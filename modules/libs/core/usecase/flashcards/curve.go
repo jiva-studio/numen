@@ -433,14 +433,14 @@ func (u Curves) date(
 			Owed:     ran.Backlog[day],
 			Retained: ran.Retained[day],
 			Through:  standing.Through[day],
-			Enough:  reached(standing, day, ran.Short),
-			Met:     reached(ran, day, ran.Short),
-			Short:   ran.Short,
-			Closed:  ran.Closed[0],
-			Clears:  ran.Clears,
-			Learned: ran.Learned,
-			Learns:  ran.Learns,
-			Backlog: ran.Backlog,
+			Enough:   reached(standing, day, ran.Short),
+			Met:      reached(ran, day, ran.Short),
+			Short:    ran.Short,
+			Closed:   ran.Closed[0],
+			Clears:   ran.Clears,
+			Learned:  ran.Learned,
+			Learns:   ran.Learns,
+			Backlog:  ran.Backlog,
 		})
 	}
 

@@ -17,6 +17,7 @@ import {
   type Presets,
   type Read,
   type Settings,
+  type Written,
 } from './core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
@@ -76,10 +77,13 @@ const opened = async (
   settings: Partial<Settings> = {},
   answers: Curve | ((asked: Settings) => Curve | Promise<Curve>) = curve,
   reading: (time: number) => Partial<Read> = () => ({}),
+  writing: (time: number) => Partial<Written> | Promise<Partial<Written>> = () => ({}),
 ) => {
   const written: Settings[] = []
   const asked: Goal[] = []
+  const closed: string[] = []
   let times = 0
+  let writes = 0
   const core: Presets = {
     read: async (path) => ({
       preset: { path, title: 'Steady', settings: { ...STEADY, ...settings }, problems: [] },
@@ -90,14 +94,14 @@ const opened = async (
     scheduling: async () => ({ preset: null, refusal: null, at: '' }),
     write: async (_path, put) => {
       written.push(put)
-      return { refusal: null, changed: false, at: 'two' }
+      return { refusal: null, changed: false, at: 'two', ...(await writing(writes++)) }
     },
     curve: async (_path, put) => {
       asked.push(put.goal)
       return typeof answers === 'function' ? answers(put) : answers
     },
   }
-  const host = { closes: () => {} } as unknown as Host
+  const host = { closes: (tab: string) => void closed.push(tab) } as unknown as Host
   const puts = { holds: () => {} } as unknown as Putting
   const kind = presetting(core, host, puts, () => {}, () => NOW)
   const held = await kind.kind.opens('Steady.md')
@@ -105,12 +109,20 @@ const opened = async (
   await Promise.resolve()
   await Promise.resolve()
   await Promise.resolve()
-  return { held, written, asked, holds: kind.holds, changed: kind.changed }
+  return {
+    held,
+    written,
+    asked,
+    closed,
+    holds: kind.holds,
+    changed: kind.changed,
+    flush: kind.flush,
+  }
 }
 
-/** A moment for the read and the curve behind it to land. */
+/** A moment for the read, the curve behind it and a write to land. */
 const after = async () => {
-  for (let i = 0; i < 4; i += 1) await Promise.resolve()
+  for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
 describe('the value the goal steers', () => {
@@ -326,6 +338,7 @@ describe('a preset no tab has open', () => {
   it('is what a preset becomes once its tab is shut', async () => {
     const { held, holds } = await opened()
     held.shuts('Steady.md')
+    await after()
     expect(holds('Steady.md')).toBeUndefined()
   })
 
@@ -333,8 +346,82 @@ describe('a preset no tab has open', () => {
     const { held, holds, changed } = await opened()
     changed([], [{ from: 'Steady.md', to: 'Slow.md' }])
     held.shuts('Slow.md')
+    await after()
     expect(holds('Slow.md')).toBeUndefined()
     expect(holds('Steady.md')).toBeUndefined()
+  })
+})
+
+// A setting typed is written when the control is let go of, so at any moment
+// the last of it stands in the tab and nowhere else. The tab answers for it
+// where it is asked to go, and where the window is.
+describe('what a tab still owes the file', () => {
+  it('is written before the tab goes', async () => {
+    const { held, written, closed } = await opened()
+    held.types('newADay', 4)
+    held.shuts('Steady.md')
+    await after()
+    expect(written.at(-1)?.newADay).toBe(4)
+    expect(closed).toStrictEqual(['Steady.md'])
+  })
+
+  it('keeps the tab open where the write was refused, and says why', async () => {
+    const { held, closed } = await opened({}, curve, () => ({}), () => ({ refusal: 'notAPreset' }))
+    held.types('newADay', 4)
+    held.shuts('Steady.md')
+    await after()
+    expect(closed).toStrictEqual([])
+    expect(held.saying()).not.toBe('')
+  })
+
+  it('lets the tab go the second time it is asked, the person having been told', async () => {
+    const { held, closed } = await opened({}, curve, () => ({}), () => ({ refusal: 'notAPreset' }))
+    held.types('newADay', 4)
+    held.shuts('Steady.md')
+    await after()
+    held.shuts('Steady.md')
+    await after()
+    expect(closed).toStrictEqual(['Steady.md'])
+  })
+
+  it('keeps the tab open where the file moved under it and nothing was written', async () => {
+    const { held, closed } = await opened({}, curve, () => ({}), () => ({ changed: true }))
+    held.types('newADay', 4)
+    held.shuts('Steady.md')
+    await after()
+    expect(closed).toStrictEqual([])
+    expect(held.changed()).toBe(true)
+  })
+
+  it('is written when the window goes', async () => {
+    const { held, written, flush } = await opened()
+    held.types('newADay', 4)
+    await flush()
+    expect(written.at(-1)?.newADay).toBe(4)
+  })
+
+  it('is waited for by the window going, where a write is already out', async () => {
+    let lands = () => {}
+    const { held, flush } = await opened({}, curve, () => ({}), (time) =>
+      time === 0
+        ? new Promise<Partial<Written>>((done) => {
+            lands = () => done({})
+          })
+        : {},
+    )
+    held.types('newADay', 4)
+    held.settles()
+    await after()
+
+    let gone = false
+    const going = flush().then(() => {
+      gone = true
+    })
+    await after()
+    expect(gone).toBe(false)
+    lands()
+    await going
+    expect(gone).toBe(true)
   })
 })
 

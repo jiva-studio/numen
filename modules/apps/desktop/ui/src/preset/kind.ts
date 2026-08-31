@@ -98,6 +98,10 @@ export function presetting(
     /** A write is out, and whether another is wanted once it lands. */
     writing: boolean
     wanted: boolean
+    /** What the writes now in the air answer to, and null while none is out. */
+    flight: Promise<void> | null
+    /** The tab was held once at its close and says why; asked again it goes. */
+    told: boolean
     /** Which curve is the current one. An answer for a goal since left is dropped. */
     asked: number
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
@@ -123,6 +127,8 @@ export function presetting(
     at: '',
     writing: false,
     wanted: false,
+    flight: null,
+    told: false,
     asked: 0,
     shape: '',
     real: false,
@@ -251,6 +257,7 @@ export function presetting(
     one.saying.value = ''
     one.at = answer.at
     one.edited = false
+    one.told = false
   }
 
   /**
@@ -259,18 +266,52 @@ export function presetting(
    * file it produced. A file that moved under the window is answered by the
    * person, so nothing is sent on top of that notice.
    */
-  const writes = async (one: Kept): Promise<void> => {
+  const writes = (one: Kept): Promise<void> => {
     if (one.writing) {
       one.wanted = true
-      return
+      return one.flight ?? Promise.resolve()
     }
     one.writing = true
+    const flight = sending(one)
+    one.flight = flight
+    return flight
+  }
+
+  /** One write, and the write asked for while it was out, as one answer. */
+  const sending = async (one: Kept): Promise<void> => {
     await sends(one)
     one.writing = false
-    if (!one.wanted) return
+    const again = one.wanted && !one.changed.value
     one.wanted = false
-    if (one.changed.value) return
-    await writes(one)
+    if (again) {
+      await writes(one)
+      return
+    }
+    one.flight = null
+  }
+
+  /** Everything the tab owes the file, written and landed. */
+  const owed = async (one: Kept): Promise<void> => {
+    if (one.edited && !one.changed.value) await writes(one)
+    else if (one.flight) await one.flight
+  }
+
+  /** Every open preset writes what it owes, for a window that is going. */
+  const flush = async (): Promise<void> => {
+    await Promise.all([...open.values()].map(owed))
+  }
+
+  /**
+   * A tab closing writes what stands unwritten and goes once it lands. A tab
+   * whose settings the file would not take is held once and says why; asked a
+   * second time it goes, since the person has been told.
+   */
+  const shut = async (one: Kept): Promise<boolean> => {
+    await owed(one)
+    if (!one.edited && !one.changed.value) return true
+    if (one.told) return true
+    one.told = true
+    return false
   }
 
   /** The settings the place the knob stands at produces, which is its own value. */
@@ -362,10 +403,14 @@ export function presetting(
         // curve is asked for again where one of those is typed.
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
       },
+      // The tab stands until the settings are written, and goes then. A preset
+      // that was renamed is filed under the name it now carries.
       shuts: (tab) => {
-        // A preset that was renamed is filed under the name it now carries.
-        open.delete(one.path.value)
-        host.closes(tab)
+        void shut(one).then((gone) => {
+          if (!gone) return
+          open.delete(one.path.value)
+          host.closes(tab)
+        })
       },
     }
   }
@@ -430,5 +475,5 @@ export function presetting(
     }
   }
 
-  return { kind, holds, changed, called, shows }
+  return { kind, holds, changed, called, shows, flush }
 }

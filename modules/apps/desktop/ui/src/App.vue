@@ -152,6 +152,7 @@ const schedules = presetting(presets, held.host, puts, tell.under('preset'))
 
 going.holds(decks.flush)
 going.holds(stencils.flush)
+going.holds(schedules.flush)
 raising(decks, going)
 raising(stencils, going)
 
