@@ -848,8 +848,13 @@ func (p Preset) lands(s *Spread, at, due time.Time) time.Time {
 		return due
 	}
 
+	// A day is added on the clock the boundary between days is read from. The
+	// moment a card lands on is the same whichever zone the instant arrives in.
+	in := s.day.zone()
+	counted := at.In(in)
+
 	stands := s.number(due)
-	from, to := s.number(at.AddDate(0, 0, first)), s.number(at.AddDate(0, 0, last))
+	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
 	on, heaviest := stands, -1.0
 	if stands >= from && stands <= to {
 		heaviest = p.weighs(s, stands)
@@ -860,7 +865,8 @@ func (p Preset) lands(s *Spread, at, due time.Time) time.Time {
 		}
 	}
 
-	return due.AddDate(0, 0, on-stands)
+	// The instant is handed back in the zone it arrived in.
+	return due.In(in).AddDate(0, 0, on-stands).In(due.Location())
 }
 
 // weighs is how much a numbered day of review wants another card: the share of

@@ -166,12 +166,7 @@ func (g Given) Faced(d Day, day string) map[CardFace]bool {
 // not broken anything, and their streak is what they had last night. A day they
 // did answer on counts from itself.
 func Streak(d Day, days map[string]Tally, now time.Time) int {
-	in := d.In
-	if in == nil {
-		in = time.Local
-	}
-
-	at := now.In(in)
+	at := now.In(d.zone())
 	if days[d.Names(at)].Answered == 0 {
 		// Today is not answered yet, so the count is of the days behind it.
 		at = at.AddDate(0, 0, -1)
