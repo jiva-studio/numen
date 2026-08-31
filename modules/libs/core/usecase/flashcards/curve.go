@@ -217,10 +217,15 @@ func (u Curves) Execute(
 	if !costed {
 		cost = history.DefaultCost
 	}
-	// The projection is run by the scheduler this preset asks for, which is the
-	// one its cards are scheduled by.
-	run := history.Simulation{By: u.at(p.Retention), Day: u.Day, Cost: cost}
 	now := u.now()
+	// The projection is run by the scheduler this preset asks for, which is the
+	// one its cards are scheduled by, and it opens on the day a person is
+	// already partway through.
+	run := history.Simulation{
+		By: u.at(p.Retention), Day: u.Day, Cost: cost,
+		Spent: history.Sat(u.Day, u.Day.Names(now), held.Answers, under,
+			map[string]history.Counts{path: p.Counts})[path],
+	}
 	var out Curve
 	switch p.Goal {
 	case history.GoalRetention:
@@ -297,6 +302,9 @@ func (u Curves) minutes(
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
+	// The day the preset keeps is a place of the grid, so what is drawn under
+	// the mark is drawn for the setting the person is standing at.
+	standing(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
 	for _, minutes := range out.Grid {
 		one := p
 		one.MinutesADay = int(minutes)
@@ -339,6 +347,10 @@ func (u Curves) retention(
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}
+	// The target the preset asks for is a place of the grid, so what is drawn
+	// under the mark is drawn for it. The two ends are what memory allows, and
+	// no setting displaces them.
+	standing(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
 	for _, share := range out.Grid {
 		one, asks := p, run
@@ -580,6 +592,25 @@ func naming(steps []int, at int) []int {
 		steps[near] = at
 	}
 	return steps
+}
+
+// standing puts the value the preset holds on the grid, in place of the place
+// of it nearest that value, so what is drawn under the mark is drawn for the
+// setting the person is standing at.
+//
+// First and last are the places a value may take: a range whose ends say what
+// the setting may be at all keeps them.
+func standing(grid []float64, value float64, first, last int) {
+	if first < 0 || last >= len(grid) || first > last {
+		return
+	}
+	at := first
+	for i := first; i <= last; i++ {
+		if math.Abs(grid[i]-value) < math.Abs(grid[at]-value) {
+			at = i
+		}
+	}
+	grid[at] = value
 }
 
 // abs is how far a whole number stands from nothing.

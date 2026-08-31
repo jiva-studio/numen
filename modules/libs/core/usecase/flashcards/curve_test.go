@@ -399,9 +399,11 @@ func inRange(t *testing.T, c flashcards.Curve) {
 			t.Errorf("the %s mark is at place %d of %d", name, mark.At, len(c.Grid))
 			continue
 		}
-		if mark.Value != c.Grid[mark.At] && name == "suggested" {
-			t.Errorf("the suggested mark is at %v and the place it names is %v",
-				mark.Value, c.Grid[mark.At])
+		// A mark stands on a place of the grid, so the figures a person reads
+		// under it are the figures of the setting they are standing at.
+		if mark.Value != c.Grid[mark.At] {
+			t.Errorf("the %s mark is at %v and the place it names is %v",
+				name, mark.Value, c.Grid[mark.At])
 		}
 		if c.Goal == history.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
@@ -903,5 +905,97 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 	if got.Now != flashcards.Nowhere {
 		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
 			got.Now, got.Grid[len(got.Grid)-1])
+	}
+}
+
+// The curve opens on the day a person is already partway through.
+//
+// The first place of a run is a real day and not a fresh one: what it draws is
+// what a sitting opened now would hand over. An evening re-opening of the tab
+// otherwise draws a day already spent as a day still to come.
+func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
+	s := opened(t, studied(30))
+	// The preset the deck points at says what the curve is asked for, so the
+	// sitting and the picture are held to one day.
+	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
+		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
+	// Every card face owed today, at six seconds an answer.
+	before := s.run(t, noon.AddDate(0, 0, -30))
+	for i := range 30 {
+		answer(t, before, mark(i), 6*time.Second)
+	}
+	p := history.Preset{
+		Goal: history.GoalMinutes, MinutesADay: 3, NewADay: 0, ReviewsADay: 0,
+	}
+
+	fresh, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Ten of them answered this morning, which is a minute of the three.
+	morning := s.run(t, noon)
+	for i := range 10 {
+		answer(t, morning, mark(i), 6*time.Second)
+	}
+	after, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if after.At[after.Now.At].Reviews >= fresh.At[fresh.Now.At].Reviews {
+		t.Errorf("a day with a minute of it spent draws %v cards and an unspent day %v",
+			after.At[after.Now.At].Reviews, fresh.At[fresh.Now.At].Reviews)
+	}
+	sat := s.under(t, today, noon, "Sanskrit.md")
+	if got := float64(len(sat.Asked)); got != after.At[after.Now.At].Reviews {
+		t.Errorf("the sitting offers %v card faces and the curve draws %v",
+			got, after.At[after.Now.At].Reviews)
+	}
+}
+
+// The setting a person is standing at is a place of the grid, so the figures
+// under the mark are the figures of that setting.
+//
+// The mark carried the preset's own value while the figures beside it were the
+// grid's nearest place, so a day of fifteen minutes was drawn as a day of
+// fourteen and a day of one minute as a day of two.
+func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
+	s := opened(t, studied(30))
+	before := s.run(t, noon.AddDate(0, 0, -30))
+	for i := range 30 {
+		answer(t, before, mark(i), 6*time.Second)
+	}
+
+	for _, minutes := range []int{1, 3, 15, 20, 200} {
+		p := history.Preset{
+			Goal: history.GoalMinutes, MinutesADay: minutes, NewADay: 8, ReviewsADay: 45,
+		}
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Now.At < 0 {
+			t.Errorf("a day of %d minutes stands nowhere on its own curve", minutes)
+			continue
+		}
+		if got.Grid[got.Now.At] != float64(minutes) {
+			t.Errorf("a day of %d minutes is marked at the place drawing %v minutes",
+				minutes, got.Grid[got.Now.At])
+		}
+	}
+
+	for _, share := range []float64{0.71, 0.87, 0.9, 0.98} {
+		p := history.Preset{
+			Goal: history.GoalRetention, Retention: share,
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		}
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Now.At < 0 || got.Grid[got.Now.At] != share {
+			t.Errorf("a target of %v is marked at place %d, which draws %v",
+				share, got.Now.At, got.Grid[got.Now.At])
+		}
 	}
 }

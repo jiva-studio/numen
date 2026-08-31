@@ -302,6 +302,10 @@ type Simulation struct {
 	Cost Cost
 	// Days is how far ahead it runs, and runs Ahead days when it is zero.
 	Days int
+	// Spent is what the day holding now has already gone through under this
+	// preset. The first day of a run is a real day a person may be halfway
+	// through, and what it has left is what a sitting opened now would offer.
+	Spent Spent
 }
 
 // Run projects the card faces forward from now.
@@ -384,7 +388,13 @@ func (s Simulation) Run(
 
 		// What the day admits is the one answer, and it is the answer the
 		// sitting of that day will be held to.
-		admits := p.Admits(s.Day, open, Spent{}, Left{New: left, Ripens: ripens})
+		// The first day of a run is the day holding now, which a person may be
+		// halfway through. Every day after it opens unspent.
+		gone := Spent{}
+		if today == 0 {
+			gone = s.Spent
+		}
+		admits := p.Admits(s.Day, open, gone, Left{New: left, Ripens: ripens})
 
 		var due []int
 		for i, c := range cards {
