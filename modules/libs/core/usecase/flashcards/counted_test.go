@@ -256,6 +256,7 @@ type countedCachedRun struct {
 	Name string                   `json:"name"`
 	Size int                      `json:"size"`
 	Days map[string]history.Tally `json:"days"`
+	IDs  []string                 `json:"ids"`
 }
 
 // claiming puts a cache of its own over the vault's counting: the runs are the
@@ -321,7 +322,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	claiming(t, s, 1, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+	claiming(t, s, 2, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
