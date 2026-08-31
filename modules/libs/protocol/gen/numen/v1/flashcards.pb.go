@@ -331,6 +331,7 @@ type PresetOwing struct {
 	ClosesNew     string `protobuf:"bytes,12,opt,name=closes_new,json=closesNew,proto3" json:"closes_new,omitempty"`
 	ClosesReviews string `protobuf:"bytes,13,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
 	ClosesMinutes string `protobuf:"bytes,14,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
+	ClosesBacklog string `protobuf:"bytes,15,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -459,6 +460,13 @@ func (x *PresetOwing) GetClosesReviews() string {
 func (x *PresetOwing) GetClosesMinutes() string {
 	if x != nil {
 		return x.ClosesMinutes
+	}
+	return ""
+}
+
+func (x *PresetOwing) GetClosesBacklog() string {
+	if x != nil {
+		return x.ClosesBacklog
 	}
 	return ""
 }
@@ -1977,7 +1985,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
-	"\banswered\x18\x05 \x01(\x05R\banswered\"\x85\x03\n" +
+	"\banswered\x18\x05 \x01(\x05R\banswered\"\xac\x03\n" +
 	"\vPresetOwing\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
@@ -1994,7 +2002,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
 	"closes_new\x18\f \x01(\tR\tclosesNew\x12%\n" +
 	"\x0ecloses_reviews\x18\r \x01(\tR\rclosesReviews\x12%\n" +
-	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\"Y\n" +
+	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\x12%\n" +
+	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\"Y\n" +
 	"\x05Ahead\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +

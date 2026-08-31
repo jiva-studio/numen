@@ -32,6 +32,16 @@ type Preset struct {
 	// times they are put to a person.
 	Counts Counts
 
+	// Backlog is how much of a day goes to what is overdue before anything
+	// unbegun is offered, as a share in hundredths. At a hundred the debt is
+	// paid first and new cards are begun on what is left; at nothing the new
+	// material comes first; between them the day is split, and a side that runs
+	// short leaves the rest to the other.
+	//
+	// It says what a day is spent on rather than what closes it, so every goal
+	// reads it.
+	Backlog int
+
 	// LightDays are the days of the week the load is cut on, and the cards
 	// moved to their neighbours.
 	LightDays []time.Weekday
@@ -78,6 +88,10 @@ func KnownCounts(c Counts) bool {
 	return false
 }
 
+// AllBacklog is a day spent on the debt before anything unbegun is offered,
+// which is what a preset naming no share does.
+const AllBacklog = 100
+
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Least, Most float64 }
 
@@ -92,6 +106,7 @@ var (
 	NewADayBounds     = Bounds{Least: 0, Most: 9999}
 	ReviewsADayBounds = Bounds{Least: 0, Most: 9999}
 	RetentionBounds   = Bounds{Least: 0.7, Most: 0.99}
+	BacklogBounds     = Bounds{Least: 0, Most: 100}
 )
 
 // Defaults is a preset naming nothing, and how a deck pointing at no preset is
@@ -104,20 +119,26 @@ func Defaults() Preset {
 		ReviewsADay: 200,
 		Retention:   0.9,
 		Counts:      CountsCards,
+		Backlog:     AllBacklog,
 		EvenLoad:    true,
 	}
 }
 
-// Closes is, for each of a preset's three budgets, what to call it when it
-// closes the day, and empty where it takes no part.
+// Closes is what each of a preset's settings governs under the goal in force,
+// each written as the preset writes the key, and empty where it takes no part.
 //
-// The goal names the budget that closes the day, and every other budget takes
-// no part. A budget taking no part stands in the file where the person left it
-// and is in force again the moment its goal is chosen.
+// A setting taking no part stands in the file where the person left it and is
+// in force again the moment its goal is chosen.
 type Closes struct {
+	// New, Reviews and Minutes are the budgets. The goal names the one that
+	// closes the day, and the others take no part.
 	New     Closed
 	Reviews Closed
 	Minutes Closed
+	// Backlog is the share of the day that goes to the debt. It closes nothing:
+	// it says what the day is spent on. A goal of a date carries the whole
+	// material by its own reckoning, so the split decides nothing there.
+	Backlog Closed
 }
 
 // Allowance is what one day of a preset admits: how many cards of each kind it
@@ -136,6 +157,10 @@ type Allowance struct {
 	Minutes time.Duration
 	// Closes is which of the three closes the day.
 	Closes Closes
+	// Backlog is how much of the day goes to the debt before anything unbegun
+	// is offered, as a share in hundredths. It says what the day is spent on
+	// rather than what closes it, so it is here under every goal.
+	Backlog int
 	// Paused is a preset that schedules nothing at all.
 	Paused bool
 }
@@ -155,6 +180,12 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
 	if p.Goal == GoalDate {
 		out.Keeps.New = p.paces(d, now, left)
 	}
+	// A split that takes no part leaves the day spending on the debt first,
+	// which is what a preset naming no share does.
+	out.Backlog = AllBacklog
+	if out.Closes.Backlog != ClosedNothing {
+		out.Backlog = p.Backlog
+	}
 	out.New = out.Keeps.New - spent.New
 	out.Reviews = out.Keeps.Reviews - spent.Reviews
 	out.Minutes = time.Duration(out.Keeps.Minutes*float64(time.Minute)) - spent.Took
@@ -169,11 +200,11 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
 func (p Preset) closing() Closes {
 	switch p.Goal {
 	case GoalRetention:
-		return Closes{New: ClosedNew, Reviews: ClosedReviews}
+		return Closes{New: ClosedNew, Reviews: ClosedReviews, Backlog: ClosedBacklog}
 	case GoalDate:
 		return Closes{New: ClosedDate}
 	default:
-		return Closes{Minutes: ClosedMinutes}
+		return Closes{Minutes: ClosedMinutes, Backlog: ClosedBacklog}
 	}
 }
 
@@ -289,6 +320,7 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 	p.MinutesADay = counted(front, "minutes_a_day", MinutesADayBounds, p.MinutesADay, &problems)
 	p.NewADay = counted(front, "new_a_day", NewADayBounds, p.NewADay, &problems)
 	p.ReviewsADay = counted(front, "reviews_a_day", ReviewsADayBounds, p.ReviewsADay, &problems)
+	p.Backlog = counted(front, "backlog", BacklogBounds, p.Backlog, &problems)
 
 	if raw, present := front["retention"]; present && raw != nil {
 		value, ok := number(raw)

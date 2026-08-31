@@ -966,3 +966,115 @@ func projected(t *testing.T, s vaulted, now time.Time, deck string) int {
 	}
 	return ran.Load[0]
 }
+
+// backlogged is a vault whose preset has a debt before it and material it has
+// not begun, so a day has both to choose between.
+func backlogged(t *testing.T, front string) vaulted {
+	t.Helper()
+	s := opened(t, map[string]string{
+		"Term.md":     term,
+		"On.md":       preset(front),
+		"decks/On.md": deckOf("On", 40, 0),
+	})
+	// Twenty card faces answered long enough ago to be owed today, and twenty
+	// nobody has begun.
+	before := s.run(t, saturday.AddDate(0, 0, -30))
+	for i := range 20 {
+		answer(t, before, mark(i), 6*time.Second)
+	}
+	return s
+}
+
+// `backlog` says how much of a day goes to the debt before anything unbegun is
+// offered. It is a share of the day and not a budget of its own, so it is read
+// against the one pot a goal of minutes keeps.
+func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
+	// Four minutes a day over twenty card faces owed and twenty unbegun, which
+	// is more of each than the day can carry.
+	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
+
+	all := s0(t, backlogged(t, day+"backlog: 100\n"))
+	if all.seen != 20 || all.fresh == 0 {
+		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
+			"the rest of the day on new ones", all)
+	}
+	none := s0(t, backlogged(t, day+"backlog: 0\n"))
+	if none.fresh != 20 || none.seen == 0 {
+		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
+			"the rest of the day on owed ones", none)
+	}
+	// An odd day gives the extra card to the debt, so the two are never more
+	// than one apart.
+	half := s0(t, backlogged(t, day+"backlog: 50\n"))
+	if half.seen-half.fresh < 0 || half.seen-half.fresh > 1 {
+		t.Errorf("splitting the day evenly asked %+v", half)
+	}
+	if half.seen == 0 || half.fresh == 0 {
+		t.Errorf("splitting the day evenly left one side of it unspent: %+v", half)
+	}
+}
+
+// A preset naming no share pays the debt first, which is what every preset
+// written before the setting existed does.
+func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
+	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
+
+	was := s0(t, backlogged(t, day+"backlog: 100\n"))
+	if got := s0(t, backlogged(t, day)); got != was {
+		t.Errorf("a preset naming no share asked %+v, and one naming a hundred %+v", got, was)
+	}
+	if was.seen != 20 {
+		t.Errorf("the debt was not paid first: %+v", was)
+	}
+}
+
+// A side that runs short leaves the rest of the day to the other, so a day is
+// never left part spent because one half of it had nothing to offer.
+func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md": term,
+		"On.md": preset("goal: retention\nbacklog: 50\n" +
+			"new_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"),
+		"decks/On.md": deckOf("On", 40, 0),
+	})
+	// Two card faces owed, and thirty-eight nobody has begun.
+	before := s.run(t, saturday.AddDate(0, 0, -30))
+	for i := range 2 {
+		answer(t, before, mark(i), 6*time.Second)
+	}
+
+	sat := s.sittingAt(t, today, saturday)
+	fresh := unseen(sat)
+	if seen := asked(sat) - fresh; seen != 2 || fresh != 20 {
+		t.Errorf("the day asked %d owed and %d new, want the two owed and its twenty new",
+			seen, fresh)
+	}
+}
+
+// A goal of a date carries the whole material by its own reckoning, so the
+// share takes no part and the value stands in the file untouched.
+func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
+	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {
+		s := backlogged(t, "goal: by_date\nby_date: 2026-09-14\n"+share+
+			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
+
+		sat := s.sittingAt(t, today, saturday)
+		fresh := unseen(sat)
+		// Twenty owed, and twenty unbegun over the ten days to the day it aims
+		// at, which is two a day.
+		if seen := asked(sat) - fresh; seen != 20 || fresh != 2 {
+			t.Errorf("under %q the day asked %d owed and %d new, want 20 and 2",
+				share, seen, fresh)
+		}
+	}
+}
+
+// what a sitting came to, of each kind.
+type sitting struct{ seen, fresh int }
+
+func s0(t *testing.T, s vaulted) sitting {
+	t.Helper()
+	sat := s.sittingAt(t, today, saturday)
+	fresh := unseen(sat)
+	return sitting{seen: asked(sat) - fresh, fresh: fresh}
+}

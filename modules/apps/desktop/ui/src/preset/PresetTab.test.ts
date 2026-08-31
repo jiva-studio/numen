@@ -23,7 +23,9 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  closed: '',
   clears: 0,
+  backlog: [],
   ...over,
 })
 
@@ -42,6 +44,7 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   decks: 1,
   cards: 400,
   overdue: 0,
+  unbegun: 0,
   honest: true,
   ...over,
 })
@@ -121,14 +124,63 @@ describe('the one control', () => {
 
   // A name inside the picture is scaled with it and is set at no step of the
   // page's type.
-  // Two marks are drawn and both are named: where the person stands, and what
-  // is suggested. The old third mark, the value in the file, is gone.
-  it('names every mark over the picture and not inside it', () => {
+  // The knob is where the person put it and needs no telling. The other mark
+  // is not obvious and carries its name.
+  it('names the mark that needs a name, and leaves the knob unnamed', () => {
     const { tab } = drawn()
     const names = tab.findAll('.control__label').map((one) => one.text())
-    expect(names).toStrictEqual([words.now, words.markName('minutes')])
-    expect(tab.findAll('.control__now')).toHaveLength(0)
+    expect(names).toStrictEqual([words.markName('minutes')])
+    expect(tab.text()).not.toContain('you are here')
     expect(tab.get('svg').find('text').exists()).toBe(false)
+  })
+
+  // A person moving the control needs to know what it is acting on, which the
+  // picture itself never says.
+  // A readout of what is being steered, scanned and not read: each figure its
+  // own tile, with the word for what it counts under it.
+  it('says what the control is acting on, as tiles over the picture', () => {
+    const { tab } = drawn({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
+    const tiles = tab
+      .findAll('.control__tile')
+      .map((one) => [one.get('.control__figure').text(), one.get('.control__word').text()])
+    expect(tiles).toStrictEqual([
+      ['4', 'decks'],
+      ['160', 'cards'],
+      ['45', 'overdue'],
+      ['30', 'new'],
+    ])
+  })
+
+  // The tiles take an equal share of the width, so a figure standing at
+  // nothing leaves the rest to spread over it.
+  it('leaves out a tile whose figure stands at nothing', () => {
+    const { tab } = drawn({ decks: 4, cards: 160, overdue: 0, unbegun: 0 })
+    expect(tab.findAll('.control__tile')).toHaveLength(2)
+  })
+
+  // A card nobody has answered is new, which is what the rest of the product
+  // calls it. Overdue keeps its own word, which is a distinction of its own.
+  it('calls a card nobody has answered new', () => {
+    const said = words.material(4, 160, 45, 30).map((one) => one.name)
+    expect(said).toContain('new')
+    expect(said).not.toContain('unbegun')
+    expect(said).toContain('overdue')
+  })
+
+  it('leaves out whichever figure stands at nothing', () => {
+    const names = (over: number, fresh: number) =>
+      words.material(1, 160, over, fresh).map((one) => `${one.figure} ${one.name}`)
+    expect(names(0, 30)).toStrictEqual(['1 deck', '160 cards', '30 new'])
+    expect(names(45, 0)).toStrictEqual(['1 deck', '160 cards', '45 overdue'])
+    expect(names(0, 0)).toStrictEqual(['1 deck', '160 cards'])
+  })
+
+  // A ring round the whole picture reads as a frame. Focus belongs on the one
+  // thing the keyboard moves.
+  it('shows focus on the knob and draws no ring round the picture', () => {
+    const style = drawn().tab.get('[role="slider"]').attributes('class')
+    expect(style).toContain('control__picture')
+    expect(drawn().tab.get('[role="slider"]').attributes('tabindex')).toBe('0')
   })
 
   // The drop line and the value under it belong to the knob, so both stand
@@ -144,12 +196,13 @@ describe('the one control', () => {
     expect(dropAt()).toBe(knobAt())
   })
 
-  // The mark is named for what it is, and the rule it is found by is prose
-  // under the picture rather than a word on the mark.
-  it('says the rule the second mark is found by, under the picture', () => {
+  // The mark keeps its short name on the picture, and the paragraph says the
+  // value it stands at and what that figure means. Nothing is captioned.
+  it('says what the second mark stands at and means, in the paragraph', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       const { tab } = drawn({ goal }, { goal })
-      expect(tab.get('.control__why').text()).toBe(words.markRule(goal))
+      expect(tab.findAll('.control__why')).toHaveLength(0)
+      expect(tab.get('.preset__costing').text()).toContain(words.markMeans(goal, 30))
       expect(tab.findAll('.control__label').map((one) => one.text())).toContain(
         words.markName(goal),
       )
@@ -159,6 +212,128 @@ describe('the one control', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       expect(words.markName(goal)).not.toContain('suggest')
     }
+  })
+
+  // The value first and the meaning after it, so the figure is what is read.
+  it('names the mark’s own value before saying what it is', () => {
+    expect(words.markMeans('minutes', 26)).toBe(
+      '26 minutes a day is the shortest day the clock no longer cuts short.',
+    )
+    expect(words.markMeans('date', 45)).toBe(
+      "45 days off is the first day this preset's own budget gets through the material.",
+    )
+    expect(words.markMeans('retention', 0.85)).toContain('85% remembered is the target')
+  })
+
+  // What the wire says is what there is: a curve answering no suggestion draws
+  // no dot, carries no name and explains nothing.
+  it('draws and says nothing where the curve answers no suggestion', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      const { tab } = drawn({ goal, suggested: NOWHERE }, { goal })
+      expect(tab.findAll('.control__suggested')).toHaveLength(0)
+      expect(tab.findAll('.control__label')).toHaveLength(0)
+      expect(tab.text()).not.toContain(words.markName(goal))
+      expect(tab.get('.preset__costing').text()).not.toContain(words.markMeans(goal, 30))
+    }
+    // The knob and its number are the person's own and stand either way.
+    expect(drawn({ suggested: NOWHERE }).tab.findAll('.control__knob')).toHaveLength(1)
+    expect(drawn({ suggested: NOWHERE }).tab.findAll('.control__number--knob')).toHaveLength(1)
+  })
+})
+
+describe('the band of what stands overdue', () => {
+  /** A curve whose place the knob stands at carries a backlog that climbs. */
+  const climbing = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
+    drawn({
+      at: [point(), point(), point({ reviews: 80, backlog }), point()],
+    })
+
+  it('is a plot of its own under the picture, drawn over the days ahead', () => {
+    const { tab } = climbing()
+    expect(tab.findAll('.control__backlog')).toHaveLength(1)
+    expect(tab.get('.control__backlog').attributes('d')?.startsWith('M')).toBe(true)
+  })
+
+  // A day too short to carry what falls due adds to the pile, and the climb is
+  // what the picture is for. The band is scaled to this one place's own run.
+  it('draws a backlog that climbs as climbing, and not flat', () => {
+    const heights = (d: string) => d.split(/[ML]/).slice(1).map((one) => Number(one.split(' ')[1]))
+    const drawnAt = heights(climbing().tab.get('.control__backlog').attributes('d') ?? '')
+    expect(drawnAt[0]).toBeGreaterThan(drawnAt[5] ?? 0)
+    expect(drawnAt[2]).toBeLessThan(drawnAt[1] ?? 0)
+    expect(new Set(drawnAt).size).toBeGreaterThan(4)
+  })
+
+  // Nothing overdue is the foot, so the height is read against a floor that
+  // means something.
+  it('reads from nothing overdue to the most this pace ever stands at', () => {
+    const said = climbing()
+      .tab.findAll('.control__number')
+      .map((one) => one.text())
+    expect(said).toContain(words.backlogHeightAt(78))
+    // A number the line stands on gives way to it, so the foot is read off a
+    // run that leaves the left edge of the band clear.
+    const falling = climbing([78, 60, 40, 20, 5, 0])
+      .tab.findAll('.control__number')
+      .map((one) => one.text())
+    expect(falling).toContain(words.backlogHeightAt(0))
+  })
+
+  it('names both its axes, in the same voice as the picture over it', () => {
+    const { tab } = climbing()
+    const names = tab.findAll('.control__name--y').map((one) => one.text())
+    expect(names).toStrictEqual([words.axisY('minutes'), words.backlogY])
+    expect(tab.findAll('.control__name--x').map((one) => one.text())).toContain(words.backlogX)
+  })
+
+  it('carries the days at either end, which the goal’s grid says nothing about', () => {
+    const { tab } = climbing()
+    const ends = tab.findAll('.control__ends').map((one) => one.text())
+    expect(ends[1]).toContain(words.backlogWidthAt(6))
+  })
+
+  // The band is read and never dragged, so it is no stop on the way round the
+  // screen and offers nothing to the keyboard.
+  it('is read and not dragged, so the one control stays the one control', () => {
+    const { tab } = climbing()
+    expect(tab.findAll('[role="slider"]')).toHaveLength(1)
+    expect(tab.findAll('svg')).toHaveLength(2)
+  })
+
+  // The page keeps its height whether or not there is a backlog to draw.
+  it('keeps its room where the place the knob stands carries no backlog', () => {
+    const { tab } = drawn()
+    expect(tab.findAll('.control__backlog')).toHaveLength(0)
+    expect(tab.findAll('.control__room')).toHaveLength(2)
+    expect(tab.findAll('.control__name--y').map((one) => one.text())).toContain(words.backlogY)
+  })
+
+  // The room a plot is drawn in is the same box in every state it has, so
+  // nothing under the picture moves when the answer lands.
+  it('holds one room for the plot, waiting, drawn and empty alike', () => {
+    const room = (over: Partial<Curve> = {}) =>
+      drawn(over)
+        .tab.findAll('.control__room')
+        .map((one) => one.attributes('style'))
+    expect(room({ honest: false })).toStrictEqual(room())
+    expect(room({ at: [point(), point(), point(), point()] })).toStrictEqual(room())
+  })
+
+  // The backlog is read off the place the knob stands at, so walking the grid
+  // walks the band with it.
+  it('follows the knob, since each place of the grid keeps its own', async () => {
+    const { tab } = drawn({
+      at: [
+        point({ backlog: [1, 2, 3] }),
+        point({ backlog: [9, 9, 9] }),
+        point({ backlog: [4, 3, 2] }),
+        point({ backlog: [8, 4, 0] }),
+      ],
+    })
+    const line = () => tab.get('.control__backlog').attributes('d')
+    const was = line()
+    await tab.get('[role="slider"]').trigger('keydown', { key: 'End' })
+    expect(line()).not.toBe(was)
   })
 })
 
@@ -237,7 +412,8 @@ describe('what the control stands at', () => {
   it('keeps the rows under the picture whether or not the answer has landed', () => {
     for (const one of [drawn({ honest: false }), drawn()]) {
       expect(one.tab.findAll('.control__under')).toHaveLength(1)
-      expect(one.tab.findAll('.control__ends')).toHaveLength(1)
+      // The picture's own row of ends, and the band's under it.
+      expect(one.tab.findAll('.control__ends')).toHaveLength(2)
     }
   })
 
@@ -256,26 +432,66 @@ describe('what the control stands at', () => {
       },
       { goal: 'date', byDate: '2026-09-29' },
     )
-    expect(dated.tab.text()).toContain(words.owing(80))
-    expect(dated.tab.text()).toContain(words.unmet)
-    // Four lines at most, and none of them the figure or the sentence again.
-    expect(dated.tab.findAll('.preset__sums li').length).toBeLessThanOrEqual(4)
-    expect(dated.tab.findAll('.preset__sums li').map((one) => one.text())).not.toContain(
-      words.value('date', 30, '2026-09-29'),
-    )
+    // One telling, not a list: the whole of it is two paragraphs at most, and
+    // the arithmetic is joined into sentences rather than set line by line.
+    expect(dated.tab.text()).toContain(words.dated(40, 20, 0.8, 80, false))
+    expect(dated.tab.findAll('.preset__sums')).toHaveLength(0)
+    // However many facts a date carries, they are one block and not several.
+    expect(dated.tab.findAll('.preset__costing')).toHaveLength(1)
     // Nothing is refused: the control is there to be moved.
     expect(dated.tab.get('[role="slider"]').attributes('aria-disabled')).toBeUndefined()
   })
 
-  // A flat line is the truth where the counts close the day, and a flat line
-  // nobody can read is not an answer.
-  it('says what closes a day a longer one buys nothing on', () => {
+  // A flat line is the truth where a count closes the day, and a flat line
+  // nobody can read is not an answer. What closed it is on the wire, so it is
+  // said wherever the goal on screen is not what closed it.
+  it('says what closes the day where the goal on screen does not', () => {
     const shut = drawn(
-      { at: [point({ reviews: 13 }), point({ reviews: 13 }), point({ reviews: 13 })], grid: [0, 10, 20] },
+      {
+        grid: [0, 10, 20, 30],
+        at: [
+          point({ reviews: 13, closed: 'reviews_a_day' }),
+          point({ reviews: 13, closed: 'reviews_a_day' }),
+          point({ reviews: 13, closed: 'reviews_a_day' }),
+          point({ reviews: 13, closed: 'reviews_a_day' }),
+        ],
+      },
       { newADay: 8, reviewsADay: 5 },
     )
-    expect(shut.tab.text()).toContain(words.closed(8, 5))
-    expect(drawn().tab.text()).not.toContain(words.closed(10, 200))
+    expect(shut.tab.text()).toContain(words.limiting('minutes', 'reviews_a_day'))
+  })
+
+  // A target closes no day of its own, so a curve flat in minutes under that
+  // goal is a count doing the limiting and says which one.
+  it('names the count that limits a preset worked to a target', () => {
+    const shut = drawn(
+      {
+        goal: 'retention',
+        at: [
+          point({ minutes: 1, closed: 'reviews_a_day' }),
+          point({ minutes: 1, closed: 'reviews_a_day' }),
+          point({ minutes: 1, closed: 'reviews_a_day' }),
+          point({ minutes: 1, closed: 'reviews_a_day' }),
+        ],
+      },
+      { goal: 'retention', newADay: 12, reviewsADay: 1 },
+    )
+    const said = shut.tab.get('.preset__costing').text()
+    expect(said).toContain(words.limiting('retention', 'reviews_a_day'))
+    expect(said).toContain('The target is not what limits this preset here')
+    expect(said).toContain('the reviews a day')
+  })
+
+  it('says nothing of what closes the day where the goal on screen closes it', () => {
+    const { tab } = drawn({
+      at: [
+        point({ closed: 'minutes_a_day' }),
+        point({ closed: 'minutes_a_day' }),
+        point({ reviews: 80, closed: 'minutes_a_day' }),
+        point({ closed: 'minutes_a_day' }),
+      ],
+    })
+    expect(tab.text()).not.toContain('is not what limits this preset')
   })
 
   // Each axis is named along the axis it names, with its unit in the name.
@@ -345,7 +561,11 @@ describe('what the control stands at', () => {
   // The knob says the value it stands on, so the end under it would say it twice.
   it('leaves the end the knob stands on to the knob', async () => {
     const { tab } = drawn()
-    const ends = () => tab.findAll('.control__ends span').map((one) => one.text())
+    const ends = () =>
+      tab
+        .findAll('.control__ends')[0]
+        ?.findAll('span')
+        .map((one) => one.text())
     await tab.get('[role="slider"]').trigger('keydown', { key: 'Home' })
     expect(ends()).toStrictEqual(['', words.widthAt('minutes', 30)])
     await tab.get('[role="slider"]').trigger('keydown', { key: 'End' })
@@ -375,8 +595,12 @@ describe('what the control stands at', () => {
       cards: 160,
       at: [point(), point(), point({ reviews: 80, clears: 5 }), point({ clears: 2 })],
     })
-    expect(tab.text()).toContain('45 of 160 card faces are overdue')
-    expect(tab.text()).toContain('nothing is overdue after 5 days')
+    // What the sitting comes to and where the backlog stands are one block of
+    // prose, not two blocks stacked.
+    const said = tab.get('.preset__costing').text()
+    expect(said).toContain(words.costs('minutes', 20, 80, 0, 0))
+    expect(said).toContain(words.behind(45, 160, 5))
+    expect(tab.findAll('.preset__costing')).toHaveLength(1)
   })
 
   it('says a pace that never gets there does not, rather than naming a day', () => {
@@ -385,26 +609,28 @@ describe('what the control stands at', () => {
       cards: 160,
       at: [point(), point(), point({ reviews: 80, clears: -1 }), point({ clears: 2 })],
     })
-    expect(tab.text()).toContain('the backlog never clears')
+    expect(tab.text()).toContain('this pace does not get on top of it')
     expect(tab.text()).not.toContain('after -1')
   })
 
   // Nothing overdue is nothing to clear, and a sentence saying so is noise.
   it('says nothing at all about clearing where nothing is overdue', () => {
     const { tab } = drawn({ overdue: 0, cards: 160 })
-    expect(tab.text()).not.toContain('overdue')
-    expect(tab.text()).not.toContain('clear')
+    expect(tab.get('.preset__costing').text()).not.toContain('overdue')
+    expect(tab.get('.preset__costing').text()).not.toContain('clear')
   })
 
   // Overdue is the backlog alone. What a sitting offers is that and today's
   // cards together, which is the deck screen's number and a larger one.
   it('says overdue only of the backlog, and never of the whole', () => {
-    const said = words.behind(45, 160)
+    const said = words.behind(45, 160, 5)
     expect(said).toContain('45')
     expect(said).toContain('160')
     expect(said).not.toContain('due today')
     expect(said).not.toContain('unbegun')
-    expect(words.behind(1, 160)).toBe('1 of 160 card faces is overdue.')
+    expect(words.behind(1, 160, 1)).toBe(
+      '1 of 160 cards is overdue, and this pace has nothing overdue after 1 day.',
+    )
   })
 
   it('says a preset past the day it aimed at has spent its budget', () => {
@@ -421,6 +647,7 @@ describe('a goal with nothing to work on', () => {
     decks: 0,
     cards: 0,
     overdue: 0,
+  unbegun: 0,
   }
 
   it('says no deck points here, and draws no curve and no figures of nothing', () => {
@@ -476,7 +703,7 @@ describe('the settings the chosen goal schedules by', () => {
     const { tab } = drawn()
     expect(rows(tab)).toStrictEqual([
       words.fieldName('minutesADay'),
-      words.fieldName('counts'),
+      words.fieldName('backlog'),
       words.fieldName('lightDays'),
       words.fieldName('evenLoad'),
     ])
@@ -490,6 +717,7 @@ describe('the settings the chosen goal schedules by', () => {
       words.fieldName('reviewsADay'),
       words.fieldName('retention'),
       words.fieldName('counts'),
+      words.fieldName('backlog'),
       words.fieldName('lightDays'),
       words.fieldName('evenLoad'),
     ])
@@ -507,10 +735,10 @@ describe('the settings the chosen goal schedules by', () => {
     )
     expect(rows(tab)).toStrictEqual([
       words.fieldName('byDate'),
-      words.fieldName('counts'),
       words.fieldName('lightDays'),
       words.fieldName('evenLoad'),
     ])
+    expect(rows(tab)).not.toContain(words.fieldName('backlog'))
     const day = tab.get('.preset__day')
     expect((day.element as HTMLInputElement).value).toBe('2026-09-29')
     await day.setValue('2026-10-09')
@@ -523,14 +751,15 @@ describe('the settings under the control', () => {
     const { tab } = drawn()
     expect(tab.text()).toContain(words.fieldName('minutesADay'))
     expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
-    expect(tab.text()).toContain(words.fieldName('counts'))
+    expect(tab.text()).toContain(words.fieldName('lightDays'))
     expect(tab.findAll('.preset__row')).toHaveLength(4)
   })
 
   // What a budget is spent on is a row like any other, and a person moving it
-  // writes the group the way every other row does.
+  // writes the group the way every other row does. It stands under the goal
+  // whose budget is cards.
   it('offers the two things a budget is spent on', async () => {
-    const { tab, done } = drawn()
+    const { tab, done } = drawn({ goal: 'retention' }, { goal: 'retention' })
     expect(tab.text()).toContain(words.fieldName('counts'))
 
     const shows = tab
@@ -538,6 +767,28 @@ describe('the settings under the control', () => {
       .find((one) => one.text() === words.countsName('shows'))
     await shows?.trigger('click')
     expect(done).toStrictEqual(['types counts shows'])
+  })
+
+  // A share is chosen by what it does and not typed as a figure, so the row
+  // offers the three shares by name.
+  it('offers the share of a day the debt takes, by what each share does', async () => {
+    const { tab, done } = drawn()
+    expect(tab.text()).toContain(words.fieldName('backlog'))
+    for (const share of [100, 50, 0]) {
+      expect(tab.text()).toContain(words.backlogName(share))
+    }
+    const first = tab.findAll('button').find((one) => one.text() === words.backlogName(0))
+    await first?.trigger('click')
+    expect(done).toStrictEqual(['types backlog 0'])
+  })
+
+  // A file may carry any share at all, and the one it carries is offered in
+  // its place along the scale.
+  it('offers a share of its own where the file carries one the three do not', () => {
+    const { tab } = drawn({}, { backlog: 30 })
+    const said = ['Overdue first', 'Split', '30%', 'New first']
+    for (const one of said) expect(tab.text()).toContain(one)
+    expect(words.backlogName(30)).toBe('30%')
   })
 
   // Every value on the screen is the person's own, so no row is marked and

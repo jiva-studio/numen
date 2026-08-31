@@ -73,6 +73,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 			ClosesNew:     string(preset.Closes.New),
 			ClosesReviews: string(preset.Closes.Reviews),
 			ClosesMinutes: string(preset.Closes.Minutes),
+			ClosesBacklog: string(preset.Closes.Backlog),
 		})
 	}
 	return one

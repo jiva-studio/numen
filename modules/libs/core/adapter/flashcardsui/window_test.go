@@ -202,6 +202,10 @@ func pictured(t *testing.T, api *API, v domain.Vault, path string, p history.Pre
 // A person reads a count of cards off the curve where their control stands, and
 // then reads a count of cards off the deck screen. The two are the same day of
 // the same preset, so they are the same number.
+//
+// It is a goal of minutes that this holds for, because there the control moves
+// today. A target of retention moves nothing until tomorrow, and its curve is
+// the load over the days projected.
 func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 	for _, one := range []struct {
 		what   string
@@ -218,11 +222,6 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			what: "steered by its minutes", goal: history.GoalMinutes,
 			places:  []int{1, 4, 9},
 			steered: func(p *history.Preset, value float64) { p.MinutesADay = int(value) },
-		},
-		{
-			what: "steered by its retention", goal: history.GoalRetention,
-			places:  []int{0, 8, 16, 24},
-			steered: func(p *history.Preset, value float64) { p.Retention = value },
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {

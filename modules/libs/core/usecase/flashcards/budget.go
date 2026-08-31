@@ -184,18 +184,24 @@ func (b *budgets) refuses(preset string) error {
 // asks is what the budgets leave of the cards standing, in the order they are
 // put to a person.
 //
-// The debt is paid before anything new is taken on, so a day too short for both
-// is a day of cards already begun.
+// Each preset spends its day between the debt before it and the material it has
+// not begun, in the share it names. What is taken is then put in one order: the
+// debt first, the card waiting longest at the front, and the cards nobody has
+// answered after it, in the order they stand in their decks.
 func (b *budgets) asks(
 	standing []Standing, schedules map[history.CardFace]history.Schedule,
 	day history.Day, now time.Time, over Over,
 ) asking {
-	var owed []Standing
+	var owed, fresh []Standing
 	for _, one := range standing {
 		if !b.holds(one, over) {
 			continue
 		}
-		if s, answered := schedules[one.CardFace]; answered && day.Owed(s, now) {
+		s, answered := schedules[one.CardFace]
+		switch {
+		case !answered:
+			fresh = append(fresh, one)
+		case day.Owed(s, now):
 			owed = append(owed, one)
 		}
 	}
@@ -203,21 +209,85 @@ func (b *budgets) asks(
 		return schedules[a.CardFace].Due.Compare(schedules[b.CardFace].Due)
 	})
 
+	took := b.spends(owed, fresh)
 	var out asking
-	for _, one := range owed {
-		if b.takes(one.CardFace, false) {
+	for at, one := range owed {
+		if took.owed[at] {
 			out.seen = append(out.seen, one)
 		}
 	}
-	for _, one := range standing {
-		if !b.holds(one, over) {
-			continue
-		}
-		if _, answered := schedules[one.CardFace]; answered {
-			continue
-		}
-		if b.takes(one.CardFace, true) {
+	for at, one := range fresh {
+		if took.fresh[at] {
 			out.fresh = append(out.fresh, one)
+		}
+	}
+	return out
+}
+
+// spending is which of the cards put to a preset its day took.
+type spending struct{ owed, fresh []bool }
+
+// spends is what each preset's day takes of the debt before it and the material
+// it has not begun.
+//
+// The two are offered one against the other in the share the preset names, and
+// a side that runs out leaves the rest of the day to the other. An odd card goes
+// to the debt, so a day holding one card spends it on what is already begun.
+func (b *budgets) spends(owed, fresh []Standing) spending {
+	out := spending{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
+
+	// The cards of each preset, in the order they stand.
+	type queue struct{ owed, fresh []int }
+	at := make(map[string]*queue)
+	var order []string
+	into := func(path string) *queue {
+		one, held := at[path]
+		if !held {
+			one = &queue{}
+			at[path] = one
+			order = append(order, path)
+		}
+		return one
+	}
+	for i, one := range owed {
+		q := into(b.under[one.CardFace])
+		q.owed = append(q.owed, i)
+	}
+	for i, one := range fresh {
+		q := into(b.under[one.CardFace])
+		q.fresh = append(q.fresh, i)
+	}
+	// The presets are asked in one order, so a sitting asked twice is the same
+	// sitting.
+	slices.Sort(order)
+
+	for _, path := range order {
+		q := at[path]
+		share := history.AllBacklog
+		if one, held := b.left[path]; held {
+			share = one.admits.Backlog
+		}
+		var debt, begun, i, j int
+		for i < len(q.owed) || j < len(q.fresh) {
+			// The next card comes from the side the share leaves short, and
+			// from whichever side is left when the other is done.
+			paying := i < len(q.owed)
+			if paying && j < len(q.fresh) {
+				paying = debt*history.AllBacklog < share*(debt+begun+1)
+			}
+			if paying {
+				if card := owed[q.owed[i]]; b.takes(card.CardFace, false) {
+					out.owed[q.owed[i]] = true
+					debt++
+				}
+				i++
+				continue
+			}
+			if card := fresh[q.fresh[j]]; b.takes(card.CardFace, true) {
+				out.fresh[q.fresh[j]] = true
+				begun++
+			}
+			j++
 		}
 	}
 	return out

@@ -34,8 +34,16 @@ type Curve struct {
 	Days []string
 	// At is what the preset comes to at each place of the grid.
 	At []Point
-	// Now is where the preset stands, and Suggested is what is suggested.
-	Now       Mark
+	// Now is where the preset stands.
+	Now Mark
+	// Suggested is the place worth pointing at: under a goal of minutes the
+	// shortest day the clock no longer cuts short, and under a goal of a date
+	// the first day the budget the preset keeps gets through the material.
+	//
+	// A goal of retention has none, and stands at Nowhere. What a target leaves
+	// in the head climbs the whole way to the top of the range, so a mark on the
+	// most of it would sit at the far end of every curve and advise only asking
+	// for as much as memory allows.
 	Suggested Mark
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
@@ -44,29 +52,36 @@ type Curve struct {
 	// nothing to schedule, and every place of the curve stands at zero with it.
 	Cards int
 	// Overdue is how many of those card faces have had their day and were not
-	// answered on it. It is one number over the whole curve: a fact about the
+	// answered on it, and Unbegun how many nobody has answered at all, so they
+	// have had no day. Both are one number over the whole curve: facts about the
 	// vault as it stands, and not about the setting being chosen.
 	Overdue int
+	Unbegun int
 }
 
 // Point is what a preset comes to at one place of the grid.
 //
-// Reviews is the sitting a person would sit down to now, which is the day the
-// deck screen offers. A person reads a count of cards off the curve where their
-// control stands and then off the deck screen, and the two are one day of one
-// preset.
+// What Reviews and Minutes are the height of is the goal's own question.
 //
-// A curve draws the whole of that day. A day already sat to part way is that
-// much further on, and the deck screen offers what is left of it.
+// Under a goal of minutes and a goal of a date they are the sitting a person
+// would sit down to now, which is the day the deck screen offers: a person reads
+// a count of cards off the curve where their control stands and then off the
+// deck screen, and the two are one day of one preset. A curve draws the whole of
+// that day, so a day already sat to part way is that much further on and the
+// deck screen offers what is left of it.
+//
+// Under a goal of retention they are the load over the days projected. A target
+// does nothing to today and everything to the weeks after it, so every place of
+// that grid would otherwise draw the same day.
 //
 // A goal of a date fills Minutes with what getting through the material by that
 // day costs and Owed with the backlog that pace leaves standing on it, and
 // Through and Enough with what the budget the preset keeps gets through by it.
-// The other two fill Minutes with what that sitting takes.
 type Point struct {
 	Reviews float64
 	Minutes float64
-	// Retained is the share of the material that comes back.
+	// Retained is the share of the material that comes back on the last day
+	// projected, which is what the load beside it buys.
 	Retained float64
 	// Owed is the card faces standing owed on the last day the projection ran:
 	// Ahead days off under a goal of minutes or of retention, and the day the
@@ -86,6 +101,11 @@ type Point struct {
 	// is overdue. A curve standing over nothing overdue clears in none, and a
 	// place whose pace never gets there is history.NeverClears.
 	Clears int
+	// Backlog is how many card faces stand overdue at the end of each day
+	// projected at this place, one entry a day over the whole horizon. It runs
+	// over days and not over the goal's range, so it is drawn beside the curve
+	// rather than under it.
+	Backlog []int
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -203,6 +223,7 @@ func (u Curves) Execute(
 	out.Decks = mine
 	out.Cards = len(under)
 	out.Overdue = history.Overdue(u.Day, at, now)
+	out.Unbegun = unseen
 	return out, nil
 }
 
@@ -291,6 +312,11 @@ func (u Curves) minutes(
 //
 // A higher target is shorter intervals and more reviews, so under a budget that
 // binds it is also fewer cards kept up with.
+//
+// Each place is the load over the days projected, which is what the target costs
+// week after week. Today is no part of it: the schedules a day opens with are
+// the same whatever target is chosen, and what a target changes it changes from
+// tomorrow on.
 func (u Curves) retention(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFace]history.Schedule, unseen int,
@@ -309,19 +335,13 @@ func (u Curves) retention(
 		if err != nil {
 			return Curve{}, err
 		}
-		out.At = append(out.At, sitting(ran))
+		out.At = append(out.At, point(ran))
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
-	// What is suggested is the target that leaves the most of the material in
-	// the head. Two targets that leave the same is the cheaper of them.
-	best := 0
-	for i, one := range out.At {
-		if one.Retained > out.At[best].Retained {
-			best = i
-		}
-	}
-	out.Suggested = Mark{At: best, Value: out.Grid[best]}
+	// Nothing is suggested. What a target leaves in the head climbs to the top
+	// of the range, so a mark on the most of it would stand at the far end every
+	// time and say only to ask for as much as memory allows.
 	return out, nil
 }
 
@@ -367,11 +387,15 @@ func (u Curves) date(
 
 	// Each day of the range is run at its own pace, which is the material spread
 	// over the days up to it, and what that day of review costs is read off it.
+	//
+	// Every place runs the same horizon, however near its own day is, so what it
+	// says about a backlog is the same question answered on every goal and not
+	// one asked over as many days as the place stands off.
 	for _, step := range spread(last-first+1, Points) {
 		day := first + step
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
-		asks.Days = day + 1
+		asks.Days = max(day+1, history.Ahead)
 		ran, err := asks.Run(ctx, now, aiming, at, unseen)
 		if err != nil {
 			return Curve{}, err
@@ -380,13 +404,16 @@ func (u Curves) date(
 		out.Days = append(out.Days, u.Day.Names(aiming.By))
 		out.At = append(out.At, Point{
 			Reviews: float64(ran.Load[0]),
-			Minutes: ran.MinutesADay,
+			// What it costs is what the days up to that one spend, and the days
+			// past it are no part of getting through by it.
+			Minutes: costing(ran.Spent[:day+1]),
 			Owed:    ran.Owed,
 			Through: standing.Through[day],
 			Enough:  standing.Through[day] >= 1,
-			Met:     ran.Through[len(ran.Through)-1] >= 1,
+			Met:     ran.Through[day] >= 1,
 			Closed:  ran.Closed[0],
 			Clears:  ran.Clears,
+			Backlog: ran.Backlog,
 		})
 	}
 
@@ -436,6 +463,7 @@ func point(p history.Projection) Point {
 		Through:  p.Through[len(p.Through)-1],
 		Closed:   p.Closed[0],
 		Clears:   p.Clears,
+		Backlog:  p.Backlog,
 	}
 }
 
@@ -500,4 +528,16 @@ func (u Curves) now() time.Time {
 		return time.Now()
 	}
 	return u.Now()
+}
+
+// costing is how long a day of review runs over these days, in minutes.
+func costing(spent []time.Duration) float64 {
+	if len(spent) == 0 {
+		return 0
+	}
+	var all time.Duration
+	for _, one := range spent {
+		all += one
+	}
+	return all.Minutes() / float64(len(spent))
 }

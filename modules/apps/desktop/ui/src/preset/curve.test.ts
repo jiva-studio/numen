@@ -5,15 +5,15 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
+import { DEFAULTS, NOWHERE, type Curve, type Goal, type Point, type Settings } from './core'
 import {
   approximate,
-  closed,
   costOf,
   dayAfter,
   daysUntil,
   FIELDS,
   held,
+  limiting,
   nearest,
   paused,
   placeAt,
@@ -37,7 +37,9 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  closed: '',
   clears: 0,
+  backlog: [],
   ...over,
 })
 
@@ -157,6 +159,7 @@ describe('what one place of the curve produces', () => {
     decks: 1,
     cards: 400,
     overdue: 0,
+    unbegun: 0,
     honest: true,
   }
 
@@ -204,31 +207,49 @@ describe('what one place of the curve produces', () => {
   })
 })
 
-describe('a day a longer one buys nothing on', () => {
-  const over = (cards: readonly number[]): Curve => ({
-    goal: 'minutes',
-    grid: cards.map((_, at) => at * 10),
+describe('what closes the day where the goal on screen does not', () => {
+  const over = (goal: Goal): Curve => ({
+    goal,
+    grid: [0, 10, 20],
     days: [],
-    at: cards.map((one) => point({ reviews: one })),
+    at: [point(), point(), point()],
     now: NOWHERE,
     suggested: NOWHERE,
     decks: 1,
     cards: 400,
     overdue: 0,
+    unbegun: 0,
     honest: true,
   })
 
-  it('is a curve holding the same cards at every place, which the counts close', () => {
-    expect(closed(over([13, 13, 13]))).toBe(true)
+  // A target closes no day of its own, so a count closing one is always
+  // something other than the goal on screen.
+  it('is the count that closed a day worked to a target', () => {
+    expect(limiting(over('retention'), point({ closed: 'reviews_a_day' }))).toBe('reviews_a_day')
+    expect(limiting(over('retention'), point({ closed: 'new_a_day' }))).toBe('new_a_day')
   })
 
-  it('is not a curve a longer day answers more cards on', () => {
-    expect(closed(over([13, 40, 90]))).toBe(false)
+  it('is the count that closed a day of minutes before the clock did', () => {
+    expect(limiting(over('minutes'), point({ closed: 'new_a_day' }))).toBe('new_a_day')
   })
 
-  it('is not said of a goal read in minutes, nor of a line the window guessed', () => {
-    expect(closed({ ...over([13, 13, 13]), goal: 'retention' })).toBe(false)
-    expect(closed({ ...over([13, 13, 13]), honest: false })).toBe(false)
+  it('is nothing where the goal on screen is what closed the day', () => {
+    expect(limiting(over('minutes'), point({ closed: 'minutes_a_day' }))).toBe('')
+    expect(limiting(over('date'), point({ closed: 'by_date' }))).toBe('')
+  })
+
+  // A day that asked for every card there was closed on nothing, and a pause
+  // is said elsewhere.
+  it('is nothing for a day no budget closed, nor for a preset paused', () => {
+    expect(limiting(over('minutes'), point({ closed: '' }))).toBe('')
+    expect(limiting(over('minutes'), point({ closed: 'paused' }))).toBe('')
+  })
+
+  it('is nothing of a line the window guessed, nor where there is no place', () => {
+    expect(limiting({ ...over('retention'), honest: false }, point({ closed: 'new_a_day' }))).toBe(
+      '',
+    )
+    expect(limiting(over('retention'), null)).toBe('')
   })
 })
 
@@ -243,6 +264,7 @@ describe('a goal with nothing to work on', () => {
     decks: 0,
     cards: 0,
     overdue: 0,
+    unbegun: 0,
     honest: true,
   }
 
@@ -301,10 +323,26 @@ describe('the settings a goal schedules by', () => {
 
   it('draws what stands under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      expect(fieldsUnder(goal)).toContain('counts')
       expect(fieldsUnder(goal)).toContain('lightDays')
       expect(fieldsUnder(goal)).toContain('evenLoad')
     }
+  })
+
+  // What a day's budget is spent on is a measure in cards, so it stands under
+  // the goal whose budget is cards and takes no part in the other two.
+  it('draws what a budget is spent on under the goal whose budget is cards', () => {
+    expect(fieldsUnder('retention')).toContain('counts')
+    expect(fieldsUnder('minutes')).not.toContain('counts')
+    expect(fieldsUnder('date')).not.toContain('counts')
+  })
+
+  // The share of a day that goes to the debt says what a day is spent on and
+  // closes nothing. A goal of a date carries the whole material by its own
+  // reckoning and has no part in it.
+  it('draws the backlog share under the two goals that keep a budget of a day', () => {
+    expect(fieldsUnder('minutes')).toContain('backlog')
+    expect(fieldsUnder('retention')).toContain('backlog')
+    expect(fieldsUnder('date')).not.toContain('backlog')
   })
 
   it('draws them in the order the receipt keeps them in', () => {

@@ -35,6 +35,7 @@ func SettingsOf(p history.Preset) *v1.Settings {
 		NewADay:     int32(p.NewADay),
 		ReviewsADay: int32(p.ReviewsADay),
 		Retention:   p.Retention,
+		Backlog:     int32(p.Backlog),
 		EvenLoad:    p.EvenLoad,
 		LightDays:   make([]string, 0, len(p.LightDays)),
 	}
@@ -58,6 +59,7 @@ func SettingsIn(s *v1.Settings) (history.Preset, error) {
 		NewADay:     int(s.GetNewADay()),
 		ReviewsADay: int(s.GetReviewsADay()),
 		Retention:   s.GetRetention(),
+		Backlog:     int(s.GetBacklog()),
 		EvenLoad:    s.GetEvenLoad(),
 	}
 	if written := strings.TrimSpace(s.GetByDate()); written != "" {
@@ -89,6 +91,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 		Decks:     int32(c.Decks),
 		Cards:     int32(c.Cards),
 		Overdue:   int32(c.Overdue),
+		Unbegun:   int32(c.Unbegun),
 	}
 	for _, one := range c.At {
 		out.At = append(out.At, &v1.Point{
@@ -101,6 +104,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Met:      one.Met,
 			Closed:   string(one.Closed),
 			Clears:   int32(one.Clears),
+			Backlog:  backlog(one.Backlog),
 		})
 	}
 	return out
@@ -163,4 +167,13 @@ func CountsIn(c v1.Counts) history.Counts {
 	default:
 		return ""
 	}
+}
+
+// backlog is a backlog day by day, as the schema carries one.
+func backlog(days []int) []int32 {
+	out := make([]int32, 0, len(days))
+	for _, one := range days {
+		out = append(out, int32(one))
+	}
+	return out
 }

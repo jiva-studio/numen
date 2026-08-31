@@ -34,6 +34,12 @@ export type Counts = 'cards' | 'shows'
 export const COUNTS: readonly Counts[] = ['cards', 'shows']
 
 /**
+ * The shares of a day the backlog row offers, from the debt first to the new
+ * material first.
+ */
+export const SHARES: readonly number[] = [100, 50, 0]
+
+/**
  * How the decks pointing at one preset are scheduled. A preset carrying none
  * of these keys is the defaults, and no cards a day is a pause.
  */
@@ -47,6 +53,12 @@ export interface Settings {
   readonly retention: number
   /** What a day's budget is spent on. */
   readonly counts: Counts
+  /**
+   * How much of a day goes to what is overdue before anything new is offered,
+   * as a percentage. A hundred pays the debt first, nothing puts the new
+   * material first, and between them the day is split until one side runs out.
+   */
+  readonly backlog: number
   /** The days the load is cut on, each as the first three letters of its name. */
   readonly lightDays: readonly string[]
   readonly evenLoad: boolean
@@ -61,6 +73,7 @@ export const DEFAULTS: Settings = {
   reviewsADay: 200,
   retention: 0.9,
   counts: 'cards',
+  backlog: 100,
   lightDays: [],
   evenLoad: true,
 }
@@ -71,6 +84,7 @@ export const BOUNDS = {
   newADay: { least: 0, most: 9999 },
   reviewsADay: { least: 0, most: 9999 },
   retention: { least: 0.7, most: 0.99 },
+  backlog: { least: 0, most: 100 },
 } as const
 
 /** One preset as a read hands it over. */
@@ -113,11 +127,23 @@ export interface Point {
   readonly enough: boolean
   readonly met: boolean
   /**
+   * The budget that closed the day here, written as the preset writes the key:
+   * `minutes_a_day`, `new_a_day`, `reviews_a_day`, or `paused`. Empty is a day
+   * that asked for every card there was.
+   */
+  readonly closed: string
+  /**
    * How many days of review at this place before nothing is overdue. Zero is a
    * preset standing over nothing overdue, and -1 is a pace that never gets
    * there.
    */
   readonly clears: number
+  /**
+   * How many card faces stand overdue at the end of each day projected here,
+   * one entry a day. It runs over days, which is a different axis from the
+   * grid.
+   */
+  readonly backlog: readonly number[]
 }
 
 /** One place on the curve worth pointing at. */
@@ -151,6 +177,11 @@ export interface Curve {
    * it. It is the backlog alone: what falls due today is not part of it.
    */
   readonly overdue: number
+  /**
+   * How many of those card faces nobody has answered at all, so they have had
+   * no day. It never overlaps the overdue.
+   */
+  readonly unbegun: number
   /**
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.
@@ -230,6 +261,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
         reviewsADay: said.reviewsADay,
         retention: said.retention,
         counts: COUNTED[said.counts] ?? DEFAULTS.counts,
+        backlog: said.backlog,
         lightDays: said.lightDays,
         evenLoad: said.evenLoad,
       }
@@ -243,6 +275,7 @@ const sent = (settings: Settings) => ({
   reviewsADay: settings.reviewsADay,
   retention: settings.retention,
   counts: COUNTING[settings.counts],
+  backlog: settings.backlog,
   lightDays: [...settings.lightDays],
   evenLoad: settings.evenLoad,
 })
@@ -260,13 +293,16 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     through: one.through,
     enough: one.enough,
     met: one.met,
+    closed: one.closed,
     clears: one.clears,
+    backlog: one.backlog,
   })),
   now: marked(said?.now),
   suggested: marked(said?.suggested),
   decks: said?.decks ?? 0,
   cards: said?.cards ?? 0,
   overdue: said?.overdue ?? 0,
+  unbegun: said?.unbegun ?? 0,
   honest: true,
 })
 

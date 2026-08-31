@@ -15,6 +15,30 @@ const COUNTS: Record<Counts, string> = {
   shows: 'Showings',
 }
 
+/**
+ * The three shares of a day the backlog row offers, each by what it does. Any
+ * other share a file carries is offered as the percentage it is.
+ */
+const BACKLOGS: Record<number, string> = {
+  100: 'Overdue first',
+  50: 'Split',
+  0: 'New first',
+}
+
+/** What closes a day, as the preset writes the key, said as a person reads it. */
+const CLOSERS: Record<string, string> = {
+  minutes_a_day: 'the minutes a day',
+  new_a_day: 'the new a day',
+  reviews_a_day: 'the reviews a day',
+}
+
+/** What each goal's own value is called where something else is doing the limiting. */
+const LIMITED: Record<Goal, string> = {
+  minutes: 'The length of the day',
+  retention: 'The target',
+  date: 'The day named',
+}
+
 /** What each setting is called, and the one line that says what it is. */
 const FIELDS: Record<Field, readonly [string, string]> = {
   newADay: ['New a day', 'How many unseen cards a day holds.'],
@@ -26,6 +50,7 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   ],
   byDate: ['The day', 'The day the material is to be in the head.'],
   counts: ['Counts', "What a day's budget is spent on."],
+  backlog: ['Backlog', 'How much of a day goes to what is overdue before anything new is offered.'],
   lightDays: ['Light days', 'The days of the week the load is cut on.'],
   evenLoad: ['Even load', 'Whether days are made to resemble each other.'],
 }
@@ -48,12 +73,19 @@ export const WORDS = {
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   countsName: (counts: Counts) => COUNTS[counts],
+  backlogName: (share: number) => BACKLOGS[share] ?? `${count(share)}%`,
   /** What each axis measures, said along the axis it names. */
   axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
   axisX: (goal: Goal) => {
     if (goal === 'retention') return 'Retention'
     return goal === 'date' ? 'Days from today' : 'Minutes a day'
   },
+  /** What the band under the picture measures, said along the axis it names. */
+  backlogY: 'Cards overdue',
+  backlogX: 'Days from today',
+  /** One height of the band, and one day along it. */
+  backlogHeightAt: (value: number) => many(value, 'card'),
+  backlogWidthAt: (days: number) => `${count(days)} d`,
   /** One height of the picture, against the line it is the height of. */
   heightAt: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
@@ -63,23 +95,43 @@ export const WORDS = {
     return goal === 'date' ? `${count(value)} d` : `${count(value)} min`
   },
   /**
-   * How far behind the preset stands. Overdue is the backlog alone — a card
-   * whose day came and went — and never what a sitting puts in front of a
-   * person, which is that backlog and today's cards together.
+   * What the control is acting on, said over the picture: the decks that point
+   * here and the material they hold between them.
    */
-  behind: (overdue: number, cards: number) =>
-    overdue === 1
-      ? `1 of ${many(cards, 'card face')} is overdue.`
-      : `${count(overdue)} of ${many(cards, 'card face')} are overdue.`,
-  /** How long that backlog takes to clear at the place the knob stands at. */
-  clearing: (days: number) =>
-    days < 0
-      ? 'At this pace the backlog never clears.'
-      : `At this pace nothing is overdue after ${many(days, 'day')}.`,
-  /** A day the card limits close before its minutes run out. */
-  closed: (newADay: number, reviewsADay: number) =>
-    `A longer day buys nothing here: ${count(newADay)} new and ` +
-    `${many(reviewsADay, 'review')} a day close the day before its minutes run out.`,
+  material: (decks: number, cards: number, overdue: number, fresh: number) => {
+    const said = [
+      { figure: count(decks), name: decks === 1 ? 'deck' : 'decks' },
+      { figure: count(cards), name: cards === 1 ? 'card' : 'cards' },
+    ]
+    // A figure standing at nothing is left out rather than said as a nought.
+    if (overdue > 0) said.push({ figure: count(overdue), name: 'overdue' })
+    if (fresh > 0) said.push({ figure: count(fresh), name: 'new' })
+    return said
+  },
+  /**
+   * How far behind the preset stands and what this pace does about it, as one
+   * sentence. Overdue is the backlog alone — a card whose day came and went —
+   * and never what a sitting puts in front of a person, which is that backlog
+   * and the cards of the day together.
+   */
+  behind: (overdue: number, cards: number, days: number) => {
+    const said =
+      overdue === 1
+        ? `1 of ${many(cards, 'card')} is overdue`
+        : `${count(overdue)} of ${many(cards, 'card')} are overdue`
+    const then =
+      days < 0
+        ? 'this pace does not get on top of it'
+        : `this pace has nothing overdue after ${many(days, 'day')}`
+    return `${said}, and ${then}.`
+  },
+  /**
+   * What closes the day where the goal on screen does not, which names the
+   * number that would have to move.
+   */
+  limiting: (goal: Goal, closed: string) =>
+    `${LIMITED[goal]} is not what limits this preset here: ${CLOSERS[closed]} ` +
+    'closes the day first, and that is the number to move.',
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],
   settings: 'What the goal produced',
@@ -97,18 +149,24 @@ export const WORDS = {
     if (goal === 'retention') return 'most kept'
     return goal === 'date' ? 'first day it fits' : 'time enough'
   },
-  /** The rule that mark is found by, said under the picture and not on it. */
-  markRule: (goal: Goal) => {
+  /**
+   * What that mark stands at and what the figure means, as one sentence in the
+   * paragraph. The value comes first and the meaning after it.
+   */
+  markMeans: (goal: Goal, value: number) => {
     if (goal === 'retention') {
-      return 'Most kept: the target that leaves most of the material in the head.'
+      return (
+        `${share(value)} remembered is the target that leaves most of ` +
+        'the material in the head.'
+      )
     }
     if (goal === 'date') {
-      return 'First day it fits: the first day the budget this preset keeps gets through the material.'
+      return (
+        `${many(value, 'day')} off is the first day this preset's own budget ` +
+        'gets through the material.'
+      )
     }
-    return (
-      'Time enough: the shortest day the clock no longer cuts short. ' +
-      'Below it the day ends before the material does; above it a longer day adds nothing.'
-    )
+    return `${many(value, 'minute')} a day is the shortest day the clock no longer cuts short.`
   },
   /** The figure is the window's own arithmetic, and the answer is on its way. */
   about: 'about',
@@ -133,15 +191,26 @@ export const WORDS = {
       `and you would remember ${share(retained)} of what you are asked.`
     )
   },
-  /** The arithmetic under a goal of a date, with the sum already done. */
-  owing: (cards: number) => `${many(cards, 'card')} would still be owed on that day.`,
-  needing: (needed: number, standing: number) =>
-    `This preset keeps ${many(standing, 'minute')} a day, ` +
-    `and getting through it by then takes ${many(needed, 'minute')}.`,
-  through: (part: number, standing: number) =>
-    `At ${many(standing, 'minute')} a day, ${count(part * 100)}% of it is through by then.`,
-  /** No budget at all gets through the material by the day named. */
-  unmet: 'No day of review gets through the material by that day.',
+  /**
+   * What a goal of a date comes to, as one telling: what the day costs, what
+   * the preset keeps against it, and how far that gets. Every clause that has
+   * nothing to say is left out rather than said as a nought.
+   */
+  dated: (needed: number, standing: number, part: number, owed: number, met: boolean) => {
+    const head =
+      `Getting through it by then takes ${many(needed, 'minute')} a day, ` +
+      `and this preset keeps ${count(standing)}`
+    // Where no day of review gets there, the figure is a floor and not a cost.
+    if (!met) {
+      return (
+        'No day of review gets through the material by that day: it would take more than ' +
+        `${many(needed, 'minute')} a day, and this preset keeps ${count(standing)}.`
+      )
+    }
+    if (part >= 1) return `${head}, which gets through all of it in time.`
+    const owing = owed > 0 ? `, leaving ${many(owed, 'card')} owed on the day` : ''
+    return `${head}, which gets ${count(part * 100)}% of it through by then${owing}.`
+  },
   /** No deck points here, so the goal has nothing to work on. */
   unpointed:
     'No deck points at this preset, so it schedules nothing. ' +

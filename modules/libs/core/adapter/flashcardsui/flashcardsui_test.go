@@ -676,8 +676,9 @@ var backlogged = map[string]string{
 // The window asks Owing for what its decks offer today and Curve for the
 // picture over a preset's range, and both are asked here as the window asks
 // them: the settings the curve is drawn for are the ones the vault holds. Where
-// the preset stands on that picture is the day the deck screen offers, and the
-// reason a day closed names the budget its own goal steers and no other.
+// the preset stands on that picture is the day the deck screen offers wherever
+// the control moves today, and the reason a day closed names the budget its own
+// goal steers and no other.
 func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what   string
@@ -685,10 +686,13 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		by     time.Time
 		closed history.Closed
 		never  []history.Closed
+		// sameDay is whether the control moves today, so that what the tab
+		// draws where it stands is the day the deck screen offers.
+		sameDay bool
 	}{
 		{
 			what: "minutes", goal: history.GoalMinutes,
-			closed: history.ClosedMinutes,
+			closed: history.ClosedMinutes, sameDay: true,
 			never: []history.Closed{
 				history.ClosedNew, history.ClosedReviews, history.ClosedDate,
 			},
@@ -700,7 +704,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		},
 		{
 			what: "a date", goal: history.GoalDate,
-			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate,
+			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate, sameDay: true,
 			never: []history.Closed{
 				history.ClosedNew, history.ClosedReviews, history.ClosedMinutes,
 			},
@@ -729,7 +733,7 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			if at < 0 {
 				t.Fatalf("the preset stands nowhere on its own curve: %+v", drawn.GetNow())
 			}
-			if got := int(drawn.GetAt()[at].GetReviews()); got != offers {
+			if got := int(drawn.GetAt()[at].GetReviews()); one.sameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
 			if got := drawn.GetAt()[at].GetClosed(); got != string(one.closed) {
@@ -1011,6 +1015,125 @@ func TestTheCountNeverAllocatesPastTheBudgetItSpends(t *testing.T) {
 			if past == 0 {
 				t.Error("no preset here hands out past a budget its goal leaves idle, " +
 					"and the distinction is not under test")
+			}
+		})
+	}
+}
+
+// The curve carries the pile as it stands and the pile day by day, so a band
+// under it can be drawn without asking again as the knob moves.
+//
+// Overdue, unbegun and the cards whose day is still to come are three separate
+// counts of the one material, and the band begins where the overdue pile does.
+func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
+	api, held := windowed(t, lived)
+	v := held[0]
+	lives(t, api, v, 14)
+	standing(api, firstMorning.AddDate(0, 0, 14))
+
+	p := asWritten(t, api, v, "Sanskrit.md")
+	p.Goal = history.GoalMinutes
+	writtenBack(t, api, v, "Sanskrit.md", p)
+	drawn := pictured(t, api, v, "Sanskrit.md", p)
+
+	overdue, unbegun, cards := drawn.GetOverdue(), drawn.GetUnbegun(), drawn.GetCards()
+	if overdue == 0 || unbegun == 0 {
+		t.Fatalf("the vault stands %d overdue and %d unbegun, and neither is under test",
+			overdue, unbegun)
+	}
+	if overdue+unbegun > cards {
+		t.Errorf("%d overdue and %d unbegun of %d card faces", overdue, unbegun, cards)
+	}
+
+	for i, one := range drawn.GetAt() {
+		band := one.GetBacklog()
+		if len(band) == 0 {
+			t.Fatalf("%v carries no backlog to draw", drawn.GetGrid()[i])
+		}
+		// A day too short to carry what falls due adds to the pile, so the
+		// band rises as well as falls, and never below nothing.
+		for day, standing := range band {
+			if standing < 0 {
+				t.Errorf("%v stands %d behind on day %d", drawn.GetGrid()[i], standing, day)
+			}
+		}
+		// The day named as the clearing is the day the band reaches nothing.
+		first := int32(-1)
+		for day, standing := range band {
+			if standing == 0 {
+				first = int32(day) + 1
+				break
+			}
+		}
+		if one.GetClears() != first {
+			t.Errorf("%v clears on day %d and its band reaches nothing on day %d",
+				drawn.GetGrid()[i], one.GetClears(), first)
+		}
+	}
+
+	// A longer day is never further behind than a shorter one on the same day.
+	short, long := drawn.GetAt()[0].GetBacklog(), drawn.GetAt()[len(drawn.GetAt())-1].GetBacklog()
+	for day := range min(len(short), len(long)) {
+		if long[day] > short[day] {
+			t.Errorf("on day %d the longest day on the range stands %d behind and the "+
+				"shortest %d", day, long[day], short[day])
+		}
+	}
+}
+
+// A curve of retention plots what the target costs week after week.
+//
+// A target does nothing to today, so the height is the load over the days
+// projected: it climbs with the target where nothing binds, and stands still at
+// every place where a count binds at every one of them.
+func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
+	for _, one := range []struct {
+		what             string
+		newADay, reviews int
+		climbs           bool
+	}{
+		// A day of one review is a day the target cannot spend, whatever it is.
+		{"a count binding at every place", 12, 1, false},
+		{"counts that never bind", 50, 200, true},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			api, held := windowed(t, lived)
+			v := held[0]
+			lives(t, api, v, 14)
+			standing(api, firstMorning.AddDate(0, 0, 14))
+
+			p := asWritten(t, api, v, "Sanskrit.md")
+			p.Goal = history.GoalRetention
+			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
+			writtenBack(t, api, v, "Sanskrit.md", p)
+			drawn := pictured(t, api, v, "Sanskrit.md", p)
+
+			least := drawn.GetAt()[0].GetMinutes()
+			most := drawn.GetAt()[len(drawn.GetAt())-1].GetMinutes()
+			if least <= 0 {
+				t.Fatalf("the easiest target costs %v minutes a day", least)
+			}
+			switch {
+			case one.climbs && most <= least*2:
+				t.Errorf("asking for %.2f of it back costs %v minutes a day and asking "+
+					"for %.2f costs %v", drawn.GetGrid()[len(drawn.GetGrid())-1], most,
+					drawn.GetGrid()[0], least)
+			case !one.climbs && most != least:
+				t.Errorf("a day the count closes at every place costs %v minutes at one "+
+					"end of the range and %v at the other", least, most)
+			}
+
+			// What the cost buys climbs with it, and is a share of the material.
+			for i, at := range drawn.GetAt() {
+				if at.GetRetained() < 0 || at.GetRetained() > 1 {
+					t.Errorf("%.2f leaves %v of the material in the head",
+						drawn.GetGrid()[i], at.GetRetained())
+				}
+			}
+			kept := drawn.GetAt()[len(drawn.GetAt())-1].GetRetained() -
+				drawn.GetAt()[0].GetRetained()
+			if one.climbs && kept <= 0 {
+				t.Errorf("asking for more of it back kept %v more of it", kept)
 			}
 		})
 	}

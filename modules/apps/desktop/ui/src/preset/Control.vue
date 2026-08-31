@@ -18,8 +18,11 @@ import { Waiting } from '@numen/ui'
 import type { Curve } from './core'
 import {
   AXIS_HIGH,
+  BAND,
+  BAND_HIGH,
   BANDS,
   bandOf,
+  bandOfBacklog,
   clearAt,
   FOOT,
   HIGH,
@@ -30,6 +33,7 @@ import {
   MIDDLE,
   placeUnder,
   RIGHT,
+  seriesOf,
   shortOf,
   spotsOf,
   TOP,
@@ -89,13 +93,13 @@ const dated = computed(() => props.curve.goal === 'date')
 const honest = computed(() => props.curve.honest)
 
 /**
- * The two marks the picture carries, each with the name it is known by: where
- * the person stands, and what is suggested.
+ * The two marks the picture carries. The knob is where the person put it and
+ * needs no name; the other one does, and carries it.
  */
 const marks = computed(() => {
   if (!honest.value) return []
   const out: { key: string; spot: Spot; text: string }[] = []
-  if (knob.value) out.push({ key: 'knob', spot: knob.value, text: words.now })
+  if (knob.value) out.push({ key: 'knob', spot: knob.value, text: '' })
   if (suggested.value) {
     out.push({ key: 'suggested', spot: suggested.value, text: words.markName(props.curve.goal) })
   }
@@ -123,6 +127,7 @@ const named = computed(() => {
   const placed: Spot[] = []
   const out: { key: string; text: string; at: Record<string, string> }[] = []
   for (const mark of marks.value) {
+    if (!mark.text) continue
     const clear = placed.every(
       (one) =>
         Math.abs(one.x - mark.spot.x) > LABEL * 2 ||
@@ -135,10 +140,10 @@ const named = computed(() => {
   return out
 })
 
-/** Where a number against one of the picture's own lines is set. */
-const against = (y: number, lift: string) => ({
+/** Where a number against one of a plot's own lines is set, in the plot's room. */
+const against = (y: number, lift: string, high = HIGH) => ({
   insetInlineStart: `${(LEFT / WIDE) * 100}%`,
-  insetBlockStart: `${(y / HIGH) * 100}%`,
+  insetBlockStart: `${(y / high) * 100}%`,
   translate: `0 ${lift}`,
 })
 
@@ -161,6 +166,45 @@ const heights = computed(() => {
 })
 
 /**
+ * The backlog at the place the knob stands, one figure a day. Its axis is days
+ * and not the goal's range, so it is a plot of its own under the picture and
+ * shares nothing with it but the width.
+ */
+const backlog = computed<readonly number[]>(() => props.curve.at[props.place]?.backlog ?? [])
+
+/**
+ * The band it is drawn against, which is this one place's own run. A day too
+ * short to carry what falls due climbs, and the climb is what there is to read.
+ */
+const backlogBand = computed<Band>(() => bandOfBacklog(backlog.value))
+
+const backlogSpots = computed(() => seriesOf(backlog.value, backlogBand.value, BAND))
+const backlogLine = computed(() => lineOf(backlogSpots.value))
+
+/** Whether there is a backlog to draw at all. */
+const banded = computed(() => honest.value && backlog.value.length > 1)
+
+/** The ends of the band, against the lines they are the height of. */
+const backlogHeights = computed(() => {
+  const { least, most } = backlogBand.value
+  const said = (value: number) => words.backlogHeightAt(value)
+  const fits = (y: number, lift: string, value: number) =>
+    clearAt(y, backlogSpots.value, [])
+      ? [{ at: against(y, lift, BAND.high), text: said(value) }]
+      : []
+  if (most === least) {
+    return [{ at: against((BAND.top + BAND.foot) / 2, '-100%', BAND.high), text: said(most) }]
+  }
+  return [...fits(BAND.top, '-100%', most), ...fits(BAND.foot, '0', least)]
+})
+
+/** The days at either end of the band, which the grid says nothing about. */
+const backlogEnds = computed(() => [
+  words.backlogWidthAt(1),
+  words.backlogWidthAt(backlog.value.length),
+])
+
+/**
  * Where the knob's own value is set. It rides a line of its own under the
  * picture, so it never prints over a number read off the picture's edges.
  */
@@ -173,6 +217,16 @@ const reading = computed(() => {
 
 /** The value at the knob, and at either end of the range, in the goal's units. */
 const atKnob = computed(() => words.widthAt(props.curve.goal, props.curve.grid[props.place] ?? 0))
+
+/** What the control is acting on, in the pieces the row is scanned in. */
+const material = computed(() =>
+  words.material(
+    props.curve.decks,
+    props.curve.cards,
+    props.curve.overdue,
+    props.curve.unbegun,
+  ),
+)
 /** An end the knob is standing on is left to the knob, which says it already. */
 const atLeast = computed(() =>
   props.place === 0 ? '' : words.widthAt(props.curve.goal, props.curve.grid[0] ?? 0),
@@ -244,108 +298,157 @@ const released = (event: KeyboardEvent) => {
 
 <template>
   <div class="control">
-    <div class="control__frame">
-      <!-- The y's name runs along the axis it names, outside the plot. -->
-      <div class="control__axis">
-        <p class="control__name control__name--y">{{ words.axisY(props.curve.goal) }}</p>
-      </div>
-
-      <div class="control__over">
-        <div
-          v-if="!honest"
-          class="control__waiting"
-          role="status"
-          :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
-        >
-          <Waiting class="control__ring" />
-          <span>{{ words.waiting }}</span>
-        </div>
-
-        <svg
-          v-else
-          ref="picture"
-          class="control__picture"
-          role="slider"
-          tabindex="0"
-          :viewBox="`0 0 ${WIDE} ${HIGH}`"
-          :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
-          :aria-label="words.knob"
-          :aria-valuemin="least"
-          :aria-valuemax="most"
-          :aria-valuenow="value"
-          :aria-valuetext="props.valueText"
-          @pointerdown="took"
-          @pointermove="dragged"
-          @pointerup="letGo"
-          @pointercancel="letGo"
-          @keydown="pressed"
-          @keyup="released"
-        >
-          <line
-            v-for="share in honest ? BANDS : []"
-            :key="share"
-            class="control__band"
-            :x1="LEFT"
-            :x2="RIGHT"
-            :y1="yOfBand(share)"
-            :y2="yOfBand(share)"
-          />
-
-          <path class="control__line" :d="line" />
-          <path v-if="honest && short" class="control__short" :d="short" />
-
-          <line
-            v-if="honest && knob"
-            class="control__drop"
-            :class="{ 'control__drop--dated': dated }"
-            :x1="knob.x"
-            :x2="knob.x"
-            :y1="dated ? TOP : knob.y"
-            :y2="FOOT"
-          />
-
-          <circle
-            v-if="honest && suggested"
-            class="control__suggested"
-            :cx="suggested.x"
-            :cy="suggested.y"
-            r="3.5"
-          />
-
-          <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
-        </svg>
-
-        <span v-for="one in named" :key="one.key" class="control__label" :style="one.at">
-          {{ one.text }}
-        </span>
-
-        <span
-          v-for="one in honest ? heights : []"
-          :key="one.text"
-          class="control__number"
-          :style="one.at"
-          >{{ one.text }}</span
-        >
-      </div>
+    <!-- What the control is acting on, said before the picture of it. Each
+         figure is its own tile, and the tiles share the width of the column.
+         The row keeps its height while the answer is on its way. -->
+    <div class="control__material">
+      <span v-for="one in honest ? material : []" :key="one.name" class="control__tile">
+        <span class="control__figure">{{ one.figure }}</span>
+        <span class="control__word">{{ one.name }}</span>
+      </span>
     </div>
 
-    <!-- Every row keeps its room while the answer is on its way, so the picture
-         is the only thing that changes when it lands. -->
-    <div class="control__foot">
-      <p class="control__under">
-        <span v-if="honest" class="control__number control__number--knob" :style="reading">
-          {{ atKnob }}
-        </span>
-      </p>
+    <!-- The whole chart as one block on the page: the plot, the band under it,
+         and every name and number read off either. -->
+    <div class="control__island">
+      <div class="control__frame">
+        <!-- The y's name runs along the axis it names, outside the plot. -->
+        <div class="control__axis">
+          <p class="control__name control__name--y">{{ words.axisY(props.curve.goal) }}</p>
+        </div>
 
-      <p class="control__ends">
-        <span>{{ honest ? atLeast : '' }}</span>
-        <span>{{ honest ? atMost : '' }}</span>
-      </p>
+        <div class="control__over">
+          <!-- The room the plot is drawn in. It is the picture's own proportion
+               whatever stands in it, so nothing below moves when the answer
+               lands. -->
+          <div class="control__room" :style="{ aspectRatio: `${WIDE} / ${HIGH}` }">
+            <div v-if="!honest" class="control__waiting" role="status">
+              <Waiting class="control__ring" />
+              <span>{{ words.waiting }}</span>
+            </div>
 
-      <p class="control__name control__name--x">{{ words.axisX(props.curve.goal) }}</p>
+            <svg
+              v-else
+              ref="picture"
+              class="control__picture"
+              role="slider"
+              tabindex="0"
+              :viewBox="`0 0 ${WIDE} ${HIGH}`"
+              :aria-label="words.knob"
+              :aria-valuemin="least"
+              :aria-valuemax="most"
+              :aria-valuenow="value"
+              :aria-valuetext="props.valueText"
+              @pointerdown="took"
+              @pointermove="dragged"
+              @pointerup="letGo"
+              @pointercancel="letGo"
+              @keydown="pressed"
+              @keyup="released"
+            >
+              <line
+                v-for="share in BANDS"
+                :key="share"
+                class="control__band"
+                :x1="LEFT"
+                :x2="RIGHT"
+                :y1="yOfBand(share)"
+                :y2="yOfBand(share)"
+              />
 
-      <p v-if="honest" class="control__why">{{ words.markRule(props.curve.goal) }}</p>
+              <path class="control__line" :d="line" />
+              <path v-if="short" class="control__short" :d="short" />
+
+              <line
+                v-if="knob"
+                class="control__drop"
+                :x1="knob.x"
+                :x2="knob.x"
+                :y1="dated ? TOP : knob.y"
+                :y2="FOOT"
+              />
+
+              <circle
+                v-if="suggested"
+                class="control__suggested"
+                :cx="suggested.x"
+                :cy="suggested.y"
+                r="3.5"
+              />
+
+              <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
+            </svg>
+          </div>
+
+          <span v-for="one in named" :key="one.key" class="control__label" :style="one.at">
+            {{ one.text }}
+          </span>
+
+          <span
+            v-for="one in honest ? heights : []"
+            :key="one.text"
+            class="control__number"
+            :style="one.at"
+            >{{ one.text }}</span
+          >
+        </div>
+      </div>
+
+      <!-- Every row keeps its room while the answer is on its way, so the
+           picture is the only thing that changes when it lands. -->
+      <div class="control__foot">
+        <p class="control__under">
+          <span v-if="honest" class="control__number control__number--knob" :style="reading">
+            {{ atKnob }}
+          </span>
+        </p>
+
+        <p class="control__ends">
+          <span>{{ honest ? atLeast : '' }}</span>
+          <span>{{ honest ? atMost : '' }}</span>
+        </p>
+
+        <p class="control__name control__name--x">{{ words.axisX(props.curve.goal) }}</p>
+      </div>
+
+      <!-- What stands overdue at the end of each day ahead, at the place the
+           knob stands. Its axis is days, so it is a plot of its own under the
+           picture and keeps its room whether or not there is a backlog. -->
+      <div class="control__frame">
+        <div class="control__axis">
+          <p class="control__name control__name--y">{{ words.backlogY }}</p>
+        </div>
+
+        <div class="control__over">
+          <div class="control__room" :style="{ aspectRatio: `${WIDE} / ${BAND_HIGH}` }">
+            <svg
+              v-if="banded"
+              class="control__picture control__picture--band"
+              aria-hidden="true"
+              :viewBox="`0 0 ${WIDE} ${BAND_HIGH}`"
+            >
+              <path class="control__backlog" :d="backlogLine" />
+            </svg>
+          </div>
+
+          <span
+            v-for="one in banded ? backlogHeights : []"
+            :key="one.text"
+            class="control__number"
+            :style="one.at"
+            >{{ one.text }}</span
+          >
+        </div>
+      </div>
+
+      <div class="control__foot">
+        <p class="control__ends">
+          <span>{{ banded ? backlogEnds[0] : '' }}</span>
+          <span>{{ banded ? backlogEnds[1] : '' }}</span>
+        </p>
+
+        <p class="control__name control__name--x">{{ words.backlogX }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -356,9 +459,71 @@ const released = (event: KeyboardEvent) => {
      y's name runs along beside the plot. */
   --control-line: calc(var(--numen-text-1) * 1.4);
   --control-axis: calc(var(--numen-text-1) * 1.6);
+  /* One tile of the readout, in the lengths the tile is built from. */
+  --control-tile: calc(
+    var(--numen-text-3) * 1.1 + var(--numen-dot-gap) + var(--numen-text-1) * 1.2 + 2 *
+      var(--numen-inset) + 2 * var(--numen-stroke)
+  );
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
+}
+
+/*
+ * What the control is acting on, over the picture. It is a readout and is
+ * scanned, so each figure is a tile of its own and the tiles take an equal
+ * share of the width the tab is read at.
+ */
+.control__material {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--numen-node-gap);
+  min-block-size: var(--control-tile);
+  margin: 0;
+}
+
+/* One tile: the figure, and under it the word for what it counts. */
+.control__tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  min-inline-size: 0;
+  padding: var(--numen-inset) var(--numen-inset-wide);
+  border: var(--numen-stroke) solid var(--numen-node-border);
+  border-radius: var(--numen-radius);
+  background: var(--numen-node-bg);
+}
+
+.control__figure {
+  color: var(--numen-node-fg);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-3);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.control__word {
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1.2;
+  overflow-wrap: break-word;
+}
+
+/*
+ * The block the whole chart sits on: the plot, the band under it, and every
+ * name and number read off either. The surface stands around the plots and
+ * adds nothing to the room inside them.
+ */
+.control__island {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding: var(--numen-box-air);
+  border: var(--numen-stroke) solid var(--numen-node-border);
+  border-radius: var(--numen-radius);
+  background: var(--numen-node-bg);
 }
 
 /* The y's name beside the plot, and the plot. */
@@ -418,15 +583,22 @@ const released = (event: KeyboardEvent) => {
 }
 
 /*
- * The picture's room while the application works the curve out. It is the room
- * the picture takes, so nothing under it moves when the answer lands.
+ * The room a plot is drawn in. It stands at the plot's own proportion whatever
+ * is inside it, so the box is one size while the answer is worked out, once it
+ * has landed, and where there is nothing to draw.
  */
+.control__room {
+  inline-size: 100%;
+}
+
+/* The ring turning in the middle of that room, with the one line beside it. */
 .control__waiting {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--numen-node-gap);
   inline-size: 100%;
+  block-size: 100%;
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
@@ -446,15 +618,25 @@ const released = (event: KeyboardEvent) => {
 .control__picture {
   display: block;
   inline-size: 100%;
-  block-size: auto;
+  block-size: 100%;
   touch-action: none;
   cursor: ew-resize;
   border-radius: var(--numen-radius);
 }
 
+/* The band is read and not dragged, so no pointer is offered over it. */
+.control__picture--band {
+  cursor: default;
+}
+
+/* Focus is shown on the knob, which is the thing the keyboard moves. */
 .control__picture:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: var(--numen-caret);
+  outline: none;
+}
+
+.control__picture:focus-visible .control__knob {
+  stroke: var(--numen-ring);
+  stroke-width: 3;
 }
 
 .control__band {
@@ -479,13 +661,20 @@ const released = (event: KeyboardEvent) => {
   stroke-linecap: round;
 }
 
+/* The line dropping from the knob, drawn one way under every goal. */
 .control__drop {
   stroke: var(--numen-focus-bg);
   stroke-width: 1;
+  stroke-dasharray: var(--numen-thread-dash);
 }
 
-.control__drop--dated {
-  stroke-dasharray: 4 4;
+/* What stands overdue over the days ahead, in the colour a debt is said in. */
+.control__backlog {
+  fill: none;
+  stroke: var(--numen-caution-fg);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* What is suggested: the accent again, filled and lighter. */
@@ -508,8 +697,8 @@ const released = (event: KeyboardEvent) => {
   line-height: 1.2;
   white-space: nowrap;
   text-shadow:
-    0 0 var(--numen-edge-label-halo) var(--numen-surface),
-    0 0 var(--numen-edge-label-halo) var(--numen-surface);
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg),
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg);
   pointer-events: none;
 }
 
@@ -527,14 +716,14 @@ const released = (event: KeyboardEvent) => {
   line-height: 1;
   white-space: nowrap;
   text-shadow:
-    0 0 var(--numen-edge-label-halo) var(--numen-surface),
-    0 0 var(--numen-edge-label-halo) var(--numen-surface);
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg),
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg);
   pointer-events: none;
 }
 
 .control__knob {
   fill: var(--numen-focus-bg);
-  stroke: var(--numen-surface);
+  stroke: var(--numen-node-bg);
   stroke-width: 2;
 }
 
@@ -549,14 +738,5 @@ const released = (event: KeyboardEvent) => {
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
-}
-
-/* What the suggested mark is chosen by, said under the picture and not on it. */
-.control__why {
-  margin: 0;
-  color: var(--numen-hushed);
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-1);
-  line-height: var(--numen-line-height);
 }
 </style>

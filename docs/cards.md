@@ -258,6 +258,8 @@ links:
 | `new_a_day` | how many unseen cards a day holds. 10. |
 | `reviews_a_day` | how many returning cards a day holds. 200. |
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
+| `counts` | what a day's budget is spent on: `cards`, where a card face counts once however often it comes round that day, or `shows`, where every showing spends a slot. `cards`. |
+| `backlog` | how much of a day goes to what is overdue before anything new is offered, in per cent. 100 is the overdue pile first and new cards only once it is empty; 0 is new cards first; 50 splits the day between them. 100. |
 | `light_days` | the days of the week the load is cut on, written `mon` to `sun`. |
 | `even_load` | whether days are made to resemble each other. On. |
 

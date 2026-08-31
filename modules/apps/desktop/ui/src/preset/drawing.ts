@@ -21,6 +21,20 @@ export const FOOT = HIGH - 16
 /** The height a curve of one value is drawn at. */
 export const MIDDLE = (TOP + FOOT) / 2
 
+/** The height a plot's line is drawn between, and the picture it stands in. */
+export interface Room {
+  readonly high: number
+  readonly top: number
+  readonly foot: number
+}
+
+/** The curve's own room, which is the picture. */
+export const PLOT: Room = { high: HIGH, top: TOP, foot: FOOT }
+
+/** The band's room under it, which is short and shares the picture's width. */
+export const BAND_HIGH = 76
+export const BAND: Room = { high: BAND_HIGH, top: 12, foot: BAND_HIGH - 12 }
+
 /** The faint lines the picture is banded by, as shares of the room's height. */
 export const BANDS: readonly number[] = [0.25, 0.5, 0.75]
 
@@ -55,24 +69,52 @@ export const bandOf = (curve: Curve): Band => {
 }
 
 /**
+ * The band a backlog is drawn against: nothing overdue at the foot, and the
+ * most this pace ever stands at over the top. It is scaled to the one place
+ * the knob stands at, so a day too short to carry what falls due is drawn
+ * climbing over the height it has.
+ */
+export const bandOfBacklog = (backlog: readonly number[]): Band => ({
+  least: 0,
+  most: backlog.length === 0 ? 0 : Math.max(...backlog),
+})
+
+/**
  * Where every place of the curve is drawn, in the band the picture is scaled
  * to. The band is the goal's and not this answer's, so a curve that is flat
  * within it is drawn flat; a band of no width has no scale and is drawn
  * through the middle.
  */
-export const spotsOf = (curve: Curve, band: Band): readonly Spot[] => {
+export const spotsOf = (curve: Curve, band: Band): readonly Spot[] =>
+  seriesOf(
+    curve.at.map((point) => costOf(curve.goal, point)),
+    band,
+  )
+
+/**
+ * Where any reading of the curve is drawn: one figure a place, over the same
+ * width and against the band it is scaled to. The line is one such reading and
+ * a second series — a backlog under it, say — is another, so a picture that
+ * carries two carries them by the same arithmetic.
+ */
+export const seriesOf = (
+  values: readonly number[],
+  band: Band,
+  room: Room = PLOT,
+): readonly Spot[] => {
   const span = band.most - band.least
-  return curve.at.map((point, place) => ({
-    x: xOf(place, curve.at.length),
+  const middle = (room.top + room.foot) / 2
+  return values.map((value, place) => ({
+    x: xOf(place, values.length),
     y:
       span > 0
-        ? held(FOOT - (FOOT - TOP) * ((costOf(curve.goal, point) - band.least) / span))
-        : MIDDLE,
+        ? held(room.foot - (room.foot - room.top) * ((value - band.least) / span), room)
+        : middle,
   }))
 }
 
 /** A height inside the room the line is drawn in. */
-const held = (y: number): number => Math.min(Math.max(y, TOP), FOOT)
+const held = (y: number, room: Room): number => Math.min(Math.max(y, room.top), room.foot)
 
 /** The line through those places. */
 export const lineOf = (spots: readonly Spot[]): string =>

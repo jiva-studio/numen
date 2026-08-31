@@ -461,3 +461,74 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 		t.Errorf("a vault with nothing overdue clears in %d days", got.Clears)
 	}
 }
+
+// A day that begins new cards still clears the backlog it answered.
+//
+// A card begun this morning is asked for again ten minutes later, so it stands
+// past its hour for the rest of the day. It is not a card the day left behind,
+// and a preset with new material to begin every day would otherwise never be
+// through its backlog however much of it a day carries.
+func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	// Sixty card faces overdue, and material enough to be starting new ones on
+	// every day of the projection.
+	at := learned(by, now, 60)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
+	p := history.Preset{
+		Goal: history.GoalRetention, NewADay: 5, ReviewsADay: 9999,
+	}
+
+	if got := history.Overdue(ahead, at, now); got == 0 {
+		t.Fatal("nothing stands overdue, and there is no backlog to clear")
+	}
+	got := ran(t, run, now, p, at, 500)
+	if got.Clears != 1 {
+		t.Errorf("a day carrying the whole backlog clears it in %d days", got.Clears)
+	}
+	if got.Seen == len(at) {
+		t.Fatal("no new card was begun, and the day that begins them is not under test")
+	}
+}
+
+// The backlog day by day is what a band under a curve is drawn from: it begins
+// where the pile stands now, and the day it reaches nothing is the day the
+// clearing names.
+func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 200)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
+
+	for _, one := range []struct {
+		what string
+		p    history.Preset
+	}{
+		{"a starved day", history.Preset{Goal: history.GoalRetention, ReviewsADay: 3}},
+		{"a day of twenty", history.Preset{Goal: history.GoalRetention, ReviewsADay: 20}},
+		{"a day of all of it", history.Preset{Goal: history.GoalRetention, ReviewsADay: 9999}},
+	} {
+		got := ran(t, run, now, one.p, at, 0)
+		if len(got.Backlog) != got.Days {
+			t.Errorf("%s projected %d days and left a backlog of %d",
+				one.what, got.Days, len(got.Backlog))
+		}
+		for day, standing := range got.Backlog {
+			if standing < 0 {
+				t.Errorf("%s stands %d behind on day %d", one.what, standing, day)
+			}
+		}
+
+		first := history.NeverClears
+		for day, standing := range got.Backlog {
+			if standing == 0 {
+				first = day + 1
+				break
+			}
+		}
+		if got.Clears != first {
+			t.Errorf("%s clears on day %d and the backlog reaches nothing on day %d",
+				one.what, got.Clears, first)
+		}
+	}
+}

@@ -39,6 +39,7 @@ export type Field =
   | 'retention'
   | 'byDate'
   | 'counts'
+  | 'backlog'
   | 'lightDays'
   | 'evenLoad'
 
@@ -50,6 +51,7 @@ export const FIELDS: readonly Field[] = [
   'minutesADay',
   'byDate',
   'counts',
+  'backlog',
   'lightDays',
   'evenLoad',
 ]
@@ -65,16 +67,29 @@ export const FIELDS: readonly Field[] = [
  */
 const BUDGETS: Record<Goal, readonly Field[]> = {
   minutes: ['minutesADay'],
-  retention: ['retention', 'newADay', 'reviewsADay'],
+  // What a day's budget is spent on belongs to the goal whose budget is cards.
+  retention: ['retention', 'newADay', 'reviewsADay', 'counts'],
   date: ['byDate'],
 }
 
+/**
+ * The share of a day that goes to the debt before anything new is offered. It
+ * says what a day is spent on and closes nothing, so it stands beside a budget
+ * and not among them. A goal of a date carries the whole material by its own
+ * reckoning and has no part in it.
+ */
+const SPENDING: Record<Goal, readonly Field[]> = {
+  minutes: ['backlog'],
+  retention: ['backlog'],
+  date: [],
+}
+
 /** The settings that stand under no goal in particular, and are drawn under all. */
-const ALWAYS: readonly Field[] = ['counts', 'lightDays', 'evenLoad']
+const ALWAYS: readonly Field[] = ['lightDays', 'evenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const fieldsUnder = (goal: Goal): readonly Field[] => {
-  const drawn = new Set<Field>([...BUDGETS[goal], ...ALWAYS])
+  const drawn = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...ALWAYS])
   return FIELDS.filter((field) => drawn.has(field))
 }
 
@@ -101,6 +116,7 @@ export const shapeOf = (settings: Settings): string => {
     minutesADay: `${settings.minutesADay}`,
     byDate: settings.byDate,
     counts: settings.counts,
+    backlog: `${settings.backlog}`,
     lightDays: settings.lightDays.join(','),
     evenLoad: `${settings.evenLoad}`,
   }
@@ -117,13 +133,27 @@ export const costOf = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.reviews : point.minutes
 
 /**
- * Whether a longer day buys nothing over the whole range, which is a day the
- * card limits close before its minutes run out.
+ * The budget each goal's own value closes a day by, as the preset writes the
+ * key. A target closes no day of its own: what closes a day worked to one is
+ * always a count.
  */
-export const closed = (curve: Curve): boolean => {
-  if (!curve.honest || curve.goal !== 'minutes' || curve.at.length < 2) return false
-  const cards = curve.at.map((point) => costOf(curve.goal, point))
-  return Math.max(...cards) - Math.min(...cards) < 1
+const CLOSES: Record<Goal, readonly string[]> = {
+  minutes: ['minutes_a_day'],
+  retention: [],
+  date: ['by_date'],
+}
+
+/** Every budget a preset closes a day by, which is the whole of what may be said. */
+const CLOSERS: readonly string[] = ['minutes_a_day', 'new_a_day', 'reviews_a_day']
+
+/**
+ * What closes the day here where the goal on screen is not what closes it, and
+ * empty where it is. A day nothing closed asked for every card there was.
+ */
+export const limiting = (curve: Curve, point: Point | null): string => {
+  if (!curve.honest || !point) return ''
+  if (!CLOSERS.includes(point.closed)) return ''
+  return CLOSES[curve.goal].includes(point.closed) ? '' : point.closed
 }
 
 /** A number held inside the bounds of the setting it is. */
@@ -209,6 +239,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
     decks: 0,
     cards: 0,
     overdue: 0,
+    unbegun: 0,
     honest: false,
   }
 }
@@ -242,7 +273,16 @@ const ladder = (least: number, most: number, rounds: (one: number) => number): r
  * more of it back costs more of the day.
  */
 const guessed = (settings: Settings, value: number, grid: readonly number[]): Point => {
-  const flat = { retained: 0, owed: 0, through: 0, enough: true, met: true, clears: 0 }
+  const flat = {
+    retained: 0,
+    owed: 0,
+    through: 0,
+    enough: true,
+    met: true,
+    closed: '',
+    clears: 0,
+    backlog: [],
+  }
   if (settings.goal === 'retention') {
     const minutes = (settings.minutesADay || DEFAULTS.minutesADay) * ((1 - MIDDLE) / (1 - value))
     return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, retained: value }

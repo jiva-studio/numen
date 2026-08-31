@@ -232,6 +232,7 @@ export function presetting(
     if (field === 'newADay') return { ...settings, newADay: held(value, 'newADay') }
     if (field === 'reviewsADay') return { ...settings, reviewsADay: held(value, 'reviewsADay') }
     if (field === 'minutesADay') return { ...settings, minutesADay: held(value, 'minutesADay') }
+    if (field === 'backlog') return { ...settings, backlog: held(Math.round(value), 'backlog') }
     return settings
   }
 

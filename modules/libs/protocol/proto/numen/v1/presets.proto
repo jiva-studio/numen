@@ -102,6 +102,15 @@ message Settings {
   // What a day's budget is spent on. Unspecified is the default, which charges
   // a card face once a review day.
   Counts counts = 9;
+
+  // How much of a day goes to what is overdue before anything unbegun is
+  // offered, as a share in hundredths. A hundred pays the debt first and begins
+  // new cards on what is left, nothing puts the new material first, and between
+  // them the day is split until one side runs out and the other takes the rest.
+  //
+  // It says what a day is spent on rather than what closes it. A goal of a date
+  // carries the whole material by its own reckoning, so it takes no part there.
+  int32 backlog = 10;
 }
 
 // Preset is one preset as a read hands it over.
@@ -150,6 +159,11 @@ message Curve {
   // stands, and not about the setting being chosen. A card falling due later
   // today is not one of these, and neither is a card nobody has begun.
   int32 overdue = 9;
+
+  // How many of those card faces nobody has answered at all, so they have had
+  // no day. Overdue and these two never overlap, and `cards` holds both plus
+  // the ones whose day is still to come.
+  int32 unbegun = 10;
 }
 
 // Point is what a preset comes to at one place of the grid.
@@ -188,6 +202,11 @@ message Point {
   // Zero is a curve standing over nothing overdue, and -1 is a pace that never
   // gets there, which a person reads as not at this one.
   int32 clears = 9;
+
+  // How many card faces stand overdue at the end of each day projected at this
+  // place, one entry a day over the whole horizon. It runs over days, which is
+  // a different axis from the grid, so it is drawn as a plot of its own.
+  repeated int32 backlog = 10;
 }
 
 // Mark is one place on the curve worth pointing at.

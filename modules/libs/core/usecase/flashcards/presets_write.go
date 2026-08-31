@@ -23,6 +23,7 @@ const (
 	reviewsADayKey = "reviews_a_day"
 	retentionKey   = "retention"
 	countsKey      = "counts"
+	backlogKey     = "backlog"
 	lightDaysKey   = "light_days"
 	evenLoadKey    = "even_load"
 )
@@ -133,6 +134,7 @@ func settle(doc *markdown.Document, p history.Preset) error {
 		{minutesADayKey, p.MinutesADay},
 		{newADayKey, p.NewADay},
 		{reviewsADayKey, p.ReviewsADay},
+		{backlogKey, p.Backlog},
 		{retentionKey, p.Retention},
 		{evenLoadKey, p.EvenLoad},
 	} {
@@ -170,6 +172,7 @@ func bounded(p history.Preset) error {
 		{newADayKey, float64(p.NewADay), history.NewADayBounds},
 		{reviewsADayKey, float64(p.ReviewsADay), history.ReviewsADayBounds},
 		{retentionKey, p.Retention, history.RetentionBounds},
+		{backlogKey, float64(p.Backlog), history.BacklogBounds},
 	} {
 		if !one.bounds.Holds(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",

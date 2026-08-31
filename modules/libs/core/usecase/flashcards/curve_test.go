@@ -88,7 +88,8 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 }
 
 // A higher target is shorter intervals, so the curve of what a day costs rises
-// with it. What is suggested is the target leaving the most in the head.
+// with it. Nothing is suggested: what a target leaves in the head climbs the
+// whole way, and a mark on the most of it would stand at the far end every time.
 func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
@@ -114,12 +115,15 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 	inRange(t, got)
 
-	best := got.Suggested.At
-	for i, one := range got.At {
-		if one.Retained > got.At[best].Retained+1e-9 {
-			t.Errorf("%v is suggested and retains %v, while %v retains %v",
-				got.Grid[best], got.At[best].Retained, got.Grid[i], one.Retained)
-		}
+	if got.Suggested != flashcards.Nowhere {
+		t.Errorf("a target of %v is suggested, and this goal points at none",
+			got.Suggested.Value)
+	}
+	// What the cost buys climbs the range rather than peaking inside it, which
+	// is why there is nothing to point at.
+	least, most := got.At[0].Retained, got.At[len(got.At)-1].Retained
+	if most <= least {
+		t.Errorf("the easiest target retains %v and the hardest %v", least, most)
 	}
 }
 
@@ -277,9 +281,11 @@ func TestTheCurveIsWorkedOutWithLightDaysAndAnEvenLoad(t *testing.T) {
 			t.Fatalf("with %s the preset stands at place %d, and without at %d",
 				name, got.Now.At, flat.Now.At)
 		}
-		if got.At[got.Now.At] == flat.At[flat.Now.At] {
+		one, was := got.At[got.Now.At], flat.At[flat.Now.At]
+		if one.Reviews == was.Reviews && one.Minutes == was.Minutes &&
+			one.Retained == was.Retained {
 			t.Errorf("with %s the preset comes to %+v, the same as a preset keeping neither",
-				name, got.At[got.Now.At])
+				name, one)
 		}
 	}
 }
@@ -402,5 +408,33 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 	if got.At[got.Now.At].Minutes <= got.At[len(got.At)-1].Minutes {
 		t.Errorf("the day named costs %v minutes a day and the furthest day %v",
 			got.At[got.Now.At].Minutes, got.At[len(got.At)-1].Minutes)
+	}
+}
+
+// What a curve says about a backlog is measured over the same horizon on every
+// goal.
+//
+// A goal of a date runs each place to its own day, and a place near the left of
+// the range would otherwise be asked how long a backlog takes to clear over a
+// horizon of a day or two and answer that it never does.
+func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Retention: 0.9,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Grid[0] != 1 {
+		t.Fatalf("the curve begins %v days off", got.Grid[0])
+	}
+	for i, one := range got.At {
+		if len(one.Backlog) < history.Ahead {
+			t.Errorf("%v days off carries %d days of backlog, and a clearing is asked "+
+				"over %d", got.Grid[i], len(one.Backlog), history.Ahead)
+		}
 	}
 }

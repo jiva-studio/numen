@@ -166,7 +166,15 @@ type Settings struct {
 	EvenLoad bool `protobuf:"varint,8,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
 	// What a day's budget is spent on. Unspecified is the default, which charges
 	// a card face once a review day.
-	Counts        Counts `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.Counts" json:"counts,omitempty"`
+	Counts Counts `protobuf:"varint,9,opt,name=counts,proto3,enum=numen.v1.Counts" json:"counts,omitempty"`
+	// How much of a day goes to what is overdue before anything unbegun is
+	// offered, as a share in hundredths. A hundred pays the debt first and begins
+	// new cards on what is left, nothing puts the new material first, and between
+	// them the day is split until one side runs out and the other takes the rest.
+	//
+	// It says what a day is spent on rather than what closes it. A goal of a date
+	// carries the whole material by its own reckoning, so it takes no part there.
+	Backlog       int32 `protobuf:"varint,10,opt,name=backlog,proto3" json:"backlog,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -262,6 +270,13 @@ func (x *Settings) GetCounts() Counts {
 		return x.Counts
 	}
 	return Counts_COUNTS_UNSPECIFIED
+}
+
+func (x *Settings) GetBacklog() int32 {
+	if x != nil {
+		return x.Backlog
+	}
+	return 0
 }
 
 // Preset is one preset as a read hands it over.
@@ -362,7 +377,11 @@ type Curve struct {
 	// it. One number over the whole curve: it is a fact about the vault as it
 	// stands, and not about the setting being chosen. A card falling due later
 	// today is not one of these, and neither is a card nobody has begun.
-	Overdue       int32 `protobuf:"varint,9,opt,name=overdue,proto3" json:"overdue,omitempty"`
+	Overdue int32 `protobuf:"varint,9,opt,name=overdue,proto3" json:"overdue,omitempty"`
+	// How many of those card faces nobody has answered at all, so they have had
+	// no day. Overdue and these two never overlap, and `cards` holds both plus
+	// the ones whose day is still to come.
+	Unbegun       int32 `protobuf:"varint,10,opt,name=unbegun,proto3" json:"unbegun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -460,6 +479,13 @@ func (x *Curve) GetOverdue() int32 {
 	return 0
 }
 
+func (x *Curve) GetUnbegun() int32 {
+	if x != nil {
+		return x.Unbegun
+	}
+	return 0
+}
+
 // Point is what a preset comes to at one place of the grid.
 //
 // A goal of a date fills `minutes` with what getting through the material by
@@ -491,7 +517,11 @@ type Point struct {
 	// How many days of review at this place it takes before nothing is overdue.
 	// Zero is a curve standing over nothing overdue, and -1 is a pace that never
 	// gets there, which a person reads as not at this one.
-	Clears        int32 `protobuf:"varint,9,opt,name=clears,proto3" json:"clears,omitempty"`
+	Clears int32 `protobuf:"varint,9,opt,name=clears,proto3" json:"clears,omitempty"`
+	// How many card faces stand overdue at the end of each day projected at this
+	// place, one entry a day over the whole horizon. It runs over days, which is
+	// a different axis from the grid, so it is drawn as a plot of its own.
+	Backlog       []int32 `protobuf:"varint,10,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -587,6 +617,13 @@ func (x *Point) GetClears() int32 {
 		return x.Clears
 	}
 	return 0
+}
+
+func (x *Point) GetBacklog() []int32 {
+	if x != nil {
+		return x.Backlog
+	}
+	return nil
 }
 
 // Mark is one place on the curve worth pointing at.
@@ -1105,7 +1142,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xaf\x02\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xc9\x02\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1116,12 +1153,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
 	"light_days\x18\a \x03(\tR\tlightDays\x12\x1b\n" +
 	"\teven_load\x18\b \x01(\bR\bevenLoad\x12(\n" +
-	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\"~\n" +
+	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\x12\x18\n" +
+	"\abacklog\x18\n" +
+	" \x01(\x05R\abacklog\"~\n" +
 	"\x06Preset\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
-	"\bproblems\x18\x04 \x03(\tR\bproblems\"\x8a\x02\n" +
+	"\bproblems\x18\x04 \x03(\tR\bproblems\"\xa4\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
@@ -1131,7 +1170,9 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tsuggested\x18\x06 \x01(\v2\x0e.numen.v1.MarkR\tsuggested\x12\x14\n" +
 	"\x05decks\x18\a \x01(\x05R\x05decks\x12\x14\n" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
-	"\aoverdue\x18\t \x01(\x05R\aoverdue\"\xdf\x01\n" +
+	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
+	"\aunbegun\x18\n" +
+	" \x01(\x05R\aunbegun\"\xf9\x01\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1141,7 +1182,9 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x10\n" +
 	"\x03met\x18\a \x01(\bR\x03met\x12\x16\n" +
 	"\x06closed\x18\b \x01(\tR\x06closed\x12\x16\n" +
-	"\x06clears\x18\t \x01(\x05R\x06clears\">\n" +
+	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
+	"\abacklog\x18\n" +
+	" \x03(\x05R\abacklog\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +

@@ -11,9 +11,9 @@ import { computed } from 'vue'
 import { Days, NumberField, Segmented, Switch } from '@numen/ui'
 import Control from './Control.vue'
 import type { Held } from './kind'
-import { BOUNDS, COUNTS, GOALS } from './core'
+import { BOUNDS, COUNTS, GOALS, SHARES } from './core'
 import type { Counts, Goal } from './core'
-import { closed, fieldsUnder, idle, paused, spent, type Field } from './curve'
+import { fieldsUnder, idle, limiting, paused, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -39,6 +39,18 @@ const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName
 
 /** The two things a budget is spent on, as the row offers them. */
 const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
+
+/**
+ * The shares of a day the backlog row offers, from the debt first to the new
+ * material first. A file standing at another share carries it as a segment of
+ * its own, in its place along that scale.
+ */
+const backlogs = computed(() => {
+  const shares = SHARES.includes(settings.value.backlog)
+    ? SHARES
+    : [...SHARES, settings.value.backlog].sort((one, two) => two - one)
+  return shares.map((one) => ({ id: `${one}`, text: words.backlogName(one) }))
+})
 
 /** What the preset comes to where the knob stands. */
 const point = computed(() => curve.value.at[place.value] ?? null)
@@ -99,32 +111,48 @@ const stopped = computed(() => {
   return paused(settings.value, today) ? words.paused : ''
 })
 
-/** The arithmetic under a goal of a date, with the sum already done. */
-const sums = computed<readonly string[]>(() => {
+/**
+ * What standing here comes to, told as prose and not as a list of figures: one
+ * paragraph for what this place costs, and one for where the preset stands
+ * against its own backlog. A clause with nothing to say is left out, and a
+ * paragraph left with nothing at all is not drawn.
+ */
+const telling = computed(() => {
   const one = point.value
-  if (curve.value.goal !== 'date' || !one) return []
-  const lines = [
-    // Nothing owed on that day is nothing to say about it.
-    ...(one.owed > 0 ? [words.owing(one.owed)] : []),
-    words.needing(one.minutes, settings.value.minutesADay),
-    words.through(one.through, settings.value.minutesADay),
-  ]
-  return one.met ? lines : [...lines, words.unmet]
+  if (!one) return ''
+  if (curve.value.goal !== 'date') return costing.value
+  return words.dated(one.minutes, settings.value.minutesADay, one.through, one.owed, one.met)
 })
 
-/** Whether a longer day buys nothing, which the card limits close it against. */
-const shut = computed(() => closed(curve.value))
+const standing = computed(() => {
+  const one = point.value
+  if (!curve.value.honest || !one) return ''
+  const said: string[] = []
+  // A preset with nothing overdue has nothing to clear, and says so by saying
+  // nothing at all.
+  if (curve.value.overdue > 0) {
+    said.push(words.behind(curve.value.overdue, curve.value.cards, one.clears))
+  }
+  const closer = limiting(curve.value, one)
+  if (closer) said.push(words.limiting(curve.value.goal, closer))
+  return said.join(' ')
+})
+
+/** What the second mark stands at, and what that figure means. */
+const meaning = computed(() => {
+  const mark = curve.value.suggested
+  if (!curve.value.honest || mark.at < 0) return ''
+  return words.markMeans(curve.value.goal, mark.value)
+})
 
 /**
- * How far behind the preset stands and what the place the knob is at does
- * about it. A preset with nothing overdue has nothing to clear, and says so by
- * saying nothing.
+ * The whole explanation, as one block of prose. What this place costs, what the
+ * mark on the picture means, and where the preset stands against its backlog
+ * are one telling and run together, however many facts they carry between them.
  */
-const behind = computed<readonly string[]>(() => {
-  const one = point.value
-  if (!curve.value.honest || curve.value.overdue <= 0 || !one) return []
-  return [words.behind(curve.value.overdue, curve.value.cards), words.clearing(one.clears)]
-})
+const explaining = computed(() =>
+  [telling.value, meaning.value, standing.value].filter(Boolean).join(' '),
+)
 </script>
 
 <template>
@@ -172,25 +200,15 @@ const behind = computed<readonly string[]>(() => {
 
             <p class="preset__reading">
               <span class="preset__figure">{{ reading }}</span>
+              <!-- What this place costs and where the preset stands against
+                   its backlog are one telling, and run together as one block. -->
               <span class="preset__costing">
                 <span v-if="!curve.honest" class="preset__about" :title="words.aboutMeaning">
                   {{ words.about }}
                 </span>
-                {{ costing }}
+                {{ explaining }}
               </span>
             </p>
-
-            <!-- How far behind, what this pace does about it, and what a
-                 longer day would not buy. -->
-            <p v-for="(text, at) in behind" :key="at" class="preset__shut">{{ text }}</p>
-
-            <p v-if="shut" class="preset__shut">
-              {{ words.closed(settings.newADay, settings.reviewsADay) }}
-            </p>
-
-            <ul v-if="sums.length" class="preset__sums">
-              <li v-for="(text, at) in sums" :key="at">{{ text }}</li>
-            </ul>
           </template>
 
           <p v-if="stopped" class="preset__stopped">{{ stopped }}</p>
@@ -218,6 +236,13 @@ const behind = computed<readonly string[]>(() => {
                 :choices="counts"
                 :aria-labelledby="`preset-${field}`"
                 @update:model-value="(one: string) => props.held.types(field, one as Counts)"
+              />
+              <Segmented
+                v-else-if="field === 'backlog'"
+                :model-value="`${settings.backlog}`"
+                :choices="backlogs"
+                :aria-labelledby="`preset-${field}`"
+                @update:model-value="(one: string) => props.held.types(field, Number(one))"
               />
               <Days
                 v-else-if="field === 'lightDays'"
@@ -319,8 +344,10 @@ const behind = computed<readonly string[]>(() => {
   line-height: 1.15;
 }
 
+/* The whole explanation, as one block of prose that wraps where it will. */
 .preset__costing {
   color: var(--numen-hushed);
+  line-height: var(--numen-line-height);
 }
 
 /* No deck points here, said where the curve would stand. */
@@ -339,22 +366,6 @@ const behind = computed<readonly string[]>(() => {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   text-transform: lowercase;
-}
-
-/* The arithmetic of a goal of a date, aligned with the column it stands in. */
-.preset__sums {
-  margin: var(--numen-dot-gap) 0 0;
-  padding: 0;
-  color: var(--numen-hushed);
-  line-height: var(--numen-line-height);
-  list-style: none;
-}
-
-/* A day the card limits close before its minutes run out. */
-.preset__shut {
-  margin: 0;
-  color: var(--numen-hushed);
-  line-height: var(--numen-line-height);
 }
 
 .preset__stopped {

@@ -179,3 +179,58 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 		}
 	}
 }
+
+// The share of a day that goes to the debt is read like the other whole
+// numbers, stands at all of it where the file names none, and is refused
+// outside its bounds.
+func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
+	if got := flashcards.Defaults().Backlog; got != flashcards.AllBacklog {
+		t.Errorf("a preset naming nothing gives the debt %d of its day", got)
+	}
+
+	p, problems := flashcards.ReadPreset(front(t, "backlog: 40\n"))
+	if len(problems) != 0 {
+		t.Fatalf("problems = %v", problems)
+	}
+	if p.Backlog != 40 {
+		t.Errorf("backlog = %d, want 40", p.Backlog)
+	}
+
+	p, problems = flashcards.ReadPreset(front(t, "backlog: 140\n"))
+	if len(problems) != 1 {
+		t.Fatalf("a share outside its bounds turned up %v", problems)
+	}
+	if p.Backlog != flashcards.AllBacklog {
+		t.Errorf("a share outside its bounds left %d standing", p.Backlog)
+	}
+}
+
+// A goal of a date reads no share, and says so where it says which of the
+// budgets closes its day.
+func TestWhichSettingsAGoalReads(t *testing.T) {
+	day := flashcards.Day{Starts: flashcards.DayStarts}
+	for _, one := range []struct {
+		goal  flashcards.Goal
+		reads bool
+	}{
+		{flashcards.GoalMinutes, true},
+		{flashcards.GoalRetention, true},
+		{flashcards.GoalDate, false},
+	} {
+		p := flashcards.Defaults()
+		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
+		admits := p.Admits(day, time.Now(), flashcards.Spent{}, 0)
+
+		if got := admits.Closes.Backlog != ""; got != one.reads {
+			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
+		}
+		want := 40
+		if !one.reads {
+			want = flashcards.AllBacklog
+		}
+		if admits.Backlog != want {
+			t.Errorf("under %s the day gives the debt %d, want %d",
+				one.goal, admits.Backlog, want)
+		}
+	}
+}

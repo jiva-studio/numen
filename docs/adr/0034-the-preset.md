@@ -68,6 +68,12 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 
 **How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own light days and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
 
+### How a day is spent between the overdue and the new
+
+`backlog` is how much of a day goes to what is overdue before anything new is offered, in per cent: 100 is the overdue pile first, 0 is new cards first, and the values between split the day. A side that runs short leaves the rest of the day to the other, so a day is never left unspent.
+
+It is not a budget and it does not close a day; it says what the day the goal admits is spent on. A goal of a date does not use it — the material is to be through by that day, all of it, so the order decides nothing that matters.
+
 ### A budget counts cards, and may be told to count showings
 
 `counts: cards` is the default: a card face counts against the day's budget the first time it is answered that day, and every further showing of it that day is free. A hundred a day is a hundred cards, whatever it takes to settle each of them.

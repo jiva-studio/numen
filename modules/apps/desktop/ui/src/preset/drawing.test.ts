@@ -31,7 +31,9 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
+  closed: '',
   clears: 0,
+  backlog: [],
   ...over,
 })
 
@@ -46,6 +48,7 @@ const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve
   decks: 1,
   cards: 400,
   overdue: 0,
+  unbegun: 0,
   honest: true,
 })
 
