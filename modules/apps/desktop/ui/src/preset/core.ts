@@ -176,6 +176,12 @@ export interface Point {
    */
   readonly learns: number
   /**
+   * How many card faces cannot be learned by the day named whatever the pace:
+   * the rule wants more days than the day leaves them. It is a count and not a
+   * pace, so no budget moves it.
+   */
+  readonly short: number
+  /**
    * How many card faces stand overdue at the end of each day projected here,
    * one entry a day. It runs over days, which is a different axis from the
    * grid.
@@ -338,6 +344,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     clears: one.clears,
     learned: one.learned,
     learns: one.learns,
+    short: one.short,
     backlog: one.backlog,
   })),
   now: marked(said?.now),

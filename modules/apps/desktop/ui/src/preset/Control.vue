@@ -165,6 +165,8 @@ const perched = computed(() => {
     minutes: point.minutes,
     horizon: point.backlog.length,
     clears: clearing(point.backlog),
+    short: point.short,
+    cards: props.curve.cards,
   })
   const under = spot.y - PERCH_GAP - PERCH_HIGH < TOP
   const half = PERCH_WIDE / 2

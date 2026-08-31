@@ -383,6 +383,7 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
     clears: 0,
     learned: 0,
     learns: -1,
+    short: 0,
     backlog: [],
   }
   if (settings.goal === 'retention') {

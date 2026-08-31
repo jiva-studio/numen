@@ -56,6 +56,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   clears: 0,
   learned: 0,
   learns: -1,
+  short: 0,
   backlog: [],
   ...over,
 })
@@ -385,6 +386,68 @@ describe('the one control', () => {
   })
 })
 
+// A day can leave a card less time than the rule wants, and no pace reaches
+// it. That is arithmetic, so it is a count said beside what the place buys,
+// where a person choosing the day is already reading.
+describe('what a day cannot reach', () => {
+  const bought = (tab: ReturnType<typeof mount>) =>
+    tab.findAll('.control__bought').map((one) => one.text())
+
+  const dated = (over: Partial<Point> = {}) =>
+    drawn(
+      {
+        goal: 'date',
+        grid: [14, 30, 90, 180],
+        days: ['2026-09-14', '2026-09-30', '2026-11-29', '2027-02-27'],
+        cards: 79,
+        now: { at: 0, value: 14, day: '2026-09-14' },
+        at: [
+          point({ minutes: 40, short: 38, ...over }),
+          point({ minutes: 30, short: 11 }),
+          point({ minutes: 20, short: 0 }),
+          point({ minutes: 15, short: 0 }),
+        ],
+      },
+      { goal: 'date', byDate: '2026-09-14' },
+    )
+
+  it('says how many no pace reaches, beside what the day costs', async () => {
+    const { tab } = dated()
+    await tab.get('.control__picture[role="slider"]').trigger('keydown', { key: 'Home' })
+    expect(bought(tab)).toStrictEqual([
+      '14 days off',
+      '40 minutes a day',
+      '38 of 79 cannot get there',
+    ])
+  })
+
+  it('says nothing of it where the day leaves every card time enough', async () => {
+    const { tab } = dated()
+    await tab.get('.control__picture[role="slider"]').trigger('keydown', { key: 'End' })
+    const said = bought(tab)
+    expect(said).toStrictEqual(['180 days off', '15 minutes a day'])
+    expect(said.join(' ')).not.toContain('cannot get there')
+    expect(said.join(' ')).not.toContain('0 of')
+  })
+
+  it('follows the day, since each day leaves its own cards short', async () => {
+    const { tab } = dated()
+    await tab.get('.control__picture[role="slider"]').trigger('keydown', { key: 'Home' })
+    await tab.get('.control__picture[role="slider"]').trigger('keydown', { key: 'ArrowRight' })
+    expect(bought(tab)).toContain('11 of 79 cannot get there')
+  })
+
+  // It is the goal of a date that names a day, so it is that goal alone that
+  // has a day nothing reaches by.
+  it('says it under a goal of a date and under neither of the others', () => {
+    const { tab } = drawn({
+      cards: 79,
+      at: [point(), point(), point({ reviews: 80, short: 38 }), point()],
+    })
+    expect(bought(tab).join(' ')).not.toContain('cannot get there')
+  })
+})
+
 // The whole point of the tab is when the material will be learned, so it is
 // said in figures under the picture, off the very run the line is drawn from.
 describe('when the material is learned', () => {
@@ -612,6 +675,8 @@ describe('what the control stands at', () => {
         minutes: 14,
         horizon: 0,
         clears: null,
+        short: 0,
+        cards: 160,
       }).join(' '),
       words.fieldDetail('retention'),
     ]) {

@@ -109,10 +109,16 @@ export const WORDS = {
       horizon: number
       /** Null is nothing overdue, and -1 a pile the days projected do not clear. */
       clears: number | null
+      /** How many card faces no pace reaches by the day, out of how many there are. */
+      short: number
+      cards: number
     },
   ): readonly string[] => {
     if (goal === 'date') {
-      return [`${many(at.value, 'day')} off`, `${many(at.minutes, 'minute')} a day`]
+      const said = [`${many(at.value, 'day')} off`, `${many(at.minutes, 'minute')} a day`]
+      // A day that leaves every card time enough has nothing to say about it.
+      if (at.short > 0) said.push(`${count(at.short)} of ${count(at.cards)} cannot get there`)
+      return said
     }
     const held =
       goal === 'minutes' ? `${many(at.value, 'minute')} a day` : `${share(at.value)} remembered`
