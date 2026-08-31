@@ -3,13 +3,14 @@
  * each story is run in a browser by `@storybook/addon-vitest`.
  *
  * The awkward ones are the names: a week starting on Sunday, names in another
- * script, and letters wide enough to burst a round chip.
+ * script, and letters wide enough to burst a round chip. The share a day
+ * carries is read off the chip without opening anything.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Days from './Days.vue'
-import { weekFrom, WEEK, type Day } from './week'
+import { weekFrom, WEEK, type Day, type Shares } from './week'
 
 /** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly Day[] = [
@@ -23,8 +24,8 @@ const RUSSIAN: readonly Day[] = [
 ]
 
 interface Knobs {
-  /** Which days are on, by their identifiers. */
-  on: readonly string[]
+  /** What each day carries, by its identifier. A day not named carries it all. */
+  load: Shares
   /** Which day the week is turned to start on. */
   startsOn: string
   /** Which names the days are drawn under. */
@@ -37,24 +38,24 @@ const meta: Meta<Knobs> = {
   component: Days,
   parameters: { layout: 'centered' },
   argTypes: {
-    on: { control: 'object' },
+    load: { control: 'object' },
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     disabled: { control: 'boolean' },
   },
-  args: { on: ['sat'], startsOn: 'mon', names: 'English', disabled: false },
+  args: { load: { sat: 50 }, startsOn: 'mon', names: 'English', disabled: false },
   render: (args) => ({
     components: { Days },
     setup: () => {
       const days = computed(() =>
         weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK),
       )
-      const on = ref<readonly string[]>(args.on)
-      return { args, days, on }
+      const load = ref<Shares>(args.load)
+      return { args, days, load }
     },
     template: `
       <div style="padding: 2rem">
-        <Days v-model="on" aria-label="Light days" :days="days" :disabled="args.disabled" />
+        <Days v-model="load" aria-label="Load by day" :days="days" :disabled="args.disabled" />
       </div>
     `,
   }),
@@ -66,70 +67,59 @@ type Story = StoryObj<Knobs>
 const chips = (canvas: HTMLElement): readonly HTMLElement[] =>
   Array.from(canvas.querySelectorAll<HTMLElement>('[data-slot="days"] button'))
 
-const onNow = (canvas: HTMLElement): readonly string[] =>
-  chips(canvas)
-    .filter((chip) => chip.getAttribute('data-state') === 'on')
-    .map((chip) => chip.getAttribute('aria-label') ?? '')
+const said = (canvas: HTMLElement): readonly string[] =>
+  chips(canvas).map((chip) => chip.getAttribute('aria-label') ?? '')
 
-/** One light day at the end of the week. */
+const offered = (): readonly string[] =>
+  Array.from(document.body.querySelectorAll('.menu__item')).map(
+    (one) => one.textContent?.trim() ?? '',
+  )
+
+/** One day of the week at half a day's load. */
 export const TheDaysOfTheWeek: Story = {}
 
-/** No day is lightened. */
-export const NoneAtAll: Story = { args: { on: [] } }
+/** Every day carries the whole of it, which is a week nothing was said about. */
+export const NoneAtAll: Story = { args: { load: {} } }
 
-/** Every day is lightened, which is a week nothing is asked of. */
+/** A day at nothing, which schedules nothing that day. */
+export const ADayAtNothing: Story = { args: { load: { sun: 0 } } }
+
+/** Every day cut, each by a different share. */
 export const AllOfThem: Story = {
-  args: { on: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] },
+  args: { load: { mon: 90, tue: 75, wed: 50, thu: 25, fri: 10, sat: 0, sun: 90 } },
 }
 
 /** A week starting on Sunday. */
 export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 
 /** Names that are not Latin, in chips the same size. */
-export const OtherScripts: Story = { args: { names: 'Russian', on: ['sat', 'sun'] } }
+export const OtherScripts: Story = { args: { names: 'Russian', load: { sat: 50, sun: 0 } } }
 
 /** Days nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }
 
-/** Each chip says its whole name, and which way it is. */
-export const EachChipSaysItsName: Story = {
+/** Each chip says its whole name and what that day carries. */
+export const EachChipSaysWhatItCarries: Story = {
   play: async ({ canvasElement }) => {
-    const drawn = chips(canvasElement)
-    expect(drawn).toHaveLength(7)
-    expect(drawn.map((chip) => chip.getAttribute('aria-label'))).toEqual([
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ])
-    expect(onNow(canvasElement)).toEqual(['Saturday'])
-    expect(drawn[0]?.getAttribute('aria-pressed')).toBe('false')
-    expect(drawn[5]?.getAttribute('aria-pressed')).toBe('true')
+    expect(chips(canvasElement)).toHaveLength(7)
+    expect(said(canvasElement)[0]).toBe('Monday, 100%')
+    expect(said(canvasElement)[5]).toBe('Saturday, 50%')
   },
 }
 
-/** The arrows walk the row and the space bar turns a day, on its own. */
-export const KeyboardTurnsOneDay: Story = {
-  args: { on: [] },
+/** Pressing a day offers the shares, and the day carries the one chosen. */
+export const PressingADayOffersTheShares: Story = {
+  args: { load: {} },
   play: async ({ canvasElement }) => {
-    const drawn = chips(canvasElement)
+    await userEvent.click(chips(canvasElement)[5] as HTMLElement)
+    await waitFor(() => expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
 
-    await userEvent.tab()
-    expect(document.activeElement).toBe(drawn[0])
-    expect(getComputedStyle(drawn[0] as HTMLElement).boxShadow).not.toBe('none')
-
-    await userEvent.keyboard(' ')
-    expect(onNow(canvasElement)).toEqual(['Monday'])
-
-    await userEvent.keyboard('{ArrowRight}{ArrowRight} ')
-    expect(onNow(canvasElement)).toEqual(['Monday', 'Wednesday'])
-
-    // Turning one off leaves the rest where they were.
-    await userEvent.keyboard('{ArrowLeft}{ArrowLeft} ')
-    expect(onNow(canvasElement)).toEqual(['Wednesday'])
+    const quarter = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item')).find(
+      (one) => one.textContent?.trim() === '25%',
+    )
+    await userEvent.click(quarter as HTMLElement)
+    await waitFor(() => expect(said(canvasElement)[5]).toBe('Saturday, 25%'))
+    await waitFor(() => expect(offered()).toEqual([]))
   },
 }
 
@@ -145,5 +135,20 @@ export const OneStopForTheWholeRow: Story = {
 
     await userEvent.tab()
     expect(chips(canvasElement)).toContain(document.activeElement)
+  },
+}
+
+/** The arrows walk the row, and the space bar offers the shares of the day on. */
+export const TheKeyboardWalksAndOffers: Story = {
+  args: { load: {} },
+  play: async ({ canvasElement }) => {
+    await userEvent.tab()
+    expect(document.activeElement).toBe(chips(canvasElement)[0])
+
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+    expect(document.activeElement).toBe(chips(canvasElement)[2])
+
+    await userEvent.keyboard(' ')
+    await waitFor(() => expect(offered()).toHaveLength(7))
   },
 }

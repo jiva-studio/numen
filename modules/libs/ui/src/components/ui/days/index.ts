@@ -1,3 +1,3 @@
 export { default as Days } from './Days.vue'
-export { lit, weekFrom, WEEK } from './week'
-export type { Day } from './week'
+export { shared, shareOn, weekFrom, SHARES, WEEK, WHOLE } from './week'
+export type { Day, Shares } from './week'

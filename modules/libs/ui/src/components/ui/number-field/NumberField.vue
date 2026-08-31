@@ -5,6 +5,9 @@
  * What was typed stands as it was typed: a line that is not a number in the
  * bounds is marked and hands nothing on, and the number in force is written
  * back only once the field is left.
+ *
+ * Typing and leaving are two things said, so a caller can follow the digits
+ * and act on the number the field comes to rest at.
  */
 import { computed, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
@@ -42,6 +45,11 @@ const props = withDefaults(
 /** The number in force. An empty field holds none. */
 const model = defineModel<number | null>({ default: null })
 
+const raises = defineEmits<{
+  /** The field left, at the number that stands there once it is settled. */
+  settles: [value: number | null]
+}>()
+
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
 /** What stands in the field, which is what was typed until the field is left. */
@@ -78,6 +86,7 @@ const settle = () => {
   const value = numberOf(typed.value)
   model.value = value === null ? null : clamped(value, bounds.value)
   typed.value = written(model.value)
+  raises('settles', model.value)
 }
 
 const move = (by: number) => {
@@ -110,8 +119,12 @@ defineExpose({
     :aria-invalid="refused || undefined"
     :class="
       cn(
-        'h-action w-full rounded-node border border-field-rule bg-field px-3',
-        'font-sans text-base text-ink tabular-nums placeholder:text-hushed',
+        'w-full rounded-tight border border-field-rule bg-field',
+        // A field keeps a line box of its own, taller than the digits in it,
+        // so the block padding is set under the inline padding by that
+        // difference. The four gaps read alike and the box is one row tall.
+        'px-2.5 py-1.5',
+        'font-sans text-base leading-none text-ink tabular-nums placeholder:text-hushed',
         'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
         'aria-invalid:border-alarm aria-invalid:text-alarm',
         'disabled:cursor-not-allowed disabled:opacity-50',

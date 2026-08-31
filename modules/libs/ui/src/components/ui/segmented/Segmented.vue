@@ -38,7 +38,7 @@ const chose = (value: unknown) => {
     :loop="true"
     :class="
       cn(
-        'inline-flex items-center gap-px rounded-node border border-rule bg-raised p-px',
+        'inline-flex items-center gap-px rounded-tight border border-rule bg-raised p-px',
         props.class,
       )
     "
@@ -50,8 +50,12 @@ const chose = (value: unknown) => {
       :value="choice.id"
       :class="
         cn(
-          'inline-flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded-node px-3',
-          'font-sans text-base font-medium text-ink',
+          'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-tight',
+          // A line box is taller than the letters standing in it, so the text
+          // is nearer the top and foot than the box padding says. The sides
+          // are set wider by that difference, and the four gaps read alike.
+          'px-2.5 py-2',
+          'font-sans text-base font-medium leading-none text-ink',
           'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
           'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
           'data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink',

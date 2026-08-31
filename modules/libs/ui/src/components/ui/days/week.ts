@@ -33,8 +33,25 @@ export const weekFrom = (id: string, week: readonly Day[] = WEEK): readonly Day[
   return [...week.slice(at), ...week.slice(0, at)]
 }
 
-/** The days that are on, in the order the week is drawn in. */
-export const lit = (chosen: readonly string[], week: readonly Day[] = WEEK): readonly string[] => {
-  const among = new Set(chosen)
-  return week.filter((day) => among.has(day.id)).map((day) => day.id)
+/** What each day of the week carries, under the identifier of the day. */
+export type Shares = Readonly<Record<string, number>>
+
+/** The whole of a day, which a day nothing was said about carries. */
+export const WHOLE = 100
+
+/** The shares on offer, from nothing to the whole of a day. */
+export const SHARES: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE]
+
+/** What one day carries, which is the whole of it unless it says otherwise. */
+export const shareOn = (shares: Shares, day: string): number => shares[day] ?? WHOLE
+
+/**
+ * The shares with one day put at a share, and a day back at the whole dropped:
+ * what carries the whole of a day is what nothing was said about.
+ */
+export const shared = (shares: Shares, day: string, share: number): Shares => {
+  const out: Record<string, number> = { ...shares }
+  if (share === WHOLE) delete out[day]
+  else out[day] = share
+  return out
 }

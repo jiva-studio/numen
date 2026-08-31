@@ -31,14 +31,17 @@ export type { Bounds } from './components/ui/number-field'
 
 export { Switch } from './components/ui/switch'
 
+/** One value along a track, moved by a handle. */
+export { Slider } from './components/ui/slider'
+
 /** Two to four choices side by side, one of them chosen. */
 export { Segmented } from './components/ui/segmented'
 export type { SegmentedChoice } from './components/ui/segmented'
 
-/** The days of the week, each on or off on its own. */
+/** The days of the week, each carrying the share of a day it takes. */
 export { Days } from './components/ui/days'
-export { weekFrom, WEEK } from './components/ui/days'
-export type { Day } from './components/ui/days'
+export { shared, shareOn, weekFrom, SHARES, WEEK, WHOLE } from './components/ui/days'
+export type { Day, Shares } from './components/ui/days'
 
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */

@@ -22,6 +22,7 @@
   --text-small--line-height: var(--numen-line-height);
 
   --radius-node: var(--numen-radius);
+  --radius-tight: var(--numen-radius-tight);
   --radius-panel: var(--numen-radius-panel);
   --radius-bubble: var(--numen-radius-bubble);
   --radius-field: var(--numen-radius-field);
