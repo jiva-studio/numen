@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const { counted, waits } = vi.hoisted(() => ({
   /** What the front door answers: two vaults, each with a deck owing. */
   counted: {
+    day: '2026-08-31',
     vaults: [
       {
         vaultId: 'physics',
@@ -21,6 +22,7 @@ const { counted, waits } = vi.hoisted(() => ({
         due: 1,
         new: 1,
         decks: [{ deck: 'decks/Heat.md', faces: 2, due: 1, new: 1 }],
+        presets: [],
         unread: '',
       },
       {
@@ -31,6 +33,7 @@ const { counted, waits } = vi.hoisted(() => ({
         due: 2,
         new: 0,
         decks: [{ deck: 'decks/Words.md', faces: 2, due: 2, new: 0 }],
+        presets: [],
         unread: '',
       },
     ],
@@ -48,6 +51,7 @@ vi.mock('./core', async (original) => ({
     moving: () => waits(),
     asking: async () => ({ unreachable: '' }),
     reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
+    scheduling: async () => ({ preset: undefined }),
   },
 }))
 
