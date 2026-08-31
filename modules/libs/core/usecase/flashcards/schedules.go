@@ -274,7 +274,7 @@ func (u Schedules) filled(
 func projected(
 	d history.Day, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
-	return history.ReplayUnder(d, asks.under, held.Answers)
+	return held.Given().Replay(d, asks.under)
 }
 
 // remembered is what was worked out last time, when it was worked out from the

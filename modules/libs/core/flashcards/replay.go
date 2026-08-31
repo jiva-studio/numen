@@ -44,14 +44,30 @@ func By(s Scheduler) Under {
 
 // ReplayUnder works out where a history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
+func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
+	return Give(answers).Replay(d, by)
+}
+
+// Given is a vault's answers in the order they were given: nothing a line takes
+// back, one line to an identifier, earliest first.
+//
+// One request asks several things of one history — where it leaves each card,
+// what each day came to, what a preset spent. The order is worked out once and
+// handed to each of them.
+type Given []Answer
+
+// Give puts a vault's answers in the order they were given.
+func Give(answers []Answer) Given { return given(answers) }
+
+// Replay works out where this history leaves every card face, each under the
+// scheduler its own preset asks for and on the day its own preset puts it.
 //
 // The days the answers have already filled are what the next card is placed
-// against, so the answers are walked in the order they were given here as
-// everywhere else.
-func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
+// against.
+func (g Given) Replay(d Day, by Under) map[CardFace]Schedule {
 	out := make(map[CardFace]Schedule)
 	on := Spreading(d)
-	for _, a := range given(answers) {
+	for _, a := range g {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
 		next.Due = one.Preset.Places(on, a.At, next.Due)
@@ -79,8 +95,13 @@ type Retention struct {
 // It is worked out with the replay and not beside it, because whether a card
 // face was spaced is a thing only the answers before it can say.
 func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
+	return Give(answers).Retained(by, d)
+}
+
+// Retained is the same over a history already in order.
+func (g Given) Retained(by Scheduler, d Day) map[string]Retention {
 	out := make(map[string]Retention)
-	replayed(by, answers, func(before Schedule, a Answer) {
+	g.replayed(by, func(before Schedule, a Answer) {
 		if !by.Spaced(before) {
 			return
 		}
@@ -100,8 +121,14 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
 func replayed(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFace]Schedule {
+	return Give(answers).replayed(by, each)
+}
+
+func (g Given) replayed(
+	by Scheduler, each func(before Schedule, a Answer),
+) map[CardFace]Schedule {
 	out := make(map[CardFace]Schedule)
-	for _, a := range given(answers) {
+	for _, a := range g {
 		before := out[a.CardFace]
 		if each != nil {
 			each(before, a)

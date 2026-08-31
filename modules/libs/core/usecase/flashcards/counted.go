@@ -144,6 +144,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 		}
 	}
 
+	held.order = ordered(held.Answers)
 	u.remember(ctx, v, now)
 	out.Streak = history.Streak(u.Day, out.Days, u.now())
 
@@ -232,7 +233,7 @@ func (u Counted) ahead(
 		}
 		falls[u.Day.Names(s.Due)]++
 	}
-	return falls, history.Retained(u.Schedules.By, u.Day, held.Answers), nil
+	return falls, held.Given().Retained(u.Schedules.By, u.Day), nil
 }
 
 // remembered is what was counted last time, by the name of the run it was

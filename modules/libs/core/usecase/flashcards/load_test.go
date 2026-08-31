@@ -158,6 +158,12 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	}
 }
 
+// logRead is this vault's answers, read the way a request reads them.
+func (l loaded) logRead(tb testing.TB) (flashcards.Held, error) {
+	tb.Helper()
+	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
+}
+
 // counting runs one request with the counters cleared, and says what it asked.
 func (l loaded) counting(tb testing.TB, run func() error) loadCounts {
 	tb.Helper()

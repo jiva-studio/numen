@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -26,6 +27,9 @@ type Log struct{ Stores port.DerivedStores }
 // Held is what a vault's log came to.
 type Held struct {
 	Answers []history.Answer
+	// order is what Given hands out, worked out at the first asking and kept
+	// for the rest of them.
+	order func() history.Given
 	// Files are what the answers were read from, sorted by name. What tells a
 	// cache it is out of date is any difference in this list.
 	//
@@ -36,6 +40,23 @@ type Held struct {
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
 	Skipped int
+}
+
+// Given is the answers in the order they were given: nothing a line takes back,
+// one line to an identifier, earliest first.
+//
+// One request asks several things of one reading, and each of them reads this
+// order. It is worked out once for the reading and handed to all of them.
+func (h Held) Given() history.Given {
+	if h.order == nil {
+		return history.Give(h.Answers)
+	}
+	return h.order()
+}
+
+// ordered is a reading that works its order out at the first asking.
+func ordered(answers []history.Answer) func() history.Given {
+	return sync.OnceValue(func() history.Given { return history.Give(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is
@@ -75,6 +96,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 		out.Answers = append(out.Answers, ran.Answers...)
 		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
 	}
+	out.order = ordered(out.Answers)
 	return out, nil
 }
 
