@@ -11,8 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// studied is a vault of one preset, one deck of thirty cards pointing at it,
-// and a second deck pointing nowhere.
+// studied is a vault of one preset, one deck of as many cards pointing at it,
+// and a second deck pointing nowhere. Nobody has answered any of it, which is
+// what a person meets the first time they open one of these controls.
 func studied(cards int) map[string]string {
 	deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
 	for i := range cards {
@@ -30,6 +31,30 @@ func studied(cards int) map[string]string {
 	}
 }
 
+// answering is that vault with a history behind it: a dozen of its card faces
+// answered three times each in the months before the day the curves are drawn
+// on, and the rest of them unbegun.
+//
+// A curve is worked out from what an answer has cost in this vault, so a
+// fixture nobody has answered draws every curve at the default and says nothing
+// about the arithmetic. The times are the shape answer times have — a middle of
+// a few seconds and a tail of interruptions.
+func answering(t *testing.T, cards int) vaulted {
+	t.Helper()
+	s := opened(t, studied(cards))
+	for _, days := range []int{150, 120, 90} {
+		record := s.run(t, noon.AddDate(0, 0, -days))
+		for i := range min(cards, 12) {
+			took := 4 * time.Second
+			if i%7 == 0 {
+				took = 50 * time.Second
+			}
+			answer(t, record, mark(i), took)
+		}
+	}
+	return s
+}
+
 // curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.Curves {
 	return flashcards.Curves{
@@ -45,7 +70,7 @@ var noon = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 // A curve is asked for once per position of a control a person is dragging, and
 // none of those asks writes anything.
 func TestACurveWritesNoScheduleCache(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
@@ -59,7 +84,7 @@ func TestACurveWritesNoScheduleCache(t *testing.T) {
 // The whole range of the goal is worked out in one pass: a control moving over
 // it reads a finished array and computes nothing.
 func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -92,7 +117,7 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 // with it. Nothing is suggested: what a target leaves in the head climbs the
 // whole way, and a mark on the most of it would stand at the far end every time.
 func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalRetention, Retention: 0.87, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 	}
@@ -133,7 +158,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 // always give themselves longer. A later day never costs more than an earlier
 // one.
 func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -190,7 +215,7 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 // It is the pace that thins, so it is said of the days a pace can reach. A day
 // out of reach is handed the whole material at once whatever day it is.
 func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -231,7 +256,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 // material is through by the day the preset aims at. The card counts standing
 // beside the date take no part in it.
 func TestADateIsMetAtWhateverItCosts(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
@@ -266,7 +291,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 // A day that has passed is a preset scheduling nothing, and there is no curve
 // over it.
 func TestADayThatHasPassedHasNoCurve(t *testing.T) {
-	s := opened(t, studied(4))
+	s := answering(t, 4)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -284,7 +309,7 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 // The load each day of the week carries and an even load are projected, so what
 // stands where the preset stands is worked out with them applied.
 func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalRetention, Retention: 0.9,
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -320,7 +345,7 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 // A curve is over the cards of the decks pointing at this preset, and no
 // others. The vault's other deck is another preset's business.
 func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	mine, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -345,7 +370,7 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 func TestACurveCarriesTheCardFacesUnderThePreset(t *testing.T) {
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	full, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
 		t.Fatal(err)
@@ -372,7 +397,7 @@ func TestACurveCarriesTheCardFacesUnderThePreset(t *testing.T) {
 // Nothing about a curve is written to the vault: it is shown beside a control,
 // and what the control settles is written by the person moving it.
 func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
-	s := opened(t, studied(4))
+	s := answering(t, 4)
 	before := read(t, s.vault, "Sanskrit.md")
 	deck := read(t, s.vault, "decks/Roots.md")
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
@@ -447,7 +472,7 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 // the range would otherwise be asked how long a backlog takes to clear over a
 // horizon of a day or two and answer that it never does.
 func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 3).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Retention: 0.9,
@@ -497,7 +522,7 @@ func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 // A day at none of the load that is not today leaves the curve where it was.
 // What it changes is what those days do further out, on the band beside it.
 func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	if noon.Weekday() == time.Saturday {
 		t.Fatal("the day these curves are drawn on is the day being given nothing")
@@ -589,7 +614,7 @@ func learnedAt(t *testing.T, s vaulted, p history.Preset) []int {
 // is spent, so no budget, no share of the day and no share of the week can
 // reach it. What a day's budget is spent on cannot reach it either.
 func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	// Every card answered on days going back, and nothing asked for months: the
 	// intervals are long and the chance of recalling them today is not.
 	for back := 240; back >= 180; back -= 15 {
@@ -654,7 +679,7 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 // It is a prediction under a stated assumption — that every card asked comes
 // back — so it is read off a run of its own and not off the run beside it.
 func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	for back := 60; back >= 15; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
 		for i := range 20 {
@@ -708,7 +733,7 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 // beneath it, so those numbers are the day they named and not the day beside
 // it.
 func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	for _, days := range []int{1, 2, 7, 14, 21, 30, 90, 365} {
 		p := history.Preset{
 			Goal: history.GoalDate, By: noon.AddDate(0, 0, days).Truncate(24 * time.Hour),
@@ -750,7 +775,7 @@ func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
 // horizon is a debt nobody was asked to pay and a share left in the head is a
 // material nobody was asked about.
 func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 30).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -785,7 +810,7 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 // it names, so every place to the right of that day drew a material falling out
 // of the head while the mark beside it said the day was met.
 func TestAPlaceOfADateIsOneRun(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 5).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -811,7 +836,7 @@ func TestAPlaceOfADateIsOneRun(t *testing.T) {
 // A day at none of the load is no sitting under a date either, so the curve
 // draws the day after it.
 func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	if noon.Weekday() != time.Monday {
 		t.Fatalf("the day these curves are drawn on is a %v", noon.Weekday())
 	}
@@ -839,7 +864,7 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 // asked nothing else, so a range whose first day leaves the whole material out
 // of reach was answered with tomorrow.
 func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -893,7 +918,7 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 // picture. An empty picture is what a day already past says, and the two are
 // not one answer.
 func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
-	s := opened(t, studied(2))
+	s := answering(t, 2)
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(20, 0, 0).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
@@ -965,7 +990,7 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 // grid's nearest place, so a day of fifteen minutes was drawn as a day of
 // fourteen and a day of one minute as a day of two.
 func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
-	s := opened(t, studied(30))
+	s := answering(t, 30)
 	before := s.run(t, noon.AddDate(0, 0, -30))
 	for i := range 30 {
 		answer(t, before, mark(i), 6*time.Second)

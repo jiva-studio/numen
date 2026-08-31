@@ -885,99 +885,192 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	}
 }
 
-// The sitting and the projection are one arithmetic.
+// The sitting and the curve are one arithmetic.
 //
-// What a day admits is worked out in one place, so what a deck screen offers
-// today and what the curve draws for that same first day are one number, under
-// every goal.
-func TestTheSittingAndTheProjectionAgreeOnTheDay(t *testing.T) {
+// What a day admits is worked out in one place, so the count the curve draws at
+// the value the preset holds is the count the deck screen hands a person on the
+// day the curve draws. That day is the next one the preset admits: a day at none
+// of the load is no sitting at all, so the curve draws the day after it.
+func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
+	// A day of the week the vault's own preset is read on, so a light Saturday
+	// and a dead Saturday are read where a person meets them.
+	const day = 90
+
 	for _, one := range []struct {
 		what  string
 		front string
-	}{
-		{"minutes", "goal: minutes_a_day\nminutes_a_day: 34\n" +
-			"new_a_day: 12\nreviews_a_day: 0\n"},
-		{"retention", "goal: retention\nretention: 0.9\n" +
-			"new_a_day: 5\nreviews_a_day: 7\nminutes_a_day: 0\n"},
-		// A date the rule cannot be met by, so the pace is the whole material at
-		// once, and one it can, so the pace is a share of it a day.
-		{"a date", "goal: by_date\nby_date: 2026-09-14\n" +
-			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"},
-		{"a date it can meet", "goal: by_date\nby_date: 2026-11-30\n" +
-			"learned: interval\ninterval: 5\n" +
-			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"},
-	} {
-		s := opened(t, map[string]string{
-			"Term.md":     term,
-			"On.md":       preset(one.front),
-			"decks/On.md": deckOf("On", 40, 0),
+		cards int
+		gave  func(t *testing.T, s vaulted)
+	}{{
+		what:  "caught up",
+		front: "goal: minutes_a_day\nminutes_a_day: 3\nnew_a_day: 0\n",
+		cards: 20,
+		gave:  answersAt(20, -1, history.Good),
+	}, {
+		what:  "a month away",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 5\n",
+		cards: 40,
+		gave:  answersAt(25, -30, history.Good),
+	}, {
+		what:  "all new",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 40,
+	}, {
+		what:  "answered once",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  answersAt(40, -20, history.Good),
+	}, {
+		what:  "one card",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 1,
+	}, {
+		what:  "an empty deck",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 0,
+	}, {
+		what:  "all Again",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Again),
+	}, {
+		what:  "all Easy",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Easy),
+	}, {
+		what:  "a huge backlog",
+		front: "goal: minutes_a_day\nminutes_a_day: 5\nnew_a_day: 6\n",
+		cards: 120,
+		gave:  answersAt(120, -60, history.Good),
+	}, {
+		what:  "a budget too small",
+		front: "goal: minutes_a_day\nminutes_a_day: 1\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what:  "a budget larger than the material",
+		front: "goal: minutes_a_day\nminutes_a_day: 1440\nnew_a_day: 9999\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what:  "a light day",
+		front: "goal: minutes_a_day\nminutes_a_day: 4\nnew_a_day: 6\nload: {sat: 50}\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what:  "a dead day",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\nload: {sat: 0}\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what: "every day dead",
+		front: "goal: minutes_a_day\nminutes_a_day: 2\nnew_a_day: 6\n" +
+			"load: {mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0}\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what:  "paused",
+		front: "goal: minutes_a_day\nminutes_a_day: 0\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  answersAt(20, -30, history.Good),
+	}, {
+		what:  "a day already partly spent",
+		front: "goal: minutes_a_day\nminutes_a_day: 3\nnew_a_day: 6\n",
+		cards: 40,
+		gave:  spentToday(20),
+	}, {
+		// The counts close a day steered by a date, and the minutes never do.
+		what: "counting cards, on a day already partly spent",
+		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
+			"counts: cards\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
+			saturday.AddDate(0, 0, day).Format(history.Named)),
+		cards: 40,
+		gave:  spentToday(20),
+	}, {
+		what: "counting showings, on a day already partly spent",
+		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
+			"counts: shows\nnew_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
+			saturday.AddDate(0, 0, day).Format(history.Named)),
+		cards: 40,
+		gave:  spentToday(20),
+	}, {
+		what: "a date",
+		front: fmt.Sprintf("goal: by_date\nby_date: %s\nlearned: interval\ninterval: 5\n"+
+			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n",
+			saturday.AddDate(0, 0, day).Format(history.Named)),
+		cards: 40,
+		gave:  answersAt(15, -30, history.Good),
+	}} {
+		t.Run(one.what, func(t *testing.T) {
+			s := opened(t, map[string]string{
+				"Term.md":     term,
+				"On.md":       preset(one.front),
+				"decks/On.md": deckOf("On", one.cards, 0),
+			})
+			if one.gave != nil {
+				one.gave(t, s)
+			}
+
+			read, err := s.presets.Of(t.Context(), s.vault, "decks/On.md")
+			if err != nil {
+				t.Fatal(err)
+			}
+			curve, err := s.curves(saturday).Execute(
+				t.Context(), s.vault, read.Path, read.Preset)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if curve.Now.At < 0 {
+				t.Fatalf("the value the preset holds stands nowhere on the grid %v", curve.Grid)
+			}
+
+			drawn := curve.At[curve.Now.At].Reviews
+			offers := asked(s.sittingAt(t, today, admitting(read.Preset, today, saturday)))
+			if drawn != float64(offers) {
+				t.Errorf("the curve draws %v and the sitting hands over %d", drawn, offers)
+			}
 		})
+	}
+}
 
-		// Fifteen cards answered long enough ago to be owed today, and nothing
-		// answered today.
-		before := s.run(t, saturday.AddDate(0, 0, -30))
-		for i := range 15 {
-			answer(t, before, mark(i), 6*time.Second)
+// admitting is the next day of review this preset admits, counting from the day
+// holding now, which is the day the curve draws. A preset admitting no day at
+// all is answered with the day it was asked about.
+func admitting(p history.Preset, day history.Day, now time.Time) time.Time {
+	for range 8 {
+		if !p.Admits(day, now, history.Spent{}, history.Left{}).Paused {
+			return now
 		}
+		now = day.Ends(now)
+	}
+	return now
+}
 
-		offers := asked(s.sittingAt(t, today, saturday))
-		if offers == 0 {
-			t.Fatalf("steered by its %s the day offered nothing to compare", one.what)
-		}
-		if projects := projected(t, s, saturday, "decks/On.md"); projects != offers {
-			t.Errorf("steered by its %s the sitting offers %d and the projection draws %d",
-				one.what, offers, projects)
+// answersAt is as many card faces answered this way, this many days before the
+// day the vault is sat.
+func answersAt(cards, days int, r history.Rating) func(*testing.T, vaulted) {
+	return func(t *testing.T, s vaulted) {
+		t.Helper()
+		before := s.run(t, saturday.AddDate(0, 0, days))
+		for i := range cards {
+			said(t, before, mark(i), r, 6*time.Second)
 		}
 	}
 }
 
-// projected is how many cards the projection puts on the first day it runs,
-// over the cards of one deck, built the way a curve is built.
-func projected(t *testing.T, s vaulted, now time.Time, deck string) int {
-	t.Helper()
-	ctx := t.Context()
-
-	read, err := s.presets.Of(ctx, s.vault, deck)
-	if err != nil {
-		t.Fatal(err)
-	}
-	held, err := flashcards.Log{Stores: s.logs}.Read(ctx, s.vault)
-	if err != nil {
-		t.Fatal(err)
-	}
-	standing, err := s.standings.Execute(ctx, s.vault)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	by := history.NewFSRSAt(read.Preset.Retention)
-	schedules := history.ReplayUnder(today, history.By(by), held.Answers)
-	at := make(map[history.CardFace]history.Schedule)
-	under := make(map[history.CardFace]string)
-	unseen := 0
-	for _, card := range standing {
-		if card.Deck != deck {
-			continue
+// spentToday is a day a person is already partway through: card faces owed from
+// a month back, some of them answered twice since the day opened.
+func spentToday(cards int) func(*testing.T, vaulted) {
+	return func(t *testing.T, s vaulted) {
+		t.Helper()
+		answersAt(cards, -30, history.Good)(t, s)
+		this := s.run(t, saturday.Add(-time.Hour))
+		for i := range 4 {
+			again(t, this, mark(i), 5*time.Second)
+			answer(t, this, mark(i), 5*time.Second)
 		}
-		under[card.CardFace] = read.Path
-		s, answered := schedules[card.CardFace]
-		if !answered {
-			unseen++
-			continue
-		}
-		at[card.CardFace] = s
 	}
-
-	cost, costed := history.CostedUnder(history.NewFSRS(), held.Answers, under)[read.Path]
-	if !costed {
-		cost = history.DefaultCost
-	}
-	run := history.Simulation{By: by, Day: today, Cost: cost, Days: 1}
-	ran, err := run.Run(ctx, now, read.Preset, at, unseen)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return ran.Load[0]
 }
 
 // backlogged is a vault whose preset has a debt before it and material it has
