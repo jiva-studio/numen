@@ -1,6 +1,7 @@
 package wire
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -103,5 +104,94 @@ func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
 				t.Errorf("%v beside %v came back as %v", rule, counts, back.GetLearned())
 			}
 		}
+	}
+}
+
+// Every setting of a preset goes out on the schema and comes back as it was.
+//
+// A setting dropped on either side is a person moving a control, watching the
+// value never leave the window, and finding the note written without it.
+func TestEverySettingComesBackAsItWentOut(t *testing.T) {
+	was := history.Preset{
+		Goal:        history.GoalDate,
+		By:          time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
+		MinutesADay: 35,
+		NewADay:     8,
+		ReviewsADay: 45,
+		Retention:   0.87,
+		Rule:        history.RuleRetention,
+		Interval:    14,
+		Counts:      history.CountsShows,
+		Backlog:     40,
+		Load:        map[time.Weekday]int{time.Monday: 80, time.Saturday: 50, time.Sunday: 0},
+		EvenLoad:    true,
+	}
+
+	got, err := SettingsIn(SettingsOf(was))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Goal != was.Goal {
+		t.Errorf("goal came back as %q", got.Goal)
+	}
+	if !got.By.Equal(was.By) {
+		t.Errorf("by_date came back as %s", got.By.Format(history.Named))
+	}
+	if got.MinutesADay != was.MinutesADay {
+		t.Errorf("minutes_a_day came back as %d", got.MinutesADay)
+	}
+	if got.NewADay != was.NewADay {
+		t.Errorf("new_a_day came back as %d", got.NewADay)
+	}
+	if got.ReviewsADay != was.ReviewsADay {
+		t.Errorf("reviews_a_day came back as %d", got.ReviewsADay)
+	}
+	if got.Retention != was.Retention {
+		t.Errorf("retention came back as %g", got.Retention)
+	}
+	if got.Rule != was.Rule {
+		t.Errorf("learned came back as %q", got.Rule)
+	}
+	if got.Interval != was.Interval {
+		t.Errorf("interval came back as %d", got.Interval)
+	}
+	if got.Counts != was.Counts {
+		t.Errorf("counts came back as %q", got.Counts)
+	}
+	if got.Backlog != was.Backlog {
+		t.Errorf("backlog came back as %d", got.Backlog)
+	}
+	if got.EvenLoad != was.EvenLoad {
+		t.Errorf("even_load came back as %t", got.EvenLoad)
+	}
+	if !reflect.DeepEqual(got.Load, was.Load) {
+		t.Errorf("load came back as %v", got.Load)
+	}
+	// A setting neither this test nor the schema names yet.
+	if !reflect.DeepEqual(got, was) {
+		t.Errorf("the preset came back as %+v, and went out as %+v", got, was)
+	}
+}
+
+// A goal, a rule and what a budget counts arriving unspecified are each not a
+// value.
+//
+// A client that names none of them is one that has not said, and the settings
+// are weighed against what a preset may hold before anything is written.
+func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
+	p, err := SettingsIn(&v1.Settings{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if history.KnownGoal(p.Goal) {
+		t.Errorf("an unspecified goal was read as %q", p.Goal)
+	}
+	if history.KnownRule(p.Rule) {
+		t.Errorf("an unspecified rule was read as %q", p.Rule)
+	}
+	if history.KnownCounts(p.Counts) {
+		t.Errorf("an unspecified counts was read as %q", p.Counts)
 	}
 }
