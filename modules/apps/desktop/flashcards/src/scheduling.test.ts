@@ -7,6 +7,7 @@ import {
   holds,
   leftWords,
   named,
+  opens,
   paused,
   scheduling,
   spent,
@@ -250,6 +251,29 @@ describe('what sitting down to a preset would ask', () => {
 
   it('says nothing fell due where the day held none of its cards', () => {
     expect(leftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
+  })
+})
+
+// The row of a deck and the letter drawn on it are one act, and both ask this.
+describe('whether sitting down to a deck is offered', () => {
+  const deck = (due: number, fresh = 0) => ({ deck: 'decks/Words.md', faces: 20, due, new: fresh })
+  const by = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
+
+  it('is offered where the deck owes and its preset schedules something', () => {
+    expect(opens(deck(3), by(preset()))).toBe(true)
+    expect(opens(deck(0, 1), by(preset()))).toBe(true)
+  })
+
+  it('is refused where the deck owes nothing', () => {
+    expect(opens(deck(0), by(preset()))).toBe(false)
+  })
+
+  it('is refused where the preset scheduling it schedules nothing', () => {
+    expect(opens(deck(3), by(preset({ paused: 'no cards a day' })))).toBe(false)
+  })
+
+  it('is offered where nothing says which preset schedules the deck', () => {
+    expect(opens(deck(3), by())).toBe(true)
   })
 })
 
@@ -568,6 +592,55 @@ describe('which preset schedules each deck', () => {
     )
 
     expect(one.presets.value[0]?.wrong).toBe('`new_a_day` is not a number')
+  })
+
+  // A build whose count answers no preset leaves what the day holds to the
+  // settings the preset itself was read with.
+  it('falls back to the settings for what the day holds', async () => {
+    const one = scheduling({
+      presets: answering({
+        'decks/Words.md': {
+          path: 'Sanskrit.md',
+          title: 'Sanskrit',
+          settings: settings({ newADay: 7, reviewsADay: 33, minutesADay: 12 }),
+        },
+      }),
+    })
+
+    await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+
+    expect(one.presets.value[0]?.budget).toStrictEqual({ new: 7, reviews: 33, minutes: 12 })
+  })
+
+  // A person who moves on while the presets of the vault they left are still
+  // being asked would otherwise be handed that vault's answer over this one.
+  it('holds no preset of a vault left while its presets were being asked', async () => {
+    let answer = () => {}
+    const asked = new Promise<void>((then) => {
+      answer = then
+    })
+    const one = scheduling({
+      presets: {
+        async scheduling() {
+          await asked
+          return {
+            preset: {
+              path: 'Sanskrit.md',
+              title: 'Sanskrit',
+              settings: settings(),
+              problems: [],
+            },
+          }
+        },
+      },
+    })
+
+    const reading = one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
+    one.forget()
+    answer()
+    await reading
+
+    expect(one.presets.value).toHaveLength(0)
   })
 
   it('holds no preset for a vault a person has left', async () => {
