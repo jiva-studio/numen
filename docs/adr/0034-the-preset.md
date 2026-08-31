@@ -73,6 +73,8 @@ Under `learned: interval` a card is learned once the interval it is sent away fo
 
 **A day the whole material is learned is named only where there is one.** An interval is passed once and stays passed, so the day the last card passes it is a day. A chance of recall is a level: a card falls under the target as it fades and rises over it the moment it is answered, so no day holds every card at once, and none is named. Nothing stands in for it.
 
+**A control that moves the scheduler names no day either.** The day a card passes an interval is the reviews it takes to get there times the space between them. A retention target moves both: it shortens every interval and it decides how many reviews the card wants, and a review is a whole number. So over the range of that one control the day steps up wherever another review is wanted and falls away between the steps — every value of it correct, and the line between them not a line. The share of the material learned over the run is what stands there instead. This is the world's arithmetic and not a fault to be smoothed: a figure is drawn where it is steady in the control beneath it, and elsewhere it is not drawn.
+
 The scheduler's own reckoning is another thing and carries another word: a card it has stopped sending minutes away and begun sending days away is **spaced**, and retention is measured over the answers to spaced cards. No setting reaches that.
 
 ### A date aims at that rule, tested on the day it names

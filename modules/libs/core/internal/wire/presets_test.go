@@ -69,3 +69,39 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 		t.Errorf("a place learned on day 12 carries %+v", at.Learns)
 	}
 }
+
+// What a day's budget is spent on and what counts as learned are two settings,
+// and they are carried apart.
+//
+// The two enums number their values alike — cards and an interval are both one,
+// shows and a chance of recall are both two — so a message that carried one in
+// the other's field would be read without complaint. Each value of each is put
+// through and read back beside every value of the other.
+func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
+	for _, counts := range []v1.Counts{v1.Counts_COUNTS_CARDS, v1.Counts_COUNTS_SHOWS} {
+		for _, rule := range []v1.Rule{v1.Rule_RULE_INTERVAL, v1.Rule_RULE_RETENTION} {
+			p, err := SettingsIn(&v1.Settings{
+				Goal: v1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
+				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+				Retention: 0.9, Interval: 21,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.Counts != CountsIn(counts) {
+				t.Errorf("%v beside %v was read as a budget spent on %q", counts, rule, p.Counts)
+			}
+			if p.Rule != RuleIn(rule) {
+				t.Errorf("%v beside %v was read as a rule of %q", rule, counts, p.Rule)
+			}
+
+			back := SettingsOf(p)
+			if back.GetCounts() != counts {
+				t.Errorf("%v beside %v came back as %v", counts, rule, back.GetCounts())
+			}
+			if back.GetLearned() != rule {
+				t.Errorf("%v beside %v came back as %v", rule, counts, back.GetLearned())
+			}
+		}
+	}
+}

@@ -2,6 +2,7 @@ package flashcards_test
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -551,5 +552,137 @@ func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
 	// card face that can be learned by it is, and there are none.
 	if !got.At[0].Enough {
 		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
+	}
+}
+
+// learnedAt is what a curve of these settings says stands learned, at every
+// place of it, without repeating a value.
+func learnedAt(t *testing.T, s vaulted, p history.Preset) []int {
+	t.Helper()
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []int
+	for _, one := range got.At {
+		if len(out) == 0 || out[len(out)-1] != one.Learned {
+			out = append(out, one.Learned)
+		}
+	}
+	return out
+}
+
+// What stands learned today moves with the rule and its threshold, and with
+// nothing else.
+//
+// It is read off the schedules the vault already holds, before a projected day
+// is spent, so no budget, no share of the day and no share of the week can
+// reach it. What a day's budget is spent on cannot reach it either.
+func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
+	s := opened(t, studied(30))
+	// Every card answered on days going back, and nothing asked for months: the
+	// intervals are long and the chance of recalling them today is not.
+	for back := 240; back >= 180; back -= 15 {
+		record := s.run(t, noon.AddDate(0, 0, -back))
+		for i := range 30 {
+			answer(t, record, mark(i), 6*time.Second)
+		}
+	}
+
+	base := history.Defaults()
+	base.Goal, base.MinutesADay = history.GoalMinutes, 20
+	base.NewADay, base.ReviewsADay = 8, 45
+	base.Rule, base.Interval = history.RuleInterval, 21
+
+	standing := learnedAt(t, s, base)
+	if len(standing) != 1 || standing[0] == 0 {
+		t.Fatalf("the vault stands at %v learned, and there is nothing to hold still", standing)
+	}
+
+	for _, one := range []struct {
+		what  string
+		alter func(p *history.Preset)
+	}{
+		{"a budget spent on every showing", func(p *history.Preset) {
+			p.Counts = history.CountsShows
+		}},
+		{"a day spent on new cards first", func(p *history.Preset) { p.Backlog = 0 }},
+		{"an even load off", func(p *history.Preset) { p.EvenLoad = false }},
+		{"a Saturday at nothing", func(p *history.Preset) {
+			p.Load = map[time.Weekday]int{time.Saturday: 0}
+		}},
+		{"no new cards a day", func(p *history.Preset) { p.NewADay = 0 }},
+		{"one review a day", func(p *history.Preset) { p.ReviewsADay = 1 }},
+		{"a minute a day", func(p *history.Preset) { p.MinutesADay = 1 }},
+		{"a goal of retention", func(p *history.Preset) { p.Goal = history.GoalRetention }},
+	} {
+		p := base
+		one.alter(&p)
+		if got := learnedAt(t, s, p); !reflect.DeepEqual(got, standing) {
+			t.Errorf("%s moved what stands learned from %v to %v", one.what, standing, got)
+		}
+	}
+
+	// And what does move it: the rule, and the threshold that rule reads.
+	other := base
+	other.Rule = history.RuleRetention
+	if got := learnedAt(t, s, other); reflect.DeepEqual(got, standing) {
+		t.Errorf("a material months past its answers stands %v learned under both rules", got)
+	}
+	tighter := base
+	tighter.Interval = int(history.IntervalBounds.Most)
+	if got := learnedAt(t, s, tighter); got[0] >= standing[0] {
+		t.Errorf("an interval of a year learns %v of what an interval of three weeks learns %v",
+			got, standing)
+	}
+}
+
+// A curve of retention names no day the material is learned on.
+//
+// That control moves the scheduler: the day a card passes an interval is the
+// reviews it takes times the space between them, and a review is a whole one,
+// so the day steps wherever the range wants another and falls away between the
+// steps. A curve of minutes leaves the scheduler alone and names the day.
+func TestACurveOfRetentionNamesNoDayTheMaterialIsLearned(t *testing.T) {
+	s := opened(t, studied(30))
+	for back := 60; back >= 15; back -= 15 {
+		record := s.run(t, noon.AddDate(0, 0, -back))
+		for i := range 20 {
+			answer(t, record, mark(i), 6*time.Second)
+		}
+	}
+
+	p := history.Defaults()
+	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 4, 60
+	p.Rule, p.Interval = history.RuleInterval, 21
+
+	p.Goal = history.GoalRetention
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, one := range got.At {
+		if one.Learns != history.LearnsUnasked {
+			t.Errorf("at a target of %v the material is learned on day %d",
+				got.Grid[i], one.Learns)
+		}
+	}
+
+	p.Goal = history.GoalMinutes
+	minutes, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	named := false
+	for _, one := range minutes.At {
+		if one.Learns >= 0 {
+			named = true
+		}
+		if one.Learns == history.LearnsUnasked {
+			t.Error("a curve of minutes leaves the scheduler alone and names the day")
+		}
+	}
+	if !named {
+		t.Error("no place of a curve of minutes reaches the day the material is learned")
 	}
 }

@@ -248,7 +248,10 @@ message Point {
   // there. A material counted by a chance of recall stands at a level: a card
   // falls below the target as it fades and rises above it when it is answered,
   // so no day holds all of them at once. A preset aiming at a date is answered
-  // by that date, with `short` for the card faces it cannot carry there.
+  // by that date, with `short` for the card faces it cannot carry there. And a
+  // curve of retention moves the scheduler at every place, so the day steps
+  // wherever one more review is wanted to pass the interval and falls away
+  // between the steps; what a target buys there is `through` beside it.
   optional int32 learns = 12;
 
   // How many card faces cannot be learned by this day whatever the pace: the

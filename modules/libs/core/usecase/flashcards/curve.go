@@ -347,7 +347,15 @@ func (u Curves) retention(
 		if err != nil {
 			return Curve{}, err
 		}
-		out.At = append(out.At, point(ran))
+		place := point(ran)
+		// The day the whole material stands learned is not carried here. This
+		// control moves the scheduler itself: the day a card passes an interval
+		// is the reviews it takes times the space between them, and the reviews
+		// are a whole number, so the day steps up wherever the range wants one
+		// more of them and falls away between the steps. What a target buys over
+		// the run is the share learned, beside it.
+		place.Learns = history.LearnsUnasked
+		out.At = append(out.At, place)
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
