@@ -728,3 +728,52 @@ func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
 		t.Errorf("the note no longer opens: %v", err)
 	}
 }
+
+// A comment beside a key is the person's, on a key the application owns as much
+// as on any other. Every writer here keeps it.
+func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
+	raw := "---\n" +
+		"id: 01J8 # the one it was made with\n" +
+		"title: Old # what I called it\n" +
+		"minutes_a_day: 20 # twenty is plenty\n" +
+		"load: # the week\n" +
+		"  sat: 50 # half a Saturday\n" +
+		"tags: # what it is about\n" +
+		"  - study\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J9"); err != nil {
+		t.Fatalf("set identifier: %v", err)
+	}
+	if err := d.SetTitle("New"); err != nil {
+		t.Fatalf("set title: %v", err)
+	}
+	if err := d.SetValue("minutes_a_day", 35); err != nil {
+		t.Fatalf("set value: %v", err)
+	}
+	if err := d.SetMapping("load", []Entry{{Key: "sat", Value: 20}}); err != nil {
+		t.Fatalf("set mapping: %v", err)
+	}
+	if err := d.SetList("tags", []string{"study", "grammar"}); err != nil {
+		t.Fatalf("set list: %v", err)
+	}
+
+	got := string(d.Bytes())
+	for _, kept := range []string{
+		"id: 01J9 # the one it was made with\n",
+		"title: New # what I called it\n",
+		"minutes_a_day: 35 # twenty is plenty\n",
+		"load: # the week\n",
+		"sat: 20 # half a Saturday\n",
+		"tags: # what it is about\n",
+	} {
+		if !strings.Contains(got, kept) {
+			t.Errorf("want %q in\n%s", kept, got)
+		}
+	}
+}

@@ -90,8 +90,8 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 }
 
-// A preset note that is gone is a deck naming none, so the deck goes on being
-// scheduled by the defaults.
+// A preset note that is gone leaves the deck on the defaults, and the address
+// that reaches nothing is named against it.
 func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md":        term,
@@ -113,6 +113,9 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	}
 	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
 		t.Errorf("preset = %+v", held.Preset)
+	}
+	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "Sanskrit") {
+		t.Errorf("problems = %v, want the one naming the note that is gone", held.Problems)
 	}
 	// The defaults are steered by their minutes, and twenty of them hold every
 	// card the deck has left.
@@ -257,10 +260,11 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 }
 
 // A vault whose preset carries keys the application does not own, an identity,
-// and an owned key standing last in the block.
+// comments on a key it owns, and an owned key standing last in the block.
 var settled = map[string]string{
 	"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
-		"minutes_a_day: 20\ntags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
+		"# how long a day runs\nminutes_a_day: 20 # twenty is plenty\n" +
+		"tags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
 		"# Sanskrit\n\nGrammar and vocabulary.\n",
 	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
 }
@@ -311,9 +315,18 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 	if got := frontmatter(t, s, "Sanskrit.md"); !reflect.DeepEqual(got, want) {
 		t.Errorf("frontmatter = %v,\n           want %v", got, want)
 	}
-	if held := read(t, s.vault, "Sanskrit.md"); !strings.Contains(
-		held, "# Sanskrit\n\nGrammar and vocabulary.\n") {
+	held := read(t, s.vault, "Sanskrit.md")
+	if !strings.Contains(held, "# Sanskrit\n\nGrammar and vocabulary.\n") {
 		t.Errorf("the body is gone from\n%s", held)
+	}
+	// The comments are the person's, on a key the application owns as much as
+	// on any other.
+	for _, kept := range []string{
+		"# how long a day runs\n", "minutes_a_day: 35 # twenty is plenty\n",
+	} {
+		if !strings.Contains(held, kept) {
+			t.Errorf("%q is gone from\n%s", kept, held)
+		}
 	}
 }
 
