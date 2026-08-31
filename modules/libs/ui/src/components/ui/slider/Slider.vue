@@ -4,8 +4,9 @@
  * behind the handle.
  *
  * The handle is the stop on the way round the screen: the arrow keys move it a
- * step, and home and end take it to the ends. It draws no number of its own,
- * so what it stands at is read out beside it.
+ * step, the page keys ten, and home and end take it to the ends. A step out and
+ * a step back come to where they began, at either end as anywhere else. It
+ * draws no number of its own, so what it stands at is read out beside it.
  *
  * It stands inside the ends: a value past one of them, and a value the ends
  * move under, are brought in and handed on.
@@ -17,7 +18,7 @@
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/lib/utils'
-import { clamped, walks, type Bounds } from './track'
+import { clamped, walked, walks, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })
 
@@ -74,13 +75,21 @@ let walking = false
 let began = 0
 
 /**
- * The handle taken hold of by the keys. A key held down and a key struck again
- * are one walk, which is over when the key is let go of.
+ * The handle taken hold of by the keys, and moved to where the key leaves it. A
+ * key held down and a key struck again are one walk, which is over when the key
+ * is let go of.
  */
 const takes = (event: KeyboardEvent) => {
-  if (walking || !walks(event.key)) return
-  walking = true
-  began = handed
+  if (!walks(event.key)) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (props.disabled) return
+  if (!walking) {
+    walking = true
+    began = handed
+  }
+  const said = walked(event.key, standing.value, bounds.value, event.shiftKey)
+  if (said !== null) hands(said)
 }
 
 /** The handle let go of, at what the walk left it standing at. */
@@ -99,7 +108,7 @@ const settled = (value: number[]) => {
   const said = value[0]
   if (typeof said !== 'number') return
   hands(said)
-  if (!walking) raises('settles', said)
+  raises('settles', said)
 }
 </script>
 

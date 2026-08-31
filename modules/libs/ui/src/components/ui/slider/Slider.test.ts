@@ -100,6 +100,28 @@ describe('moving the handle', () => {
     expect(handed(least)).toEqual([])
   })
 
+  // A step out and a step back come to where they began, and the ceiling is a
+  // place the handle may stand whether or not the step lays one there.
+  it('gives back at the ceiling what a step took to get there', async () => {
+    const control = mountSlider({ modelValue: 9, min: 0, max: 10, step: 3 })
+    await handle(control).trigger('keydown', { key: 'ArrowRight' })
+    await control.setProps({ modelValue: 10 })
+    await handle(control).trigger('keydown', { key: 'ArrowLeft' })
+
+    expect(handed(control)).toEqual([10, 9])
+  })
+
+  it('moves ten steps under a page key, and under a key held with shift', async () => {
+    const control = mountSlider()
+    await handle(control).trigger('keydown', { key: 'PageUp' })
+    await control.setProps({ modelValue: 50 })
+    await handle(control).trigger('keydown', { key: 'PageDown' })
+    await control.setProps({ modelValue: 40 })
+    await handle(control).trigger('keydown', { key: 'ArrowRight', shiftKey: true })
+
+    expect(handed(control)).toEqual([50, 40, 50])
+  })
+
   it('hands nothing on while nobody may move it', async () => {
     const control = mountSlider({ disabled: true })
     await handle(control).trigger('keydown', { key: 'ArrowRight' })

@@ -118,6 +118,22 @@ export const UnderTheFloor: Story = {
   },
 }
 
+/**
+ * A ceiling the step lays no place on. The handle reaches it, and the step back
+ * comes to where the step up set out.
+ */
+export const AStepAtTheCeiling: Story = {
+  args: { min: 0, max: 10, step: 3, value: 9 },
+  play: async ({ canvasElement }) => {
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() => expect(standsAt(canvasElement)).toBe('10'))
+
+    await userEvent.keyboard('{ArrowLeft}')
+    await waitFor(() => expect(standsAt(canvasElement)).toBe('9'))
+  },
+}
+
 /** A track with barely room to draw itself. */
 export const ANarrowBox: Story = { args: { width: '4rem' } }
 
