@@ -290,7 +290,9 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
 		Paused: p.Paused(d, now) || p.Share(opened.Weekday()) == 0,
 	}
 	if p.Goal == GoalDate {
-		out.Keeps.New = p.paces(d, now, left)
+		// The pace is a whole day's share of the material, and this day carries
+		// as much of it as its day of the week carries of the load.
+		out.Keeps.New = int(math.Round(p.Share(opened.Weekday()) * float64(p.paces(d, now, left))))
 	}
 	// A split that takes no part leaves the day spending on the debt first,
 	// which is what a preset naming no share does.
@@ -371,20 +373,20 @@ func (p Preset) paces(d Day, now time.Time, left Left) int {
 	if days <= 0 {
 		return 0
 	}
-	in := days - left.Ripens
+	in := days - float64(left.Ripens)
 	if left.Ripens == NeverRipens || in <= 0 {
 		return left.New
 	}
-	return (left.New + in - 1) / in
+	return int(math.Ceil(float64(left.New) / in))
 }
 
 // days is how many days of review there are from the day holding now through to
 // the day this preset aims at, counting both. A preset aiming at no day, or at
 // one behind us, has none.
 //
-// A day of the week at none of the load schedules nothing, so it is no day of
-// review and the pace does not divide by it.
-func (p Preset) days(d Day, now time.Time) int {
+// Each day counts for the share of the load its day of the week carries, so a
+// day at nothing is no day of review at all and a day at half is half of one.
+func (p Preset) days(d Day, now time.Time) float64 {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
@@ -397,24 +399,20 @@ func (p Preset) days(d Day, now time.Time) int {
 	return p.admits(from, int(to.Sub(from).Hours()/24)+1)
 }
 
-// admits is how many of the calendar days from this one the preset holds a day
-// of review on.
-func (p Preset) admits(from time.Time, days int) int {
+// admits is how many whole days of review the preset holds over the calendar
+// days from this one.
+func (p Preset) admits(from time.Time, days int) float64 {
 	if days <= 0 {
 		return 0
 	}
-	week := 0
+	week := 0.0
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		if p.Share(day) != 0 {
-			week++
-		}
+		week += p.Share(day)
 	}
 	whole := days / 7
-	out := whole * week
+	out := week * float64(whole)
 	for i := range days % 7 {
-		if p.Share(from.AddDate(0, 0, whole*7+i).Weekday()) != 0 {
-			out++
-		}
+		out += p.Share(from.AddDate(0, 0, whole*7+i).Weekday())
 	}
 	return out
 }

@@ -947,3 +947,29 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 			got.ReviewsADay, got.MinutesADay)
 	}
 }
+
+// The pace of a date carries the share of the load its day of the week carries.
+//
+// The pace is a whole day's share of the material, and the day it falls on
+// keeps as much of it as it keeps of everything else. A Saturday at half was
+// handed a whole day of new material, and the days around it were paced as
+// though it had carried its own.
+func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
+	// A Saturday, so the light day is the day being asked about.
+	now := opens(time.Date(2026, 3, 7, 9, 41, 0, 0, time.Local))
+	if now.Weekday() != time.Saturday {
+		t.Fatalf("the day the pace is asked on is a %v", now.Weekday())
+	}
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 9)
+	p.Rule, p.Retention = history.RuleRetention, 0.9
+
+	whole := p.Admits(ahead, now, history.Spent{}, history.Left{New: 40})
+	p.Load = map[time.Weekday]int{time.Saturday: 50}
+	half := p.Admits(ahead, now, history.Spent{}, history.Left{New: 40})
+
+	if half.Keeps.New >= whole.Keeps.New {
+		t.Errorf("a Saturday at half the load is paced %d card faces and a whole Saturday %d",
+			half.Keeps.New, whole.Keeps.New)
+	}
+}
