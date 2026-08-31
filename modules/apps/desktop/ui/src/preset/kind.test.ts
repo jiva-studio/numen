@@ -74,7 +74,7 @@ const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retent
 
 const opened = async (
   settings: Partial<Settings> = {},
-  answers: Curve | ((asked: Settings) => Curve) = curve,
+  answers: Curve | ((asked: Settings) => Curve | Promise<Curve>) = curve,
   reading: (time: number) => Partial<Read> = () => ({}),
 ) => {
   const written: Settings[] = []
@@ -283,6 +283,17 @@ describe('the curve behind the knob', () => {
     expect(held.curve().honest).toBe(false)
     await after()
     expect(held.curve().honest).toBe(true)
+  })
+})
+
+// The goal is the one choice a person makes outright, and it is theirs the
+// moment they make it. A window shut before an answer lands loses nothing.
+describe('the goal chosen', () => {
+  it('is written without waiting on the curve behind it', async () => {
+    const { held, written } = await opened({}, () => new Promise<Curve>(() => {}))
+    held.chooses('retention')
+    await after()
+    expect(written.at(-1)?.goal).toBe('retention')
   })
 })
 

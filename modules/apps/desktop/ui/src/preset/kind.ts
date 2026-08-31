@@ -335,7 +335,10 @@ export function presetting(
         if (goal === one.settings.value.goal) return
         one.settings.value = aiming(one.settings.value, goal)
         one.edited = true
-        void curves(one).then(() => writes(one))
+        // The goal is a settled choice the moment it is made, and the file
+        // carries it whether or not the curve of it ever comes back.
+        void writes(one)
+        void curves(one)
       },
       moves: (place) => turns(one, place),
       settles: () => void writes(one),
