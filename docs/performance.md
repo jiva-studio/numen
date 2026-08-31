@@ -12,6 +12,7 @@ go test ./usecase/vault/ -run XXX -bench ColdScan -benchtime 1x
 go test ./usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
+go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -663,3 +664,36 @@ The editor draws only the lines that are on screen — thirty-six of the four hu
 Those two columns are read against each other. A page carrying the whole stylesheet costs more to recalculate than one carrying the tokens, which is why neither column meets the table above.
 
 A held arrow key crosses a row of the size list every 40 ms, and a size is worn once the keyboard has stood on a row for 150 ms.
+
+## What a window asks of one vault
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkVault` in `usecase/flashcards`. The vault is generated: fifty thousand card faces over twenty decks, answered a hundred and fifty times a day for six months — 27 000 answers in 180 run files.
+
+Each row is one request through its use case. The first three are warm, which is a person's second question of an evening: the schedule cache and the day counts are filled before the clock starts. The fourth is the history screen on a build that keeps no counting, which is what the first question of a launch pays.
+
+| | Before | After |
+| --- | --- | --- |
+| The front door, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB |
+| Starting a sitting | 1.25 s · 836 MB | 1.19 s · 793 MB |
+| The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB |
+| The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB |
+
+Both columns are the median of two runs of five. The memory column is what a request allocates, which is the steadier of the two: the times of repeated runs of one build spread by about 5 %, and the memory by under 0.1 %.
+
+**The front door is unchanged, and is here as the thing the others are read against.** It was already asking the schedule cache first, and nothing was taken off its path.
+
+What was counted, per warm request:
+
+| | Before | After |
+| --- | --- | --- |
+| Starting a sitting: the schedule cache read | 0 | 1 |
+| Starting a sitting: the schedule cache written | 1 | 0 |
+| Opening the history: the schedule cache read | 0 | 1 |
+| Opening the history: the schedule cache written | 1 | 0 |
+| The history screen, nothing counted yet: run files opened | 360 | 180 |
+
+A sitting and the history screen each worked the whole log out again and wrote what it came to, whatever the cache held; both now ask it first. The history screen read the log twice — once for the days behind and once for the days ahead — and now reads it once and hands the reading on.
+
+**A reading of the answers is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `Sat` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
+
+**Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
