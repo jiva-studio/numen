@@ -812,3 +812,36 @@ func TestTheDayTheMaterialIsLearnedIsAskedWhereItIsADay(t *testing.T) {
 		t.Errorf("a date says %d card faces cannot get there", got)
 	}
 }
+
+// The day a card face ripens is the day the projection learns it.
+//
+// The pace of a date is worked out from the first and the picture beside it
+// from the second, so a day is one day in both: a card face begun today is
+// learned on the day the pace was told it would be.
+func TestRipeningAndTheProjectionAreOneDay(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	by := history.NewFSRS()
+	// A day long enough and a budget large enough that nothing but the rule
+	// decides when the one card face is learned.
+	p := history.Defaults()
+	p.Goal, p.MinutesADay = history.GoalMinutes, int(history.MinutesADayBounds.Most)
+	p.NewADay, p.ReviewsADay, p.EvenLoad = 1, 1000, false
+	p.Rule = history.RuleInterval
+
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 400}
+	for _, interval := range []int{1, 2, 5, 7, 14, 21, 30, 60} {
+		one := p
+		one.Interval = interval
+		learns := -1
+		for day, through := range ran(t, run, now, one, nil, 1).Through {
+			if through >= 1 {
+				learns = day
+				break
+			}
+		}
+		if got := history.Ripens(by, ahead, one, now); got != learns {
+			t.Errorf("an interval of %d days ripens in %d days of review, and the "+
+				"projection learns the card face on day %d", interval, got, learns)
+		}
+	}
+}

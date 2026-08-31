@@ -427,7 +427,7 @@ func (s Simulation) Run(
 				used += s.Cost.Review
 				seen++
 				answered++
-				cards[at] = s.step(cards[at], open, p, on)
+				cards[at] = s.answers(cards[at], open, ends, p, on)
 				answeredOn[at] = today
 				continue
 			}
@@ -445,7 +445,7 @@ func (s Simulation) Run(
 			answered++
 			left--
 			out.Seen++
-			cards = append(cards, s.step(Schedule{}, open, p, on))
+			cards = append(cards, s.answers(Schedule{}, open, ends, p, on))
 			answeredOn = append(answeredOn, today)
 		}
 
@@ -513,16 +513,13 @@ const NeverRipens = -1
 // now is learned.
 const LongestRipening = 10 * 365
 
-// mostShowings is how many times one day of review puts one card face to a
-// person before a walk of that card face gives the day up.
-const mostShowings = 200
-
 // mostAnswers is how many answers a walk of one card face gives it before
 // giving it up.
 const mostAnswers = 1000
 
 // Ripens is how many days of review a card face begun now needs before this
-// preset counts it learned, when every showing it falls due for is answered.
+// preset counts it learned, when every day that card face falls due in answers
+// it.
 //
 // It is one number for the whole material nobody has begun: those card faces
 // all stand at the same nothing. A rule no such card face reaches is
@@ -533,7 +530,7 @@ func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	var c Schedule
 	for day := range LongestRipening {
 		ends := d.Ends(open)
-		c = s.answers(c, open, ends, p)
+		c = s.answers(c, open, ends, p, nil)
 		if p.Learned(c, ends) {
 			return day
 		}
@@ -542,20 +539,16 @@ func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	return NeverRipens
 }
 
-// answers is where one day of review leaves a card face when every showing it
-// falls due for in that day is answered.
-func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset) Schedule {
-	for range mostShowings {
-		if c.Seen() && !c.Due.Before(ends) {
-			return c
-		}
-		at := open
-		if c.Seen() && c.Due.After(open) {
-			at = c.Due
-		}
-		c = s.step(c, at, p, nil)
+// answers is where one day of review leaves a card face: a card face falling
+// due in the day is answered once in it, at the hour the day opens.
+//
+// It is the one model of a review day, so the day a card face ripens is the day
+// the projection learns it.
+func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *Spread) Schedule {
+	if c.Seen() && !c.Due.Before(ends) {
+		return c
 	}
-	return c
+	return s.step(c, open, p, on)
 }
 
 // reaches reports whether a card face standing here is learned on the day the
@@ -574,7 +567,7 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 			open = s.Day.Ends(c.Due).AddDate(0, 0, -1)
 		}
 		ends := s.Day.Ends(open)
-		c = s.answers(c, open, ends, p)
+		c = s.answers(c, open, ends, p, nil)
 		open = ends
 	}
 	return p.Learned(c, by)
