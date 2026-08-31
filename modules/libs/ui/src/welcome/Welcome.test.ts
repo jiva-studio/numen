@@ -22,16 +22,16 @@ const caps = (screen: ReturnType<typeof draw>): readonly string[] =>
 
 describe('a vault on the list', () => {
   it('carries the letter it is opened by, from the top down', () => {
-    expect(caps(draw([vault('physics'), vault('heat')]))).toStrictEqual(['a', 'b'])
+    expect(caps(draw([vault('physics'), vault('heat')]))).toStrictEqual(['A', 'B'])
   })
 
-  it('carries a mark in place of a letter past the alphabet', () => {
+  it('carries no letter at all past the alphabet', () => {
     const many = [...VAULT_LETTERS].map((letter) => vault(letter))
 
     const screen = draw([...many, vault('last')])
 
     expect(caps(screen)).toHaveLength(VAULT_LETTERS.length)
-    expect(screen.findAll('.welcome__icon')).toHaveLength(1)
+    expect(screen.findAll('.welcome__row--vault')).toHaveLength(VAULT_LETTERS.length + 1)
   })
 
   it('is still opened by the hand, by the identity it was given', async () => {
