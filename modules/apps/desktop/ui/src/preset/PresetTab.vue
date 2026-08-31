@@ -125,7 +125,7 @@ const dated = (said: Event) => {
 const stopped = computed(() => {
   const today = new Date()
   if (spent(settings.value, today)) return words.spent
-  return paused(settings.value, today) ? words.paused : ''
+  return paused(settings.value, today) ? words.paused(settings.value.goal) : ''
 })
 </script>
 

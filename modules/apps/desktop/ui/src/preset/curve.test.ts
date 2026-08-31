@@ -25,6 +25,7 @@ import {
   spent,
   standing,
 } from './curve'
+import { WORDS as words } from './words'
 
 const today = new Date('2026-08-30T00:00:00Z')
 
@@ -85,13 +86,32 @@ describe('a preset that schedules nothing', () => {
     expect(paused(gone, today)).toBe(true)
   })
 
-  it('is one holding no cards a day', () => {
-    expect(paused(settings({ newADay: 0, reviewsADay: 0 }), today)).toBe(true)
+  // The budget a goal does not name keeps its value and takes no part, so a
+  // preset steered by minutes with no new cards a day is an ordinary file.
+  it('is one whose minutes a day stand at nothing, under a goal of minutes', () => {
+    expect(paused(settings({ goal: 'minutes', minutesADay: 0 }), today)).toBe(true)
+    expect(paused(settings({ goal: 'minutes', newADay: 0, reviewsADay: 0 }), today)).toBe(false)
   })
 
-  it('is not one aiming at a day still ahead', () => {
-    expect(spent(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(false)
-    expect(paused(settings({ goal: 'date', byDate: '2026-09-29' }), today)).toBe(false)
+  it('is one holding no cards a day, under a goal of retention', () => {
+    expect(paused(settings({ goal: 'retention', newADay: 0, reviewsADay: 0 }), today)).toBe(true)
+    expect(paused(settings({ goal: 'retention', newADay: 0, reviewsADay: 1 }), today)).toBe(false)
+    expect(paused(settings({ goal: 'retention', minutesADay: 0 }), today)).toBe(false)
+  })
+
+  it('is one past its day and nothing else, under a goal of a date', () => {
+    const ahead = { goal: 'date', byDate: '2026-09-29' } as const
+    expect(spent(settings(ahead), today)).toBe(false)
+    expect(paused(settings(ahead), today)).toBe(false)
+    expect(paused(settings({ ...ahead, minutesADay: 0 }), today)).toBe(false)
+    expect(paused(settings({ ...ahead, newADay: 0, reviewsADay: 0 }), today)).toBe(false)
+  })
+
+  // The sentence names the budget that stands at nothing, and there is one
+  // budget per goal.
+  it('says it in the units of the budget its goal names', () => {
+    expect(words.paused('minutes')).toContain('minutes')
+    expect(words.paused('retention')).toContain('cards')
   })
 })
 

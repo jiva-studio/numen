@@ -259,7 +259,10 @@ export const WORDS = {
         'so this preset schedules nothing.',
   /** The preset schedules nothing, for either of the two reasons. */
   spent: 'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
-  paused: 'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
+  /** The budget the goal names stands at zero, said in the units it holds. */
+  paused: (goal: Goal) =>
+    `${goal === 'retention' ? 'No cards a day' : 'No minutes a day'}: ` +
+    'this preset schedules nothing, and every deck pointing at it stops.',
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */

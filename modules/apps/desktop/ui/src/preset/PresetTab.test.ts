@@ -976,6 +976,16 @@ describe('what the control stands at', () => {
     const gone = drawn({}, { goal: 'date', byDate: '2000-01-01' })
     expect(gone.tab.text()).toContain(words.spent)
   })
+
+  // A preset steered by minutes with no new cards a day is a deck of reviews
+  // only, and it holds a full day.
+  it('says nothing is scheduled where the budget the goal names stands at nothing', () => {
+    const reviewing = drawn({}, { goal: 'minutes', newADay: 0, reviewsADay: 0 })
+    expect(reviewing.tab.findAll('.preset__stopped')).toHaveLength(0)
+
+    const stopped = drawn({}, { goal: 'minutes', minutesADay: 0 })
+    expect(stopped.tab.get('.preset__stopped').text()).toBe(words.paused('minutes'))
+  })
 })
 
 describe('a goal with nothing to work on', () => {
