@@ -341,7 +341,7 @@ func (p Preset) closing() Closes {
 }
 
 // Paused reports whether the preset schedules nothing: the budget its goal
-// names is zero, or a day that has passed.
+// names is zero or absent, or a day that has passed.
 func (p Preset) Paused(d Day, now time.Time) bool {
 	if p.Past(d, now) {
 		return true
@@ -350,7 +350,9 @@ func (p Preset) Paused(d Day, now time.Time) bool {
 	case GoalRetention:
 		return p.NewADay == 0 && p.ReviewsADay == 0
 	case GoalDate:
-		return false
+		// A preset aiming at a day that names none has no budget at all, and a
+		// budget the goal names and cannot read is a pause.
+		return p.By.IsZero()
 	default:
 		return p.MinutesADay == 0
 	}

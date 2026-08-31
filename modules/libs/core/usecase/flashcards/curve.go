@@ -387,17 +387,23 @@ func (u Curves) date(
 		return out, nil
 	}
 	// How far off the day the file names is, counting the day holding now as
-	// none.
+	// none. A day further off than the projection reaches stands nowhere on the
+	// range, and the range is drawn as far as it goes so that a person can see
+	// where their day fell off it.
 	named := 0
 	for day := open; u.Day.Names(day) < by; day = day.AddDate(0, 0, 1) {
 		named++
 		if named > MostAhead {
-			return out, nil
+			named = Nowhere.At
+			break
 		}
 	}
 
 	first := 1
 	last := min(MostAhead, max(2*named, unseen, first))
+	if named < 0 {
+		last = MostAhead
+	}
 	run.Days = last + 1
 
 	// Each place of the range is one day named, run at the pace that day sets:
@@ -449,10 +455,12 @@ func (u Curves) date(
 
 	// The day the file names is a place of the grid, so what stands under the
 	// mark is worked out for that day.
-	out.Now = Mark{
-		At:    nearest(out.Grid, float64(named)),
-		Value: float64(named),
-		Day:   u.Day.Names(open.AddDate(0, 0, named)),
+	if named >= 0 {
+		out.Now = Mark{
+			At:    nearest(out.Grid, float64(named)),
+			Value: float64(named),
+			Day:   u.Day.Names(open.AddDate(0, 0, named)),
+		}
 	}
 	// What is suggested is the soonest day the material can be learned by:
 	// nothing out of reach on it and the pace through the whole of it. Where the

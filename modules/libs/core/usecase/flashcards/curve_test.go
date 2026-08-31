@@ -860,3 +860,48 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 		}
 	}
 }
+
+// A preset aiming at a day and naming none schedules nothing.
+//
+// The budget its goal names is the day, and a goal that cannot read its own
+// budget is the pause a budget of zero is. Every overdue card face was handed
+// over instead, with no count and no minutes to close the day.
+func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
+	p := history.Preset{
+		Goal: history.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	}
+	if !p.Paused(today, noon) {
+		t.Error("a preset aiming at a day and naming none schedules something")
+	}
+	admits := p.Admits(today, noon, history.Spent{}, history.Left{New: 30})
+	if !admits.Paused {
+		t.Errorf("the day of a preset aiming at no day admits %+v", admits)
+	}
+}
+
+// A day further off than the projection reaches stands nowhere on the range,
+// and the range is drawn as far as it goes.
+//
+// A person who has given themselves a decade sees where their day fell off the
+// picture. An empty picture is what a day already past says, and the two are
+// not one answer.
+func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
+	s := opened(t, studied(2))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(20, 0, 0).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleRetention, Retention: 0.9,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Grid) == 0 {
+		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
+	}
+	if got.Now != flashcards.Nowhere {
+		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
+			got.Now, got.Grid[len(got.Grid)-1])
+	}
+}
