@@ -130,26 +130,27 @@ func budgeted(
 // The day is closed by the budget the preset's goal names, and every other
 // budget takes no part. A preset counting in cards charges a card face the
 // first time the day answers it, so a face the day has already charged comes
-// round again for nothing.
+// round again for no count. The minutes are spent on every answer whichever way
+// the preset counts.
 func (b *budgets) takes(face history.CardFace, fresh bool) bool {
 	one, held := b.left[b.under[face]]
 	if !held || one.admits.Paused {
 		return false
 	}
-	if one.counts != history.CountsShows && b.faced[face] {
-		return true
-	}
+	counted := one.counts == history.CountsShows || !b.faced[face]
 	cost, left, closes := one.cost.Review, &one.admits.Reviews, one.admits.Closes.Reviews
 	if fresh {
 		cost, left, closes = one.cost.New, &one.admits.New, one.admits.Closes.New
 	}
-	if closes != history.ClosedNothing && *left <= 0 {
+	if counted && closes != history.ClosedNothing && *left <= 0 {
 		return false
 	}
 	if one.admits.Closes.Minutes != history.ClosedNothing && one.admits.Minutes < cost {
 		return false
 	}
-	*left--
+	if counted {
+		*left--
+	}
 	one.admits.Minutes -= cost
 	return true
 }

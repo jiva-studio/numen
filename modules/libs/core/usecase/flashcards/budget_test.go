@@ -1118,3 +1118,45 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 			"decides nothing there", spent["retention"])
 	}
 }
+
+// What a day's budget is spent on decides what a count charges, and leaves the
+// minutes alone.
+//
+// A card face the day has already answered comes round again for no count where
+// the preset counts cards, and the minutes go on it as they go on every answer.
+// A day of a minute spent four times over is a day nobody asked for.
+func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
+	for _, counts := range []string{"cards", "shows"} {
+		s := opened(t, map[string]string{
+			"Term.md": term,
+			"On.md": preset("goal: minutes_a_day\nminutes_a_day: 1\n" +
+				"new_a_day: 0\nreviews_a_day: 0\ncounts: " + counts + "\n"),
+			"decks/On.md": deckOf("On", 40, 0),
+		})
+		// Every card face answered long enough ago to be owed today, at six
+		// seconds an answer, so a minute holds ten of them.
+		before := s.run(t, saturday.AddDate(0, 0, -30))
+		for i := range 40 {
+			answer(t, before, mark(i), 6*time.Second)
+		}
+
+		spent := time.Duration(0)
+		asked := 0
+		for range 4 {
+			sat := s.sittingAt(t, today, saturday.Add(spent))
+			if len(sat.Asked) == 0 {
+				break
+			}
+			given := s.run(t, saturday.Add(spent))
+			for _, one := range sat.Asked {
+				again(t, given, one.CardFace.Card, 6*time.Second)
+				spent += 6 * time.Second
+				asked++
+			}
+		}
+		if spent > 90*time.Second {
+			t.Errorf("counting %s, a day of one minute asked %d card faces and ran %v",
+				counts, asked, spent)
+		}
+	}
+}
