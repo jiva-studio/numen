@@ -34,7 +34,7 @@ const words: Words = {
   hard: 'Hard',
   good: 'Good',
   easy: 'Easy',
-  recalled: 'recalled',
+  recalled: 'of cards you are reviewing came back',
 }
 
 /** worked is a year of days, most of them answered on. */
