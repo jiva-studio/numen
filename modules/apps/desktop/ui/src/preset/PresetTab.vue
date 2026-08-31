@@ -142,6 +142,8 @@ const sums = computed<readonly string[]>(() => {
     <div class="preset__page">
       <div class="preset__column">
         <section class="preset__goal" :aria-label="words.goal">
+          <p class="preset__label">{{ words.goal }}</p>
+
           <Segmented
             :model-value="settings.goal"
             :choices="goals"
@@ -247,7 +249,14 @@ const sums = computed<readonly string[]>(() => {
 <style scoped>
 .preset {
   /* The measure a preset is read at, which the goal and the settings share. */
-  --preset-measure: 44rem;
+  --preset-measure: 46rem;
+  /* Between the goal and the settings under it, and inside each. */
+  --preset-apart: 1.75rem;
+  --preset-near: 0.625rem;
+  /* One row of the receipt: its two set columns, and the air around it. */
+  --preset-name: 11rem;
+  --preset-value: 6rem;
+  --preset-row-air: 0.5rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -264,32 +273,41 @@ const sums = computed<readonly string[]>(() => {
   padding: var(--numen-gutter);
 }
 
-/* The column the tab is read in, centred in whatever room the pane has. */
+/* The column the tab is read in, at the measure the other tabs are read at. */
 .preset__column {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: var(--preset-apart);
   inline-size: 100%;
   max-inline-size: var(--preset-measure);
-  margin-inline: auto;
 }
 
 .preset__goal {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: var(--preset-near);
+}
+
+/* What the three segments are, said over them. */
+.preset__label {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+  font-weight: 600;
+  letter-spacing: var(--numen-caps-tracking);
+  text-transform: uppercase;
 }
 
 .preset__reading {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--numen-dot-gap);
   margin: 0;
 }
 
-/* The value the control stands at, in figures of one width. */
+/* The one line the tab is built around, in figures of one width. */
 .preset__figure {
-  font-size: var(--numen-text-3);
+  font-size: var(--numen-text-4);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
@@ -307,9 +325,9 @@ const sums = computed<readonly string[]>(() => {
 
 /* The window's own arithmetic, standing until the application answers. */
 .preset__about {
-  margin-inline-end: 0.3rem;
-  padding: 0.05rem 0.3rem;
-  border: 1px solid var(--numen-node-border);
+  margin-inline-end: var(--numen-node-gap);
+  padding-inline: var(--numen-node-gap);
+  border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius-pill);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
@@ -317,15 +335,15 @@ const sums = computed<readonly string[]>(() => {
 }
 
 .preset__sums {
-  margin: 0.2rem 0 0;
-  padding-inline-start: 1.1rem;
+  margin: var(--numen-dot-gap) 0 0;
+  padding-inline-start: var(--numen-gutter);
   color: var(--numen-hushed);
   line-height: var(--numen-line-height);
 }
 
 .preset__stopped {
   margin: 0;
-  padding: 0.4rem 0.6rem;
+  padding: var(--numen-inset) var(--numen-inset-wide);
   border-radius: var(--numen-radius);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
@@ -338,12 +356,13 @@ const sums = computed<readonly string[]>(() => {
 
 .preset__row {
   display: grid;
-  grid-template-columns: 11rem minmax(6rem, max-content) 1fr;
+  grid-template-columns: var(--preset-name) minmax(var(--preset-value), max-content) 1fr;
   align-items: baseline;
-  gap: 0 1rem;
-  padding: 0.55rem 0 0.55rem 0.7rem;
-  border-inline-start: 2px solid transparent;
-  border-block-end: 1px solid var(--numen-node-border);
+  gap: 0 var(--numen-panel-gap);
+  padding-block: var(--preset-row-air);
+  padding-inline-start: var(--numen-node-gap);
+  border-inline-start: var(--numen-caret) solid transparent;
+  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
 /* A value the person typed, which no longer follows the goal. */
@@ -361,13 +380,13 @@ const sums = computed<readonly string[]>(() => {
 }
 
 .preset__number {
-  inline-size: 6rem;
+  inline-size: var(--preset-value);
 }
 
 .preset__day {
   min-block-size: var(--numen-field-min);
   padding: 0 var(--numen-field-padding);
-  border: 1px solid var(--numen-field-border);
+  border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-field);
   background: var(--numen-field-bg);
   color: inherit;
@@ -376,7 +395,7 @@ const sums = computed<readonly string[]>(() => {
 
 .preset__day:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 1px;
+  outline-offset: var(--numen-stroke);
 }
 
 .preset__detail {
@@ -386,7 +405,7 @@ const sums = computed<readonly string[]>(() => {
 
 .preset__warning {
   margin: 0;
-  padding: 0.4rem 1rem;
+  padding: var(--numen-inset) var(--numen-gutter);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   overflow-wrap: break-word;
@@ -396,7 +415,7 @@ const sums = computed<readonly string[]>(() => {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0 0.9rem;
+  gap: 0 var(--numen-panel-gap);
 }
 
 .preset__answer {
@@ -411,12 +430,12 @@ const sums = computed<readonly string[]>(() => {
 }
 
 .preset__answer:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
+  outline: var(--numen-stroke) solid currentColor;
+  outline-offset: var(--numen-caret);
 }
 
 .preset__problems {
-  padding-inline-start: 2rem;
+  padding-inline-start: calc(var(--numen-gutter) * 2);
   list-style: disc;
 }
 </style>

@@ -9,11 +9,12 @@
  * on the way round the screen, and the arrow keys walk the grid a place at a
  * time.
  */
-import { computed, useTemplateRef } from 'vue'
+import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import type { Curve } from './core'
 import {
   areaOf,
   BANDS,
+  bandOf,
   FOOT,
   HIGH,
   LABEL,
@@ -27,6 +28,7 @@ import {
   TOP,
   WIDE,
   yOfBand,
+  type Band,
 } from './drawing'
 import { WORDS as words } from './words'
 
@@ -45,7 +47,25 @@ const raises = defineEmits<{
 
 const picture = useTemplateRef<SVGSVGElement>('picture')
 
-const spots = computed(() => spotsOf(props.curve))
+/**
+ * The stretch of cost the picture is scaled to, taken from the whole grid of
+ * the first answer this goal gave and kept while that goal is on screen. A
+ * later answer is drawn against it, so the line moves and the axis does not.
+ */
+const scale = shallowRef<{ goal: string; band: Band } | null>(null)
+
+watch(
+  () => props.curve,
+  (curve) => {
+    if (scale.value?.goal === curve.goal) return
+    scale.value = curve.honest ? { goal: curve.goal, band: bandOf(curve) } : null
+  },
+  { immediate: true },
+)
+
+const band = computed<Band>(() => scale.value?.band ?? bandOf(props.curve))
+
+const spots = computed(() => spotsOf(props.curve, band.value))
 const line = computed(() => lineOf(spots.value))
 const area = computed(() => areaOf(spots.value))
 /** The stretch the budget does not get through, which is drawn quieter. */
@@ -62,12 +82,21 @@ const dated = computed(() => props.curve.goal === 'date')
 /** Whether this is the application's answer. The bands and the marks stand over that alone. */
 const honest = computed(() => props.curve.honest)
 
-/** How the name of the suggested mark is set, so that it stays inside the picture. */
+/**
+ * Where the name of the suggested mark is set. It is set over the picture and
+ * not in it, so it takes the page's type; the picture's own units place it, as
+ * shares of the room the picture was given. It is pulled back inside at either
+ * end so that the whole word stands over the picture.
+ */
 const naming = computed(() => {
   const spot = suggested.value
-  if (!spot) return { x: 0, y: 0, anchor: 'middle' }
-  const anchor = spot.x < LEFT + LABEL ? 'start' : spot.x > RIGHT - LABEL ? 'end' : 'middle'
-  return { x: spot.x, y: Math.max(spot.y - LIFT, TOP), anchor }
+  if (!spot) return {}
+  const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
+  return {
+    insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+    insetBlockStart: `${(Math.max(spot.y - LIFT, TOP) / HIGH) * 100}%`,
+    translate: `${back} -100%`,
+  }
 })
 
 const least = computed(() => props.curve.grid[0] ?? 0)
@@ -131,72 +160,74 @@ const released = (event: KeyboardEvent) => {
 
 <template>
   <div class="control">
-    <svg
-      ref="picture"
-      class="control__picture"
-      role="slider"
-      tabindex="0"
-      :viewBox="`0 0 ${WIDE} ${HIGH}`"
-      :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
-      :aria-label="words.knob"
-      :aria-valuemin="least"
-      :aria-valuemax="most"
-      :aria-valuenow="value"
-      :aria-valuetext="props.valueText"
-      @pointerdown="took"
-      @pointermove="dragged"
-      @pointerup="letGo"
-      @pointercancel="letGo"
-      @keydown="pressed"
-      @keyup="released"
-    >
-      <defs>
-        <linearGradient id="preset-fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="var(--numen-focus-bg)" stop-opacity="0.22" />
-          <stop offset="1" stop-color="var(--numen-focus-bg)" stop-opacity="0" />
-        </linearGradient>
-      </defs>
+    <div class="control__over">
+      <svg
+        ref="picture"
+        class="control__picture"
+        role="slider"
+        tabindex="0"
+        :viewBox="`0 0 ${WIDE} ${HIGH}`"
+        :style="{ aspectRatio: `${WIDE} / ${HIGH}` }"
+        :aria-label="words.knob"
+        :aria-valuemin="least"
+        :aria-valuemax="most"
+        :aria-valuenow="value"
+        :aria-valuetext="props.valueText"
+        @pointerdown="took"
+        @pointermove="dragged"
+        @pointerup="letGo"
+        @pointercancel="letGo"
+        @keydown="pressed"
+        @keyup="released"
+      >
+        <defs>
+          <linearGradient id="preset-fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="var(--numen-focus-bg)" stop-opacity="0.22" />
+            <stop offset="1" stop-color="var(--numen-focus-bg)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
 
-      <line
-        v-for="band in honest ? BANDS : []"
-        :key="band"
-        class="control__band"
-        :x1="LEFT"
-        :x2="RIGHT"
-        :y1="yOfBand(band)"
-        :y2="yOfBand(band)"
-      />
-
-      <path class="control__area" :d="area" />
-      <path class="control__line" :d="line" />
-      <path v-if="honest && short" class="control__short" :d="short" />
-
-      <g v-if="honest && now">
         <line
-          class="control__drop"
-          :class="{ 'control__drop--dated': dated }"
-          :x1="now.x"
-          :x2="now.x"
-          :y1="dated ? TOP : now.y"
-          :y2="FOOT"
+          v-for="share in honest ? BANDS : []"
+          :key="share"
+          class="control__band"
+          :x1="LEFT"
+          :x2="RIGHT"
+          :y1="yOfBand(share)"
+          :y2="yOfBand(share)"
         />
-        <circle class="control__now" :cx="now.x" :cy="now.y" r="5" />
-      </g>
 
-      <g v-if="honest && suggested">
-        <circle class="control__suggested" :cx="suggested.x" :cy="suggested.y" r="3.5" />
-        <text
-          class="control__label"
-          :x="naming.x"
-          :y="naming.y"
-          :text-anchor="naming.anchor"
-        >
-          {{ words.suggested }}
-        </text>
-      </g>
+        <path class="control__area" :d="area" />
+        <path class="control__line" :d="line" />
+        <path v-if="honest && short" class="control__short" :d="short" />
 
-      <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
-    </svg>
+        <g v-if="honest && now">
+          <line
+            class="control__drop"
+            :class="{ 'control__drop--dated': dated }"
+            :x1="now.x"
+            :x2="now.x"
+            :y1="dated ? TOP : now.y"
+            :y2="FOOT"
+          />
+          <circle class="control__now" :cx="now.x" :cy="now.y" r="5" />
+        </g>
+
+        <circle
+          v-if="honest && suggested"
+          class="control__suggested"
+          :cx="suggested.x"
+          :cy="suggested.y"
+          r="3.5"
+        />
+
+        <circle v-if="knob" class="control__knob" :cx="knob.x" :cy="knob.y" r="7" />
+      </svg>
+
+      <span v-if="honest && suggested" class="control__label" :style="naming">
+        {{ words.suggested }}
+      </span>
+    </div>
 
     <p v-if="honest" class="control__ends">
       <span>{{ words.ends(props.curve.goal)[0] }}</span>
@@ -209,10 +240,16 @@ const released = (event: KeyboardEvent) => {
 .control {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--numen-dot-gap);
+}
+
+/* The picture, and what is named over it. */
+.control__over {
+  position: relative;
 }
 
 .control__picture {
+  display: block;
   inline-size: 100%;
   block-size: auto;
   touch-action: none;
@@ -222,7 +259,7 @@ const released = (event: KeyboardEvent) => {
 
 .control__picture:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 2px;
+  outline-offset: var(--numen-caret);
 }
 
 .control__band {
@@ -271,10 +308,15 @@ const released = (event: KeyboardEvent) => {
   fill: var(--numen-hushed);
 }
 
+/* The name of a mark, set over the picture and taking the page's type. */
 .control__label {
-  fill: var(--numen-hushed);
+  position: absolute;
+  color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .control__knob {
@@ -287,7 +329,7 @@ const released = (event: KeyboardEvent) => {
   display: flex;
   justify-content: space-between;
   margin: 0;
-  padding-inline: 0.5rem;
+  padding-inline: var(--numen-inset);
   color: var(--numen-hushed);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-1);

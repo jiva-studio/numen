@@ -47,11 +47,14 @@ describe('what the goals come to today', () => {
     expect(one.find('.presets__done').text()).toBe('20%')
   })
 
-  it('draws one meter and no more', () => {
-    const meters = shown([preset()]).findAll('.presets__track')
+  // The screen is scanned, and a bar reading a fifth costs a row of it to say
+  // what the number already says.
+  it('says how far through the day it is in words alone, and draws nothing', () => {
+    const one = shown([preset()])
 
-    expect(meters).toHaveLength(1)
-    expect(meters[0]?.attributes('style')).toContain('--filled: 0.2')
+    expect(one.findAll('.presets__track')).toHaveLength(0)
+    expect(one.findAll('.presets__through')).toHaveLength(0)
+    expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%')
   })
 
   // A person is as far through their day as their fullest budget says.
@@ -59,7 +62,6 @@ describe('what the goals come to today', () => {
     const one = shown([preset({ answered: 11, took: 15 })])
 
     expect(one.find('.presets__done').text()).toBe('75%')
-    expect(one.find('.presets__track').attributes('style')).toContain('--filled: 0.75')
   })
 
   it('stands on the cards alone where the preset keeps no budget in time', () => {
@@ -80,7 +82,6 @@ describe('what the goals come to today', () => {
     const one = shown([preset({ answered: 55, took: 20 })])
 
     expect(one.find('.presets__done').text()).toBe('100%')
-    expect(one.find('.presets__track').attributes('style')).toContain('--filled: 1')
   })
 
   // Sixty-six answers against thirteen cards is not a day that is done, and a
@@ -91,8 +92,6 @@ describe('what the goals come to today', () => {
 
     expect(said.text()).toBe('over budget')
     expect(said.attributes('data-over')).toBe('')
-    // The meter is full, because it is.
-    expect(one.find('.presets__track').attributes('style')).toContain('--filled: 1')
   })
 
   it('says the same of a day that has run past its minutes', () => {
@@ -120,18 +119,18 @@ describe('what the goals come to today', () => {
 
     expect(one.find('.presets__preset--paused').exists()).toBe(true)
     expect(one.text()).toContain('no cards a day')
-    expect(one.findAll('.presets__track')).toHaveLength(0)
+    expect(one.findAll('.presets__done')).toHaveLength(0)
   })
 
-  // A preset nothing points at schedules nobody, and a meter drawn against it
-  // says nothing a person can act on.
+  // A preset nothing points at schedules nobody, and a figure against it says
+  // nothing a person can act on.
   it('says of a preset no deck points at that nothing does', () => {
     const one = shown([
       preset({ decks: [], named: 0, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
     ])
 
     expect(one.find('.presets__alone').text()).toBe('Nothing points here')
-    expect(one.findAll('.presets__track')).toHaveLength(0)
+    expect(one.findAll('.presets__done')).toHaveLength(0)
     expect(one.find('.presets__preset').text()).toBe('SanskritNothing points here')
   })
 
@@ -143,7 +142,7 @@ describe('what the goals come to today', () => {
     ])
 
     expect(one.find('.presets__alone').text()).toBe('One deck, no cards')
-    expect(one.findAll('.presets__track')).toHaveLength(0)
+    expect(one.findAll('.presets__done')).toHaveLength(0)
   })
 
   // The decks naming no preset are a row like any other, and it carries no act.
@@ -151,7 +150,7 @@ describe('what the goals come to today', () => {
     const one = shown([preset({ path: '', name: 'The defaults' })])
 
     expect(one.text()).toContain('The defaults')
-    expect(one.findAll('.presets__track')).toHaveLength(1)
+    expect(one.findAll('.presets__done')).toHaveLength(1)
     expect(one.findAll('.presets__settle')).toHaveLength(0)
   })
 

@@ -62,7 +62,7 @@ export interface Preset {
   readonly faces: number
   /** Cards of those decks the day holds, inside the budgets it keeps. */
   readonly cards: number
-  /** What the day holds under it, which is what the meter is drawn against. */
+  /** What the day holds under it, which is what today is weighed against. */
   readonly budget: Budget
   /** Cards answered under it since the day opened, and the minutes they took. */
   readonly answered: number

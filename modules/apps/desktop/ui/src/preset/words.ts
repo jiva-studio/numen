@@ -2,11 +2,11 @@
 import type { Counts, Goal } from './core'
 import type { Field } from './curve'
 
-/** What each of the three goals is offered as: what the person is aiming at. */
+/** What each of the three goals is offered as: the value it steers. */
 const GOALS: Record<Goal, string> = {
-  minutes: 'A day that fits',
-  retention: 'How much comes back',
-  date: 'Through it by a day',
+  minutes: 'Minutes a day',
+  retention: 'Retention',
+  date: 'A date',
 }
 
 /** What each of the two things a budget is spent on is offered as. */
@@ -47,7 +47,8 @@ export const WORDS = {
   preset: 'Preset',
   /** What a preset tab is called before the vault has said what the note is. */
   newPreset: 'Preset',
-  goal: 'What this preset steers',
+  /** What the three segments are, said over them. */
+  goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   countsName: (counts: Counts) => COUNTS[counts],
   ends: (goal: Goal) => ENDS[goal],

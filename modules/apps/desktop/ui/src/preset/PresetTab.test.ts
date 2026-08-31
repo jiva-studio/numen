@@ -119,6 +119,22 @@ describe('the one control', () => {
     await tab.get('[role="slider"]').trigger('keydown', { key: 'k' })
     expect(done).toStrictEqual([])
   })
+
+  it('offers the three goals by the value each steers, under a label saying so', () => {
+    const { tab } = drawn()
+    expect(tab.get('.preset__label').text()).toBe(words.goal)
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      expect(tab.text()).toContain(words.goalName(goal))
+    }
+  })
+
+  // A name inside the picture is scaled with it and is set at no step of the
+  // page's type.
+  it('names a mark over the picture and not inside it', () => {
+    const { tab } = drawn()
+    expect(tab.get('.control__label').text()).toBe(words.suggested)
+    expect(tab.get('svg').find('text').exists()).toBe(false)
+  })
 })
 
 describe('what the control stands at', () => {

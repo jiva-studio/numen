@@ -65,6 +65,34 @@ export const fieldsUnder = (goal: Goal): readonly Field[] =>
 export const producedBy = (goal: Goal): readonly Field[] =>
   goal === 'minutes' ? ['reviewsADay', 'retention'] : ['minutesADay', 'reviewsADay']
 
+/** The field the goal steers, which is the knob under another name. */
+export const steers = (goal: Goal): Field => {
+  if (goal === 'minutes') return 'minutesADay'
+  if (goal === 'retention') return 'retention'
+  return 'byDate'
+}
+
+/**
+ * The settings that give a curve its shape, as one word. The value the knob
+ * rides and the values it produces are left out, so walking the grid reads the
+ * same shape throughout and a curve is asked for once for it.
+ */
+export const shapeOf = (settings: Settings): string => {
+  const own = new Set<Field>([steers(settings.goal), ...producedBy(settings.goal)])
+  const said: Record<Field, string> = {
+    newADay: `${settings.newADay}`,
+    reviewsADay: `${settings.reviewsADay}`,
+    retention: `${settings.retention}`,
+    minutesADay: `${settings.minutesADay}`,
+    byDate: settings.byDate,
+    counts: settings.counts,
+    lightDays: settings.lightDays.join(','),
+    evenLoad: `${settings.evenLoad}`,
+  }
+  const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${said[field]}`)
+  return [settings.goal, ...rest].join(' ')
+}
+
 /** What the curve of a goal is read in: the share brought back, or minutes. */
 export const costOf = (goal: Goal, point: Point): number =>
   goal === 'minutes' ? point.retained : point.minutes

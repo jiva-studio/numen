@@ -199,12 +199,21 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
 
 <style scoped>
 .settings {
+  /* The measure the settings are read at. */
+  --settings-measure: 46rem;
+  /* Between one group and the next, and between a heading and its rows. */
+  --settings-apart: 1.75rem;
+  --settings-near: 0.375rem;
+  /* One row: its two set columns, and the air around it. */
+  --settings-name: 12rem;
+  --settings-value: 6rem;
+  --settings-row-air: 0.5rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
   min-block-size: 0;
   font-family: var(--numen-font-sans);
-  font-size: var(--numen-font-size);
+  font-size: var(--numen-text-2);
   color: var(--numen-node-fg);
 }
 
@@ -212,23 +221,24 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
   flex: 1;
   min-block-size: 0;
   overflow-y: auto;
-  padding: 1.2rem 1.4rem 2rem;
+  padding: var(--numen-gutter);
 }
 
 .settings__where {
-  margin: 0 0 1.4rem;
-  color: var(--numen-text-3);
+  margin: 0 0 var(--settings-apart);
+  color: var(--numen-hushed);
 }
 
 .settings__group {
-  max-inline-size: 46rem;
-  margin-block-end: 1.8rem;
+  max-inline-size: var(--settings-measure);
+  margin-block-end: var(--settings-apart);
 }
 
+/* A label over the rows it names, set as this window sets its labels. */
 .settings__heading {
-  margin: 0 0 0.4rem;
+  margin: 0 0 var(--settings-near);
   color: var(--numen-hushed);
-  font-size: calc(var(--numen-font-size) * 11 / 13);
+  font-size: var(--numen-text-1);
   font-weight: 600;
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
@@ -236,11 +246,11 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
 
 .settings__row {
   display: grid;
-  grid-template-columns: 12rem minmax(8rem, max-content) 1fr;
+  grid-template-columns: var(--settings-name) minmax(var(--settings-value), max-content) 1fr;
   align-items: baseline;
-  gap: 0 1rem;
-  padding-block: 0.55rem;
-  border-block-end: 1px solid var(--numen-node-border);
+  gap: 0 var(--numen-panel-gap);
+  padding-block: var(--settings-row-air);
+  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
 .settings__value {
@@ -249,18 +259,18 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
 }
 
 .settings__number {
-  inline-size: 6rem;
+  inline-size: var(--settings-value);
 }
 
 .settings__detail {
-  color: var(--numen-text-3);
-  font-size: calc(var(--numen-font-size) * 12 / 13);
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
 }
 
 .settings__select {
   min-block-size: var(--numen-field-min);
   padding: 0 var(--numen-field-padding);
-  border: 1px solid var(--numen-field-border);
+  border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-field);
   background: var(--numen-field-bg);
   color: inherit;
@@ -269,15 +279,15 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
 
 .settings__select:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: 1px;
+  outline-offset: var(--numen-stroke);
 }
 
 /* A setting this window shows and does not write. */
 .settings__elsewhere {
-  padding: 0.05rem 0.4rem;
-  border: 1px solid var(--numen-node-border);
+  padding-inline: var(--numen-node-gap);
+  border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius-pill);
   color: var(--numen-hushed);
-  font-size: calc(var(--numen-font-size) * 11 / 13);
+  font-size: var(--numen-text-1);
 }
 </style>

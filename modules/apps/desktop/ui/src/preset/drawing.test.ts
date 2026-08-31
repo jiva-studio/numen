@@ -63,29 +63,36 @@ describe('where a place of the grid stands across the picture', () => {
 })
 
 describe('the curve as it is drawn', () => {
-  it('is scaled to the band between the least and the most it costs', () => {
+  it('is scaled to the band it is given, between the foot and the top', () => {
     const one = curve([0, 0.5, 1])
     expect(bandOf(one)).toStrictEqual({ least: 0, most: 1 })
-    const spots = spotsOf(one)
+    const spots = spotsOf(one, bandOf(one))
     expect(spots[0]?.y).toBe(FOOT)
     expect(spots[2]?.y).toBe(TOP)
   })
 
-  // A curve of a narrow band is the shape of that band, and not a line flat
-  // against the top of a picture scaled to nothing.
-  it('fills the picture with a band that moves little', () => {
-    const spots = spotsOf(curve([0.9, 0.94, 0.98]))
+  // The band is the goal's and not this answer's, so an answer that moves
+  // little inside it is drawn as the little it moves.
+  it('draws a curve that is flat within its band flat', () => {
+    const spots = spotsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
+    expect(spots.every((spot) => spot.y === spots[0]?.y)).toBe(true)
+    expect(spots[0]?.y).not.toBe(MIDDLE)
+  })
+
+  it('keeps a curve past either end of its band inside the picture', () => {
+    const spots = spotsOf(curve([-1, 0.5, 2]), { least: 0, most: 1 })
     expect(spots[0]?.y).toBe(FOOT)
     expect(spots[2]?.y).toBe(TOP)
   })
 
-  it('runs through the middle where it costs the same everywhere', () => {
-    expect(spotsOf(curve([0, 0, 0])).every((spot) => spot.y === MIDDLE)).toBe(true)
-    expect(spotsOf(curve([0.5, 0.5])).every((spot) => spot.y === MIDDLE)).toBe(true)
+  it('runs through the middle where the band has no width', () => {
+    expect(spotsOf(curve([0, 0, 0]), { least: 0, most: 0 }).every((one) => one.y === MIDDLE)).toBe(
+      true,
+    )
   })
 
   it('is one line through every place, closed down to the foot where it is filled', () => {
-    const spots = spotsOf(curve([0, 0.5, 1]))
+    const spots = spotsOf(curve([0, 0.5, 1]), { least: 0, most: 1 })
     expect(lineOf(spots).startsWith('M')).toBe(true)
     expect(lineOf(spots).split('L')).toHaveLength(3)
     expect(areaOf(spots).endsWith('Z')).toBe(true)
@@ -100,17 +107,17 @@ describe('the curve as it is drawn', () => {
 describe('the stretch a budget does not get through', () => {
   it('is a line of its own over the places the budget falls short at', () => {
     const one = curve([0, 0.4, 0.7, 1], [true, false, false, true])
-    expect(shortOf(one, spotsOf(one)).startsWith('M')).toBe(true)
+    expect(shortOf(one, spotsOf(one, bandOf(one))).startsWith('M')).toBe(true)
   })
 
   it('is nothing where the budget gets through all of it', () => {
     const one = curve([0, 0.4, 1])
-    expect(shortOf(one, spotsOf(one))).toBe('')
+    expect(shortOf(one, spotsOf(one, bandOf(one)))).toBe('')
   })
 
   it('is nothing where it falls short at one place alone, which draws no line', () => {
     const one = curve([0, 0.4, 1], [true, false, true])
-    expect(shortOf(one, spotsOf(one))).toBe('')
+    expect(shortOf(one, spotsOf(one, bandOf(one)))).toBe('')
   })
 })
 
@@ -126,7 +133,8 @@ describe('the place a pointer stands over', () => {
   })
 
   it('reads back the place a spot was drawn at', () => {
-    const spots = spotsOf(curve([0, 0.25, 0.5, 0.75, 1]))
+    const one = curve([0, 0.25, 0.5, 0.75, 1])
+    const spots = spotsOf(one, bandOf(one))
     spots.forEach((spot, at) => expect(placeUnder(spot.x, spots.length)).toBe(at))
   })
 

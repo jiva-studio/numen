@@ -6,6 +6,8 @@
  * A preset keeps a budget in cards and a budget in time. The day stands as far
  * through as the fuller of the two, which is the one a person is nearest the
  * end of.
+ *
+ * The screen is read at a glance, so a row is one line of words.
  */
 import { computed } from 'vue'
 
@@ -24,8 +26,6 @@ interface Line {
   readonly goal: string
   /** How much of the day is done, and above one for a day drawn past it. */
   readonly done: number
-  /** What the meter is filled to, which is all of it once the day is done. */
-  readonly filled: number
   /** How far through the day it stands, in the words the row says it in. */
   readonly says: string
   /** Whether no deck points at it, which is a preset that schedules nobody. */
@@ -46,7 +46,6 @@ const lines = computed<Line[]>(() =>
       one,
       goal: one.settings ? goalWords(one.settings, props.today) : '',
       done,
-      filled: Math.min(done, 1),
       says: done > 1 ? 'over budget' : percent(done),
       alone,
       bare: !alone && one.faces === 0 ? bareWords(one.named) : '',
@@ -93,14 +92,15 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
         <p v-else-if="line.bare" class="presets__alone">{{ line.bare }}</p>
         <p v-else class="presets__goal">{{ line.one.paused || line.goal }}</p>
 
-        <!-- A day answered past its budget has a full meter, and says so
-             rather than standing at a round number it is already past. -->
-        <div v-if="!line.alone && !line.bare && !line.one.paused" class="presets__through">
-          <span class="presets__track" :style="{ '--filled': line.filled }" />
-          <span class="presets__done" :data-over="line.done > 1 ? '' : undefined">
-            {{ line.says }}
-          </span>
-        </div>
+        <!-- A day answered past its budget says so, rather than standing at a
+             round number it is already past. -->
+        <p
+          v-if="!line.alone && !line.bare && !line.one.paused"
+          class="presets__done"
+          :data-over="line.done > 1 ? '' : undefined"
+        >
+          {{ line.says }}
+        </p>
       </li>
     </ul>
   </section>
@@ -123,10 +123,11 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
   list-style: none;
 }
 
-/* The name and the goal read across one line, and the meter lies under both. */
+/* A row is one line: the name, the goal, and how far through the day it is at
+   the end of it. */
 .presets__preset {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: baseline;
   column-gap: var(--numen-inset);
 }
@@ -142,35 +143,9 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
   color: var(--numen-hushed);
 }
 
-/* How far through the day the preset stands: the meter, and the same in a
-   number beside it. */
-.presets__through {
-  display: flex;
-  grid-column: 1 / -1;
-  margin-block-start: 0.1875rem;
-  align-items: center;
-  gap: var(--numen-inset);
-}
-
-.presets__track {
-  display: block;
-  flex: 1;
-  block-size: var(--numen-dot-size);
-  border-radius: var(--numen-radius-pill);
-  background: var(--numen-edge);
-}
-
-.presets__track::before {
-  display: block;
-  inline-size: calc(var(--filled) * 100%);
-  block-size: 100%;
-  border-radius: inherit;
-  background: var(--numen-focus-bg);
-  content: '';
-}
-
 .presets__done {
-  flex: none;
+  margin: 0;
+  justify-self: end;
   color: var(--numen-hushed);
   font-size: var(--numen-edge-label-size);
   font-variant-numeric: tabular-nums;

@@ -41,29 +41,38 @@ export const xOf = (place: number, places: number): number =>
 /** The height of one of the faint lines. */
 export const yOfBand = (share: number): number => FOOT - (FOOT - TOP) * share
 
-/** The least and the most the curve costs, which is the band it is drawn in. */
-export const bandOf = (curve: Curve): { least: number; most: number } => {
+/** The stretch of cost the picture is scaled to. */
+export interface Band {
+  readonly least: number
+  readonly most: number
+}
+
+/** The least and the most a curve costs over its whole grid. */
+export const bandOf = (curve: Curve): Band => {
   const costs = curve.at.map((point) => costOf(curve.goal, point))
   if (costs.length === 0) return { least: 0, most: 0 }
   return { least: Math.min(...costs), most: Math.max(...costs) }
 }
 
 /**
- * Where every place of the curve is drawn. The picture is scaled to the band
- * the curve moves in, so what it shows is the shape of the curve; a curve that
- * costs the same everywhere has no shape and is drawn through the middle.
+ * Where every place of the curve is drawn, in the band the picture is scaled
+ * to. The band is the goal's and not this answer's, so a curve that is flat
+ * within it is drawn flat; a band of no width has no scale and is drawn
+ * through the middle.
  */
-export const spotsOf = (curve: Curve): readonly Spot[] => {
-  const { least, most } = bandOf(curve)
-  const span = most - least
+export const spotsOf = (curve: Curve, band: Band): readonly Spot[] => {
+  const span = band.most - band.least
   return curve.at.map((point, place) => ({
     x: xOf(place, curve.at.length),
     y:
       span > 0
-        ? FOOT - (FOOT - TOP) * ((costOf(curve.goal, point) - least) / span)
+        ? held(FOOT - (FOOT - TOP) * ((costOf(curve.goal, point) - band.least) / span))
         : MIDDLE,
   }))
 }
+
+/** A height inside the room the line is drawn in. */
+const held = (y: number): number => Math.min(Math.max(y, TOP), FOOT)
 
 /** The line through those places. */
 export const lineOf = (spots: readonly Spot[]): string =>

@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { presetting } from './kind'
-import { DEFAULTS, type Curve, type Point, type Presets, type Settings } from './core'
+import { DEFAULTS, type Curve, type Goal, type Point, type Presets, type Settings } from './core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
 
@@ -51,6 +51,7 @@ const dated: Curve = {
 /** A vault answering with one preset and that curve, and what was written into it. */
 const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) => {
   const written: Settings[] = []
+  const asked: Goal[] = []
   const core: Presets = {
     read: async (path) => ({
       preset: { path, title: 'Steady', settings: { ...DEFAULTS, ...settings }, problems: [] },
@@ -62,7 +63,10 @@ const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) 
       written.push(put)
       return { refusal: null, changed: false, at: 'two' }
     },
-    curve: async () => answers,
+    curve: async (_path, put) => {
+      asked.push(put.goal)
+      return answers
+    },
   }
   const host = { closes: () => {} } as unknown as Host
   const puts = { holds: () => {} } as unknown as Putting
@@ -73,7 +77,7 @@ const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) 
   await Promise.resolve()
   await Promise.resolve()
   await Promise.resolve()
-  return { held, written }
+  return { held, written, asked, changed: kind.changed }
 }
 
 describe('the value the goal steers', () => {
@@ -119,6 +123,37 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(held.place()).toBe(0)
     expect(held.byHand().has('byDate')).toBe(false)
+  })
+})
+
+describe('the curve behind the knob', () => {
+  it('is asked for once for the goal, and a walk of the grid asks nothing', async () => {
+    const { held, asked } = await opened()
+    held.moves(1)
+    held.moves(3)
+    held.settles()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(asked).toStrictEqual(['minutes'])
+  })
+
+  it('is asked for again where a field the knob does not ride is typed', async () => {
+    const { held, asked } = await opened()
+    held.types('newADay', 4)
+    await Promise.resolve()
+    expect(asked).toStrictEqual(['minutes', 'minutes'])
+  })
+
+  it('is left as it stands where the file comes back saying what it already says', async () => {
+    const { held, asked, changed } = await opened()
+    held.moves(3)
+    changed(['Steady.md'])
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(asked).toStrictEqual(['minutes'])
+    expect(held.place()).toBe(3)
   })
 })
 

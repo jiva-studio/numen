@@ -24,7 +24,9 @@ import {
   kept,
   nearest,
   producing,
+  shapeOf,
   standing,
+  steers,
   type Field,
 } from './curve'
 import { WORDS as words } from './words'
@@ -93,6 +95,8 @@ export function presetting(
     at: string
     /** Which curve is the current one. An answer for a goal since left is dropped. */
     asked: number
+    /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
+    shape: string
   }
 
   const open = new Map<string, Kept>()
@@ -108,6 +112,7 @@ export function presetting(
     saying: ref(''),
     at: '',
     asked: 0,
+    shape: '',
   })
 
   /** What one refusal is put in, and the window's own word for the rest. */
@@ -135,18 +140,24 @@ export function presetting(
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
     one.problems.value = answer.preset.problems
     one.settings.value = answer.preset.settings
-    await curves(one)
+    if (shapeOf(one.settings.value) !== one.shape) await curves(one)
   }
 
   /**
    * The curve of the goal these settings name. The line the window works out
-   * for itself stands in its place until the application answers.
+   * for itself stands in its place until the application answers. Where a
+   * curve of this goal already stands, the knob stays where it is and only the
+   * line is drawn again.
    */
   const curves = async (one: Kept): Promise<void> => {
     const mine = ++one.asked
-    const guess = approximate(one.settings.value, today())
-    one.curve.value = guess
-    one.place.value = Math.max(guess.now.at, 0)
+    one.shape = shapeOf(one.settings.value)
+    const standsAlready = one.curve.value.honest && one.curve.value.goal === one.settings.value.goal
+    if (!standsAlready) {
+      const guess = approximate(one.settings.value, today())
+      one.curve.value = guess
+      one.place.value = Math.max(guess.now.at, 0)
+    }
     let answer: Curve
     try {
       answer = await core.curve(one.path.value, one.settings.value)
@@ -157,6 +168,7 @@ export function presetting(
     }
     if (mine !== one.asked) return
     one.curve.value = answer
+    if (standsAlready) return
     one.place.value =
       answer.now.at >= 0
         ? answer.now.at
@@ -214,15 +226,6 @@ export function presetting(
     return settings
   }
 
-  /**
-   * The field the goal steers, which is the knob under another name.
-   */
-  const steers = (goal: Goal): Field => {
-    if (goal === 'minutes') return 'minutesADay'
-    if (goal === 'retention') return 'retention'
-    return 'byDate'
-  }
-
   /** Where a value typed into the field the goal steers falls on the grid. */
   const falling = (one: Kept, value: number | string | boolean | readonly string[]): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
@@ -269,6 +272,9 @@ export function presetting(
         }
         one.byHand.value = new Set([...one.byHand.value, field])
         one.settings.value = typed(one.settings.value, field, value)
+        // A field the knob does not ride gives the curve its shape, so the
+        // curve is asked for again where one of those is typed.
+        if (shapeOf(one.settings.value) !== one.shape) void curves(one)
         void writes(one)
       },
       follows: (field) => {
