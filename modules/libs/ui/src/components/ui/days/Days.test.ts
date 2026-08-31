@@ -61,6 +61,65 @@ describe('what is drawn', () => {
   it('says a day offers the shares rather than turning on the spot', () => {
     expect(mountDays().get('button').attributes('aria-haspopup')).toBe('menu')
   })
+
+  it('says on the chip whether its shares are open', async () => {
+    const row = mountDays()
+    const chip = row.findAll('button')[5]
+    expect(chip?.attributes('aria-expanded')).toBe('false')
+    await chip?.trigger('click')
+    expect(chip?.attributes('aria-expanded')).toBe('true')
+    expect(row.findAll('button')[0]?.attributes('aria-expanded')).toBe('false')
+  })
+})
+
+describe('the keyboard while the shares are offered', () => {
+  /** The chip pressed, focused as the keyboard would leave it. */
+  const asked = async (row: ReturnType<typeof mountDays>, at: number) => {
+    const chip = row.findAll('button')[at]
+    const element = chip?.element as HTMLElement
+    element.focus()
+    await chip?.trigger('click')
+    return element
+  }
+
+  const items = (): readonly HTMLElement[] => [
+    ...document.body.querySelectorAll<HTMLElement>('.menu__item'),
+  ]
+
+  it('opens on the share the day carries, and says which of them it is', async () => {
+    const row = mountDays()
+    await asked(row, 5)
+    expect(document.activeElement).toBe(items()[3])
+    expect(items().map((one) => one.getAttribute('role'))).toEqual(
+      Array(7).fill('menuitemradio'),
+    )
+    expect(items().map((one) => one.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'false',
+      'false',
+      'true',
+      'false',
+      'false',
+      'false',
+    ])
+  })
+
+  it('gives the keyboard back to the chip once a share is chosen', async () => {
+    const row = mountDays()
+    const chip = await asked(row, 5)
+    items()[2]?.click()
+    await row.vm.$nextTick()
+    expect(document.activeElement).toBe(chip)
+  })
+
+  it('gives the keyboard back to the chip where nothing is chosen at all', async () => {
+    const row = mountDays()
+    const chip = await asked(row, 0)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await row.vm.$nextTick()
+    expect(items()).toEqual([])
+    expect(document.activeElement).toBe(chip)
+  })
 })
 
 describe('giving a day a share', () => {

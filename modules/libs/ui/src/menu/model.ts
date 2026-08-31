@@ -111,7 +111,16 @@ export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpen
 
 /**
  * Where the keyboard is as a menu opens. Opened by hand it is on no item, and
- * the first step down from there lands on the first one.
+ * the first step down from there lands on the first one. Opened by the
+ * keyboard it lands on the item in force, and on the first where the menu
+ * holds none.
  */
-export const landsOn = (opening: MenuOpening, items: readonly MenuItem[]): number =>
-  MENU_OPENINGS[opening].lands ? stepTo(items, -1, 1) : -1
+export const landsOn = (
+  opening: MenuOpening,
+  items: readonly MenuItem[],
+  current: string | null = null,
+): number => {
+  if (!MENU_OPENINGS[opening].lands) return -1
+  const at = items.findIndex((item) => item.id === current && !item.disabled)
+  return at >= 0 ? at : stepTo(items, -1, 1)
+}

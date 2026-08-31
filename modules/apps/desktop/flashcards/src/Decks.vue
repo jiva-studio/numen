@@ -12,7 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
-import { spent } from './scheduling'
+import { opens, spent } from './scheduling'
 import type { DeckOwing, Owing } from './core'
 import type { Preset } from './scheduling'
 
@@ -78,7 +78,7 @@ const empty = (deck: DeckOwing): string => {
         <Button
           variant="outline"
           class="decks__deck"
-          :disabled="deck.due + deck.new === 0 || stopped(deck.deck) !== ''"
+          :disabled="!opens(deck, byDeck)"
           @click="$emit('start', deck.deck)"
         >
           <!-- The letter it is picked by, where the alphabet reaches it: a

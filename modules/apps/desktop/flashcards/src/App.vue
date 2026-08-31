@@ -27,7 +27,7 @@ import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
-import { scheduling } from './scheduling'
+import { opens, scheduling } from './scheduling'
 import { session } from './session'
 import { asking } from './asking'
 import { reading } from './reading'
@@ -261,13 +261,11 @@ const choosing = (press: KeyboardEvent, vault: Owing) => {
 
   switch (asked.does) {
     case 'all':
-      void start('')
+      if (vault.due + vault.new > 0) void start('')
       break
     case 'deck': {
       const deck = vault.decks[asked.at]
-      // A deck whose preset schedules nothing is not studied today, by the key
-      // as by the button.
-      if (deck && !schedules.byDeck.value.get(deck.deck)?.paused) void start(deck.deck)
+      if (deck && opens(deck, schedules.byDeck.value)) void start(deck.deck)
       break
     }
     case 'back':

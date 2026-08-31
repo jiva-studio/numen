@@ -9,8 +9,11 @@ import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { counted, waits } = vi.hoisted(() => ({
-  /** What the front door answers: two vaults, each with a deck owing. */
+const { counted, started, waits } = vi.hoisted(() => ({
+  /**
+   * What the front door answers: one vault owing nothing, and one owing on the
+   * first of its two decks.
+   */
   counted: {
     day: '2026-08-31',
     vaults: [
@@ -19,9 +22,9 @@ const { counted, waits } = vi.hoisted(() => ({
         name: 'Physics',
         path: '/vaults/Physics',
         faces: 2,
-        due: 1,
-        new: 1,
-        decks: [{ deck: 'decks/Heat.md', faces: 2, due: 1, new: 1 }],
+        due: 0,
+        new: 0,
+        decks: [{ deck: 'decks/Heat.md', faces: 2, due: 0, new: 0 }],
         presets: [],
         unread: '',
       },
@@ -29,15 +32,20 @@ const { counted, waits } = vi.hoisted(() => ({
         vaultId: 'words',
         name: 'Words',
         path: '/vaults/Words',
-        faces: 2,
+        faces: 4,
         due: 2,
         new: 0,
-        decks: [{ deck: 'decks/Words.md', faces: 2, due: 2, new: 0 }],
+        decks: [
+          { deck: 'decks/Words.md', faces: 2, due: 2, new: 0 },
+          { deck: 'decks/Roots.md', faces: 2, due: 0, new: 0 },
+        ],
         presets: [],
         unread: '',
       },
     ],
   },
+  /** Every sitting the window opened, by what it was opened over. */
+  started: [] as { deck: string }[],
   /** A stream that stays open, so nothing the window follows ever ends. */
   async *waits(): AsyncGenerator<never> {
     await new Promise<never>(() => {})
@@ -52,6 +60,10 @@ vi.mock('./core', async (original) => ({
     asking: async () => ({ unreachable: '' }),
     reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
     scheduling: async () => ({ preset: undefined }),
+    start: async (said: { deck: string }) => {
+      started.push(said)
+      return { run: 'run', asked: [], unwritten: [], skipped: 0 }
+    },
   },
 }))
 
@@ -77,6 +89,7 @@ const windows: VueWrapper[] = []
 
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
+  started.splice(0)
 })
 
 /** One keystroke, taken on the window as a person takes it. */
@@ -123,5 +136,49 @@ describe('a letter pressed on the vaults', () => {
     await press('a', { ctrlKey: true })
 
     expect(opened(window)).toBe('')
+  })
+})
+
+// The letter drawn on a row and the row itself are one act, so a row that
+// cannot be pressed is a letter that does nothing. A sitting opened over a deck
+// owing nothing is an empty sitting, and it mints marks in the vault to hold it.
+describe('a letter pressed on the decks', () => {
+  /** The window on the decks of the vault standing at this letter. */
+  const on = async (vault: string) => {
+    const window = await drawn()
+    await press(vault)
+    return window
+  }
+
+  it('sits down to the deck standing at it', async () => {
+    await on('b')
+
+    await press('a')
+
+    expect(started).toStrictEqual([{ vaultId: 'words', deck: 'decks/Words.md' }])
+  })
+
+  it('sits down to nothing where that deck owes nothing', async () => {
+    await on('b')
+
+    await press('b')
+
+    expect(started).toStrictEqual([])
+  })
+
+  it('sits down to nothing where the whole vault owes nothing', async () => {
+    await on('a')
+
+    await press('Enter')
+
+    expect(started).toStrictEqual([])
+  })
+
+  it('sits down to the whole vault where it owes something', async () => {
+    await on('b')
+
+    await press('Enter')
+
+    expect(started).toStrictEqual([{ vaultId: 'words', deck: '' }])
   })
 })

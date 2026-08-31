@@ -35,11 +35,16 @@ const props = withDefaults(
 /** What each day carries. A day not named carries the whole of it. */
 const model = defineModel<Shares>({ default: () => ({}) })
 
-/** Which day is being given a share, and where its chip stands. */
-const asking = ref<{ day: string; at: Point } | null>(null)
+/** Which day is being given a share, where its chip stands, and which chip. */
+const asking = ref<{ day: string; at: Point; from: HTMLElement } | null>(null)
 
 const offered = computed(() =>
   props.shares.map((share) => ({ id: `${share}`, text: `${share}%` })),
+)
+
+/** The share the day being asked about carries, which the menu opens on. */
+const carrying = computed(() =>
+  asking.value ? `${shareOn(model.value, asking.value.day)}` : null,
 )
 
 const asks = (day: string, event: Event) => {
@@ -47,7 +52,7 @@ const asks = (day: string, event: Event) => {
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
-  asking.value = { day, at: { x: box.left, y: box.bottom } }
+  asking.value = { day, at: { x: box.left, y: box.bottom }, from: chip }
 }
 
 const chose = (said: string) => {
@@ -88,6 +93,7 @@ const filling = (day: string) => {
       :value="day.id"
       :aria-label="`${day.long}, ${shareOn(model, day.id)}%`"
       aria-haspopup="menu"
+      :aria-expanded="asking?.day === day.id"
       :style="filling(day.id)"
       :class="
         cn(
@@ -108,6 +114,8 @@ const filling = (day: string) => {
     v-if="asking"
     :items="offered"
     :at="asking.at"
+    :from="asking.from"
+    :current="carrying"
     open
     opening="keyboard"
     @choose="chose"

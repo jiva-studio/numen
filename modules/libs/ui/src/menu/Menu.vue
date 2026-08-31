@@ -22,6 +22,12 @@ const props = withDefaults(
     open?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */
     opening?: MenuOpening
+    /**
+     * Which item is the one in force, by the caller's identifier. A menu
+     * naming one offers a choice between its items: each says whether it is
+     * the one, and the keyboard opens on it.
+     */
+    current?: string | null
     /** Where the keyboard goes back to once it closes. */
     from?: HTMLElement | SVGElement | null
     /** The area it is placed in. The browser's own by default. */
@@ -36,6 +42,7 @@ const props = withDefaults(
   {
     open: false,
     opening: 'pointer',
+    current: null,
     from: null,
     viewport: null,
     margin: 8,
@@ -163,7 +170,7 @@ const enter = async () => {
 
   await nextTick()
   measure()
-  goTo(landsOn(props.opening, props.items))
+  goTo(landsOn(props.opening, props.items, props.current))
 }
 
 const leave = () => {
@@ -219,7 +226,8 @@ onBeforeUnmount(leave)
         <button
           class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
           type="button"
-          role="menuitem"
+          :role="current === null ? 'menuitem' : 'menuitemradio'"
+          :aria-checked="current === null ? undefined : item.id === current"
           tabindex="-1"
           :disabled="item.disabled"
           @focus="here = index"

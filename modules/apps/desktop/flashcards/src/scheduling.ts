@@ -11,6 +11,7 @@ import { Goal } from '@numen/protocol'
 import type { Refusal } from '@numen/protocol'
 
 import { deckName } from './core'
+import type { DeckOwing } from './core'
 import { said } from './reading/core'
 import type { Closes, Owing } from './core'
 
@@ -292,6 +293,15 @@ const refusedFor = (answered: readonly Answered[]): string => {
   if (why.size === 0) return ''
   return why.size === 1 ? ([...why][0] ?? '') : UNREAD
 }
+
+/**
+ * Whether sitting down to one deck is offered: it owes something today, and the
+ * preset scheduling it schedules something.
+ *
+ * The row and the letter drawn on it are one act, so both ask this.
+ */
+export const opens = (deck: DeckOwing, by: ReadonlyMap<string, Preset>): boolean =>
+  deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
 
 /** How many cards the day holds at most. */
 export const holds = (budget: Budget): number => budget.new + budget.reviews
