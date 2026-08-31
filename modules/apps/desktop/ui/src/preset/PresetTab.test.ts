@@ -84,7 +84,11 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
 })
 
 /** A tab standing at those settings, and everything it was asked to do. */
-const standing = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) => {
+const standing = (
+  over: Partial<Curve> = {},
+  settings: Partial<Settings> = {},
+  waiting = true,
+) => {
   const done: string[] = []
   const place = ref(2)
   const held: Held = {
@@ -92,6 +96,7 @@ const standing = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) =
     settings: () => ({ ...DEFAULTS, ...settings }),
     curve: () => curve(over),
     place: () => place.value,
+    waiting: () => waiting,
     problems: () => [],
     saying: () => '',
     changed: () => false,
@@ -108,8 +113,8 @@ const standing = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) =
   return { held, done }
 }
 
-const drawn = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) => {
-  const one = standing(over, settings)
+const drawn = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}, waiting = true) => {
+  const one = standing(over, settings, waiting)
   return { ...one, tab: mount(PresetTab, { props: { held: one.held } }) }
 }
 
@@ -805,6 +810,15 @@ describe('what the control stands at', () => {
     expect(tab.findAll('.control__picture[role="slider"]')).toHaveLength(0)
     expect(tab.findAll('.control__number')).toHaveLength(0)
     expect(tab.get('.control__ends').text()).toBe('')
+  })
+
+  // A caption promising work in progress is a promise, and there is nothing
+  // behind it once the vault has refused the picture.
+  it('says nothing of reading the vault where no answer is coming', () => {
+    const { tab } = drawn({ honest: false }, {}, false)
+    expect(tab.findAll('.control__waiting')).toHaveLength(0)
+    expect(tab.text()).not.toContain(words.waiting)
+    expect(tab.findAll('.control__picture[role="slider"]')).toHaveLength(0)
   })
 
   it('draws the picture and nothing waiting once the answer has landed', () => {

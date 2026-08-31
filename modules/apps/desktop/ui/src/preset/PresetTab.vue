@@ -169,6 +169,7 @@ const stopped = computed(() => {
               :curve="curve"
               :place="place"
               :value-text="reading"
+              :waiting="props.held.waiting()"
               @moves="(at: number) => props.held.moves(at)"
               @settles="props.held.settles()"
             />

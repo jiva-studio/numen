@@ -56,6 +56,8 @@ const props = defineProps<{
   place: number
   /** What the knob is announced as standing at. */
   valueText: string
+  /** An answer to the picture is on its way. */
+  waiting: boolean
 }>()
 
 const raises = defineEmits<{
@@ -442,13 +444,15 @@ const released = (event: KeyboardEvent) => {
                whatever stands in it, so nothing below moves when the answer
                lands. -->
           <div class="control__room" :style="{ aspectRatio: `${WIDE} / ${HIGH}` }">
-            <div v-if="!honest" class="control__waiting" role="status">
+            <!-- The room keeps its proportion where no line is drawn in it,
+                 so nothing below moves. -->
+            <div v-if="!honest && props.waiting" class="control__waiting" role="status">
               <Waiting class="control__ring" />
               <span>{{ words.waiting }}</span>
             </div>
 
             <svg
-              v-else
+              v-else-if="honest"
               ref="picture"
               class="control__picture"
               role="slider"

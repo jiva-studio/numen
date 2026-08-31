@@ -50,6 +50,8 @@ export interface Held {
   curve(): Curve
   /** Where the knob stands on that curve. */
   place(): number
+  /** An answer to the picture is on its way. */
+  waiting(): boolean
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
   /** What the file was refused for, in words a person reads, or nothing. */
@@ -93,6 +95,8 @@ export function presetting(
     readonly problems: Ref<readonly string[]>
     readonly changed: Ref<boolean>
     readonly saying: Ref<string>
+    /** An answer to the picture is on its way, and the tab says it is reading. */
+    readonly waiting: Ref<boolean>
     /** The file the settings came out of, presented at the next write. */
     at: string
     /** A write is out, and whether another is wanted once it lands. */
@@ -124,6 +128,8 @@ export function presetting(
     problems: shallowRef<readonly string[]>([]),
     changed: ref(false),
     saying: ref(''),
+    // A tab opens by reading the file the picture is worked out over.
+    waiting: ref(true),
     at: '',
     writing: false,
     wanted: false,
@@ -151,6 +157,7 @@ export function presetting(
     } catch (error) {
       console.error(error)
       one.saying.value = words.unreachable
+      one.waiting.value = false
       return
     }
     one.saying.value = whyOf(answer.refusal)
@@ -161,6 +168,7 @@ export function presetting(
     one.answers.clear()
     if (!answer.preset) {
       one.problems.value = []
+      one.waiting.value = false
       return
     }
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
@@ -190,6 +198,7 @@ export function presetting(
     if (answered) {
       one.curve.value = answered
       one.real = true
+      one.waiting.value = false
       one.place.value = standsAt(answered, one.settings.value)
       return
     }
@@ -209,17 +218,24 @@ export function presetting(
       one.place.value = Math.max(meanwhile.now.at, 0)
     }
     one.real = false
+    one.waiting.value = true
     let answer: Curve
+    // A picture nobody is going to answer is not a picture being read: the tab
+    // says what happened and stops waiting.
     try {
       answer = await core.curve(one.path.value, one.settings.value)
     } catch (error) {
       console.error(error)
+      if (mine !== one.asked) return
+      one.saying.value = words.unreachable
+      one.waiting.value = false
       return
     }
     if (mine !== one.asked) return
     one.answers.set(shape, answer)
     one.curve.value = answer
     one.real = true
+    one.waiting.value = false
     if (standsAlready && alike(riding, answer.grid)) return
     one.place.value = standsAt(answer, one.settings.value)
   }
@@ -368,6 +384,7 @@ export function presetting(
       settings: () => one.settings.value,
       curve: () => one.curve.value,
       place: () => one.place.value,
+      waiting: () => one.waiting.value,
       problems: () => one.problems.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,

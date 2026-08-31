@@ -352,6 +352,29 @@ describe('a preset no tab has open', () => {
   })
 })
 
+// A picture that says it is reading the vault says an answer is on its way.
+// Where none is coming, the tab says what happened and stops saying it.
+describe('a curve nobody answers', () => {
+  it('leaves the tab saying why, and not saying it is reading', async () => {
+    const { held } = await opened({}, () => Promise.reject(new Error('the vault is gone')))
+    expect(held.waiting()).toBe(false)
+    expect(held.saying()).not.toBe('')
+  })
+
+  it('is what a file refused leaves, so no answer is waited on', async () => {
+    const { held } = await opened({}, curve, () => ({ preset: null, refusal: 'notAPreset' }))
+    expect(held.waiting()).toBe(false)
+    expect(held.saying()).not.toBe('')
+  })
+
+  it('is waited on again where the goal is moved to one nobody has answered', async () => {
+    const { held } = await opened({}, () => new Promise<Curve>(() => {}))
+    held.chooses('retention')
+    await after()
+    expect(held.waiting()).toBe(true)
+  })
+})
+
 // A setting typed is written when the control is let go of, so at any moment
 // the last of it stands in the tab and nowhere else. The tab answers for it
 // where it is asked to go, and where the window is.
