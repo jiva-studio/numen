@@ -17,6 +17,7 @@ export const WORDS = {
 export const REFUSED = {
   missing: 'that note is not in the vault',
   notANote: 'that file is not a note',
+  notAPreset: 'that note is not a preset',
   notText: 'that file is not text',
   tooLarge: 'that note is longer than this reads',
   unreadable: 'the frontmatter of that note cannot be read',

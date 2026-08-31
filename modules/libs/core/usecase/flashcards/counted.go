@@ -12,7 +12,7 @@ import (
 
 // countedVersion is the shape of the cache file. A cache of another shape is
 // thrown away and worked out again, which costs a reading of the answers.
-const countedVersion = 1
+const countedVersion = 2
 
 type counted struct {
 	V int `json:"v"`
@@ -23,9 +23,13 @@ type counted struct {
 }
 
 type countedRun struct {
-	Name string                   `json:"name"`
-	Size int                      `json:"size"`
+	Name string `json:"name"`
+	Size int    `json:"size"`
+	// Days is what this run alone came to.
 	Days map[string]history.Tally `json:"days"`
+	// IDs are the identifiers its lines carry, which is what says an answer
+	// another run holds too is the one answer.
+	IDs []string `json:"ids"`
 }
 
 // Reviewed is how much of a vault was answered, and when.
@@ -85,21 +89,44 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 	if err != nil {
 		return Reviewed{}, err
 	}
+	// One identifier is one answer over the whole log, so a line another run
+	// was counted for is not counted again.
+	seen := make(map[string]bool)
 	for _, file := range files {
+		var answers []history.Answer
 		one, held := was[file.Name]
 		if !held || one.Size != file.Size {
 			read, err := log.Run(ctx, store, file)
 			if err != nil {
 				return Reviewed{}, err
 			}
+			answers = read.Answers
 			one = countedRun{
 				Name: file.Name,
 				Size: read.Size,
 				Days: history.Counted(u.Day, read.Answers),
+				IDs:  identifiers(read.Answers),
 			}
 		}
 		now.Runs = append(now.Runs, one)
-		for day, count := range one.Days {
+
+		// What a run came to on its own is what is kept, and what the run adds
+		// to the counting is what no other run has been counted for.
+		days := one.Days
+		if repeats(one.IDs, seen) {
+			if answers == nil {
+				read, err := log.Run(ctx, store, file)
+				if err != nil {
+					return Reviewed{}, err
+				}
+				answers = read.Answers
+			}
+			days = history.Counted(u.Day, given(answers, seen))
+		}
+		for _, id := range one.IDs {
+			seen[id] = true
+		}
+		for day, count := range days {
 			out.Days[day] = added(out.Days[day], count)
 			out.Answered += count.Answered
 		}
@@ -129,6 +156,37 @@ func added(one, other history.Tally) history.Tally {
 		Good:     one.Good + other.Good,
 		Easy:     one.Easy + other.Easy,
 	}
+}
+
+// identifiers is what every line of a run is named by, the lines taking an
+// answer back among them.
+func identifiers(answers []history.Answer) []string {
+	out := make([]string, 0, len(answers))
+	for _, a := range answers {
+		out = append(out, a.ID)
+	}
+	return out
+}
+
+// repeats reports whether a run carries a line another run was counted for.
+func repeats(ids []string, seen map[string]bool) bool {
+	for _, id := range ids {
+		if seen[id] {
+			return true
+		}
+	}
+	return false
+}
+
+// given is the lines of a run no other run was counted for.
+func given(answers []history.Answer, seen map[string]bool) []history.Answer {
+	out := make([]history.Answer, 0, len(answers))
+	for _, a := range answers {
+		if !seen[a.ID] {
+			out = append(out, a)
+		}
+	}
+	return out
 }
 
 // ahead is how much falls on each day still to come, and how much of what came

@@ -158,7 +158,7 @@ func (d *Document) Identifier() (string, bool) {
 
 // SetIdentifier writes the identifier the note is to carry from now on.
 func (d *Document) SetIdentifier(identifier string) error {
-	return d.set("id", []byte("id: "+identifier+d.eol))
+	return d.put("id", &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: identifier})
 }
 
 // Title is what the frontmatter says the note is called, and whether it says.
@@ -180,11 +180,11 @@ func (d *Document) Title() (string, bool) {
 
 // SetTitle writes the title the note is shown by from now on.
 func (d *Document) SetTitle(title string) error {
-	written, err := scalar(title)
-	if err != nil {
+	var held yaml.Node
+	if err := held.Encode(title); err != nil {
 		return err
 	}
-	return d.set("title", []byte("title: "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+	return d.put("title", &held)
 }
 
 // List is the names one top-level frontmatter key holds, in the order they
@@ -225,13 +225,7 @@ func (d *Document) SetList(key string, names []string) error {
 			Kind: yaml.ScalarNode, Style: spelled[name], Value: name,
 		})
 	}
-	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Value: key}, seq,
-	}})
-	if err != nil {
-		return err
-	}
-	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+	return d.put(key, seq)
 }
 
 // Entry is one line of a mapping written under a top-level frontmatter key.
@@ -299,7 +293,8 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 	}
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
-		held := valueOf(standing, one.Key)
+		was := pair(standing, one.Key)
+		held := was.value
 		if !one.Standing {
 			held = &yaml.Node{}
 			if err := held.Encode(one.Value); err != nil {
@@ -309,19 +304,14 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 		if held == nil {
 			continue
 		}
-		mapping.Content = append(mapping.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}, held)
+		name := &yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}
+		was.carry(name, held)
+		mapping.Content = append(mapping.Content, name, held)
 	}
 	if len(mapping.Content) == 0 {
 		return d.set(key, nil)
 	}
-	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Value: key}, mapping,
-	}})
-	if err != nil {
-		return err
-	}
-	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+	return d.put(key, mapping)
 }
 
 // SetScalar writes what one top-level frontmatter key holds from now on. An
@@ -330,11 +320,7 @@ func (d *Document) SetScalar(key, value string) error {
 	if value == "" {
 		return d.set(key, nil)
 	}
-	written, err := scalar(value)
-	if err != nil {
-		return err
-	}
-	return d.set(key, []byte(key+": "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+	return d.SetValue(key, value)
 }
 
 // SetValue writes what one top-level frontmatter key holds from now on, in the
@@ -345,26 +331,15 @@ func (d *Document) SetValue(key string, value any) error {
 	if err := held.Encode(value); err != nil {
 		return err
 	}
-	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Value: key}, &held,
-	}})
-	if err != nil {
-		return err
-	}
-	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+	return d.put(key, &held)
 }
 
 // SetDay writes the day one top-level frontmatter key stands for from now on,
 // as a day with no hour on it.
 func (d *Document) SetDay(key string, day time.Time) error {
-	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Value: key},
-		{Kind: yaml.ScalarNode, Tag: "!!timestamp", Value: day.Format("2006-01-02")},
-	}})
-	if err != nil {
-		return err
-	}
-	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+	return d.put(key, &yaml.Node{
+		Kind: yaml.ScalarNode, Tag: "!!timestamp", Value: day.Format("2006-01-02"),
+	})
 }
 
 // spelling is how each name of one key's list is quoted, so that a name coming
@@ -400,6 +375,53 @@ func render(node *yaml.Node) (string, error) {
 		return "", err
 	}
 	return out.String(), nil
+}
+
+// put writes one top-level key and what it holds, keeping the comment written
+// on the key's own line. That comment is the person's, on a key the application
+// owns as much as on any other.
+func (d *Document) put(key string, value *yaml.Node) error {
+	node, err := d.writable()
+	if err != nil {
+		return err
+	}
+	name := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
+	pair(node, key).carry(name, value)
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{name, value}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
+// held is the two nodes one key of a mapping stands as, and is empty where the
+// mapping has no such key.
+type held struct{ name, value *yaml.Node }
+
+// pair is the two nodes one key of a mapping stands as.
+func pair(node *yaml.Node, key string) held {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return held{}
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return held{name: node.Content[i], value: node.Content[i+1]}
+		}
+	}
+	return held{}
+}
+
+// carry puts the comment written on a key's own line onto the nodes replacing
+// it. A mapping or a list carries it on the key and a scalar on the value, so
+// both are read off both.
+func (h held) carry(name, value *yaml.Node) {
+	if h.name == nil {
+		return
+	}
+	name.LineComment = h.name.LineComment
+	if value != h.value {
+		value.LineComment = h.value.LineComment
+	}
 }
 
 // set replaces the lines one top-level key occupies, or appends them when the

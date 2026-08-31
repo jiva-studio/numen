@@ -70,6 +70,6 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.UNNAMEABLE]: 'unreadable',
   [Refusal.NOT_A_STENCIL]: 'notANote',
   [Refusal.NOT_A_DECK]: 'notANote',
-  [Refusal.NOT_A_PRESET]: 'notANote',
+  [Refusal.NOT_A_PRESET]: 'notAPreset',
   [Refusal.DECK_TOO_LARGE]: 'tooLarge',
 }

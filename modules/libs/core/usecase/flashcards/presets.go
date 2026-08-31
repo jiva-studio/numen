@@ -118,10 +118,10 @@ func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (P
 		return Preset{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
 
-	var at []string
+	var at []domain.ResolvedLink
 	for _, link := range links {
-		if link.Type == LinkType && link.To != "" {
-			at = append(at, link.To)
+		if link.Type == LinkType {
+			at = append(at, link)
 		}
 	}
 	if len(at) == 0 {
@@ -132,18 +132,25 @@ func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (P
 		return out, nil
 	}
 
-	out, err := r.read(ctx, v, at[0])
-	if err != nil {
-		return Preset{}, err
-	}
-	// A note that is not a preset schedules nothing, so the deck stands with
-	// the decks naming none and the problem is shown against it.
-	if out.Type != domain.TypePreset {
-		out.Path = ""
+	first := at[0]
+	by := first.Target.Written()
+	out := Default()
+	if first.To != "" {
+		by = first.To
+		if out, err = r.read(ctx, v, first.To); err != nil {
+			return Preset{}, err
+		}
+		// A note that is not a preset schedules nothing, so the deck stands
+		// with the decks naming none and the problem is shown against it.
+		if out.Type != domain.TypePreset {
+			out.Path = ""
+		}
+	} else {
+		out.Problems = []string{by + " reaches no note, and the defaults stand"}
 	}
 	if len(at) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
-			"this deck names more than one preset, and is scheduled by "+at[0])
+			"this deck names more than one preset, and is scheduled by "+by)
 	}
 	return out, nil
 }

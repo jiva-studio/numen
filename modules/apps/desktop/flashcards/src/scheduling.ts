@@ -399,8 +399,7 @@ const shareOn = (settings: Settings, today: string): number => {
 
 /**
  * What the goal of a preset comes to, in the few words a person reads at a
- * glance. Each goal is said here as the preset tab says it, so one goal reads
- * the same in both windows.
+ * glance. A day is said as a person reads one, and not as the file writes it.
  */
 export const goalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
