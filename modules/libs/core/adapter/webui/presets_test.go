@@ -48,7 +48,7 @@ func steering(t *testing.T, notes map[string]string) *scheduling {
 // sanskrit is a preset a person wrote, with a deck pointing at it and a deck
 // pointing at nothing.
 const sanskrit = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
-	"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nlight_days:\n  - sat\n" +
+	"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload:\n  sat: 50\n  sun: 0\n" +
 	"even_load: true\n---\n\n# Sanskrit\n\nGrammar and vocabulary.\n"
 
 const roots = "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n" +
@@ -72,7 +72,7 @@ func settings() *v1.Settings {
 		NewADay:     8,
 		ReviewsADay: 45,
 		Retention:   0.87,
-		LightDays:   []string{"sat"},
+		Load:        map[string]int32{"sat": 50, "sun": 0},
 		EvenLoad:    true,
 	}
 }

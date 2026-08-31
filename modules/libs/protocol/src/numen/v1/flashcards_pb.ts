@@ -208,8 +208,8 @@ export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
 
   /**
    * What the preset keeps for this day of the week: how many cards of each
-   * kind, and how long the day runs. A light day carries less of the load, and
-   * its neighbours carry what it sheds.
+   * kind, and how long the day runs, at the share of the load that day of the
+   * week carries.
    *
    * A budget the preset's goal does not name stands here as the person left it
    * and closes nothing. `owed_due` and `owed_new` are already held to the ones

@@ -158,7 +158,7 @@ func ahead(
 	if under == nil {
 		return nil
 	}
-	by := under(on)
+	by := under(on).By
 	if by == nil {
 		return nil
 	}

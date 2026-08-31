@@ -228,8 +228,9 @@ minutes_a_day: 20
 new_a_day: 8
 reviews_a_day: 45
 retention: 0.87
-light_days:
-  - sat
+load:
+  sat: 50
+  sun: 0
 even_load: true
 ---
 
@@ -260,12 +261,16 @@ links:
 | `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
 | `counts` | what a day's budget is spent on: `cards`, where a card face counts once however often it comes round that day, or `shows`, where every showing spends a slot. `cards`. |
 | `backlog` | how much of a day goes to what is overdue before anything new is offered, in per cent. 100 is the overdue pile first and new cards only once it is empty; 0 is new cards first; 50 splits the day between them. 100. |
-| `light_days` | the days of the week the load is cut on, written `mon` to `sun`. |
+| `load` | how much of a day's load each day of the week carries, in per cent, under `mon` to `sun`. A day not named carries 100, and a day at 0 schedules nothing. |
 | `even_load` | whether days are made to resemble each other. On. |
 
 Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
 
 Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to be through the material by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
+
+`load` gives a day of the week its share of the load, and that share scales every budget the day keeps: a Saturday at 50 holds half the minutes and half of each card count. It is read whether or not the days are evened out, and **a day at 0 schedules nothing** — a pause of that one day.
+
+`even_load` is whether a card is moved off the day it fell on. The day it comes back on is chosen inside the tolerance the scheduler allows around the interval, and a day carrying less of the load, or already holding more cards, is one the card is less likely to be put on. It is pressure and not a promise: no day is stopped from carrying more than its share, and a short interval leaves nowhere to move a card. With `even_load` off a card falls where the scheduler puts it, and a day that cannot show it leaves it standing over for the next one.
 
 **No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere.
 

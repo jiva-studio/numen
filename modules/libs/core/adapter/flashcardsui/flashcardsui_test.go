@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -1136,5 +1137,93 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 				t.Errorf("asking for more of it back kept %v more of it", kept)
 			}
 		})
+	}
+}
+
+// sat is what a sitting over one preset came to: how many cards, and how they
+// divided between the debt and the material it had not begun.
+type sat struct{ asked, owed, fresh int }
+
+// sitting opens a sitting over one preset, the way pressing its tile does.
+func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
+	t.Helper()
+	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+		VaultId: v.ID, Preset: naming(preset),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	held := sat{asked: len(out.Msg.GetAsked())}
+	for _, one := range out.Msg.GetAsked() {
+		if !one.GetSeen() {
+			held.fresh++
+			continue
+		}
+		held.owed++
+	}
+	return held
+}
+
+// The share of a day that goes to the debt moves the sitting and the projection
+// alike, and moves them together.
+//
+// A share is read where a day is spent, which is one place, so the cards a
+// person is asked for and the cards the picture is drawn from are the same
+// cards. Were the projection to read its own rule, moving the share would
+// change tomorrow's sitting and leave the curve and the overdue band standing.
+func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
+	held := make(map[int]sat, 2)
+	bands := make(map[int][]int32, 2)
+
+	for _, share := range []int{100, 0} {
+		api, vaults := windowed(t, lived)
+		v := vaults[0]
+		lives(t, api, v, 20)
+		standing(api, firstMorning.AddDate(0, 0, 20))
+
+		p := asWritten(t, api, v, "Sanskrit.md")
+		p.Goal, p.Backlog = history.GoalMinutes, share
+		writtenBack(t, api, v, "Sanskrit.md", p)
+
+		// The control is left on a place of its own grid, so the picture is
+		// drawn for the day the vault is held to.
+		drawn := pictured(t, api, v, "Sanskrit.md", p)
+		value := drawn.GetGrid()[2]
+		p.MinutesADay = int(value)
+		writtenBack(t, api, v, "Sanskrit.md", p)
+
+		drawn = pictured(t, api, v, "Sanskrit.md", p)
+		at := 2
+		if drawn.GetGrid()[at] != value {
+			t.Fatalf("the control was left at %v and the grid holds %v there",
+				value, drawn.GetGrid()[at])
+		}
+
+		one := sitting(t, api, v, "Sanskrit.md")
+		if got := int(drawn.GetAt()[at].GetReviews()); got != one.asked {
+			t.Errorf("giving the debt %d of the day, the sitting asks %d cards and the "+
+				"picture draws %d", share, one.asked, got)
+		}
+		held[share], bands[share] = one, drawn.GetAt()[at].GetBacklog()
+	}
+
+	// Each share put its own side of the day first: paying the debt filled the
+	// day with it, and putting it last spent the day on new cards.
+	if held[100].owed == 0 || held[0].fresh == 0 {
+		t.Fatalf("paying the debt first asked %+v and putting it last %+v, and neither "+
+			"side is under test", held[100], held[0])
+	}
+	// The two shares are two different days, in the sitting and in the picture
+	// both. A setting inert in either half would show as one of these matching.
+	if held[100].owed == held[0].owed {
+		t.Errorf("paying the debt first asked %+v and putting it last %+v",
+			held[100], held[0])
+	}
+	if held[100].owed <= held[0].owed {
+		t.Errorf("paying the debt first asked %d owed and putting it last %d",
+			held[100].owed, held[0].owed)
+	}
+	if slices.Equal(bands[100], bands[0]) {
+		t.Error("the overdue band is the same whether the debt is paid first or last")
 	}
 }

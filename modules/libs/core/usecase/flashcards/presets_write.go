@@ -24,7 +24,7 @@ const (
 	retentionKey   = "retention"
 	countsKey      = "counts"
 	backlogKey     = "backlog"
-	lightDaysKey   = "light_days"
+	loadKey        = "load"
 	evenLoadKey    = "even_load"
 )
 
@@ -111,8 +111,8 @@ func (u Presets) save(
 }
 
 // settle writes the settings into the frontmatter, one key at a time. A day the
-// goal does not name and a week of no light days are keys the note stops
-// carrying.
+// goal does not name and a week of days all carrying the whole load are keys
+// the note stops carrying.
 func settle(doc *markdown.Document, p history.Preset) error {
 	if err := doc.SetScalar(goalKey, string(p.Goal)); err != nil {
 		return err
@@ -142,11 +142,19 @@ func settle(doc *markdown.Document, p history.Preset) error {
 			return err
 		}
 	}
-	names := make([]string, 0, len(p.LightDays))
-	for _, weekday := range p.LightDays {
-		names = append(names, history.DayName(weekday))
+	shares := make([]markdown.Entry, 0, len(p.Load))
+	for _, weekday := range week {
+		if share, named := p.Load[weekday]; named {
+			shares = append(shares, markdown.Entry{Key: history.DayName(weekday), Value: share})
+		}
 	}
-	return doc.SetList(lightDaysKey, names)
+	return doc.SetMapping(loadKey, shares)
+}
+
+// week is the days of the week in the order a preset writes them.
+var week = []time.Weekday{
+	time.Monday, time.Tuesday, time.Wednesday, time.Thursday,
+	time.Friday, time.Saturday, time.Sunday,
 }
 
 // bounded is what in the settings may not be written, and is nil when all of
@@ -179,9 +187,20 @@ func bounded(p history.Preset) error {
 				ErrOutOfBounds, one.key, one.value, one.bounds.Least, one.bounds.Most)
 		}
 	}
-	for _, weekday := range p.LightDays {
+	for _, weekday := range week {
+		share, named := p.Load[weekday]
+		if !named {
+			continue
+		}
+		if !history.LoadBounds.Holds(float64(share)) {
+			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
+				ErrOutOfBounds, history.DayName(weekday), share,
+				history.LoadBounds.Least, history.LoadBounds.Most)
+		}
+	}
+	for weekday := range p.Load {
 		if weekday < time.Sunday || weekday > time.Saturday {
-			return fmt.Errorf("%w: a light day is a day of the week", ErrOutOfBounds)
+			return fmt.Errorf("%w: a load is kept on a day of the week", ErrOutOfBounds)
 		}
 	}
 	return nil

@@ -159,9 +159,6 @@ type Settings struct {
 	ReviewsADay int32 `protobuf:"varint,5,opt,name=reviews_a_day,json=reviewsADay,proto3" json:"reviews_a_day,omitempty"`
 	// The share of cards recalled when they come round again.
 	Retention float64 `protobuf:"fixed64,6,opt,name=retention,proto3" json:"retention,omitempty"`
-	// The days of the week the load is cut on, each as the first three letters of
-	// its name in lower case.
-	LightDays []string `protobuf:"bytes,7,rep,name=light_days,json=lightDays,proto3" json:"light_days,omitempty"`
 	// Whether days are made to resemble each other.
 	EvenLoad bool `protobuf:"varint,8,opt,name=even_load,json=evenLoad,proto3" json:"even_load,omitempty"`
 	// What a day's budget is spent on. Unspecified is the default, which charges
@@ -174,7 +171,11 @@ type Settings struct {
 	//
 	// It says what a day is spent on rather than what closes it. A goal of a date
 	// carries the whole material by its own reckoning, so it takes no part there.
-	Backlog       int32 `protobuf:"varint,10,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	Backlog int32 `protobuf:"varint,10,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	// How much of a day's load each day of the week carries, in per cent, under
+	// the first three letters of the day's name in lower case. A day not named
+	// carries the whole of it, and a day at nothing schedules nothing.
+	Load          map[string]int32 `protobuf:"bytes,11,rep,name=load,proto3" json:"load,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -251,13 +252,6 @@ func (x *Settings) GetRetention() float64 {
 	return 0
 }
 
-func (x *Settings) GetLightDays() []string {
-	if x != nil {
-		return x.LightDays
-	}
-	return nil
-}
-
 func (x *Settings) GetEvenLoad() bool {
 	if x != nil {
 		return x.EvenLoad
@@ -277,6 +271,13 @@ func (x *Settings) GetBacklog() int32 {
 		return x.Backlog
 	}
 	return 0
+}
+
+func (x *Settings) GetLoad() map[string]int32 {
+	if x != nil {
+		return x.Load
+	}
+	return nil
 }
 
 // Preset is one preset as a read hands it over.
@@ -1142,20 +1143,23 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xc9\x02\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xa7\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
 	"\rminutes_a_day\x18\x03 \x01(\x05R\vminutesADay\x12\x1a\n" +
 	"\tnew_a_day\x18\x04 \x01(\x05R\anewADay\x12\"\n" +
 	"\rreviews_a_day\x18\x05 \x01(\x05R\vreviewsADay\x12\x1c\n" +
-	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1d\n" +
-	"\n" +
-	"light_days\x18\a \x03(\tR\tlightDays\x12\x1b\n" +
+	"\tretention\x18\x06 \x01(\x01R\tretention\x12\x1b\n" +
 	"\teven_load\x18\b \x01(\bR\bevenLoad\x12(\n" +
 	"\x06counts\x18\t \x01(\x0e2\x10.numen.v1.CountsR\x06counts\x12\x18\n" +
 	"\abacklog\x18\n" +
-	" \x01(\x05R\abacklog\"~\n" +
+	" \x01(\x05R\abacklog\x120\n" +
+	"\x04load\x18\v \x03(\v2\x1c.numen.v1.Settings.LoadEntryR\x04load\x1a7\n" +
+	"\tLoadEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\a\x10\bR\n" +
+	"light_days\"~\n" +
 	"\x06Preset\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
@@ -1256,7 +1260,7 @@ func file_numen_v1_presets_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                   // 0: numen.v1.Goal
 	(Counts)(0),                 // 1: numen.v1.Counts
@@ -1273,42 +1277,44 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*WritePresetResponse)(nil), // 12: numen.v1.WritePresetResponse
 	(*CurveRequest)(nil),        // 13: numen.v1.CurveRequest
 	(*CurveResponse)(nil),       // 14: numen.v1.CurveResponse
-	(Refusal)(0),                // 15: numen.v1.Refusal
-	(*Fingerprint)(nil),         // 16: numen.v1.Fingerprint
+	nil,                         // 15: numen.v1.Settings.LoadEntry
+	(Refusal)(0),                // 16: numen.v1.Refusal
+	(*Fingerprint)(nil),         // 17: numen.v1.Fingerprint
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
 	1,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
-	2,  // 2: numen.v1.Preset.settings:type_name -> numen.v1.Settings
-	0,  // 3: numen.v1.Curve.goal:type_name -> numen.v1.Goal
-	5,  // 4: numen.v1.Curve.at:type_name -> numen.v1.Point
-	6,  // 5: numen.v1.Curve.now:type_name -> numen.v1.Mark
-	6,  // 6: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
-	3,  // 7: numen.v1.SchedulingResponse.preset:type_name -> numen.v1.Preset
-	15, // 8: numen.v1.SchedulingResponse.refusal:type_name -> numen.v1.Refusal
-	16, // 9: numen.v1.SchedulingResponse.at:type_name -> numen.v1.Fingerprint
-	3,  // 10: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	15, // 11: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
-	16, // 12: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
-	2,  // 13: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	16, // 14: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	15, // 15: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
-	16, // 16: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
-	2,  // 17: numen.v1.CurveRequest.settings:type_name -> numen.v1.Settings
-	4,  // 18: numen.v1.CurveResponse.curve:type_name -> numen.v1.Curve
-	7,  // 19: numen.v1.PresetsService.Scheduling:input_type -> numen.v1.SchedulingRequest
-	9,  // 20: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
-	11, // 21: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
-	13, // 22: numen.v1.PresetsService.Curve:input_type -> numen.v1.CurveRequest
-	8,  // 23: numen.v1.PresetsService.Scheduling:output_type -> numen.v1.SchedulingResponse
-	10, // 24: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
-	12, // 25: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
-	14, // 26: numen.v1.PresetsService.Curve:output_type -> numen.v1.CurveResponse
-	23, // [23:27] is the sub-list for method output_type
-	19, // [19:23] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	15, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
+	2,  // 3: numen.v1.Preset.settings:type_name -> numen.v1.Settings
+	0,  // 4: numen.v1.Curve.goal:type_name -> numen.v1.Goal
+	5,  // 5: numen.v1.Curve.at:type_name -> numen.v1.Point
+	6,  // 6: numen.v1.Curve.now:type_name -> numen.v1.Mark
+	6,  // 7: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
+	3,  // 8: numen.v1.SchedulingResponse.preset:type_name -> numen.v1.Preset
+	16, // 9: numen.v1.SchedulingResponse.refusal:type_name -> numen.v1.Refusal
+	17, // 10: numen.v1.SchedulingResponse.at:type_name -> numen.v1.Fingerprint
+	3,  // 11: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
+	16, // 12: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	17, // 13: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
+	2,  // 14: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
+	17, // 15: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	16, // 16: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	17, // 17: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
+	2,  // 18: numen.v1.CurveRequest.settings:type_name -> numen.v1.Settings
+	4,  // 19: numen.v1.CurveResponse.curve:type_name -> numen.v1.Curve
+	7,  // 20: numen.v1.PresetsService.Scheduling:input_type -> numen.v1.SchedulingRequest
+	9,  // 21: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
+	11, // 22: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
+	13, // 23: numen.v1.PresetsService.Curve:input_type -> numen.v1.CurveRequest
+	8,  // 24: numen.v1.PresetsService.Scheduling:output_type -> numen.v1.SchedulingResponse
+	10, // 25: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
+	12, // 26: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
+	14, // 27: numen.v1.PresetsService.Curve:output_type -> numen.v1.CurveResponse
+	24, // [24:28] is the sub-list for method output_type
+	20, // [20:24] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_presets_proto_init() }
@@ -1327,7 +1333,7 @@ func file_numen_v1_presets_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_presets_proto_rawDesc), len(file_numen_v1_presets_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   13,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

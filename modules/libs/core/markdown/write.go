@@ -234,6 +234,38 @@ func (d *Document) SetList(key string, names []string) error {
 	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
 }
 
+// Entry is one line of a mapping written under a top-level frontmatter key.
+type Entry struct {
+	Key   string
+	Value any
+}
+
+// SetMapping writes the entries one top-level frontmatter key holds from now
+// on, one to a line and in the order they are given. No entries removes the
+// key.
+func (d *Document) SetMapping(key string, entries []Entry) error {
+	if len(entries) == 0 {
+		return d.set(key, nil)
+	}
+
+	mapping := &yaml.Node{Kind: yaml.MappingNode}
+	for _, one := range entries {
+		var held yaml.Node
+		if err := held.Encode(one.Value); err != nil {
+			return err
+		}
+		mapping.Content = append(mapping.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}, &held)
+	}
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: key}, mapping,
+	}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
 // SetScalar writes what one top-level frontmatter key holds from now on. An
 // empty value removes the key.
 func (d *Document) SetScalar(key, value string) error {
@@ -428,7 +460,7 @@ func (d *Document) writable() (*yaml.Node, error) {
 // Everything here works by replacing the lines a key occupies, and that is a
 // key's own span while one line holds one key. `{title: T, id: b}` puts them
 // all on one, so the span of any of them is the span of all of them. A value
-// written on one line — `light_days: [sat]` — still occupies its key's own
+// written on one line — `load: {sat: 50}` — still occupies its key's own
 // lines and is replaced as it stands.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 

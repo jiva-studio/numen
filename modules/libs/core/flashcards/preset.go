@@ -2,7 +2,9 @@ package flashcards
 
 import (
 	"fmt"
+	"maps"
 	"math"
+	"slices"
 	"strings"
 	"time"
 )
@@ -42,11 +44,38 @@ type Preset struct {
 	// reads it.
 	Backlog int
 
-	// LightDays are the days of the week the load is cut on, and the cards
-	// moved to their neighbours.
-	LightDays []time.Weekday
+	// Load is how much of a day's load each day of the week carries, in per
+	// cent. A day the preset does not name carries the whole of it, and a day
+	// at nothing schedules nothing.
+	Load map[time.Weekday]int
 	// EvenLoad is whether days are made to resemble each other.
 	EvenLoad bool
+}
+
+// FullLoad is a whole day's load, which is what a day the preset does not name
+// carries.
+const FullLoad = 100
+
+// Share is how much of a day's load this day of the week carries, as a share of
+// one.
+func (p Preset) Share(day time.Weekday) float64 {
+	per, named := p.Load[day]
+	if !named {
+		return 1
+	}
+	return float64(per) / FullLoad
+}
+
+// Placing is how this preset puts a card on a day, as a short name: whether it
+// evens the days out, and the share each day of the week carries. A schedule
+// worked out under one placing is not read back under another.
+func (p Preset) Placing() string {
+	var out strings.Builder
+	fmt.Fprintf(&out, "even=%t", p.EvenLoad)
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.Share(day)*FullLoad)))
+	}
+	return out.String()
 }
 
 // Goal is which value the one control steers.
@@ -107,6 +136,7 @@ var (
 	ReviewsADayBounds = Bounds{Least: 0, Most: 9999}
 	RetentionBounds   = Bounds{Least: 0.7, Most: 0.99}
 	BacklogBounds     = Bounds{Least: 0, Most: 100}
+	LoadBounds        = Bounds{Least: 0, Most: FullLoad}
 )
 
 // Defaults is a preset naming nothing, and how a deck pointing at no preset is
@@ -175,7 +205,9 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
 		Closes: p.closing(),
-		Paused: p.Paused(d, now),
+		// A day carrying none of the load schedules nothing, as a budget of
+		// zero does.
+		Paused: p.Paused(d, now) || p.Share(opened.Weekday()) == 0,
 	}
 	if p.Goal == GoalDate {
 		out.Keeps.New = p.paces(d, now, left)
@@ -190,6 +222,26 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
 	out.Reviews = out.Keeps.Reviews - spent.Reviews
 	out.Minutes = time.Duration(out.Keeps.Minutes*float64(time.Minute)) - spent.Took
 	return out
+}
+
+// Paying reports whether the next card of this day comes from the debt before
+// it rather than from the material it has not begun.
+//
+// Debt and begun are how many of each the day has taken so far, and owed and
+// fresh whether either side has a card left to give. The day is spent between
+// the two in the share the preset names; a side with nothing left leaves the
+// rest of the day to the other, and an odd card goes to the debt.
+//
+// It is the one rule for how a day is spent, so a sitting and a projection of
+// that same day put the same cards in the same order.
+func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
+	if !owed {
+		return false
+	}
+	if !fresh {
+		return true
+	}
+	return debt*AllBacklog < a.Backlog*(debt+begun+1)
 }
 
 // closing is which budget closes this preset's day.
@@ -344,23 +396,34 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		}
 	}
 
-	if raw, present := front["light_days"]; present && raw != nil {
-		days, isList := raw.([]any)
-		if !isList {
-			problems = append(problems, "light_days is a list of days")
+	if raw, present := front["load"]; present && raw != nil {
+		days, isMapping := raw.(map[string]any)
+		if !isMapping {
+			problems = append(problems, "load is a day of the week against a share of a day's load")
 		} else {
-			for _, one := range days {
-				name, isText := one.(string)
-				if !isText {
-					problems = append(problems, "a light day is not text")
-					continue
-				}
+			// A map hands its keys over in whatever order it holds them, and a
+			// note read twice says the same both times.
+			for _, name := range slices.Sorted(maps.Keys(days)) {
 				day, known := Weekday(name)
 				if !known {
-					problems = append(problems, "light day "+name+" is not a day of the week")
+					problems = append(problems, "the load of "+name+" is not a day of the week")
 					continue
 				}
-				p.LightDays = append(p.LightDays, day)
+				share, ok := number(days[name])
+				switch {
+				case !ok:
+					problems = append(problems, "the load of "+name+" is not a number")
+				case share != math.Trunc(share):
+					problems = append(problems, "the load of "+name+" is counted in whole per cent")
+				case !LoadBounds.Holds(share):
+					problems = append(problems, fmt.Sprintf("the load of %s, %g, is outside %g to %g",
+						name, share, LoadBounds.Least, LoadBounds.Most))
+				default:
+					if p.Load == nil {
+						p.Load = make(map[time.Weekday]int, len(days))
+					}
+					p.Load[day] = int(share)
+				}
 			}
 		}
 	}

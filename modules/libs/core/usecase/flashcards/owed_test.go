@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// A vault of three decks: two scheduled by a preset that keeps Saturday light,
-// and one naming no preset at all.
+// A vault of three decks: two scheduled by a preset that gives Saturday half
+// the load, and one naming no preset at all.
 var scheduled = map[string]string{
 	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
-		"new_a_day: 8\nreviews_a_day: 45\nlight_days: [sat]\n---\n\n# Sanskrit\n",
+		"new_a_day: 8\nreviews_a_day: 45\nload: {sat: 50}\n---\n\n# Sanskrit\n",
 	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
 		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
 		"\n## Root ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n",
@@ -25,7 +25,8 @@ var scheduled = map[string]string{
 		"\n## Term ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nsutra\n\n### Meaning\n\na thread\n",
 }
 
-// saturday is a day the Sanskrit preset keeps light, at an hour well inside it.
+// saturday is a day the Sanskrit preset gives half the load, at an hour well
+// inside it.
 var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 
 // What a day came to is counted under the preset each deck names, over as many

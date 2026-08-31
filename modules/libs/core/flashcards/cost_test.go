@@ -180,15 +180,12 @@ func TestAHigherTargetIsMoreReviews(t *testing.T) {
 	}
 }
 
-// A light day sheds part of its load and the days either side of it take it up,
-// so the week answers what it answered and the days that are not light are
-// longer.
-func TestALightDayMovesTheWeeksWorkAndKeepsIt(t *testing.T) {
+// A day carrying a share of the load answers that share of the cards, and the
+// day it is answers no fewer than the same day carrying all of it would.
+func TestADayCarriesTheShareOfTheLoadItIsGiven(t *testing.T) {
 	by := history.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	at := learned(by, now, 600)
-	// A day of fourteen minutes at ten seconds an answer is whole cards at every
-	// share a light day and its neighbours carry.
 	run := history.Simulation{
 		By: by, Day: ahead,
 		Cost: history.Cost{New: 20 * time.Second, Review: 10 * time.Second}, Days: 7,
@@ -197,26 +194,37 @@ func TestALightDayMovesTheWeeksWorkAndKeepsIt(t *testing.T) {
 
 	flat := ran(t, run, now, p, at, 0)
 	light := p
-	light.LightDays = []time.Weekday{time.Wednesday}
+	light.Load = map[time.Weekday]int{time.Wednesday: 50}
 	cut := ran(t, run, now, light, at, 0)
 
-	if cut.Answered != flat.Answered {
-		t.Errorf("a week with a light day answered %d, and the same week without one %d",
+	if cut.Answered >= flat.Answered {
+		t.Errorf("a week with a half day answered %d, and the same week of whole days %d",
 			cut.Answered, flat.Answered)
 	}
-	days := weekdays(now, len(cut.Load))
-	for i, day := range days {
-		switch day {
-		case time.Wednesday:
-			if cut.Load[i] >= flat.Load[i] {
-				t.Errorf("the light %s carried %d, and the same day not light %d",
-					day, cut.Load[i], flat.Load[i])
-			}
-		case time.Tuesday, time.Thursday:
-			if cut.Load[i] <= flat.Load[i] {
-				t.Errorf("%s, beside a light day, carried %d, and away from one %d",
-					day, cut.Load[i], flat.Load[i])
-			}
+	for i, day := range weekdays(now, len(cut.Load)) {
+		if day == time.Wednesday && cut.Load[i] >= flat.Load[i] {
+			t.Errorf("the half %s carried %d, and the same day whole %d",
+				day, cut.Load[i], flat.Load[i])
+		}
+	}
+}
+
+// A day carrying none of the load takes no card, and the day after it picks up
+// what stood over.
+func TestADayCarryingNoneOfTheLoadTakesNoCard(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 600)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 14}
+	p := history.Preset{
+		Goal: history.GoalRetention, NewADay: 20, ReviewsADay: 40, EvenLoad: true,
+		Load: map[time.Weekday]int{time.Wednesday: 0},
+	}
+
+	got := ran(t, run, now, p, at, 0)
+	for i, day := range weekdays(now, len(got.Load)) {
+		if day == time.Wednesday && got.Load[i] != 0 {
+			t.Errorf("a %s carrying none of the load answered %d", day, got.Load[i])
 		}
 	}
 }
@@ -231,53 +239,43 @@ func keeps(p history.Preset, day time.Weekday) history.Budget {
 	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, 0).Keeps
 }
 
-// The budget a preset keeps on one day is the day of the week's share of it: a
-// light day holds less, the days either side of it hold more, and a week holds
-// what it held.
+// The budget a preset keeps on one day is that day of the week's share of it,
+// whether or not the days are evened out. A day the preset does not name keeps
+// the whole of it, and a day at nothing keeps none.
 func TestTheBudgetOfOneDayIsItsShareOfTheLoad(t *testing.T) {
-	p := history.Preset{MinutesADay: 20, NewADay: 10, ReviewsADay: 40}
-	p.LightDays = []time.Weekday{time.Wednesday}
-
-	light := keeps(p, time.Wednesday)
-	if want := (history.Budget{New: 5, Reviews: 20, Minutes: 10}); light != want {
-		t.Errorf("a light day holds %+v, want %+v", light, want)
-	}
-	beside := keeps(p, time.Tuesday)
-	if want := (history.Budget{New: 13, Reviews: 50, Minutes: 25}); beside != want {
-		t.Errorf("the day beside it holds %+v, want %+v", beside, want)
-	}
-	if away := keeps(p, time.Sunday); away.Reviews != p.ReviewsADay {
-		t.Errorf("a day away from the light one holds %+v", away)
+	p := history.Preset{
+		MinutesADay: 20, NewADay: 10, ReviewsADay: 40,
+		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0},
 	}
 
-	var week history.Budget
-	for day := time.Sunday; day <= time.Saturday; day++ {
-		one := keeps(p, day)
-		week.New += one.New
-		week.Reviews += one.Reviews
-		week.Minutes += one.Minutes
+	half := keeps(p, time.Wednesday)
+	if want := (history.Budget{New: 5, Reviews: 20, Minutes: 10}); half != want {
+		t.Errorf("a day at half the load holds %+v, want %+v", half, want)
 	}
-	if week.Reviews != 7*p.ReviewsADay {
-		t.Errorf("the week holds %d reviews, want %d", week.Reviews, 7*p.ReviewsADay)
+	whole := keeps(p, time.Tuesday)
+	if want := (history.Budget{New: 10, Reviews: 40, Minutes: 20}); whole != want {
+		t.Errorf("a day the preset does not name holds %+v, want %+v", whole, want)
+	}
+	if none := keeps(p, time.Sunday); none != (history.Budget{}) {
+		t.Errorf("a day at none of the load holds %+v", none)
 	}
 }
 
-// A week of nothing but light days is a week of ordinary ones: there is no
-// neighbour for the load to move to.
-func TestAWeekOfNothingButLightDaysIsAnOrdinaryWeek(t *testing.T) {
-	by := history.NewFSRS()
-	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	at := learned(by, now, 200)
-	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 14}
-	p := history.Preset{MinutesADay: 15, ReviewsADay: 9999}
-
-	all := p
-	for day := time.Sunday; day <= time.Saturday; day++ {
-		all.LightDays = append(all.LightDays, day)
+// A day at none of the load schedules nothing, as a budget of zero does.
+func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
+	p := history.Preset{
+		Goal: history.GoalRetention, NewADay: 10, ReviewsADay: 40,
+		Load: map[time.Weekday]int{time.Sunday: 0},
 	}
-	got, want := ran(t, run, now, all, at, 0).Load, ran(t, run, now, p, at, 0).Load
-	if !slices.Equal(got, want) {
-		t.Errorf("a week of light days carried %v, and a week of none %v", got, want)
+	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
+	if at.Weekday() != time.Sunday {
+		t.Fatalf("%v is a %v", at, at.Weekday())
+	}
+	if !p.Admits(ahead, at, history.Spent{}, 0).Paused {
+		t.Error("a day at none of the load is not a pause")
+	}
+	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, 0).Paused {
+		t.Error("the day after it is a pause")
 	}
 }
 

@@ -123,7 +123,7 @@ func (c Config) Flashcards(
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.
 	schedules := flashcards.Schedules{
-		Logs: logs, Kept: kept, By: history.NewFSRS(),
+		Logs: logs, Kept: kept, By: history.NewFSRS(), Day: day,
 		Standings: standing, Presets: presets,
 	}
 

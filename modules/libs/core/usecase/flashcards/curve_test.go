@@ -254,9 +254,9 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 	}
 }
 
-// Light days and an even load are projected, so what stands where the preset
-// stands is worked out with them applied.
-func TestTheCurveIsWorkedOutWithLightDaysAndAnEvenLoad(t *testing.T) {
+// The load each day of the week carries and an even load are projected, so what
+// stands where the preset stands is worked out with them applied.
+func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
 		Goal: history.GoalRetention, Retention: 0.9,
@@ -268,10 +268,10 @@ func TestTheCurveIsWorkedOutWithLightDaysAndAnEvenLoad(t *testing.T) {
 		t.Fatal(err)
 	}
 	light, even := p, p
-	light.LightDays = []time.Weekday{time.Wednesday, time.Sunday}
+	light.Load = map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 0}
 	even.EvenLoad = true
 
-	for name, one := range map[string]history.Preset{"light days": light, "an even load": even} {
+	for name, one := range map[string]history.Preset{"a light week": light, "an even load": even} {
 		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one)
 		if err != nil {
 			t.Fatal(err)

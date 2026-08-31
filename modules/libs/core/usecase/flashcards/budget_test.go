@@ -124,8 +124,9 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 // the small hours of the morning belong to the day before.
 func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 	s := opened(t, map[string]string{
-		"Term.md":        term,
-		"Light.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nlight_days: [sat]\n"),
+		"Term.md": term,
+		"Light.md": preset(
+			"new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sat: 50}\n"),
 		"decks/Light.md": deckOf("Light", 20, 0),
 	})
 
@@ -134,9 +135,9 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 		cards int
 	}{
 		// Two in the morning of the Saturday is the Friday's review day, which
-		// carries what the light Saturday sheds.
-		{time.Date(2026, 9, 5, 2, 0, 0, 0, time.Local), 10},
-		// And two in the morning of the Sunday is the light Saturday itself.
+		// carries the whole of the load.
+		{time.Date(2026, 9, 5, 2, 0, 0, 0, time.Local), 8},
+		// And two in the morning of the Sunday is the half Saturday itself.
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 4},
 	} {
 		got := byDeck(s.sittingAt(t, today, one.at))["decks/Light.md"]
@@ -327,12 +328,13 @@ func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 	}
 }
 
-// A day the preset names light carries half the load, and a preset naming none
-// carries all of it on the same day.
+// A day the preset gives half the load carries half the cards, and a preset
+// naming that day nothing carries all of them on it.
 func TestALightDayCutsTheDaysCards(t *testing.T) {
 	s := opened(t, map[string]string{
-		"Term.md":        term,
-		"Light.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nlight_days: [sat]\n"),
+		"Term.md": term,
+		"Light.md": preset(
+			"new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sat: 50}\n"),
 		"Plain.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/Light.md": deckOf("Light", 10, 0),
 		"decks/Plain.md": deckOf("Plain", 10, 100),
@@ -343,7 +345,7 @@ func TestALightDayCutsTheDaysCards(t *testing.T) {
 		t.Errorf("a light Saturday was asked %d cards, want 4", got["decks/Light.md"])
 	}
 	if got["decks/Plain.md"] != 8 {
-		t.Errorf("the same Saturday under no light day was asked %d cards, want 8",
+		t.Errorf("the same Saturday under the whole load was asked %d cards, want 8",
 			got["decks/Plain.md"])
 	}
 }
@@ -785,12 +787,12 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	}
 }
 
-// A light day sheds onto the day either side of it round the end of the week,
-// so a light Sunday is carried by the Saturday before it and the Monday after.
-func TestALightSundayShedsOntoTheDaysEitherSideOfIt(t *testing.T) {
+// A day carrying none of the load is asked no card, and the day after it opens
+// on the whole of the budget.
+func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md":     term,
-		"On.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nlight_days: [sun]\n"),
+		"On.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sun: 0}\n"),
 		"decks/On.md": deckOf("On", 40, 0),
 	})
 
@@ -798,10 +800,9 @@ func TestALightSundayShedsOntoTheDaysEitherSideOfIt(t *testing.T) {
 		at    time.Time
 		cards int
 	}{
-		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 10},
-		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 4},
-		{time.Date(2026, 9, 7, 10, 0, 0, 0, time.Local), 10},
-		{time.Date(2026, 9, 8, 10, 0, 0, 0, time.Local), 8},
+		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 8},
+		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
+		{time.Date(2026, 9, 7, 10, 0, 0, 0, time.Local), 8},
 	} {
 		got := unseen(s.sittingAt(t, today, one.at))
 		if got != one.cards {
@@ -938,7 +939,7 @@ func projected(t *testing.T, s vaulted, now time.Time, deck string) int {
 	}
 
 	by := history.NewFSRSAt(read.Preset.Retention)
-	schedules := history.ReplayUnder(history.By(by), held.Answers)
+	schedules := history.ReplayUnder(today, history.By(by), held.Answers)
 	at := make(map[history.CardFace]history.Schedule)
 	under := make(map[history.CardFace]string)
 	unseen := 0

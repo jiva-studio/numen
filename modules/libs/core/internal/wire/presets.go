@@ -7,6 +7,8 @@ package wire
 
 import (
 	"errors"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -37,20 +39,20 @@ func SettingsOf(p history.Preset) *v1.Settings {
 		Retention:   p.Retention,
 		Backlog:     int32(p.Backlog),
 		EvenLoad:    p.EvenLoad,
-		LightDays:   make([]string, 0, len(p.LightDays)),
+		Load:        make(map[string]int32, len(p.Load)),
 	}
 	if !p.By.IsZero() {
 		out.ByDate = p.By.Format(history.Named)
 	}
-	for _, day := range p.LightDays {
-		out.LightDays = append(out.LightDays, history.DayName(day))
+	for day, share := range p.Load {
+		out.Load[history.DayName(day)] = int32(share)
 	}
 	return out
 }
 
 // SettingsIn is the settings a client is putting into a preset, in the words
-// the core holds them in. A day that is not one and a light day that is not a
-// day of the week are the client's to correct.
+// the core holds them in. A day that is not one and a load kept on something
+// that is not a day of the week are the client's to correct.
 func SettingsIn(s *v1.Settings) (history.Preset, error) {
 	out := history.Preset{
 		Goal:        GoalIn(s.GetGoal()),
@@ -69,12 +71,15 @@ func SettingsIn(s *v1.Settings) (history.Preset, error) {
 		}
 		out.By = day
 	}
-	for _, name := range s.GetLightDays() {
+	for _, name := range slices.Sorted(maps.Keys(s.GetLoad())) {
 		day, known := history.Weekday(name)
 		if !known {
 			return history.Preset{}, errors.New(name + " is not a day of the week")
 		}
-		out.LightDays = append(out.LightDays, day)
+		if out.Load == nil {
+			out.Load = make(map[time.Weekday]int, len(s.GetLoad()))
+		}
+		out.Load[day] = int(s.GetLoad()[name])
 	}
 	return out, nil
 }

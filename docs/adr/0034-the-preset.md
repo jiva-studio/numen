@@ -28,8 +28,9 @@ minutes_a_day: 20
 new_a_day: 8
 reviews_a_day: 45
 retention: 0.87
-light_days:
-  - sat
+load:
+  sat: 50
+  sun: 0
 even_load: true
 ---
 
@@ -56,7 +57,7 @@ A setting the goal does not name keeps its value, takes no part while another go
 
 ### What a preset settles, and what it does not
 
-Everything about how a deck is scheduled is the preset's. This record settles seven of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, light days of the week, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
+Everything about how a deck is scheduled is the preset's. This record settles seven of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, the share of the load each day of the week carries, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
 
 `numen.json` keeps the hour a day begins at and how a streak is counted. Both are facts about a person's clock and habit rather than about a subject.
 
@@ -66,7 +67,23 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 
 **Inside one preset, the budget its goal names is what closes the day.** A preset steered by minutes turns them into a count from its own answer times; from there everything is counts.
 
-**How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own light days and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
+**How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own shares and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
+
+### A day of the week carries a share of the load
+
+`load` is how much of a day's load each day of the week carries, in per cent, under the first three letters of the day's name. A day the preset does not name carries the whole of it.
+
+That share scales every budget the day keeps: a Saturday at 50 holds half the minutes and half of each card count. **A day at nothing schedules nothing**, the way a governing budget of zero is a pause, and it is a pause of that one day.
+
+The share is read whether or not the days are evened out. It is what a day admits, and evening the days out is what moves a card off one.
+
+### One rule says which day a card lands on
+
+**A card's day is chosen in one function, and the sitting and the picture both go through it.** The scheduler works out an interval; the day inside the tolerance around that interval is chosen by weight, where a day's weight is the share of the load its day of the week carries over what already falls on it. A day at nothing weighs nothing and takes no card; a day already carrying more takes fewer. Two implementations kept in step by tests are two answers to one question, and the fault they produce is a picture promising a load the sitting never delivers.
+
+It is pressure and not a promise. No day is forbidden to carry more than its share, and nothing is solved over the collection: the tolerance is empty on short intervals and closed on long ones, so a card with nowhere to go stands where it fell.
+
+**An even load off is no placement at all.** The card lands where the scheduler put it. If the day it lands on does not admit it, it is not shown that day: it stands overdue, the next day picks it up, and that day is larger by the share the light day shed. Nothing is written anywhere — there is no schedule in the vault to write to.
 
 ### How a day is spent between the overdue and the new
 
@@ -95,6 +112,8 @@ A goal of a date is a budget that ends the same way: past the date, the preset s
 - **A number is enforced where it was typed.** Decks are files and nothing contains anything, so no limit is displaced onto a parent.
 - **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
+- **The mark carries the placement too.** A preset's shares, its even load and the hour a day of review begins at all decide which day a card lands on, so all of them stand in the mark the cache is filed under.
+- **A day is a whole number.** The days are counted from the day the clock is counted from, so the same answers name the same days in every process and a schedule worked out again is the schedule that was worked out.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
 
 ## Alternatives considered
@@ -108,3 +127,7 @@ A goal of a date is a budget that ends the same way: past the date, the preset s
 **Keys in the language of the interface.** Rejected: the vault format is one spelling, and `type`, `fields` and `links` are already written in it.
 
 **A deck carrying its own limits.** Rejected: two decks that should agree would have no way to say so, and the settings would be copied by hand into every deck of a subject.
+
+**A list of light days, each carrying a fixed half and shedding the rest onto the day either side.** Rejected: the half was a number nothing decided, and a person who wants a quiet Saturday and no Sunday at all has one word for both. A share says every one of them, and nothing is shed anywhere a person did not ask for.
+
+**A day chosen once for the picture and again for the sitting.** Rejected: the two were kept in step by tests, and drifted the moment one of them was touched. The control drew an even load the scheduler never delivered.

@@ -263,19 +263,15 @@ func (b *budgets) spends(owed, fresh []Standing) spending {
 
 	for _, path := range order {
 		q := at[path]
-		share := history.AllBacklog
+		admits := history.Allowance{Backlog: history.AllBacklog}
 		if one, held := b.left[path]; held {
-			share = one.admits.Backlog
+			admits = one.admits
 		}
 		var debt, begun, i, j int
 		for i < len(q.owed) || j < len(q.fresh) {
 			// The next card comes from the side the share leaves short, and
 			// from whichever side is left when the other is done.
-			paying := i < len(q.owed)
-			if paying && j < len(q.fresh) {
-				paying = debt*history.AllBacklog < share*(debt+begun+1)
-			}
-			if paying {
+			if admits.Paying(debt, begun, i < len(q.owed), j < len(q.fresh)) {
 				if card := owed[q.owed[i]]; b.takes(card.CardFace, false) {
 					out.owed[q.owed[i]] = true
 					debt++

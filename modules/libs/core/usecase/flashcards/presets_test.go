@@ -17,7 +17,7 @@ import (
 // names nothing.
 var pointing = map[string]string{
 	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
-		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nlight_days: [sat]\n---\n\n# Sanskrit\n",
+		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\nload: {sat: 50}\n---\n\n# Sanskrit\n",
 	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
 	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
 		"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n\n## Root ^k7m2xq9fzp\n",
@@ -258,7 +258,8 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 // A vault whose preset carries keys the application does not own.
 var settled = map[string]string{
 	"Sanskrit.md": "---\ncolour: green\ntype: preset\ngoal: minutes_a_day\n" +
-		"minutes_a_day: 20\ntags:\n  - study\n---\n\n# Sanskrit\n\nGrammar and vocabulary.\n",
+		"minutes_a_day: 20\nlight_days:\n  - sat\ntags:\n  - study\n---\n\n" +
+		"# Sanskrit\n\nGrammar and vocabulary.\n",
 	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
 }
 
@@ -280,7 +281,8 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 
 	held := read(t, s.vault, "Sanskrit.md")
 	for _, kept := range []string{
-		"colour: green", "tags:\n  - study", "# Sanskrit\n\nGrammar and vocabulary.\n",
+		"colour: green", "tags:\n  - study", "light_days:\n  - sat",
+		"# Sanskrit\n\nGrammar and vocabulary.\n",
 	} {
 		if !strings.Contains(held, kept) {
 			t.Errorf("%q is gone from\n%s", kept, held)
@@ -326,12 +328,12 @@ func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
 	}
 }
 
-// Light days go in and come back out as the days they were.
-func TestLightDaysComeBackAsTheyWentIn(t *testing.T) {
+// The load each day of the week carries goes in and comes back out as it was.
+func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 	s := opened(t, settled)
 
 	p := minutes()
-	p.LightDays = []time.Weekday{time.Saturday, time.Sunday}
+	p.Load = map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
@@ -343,8 +345,8 @@ func TestLightDaysComeBackAsTheyWentIn(t *testing.T) {
 	if len(held.Problems) != 0 {
 		t.Errorf("problems = %v", held.Problems)
 	}
-	if !reflect.DeepEqual(held.Preset.LightDays, p.LightDays) {
-		t.Errorf("light days = %v", held.Preset.LightDays)
+	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
+		t.Errorf("load = %v", held.Preset.Load)
 	}
 }
 

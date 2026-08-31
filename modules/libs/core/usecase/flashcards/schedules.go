@@ -62,6 +62,9 @@ type Schedules struct {
 	// it out at every launch.
 	Kept port.Schedules
 	By   history.Scheduler
+	// Day is where one day of review gives way to the next, which is what says
+	// on which day a card placed by its preset lands.
+	Day history.Day
 	// Standings and Presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
@@ -76,12 +79,32 @@ type Schedules struct {
 // assignment comes to.
 //
 // The mark is what says a cache is out of date. A target moving, a deck
-// repointed and a card moved between decks all move it, and the whole cache is
-// thrown away: a schedule depends on every answer before it, so nothing worked
-// out under the old assignment can be kept.
+// repointed, a card moved between decks and a preset placing its cards
+// differently all move it, and the whole cache is thrown away: a schedule
+// depends on every answer before it, so nothing worked out under the old
+// assignment can be kept.
 type scheduling struct {
 	under history.Under
 	mark  string
+}
+
+// plain is every card face on the one scheduler, at the preset a deck naming
+// none is scheduled by.
+func (u Schedules) plain() scheduling {
+	return scheduling{
+		under: history.By(u.By),
+		mark:  marked([]string{u.By.Name(), u.opening(), history.Defaults().Placing()}),
+	}
+}
+
+// opening is the hour a day of review begins at, as a name a cache is filed
+// under. A day beginning elsewhere puts a card on another day.
+func (u Schedules) opening() string {
+	in := "local"
+	if u.Day.In != nil {
+		in = u.Day.In.String()
+	}
+	return "day\t" + history.Clock(u.Day.Starts) + "\t" + in
 }
 
 // asking is the scheduler each card face is worked out by, over a reading of
@@ -91,11 +114,11 @@ type scheduling struct {
 // is every card of a vault nothing has read yet.
 func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, error) {
 	if u.Presets.Links == nil || u.Standings.Notes == nil {
-		return scheduling{under: history.By(u.By), mark: u.By.Name()}, nil
+		return u.plain(), nil
 	}
 	standing, err := u.Standings.Execute(ctx, v)
 	if errors.Is(err, ErrUnread) {
-		return scheduling{under: history.By(u.By), mark: u.By.Name()}, nil
+		return u.plain(), nil
 	}
 	if err != nil {
 		return scheduling{}, err
@@ -108,13 +131,13 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, erro
 func (u Schedules) under(
 	ctx context.Context, v domain.Vault, reading *Reading, standing []Standing,
 ) (scheduling, error) {
-	out := scheduling{under: history.By(u.By), mark: u.By.Name()}
+	out := u.plain()
 	if reading == nil || reading.Links == nil {
 		return out, nil
 	}
 
-	by := make(map[string]history.Scheduler)
-	under := make(map[history.CardFace]history.Scheduler, len(standing))
+	by := make(map[string]history.Scheduling)
+	under := make(map[history.CardFace]history.Scheduling, len(standing))
 	asked := make(map[string]string, len(standing))
 	for _, one := range standing {
 		path, known := asked[one.Deck]
@@ -126,23 +149,23 @@ func (u Schedules) under(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = u.at(p.Preset.Retention)
+				by[path] = history.Scheduling{By: u.at(p.Preset.Retention), Preset: p.Preset}
 			}
 		}
 		under[one.CardFace] = by[path]
 	}
 
-	marks := make([]string, 0, len(under)+1)
-	marks = append(marks, u.By.Name())
+	marks := make([]string, 0, len(under)+2)
+	marks = append(marks, u.By.Name(), u.opening())
 	for face, one := range under {
-		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.Name())
+		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
 	out.mark = marked(marks)
-	out.under = func(face history.CardFace) history.Scheduler {
+	out.under = func(face history.CardFace) history.Scheduling {
 		if one, held := under[face]; held {
 			return one
 		}
-		return u.By
+		return history.Scheduling{By: u.By, Preset: history.Defaults()}
 	}
 	return out, nil
 }
@@ -219,7 +242,7 @@ func (u Schedules) worked(
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
-	return projected(held, asks)
+	return projected(u.Day, held, asks)
 }
 
 // counted is the same, with what a replay came to kept for the next launch.
@@ -236,15 +259,17 @@ func (u Schedules) counted(
 func (u Schedules) replayed(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
 ) map[history.CardFace]history.Schedule {
-	out := projected(held, asks)
+	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
 }
 
 // projected is where the answers leave every card face, and is what a caller
 // that only reads them asks for.
-func projected(held Held, asks scheduling) map[history.CardFace]history.Schedule {
-	return history.ReplayUnder(asks.under, held.Answers)
+func projected(
+	d history.Day, held Held, asks scheduling,
+) map[history.CardFace]history.Schedule {
+	return history.ReplayUnder(d, asks.under, held.Answers)
 }
 
 // remembered is what was worked out last time, when it was worked out from the

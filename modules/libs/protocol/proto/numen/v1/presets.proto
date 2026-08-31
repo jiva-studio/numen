@@ -75,6 +75,9 @@ enum Counts {
 // Settings are how the decks pointing at one preset are scheduled. A preset
 // carrying none of these keys is the defaults, and no cards a day is a pause.
 message Settings {
+  reserved 7;
+  reserved "light_days";
+
   Goal goal = 1;
 
   // The day the material is to be in the head, as the year, the month and the
@@ -92,10 +95,6 @@ message Settings {
   // The share of cards recalled when they come round again.
   double retention = 6;
 
-  // The days of the week the load is cut on, each as the first three letters of
-  // its name in lower case.
-  repeated string light_days = 7;
-
   // Whether days are made to resemble each other.
   bool even_load = 8;
 
@@ -111,6 +110,11 @@ message Settings {
   // It says what a day is spent on rather than what closes it. A goal of a date
   // carries the whole material by its own reckoning, so it takes no part there.
   int32 backlog = 10;
+
+  // How much of a day's load each day of the week carries, in per cent, under
+  // the first three letters of the day's name in lower case. A day not named
+  // carries the whole of it, and a day at nothing schedules nothing.
+  map<string, int32> load = 11;
 }
 
 // Preset is one preset as a read hands it over.

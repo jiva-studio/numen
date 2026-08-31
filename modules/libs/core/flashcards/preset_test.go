@@ -28,7 +28,7 @@ minutes_a_day: 20
 new_a_day: 8
 reviews_a_day: 45
 retention: 0.87
-light_days: [sat]
+load: {sat: 50, sun: 0}
 even_load: true
 `))
 
@@ -44,8 +44,8 @@ even_load: true
 	if p.Retention != 0.87 {
 		t.Errorf("retention = %g", p.Retention)
 	}
-	if len(p.LightDays) != 1 || p.LightDays[0] != time.Saturday {
-		t.Errorf("light days = %v", p.LightDays)
+	if p.Share(time.Saturday) != 0.5 || p.Share(time.Sunday) != 0 || p.Share(time.Monday) != 1 {
+		t.Errorf("load = %v", p.Load)
 	}
 	if !p.EvenLoad {
 		t.Error("even load was asked for")
@@ -89,17 +89,20 @@ func TestWhatAPresetLeavesUnsaid(t *testing.T) {
 // default.
 func TestAKeyThatCannotBeRead(t *testing.T) {
 	for written, says := range map[string]string{
-		"goal: sideways\n":         "goal",
-		"new_a_day: many\n":        "new_a_day",
-		"new_a_day: 2.5\n":         "whole numbers",
-		"reviews_a_day: 100000\n":  "outside",
-		"retention: 0.2\n":         "outside",
-		"even_load: perhaps\n":     "even_load",
-		"light_days: sat\n":        "light_days",
-		"light_days: [caturday]\n": "day of the week",
-		"goal: by_date\n":          "which day",
-		"by_date: 30 September\n":  "by_date",
-		"counts: minutes\n":        "counts",
+		"goal: sideways\n":        "goal",
+		"new_a_day: many\n":       "new_a_day",
+		"new_a_day: 2.5\n":        "whole numbers",
+		"reviews_a_day: 100000\n": "outside",
+		"retention: 0.2\n":        "outside",
+		"even_load: perhaps\n":    "even_load",
+		"load: sat\n":             "load is a day of the week",
+		"load: {caturday: 50}\n":  "day of the week",
+		"load: {sat: 120}\n":      "outside",
+		"load: {sat: 12.5}\n":     "whole per cent",
+		"load: {sat: half}\n":     "not a number",
+		"goal: by_date\n":         "which day",
+		"by_date: 30 September\n": "by_date",
+		"counts: minutes\n":       "counts",
 	} {
 		p, problems := flashcards.ReadPreset(front(t, written))
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {

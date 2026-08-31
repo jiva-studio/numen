@@ -109,12 +109,13 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 }
 
 // targeted is a vault of two presets asking for different shares of the cards,
-// with a deck of one card under each.
+// with a deck of one card under each. Neither evens its days out, so what
+// separates two cards here is the target each stands under.
 func targeted(high, low float64) map[string]string {
 	return map[string]string{
 		"Term.md": term,
-		"High.md": preset(fmt.Sprintf("retention: %g\n", high)),
-		"Low.md":  preset(fmt.Sprintf("retention: %g\n", low)),
+		"High.md": preset(fmt.Sprintf("retention: %g\neven_load: false\n", high)),
+		"Low.md":  preset(fmt.Sprintf("retention: %g\neven_load: false\n", low)),
 		"decks/High.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: High\n    role: ref\n    type: preset\n---\n" +
 			"\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n",
@@ -282,5 +283,129 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	}
 	if len(got) != len(want) || !got[on].Due.Equal(want[on].Due) {
 		t.Errorf("worked out %+v, want %+v", got[on], want[on])
+	}
+}
+
+// The day a card comes back on is one answer, whether it is answered or
+// projected. A preset evening its days out moves the card off the day carrying
+// none of the load, and the sitting and the picture move it to the same one.
+//
+// The card is answered twice at the hour the day opens: a card answered no time
+// at all since its last answer is one the projection is certain came back, so
+// the two work the same interval out and what is compared is where it is put.
+func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
+	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
+	by := history.NewFSRSAt(0.9)
+	begun := by.Next(history.Schedule{}, when, history.Good)
+	fell := by.Next(begun, when, history.Good).Due
+	if away := fell.Sub(when).Hours() / 24; away < history.EvenFrom {
+		t.Fatalf("the second answer sends the card %g days away", away)
+	}
+
+	s := opened(t, map[string]string{
+		"Term.md": term,
+		"Even.md": preset(fmt.Sprintf(
+			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: true\nload: {%s: 0}\n",
+			history.DayName(fell.Weekday()))),
+		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
+	})
+	on := history.CardFace{Card: mark(0), Face: "Say it"}
+	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The projection takes the card on from where the first answer left it, and
+	// its one day of review is the day that answer is given in.
+	run := history.Simulation{By: by, Day: today, Cost: history.DefaultCost, Days: 21}
+	projected, err := run.Run(t.Context(), when, read.Preset, first, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	comes := 0
+	for day, load := range projected.Load {
+		if day > 0 && load > 0 {
+			comes = day
+			break
+		}
+	}
+
+	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	answered, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stands := dayFrom(when, answered[on].Due)
+
+	if comes == 0 || comes != stands {
+		t.Errorf("the projection has the card back on day %d and the answer on day %d",
+			comes, stands)
+	}
+	if stands == dayFrom(when, fell) {
+		t.Errorf("the card stood on the %v it fell on", fell.Weekday())
+	}
+}
+
+// dayFrom is how many days of review stand between the one holding from and the
+// one holding at.
+func dayFrom(from, at time.Time) int {
+	open := from
+	for i := range 400 {
+		if at.Before(today.Ends(open)) {
+			return i
+		}
+		open = today.Ends(open)
+	}
+	return -1
+}
+
+// A preset keeping no even load leaves a card where the scheduler puts it, so a
+// card falls on a day carrying none of the load. Nothing is shown there: the
+// card stands overdue, and the next day picks it up.
+func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
+	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
+	by := history.NewFSRSAt(0.9)
+	begun := by.Next(history.Schedule{}, when, history.Good)
+	fell := by.Next(begun, when, history.Good).Due
+
+	s := opened(t, map[string]string{
+		"Term.md": term,
+		"Even.md": preset(fmt.Sprintf(
+			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: false\nload: {%s: 0}\n",
+			history.DayName(fell.Weekday()))),
+		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
+	})
+	on := history.CardFace{Card: mark(0), Face: "Say it"}
+
+	for range 2 {
+		if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	answered, err := s.kept.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := answered[on].Due; !got.Equal(fell) {
+		t.Fatalf("the card comes round at %v, and the scheduler put it at %v", got, fell)
+	}
+
+	opens := today.Ends(fell).AddDate(0, 0, -1)
+	if asked := s.sittingAt(t, today, opens.Add(6*time.Hour)).Asked; len(asked) != 0 {
+		t.Errorf("a %v carrying none of the load asked %d cards", fell.Weekday(), len(asked))
+	}
+	after := today.Ends(fell).Add(6 * time.Hour)
+	if asked := s.sittingAt(t, today, after).Asked; len(asked) != 1 {
+		t.Errorf("the day after asked %d cards, want the one standing over", len(asked))
 	}
 }

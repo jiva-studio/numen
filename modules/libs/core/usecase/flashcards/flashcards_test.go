@@ -86,6 +86,7 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 		Logs:      logs,
 		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
 		By:        history.NewFSRS(),
+		Day:       today,
 		Standings: standings,
 		Presets:   presets,
 	}
@@ -685,7 +686,7 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := history.Replay(history.NewFSRS(), held.Answers)
+	replayed := history.Replay(today, history.NewFSRS(), held.Answers)
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))

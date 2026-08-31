@@ -33,7 +33,8 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | deck | A note whose body is cards, in sections where a person made them — [Cards](cards.md). | collection |
 | preset | A note saying how the decks pointing at it are scheduled — [Cards](cards.md). A deck points at one with a link carrying `type: preset`, and a deck pointing at none is scheduled by the defaults. The word is spent twice: a theme that ships inside the application is named `preset:numen`. | profile, options |
 | goal | Which of three a preset's one control steers: minutes a day, a retention target, or a day the material is to be in the head by. | target |
-| light day | A day of the week a preset cuts its load on, moving those cards to the days around it. | rest day |
+| load (of a day of the week) | How much of a day's load one day of the week carries under a preset, in per cent. A day the preset does not name carries all of it, and a day at nothing schedules nothing. | light day, rest day |
+| even load | A preset moving a card off the day it fell on, onto a day of the tolerance around it carrying less. | spreading, levelling |
 
 ## What the application keeps
 

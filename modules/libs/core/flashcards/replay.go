@@ -20,25 +20,42 @@ import (
 // person restoring a backup puts one there by hand; counting those lines twice
 // would double what a card has been through and send it away for longer than it
 // was earned.
-func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
-	return replayed(by, answers, nil)
+func Replay(d Day, by Scheduler, answers []Answer) map[CardFace]Schedule {
+	return ReplayUnder(d, By(by), answers)
 }
 
-// Under is the scheduler one card face is worked out by. A card face is
-// scheduled by the preset its deck points at, and two presets asking for
-// different shares of the cards send the same card away for different lengths
-// of time.
-type Under func(CardFace) Scheduler
+// Scheduling is how one card face is worked out: the scheduler that spaces it,
+// and the preset that says which day it lands on.
+type Scheduling struct {
+	By     Scheduler
+	Preset Preset
+}
 
-// By is one scheduler for every card face.
-func By(s Scheduler) Under { return func(CardFace) Scheduler { return s } }
+// Under is how one card face is scheduled. A card face is scheduled by the
+// preset its deck points at, and two presets asking for different shares of the
+// cards send the same card away for different lengths of time.
+type Under func(CardFace) Scheduling
+
+// By is one scheduler for every card face, on the preset a deck naming none is
+// scheduled by.
+func By(s Scheduler) Under {
+	return func(CardFace) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
+}
 
 // ReplayUnder works out where a history leaves every card face, each under the
-// scheduler its own preset asks for.
-func ReplayUnder(by Under, answers []Answer) map[CardFace]Schedule {
+// scheduler its own preset asks for and on the day its own preset puts it.
+//
+// The days the answers have already filled are what the next card is placed
+// against, so the answers are walked in the order they were given here as
+// everywhere else.
+func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
 	out := make(map[CardFace]Schedule)
+	on := Spreading(d)
 	for _, a := range given(answers) {
-		out[a.CardFace] = by(a.CardFace).Next(out[a.CardFace], a.At, a.Rating)
+		one := by(a.CardFace)
+		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
+		next.Due = one.Preset.Places(on, a.At, next.Due)
+		out[a.CardFace] = next
 	}
 	return out
 }

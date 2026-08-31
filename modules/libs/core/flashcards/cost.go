@@ -18,12 +18,13 @@ const Ahead = 90
 // not review.
 const LongestAnswer = time.Minute
 
-// LightShare is how much of a day's load a day named light carries.
-const LightShare = 0.5
-
-// EvenSlack is how far an even load moves a review, as a share of the interval
-// it stands at. A card moved this far comes round when a person expects it.
-const EvenSlack = 0.05
+// EvenFrom and EvenTo are the intervals a card may be moved within, in days.
+// One falling short of the first or past the second stands where the scheduler
+// put it.
+const (
+	EvenFrom = 2.5
+	EvenTo   = Ahead
+)
 
 // Cost is how long an answer takes: one of a card being learned, and one of a
 // card already learned.
@@ -226,8 +227,9 @@ const (
 // Simulation projects a preset forward over the days ahead: its card faces
 // answered day after day, inside the budgets it keeps.
 //
-// Light days and an even load move cards between neighbouring days and leave
-// the load over a week where it was.
+// The share of the load each day of the week carries scales what that day
+// admits, and an even load moves cards onto the days carrying least. Both are
+// Preset's, and the sitting reads them the same way.
 type Simulation struct {
 	By   Scheduler
 	Day  Day
@@ -278,12 +280,11 @@ func (s Simulation) Run(
 	}
 
 	open := s.Day.Ends(now).AddDate(0, 0, -1)
-	var even *spread
-	if p.EvenLoad {
-		even = &spread{from: open, on: make(map[int]int, len(cards))}
-		for _, c := range cards {
-			even.on[even.day(c.Due)]++
-		}
+	// Where the answers so far have left every card face is what the days
+	// ahead are loaded with.
+	on := Spreading(s.Day)
+	for _, c := range cards {
+		on.Holds(c.Due)
 	}
 	for today := range days {
 		if err := ctx.Err(); err != nil {
@@ -313,40 +314,56 @@ func (s Simulation) Run(
 			closed = ClosedPaused
 		}
 
-		answered, seen := 0, 0
-		for _, i := range due {
-			if admits.Paused {
+		// The day is spent between the debt and the material it has not begun,
+		// in the share the preset names. A side the day has no more room for is
+		// done with, and the other goes on with what is left of the day.
+		answered, seen, begun, take := 0, 0, 0, 0
+		paid, all := admits.Paused, admits.Paused
+		for !paid || !all {
+			owed, fresh := !paid && take < len(due), !all && left > 0
+			if !owed {
+				paid = true
+			}
+			if !fresh {
+				all = true
+			}
+			if !owed && !fresh {
 				break
 			}
-			if admits.Closes.Reviews != ClosedNothing && seen >= admits.Reviews {
-				closed = admits.Closes.Reviews
-				break
-			}
-			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
-				closed = admits.Closes.Minutes
-				break
-			}
-			used += s.Cost.Review
-			seen++
-			answered++
-			cards[i] = s.step(cards[i], open, even)
-			answeredOn[i] = today
-		}
 
-		for begun := 0; left > 0 && !admits.Paused; begun++ {
+			if admits.Paying(seen, begun, owed, fresh) {
+				if admits.Closes.Reviews != ClosedNothing && seen >= admits.Reviews {
+					closed, paid = admits.Closes.Reviews, true
+					continue
+				}
+				if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
+					closed, paid = admits.Closes.Minutes, true
+					continue
+				}
+				at := due[take]
+				take++
+				used += s.Cost.Review
+				seen++
+				answered++
+				cards[at] = s.step(cards[at], open, p, on)
+				answeredOn[at] = today
+				continue
+			}
+
 			if admits.Closes.New != ClosedNothing && begun >= admits.New {
-				closed = admits.Closes.New
-				break
+				closed, all = admits.Closes.New, true
+				continue
 			}
 			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
-				closed = admits.Closes.Minutes
-				break
+				closed, all = admits.Closes.Minutes, true
+				continue
 			}
 			used += s.Cost.New
+			begun++
 			answered++
 			left--
 			out.Seen++
-			cards = append(cards, s.step(Schedule{}, open, even))
+			cards = append(cards, s.step(Schedule{}, open, p, on))
 			answeredOn = append(answeredOn, today)
 		}
 
@@ -401,10 +418,10 @@ func behind(cards []Schedule, answeredOn []int, at time.Time, today int) int {
 // Both endings are worked out and weighed by how likely the card is to come
 // back, so a projection follows one card down the middle of what it may do. The
 // phase is the one a card that came back is left in.
-func (s Simulation) step(c Schedule, at time.Time, even *spread) Schedule {
+func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedule {
 	good := s.By.Next(c, at, Good)
 	if !c.Seen() {
-		good.Due = even.place(at, good.Due)
+		good.Due = p.Places(on, at, good.Due)
 		return good
 	}
 	back := Recall(at.Sub(c.Last), c.Stability)
@@ -414,7 +431,7 @@ func (s Simulation) step(c Schedule, at time.Time, even *spread) Schedule {
 	out.Stability = back*good.Stability + (1-back)*again.Stability
 	out.Difficulty = back*good.Difficulty + (1-back)*again.Difficulty
 	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
-	out.Due = even.place(at, at.Add(time.Duration(away*float64(time.Second))))
+	out.Due = p.Places(on, at, at.Add(time.Duration(away*float64(time.Second))))
 	return out
 }
 
@@ -426,12 +443,12 @@ type Budget struct {
 	Minutes float64
 }
 
-// on is the budget a preset keeps on this day of the week. A day named light
-// carries LightShare of the load, and what it sheds stands on its neighbours.
+// on is the budget a preset keeps on this day of the week: its share of the
+// load, whether or not the days are evened out.
 //
 // What a day of it admits is Admits, which is the one place a limit is read.
 func (p Preset) on(day time.Weekday) Budget {
-	share := weekly(p.LightDays)[day]
+	share := p.Share(day)
 	return Budget{
 		New:     int(math.Round(share * float64(p.NewADay))),
 		Reviews: int(math.Round(share * float64(p.ReviewsADay))),
@@ -439,86 +456,118 @@ func (p Preset) on(day time.Weekday) Budget {
 	}
 }
 
-// weekly is how much of a day's load each day of the week carries.
+// Spread is how loaded each day of review is: how many card faces fall on each.
 //
-// A day named light carries LightShare of it and sheds the rest to the nearest
-// day either side that is not light, so a week carries what it did. A week of
-// nothing but light days is a week of ordinary ones.
-func weekly(light []time.Weekday) [7]float64 {
-	var out [7]float64
-	var cut [7]bool
-	named := 0
-	for _, day := range light {
-		if day >= 0 && int(day) < len(cut) && !cut[day] {
-			cut[day] = true
-			named++
-		}
-	}
-	for i := range out {
-		out[i] = 1
-	}
-	if named == 0 || named == len(cut) {
-		return out
-	}
-	for day := range out {
-		if !cut[day] {
-			continue
-		}
-		out[day] = LightShare
-		shed := (1 - LightShare) / 2
-		out[toward(cut, day, -1)] += shed
-		out[toward(cut, day, 1)] += shed
-	}
-	return out
+// It is one table over every preset, and the answers replayed and the
+// projection ahead of them both read it.
+type Spread struct {
+	day Day
+	on  map[int]int
 }
 
-// toward is the nearest day of the week that is not light, walked round this
-// way.
-func toward(cut [7]bool, from, step int) int {
-	at := from
-	for {
-		at = (at + step + len(cut)) % len(cut)
-		if !cut[at] {
-			return at
-		}
+// Spreading opens a table counting the days as this day of review divides them.
+func Spreading(d Day) *Spread { return &Spread{day: d, on: make(map[int]int)} }
+
+// Holds counts one card face against the day its schedule falls in.
+func (s *Spread) Holds(due time.Time) {
+	if s != nil {
+		s.on[s.number(due)]++
 	}
 }
 
-// spread is where an even load puts a card whose next review may fall on any of
-// a few days: the day of them carrying least.
-type spread struct {
-	from time.Time
-	on   map[int]int
+// On is how many card faces fall on the day of review holding this instant.
+func (s *Spread) On(at time.Time) int {
+	if s == nil {
+		return 0
+	}
+	return s.on[s.number(at)]
 }
 
-// day is which day of the projection an instant falls in.
-func (s *spread) day(at time.Time) int {
-	return int(math.Floor(at.Sub(s.from).Hours() / 24))
+// number is the day of review holding an instant, as a whole number counted
+// from the day the clock is counted from. The same answers name the same days
+// in every process.
+func (s *Spread) number(at time.Time) int {
+	opened := s.day.Ends(at).AddDate(0, 0, -1)
+	y, m, d := opened.Date()
+	return int(time.Date(y, m, d, 0, 0, 0, 0, time.UTC).Unix() / int64(24*time.Hour/time.Second))
 }
 
-// place is the day a review is put on, and counts the card against it. A
-// projection keeping no even load leaves the review where the scheduler put it.
-func (s *spread) place(at, due time.Time) time.Time {
+// weekday is the day of the week a numbered day of review falls on. The day the
+// clock is counted from was a Thursday.
+func weekday(number int) time.Weekday {
+	return time.Weekday(((number+int(time.Thursday))%7 + 7) % 7)
+}
+
+// Places is the day a card answered at this instant comes back on, and counts
+// it against that day.
+//
+// It is chosen inside the tolerance the scheduler allows around the interval it
+// worked out. Every day of that window carries a weight — the share of the load
+// its day of the week keeps, over what already falls on it — and the heaviest
+// takes the card, the day the scheduler named winning a tie. A day at nothing
+// weighs nothing and takes no card.
+//
+// It is pressure and not a promise: no day is forbidden to carry more than its
+// share, and a preset keeping no even load leaves the card where it fell.
+//
+// It is the one place a day is chosen. A sitting and a projection of it both
+// come here.
+func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
 	if s == nil {
 		return due
 	}
-	away := due.Sub(at)
-	if away <= 0 {
+	first, last, opens := window(due.Sub(at))
+	if !p.EvenLoad || !opens {
+		s.Holds(due)
 		return due
 	}
-	slack := time.Duration(EvenSlack * float64(away))
-	stands := s.day(due)
-	first, last := max(s.day(due.Add(-slack)), s.day(at)+1), s.day(due.Add(slack))
 
-	on := stands
-	for day := first; day <= last; day++ {
-		// A day tied with the one the scheduler named leaves the card where it is.
-		if s.on[day] < s.on[on] {
-			on = day
+	stands := s.number(due)
+	from, to := s.number(at.AddDate(0, 0, first)), s.number(at.AddDate(0, 0, last))
+	on, heaviest := stands, -1.0
+	if stands >= from && stands <= to {
+		heaviest = p.weighs(s, stands)
+	}
+	for day := from; day <= to; day++ {
+		if weight := p.weighs(s, day); weight > heaviest {
+			on, heaviest = day, weight
 		}
 	}
-	s.on[on]++
-	return due.AddDate(0, 0, on-stands)
+
+	out := due.AddDate(0, 0, on-stands)
+	s.Holds(out)
+	return out
+}
+
+// weighs is how much a numbered day of review wants another card: the share of
+// the load its day of the week keeps, over what already falls on it.
+func (p Preset) weighs(s *Spread, day int) float64 {
+	return p.Share(weekday(day)) / float64(1+s.on[day])
+}
+
+// slacks is how far either side of an interval a card may be put, by how long
+// the interval is: the wider it is, the more days come round when a person
+// expects them.
+var slacks = []struct{ from, to, factor float64 }{
+	{2.5, 7, 0.15},
+	{7, 20, 0.1},
+	{20, math.Inf(1), 0.05},
+}
+
+// window is the days either side of an interval a card may be put on, counted
+// from the answer, and whether the window holds more than one day.
+func window(away time.Duration) (first, last int, opens bool) {
+	days := away.Hours() / 24
+	if days < EvenFrom || days > EvenTo {
+		return 0, 0, false
+	}
+	slack := 1.0
+	for _, one := range slacks {
+		slack += one.factor * math.Max(math.Min(days, one.to)-one.from, 0)
+	}
+	first = int(math.Max(2, math.Round(days-slack)))
+	last = int(math.Round(days + slack))
+	return first, last, last > first
 }
 
 // older puts the card face owed longest first. Two schedules alike in all of
