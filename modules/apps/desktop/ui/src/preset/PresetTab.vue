@@ -8,13 +8,13 @@
  * whatever the picture says it comes to.
  */
 import { computed, ref } from 'vue'
-import { Days, Menu, NumberField, Segmented, Slider, Switch } from '@numen/ui'
-import type { Point } from '@numen/ui'
+import { Days, Menu, NumberField, Segmented, Slider, Switch, WEEK } from '@numen/ui'
+import type { Day, Point } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
-import { BOUNDS, COUNTS, GOALS, RULES } from './core'
-import type { Counts, Goal, Load, Rule } from './core'
+import { BOUNDS, COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
+import type { Counts, Goal, Rule } from './core'
 import { fieldsUnder, idle, paused, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
@@ -44,6 +44,19 @@ const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
 
 /** The two rules for what is learned, as the row offers them. */
 const rules = RULES.map((one) => ({ id: one, text: words.ruleName(one) }))
+
+/** The week, each day drawn at the share of a day's load it carries. */
+const week = computed<readonly Day[]>(() =>
+  WEEK.map((one) => ({ ...one, level: loadOn(settings.value.load, one.id) / WHOLE_LOAD })),
+)
+
+/** The shares a day may be put at, as the row draws them. */
+const levels = LOADS.map((one) => one / WHOLE_LOAD)
+
+/** One day of the week put at a share of a day's load. */
+const loads = (day: string, level: number) => {
+  chose('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
+}
 
 /** Where the rules were asked for, and nothing while they are not. */
 const asking = ref<Point | null>(null)
@@ -236,9 +249,10 @@ const stopped = computed(() => {
               </template>
               <Days
                 v-else-if="field === 'load'"
-                :model-value="settings.load"
+                :days="week"
+                :levels="levels"
                 :aria-labelledby="`preset-${field}`"
-                @update:model-value="(load: Load) => chose(field, load)"
+                @chooses="loads"
               />
               <Switch
                 v-else-if="field === 'evenLoad'"

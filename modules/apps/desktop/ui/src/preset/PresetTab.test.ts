@@ -13,7 +13,7 @@ import PresetTab from './PresetTab.vue'
 import { BOUNDS, DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
 import { clearing, type Field } from './curve'
 import { FOOT } from './drawing'
-import type { Held } from './kind'
+import type { Held, Said } from './kind'
 import { WORDS as words } from './words'
 
 // The track of a share is measured as it is drawn, and a document with no
@@ -1239,5 +1239,77 @@ describe('what the tab says went wrong', () => {
   it('offers nothing where there is nothing to say', () => {
     const { tab } = drawn()
     expect(tab.findAll('[role="alert"]')).toHaveLength(0)
+  })
+})
+
+// The row of days draws a level and hands back a day and a level. That the
+// whole of a day is a hundred, and that a day back at it stops being named,
+// are the file's own way of writing the week and belong to this tab.
+describe('the load of the week', () => {
+  /** A tab whose row of days is watched for what it puts into the settings. */
+  const watching = (load: Record<string, number>) => {
+    const one = standing({}, { load })
+    const put: [Field, Said][] = []
+    const held: Held = {
+      ...one.held,
+      types: (field, value) => {
+        put.push([field, value])
+        one.done.push('types')
+      },
+    }
+    return { tab: mount(PresetTab, { props: { held } }), put, done: one.done }
+  }
+
+  /** The chips of the row that draws the week. */
+  const chips = (tab: ReturnType<typeof mount>) => tab.findAll('[data-slot="days"] button')
+
+  const offered = (): readonly HTMLElement[] => [
+    ...document.body.querySelectorAll<HTMLElement>('.menu__item'),
+  ]
+
+  it('draws a day not named at the whole of a day, and the rest where they stand', () => {
+    const { tab } = watching({ sat: 50, sun: 0 })
+    expect(chips(tab).map((chip) => chip.attributes('aria-label'))).toStrictEqual([
+      'Monday, 100%',
+      'Tuesday, 100%',
+      'Wednesday, 100%',
+      'Thursday, 100%',
+      'Friday, 100%',
+      'Saturday, 50%',
+      'Sunday, 0%',
+    ])
+  })
+
+  it('offers the shares of a day, from nothing to the whole of it', async () => {
+    const { tab } = watching({})
+    await chips(tab)[0]?.trigger('click')
+    expect(offered().map((one) => one.textContent?.trim())).toStrictEqual([
+      '0%',
+      '10%',
+      '25%',
+      '50%',
+      '75%',
+      '90%',
+      '100%',
+    ])
+  })
+
+  it('writes the day it was handed at the share chosen, leaving the others', async () => {
+    const { tab, put, done } = watching({ sat: 50, sun: 0 })
+    await chips(tab)[0]?.trigger('click')
+    offered()[2]?.click()
+    await tab.vm.$nextTick()
+
+    expect(put).toStrictEqual([['load', { sat: 50, sun: 0, mon: 25 }]])
+    expect(done).toStrictEqual(['types', 'settles'])
+  })
+
+  it('stops naming a day put back to the whole of a day', async () => {
+    const { tab, put } = watching({ sat: 50, sun: 0 })
+    await chips(tab)[5]?.trigger('click')
+    offered()[6]?.click()
+    await tab.vm.$nextTick()
+
+    expect(put).toStrictEqual([['load', { sun: 0 }]])
   })
 })

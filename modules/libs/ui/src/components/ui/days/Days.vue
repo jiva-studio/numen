@@ -1,93 +1,86 @@
 <script setup lang="ts">
 /**
- * The days of the week as seven chips, each carrying a share of a whole day.
- * Pressing a day offers the shares, and the day carries what was chosen.
+ * The days of the week as seven chips, each standing at a level. Pressing a day
+ * offers the levels, and the day it was chosen for is handed back with it.
  *
- * A chip is a button that offers a menu: it says the day, the share it carries
- * and whether its shares are open. It holds nothing down.
+ * A chip is a button that offers a menu: it says the day, the level it stands
+ * at and whether its levels are open. It holds nothing down.
  *
  * A row nobody may turn is still read: its chips keep the keyboard, say they
  * are disabled, and offer nothing when they are pressed.
  *
  * The row is one stop on the way round the screen; the arrow keys move along
- * it and the space bar offers the shares. A day is filled in step with what it
- * carries, so the week is read as the work standing on it without opening
- * anything: a full day is full colour, and a day carrying nothing has none.
+ * it and the space bar offers the levels. A day is filled in step with the
+ * level it stands at, so the week is read at a glance without opening anything:
+ * a full day is full colour, and a day at nothing has none.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/lib/utils'
 import Menu from '@/menu/Menu.vue'
 import type { Point } from '@/plex/model'
-import {
-  carriedOn,
-  offering,
-  shared,
-  SHARES,
-  WEEK,
-  type Day,
-  type Shares,
-} from './week'
+import { filled, offering, percent, type Day } from './week'
 
-// The row and the shares it offers are two things drawn, so what a caller
+// The row and the levels it offers are two things drawn, so what a caller
 // names the row by is put on the row itself.
 defineOptions({ inheritAttrs: false })
 
 const props = withDefaults(
   defineProps<{
-    /** The days, in the order they are drawn. */
-    days?: readonly Day[]
-    /** The shares offered, in the order they are offered. */
-    shares?: readonly number[]
+    /** The days, in the order they are drawn, each at the level it stands at. */
+    days: readonly Day[]
+    /** The levels offered, in the order they are offered. */
+    levels: readonly number[]
     disabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { days: () => WEEK, shares: () => SHARES, disabled: false },
+  { disabled: false },
 )
 
-/** What each day carries. A day not named carries the whole of it. */
-const model = defineModel<Shares>({ default: () => ({}) })
+const raises = defineEmits<{
+  /** A day put at a level, which is the day as it was given and the level chosen. */
+  chooses: [day: string, level: number]
+}>()
 
-/** Which day is being given a share, where its chip stands, and which chip. */
-const asking = ref<{ day: string; at: Point; from: HTMLElement } | null>(null)
-
-/** The share the day being asked about carries, which the menu opens on. */
-const carrying = computed(() =>
-  asking.value ? carriedOn(model.value, asking.value.day) : null,
-)
+/** Which day is being given a level, what it stands at, and where its chip is. */
+const asking = ref<{ day: string; level: number; at: Point; from: HTMLElement } | null>(null)
 
 const offered = computed(() =>
-  offering(props.shares, carrying.value).map((share) => ({
-    id: `${share}`,
-    text: `${share}%`,
+  offering(props.levels, asking.value?.level ?? null).map((level) => ({
+    id: `${level}`,
+    text: percent(level),
   })),
 )
 
-/** Which of the shares on offer is the one in force, as the menu names it. */
-const current = computed(() => (carrying.value === null ? null : `${carrying.value}`))
+/** Which of the levels on offer is the one in force, as the menu names it. */
+const current = computed(() => (asking.value === null ? null : `${asking.value.level}`))
 
-const asks = (day: string, event: Event) => {
+const asks = (day: Day, event: Event) => {
   if (props.disabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
-  asking.value = { day, at: { x: box.left, y: box.bottom }, from: chip }
+  asking.value = {
+    day: day.id,
+    level: filled(day.level),
+    at: { x: box.left, y: box.bottom },
+    from: chip,
+  }
 }
 
 const chose = (said: string) => {
   const day = asking.value?.day
-  const share = Number(said)
-  if (day === undefined || Number.isNaN(share)) return
-  model.value = shared(model.value, day, share)
+  const level = Number(said)
+  if (day === undefined || Number.isNaN(level)) return
+  raises('chooses', day, level)
 }
 
 /**
- * How strongly a day is filled: the whole of the accent at a day carrying the
- * whole of a day, and no colour at all at a day carrying none. The week is
- * read as the work standing on it.
+ * How strongly a day is filled: the whole of the accent at a day standing at
+ * the whole of it, and no colour at all at a day standing at nothing.
  */
-const filling = (day: string) => {
-  const weight = carriedOn(model.value, day)
+const filling = (level: number) => {
+  const weight = filled(level) * 100
   return {
     background: `color-mix(in oklab, var(--numen-node-bg), var(--numen-focus-bg) ${weight}%)`,
     color: weight > 50 ? 'var(--numen-focus-fg)' : 'var(--numen-node-fg)',
@@ -108,10 +101,10 @@ const filling = (day: string) => {
       <button
         type="button"
         :aria-disabled="disabled || undefined"
-        :aria-label="`${day.long}, ${carriedOn(model, day.id)}%`"
+        :aria-label="`${day.long}, ${percent(day.level)}`"
         aria-haspopup="menu"
         :aria-expanded="asking?.day === day.id"
-        :style="filling(day.id)"
+        :style="filling(day.level)"
         :class="
           cn(
             'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
@@ -121,7 +114,7 @@ const filling = (day: string) => {
             'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "
-        @click="asks(day.id, $event)"
+        @click="asks(day, $event)"
       >
         {{ day.short }}
       </button>

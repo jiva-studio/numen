@@ -87,8 +87,22 @@ export type Load = Readonly<Record<string, number>>
 /** The whole of a day's load, which a day nothing was said about carries. */
 export const WHOLE_LOAD = 100
 
+/** The shares of a day's load a day may be put at, in the order they are offered. */
+export const LOADS: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE_LOAD]
+
 /** What one day of the week carries, which is the whole of it unless it is named. */
 export const loadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LOAD
+
+/**
+ * The load with one day put at a share. What carries the whole of a day is what
+ * nothing was said about, so a day put back to it stops being named.
+ */
+export const loaded = (load: Load, day: string, share: number): Load => {
+  const out: Record<string, number> = { ...load }
+  if (share === WHOLE_LOAD) delete out[day]
+  else out[day] = share
+  return out
+}
 
 /** A preset naming nothing, and how a deck pointing at none is scheduled. */
 export const DEFAULTS: Settings = {

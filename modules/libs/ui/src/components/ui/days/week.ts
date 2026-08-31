@@ -5,8 +5,8 @@
  * and the names are the caller's to hand in.
  */
 
-/** One day of the week. */
-export interface Day {
+/** What a day is called. */
+export interface Named {
   /** The caller's own identifier, handed back as given. */
   readonly id: string
   /** What is drawn on the chip: a letter or two. */
@@ -15,8 +15,14 @@ export interface Day {
   readonly long: string
 }
 
+/** One day as the row draws it: what it is called, and how full it stands. */
+export interface Day extends Named {
+  /** How full the chip is drawn, from nothing to the whole of it. */
+  readonly level: number
+}
+
 /** The week as English names it, starting on Monday. */
-export const WEEK: readonly Day[] = [
+export const WEEK: readonly Named[] = [
   { id: 'mon', short: 'M', long: 'Monday' },
   { id: 'tue', short: 'T', long: 'Tuesday' },
   { id: 'wed', short: 'W', long: 'Wednesday' },
@@ -27,55 +33,34 @@ export const WEEK: readonly Day[] = [
 ]
 
 /** The week turned to start on a day; a day it does not hold leaves it as it is. */
-export const weekFrom = (id: string, week: readonly Day[] = WEEK): readonly Day[] => {
+export const weekFrom = <One extends Named>(id: string, week: readonly One[]): readonly One[] => {
   const at = week.findIndex((day) => day.id === id)
   if (at <= 0) return week
   return [...week.slice(at), ...week.slice(0, at)]
 }
 
-/** What each day of the week carries, under the identifier of the day. */
-export type Shares = Readonly<Record<string, number>>
-
-/** The whole of a day, which a day nothing was said about carries. */
-export const WHOLE = 100
-
-/** The shares on offer, from nothing to the whole of a day. */
-export const SHARES: readonly number[] = [0, 10, 25, 50, 75, 90, WHOLE]
-
-/** What one day carries, which is the whole of it unless it says otherwise. */
-export const shareOn = (shares: Shares, day: string): number => shares[day] ?? WHOLE
-
 /**
- * What a day is drawn as carrying: its share brought inside nothing and the
- * whole of a day. A number outside that is not a share a chip can show, and
- * the figure said and the colour drawn are this one number.
+ * How full a chip is drawn, which is the level brought inside nothing and the
+ * whole of it. A level outside that is none a chip can show, and the figure
+ * said and the colour drawn are this one number.
  */
-export const carriedOn = (shares: Shares, day: string, whole: number = WHOLE): number =>
-  Math.min(Math.max(shareOn(shares, day), 0), whole)
+export const filled = (level: number): number => Math.min(Math.max(level, 0), 1)
+
+/** How full a chip stands, written out as a share of the whole. */
+export const percent = (level: number): string => `${Math.round(filled(level) * 100)}%`
 
 /**
- * The shares on offer, holding the one a day carries. A share the offer does
+ * The levels on offer, holding the one a day stands at. A level the offer does
  * not name is added where it stands among them, so a day is never asked to
- * choose without its own share among the choices. Nothing carried leaves the
+ * choose without its own level among the choices. Nothing standing leaves the
  * offer as it is.
  */
 export const offering = (
-  shares: readonly number[],
-  carrying: number | null,
+  levels: readonly number[],
+  standing: number | null,
 ): readonly number[] => {
-  if (carrying === null || shares.includes(carrying)) return shares
-  const at = shares.findIndex((one) => one > carrying)
-  if (at < 0) return [...shares, carrying]
-  return [...shares.slice(0, at), carrying, ...shares.slice(at)]
-}
-
-/**
- * The shares with one day put at a share, and a day back at the whole dropped:
- * what carries the whole of a day is what nothing was said about.
- */
-export const shared = (shares: Shares, day: string, share: number): Shares => {
-  const out: Record<string, number> = { ...shares }
-  if (share === WHOLE) delete out[day]
-  else out[day] = share
-  return out
+  if (standing === null || levels.includes(standing)) return levels
+  const at = levels.findIndex((one) => one > standing)
+  if (at < 0) return [...levels, standing]
+  return [...levels.slice(0, at), standing, ...levels.slice(at)]
 }

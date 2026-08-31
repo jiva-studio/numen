@@ -1,25 +1,38 @@
 /**
- * What the chips are announced as, and that pressing one offers the shares a
- * day can carry.
+ * What the chips are announced as, and that pressing one offers the levels a
+ * day can stand at.
  *
- * A day carrying the whole of a day is a day nothing was said about, so the
- * model names only the days standing under it.
+ * Each day is handed in at the level it stands at, and what comes back is one
+ * day and one level: what a level means, and what a day nobody named stands at,
+ * are the caller's.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Days from './Days.vue'
-import { weekFrom, WHOLE } from './week'
+import { weekFrom, WEEK, type Day } from './week'
+
+/** The levels a day is offered, from nothing to the whole of it. */
+const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
+
+/** The week, every day at the whole of it but for the ones named. */
+const week = (
+  standing: Readonly<Record<string, number>> = {},
+  named: readonly { id: string; short: string; long: string }[] = WEEK,
+): readonly Day[] => named.map((one) => ({ ...one, level: standing[one.id] ?? 1 }))
 
 type DaysProps = InstanceType<typeof Days>['$props']
 
 const mountDays = (props: Partial<DaysProps> = {}) =>
-  mount(Days, { props: { modelValue: { sat: 50 }, ...props }, attachTo: document.body })
+  mount(Days, {
+    props: { days: week({ sat: 0.5 }), levels: LEVELS, ...props },
+    attachTo: document.body,
+  })
 
-/** Every set of shares the row has handed on, in the order it handed them on. */
-const handed = (row: ReturnType<typeof mountDays>): readonly unknown[] =>
-  (row.emitted('update:modelValue') ?? []).map((said) => (said as unknown[])[0])
+/** Every day the row has handed back, with the level chosen for it. */
+const handed = (row: ReturnType<typeof mountDays>): readonly unknown[][] =>
+  (row.emitted('chooses') ?? []) as unknown[][]
 
-/** The shares on offer, once a chip has been pressed. */
+/** The levels on offer, once a chip has been pressed. */
 const offered = (): readonly string[] =>
   [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
@@ -28,7 +41,7 @@ afterEach(() => {
 })
 
 describe('what is drawn', () => {
-  it('draws the seven days, each under its whole name and what it carries', () => {
+  it('draws the seven days, each under its whole name and how full it stands', () => {
     const chips = mountDays().findAll('button')
     expect(chips).toHaveLength(7)
     expect(chips.map((chip) => chip.attributes('aria-label'))).toEqual([
@@ -43,27 +56,27 @@ describe('what is drawn', () => {
     expect(chips.map((chip) => chip.text())).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S'])
   })
 
-  it('draws the week from the day it is given', () => {
-    const chips = mountDays({ days: weekFrom('sun') }).findAll('button')
+  it('draws the days in the order they are given', () => {
+    const chips = mountDays({ days: week({}, weekFrom('sun', WEEK)) }).findAll('button')
     expect(chips[0]?.attributes('aria-label')).toBe('Sunday, 100%')
   })
 
-  // The week is read as the work standing on it: a day carrying the whole of a
-  // day is full colour, and a day carrying none has none.
-  it('fills a day in step with what it carries', () => {
-    const chips = mountDays({ modelValue: { sat: 0, sun: 75 } }).findAll('button')
+  // The week is read at a glance: a day at the whole of it is full colour, and
+  // a day at nothing has none.
+  it('fills a day in step with the level it stands at', () => {
+    const chips = mountDays({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
     const filling = (at: number) => chips[at]?.attributes('style') ?? ''
-    expect(filling(0)).toContain(`var(--numen-focus-bg) ${WHOLE}%`)
+    expect(filling(0)).toContain('var(--numen-focus-bg) 100%')
     expect(filling(5)).toContain('var(--numen-focus-bg) 0%')
     expect(filling(6)).toContain('var(--numen-focus-bg) 75%')
   })
 
-  it('says a day offers the shares rather than turning on the spot', () => {
+  it('says a day offers the levels rather than turning on the spot', () => {
     expect(mountDays().get('button').attributes('aria-haspopup')).toBe('menu')
   })
 
-  // A chip carries a share and offers a menu. It holds nothing down, so it
-  // announces no state of its own beyond the share it is labelled with.
+  // A chip stands at a level and offers a menu. It holds nothing down, so it
+  // announces no state of its own beyond the level it is labelled with.
   it('is a row of buttons offering menus, and not a set of toggles', () => {
     const row = mountDays()
     expect(row.get('[data-slot="days"]').attributes('role')).toBe('toolbar')
@@ -77,7 +90,7 @@ describe('what is drawn', () => {
     }
   })
 
-  it('says on the chip whether its shares are open', async () => {
+  it('says on the chip whether its levels are open', async () => {
     const row = mountDays()
     const chip = row.findAll('button')[5]
     expect(chip?.attributes('aria-expanded')).toBe('false')
@@ -87,9 +100,9 @@ describe('what is drawn', () => {
   })
 })
 
-describe('a day carrying a share the offer does not name', () => {
-  it('says the share it is drawn at, and is drawn at the share it says', async () => {
-    const row = mountDays({ modelValue: { sat: 37, sun: 400 } })
+describe('a day standing at a level the offer does not name', () => {
+  it('says the level it is drawn at, and is drawn at the level it says', () => {
+    const row = mountDays({ days: week({ sat: 0.37, sun: 4 }) })
     const chips = row.findAll('button')
     expect(chips[5]?.attributes('aria-label')).toBe('Saturday, 37%')
     expect(chips[5]?.attributes('style')).toContain('var(--numen-focus-bg) 37%')
@@ -97,8 +110,8 @@ describe('a day carrying a share the offer does not name', () => {
     expect(chips[6]?.attributes('style')).toContain('var(--numen-focus-bg) 100%')
   })
 
-  it('offers that share too, in its place among them and as the one in force', async () => {
-    const row = mountDays({ modelValue: { sat: 37 } })
+  it('offers that level too, in its place among them and as the one in force', async () => {
+    const row = mountDays({ days: week({ sat: 0.37 }) })
     await row.findAll('button')[5]?.trigger('click')
     expect(offered()).toEqual(['0%', '10%', '25%', '37%', '50%', '75%', '90%', '100%'])
 
@@ -109,7 +122,7 @@ describe('a day carrying a share the offer does not name', () => {
   })
 })
 
-describe('the keyboard while the shares are offered', () => {
+describe('the keyboard while the levels are offered', () => {
   /** The chip pressed, focused as the keyboard would leave it. */
   const asked = async (row: ReturnType<typeof mountDays>, at: number) => {
     const chip = row.findAll('button')[at]
@@ -123,7 +136,7 @@ describe('the keyboard while the shares are offered', () => {
     ...document.body.querySelectorAll<HTMLElement>('.menu__item'),
   ]
 
-  it('opens on the share the day carries, and says which of them it is', async () => {
+  it('opens on the level the day stands at, and says which of them it is', async () => {
     const row = mountDays()
     await asked(row, 5)
     expect(document.activeElement).toBe(items()[3])
@@ -141,7 +154,7 @@ describe('the keyboard while the shares are offered', () => {
     ])
   })
 
-  it('gives the keyboard back to the chip once a share is chosen', async () => {
+  it('gives the keyboard back to the chip once a level is chosen', async () => {
     const row = mountDays()
     const chip = await asked(row, 5)
     items()[2]?.click()
@@ -159,32 +172,33 @@ describe('the keyboard while the shares are offered', () => {
   })
 })
 
-describe('giving a day a share', () => {
-  it('offers the shares, from nothing to the whole of a day', async () => {
+describe('giving a day a level', () => {
+  it('offers the levels it was given, in the order it was given them', async () => {
     const row = mountDays()
     await row.findAll('button')[5]?.trigger('click')
     expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%'])
   })
 
-  it('offers the shares it was given, where a caller names its own', async () => {
-    const row = mountDays({ shares: [0, 50, 100] })
+  it('offers three where three is what it was given', async () => {
+    const row = mountDays({ levels: [0, 0.5, 1] })
     await row.findAll('button')[0]?.trigger('click')
     expect(offered()).toEqual(['0%', '50%', '100%'])
   })
 
-  it('hands the day back at the share that was chosen, and leaves the rest', async () => {
+  // The day is handed back as it was given, and the level with it; what a level
+  // means, and what becomes of the days it says nothing about, are the caller's.
+  it('hands back the day it was given and the level chosen for it', async () => {
     const row = mountDays()
     await row.findAll('button')[0]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[2]?.click()
-    expect(handed(row)).toEqual([{ sat: 50, mon: 25 }])
+    expect(handed(row)).toEqual([['mon', 0.25]])
   })
 
-  // What carries the whole of a day is what nothing was said about.
-  it('stops naming a day put back to the whole of a day', async () => {
+  it('hands back a day put at the whole of it like any other', async () => {
     const row = mountDays()
     await row.findAll('button')[5]?.trigger('click')
     await document.body.querySelectorAll<HTMLElement>('.menu__item')[6]?.click()
-    expect(handed(row)).toEqual([{}])
+    expect(handed(row)).toEqual([['sat', 1]])
   })
 
   // A chip nobody may turn is pressed like any other and answers with nothing.

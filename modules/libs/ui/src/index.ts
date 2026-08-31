@@ -38,10 +38,10 @@ export { Slider } from './components/ui/slider'
 export { Segmented } from './components/ui/segmented'
 export type { SegmentedChoice } from './components/ui/segmented'
 
-/** The days of the week, each carrying the share of a day it takes. */
+/** The days of the week, each drawn at the level it stands at. */
 export { Days } from './components/ui/days'
 export { weekFrom, WEEK } from './components/ui/days'
-export type { Day, Shares } from './components/ui/days'
+export type { Day, Named } from './components/ui/days'
 
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */
