@@ -10,9 +10,16 @@ import { mount } from '@vue/test-utils'
 import KeyCap from '../palette/KeyCap.vue'
 import Welcome from './Welcome.vue'
 import { VAULT_LETTERS } from './picking'
-import type { Held } from './welcome'
+import type { Held, Offer } from './welcome'
 
 const vault = (id: string): Held => ({ id, name: id, path: `/vaults/${id}` })
+
+/** What a window offers below the list, with the keystroke that reaches it. */
+const offer: Offer = {
+  text: 'New vault',
+  detail: 'Choose a folder',
+  keys: { marks: ['control', 'shift'], letter: 'N' },
+}
 
 const draw = (vaults: readonly Held[]) => mount(Welcome, { props: { vaults, heading: 'Vaults' } })
 
@@ -34,11 +41,34 @@ describe('a vault on the list', () => {
     expect(screen.findAll('.welcome__row--vault')).toHaveLength(VAULT_LETTERS.length + 1)
   })
 
+  it('carries what the window says at the end of its row, and its letter after it', () => {
+    const screen = mount(Welcome, {
+      props: { vaults: [vault('physics')], heading: 'Vaults' },
+      slots: { vault: '<span class="owed">2</span>' },
+    })
+
+    expect(screen.find('.welcome__row--vault').text()).toContain('2')
+    expect(caps(screen)).toStrictEqual(['A'])
+  })
+
   it('is still opened by the hand, by the identity it was given', async () => {
     const screen = draw([vault('physics'), vault('heat')])
 
     await screen.findAll('.welcome__row--vault')[1]!.trigger('click')
 
     expect(screen.emitted('opens')).toStrictEqual([['heat']])
+  })
+})
+
+describe('what the screen offers below the list', () => {
+  const drawWith = (one: Offer) =>
+    mount(Welcome, { props: { vaults: [vault('physics')], heading: 'Vaults', offer: one } })
+
+  it('carries the keystroke that reaches it, after the letters on the list', () => {
+    expect(caps(drawWith(offer))).toStrictEqual(['A', 'N'])
+  })
+
+  it('carries none where the window binds none', () => {
+    expect(caps(drawWith({ text: offer.text }))).toStrictEqual(['A'])
   })
 })

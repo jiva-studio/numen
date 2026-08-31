@@ -425,7 +425,13 @@ export const commandsOf = (
     where: (at) => at.ready,
   },
   { id: 'openVault', text: words.openVault, band: 'vault', needs: 'vaults', where: always },
-  { id: 'newVault', text: words.newVault, band: 'vault', where: always },
+  {
+    id: 'newVault',
+    text: words.newVault,
+    ...keysOf('newVault', agent),
+    band: 'vault',
+    where: always,
+  },
   {
     id: 'renameVault',
     text: words.renameVault,

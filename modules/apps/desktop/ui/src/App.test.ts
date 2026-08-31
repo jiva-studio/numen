@@ -167,6 +167,8 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     measured: 0,
     /** The vaults the window asked to be shown, in the order it asked. */
     opened: [] as string[],
+    /** How often a folder was asked for, which is a vault being added. */
+    chose: 0,
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
@@ -191,7 +193,10 @@ vi.mock('./vault', () => ({
   vault: {},
   vaults: {
     list: async () => listed,
-    choose: async () => '',
+    choose: async () => {
+      asked.chose += 1
+      return ''
+    },
     add: async () => ({ vault: null, refusal: null }),
     rename: async () => ({ vault: null, refusal: null }),
     forget: async () => null,
@@ -430,6 +435,7 @@ afterEach(() => {
   asked.worn = []
   asked.measured = 0
   asked.opened = []
+  asked.chose = 0
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })
@@ -627,6 +633,30 @@ describe('a letter pressed on the welcome screen', () => {
     await press('a')
 
     expect(asked.opened).toStrictEqual([])
+  })
+})
+
+describe('the vault offered below the list', () => {
+  it('carries the keystroke that reaches it, drawn on its own row', async () => {
+    listed.showing = ''
+
+    const window = await drawn()
+
+    expect(window.findComponent(Welcome).props('offer')).toMatchObject({
+      keys: { marks: ['control', 'shift'], letter: 'N' },
+    })
+  })
+
+  it('is asked for by that keystroke, which is a folder chosen on this machine', async () => {
+    listed.showing = ''
+    await drawn()
+
+    globalThis.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'N', ctrlKey: true, shiftKey: true, cancelable: true }),
+    )
+    await settles()
+
+    expect(asked.chose).toBe(1)
   })
 })
 

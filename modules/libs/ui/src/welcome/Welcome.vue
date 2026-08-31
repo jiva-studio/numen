@@ -92,6 +92,7 @@ defineEmits<{
             <span class="welcome__what">{{ offer.text }}</span>
             <span v-if="offer.detail" class="welcome__aside">{{ offer.detail }}</span>
           </span>
+          <KeyCap v-if="offer.keys" :keys="offer.keys" />
         </button>
       </section>
     </div>
