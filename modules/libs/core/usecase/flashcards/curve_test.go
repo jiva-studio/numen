@@ -825,3 +825,38 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 		}
 	}
 }
+
+// The day suggested for a date is a day the material can be learned by.
+//
+// It took the soonest day whose cost fitted the minutes the preset keeps and
+// asked nothing else, so a range whose first day leaves the whole material out
+// of reach was answered with tomorrow.
+func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{
+		Goal: history.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+	}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Suggested == flashcards.Nowhere {
+		t.Fatal("no day is suggested, and the range holds days the material is through by")
+	}
+	stands := got.At[got.Suggested.At]
+	if stands.Short != 0 || !stands.Enough || stands.Through < 1 {
+		t.Errorf("%s is suggested, and it leaves %d card faces out of reach and gets "+
+			"through %v of the material", got.Suggested.Day, stands.Short, stands.Through)
+	}
+	// And it is the soonest such day.
+	for i, one := range got.At {
+		if i < got.Suggested.At && one.Short == 0 && one.Enough &&
+			one.Minutes <= float64(p.MinutesADay) {
+			t.Errorf("%s is suggested and %s, earlier, is through the material too",
+				got.Suggested.Day, got.Days[i])
+		}
+	}
+}

@@ -454,33 +454,33 @@ func (u Curves) date(
 		Value: float64(named),
 		Day:   u.Day.Names(open.AddDate(0, 0, named)),
 	}
-	// What is suggested is the soonest day whose cost fits the minutes the
-	// preset keeps, which is being through it without changing the day a person
-	// sits to.
+	// What is suggested is the soonest day the material can be learned by:
+	// nothing out of reach on it and the pace through the whole of it. Where the
+	// preset keeps minutes, the soonest such day whose cost fits them, which is
+	// being through it without changing the day a person sits to.
 	if p.MinutesADay > 0 {
 		for i, one := range out.At {
-			if one.Minutes <= float64(p.MinutesADay) {
+			if learns(one) && one.Minutes <= float64(p.MinutesADay) {
 				out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
 				return out, nil
 			}
 		}
 	}
 	// A preset keeping no minutes, and a range no day of which fits them, are
-	// suggested the first day the material is through.
+	// suggested the soonest day that gets there at whatever it costs. A range no
+	// day of which gets there points at none.
 	for i, one := range out.At {
-		if one.Enough {
-			out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
-			return out, nil
-		}
-	}
-	for i, one := range out.At {
-		if one.Met {
+		if learns(one) {
 			out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
 			return out, nil
 		}
 	}
 	return out, nil
 }
+
+// learns reports whether the whole material stands learned on this day: no card
+// face out of reach of it, and the pace it sets through every one of them.
+func learns(one Point) bool { return one.Short == 0 && one.Enough }
 
 // reached reports whether every card face that can be learned by this day of a
 // run stands learned on it. Short is how many cannot be, whatever the pace.
