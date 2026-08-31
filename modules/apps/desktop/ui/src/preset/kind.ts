@@ -320,8 +320,8 @@ export function presetting(
       ? { ...settings, goal, byDate: dayAfter(today(), AHEAD) }
       : { ...settings, goal }
 
-  const holds = (id: string): Held => {
-    const one = open.get(id) ?? keeps(id)
+  /** What one open preset holds, in the vocabulary its tab is drawn from. */
+  const holding = (one: Kept, id: string): Held => {
     return {
       id,
       settings: () => one.settings.value,
@@ -363,10 +363,17 @@ export function presetting(
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
       },
       shuts: (tab) => {
-        open.delete(id)
+        // A preset that was renamed is filed under the name it now carries.
+        open.delete(one.path.value)
         host.closes(tab)
       },
     }
+  }
+
+  /** What a preset tab holds, and nothing for a preset no tab has open. */
+  const holds = (id: string): Held | undefined => {
+    const one = open.get(id)
+    return one && holding(one, id)
   }
 
   /** What a preset tab is called: the title the file carries, or the file itself. */
@@ -383,7 +390,7 @@ export function presetting(
       const one = keeps(path)
       open.set(path, one)
       void reads(one)
-      return holds(path)
+      return holding(one, path)
     },
     called: (one) => called(one.id),
     draws: PresetTab,

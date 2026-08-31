@@ -100,13 +100,12 @@ const opened = async (
   const host = { closes: () => {} } as unknown as Host
   const puts = { holds: () => {} } as unknown as Putting
   const kind = presetting(core, host, puts, () => {}, () => NOW)
-  kind.kind.opens('Steady.md')
-  const held = kind.holds('Steady.md')
+  const held = await kind.kind.opens('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
   await Promise.resolve()
   await Promise.resolve()
-  return { held, written, asked, changed: kind.changed }
+  return { held, written, asked, holds: kind.holds, changed: kind.changed }
 }
 
 /** A moment for the read and the curve behind it to land. */
@@ -312,6 +311,30 @@ describe('the goal chosen', () => {
       expect(held.settings().byDate).toBe(day)
       expect(written.at(-1)?.byDate).toBe(day)
     }
+  })
+})
+
+// A tab is the one thing that holds a preset. Anything else answering for one
+// answers with settings nobody set, and writes them into the file at the first
+// control let go of.
+describe('a preset no tab has open', () => {
+  it('is held by nothing, where no tab ever opened it', async () => {
+    const { holds } = await opened()
+    expect(holds('Nowhere.md')).toBeUndefined()
+  })
+
+  it('is what a preset becomes once its tab is shut', async () => {
+    const { held, holds } = await opened()
+    held.shuts('Steady.md')
+    expect(holds('Steady.md')).toBeUndefined()
+  })
+
+  it('is what a renamed preset becomes once its tab is shut', async () => {
+    const { held, holds, changed } = await opened()
+    changed([], [{ from: 'Steady.md', to: 'Slow.md' }])
+    held.shuts('Slow.md')
+    expect(holds('Slow.md')).toBeUndefined()
+    expect(holds('Steady.md')).toBeUndefined()
   })
 })
 
