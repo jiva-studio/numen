@@ -33,6 +33,10 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+/** What each row of the receipt is called, in the order they are drawn. */
+const rows = (tab: ReturnType<typeof mount>): readonly string[] =>
+  tab.findAll('.preset__row .preset__name').map((one) => one.text())
+
 /** The heights a drawn path stands at, in the picture's own units. */
 const heights = (d: string): readonly number[] =>
   d
@@ -50,6 +54,8 @@ const point = (over: Partial<Point> = {}): Point => ({
   met: true,
   closed: '',
   clears: 0,
+  learned: 0,
+  learns: -1,
   backlog: [],
   ...over,
 })
@@ -174,7 +180,7 @@ describe('the one control', () => {
   it('says what the control is acting on, as tiles over the picture', () => {
     const { tab } = drawn({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
     const tiles = tab
-      .findAll('.control__tile')
+      .findAll('.control__material:not(.control__learned) .control__tile')
       .map((one) => [one.get('.control__figure').text(), one.get('.control__word').text()])
     expect(tiles).toStrictEqual([
       ['4', 'decks'],
@@ -188,7 +194,7 @@ describe('the one control', () => {
   // nothing leaves the rest to spread over it.
   it('leaves out a tile whose figure stands at nothing', () => {
     const { tab } = drawn({ decks: 4, cards: 160, overdue: 0, unbegun: 0 })
-    expect(tab.findAll('.control__tile')).toHaveLength(2)
+    expect(tab.findAll('.control__material:not(.control__learned) .control__tile')).toHaveLength(2)
   })
 
   // A card nobody has answered is new, which is what the rest of the product
@@ -376,6 +382,66 @@ describe('the one control', () => {
     // The knob and its number are the person's own and stand either way.
     expect(drawn({ suggested: NOWHERE }).tab.findAll('.control__knob')).toHaveLength(1)
     expect(drawn({ suggested: NOWHERE }).tab.findAll('.control__number--knob')).toHaveLength(1)
+  })
+})
+
+// The whole point of the tab is when the material will be learned, so it is
+// said in figures under the picture, off the very run the line is drawn from.
+describe('when the material is learned', () => {
+  const learning = (tab: ReturnType<typeof mount>) =>
+    tab
+      .findAll('.control__learned .control__tile')
+      .map((one) => [one.get('.control__figure').text(), one.get('.control__word').text()])
+
+  it('says the days it takes and how much of it stands learned today', () => {
+    const { tab } = drawn({
+      cards: 79,
+      at: [point(), point(), point({ learns: 41, learned: 0 }), point()],
+    })
+    expect(learning(tab)).toStrictEqual([
+      ['41', 'days to learn it'],
+      ['0 of 79', 'learned today'],
+    ])
+  })
+
+  it('follows the knob, since each place of the grid learns at its own pace', async () => {
+    const { tab } = drawn({
+      cards: 79,
+      at: [
+        point({ learns: 70, learned: 0 }),
+        point({ learns: 41, learned: 0 }),
+        point({ learns: 3, learned: 77 }),
+        point({ learns: 0, learned: 79 }),
+      ],
+    })
+    expect(learning(tab)[0]).toStrictEqual(['3', 'days to learn it'])
+    await tab.get('.control__picture[role="slider"]').trigger('keydown', { key: 'Home' })
+    expect(learning(tab)[0]).toStrictEqual(['70', 'days to learn it'])
+  })
+
+  // A pace that does not get there has no day to name, so it says so.
+  it('says a pace that never gets there in words, and not as a figure', () => {
+    const { tab } = drawn({
+      cards: 79,
+      at: [point(), point(), point({ learns: -1, learned: 4 }), point()],
+    })
+    expect(learning(tab)).toStrictEqual([
+      ['not yet', 'in the days ahead'],
+      ['4 of 79', 'learned today'],
+    ])
+  })
+
+  it('says a material already learned is learned today', () => {
+    const { tab } = drawn({
+      cards: 79,
+      at: [point(), point(), point({ learns: 0, learned: 79 }), point()],
+    })
+    expect(learning(tab)[0]).toStrictEqual(['today', 'all of it learned'])
+  })
+
+  it('says nothing at all until the answer lands', () => {
+    const { tab } = drawn({ honest: false })
+    expect(tab.findAll('.control__learned .control__tile')).toHaveLength(0)
   })
 })
 
@@ -790,22 +856,24 @@ describe('a goal with nothing to work on', () => {
 
   it('leaves its settings there to be set up before a deck points here', () => {
     const { tab, done } = drawn(nothing)
-    expect(tab.findAll('.preset__row')).toHaveLength(4)
-    tab.get('.preset__row input').setValue('7')
+    expect(tab.findAll('.preset__row')).toHaveLength(6)
+    const minutes = tab
+      .findAll('.preset__row')
+      .find((one) => one.get('.preset__name').text() === words.fieldName('minutesADay'))
+    minutes?.get('input').setValue('7')
     expect(done).toStrictEqual(['types minutesADay 7'])
   })
 })
 
 describe('the settings the chosen goal schedules by', () => {
   /** What each row of the receipt is called, which is what the goal draws. */
-  const rows = (tab: ReturnType<typeof mount>) =>
-    tab.findAll('.preset__row .preset__name').map((one) => one.text())
-
   // A goal names one budget. The budgets of the other two are not drawn, so
   // nothing on the screen offers to close a day by a measure nobody named.
   it('draws the minutes alone under a goal of minutes', () => {
     const { tab } = drawn()
     expect(rows(tab)).toStrictEqual([
+      words.fieldName('learned'),
+      words.fieldName('interval'),
       words.fieldName('minutesADay'),
       words.fieldName('backlog'),
       words.fieldName('load'),
@@ -819,6 +887,8 @@ describe('the settings the chosen goal schedules by', () => {
     expect(rows(tab)).toStrictEqual([
       words.fieldName('newADay'),
       words.fieldName('reviewsADay'),
+      words.fieldName('learned'),
+      words.fieldName('interval'),
       words.fieldName('retention'),
       words.fieldName('counts'),
       words.fieldName('backlog'),
@@ -838,6 +908,8 @@ describe('the settings the chosen goal schedules by', () => {
       { goal: 'date', byDate: '2026-09-29' },
     )
     expect(rows(tab)).toStrictEqual([
+      words.fieldName('learned'),
+      words.fieldName('interval'),
       words.fieldName('byDate'),
       words.fieldName('load'),
       words.fieldName('evenLoad'),
@@ -857,7 +929,7 @@ describe('the settings under the control', () => {
     expect(tab.text()).toContain(words.fieldName('minutesADay'))
     expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
     expect(tab.text()).toContain(words.fieldName('load'))
-    expect(tab.findAll('.preset__row')).toHaveLength(4)
+    expect(tab.findAll('.preset__row')).toHaveLength(6)
   })
 
   // What a budget is spent on is a row like any other, and a person moving it
@@ -897,6 +969,49 @@ describe('the settings under the control', () => {
     expect(done).toStrictEqual(['types backlog 69', 'settles'])
     // The hundred is the whole of it, and nothing outside it is taken.
     expect(BOUNDS.backlog).toStrictEqual({ least: 0, most: 100 })
+  })
+
+  // The rule stands over the one value it reads, and the value the other rule
+  // reads is not drawn at all — the same rule a goal follows for its budgets.
+  it('offers the two rules for the learned, and draws the value the chosen one reads', async () => {
+    const byInterval = drawn({}, { learned: 'interval', interval: 21 })
+    expect(rows(byInterval.tab)).toContain(words.fieldName('learned'))
+    expect(rows(byInterval.tab)).toContain(words.fieldName('interval'))
+    expect(rows(byInterval.tab)).not.toContain(words.fieldName('retention'))
+
+    const byRetention = drawn({}, { learned: 'retention' })
+    expect(rows(byRetention.tab)).toContain(words.fieldName('retention'))
+    expect(rows(byRetention.tab)).not.toContain(words.fieldName('interval'))
+  })
+
+  // Under a goal of retention the target is the knob's own value and the rule
+  // reads it too. It is one key, so the receipt draws it once.
+  it('draws the target once where the goal and the rule both read it', () => {
+    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention', learned: 'retention' })
+    const named = rows(tab).filter((one) => one === words.fieldName('retention'))
+    expect(named).toHaveLength(1)
+  })
+
+  it('hands on the rule that was chosen, and is done with it at once', async () => {
+    const { tab, done } = drawn({}, { learned: 'interval' })
+    const chosen = tab
+      .findAll('button')
+      .find((one) => one.text() === words.ruleName('retention'))
+    await chosen?.trigger('click')
+    expect(done).toStrictEqual(['types learned retention', 'settles'])
+  })
+
+  it('holds the days a card is put off inside what a preset may hold', async () => {
+    const { tab, done } = drawn({}, { learned: 'interval', interval: 21 })
+    const row = tab
+      .findAll('.preset__row')
+      .find((one) => one.get('.preset__name').text() === words.fieldName('interval'))
+    const field = row?.get<HTMLInputElement>('input')
+    expect(field?.element.value).toBe('21')
+    expect(field?.attributes('aria-valuemin')).toBe(`${BOUNDS.interval.least}`)
+    expect(field?.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
+    await field?.setValue('30')
+    expect(done).toStrictEqual(['types interval 30'])
   })
 
   // A row whose number the goal would fill in itself says so, and carries the

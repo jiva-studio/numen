@@ -315,6 +315,17 @@ const material = computed(() =>
     props.curve.unbegun,
   ),
 )
+/**
+ * When the material this place buys is learned, said as tiles under the
+ * picture. It is read off the very point the line is drawn through, so the
+ * picture and the tiles cannot disagree.
+ */
+const learning = computed(() => {
+  const one = props.curve.at[props.place]
+  if (!one) return []
+  return words.learning(one.learns, one.learned, props.curve.cards)
+})
+
 /** An end the knob is standing on is left to the knob, which says it already. */
 const atLeast = computed(() =>
   props.place === 0 ? '' : words.widthAt(props.curve.goal, props.curve.grid[0] ?? 0),
@@ -565,6 +576,15 @@ const released = (event: KeyboardEvent) => {
 
         <p class="control__name control__name--x">{{ words.backlogX }}</p>
       </div>
+    </div>
+
+    <!-- When the material is learned at the place the knob stands, read off
+         the same run the picture is drawn from. -->
+    <div class="control__material control__learned">
+      <span v-for="one in honest ? learning : []" :key="one.name" class="control__tile">
+        <span class="control__figure">{{ one.figure }}</span>
+        <span class="control__word">{{ one.name }}</span>
+      </span>
     </div>
   </div>
 </template>

@@ -23,6 +23,8 @@ const point = (over: Partial<Point> = {}): Point => ({
   met: true,
   closed: '',
   clears: 0,
+  learned: 0,
+  learns: -1,
   backlog: [],
   ...over,
 })
@@ -227,7 +229,7 @@ describe('what the control writes', () => {
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
     const { held, written } = await opened({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
-    expect(fieldsUnder(held.settings().goal)).not.toContain('reviewsADay')
+    expect(fieldsUnder(held.settings().goal, held.settings().learned)).not.toContain('reviewsADay')
 
     held.moves(1)
     held.settles()
@@ -247,7 +249,7 @@ describe('a setting the goal on screen does not name', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(fieldsUnder('retention')).toContain('reviewsADay')
+    expect(fieldsUnder('retention', DEFAULTS.learned)).toContain('reviewsADay')
     expect(held.settings().reviewsADay).toBe(7)
     expect(held.settings().newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(7)
@@ -306,7 +308,7 @@ describe('a field the goal does not steer, typed', () => {
 
   it('leaves every other setting exactly as it stood, under every goal', async () => {
     for (const goal of ['minutes', 'retention'] as const) {
-      for (const field of fieldsUnder(goal)) {
+      for (const field of fieldsUnder(goal, DEFAULTS.learned)) {
         const said = SAID[field]
         if (field === steers(goal) || said === undefined) continue
 

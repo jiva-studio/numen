@@ -7,7 +7,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Counts as Countings, Goal as Goals, PresetsService } from '@numen/protocol'
+import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
 import type {
   Curve as CurveMessage,
   Mark as MarkMessage,
@@ -32,6 +32,20 @@ export type Counts = 'cards' | 'shows'
 
 /** The two, in the order they are offered. */
 export const COUNTS: readonly Counts[] = ['cards', 'shows']
+
+/**
+ * What a preset counts as learned. A card sent days away rather than minutes
+ * away is spaced, which is the scheduler's own doing; learned is the person's
+ * rule for when the material is theirs.
+ *
+ * Under `interval` a card face is learned once it is sent away for that many
+ * days; under `retention` once the chance of recalling it today stands at the
+ * target. The rule not named keeps its value and takes no part.
+ */
+export type Rule = 'interval' | 'retention'
+
+/** The two, in the order they are offered. */
+export const RULES: readonly Rule[] = ['interval', 'retention']
 
 /**
  * How the decks pointing at one preset are scheduled. A preset carrying none
@@ -62,6 +76,9 @@ export interface Settings {
    */
   readonly load: Load
   readonly evenLoad: boolean
+  /** What counts as learned, and how long a card is sent away for under one. */
+  readonly learned: Rule
+  readonly interval: number
 }
 
 /** A share of a day's load for each day of the week that is not at the whole. */
@@ -85,6 +102,8 @@ export const DEFAULTS: Settings = {
   backlog: 100,
   load: {},
   evenLoad: true,
+  learned: 'interval',
+  interval: 21,
 }
 
 /** How far each setting goes. A number outside its bounds is refused. */
@@ -94,6 +113,7 @@ export const BOUNDS = {
   reviewsADay: { least: 0, most: 9999 },
   retention: { least: 0.7, most: 0.99 },
   backlog: { least: 0, most: 100 },
+  interval: { least: 1, most: 365 },
 } as const
 
 /** One preset as a read hands it over. */
@@ -147,6 +167,14 @@ export interface Point {
    * there.
    */
   readonly clears: number
+  /** How many card faces stand learned as the run opens, under the preset's rule. */
+  readonly learned: number
+  /**
+   * How many days of review before every card face is learned. Zero is a place
+   * standing over a material already learned, and -1 is a horizon that ends
+   * with one of them still to learn.
+   */
+  readonly learns: number
   /**
    * How many card faces stand overdue at the end of each day projected here,
    * one entry a day. It runs over days, which is a different axis from the
@@ -273,6 +301,8 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
         backlog: said.backlog,
         load: said.load,
         evenLoad: said.evenLoad,
+        learned: LEARNED[said.learned] ?? DEFAULTS.learned,
+        interval: said.interval,
       }
 
 /** The settings in the shape the schema carries them. */
@@ -287,6 +317,8 @@ const sent = (settings: Settings) => ({
   backlog: settings.backlog,
   load: { ...settings.load },
   evenLoad: settings.evenLoad,
+  learned: RULING[settings.learned],
+  interval: settings.interval,
 })
 
 /** A curve as the window carries it. An answer holding none is an empty one. */
@@ -304,6 +336,8 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     met: one.met,
     closed: one.closed,
     clears: one.clears,
+    learned: one.learned,
+    learns: one.learns,
     backlog: one.backlog,
   })),
   now: marked(said?.now),
@@ -330,6 +364,18 @@ const WORDED: Partial<Record<Goals, Goal>> = {
   [Goals.MINUTES_A_DAY]: 'minutes',
   [Goals.RETENTION]: 'retention',
   [Goals.BY_DATE]: 'date',
+}
+
+/** What counts as learned, as the schema names it. */
+const RULING: Record<Rule, Rules> = {
+  interval: Rules.INTERVAL,
+  retention: Rules.RETENTION,
+}
+
+/** What counts as learned, in the window's own words. */
+const LEARNED: Partial<Record<Rules, Rule>> = {
+  [Rules.INTERVAL]: 'interval',
+  [Rules.RETENTION]: 'retention',
 }
 
 /** What a budget counts, as the schema names it. */

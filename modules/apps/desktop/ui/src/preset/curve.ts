@@ -8,7 +8,7 @@
  * over the settings alone and is shown as the approximation it is.
  */
 import { BOUNDS, DEFAULTS, NOWHERE } from './core'
-import type { Curve, Goal, Mark, Point, Settings } from './core'
+import type { Curve, Goal, Mark, Point, Rule, Settings } from './core'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -37,6 +37,8 @@ export type Field =
   | 'newADay'
   | 'reviewsADay'
   | 'retention'
+  | 'learned'
+  | 'interval'
   | 'byDate'
   | 'counts'
   | 'backlog'
@@ -47,6 +49,10 @@ export type Field =
 export const FIELDS: readonly Field[] = [
   'newADay',
   'reviewsADay',
+  // The rule for what is learned stands over the value it reads, and one of
+  // those values is the target, so the rule stands over that too.
+  'learned',
+  'interval',
   'retention',
   'minutesADay',
   'byDate',
@@ -84,12 +90,30 @@ const SPENDING: Record<Goal, readonly Field[]> = {
   date: [],
 }
 
+/**
+ * What each rule for the learned reads. The rule itself is drawn under every
+ * goal, and under it the one value that rule reads; the other keeps its value
+ * and takes no part, as a budget the goal does not name does.
+ *
+ * A target is read by the goal that steers it and by the rule that counts by
+ * it, and either way it is the one key: the receipt draws it once.
+ */
+const LEARNS: Record<Rule, readonly Field[]> = {
+  interval: ['learned', 'interval'],
+  retention: ['learned', 'retention'],
+}
+
 /** The settings that stand under no goal in particular, and are drawn under all. */
 const ALWAYS: readonly Field[] = ['load', 'evenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
-export const fieldsUnder = (goal: Goal): readonly Field[] => {
-  const drawn = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...ALWAYS])
+export const fieldsUnder = (goal: Goal, learned: Rule): readonly Field[] => {
+  const drawn = new Set<Field>([
+    ...BUDGETS[goal],
+    ...SPENDING[goal],
+    ...LEARNS[learned],
+    ...ALWAYS,
+  ])
   return FIELDS.filter((field) => drawn.has(field))
 }
 
@@ -131,6 +155,8 @@ export const shapeOf = (settings: Settings): string => {
     byDate: settings.byDate,
     counts: settings.counts,
     backlog: `${settings.backlog}`,
+    learned: settings.learned,
+    interval: `${settings.interval}`,
     load: Object.keys(settings.load)
       .sort()
       .map((day) => `${day}=${settings.load[day]}`)
@@ -355,6 +381,8 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
     met: true,
     closed: '',
     clears: 0,
+    learned: 0,
+    learns: -1,
     backlog: [],
   }
   if (settings.goal === 'retention') {

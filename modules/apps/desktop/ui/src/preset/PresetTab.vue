@@ -12,8 +12,8 @@ import { Days, NumberField, Segmented, Slider, Switch } from '@numen/ui'
 import { RotateCcw } from '@lucide/vue'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
-import { BOUNDS, COUNTS, GOALS } from './core'
-import type { Counts, Goal, Load } from './core'
+import { BOUNDS, COUNTS, GOALS, RULES } from './core'
+import type { Counts, Goal, Load, Rule } from './core'
 import { fieldsUnder, idle, paused, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
@@ -36,13 +36,16 @@ const saidInstead = computed(() => {
 })
 
 /** The rows the chosen goal schedules by, which are the ones drawn. */
-const fields = computed(() => fieldsUnder(settings.value.goal))
+const fields = computed(() => fieldsUnder(settings.value.goal, settings.value.learned))
 
 /** The three goals, as the switch above the curve offers them. */
 const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName(one) })))
 
 /** The two things a budget is spent on, as the row offers them. */
 const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
+
+/** The two rules for what is learned, as the row offers them. */
+const rules = RULES.map((one) => ({ id: one, text: words.ruleName(one) }))
 
 /** The day the knob stands at, under the goal that steers one. */
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
@@ -68,6 +71,7 @@ const boundsOf = (field: Field): { least: number; most: number } => {
   if (field === 'retention') return BOUNDS.retention
   if (field === 'minutesADay') return BOUNDS.minutesADay
   if (field === 'backlog') return BOUNDS.backlog
+  if (field === 'interval') return BOUNDS.interval
   return { least: 0, most: 0 }
 }
 
@@ -77,6 +81,7 @@ const counted = (field: Field): number | null => {
   if (field === 'reviewsADay') return settings.value.reviewsADay
   if (field === 'retention') return settings.value.retention
   if (field === 'minutesADay') return settings.value.minutesADay
+  if (field === 'interval') return settings.value.interval
   return null
 }
 
@@ -193,6 +198,13 @@ const stopped = computed(() => {
                 :value="settings.byDate"
                 :aria-labelledby="`preset-${field}`"
                 @change="dated"
+              />
+              <Segmented
+                v-else-if="field === 'learned'"
+                :model-value="settings.learned"
+                :choices="rules"
+                :aria-labelledby="`preset-${field}`"
+                @update:model-value="(one: string) => chose(field, one as Rule)"
               />
               <Segmented
                 v-else-if="field === 'counts'"

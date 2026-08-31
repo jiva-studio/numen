@@ -1,5 +1,5 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
-import type { Counts, Goal } from './core'
+import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
 
 /** What each of the three goals is offered as: the value it steers. */
@@ -7,6 +7,12 @@ const GOALS: Record<Goal, string> = {
   minutes: 'Minutes a day',
   retention: 'Retention',
   date: 'A date',
+}
+
+/** What each of the two rules for the learned is offered as. */
+const RULES: Record<Rule, string> = {
+  interval: 'How long it is put off',
+  retention: 'How well it is held',
 }
 
 /** What each of the two things a budget is spent on is offered as. */
@@ -26,6 +32,15 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   ],
   byDate: ['The day', 'The day the material is to be in the head.'],
   counts: ['Counts', "What a day's budget is spent on."],
+  learned: [
+    'Learned when',
+    'What counts as a card you have learned: how far ahead it is put off, or how well ' +
+      'you would hold it today. The rule not chosen keeps its value and takes no part.',
+  ],
+  interval: [
+    'Put off by',
+    'How far ahead a card is put off before it counts as learned, in days.',
+  ],
   backlog: [
     'Overdue share',
     'What part of a sitting goes to the overdue pile before new material is offered, in per cent. ' +
@@ -64,6 +79,7 @@ export const WORDS = {
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   countsName: (counts: Counts) => COUNTS[counts],
+  ruleName: (rule: Rule) => RULES[rule],
   /** What each axis measures, said along the axis it names. */
   axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
   axisX: (goal: Goal) => {
@@ -132,6 +148,20 @@ export const WORDS = {
     if (overdue > 0) said.push({ figure: count(overdue), name: 'overdue' })
     if (fresh > 0) said.push({ figure: count(fresh), name: 'new' })
     return said
+  },
+  /**
+   * When the material is learned, and how much of it stands learned now. Both
+   * are read off the run the picture is drawn from. A pace that does not get
+   * there inside the days projected says so in words: there is no day to name.
+   */
+  learning: (learns: number, learned: number, cards: number) => {
+    const when =
+      learns < 0
+        ? { figure: 'not yet', name: 'in the days ahead' }
+        : learns === 0
+          ? { figure: 'today', name: 'all of it learned' }
+          : { figure: count(learns), name: learns === 1 ? 'day to learn it' : 'days to learn it' }
+    return [when, { figure: `${count(learned)} of ${count(cards)}`, name: 'learned today' }]
   },
   fieldName: (field: Field) => FIELDS[field][0],
   fieldDetail: (field: Field) => FIELDS[field][1],

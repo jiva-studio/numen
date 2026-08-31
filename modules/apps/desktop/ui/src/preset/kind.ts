@@ -296,6 +296,9 @@ export function presetting(
     if (field === 'counts' && (value === 'cards' || value === 'shows')) {
       return { ...settings, counts: value }
     }
+    if (field === 'learned' && (value === 'interval' || value === 'retention')) {
+      return { ...settings, learned: value }
+    }
     if (field === 'load' && isLoad(value)) return { ...settings, load: value }
     if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
     if (typeof value !== 'number') return settings
@@ -304,6 +307,7 @@ export function presetting(
     if (field === 'reviewsADay') return { ...settings, reviewsADay: held(value, 'reviewsADay') }
     if (field === 'minutesADay') return { ...settings, minutesADay: held(value, 'minutesADay') }
     if (field === 'backlog') return { ...settings, backlog: held(Math.round(value), 'backlog') }
+    if (field === 'interval') return { ...settings, interval: held(Math.round(value), 'interval') }
     return settings
   }
 
