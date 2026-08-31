@@ -57,9 +57,9 @@ A setting the goal does not name keeps its value, takes no part while another go
 
 ### What a preset settles, and what it does not
 
-Everything about how a deck is scheduled is the preset's. This record settles eight of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, the share of the load each day of the week carries, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
+Everything about how a deck is scheduled is the preset's. This record settles ten of them: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, how much of a day goes to what is overdue, the share of the load each day of the week carries, an even load, and the goal that steers them. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
 
-`numen.json` keeps the hour a day begins at and how a streak is counted. Both are facts about a person's clock and habit rather than about a subject.
+`numen.json` keeps the hour a day begins at. It is a fact about a person's clock rather than about a subject.
 
 ### A preset says what counts as learned
 
@@ -71,7 +71,9 @@ Under `learned: interval` a card is learned once the interval it is sent away fo
 
 **One question, one function.** How much of a preset's material stands learned is read from the rule in one place, so the number on a screen and the number in a projection are one number. A preset that names no rule counts by the default rule at its default value: a key nobody wrote leaves the default in force, and never a threshold every card passes.
 
-**A day the whole material is learned is named only where there is one.** An interval is passed once and stays passed, so the day the last card passes it is a day. A chance of recall is a level: a card falls under the target as it fades and rises over it the moment it is answered, so no day holds every card at once, and none is named. Nothing stands in for it.
+**Learned is a state and not a milestone.** A card face stands learned while its reviews are far enough apart, or while it is likely enough to be recalled, and a lapse takes it back out of that standing: the interval collapses and the chance of recall with it. Both rules are asked of where the card stands now.
+
+**A day the whole material is learned is a day of a projection and not a promise.** It is the day that run reaches with every card face learned at once. Because the standing can be lost, it is a fact about the run it is read off, and it is named only where the run behind it is one a person could keep.
 
 **A control that moves the scheduler names no day either.** The day a card passes an interval is the reviews it takes to get there times the space between them. A retention target moves both: it shortens every interval and it decides how many reviews the card wants, and a review is a whole number. So over the range of that one control the day steps up wherever another review is wanted and falls away between the steps — every value of it correct, and the line between them not a line. The share of the material learned over the run is what stands there instead. This is the world's arithmetic and not a fault to be smoothed: a figure is drawn where it is steady in the control beneath it, and elsewhere it is not drawn.
 
@@ -111,6 +113,8 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 
 **The picture draws the next sitting, not today.** The control's curve reads the first day of the run the preset admits. A day at none of the load is no sitting at all, so a person moving a control on such a day reads what the setting buys them on the day they will next sit down, rather than a row of noughts. It is one real day of the projection, worked out by the arithmetic the sitting runs, so the count on the curve is the count that sitting hands them. Days the preset does not admit take no part in any summary over the run.
 
+**A preset aiming at a day evens no load.** The pace is what spreads a date's material over its days, and the days it has are the days it needs. A window of a placement holds nothing beyond the front of a run, so its lightest day is its last, and a card put there is a card asked for later than the pace was told it would be.
+
 **An even load off is no placement at all.** The card lands where the scheduler put it. If the day it lands on does not admit it, it is not shown that day: it stands overdue, the next day picks it up, and that day is larger by the share the light day shed. Nothing is written anywhere — there is no schedule in the vault to write to.
 
 ### How a day is spent between the overdue and the new
@@ -131,7 +135,7 @@ The time budget is unaffected: minutes are spent as they are spent, on every ans
 
 A preset whose governing budget is zero schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A budget the goal does not name is not a pause, whatever it holds.
 
-A goal of a date is a budget that ends the same way: past the date, the preset schedules nothing until the date is moved or the deck is pointed elsewhere.
+A goal of a date is a budget that ends the same way: past the date, the preset schedules nothing until the date is moved or the deck is pointed elsewhere. A preset aiming at a day and naming none is paused from the start: the budget its goal names is the day, and a goal that cannot read its own budget schedules nothing.
 
 ## Consequences
 
@@ -140,7 +144,7 @@ A goal of a date is a budget that ends the same way: past the date, the preset s
 - **A number is enforced where it was typed.** Decks are files and nothing contains anything, so no limit is displaced onto a parent.
 - **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
-- **The mark carries the placement too.** A preset's shares, its even load and the hour a day of review begins at all decide which day a card lands on, so all of them stand in the mark the cache is filed under.
+- **The mark carries the placement too.** A preset's shares, its even load, the goal that decides whether that load is evened at all, and the hour a day of review begins at all decide which day a card lands on, so all of them stand in the mark the cache is filed under.
 - **A day is a whole number.** The days are counted from the day the clock is counted from, so the same answers name the same days in every process and a schedule worked out again is the schedule that was worked out.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
 
