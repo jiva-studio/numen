@@ -131,8 +131,13 @@ const stopped = computed(() => {
 
 <template>
   <div class="preset">
-    <p v-if="props.held.saying()" role="alert" class="preset__warning">
+    <!-- Reading the file again is the way out of anything the tab has to say,
+         and it waits on nothing in the vault. -->
+    <p v-if="props.held.saying()" role="alert" class="preset__warning preset__answering">
       {{ props.held.saying() }}
+      <button type="button" class="preset__answer" @click="props.held.again()">
+        {{ words.reads }}
+      </button>
     </p>
 
     <p v-if="props.held.changed()" role="status" class="preset__warning preset__answering">

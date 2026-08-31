@@ -19,8 +19,10 @@ import {
   type Settings,
   type Written,
 } from './core'
+import type { Refused } from '../core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
+import { WORDS as words } from './words'
 
 const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
@@ -349,6 +351,49 @@ describe('a preset no tab has open', () => {
     await after()
     expect(holds('Slow.md')).toBeUndefined()
     expect(holds('Steady.md')).toBeUndefined()
+  })
+})
+
+// A person who is told what happened can do something about it. One sentence
+// over every refusal names none of them.
+describe('what the tab says it was refused for', () => {
+  const refusals: readonly Refused[] = ['missing', 'tooLarge', 'notANote', 'unreadable']
+
+  it('is a sentence of its own for each refusal a read answers', async () => {
+    const said: string[] = []
+    for (const refusal of refusals) {
+      const { held } = await opened({}, curve, () => ({ preset: null, refusal }))
+      said.push(held.saying())
+    }
+    expect(said.every((one) => one !== '')).toBe(true)
+    expect(new Set(said).size).toBe(refusals.length)
+  })
+
+  it('is a sentence of its own for each refusal a write answers', async () => {
+    const said: string[] = []
+    for (const refusal of refusals) {
+      const { held } = await opened({}, curve, () => ({}), () => ({ refusal }))
+      held.types('newADay', 4)
+      held.settles()
+      await after()
+      said.push(held.saying())
+    }
+    expect(said.every((one) => one !== '')).toBe(true)
+    expect(new Set(said).size).toBe(refusals.length)
+  })
+
+  // The settings are in the tab and nowhere else once a write is refused, and
+  // a person deciding what to do next has to be told that.
+  it('says the settings are still here where a write was refused', async () => {
+    for (const refusal of refusals) {
+      expect(words.notSaved(refusal)).toContain('still here')
+    }
+  })
+
+  it('says the refusal of a read and the refusal of a write in different words', async () => {
+    for (const refusal of refusals) {
+      expect(words.refused(refusal)).not.toBe(words.notSaved(refusal))
+    }
   })
 })
 

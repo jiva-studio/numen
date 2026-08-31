@@ -142,12 +142,9 @@ export function presetting(
     answers: new Map<string, Curve>(),
   })
 
-  /** What one refusal is put in, and the window's own word for the rest. */
-  const whyOf = (refusal: Refused | null): string => {
-    if (refusal === null) return ''
-    if (refusal === 'notAPreset') return words.notAPreset
-    return words.refused
-  }
+  /** What a read was refused for, in words a person reads. */
+  const whyOf = (refusal: Refused | null): string =>
+    refusal === null ? '' : words.refused(refusal)
 
   /** The settings of one preset, read again from the file. */
   const reads = async (one: Kept): Promise<void> => {
@@ -227,7 +224,7 @@ export function presetting(
     } catch (error) {
       console.error(error)
       if (mine !== one.asked) return
-      one.saying.value = words.unreachable
+      one.saying.value = words.noCurve
       one.waiting.value = false
       return
     }
@@ -257,7 +254,7 @@ export function presetting(
     try {
       answer = await core.write(one.path.value, one.settings.value, one.at)
     } catch (error) {
-      one.saying.value = words.unreachable
+      one.saying.value = words.unwritten
       console.error(error)
       return
     }
@@ -266,8 +263,8 @@ export function presetting(
       return
     }
     if (answer.refusal) {
-      one.saying.value = answer.refusal === 'notAPreset' ? words.notAPreset : words.notSaved
-      said(words.notSaved, 'refusal')
+      one.saying.value = words.notSaved(answer.refusal)
+      said(one.saying.value, 'refusal')
       return
     }
     one.saying.value = ''

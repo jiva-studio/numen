@@ -1,4 +1,5 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
+import type { Refused } from '../core'
 import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
 
@@ -60,6 +61,54 @@ const FIELDS: Record<Field, readonly [string, string]> = {
       'A card whose interval allows no other day stays where it fell.',
   ],
 }
+
+/**
+ * What a read of the preset was refused for. A refusal a read of a note does
+ * not answer is said in the one sentence under it.
+ */
+const READING: Partial<Record<Refused, string>> = {
+  missing: 'This preset is no longer in the vault, so what stands here is what was last read.',
+  notANote: 'What stands at this path is not a note, so there are no settings in it to read.',
+  notText: 'This file is not text, so there are no settings in it to read.',
+  tooLarge: 'This note is longer than the window reads, so none of its settings were read.',
+  unreadable: 'The frontmatter of this note cannot be read, so none of its settings were read.',
+  notAPreset: 'That note is not a preset, and the defaults stand.',
+}
+
+/** The read was refused and the vault named no reason the window knows. */
+const UNREAD = 'This preset could not be read, and the vault named no reason.'
+
+/**
+ * What a write of the settings was refused for. Each says where the settings
+ * stand, which is in the tab: a refused write leaves the file as it was.
+ */
+const WRITING: Partial<Record<Refused, string>> = {
+  missing:
+    'This preset is no longer in the vault, so nothing was written. ' +
+    'These settings are still here.',
+  notANote:
+    'What stands at this path is not a note, so nothing was written. ' +
+    'These settings are still here.',
+  notText: 'This file is not text, so nothing was written. These settings are still here.',
+  tooLarge:
+    'This note is longer than the window writes, so nothing was written. ' +
+    'These settings are still here.',
+  unreadable:
+    'The frontmatter of this note cannot be read, so nothing was written. ' +
+    'These settings are still here.',
+  bodyRefused:
+    'This note begins where its frontmatter should, so nothing was written. ' +
+    'These settings are still here.',
+  occupied:
+    'A file stands where this note goes, so nothing was written. ' +
+    'These settings are still here.',
+  notAPreset:
+    'That note is not a preset, so nothing was written. These settings are still here.',
+}
+
+/** The write was refused and the vault named no reason the window knows. */
+const UNWRITTEN =
+  'These settings could not be written, and the vault named no reason. They are still here.'
 
 /** A share as a person reads one, which is a percentage and not a fraction. */
 const share = (value: number): string => `${Math.round(value * 100)}%`
@@ -216,9 +265,15 @@ export const WORDS = {
   /** The file moved under the window, and the two answers to that. */
   changed: 'This file changed on disk, so nothing was written.',
   reads: 'Read it again',
-  /** The write and the read were refused, and the vault said nothing at all. */
-  notSaved: 'These settings could not be written.',
-  refused: 'This preset could not be read.',
-  unreachable: 'The vault could not be reached.',
-  notAPreset: 'That note is not a preset, and the defaults stand.',
+  /** What a read was refused for. */
+  refused: (refusal: Refused) => READING[refusal] ?? UNREAD,
+  /** What a write was refused for, and where the settings stand after it. */
+  notSaved: (refusal: Refused) => WRITING[refusal] ?? UNWRITTEN,
+  /** The vault answered a read with neither settings nor a reason. */
+  unreachable: 'The vault would not answer for this preset, and did not say why.',
+  /** The vault answered a write with neither a file nor a reason. */
+  unwritten:
+    'The vault would not take these settings, and did not say why. They are still here.',
+  /** The vault would not work the picture out. */
+  noCurve: 'The vault would not work this picture out, and did not say why.',
 }

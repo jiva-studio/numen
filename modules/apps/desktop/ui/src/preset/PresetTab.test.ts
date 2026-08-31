@@ -1199,3 +1199,32 @@ describe('the settings under the control', () => {
     expect(done).toStrictEqual(['types interval 30'])
   })
 })
+
+// A tab showing a failure is a tab with a way back: the file is read again,
+// which is what a fixed permission bit or a restored folder wants.
+describe('what the tab says went wrong', () => {
+  const saying = (words: string) => {
+    const one = standing()
+    const held: Held = { ...one.held, saying: () => words }
+    return { tab: mount(PresetTab, { props: { held } }), done: one.done }
+  }
+
+  it('offers reading the file again beside what it says', async () => {
+    const { tab, done } = saying(words.refused('missing'))
+    const alert = tab.get('[role="alert"]')
+    expect(alert.text()).toContain(words.refused('missing'))
+    await alert.get('.preset__answer').trigger('click')
+    expect(done).toStrictEqual(['again'])
+  })
+
+  it('offers it for a refused write as well as a refused read', async () => {
+    const { tab, done } = saying(words.notSaved('unreadable'))
+    await tab.get('[role="alert"] .preset__answer').trigger('click')
+    expect(done).toStrictEqual(['again'])
+  })
+
+  it('offers nothing where there is nothing to say', () => {
+    const { tab } = drawn()
+    expect(tab.findAll('[role="alert"]')).toHaveLength(0)
+  })
+})
