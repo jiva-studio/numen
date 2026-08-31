@@ -20,7 +20,7 @@ const dated = (day: string): Settings => ({
   newADay: 10,
   reviewsADay: 200,
   retention: 0.9,
-  lightDays: [],
+  load: {},
   evenLoad: true,
 })
 

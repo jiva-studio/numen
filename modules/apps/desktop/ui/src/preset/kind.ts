@@ -14,11 +14,13 @@ import type { Host, Kind } from '../windowing'
 import type { Putting } from '../putting'
 import { PRESET } from '../workspace'
 import PresetTab from './PresetTab.vue'
-import { DEFAULTS, type Curve, type Goal, type Presets, type Settings } from './core'
+import { DEFAULTS, type Curve, type Goal, type Load, type Presets, type Settings } from './core'
 import {
   approximate,
+  byHand,
   dayAfter,
   daysUntil,
+  following,
   held,
   isDay,
   nearest,
@@ -33,6 +35,13 @@ import { WORDS as words } from './words'
 /** How far off the day a goal of a date opens on, where the file names none. */
 const AHEAD = 30
 
+/** What a person can put into one row of the receipt. */
+export type Said = number | string | boolean | Load
+
+/** Whether what was said is a share for each day of the week that carries one. */
+const isLoad = (value: Said): value is Load =>
+  typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
+
 /** What one preset tab holds. */
 export interface Held {
   /** The identity this preset opened under, which its tab keeps wherever it goes. */
@@ -43,6 +52,8 @@ export interface Held {
   curve(): Curve
   /** Where the knob stands on that curve. */
   place(): number
+  /** The rows standing at a value of a person's own instead of the goal's. */
+  byHand(): ReadonlySet<Field>
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
   /** What the file was refused for, in words a person reads, or nothing. */
@@ -55,13 +66,16 @@ export interface Held {
   chooses(goal: Goal): void
   /** The knob moved to a place of the grid. Nothing is written while it moves. */
   moves(place: number): void
-  /** The knob let go of, which is what writes the group. */
+  /** A control let go of, which is what writes the group. */
   settles(): void
   /**
-   * One field typed. The field the goal steers is the knob, and typing into it
-   * moves the knob.
+   * One field moved: the settings and the drawing follow it and nothing is
+   * written, as under the knob. The field the goal steers is the knob, and
+   * typing into it moves the knob.
    */
-  types(field: Field, value: number | string | boolean | readonly string[]): void
+  types(field: Field, value: Said): void
+  /** That row put back to the value the goal produces for it. */
+  follows(field: Field): void
   /** The tab is closing. */
   shuts(id: string): void
 }
@@ -87,6 +101,9 @@ export function presetting(
     readonly saying: Ref<string>
     /** The file the settings came out of, presented at the next write. */
     at: string
+    /** A write is out, and whether another is wanted once it lands. */
+    writing: boolean
+    wanted: boolean
     /** Which curve is the current one. An answer for a goal since left is dropped. */
     asked: number
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
@@ -106,6 +123,8 @@ export function presetting(
     changed: ref(false),
     saying: ref(''),
     at: '',
+    writing: false,
+    wanted: false,
     asked: 0,
     shape: '',
     answers: new Map<string, Curve>(),
@@ -141,13 +160,17 @@ export function presetting(
   /**
    * The curve of the goal these settings name. A curve already answered under
    * them is drawn again as it was, so moving between the three goals asks
-   * nothing and waits for nothing. Where a curve of this goal already stands,
-   * the knob stays where it is and only the line is drawn again.
+   * nothing and waits for nothing. Where a curve of this goal already stands
+   * over the same range, the knob stays where it is and only the line is drawn
+   * again; a range that came back another length, or another set of values, is
+   * a grid the old place means nothing on, and the knob goes back to where the
+   * preset stands.
    */
   const curves = async (one: Kept): Promise<void> => {
     const mine = ++one.asked
     const shape = shapeOf(one.settings.value)
     one.shape = shape
+    const riding = one.curve.value.grid
 
     const answered = one.answers.get(shape)
     if (answered) {
@@ -175,9 +198,13 @@ export function presetting(
     if (mine !== one.asked) return
     one.answers.set(shape, answer)
     one.curve.value = answer
-    if (standsAlready) return
+    if (standsAlready && alike(riding, answer.grid)) return
     one.place.value = standsAt(answer, one.settings.value)
   }
+
+  /** Whether two curves are drawn over the same range, place for place. */
+  const alike = (one: readonly number[], two: readonly number[]): boolean =>
+    one.length === two.length && one.every((value, at) => value === two[at])
 
   /** Where the knob stands on a curve: the preset's own place, or the nearest. */
   const standsAt = (curve: Curve, settings: Settings): number =>
@@ -185,8 +212,8 @@ export function presetting(
       ? curve.now.at
       : Math.max(nearest(curve.grid, standing(settings, today())), 0)
 
-  /** The settings as they now stand, written into the file the read came out of. */
-  const writes = async (one: Kept): Promise<void> => {
+  /** The settings as they now stand, into the file the read came out of. */
+  const sends = async (one: Kept): Promise<void> => {
     said('')
     let answer
     try {
@@ -209,6 +236,26 @@ export function presetting(
     one.at = answer.at
   }
 
+  /**
+   * The settings written. One write per preset is out at a time, and a write
+   * asked for while one is out is taken up when that one lands, carrying the
+   * file it produced. A file that moved under the window is answered by the
+   * person, so nothing is sent on top of that notice.
+   */
+  const writes = async (one: Kept): Promise<void> => {
+    if (one.writing) {
+      one.wanted = true
+      return
+    }
+    one.writing = true
+    await sends(one)
+    one.writing = false
+    if (!one.wanted) return
+    one.wanted = false
+    if (one.changed.value) return
+    await writes(one)
+  }
+
   /** The settings the place the knob stands at produces, which is its own value. */
   const turns = (one: Kept, place: number): void => {
     one.settings.value = producing(one.settings.value, place, one.curve.value, today())
@@ -219,13 +266,13 @@ export function presetting(
   const typed = (
     settings: Settings,
     field: Field,
-    value: number | string | boolean | readonly string[],
+    value: Said,
   ): Settings => {
     if (field === 'byDate' && typeof value === 'string') return { ...settings, byDate: value }
     if (field === 'counts' && (value === 'cards' || value === 'shows')) {
       return { ...settings, counts: value }
     }
-    if (field === 'lightDays' && Array.isArray(value)) return { ...settings, lightDays: value }
+    if (field === 'load' && isLoad(value)) return { ...settings, load: value }
     if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
     if (typeof value !== 'number') return settings
     if (field === 'retention') return { ...settings, retention: held(value, 'retention') }
@@ -237,7 +284,7 @@ export function presetting(
   }
 
   /** Where a value typed into the field the goal steers falls on the grid. */
-  const falling = (one: Kept, value: number | string | boolean | readonly string[]): number => {
+  const falling = (one: Kept, value: Said): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
     if (typeof value === 'string' && isDay(value)) {
       return nearest(one.curve.value.grid, daysUntil(today(), value))
@@ -258,6 +305,7 @@ export function presetting(
       settings: () => one.settings.value,
       curve: () => one.curve.value,
       place: () => one.place.value,
+      byHand: () => byHand(one.settings.value, one.curve.value, one.place.value),
       problems: () => one.problems.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,
@@ -276,12 +324,20 @@ export function presetting(
           one.settings.value = typed(one.settings.value, field, value)
           const place = falling(one, value)
           if (place >= 0) turns(one, place)
-          void writes(one)
           return
         }
         one.settings.value = typed(one.settings.value, field, value)
         // A field the knob does not ride gives the curve its shape, so the
         // curve is asked for again where one of those is typed.
+        if (shapeOf(one.settings.value) !== one.shape) void curves(one)
+      },
+      follows: (field) => {
+        one.settings.value = following(
+          one.settings.value,
+          field,
+          one.curve.value,
+          one.place.value,
+        )
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
         void writes(one)
       },

@@ -25,7 +25,8 @@ export interface Settings {
   newADay: number
   reviewsADay: number
   retention: number
-  lightDays: string[]
+  /** What each day of the week carries, in per cent, under the day's own name. */
+  load: Record<string, number>
   evenLoad: boolean
 }
 

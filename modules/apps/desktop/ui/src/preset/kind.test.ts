@@ -7,8 +7,8 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { presetting } from './kind'
-import { fieldsUnder } from './curve'
+import { presetting, type Said } from './kind'
+import { fieldsUnder, nearest, standing, steers, type Field } from './curve'
 import { DEFAULTS, type Curve, type Goal, type Point, type Presets, type Settings } from './core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
@@ -59,7 +59,10 @@ const dated: Curve = {
 /** The file every test here opens, which stands where the curve's marks stand. */
 const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
 
-const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) => {
+const opened = async (
+  settings: Partial<Settings> = {},
+  answers: Curve | ((asked: Settings) => Curve) = curve,
+) => {
   const written: Settings[] = []
   const asked: Goal[] = []
   const core: Presets = {
@@ -75,7 +78,7 @@ const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) 
     },
     curve: async (_path, put) => {
       asked.push(put.goal)
-      return answers
+      return typeof answers === 'function' ? answers(put) : answers
     },
   }
   const host = { closes: () => {} } as unknown as Host
@@ -104,6 +107,7 @@ describe('the value the goal steers', () => {
   it('is the knob moved when it is typed into, and does not leave the goal', async () => {
     const { held, written } = await opened()
     held.types('minutesADay', 21)
+    held.settles()
     await Promise.resolve()
     expect(held.place()).toBe(2)
     expect(held.settings().minutesADay).toBe(20)
@@ -116,6 +120,7 @@ describe('the value the goal steers', () => {
       { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
     )
     held.types('byDate', '2026-09-29')
+    held.settles()
     await Promise.resolve()
     expect(held.place()).toBe(2)
     expect(held.settings().byDate).toBe('2026-09-29')
@@ -246,5 +251,220 @@ describe('a setting the goal on screen does not name', () => {
     expect(held.settings().reviewsADay).toBe(7)
     expect(held.settings().newADay).toBe(12)
     expect(written.at(-1)?.reviewsADay).toBe(7)
+  })
+})
+
+/**
+ * A curve worked out off the settings it was asked under, the way the
+ * application works one out: its range runs to what carrying the load costs,
+ * which the share of the day going to the debt moves.
+ */
+const ranging = (asked: Settings): Curve => {
+  const top = 60 + asked.backlog
+  const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
+  const value = standing(asked, new Date())
+  return {
+    ...curve,
+    goal: asked.goal,
+    grid,
+    at: grid.map((minutes) => point({ minutes, reviews: minutes * 4 })),
+    now: { at: nearest(grid, value), value, day: '' },
+    suggested: { at: grid.length - 1, value: grid[grid.length - 1] ?? 0, day: '' },
+  }
+}
+
+// Nothing but the field a person types in may change, and the budget the goal
+// steers least of all: it is what the picture is scaled to.
+describe('a field the goal does not steer, typed', () => {
+  // A curve asked for under a new share of the day comes back over a range of
+  // its own, and a place of the old grid stands at another value on it. The
+  // knob goes back to where the preset stands, so the picture and the file say
+  // one thing and the next touch of the knob writes what the file already says.
+  it('leaves the knob standing where the preset stands, whatever range comes back', async () => {
+    const { held, written } = await opened({ minutesADay: 23 }, ranging)
+    expect(held.place()).toBe(held.curve().now.at)
+
+    held.types('backlog', 5)
+    held.settles()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(held.place()).toBe(held.curve().now.at)
+    expect(held.settings().minutesADay).toBe(23)
+    expect(written.at(-1)?.minutesADay).toBe(23)
+  })
+
+  const SAID: Partial<Record<Field, Said>> = {
+    newADay: 4,
+    reviewsADay: 33,
+    counts: 'shows',
+    backlog: 5,
+    load: { sat: 50 },
+    evenLoad: false,
+  }
+
+  it('leaves every other setting exactly as it stood, under every goal', async () => {
+    for (const goal of ['minutes', 'retention'] as const) {
+      for (const field of fieldsUnder(goal)) {
+        const said = SAID[field]
+        if (field === steers(goal) || said === undefined) continue
+
+        const { held, written } = await opened({ goal, minutesADay: 23 }, ranging)
+        const was = held.settings()
+        held.types(field, said)
+        held.settles()
+        await Promise.resolve()
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const now = held.settings()
+        expect({ ...now, [field]: was[field] }).toStrictEqual(was)
+        expect(written.at(-1)).toStrictEqual(now)
+      }
+    }
+  })
+})
+
+// A number a person typed stands until they hand the row back to the goal.
+describe('a row put back under the goal', () => {
+  /** The same range read as a target, which is the goal that produces a pace. */
+  const target: Curve = {
+    ...curve,
+    goal: 'retention',
+    grid: [0.7, 0.8, 0.88, 0.99],
+    now: { at: 2, value: 0.88, day: '' },
+  }
+
+  it('is offered where the file and the curve disagree, and not where they agree', async () => {
+    const mine = await opened({ goal: 'retention', reviewsADay: 12 }, target)
+    expect([...mine.held.byHand()]).toStrictEqual(['reviewsADay'])
+
+    const following = await opened({ goal: 'retention', reviewsADay: 80 }, target)
+    expect(following.held.byHand().size).toBe(0)
+  })
+
+  it('takes the value the curve produces where the knob stands, and writes it', async () => {
+    const { held, written } = await opened({ goal: 'retention', reviewsADay: 12 }, target)
+    held.follows('reviewsADay')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(held.settings().reviewsADay).toBe(80)
+    expect(held.byHand().size).toBe(0)
+    expect(written.at(-1)?.reviewsADay).toBe(80)
+    expect(written.at(-1)?.retention).toBe(0.88)
+  })
+
+  it('is offered on no row under a goal that produces none', async () => {
+    const { held } = await opened({ reviewsADay: 12, backlog: 5 })
+    expect(held.byHand().size).toBe(0)
+  })
+})
+
+/**
+ * The window's own writing, which the notice about a file that moved is there
+ * to protect. A control moved a step at a time must not write a step at a
+ * time, and two writes must never race over one file.
+ */
+describe('what a gesture writes', () => {
+  /** A vault whose file carries a fingerprint, and answers a write against it. */
+  const opening = async (settings: Partial<Settings> = {}) => {
+    const written: Settings[] = []
+    const seen: string[] = []
+    const file = { at: 'one', settings: { ...STEADY, ...settings } }
+    let stamps = 1
+    const core: Presets = {
+      read: async (path) => ({
+        preset: { path, title: 'Steady', settings: file.settings, problems: [] },
+        refusal: null,
+        at: file.at,
+      }),
+      scheduling: async () => ({ preset: null, refusal: null, at: '' }),
+      write: async (_path, put, against) => {
+        seen.push(against)
+        // The file is written only by a caller holding the file as it stands.
+        if (against !== file.at) return { refusal: null, changed: true, at: '' }
+        written.push(put)
+        file.settings = put
+        stamps += 1
+        file.at = `at-${stamps}`
+        return { refusal: null, changed: false, at: file.at }
+      },
+      curve: async () => curve,
+    }
+    const host = { closes: () => {} } as unknown as Host
+    const puts = { holds: () => {} } as unknown as Putting
+    const kinds = presetting(core, host, puts, () => {})
+    kinds.kind.opens('Steady.md')
+    const held = kinds.holds('Steady.md')
+    for (let i = 0; i < 4; i += 1) await Promise.resolve()
+    return { held, written, seen, file, changed: kinds.changed }
+  }
+
+  const settle = async () => {
+    for (let i = 0; i < 8; i += 1) await Promise.resolve()
+  }
+
+  // A hand on a slider or a hand typing is a run of small changes. The file is
+  // written where the hand comes off it.
+  it('writes once for a run of changes, and says nothing about a file that moved', async () => {
+    const { held, written } = await opening()
+    for (const share of [90, 80, 70, 60, 50]) held.types('backlog', share)
+    await settle()
+    expect(written).toHaveLength(0)
+
+    held.settles()
+    await settle()
+    expect(written).toHaveLength(1)
+    expect(written.at(-1)?.backlog).toBe(50)
+    expect(held.changed()).toBe(false)
+    expect(held.saying()).toBe('')
+  })
+
+  // Two gestures one after the other, the second before the first has landed.
+  it('holds one write to a preset at a time, each carrying the file the last made', async () => {
+    const { held, written, seen } = await opening()
+    held.types('backlog', 40)
+    held.settles()
+    held.types('newADay', 3)
+    held.settles()
+    held.types('evenLoad', false)
+    held.settles()
+    await settle()
+
+    // Every write went out against the file the one before it produced, so
+    // none of them was refused.
+    expect(seen).toStrictEqual(['one', 'at-2'])
+    expect(new Set(seen).size).toBe(seen.length)
+    expect(written).toHaveLength(2)
+    expect(written.at(-1)?.backlog).toBe(40)
+    expect(written.at(-1)?.newADay).toBe(3)
+    expect(written.at(-1)?.evenLoad).toBe(false)
+    expect(held.changed()).toBe(false)
+  })
+
+  // The notice keeps meaning what it says.
+  it('says the file moved where the file did move under the window', async () => {
+    const { held, file } = await opening()
+    file.at = 'somebody-else'
+    held.types('backlog', 40)
+    held.settles()
+    await settle()
+
+    expect(held.changed()).toBe(true)
+  })
+
+  it('sends nothing further while that notice stands', async () => {
+    const { held, written, file } = await opening()
+    file.at = 'somebody-else'
+    held.types('backlog', 40)
+    held.settles()
+    held.types('newADay', 3)
+    held.settles()
+    await settle()
+
+    expect(held.changed()).toBe(true)
+    expect(written).toHaveLength(0)
   })
 })

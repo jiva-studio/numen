@@ -34,12 +34,6 @@ export type Counts = 'cards' | 'shows'
 export const COUNTS: readonly Counts[] = ['cards', 'shows']
 
 /**
- * The shares of a day the backlog row offers, from the debt first to the new
- * material first.
- */
-export const SHARES: readonly number[] = [100, 50, 0]
-
-/**
  * How the decks pointing at one preset are scheduled. A preset carrying none
  * of these keys is the defaults, and no cards a day is a pause.
  */
@@ -54,15 +48,30 @@ export interface Settings {
   /** What a day's budget is spent on. */
   readonly counts: Counts
   /**
-   * How much of a day goes to what is overdue before anything new is offered,
-   * as a percentage. A hundred pays the debt first, nothing puts the new
-   * material first, and between them the day is split until one side runs out.
+   * What share of a day's cards goes to what is overdue before any new
+   * material is offered, as a percentage. It moves what fills a day and never
+   * how much a day holds: a hundred works the debt down first, nothing offers
+   * new material while there is any, and between them the day is split until
+   * one side runs out.
    */
   readonly backlog: number
-  /** The days the load is cut on, each as the first three letters of its name. */
-  readonly lightDays: readonly string[]
+  /**
+   * How much of a day's load each day of the week carries, in per cent, under
+   * the first three letters of the day's name. A day not named carries the
+   * whole of it, and a day at nothing schedules nothing.
+   */
+  readonly load: Load
   readonly evenLoad: boolean
 }
+
+/** A share of a day's load for each day of the week that is not at the whole. */
+export type Load = Readonly<Record<string, number>>
+
+/** The whole of a day's load, which a day nothing was said about carries. */
+export const WHOLE_LOAD = 100
+
+/** What one day of the week carries, which is the whole of it unless it is named. */
+export const loadOn = (load: Load, day: string): number => load[day] ?? WHOLE_LOAD
 
 /** A preset naming nothing, and how a deck pointing at none is scheduled. */
 export const DEFAULTS: Settings = {
@@ -74,7 +83,7 @@ export const DEFAULTS: Settings = {
   retention: 0.9,
   counts: 'cards',
   backlog: 100,
-  lightDays: [],
+  load: {},
   evenLoad: true,
 }
 
@@ -262,7 +271,7 @@ const settingsOf = (said: SettingsMessage | undefined): Settings =>
         retention: said.retention,
         counts: COUNTED[said.counts] ?? DEFAULTS.counts,
         backlog: said.backlog,
-        lightDays: said.lightDays,
+        load: said.load,
         evenLoad: said.evenLoad,
       }
 
@@ -276,7 +285,7 @@ const sent = (settings: Settings) => ({
   retention: settings.retention,
   counts: COUNTING[settings.counts],
   backlog: settings.backlog,
-  lightDays: [...settings.lightDays],
+  load: { ...settings.load },
   evenLoad: settings.evenLoad,
 })
 

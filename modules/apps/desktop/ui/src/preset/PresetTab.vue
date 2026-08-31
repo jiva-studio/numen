@@ -8,12 +8,13 @@
  * whatever the picture says it comes to.
  */
 import { computed } from 'vue'
-import { Days, NumberField, Segmented, Switch } from '@numen/ui'
+import { Days, NumberField, Segmented, Slider, Switch } from '@numen/ui'
+import { RotateCcw } from '@lucide/vue'
 import Control from './Control.vue'
-import type { Held } from './kind'
-import { BOUNDS, COUNTS, GOALS, SHARES } from './core'
-import type { Counts, Goal } from './core'
-import { fieldsUnder, idle, limiting, paused, spent, type Field } from './curve'
+import type { Held, Said } from './kind'
+import { BOUNDS, COUNTS, GOALS } from './core'
+import type { Counts, Goal, Load } from './core'
+import { fieldsUnder, idle, paused, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -21,6 +22,9 @@ const props = defineProps<{ held: Held }>()
 const settings = computed(() => props.held.settings())
 const curve = computed(() => props.held.curve())
 const place = computed(() => props.held.place())
+
+/** The rows standing at a value of a person's own instead of the goal's. */
+const byHand = computed(() => props.held.byHand())
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -40,38 +44,22 @@ const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName
 /** The two things a budget is spent on, as the row offers them. */
 const counts = COUNTS.map((one) => ({ id: one, text: words.countsName(one) }))
 
-/**
- * The shares of a day the backlog row offers, from the debt first to the new
- * material first. A file standing at another share carries it as a segment of
- * its own, in its place along that scale.
- */
-const backlogs = computed(() => {
-  const shares = SHARES.includes(settings.value.backlog)
-    ? SHARES
-    : [...SHARES, settings.value.backlog].sort((one, two) => two - one)
-  return shares.map((one) => ({ id: `${one}`, text: words.backlogName(one) }))
-})
-
-/** What the preset comes to where the knob stands. */
-const point = computed(() => curve.value.at[place.value] ?? null)
-const value = computed(() => curve.value.grid[place.value] ?? 0)
+/** The day the knob stands at, under the goal that steers one. */
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
+
+/**
+ * The value the knob stands at. A preset's own value need not sit on the grid,
+ * and the place it opens at is the one nearest it, so while the knob has not
+ * been moved off that place the preset's own value is what is read out.
+ */
+const value = computed(() =>
+  curve.value.now.at >= 0 && place.value === curve.value.now.at
+    ? curve.value.now.value
+    : (curve.value.grid[place.value] ?? 0),
+)
 
 /** The value the control stands at, in the units of its goal. */
 const reading = computed(() => words.value(curve.value.goal, value.value, day.value))
-
-/** What standing there costs, in one sentence. */
-const costing = computed(() =>
-  point.value
-    ? words.costs(
-        curve.value.goal,
-        value.value,
-        point.value.reviews,
-        point.value.minutes,
-        point.value.retained,
-      )
-    : '',
-)
 
 /** How far a field goes. A field that holds no number is bounded by nothing. */
 const boundsOf = (field: Field): { least: number; most: number } => {
@@ -79,6 +67,7 @@ const boundsOf = (field: Field): { least: number; most: number } => {
   if (field === 'reviewsADay') return BOUNDS.reviewsADay
   if (field === 'retention') return BOUNDS.retention
   if (field === 'minutesADay') return BOUNDS.minutesADay
+  if (field === 'backlog') return BOUNDS.backlog
   return { least: 0, most: 0 }
 }
 
@@ -99,9 +88,19 @@ const typed = (field: Field, said: number | null) => {
   props.held.types(field, said)
 }
 
+/**
+ * A row a person is done with, which is what writes the group. A control moved
+ * a step at a time says so when it is let go of; one that turns in a single
+ * gesture is done the moment it turns.
+ */
+const chose = (field: Field, value: Said) => {
+  props.held.types(field, value)
+  props.held.settles()
+}
+
 /** A day typed into the row that holds one. */
 const dated = (said: Event) => {
-  props.held.types('byDate', (said.target as HTMLInputElement).value)
+  chose('byDate', (said.target as HTMLInputElement).value)
 }
 
 /** Whether the preset schedules nothing, and why. */
@@ -110,49 +109,6 @@ const stopped = computed(() => {
   if (spent(settings.value, today)) return words.spent
   return paused(settings.value, today) ? words.paused : ''
 })
-
-/**
- * What standing here comes to, told as prose and not as a list of figures: one
- * paragraph for what this place costs, and one for where the preset stands
- * against its own backlog. A clause with nothing to say is left out, and a
- * paragraph left with nothing at all is not drawn.
- */
-const telling = computed(() => {
-  const one = point.value
-  if (!one) return ''
-  if (curve.value.goal !== 'date') return costing.value
-  return words.dated(one.minutes, settings.value.minutesADay, one.through, one.owed, one.met)
-})
-
-const standing = computed(() => {
-  const one = point.value
-  if (!curve.value.honest || !one) return ''
-  const said: string[] = []
-  // A preset with nothing overdue has nothing to clear, and says so by saying
-  // nothing at all.
-  if (curve.value.overdue > 0) {
-    said.push(words.behind(curve.value.overdue, curve.value.cards, one.clears))
-  }
-  const closer = limiting(curve.value, one)
-  if (closer) said.push(words.limiting(curve.value.goal, closer))
-  return said.join(' ')
-})
-
-/** What the second mark stands at, and what that figure means. */
-const meaning = computed(() => {
-  const mark = curve.value.suggested
-  if (!curve.value.honest || mark.at < 0) return ''
-  return words.markMeans(curve.value.goal, mark.value)
-})
-
-/**
- * The whole explanation, as one block of prose. What this place costs, what the
- * mark on the picture means, and where the preset stands against its backlog
- * are one telling and run together, however many facts they carry between them.
- */
-const explaining = computed(() =>
-  [telling.value, meaning.value, standing.value].filter(Boolean).join(' '),
-)
 </script>
 
 <template>
@@ -198,16 +154,13 @@ const explaining = computed(() =>
               @settles="props.held.settles()"
             />
 
+            <!-- The one line the tab is built around. What a place of the
+                 curve buys is said in the bubble over the knob. -->
             <p class="preset__reading">
-              <span class="preset__figure">{{ reading }}</span>
-              <!-- What this place costs and where the preset stands against
-                   its backlog are one telling, and run together as one block. -->
-              <span class="preset__costing">
-                <span v-if="!curve.honest" class="preset__about" :title="words.aboutMeaning">
-                  {{ words.about }}
-                </span>
-                {{ explaining }}
+              <span v-if="!curve.honest" class="preset__about" :title="words.aboutMeaning">
+                {{ words.about }}
               </span>
+              <span class="preset__figure">{{ reading }}</span>
             </p>
           </template>
 
@@ -215,10 +168,29 @@ const explaining = computed(() =>
         </section>
 
         <section class="preset__settings" :aria-label="words.settings">
-          <div v-for="field in fields" :key="field" class="preset__row">
+          <div
+            v-for="field in fields"
+            :key="field"
+            class="preset__row"
+            :class="{ 'preset__row--mine': byHand.has(field) }"
+          >
             <span class="preset__said">
               <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
-              <span class="preset__detail">{{ words.fieldDetail(field) }}</span>
+              <span class="preset__detail">
+                {{ words.fieldDetail(field) }}
+                <template v-if="byHand.has(field)">
+                  <span class="preset__mine">{{ words.byHand }}</span>
+                  <button
+                    type="button"
+                    class="preset__follows"
+                    :aria-label="words.follows"
+                    :title="words.follows"
+                    @click="props.held.follows(field)"
+                  >
+                    <RotateCcw class="preset__icon" aria-hidden="true" />
+                  </button>
+                </template>
+              </span>
             </span>
 
             <span class="preset__value">
@@ -235,26 +207,34 @@ const explaining = computed(() =>
                 :model-value="settings.counts"
                 :choices="counts"
                 :aria-labelledby="`preset-${field}`"
-                @update:model-value="(one: string) => props.held.types(field, one as Counts)"
+                @update:model-value="(one: string) => chose(field, one as Counts)"
               />
-              <Segmented
-                v-else-if="field === 'backlog'"
-                :model-value="`${settings.backlog}`"
-                :choices="backlogs"
-                :aria-labelledby="`preset-${field}`"
-                @update:model-value="(one: string) => props.held.types(field, Number(one))"
-              />
+              <!-- A share is moved along its whole range and read out beside
+                   the track, which draws no figure of its own. -->
+              <template v-else-if="field === 'backlog'">
+                <Slider
+                  :model-value="settings.backlog"
+                  :min="boundsOf(field).least"
+                  :max="boundsOf(field).most"
+                  :step="stepOf(field)"
+                  :aria-labelledby="`preset-${field}`"
+                  class="preset__slider"
+                  @update:model-value="(share: number) => props.held.types(field, share)"
+                  @settles="props.held.settles()"
+                />
+                <span class="preset__percent">{{ words.percent(settings.backlog) }}</span>
+              </template>
               <Days
-                v-else-if="field === 'lightDays'"
-                :model-value="settings.lightDays"
+                v-else-if="field === 'load'"
+                :model-value="settings.load"
                 :aria-labelledby="`preset-${field}`"
-                @update:model-value="(days: readonly string[]) => props.held.types(field, days)"
+                @update:model-value="(load: Load) => chose(field, load)"
               />
               <Switch
                 v-else-if="field === 'evenLoad'"
                 :model-value="settings.evenLoad"
                 :aria-labelledby="`preset-${field}`"
-                @update:model-value="(on: boolean) => props.held.types(field, on)"
+                @update:model-value="(on: boolean) => chose(field, on)"
               />
               <NumberField
                 v-else
@@ -265,6 +245,7 @@ const explaining = computed(() =>
                 :aria-labelledby="`preset-${field}`"
                 class="preset__number"
                 @update:model-value="(said: number | null) => typed(field, said)"
+                @settles="props.held.settles()"
               />
             </span>
           </div>
@@ -286,8 +267,15 @@ const explaining = computed(() =>
   --preset-value: 6rem;
   --preset-row-air: 0.5rem;
   --preset-said-gap: 0.125rem;
-  /* The clearance typing keeps from the ends of its box. */
-  --preset-field-inset: 0.75rem;
+  /* The clearance typing keeps from the edges of its box. A field keeps a line
+     box taller than the digits in it, so the block clearance is set under the
+     inline one by that difference and the four gaps read alike. */
+  --preset-field-inset: var(--numen-field-padding) var(--numen-box-air);
+  /* The mark a row carries beside its small print. */
+  --preset-icon: 0.875rem;
+  /* The track a share is moved along, and the room the figure beside it takes. */
+  --preset-track: 9rem;
+  --preset-percent: 2.25rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -330,11 +318,13 @@ const explaining = computed(() =>
   text-transform: uppercase;
 }
 
+/* The reading stands clear of the picture it is read off. */
 .preset__reading {
   display: flex;
-  flex-direction: column;
-  gap: var(--numen-dot-gap);
+  align-items: baseline;
+  gap: var(--numen-node-gap);
   margin: 0;
+  margin-block-start: var(--preset-near);
 }
 
 /* The one line the tab is built around, in figures of one width. */
@@ -342,12 +332,6 @@ const explaining = computed(() =>
   font-size: var(--numen-text-4);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
-}
-
-/* The whole explanation, as one block of prose that wraps where it will. */
-.preset__costing {
-  color: var(--numen-hushed);
-  line-height: var(--numen-line-height);
 }
 
 /* No deck points here, said where the curve would stand. */
@@ -359,7 +343,6 @@ const explaining = computed(() =>
 
 /* The window's own arithmetic, standing until the application answers. */
 .preset__about {
-  margin-inline-end: var(--numen-node-gap);
   padding-inline: var(--numen-node-gap);
   border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius-pill);
@@ -388,7 +371,14 @@ const explaining = computed(() =>
   align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--preset-row-air);
+  padding-inline-start: var(--numen-node-gap);
+  border-inline-start: var(--numen-caret) solid transparent;
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
+}
+
+/* A row standing at a value of a person's own, which no longer follows the goal. */
+.preset__row--mine {
+  border-inline-start-color: var(--numen-focus-bg);
 }
 
 /* What the row is called, and under it what it means. */
@@ -399,8 +389,11 @@ const explaining = computed(() =>
   min-inline-size: 0;
 }
 
+/* The name of a row and what it means are one size, and the name carries the
+   weight and the colour that tell them apart. */
 .preset__name {
   color: var(--numen-node-fg);
+  font-weight: 500;
 }
 
 /* Controls of every width end at the one edge. */
@@ -408,21 +401,34 @@ const explaining = computed(() =>
   display: flex;
   align-items: center;
   justify-content: end;
+  gap: var(--numen-node-gap);
 }
 
 .preset__number {
   inline-size: var(--preset-value);
 }
 
+.preset__slider {
+  inline-size: var(--preset-track);
+}
+
+/* What the track stands at, which the track itself does not draw. */
+.preset__percent {
+  min-inline-size: var(--preset-percent);
+  color: var(--numen-hushed);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
 /* The same box the numbers of the receipt are typed into. */
 .preset__day {
-  block-size: var(--numen-action-size);
-  padding-inline: var(--preset-field-inset);
+  padding: var(--preset-field-inset);
   border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-field-bg);
   color: inherit;
   font: inherit;
+  line-height: 1;
 }
 
 .preset__day:focus-visible {
@@ -432,7 +438,34 @@ const explaining = computed(() =>
 
 .preset__detail {
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+}
+
+/* Said against the row whose number is the person's own. */
+.preset__mine {
+  color: var(--numen-focus-bg);
+}
+
+/* The way back under the goal, drawn as the mark it is. */
+.preset__follows {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--numen-focus-bg);
+  line-height: 0;
+  vertical-align: text-bottom;
+  cursor: pointer;
+}
+
+.preset__follows:focus-visible {
+  outline: var(--numen-stroke) solid currentColor;
+  outline-offset: var(--numen-caret);
+}
+
+/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+.preset__icon {
+  inline-size: var(--preset-icon);
+  block-size: var(--preset-icon);
+  stroke-width: 1.875;
 }
 
 .preset__warning {

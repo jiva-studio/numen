@@ -15,7 +15,7 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   newADay: 10,
   reviewsADay: 45,
   retention: 0.9,
-  lightDays: [],
+  load: {},
   evenLoad: true,
   ...said,
 })

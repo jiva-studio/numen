@@ -80,6 +80,14 @@ export const bandOfBacklog = (backlog: readonly number[]): Band => ({
 })
 
 /**
+ * Where a backlog is drawn. Nothing overdue is the foot under every run, so a
+ * run holding nothing at all lies along the floor and a run holding anything
+ * is measured up from it.
+ */
+export const backlogSpotsOf = (values: readonly number[], band: Band): readonly Spot[] =>
+  seriesOf(values, band.most > band.least ? band : { least: 0, most: 1 }, BAND)
+
+/**
  * Where every place of the curve is drawn, in the band the picture is scaled
  * to. The band is the goal's and not this answer's, so a curve that is flat
  * within it is drawn flat; a band of no width has no scale and is drawn
@@ -123,6 +131,32 @@ export const lineOf = (spots: readonly Spot[]): string =>
 /** The room a number set against a line takes, in the picture's own units. */
 export const AXIS_WIDE = 64
 export const AXIS_HIGH = 15
+
+/**
+ * The room the bubble over the knob takes, and how far off the knob it sits.
+ * The width and height are what it comes to at the interface's own size, and
+ * are what everything else on the picture is kept clear of. The gap stands off
+ * far enough that the curve on either side of the knob is read through it, and
+ * is the same gap on whichever side the bubble hangs.
+ */
+export const PERCH_WIDE = 104
+export const PERCH_HIGH = 48
+export const PERCH_GAP = 24
+
+/** The room one word takes on the picture, in the picture's own units. */
+export interface Box {
+  readonly x: number
+  readonly y: number
+  readonly wide: number
+  readonly high: number
+}
+
+/** Whether two words stand clear of each other. */
+export const apart = (one: Box, two: Box): boolean =>
+  one.x + one.wide <= two.x ||
+  two.x + two.wide <= one.x ||
+  one.y + one.high <= two.y ||
+  two.y + two.high <= one.y
 
 /**
  * Whether a number set against this height stands clear of everything drawn

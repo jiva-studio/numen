@@ -16,13 +16,17 @@
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Waiting } from '@numen/ui'
 import type { Curve } from './core'
+import { clearing } from './curve'
 import {
+  apart,
   AXIS_HIGH,
+  AXIS_WIDE,
   BAND,
   BAND_HIGH,
   BANDS,
   bandOf,
   bandOfBacklog,
+  backlogSpotsOf,
   clearAt,
   FOOT,
   HIGH,
@@ -31,15 +35,18 @@ import {
   LIFT,
   lineOf,
   MIDDLE,
+  PERCH_GAP,
+  PERCH_HIGH,
+  PERCH_WIDE,
   placeUnder,
   RIGHT,
-  seriesOf,
   shortOf,
   spotsOf,
   TOP,
   WIDE,
   yOfBand,
   type Band,
+  type Box,
   type Spot,
 } from './drawing'
 import { WORDS as words } from './words'
@@ -86,6 +93,18 @@ const places = computed(() => props.curve.grid.length)
 const knob = computed(() => spots.value[props.place] ?? null)
 const suggested = computed(() => spots.value[props.curve.suggested.at] ?? null)
 
+/**
+ * The value the knob stands at. A preset's own value need not sit on the grid,
+ * and the place it opens at is the one nearest it, so while the knob has not
+ * been moved off that place the preset's own value is what is said. A knob
+ * walked anywhere else stands on a place, and the place is exact.
+ */
+const held = computed(() =>
+  props.curve.now.at >= 0 && props.place === props.curve.now.at
+    ? props.curve.now.value
+    : (props.curve.grid[props.place] ?? 0),
+)
+
 /** A goal of a date stands the mark of the day it names full height, and dashed. */
 const dated = computed(() => props.curve.goal === 'date')
 
@@ -119,23 +138,74 @@ const naming = (spot: Spot) => {
   }
 }
 
+/** The room that name takes, which the knob's own figures stand clear of. */
+const namingBox = (spot: Spot): Box => {
+  const back = spot.x < LEFT + LABEL ? 0 : spot.x > RIGHT - LABEL ? LABEL * 2 : LABEL
+  return {
+    x: spot.x - back,
+    y: Math.max(spot.y - LIFT, TOP) - AXIS_HIGH,
+    wide: LABEL * 2,
+    high: AXIS_HIGH,
+  }
+}
+
+/**
+ * What this place of the curve buys, said in a bubble over the knob that moves
+ * with it. It sits above the knob, and below it where above would take it off
+ * the top, so it never covers the curve the knob is riding. The tail is
+ * anchored on the knob itself and turns over with the bubble, so what the
+ * numbers belong to is never in doubt.
+ */
+const perched = computed(() => {
+  const spot = knob.value
+  const point = props.curve.at[props.place]
+  if (!honest.value || !spot || !point) return null
+  const lines = words.buys(props.curve.goal, {
+    value: held.value,
+    reviews: point.reviews,
+    minutes: point.minutes,
+    horizon: point.backlog.length,
+    clears: clearing(point.backlog),
+  })
+  const under = spot.y - PERCH_GAP - PERCH_HIGH < TOP
+  const half = PERCH_WIDE / 2
+  const back = spot.x < LEFT + half ? 0 : spot.x > RIGHT - half ? PERCH_WIDE : half
+  const edge = under ? spot.y + PERCH_GAP : spot.y - PERCH_GAP
+  return {
+    lines,
+    under,
+    box: {
+      x: spot.x - back,
+      y: under ? edge : edge - PERCH_HIGH,
+      wide: PERCH_WIDE,
+      high: PERCH_HIGH,
+    },
+    at: {
+      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+      insetBlockStart: `${(edge / HIGH) * 100}%`,
+      translate: `${(-back / PERCH_WIDE) * 100}% ${under ? '0' : '-100%'}`,
+    },
+    tail: {
+      insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+      insetBlockStart: `${(edge / HIGH) * 100}%`,
+    },
+  }
+})
+
 /**
  * The names that fit. They are taken in the order the marks stand in, and one
- * that would touch a name already placed is left off.
+ * that would touch the readout over the knob, or a name already placed, is
+ * left off.
  */
 const named = computed(() => {
-  const placed: Spot[] = []
-  const out: { key: string; text: string; at: Record<string, string> }[] = []
+  const placed: Box[] = perched.value ? [perched.value.box] : []
+  const out: { key: string; text: string; at: Record<string, string>; box: Box }[] = []
   for (const mark of marks.value) {
     if (!mark.text) continue
-    const clear = placed.every(
-      (one) =>
-        Math.abs(one.x - mark.spot.x) > LABEL * 2 ||
-        Math.abs(one.y - mark.spot.y) > AXIS_HIGH * 2,
-    )
-    if (!clear) continue
-    placed.push(mark.spot)
-    out.push({ key: mark.key, text: mark.text, at: naming(mark.spot) })
+    const box = namingBox(mark.spot)
+    if (!placed.every((one) => apart(box, one))) continue
+    placed.push(box)
+    out.push({ key: mark.key, text: mark.text, at: naming(mark.spot), box })
   }
   return out
 })
@@ -147,21 +217,37 @@ const against = (y: number, lift: string, high = HIGH) => ({
   translate: `0 ${lift}`,
 })
 
+/** The room that number takes, which the knob's own figures stand clear of. */
+const againstBox = (y: number, lift: string): Box => ({
+  x: LEFT,
+  y: lift === '0' ? y : y - AXIS_HIGH,
+  wide: AXIS_WIDE,
+  high: AXIS_HIGH,
+})
+
 /**
  * What the height of the picture comes to, against the lines it is read off. A
  * band of no width is one number and is said once, in the middle, where a curve
- * that never moves is drawn. A number the line or a mark stands on is dropped:
- * the axis gives way, and the drawing keeps what it has to say.
+ * that never moves is drawn. A number the line, a mark or the readout over the
+ * knob stands on is dropped: the axis gives way, and the drawing keeps what it
+ * has to say.
  */
 const heights = computed(() => {
   const { least, most } = band.value
   const said = (value: number) => words.heightAt(props.curve.goal, value)
   const standing = marks.value.map((one) => one.spot)
-  const fits = (y: number, lift: string, value: number) =>
-    clearAt(y, spots.value, standing) ? [{ at: against(y, lift), text: said(value) }] : []
+  const over = perched.value?.box
+  const fits = (y: number, lift: string, value: number) => {
+    const box = againstBox(y, lift)
+    if (!clearAt(y, spots.value, standing)) return []
+    if (over && !apart(box, over)) return []
+    return [{ at: against(y, lift), box, text: said(value) }]
+  }
   // A band of no width has one number and nothing else to read, so it is set
   // over the line it names rather than given way to it.
-  if (most === least) return [{ at: against(MIDDLE, '-100%'), text: said(most) }]
+  if (most === least) {
+    return [{ at: against(MIDDLE, '-100%'), box: againstBox(MIDDLE, '-100%'), text: said(most) }]
+  }
   return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
 })
 
@@ -178,13 +264,17 @@ const backlog = computed<readonly number[]>(() => props.curve.at[props.place]?.b
  */
 const backlogBand = computed<Band>(() => bandOfBacklog(backlog.value))
 
-const backlogSpots = computed(() => seriesOf(backlog.value, backlogBand.value, BAND))
+const backlogSpots = computed(() => backlogSpotsOf(backlog.value, backlogBand.value))
 const backlogLine = computed(() => lineOf(backlogSpots.value))
 
 /** Whether there is a backlog to draw at all. */
 const banded = computed(() => honest.value && backlog.value.length > 1)
 
-/** The ends of the band, against the lines they are the height of. */
+/**
+ * The ends of the band, against the lines they are the height of. Nothing
+ * overdue is the foot, so a run holding nothing at all is that one number on
+ * the floor it lies along.
+ */
 const backlogHeights = computed(() => {
   const { least, most } = backlogBand.value
   const said = (value: number) => words.backlogHeightAt(value)
@@ -192,9 +282,7 @@ const backlogHeights = computed(() => {
     clearAt(y, backlogSpots.value, [])
       ? [{ at: against(y, lift, BAND.high), text: said(value) }]
       : []
-  if (most === least) {
-    return [{ at: against((BAND.top + BAND.foot) / 2, '-100%', BAND.high), text: said(most) }]
-  }
+  if (most === least) return [{ at: against(BAND.foot, '0', BAND.high), text: said(least) }]
   return [...fits(BAND.top, '-100%', most), ...fits(BAND.foot, '0', least)]
 })
 
@@ -216,7 +304,7 @@ const reading = computed(() => {
 })
 
 /** The value at the knob, and at either end of the range, in the goal's units. */
-const atKnob = computed(() => words.widthAt(props.curve.goal, props.curve.grid[props.place] ?? 0))
+const atKnob = computed(() => words.widthAt(props.curve.goal, held.value))
 
 /** What the control is acting on, in the pieces the row is scanned in. */
 const material = computed(() =>
@@ -239,7 +327,7 @@ const atMost = computed(() =>
 
 const least = computed(() => props.curve.grid[0] ?? 0)
 const most = computed(() => props.curve.grid[places.value - 1] ?? 0)
-const value = computed(() => props.curve.grid[props.place] ?? 0)
+const value = computed(() => held.value)
 
 /**
  * The place a pointer stands over. Where it stands is read through the
@@ -356,6 +444,10 @@ const released = (event: KeyboardEvent) => {
                 :y2="yOfBand(share)"
               />
 
+              <!-- The two axes the figures are read against. -->
+              <line class="control__rule" :x1="LEFT" :x2="LEFT" :y1="TOP" :y2="FOOT" />
+              <line class="control__rule" :x1="LEFT" :x2="RIGHT" :y1="FOOT" :y2="FOOT" />
+
               <path class="control__line" :d="line" />
               <path v-if="short" class="control__short" :d="short" />
 
@@ -391,6 +483,19 @@ const released = (event: KeyboardEvent) => {
             :style="one.at"
             >{{ one.text }}</span
           >
+
+          <!-- What this place buys, in a bubble over the knob, with its tail
+               on the knob it belongs to. -->
+          <template v-if="perched">
+            <span class="control__perch" :style="perched.at">
+              <span v-for="one in perched.lines" :key="one" class="control__bought">{{ one }}</span>
+            </span>
+            <span
+              class="control__tail"
+              :class="{ 'control__tail--under': perched.under }"
+              :style="perched.tail"
+            />
+          </template>
         </div>
       </div>
 
@@ -427,6 +532,17 @@ const released = (event: KeyboardEvent) => {
               aria-hidden="true"
               :viewBox="`0 0 ${WIDE} ${BAND_HIGH}`"
             >
+              <!-- The foot is nothing overdue, which is what the band is read
+                   up from. -->
+              <line class="control__rule" :x1="LEFT" :x2="LEFT" :y1="BAND.top" :y2="BAND.foot" />
+              <line
+                class="control__rule"
+                :x1="LEFT"
+                :x2="RIGHT"
+                :y1="BAND.foot"
+                :y2="BAND.foot"
+              />
+
               <path class="control__backlog" :d="backlogLine" />
             </svg>
           </div>
@@ -459,9 +575,13 @@ const released = (event: KeyboardEvent) => {
      y's name runs along beside the plot. */
   --control-line: calc(var(--numen-text-1) * 1.4);
   --control-axis: calc(var(--numen-text-1) * 1.6);
+  /* The square the bubble's tail is turned out of. */
+  --control-tail: 0.4375rem;
+  /* How much taller a line box is than the letters standing in it. */
+  --control-lead: 0.125rem;
   /* One tile of the readout, in the lengths the tile is built from. */
   --control-tile: calc(
-    var(--numen-text-3) * 1.1 + var(--numen-dot-gap) + var(--numen-text-1) * 1.2 + 2 *
+    var(--numen-text-2) * 1.1 + var(--numen-dot-gap) + var(--numen-text-1) * 1.2 + 2 *
       var(--numen-inset) + 2 * var(--numen-stroke)
   );
   display: flex;
@@ -489,7 +609,10 @@ const released = (event: KeyboardEvent) => {
   flex-direction: column;
   gap: var(--numen-dot-gap);
   min-inline-size: 0;
-  padding: var(--numen-inset) var(--numen-inset-wide);
+  /* The lines inside stand on their own leading, which is taller than the
+     letters, so the block clearance is trimmed by that difference and the four
+     gaps read alike. */
+  padding: calc(var(--numen-inset) - var(--control-lead)) var(--numen-inset);
   border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
@@ -498,7 +621,7 @@ const released = (event: KeyboardEvent) => {
 .control__figure {
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-3);
+  font-size: var(--numen-text-2);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -645,6 +768,15 @@ const released = (event: KeyboardEvent) => {
   stroke-dasharray: 2 5;
 }
 
+/*
+ * The two axes a picture's figures are read against. A rule separates and does
+ * not state, so it is drawn quieter and thinner than anything it measures.
+ */
+.control__rule {
+  stroke: var(--numen-node-border);
+  stroke-width: 1;
+}
+
 .control__line {
   fill: none;
   stroke: var(--numen-focus-bg);
@@ -704,6 +836,64 @@ const released = (event: KeyboardEvent) => {
 
 /* The knob's own value, which reads out where the knob is dragged to. */
 .control__number--knob {
+  color: var(--numen-focus-bg);
+}
+
+/*
+ * What this place of the curve buys, in a bubble over the knob. It stands on a
+ * ground of its own so the line behind it never reads through, and holds one
+ * short line to a row.
+ */
+.control__perch {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding: var(--numen-inset);
+  border: var(--numen-stroke) solid var(--numen-node-border);
+  border-radius: var(--numen-radius);
+  background: var(--numen-node-bg);
+  box-shadow: var(--numen-shadow-card);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
+ * The tail, aimed at the knob from the bubble's underside. It is a square
+ * turned on its corner, showing the two faces that fall toward the knob, and
+ * it turns over with the bubble.
+ */
+.control__tail {
+  position: absolute;
+  inline-size: var(--control-tail);
+  block-size: var(--control-tail);
+  border: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-start: 0;
+  border-inline-start: 0;
+  background: var(--numen-node-bg);
+  rotate: 45deg;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+
+/* Under the knob the bubble hangs below it, so the tail points up instead. */
+.control__tail--under {
+  border-block-start: var(--numen-stroke) solid var(--numen-node-border);
+  border-inline-start: var(--numen-stroke) solid var(--numen-node-border);
+  border-block-end: 0;
+  border-inline-end: 0;
+}
+
+.control__bought {
+  color: var(--numen-node-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The value being held is the knob's own, and is said in the knob's colour. */
+.control__bought:first-child {
   color: var(--numen-focus-bg);
 }
 

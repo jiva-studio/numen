@@ -40,7 +40,7 @@ export type Field =
   | 'byDate'
   | 'counts'
   | 'backlog'
-  | 'lightDays'
+  | 'load'
   | 'evenLoad'
 
 /** Every setting the receipt has a row for, in the order they stand in. */
@@ -52,7 +52,7 @@ export const FIELDS: readonly Field[] = [
   'byDate',
   'counts',
   'backlog',
-  'lightDays',
+  'load',
   'evenLoad',
 ]
 
@@ -85,12 +85,26 @@ const SPENDING: Record<Goal, readonly Field[]> = {
 }
 
 /** The settings that stand under no goal in particular, and are drawn under all. */
-const ALWAYS: readonly Field[] = ['lightDays', 'evenLoad']
+const ALWAYS: readonly Field[] = ['load', 'evenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const fieldsUnder = (goal: Goal): readonly Field[] => {
   const drawn = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...ALWAYS])
   return FIELDS.filter((field) => drawn.has(field))
+}
+
+/**
+ * The rows a goal produces a value for, which are the rows a person may put
+ * back under it. A target implies the pace it is kept at, so the cards a day
+ * holds follow from it. A goal of minutes produces none: the clock is the whole
+ * budget and nothing else is read off it. The share of the day going to the
+ * debt says what a day is spent on and stands beside the budget, so no goal
+ * produces it.
+ */
+const PRODUCED: Record<Goal, readonly Field[]> = {
+  minutes: [],
+  retention: ['reviewsADay'],
+  date: [],
 }
 
 /** The field the goal steers, which is the knob under another name. */
@@ -117,7 +131,10 @@ export const shapeOf = (settings: Settings): string => {
     byDate: settings.byDate,
     counts: settings.counts,
     backlog: `${settings.backlog}`,
-    lightDays: settings.lightDays.join(','),
+    load: Object.keys(settings.load)
+      .sort()
+      .map((day) => `${day}=${settings.load[day]}`)
+      .join(','),
     evenLoad: `${settings.evenLoad}`,
   }
   const rest = FIELDS.filter((field) => !own.has(field)).map((field) => `${field}=${said[field]}`)
@@ -154,6 +171,17 @@ export const limiting = (curve: Curve, point: Point | null): string => {
   if (!curve.honest || !point) return ''
   if (!CLOSERS.includes(point.closed)) return ''
   return CLOSES[curve.goal].includes(point.closed) ? '' : point.closed
+}
+
+/**
+ * The day the overdue pile is gone, read off the very projection the band is
+ * drawn from. Null is a place with nothing overdue to be gone at all, and -1
+ * is a pile still standing on the last day projected.
+ */
+export const clearing = (backlog: readonly number[]): number | null => {
+  if (!backlog.some((one) => one > 0)) return null
+  const at = backlog.indexOf(0)
+  return at < 0 ? -1 : at + 1
 }
 
 /** A number held inside the bounds of the setting it is. */
@@ -208,6 +236,52 @@ export const idle = (curve: Curve): Idle => {
   if (!curve.honest) return ''
   if (curve.decks === 0) return 'unpointed'
   return curve.cards === 0 ? 'noCards' : ''
+}
+
+/**
+ * What the goal produces for one row at the place the knob stands, and null
+ * where it produces nothing for it. It is read off the very point the picture
+ * is drawn from, so the row and the curve cannot disagree.
+ */
+export const producedAt = (field: Field, curve: Curve, place: number): number | null => {
+  if (!curve.honest || !PRODUCED[curve.goal].includes(field)) return null
+  const point = curve.at[place]
+  if (!point) return null
+  return field === 'reviewsADay' ? held(Math.round(point.reviews), 'reviewsADay') : null
+}
+
+/** What one row holds now, where the goal produces a value for that row at all. */
+const holding = (settings: Settings, field: Field): number | null =>
+  field === 'reviewsADay' ? settings.reviewsADay : null
+
+/**
+ * The rows standing at a value of a person's own: those the goal produces a
+ * value for, where what the file carries is not that value. Nothing is
+ * remembered between reads — the file and the curve either agree or they do not.
+ */
+export const byHand = (
+  settings: Settings,
+  curve: Curve,
+  place: number,
+): ReadonlySet<Field> => {
+  const out = new Set<Field>()
+  for (const field of PRODUCED[curve.goal]) {
+    const produced = producedAt(field, curve, place)
+    if (produced !== null && produced !== holding(settings, field)) out.add(field)
+  }
+  return out
+}
+
+/** One row put back to the value the goal produces for it where the knob stands. */
+export const following = (
+  settings: Settings,
+  field: Field,
+  curve: Curve,
+  place: number,
+): Settings => {
+  const produced = producedAt(field, curve, place)
+  if (produced === null) return settings
+  return field === 'reviewsADay' ? { ...settings, reviewsADay: produced } : settings
 }
 
 /** Whether the day the goal names is behind us, which spends the budget. */

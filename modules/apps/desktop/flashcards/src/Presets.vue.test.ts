@@ -13,7 +13,7 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   newADay: 10,
   reviewsADay: 45,
   retention: 0.9,
-  lightDays: [],
+  load: {},
   evenLoad: true,
   ...said,
 })
@@ -180,7 +180,7 @@ describe('what the goals come to today', () => {
   // else.
   it('says nothing of counts, of what closes the day, or of the week', () => {
     const said = shown([
-      preset({ path: 'A.md', settings: settings({ lightDays: ['sat'] }) }),
+      preset({ path: 'A.md', settings: settings({ load: { sat: 50 } }) }),
       preset({ path: 'B.md', name: 'Pali' }),
     ]).text()
 

@@ -8,10 +8,12 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULTS, NOWHERE, type Curve, type Goal, type Point, type Settings } from './core'
 import {
   approximate,
+  byHand,
   costOf,
   dayAfter,
   daysUntil,
   FIELDS,
+  following,
   held,
   limiting,
   nearest,
@@ -19,6 +21,7 @@ import {
   placeAt,
   fieldsUnder,
   idle,
+  producedAt,
   producing,
   round,
   spent,
@@ -323,7 +326,7 @@ describe('the settings a goal schedules by', () => {
 
   it('draws what stands under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      expect(fieldsUnder(goal)).toContain('lightDays')
+      expect(fieldsUnder(goal)).toContain('load')
       expect(fieldsUnder(goal)).toContain('evenLoad')
     }
   })
@@ -358,5 +361,56 @@ describe('a number to that many places', () => {
   it('rounds and does not truncate', () => {
     expect(round(0.876, 2)).toBe(0.88)
     expect(round(0.874, 2)).toBe(0.87)
+  })
+})
+
+// A goal produces a value for a row only where the row follows from it. A
+// target implies the pace it is kept at; a clock implies nothing but itself,
+// and the share of the day going to the debt follows from no goal at all.
+describe('a row a goal fills in itself', () => {
+  const curve: Curve = {
+    goal: 'retention',
+    grid: [0.7, 0.8, 0.9, 0.99],
+    days: [],
+    at: [
+      point({ reviews: 20 }),
+      point({ reviews: 45 }),
+      point({ reviews: 80 }),
+      point({ reviews: 160 }),
+    ],
+    now: { at: 2, value: 0.9, day: '' },
+    suggested: NOWHERE,
+    decks: 1,
+    cards: 400,
+    overdue: 0,
+    unbegun: 0,
+    honest: true,
+  }
+
+  it('is the cards a day holds under a goal of retention, off the place the knob stands', () => {
+    expect(producedAt('reviewsADay', curve, 2)).toBe(80)
+    expect(producedAt('reviewsADay', curve, 3)).toBe(160)
+  })
+
+  it('is nothing under a goal of minutes, and nothing for the share of the day', () => {
+    const clock: Curve = { ...curve, goal: 'minutes' }
+    expect(producedAt('reviewsADay', clock, 2)).toBe(null)
+    expect(producedAt('backlog', curve, 2)).toBe(null)
+    expect(byHand(settings({ goal: 'minutes', reviewsADay: 12, backlog: 5 }), clock, 2).size).toBe(0)
+  })
+
+  it('stands at a value of the person’s own where the file says another', () => {
+    const mine = settings({ goal: 'retention', reviewsADay: 12 })
+    expect([...byHand(mine, curve, 2)]).toStrictEqual(['reviewsADay'])
+    expect(byHand(settings({ goal: 'retention', reviewsADay: 80 }), curve, 2).size).toBe(0)
+  })
+
+  it('is put back to what the goal produces, and nothing else moves with it', () => {
+    const mine = settings({ goal: 'retention', reviewsADay: 12, newADay: 7, backlog: 5 })
+    const back = following(mine, 'reviewsADay', curve, 2)
+    expect(back.reviewsADay).toBe(80)
+    expect({ ...back, reviewsADay: 12 }).toStrictEqual(mine)
+    // A row the goal produces nothing for has nothing to follow.
+    expect(following(mine, 'backlog', curve, 2)).toStrictEqual(mine)
   })
 })
