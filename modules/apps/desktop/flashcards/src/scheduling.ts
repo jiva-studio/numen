@@ -277,7 +277,7 @@ export const spent = (one: Preset): boolean => through(one) >= 1
  */
 export const leftWords = (one: Preset): string => {
   if (one.cards <= 0) return ''
-  return `${one.cards} ${one.cards === 1 ? 'card' : 'cards'}`
+  return many(one.cards, 'card')
 }
 
 /** Why a preset schedules nothing, and empty while it schedules something. */
@@ -289,22 +289,30 @@ export const paused = (settings: Settings, today: string): string => {
   return ''
 }
 
-/** What the goal of a preset comes to, in the few words a person reads at a glance. */
+/**
+ * What the goal of a preset comes to, in the few words a person reads at a
+ * glance. Each goal is said here as the preset tab says it, so one goal reads
+ * the same in both windows.
+ */
 export const goalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
     case Goal.RETENTION:
-      return `retention ${settings.retention.toFixed(2)}`
+      return `${Math.round(settings.retention * 100)}% remembered`
     case Goal.BY_DATE: {
       if (!settings.byDate) return 'by no day'
       const left = daysBetween(today, settings.byDate)
       if (left <= 0) return `by ${dayWords(settings.byDate)}`
-      return `by ${dayWords(settings.byDate)} — ${left} ${left === 1 ? 'day' : 'days'}`
+      return `${many(left, 'day')} to ${dayWords(settings.byDate)}`
     }
     default:
       if (settings.minutesADay === 0) return 'no budget in time'
-      return `${settings.minutesADay} minutes a day`
+      return `${many(settings.minutesADay, 'minute')} a day`
   }
 }
+
+/** A count and the thing it counts, in the singular where there is one of it. */
+const many = (value: number, one: string): string =>
+  `${value} ${value === 1 ? one : `${one}s`}`
 
 /** A day as the application writes one: the year, the month and the day. */
 export const named = (at: Date): string => {

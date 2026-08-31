@@ -118,12 +118,16 @@ describe('what a day of a preset holds', () => {
 describe('what a goal comes to in words', () => {
   it('says how long a day runs', () => {
     expect(goalWords(settings({ minutesADay: 20 }), '2026-09-05')).toBe('20 minutes a day')
+    expect(goalWords(settings({ minutesADay: 1 }), '2026-09-05')).toBe('1 minute a day')
     expect(goalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no budget in time')
   })
 
-  it('says the share asked of memory', () => {
+  it('says the share asked of memory in hundredths', () => {
     expect(goalWords(settings({ goal: Goal.RETENTION, retention: 0.9 }), '2026-09-05')).toBe(
-      'retention 0.90',
+      '90% remembered',
+    )
+    expect(goalWords(settings({ goal: Goal.RETENTION, retention: 0.85 }), '2026-09-05')).toBe(
+      '85% remembered',
     )
   })
 
@@ -132,8 +136,7 @@ describe('what a goal comes to in words', () => {
       settings({ goal: Goal.BY_DATE, byDate: '2026-09-30' }),
       '2026-09-12',
     )
-    expect(said).toMatch(/^by /)
-    expect(said).toMatch(/— 18 days$/)
+    expect(said).toMatch(/^18 days to /)
   })
 })
 
