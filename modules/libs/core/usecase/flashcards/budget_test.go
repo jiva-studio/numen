@@ -102,21 +102,25 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 		"decks/Quick.md": deckOf("Quick", 20, 100),
 	})
 
-	// What each preset's cards have cost, answered on a day of their own.
-	before := s.run(t, saturday.AddDate(0, 0, -1))
-	for i := range 5 {
-		answer(t, before, mark(i), 20*time.Second)
-		answer(t, before, mark(100+i), 4*time.Second)
+	// What each preset's cards have cost. Twelve card faces of each answered
+	// three times over two months is a history long enough to say what both
+	// kinds of answer take.
+	for _, days := range []int{90, 80, 75} {
+		before := s.run(t, saturday.AddDate(0, 0, -days))
+		for i := range 12 {
+			answer(t, before, mark(i), 20*time.Second)
+			answer(t, before, mark(100+i), 4*time.Second)
+		}
 	}
 
 	got := byDeck(s.sittingAt(t, today, saturday))
-	// Five cards of each are owed and paid for first. What is left of the minute
-	// buys one more twenty-second card and five more four-second ones.
-	if got["decks/Slow.md"] != 6 {
-		t.Errorf("the slow cards were asked %d in a minute, want 6", got["decks/Slow.md"])
+	// Twelve card faces of each stand owed. The minute buys three of the slow
+	// ones, and all twelve of the quick ones with room for three unbegun.
+	if got["decks/Slow.md"] != 3 {
+		t.Errorf("the slow cards were asked %d in a minute, want 3", got["decks/Slow.md"])
 	}
-	if got["decks/Quick.md"] != 10 {
-		t.Errorf("the quick cards were asked %d in a minute, want 10", got["decks/Quick.md"])
+	if got["decks/Quick.md"] != 15 {
+		t.Errorf("the quick cards were asked %d in a minute, want 15", got["decks/Quick.md"])
 	}
 }
 

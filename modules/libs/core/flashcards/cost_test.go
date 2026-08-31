@@ -343,53 +343,128 @@ func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 	}
 }
 
-// The answer times already recorded are what a projection spends. An answer
-// nobody sat through for an hour is counted at what a card is worth.
-func TestWhatAnAnswerCostsIsReadFromTheAnswers(t *testing.T) {
+// timed is a history of as many card faces, each answered as many times, at
+// the time the caller gives for each answer.
+//
+// The first two answers to a card face are of one still being learned and every
+// answer after them is of one that comes round in days, so a history of card
+// faces answered three times each holds twice as many of the first kind as of
+// the second.
+func timed(
+	at time.Time, faces, each int, took func(face, step int) time.Duration,
+) []history.Answer {
+	var out []history.Answer
+	for face := range faces {
+		on := history.CardFace{Card: fmt.Sprintf("card%06d", face), Face: "Recognise"}
+		for step := range each {
+			out = append(out, history.Answer{
+				ID: fmt.Sprintf("%06d", len(out)), CardFace: on,
+				At:     at.Add(time.Duration(len(out)) * time.Hour),
+				Rating: history.Good, Took: took(face, step),
+			})
+		}
+	}
+	return out
+}
+
+// What an answer costs is the middle of the answers to its kind: half of them
+// fall either side of it, so a person who answered the door once moves it by one
+// place and not by minutes.
+func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	by := history.NewFSRS()
-	at := time.Now().Add(-72 * time.Hour)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	at := time.Now().Add(-400 * 24 * time.Hour)
 
-	var answers []history.Answer
-	for i, took := range []time.Duration{
-		6 * time.Second, 10 * time.Second, 8 * time.Second, 12 * time.Second, time.Hour,
-	} {
-		answers = append(answers, history.Answer{
-			ID: string(rune('a' + i)), CardFace: on, At: at.Add(time.Duration(i) * time.Hour),
-			Rating: history.Good, Took: took,
-		})
-	}
+	// Twelve card faces answered three times each: three seconds while a card
+	// face is being learned and nine once it comes round in days. One of them
+	// stood on the screen for an hour every time.
+	answers := timed(at, 12, 3, func(face, step int) time.Duration {
+		switch {
+		case face == 0:
+			return time.Hour
+		case step < 2:
+			return 3 * time.Second
+		default:
+			return 9 * time.Second
+		}
+	})
 
-	// The card is still being learned for the first two answers and learned for
-	// the three after them, and the hour among those counts as a minute.
 	cost := history.Costed(by, answers)
-	if want := (6*time.Second + 10*time.Second) / 2; cost.New != want {
-		t.Errorf("a card being learned costs %v, want %v", cost.New, want)
+	if cost.New != 3*time.Second {
+		t.Errorf("a card being learned costs %v, want 3s", cost.New)
 	}
-	if want := (8*time.Second + 12*time.Second + history.LongestAnswer) / 3; cost.Review != want {
-		t.Errorf("a review costs %v, want %v", cost.Review, want)
+	if cost.Review != 9*time.Second {
+		t.Errorf("a review costs %v, want 9s", cost.Review)
 	}
-	if cost == history.DefaultCost {
-		t.Error("the answers were never read")
+	if !cost.ReadNew || !cost.ReadReview {
+		t.Errorf("cost = %+v, want both halves read from the answers", cost)
+	}
+}
+
+// A history too short to say what a kind of answer costs leaves that kind at
+// the default, and says it did.
+func TestAHistoryTooShortToSayStandsAtTheDefault(t *testing.T) {
+	by := history.NewFSRS()
+	at := time.Now().Add(-400 * 24 * time.Hour)
+
+	// One card face answered once, for fifty-five seconds.
+	answers := timed(at, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
+
+	cost := history.Costed(by, answers)
+	if cost != history.DefaultCost {
+		t.Errorf("cost = %+v, want the default %+v", cost, history.DefaultCost)
+	}
+	if cost.ReadNew || cost.ReadReview {
+		t.Errorf("cost = %+v, want neither half read from the answers", cost)
 	}
 }
 
 // The two kinds of answer are counted apart: a history of one kind leaves the
-// other at the default.
+// other at the default and says which of the two it is.
 func TestACostOfOneKindLeavesTheOtherAtTheDefault(t *testing.T) {
 	by := history.NewFSRS()
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	first := history.Answer{
-		ID: "a", CardFace: on, At: time.Now().Add(-72 * time.Hour),
-		Rating: history.Good, Took: 30 * time.Second,
-	}
+	at := time.Now().Add(-400 * 24 * time.Hour)
 
-	cost := history.Costed(by, []history.Answer{first})
-	if cost.New != 30*time.Second {
-		t.Errorf("a card being learned costs %v, want 30s", cost.New)
+	// Twelve card faces answered twice each, which is a vault holding no answer
+	// to a card that comes round in days.
+	answers := timed(at, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
+
+	cost := history.Costed(by, answers)
+	if cost.New != 30*time.Second || !cost.ReadNew {
+		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ReadNew)
 	}
-	if cost.Review != history.DefaultCost.Review {
-		t.Errorf("a review costs %v, want the default %v", cost.Review, history.DefaultCost.Review)
+	if cost.Review != history.DefaultCost.Review || cost.ReadReview {
+		t.Errorf("a review costs %v, read %t, want the default %v unread",
+			cost.Review, cost.ReadReview, history.DefaultCost.Review)
+	}
+}
+
+// A history of key hits is costed at the shortest an answer is costed at, so a
+// day is never priced at more cards than a person could sit through.
+func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
+	by := history.NewFSRS()
+	at := time.Now().Add(-400 * 24 * time.Hour)
+
+	answers := timed(at, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
+
+	cost := history.Costed(by, answers)
+	if cost.New != history.ShortestAnswer || cost.Review != history.ShortestAnswer {
+		t.Errorf("cost = %+v, want both halves at %v", cost, history.ShortestAnswer)
+	}
+}
+
+// One answer nobody sat through is counted at what a card is worth, so an hour
+// away from the screen is an hour of no history.
+func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
+	by := history.NewFSRS()
+	at := time.Now().Add(-400 * 24 * time.Hour)
+
+	// Every answer stood on the screen for an hour, so the middle of them is
+	// what one answer is capped at.
+	answers := timed(at, 12, 3, func(int, int) time.Duration { return time.Hour })
+
+	cost := history.Costed(by, answers)
+	if cost.New != history.LongestAnswer || cost.Review != history.LongestAnswer {
+		t.Errorf("cost = %+v, want both halves at %v", cost, history.LongestAnswer)
 	}
 }
 

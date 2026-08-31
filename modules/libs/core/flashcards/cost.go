@@ -32,41 +32,38 @@ const (
 	EvenTo   = Ahead
 )
 
+// ShortestAnswer is the shortest a kind of answer is costed at. A card graded
+// before it could be read is a key hit and not review.
+const ShortestAnswer = time.Second
+
+// LeastAnswers is how many answers of a kind a history holds before it says
+// what that kind costs. A kind the history holds fewer of stands at the
+// default.
+const LeastAnswers = 10
+
 // Cost is how long an answer takes: one of a card the scheduler is still
 // putting into memory, and one of a card that comes round in days.
-type Cost struct{ New, Review time.Duration }
+//
+// ReadNew and ReadReview say which halves the history answered. A half it does
+// not answer stands at the default, and a caller putting the number in front of
+// a person says which of the two it is showing.
+type Cost struct {
+	New, Review         time.Duration
+	ReadNew, ReadReview bool
+}
 
 // DefaultCost is what a vault holding no answer times is projected at.
 var DefaultCost = Cost{New: 20 * time.Second, Review: 8 * time.Second}
 
 // Costed is how long an answer takes in this history, from the times the
-// answers themselves carry. A kind of answer nobody has given yet stands at the
-// default.
+// answers themselves carry. A kind of answer the history holds too few of
+// stands at the default.
 func Costed(by Scheduler, answers []Answer) Cost {
-	var begun, spaced time.Duration
-	var begunCount, spacedCount int
+	var took taking
 	replayed(by, answers, func(before Schedule, a Answer) {
-		took := min(a.Took, LongestAnswer)
-		if took <= 0 {
-			return
-		}
-		if by.Spaced(before) {
-			spaced += took
-			spacedCount++
-			return
-		}
-		begun += took
-		begunCount++
+		took.holds(by.Spaced(before), a.Took)
 	})
-
-	out := DefaultCost
-	if begunCount > 0 {
-		out.New = begun / time.Duration(begunCount)
-	}
-	if spacedCount > 0 {
-		out.Review = spaced / time.Duration(spacedCount)
-	}
-	return out
+	return took.cost()
 }
 
 // CostedUnder is how long an answer takes under each preset, by the path the
@@ -74,49 +71,76 @@ func Costed(by Scheduler, answers []Answer) Cost {
 //
 // A preset is costed from the answers to its own card faces: a preset of long
 // cards and one of short cards turn the same minutes into different counts. A
-// card face nothing groups is left out, and a kind of answer a preset holds
-// none of stands at the default.
+// card face nothing groups is left out, and a kind of answer a preset holds too
+// few of stands at the default.
 func CostedUnder(by Scheduler, answers []Answer, under map[CardFace]string) map[string]Cost {
-	type taken struct {
-		begun, spaced           time.Duration
-		begunCount, spacedCount int
-	}
-	held := make(map[string]*taken)
+	held := make(map[string]*taking)
 	replayed(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
 		if !groups {
 			return
 		}
-		took := min(a.Took, LongestAnswer)
-		if took <= 0 {
-			return
-		}
 		one := held[path]
 		if one == nil {
-			one = &taken{}
+			one = &taking{}
 			held[path] = one
 		}
-		if by.Spaced(before) {
-			one.spaced += took
-			one.spacedCount++
-			return
-		}
-		one.begun += took
-		one.begunCount++
+		one.holds(by.Spaced(before), a.Took)
 	})
 
 	out := make(map[string]Cost, len(held))
 	for path, one := range held {
-		cost := DefaultCost
-		if one.begunCount > 0 {
-			cost.New = one.begun / time.Duration(one.begunCount)
-		}
-		if one.spacedCount > 0 {
-			cost.Review = one.spaced / time.Duration(one.spacedCount)
-		}
-		out[path] = cost
+		out[path] = one.cost()
 	}
 	return out
+}
+
+// taking is how long the answers of each kind took, one entry an answer.
+type taking struct{ begun, spaced []time.Duration }
+
+// holds counts one answer, capped at LongestAnswer. An answer carrying no time
+// at all says nothing about how long its kind takes.
+func (t *taking) holds(spaced bool, took time.Duration) {
+	took = min(took, LongestAnswer)
+	if took <= 0 {
+		return
+	}
+	if spaced {
+		t.spaced = append(t.spaced, took)
+		return
+	}
+	t.begun = append(t.begun, took)
+}
+
+// cost is what these answers say a kind of answer takes, each half standing at
+// the default where the history is too short to say.
+func (t *taking) cost() Cost {
+	out := DefaultCost
+	if middle, read := middling(t.begun); read {
+		out.New, out.ReadNew = middle, true
+	}
+	if middle, read := middling(t.spaced); read {
+		out.Review, out.ReadReview = middle, true
+	}
+	return out
+}
+
+// middling is the middle of these answers, and whether there are enough of them
+// to have one.
+//
+// Answer times are a right tail: a person answers the door, and the card stands
+// on the screen while they do. The middle is where half the answers fall either
+// side of it, and one long answer moves it by one place.
+func middling(took []time.Duration) (time.Duration, bool) {
+	if len(took) < LeastAnswers {
+		return 0, false
+	}
+	slices.Sort(took)
+	out := took[len(took)/2]
+	if len(took)%2 == 0 {
+		out = (took[len(took)/2-1] + out) / 2
+	}
+	return max(out, ShortestAnswer), true
 }
 
 // The forgetting curve a projection reads a stability by.
