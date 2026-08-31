@@ -57,6 +57,19 @@ describe('what the goals come to today', () => {
     expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%')
   })
 
+  // The tile reads across: the name with the goal under it, and what the day
+  // comes to at the far end of the line.
+  it('stands the name and goal together, and the figure apart from them', () => {
+    const tile = shown([preset()]).find('.presets__preset')
+    const said = tile.find('.presets__said')
+
+    expect(said.find('.presets__name').text()).toBe('Sanskrit')
+    expect(said.find('.presets__goal').text()).toBe('20 minutes a day')
+    // The figure is the tile's own child, beside that pair and not under them.
+    expect(said.find('.presets__done').exists()).toBe(false)
+    expect(tile.find('.presets__done').text()).toBe('20%')
+  })
+
   // Each preset is an island of its own, the way a deck in the list below is.
   it('gives every preset a tile of its own', () => {
     const one = shown([
@@ -134,12 +147,16 @@ describe('what the goals come to today', () => {
     expect(said).not.toContain('light in')
   })
 
-  it('greys a preset that schedules nothing and says why', () => {
+  // What a person needs from the tile is why it schedules nothing, not what it
+  // was aiming at, so the reason stands where the goal would.
+  it('greys a preset that schedules nothing and says why in place of the goal', () => {
     const one = shown([preset({ paused: 'no cards a day' })])
 
     expect(one.find('.presets__preset--paused').exists()).toBe(true)
-    expect(one.text()).toContain('no cards a day')
+    expect(one.find('.presets__goal').text()).toBe('no cards a day')
+    expect(one.text()).not.toContain('20 minutes a day')
     expect(one.findAll('.presets__done')).toHaveLength(0)
+    expect(one.text()).not.toContain('%')
   })
 
   // This screen is what a person's day comes to. A preset nothing points at is
@@ -174,6 +191,7 @@ describe('what the goals come to today', () => {
 
     expect(drawn).toHaveLength(2)
     expect(drawn[1]?.text()).toBe('Stoppedno cards a day')
+    expect(drawn[1]?.find('.presets__done').exists()).toBe(false)
   })
 
   // The decks naming no preset are a tile like any other, and it carries no act.

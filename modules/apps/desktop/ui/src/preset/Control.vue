@@ -21,6 +21,7 @@ import {
   LEFT,
   LIFT,
   lineOf,
+  MIDDLE,
   placeUnder,
   RIGHT,
   shortOf,
@@ -100,29 +101,36 @@ const naming = computed(() => {
 })
 
 /** Where a number against one of the picture's own lines is set. */
-const against = (y: number) => ({
+const against = (y: number, lift: string) => ({
   insetInlineStart: `${(LEFT / WIDE) * 100}%`,
   insetBlockStart: `${(y / HIGH) * 100}%`,
+  translate: `0 ${lift}`,
 })
 
-/** The two ends of the band, against the lines they are the height of. */
-const ceiling = computed(() => ({ ...against(TOP), translate: '0 -100%' }))
-const floor = computed(() => ({ ...against(FOOT), translate: '0 0' }))
+/**
+ * What the height of the picture comes to, against the lines it is read off.
+ * A band of no width is one number and is said once, in the middle, where a
+ * curve that never moves is drawn.
+ */
+const heights = computed(() => {
+  const { least, most } = band.value
+  const said = (value: number) => words.heightAt(props.curve.goal, value)
+  if (most === least) return [{ at: against(MIDDLE, '-50%'), text: said(most) }]
+  return [
+    { at: against(TOP, '-100%'), text: said(most) },
+    { at: against(FOOT, '0'), text: said(least) },
+  ]
+})
 
-/** What the two ends of the band come to, in the units the goal is read in. */
-const highest = computed(() => words.heightAt(props.curve.goal, band.value.most))
-const lowest = computed(() => words.heightAt(props.curve.goal, band.value.least))
-
-/** Where the knob's own value is set, which follows it along the foot. */
+/**
+ * Where the knob's own value is set. It rides a line of its own under the
+ * picture, so it never prints over a number read off the picture's edges.
+ */
 const reading = computed(() => {
   const spot = knob.value
   if (!spot) return {}
   const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
-  return {
-    insetInlineStart: `${(spot.x / WIDE) * 100}%`,
-    insetBlockStart: `${(FOOT / HIGH) * 100}%`,
-    translate: `${back} 0`,
-  }
+  return { insetInlineStart: `${(spot.x / WIDE) * 100}%`, translate: `${back} 0` }
 })
 
 /** The value at the knob, and at either end of the range, in the goal's units. */
@@ -265,12 +273,18 @@ const released = (event: KeyboardEvent) => {
         {{ words.suggested }}
       </span>
 
-      <template v-if="honest">
-        <span class="control__number" :style="ceiling">{{ highest }}</span>
-        <span class="control__number" :style="floor">{{ lowest }}</span>
-        <span class="control__number control__number--knob" :style="reading">{{ atKnob }}</span>
-      </template>
+      <span
+        v-for="one in honest ? heights : []"
+        :key="one.text"
+        class="control__number"
+        :style="one.at"
+        >{{ one.text }}</span
+      >
     </div>
+
+    <p v-if="honest" class="control__under">
+      <span class="control__number control__number--knob" :style="reading">{{ atKnob }}</span>
+    </p>
 
     <p v-if="honest" class="control__ends">
       <span>{{ words.ends(props.curve.goal)[0] }} · {{ atLeast }}</span>
@@ -281,6 +295,8 @@ const released = (event: KeyboardEvent) => {
 
 <style scoped>
 .control {
+  /* One line of the small print the picture is annotated in. */
+  --control-line: calc(var(--numen-text-1) * 1.4);
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
@@ -297,6 +313,13 @@ const released = (event: KeyboardEvent) => {
 /* The picture, and what is named over it. */
 .control__over {
   position: relative;
+}
+
+/* The line the knob's own value rides, clear of every number on the picture. */
+.control__under {
+  position: relative;
+  margin: 0;
+  block-size: var(--control-line);
 }
 
 .control__picture {

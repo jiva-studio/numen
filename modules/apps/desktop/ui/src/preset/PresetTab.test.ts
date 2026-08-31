@@ -208,6 +208,31 @@ describe('what the control stands at', () => {
     expect(numbers).toContain(words.heightAt('minutes', 0))
   })
 
+  // Two ends of a band of no width are one number, and one number said twice
+  // says nothing.
+  it('says the one value once where the curve never moves', () => {
+    const flat = drawn({ at: [point({ reviews: 2 }), point({ reviews: 2 }), point({ reviews: 2 })] })
+    const numbers = flat.tab.findAll('.control__number:not(.control__number--knob)')
+    expect(numbers.map((one) => one.text())).toStrictEqual([words.heightAt('minutes', 2)])
+  })
+
+  // The knob's value rides a line of its own, so a knob at either end cannot
+  // print over a number read off the picture.
+  it('keeps the knob’s value on its own line, clear of the picture’s numbers', async () => {
+    const { tab } = drawn()
+    const over = tab.get('.control__over')
+    const under = tab.get('.control__under')
+    expect(under.findAll('.control__number--knob')).toHaveLength(1)
+    expect(over.findAll('.control__number--knob')).toHaveLength(0)
+
+    // At either end the knob's value is pulled back inside the picture's width.
+    const slider = tab.get('[role="slider"]')
+    await slider.trigger('keydown', { key: 'Home' })
+    expect(tab.get('.control__number--knob').attributes('style')).toContain('translate: 0 0')
+    await slider.trigger('keydown', { key: 'End' })
+    expect(tab.get('.control__number--knob').attributes('style')).toContain('translate: -100% 0')
+  })
+
   it('carries the value at either end of the range, beside the words there', () => {
     const ends = drawn().tab.get('.control__ends').text()
     expect(ends).toContain(words.ends('minutes')[0])

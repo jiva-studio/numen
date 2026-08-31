@@ -26,11 +26,15 @@ const props = defineProps<{
 /** One preset's tile: its goal, and how far through the day it stands. */
 interface Tile {
   readonly one: Preset
+  /**
+   * What stands under the name: the goal, or why it schedules nothing. A preset
+   * scheduling nothing is asked for its reason, not for what it was aiming at.
+   */
   readonly goal: string
-  /** How much of the day is done, and above one for a day drawn past it. */
-  readonly done: number
-  /** How far through the day it stands, in the words the tile says it in. */
+  /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
+  /** Whether the day is past its budget, which is the one thing to catch the eye. */
+  readonly over: boolean
 }
 
 /**
@@ -43,11 +47,12 @@ const schedules = (one: Preset): boolean => one.named > 0 && one.faces > 0
 const tiles = computed<Tile[]>(() =>
   props.presets.filter(schedules).map((one) => {
     const done = through(one)
+    const over = done > 1
     return {
       one,
-      goal: one.settings ? goalWords(one.settings, props.today) : '',
-      done,
-      says: done > 1 ? 'over budget' : percent(done),
+      goal: one.paused || (one.settings ? goalWords(one.settings, props.today) : ''),
+      says: over ? 'over budget' : percent(done),
+      over,
     }
   }),
 )
@@ -65,18 +70,19 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
         class="presets__preset"
         :class="{ 'presets__preset--paused': tile.one.paused }"
       >
-        <p class="presets__name">{{ tile.one.name }}</p>
-        <p class="presets__goal">{{ tile.one.paused || tile.goal }}</p>
+        <span class="presets__said">
+          <span class="presets__name">{{ tile.one.name }}</span>
+          <span v-if="tile.goal" class="presets__goal">{{ tile.goal }}</span>
+        </span>
 
-        <!-- A day answered past its budget says so, rather than standing at a
-             round number it is already past. -->
-        <p
+        <!-- What today comes to under it. A preset scheduling nothing has said
+             so under its name, and stands here empty. -->
+        <span
           v-if="!tile.one.paused"
           class="presets__done"
-          :data-over="tile.done > 1 ? '' : undefined"
+          :data-over="tile.over ? '' : undefined"
+          >{{ tile.says }}</span
         >
-          {{ tile.says }}
-        </p>
       </li>
     </ul>
   </section>
@@ -102,35 +108,41 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 }
 
 /* A tile is an island of the same make as a deck in the list below it: the same
-   ground, the same rule around it, the same corner and the same inset. */
+   ground, the same rule around it, the same corner and the same inset. It reads
+   across, with what the day comes to at its right. */
 .presets__preset {
   display: flex;
-  flex: 1 1 9rem;
-  flex-direction: column;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: space-between;
   padding: var(--numen-inset);
-  gap: 0.125rem;
+  gap: var(--numen-inset);
   border: 1px solid var(--numen-node-border);
   border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
 }
 
+/* The name, with the goal under it. */
+.presets__said {
+  display: flex;
+  min-inline-size: 0;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
 .presets__name {
-  margin: 0;
   font-weight: 600;
 }
 
 .presets__goal {
-  margin: 0;
   color: var(--numen-hushed);
 }
 
 /* What a person looks for, so it carries the weight in the tile and stands at
-   the foot of it however tall the words above it run. */
+   the end of the line, against the middle of the two above it. */
 .presets__done {
-  margin: 0;
-  margin-block-start: auto;
-  padding-block-start: var(--numen-inset);
+  flex: none;
   font-size: var(--numen-title-size);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -141,6 +153,7 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 .presets__done[data-over] {
   color: var(--numen-caution-fg);
   font-size: var(--numen-font-size);
+  text-align: end;
 }
 
 /* A preset scheduling nothing today stands with its reason and nothing else. */
