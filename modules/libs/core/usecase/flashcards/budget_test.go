@@ -1087,3 +1087,34 @@ func s0(t *testing.T, s vaulted) sitting {
 	fresh := unseen(sat)
 	return sitting{seen: asked(sat) - fresh, fresh: fresh}
 }
+
+// The share of the day that goes to the debt moves the day where the day is one
+// pot, and nowhere else.
+//
+// A goal of minutes spends one pot between the debt and the material it has not
+// begun, so the share decides how much of each is asked. A goal of retention
+// holds each side to a count of its own, so the order the two are drawn in
+// cannot move either total.
+func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
+	const minutes = "goal: minutes_a_day\nminutes_a_day: 4\n"
+	// Counts larger than either side holds, so nothing but the share could
+	// close the day.
+	const target = "goal: retention\nnew_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"
+
+	spent := make(map[string]map[int]int, 2)
+	for name, day := range map[string]string{"minutes": minutes, "retention": target} {
+		spent[name] = make(map[int]int)
+		for _, share := range []int{100, 50, 0} {
+			one := s0(t, backlogged(t, fmt.Sprintf("%sbacklog: %d\n", day, share)))
+			spent[name][share] = one.seen
+		}
+	}
+	if spent["minutes"][100] == spent["minutes"][0] {
+		t.Errorf("a day of one pot asked %d of the debt at every share", spent["minutes"][100])
+	}
+	if spent["retention"][100] != spent["retention"][0] ||
+		spent["retention"][100] != spent["retention"][50] {
+		t.Errorf("a day of a count for each side asked %v of the debt, and the share "+
+			"decides nothing there", spent["retention"])
+	}
+}

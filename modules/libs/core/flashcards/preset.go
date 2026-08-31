@@ -48,8 +48,8 @@ type Preset struct {
 	// material comes first; between them the day is split, and a side that runs
 	// short leaves the rest to the other.
 	//
-	// It says what a day is spent on rather than what closes it, so every goal
-	// reads it.
+	// It says what a day is spent on rather than what closes it, and it is read
+	// where one pot is spent between the two.
 	Backlog int
 
 	// Load is how much of a day's load each day of the week carries, in per
@@ -239,8 +239,10 @@ type Closes struct {
 	Reviews Closed
 	Minutes Closed
 	// Backlog is the share of the day that goes to the debt. It closes nothing:
-	// it says what the day is spent on. A goal of a date carries the whole
-	// material by its own reckoning, so the split decides nothing there.
+	// it says what the day is spent on, and it is empty under a goal whose day
+	// is not one pot spent between the two. A goal of a date carries the whole
+	// material by its own reckoning, and a goal of retention holds each side to
+	// a count of its own.
 	Backlog Closed
 }
 
@@ -261,8 +263,9 @@ type Allowance struct {
 	// Closes is which of the three closes the day.
 	Closes Closes
 	// Backlog is how much of the day goes to the debt before anything unbegun
-	// is offered, as a share in hundredths. It says what the day is spent on
-	// rather than what closes it, so it is here under every goal.
+	// is offered, as a share in hundredths. A goal whose day is not one pot
+	// spent between the two stands at the whole of it, and the debt is paid
+	// first.
 	Backlog int
 	// Paused is a preset that schedules nothing at all.
 	Paused bool
@@ -331,10 +334,14 @@ func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
 // A goal of a date closes the day on a count of new cards, which is the share
 // of the material a day has to begin to be through it by then. The date is what
 // paced that count, so the date is what closed the day.
+//
+// The share of the day that goes to the debt is read where one pot is spent
+// between the two. A goal of retention keeps a count for each side, so each is
+// held to its own and the share decides nothing.
 func (p Preset) closing() Closes {
 	switch p.Goal {
 	case GoalRetention:
-		return Closes{New: ClosedNew, Reviews: ClosedReviews, Backlog: ClosedBacklog}
+		return Closes{New: ClosedNew, Reviews: ClosedReviews}
 	case GoalDate:
 		return Closes{New: ClosedDate}
 	default:

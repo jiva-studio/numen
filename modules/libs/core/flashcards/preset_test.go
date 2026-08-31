@@ -210,8 +210,13 @@ func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 	}
 }
 
-// A goal of a date reads no share, and says so where it says which of the
-// budgets closes its day.
+// The share of the day that goes to the debt is read where one pot is spent
+// between the two, and the goal says so where it says which budget closes its
+// day.
+//
+// A goal of retention keeps a count for each side, so each is held to its own
+// and the share decides nothing. A goal of a date carries the whole material by
+// its own reckoning.
 func TestWhichSettingsAGoalReads(t *testing.T) {
 	day := flashcards.Day{Starts: flashcards.DayStarts}
 	for _, one := range []struct {
@@ -219,7 +224,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		reads bool
 	}{
 		{flashcards.GoalMinutes, true},
-		{flashcards.GoalRetention, true},
+		{flashcards.GoalRetention, false},
 		{flashcards.GoalDate, false},
 	} {
 		p := flashcards.Defaults()
