@@ -3,6 +3,8 @@ package flashcards_test
 import (
 	"context"
 	"errors"
+	"io/fs"
+	"os"
 	"testing"
 	"time"
 
@@ -165,6 +167,38 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	counting.Logs = refusing{DerivedStores: s.logs}
 	if _, err := counting.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
+	}
+}
+
+// A vault folder that is gone mid-sitting is not somewhere to go on answering
+// into. An unmounted disk and a sync folder that vanished leave a path the
+// application would fill with a stub, and an evening of answers in it is
+// shadowed the moment the real vault comes back.
+func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	writing := s.run(t, time.Now())
+	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(s.vault.Path); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err == nil {
+		t.Error("an answer into a folder that is no longer the vault said it landed")
+	}
+	if _, err := os.Stat(s.vault.Path); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the vault was made again to answer into: %v", err)
+	}
+
+	log := flashcards.Log{Stores: s.logs}
+	if _, err := log.Open(t.Context(), s.vault, time.Now()); err == nil {
+		t.Error("a sitting opened on a vault that is gone")
+	}
+	if _, err := log.Read(t.Context(), s.vault); err == nil {
+		t.Error("the history of a vault that is gone was read as no history at all")
 	}
 }
 

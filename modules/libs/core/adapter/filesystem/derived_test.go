@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -19,6 +20,9 @@ import (
 func store(t *testing.T) (*filesystem.Derived, string) {
 	t.Helper()
 	root := t.TempDir()
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
 	if err != nil {
 		t.Fatal(err)
@@ -32,8 +36,47 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 	derived, root := store(t)
 	_ = derived
 
-	if _, err := os.Stat(filepath.Join(root, filesystem.DefaultServiceDir)); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("opening the store made %s: %v", filesystem.DefaultServiceDir, err)
+	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)
+	if _, err := os.Stat(at); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("opening the store made %s: %v", filesystem.OCRDir, err)
+	}
+}
+
+// A vault folder taken away under a store that is writing is not a vault to go
+// on writing into: creating the parents of a name would put a stub where the
+// vault was, and what is written there is shadowed the moment the real one is
+// back.
+func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
+	derived, root := store(t)
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into a vault that is gone gave %v", err)
+	}
+	if err := derived.Write(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("writing into a vault that is gone gave %v", err)
+	}
+	if _, err := derived.List(ctx, filesystem.OCRDir); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("listing a vault that is gone gave %v", err)
+	}
+	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the vault folder was made again to write into: %v", err)
+	}
+
+	// A folder put back at the path, carrying an identity of its own, is
+	// another vault and not this one.
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into another vault at the same path gave %v", err)
 	}
 }
 
@@ -100,10 +143,8 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 	// climbing out of the area to reach it.
 	derived, root := store(t)
 	identity := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
-	if err := os.MkdirAll(filepath.Dir(identity), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(identity, []byte(`{"v":1}`), 0o644); err != nil {
+	was, err := os.ReadFile(identity)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -117,7 +158,7 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 		}
 	}
 
-	if got, err := os.ReadFile(identity); err != nil || string(got) != `{"v":1}` {
+	if got, err := os.ReadFile(identity); err != nil || string(got) != string(was) {
 		t.Errorf("the vault's identity is now %q, %v", got, err)
 	}
 }

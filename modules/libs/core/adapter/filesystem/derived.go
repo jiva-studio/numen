@@ -39,9 +39,16 @@ const FlashcardsDir = "flashcards"
 // no other, so the vault's identity — which is in the folder and in no area —
 // is not a name this can express.
 type Derived struct {
-	root string // <vault>/<serviceDir>
-	area string // the one folder inside it this store answers for
+	vault   string // the vault folder
+	service string // the application's folder inside it
+	id      string // the identity that folder carried when this store was opened
+	root    string // <vault>/<serviceDir>
+	area    string // the one folder inside it this store answers for
 }
+
+// ErrNotThisVault is what a name gets when the folder underneath it no longer
+// carries the identity the store was opened on.
+var ErrNotThisVault = errors.New("the folder is not the vault this store was opened on")
 
 // DerivedStores opens the shelf of whichever vault a use case is working on.
 type DerivedStores struct {
@@ -54,9 +61,9 @@ func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
 	return OpenDerived(v.Path, d.Options, d.Area)
 }
 
-// OpenDerived opens one vault's store. Nothing is written: a store that created
-// its folder on being opened would put one in every vault the application looks
-// at.
+// OpenDerived opens one vault's store, and holds on to the identity that vault
+// carries. Nothing is written: a store that created its folder on being opened
+// would put one in every vault the application looks at.
 func OpenDerived(vaultRoot string, opts Options, area string) (*Derived, error) {
 	if area == "" {
 		area = OCRDir
@@ -71,9 +78,16 @@ func OpenDerived(vaultRoot string, opts Options, area string) (*Derived, error) 
 	if _, err := os.Stat(abs); err != nil {
 		return nil, err
 	}
+	id, err := carried(abs, opts.serviceDir())
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", abs, err)
+	}
 	return &Derived{
-		root: filepath.Join(abs, opts.serviceDir()),
-		area: area,
+		vault:   abs,
+		service: opts.serviceDir(),
+		id:      id,
+		root:    filepath.Join(abs, opts.serviceDir()),
+		area:    area,
 	}, nil
 }
 
@@ -221,7 +235,36 @@ func (d *Derived) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-// at is where one name lands on this machine.
+// still confirms the folder is the vault this store was opened on. A vault
+// carries its identity inside itself, and a folder that has lost the identity
+// it had is somewhere else: an unmounted disk, a synchroniser's stub, a folder
+// this store's own creation of its parents would otherwise make.
+func (d *Derived) still() error {
+	id, err := carried(d.vault, d.service)
+	if err != nil {
+		return fmt.Errorf("%s: %w", d.vault, err)
+	}
+	if id != d.id {
+		return fmt.Errorf("%s carries %q and not %q: %w", d.vault, id, d.id, ErrNotThisVault)
+	}
+	return nil
+}
+
+// carried is the identity a folder holds, and nothing where it holds none.
+func carried(root, serviceDir string) (string, error) {
+	cfg, err := ReadConfig(root, serviceDir)
+	if errors.Is(err, ErrNotAVault) || errors.Is(err, fs.ErrNotExist) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return cfg.ID, nil
+}
+
+// at is where one name lands on this machine. Every name is answered where the
+// vault still is, so nothing here reads or writes a folder that is no longer
+// the one this store was opened on.
 //
 // The name is joined under the store's own root and checked against it with
 // every link on the way resolved. Without that check a name stored here could
@@ -233,6 +276,9 @@ func (d *Derived) Remove(_ context.Context, name string) error {
 func (d *Derived) at(name string) (string, error) {
 	clean, err := cleaned(name)
 	if err != nil {
+		return "", err
+	}
+	if err := d.still(); err != nil {
 		return "", err
 	}
 	// A name says which store it belongs to, and a store answers for its own
