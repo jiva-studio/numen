@@ -3,6 +3,7 @@ package flashcards
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"strings"
 	"time"
@@ -140,6 +141,10 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*Run, erro
 type Run struct {
 	store port.DerivedStore
 	name  string
+	// stopped is the append that did not land. A run whose file refused one
+	// answer writes nothing further to it, and every answer after it is
+	// refused with what stopped the first.
+	stopped error
 }
 
 // Name is the file this run writes, as a name of the vault's own store.
@@ -150,9 +155,16 @@ func (r *Run) Name() string { return r.name }
 // An append is not atomic: a machine that stopped mid-line leaves a tail no
 // newline closes, and reading the file back leaves that line out.
 func (r *Run) Append(ctx context.Context, a history.Answer) error {
+	if r.stopped != nil {
+		return r.stopped
+	}
 	raw, err := history.Write(a)
 	if err != nil {
 		return err
 	}
-	return r.store.Append(ctx, r.name, raw)
+	if err := r.store.Append(ctx, r.name, raw); err != nil {
+		r.stopped = fmt.Errorf("%s took no more answers: %w", r.name, err)
+		return r.stopped
+	}
+	return nil
 }

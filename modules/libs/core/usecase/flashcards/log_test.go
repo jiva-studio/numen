@@ -168,6 +168,76 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	}
 }
 
+// brimming is a store that takes one append and refuses every one after it,
+// which is a disk filling up under a sitting.
+type brimming struct {
+	port.DerivedStores
+	store *filling
+}
+
+func (b *brimming) Open(v domain.Vault) (port.DerivedStore, error) {
+	if b.store == nil {
+		store, err := b.DerivedStores.Open(v)
+		if err != nil {
+			return nil, err
+		}
+		b.store = &filling{DerivedStore: store}
+	}
+	return b.store, nil
+}
+
+type filling struct {
+	port.DerivedStore
+	asked int
+}
+
+var errNoRoom = errors.New("no room left on the disk")
+
+func (f *filling) Append(ctx context.Context, name string, content []byte) error {
+	f.asked++
+	if f.asked > 1 {
+		return errNoRoom
+	}
+	return f.DerivedStore.Append(ctx, name, content)
+}
+
+// A run whose append did not land stops. The file it was writing ends where a
+// line ends, and going on would put the next answer behind whatever landed.
+func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+
+	full := &brimming{DerivedStores: s.logs}
+	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	writing := flashcards.Record{Run: run, Now: time.Now}
+
+	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := writing.Answer(t.Context(), on, history.Good, 0); !errors.Is(err, errNoRoom) {
+		t.Fatalf("an answer that did not land came back with %v", err)
+	}
+	if _, err := writing.Answer(t.Context(), on, history.Good, 0); !errors.Is(err, errNoRoom) {
+		t.Errorf("the answer after it came back with %v", err)
+	}
+	if full.store.asked != 2 {
+		t.Errorf("the run wrote to the file %d times, want it to stop at the one that did not land",
+			full.store.asked)
+	}
+
+	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(held.Answers) != 1 || held.Skipped != 0 {
+		t.Errorf("the vault holds %d answers and %d lines it could not act on, want the one that landed",
+			len(held.Answers), held.Skipped)
+	}
+}
+
 // A vault nobody has reviewed holds no folder and no files, which is an answer
 // and not a failure.
 func TestAVaultNobodyReviewedHoldsNoRuns(t *testing.T) {

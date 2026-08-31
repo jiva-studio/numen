@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -102,9 +103,11 @@ func (d *Derived) Write(_ context.Context, name string, content []byte) error {
 	return settle(filepath.Dir(target))
 }
 
-// Append adds to the end of what is there, in place.
+// Append adds to the end of what is there, in place. What it is given lands
+// whole or does not land at all: a write that stopped partway is cut back to
+// the length the file had, so the next append begins where this one found it.
 //
-// It is not atomic. A run that stopped partway leaves a torn tail, and what
+// A machine that stopped mid-write leaves a torn tail all the same, and what
 // reads the file back takes the whole pages and drops what follows them.
 func (d *Derived) Append(_ context.Context, name string, content []byte) error {
 	target, err := d.at(name)
@@ -118,15 +121,33 @@ func (d *Derived) Append(_ context.Context, name string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write(content); err != nil {
+	had, err := file.Stat()
+	if err != nil {
 		file.Close()
 		return err
+	}
+	if n, err := file.Write(content); err != nil || n != len(content) {
+		return errors.Join(short(name, n, len(content), err), back(file, had.Size()))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
 		return err
 	}
 	return file.Close()
+}
+
+// short is what an append that did not land says.
+func short(name string, wrote, asked int, why error) error {
+	if why == nil {
+		why = io.ErrShortWrite
+	}
+	return fmt.Errorf("%s: %d of %d bytes: %w", name, wrote, asked, why)
+}
+
+// back cuts a file to the length it had and closes it.
+func back(file *os.File, to int64) error {
+	err := errors.Join(file.Truncate(to), file.Sync())
+	return errors.Join(err, file.Close())
 }
 
 // claimSuffix names the file a claim on a name is held on. It outlives the
