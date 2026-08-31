@@ -9,10 +9,13 @@ const GOALS: Record<Goal, string> = {
   date: 'A date',
 }
 
-/** What each of the two rules for the learned is offered as. */
+/**
+ * What each of the two rules for the learned is offered as: a name, since a
+ * control offers names and the row under it says what they mean.
+ */
 const RULES: Record<Rule, string> = {
-  interval: 'When reviews are far enough apart',
-  retention: 'When you would remember it today',
+  interval: 'By days',
+  retention: 'By remembering',
 }
 
 /** What each of the two things a budget is spent on is offered as. */
@@ -34,13 +37,10 @@ const FIELDS: Record<Field, readonly [string, string]> = {
   counts: ['Counts', "What a day's budget is spent on."],
   learned: [
     'Counts as learned',
-    'What makes a card one you have learned: reviews far enough apart, or a good chance of ' +
-      'remembering it today.',
+    'By days, a card is learned once its reviews stand at least so many days apart. ' +
+      'By remembering, once the chance you would remember it today is at least the target.',
   ],
-  interval: [
-    'Days between reviews',
-    'How far apart reviews stand before a card counts as learned.',
-  ],
+  interval: ['Days apart', 'How far apart reviews stand before a card counts as learned.'],
   backlog: [
     'Overdue share',
     'What part of a sitting goes to the overdue pile before new material is offered, in per cent. ' +

@@ -319,12 +319,12 @@ const stopped = computed(() => {
   margin-inline: auto;
 }
 
-/* The goal, its picture and what it reads are parts of one block, so they are
-   half a step apart and the block itself a whole step from the next. */
+/* The goal, its picture and what it reads are parts of one block, so they
+   stand close together and the block itself a whole step from the next. */
 .preset__goal {
   display: flex;
   flex-direction: column;
-  gap: var(--numen-half-step);
+  gap: var(--numen-node-gap);
 }
 
 /* The switch spans the column and hangs out at both ends by its own border and
@@ -357,7 +357,7 @@ const stopped = computed(() => {
 .preset__stopped {
   margin: 0;
   padding: var(--numen-inset) var(--numen-inset-wide);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
 }

@@ -628,7 +628,7 @@ const released = (event: KeyboardEvent) => {
   display: flex;
   flex-direction: column;
   /* The readout, the chart and what is read off it are parts of one block. */
-  gap: var(--numen-half-step);
+  gap: var(--numen-node-gap);
 }
 
 /*
@@ -660,7 +660,7 @@ const released = (event: KeyboardEvent) => {
      gaps read alike. */
   padding: calc(var(--numen-inset) - var(--control-lead)) var(--numen-box-air);
   border: var(--numen-stroke) solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-node-bg);
 }
 
@@ -693,7 +693,7 @@ const released = (event: KeyboardEvent) => {
   margin-inline: calc(-1 * var(--numen-stroke));
   padding: var(--numen-box-air);
   border: var(--numen-stroke) solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-node-bg);
 }
 
@@ -792,7 +792,7 @@ const released = (event: KeyboardEvent) => {
   block-size: 100%;
   touch-action: none;
   cursor: ew-resize;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
 }
 
 /* The band is read and not dragged, so no pointer is offered over it. */
@@ -899,7 +899,7 @@ const released = (event: KeyboardEvent) => {
   gap: var(--numen-dot-gap);
   padding: var(--numen-inset);
   border: var(--numen-stroke) solid var(--numen-node-border);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: var(--numen-node-bg);
   box-shadow: var(--numen-shadow-card);
   font-family: var(--numen-font-sans);

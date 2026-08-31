@@ -257,6 +257,11 @@ onBeforeUnmount(leave)
 
   position: fixed;
   z-index: var(--lift);
+  /* As wide as the longest thing it offers. A menu stands over the page and
+     is placed by two numbers, so without a width of its own it would be as
+     wide as the room left beside the point it was asked for and would cut its
+     own words short there. */
+  inline-size: max-content;
   min-inline-size: var(--narrowest);
   max-inline-size: var(--widest);
   max-block-size: var(--tallest);

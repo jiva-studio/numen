@@ -44,7 +44,9 @@ const asked = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
-    const at = ref(args.at)
+    const at = ref(
+      args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at,
+    )
     const node = ref<HTMLElement | null>(null)
     const from = ref<HTMLElement | null>(null)
 
@@ -323,6 +325,37 @@ export const FarTooLong: Story = {
       { id: 'long', text: LONG },
       { id: 'open', text: 'Open' },
     ],
+  },
+}
+
+/**
+ * Asked for beside the far edge, where the room left is narrower than the
+ * choices. A menu is as wide as the longest thing it offers, so the words are
+ * read whole and the menu is the thing that moves.
+ */
+export const AskedForAtTheEdge: Story = {
+  args: {
+    // Counted back from the far edge: the room left is narrower than the
+    // words, whatever the page is drawn at.
+    at: { x: -200, y: 200 },
+    items: [
+      { id: 'apart', text: 'When reviews are far enough apart' },
+      { id: 'remember', text: 'When you would remember it today' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const menu = document.body.querySelector<HTMLElement>('.menu')
+    expect(menu).not.toBeNull()
+    const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
+    expect(lines).toHaveLength(2)
+    for (const line of lines) {
+      // Nothing is cut short: what the line holds fits the room it has.
+      expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
+    }
+    // And it stands inside the page it was asked for from.
+    const box = menu!.getBoundingClientRect()
+    expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
+    expect(box.left).toBeGreaterThanOrEqual(0)
   },
 }
 
