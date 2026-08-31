@@ -51,6 +51,42 @@ describe('what is typed', () => {
     await field.get('input').setValue('')
     expect(handed(field)).toEqual([null])
   })
+
+  it('marks a thousands group and hands nothing on', async () => {
+    const field = mountField()
+    await field.get('input').setValue('1,200')
+
+    expect(field.get('input').attributes('aria-invalid')).toBe('true')
+    expect(handed(field)).toEqual([])
+  })
+})
+
+describe('a number between two places the step lays', () => {
+  it('hands nothing on while it stands there', async () => {
+    const field = mountField()
+    await field.get('input').setValue('13')
+
+    expect(field.get('input').element.value).toBe('13')
+    expect(handed(field)).toEqual([])
+  })
+
+  it('is brought onto a place of the step once the field is left', async () => {
+    const field = mountField()
+    await field.get('input').setValue('13')
+    await field.get('input').trigger('blur')
+
+    expect(handed(field)).toEqual([15])
+    expect(field.get('input').element.value).toBe('15')
+  })
+
+  it('leaves an arrow key standing on a place of the step', async () => {
+    const field = mountField({ modelValue: 10 })
+    await field.get('input').setValue('13')
+    await field.get('input').trigger('keydown', { key: 'ArrowUp' })
+
+    expect(handed(field)).toEqual([20])
+    expect(field.get('input').element.value).toBe('20')
+  })
 })
 
 describe('the bounds', () => {
@@ -98,6 +134,14 @@ describe('the arrow keys', () => {
 
     expect(handed(field)).toEqual([0])
     expect(field.get('input').element.value).toBe('0')
+  })
+
+  it('leave a number written to the places its step is written to', async () => {
+    const field = mountField({ modelValue: 0.81, min: 0.7, max: 0.99, step: 0.01 })
+    await field.get('input').trigger('keydown', { key: 'ArrowUp' })
+
+    expect(handed(field)).toEqual([0.82])
+    expect(field.get('input').element.value).toBe('0.82')
   })
 
   it('leave a field nobody may type into where it stands', async () => {

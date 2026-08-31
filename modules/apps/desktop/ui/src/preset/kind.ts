@@ -315,12 +315,13 @@ export function presetting(
       moves: (place) => turns(one, place),
       settles: () => void writes(one),
       types: (field, value) => {
-        // What is typed into the field the goal steers moves the knob there, so
-        // the knob, the field and the file stand at one value.
+        // The value typed into the field the goal steers is the value kept and
+        // written. The knob goes to the place nearest it, which is where the
+        // person now stands on the grid.
         if (field === steers(one.settings.value.goal)) {
           one.settings.value = typed(one.settings.value, field, value)
           const place = falling(one, value)
-          if (place >= 0) turns(one, place)
+          if (place >= 0) one.place.value = place
           return
         }
         one.settings.value = typed(one.settings.value, field, value)

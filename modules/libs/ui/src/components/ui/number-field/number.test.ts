@@ -5,9 +5,21 @@
  * only looks like one until the end of it.
  */
 import { describe, expect, it } from 'vitest'
-import { clamped, numberOf, onItsWay, stepped, written, type Bounds } from './number'
+import {
+  allowed,
+  clamped,
+  numberOf,
+  onItsWay,
+  settled,
+  stepped,
+  written,
+  type Bounds,
+} from './number'
 
 const BOUNDS: Bounds = { min: 0, max: 240, step: 5 }
+
+/** A step of a hundredth, where the arithmetic of a float shows. */
+const FINE: Bounds = { min: 0.7, max: 0.99, step: 0.01 }
 
 describe('what the text comes to', () => {
   it('reads a number out of the digits', () => {
@@ -19,6 +31,15 @@ describe('what the text comes to', () => {
 
   it('reads a comma as the point, wherever it is typed that way', () => {
     expect(numberOf('0,5')).toBe(0.5)
+    expect(numberOf('12,25')).toBe(12.25)
+  })
+
+  // A comma before a group of three is how a thousand is written, and reading
+  // it as the point would turn a thousand two hundred into one and a fifth.
+  it('comes to nothing where a comma stands before a group of three', () => {
+    expect(numberOf('1,200')).toBeNull()
+    expect(onItsWay('1,200')).toBe(false)
+    expect(numberOf('12,000')).toBeNull()
   })
 
   it('comes to nothing where the text is no number', () => {
@@ -67,6 +88,38 @@ describe('the bounds', () => {
   it('starts at the floor where no number stands', () => {
     expect(stepped(null, 1, BOUNDS)).toBe(5)
     expect(stepped(null, -1, BOUNDS)).toBe(0)
+  })
+
+  // A step is written to so many places, and the number it leaves is written
+  // to the same, so what a person reads is what the file gets.
+  it('leaves a number written to the places its step is written to', () => {
+    expect(stepped(0.81, 1, FINE)).toBe(0.82)
+    expect(stepped(0.83, -1, FINE)).toBe(0.82)
+  })
+
+  it('lands on a place the step lays, from wherever it started', () => {
+    expect(stepped(13, 1, BOUNDS)).toBe(20)
+    expect(stepped(13, -1, BOUNDS)).toBe(10)
+  })
+})
+
+describe('the places a step lays', () => {
+  it('is where a number off them is brought', () => {
+    expect(settled(13, BOUNDS)).toBe(15)
+    expect(settled(0.873, FINE)).toBe(0.87)
+    expect(settled(20, BOUNDS)).toBe(20)
+  })
+
+  it('holds a number brought to them inside the bounds', () => {
+    expect(settled(900, BOUNDS)).toBe(240)
+    expect(settled(-4, BOUNDS)).toBe(0)
+  })
+
+  it('is what the bounds allow, and a number between two of them is not', () => {
+    expect(allowed('15', BOUNDS)).toBe(true)
+    expect(allowed('13', BOUNDS)).toBe(false)
+    expect(allowed('0.87', FINE)).toBe(true)
+    expect(allowed('0.873', FINE)).toBe(false)
   })
 })
 

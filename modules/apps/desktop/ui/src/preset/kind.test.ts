@@ -48,6 +48,9 @@ const curve: Curve = {
   honest: true,
 }
 
+/** The day every test here runs on, so a goal of a date counts from one place. */
+const NOW = new Date('2026-08-30T00:00:00Z')
+
 /** The same range read as days, which is the goal a date steers. */
 const dated: Curve = {
   ...curve,
@@ -85,7 +88,7 @@ const opened = async (
   }
   const host = { closes: () => {} } as unknown as Host
   const puts = { holds: () => {} } as unknown as Putting
-  const kind = presetting(core, host, puts, () => {})
+  const kind = presetting(core, host, puts, () => {}, () => NOW)
   kind.kind.opens('Steady.md')
   const held = kind.holds('Steady.md')
   // The read and the curve behind it are two answers, and both are awaited.
@@ -106,14 +109,35 @@ describe('the value the goal steers', () => {
     expect(written.at(-1)?.minutesADay).toBe(30)
   })
 
-  it('is the knob moved when it is typed into, and does not leave the goal', async () => {
+  // The knob rides 25 places of a grid and a person types whatever they like.
+  // What they typed is what the file gets; the knob only shows where that
+  // leaves them.
+  it('is the number typed, and the knob goes to the place nearest it', async () => {
     const { held, written } = await opened()
     held.types('minutesADay', 21)
     held.settles()
     await Promise.resolve()
     expect(held.place()).toBe(2)
-    expect(held.settings().minutesADay).toBe(20)
-    expect(written.at(-1)?.minutesADay).toBe(20)
+    expect(held.settings().minutesADay).toBe(21)
+    expect(written.at(-1)?.minutesADay).toBe(21)
+  })
+
+  it('is the target typed, whatever place of the grid stands nearest', async () => {
+    const { held, written } = await opened(
+      { goal: 'retention' },
+      {
+        ...curve,
+        goal: 'retention',
+        grid: [0.8, 0.85, 0.9, 0.95],
+        now: { at: 1, value: 0.85, day: '' },
+      },
+    )
+    held.types('retention', 0.873)
+    held.settles()
+    await Promise.resolve()
+    expect(held.place()).toBe(1)
+    expect(held.settings().retention).toBe(0.873)
+    expect(written.at(-1)?.retention).toBe(0.873)
   })
 
   it('is the day under a goal of a date, and a day typed moves the knob', async () => {
@@ -127,6 +151,19 @@ describe('the value the goal steers', () => {
     expect(held.place()).toBe(2)
     expect(held.settings().byDate).toBe('2026-09-29')
     expect(written.at(-1)?.byDate).toBe('2026-09-29')
+  })
+
+  it('is the day typed, and not the day the nearest place of the grid names', async () => {
+    const { held, written } = await opened(
+      { goal: 'date', byDate: '2026-09-09' },
+      { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
+    )
+    held.types('byDate', '2026-09-22')
+    held.settles()
+    await Promise.resolve()
+    expect(held.place()).toBe(1)
+    expect(held.settings().byDate).toBe('2026-09-22')
+    expect(written.at(-1)?.byDate).toBe('2026-09-22')
   })
 
   it('leaves a field holding no day where it stands, and the knob where it is', async () => {
@@ -264,7 +301,7 @@ describe('a setting the goal on screen does not name', () => {
 const ranging = (asked: Settings): Curve => {
   const top = 60 + asked.backlog
   const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
-  const value = standing(asked, new Date())
+  const value = standing(asked, NOW)
   return {
     ...curve,
     goal: asked.goal,

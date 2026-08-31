@@ -16,6 +16,7 @@ import {
   clamped,
   numberOf,
   onItsWay,
+  settled,
   stepped,
   written,
   DEFAULT_BOUNDS,
@@ -58,7 +59,8 @@ const typed = ref(written(model.value))
 /**
  * Whether what stands there is refused. Text a number could still be typed out
  * of is left alone; text that is no number, and a number past the bounds, are
- * marked where they stand.
+ * marked where they stand. A number between two places the step lays is a
+ * number on the way to one of them, and stands unmarked until the field is left.
  */
 const refused = computed(() => {
   const said = typed.value.trim()
@@ -81,10 +83,10 @@ const took = (event: Event) => {
   else if (allowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
 }
 
-/** Leaving writes back what holds: the number brought inside the bounds. */
+/** Leaving writes back what holds: the number on a place of the step, in bounds. */
 const settle = () => {
   const value = numberOf(typed.value)
-  model.value = value === null ? null : clamped(value, bounds.value)
+  model.value = value === null ? null : settled(value, bounds.value)
   typed.value = written(model.value)
   raises('settles', model.value)
 }
