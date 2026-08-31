@@ -147,4 +147,12 @@ How a note's title and the name of its file are held together.
 | | | |
 | --- | --- | --- |
 | `sync_title_and_filename` | yes or no | whether renaming either of the two brings the other into line. |
+
+### `review`
+
+What a day of review is, on this person's clock.
+
+| | | |
+| --- | --- | --- |
+| `day_starts` | text | the hour a day of review begins at, on the clock on the wall, written as hours and minutes. |
 <!-- END AUTOGEN -->
