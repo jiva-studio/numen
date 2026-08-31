@@ -238,6 +238,47 @@ func (d *Document) SetList(key string, names []string) error {
 type Entry struct {
 	Key   string
 	Value any
+	// Standing keeps what the entry holds as it was written, which is what an
+	// entry the application could not read gets. An entry standing under a key
+	// that is not there is written nowhere.
+	Standing bool
+}
+
+// EntryNames is the keys of the mapping under one top-level frontmatter key, in
+// the order it holds them. A key that is not there holds none.
+//
+// False is a key holding something other than a mapping. Such a value is the
+// person's whole, and the entries of a mapping are what this writes.
+func (d *Document) EntryNames(key string) ([]string, bool) {
+	node, err := d.mapping()
+	if err != nil {
+		return nil, false
+	}
+	held := d.entries(node, key)
+	if held == nil {
+		return nil, false
+	}
+	out := make([]string, 0, len(held.Content)/2)
+	for i := 0; i+1 < len(held.Content); i += 2 {
+		out = append(out, held.Content[i].Value)
+	}
+	return out, true
+}
+
+// entries is the mapping one top-level key holds, an empty one where the key
+// holds nothing at all or is not there, and nil where it holds something else.
+func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
+	if node == nil {
+		return &yaml.Node{Kind: yaml.MappingNode}
+	}
+	held := valueOf(node, key)
+	switch {
+	case held == nil || empty(held):
+		return &yaml.Node{Kind: yaml.MappingNode}
+	case held.Kind != yaml.MappingNode:
+		return nil
+	}
+	return held
 }
 
 // SetMapping writes the entries one top-level frontmatter key holds from now
@@ -248,14 +289,31 @@ func (d *Document) SetMapping(key string, entries []Entry) error {
 		return d.set(key, nil)
 	}
 
+	node, err := d.mapping()
+	if err != nil {
+		return err
+	}
+	standing := d.entries(node, key)
+	if standing == nil {
+		standing = &yaml.Node{Kind: yaml.MappingNode}
+	}
 	mapping := &yaml.Node{Kind: yaml.MappingNode}
 	for _, one := range entries {
-		var held yaml.Node
-		if err := held.Encode(one.Value); err != nil {
-			return err
+		held := valueOf(standing, one.Key)
+		if !one.Standing {
+			held = &yaml.Node{}
+			if err := held.Encode(one.Value); err != nil {
+				return err
+			}
+		}
+		if held == nil {
+			continue
 		}
 		mapping.Content = append(mapping.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}, &held)
+			&yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}, held)
+	}
+	if len(mapping.Content) == 0 {
+		return d.set(key, nil)
 	}
 	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
 		{Kind: yaml.ScalarNode, Value: key}, mapping,

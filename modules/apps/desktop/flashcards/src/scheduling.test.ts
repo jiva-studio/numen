@@ -10,6 +10,7 @@ import {
   paused,
   scheduling,
   spent,
+  STOPPED,
   through,
 } from './scheduling'
 import type { Asks, Budget, Closes, Preset, Settings } from './scheduling'
@@ -242,8 +243,29 @@ describe('what sitting down to a preset would ask', () => {
     expect(leftWords(preset({ cards: 1 }))).toBe('1 card')
   })
 
-  it('is nothing at all where it would ask nothing', () => {
-    expect(leftWords(preset({ cards: 0 }))).toBe('')
+  // A tile with nothing to offer says why, as the deck rows under it do.
+  it('says the day is full where the budget is what left it nothing', () => {
+    expect(leftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('the day is full')
+  })
+
+  it('says nothing fell due where the day held none of its cards', () => {
+    expect(leftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
+  })
+})
+
+// The reasons stand in one column, under a tile and along a deck row, so they
+// read in one voice.
+describe('why a preset or a deck is asking nothing', () => {
+  it('is said in one register: a clause in lower case, and never a sentence', () => {
+    const said = [STOPPED.nothing, STOPPED.full, STOPPED.noCards, STOPPED.noMinutes]
+
+    for (const one of said) {
+      expect(one).toBe(one.toLowerCase())
+      expect(one).not.toMatch(/[.!?]$/)
+    }
+    // A day and a day of the week are names, and carry the only capital in one.
+    expect(STOPPED.passed('2026-09-30')).toMatch(/ has passed$/)
+    expect(STOPPED.noLoad('2026-09-05')).toMatch(/^no load on \S+$/)
   })
 })
 

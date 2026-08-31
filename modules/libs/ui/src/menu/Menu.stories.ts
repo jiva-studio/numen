@@ -18,6 +18,8 @@ interface Knobs {
   icons?: Readonly<Record<string, Component>>
   at: { x: number; y: number }
   opening: MenuOpening
+  /** Which item is the one in force, if the menu names one. */
+  current: string | null
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -75,6 +77,7 @@ const asked = (args: Knobs) => ({
         :open="open"
         :from="from"
         :opening="args.opening"
+        :current="args.current"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -110,6 +113,7 @@ const meta = {
   },
   argTypes: {
     opening: { control: 'inline-radio', options: MENU_OPENINGS_ALL },
+    current: { control: 'text' },
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },
     items: { table: { disable: true } },
@@ -122,6 +126,7 @@ const meta = {
     items: ITEMS,
     at: { x: 480, y: 300 },
     opening: 'pointer',
+    current: null,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -268,6 +273,25 @@ export const NotClipped: Story = {
     await expect(box.top).toBeGreaterThanOrEqual(0)
     await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
+  },
+}
+
+/**
+ * A choice between the items, one of them in force. Each says whether it is
+ * the one, and the keyboard opens on it.
+ */
+export const TheOneInForce: Story = {
+  args: { opening: 'keyboard', current: 'child' },
+  play: async () => {
+    const chosen = within(menuElement()!).getAllByRole('menuitemradio')
+    await expect(chosen).toHaveLength(4)
+    await expect(chosen[1]).toHaveFocus()
+    await expect(chosen.map((one) => one.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'true',
+      'false',
+      'false',
+    ])
   },
 }
 

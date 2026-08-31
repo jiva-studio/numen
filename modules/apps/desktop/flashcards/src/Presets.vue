@@ -41,7 +41,10 @@ interface Tile {
   readonly wrong: string
   /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
-  /** What sitting down to it would ask, and empty where it would ask nothing. */
+  /**
+   * What sitting down to it would ask, or why it would ask nothing. A preset
+   * scheduling nothing has said why under its name, and stands here empty.
+   */
   readonly left: string
   /** Whether the day is past its budget, which is the one thing to catch the eye. */
   readonly over: boolean
@@ -78,7 +81,7 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 
 <template>
   <section v-if="tiles.length" class="presets">
-    <ul class="presets__list">
+    <ul class="presets__list" aria-label="What the goals of this vault come to today">
       <li v-for="tile in tiles" :key="tile.one.path" class="presets__tile">
         <!-- Sitting down to a preset is the same act as sitting down to a deck,
              one level up, so it is the same button. One with nothing to offer
@@ -99,9 +102,12 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
           </span>
 
           <!-- How far through the day it is, and under it what pressing this
-               would ask. A preset scheduling nothing has said so under its
-               name, and stands here empty. -->
-          <span v-if="!tile.one.paused" class="presets__figures">
+               would ask or why it would ask nothing. A preset scheduling
+               nothing has said so under its name, and stands here empty.
+
+               A sitting is left back onto this screen with these figures moved,
+               so they are said again where they are read aloud. -->
+          <span v-if="!tile.one.paused" class="presets__figures" aria-live="polite">
             <span class="presets__done" :data-over="tile.over ? '' : undefined">{{
               tile.says
             }}</span>

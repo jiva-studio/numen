@@ -379,6 +379,9 @@ func (p Preset) paces(d Day, now time.Time, left Left) int {
 // days is how many days of review there are from the day holding now through to
 // the day this preset aims at, counting both. A preset aiming at no day, or at
 // one behind us, has none.
+//
+// A day of the week at none of the load schedules nothing, so it is no day of
+// review and the pace does not divide by it.
 func (p Preset) days(d Day, now time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
@@ -389,9 +392,27 @@ func (p Preset) days(d Day, now time.Time) int {
 	}
 	y, m, day := p.By.Date()
 	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
-	out := int(to.Sub(from).Hours()/24) + 1
-	if out < 0 {
+	return p.admits(from, int(to.Sub(from).Hours()/24)+1)
+}
+
+// admits is how many of the calendar days from this one the preset holds a day
+// of review on.
+func (p Preset) admits(from time.Time, days int) int {
+	if days <= 0 {
 		return 0
+	}
+	week := 0
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		if p.Share(day) != 0 {
+			week++
+		}
+	}
+	whole := days / 7
+	out := whole * week
+	for i := range days % 7 {
+		if p.Share(from.AddDate(0, 0, whole*7+i).Weekday()) != 0 {
+			out++
+		}
 	}
 	return out
 }

@@ -425,6 +425,81 @@ func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 	}
 }
 
+// A `load` entry the read could not make out stands where it was written. The
+// file is never repaired, and a save that wrote only the days it understood
+// would take the rest of the week out with it.
+func TestASaveLeavesTheLoadItCouldNotRead(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
+			"load:\n  sat: 50\n  fri: half\n  caturdasi: 20\n---\n\n# Sanskrit\n",
+	})
+
+	p := minutes()
+	p.Load = map[time.Weekday]int{time.Sunday: 0}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"fri": "half", "caturdasi": 20, "sun": 0,
+	}
+	if got := frontmatter(t, s, "Sanskrit.md")["load"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("load = %v, want %v\n%s", got, want, read(t, s.vault, "Sanskrit.md"))
+	}
+	if got := read(t, s.vault, "Sanskrit.md"); !strings.Contains(
+		got, "load:\n  fri: half\n  caturdasi: 20\n  sun: 0\n") {
+		t.Errorf("the entries moved:\n%s", got)
+	}
+	// The two the read could not make out are still what it cannot read, and
+	// they are still said against the note.
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(held.Problems) != 2 {
+		t.Errorf("problems = %v", held.Problems)
+	}
+}
+
+// A save into a note whose every `load` entry is one the read could not make
+// out leaves the key where it stands.
+func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
+			"load:\n  fri: half\n---\n\n# Sanskrit\n",
+	})
+
+	p := minutes()
+	p.Load = map[time.Weekday]int{time.Sunday: 0}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{"fri": "half", "sun": 0}
+	if got := frontmatter(t, s, "Sanskrit.md")["load"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("load = %v, want %v\n%s", got, want, read(t, s.vault, "Sanskrit.md"))
+	}
+}
+
+// A `load` written as anything but a week of days is the person's whole, and a
+// save leaves it as it stands.
+func TestASaveLeavesALoadThatIsNotAWeek(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
+			"load: every other day\n---\n\n# Sanskrit\n",
+	})
+
+	p := minutes()
+	p.Load = map[time.Weekday]int{time.Saturday: 50}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := frontmatter(t, s, "Sanskrit.md")["load"]; got != "every other day" {
+		t.Errorf("load = %v\n%s", got, read(t, s.vault, "Sanskrit.md"))
+	}
+}
+
 // A goal of a day writes the day, and it is read back as the day it was.
 func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	s := opened(t, settled)

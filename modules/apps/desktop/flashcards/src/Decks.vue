@@ -12,7 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
-import { opens, spent } from './scheduling'
+import { opens, spent, STOPPED } from './scheduling'
 import type { DeckOwing, Owing } from './core'
 import type { Preset } from './scheduling'
 
@@ -59,7 +59,7 @@ const done = (deck: DeckOwing): boolean => {
  */
 const empty = (deck: DeckOwing): string => {
   const one = props.byDeck.get(deck.deck)
-  return one && spent(one) ? 'the day is full' : 'Nothing today'
+  return one && spent(one) ? STOPPED.full : STOPPED.nothing
 }
 </script>
 

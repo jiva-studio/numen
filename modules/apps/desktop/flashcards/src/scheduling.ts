@@ -335,14 +335,29 @@ export const through = (one: Preset): number => {
 export const spent = (one: Preset): boolean => through(one) >= 1
 
 /**
+ * Why a preset or a deck under it is asking nothing. They stand in one column,
+ * under a tile and along a deck row, so they read in one voice.
+ */
+export const STOPPED = {
+  /** The day held none of its cards. */
+  nothing: 'nothing today',
+  /** The budget was spent, and elsewhere for a deck that says this. */
+  full: 'the day is full',
+  noCards: 'no cards a day',
+  noMinutes: 'no budget in time',
+  passed: (day: string) => `${dayWords(day)} has passed`,
+  noLoad: (day: string) => `no load on ${weekdayWords(day)}`,
+} as const
+
+/**
  * How many cards sitting down to this preset would put in front of a person,
- * which is what its decks still owe today.
+ * which is what its decks still owe today, or why it would put none there.
  *
  * It is the count the sitting itself will ask, so it is printed as it stands.
  */
 export const leftWords = (one: Preset): string => {
-  if (one.cards <= 0) return ''
-  return many(one.cards, 'card')
+  if (one.cards > 0) return many(one.cards, 'card')
+  return spent(one) ? STOPPED.full : STOPPED.nothing
 }
 
 /**
@@ -355,21 +370,18 @@ export const leftWords = (one: Preset): string => {
 export const paused = (settings: Settings, today: string): string => {
   const why = budgeted(settings, today)
   if (why) return why
-  return shareOn(settings, today) === 0 ? `no load on ${weekdayWords(today)}` : ''
+  return shareOn(settings, today) === 0 ? STOPPED.noLoad(today) : ''
 }
 
 /** Why the budget the goal names schedules nothing, and empty while it does. */
 const budgeted = (settings: Settings, today: string): string => {
   switch (settings.goal) {
     case Goal.RETENTION:
-      return settings.newADay === 0 && settings.reviewsADay === 0 ? 'no cards a day' : ''
+      return settings.newADay === 0 && settings.reviewsADay === 0 ? STOPPED.noCards : ''
     case Goal.BY_DATE:
-      if (settings.byDate && settings.byDate < today) {
-        return `${dayWords(settings.byDate)} has passed`
-      }
-      return ''
+      return settings.byDate && settings.byDate < today ? STOPPED.passed(settings.byDate) : ''
     default:
-      return settings.minutesADay === 0 ? 'no budget in time' : ''
+      return settings.minutesADay === 0 ? STOPPED.noMinutes : ''
   }
 }
 
@@ -401,7 +413,7 @@ export const goalWords = (settings: Settings, today: string): string => {
       return `${many(left, 'day')} to ${dayWords(settings.byDate)}`
     }
     default:
-      if (settings.minutesADay === 0) return 'no budget in time'
+      if (settings.minutesADay === 0) return STOPPED.noMinutes
       return `${many(settings.minutesADay, 'minute')} a day`
   }
 }

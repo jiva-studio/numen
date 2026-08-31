@@ -138,6 +138,38 @@ export const OneStopForTheWholeRow: Story = {
   },
 }
 
+/**
+ * The keyboard opens the shares on the one the day carries, and comes back to
+ * the chip it was on — whether a share was chosen or nothing was.
+ */
+export const TheKeyboardComesBack: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}')
+    const chip = chips(canvasElement)[5] as HTMLElement
+    expect(document.activeElement).toBe(chip)
+
+    await userEvent.keyboard(' ')
+    const onOffer = () =>
+      Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+    await waitFor(() => expect(onOffer()).toHaveLength(7))
+    // Open on the share the day carries, said on the item itself.
+    expect(document.activeElement).toBe(onOffer()[3])
+    expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
+
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(offered()).toEqual([]))
+    expect(document.activeElement).toBe(chip)
+
+    await userEvent.keyboard(' ')
+    await waitFor(() => expect(offered()).toHaveLength(7))
+    await userEvent.keyboard('{ArrowUp}{Enter}')
+    await waitFor(() => expect(offered()).toEqual([]))
+    expect(document.activeElement).toBe(chip)
+    expect(said(canvasElement)[5]).toBe('Saturday, 25%')
+  },
+}
+
 /** The arrows walk the row, and the space bar offers the shares of the day on. */
 export const TheKeyboardWalksAndOffers: Story = {
   args: { load: {} },

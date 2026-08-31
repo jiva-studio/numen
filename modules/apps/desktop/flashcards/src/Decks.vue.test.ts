@@ -132,7 +132,7 @@ describe('a deck with nothing waiting', () => {
   it('says a deck nothing fell due for has nothing, and never that it is done', () => {
     const one = shown([preset({ cards: 0, answered: 0, took: 0 })], holding(20, 0, 0))
 
-    expect(one.find('.decks__stopped').text()).toBe('Nothing today')
+    expect(one.find('.decks__stopped').text()).toBe('nothing today')
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
@@ -211,8 +211,8 @@ describe('the tile and the decks under it', () => {
     expect(one.find('.presets__done').text()).toBe('0%')
     expect(one.findAll('.decks__met')).toHaveLength(0)
     expect(one.findAll('.decks__stopped').map((said) => said.text())).toStrictEqual([
-      'Nothing today',
-      'Nothing today',
+      'nothing today',
+      'nothing today',
     ])
     expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
   })

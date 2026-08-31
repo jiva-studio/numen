@@ -110,6 +110,21 @@ describe('where the keyboard lands as a menu opens', () => {
     expect(landsOn('keyboard', [])).toBe(-1)
     expect(landsOn('pointer', [])).toBe(-1)
   })
+
+  it('is the item in force where the menu names one', () => {
+    const three: MenuItem[] = [
+      { id: 'one', text: 'One' },
+      { id: 'two', text: 'Two' },
+      { id: 'three', text: 'Three' },
+    ]
+    expect(landsOn('keyboard', three, 'three')).toBe(2)
+    expect(landsOn('pointer', three, 'three')).toBe(-1)
+  })
+
+  it('is the first that can be chosen where the one in force is not among them', () => {
+    expect(landsOn('keyboard', items, 'gone')).toBe(1)
+    expect(landsOn('keyboard', items, 'one')).toBe(1)
+  })
 })
 
 describe('the rules a menu draws between its bands', () => {

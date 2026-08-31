@@ -278,6 +278,20 @@ describe('what the goals come to today', () => {
   })
 })
 
+// The tiles are a list with nothing over them, and the figures on them change
+// under a person who has just left a sitting.
+describe('the tiles read aloud', () => {
+  it('names the list', () => {
+    expect(shown([preset()]).find('.presets__list').attributes('aria-label')).toBe(
+      'What the goals of this vault come to today',
+    )
+  })
+
+  it('says the figures again as they change', () => {
+    expect(shown([preset()]).find('.presets__figures').attributes('aria-live')).toBe('polite')
+  })
+})
+
 // The figure says how far through the day a person is; the count says what is
 // left to do, which is what they are deciding on.
 describe('what pressing a preset would ask', () => {
@@ -301,8 +315,14 @@ describe('what pressing a preset would ask', () => {
     expect(shown([preset({ cards: 1 })]).find('.presets__left').text()).toBe('1 card')
   })
 
-  it('says nothing of a count where there is nothing to ask', () => {
-    expect(shown([preset({ cards: 0 })]).findAll('.presets__left')).toHaveLength(0)
+  // A tile that cannot be pressed says why, as the deck rows under it do.
+  it('says why in its place where there is nothing to ask', () => {
+    expect(shown([preset({ cards: 0, answered: 55, took: 20 })]).find('.presets__left').text()).toBe(
+      'the day is full',
+    )
+    expect(shown([preset({ cards: 0, answered: 0, took: 0 })]).find('.presets__left').text()).toBe(
+      'nothing today',
+    )
   })
 
   it('says nothing of a count where the preset schedules nothing today', () => {

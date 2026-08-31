@@ -93,15 +93,19 @@ func (u Presets) save(
 	if err != nil {
 		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
-	if kind := markdown.Parse(against, raw).Type; kind != domain.TypePreset {
-		return domain.FileRef{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, kind)
+	n := markdown.Parse(against, raw)
+	if n.Type != domain.TypePreset {
+		return domain.FileRef{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
 	}
+	// What the note said before this write, so that a share the read could not
+	// make out is one this write leaves standing.
+	was, _ := history.ReadPreset(n.Frontmatter)
 
 	doc, err := markdown.Open(raw)
 	if err != nil {
 		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
 	}
-	if err := settle(doc, settings); err != nil {
+	if err := settle(doc, settings, was.Load); err != nil {
 		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
 	}
 
@@ -115,7 +119,10 @@ func (u Presets) save(
 // settle writes the settings into the frontmatter, one key at a time. A day the
 // goal does not name and a week of days all carrying the whole load are keys
 // the note stops carrying.
-func settle(doc *markdown.Document, p history.Preset) error {
+//
+// Read is the shares the note was read at, which is every `load` entry the read
+// could make out.
+func settle(doc *markdown.Document, p history.Preset, read map[time.Weekday]int) error {
 	if err := doc.SetScalar(goalKey, string(p.Goal)); err != nil {
 		return err
 	}
@@ -148,13 +155,41 @@ func settle(doc *markdown.Document, p history.Preset) error {
 			return err
 		}
 	}
-	shares := make([]markdown.Entry, 0, len(p.Load))
+	entries, mapping := doc.EntryNames(loadKey)
+	// A `load` written as anything but a week of days is the person's, whole.
+	if !mapping {
+		return nil
+	}
+	return doc.SetMapping(loadKey, shares(entries, p.Load, read))
+}
+
+// shares is the `load` block a save puts down: a day the read made out carries
+// what the settings say or is taken out, and every other entry stands where it
+// was, in the order it was written in. A day the block does not name is written
+// after the ones it does.
+func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
+	out := make([]markdown.Entry, 0, len(entries)+len(load))
+	written := make(map[time.Weekday]bool, len(load))
+	for _, name := range entries {
+		weekday, isDay := history.Weekday(name)
+		_, could := read[weekday]
+		if !isDay || !could || written[weekday] {
+			out = append(out, markdown.Entry{Key: name, Standing: true})
+			continue
+		}
+		share, named := load[weekday]
+		if !named {
+			continue
+		}
+		written[weekday] = true
+		out = append(out, markdown.Entry{Key: name, Value: share})
+	}
 	for _, weekday := range week {
-		if share, named := p.Load[weekday]; named {
-			shares = append(shares, markdown.Entry{Key: history.DayName(weekday), Value: share})
+		if share, named := load[weekday]; named && !written[weekday] {
+			out = append(out, markdown.Entry{Key: history.DayName(weekday), Value: share})
 		}
 	}
-	return doc.SetMapping(loadKey, shares)
+	return out
 }
 
 // week is the days of the week in the order a preset writes them.

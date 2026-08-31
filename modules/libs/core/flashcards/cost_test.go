@@ -877,3 +877,34 @@ func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
 			got.Short, got.Through[21])
 	}
 }
+
+// The pace of a date counts the days the preset admits, and no others.
+//
+// A day of the week at none of the load schedules nothing. Dividing the
+// material by the calendar puts on the surviving days a load they were never
+// paced for, and the card faces it begins too late stand unlearned on the day
+// with nothing saying so.
+func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 21)
+	p.Rule, p.Interval = history.RuleInterval, 21
+	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
+	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
+
+	run := history.Simulation{
+		By: history.NewFSRSAt(p.Retention), Day: ahead, Cost: history.DefaultCost, Days: 22,
+	}
+	got := ran(t, run, now, p, nil, 40)
+	if got.Through[21] < 1 || got.Short != 0 {
+		t.Errorf("a week of five days gets through %v of the material by the day it aims "+
+			"at, and %d card faces stand short", got.Through[21], got.Short)
+	}
+	// And the week the preset admits is fewer days, so each of them begins more.
+	whole := p
+	whole.Load = nil
+	if flat := ran(t, run, now, whole, nil, 40); flat.Load[0] >= got.Load[0] {
+		t.Errorf("a week of five days begins %d card faces today and a week of seven %d",
+			got.Load[0], flat.Load[0])
+	}
+}

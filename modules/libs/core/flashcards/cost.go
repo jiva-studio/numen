@@ -524,16 +524,41 @@ const mostAnswers = 1000
 // It is one number for the whole material nobody has begun: those card faces
 // all stand at the same nothing. A rule no such card face reaches is
 // NeverRipens.
+//
+// A day of the week at none of the load schedules nothing, so it asks the card
+// face nothing and counts for none of the days the pace divides by. A week
+// carrying such a day needs as many days of review as its slowest day of the
+// week does, so the pace holds for a card face begun on any of them.
 func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
-	open := d.Ends(now).AddDate(0, 0, -1)
+	from := d.Ends(now).AddDate(0, 0, -1)
+	out := 0
+	for range 7 {
+		one := s.ripens(p, from)
+		if one == NeverRipens {
+			return NeverRipens
+		}
+		out = max(out, one)
+		from = d.Ends(from)
+	}
+	return out
+}
+
+// ripens is how many days of review a card face begun on this day needs.
+func (s Simulation) ripens(p Preset, open time.Time) int {
 	var c Schedule
-	for day := range LongestRipening {
-		ends := d.Ends(open)
+	days := 0
+	for range LongestRipening {
+		ends := s.Day.Ends(open)
+		if p.Share(open.Weekday()) == 0 {
+			open = ends
+			continue
+		}
 		c = s.answers(c, open, ends, p, nil)
 		if p.Learned(c, ends) {
-			return day
+			return days
 		}
+		days++
 		open = ends
 	}
 	return NeverRipens
@@ -567,7 +592,11 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 			open = s.Day.Ends(c.Due).AddDate(0, 0, -1)
 		}
 		ends := s.Day.Ends(open)
-		c = s.answers(c, open, ends, p, nil)
+		// A day of the week at none of the load asks it nothing, and the next
+		// day of review picks it up.
+		if p.Share(open.Weekday()) != 0 {
+			c = s.answers(c, open, ends, p, nil)
+		}
 		open = ends
 	}
 	return p.Learned(c, by)
