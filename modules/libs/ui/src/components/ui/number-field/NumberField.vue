@@ -6,6 +6,9 @@
  * bounds is marked and hands nothing on, and the number in force is written
  * back only once the field is left.
  *
+ * The number in force is one the bounds hold, so bounds that move under it
+ * bring it in and it is written out where it now stands.
+ *
  * Typing and leaving are two things said, so a caller can follow the digits
  * and act on the number the field comes to rest at.
  */
@@ -69,6 +72,22 @@ const refused = computed(() => {
   const value = numberOf(said)
   return value !== null && value !== clamped(value, bounds.value)
 })
+
+/** The number in force, which is a number the bounds hold. */
+const standing = computed(() =>
+  model.value === null ? null : clamped(model.value, bounds.value),
+)
+
+/** A number the bounds no longer hold is brought in, and stands there written out. */
+watch(
+  standing,
+  (now) => {
+    if (now === model.value) return
+    model.value = now
+    typed.value = written(now)
+  },
+  { immediate: true },
+)
 
 const element = useTemplateRef<HTMLInputElement>('element')
 

@@ -97,6 +97,27 @@ export const ACoarseStep: Story = { args: { step: 25, value: 50 } }
 /** A range that is neither nought to a hundred nor a whole number of steps. */
 export const AnotherRange: Story = { args: { min: 5, max: 8, step: 1, value: 6 } }
 
+/**
+ * A value the ends do not hold. The handle is drawn at the end whatever it is
+ * given, so the figure beside it and what it announces stand at that end too.
+ */
+export const PastTheEnd: Story = {
+  args: { value: 90, max: 50 },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(standsAt(canvasElement)).toBe('50'))
+    expect(canvasElement.textContent).toContain('50%')
+  },
+}
+
+/** A value under the floor, which the handle is not drawn under either. */
+export const UnderTheFloor: Story = {
+  args: { value: -20 },
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(standsAt(canvasElement)).toBe('0'))
+    expect(canvasElement.textContent).toContain('0%')
+  },
+}
+
 /** A track with barely room to draw itself. */
 export const ANarrowBox: Story = { args: { width: '4rem' } }
 

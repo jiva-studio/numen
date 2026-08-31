@@ -82,6 +82,20 @@ export const AtTheFloor: Story = { args: { value: 0 } }
 /** The number at the ceiling of its bounds. */
 export const AtTheCeiling: Story = { args: { value: 240 } }
 
+/**
+ * A number the bounds do not hold. It is brought in and stands there, and
+ * nothing is marked, since nobody typed it.
+ */
+export const PastTheCeiling: Story = {
+  args: { value: 900, max: 240 },
+  play: async ({ canvasElement }) => {
+    const input = field(canvasElement)
+    expect(input.value).toBe('240')
+    expect(input.getAttribute('aria-valuenow')).toBe('240')
+    expect(input.getAttribute('aria-invalid')).toBeNull()
+  },
+}
+
 /** More digits than the field is wide. */
 export const FarTooMany: Story = { args: { value: 123456789, max: 999999999 } }
 

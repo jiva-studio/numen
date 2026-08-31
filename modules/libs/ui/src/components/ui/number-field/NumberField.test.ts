@@ -119,6 +119,34 @@ describe('the bounds', () => {
   })
 })
 
+// A caller narrowing what a field allows narrows it under a number already
+// standing there. Nobody typed that number here, so nothing is marked.
+describe('the bounds moving under the number', () => {
+  it('brings the number in, writes it out, and marks nothing', async () => {
+    const field = mountField({ modelValue: 200 })
+    await field.setProps({ max: 10 })
+
+    expect(handed(field)).toEqual([10])
+    expect(field.get('input').element.value).toBe('10')
+    expect(field.get('input').attributes('aria-valuenow')).toBe('10')
+    expect(field.get('input').attributes('aria-invalid')).toBeUndefined()
+  })
+
+  it('brings a number under a floor that rose up to it', async () => {
+    const field = mountField({ modelValue: 20 })
+    await field.setProps({ min: 100 })
+
+    expect(handed(field)).toEqual([100])
+    expect(field.get('input').element.value).toBe('100')
+  })
+
+  it('brings in a number the bounds it opened on never held', () => {
+    const field = mountField({ modelValue: 900 })
+    expect(field.get('input').element.value).toBe('240')
+    expect(handed(field)).toEqual([240])
+  })
+})
+
 describe('the arrow keys', () => {
   it('move the number one step', async () => {
     const field = mountField()

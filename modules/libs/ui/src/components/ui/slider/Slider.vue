@@ -7,12 +7,16 @@
  * step, and home and end take it to the ends. It draws no number of its own,
  * so what it stands at is read out beside it.
  *
+ * It stands inside the ends: a value past one of them, and a value the ends
+ * move under, are brought in and handed on.
+ *
  * Moving it and letting it go are two things said, so a caller can follow the
  * handle while it moves and act once it has come to rest.
  */
-import { watch, type HTMLAttributes } from 'vue'
+import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/lib/utils'
+import { clamped, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })
 
@@ -52,6 +56,13 @@ const hands = (said: number) => {
   model.value = said
 }
 
+const bounds = computed<Bounds>(() => ({ min: props.min, max: props.max, step: props.step }))
+
+/** Where the handle stands, which is inside the ends whatever it was given. */
+const standing = computed(() => clamped(model.value, bounds.value))
+
+watch(standing, hands, { immediate: true })
+
 const moved = (value: number[] | undefined) => {
   const said = value?.[0]
   if (typeof said === 'number') hands(said)
@@ -73,7 +84,7 @@ const settled = (value: number[]) => {
   <SliderRoot
     data-slot="slider"
     orientation="horizontal"
-    :model-value="[model]"
+    :model-value="[standing]"
     :min="min"
     :max="max"
     :step="step"

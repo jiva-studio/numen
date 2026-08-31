@@ -107,6 +107,32 @@ describe('moving the handle', () => {
   })
 })
 
+describe('a value the ends do not hold', () => {
+  it('stands at the end it is past, and is announced there', async () => {
+    const control = mountSlider({ modelValue: 90, max: 50 })
+    await nextTick()
+    expect(handle(control).attributes('aria-valuenow')).toBe('50')
+    expect(handed(control)).toEqual([50])
+  })
+
+  it('stands at the floor where it is handed a value under it', async () => {
+    const control = mountSlider({ modelValue: -20 })
+    await nextTick()
+    expect(handle(control).attributes('aria-valuenow')).toBe('0')
+    expect(handed(control)).toEqual([0])
+  })
+
+  // A caller narrowing what a control allows narrows it under a value already
+  // standing there, and what is announced is where the handle is drawn.
+  it('comes inside the ends where they move under it', async () => {
+    const control = mountSlider({ modelValue: 90 })
+    await control.setProps({ max: 50 })
+    await nextTick()
+    expect(handle(control).attributes('aria-valuenow')).toBe('50')
+    expect(handed(control)).toEqual([50])
+  })
+})
+
 describe('the box it is drawn in', () => {
   it('is the caller’s to size, and the handle is left alone', () => {
     const control = mountSlider({ class: 'w-40' })
