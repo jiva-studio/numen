@@ -15,3 +15,18 @@ export interface Bounds {
 /** The value brought inside the ends. */
 export const clamped = (value: number, bounds: Bounds): number =>
   Math.min(bounds.max, Math.max(bounds.min, value))
+
+/** The keys that walk the handle along the track. */
+const WALKING: readonly string[] = [
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+]
+
+/** Whether a key is one the handle walks under. */
+export const walks = (key: string): boolean => WALKING.includes(key)

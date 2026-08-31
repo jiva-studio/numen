@@ -11,12 +11,13 @@
  * move under, are brought in and handed on.
  *
  * Moving it and letting it go are two things said, so a caller can follow the
- * handle while it moves and act once it has come to rest.
+ * handle while it moves and act once it has come to rest. A walk with the keys
+ * is over when the key is let go of, however many places it covered.
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { cn } from '@/lib/utils'
-import { clamped, type Bounds } from './track'
+import { clamped, walks, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })
 
@@ -68,15 +69,37 @@ const moved = (value: number[] | undefined) => {
   if (typeof said === 'number') hands(said)
 }
 
+/** Whether a key is down, and where the handle stood when it went down. */
+let walking = false
+let began = 0
+
 /**
- * The handle come to rest. What it came to rest at is handed on before it is
- * said to have settled, so a caller acting on the second has the first.
+ * The handle taken hold of by the keys. A key held down and a key struck again
+ * are one walk, which is over when the key is let go of.
+ */
+const takes = (event: KeyboardEvent) => {
+  if (walking || !walks(event.key)) return
+  walking = true
+  began = handed
+}
+
+/** The handle let go of, at what the walk left it standing at. */
+const rests = () => {
+  if (!walking) return
+  walking = false
+  if (handed !== began) raises('settles', handed)
+}
+
+/**
+ * The handle come to rest under the pointer. What it came to rest at is handed
+ * on before it is said to have settled, so a caller acting on the second has
+ * the first.
  */
 const settled = (value: number[]) => {
   const said = value[0]
   if (typeof said !== 'number') return
   hands(said)
-  raises('settles', said)
+  if (!walking) raises('settles', said)
 }
 </script>
 
@@ -112,6 +135,9 @@ const settled = (value: number[]) => {
           'data-[disabled]:cursor-not-allowed',
         )
       "
+      @keydown="takes"
+      @keyup="rests"
+      @blur="rests"
     />
   </SliderRoot>
 </template>

@@ -180,6 +180,48 @@ export const TheFigureIsReadOutBesideIt: Story = {
   },
 }
 
+/**
+ * A walk with the keys is one settling, said when the key is let go of and not
+ * at each place it passed through.
+ */
+export const SettlesWhenTheKeyIsLetGo: Story = {
+  render: (args) => ({
+    components: { Slider },
+    setup: () => {
+      const share = ref(args.value)
+      const rests = ref<number[]>([])
+      return { args, share, rests }
+    },
+    template: `
+      <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem">
+        <span id="said">{{ args.said }}</span>
+        <div :style="{ inlineSize: args.width }">
+          <Slider
+            v-model="share"
+            aria-labelledby="said"
+            :min="args.min"
+            :max="args.max"
+            :step="args.step"
+            @settles="rests.push($event)"
+          />
+        </div>
+        <span data-slot="rests">{{ rests.join(' ') }}</span>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const rests = () => canvasElement.querySelector('[data-slot="rests"]')?.textContent
+
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowRight>3/}')
+    await waitFor(() => expect(standsAt(canvasElement)).toBe('43'))
+    await waitFor(() => expect(rests()).toBe('43'))
+
+    await userEvent.keyboard('{End}')
+    await waitFor(() => expect(rests()).toBe('43 100'))
+  },
+}
+
 /** The keyboard goes nowhere near a slider nobody may move. */
 export const DisabledTakesNoKeyboard: Story = {
   args: { disabled: true },

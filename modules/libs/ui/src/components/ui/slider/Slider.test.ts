@@ -142,11 +142,20 @@ describe('the box it is drawn in', () => {
 })
 
 describe('coming to rest', () => {
+  /** A walk of so many places, the key held down the whole way. */
+  const walked = async (control: ReturnType<typeof mountSlider>, places: readonly number[]) => {
+    for (const at of places) {
+      await handle(control).trigger('keydown', { key: 'ArrowRight' })
+      await control.setProps({ modelValue: at })
+    }
+  }
+
   // A caller writes what it was handed when the handle settles, so the value
   // has to be handed on before the settling is.
   it('hands the value on before it says the handle has settled', async () => {
     const control = mountSlider()
     await handle(control).trigger('keydown', { key: 'ArrowRight' })
+    await handle(control).trigger('keyup', { key: 'ArrowRight' })
 
     expect(handed(control)).toEqual([41])
     expect(control.emitted('settles')).toEqual([[41]])
@@ -154,10 +163,36 @@ describe('coming to rest', () => {
     expect(order.indexOf('update:modelValue')).toBeLessThan(order.indexOf('settles'))
   })
 
-  it('says nothing about settling while the handle is only moving', async () => {
+  it('says nothing about settling while the keys are still walking it', async () => {
     const control = mountSlider()
-    await handle(control).trigger('keydown', { key: 'Home' })
-    await control.setProps({ modelValue: 0 })
-    expect(control.emitted('settles')).toEqual([[0]])
+    await walked(control, [41, 42, 43])
+
+    expect(handed(control)).toEqual([41, 42, 43])
+    expect(control.emitted('settles')).toBeUndefined()
+  })
+
+  it('says it once, at where the walk left it, when the key is let go of', async () => {
+    const control = mountSlider()
+    await walked(control, [41, 42, 43])
+    await handle(control).trigger('keyup', { key: 'ArrowRight' })
+
+    expect(control.emitted('settles')).toEqual([[43]])
+  })
+
+  it('says nothing where the walk left the handle where it began', async () => {
+    const control = mountSlider({ modelValue: 0 })
+    await handle(control).trigger('keydown', { key: 'ArrowLeft' })
+    await handle(control).trigger('keyup', { key: 'ArrowLeft' })
+
+    expect(control.emitted('settles')).toBeUndefined()
+  })
+
+  // A handle the keyboard leaves in the middle of a walk is a handle let go of.
+  it('says it where the keyboard leaves the handle with the key still down', async () => {
+    const control = mountSlider()
+    await walked(control, [41])
+    await handle(control).trigger('blur')
+
+    expect(control.emitted('settles')).toEqual([[41]])
   })
 })

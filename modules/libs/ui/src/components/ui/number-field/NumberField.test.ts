@@ -179,6 +179,48 @@ describe('the arrow keys', () => {
   })
 })
 
+// A caller writes what it holds when the field settles, so a field left alone
+// is a field that has settled nowhere.
+describe('leaving the field', () => {
+  /** Every number the field has come to rest at, in the order it rested at them. */
+  const rested = (field: ReturnType<typeof mountField>): readonly unknown[] =>
+    (field.emitted('settles') ?? []).map((said) => (said as unknown[])[0])
+
+  it('says nothing where nothing was typed into it', async () => {
+    const field = mountField()
+    await field.get('input').trigger('blur')
+    await field.get('input').trigger('focus')
+    await field.get('input').trigger('blur')
+
+    expect(rested(field)).toEqual([])
+  })
+
+  it('says nothing where what was typed came to the number already standing', async () => {
+    const field = mountField()
+    await field.get('input').setValue('20')
+    await field.get('input').trigger('blur')
+
+    expect(rested(field)).toEqual([])
+  })
+
+  it('says it where the number the field comes to rest at is another one', async () => {
+    const field = mountField()
+    await field.get('input').setValue('45')
+    await field.get('input').trigger('blur')
+    await field.get('input').trigger('blur')
+
+    expect(rested(field)).toEqual([45])
+  })
+
+  it('says nothing where a number set from outside is the one it is left at', async () => {
+    const field = mountField()
+    await field.setProps({ modelValue: 60 })
+    await field.get('input').trigger('blur')
+
+    expect(rested(field)).toEqual([])
+  })
+})
+
 describe('what a screen reader is told', () => {
   it('is a number with bounds, and where in them it stands', () => {
     const input = mountField().get('input')

@@ -10,7 +10,8 @@
  * bring it in and it is written out where it now stands.
  *
  * Typing and leaving are two things said, so a caller can follow the digits
- * and act on the number the field comes to rest at.
+ * and act on the number the field comes to rest at. A field left standing where
+ * it stood has come to rest nowhere new and says nothing.
  */
 import { computed, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
@@ -50,7 +51,7 @@ const props = withDefaults(
 const model = defineModel<number | null>({ default: null })
 
 const raises = defineEmits<{
-  /** The field left, at the number that stands there once it is settled. */
+  /** The field come to rest at a number other than the one it was resting at. */
   settles: [value: number | null]
 }>()
 
@@ -58,6 +59,9 @@ const bounds = computed(() => ({ min: props.min, max: props.max, step: props.ste
 
 /** What stands in the field, which is what was typed until the field is left. */
 const typed = ref(written(model.value))
+
+/** The number the field last stood at rest at. Settling is what moves it. */
+let rested = model.value
 
 /**
  * Whether what stands there is refused. Text a number could still be typed out
@@ -85,6 +89,7 @@ watch(
     if (now === model.value) return
     model.value = now
     typed.value = written(now)
+    rested = now
   },
   { immediate: true },
 )
@@ -93,7 +98,9 @@ const element = useTemplateRef<HTMLInputElement>('element')
 
 /** A number set from outside is written out; typing that means it is left alone. */
 watch(model, (now) => {
-  if (numberOf(typed.value) !== now) typed.value = written(now)
+  if (numberOf(typed.value) === now) return
+  typed.value = written(now)
+  rested = now
 })
 
 const took = (event: Event) => {
@@ -102,12 +109,18 @@ const took = (event: Event) => {
   else if (allowed(typed.value, bounds.value)) model.value = numberOf(typed.value)
 }
 
-/** Leaving writes back what holds: the number on a place of the step, in bounds. */
+/**
+ * Leaving writes back what holds: the number on a place of the step, in bounds.
+ * A field left standing where it stood has not settled anywhere new.
+ */
 const settle = () => {
   const value = numberOf(typed.value)
-  model.value = value === null ? null : settled(value, bounds.value)
-  typed.value = written(model.value)
-  raises('settles', model.value)
+  const now = value === null ? null : settled(value, bounds.value)
+  model.value = now
+  typed.value = written(now)
+  if (now === rested) return
+  rested = now
+  raises('settles', now)
 }
 
 const move = (by: number) => {
