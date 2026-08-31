@@ -48,14 +48,14 @@ describe('what is drawn', () => {
     expect(chips[0]?.attributes('aria-label')).toBe('Sunday, 100%')
   })
 
-  // A day at the whole of it is the plain day it always was, and the further a
-  // day stands under that the stronger it is filled.
-  it('fills a day the further it stands under the whole of a day', () => {
+  // The week is read as the work standing on it: a day carrying the whole of a
+  // day is full colour, and a day carrying none has none.
+  it('fills a day in step with what it carries', () => {
     const chips = mountDays({ modelValue: { sat: 0, sun: 75 } }).findAll('button')
     const filling = (at: number) => chips[at]?.attributes('style') ?? ''
-    expect(filling(0)).toContain('var(--numen-focus-bg) 0%')
-    expect(filling(5)).toContain(`var(--numen-focus-bg) ${WHOLE}%`)
-    expect(filling(6)).toContain('var(--numen-focus-bg) 25%')
+    expect(filling(0)).toContain(`var(--numen-focus-bg) ${WHOLE}%`)
+    expect(filling(5)).toContain('var(--numen-focus-bg) 0%')
+    expect(filling(6)).toContain('var(--numen-focus-bg) 75%')
   })
 
   it('says a day offers the shares rather than turning on the spot', () => {

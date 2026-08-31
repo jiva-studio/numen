@@ -61,11 +61,14 @@ export interface Band {
   readonly most: number
 }
 
-/** The least and the most a curve costs over its whole grid. */
+/**
+ * The band a curve is drawn against: nothing at the foot, and the most it ever
+ * costs over the top. A count does not go below nothing, so the foot of the
+ * picture is nothing under every run and a height is read against it.
+ */
 export const bandOf = (curve: Curve): Band => {
   const costs = curve.at.map((point) => costOf(curve.goal, point))
-  if (costs.length === 0) return { least: 0, most: 0 }
-  return { least: Math.min(...costs), most: Math.max(...costs) }
+  return { least: 0, most: costs.length === 0 ? 0 : Math.max(0, ...costs) }
 }
 
 /**
@@ -85,7 +88,7 @@ export const bandOfBacklog = (backlog: readonly number[]): Band => ({
  * is measured up from it.
  */
 export const backlogSpotsOf = (values: readonly number[], band: Band): readonly Spot[] =>
-  seriesOf(values, band.most > band.least ? band : { least: 0, most: 1 }, BAND)
+  seriesOf(values, band, BAND)
 
 /**
  * Where every place of the curve is drawn, in the band the picture is scaled
@@ -111,13 +114,14 @@ export const seriesOf = (
   room: Room = PLOT,
 ): readonly Spot[] => {
   const span = band.most - band.least
-  const middle = (room.top + room.foot) / 2
+  // A band of no width has no height to read: every value in it is the foot of
+  // the band, and the foot is where it is drawn.
   return values.map((value, place) => ({
     x: xOf(place, values.length),
     y:
       span > 0
         ? held(room.foot - (room.foot - room.top) * ((value - band.least) / span), room)
-        : middle,
+        : room.foot,
   }))
 }
 

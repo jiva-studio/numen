@@ -5,9 +5,9 @@
  * chosen.
  *
  * The row is one stop on the way round the screen; the arrow keys move along
- * it and the space bar offers the shares. A day at the whole of it is drawn
- * plain, and the further a day stands under that the stronger it is filled, so
- * the week is read without opening anything.
+ * it and the space bar offers the shares. A day is filled in step with what it
+ * carries, so the week is read as the work standing on it without opening
+ * anything: a full day is full colour, and a day carrying nothing has none.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
@@ -58,12 +58,12 @@ const chose = (said: string) => {
 }
 
 /**
- * How strongly a day is filled: nothing at the whole of a day, and the whole
- * of the accent at a day that schedules none of it.
+ * How strongly a day is filled: the whole of the accent at a day carrying the
+ * whole of a day, and no colour at all at a day carrying none. The week is
+ * read as the work standing on it.
  */
 const filling = (day: string) => {
-  const share = shareOn(model.value, day)
-  const weight = Math.min(Math.max(WHOLE - share, 0), WHOLE)
+  const weight = Math.min(Math.max(shareOn(model.value, day), 0), WHOLE)
   return {
     background: `color-mix(in oklab, var(--numen-node-bg), var(--numen-focus-bg) ${weight}%)`,
     color: weight > 50 ? 'var(--numen-focus-fg)' : 'var(--numen-node-fg)',

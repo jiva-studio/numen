@@ -91,10 +91,31 @@ describe('the curve as it is drawn', () => {
     expect(spots[2]?.y).toBe(TOP)
   })
 
-  it('runs through the middle where the band has no width', () => {
-    expect(spotsOf(curve([0, 0, 0]), { least: 0, most: 0 }).every((one) => one.y === MIDDLE)).toBe(
-      true,
-    )
+  // A count does not go below nothing, so nothing is the foot of the picture
+  // and a run of it lies along that foot rather than through the middle.
+  it('lies along the floor where the band has no width', () => {
+    const spots = spotsOf(curve([0, 0, 0]), { least: 0, most: 0 })
+    expect(spots.every((one) => one.y === FOOT)).toBe(true)
+    expect(spots.every((one) => one.y === MIDDLE)).toBe(false)
+  })
+
+  it('stands a band on nothing, whatever the run it holds comes to', () => {
+    expect(bandOf(curve([0, 0, 0]))).toStrictEqual({ least: 0, most: 0 })
+    expect(bandOf(curve([40, 45, 41]))).toStrictEqual({ least: 0, most: 45 })
+    expect(bandOf(curve([0, 20, 5]))).toStrictEqual({ least: 0, most: 20 })
+    expect(bandOf(curve([]))).toStrictEqual({ least: 0, most: 0 })
+  })
+
+  // Whatever the run holds, the height read as nothing is the foot line.
+  it('draws nothing on the foot under every run', () => {
+    for (const run of [[0, 0, 0], [0, 20, 5], [40, 45, 41]]) {
+      const one = curve(run)
+      const spots = spotsOf(one, bandOf(one))
+      for (const [at, value] of run.entries()) {
+        if (value === 0) expect(spots[at]?.y).toBe(FOOT)
+        expect(spots[at]?.y).toBeLessThanOrEqual(FOOT)
+      }
+    }
   })
 
   it('is one line through every place', () => {

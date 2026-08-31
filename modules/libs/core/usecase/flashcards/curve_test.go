@@ -438,3 +438,58 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 		}
 	}
 }
+
+// A day at none of the load is no sitting, so the curve draws the day after it.
+//
+// A person who has just given today's weekday nothing is the person most in
+// need of the picture, and a picture reading nought at every place of the range
+// says nothing about the setting it is there to steer.
+func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	if noon.Weekday() != time.Monday {
+		t.Fatalf("the day these curves are drawn on is a %v", noon.Weekday())
+	}
+	p.Load = map[time.Weekday]int{time.Monday: 0}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.At[0].Reviews == 0 {
+		t.Error("the shortest day of the range draws nothing")
+	}
+	if first, last := got.At[0].Reviews, got.At[len(got.At)-1].Reviews; !(last > first) {
+		t.Errorf("the range runs from %g cards to %g, and says nothing about the setting",
+			first, last)
+	}
+}
+
+// A day at none of the load that is not today leaves the curve where it was.
+// What it changes is what those days do further out, on the band beside it.
+func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
+	s := opened(t, studied(30))
+	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	if noon.Weekday() == time.Saturday {
+		t.Fatal("the day these curves are drawn on is the day being given nothing")
+	}
+
+	was, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	light := p
+	light.Load = map[time.Weekday]int{time.Saturday: 0}
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", light)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := range got.At {
+		if got.At[i].Reviews != was.At[i].Reviews || got.At[i].Minutes != was.At[i].Minutes {
+			t.Errorf("at %g the curve draws %g cards in %g minutes, and drew %g in %g",
+				got.Grid[i], got.At[i].Reviews, got.At[i].Minutes,
+				was.At[i].Reviews, was.At[i].Minutes)
+		}
+	}
+}

@@ -147,7 +147,8 @@ func NewFSRSAt(retention float64) FSRS {
 type Projection struct {
 	// Days is how many days were projected.
 	Days int
-	// ReviewsADay and MinutesADay are the daily load, over the days projected.
+	// ReviewsADay and MinutesADay are the daily load, over the days the preset
+	// admitted.
 	ReviewsADay float64
 	MinutesADay float64
 	// Retained is the share of the material that comes back on the last day.
@@ -167,10 +168,12 @@ type Projection struct {
 	// NeverClears.
 	Clears int
 	// Load is how many answers each day projected carried, and Spent is how
-	// long those answers took. The first of each is the day a sitting now would
-	// ask, which is the day a caller shows against a control.
+	// long those answers took.
 	Load  []int
 	Spent []time.Duration
+	// Admitted is whether the preset admitted each day projected. A day it did
+	// not is no sitting at all, and the summaries over the run pass over it.
+	Admitted []bool
 	// Closed is what stopped each day projected asking for more.
 	Closed []Closed
 	// Backlog is how many card faces stood overdue at the end of each day
@@ -184,6 +187,33 @@ type Projection struct {
 
 // NeverClears is a pace that leaves something overdue on every day projected.
 const NeverClears = -1
+
+// Admits is how many of the days projected the preset admitted.
+func (p Projection) Admits() int {
+	out := 0
+	for _, one := range p.Admitted {
+		if one {
+			out++
+		}
+	}
+	return out
+}
+
+// Sitting is the first day of this run the preset admits: the next sitting a
+// person will actually sit down to. False is a run admitting no day at all,
+// which holds no sitting.
+//
+// It is one real day of the run, so the count read off it is the count a
+// sitting on that day hands a person. A day the preset does not admit is no
+// sitting, and the day after it is the one a person meets.
+func (p Projection) Sitting() (int, bool) {
+	for day, admitted := range p.Admitted {
+		if admitted {
+			return day, true
+		}
+	}
+	return 0, false
+}
 
 // Overdue is how many card faces standing at these schedules have had their day
 // and were not answered on it.
@@ -371,6 +401,7 @@ func (s Simulation) Run(
 		spent += used
 		out.Load = append(out.Load, answered)
 		out.Spent = append(out.Spent, used)
+		out.Admitted = append(out.Admitted, !admits.Paused)
 		out.Closed = append(out.Closed, closed)
 		out.Through = append(out.Through, through(out.Seen, out.Faces))
 
@@ -383,8 +414,10 @@ func (s Simulation) Run(
 		open = ends
 	}
 
-	out.ReviewsADay = float64(out.Answered) / float64(days)
-	out.MinutesADay = spent.Minutes() / float64(days)
+	if admitted := out.Admits(); admitted > 0 {
+		out.ReviewsADay = float64(out.Answered) / float64(admitted)
+		out.MinutesADay = spent.Minutes() / float64(admitted)
+	}
 	for _, c := range cards {
 		if c.Due.Before(open) {
 			out.Owed++

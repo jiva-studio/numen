@@ -494,9 +494,10 @@ func (x *Curve) GetUnbegun() int32 {
 // keeps gets through by it. The rest stands at zero there.
 type Point struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Under a goal of minutes, the sitting a person would sit down to now, which
-	// is the day the deck screen offers. Under the other two, the load over the
-	// days projected.
+	// Under a goal of minutes, the next sitting a person will sit down to: the
+	// first day the preset admits, which is the day the deck screen offers. A day
+	// at none of the load is no sitting, so the day after it is drawn. Under the
+	// other two, the load over the days the preset admits.
 	Reviews float64 `protobuf:"fixed64,1,opt,name=reviews,proto3" json:"reviews,omitempty"`
 	Minutes float64 `protobuf:"fixed64,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// The share of the material that comes back.

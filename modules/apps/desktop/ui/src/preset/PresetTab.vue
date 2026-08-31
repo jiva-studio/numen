@@ -138,6 +138,7 @@ const stopped = computed(() => {
           <p class="preset__label">{{ words.goal }}</p>
 
           <Segmented
+            class="preset__goals"
             :model-value="settings.goal"
             :choices="goals"
             @update:model-value="(one: string) => props.held.chooses(one as Goal)"
@@ -259,9 +260,11 @@ const stopped = computed(() => {
 .preset {
   /* The measure a preset is read at, which the goal and the settings share. */
   --preset-measure: 46rem;
-  /* Between the goal and the settings under it, and inside each. */
-  --preset-apart: 1.75rem;
-  --preset-near: 0.625rem;
+  /* Where every line of this tab begins, measured from the column: the
+     clearance a box keeps inside its own border. A block that draws a box is
+     pulled out by that border so what it holds lands on the line, and a block
+     that draws none is inset to it. */
+  --preset-ink: var(--numen-box-air);
   /* One row of the receipt: the box a number is typed into, the air around the
      row, and the space between what it is called and what it means. */
   --preset-value: 6rem;
@@ -296,21 +299,31 @@ const stopped = computed(() => {
 .preset__column {
   display: flex;
   flex-direction: column;
-  gap: var(--preset-apart);
+  gap: var(--numen-step);
   inline-size: 100%;
   max-inline-size: var(--preset-measure);
   margin-inline: auto;
 }
 
+/* The goal, its picture and what it reads are parts of one block, so they are
+   half a step apart and the block itself a whole step from the next. */
 .preset__goal {
   display: flex;
   flex-direction: column;
-  gap: var(--preset-near);
+  gap: var(--numen-half-step);
+}
+
+/* The switch hangs out by its own border and the hairline inside it, so what
+   stands on its segments begins on the line. */
+.preset__goals {
+  align-self: start;
+  margin-inline-start: calc(-2 * var(--numen-stroke));
 }
 
 /* What the three segments are, said over them. */
 .preset__label {
   margin: 0;
+  padding-inline: var(--preset-ink);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -324,7 +337,7 @@ const stopped = computed(() => {
   align-items: baseline;
   gap: var(--numen-node-gap);
   margin: 0;
-  margin-block-start: var(--preset-near);
+  padding-inline: var(--preset-ink);
 }
 
 /* The one line the tab is built around, in figures of one width. */
@@ -337,6 +350,7 @@ const stopped = computed(() => {
 /* No deck points here, said where the curve would stand. */
 .preset__unpointed {
   margin: 0;
+  padding-inline: var(--preset-ink);
   color: var(--numen-hushed);
   line-height: var(--numen-line-height);
 }
@@ -359,19 +373,25 @@ const stopped = computed(() => {
   color: var(--numen-caution-fg);
 }
 
+/* Every row is one grid, so a control begins on the line the control above it
+   begins on and every line of prose wraps at the one measure. The control
+   column is as wide as the widest control the rows hold. */
 .preset__settings {
-  display: flex;
-  flex-direction: column;
-}
-
-/* The name and what it means on the left, the control at the end of the row. */
-.preset__row {
   display: grid;
   grid-template-columns: 1fr max-content;
+}
+
+/* The name and what it means on the left, the control on the right. The row
+   takes the settings' own two columns, so nothing is measured row by row. */
+.preset__row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--preset-row-air);
-  padding-inline-start: var(--numen-node-gap);
+  padding-inline-start: calc(var(--preset-ink) - var(--numen-caret));
+  padding-inline-end: var(--preset-ink);
   border-inline-start: var(--numen-caret) solid transparent;
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
@@ -397,10 +417,11 @@ const stopped = computed(() => {
 }
 
 /* Controls of every width end at the one edge. */
+/* Controls of every width begin at the one edge. */
 .preset__value {
   display: flex;
   align-items: center;
-  justify-content: end;
+  justify-content: start;
   gap: var(--numen-node-gap);
 }
 

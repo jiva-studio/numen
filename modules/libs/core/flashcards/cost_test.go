@@ -530,3 +530,43 @@ func TestTheBacklogDayByDayAgreesWithTheDayItClears(t *testing.T) {
 		}
 	}
 }
+
+// A day the preset does not admit answers nothing, so nothing can leave the
+// overdue pile on it: across such a day the pile stands where it was or grows.
+func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now.AddDate(0, 0, -40), 300)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 28}
+
+	for what, load := range map[string]map[time.Weekday]int{
+		"a week of nothing": {
+			time.Monday: 0, time.Tuesday: 0, time.Wednesday: 0, time.Thursday: 0,
+			time.Friday: 0, time.Saturday: 0, time.Sunday: 0,
+		},
+		"a Wednesday and a Sunday of nothing": {time.Wednesday: 0, time.Sunday: 0},
+	} {
+		p := history.Preset{
+			Goal: history.GoalRetention, NewADay: 20, ReviewsADay: 40,
+			EvenLoad: true, Load: load,
+		}
+		got := ran(t, run, now, p, at, 60)
+		if len(got.Admitted) != len(got.Backlog) {
+			t.Fatalf("%s: %d days admitted against %d of backlog",
+				what, len(got.Admitted), len(got.Backlog))
+		}
+		for day := 1; day < len(got.Backlog); day++ {
+			if got.Admitted[day] {
+				continue
+			}
+			if got.Backlog[day] < got.Backlog[day-1] {
+				t.Errorf("%s: day %d admits nothing and the pile fell from %d to %d",
+					what, day, got.Backlog[day-1], got.Backlog[day])
+			}
+			if got.Load[day] != 0 {
+				t.Errorf("%s: day %d admits nothing and answered %d",
+					what, day, got.Load[day])
+			}
+		}
+	}
+}

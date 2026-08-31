@@ -63,16 +63,19 @@ type Curve struct {
 //
 // What Reviews and Minutes are the height of is the goal's own question.
 //
-// Under a goal of minutes and a goal of a date they are the sitting a person
-// would sit down to now, which is the day the deck screen offers: a person reads
-// a count of cards off the curve where their control stands and then off the
-// deck screen, and the two are one day of one preset. A curve draws the whole of
-// that day, so a day already sat to part way is that much further on and the
-// deck screen offers what is left of it.
+// Under a goal of minutes and a goal of a date they are the first day of the
+// run the preset admits: the next sitting a person will actually sit down to. A
+// day at none of the load is no sitting at all, so the picture draws the day
+// after it, and a person moving a control on such a day reads what the setting
+// buys them rather than a row of noughts.
 //
-// Under a goal of retention they are the load over the days projected. A target
-// does nothing to today and everything to the weeks after it, so every place of
-// that grid would otherwise draw the same day.
+// It is one real day of the run, worked out by the arithmetic the deck screen
+// runs, so the count read off the curve is the count that sitting hands a
+// person.
+//
+// Under a goal of retention they are the load over the days the preset admits.
+// A target does nothing to today and everything to the weeks after it, so every
+// place of that grid would otherwise draw the same day.
 //
 // A goal of a date fills Minutes with what getting through the material by that
 // day costs and Owed with the backlog that pace leaves standing on it, and
@@ -280,7 +283,7 @@ func (u Curves) minutes(
 	}
 
 	out := Curve{Goal: history.GoalMinutes, Now: Nowhere, Suggested: Nowhere}
-	top := ceiling(load.Spent[0].Minutes(), float64(p.MinutesADay))
+	top := ceiling(carried(load), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
@@ -453,7 +456,7 @@ func (u Curves) date(
 }
 
 // point is a projection as one place of a curve, at the load it carries over
-// the days projected.
+// the days the preset admits.
 func point(p history.Projection) Point {
 	return Point{
 		Reviews:  p.ReviewsADay,
@@ -461,18 +464,35 @@ func point(p history.Projection) Point {
 		Retained: p.Retained,
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
-		Closed:   p.Closed[0],
+		Closed:   closing(p),
 		Clears:   p.Clears,
 		Backlog:  p.Backlog,
 	}
 }
 
-// sitting is a projection as one place of a curve, at the day a person would
-// sit down to now. It is the day the deck screen offers, worked out by the same
-// arithmetic.
+// closing is what closed the first day the preset admits. A preset admitting no
+// day is closed by the pause.
+func closing(p history.Projection) history.Closed {
+	day, any := p.Sitting()
+	if !any {
+		return history.ClosedPaused
+	}
+	return p.Closed[day]
+}
+
+// sitting is a projection as one place of a curve, at the first day of it the
+// preset admits: the next sitting a person will sit down to.
+//
+// It is one real day of the run, worked out by the arithmetic the deck screen
+// runs, so the count here is the count that sitting hands a person. A preset
+// admitting no day at all holds no sitting, and stands at nothing.
 func sitting(p history.Projection) Point {
 	out := point(p)
-	out.Reviews, out.Minutes = float64(p.Load[0]), p.Spent[0].Minutes()
+	day, any := p.Sitting()
+	if !any {
+		return out
+	}
+	out.Reviews, out.Minutes = float64(p.Load[day]), p.Spent[day].Minutes()
 	return out
 }
 
@@ -491,6 +511,16 @@ func spread(days, places int) []int {
 		out[i] = int(math.Round(float64(i) * float64(days-1) / float64(places-1)))
 	}
 	return out
+}
+
+// carried is how long the first day the preset admits took, which is what
+// carrying the whole load costs on the next sitting.
+func carried(p history.Projection) float64 {
+	day, any := p.Sitting()
+	if !any {
+		return 0
+	}
+	return p.Spent[day].Minutes()
 }
 
 // ceiling is how far a curve of minutes runs: twice what carrying the whole

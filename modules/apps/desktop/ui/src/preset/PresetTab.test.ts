@@ -12,6 +12,7 @@ import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import { BOUNDS, DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
 import { clearing, type Field } from './curve'
+import { FOOT } from './drawing'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -31,6 +32,13 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
 })
+
+/** The heights a drawn path stands at, in the picture's own units. */
+const heights = (d: string): readonly number[] =>
+  d
+    .split(/[ML]/)
+    .slice(1)
+    .map((one) => Number(one.trim().split(' ')[1]))
 
 const point = (over: Partial<Point> = {}): Point => ({
   reviews: 0,
@@ -632,11 +640,38 @@ describe('what the control stands at', () => {
   })
 
   // Two ends of a band of no width are one number, and one number said twice
-  // says nothing.
+  // says nothing. A run of nothing is that band, and its one number stands on
+  // the foot the run lies along.
   it('says the one value once where the curve never moves', () => {
-    const flat = drawn({ at: [point({ reviews: 2 }), point({ reviews: 2 }), point({ reviews: 2 })] })
+    const flat = drawn({ at: [point(), point(), point()] })
     const numbers = flat.tab.findAll('.control__number:not(.control__number--knob)')
-    expect(numbers.map((one) => one.text())).toStrictEqual([words.heightAt('minutes', 2)])
+    expect(numbers.map((one) => one.text())).toStrictEqual([words.heightAt('minutes', 0)])
+  })
+
+  // A count does not go below nothing, so nothing is the foot of the picture
+  // under every goal and nothing is drawn under it.
+  it('lays a curve of nothing along the foot, under every goal', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      const { tab } = drawn({ goal, at: [point(), point(), point(), point()] }, { goal })
+      const drawnAt = heights(tab.get('.control__line').attributes('d') ?? '')
+      expect(new Set(drawnAt).size).toBe(1)
+      expect(drawnAt[0]).toBe(FOOT)
+    }
+  })
+
+  // A run that touches nothing touches the foot, and one that never gets near
+  // it is still read against a foot of nothing.
+  it('stands the foot at nothing whether or not the run gets there', () => {
+    const touching = drawn({
+      at: [point(), point({ reviews: 40 }), point({ reviews: 80 })],
+    })
+    expect(heights(touching.tab.get('.control__line').attributes('d') ?? '')[0]).toBe(FOOT)
+
+    const clear = drawn({
+      at: [point({ reviews: 40 }), point({ reviews: 45 }), point({ reviews: 41 })],
+    })
+    const away = heights(clear.tab.get('.control__line').attributes('d') ?? '')
+    expect(away.every((one) => one < FOOT)).toBe(true)
   })
 
   // The knob's value rides a line of its own, so a knob at either end cannot

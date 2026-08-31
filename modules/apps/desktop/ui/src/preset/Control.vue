@@ -34,7 +34,6 @@ import {
   LEFT,
   LIFT,
   lineOf,
-  MIDDLE,
   PERCH_GAP,
   PERCH_HIGH,
   PERCH_WIDE,
@@ -227,7 +226,7 @@ const againstBox = (y: number, lift: string): Box => ({
 
 /**
  * What the height of the picture comes to, against the lines it is read off. A
- * band of no width is one number and is said once, in the middle, where a curve
+ * band of no width is one number and is said once, on the foot, where a curve
  * that never moves is drawn. A number the line, a mark or the readout over the
  * knob stands on is dropped: the axis gives way, and the drawing keeps what it
  * has to say.
@@ -244,9 +243,10 @@ const heights = computed(() => {
     return [{ at: against(y, lift), box, text: said(value) }]
   }
   // A band of no width has one number and nothing else to read, so it is set
-  // over the line it names rather than given way to it.
+  // over the line it names rather than given way to it. That line is the foot,
+  // which is where a run with no height is drawn.
   if (most === least) {
-    return [{ at: against(MIDDLE, '-100%'), box: againstBox(MIDDLE, '-100%'), text: said(most) }]
+    return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: said(most) }]
   }
   return [...fits(TOP, '-100%', most), ...fits(FOOT, '0', least)]
 })
@@ -586,7 +586,8 @@ const released = (event: KeyboardEvent) => {
   );
   display: flex;
   flex-direction: column;
-  gap: var(--numen-dot-gap);
+  /* The readout, the chart and what is read off it are parts of one block. */
+  gap: var(--numen-half-step);
 }
 
 /*
@@ -594,6 +595,8 @@ const released = (event: KeyboardEvent) => {
  * scanned, so each figure is a tile of its own and the tiles take an equal
  * share of the width the tab is read at.
  */
+/* The tiles hang out by their own border, so the figures on them begin on the
+   line every line of the page begins on. */
 .control__material {
   display: grid;
   grid-auto-flow: column;
@@ -601,6 +604,7 @@ const released = (event: KeyboardEvent) => {
   gap: var(--numen-node-gap);
   min-block-size: var(--control-tile);
   margin: 0;
+  margin-inline: calc(-1 * var(--numen-stroke));
 }
 
 /* One tile: the figure, and under it the word for what it counts. */
@@ -612,7 +616,7 @@ const released = (event: KeyboardEvent) => {
   /* The lines inside stand on their own leading, which is taller than the
      letters, so the block clearance is trimmed by that difference and the four
      gaps read alike. */
-  padding: calc(var(--numen-inset) - var(--control-lead)) var(--numen-inset);
+  padding: calc(var(--numen-inset) - var(--control-lead)) var(--numen-box-air);
   border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
@@ -639,10 +643,12 @@ const released = (event: KeyboardEvent) => {
  * name and number read off either. The surface stands around the plots and
  * adds nothing to the room inside them.
  */
+/* The chart hangs out by its own border for the same reason the tiles do. */
 .control__island {
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
+  margin-inline: calc(-1 * var(--numen-stroke));
   padding: var(--numen-box-air);
   border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius);
