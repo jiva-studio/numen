@@ -74,12 +74,19 @@ func (p Preset) Share(day time.Weekday) float64 {
 	return float64(per) / FullLoad
 }
 
+// Evens reports whether this preset moves a card face off the day the scheduler
+// chose.
+//
+// A preset aiming at a day does not. The pace is what spreads a date's material
+// over its days, and the days it has are the days it needs.
+func (p Preset) Evens() bool { return p.EvenLoad && p.Goal != GoalDate }
+
 // Placing is how this preset puts a card on a day, as a short name: whether it
 // evens the days out, and the share each day of the week carries. A schedule
 // worked out under one placing is not read back under another.
 func (p Preset) Placing() string {
 	var out strings.Builder
-	fmt.Fprintf(&out, "even=%t", p.EvenLoad)
+	fmt.Fprintf(&out, "even=%t", p.Evens())
 	for day := time.Sunday; day <= time.Saturday; day++ {
 		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.Share(day)*FullLoad)))
 	}

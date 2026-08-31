@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"maps"
 	"strings"
 	"testing"
 	"time"
@@ -353,5 +354,42 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	}
 	if !chance.Learned(near, now) {
 		t.Error("a card face answered yesterday is not recalled nine times in ten")
+	}
+}
+
+// The mark a schedule cache is filed under carries everything that decides
+// which day a card lands on.
+//
+// A cache worked out under one placing is thrown away whole when the placing
+// changes, so a setting that moves a card and not the mark is a cache read back
+// under settings it was never worked out for.
+func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
+	stands := flashcards.Defaults()
+	stands.Load = map[time.Weekday]int{time.Saturday: 50}
+	was := stands.Placing()
+
+	for what, alter := range map[string]func(p *flashcards.Preset){
+		"an even load off":   func(p *flashcards.Preset) { p.EvenLoad = false },
+		"a goal of a date":   func(p *flashcards.Preset) { p.Goal = flashcards.GoalDate },
+		"a Saturday freed":   func(p *flashcards.Preset) { p.Load = nil },
+		"a lighter Saturday": func(p *flashcards.Preset) { p.Load[time.Saturday] = 20 },
+	} {
+		one := stands
+		one.Load = maps.Clone(stands.Load)
+		alter(&one)
+		if got := one.Placing(); got == was {
+			t.Errorf("with %s a card is placed under %q, the same mark as without it",
+				what, got)
+		}
+	}
+	// And every day of the week stands in it on its own.
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		one := stands
+		one.Load = maps.Clone(stands.Load)
+		one.Load[day] = 30
+		if got := one.Placing(); got == was {
+			t.Errorf("a %v at thirty is placed under %q, the same mark as one at the "+
+				"whole of it", day, got)
+		}
 	}
 }

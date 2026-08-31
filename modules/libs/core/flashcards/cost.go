@@ -762,7 +762,7 @@ func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
-	if !p.EvenLoad || p.Goal == GoalDate || !opens {
+	if !p.Evens() || !opens {
 		s.Holds(due)
 		return due
 	}
