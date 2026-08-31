@@ -6,7 +6,7 @@
  * beside it and the keyboard reaching it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Switch from './Switch.vue'
 
@@ -83,6 +83,41 @@ export const AnnouncedAsASwitch: Story = {
     const control = switched(canvasElement)
     expect(control.getAttribute('role')).toBe('switch')
     expect(control.getAttribute('aria-checked')).toBe('true')
+  },
+}
+
+/**
+ * What a person actually sees: the thumb slides across the track and the track
+ * fills behind it. Neither is a state a test can read off an attribute, so
+ * both are measured where they are drawn.
+ */
+export const TheThumbSlidesAndTheTrackFills: Story = {
+  args: { on: false },
+  play: async ({ canvasElement }) => {
+    const control = switched(canvasElement)
+    const thumb = control.firstElementChild as HTMLElement
+    const across = () => thumb.getBoundingClientRect().left - control.getBoundingClientRect().left
+    const filling = () => getComputedStyle(control).backgroundColor
+
+    const wasAcross = across()
+    const wasFilling = filling()
+
+    await userEvent.click(control)
+    await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
+
+    // The thumb has moved the width of a thumb, and it is still on the track.
+    await waitFor(() => expect(across()).toBeGreaterThan(wasAcross + thumb.offsetWidth / 2))
+    const track = control.getBoundingClientRect()
+    const box = thumb.getBoundingClientRect()
+    expect(box.right).toBeLessThanOrEqual(track.right + 1)
+    expect(box.left).toBeGreaterThanOrEqual(track.left - 1)
+
+    // And the track behind it is not the colour it was.
+    await waitFor(() => expect(filling()).not.toBe(wasFilling))
+
+    await userEvent.click(control)
+    await waitFor(() => expect(across()).toBeCloseTo(wasAcross, 0))
+    await waitFor(() => expect(filling()).toBe(wasFilling))
   },
 }
 

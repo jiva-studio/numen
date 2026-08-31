@@ -193,6 +193,25 @@ export const AwkwardNames: Story = {
 /** Days nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }
 
+/**
+ * A row nobody may turn is still read: the chips keep the keyboard and say
+ * they are disabled, and pressing one offers nothing.
+ */
+export const DisabledOffersNothing: Story = {
+  args: { disabled: true },
+  play: async ({ canvasElement }) => {
+    const chip = chips(canvasElement)[2] as HTMLElement
+    expect(chip.getAttribute('aria-disabled')).toBe('true')
+
+    await userEvent.tab()
+    expect(chips(canvasElement)).toContain(document.activeElement)
+
+    await userEvent.click(chip)
+    await userEvent.keyboard(' ')
+    expect(offered()).toEqual([])
+  },
+}
+
 /** Each chip says its whole name and what that day carries. */
 export const EachChipSaysWhatItCarries: Story = {
   play: async ({ canvasElement }) => {

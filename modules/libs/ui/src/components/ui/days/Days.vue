@@ -7,6 +7,9 @@
  * A chip is a button that offers a menu: it says the day, the share it carries
  * and whether its shares are open. It holds nothing down.
  *
+ * A row nobody may turn is still read: its chips keep the keyboard, say they
+ * are disabled, and offer nothing when they are pressed.
+ *
  * The row is one stop on the way round the screen; the arrow keys move along
  * it and the space bar offers the shares. A day is filled in step with what it
  * carries, so the week is read as the work standing on it without opening
@@ -105,7 +108,7 @@ const filling = (day: string) => {
     <RovingFocusItem v-for="day in days" :key="day.id" as-child>
       <button
         type="button"
-        :disabled="disabled"
+        :aria-disabled="disabled || undefined"
         :aria-label="`${day.long}, ${carriedOn(model, day.id)}%`"
         aria-haspopup="menu"
         :aria-expanded="asking?.day === day.id"
@@ -116,7 +119,7 @@ const filling = (day: string) => {
             'border border-rule font-sans text-base font-medium',
             'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
             'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
-            'disabled:cursor-not-allowed disabled:opacity-50',
+            'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "
         @click="asks(day.id, $event)"

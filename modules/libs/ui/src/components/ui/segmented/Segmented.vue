@@ -4,7 +4,8 @@
  * filled with the accent and the rest are quiet.
  *
  * The whole control is one stop on the way round the screen, and the arrow
- * keys move between the segments and choose as they go.
+ * keys move between the segments and choose as they go. Home and End go to
+ * the ends.
  */
 import type { HTMLAttributes } from 'vue'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
@@ -27,6 +28,18 @@ const model = defineModel<string>({ default: '' })
 const chose = (value: unknown) => {
   if (typeof value === 'string') model.value = value
 }
+
+/** Home and End go to the ends of the row, and the choice follows the keyboard. */
+const onKey = (event: KeyboardEvent) => {
+  if (props.disabled) return
+  const choice =
+    event.key === 'Home'
+      ? props.choices[0]
+      : event.key === 'End'
+        ? props.choices[props.choices.length - 1]
+        : undefined
+  if (choice) model.value = choice.id
+}
 </script>
 
 <template>
@@ -43,6 +56,7 @@ const chose = (value: unknown) => {
       )
     "
     @update:model-value="chose"
+    @keydown="onKey"
   >
     <RadioGroupItem
       v-for="choice in choices"

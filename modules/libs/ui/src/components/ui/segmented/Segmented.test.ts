@@ -62,6 +62,23 @@ describe('choosing', () => {
     expect(control.findAll('[role="radio"]')[0]?.attributes('aria-checked')).toBe('true')
   })
 
+  it('goes to the ends on Home and End', async () => {
+    const control = mountSegmented({ modelValue: 'retention' })
+    const segments = control.findAll('[role="radio"]')
+
+    await segments[1]?.trigger('keydown', { key: 'End' })
+    expect(handed(control).at(-1)).toBe('date')
+
+    await segments[1]?.trigger('keydown', { key: 'Home' })
+    expect(handed(control).at(-1)).toBe('minutes')
+  })
+
+  it('is left where it is on Home and End while nobody may turn it', async () => {
+    const control = mountSegmented({ modelValue: 'retention', disabled: true })
+    await control.findAll('[role="radio"]')[1]?.trigger('keydown', { key: 'End' })
+    expect(handed(control)).toEqual([])
+  })
+
   it('hands nothing on while nobody may turn it', async () => {
     const control = mountSegmented({ disabled: true })
     await control.findAll('[role="radio"]')[1]?.trigger('click')

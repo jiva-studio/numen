@@ -187,10 +187,21 @@ describe('giving a day a share', () => {
     expect(handed(row)).toEqual([{}])
   })
 
-  it('offers nothing while nobody may turn them', async () => {
+  // A chip nobody may turn is pressed like any other and answers with nothing.
+  // It keeps the keyboard, so the week is still read while it is disabled.
+  it('offers nothing while nobody may turn them, and says so on every chip', async () => {
     const row = mountDays({ disabled: true })
-    await row.findAll('button')[1]?.trigger('click')
+    const chips = row.findAll('button')
+    expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(
+      Array(7).fill('true'),
+    )
+    expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(
+      Array(7).fill(undefined),
+    )
+
+    await chips[1]?.trigger('click')
     expect(offered()).toEqual([])
     expect(handed(row)).toEqual([])
+    expect(chips[1]?.attributes('aria-expanded')).toBe('false')
   })
 })
