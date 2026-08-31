@@ -62,6 +62,21 @@ describe('what is drawn', () => {
     expect(mountDays().get('button').attributes('aria-haspopup')).toBe('menu')
   })
 
+  // A chip carries a share and offers a menu. It holds nothing down, so it
+  // announces no state of its own beyond the share it is labelled with.
+  it('is a row of buttons offering menus, and not a set of toggles', () => {
+    const row = mountDays()
+    expect(row.get('[data-slot="days"]').attributes('role')).toBe('toolbar')
+
+    const chips = row.findAll('button')
+    expect(chips).toHaveLength(7)
+    for (const chip of chips) {
+      expect(chip.attributes('aria-pressed')).toBeUndefined()
+      expect(chip.attributes('aria-checked')).toBeUndefined()
+      expect(chip.attributes('role')).toBeUndefined()
+    }
+  })
+
   it('says on the chip whether its shares are open', async () => {
     const row = mountDays()
     const chip = row.findAll('button')[5]

@@ -4,13 +4,16 @@
  * it takes. Pressing a day offers the shares, and the day carries what was
  * chosen.
  *
+ * A chip is a button that offers a menu: it says the day, the share it carries
+ * and whether its shares are open. It holds nothing down.
+ *
  * The row is one stop on the way round the screen; the arrow keys move along
  * it and the space bar offers the shares. A day is filled in step with what it
  * carries, so the week is read as the work standing on it without opening
  * anything: a full day is full colour, and a day carrying nothing has none.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
-import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
+import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
 import { cn } from '@/lib/utils'
 import Menu from '@/menu/Menu.vue'
 import type { Point } from '@/plex/model'
@@ -77,38 +80,37 @@ const filling = (day: string) => {
 </script>
 
 <template>
-  <ToggleGroupRoot
-    type="multiple"
+  <RovingFocusGroup
     data-slot="days"
+    role="toolbar"
     orientation="horizontal"
     v-bind="$attrs"
-    :model-value="[]"
-    :disabled="disabled"
     :loop="true"
     :class="cn('inline-flex items-center gap-1', props.class)"
   >
-    <ToggleGroupItem
-      v-for="day in days"
-      :key="day.id"
-      :value="day.id"
-      :aria-label="`${day.long}, ${shareOn(model, day.id)}%`"
-      aria-haspopup="menu"
-      :aria-expanded="asking?.day === day.id"
-      :style="filling(day.id)"
-      :class="
-        cn(
-          'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
-          'border border-rule font-sans text-base font-medium',
-          'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
-          'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )
-      "
-      @click="asks(day.id, $event)"
-    >
-      {{ day.short }}
-    </ToggleGroupItem>
-  </ToggleGroupRoot>
+    <RovingFocusItem v-for="day in days" :key="day.id" as-child>
+      <button
+        type="button"
+        :disabled="disabled"
+        :aria-label="`${day.long}, ${shareOn(model, day.id)}%`"
+        aria-haspopup="menu"
+        :aria-expanded="asking?.day === day.id"
+        :style="filling(day.id)"
+        :class="
+          cn(
+            'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
+            'border border-rule font-sans text-base font-medium',
+            'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
+            'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+          )
+        "
+        @click="asks(day.id, $event)"
+      >
+        {{ day.short }}
+      </button>
+    </RovingFocusItem>
+  </RovingFocusGroup>
 
   <Menu
     v-if="asking"
