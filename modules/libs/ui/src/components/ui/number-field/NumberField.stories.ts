@@ -129,8 +129,13 @@ export const ArrowKeysStep: Story = {
     const input = field(canvasElement)
 
     await userEvent.click(input)
+    // The number stands between two places the step lays, and the key brings
+    // it onto one of them.
     await userEvent.keyboard('{ArrowUp}')
-    expect(input.value).toBe('6')
+    expect(input.value).toBe('5')
+
+    await userEvent.keyboard('{ArrowUp}')
+    expect(input.value).toBe('10')
 
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     expect(input.value).toBe('0')

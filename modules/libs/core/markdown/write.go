@@ -485,6 +485,9 @@ func (d *Document) writable() (*yaml.Node, error) {
 	if err != nil || node == nil {
 		return node, err
 	}
+	if anchored(node) {
+		return nil, ErrAnchored
+	}
 	if flow(node) {
 		return nil, ErrInline
 	}
@@ -500,6 +503,29 @@ func (d *Document) writable() (*yaml.Node, error) {
 // written on one line — `load: {sat: 50}` — still occupies its key's own
 // lines and is replaced as it stands.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
+
+// ErrAnchored is a frontmatter carrying a YAML anchor. Nothing is changed in it.
+//
+// An anchor is read by an alias somewhere else in the block, and a splice puts
+// down a value carrying no anchor. The alias then points at nothing, and the
+// note stops opening at all.
+var ErrAnchored = errors.New("this frontmatter carries a YAML anchor, and cannot be changed a key at a time")
+
+// anchored reports whether anything in a subtree carries an anchor.
+func anchored(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	if node.Anchor != "" || node.Kind == yaml.AliasNode {
+		return true
+	}
+	for _, child := range node.Content {
+		if anchored(child) {
+			return true
+		}
+	}
+	return false
+}
 
 // ErrUnterminated is a note that opens a frontmatter block and never closes it.
 // What the person meant is not knowable from here, and writing would decide it

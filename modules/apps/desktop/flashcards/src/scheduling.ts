@@ -8,8 +8,10 @@
  */
 import { computed, ref } from 'vue'
 import { Goal } from '@numen/protocol'
+import type { Refusal } from '@numen/protocol'
 
 import { deckName } from './core'
+import { said } from './reading/core'
 import type { Closes, Owing } from './core'
 
 export type { Closes }
@@ -48,8 +50,14 @@ export interface Budget {
 export interface Asks {
   scheduling(said: { vaultId: string; deck: string }): Promise<{
     preset?:
-      | { path: string; title: string; settings?: Settings | undefined; problems: string[] }
+      | {
+          path: string
+          title: string
+          settings?: Settings | undefined
+          problems: readonly string[]
+        }
       | undefined
+    refusal?: Refusal | undefined
   }>
 }
 
@@ -80,6 +88,12 @@ export interface Preset {
   readonly took: number
   /** Why it schedules nothing, and empty while it schedules something. */
   readonly paused: string
+  /**
+   * What is wrong with the preset, in the words to show, and empty where
+   * nothing is: what the file said that could not be read, or why the file
+   * itself could not be.
+   */
+  readonly wrong: string
 }
 
 export interface Scheduling {
@@ -126,19 +140,43 @@ export function scheduling(deps: Scheduling) {
   return { presets, byDeck, of, read, forget }
 }
 
-/** The preset one deck is scheduled by, and null where none was answered. */
-const scheduled = async (
-  presets: Asks,
-  vaultId: string,
-  deck: string,
-): Promise<{ deck: string; path: string; name: string; settings: Settings } | null> => {
+/** What was answered about one deck's preset. */
+interface Answered {
+  readonly deck: string
+  /** The preset, and null where it was not read. */
+  readonly held: {
+    path: string
+    name: string
+    settings: Settings
+    problems: readonly string[]
+  } | null
+  /** Why it was not read, in the words to show, and empty where it was. */
+  readonly refused: string
+}
+
+/** What is shown of a preset the window has no other reason to give for. */
+const UNREAD = 'the settings of this preset could not be read'
+
+/** The preset one deck is scheduled by, or why it could not be read. */
+const scheduled = async (presets: Asks, vaultId: string, deck: string): Promise<Answered> => {
   try {
-    const said = await presets.scheduling({ vaultId, deck })
-    const settings = said.preset?.settings
-    if (!said.preset || !settings) return null
-    return { deck, path: said.preset.path, name: said.preset.title, settings }
+    const answer = await presets.scheduling({ vaultId, deck })
+    const settings = answer.preset?.settings
+    if (!answer.preset || !settings) {
+      return { deck, held: null, refused: said(answer.refusal) || UNREAD }
+    }
+    return {
+      deck,
+      held: {
+        path: answer.preset.path,
+        name: answer.preset.title,
+        settings,
+        problems: answer.preset.problems,
+      },
+      refused: '',
+    }
   } catch {
-    return null
+    return { deck, held: null, refused: UNREAD }
   }
 }
 
@@ -150,6 +188,8 @@ interface Gathering {
   decks: string[]
   due: number
   fresh: number
+  /** What was wrong in the file, each said once however many decks name it. */
+  problems: Set<string>
 }
 
 /** What the day holds under a preset the application counted nothing for. */
@@ -165,30 +205,28 @@ const budgetOf = (settings: Settings): Budget => ({
  * Every preset the vault holds gets a row. The ones whose decks hold cards are
  * gathered from what each deck answered, and the rest stand on the count alone.
  */
-const gather = (
-  vault: Owing,
-  held: readonly ({ deck: string; path: string; name: string; settings: Settings } | null)[],
-  today: string,
-): Preset[] => {
+const gather = (vault: Owing, answered: readonly Answered[], today: string): Preset[] => {
   const owed = new Map(vault.decks.map((one) => [one.deck, one]))
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
   const at = new Map<string, Gathering>()
 
-  for (const one of held) {
-    if (!one) continue
-    let into = at.get(one.path)
+  for (const one of answered) {
+    if (!one.held) continue
+    let into = at.get(one.held.path)
     if (!into) {
       into = {
-        path: one.path,
-        name: one.name || 'The defaults',
-        settings: one.settings,
+        path: one.held.path,
+        name: one.held.name || 'The defaults',
+        settings: one.held.settings,
         decks: [],
         due: 0,
         fresh: 0,
+        problems: new Set(),
       }
-      at.set(one.path, into)
+      at.set(one.held.path, into)
     }
     into.decks.push(one.deck)
+    for (const problem of one.held.problems) into.problems.add(problem)
     const deck = owed.get(one.deck)
     into.due += deck?.due ?? 0
     into.fresh += deck?.new ?? 0
@@ -213,11 +251,14 @@ const gather = (
       answered: day?.answered ?? 0,
       took: day?.took ?? 0,
       paused: why,
+      wrong: [...one.problems].join('; '),
     }
   })
 
-  // A preset every one of whose decks is empty is answered for no deck, so it
-  // stands here on the count alone, beside the presets nothing points at.
+  // A preset every one of whose decks is empty is answered for no deck, and so
+  // is one whose settings could not be read, so both stand here on the count
+  // alone, beside the presets nothing points at.
+  const why = refusedFor(answered)
   for (const one of vault.presets) {
     if (at.has(one.preset)) continue
     out.push({
@@ -227,15 +268,29 @@ const gather = (
       decks: [],
       named: one.decks,
       faces: one.cards,
-      cards: 0,
-      budget: { new: 0, reviews: 0, minutes: 0 },
-      closes: CLOSES_NOTHING,
-      answered: 0,
-      took: 0,
+      // The count answered for this preset with its own figures, and the day is
+      // drawn from them.
+      cards: one.owed,
+      budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
+      closes: one.closes,
+      answered: one.answered,
+      took: one.took,
       paused: '',
+      wrong: one.decks > 0 ? why : '',
     })
   }
   return out
+}
+
+/**
+ * Why the presets no deck answered for could not be read. Every deck of one
+ * preset is refused for the same reason, so a reason every refused deck gave is
+ * the reason of each preset none of them could read.
+ */
+const refusedFor = (answered: readonly Answered[]): string => {
+  const why = new Set(answered.filter((one) => one.refused).map((one) => one.refused))
+  if (why.size === 0) return ''
+  return why.size === 1 ? ([...why][0] ?? '') : UNREAD
 }
 
 /** How many cards the day holds at most. */

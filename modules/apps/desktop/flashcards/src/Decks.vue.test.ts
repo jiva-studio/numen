@@ -36,6 +36,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   answered: 0,
   took: 0,
   paused: '',
+  wrong: '',
   ...said,
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal } from '@numen/protocol'
+import { Goal, Refusal } from '@numen/protocol'
 
 import {
   CLOSES_NOTHING,
@@ -53,6 +53,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   answered: 0,
   took: 0,
   paused: '',
+  wrong: '',
   ...said,
 })
 
@@ -474,6 +475,77 @@ describe('which preset schedules each deck', () => {
     )
 
     expect(one.presets.value[0]).toMatchObject({ path: 'goals/Empty.md', name: 'Empty' })
+  })
+
+  // The count answered for the preset with its own figures, and a tile built
+  // at nothing beside them is a day drawn as unbegun.
+  it('draws a preset it could not read from the figures the count gave', async () => {
+    const one = scheduling({
+      presets: { scheduling: async () => ({ refusal: Refusal.MISSING }) },
+    })
+
+    await one.read(
+      vault(
+        [{ deck: 'decks/Words.md', due: 20, new: 2 }],
+        [owing({ cards: 40, owed: 22, answered: 6, took: 12, new: 0, reviews: 0, minutes: 20 })],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]).toMatchObject({
+      cards: 22,
+      answered: 6,
+      took: 12,
+      budget: { new: 0, reviews: 0, minutes: 20 },
+      closes: byMinutes,
+    })
+  })
+
+  it('says why a preset it could not read has no settings', async () => {
+    const one = scheduling({
+      presets: { scheduling: async () => ({ refusal: Refusal.MISSING }) },
+    })
+
+    await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [owing()]), '2026-09-05')
+
+    expect(one.presets.value[0]?.wrong).toBe('that note is not in the vault')
+  })
+
+  it('says nothing is wrong with a preset no deck of this vault answered for', async () => {
+    const one = scheduling({ presets: answering({}) })
+
+    await one.read(vault([], [owing()]), '2026-09-05')
+
+    expect(one.presets.value[0]?.wrong).toBe('')
+  })
+
+  // What was wrong in the file is the person's to settle in the editor, and
+  // this window is where they find out there is anything to settle.
+  it('carries what was wrong in a preset it did read, once for all its decks', async () => {
+    const one = scheduling({
+      presets: {
+        async scheduling() {
+          return {
+            preset: {
+              path: 'Sanskrit.md',
+              title: 'Sanskrit',
+              settings: settings(),
+              problems: ['`new_a_day` is not a number'],
+            },
+          }
+        },
+      },
+    })
+
+    await one.read(
+      vault([
+        { deck: 'decks/Words.md', due: 3, new: 1 },
+        { deck: 'decks/Roots.md', due: 2, new: 0 },
+      ]),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]?.wrong).toBe('`new_a_day` is not a number')
   })
 
   it('holds no preset for a vault a person has left', async () => {

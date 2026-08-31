@@ -6,15 +6,12 @@ import (
 	"time"
 
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
-// The table asked for: Through on the named day and Short, both rules, both
-// even loads, at a spread of dates.
 func TestAuditTable(t *testing.T) {
 	s := opened(t, studied(40))
-	fmt.Printf("%-10s %-6s %-5s | %-8s %-6s | %-8s %-6s\n",
-		"rule", "even", "days", "through", "short", "curveDay", "atDay")
+	fmt.Printf("%-10s %-6s %-5s | %-8s %-6s %-6s %-7s %-5s %s\n",
+		"rule", "even", "days", "through", "short", "met", "enough", "owed", "day")
 	for _, rule := range []history.Rule{history.RuleInterval, history.RuleRetention} {
 		for _, even := range []bool{true, false} {
 			for _, days := range []int{1, 2, 7, 14, 21, 30, 90, 365} {
@@ -29,24 +26,25 @@ func TestAuditTable(t *testing.T) {
 					t.Fatal(err)
 				}
 				if len(got.At) == 0 {
-					fmt.Printf("%-10s %-6t %-5d | %-8s %-6s |\n", rule, even, days, "-", "-")
+					fmt.Printf("%-10s %-6t %-5d | no curve\n", rule, even, days)
 					continue
 				}
 				at := -1
-				for i, g := range got.Grid {
-					if int(g) == days {
+				for i, d := range got.Days {
+					if d == got.Now.Day {
 						at = i
 					}
 				}
 				if at < 0 {
-					at = got.Now.At
+					fmt.Printf("%-10s %-6t %-5d | the day named is not on the grid (mark at %s)\n",
+						rule, even, days, got.Days[got.Now.At])
+					continue
 				}
 				one := got.At[at]
-				fmt.Printf("%-10s %-6t %-5d | %-8.3f %-6d | %-8s %-8s met=%t enough=%t owed=%d\n",
-					rule, even, days, one.Through, one.Short,
-					got.Days[at], got.Now.Day, one.Met, one.Enough, one.Owed)
+				fmt.Printf("%-10s %-6t %-5d | %-8.3f %-6d %-6t %-7t %-5d %s\n",
+					rule, even, days, one.Through, one.Short, one.Met, one.Enough, one.Owed,
+					got.Days[at])
 			}
 		}
 	}
-	_ = flashcards.Nowhere
 }

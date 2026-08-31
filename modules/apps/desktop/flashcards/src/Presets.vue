@@ -37,6 +37,8 @@ interface Tile {
    * scheduling nothing is asked for its reason, not for what it was aiming at.
    */
   readonly goal: string
+  /** What is wrong with the preset, and empty where nothing is. */
+  readonly wrong: string
   /** What stands at the right of the tile: the figure, or words in its place. */
   readonly says: string
   /** What sitting down to it would ask, and empty where it would ask nothing. */
@@ -61,6 +63,7 @@ const tiles = computed<Tile[]>(() =>
     return {
       one,
       goal: one.paused || (one.settings ? goalWords(one.settings, props.today) : ''),
+      wrong: one.wrong,
       says: over ? 'over budget' : percent(done),
       left: one.paused ? '' : leftWords(one),
       over,
@@ -90,6 +93,9 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
           <span class="presets__said">
             <span class="presets__name">{{ tile.one.name }}</span>
             <span v-if="tile.goal" class="presets__goal">{{ tile.goal }}</span>
+            <!-- What is wrong with the preset, where the goal it could not
+                 state would stand. The editor is where it is settled. -->
+            <span v-if="tile.wrong" class="presets__wrong">{{ tile.wrong }}</span>
           </span>
 
           <!-- How far through the day it is, and under it what pressing this
@@ -159,6 +165,13 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 
 .presets__goal {
   color: var(--numen-hushed);
+}
+
+/* What is wrong with the preset, which is the one thing under the name worth
+   catching the eye. */
+.presets__wrong {
+  color: var(--numen-caution-fg);
+  font-size: var(--numen-edge-label-size);
 }
 
 /* How far through the day it is, with what pressing it would ask under that. */

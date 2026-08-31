@@ -687,3 +687,44 @@ func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
 		t.Errorf("frontmatter = %v, want %v\n%s", front, want, got)
 	}
 }
+
+// A frontmatter carrying an anchor is left alone. Replacing the value the anchor
+// stands on leaves the alias pointing at nothing, and the note stops opening at
+// all — not the one key, the whole of it.
+func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
+	raw := "---\n" +
+		"id: 01J8\n" +
+		"retention: &target 0.87\n" +
+		"mine: *target\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	added := domain.Link{
+		Target: domain.Address{Scheme: domain.SchemeName, Value: "New"}, Role: domain.RoleChild,
+	}
+	for name, write := range map[string]func() error{
+		"a value":         func() error { return d.SetValue("retention", 0.9) },
+		"the identifier":  func() error { return d.SetIdentifier("01J9") },
+		"the title":       func() error { return d.SetTitle("Sanskrit") },
+		"a mapping":       func() error { return d.SetMapping("load", []Entry{{Key: "sat", Value: 50}}) },
+		"a list":          func() error { return d.SetList("tags", []string{"study"}) },
+		"a link":          func() error { return d.AddLink(added) },
+		"a key not there": func() error { return d.SetValue("new_a_day", 8) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := write(); !errors.Is(err, ErrAnchored) {
+				t.Fatalf("want ErrAnchored, got %v", err)
+			}
+		})
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the note was written\n want %q\n  got %q", raw, got)
+	}
+	if _, err := Open(d.Bytes()); err != nil {
+		t.Errorf("the note no longer opens: %v", err)
+	}
+}

@@ -34,6 +34,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   answered: 11,
   took: 4,
   paused: '',
+  wrong: '',
   ...said,
 })
 
@@ -204,6 +205,28 @@ describe('what the goals come to today', () => {
     expect(one.text()).not.toContain('20 minutes a day')
     expect(one.findAll('.presets__done')).toHaveLength(0)
     expect(one.text()).not.toContain('%')
+  })
+
+  // The settings could not be read, and the count answered for the preset all
+  // the same. The day is drawn from what it gave.
+  it('draws a preset whose settings could not be read from what the count gave', () => {
+    const one = shown([
+      preset({ settings: null, cards: 22, answered: 6, took: 4, wrong: 'that note is not in the vault' }),
+    ])
+
+    expect(one.find('.presets__done').text()).toBe('20%')
+    expect(one.find('.presets__left').text()).toBe('22 cards')
+    expect(one.find('.presets__preset').attributes('disabled')).toBeUndefined()
+  })
+
+  it('says what is wrong with a preset where its goal would stand', () => {
+    const one = shown([preset({ settings: null, wrong: 'that note is not in the vault' })])
+
+    expect(one.find('.presets__wrong').text()).toBe('that note is not in the vault')
+  })
+
+  it('says nothing of what is wrong where nothing is', () => {
+    expect(shown([preset()]).findAll('.presets__wrong')).toHaveLength(0)
   })
 
   // This screen is what a person's day comes to. A preset nothing points at is
