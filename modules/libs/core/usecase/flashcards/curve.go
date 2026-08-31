@@ -109,7 +109,8 @@ type Point struct {
 	Clears int
 	// Learned is how many card faces stand learned today at this place, and
 	// Learns how many days of review it takes before all of them do. A place
-	// whose horizon ends with one still to learn is history.NeverLearns.
+	// whose horizon ends with one still to learn is history.NeverLearns, and one
+	// with no such day to name is history.LearnsUnasked.
 	Learned int
 	Learns  int
 	// Backlog is how many card faces stand overdue at the end of each day

@@ -307,3 +307,46 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		t.Error("a card face nobody has answered is learned")
 	}
 }
+
+// A preset naming no rule counts by the default rule at its default value.
+//
+// A key nobody wrote leaves the default in force. It never leaves a threshold
+// every card face passes: a preset that says nothing about what counts as
+// learned counts nothing learned that three weeks away would not.
+func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
+	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.UTC)
+	last := now.AddDate(0, 0, -1)
+	// A card face first seen yesterday and put off by sixteen days, and one put
+	// off by twenty-one.
+	near := flashcards.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	far := flashcards.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
+
+	// Every field left empty, which is a preset built from settings that name
+	// no rule at all.
+	var said flashcards.Preset
+	if said.Learned(near, now) {
+		t.Error("a card face sixteen days off is learned under a preset naming no rule")
+	}
+	if !said.Learned(far, now) {
+		t.Error("a card face twenty-one days off is not learned at the default interval")
+	}
+
+	// A rule named with no value under it reads the default value too.
+	named := flashcards.Preset{Rule: flashcards.RuleInterval}
+	if named.Learned(near, now) {
+		t.Error("a card face sixteen days off is learned under an interval nobody wrote")
+	}
+
+	// And the other rule, whose value nobody wrote, holds cards to the default
+	// chance of recall.
+	faded := flashcards.Schedule{
+		Last: now.AddDate(0, 0, -200), Due: now, Reps: 3, Stability: 10,
+	}
+	chance := flashcards.Preset{Rule: flashcards.RuleRetention}
+	if chance.Learned(faded, now) {
+		t.Error("a card face two hundred days past its answer is recalled nine times in ten")
+	}
+	if !chance.Learned(near, now) {
+		t.Error("a card face answered yesterday is not recalled nine times in ten")
+	}
+}

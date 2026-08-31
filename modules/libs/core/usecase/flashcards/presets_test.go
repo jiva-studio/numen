@@ -402,3 +402,61 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 		t.Errorf("preset = %+v", back.Preset)
 	}
 }
+
+// A preset written before the rule existed is read at the default rule, and its
+// cards are counted against the default threshold.
+//
+// The file names no rule and no interval, which is every preset a person wrote
+// before there was one to name. A card face put off by less than the default
+// interval is not learned, and the counts a window draws say so.
+func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Old.md": "---\ntype: preset\ngoal: retention\nminutes_a_day: 10\n" +
+			"new_a_day: 12\nreviews_a_day: 5\nretention: 0.8\nbacklog: 68\n" +
+			"even_load: true\n---\n\n# Steady\n",
+	})
+
+	read, err := s.presets.Read(t.Context(), s.vault, "Old.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(read.Problems) != 0 {
+		t.Fatalf("problems = %v", read.Problems)
+	}
+	p := read.Preset
+	if p.Rule != history.RuleInterval || p.Interval != history.Defaults().Interval {
+		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
+	}
+
+	// Two card faces first seen yesterday, one put off by sixteen days and one
+	// by twenty-one.
+	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
+	last := now.AddDate(0, 0, -1)
+	at := map[history.CardFace]history.Schedule{
+		{Card: "near", Face: "Recognise"}: {
+			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
+		},
+		{Card: "far", Face: "Recognise"}: {
+			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
+		},
+	}
+	if p.Learned(at[history.CardFace{Card: "near", Face: "Recognise"}], now) {
+		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
+	}
+
+	// And the counts the window draws off the projection say the same.
+	run := history.Simulation{
+		By: history.NewFSRSAt(p.Retention), Day: today, Cost: history.DefaultCost, Days: 1,
+	}
+	ran, err := run.Run(t.Context(), now, p, at, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ran.Learned != 1 {
+		t.Errorf("%d of the two card faces stand learned, want the one sent away for 21 days",
+			ran.Learned)
+	}
+	if ran.Through[0] >= 1 {
+		t.Errorf("the day leaves the material %v learned, and one of the two is not", ran.Through[0])
+	}
+}

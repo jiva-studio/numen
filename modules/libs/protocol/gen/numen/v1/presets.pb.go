@@ -606,7 +606,13 @@ type Point struct {
 	// preset schedules is learned. Zero is a place standing over a material
 	// already learned, and -1 is a horizon that ends with one of them still to
 	// learn, which a person reads as further off than this projection saw.
-	Learns int32 `protobuf:"varint,12,opt,name=learns,proto3" json:"learns,omitempty"`
+	//
+	// Absent where that day is not a day to name, and nothing is drawn for it
+	// there. A material counted by a chance of recall stands at a level: a card
+	// falls below the target as it fades and rises above it when it is answered,
+	// so no day holds all of them at once. A preset aiming at a date is answered
+	// by that date, with `short` for the card faces it cannot carry there.
+	Learns *int32 `protobuf:"varint,12,opt,name=learns,proto3,oneof" json:"learns,omitempty"`
 	// How many card faces cannot be learned by this day whatever the pace: the
 	// rule wants more days than the day leaves them, so no pace reaches them and
 	// the pace beside this is the one that reaches every other. Say the number;
@@ -724,8 +730,8 @@ func (x *Point) GetLearned() int32 {
 }
 
 func (x *Point) GetLearns() int32 {
-	if x != nil {
-		return x.Learns
+	if x != nil && x.Learns != nil {
+		return *x.Learns
 	}
 	return 0
 }
@@ -1288,7 +1294,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xc1\x02\n" +
+	" \x01(\x05R\aunbegun\"\xd1\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
@@ -1301,9 +1307,10 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\n" +
 	" \x03(\x05R\abacklog\x12\x18\n" +
-	"\alearned\x18\v \x01(\x05R\alearned\x12\x16\n" +
-	"\x06learns\x18\f \x01(\x05R\x06learns\x12\x14\n" +
-	"\x05short\x18\r \x01(\x05R\x05short\">\n" +
+	"\alearned\x18\v \x01(\x05R\alearned\x12\x1b\n" +
+	"\x06learns\x18\f \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
+	"\x05short\x18\r \x01(\x05R\x05shortB\t\n" +
+	"\a_learns\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
@@ -1444,6 +1451,7 @@ func file_numen_v1_presets_proto_init() {
 		return
 	}
 	file_numen_v1_vault_proto_init()
+	file_numen_v1_presets_proto_msgTypes[3].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[9].OneofWrappers = []any{}

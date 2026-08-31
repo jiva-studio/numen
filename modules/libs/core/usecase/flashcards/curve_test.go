@@ -136,6 +136,9 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		// A card learned the day it is answered, so what a day of the range
+		// costs is the material it begins and nothing else.
+		Rule: history.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
@@ -169,6 +172,11 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], now.Minutes, got.Days[i-1], was.Minutes)
 		}
+		// Up to the day the file names. Past it the preset schedules nothing,
+		// and a material nobody is answering falls back out of the head.
+		if got.Grid[i] > got.Now.Value {
+			continue
+		}
 		if now.Through < was.Through-1e-9 {
 			t.Errorf("%s gets through %v and %s, a day earlier, gets through %v",
 				got.Days[i], now.Through, got.Days[i-1], was.Through)
@@ -184,6 +192,9 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		// A card learned the day it is answered, so what a day of the range
+		// costs is the material it begins and nothing else.
+		Rule: history.RuleRetention, Retention: 0.9,
 	}
 
 	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)

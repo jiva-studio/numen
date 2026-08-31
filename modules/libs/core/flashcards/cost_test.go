@@ -773,3 +773,42 @@ func TestAPresetAimingAtNoDayIsNeverShort(t *testing.T) {
 		t.Errorf("a preset steered by its minutes left %d card faces short", short)
 	}
 }
+
+// The day the whole material stands learned is answered where it is a day.
+//
+// An interval is passed once and stays passed, so the last card face to pass it
+// passes it on a day. A chance of recall is a level: a card falls under the
+// target as it fades and rises over it when it is answered, so no day holds all
+// of them at once. And a preset aiming at a date is answered by its date.
+func TestTheDayTheMaterialIsLearnedIsAskedWhereItIsADay(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 40)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 120}
+
+	counting := history.Defaults()
+	counting.Goal, counting.ReviewsADay, counting.NewADay = history.GoalRetention, 9999, 50
+	counting.Rule, counting.Interval = history.RuleInterval, 21
+
+	if got := ran(t, run, now, counting, at, 0).Learns; got < 0 {
+		t.Errorf("an interval of 21 days is reached on day %d", got)
+	}
+
+	// The same material counted by a chance of recall.
+	level := counting
+	level.Rule = history.RuleRetention
+	if got := ran(t, run, now, level, at, 0).Learns; got != history.LearnsUnasked {
+		t.Errorf("a material counted by a chance of recall is all learned on day %d", got)
+	}
+
+	// And the same material under a date, which is its own answer.
+	dated := counting
+	dated.Goal, dated.By = history.GoalDate, now.AddDate(0, 0, 60)
+	if got := ran(t, run, now, dated, at, 0).Learns; got != history.LearnsUnasked {
+		t.Errorf("a preset aiming at a day answers with day %d beside it", got)
+	}
+	// What a date is qualified by is the count no pace reaches.
+	if got := ran(t, run, now, dated, at, 0).Short; got < 0 {
+		t.Errorf("a date says %d card faces cannot get there", got)
+	}
+}

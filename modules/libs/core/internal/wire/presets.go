@@ -115,7 +115,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
-			Learns:   int32(one.Learns),
+			Learns:   learns(one.Learns),
 			Backlog:  backlog(one.Backlog),
 		})
 	}
@@ -204,6 +204,16 @@ func CountsIn(c v1.Counts) history.Counts {
 	default:
 		return ""
 	}
+}
+
+// learns is the day the whole material stands learned, as the schema carries
+// it. A place with no such day to name carries none.
+func learns(day int) *int32 {
+	if day == history.LearnsUnasked {
+		return nil
+	}
+	out := int32(day)
+	return &out
 }
 
 // backlog is a backlog day by day, as the schema carries one.

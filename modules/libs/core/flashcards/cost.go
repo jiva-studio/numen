@@ -174,6 +174,12 @@ type Projection struct {
 	// preset schedules is learned. A run opening with all of them learned learns
 	// in none, and a horizon ending with one of them still to learn is
 	// NeverLearns.
+	//
+	// It is answered where that day is a day. An interval is passed once and
+	// stays passed, so the day the last card face passes it is one. A chance of
+	// recall falls as a card fades and rises when it is answered, so a material
+	// counted that way stands at a level and reaches no such day; and a preset
+	// aiming at a date is answered by its date. Both are LearnsUnasked.
 	Learns int
 	// Short is how many card faces cannot be learned by the day the preset aims
 	// at, whatever the pace: the rule wants more days than the date leaves them.
@@ -205,6 +211,11 @@ const NeverClears = -1
 // the last of them is learned is further off than the projection ran, and it is
 // not worked out from what the run saw.
 const NeverLearns = -1
+
+// LearnsUnasked is a projection with no day on which the whole material stands
+// learned: one counting by a chance of recall, which is a level and not a
+// milestone, and one aiming at a date, which is that day.
+const LearnsUnasked = -2
 
 // Admits is how many of the days projected the preset admitted.
 func (p Projection) Admits() int {
@@ -311,9 +322,18 @@ func (s Simulation) Run(
 	}
 	slices.SortFunc(cards, older)
 
+	// The day the whole material stands learned is asked of a preset counting by
+	// an interval and aiming at no date. The other two are answered by a level
+	// and by their own date.
+	rule, _, _ := p.counting()
+	learns := NeverLearns
+	if rule != RuleInterval || p.Goal == GoalDate {
+		learns = LearnsUnasked
+	}
+
 	out := Projection{
 		Days: days, Faces: len(at) + unseen, Seen: len(at),
-		Clears: NeverClears, Learns: NeverLearns,
+		Clears: NeverClears, Learns: learns,
 	}
 	// A day that begins with nothing overdue has nothing to clear.
 	if Overdue(s.Day, at, now) == 0 {
@@ -337,7 +357,7 @@ func (s Simulation) Run(
 	}
 	out.Learned = learned(p, cards, open)
 	// A run opening with the whole material learned has nothing left to learn.
-	if out.Learned == out.Faces {
+	if out.Learns == NeverLearns && out.Learned == out.Faces {
 		out.Learns = 0
 	}
 	// What no pace reaches, and how long a card face begun today takes to be

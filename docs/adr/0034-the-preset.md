@@ -69,7 +69,9 @@ Under `learned: interval` a card is learned once the interval it is sent away fo
 
 **The rule is the person's.** A hundred words of vocabulary and a hundred ślokas are not learned at the same interval, and a person carrying a subject to an examination means something else by the word than one keeping a language alive. It is a fact about a subject and the person studying it, so it stands in the preset beside everything else about how a deck is scheduled.
 
-**One question, one function.** How much of a preset's material stands learned, and how long until all of it does, are read from the same rule in the same place, so the number on a screen and the number in a projection are one number.
+**One question, one function.** How much of a preset's material stands learned is read from the rule in one place, so the number on a screen and the number in a projection are one number. A preset that names no rule counts by the default rule at its default value: a key nobody wrote leaves the default in force, and never a threshold every card passes.
+
+**A day the whole material is learned is named only where there is one.** An interval is passed once and stays passed, so the day the last card passes it is a day. A chance of recall is a level: a card falls under the target as it fades and rises over it the moment it is answered, so no day holds every card at once, and none is named. Nothing stands in for it.
 
 The scheduler's own reckoning is another thing and carries another word: a card it has stopped sending minutes away and begun sending days away is **spaced**, and retention is measured over the answers to spaced cards. No setting reaches that.
 
@@ -80,6 +82,8 @@ A person who names a day means they will know the material by it. `by_date` is t
 **The pace follows from the rule.** A card face has to be begun early enough to be learned by then, so the material is spread over the days on which beginning one still leaves it time: under `learned: interval` a card that must be sent away for three weeks is begun weeks before the day, and under `learned: retention` one that has only to be recalled on the day may be begun on it. The same material and the same date are two paces, and each is worked out from the same rule the deck screen counts by.
 
 **What no pace can reach is counted and said.** A card face added a fortnight before a day it must stand three weeks away from cannot get there, whatever a person does: the arithmetic forbids it, and no pace is a remedy. The projection carries how many card faces the day leaves short, and the picture says the number. The day is not moved, the rule is not bent, and the pace beside that number is the one that gets there every card face that can.
+
+**The date is the answer, and nothing beside it answers again.** A preset aiming at a day names no other day the material is learned on: the day it names is that day, and what qualifies it is the count no pace reaches. Past that day the preset schedules nothing, so what a projection shows past it is a material nobody is answering: the debt climbs and what was learned fades. Those days belong to the pause and are drawn as no part of the choice.
 
 ### Budgets add up
 

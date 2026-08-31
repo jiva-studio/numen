@@ -137,10 +137,32 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 	if !s.Seen() {
 		return false
 	}
-	if p.Rule == RuleRetention {
-		return Recall(at.Sub(s.Last), s.Stability) >= p.Retention
+	rule, interval, retention := p.counting()
+	if rule == RuleRetention {
+		return Recall(at.Sub(s.Last), s.Stability) >= retention
 	}
-	return s.Due.Sub(s.Last) >= time.Duration(p.Interval)*24*time.Hour
+	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
+}
+
+// counting is the rule a card face is counted learned by here, and the two
+// values a rule reads.
+//
+// A preset naming no rule counts by the default rule, and a value the rule
+// cannot hold stands at the default. A preset that says nothing holds its cards
+// to the threshold in Defaults, which is the threshold the docs write down.
+func (p Preset) counting() (Rule, int, float64) {
+	standing := Defaults()
+	rule, interval, retention := p.Rule, p.Interval, p.Retention
+	if !KnownRule(rule) {
+		rule = standing.Rule
+	}
+	if !IntervalBounds.Holds(float64(interval)) {
+		interval = standing.Interval
+	}
+	if !RetentionBounds.Holds(retention) {
+		retention = standing.Retention
+	}
+	return rule, interval, retention
 }
 
 // Counts is what a day's budget is spent on.
