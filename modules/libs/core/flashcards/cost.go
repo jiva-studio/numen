@@ -18,6 +18,12 @@ const Ahead = 90
 // not review.
 const LongestAnswer = time.Minute
 
+// LeastStability is the least a projected card face is taken to stand at, in
+// days, which is a minute. The scheduler divides by stability, so a card face a
+// long run of lapses has worn down to none of it answers with a number nobody
+// can read, and every figure weighed against it after that is that number.
+const LeastStability = 1.0 / (24 * 60)
+
 // EvenFrom and EvenTo are the intervals a card may be moved within, in days.
 // One falling short of the first or past the second stands where the scheduler
 // put it.
@@ -650,6 +656,9 @@ func learned(p Preset, cards []Schedule, at time.Time) int {
 // back, so a projection follows one card down the middle of what it may do. The
 // phase is the one a card that came back is left in.
 func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedule {
+	if c.Seen() {
+		c.Stability = math.Max(c.Stability, LeastStability)
+	}
 	good := s.By.Next(c, at, Good)
 	if !c.Seen() {
 		good.Due = p.Places(on, at, good.Due)

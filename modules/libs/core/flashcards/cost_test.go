@@ -908,3 +908,42 @@ func TestADateIsPacedOverTheDaysThePresetAdmits(t *testing.T) {
 			got.Load[0], flat.Load[0])
 	}
 }
+
+// No figure a projection reports is a number nobody can read.
+//
+// The scheduler divides by stability, so a card face a long run of lapses has
+// worn down to none of it answers with one, and the share of the material left
+// in the head is the mean over every card face beside it.
+func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	// One card face worn down to no stability at all, among forty nobody has
+	// begun.
+	worn := history.Schedule{
+		Last: now.AddDate(0, 0, -1), Due: now.AddDate(0, 0, -1),
+		Difficulty: 9, Reps: 300, Lapses: 300, Phase: 2,
+	}
+	at := map[history.CardFace]history.Schedule{{Card: "worn", Face: "Say it"}: worn}
+
+	p := history.Defaults()
+	p.Goal, p.MinutesADay = history.GoalMinutes, 1440
+	p.NewADay, p.ReviewsADay = 40, 4000
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 30,
+	}
+	got := ran(t, run, now, p, at, 40)
+
+	for day, one := range got.Retained {
+		if math.IsNaN(one) || one < 0 || one > 1 {
+			t.Fatalf("day %d leaves %v of the material in the head", day, one)
+		}
+	}
+	for day, one := range got.Through {
+		if math.IsNaN(one) || one < 0 || one > 1 {
+			t.Fatalf("day %d gets through %v of the material", day, one)
+		}
+	}
+	if math.IsNaN(got.ReviewsADay) || math.IsNaN(got.MinutesADay) {
+		t.Errorf("the run answers %v cards a day in %v minutes",
+			got.ReviewsADay, got.MinutesADay)
+	}
+}
