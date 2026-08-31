@@ -31,6 +31,8 @@ interface Knobs {
   /** Which names the days are drawn under. */
   names: 'English' | 'Russian'
   disabled: boolean
+  /** The days themselves, where a story draws something other than a week. */
+  days?: readonly Day[]
 }
 
 const meta: Meta<Knobs> = {
@@ -42,13 +44,14 @@ const meta: Meta<Knobs> = {
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     disabled: { control: 'boolean' },
+    days: { table: { disable: true } },
   },
   args: { load: { sat: 50 }, startsOn: 'mon', names: 'English', disabled: false },
   render: (args) => ({
     components: { Days },
     setup: () => {
-      const days = computed(() =>
-        weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK),
+      const days = computed(
+        () => args.days ?? weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK),
       )
       const load = ref<Shares>(args.load)
       return { args, days, load }
@@ -112,6 +115,80 @@ export const AShareNotOnOffer: Story = {
 
 /** Names that are not Latin, in chips the same size. */
 export const OtherScripts: Story = { args: { names: 'Russian', load: { sat: 50, sun: 0 } } }
+
+/** No days at all: a row holding nothing, which the keyboard passes over. */
+export const NoDaysAtAll: Story = {
+  args: { days: [] },
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>('[data-slot="days"]')
+    expect(row).not.toBeNull()
+    expect(chips(canvasElement)).toHaveLength(0)
+    expect(row?.tabIndex).toBe(-1)
+  },
+}
+
+/** One day, which the arrows leave where it is. */
+export const OneDay: Story = {
+  args: { days: [{ id: 'wed', short: 'W', long: 'Wednesday' }], load: { wed: 25 } },
+  play: async ({ canvasElement }) => {
+    expect(said(canvasElement)).toEqual(['Wednesday, 25%'])
+
+    await userEvent.tab()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(document.activeElement).toBe(chips(canvasElement)[0])
+  },
+}
+
+/** Far more days than a week holds, each drawn at the size of the rest. */
+export const FarTooMany: Story = {
+  args: {
+    days: Array.from({ length: 31 }, (_, at) => ({
+      id: `day-${at}`,
+      short: `${at + 1}`,
+      long: `Day ${at + 1}`,
+    })),
+  },
+  play: async ({ canvasElement }) => {
+    const all = chips(canvasElement)
+    expect(all).toHaveLength(31)
+
+    // Nothing is squeezed to make room: every chip is the size of the first.
+    const first = all[0]?.getBoundingClientRect()
+    for (const chip of all) {
+      const box = chip.getBoundingClientRect()
+      expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
+      expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
+    }
+  },
+}
+
+/**
+ * Names a round chip was not drawn for: nothing at all, and four letters
+ * where one was meant. Every chip stays the size of the rest.
+ */
+export const AwkwardNames: Story = {
+  args: {
+    days: [
+      { id: 'mon', short: '', long: 'Monday' },
+      { id: 'tue', short: 'Tues', long: 'Tuesday' },
+      { id: 'wed', short: 'W', long: 'Wednesday' },
+      { id: 'thu', short: 'Четв', long: 'Четверг' },
+    ],
+    load: { tue: 25 },
+  },
+  play: async ({ canvasElement }) => {
+    const all = chips(canvasElement)
+    expect(all.map((chip) => chip.textContent?.trim())).toEqual(['', 'Tues', 'W', 'Четв'])
+    expect(said(canvasElement)[0]).toBe('Monday, 100%')
+
+    const first = all[0]?.getBoundingClientRect()
+    for (const chip of all) {
+      const box = chip.getBoundingClientRect()
+      expect(box.width).toBeCloseTo(first?.width ?? 0, 1)
+      expect(box.height).toBeCloseTo(first?.height ?? 0, 1)
+    }
+  },
+}
 
 /** Days nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }

@@ -116,6 +116,66 @@ export const Unbroken: Story = {
   args: { words: `${UNBROKEN}\nShort`, chosen: 'short', width: '18rem' },
 }
 
+/** No choices at all: a control with nothing to offer, which takes no keyboard. */
+export const NoChoicesAtAll: Story = {
+  args: { words: '', chosen: '' },
+  play: async ({ canvasElement }) => {
+    const control = canvasElement.querySelector<HTMLElement>('[data-slot="segmented"]')
+    expect(control).not.toBeNull()
+    expect(segments(canvasElement)).toHaveLength(0)
+    expect(control?.tabIndex).toBe(-1)
+  },
+}
+
+/** One choice, which is in force and stays in force. */
+export const OneChoice: Story = {
+  args: { words: 'Only this', chosen: 'only-this' },
+  play: async ({ canvasElement }) => {
+    expect(segments(canvasElement)).toHaveLength(1)
+    expect(chosenOf(canvasElement)).toBe('Only this')
+
+    await userEvent.tab()
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Only this'))
+  },
+}
+
+/** Far more choices than a segmented control is drawn for. */
+export const FarTooMany: Story = {
+  args: {
+    words: Array.from({ length: 12 }, (_, at) => `Choice ${at + 1}`).join('\n'),
+    chosen: 'choice-1',
+    width: '30rem',
+  },
+  play: async ({ canvasElement }) => {
+    expect(segments(canvasElement)).toHaveLength(12)
+    expect(chosenOf(canvasElement)).toBe('Choice 1')
+
+    // One of them is in force, and only one.
+    const checked = segments(canvasElement).filter(
+      (one) => one.getAttribute('aria-checked') === 'true',
+    )
+    expect(checked).toHaveLength(1)
+  },
+}
+
+/**
+ * A value in force that is none of the choices: nothing is checked, and the
+ * keyboard still lands on the control and chooses.
+ */
+export const AValueNotAmongThem: Story = {
+  args: { chosen: 'something-else' },
+  play: async ({ canvasElement }) => {
+    expect(chosenOf(canvasElement)).toBeUndefined()
+    expect(
+      segments(canvasElement).map((one) => one.getAttribute('aria-checked')),
+    ).toEqual(['false', 'false', 'false'])
+
+    await userEvent.tab()
+    expect(document.activeElement).toBe(segments(canvasElement)[0])
+    await press('ArrowRight', () => expect(chosenOf(canvasElement)).toBe('Retention'))
+  },
+}
+
 /** Nothing said on the segments at all. */
 export const NoTextAtAll: Story = {
   args: { words: ' \n \n ', chosen: '' },
