@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"syscall"
 
 	"connectrpc.com/connect"
 
@@ -61,7 +60,9 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 	}
 	defer a.Writing.done()
 	at, err := a.Saves.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
-	if err == nil {
+	// A write that reached the vault is a write that happened, so the client is
+	// handed the fingerprint it presents at its next save.
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		// What the person typed owes its vectors. Which chunks owe them is not
 		// carried: the debt is in the index, so several saves are one pass.
 		if a.Wrote != nil {
@@ -75,11 +76,11 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 	if errors.Is(err, port.ErrChanged) {
 		return connect.NewResponse(&v1.WriteResponse{Changed: true}), nil
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.WriteResponse{Refusal: &reason}), nil
 }
 
 // Create makes a note, named after the title it is given and joined to whatever
@@ -118,11 +119,11 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	if err == nil {
 		return connect.NewResponse(&v1.CreateResponse{}), nil
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.CreateResponse{Refusal: &reason}), nil
 }
 
 // Join writes one relationship into one note. What is already written there is
@@ -151,11 +152,11 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 		if errors.Is(err, port.ErrChanged) {
 			return connect.NewResponse(&v1.JoinResponse{Changed: true}), nil
 		}
-		refusal, refused := refusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.JoinResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.JoinResponse{Refusal: &reason}), nil
 	}
 	return connect.NewResponse(&v1.JoinResponse{}), nil
 }
@@ -251,45 +252,4 @@ func refOf(at *v1.Fingerprint) domain.FileRef {
 		return domain.FileRef{}
 	}
 	return domain.FileRef{Path: at.GetPath(), Size: at.GetSize(), MTime: at.GetMtime()}
-}
-
-// refusedBy says which refusal a write's error is, and whether it is one at all.
-// Anything else is the vault being out of reach.
-//
-// A note that changed is not among them. It is answered on its own, because a
-// refusal is something the client can do nothing about and that one is a
-// question for the person.
-func refusedBy(err error) (v1.Refusal, bool) {
-	switch {
-	case errors.Is(err, note.ErrNoNote):
-		return v1.Refusal_REFUSAL_MISSING, true
-	case errors.Is(err, note.ErrTooLarge):
-		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case errors.Is(err, note.ErrUnnameable):
-		return v1.Refusal_REFUSAL_UNNAMEABLE, true
-	case errors.Is(err, note.ErrUnreadable),
-		errors.Is(err, note.ErrInline),
-		errors.Is(err, note.ErrUnterminated):
-		return v1.Refusal_REFUSAL_UNREADABLE, true
-	case errors.Is(err, note.ErrBodyRefused):
-		return v1.Refusal_REFUSAL_BODY_REFUSED, true
-	case errors.Is(err, port.ErrNotANote):
-		return v1.Refusal_REFUSAL_NOT_A_NOTE, true
-	// A file standing where a folder of the path must be is a file in the way,
-	// the same as a file standing where the note itself would go.
-	case errors.Is(err, port.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
-		return v1.Refusal_REFUSAL_OCCUPIED, true
-	default:
-		return v1.Refusal_REFUSAL_UNSPECIFIED, false
-	}
-}
-
-// coded is the code an error that is no refusal answers with. A path that does
-// not stay in the vault is the client's to correct; anything else is the vault
-// being out of reach.
-func coded(err error) connect.Code {
-	if errors.Is(err, port.ErrOutside) {
-		return connect.CodeInvalidArgument
-	}
-	return connect.CodeInternal
 }

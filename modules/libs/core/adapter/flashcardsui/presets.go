@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // Scheduling is the preset a deck of the named vault is scheduled by. A deck
@@ -22,12 +23,12 @@ func (a *API) Scheduling(
 	}
 	found, err := a.Presets.Of(ctx, v, r.Msg.GetDeck())
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
 	out := &v1.FlashcardsServiceSchedulingResponse{}
-	if refusal, refused := wire.RefusalOf(found.Outcome); refused {
-		out.Refusal = &refusal
+	if reason, refused := refusal.Of(found.Outcome); refused {
+		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = wire.PresetOf(found, a.titled(ctx, v, found.Path))
@@ -50,7 +51,7 @@ func (a *API) Curve(
 	}
 	held, err := a.Curves.Execute(ctx, v, r.Msg.GetPath(), settings)
 	if err != nil {
-		return nil, connect.NewError(wire.Coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.FlashcardsServiceCurveResponse{Curve: wire.CurveOf(held)}), nil
 }

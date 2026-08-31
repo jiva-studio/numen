@@ -59,6 +59,9 @@ type API struct {
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
+	// Day is where one day of review gives way to the next. A build holding none
+	// counts the day from midnight.
+	Day history.Day
 	// Now is when this is happening.
 	Now func() time.Time
 

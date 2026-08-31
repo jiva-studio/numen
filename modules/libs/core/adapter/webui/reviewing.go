@@ -9,7 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // dayStarts is the hour a day of review begins at in a build that reads no
@@ -40,11 +40,11 @@ func (a *API) ChooseReviewing(
 		if errors.Is(err, history.ErrNotAnHour) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.ChooseReviewingResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.ChooseReviewingResponse{Refusal: &reason}), nil
 	}
 	return connect.NewResponse(&v1.ChooseReviewingResponse{}), nil
 }

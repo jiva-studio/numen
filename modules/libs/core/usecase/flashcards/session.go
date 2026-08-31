@@ -97,10 +97,14 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) (Sitt
 	out.Asked = make([]Asked, 0, len(holds.seen)+len(holds.fresh))
 	for _, one := range holds.seen {
 		s := schedules[one.CardFace]
-		out.Asked = append(out.Asked, Asked{Standing: one, Schedule: s, Ahead: u.ahead(s, now)})
+		out.Asked = append(out.Asked, Asked{
+			Standing: one, Schedule: s, Ahead: ahead(asks.under, one.CardFace, s, now),
+		})
 	}
 	for _, one := range holds.fresh {
-		out.Asked = append(out.Asked, Asked{Standing: one, Ahead: u.ahead(history.Schedule{}, now)})
+		out.Asked = append(out.Asked, Asked{
+			Standing: one, Ahead: ahead(asks.under, one.CardFace, history.Schedule{}, now),
+		})
 	}
 	return out, nil
 }
@@ -108,8 +112,16 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) (Sitt
 // ahead is how long each of the four would leave a card standing where this
 // schedule leaves it. It is what the scheduler answers and nothing else: the
 // four are asked of it, and the card is left where it was.
-func (u Session) ahead(s history.Schedule, now time.Time) map[history.Rating]time.Duration {
-	by := u.Schedules.By
+//
+// The scheduler is the one this card face is scheduled by, so the window under
+// each button is the moment the card will come back.
+func ahead(
+	under history.Under, on history.CardFace, s history.Schedule, now time.Time,
+) map[history.Rating]time.Duration {
+	if under == nil {
+		return nil
+	}
+	by := under(on)
 	if by == nil {
 		return nil
 	}

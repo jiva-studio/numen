@@ -1,24 +1,19 @@
 // Package wire carries what more than one adapter puts on the schema.
 //
 // A preset is asked about from the editor's window and from the window a person
-// runs their cards in, and the two hand the same settings, the same curve and
-// the same refusals over.
+// runs their cards in, and the two hand the same settings and the same curve
+// over.
 package wire
 
 import (
 	"errors"
 	"strings"
-	"syscall"
 	"time"
-
-	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // PresetOf is one preset as the schema carries it.
@@ -163,64 +158,5 @@ func CountsIn(c v1.Counts) history.Counts {
 		return history.CountsShows
 	default:
 		return ""
-	}
-}
-
-// RefusedBy says which refusal a write's error is, and whether it is one at all.
-// Anything else is the vault being out of reach.
-//
-// A note that changed is not among them. It is answered on its own, because a
-// refusal is something the client can do nothing about and that one is a
-// question for the person.
-func RefusedBy(err error) (v1.Refusal, bool) {
-	switch {
-	case errors.Is(err, note.ErrNoNote):
-		return v1.Refusal_REFUSAL_MISSING, true
-	case errors.Is(err, note.ErrTooLarge):
-		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case errors.Is(err, note.ErrUnnameable):
-		return v1.Refusal_REFUSAL_UNNAMEABLE, true
-	case errors.Is(err, note.ErrUnreadable),
-		errors.Is(err, note.ErrInline),
-		errors.Is(err, note.ErrUnterminated):
-		return v1.Refusal_REFUSAL_UNREADABLE, true
-	case errors.Is(err, note.ErrBodyRefused):
-		return v1.Refusal_REFUSAL_BODY_REFUSED, true
-	case errors.Is(err, port.ErrNotANote):
-		return v1.Refusal_REFUSAL_NOT_A_NOTE, true
-	// A file standing where a folder of the path must be is a file in the way,
-	// the same as a file standing where the note itself would go.
-	case errors.Is(err, port.ErrOccupied), errors.Is(err, syscall.ENOTDIR):
-		return v1.Refusal_REFUSAL_OCCUPIED, true
-	default:
-		return v1.Refusal_REFUSAL_UNSPECIFIED, false
-	}
-}
-
-// Coded is the code an error that is no refusal answers with. A path that does
-// not stay in the vault is the client's to correct; anything else is the vault
-// being out of reach.
-func Coded(err error) connect.Code {
-	if errors.Is(err, port.ErrOutside) {
-		return connect.CodeInvalidArgument
-	}
-	return connect.CodeInternal
-}
-
-// RefusalOf says which refusal an outcome is, and whether it is one at all.
-func RefusalOf(o note.Outcome) (v1.Refusal, bool) {
-	switch o {
-	case note.Missing:
-		return v1.Refusal_REFUSAL_MISSING, true
-	case note.NotANote:
-		return v1.Refusal_REFUSAL_NOT_A_NOTE, true
-	case note.NotText:
-		return v1.Refusal_REFUSAL_NOT_TEXT, true
-	case note.TooLarge:
-		return v1.Refusal_REFUSAL_TOO_LARGE, true
-	case note.Unreadable:
-		return v1.Refusal_REFUSAL_UNREADABLE, true
-	default:
-		return v1.Refusal_REFUSAL_UNSPECIFIED, false
 	}
 }

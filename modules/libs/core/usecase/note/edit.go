@@ -70,7 +70,9 @@ func (e editing) apply(ctx context.Context, v domain.Vault, path string, change 
 	if e.index == nil {
 		return written, nil
 	}
-	return written, e.index(ctx, v, []string{path})
+	// The file is on disk, so the fingerprint stands beside whatever the
+	// levelling came to and a caller can tell the two apart.
+	return written, Levelled(path, e.index(ctx, v, []string{path}))
 }
 
 // splice is the read, the change and the write, under this vault's write lock

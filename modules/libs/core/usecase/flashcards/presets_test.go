@@ -89,6 +89,51 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	}
 }
 
+// A preset note that is gone is a deck naming none, so the deck goes on being
+// scheduled by the defaults.
+func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":        term,
+		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Roots.md": deckOf("Sanskrit", 20, 0),
+	})
+	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+		t.Fatalf("under the preset the day was asked %d new cards, want 2", got)
+	}
+
+	remove(t, s, "Sanskrit.md")
+
+	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held.Path != "" {
+		t.Errorf("read from %q", held.Path)
+	}
+	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Preset)
+	}
+	if got := unseen(s.sittingAt(t, today, saturday)); got != history.Defaults().NewADay {
+		t.Errorf("on the defaults the day was asked %d new cards, want %d",
+			got, history.Defaults().NewADay)
+	}
+}
+
+// A deck naming two presets is held to the budget of the first, which is the
+// preset it is scheduled by.
+func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":        term,
+		"Few.md":         preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"Many.md":        preset("new_a_day: 9\nreviews_a_day: 0\nminutes_a_day: 0\n"),
+		"decks/Roots.md": deckNaming([]string{"Few", "Many"}, 20, 0),
+	})
+
+	if got := unseen(s.sittingAt(t, today, saturday)); got != 2 {
+		t.Errorf("the day was asked %d new cards, want the two the first preset keeps", got)
+	}
+}
+
 // A levelling that failed is not a write that failed. The fingerprint of the
 // file the write produced comes back with it, and the caller's next save lands
 // on that file.

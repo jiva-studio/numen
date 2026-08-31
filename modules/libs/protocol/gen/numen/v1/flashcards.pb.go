@@ -638,8 +638,12 @@ func (*OwingRequest) Descriptor() ([]byte, []int) {
 }
 
 type OwingResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Vaults        []*VaultOwing          `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Vaults []*VaultOwing          `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	// Day is the review day these counts stand in, written as the year, the month
+	// and the day. A day of review begins at the hour the settings name, so an
+	// hour past midnight is still the day before.
+	Day           string `protobuf:"bytes,2,opt,name=day,proto3" json:"day,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -679,6 +683,13 @@ func (x *OwingResponse) GetVaults() []*VaultOwing {
 		return x.Vaults
 	}
 	return nil
+}
+
+func (x *OwingResponse) GetDay() string {
+	if x != nil {
+		return x.Day
+	}
+	return ""
 }
 
 type StartRequest struct {
@@ -1919,9 +1930,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
 	"\x05ahead\x18\n" +
 	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x0e\n" +
-	"\fOwingRequest\"=\n" +
+	"\fOwingRequest\"O\n" +
 	"\rOwingResponse\x12,\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\"=\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\x12\x10\n" +
+	"\x03day\x18\x02 \x01(\tR\x03day\"=\n" +
 	"\fStartRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x80\x01\n" +

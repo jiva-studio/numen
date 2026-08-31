@@ -27,7 +27,7 @@ import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
-import { scheduling, named } from './scheduling'
+import { scheduling } from './scheduling'
 import { session } from './session'
 import { asking } from './asking'
 import { reading } from './reading'
@@ -43,13 +43,10 @@ const on = ref<'vaults' | 'decks' | 'session'>('vaults')
 const vault = ref('')
 
 const { notices, says, failed, putAway } = raising()
-const { vaults, counting: busy, count } = counting({ cards, failed })
+const { vaults, counting: busy, day: today, count } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
 const schedules = scheduling({ presets: cards })
-
-/** The day the screen is being read on, which is what a goal is weighed against. */
-const today = ref(named(new Date()))
 
 /** Why nothing can be asked here, empty while something can. */
 const unreachable = ref('')
@@ -128,7 +125,6 @@ const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.v
 const choose = (id: string) => {
   vault.value = id
   on.value = 'decks'
-  today.value = named(new Date())
   void done.read(id)
   void schedules.read(chosen.value, today.value)
 }
@@ -167,7 +163,6 @@ const leave = async () => {
   read.ends()
   sat.forget()
   on.value = 'decks'
-  today.value = named(new Date())
   void done.read(vault.value)
   await count()
   void schedules.read(chosen.value, today.value)

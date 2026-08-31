@@ -16,7 +16,6 @@ import (
 // The frontmatter keys a preset's settings stand under. A key outside this list
 // belongs to the person and is never written.
 const (
-	typeKey        = "type"
 	goalKey        = "goal"
 	byDateKey      = "by_date"
 	minutesADayKey = "minutes_a_day"

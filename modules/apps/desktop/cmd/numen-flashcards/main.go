@@ -4,10 +4,10 @@
 // occasional and running them is daily, and the daily act is not reached
 // through the application built for the other one.
 //
-// It writes into the vault it is sitting to — a mark for a card typed by hand,
-// a preset, the link that points a deck at one — and the answers, which go to
-// the vault's own folder. Each write is levelled in the index before it
-// returns, so what the window draws next is what it just wrote.
+// It writes into the vault it is sitting to — a mark for a card that carries
+// none — and the answers, which go to the vault's own folder. Each write is
+// levelled in the index before it returns, so what the window draws next is
+// what it just wrote.
 package main
 
 import (
@@ -88,6 +88,7 @@ func run(cfg container.Config, noAgent bool) error {
 		Presets: running.Presets,
 		Curves:  running.Curves,
 		Notes:   db.Queries(),
+		Day:     running.Day,
 		Now:     time.Now,
 	}
 

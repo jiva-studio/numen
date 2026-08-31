@@ -133,10 +133,15 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 				// held a note there: it is written while this reads it.
 				continue
 			}
-			if kinds[one.Path] == domain.TypeStencil {
+			switch kinds[one.Path] {
+			case domain.TypeStencil:
 				// Every card names the stencil it is cut by, so a deck points at
 				// its stencils. A stencil is how a card is laid out and not what
 				// it was written from.
+				continue
+			case domain.TypePreset:
+				// A deck points at the preset it is scheduled by. A preset is how
+				// the cards come round and not what they were written from.
 				continue
 			}
 			one.Title = ref.Title

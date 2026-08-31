@@ -27,7 +27,11 @@ func (a *API) Owing(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.OwingResponse{Vaults: make([]*v1.VaultOwing, 0, len(all))}
+	// The day these counts stand in, which is the day a goal is weighed against.
+	out := &v1.OwingResponse{
+		Day:    a.Day.Names(a.now()),
+		Vaults: make([]*v1.VaultOwing, 0, len(all)),
+	}
 	for _, v := range all {
 		out.Vaults = append(out.Vaults, a.counted(ctx, v))
 	}

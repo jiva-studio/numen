@@ -1,0 +1,46 @@
+package flashcardsui
+
+import (
+	"testing"
+	"time"
+
+	"connectrpc.com/connect"
+
+	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+)
+
+// The counts the window is handed stand in a review day, and the window weighs
+// a preset's goal against that day. A day of review begins at the hour the
+// settings name, so between midnight and that hour the calendar has turned and
+// the day has not.
+func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
+	api, _ := windowed(t, deck)
+	api.Day = history.Day{Starts: 4 * time.Hour, In: time.UTC}
+
+	for name, c := range map[string]struct {
+		at   time.Time
+		want string
+	}{
+		"an hour past midnight": {
+			time.Date(2026, 9, 5, 1, 0, 0, 0, time.UTC), "2026-09-04",
+		},
+		"the hour the day begins at": {
+			time.Date(2026, 9, 5, 4, 0, 0, 0, time.UTC), "2026-09-05",
+		},
+		"the middle of the day": {
+			time.Date(2026, 9, 5, 14, 0, 0, 0, time.UTC), "2026-09-05",
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			api.Now = func() time.Time { return c.at }
+			out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := out.Msg.GetDay(); got != c.want {
+				t.Errorf("at %v the counts stand in %q, want %q", c.at, got, c.want)
+			}
+		})
+	}
+}

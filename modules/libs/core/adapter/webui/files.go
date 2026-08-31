@@ -10,8 +10,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // List is what one folder of the vault holds. The vault settles the order the
@@ -140,11 +140,11 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 		out.Moved = movedOf(moved)
 	}
 	if err != nil {
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &refusal
+		out.Refusal = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -169,11 +169,11 @@ func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRe
 	}
 	out := &v1.MakeFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &refusal
+		out.Refusal = &reason
 	}
 	return connect.NewResponse(out), nil
 }

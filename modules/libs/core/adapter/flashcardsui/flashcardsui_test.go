@@ -106,6 +106,7 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		Presets: running.Presets,
 		Curves:  running.Curves,
 		Notes:   db.Queries(),
+		Day:     running.Day,
 		Now:     time.Now,
 	}, held
 }
@@ -574,5 +575,70 @@ func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
 	}
 	if one.GetNew() != int32(defaults.NewADay) || one.GetReviews() != int32(defaults.ReviewsADay) {
 		t.Errorf("the day holds %+v", one)
+	}
+}
+
+// twoPresets is one vault studying two subjects: a preset of one card a day, a
+// preset of two, and a deck of three cards under each.
+var twoPresets = map[string]string{
+	"Term.md": deck["Term.md"],
+	"Roots.md": "---\ntype: preset\nnew_a_day: 1\nreviews_a_day: 0\n" +
+		"minutes_a_day: 0\n---\n\n# Roots\n",
+	"Mantras.md": "---\ntype: preset\nnew_a_day: 2\nreviews_a_day: 0\n" +
+		"minutes_a_day: 0\n---\n\n# Mantras\n",
+	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Roots\n    role: ref\n    type: preset\n---\n" +
+		"\n## bhu ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n" +
+		"\n## gam ^zpqrstvwxy\n\n[[Term]]\n\n### Word\n\ngam\n\n### Meaning\n\nto go\n" +
+		"\n## kr ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nkr\n\n### Meaning\n\nto do\n",
+	"decks/Mantras.md": "---\ntype: deck\nlinks:\n" +
+		"  - to: Mantras\n    role: ref\n    type: preset\n---\n" +
+		"\n## one ^m4n5b6v7c8\n\n[[Term]]\n\n### Word\n\ngayatri\n\n### Meaning\n\na metre\n" +
+		"\n## two ^q1w2e3r4t5\n\n[[Term]]\n\n### Word\n\nmaha\n\n### Meaning\n\ngreat\n" +
+		"\n## three ^y6u7i8o9p0\n\n[[Term]]\n\n### Word\n\nsanti\n\n### Meaning\n\npeace\n",
+}
+
+// A sitting over a vault of two presets is the union of them: each deck is held
+// to its own preset's budget, and one preset running out closes its own decks.
+func TestASittingOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
+	api, held := windowed(t, twoPresets)
+
+	got := make(map[string]int)
+	for _, one := range started(t, api, held[0]).GetAsked() {
+		got[one.GetDeck()]++
+	}
+	want := map[string]int{"decks/Roots.md": 1, "decks/Mantras.md": 2}
+	for path, cards := range want {
+		if got[path] != cards {
+			t.Errorf("%s was asked %d cards, want %d", path, got[path], cards)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("the sitting held %v, want %v", got, want)
+	}
+}
+
+// The front door says what each of a vault's presets holds today, and neither
+// of them carries the other's budget.
+func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
+	api, _ := windowed(t, twoPresets)
+
+	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := make(map[string]int32)
+	for _, one := range out.Msg.GetVaults()[0].GetPresets() {
+		got[one.GetPreset()] = one.GetNew()
+	}
+	want := map[string]int32{"Mantras.md": 2, "Roots.md": 1}
+	for path, cards := range want {
+		if got[path] != cards {
+			t.Errorf("%s holds %d new cards a day, want %d", path, got[path], cards)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("the vault came to %v, want %v", got, want)
 	}
 }

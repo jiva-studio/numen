@@ -66,6 +66,32 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 	}
 }
 
+// A vault holding no preset at all is one scope: the defaults, with every deck
+// under them.
+func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md":      term,
+		"decks/One.md": deckOf("", 20, 0),
+		"decks/Two.md": deckOf("", 20, 100),
+	})
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday }).Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := flashcards.PresetOwing{
+		Preset: "", Decks: 2, Cards: 40,
+		Budget: history.Defaults().On(saturday.Weekday()),
+	}
+	if len(owing.Presets) != 1 {
+		t.Fatalf("the vault came to %+v, want the defaults alone", owing.Presets)
+	}
+	if owing.Presets[0] != want {
+		t.Errorf("the defaults came to %+v, want %+v", owing.Presets[0], want)
+	}
+}
+
 // Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
 func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {

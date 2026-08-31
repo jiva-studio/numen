@@ -125,6 +125,19 @@ func write(t *testing.T, s vaulted, path, body string) {
 	}
 }
 
+// remove takes a file out of the vault and brings the index level with it,
+// which is what a person deleting their own note in another window leaves
+// behind.
+func remove(t *testing.T, s vaulted, path string) {
+	t.Helper()
+	if err := os.Remove(filepath.Join(s.vault.Path, filepath.FromSlash(path))); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.scan(t.Context(), s.vault, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func read(t *testing.T, v domain.Vault, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
@@ -141,6 +154,18 @@ func (s vaulted) run(t *testing.T, at time.Time) flashcards.Record {
 		t.Fatal(err)
 	}
 	return flashcards.Record{Run: run, Now: func() time.Time { return at }}
+}
+
+// runNamed is a run whose file is named for one instant and whose answers were
+// given at another, which is what a run written on another machine and carried
+// here by a synchroniser looks like.
+func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Record {
+	t.Helper()
+	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return flashcards.Record{Run: run, Now: func() time.Time { return given }}
 }
 
 func (s vaulted) owed(day history.Day) flashcards.Owed {

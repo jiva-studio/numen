@@ -16,6 +16,8 @@ export interface Counts {
 
 /** What it answers with. */
 export interface Counted {
+  /** The review day these counts stand in, which begins at the hour the settings name. */
+  day: string
   vaults: readonly {
     vaultId: string
     name: string
@@ -51,6 +53,13 @@ export function counting(deps: Counting) {
   const vaults = ref<readonly Owing[]>([])
   const counting = ref(true)
 
+  /**
+   * The day the counts stand in, and the day a goal is weighed against. A day of
+   * review begins at the hour the settings name, so an hour past midnight is
+   * still the day before.
+   */
+  const day = ref('')
+
   /** The count on its way, so two never run at once and none is asked twice. */
   let underway: Promise<void> | null = null
 
@@ -67,6 +76,7 @@ export function counting(deps: Counting) {
     counting.value = true
     try {
       const answer = await deps.cards.owing({})
+      day.value = answer.day
       vaults.value = answer.vaults.map((one) => ({
         vaultId: one.vaultId,
         name: one.name,
@@ -100,5 +110,5 @@ export function counting(deps: Counting) {
     }
   }
 
-  return { vaults, counting, count }
+  return { vaults, counting, day, count }
 }

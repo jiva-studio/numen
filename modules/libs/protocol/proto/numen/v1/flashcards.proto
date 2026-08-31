@@ -197,6 +197,11 @@ message OwingRequest {}
 
 message OwingResponse {
   repeated VaultOwing vaults = 1;
+
+  // Day is the review day these counts stand in, written as the year, the month
+  // and the day. A day of review begins at the hour the settings name, so an
+  // hour past midnight is still the day before.
+  string day = 2;
 }
 
 message StartRequest {

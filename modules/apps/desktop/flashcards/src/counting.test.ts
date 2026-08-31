@@ -30,7 +30,7 @@ const vault = (id: string, said: Partial<Counted['vaults'][number]> = {}) => ({
 
 describe('counting what every vault owes', () => {
   it('holds what the front door answered', async () => {
-    const cards: Counts = { async owing() { return { vaults: [vault('01A'), vault('01B')] } } }
+    const cards: Counts = { async owing() { return { day: '2026-09-05', vaults: [vault('01A'), vault('01B')] } } }
     const one = counting({ cards, failed: () => {} })
 
     await one.count()
@@ -70,7 +70,7 @@ describe('counting what every vault owes', () => {
     const three = [one.count(), one.count(), one.count()]
     expect(asked).toBe(1)
 
-    settle({ vaults: [vault('01A')] })
+    settle({ day: '2026-09-05', vaults: [vault('01A')] })
     await Promise.all(three)
     expect(one.vaults.value).toHaveLength(1)
 
@@ -95,7 +95,7 @@ describe('counting what every vault owes', () => {
   it('carries what a vault that could not be counted says', async () => {
     const cards: Counts = {
       async owing() {
-        return { vaults: [vault('01A', { unread: 'this vault has not been read yet', faces: 0, due: 0, new: 0 })] }
+        return { day: '2026-09-05', vaults: [vault('01A', { unread: 'this vault has not been read yet', faces: 0, due: 0, new: 0 })] }
       },
     }
     const one = counting({ cards, failed: () => {} })

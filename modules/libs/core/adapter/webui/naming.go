@@ -9,8 +9,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -42,11 +42,11 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 		return connect.NewResponse(out), nil
 	}
 	if err != nil {
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &refusal
+		out.Refusal = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -69,11 +69,11 @@ func (a *API) ChooseSyncing(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	if err := a.Chooses(note.Sync(r.Msg.GetSyncTitleAndFilename())); err != nil {
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.ChooseSyncingResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.ChooseSyncingResponse{Refusal: &reason}), nil
 	}
 	return connect.NewResponse(&v1.ChooseSyncingResponse{}), nil
 }
@@ -98,11 +98,11 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	if err != nil {
-		refusal, refused := wire.RefusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.RemoveResponse{Refusal: &reason}), nil
 	}
 	return connect.NewResponse(&v1.RemoveResponse{
 		Trashed:  removed.Trashed,

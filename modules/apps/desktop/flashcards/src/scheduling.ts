@@ -95,7 +95,9 @@ export function scheduling(deps: Scheduling) {
     of.value = ''
   }
 
-  const read = async (vault: Owing | null, today = named(new Date())) => {
+  // Today is the review day, which the application measures and this window is
+  // told: it begins at the hour the settings name.
+  const read = async (vault: Owing | null, today: string) => {
     if (!vault) {
       forget()
       return
