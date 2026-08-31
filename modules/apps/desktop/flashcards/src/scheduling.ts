@@ -280,13 +280,44 @@ export const leftWords = (one: Preset): string => {
   return many(one.cards, 'card')
 }
 
-/** Why a preset schedules nothing, and empty while it schedules something. */
+/**
+ * Why a preset schedules nothing, and empty while it schedules something.
+ *
+ * The budget the goal names is the one that pauses it, and a budget the goal
+ * does not name stands as the person left it and pauses nothing. A day of the
+ * week carrying none of the load is a pause of that one day.
+ */
 export const paused = (settings: Settings, today: string): string => {
-  if (settings.newADay === 0 && settings.reviewsADay === 0) return 'no cards a day'
-  if (settings.goal === Goal.BY_DATE && settings.byDate && settings.byDate < today) {
-    return `${dayWords(settings.byDate)} has passed`
+  const why = budgeted(settings, today)
+  if (why) return why
+  return shareOn(settings, today) === 0 ? `no load on ${weekdayWords(today)}` : ''
+}
+
+/** Why the budget the goal names schedules nothing, and empty while it does. */
+const budgeted = (settings: Settings, today: string): string => {
+  switch (settings.goal) {
+    case Goal.RETENTION:
+      return settings.newADay === 0 && settings.reviewsADay === 0 ? 'no cards a day' : ''
+    case Goal.BY_DATE:
+      if (settings.byDate && settings.byDate < today) {
+        return `${dayWords(settings.byDate)} has passed`
+      }
+      return ''
+    default:
+      return settings.minutesADay === 0 ? 'no budget in time' : ''
   }
-  return ''
+}
+
+/** The first three letters of each day's name, which is how a preset writes one. */
+const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+
+/**
+ * How much of a day's load the day of the week carries, as a share of one. A
+ * day the preset does not name carries the whole of it.
+ */
+const shareOn = (settings: Settings, today: string): number => {
+  const carried = settings.load[DAYS[dated(today).getDay()] ?? '']
+  return carried === undefined ? 1 : carried / 100
 }
 
 /**
@@ -324,6 +355,11 @@ export const named = (at: Date): string => {
 const short = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long' })
 
 const dayWords = (day: string): string => short.format(dated(day))
+
+/** The day of the week a day falls on, by its name. */
+const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' })
+
+const weekdayWords = (day: string): string => weekday.format(dated(day))
 
 /** How many days lie between two days. */
 const daysBetween = (from: string, to: string): number =>

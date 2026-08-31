@@ -701,6 +701,11 @@ func weekday(number int) time.Weekday {
 // It is pressure and not a promise: no day is forbidden to carry more than its
 // share, and a preset keeping no even load leaves the card where it fell.
 //
+// A preset aiming at a day moves no card face. The days beyond the front of a
+// projection carry nothing, so the lightest day of a window is its last, and a
+// card put there is a card asked for later. The pace is what spreads a date's
+// material over its days, and the days it has are the days it needs.
+//
 // It is the one place a day is chosen. A sitting and a projection of it both
 // come here.
 func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
@@ -708,7 +713,7 @@ func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
 		return due
 	}
 	first, last, opens := window(due.Sub(at))
-	if !p.EvenLoad || !opens {
+	if !p.EvenLoad || p.Goal == GoalDate || !opens {
 		s.Holds(due)
 		return due
 	}

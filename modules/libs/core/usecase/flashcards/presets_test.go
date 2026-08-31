@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -255,10 +256,11 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	}
 }
 
-// A vault whose preset carries keys the application does not own.
+// A vault whose preset carries keys the application does not own, an identity,
+// and an owned key standing last in the block.
 var settled = map[string]string{
-	"Sanskrit.md": "---\ncolour: green\ntype: preset\ngoal: minutes_a_day\n" +
-		"minutes_a_day: 20\nlight_days:\n  - sat\ntags:\n  - study\n---\n\n" +
+	"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ncolour: green\ntype: preset\n" +
+		"minutes_a_day: 20\ntags:\n  - study\ngoal: minutes_a_day\n---\n\n" +
 		"# Sanskrit\n\nGrammar and vocabulary.\n",
 	"Grammar.md": "---\ntype: note\n---\n\n# Grammar\n",
 }
@@ -270,6 +272,23 @@ func minutes() history.Preset {
 	return p
 }
 
+// frontmatter is the whole of what a note's block says after a write, read by
+// the parser every other note is read by. A key that went missing, a key that
+// arrived twice and a block a person can no longer open all show here and in
+// none of the substrings a write puts in.
+func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
+	t.Helper()
+	raw := []byte(read(t, s.vault, path))
+	if _, err := markdown.Open(raw); err != nil {
+		t.Fatalf("the note cannot be opened after the write: %v\n%s", err, raw)
+	}
+	n := markdown.Parse(domain.FileRef{Path: path}, raw)
+	if n.FrontmatterErr != "" {
+		t.Fatalf("the frontmatter cannot be read after the write: %s\n%s", n.FrontmatterErr, raw)
+	}
+	return n.Frontmatter
+}
+
 // A write puts the settings in and leaves every other key, and the body, as
 // they were.
 func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
@@ -279,22 +298,78 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held := read(t, s.vault, "Sanskrit.md")
-	for _, kept := range []string{
-		"colour: green", "tags:\n  - study", "light_days:\n  - sat",
-		"# Sanskrit\n\nGrammar and vocabulary.\n",
-	} {
-		if !strings.Contains(held, kept) {
-			t.Errorf("%q is gone from\n%s", kept, held)
-		}
+	want := map[string]any{
+		"id":     "01J8F3K2M9QRSTVWXYZ012",
+		"colour": "green",
+		"tags":   []any{"study"},
+		"type":   "preset",
+		// Owned, and every one of them written.
+		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
+		"reviews_a_day": 45, "retention": 0.87, "learned": "interval",
+		"interval": 21, "counts": "cards", "backlog": 100, "even_load": true,
 	}
-	for _, written := range []string{
-		"minutes_a_day: 35", "new_a_day: 8", "reviews_a_day: 45", "retention: 0.87",
-		"even_load: true",
-	} {
-		if !strings.Contains(held, written) {
-			t.Errorf("%q was not written to\n%s", written, held)
-		}
+	if got := frontmatter(t, s, "Sanskrit.md"); !reflect.DeepEqual(got, want) {
+		t.Errorf("frontmatter = %v,\n           want %v", got, want)
+	}
+	if held := read(t, s.vault, "Sanskrit.md"); !strings.Contains(
+		held, "# Sanskrit\n\nGrammar and vocabulary.\n") {
+		t.Errorf("the body is gone from\n%s", held)
+	}
+}
+
+// A block written in from the margin is spliced where its own keys stand. A key
+// written flush ends the mapping, and the person's keys below it — the identity
+// among them — stop being read at all.
+func TestAWriteIntoAnIndentedBlock(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\n  id: 01J8F3K2M9QRSTVWXYZ012\n  type: preset\n" +
+			"  goal: minutes_a_day\n  minutes_a_day: 20\n  colour: green\n---\n\n# Sanskrit\n",
+	})
+
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"id": "01J8F3K2M9QRSTVWXYZ012", "colour": "green", "type": "preset",
+		"goal": "minutes_a_day", "minutes_a_day": 35, "new_a_day": 8,
+		"reviews_a_day": 45, "retention": 0.87, "learned": "interval",
+		"interval": 21, "counts": "cards", "backlog": 100, "even_load": true,
+	}
+	if got := frontmatter(t, s, "Sanskrit.md"); !reflect.DeepEqual(got, want) {
+		t.Errorf("frontmatter = %v,\n           want %v", got, want)
+	}
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if held.Preset.MinutesADay != 35 {
+		t.Errorf("the note reads back at %d minutes a day", held.Preset.MinutesADay)
+	}
+}
+
+// A note written by an editor that marks its files and ends its lines the other
+// way comes out of a write written the same way.
+func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "\xef\xbb\xbf---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\ntype: preset\r\n" +
+			"minutes_a_day: 20\r\n---\r\n\r\n# Sanskrit\r\n",
+	})
+
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	held := read(t, s.vault, "Sanskrit.md")
+	if !strings.HasPrefix(held, "\xef\xbb\xbf") {
+		t.Errorf("the mark is gone from\n%q", held)
+	}
+	if strings.Contains(strings.ReplaceAll(held, "\r\n", ""), "\n") {
+		t.Errorf("a bare newline was written into a note ending its lines the other way:\n%q", held)
+	}
+	if got := frontmatter(t, s, "Sanskrit.md")["minutes_a_day"]; got != 35 {
+		t.Errorf("minutes_a_day = %v", got)
 	}
 }
 

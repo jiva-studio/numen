@@ -20,12 +20,8 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   ...said,
 })
 
-/** Every budget closing the day, so each of them is weighed against. */
-const closes: Closes = {
-  new: 'new_a_day',
-  reviews: 'reviews_a_day',
-  minutes: 'minutes_a_day',
-}
+/** What closes the day of the fixture, which is steered by its minutes. */
+const closes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',

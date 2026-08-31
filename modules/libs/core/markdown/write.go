@@ -351,6 +351,7 @@ func (d *Document) set(key string, rendered []byte) error {
 	if err != nil {
 		return err
 	}
+	rendered = indented(rendered, d.indent(node))
 
 	start, end, found := d.span(node, key)
 	if !found {
@@ -374,6 +375,42 @@ func (d *Document) set(key string, rendered []byte) error {
 	front = append(front, rendered...)
 	d.front = append(front, d.front[end:]...)
 	return nil
+}
+
+// indent is the whitespace the frontmatter's own keys stand at. A block written
+// in from the margin is a mapping that ends at the first line written flush,
+// and the keys below it become text.
+func (d *Document) indent(node *yaml.Node) string {
+	if node == nil || len(node.Content) == 0 {
+		return ""
+	}
+	lines := lineOffsets(d.front)
+	at := node.Content[0].Line
+	if at < 1 || at >= len(lines) {
+		return ""
+	}
+	return leading(string(d.front[lines[at-1]:lines[at]]))
+}
+
+// indented is rendered lines written at the indentation the block's keys stand
+// at. A line with nothing on it takes none.
+func indented(rendered []byte, indent string) []byte {
+	if indent == "" || len(rendered) == 0 {
+		return rendered
+	}
+	out := make([]byte, 0, len(rendered)+4*len(indent))
+	for at := 0; at < len(rendered); {
+		end := len(rendered)
+		if next := bytes.IndexByte(rendered[at:], '\n'); next >= 0 {
+			end = at + next + 1
+		}
+		if len(bytes.TrimSpace(rendered[at:end])) > 0 {
+			out = append(out, indent...)
+		}
+		out = append(out, rendered[at:end]...)
+		at = end
+	}
+	return out
 }
 
 // span is the byte range one top-level key occupies in the frontmatter,

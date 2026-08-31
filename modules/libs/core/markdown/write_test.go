@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -646,5 +647,43 @@ func TestALinkWrittenAgainInAnotherRoleIsReseated(t *testing.T) {
 	}
 	if !strings.Contains(out, "role: parent") || strings.Contains(out, "role: child") {
 		t.Errorf("it did not take the new role:\n%s", out)
+	}
+}
+
+// A frontmatter written in from the margin is spliced where its own keys stand.
+// A line written flush ends the mapping, and every key below it becomes text
+// the YAML decoder drops without saying so — the person's own keys among them.
+func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
+	raw := "---\n" +
+		"  type: preset\n" +
+		"  id: 01J8\n" +
+		"  minutes_a_day: 20\n" +
+		"  colour: green\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetValue("minutes_a_day", 35); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	if err := d.SetValue("new_a_day", 8); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	back := reopen(t, got)
+	if id, ok := back.Identifier(); !ok || id != "01J8" {
+		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
+	}
+	front := Parse(domain.FileRef{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
+	want := map[string]any{
+		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
+		"colour": "green",
+	}
+	if !reflect.DeepEqual(front, want) {
+		t.Errorf("frontmatter = %v, want %v\n%s", front, want, got)
 	}
 }

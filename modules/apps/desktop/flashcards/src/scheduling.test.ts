@@ -104,7 +104,9 @@ describe('what a day of a preset holds', () => {
   })
 
   it('is nothing where the preset schedules nothing', () => {
-    expect(paused(settings({ newADay: 0, reviewsADay: 0 }), '2026-09-05')).toBe('no cards a day')
+    expect(paused(settings({ goal: Goal.RETENTION, newADay: 0, reviewsADay: 0 }), '2026-09-05')).toBe(
+      'no cards a day',
+    )
     expect(paused(settings(), '2026-09-05')).toBe('')
   })
 
@@ -112,6 +114,51 @@ describe('what a day of a preset holds', () => {
     const by = settings({ goal: Goal.BY_DATE, byDate: '2026-08-31' })
     expect(paused(by, '2026-09-05')).toMatch(/has passed$/)
     expect(paused(by, '2026-08-31')).toBe('')
+  })
+})
+
+// The budget the goal names is the one that pauses the preset. A budget the
+// goal does not name stands as the person left it and pauses nothing, so a
+// preset steered by its minutes runs a full day of reviews at no cards a day.
+describe('the budget each goal is paused by', () => {
+  const on = '2026-09-05'
+
+  it('is the minutes under a goal of minutes a day', () => {
+    expect(paused(settings({ minutesADay: 0 }), on)).toBe('no budget in time')
+    expect(paused(settings({ minutesADay: 20, newADay: 0, reviewsADay: 0 }), on)).toBe('')
+  })
+
+  it('is both card counts under a goal of retention', () => {
+    const asked = (said: Partial<Settings>) =>
+      paused(settings({ goal: Goal.RETENTION, ...said }), on)
+
+    expect(asked({ newADay: 0, reviewsADay: 0 })).toBe('no cards a day')
+    expect(asked({ newADay: 0, reviewsADay: 45 })).toBe('')
+    expect(asked({ minutesADay: 0 })).toBe('')
+  })
+
+  it('is the day itself under a goal of a date, and neither budget beside it', () => {
+    const asked = (said: Partial<Settings>) =>
+      paused(settings({ goal: Goal.BY_DATE, byDate: '2026-09-30', ...said }), on)
+
+    expect(asked({ minutesADay: 0 })).toBe('')
+    expect(asked({ newADay: 0, reviewsADay: 0 })).toBe('')
+    expect(asked({ byDate: '2026-09-04' })).toMatch(/has passed$/)
+  })
+})
+
+// A day of the week at none of the load schedules nothing, and it is a pause of
+// that one day.
+describe('the share a day of the week carries', () => {
+  // The fifth of September in 2026 is a Saturday.
+  it('pauses the day it stands at nothing on', () => {
+    expect(paused(settings({ load: { sat: 0 } }), '2026-09-05')).toMatch(/^no load on /)
+    expect(paused(settings({ load: { sat: 0 } }), '2026-09-04')).toBe('')
+  })
+
+  it('leaves a day carrying any of it scheduling something', () => {
+    expect(paused(settings({ load: { sat: 50 } }), '2026-09-05')).toBe('')
+    expect(paused(settings({ load: {} }), '2026-09-05')).toBe('')
   })
 })
 
@@ -303,7 +350,7 @@ describe('which preset schedules each deck', () => {
         'decks/Words.md': {
           path: 'Stopped.md',
           title: 'Stopped',
-          settings: settings({ newADay: 0, reviewsADay: 0 }),
+          settings: settings({ goal: Goal.RETENTION, newADay: 0, reviewsADay: 0 }),
         },
       }),
     })

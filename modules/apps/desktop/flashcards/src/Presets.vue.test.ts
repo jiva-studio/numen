@@ -18,12 +18,8 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   ...said,
 })
 
-/** Every budget closing the day, so each of them is weighed against. */
-const closes: Closes = {
-  new: 'new_a_day',
-  reviews: 'reviews_a_day',
-  minutes: 'minutes_a_day',
-}
+/** What closes the day of the fixture, which is steered by its minutes. */
+const closes: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
 
 const preset = (said: Partial<Preset> = {}): Preset => ({
   path: 'Sanskrit.md',
@@ -98,8 +94,8 @@ describe('what the goals come to today', () => {
     expect(drawn[1]?.find('.presets__done').text()).toBe('20%')
   })
 
-  // A person is as far through their day as their fullest budget says.
-  it('stands as far through as the fuller of the two budgets', () => {
+  // A person is as far through their day as the budget closing it says.
+  it('stands as far through as the minutes it is steered by', () => {
     const one = shown([preset({ answered: 11, took: 15 })])
 
     expect(one.find('.presets__done').text()).toBe('75%')
@@ -108,14 +104,15 @@ describe('what the goals come to today', () => {
   it('stands on the cards alone where the preset keeps no budget in time', () => {
     const one = shown([
       preset({
-        settings: settings({ minutesADay: 0 }),
+        settings: settings({ goal: Goal.RETENTION, minutesADay: 0 }),
         budget: { new: 10, reviews: 45, minutes: 0 },
+        closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
         answered: 11,
         took: 40,
       }),
     ])
 
-    expect(one.text()).toContain('no budget in time')
+    expect(one.text()).toContain('90% remembered')
     expect(one.find('.presets__done').text()).toBe('20%')
   })
 
@@ -128,7 +125,14 @@ describe('what the goals come to today', () => {
   // Sixty-six answers against thirteen cards is not a day that is done, and a
   // round number would read as one.
   it('says a day answered past its budget is over it, and never a percentage', () => {
-    const one = shown([preset({ budget: { new: 3, reviews: 10, minutes: 20 }, answered: 66 })])
+    const one = shown([
+      preset({
+        settings: settings({ goal: Goal.RETENTION }),
+        budget: { new: 3, reviews: 10, minutes: 20 },
+        closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
+        answered: 66,
+      }),
+    ])
     const said = one.find('.presets__done')
 
     expect(said.text()).toBe('over budget')

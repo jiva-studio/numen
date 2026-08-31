@@ -845,3 +845,35 @@ func TestRipeningAndTheProjectionAreOneDay(t *testing.T) {
 		}
 	}
 }
+
+// A date reaches the same material whether or not the days are evened out.
+//
+// The pace of a date walks a card face with no day chosen for it, and the run
+// beside it chooses one. The days past the front of a run carry nothing, so the
+// lightest day of a window is its last and every card face is asked for later
+// than the pace was told it would be.
+func TestADateReachesTheSameMaterialWithTheDaysEvenedOut(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 21)
+	p.Rule, p.Interval = history.RuleInterval, 21
+	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 8, 45
+
+	run := history.Simulation{
+		By: history.NewFSRSAt(p.Retention), Day: ahead, Cost: history.DefaultCost, Days: 22,
+	}
+	even, flat := p, p
+	even.EvenLoad, flat.EvenLoad = true, false
+	got, was := ran(t, run, now, even, nil, 40), ran(t, run, now, flat, nil, 40)
+
+	if got.Through[21] != was.Through[21] {
+		t.Errorf("the day it aims at gets through %v of the material with the days evened "+
+			"out and %v without", got.Through[21], was.Through[21])
+	}
+	// And the pace is one that gets there: what it says no pace reaches is what
+	// the run leaves unlearned.
+	if got.Short != 0 || got.Through[21] < 0.5 {
+		t.Errorf("the pace leaves %d card faces short and gets through %v of the material",
+			got.Short, got.Through[21])
+	}
+}
