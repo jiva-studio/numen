@@ -119,11 +119,52 @@ type Closes struct {
 	Minutes bool
 }
 
-// Closing is which budget closes this preset's day.
+// Allowance is what one day of a preset admits: how many cards of each kind it
+// has room for, how long the day still runs, and which of the three closes it.
+//
+// It is the one answer to what a day admits. A sitting spends against it and a
+// projection runs on it, so the picture a person drags a control over is the
+// arithmetic the sitting will run.
+type Allowance struct {
+	// Keeps is what the preset keeps for the whole of this day, the day of the
+	// week having had its say.
+	Keeps Budget
+	// New, Reviews and Minutes are what is left of it.
+	New     int
+	Reviews int
+	Minutes time.Duration
+	// Closes is which of the three closes the day.
+	Closes Closes
+	// Paused is a preset that schedules nothing at all.
+	Paused bool
+}
+
+// Admits is what this preset's day admits.
+//
+// Now is any instant of the review day, spent is what that day has already gone
+// through under the preset, and left is how much of the material the preset has
+// still to begin.
+func (p Preset) Admits(d Day, now time.Time, spent Spent, left int) Allowance {
+	opened := d.Ends(now).AddDate(0, 0, -1)
+	out := Allowance{
+		Keeps:  p.on(opened.Weekday()),
+		Closes: p.closing(),
+		Paused: p.Paused(d, now),
+	}
+	if p.Goal == GoalDate {
+		out.Keeps.New = p.paces(d, now, left)
+	}
+	out.New = out.Keeps.New - spent.New
+	out.Reviews = out.Keeps.Reviews - spent.Reviews
+	out.Minutes = time.Duration(out.Keeps.Minutes*float64(time.Minute)) - spent.Took
+	return out
+}
+
+// closing is which budget closes this preset's day.
 //
 // A goal of a date closes the day on a count of new cards, which is the share
 // of the material a day has to begin to be through it by then.
-func (p Preset) Closing() Closes {
+func (p Preset) closing() Closes {
 	switch p.Goal {
 	case GoalRetention:
 		return Closes{New: true, Reviews: true}
@@ -150,10 +191,21 @@ func (p Preset) Paused(d Day, now time.Time) bool {
 	}
 }
 
-// Days is how many days of review there are from the day holding now through to
+// paces is how much of the material a day holds when a date sets the pace: what
+// is left to begin, over the days left to begin it in. A day past the one it
+// aims at holds none of it.
+func (p Preset) paces(d Day, now time.Time, left int) int {
+	days := p.days(d, now)
+	if days <= 0 {
+		return 0
+	}
+	return (left + days - 1) / days
+}
+
+// days is how many days of review there are from the day holding now through to
 // the day this preset aims at, counting both. A preset aiming at no day, or at
 // one behind us, has none.
-func (p Preset) Days(d Day, now time.Time) int {
+func (p Preset) days(d Day, now time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}

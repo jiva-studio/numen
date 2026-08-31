@@ -192,7 +192,7 @@ func (b *budgets) owing() []PresetOwing {
 	for path, one := range b.left {
 		out = append(out, PresetOwing{
 			Preset: path, Cards: b.cards[path], Answered: one.spent.Answered,
-			Took: one.spent.Took, Budget: one.budget,
+			Took: one.spent.Took, Budget: one.admits.Keeps,
 		})
 	}
 	return out

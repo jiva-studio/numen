@@ -876,3 +876,93 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 		t.Errorf("asking for 0.99 of the cards back, %d were owed today, want 3", got)
 	}
 }
+
+// The sitting and the projection are one arithmetic.
+//
+// What a day admits is worked out in one place, so what a deck screen offers
+// today and what the curve draws for that same first day are one number, under
+// every goal.
+func TestTheSittingAndTheProjectionAgreeOnTheDay(t *testing.T) {
+	for _, one := range []struct {
+		what  string
+		front string
+	}{
+		{"minutes", "goal: minutes_a_day\nminutes_a_day: 34\n" +
+			"new_a_day: 12\nreviews_a_day: 0\n"},
+		{"retention", "goal: retention\nretention: 0.9\n" +
+			"new_a_day: 5\nreviews_a_day: 7\nminutes_a_day: 0\n"},
+		{"a date", "goal: by_date\nby_date: 2026-09-14\n" +
+			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"},
+	} {
+		s := opened(t, map[string]string{
+			"Term.md":     term,
+			"On.md":       preset(one.front),
+			"decks/On.md": deckOf("On", 40, 0),
+		})
+
+		// Fifteen cards answered long enough ago to be owed today, and nothing
+		// answered today.
+		before := s.run(t, saturday.AddDate(0, 0, -30))
+		for i := range 15 {
+			answer(t, before, mark(i), 6*time.Second)
+		}
+
+		offers := asked(s.sittingAt(t, today, saturday))
+		if offers == 0 {
+			t.Fatalf("steered by its %s the day offered nothing to compare", one.what)
+		}
+		if projects := projected(t, s, saturday, "decks/On.md"); projects != offers {
+			t.Errorf("steered by its %s the sitting offers %d and the projection draws %d",
+				one.what, offers, projects)
+		}
+	}
+}
+
+// projected is how many cards the projection puts on the first day it runs,
+// over the cards of one deck, built the way a curve is built.
+func projected(t *testing.T, s vaulted, now time.Time, deck string) int {
+	t.Helper()
+	ctx := t.Context()
+
+	read, err := s.presets.Of(ctx, s.vault, deck)
+	if err != nil {
+		t.Fatal(err)
+	}
+	held, err := flashcards.Log{Stores: s.logs}.Read(ctx, s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	standing, err := s.standings.Execute(ctx, s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	by := history.NewFSRSAt(read.Preset.Retention)
+	schedules := history.ReplayUnder(history.By(by), held.Answers)
+	at := make(map[history.CardFace]history.Schedule)
+	under := make(map[history.CardFace]string)
+	unseen := 0
+	for _, card := range standing {
+		if card.Deck != deck {
+			continue
+		}
+		under[card.CardFace] = read.Path
+		s, answered := schedules[card.CardFace]
+		if !answered {
+			unseen++
+			continue
+		}
+		at[card.CardFace] = s
+	}
+
+	cost, costed := history.CostedUnder(history.NewFSRS(), held.Answers, under)[read.Path]
+	if !costed {
+		cost = history.DefaultCost
+	}
+	run := history.Simulation{By: by, Day: today, Cost: cost, Days: 1}
+	ran, err := run.Run(ctx, now, read.Preset, at, unseen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ran.Load[0]
+}

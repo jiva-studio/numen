@@ -75,7 +75,9 @@ func TestMinutesADayCountedOneCardAtATime(t *testing.T) {
 	run := history.Simulation{By: by, Day: ahead, Cost: cost, Days: days}
 	// Nothing is capped and no card is new, so every card face falls due on its
 	// own and the two counts are of the same answers.
-	p := history.Preset{ReviewsADay: 100000, NewADay: 0, MinutesADay: 0}
+	p := history.Preset{
+		Goal: history.GoalRetention, ReviewsADay: 100000, NewADay: 0, MinutesADay: 0,
+	}
 	got := ran(t, run, now, p, at, 0)
 
 	answers := 0
@@ -219,6 +221,16 @@ func TestALightDayMovesTheWeeksWorkAndKeepsIt(t *testing.T) {
 	}
 }
 
+// keeps is what a preset keeps for a day of the week, read off the day that
+// admits it.
+func keeps(p history.Preset, day time.Weekday) history.Budget {
+	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
+	for at.Weekday() != day {
+		at = at.AddDate(0, 0, 1)
+	}
+	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, 0).Keeps
+}
+
 // The budget a preset keeps on one day is the day of the week's share of it: a
 // light day holds less, the days either side of it hold more, and a week holds
 // what it held.
@@ -226,21 +238,21 @@ func TestTheBudgetOfOneDayIsItsShareOfTheLoad(t *testing.T) {
 	p := history.Preset{MinutesADay: 20, NewADay: 10, ReviewsADay: 40}
 	p.LightDays = []time.Weekday{time.Wednesday}
 
-	light := p.On(time.Wednesday)
+	light := keeps(p, time.Wednesday)
 	if want := (history.Budget{New: 5, Reviews: 20, Minutes: 10}); light != want {
 		t.Errorf("a light day holds %+v, want %+v", light, want)
 	}
-	beside := p.On(time.Tuesday)
+	beside := keeps(p, time.Tuesday)
 	if want := (history.Budget{New: 13, Reviews: 50, Minutes: 25}); beside != want {
 		t.Errorf("the day beside it holds %+v, want %+v", beside, want)
 	}
-	if away := p.On(time.Sunday); away.Reviews != p.ReviewsADay {
+	if away := keeps(p, time.Sunday); away.Reviews != p.ReviewsADay {
 		t.Errorf("a day away from the light one holds %+v", away)
 	}
 
 	var week history.Budget
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		one := p.On(day)
+		one := keeps(p, day)
 		week.New += one.New
 		week.Reviews += one.Reviews
 		week.Minutes += one.Minutes
@@ -278,7 +290,7 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 	// No budget binds, so a day carries what falls on it and what is compared is
 	// where the reviews fall.
 	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 60}
-	p := history.Preset{ReviewsADay: 9999}
+	p := history.Preset{Goal: history.GoalRetention, ReviewsADay: 9999}
 
 	lumpy := ran(t, run, now, p, at, 0)
 	p.EvenLoad = true
@@ -322,7 +334,8 @@ func TestAPresetSchedulingNothingProjectsNothing(t *testing.T) {
 	at := learned(by, now.AddDate(0, 0, -30), 12)
 
 	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
-	got := ran(t, run, now, history.Preset{MinutesADay: 60}, at, 8)
+	nothing := history.Preset{Goal: history.GoalRetention, MinutesADay: 60}
+	got := ran(t, run, now, nothing, at, 8)
 
 	if got.Answered != 0 || got.MinutesADay != 0 {
 		t.Errorf("projection = %+v, want nothing answered", got)

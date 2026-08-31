@@ -25,25 +25,19 @@ type budgets struct {
 	sat map[string]history.Spent
 }
 
-// allowance is one preset's day: what it keeps, what an answer under it costs,
-// what has gone on it already, and what is left of each of the three.
+// allowance is one preset's day: what the day admits, what an answer under it
+// costs, how it counts, and what has gone on it already.
 type allowance struct {
-	budget history.Budget
+	admits history.Allowance
 	cost   history.Cost
 	counts history.Counts
 	spent  history.Spent
-	paused bool
-	// closes is which of the three budgets closes this preset's day.
-	closes  history.Closes
-	new     int
-	reviews int
-	minutes time.Duration
 }
 
 // budgeted works out the day's budgets over the cards standing.
 //
 // What has been answered since the day opened is off it, so a second sitting
-// takes up where the first left off. A paused preset keeps nothing.
+// takes up where the first left off.
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *Reading, day history.Day,
 	standing []Standing, schedules map[history.CardFace]history.Schedule,
@@ -54,10 +48,6 @@ func budgeted(
 		left:  make(map[string]*allowance),
 		cards: make(map[string]int),
 	}
-
-	// The load a day carries is the load of the review day being sat, which is
-	// the day the spending is counted in.
-	opened := day.Ends(now).AddDate(0, 0, -1)
 
 	// A deck is asked once which preset schedules it, however many card faces it
 	// holds, and a preset note is opened once however many decks name it.
@@ -77,15 +67,8 @@ func budgeted(
 			}
 			path = p.Path
 			asked[one.Deck] = path
-			if _, held := out.left[path]; !held {
+			if _, held := settings[path]; !held {
 				settings[path] = p.Preset
-				out.left[path] = &allowance{
-					budget: p.Preset.On(opened.Weekday()),
-					cost:   history.DefaultCost,
-					counts: p.Preset.Counts,
-					closes: p.Preset.Closing(),
-					paused: p.Preset.Paused(day, now),
-				}
 			}
 		}
 		out.under[one.CardFace] = path
@@ -95,49 +78,41 @@ func budgeted(
 			unseen[path]++
 		}
 	}
-	// A day of a date holds the share of the material still to begin that has to
-	// be begun to be through it by that day.
-	for path, one := range out.left {
-		if p := settings[path]; p.Goal == history.GoalDate {
-			one.budget.New = paced(unseen[path], p.Days(day, now))
-		}
-	}
 
 	counting := make(map[string]history.Counts, len(asked))
 	for deck, path := range asked {
-		counting[deck] = out.left[path].counts
+		counting[deck] = settings[path].Counts
 	}
 	named := day.Names(now)
 	out.faced = history.Faced(day, named, log.Answers)
 
-	for path, one := range history.CostedUnder(by, log.Answers, out.under) {
-		out.left[path].cost = one
-	}
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
 	out.sat = history.Sat(day, named, log.Answers, in, counting)
+	spent := make(map[string]history.Spent, len(settings))
 	for deck, one := range out.sat {
-		spent := &out.left[asked[deck]].spent
-		spent.Answered += one.Answered
-		spent.New += one.New
-		spent.Reviews += one.Reviews
-		spent.Took += one.Took
+		at := spent[asked[deck]]
+		at.Answered += one.Answered
+		at.New += one.New
+		at.Reviews += one.Reviews
+		at.Took += one.Took
+		spent[asked[deck]] = at
 	}
-	for _, one := range out.left {
-		one.new = one.budget.New - one.spent.New
-		one.reviews = one.budget.Reviews - one.spent.Reviews
-		one.minutes = time.Duration(one.budget.Minutes*float64(time.Minute)) - one.spent.Took
+
+	costed := history.CostedUnder(by, log.Answers, out.under)
+	for path, p := range settings {
+		cost, held := costed[path]
+		if !held {
+			cost = history.DefaultCost
+		}
+		out.left[path] = &allowance{
+			admits: p.Admits(day, now, spent[path], unseen[path]),
+			cost:   cost,
+			counts: p.Counts,
+			spent:  spent[path],
+		}
 	}
 	return out, nil
-}
-
-// paced is how much of the material a day holds when a date sets the pace: what
-// is left to begin, over the days left to begin it in.
-func paced(left, days int) int {
-	if days <= 0 {
-		return left
-	}
-	return (left + days - 1) / days
 }
 
 // takes reports whether the preset a card face stands under has room for it
@@ -149,24 +124,24 @@ func paced(left, days int) int {
 // round again for nothing.
 func (b *budgets) takes(face history.CardFace, fresh bool) bool {
 	one, held := b.left[b.under[face]]
-	if !held || one.paused {
+	if !held || one.admits.Paused {
 		return false
 	}
 	if one.counts != history.CountsShows && b.faced[face] {
 		return true
 	}
-	cost, left, closes := one.cost.Review, &one.reviews, one.closes.Reviews
+	cost, left, closes := one.cost.Review, &one.admits.Reviews, one.admits.Closes.Reviews
 	if fresh {
-		cost, left, closes = one.cost.New, &one.new, one.closes.New
+		cost, left, closes = one.cost.New, &one.admits.New, one.admits.Closes.New
 	}
 	if closes && *left <= 0 {
 		return false
 	}
-	if one.closes.Minutes && one.minutes < cost {
+	if one.admits.Closes.Minutes && one.admits.Minutes < cost {
 		return false
 	}
 	*left--
-	one.minutes -= cost
+	one.admits.Minutes -= cost
 	return true
 }
 

@@ -224,10 +224,9 @@ func (s Simulation) Run(
 		ends := s.Day.Ends(open)
 		var used time.Duration
 
-		// The day of the week decides how much of the load this day carries.
-		keeps := p.On(open.Weekday())
-		budget := time.Duration(math.Round(keeps.Minutes * float64(time.Minute)))
-		reviews, fresh := keeps.Reviews, keeps.New
+		// What the day admits is the one answer, and it is the answer the
+		// sitting of that day will be held to.
+		admits := p.Admits(s.Day, open, Spent{}, left)
 
 		var due []int
 		for i, c := range cards {
@@ -239,21 +238,28 @@ func (s Simulation) Run(
 		// leaves the cards least overdue standing.
 		slices.SortFunc(due, func(a, b int) int { return older(cards[a], cards[b]) })
 
-		answered := 0
+		answered, seen := 0, 0
 		for _, i := range due {
-			if answered >= reviews {
+			if admits.Paused {
 				break
 			}
-			if budget > 0 && used+s.Cost.Review > budget {
+			if admits.Closes.Reviews && seen >= admits.Reviews {
+				break
+			}
+			if admits.Closes.Minutes && used+s.Cost.Review > admits.Minutes {
 				break
 			}
 			used += s.Cost.Review
+			seen++
 			answered++
 			cards[i] = s.step(cards[i], open, even)
 		}
 
-		for taken := 0; taken < fresh && left > 0; taken++ {
-			if budget > 0 && used+s.Cost.New > budget {
+		for begun := 0; left > 0 && !admits.Paused; begun++ {
+			if admits.Closes.New && begun >= admits.New {
+				break
+			}
+			if admits.Closes.Minutes && used+s.Cost.New > admits.Minutes {
 				break
 			}
 			used += s.Cost.New
@@ -314,9 +320,11 @@ type Budget struct {
 	Minutes float64
 }
 
-// On is the budget a preset keeps on this day of the week. A day named light
+// on is the budget a preset keeps on this day of the week. A day named light
 // carries LightShare of the load, and what it sheds stands on its neighbours.
-func (p Preset) On(day time.Weekday) Budget {
+//
+// What a day of it admits is Admits, which is the one place a limit is read.
+func (p Preset) on(day time.Weekday) Budget {
 	share := weekly(p.LightDays)[day]
 	return Budget{
 		New:     int(math.Round(share * float64(p.NewADay))),

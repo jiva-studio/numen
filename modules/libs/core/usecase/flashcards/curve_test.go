@@ -164,9 +164,8 @@ func TestTheCurveOfADateRunsToTheDayNamed(t *testing.T) {
 	inRange(t, got)
 }
 
-// More days to do the same material in is never more minutes a day. The early
-// days no budget gets through the material by are the dearest of the range and
-// not the cheapest: they want more than the range explores, not nothing.
+// More days to do the same material in is never more minutes a day: the date
+// paces the material, so a nearer day is a dearer one.
 func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
@@ -179,11 +178,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unmet := 0
 	for i, one := range got.At {
-		if !one.Met {
-			unmet++
-		}
 		if one.Minutes <= 0 {
 			t.Errorf("%s wants %v minutes a day, and no day is got through for nothing",
 				got.Days[i], one.Minutes)
@@ -193,20 +188,16 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 				got.Days[i], one.Minutes, got.Days[i-1], got.At[i-1].Minutes)
 		}
 	}
-	// Eight new cards a day is thirty cards in four, so the first days of the
-	// range are days no budget is through the material by.
-	if unmet == 0 {
-		t.Fatal("no day of the range is out of reach, and the fall is not under test")
-	}
 	if got.At[0].Minutes <= got.At[len(got.At)-1].Minutes {
 		t.Errorf("the first day wants %v minutes a day and the last wants %v",
 			got.At[0].Minutes, got.At[len(got.At)-1].Minutes)
 	}
 }
 
-// A day nothing gets the material through by is said so, and the budget that
-// falls short is told how much of it it would get through.
-func TestADayThatCannotBeMet(t *testing.T) {
+// A date paces what it holds, so no day of the range is out of reach and the
+// material is through by the day the preset aims at. The card counts standing
+// beside the date take no part in it.
+func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	s := opened(t, studied(30))
 	p := history.Preset{
 		Goal: history.GoalDate, By: noon.AddDate(0, 0, 2).Truncate(24 * time.Hour),
@@ -218,16 +209,17 @@ func TestADayThatCannotBeMet(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, one := range got.At {
-		if one.Met || one.Enough {
-			t.Errorf("%s is met at %+v, and one new card a day is three cards of thirty",
+		if !one.Met {
+			t.Errorf("%s is out of reach at %+v, and a date paces what it holds",
 				got.Days[i], one)
 		}
-		if one.Through <= 0 || one.Through >= 1 {
-			t.Errorf("%s gets through %v of the material", got.Days[i], one.Through)
-		}
 	}
-	if got.Suggested != flashcards.Nowhere {
-		t.Errorf("suggested %+v, and no day on the curve can be met", got.Suggested)
+	last := got.At[len(got.At)-1]
+	if last.Through < 1 || !last.Enough {
+		t.Errorf("the day it aims at gets through %v of the material", last.Through)
+	}
+	if got.Suggested == flashcards.Nowhere {
+		t.Error("no day is suggested, and the day it aims at is through the material")
 	}
 }
 
@@ -253,7 +245,10 @@ func TestADayThatHasPassedHasNoCurve(t *testing.T) {
 // stands is worked out with them applied.
 func TestTheCurveIsWorkedOutWithLightDaysAndAnEvenLoad(t *testing.T) {
 	s := opened(t, studied(30))
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := history.Preset{
+		Goal: history.GoalRetention, Retention: 0.9,
+		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	}
 
 	flat, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {

@@ -228,7 +228,7 @@ func (u Curves) minutes(
 	at map[history.CardFace]history.Schedule, unseen int,
 ) (Curve, error) {
 	free := p
-	free.MinutesADay = 0
+	free.MinutesADay = int(history.MinutesADayBounds.Most)
 	load, err := run.Run(ctx, now, free, at, unseen)
 	if err != nil {
 		return Curve{}, err
@@ -323,51 +323,29 @@ func (u Curves) date(
 	}
 	run.Days = days
 
-	// The whole range is walked once at each budget, and the day a budget gets
-	// through the material is read out of the walk. The budgets are walked from
-	// the longest day down, so what stands against a day at the end is the
-	// shortest day that got through by it.
+	// What the day the preset aims at comes to, over the whole range.
 	standing, err := run.Run(ctx, now, p, at, unseen)
 	if err != nil {
 		return Curve{}, err
 	}
-	free := p
-	free.MinutesADay = 0
-	carrying, err := run.Run(ctx, now, free, at, unseen)
-	if err != nil {
-		return Curve{}, err
-	}
-	top := ceiling(carrying.MinutesADay, float64(p.MinutesADay))
-	// A day no budget on the range gets through the material by needs more than
-	// the range explores, so it stands at the top of it. The walk below only
-	// ever lowers a day, and the minutes a day needed fall as the days grow.
-	needs := make([]float64, days)
-	for day := range needs {
-		needs[day] = top
-	}
-	met := make([]bool, days)
-	for i := Points; i >= 1; i-- {
-		one := p
-		one.MinutesADay = int(math.Round(top * float64(i) / Points))
-		ran, err := run.Run(ctx, now, one, at, unseen)
+
+	// Each day of the range is run at its own pace, which is the material spread
+	// over the days up to it, and what that day of review costs is read off it.
+	for _, day := range spread(days, Points) {
+		aiming, asks := p, run
+		aiming.By = open.AddDate(0, 0, day)
+		asks.Days = day + 1
+		ran, err := asks.Run(ctx, now, aiming, at, unseen)
 		if err != nil {
 			return Curve{}, err
 		}
-		for day, share := range ran.Through {
-			if share >= 1 {
-				needs[day], met[day] = float64(one.MinutesADay), true
-			}
-		}
-	}
-
-	for _, day := range spread(days, Points) {
 		out.Grid = append(out.Grid, float64(day))
-		out.Days = append(out.Days, u.Day.Names(open.AddDate(0, 0, day)))
+		out.Days = append(out.Days, u.Day.Names(aiming.By))
 		out.At = append(out.At, Point{
-			Minutes: needs[day],
+			Minutes: ran.MinutesADay,
 			Through: standing.Through[day],
 			Enough:  standing.Through[day] >= 1,
-			Met:     met[day],
+			Met:     ran.Through[len(ran.Through)-1] >= 1,
 		})
 	}
 
