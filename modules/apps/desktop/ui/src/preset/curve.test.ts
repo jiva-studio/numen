@@ -12,12 +12,11 @@ import {
   costOf,
   dayAfter,
   daysUntil,
+  FIELDS,
   held,
-  kept,
   nearest,
   paused,
   placeAt,
-  producedBy,
   fieldsUnder,
   idle,
   producing,
@@ -159,54 +158,47 @@ describe('what one place of the curve produces', () => {
     honest: true,
   }
 
-  it('takes the goal’s own value off the grid and the limits off the point', () => {
-    const made = producing(settings(), 3, curve, today)
+  // The control moves the one value its goal names. What that comes to on this
+  // vault is said in a sentence and becomes no setting, so no number the person
+  // did not name can close their day.
+  it('takes the goal’s own value off the grid, and writes nothing else', () => {
+    const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
+    const made = producing(was, 3, curve, today)
     expect(made.minutesADay).toBe(30)
-    expect(made.reviewsADay).toBe(120)
-    expect(made.retention).toBe(0.93)
+    expect(made.newADay).toBe(12)
+    expect(made.reviewsADay).toBe(0)
+    expect(made.retention).toBe(0.95)
   })
 
   it('leaves the settings as they are where the grid has no such place', () => {
     expect(producing(settings(), 9, curve, today)).toStrictEqual(settings())
   })
 
-  it('names the day of the place for a goal of a date', () => {
+  it('names the day of the place for a goal of a date, and nothing else', () => {
     const dated: Curve = {
       ...curve,
       goal: 'date',
       days: ['2026-08-31', '2026-09-09', '2026-09-19', '2026-09-29'],
       at: curve.at.map((one) => ({ ...one, minutes: 45 })),
     }
-    const made = producing(settings({ goal: 'date' }), 3, dated, today)
+    const was = settings({ goal: 'date', minutesADay: 20, reviewsADay: 0 })
+    const made = producing(was, 3, dated, today)
     expect(made.byDate).toBe('2026-09-29')
-    expect(made.minutesADay).toBe(45)
+    expect(made.minutesADay).toBe(20)
+    expect(made.reviewsADay).toBe(0)
   })
 
-  it('is the goal’s for every field but the ones a person typed themselves', () => {
-    const mine = settings({ newADay: 3, reviewsADay: 12, retention: 0.95 })
-    const made = producing(mine, 3, curve, today)
-    const out = kept(made, mine, new Set(['reviewsADay']))
-    expect(out.reviewsADay).toBe(12)
-    expect(out.retention).toBe(0.93)
-    expect(out.newADay).toBe(3)
-  })
-
-  it('is the goal’s throughout where nothing was typed by hand', () => {
-    const mine = settings({ reviewsADay: 12 })
-    const made = producing(mine, 3, curve, today)
-    expect(kept(made, mine, new Set()).reviewsADay).toBe(120)
+  it('moves the target alone under a goal of retention', () => {
+    const was = settings({ goal: 'retention', newADay: 12, reviewsADay: 30 })
+    const made = producing(was, 3, { ...curve, goal: 'retention' }, today)
+    expect(made.retention).toBe(0.99)
+    expect(made.newADay).toBe(12)
+    expect(made.reviewsADay).toBe(30)
   })
 
   it('leaves the knob, the field and what is written at one value', () => {
-    const made = kept(producing(settings(), 2, curve, today), settings(), new Set())
+    const made = producing(settings(), 2, curve, today)
     expect(made.minutesADay).toBe(curve.grid[2])
-  })
-
-  it('keeps a value typed by hand where the knob moves on', () => {
-    const mine = settings({ minutesADay: 143 })
-    const moved = kept(producing(mine, 1, curve, today), mine, new Set(['minutesADay']))
-    expect(moved.minutesADay).toBe(143)
-    expect(moved.reviewsADay).toBe(40)
   })
 })
 
@@ -274,28 +266,49 @@ describe('a goal with nothing to work on', () => {
 })
 
 describe('the settings a goal schedules by', () => {
-  it('leaves the day out of every goal but the one it steers', () => {
-    expect(fieldsUnder('minutes')).not.toContain('byDate')
-    expect(fieldsUnder('retention')).not.toContain('byDate')
-    expect(fieldsUnder('date')).toContain('byDate')
+  // A goal names one budget, and the budgets of the other two take no part in
+  // it: they are not drawn, so nothing on the screen offers to cut the day
+  // short by a measure the person did not name.
+  it('is the minutes alone under a goal of minutes', () => {
+    const under = fieldsUnder('minutes')
+    expect(under).toContain('minutesADay')
+    expect(under).not.toContain('newADay')
+    expect(under).not.toContain('reviewsADay')
+    expect(under).not.toContain('retention')
+    expect(under).not.toContain('byDate')
   })
 
-  it('draws the card limits, the light days and the even load under all three', () => {
+  it('is the target and the counts that close a day under a goal of retention', () => {
+    const under = fieldsUnder('retention')
+    expect(under).toContain('retention')
+    expect(under).toContain('newADay')
+    expect(under).toContain('reviewsADay')
+    expect(under).not.toContain('minutesADay')
+    expect(under).not.toContain('byDate')
+  })
+
+  it('is the day alone under a goal of a date, which nothing else may cut short', () => {
+    const under = fieldsUnder('date')
+    expect(under).toContain('byDate')
+    expect(under).not.toContain('minutesADay')
+    expect(under).not.toContain('newADay')
+    expect(under).not.toContain('reviewsADay')
+  })
+
+  it('draws what stands under no goal in particular under all three', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
-      expect(fieldsUnder(goal)).toContain('newADay')
-      expect(fieldsUnder(goal)).toContain('reviewsADay')
+      expect(fieldsUnder(goal)).toContain('counts')
       expect(fieldsUnder(goal)).toContain('lightDays')
       expect(fieldsUnder(goal)).toContain('evenLoad')
-      expect(fieldsUnder(goal)).toContain('minutesADay')
-      expect(fieldsUnder(goal)).toContain('retention')
     }
   })
-})
 
-describe('the fields a goal fills in itself', () => {
-  it('leaves out the one the goal names', () => {
-    expect(producedBy('minutes')).not.toContain('minutesADay')
-    expect(producedBy('retention')).not.toContain('retention')
+  it('draws them in the order the receipt keeps them in', () => {
+    for (const goal of ['minutes', 'retention', 'date'] as const) {
+      const under = fieldsUnder(goal)
+      const places = under.map((field) => FIELDS.indexOf(field))
+      expect(places).toStrictEqual([...places].sort((a, b) => a - b))
+    }
   })
 })
 

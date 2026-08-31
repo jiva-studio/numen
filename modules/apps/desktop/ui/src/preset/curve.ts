@@ -55,15 +55,28 @@ export const FIELDS: readonly Field[] = [
 ]
 
 /**
- * The settings a goal schedules by, which are the rows the receipt draws. A
- * day steers nothing unless it is the goal, so it stands under that goal alone.
+ * The budget each goal schedules by. A goal names one, and the settings of the
+ * other two take no part in it: they are neither drawn nor written while it
+ * stands, and the file keeps them where the person left them.
+ *
+ * Minutes are a budget of time. Retention is a budget of cards, since the
+ * counts are what close a day worked to a target. A date is neither: the pace
+ * follows from the day named, and nothing else may cut it short.
  */
-export const fieldsUnder = (goal: Goal): readonly Field[] =>
-  FIELDS.filter((field) => field !== 'byDate' || goal === 'date')
+const BUDGETS: Record<Goal, readonly Field[]> = {
+  minutes: ['minutesADay'],
+  retention: ['retention', 'newADay', 'reviewsADay'],
+  date: ['byDate'],
+}
 
-/** The fields a goal fills in itself. The value the goal names is its own. */
-export const producedBy = (goal: Goal): readonly Field[] =>
-  goal === 'minutes' ? ['reviewsADay', 'retention'] : ['minutesADay', 'reviewsADay']
+/** The settings that stand under no goal in particular, and are drawn under all. */
+const ALWAYS: readonly Field[] = ['counts', 'lightDays', 'evenLoad']
+
+/** The settings a goal schedules by, which are the rows the receipt draws. */
+export const fieldsUnder = (goal: Goal): readonly Field[] => {
+  const drawn = new Set<Field>([...BUDGETS[goal], ...ALWAYS])
+  return FIELDS.filter((field) => drawn.has(field))
+}
 
 /** The field the goal steers, which is the knob under another name. */
 export const steers = (goal: Goal): Field => {
@@ -74,11 +87,11 @@ export const steers = (goal: Goal): Field => {
 
 /**
  * The settings that give a curve its shape, as one word. The value the knob
- * rides and the values it produces are left out, so walking the grid reads the
- * same shape throughout and a curve is asked for once for it.
+ * rides is left out, so walking the grid reads the same shape throughout and a
+ * curve is asked for once for it.
  */
 export const shapeOf = (settings: Settings): string => {
-  const own = new Set<Field>([steers(settings.goal), ...producedBy(settings.goal)])
+  const own = new Set<Field>([steers(settings.goal)])
   const said: Record<Field, string> = {
     newADay: `${settings.newADay}`,
     reviewsADay: `${settings.reviewsADay}`,
@@ -165,48 +178,6 @@ export const idle = (curve: Curve): Idle => {
   return curve.cards === 0 ? 'noCards' : ''
 }
 
-/**
- * The fields that no longer follow the goal: those the goal fills in itself
- * where what stands in the file differs from what the goal produces for its
- * own stored value. Nothing is remembered between reads — the file carries the
- * goal and the values, and the two either agree or they do not.
- */
-export const offGoal = (settings: Settings, curve: Curve, today: Date): ReadonlySet<Field> => {
-  const off = new Set<Field>()
-  if (!curve.honest || curve.grid.length === 0) return off
-  const place = nearest(curve.grid, standing(settings, today))
-  const produced = producing(settings, place, curve, today)
-  for (const field of producedBy(settings.goal)) {
-    if (!agree(settings, produced, field)) off.add(field)
-  }
-  return off
-}
-
-/** Whether one field reads the same in two settings. */
-const agree = (one: Settings, two: Settings, field: Field): boolean => {
-  if (field === 'retention') return Math.abs(one.retention - two.retention) < 0.005
-  if (field === 'minutesADay') return one.minutesADay === two.minutesADay
-  if (field === 'reviewsADay') return one.reviewsADay === two.reviewsADay
-  if (field === 'newADay') return one.newADay === two.newADay
-  return true
-}
-
-/** One field of the settings put back to what the goal produces for it. */
-export const following = (
-  settings: Settings,
-  field: Field,
-  curve: Curve,
-  today: Date,
-): Settings => {
-  if (curve.grid.length === 0) return settings
-  const place = nearest(curve.grid, standing(settings, today))
-  const produced = producing(settings, place, curve, today)
-  if (field === 'retention') return { ...settings, retention: produced.retention }
-  if (field === 'minutesADay') return { ...settings, minutesADay: produced.minutesADay }
-  if (field === 'reviewsADay') return { ...settings, reviewsADay: produced.reviewsADay }
-  return settings
-}
-
 /** Whether the day the goal names is behind us, which spends the budget. */
 export const spent = (settings: Settings, today: Date): boolean =>
   settings.goal === 'date' && settings.byDate !== '' && daysUntil(today, settings.byDate) < 0
@@ -285,8 +256,8 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
 }
 
 /**
- * The settings one place of the curve produces. The goal's own value comes off
- * the grid, and the daily limits off what the preset comes to there.
+ * The settings one place of the curve produces, which is the goal's own value
+ * off the grid. Every other setting stands as the person left it.
  */
 export const producing = (
   was: Settings,
@@ -295,43 +266,13 @@ export const producing = (
   today: Date,
 ): Settings => {
   const value = curve.grid[place] ?? standing(was, today)
-  const point = curve.at[place]
-  if (!point) return was
-  const limits = {
-    reviewsADay: held(Math.round(point.reviews), 'reviewsADay'),
-    minutesADay: held(Math.round(point.minutes), 'minutesADay'),
-  }
   if (curve.goal === 'retention') {
-    return { ...was, retention: held(round(value, 2), 'retention'), ...limits }
+    return { ...was, retention: held(round(value, 2), 'retention') }
   }
   if (curve.goal === 'date') {
-    return { ...was, byDate: curve.days[place] ?? dayAfter(today, value), ...limits }
+    return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
   }
-  return {
-    ...was,
-    minutesADay: held(Math.round(value), 'minutesADay'),
-    reviewsADay: limits.reviewsADay,
-    retention: held(round(point.retained, 2), 'retention'),
-  }
-}
-
-/**
- * The settings the goal produced, with every field a person typed themselves
- * put back as they typed it.
- */
-export const kept = (
-  produced: Settings,
-  byHand: Settings,
-  fields: ReadonlySet<Field>,
-): Settings => {
-  let out = produced
-  if (fields.has('minutesADay')) out = { ...out, minutesADay: byHand.minutesADay }
-  if (fields.has('newADay')) out = { ...out, newADay: byHand.newADay }
-  if (fields.has('reviewsADay')) out = { ...out, reviewsADay: byHand.reviewsADay }
-  if (fields.has('retention')) out = { ...out, retention: byHand.retention }
-  if (fields.has('lightDays')) out = { ...out, lightDays: byHand.lightDays }
-  if (fields.has('evenLoad')) out = { ...out, evenLoad: byHand.evenLoad }
-  return out
+  return { ...was, minutesADay: held(Math.round(value), 'minutesADay') }
 }
 
 /** A number to that many places. */

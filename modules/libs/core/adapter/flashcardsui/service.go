@@ -50,10 +50,11 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	one.New = int32(owing.New)
 	for _, deck := range owing.Decks {
 		one.Decks = append(one.Decks, &v1.DeckOwing{
-			Deck:  deck.Deck,
-			Faces: int32(deck.Faces),
-			Due:   int32(deck.Due),
-			New:   int32(deck.New),
+			Deck:     deck.Deck,
+			Faces:    int32(deck.Faces),
+			Due:      int32(deck.Due),
+			New:      int32(deck.New),
+			Answered: int32(deck.Answered),
 		})
 	}
 	for _, preset := range owing.Presets {

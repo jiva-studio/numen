@@ -109,12 +109,32 @@ describe('a deck with nothing waiting', () => {
     decks: [{ deck: 'decks/Words.md', faces, due, new: fresh }],
   })
 
-  it('says the day is done where the deck holds cards and owes none', () => {
-    const one = shown([preset({ cards: 0 })], holding(20, 0, 0))
+  // Something was answered under the preset today and nothing of this deck is
+  // left, which is the day's work met.
+  it('says the day is done where the deck was answered and owes none', () => {
+    const one = shown([preset({ cards: 0, answered: 6, took: 3 })], holding(20, 0, 0))
 
     expect(one.find('.decks__met').text()).toBe('Done today')
     expect(one.findAll('.owed')).toHaveLength(1)
     expect(one.find('.decks__all').text()).toContain('0')
+  })
+
+  // Having nothing due is not having finished. Nothing was answered under this
+  // preset today, so no deck of it has done anything.
+  it('says a deck nothing fell due for has nothing, and never that it is done', () => {
+    const one = shown([preset({ cards: 0, answered: 0, took: 0 })], holding(20, 0, 0))
+
+    expect(one.find('.decks__stopped').text()).toBe('Nothing today')
+    expect(one.findAll('.decks__met')).toHaveLength(0)
+  })
+
+  // The budget was spent elsewhere under this preset, which is why this deck is
+  // asked nothing. That is the preset's reason, the way a paused one's is.
+  it('says the preset is full where its budget is what left the deck nothing', () => {
+    const one = shown([preset({ cards: 0, answered: 55, took: 20 })], holding(20, 0, 0))
+
+    expect(one.find('.decks__stopped').text()).toBe('the day is full')
+    expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
   it('says the reason instead where the preset schedules nothing today', () => {
@@ -138,5 +158,42 @@ describe('a deck with nothing waiting', () => {
 
     expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
     expect(one.findAll('.decks__met')).toHaveLength(0)
+  })
+})
+
+// The tile over the list and the rows under it are drawn from the one reading
+// of the day, so they cannot say different things about it.
+describe('the tile and the decks under it', () => {
+  it('agree: at nothing done, no deck of that preset claims to be done', () => {
+    const over: Owing = {
+      ...vault,
+      due: 10,
+      new: 0,
+      decks: [
+        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0 },
+        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0 },
+        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0 },
+      ],
+    }
+    const one = shown(
+      [
+        preset({
+          decks: ['decks/Words.md', 'decks/Roots.md', 'decks/Stems.md'],
+          named: 3,
+          faces: 60,
+          answered: 0,
+          took: 0,
+        }),
+      ],
+      over,
+    )
+
+    expect(one.find('.presets__done').text()).toBe('0%')
+    expect(one.findAll('.decks__met')).toHaveLength(0)
+    expect(one.findAll('.decks__stopped').map((said) => said.text())).toStrictEqual([
+      'Nothing today',
+      'Nothing today',
+    ])
+    expect(one.find('.decks__deck').find('.owed').text()).toBe('10 to review')
   })
 })

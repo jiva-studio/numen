@@ -53,7 +53,7 @@ export const WORDS = {
   countsName: (counts: Counts) => COUNTS[counts],
   ends: (goal: Goal) => ENDS[goal],
   /** What the height of the picture is read in, said over it. */
-  height: (goal: Goal) => (goal === 'minutes' ? 'Cards a day' : 'Minutes a day'),
+  height: (goal: Goal) => (goal === 'minutes' ? 'Cards in a sitting' : 'Minutes a day'),
   /** One height of the picture, against the line it is the height of. */
   heightAt: (goal: Goal, value: number) =>
     goal === 'minutes' ? `${count(value)} cards` : `${count(value)} min`,
@@ -89,7 +89,10 @@ export const WORDS = {
       return `${share(value)} of it coming back is ${count(minutes)} minutes a day and ${count(reviews)} cards.`
     }
     if (goal === 'date') return `Being through it by then is ${count(minutes)} minutes a day.`
-    return `A day of ${count(value)} minutes holds ${count(reviews)} cards, and ${share(retained)} of it comes back.`
+    return (
+      `A sitting of ${count(value)} minutes puts ${count(reviews)} cards in front of you, ` +
+      `and ${share(retained)} of the material comes back.`
+    )
   },
   /** The arithmetic under a goal of a date, with the sum already done. */
   owing: (cards: number) => `${count(cards)} cards would still be owed on that day.`,
@@ -112,9 +115,6 @@ export const WORDS = {
   /** The preset schedules nothing, for either of the two reasons. */
   spent: 'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
   paused: 'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  /** A field a person typed themselves, and the way back under the goal. */
-  byHand: 'typed by hand',
-  follows: 'Follow the goal again',
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */

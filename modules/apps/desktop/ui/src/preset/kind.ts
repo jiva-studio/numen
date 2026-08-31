@@ -19,12 +19,9 @@ import {
   approximate,
   dayAfter,
   daysUntil,
-  following,
   held,
   isDay,
-  kept,
   nearest,
-  offGoal,
   producing,
   shapeOf,
   standing,
@@ -46,8 +43,6 @@ export interface Held {
   curve(): Curve
   /** Where the knob stands on that curve. */
   place(): number
-  /** The fields a person typed themselves, which no longer follow the goal. */
-  byHand(): ReadonlySet<Field>
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
   /** What the file was refused for, in words a person reads, or nothing. */
@@ -63,12 +58,10 @@ export interface Held {
   /** The knob let go of, which is what writes the group. */
   settles(): void
   /**
-   * One field typed by hand, which keeps what was typed and stops following.
-   * The field the goal steers is the knob, and typing into it moves the knob.
+   * One field typed. The field the goal steers is the knob, and typing into it
+   * moves the knob.
    */
   types(field: Field, value: number | string | boolean | readonly string[]): void
-  /** That field put back under the goal. */
-  follows(field: Field): void
   /** The tab is closing. */
   shuts(id: string): void
 }
@@ -198,11 +191,9 @@ export function presetting(
     one.at = answer.at
   }
 
-  /** The settings the place the knob stands at produces, with what was typed kept. */
+  /** The settings the place the knob stands at produces, which is its own value. */
   const turns = (one: Kept, place: number): void => {
-    const off = offGoal(one.settings.value, one.curve.value, today())
-    const produced = producing(one.settings.value, place, one.curve.value, today())
-    one.settings.value = kept(produced, one.settings.value, off)
+    one.settings.value = producing(one.settings.value, place, one.curve.value, today())
     one.place.value = place
   }
 
@@ -248,7 +239,6 @@ export function presetting(
       settings: () => one.settings.value,
       curve: () => one.curve.value,
       place: () => one.place.value,
-      byHand: () => offGoal(one.settings.value, one.curve.value, today()),
       problems: () => one.problems.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,
@@ -274,10 +264,6 @@ export function presetting(
         // A field the knob does not ride gives the curve its shape, so the
         // curve is asked for again where one of those is typed.
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)
-        void writes(one)
-      },
-      follows: (field) => {
-        one.settings.value = following(one.settings.value, field, one.curve.value, today())
         void writes(one)
       },
       shuts: (tab) => {

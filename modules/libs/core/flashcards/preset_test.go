@@ -156,14 +156,26 @@ func TestADateIsABudget(t *testing.T) {
 	}
 }
 
-// Limits of zero are a pause, and every deck pointing at the preset stops.
-func TestZeroIsAPause(t *testing.T) {
-	p, problems := flashcards.ReadPreset(front(t, "new_a_day: 0\nreviews_a_day: 0\n"))
+// A budget of zero is a pause where the goal names that budget, and every deck
+// pointing at the preset stops. A budget the goal does not name is not read.
+func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
+	for _, one := range []struct {
+		front  string
+		paused bool
+	}{
+		{"goal: retention\nnew_a_day: 0\nreviews_a_day: 0\n", true},
+		{"goal: retention\nminutes_a_day: 0\n", false},
+		{"goal: minutes_a_day\nminutes_a_day: 0\n", true},
+		{"goal: minutes_a_day\nnew_a_day: 0\nreviews_a_day: 0\n", false},
+	} {
+		p, problems := flashcards.ReadPreset(front(t, one.front))
 
-	if len(problems) != 0 {
-		t.Fatalf("problems = %v", problems)
-	}
-	if !p.Paused(flashcards.Day{Starts: flashcards.DayStarts}, time.Now()) {
-		t.Error("a preset holding no cards a day schedules nothing")
+		if len(problems) != 0 {
+			t.Fatalf("problems = %v", problems)
+		}
+		got := p.Paused(flashcards.Day{Starts: flashcards.DayStarts}, time.Now())
+		if got != one.paused {
+			t.Errorf("%q is paused %v, want %v", one.front, got, one.paused)
+		}
 	}
 }

@@ -108,10 +108,66 @@ func Defaults() Preset {
 	}
 }
 
-// Paused reports whether the preset schedules nothing: no cards a day, or a day
-// that has passed.
+// Closes is which of a preset's budgets closes its day.
+//
+// The goal names the budget that closes the day, and every other budget takes
+// no part. A budget taking no part stands in the file where the person left it
+// and is in force again the moment its goal is chosen.
+type Closes struct {
+	New     bool
+	Reviews bool
+	Minutes bool
+}
+
+// Closing is which budget closes this preset's day.
+//
+// A goal of a date closes the day on a count of new cards, which is the share
+// of the material a day has to begin to be through it by then.
+func (p Preset) Closing() Closes {
+	switch p.Goal {
+	case GoalRetention:
+		return Closes{New: true, Reviews: true}
+	case GoalDate:
+		return Closes{New: true}
+	default:
+		return Closes{Minutes: true}
+	}
+}
+
+// Paused reports whether the preset schedules nothing: the budget its goal
+// names is zero, or a day that has passed.
 func (p Preset) Paused(d Day, now time.Time) bool {
-	return (p.NewADay == 0 && p.ReviewsADay == 0) || p.Past(d, now)
+	if p.Past(d, now) {
+		return true
+	}
+	switch p.Goal {
+	case GoalRetention:
+		return p.NewADay == 0 && p.ReviewsADay == 0
+	case GoalDate:
+		return false
+	default:
+		return p.MinutesADay == 0
+	}
+}
+
+// Days is how many days of review there are from the day holding now through to
+// the day this preset aims at, counting both. A preset aiming at no day, or at
+// one behind us, has none.
+func (p Preset) Days(d Day, now time.Time) int {
+	if p.Goal != GoalDate || p.By.IsZero() {
+		return 0
+	}
+	from, err := time.Parse(Named, d.Names(now))
+	if err != nil {
+		return 0
+	}
+	y, m, day := p.By.Date()
+	to := time.Date(y, m, day, 0, 0, 0, 0, time.UTC)
+	out := int(to.Sub(from).Hours()/24) + 1
+	if out < 0 {
+		return 0
+	}
+	return out
 }
 
 // Past reports whether the review day the goal names is behind us. The day it

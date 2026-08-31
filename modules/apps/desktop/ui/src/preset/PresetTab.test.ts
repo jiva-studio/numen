@@ -3,11 +3,10 @@
  *
  * What is asked here is that the curve is the control — one stop on the way
  * round the screen, walked by the arrow keys and written once the key is let
- * go of — and that a field typed by hand stops following the goal and offers
- * the way back.
+ * go of — and that a goal draws the settings it schedules by and no others.
  */
 import { describe, expect, it } from 'vitest'
-import { ref, shallowRef } from 'vue'
+import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from './PresetTab.vue'
@@ -48,14 +47,12 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
 /** A tab standing at those settings, and everything it was asked to do. */
 const standing = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) => {
   const done: string[] = []
-  const byHand = shallowRef<ReadonlySet<Field>>(new Set())
   const place = ref(2)
   const held: Held = {
     id: 'Sanskrit.md',
     settings: () => ({ ...DEFAULTS, ...settings }),
     curve: () => curve(over),
     place: () => place.value,
-    byHand: () => byHand.value,
     problems: () => [],
     saying: () => '',
     changed: () => false,
@@ -66,19 +63,10 @@ const standing = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) =
       done.push(`moves ${at}`)
     },
     settles: () => void done.push('settles'),
-    types: (field, value) => {
-      byHand.value = new Set([...byHand.value, field])
-      done.push(`types ${field} ${value}`)
-    },
-    follows: (field) => {
-      const rest = new Set(byHand.value)
-      rest.delete(field)
-      byHand.value = rest
-      done.push(`follows ${field}`)
-    },
+    types: (field, value) => void done.push(`types ${field} ${value}`),
     shuts: () => {},
   }
-  return { held, done, byHand }
+  return { held, done }
 }
 
 const drawn = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}) => {
@@ -148,10 +136,20 @@ describe('what the control stands at', () => {
   // A point read as zero draws a screen of zeroes, which reads as a broken one.
   it('reads the cards and the share off the place the knob stands at', () => {
     const { tab } = drawn()
-    expect(tab.text()).toContain('holds 80 cards')
-    expect(tab.text()).toContain('0.88 of it comes back')
-    expect(tab.text()).not.toContain('holds 0 cards')
-    expect(tab.text()).not.toContain('0.00 of it comes back')
+    expect(tab.text()).toContain('puts 80 cards in front of you')
+    expect(tab.text()).toContain('0.88 of the material comes back')
+    expect(tab.text()).not.toContain('puts 0 cards')
+    expect(tab.text()).not.toContain('0.00 of the material')
+  })
+
+  // The height, the label over it and the sentence under it are one number:
+  // every card the sitting puts in front of the person, new and returning.
+  it('names the height, the sentence and the axis in cards of a sitting', () => {
+    const { tab } = drawn()
+    expect(tab.get('.control__height').text()).toBe(words.height('minutes'))
+    expect(tab.get('.control__height').text()).toContain('sitting')
+    expect(tab.text()).toContain(words.heightAt('minutes', 120))
+    expect(tab.text()).toContain(words.costs('minutes', 20, 80, 0, 0.88))
   })
 
   it('carries the word for a figure the window guessed, until the answer lands', () => {
@@ -284,20 +282,41 @@ describe('a goal with nothing to work on', () => {
 
   it('leaves its settings there to be set up before a deck points here', () => {
     const { tab, done } = drawn(nothing)
-    expect(tab.findAll('.preset__row')).toHaveLength(7)
+    expect(tab.findAll('.preset__row')).toHaveLength(4)
     tab.get('.preset__row input').setValue('7')
-    expect(done).toStrictEqual(['types newADay 7'])
+    expect(done).toStrictEqual(['types minutesADay 7'])
   })
 })
 
 describe('the settings the chosen goal schedules by', () => {
-  it('leaves the day out where it steers nothing', () => {
-    const minutes = drawn().tab
-    expect(minutes.findAll('.preset__day')).toHaveLength(0)
-    expect(minutes.findAll('.preset__row')).toHaveLength(7)
-    const share = drawn({ goal: 'retention' }, { goal: 'retention' }).tab
-    expect(share.findAll('.preset__day')).toHaveLength(0)
-    expect(share.findAll('.preset__row')).toHaveLength(7)
+  /** What each row of the receipt is called, which is what the goal draws. */
+  const rows = (tab: ReturnType<typeof mount>) =>
+    tab.findAll('.preset__row .preset__name').map((one) => one.text())
+
+  // A goal names one budget. The budgets of the other two are not drawn, so
+  // nothing on the screen offers to close a day by a measure nobody named.
+  it('draws the minutes alone under a goal of minutes', () => {
+    const { tab } = drawn()
+    expect(rows(tab)).toStrictEqual([
+      words.fieldName('minutesADay'),
+      words.fieldName('counts'),
+      words.fieldName('lightDays'),
+      words.fieldName('evenLoad'),
+    ])
+    expect(tab.findAll('.preset__day')).toHaveLength(0)
+  })
+
+  it('draws the target and the counts that close a day under a goal of retention', () => {
+    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention' })
+    expect(rows(tab)).toStrictEqual([
+      words.fieldName('newADay'),
+      words.fieldName('reviewsADay'),
+      words.fieldName('retention'),
+      words.fieldName('counts'),
+      words.fieldName('lightDays'),
+      words.fieldName('evenLoad'),
+    ])
+    expect(tab.findAll('.preset__day')).toHaveLength(0)
   })
 
   it('draws the day under the goal that steers it, and moves the knob by it', async () => {
@@ -309,8 +328,12 @@ describe('the settings the chosen goal schedules by', () => {
       },
       { goal: 'date', byDate: '2026-09-29' },
     )
-    expect(tab.text()).toContain(words.fieldName('byDate'))
-    expect(tab.findAll('.preset__row')).toHaveLength(8)
+    expect(rows(tab)).toStrictEqual([
+      words.fieldName('byDate'),
+      words.fieldName('counts'),
+      words.fieldName('lightDays'),
+      words.fieldName('evenLoad'),
+    ])
     const day = tab.get('.preset__day')
     expect((day.element as HTMLInputElement).value).toBe('2026-09-29')
     await day.setValue('2026-10-09')
@@ -321,9 +344,10 @@ describe('the settings the chosen goal schedules by', () => {
 describe('the settings under the control', () => {
   it('draws a row for each, with what it is beside it', () => {
     const { tab } = drawn()
-    expect(tab.text()).toContain(words.fieldName('newADay'))
-    expect(tab.text()).toContain(words.fieldDetail('reviewsADay'))
-    expect(tab.findAll('.preset__row')).toHaveLength(7)
+    expect(tab.text()).toContain(words.fieldName('minutesADay'))
+    expect(tab.text()).toContain(words.fieldDetail('minutesADay'))
+    expect(tab.text()).toContain(words.fieldName('counts'))
+    expect(tab.findAll('.preset__row')).toHaveLength(4)
   })
 
   // What a budget is spent on is a row like any other, and a person moving it
@@ -339,20 +363,10 @@ describe('the settings under the control', () => {
     expect(done).toStrictEqual(['types counts shows'])
   })
 
-  it('marks a row a person typed themselves, and offers it back under the goal', async () => {
-    const { tab, done, byHand } = drawn()
-    byHand.value = new Set(['reviewsADay'])
-    await tab.vm.$nextTick()
-    const mine = tab.findAll('.preset__row--mine')
-    expect(mine).toHaveLength(1)
-    await mine[0]!.get('button').trigger('click')
-    expect(done).toStrictEqual(['follows reviewsADay'])
-  })
-
-  it('offers no way back under a goal that does not produce that field', async () => {
-    const { tab, byHand } = drawn()
-    byHand.value = new Set(['newADay'])
-    await tab.vm.$nextTick()
-    expect(tab.findAll('.preset__row--mine')[0]!.findAll('button')).toHaveLength(0)
+  // Every value on the screen is the person's own, so no row is marked and
+  // none is offered back to anything.
+  it('draws every row alike, with nothing offered back to the goal', () => {
+    const { tab } = drawn()
+    expect(tab.findAll('.preset__row .preset__answer')).toHaveLength(0)
   })
 })

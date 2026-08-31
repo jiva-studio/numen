@@ -263,7 +263,7 @@ links:
 
 Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
 
-Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, whichever budget runs out first closes it for the day.
+Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to be through the material by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
 
 **No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere.
 

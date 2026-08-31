@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * A preset tab: the one control at the top, and under it the settings the goal
- * produced.
+ * A preset tab: the one control at the top, and under it the settings its goal
+ * schedules by.
  *
- * The control is the goal's curve and the rows below it are a receipt. A row a
- * person typed themselves carries a mark and a way back under the goal; the
- * rest are drawn again wherever the control moves.
+ * The control is the goal's curve. The goal owns one value and writes only
+ * that; every other setting is the person's own and stands as they left it,
+ * whatever the picture says it comes to.
  */
 import { computed } from 'vue'
 import { Days, NumberField, Segmented, Switch } from '@numen/ui'
@@ -13,7 +13,7 @@ import Control from './Control.vue'
 import type { Held } from './kind'
 import { BOUNDS, COUNTS, GOALS } from './core'
 import type { Counts, Goal } from './core'
-import { closed, fieldsUnder, idle, paused, producedBy, spent, type Field } from './curve'
+import { closed, fieldsUnder, idle, paused, spent, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -21,7 +21,6 @@ const props = defineProps<{ held: Held }>()
 const settings = computed(() => props.held.settings())
 const curve = computed(() => props.held.curve())
 const place = computed(() => props.held.place())
-const byHand = computed(() => props.held.byHand())
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => idle(curve.value))
@@ -61,9 +60,6 @@ const costing = computed(() =>
       )
     : '',
 )
-
-/** The rows the goal fills in itself, which follow it until they are typed over. */
-const produced = computed(() => new Set(producedBy(curve.value.goal)))
 
 /** How far a field goes. A field that holds no number is bounded by nothing. */
 const boundsOf = (field: Field): { least: number; most: number } => {
@@ -185,13 +181,11 @@ const shut = computed(() => closed(curve.value))
         </section>
 
         <section class="preset__settings" :aria-label="words.settings">
-          <div
-            v-for="field in fields"
-            :key="field"
-            class="preset__row"
-            :class="{ 'preset__row--mine': byHand.has(field) }"
-          >
-            <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
+          <div v-for="field in fields" :key="field" class="preset__row">
+            <span class="preset__said">
+              <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
+              <span class="preset__detail">{{ words.fieldDetail(field) }}</span>
+            </span>
 
             <span class="preset__value">
               <input
@@ -232,18 +226,6 @@ const shut = computed(() => closed(curve.value))
                 @update:model-value="(said: number | null) => typed(field, said)"
               />
             </span>
-
-            <span class="preset__detail">
-              {{ words.fieldDetail(field) }}
-              <button
-                v-if="byHand.has(field) && produced.has(field)"
-                type="button"
-                class="preset__answer"
-                @click="props.held.follows(field)"
-              >
-                {{ words.follows }}
-              </button>
-            </span>
           </div>
         </section>
       </div>
@@ -258,10 +240,11 @@ const shut = computed(() => closed(curve.value))
   /* Between the goal and the settings under it, and inside each. */
   --preset-apart: 1.75rem;
   --preset-near: 0.625rem;
-  /* One row of the receipt: its two set columns, and the air around it. */
-  --preset-name: 11rem;
+  /* One row of the receipt: the box a number is typed into, the air around the
+     row, and the space between what it is called and what it means. */
   --preset-value: 6rem;
   --preset-row-air: 0.5rem;
+  --preset-said-gap: 0.125rem;
   /* The clearance typing keeps from the ends of its box. */
   --preset-field-inset: 0.75rem;
   display: flex;
@@ -371,29 +354,33 @@ const shut = computed(() => closed(curve.value))
   flex-direction: column;
 }
 
+/* The name and what it means on the left, the control at the end of the row. */
 .preset__row {
   display: grid;
-  grid-template-columns: var(--preset-name) minmax(var(--preset-value), max-content) 1fr;
-  align-items: baseline;
+  grid-template-columns: 1fr max-content;
+  align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--preset-row-air);
-  padding-inline-start: var(--numen-node-gap);
-  border-inline-start: var(--numen-caret) solid transparent;
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
-/* A value the person typed, which no longer follows the goal. */
-.preset__row--mine {
-  border-inline-start-color: var(--numen-focus-bg);
+/* What the row is called, and under it what it means. */
+.preset__said {
+  display: flex;
+  flex-direction: column;
+  gap: var(--preset-said-gap);
+  min-inline-size: 0;
 }
 
 .preset__name {
   color: var(--numen-node-fg);
 }
 
+/* Controls of every width end at the one edge. */
 .preset__value {
   display: flex;
   align-items: center;
+  justify-content: end;
 }
 
 .preset__number {

@@ -33,6 +33,9 @@ type DeckOwing struct {
 	Faces int
 	Due   int
 	New   int
+	// Answered is how many of the deck's cards were answered in the day holding
+	// now, counted the way its preset counts.
+	Answered int
 }
 
 // PresetOwing is one preset's day, by the path of the note it stands in. A
@@ -89,7 +92,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	schedules := projected(log, asks)
 
 	now := u.now()
-	day, err := budgeted(ctx, v, reading, u.Day, standing, log, u.Schedules.By, now)
+	day, err := budgeted(ctx, v, reading, u.Day, standing, schedules, log, u.Schedules.By, now)
 	if err != nil {
 		return Owing{}, err
 	}
@@ -107,6 +110,9 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	}
 	for _, one := range standing {
 		at(one.Deck).Faces++
+	}
+	for deck, one := range day.sat {
+		at(deck).Answered = one.Answered
 	}
 	for _, one := range holds.seen {
 		out.Due++

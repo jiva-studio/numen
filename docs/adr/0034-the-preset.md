@@ -46,11 +46,13 @@ A deck names its preset with an entry of its `links:` block carrying `type: pres
 
 Several decks pointing at one preset is what sharing it looks like. Scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and a deck naming a note that is not a preset is a problem against the deck.
 
-### The goal and the values it gave are both written
+### The goal names the budget, and nothing else closes the day
 
-`goal` names which of three the one control steers — `minutes_a_day`, `retention` or `by_date` — and the value stands under the key it names. Beside it are the daily limits that goal produced. Both are in the file: the limits that hold are what a person opens, and nothing has to be simulated to schedule from them.
+`goal` names which of three a preset is steered by — `minutes_a_day`, `retention` or `by_date` — and the value stands under the key it names.
 
-A value edited by hand stands as it was typed and stops following the goal. The rest follow it.
+That budget is the only one that closes the day. Under `minutes_a_day` the day is spent against the time each answer took. Under `retention` the target sets the intervals and the two card counts close the day. Under `by_date` the day holds what has to be got through to be through the material by that day, and neither the minutes nor the counts cut it short.
+
+A setting the goal does not name keeps its value, takes no part while another goal is in force, and is in force again the moment its own goal is chosen. It is neither zeroed nor removed: a person who set a card limit last month finds it where they left it.
 
 ### What a preset settles, and what it does not
 
@@ -62,7 +64,7 @@ Everything about how a deck is scheduled is the preset's. This record settles se
 
 A preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Ten minutes on one preset and twenty on another is thirty minutes.
 
-**Inside one preset, whichever budget runs out first closes it for the day.** Each preset turns its own minutes into a count from its own answer times; from there everything is counts.
+**Inside one preset, the budget its goal names is what closes the day.** A preset steered by minutes turns them into a count from its own answer times; from there everything is counts.
 
 **How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own light days and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
 
@@ -76,7 +78,7 @@ The time budget is unaffected: minutes are spent as they are spent, on every ans
 
 ### A budget of zero is a pause
 
-A preset whose limits are zero schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own.
+A preset whose governing budget is zero schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A budget the goal does not name is not a pause, whatever it holds.
 
 A goal of a date is a budget that ends the same way: past the date, the preset schedules nothing until the date is moved or the deck is pointed elsewhere.
 

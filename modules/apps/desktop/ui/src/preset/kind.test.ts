@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { presetting } from './kind'
+import { fieldsUnder } from './curve'
 import { DEFAULTS, type Curve, type Goal, type Point, type Presets, type Settings } from './core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
@@ -50,18 +51,15 @@ const dated: Curve = {
 }
 
 /** A vault answering with one preset and that curve, and what was written into it. */
-/**
- * A file whose values are the ones its goal produces where it stands. It is
- * the file of a preset following its goal, so nothing in it is marked.
- */
-const AGREEING: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
+/** The file every test here opens, which stands where the curve's marks stand. */
+const STEADY: Settings = { ...DEFAULTS, minutesADay: 20, reviewsADay: 80, retention: 0.88 }
 
 const opened = async (settings: Partial<Settings> = {}, answers: Curve = curve) => {
   const written: Settings[] = []
   const asked: Goal[] = []
   const core: Presets = {
     read: async (path) => ({
-      preset: { path, title: 'Steady', settings: { ...AGREEING, ...settings }, problems: [] },
+      preset: { path, title: 'Steady', settings: { ...STEADY, ...settings }, problems: [] },
       refusal: null,
       at: 'one',
     }),
@@ -104,7 +102,6 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(held.place()).toBe(2)
     expect(held.settings().minutesADay).toBe(20)
-    expect(held.byHand().has('minutesADay')).toBe(false)
     expect(written.at(-1)?.minutesADay).toBe(20)
   })
 
@@ -117,7 +114,6 @@ describe('the value the goal steers', () => {
     await Promise.resolve()
     expect(held.place()).toBe(2)
     expect(held.settings().byDate).toBe('2026-09-29')
-    expect(held.byHand().has('byDate')).toBe(false)
     expect(written.at(-1)?.byDate).toBe('2026-09-29')
   })
 
@@ -129,7 +125,6 @@ describe('the value the goal steers', () => {
     held.types('byDate', '')
     await Promise.resolve()
     expect(held.place()).toBe(0)
-    expect(held.byHand().has('byDate')).toBe(false)
   })
 })
 
@@ -164,65 +159,64 @@ describe('the curve behind the knob', () => {
   })
 })
 
-describe('a field the goal fills in itself', () => {
-  it('keeps what a person typed, and the knob no longer writes it', async () => {
-    const { held, written } = await opened()
-    held.types('reviewsADay', 12)
-    await Promise.resolve()
-    expect(held.byHand().has('reviewsADay')).toBe(true)
+// The goal names one budget and moves that. Every other setting is the
+// person's, and the control neither predicts it nor writes it.
+describe('what the control writes', () => {
+  it('is the minutes alone under a goal of minutes, whatever the counts hold', async () => {
+    // The case reported: a day of minutes the card limits had been cut to
+    // nothing under.
+    const { held, written } = await opened({ minutesADay: 34, newADay: 12, reviewsADay: 0 })
     held.moves(3)
     held.settles()
     await Promise.resolve()
-    expect(held.settings().reviewsADay).toBe(12)
-    expect(held.settings().retention).toBe(0.93)
-    expect(written.at(-1)?.reviewsADay).toBe(12)
+
+    expect(held.settings().minutesADay).toBe(30)
+    expect(written.at(-1)?.minutesADay).toBe(30)
+    expect(written.at(-1)?.newADay).toBe(12)
+    expect(written.at(-1)?.reviewsADay).toBe(0)
+    expect(written.at(-1)?.retention).toBe(0.88)
   })
 
-  it('follows the goal again when it is handed back', async () => {
-    const { held } = await opened()
-    held.types('reviewsADay', 12)
+  it('leaves the counts and the target alone under a goal of minutes', async () => {
+    const { held, written } = await opened({ reviewsADay: 12, retention: 0.95 })
+    held.moves(1)
+    held.settles()
     await Promise.resolve()
-    held.follows('reviewsADay')
-    expect(held.byHand().has('reviewsADay')).toBe(false)
-    expect(held.settings().reviewsADay).toBe(80)
+    expect(held.settings().reviewsADay).toBe(12)
+    expect(held.settings().retention).toBe(0.95)
+    expect(written.at(-1)?.reviewsADay).toBe(12)
+    expect(written.at(-1)?.retention).toBe(0.95)
   })
 })
 
-// Nothing is remembered: the file carries the goal and the values, and a field
-// is off the goal exactly while the two disagree.
-describe('which fields are off the goal', () => {
-  it('is none of them, for a file whose values are the ones its goal produces', async () => {
-    const { held } = await opened()
-    expect([...held.byHand()]).toStrictEqual([])
-  })
+// A setting the goal does not name is never deleted and never zeroed: it waits
+// in the file for the goal that names it to come round again.
+describe('a setting the goal on screen does not name', () => {
+  it('is not drawn, and keeps its value in the file across a write', async () => {
+    const { held, written } = await opened({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    expect(fieldsUnder(held.settings().goal)).not.toContain('reviewsADay')
 
-  it('is the rows a file disagrees with its goal on, and no others', async () => {
-    const { held } = await opened({ reviewsADay: 12 })
-    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
-  })
-
-  it('is a field the goal does not fill in itself under no circumstance', async () => {
-    const { held } = await opened({ newADay: 4, evenLoad: false })
-    expect([...held.byHand()]).toStrictEqual([])
-  })
-
-  it('is what it was after a write, and after the file is read again', async () => {
-    const { held, changed } = await opened({ reviewsADay: 12 })
+    held.moves(1)
     held.settles()
     await Promise.resolve()
-    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
-    changed(['Steady.md'])
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
-    expect([...held.byHand()]).toStrictEqual(['reviewsADay'])
+    expect(written.at(-1)?.reviewsADay).toBe(7)
+    expect(written.at(-1)?.newADay).toBe(12)
   })
 
-  it('loses the row handed back, and the goal’s own value is written for it', async () => {
-    const { held, written } = await opened({ reviewsADay: 12 })
-    held.follows('reviewsADay')
+  it('comes back the moment its own goal is chosen again', async () => {
+    const { held, written } = await opened({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    held.moves(3)
+    held.settles()
     await Promise.resolve()
-    expect([...held.byHand()]).toStrictEqual([])
-    expect(written.at(-1)?.reviewsADay).toBe(80)
+
+    held.chooses('retention')
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(fieldsUnder('retention')).toContain('reviewsADay')
+    expect(held.settings().reviewsADay).toBe(7)
+    expect(held.settings().newADay).toBe(12)
+    expect(written.at(-1)?.reviewsADay).toBe(7)
   })
 })

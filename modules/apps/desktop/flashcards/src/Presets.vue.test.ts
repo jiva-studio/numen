@@ -57,6 +57,26 @@ describe('what the goals come to today', () => {
     expect(one.find('.presets__preset').text()).toBe('Sanskrit20 minutes a day20%')
   })
 
+  // Each preset is an island of its own, the way a deck in the list below is.
+  it('gives every preset a tile of its own', () => {
+    const one = shown([
+      preset({ path: 'A.md', name: 'Sanskrit' }),
+      preset({ path: 'B.md', name: 'Pali' }),
+      preset({ path: 'C.md', name: 'Greek' }),
+    ])
+    const drawn = one.findAll('.presets__preset')
+
+    expect(drawn).toHaveLength(3)
+    expect(drawn.map((tile) => tile.find('.presets__name').text())).toStrictEqual([
+      'Sanskrit',
+      'Pali',
+      'Greek',
+    ])
+    // The heading, the goal under it, and the number a person looks for.
+    expect(drawn[1]?.find('.presets__goal').text()).toBe('20 minutes a day')
+    expect(drawn[1]?.find('.presets__done').text()).toBe('20%')
+  })
+
   // A person is as far through their day as their fullest budget says.
   it('stands as far through as the fuller of the two budgets', () => {
     const one = shown([preset({ answered: 11, took: 15 })])
@@ -122,31 +142,42 @@ describe('what the goals come to today', () => {
     expect(one.findAll('.presets__done')).toHaveLength(0)
   })
 
-  // A preset nothing points at schedules nobody, and a figure against it says
-  // nothing a person can act on.
-  it('says of a preset no deck points at that nothing does', () => {
+  // This screen is what a person's day comes to. A preset nothing points at is
+  // a file being set up, and the editor's preset tab is where it is read.
+  it('leaves out a preset no deck points at', () => {
     const one = shown([
       preset({ decks: [], named: 0, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
     ])
 
-    expect(one.find('.presets__alone').text()).toBe('Nothing points here')
-    expect(one.findAll('.presets__done')).toHaveLength(0)
-    expect(one.find('.presets__preset').text()).toBe('SanskritNothing points here')
+    expect(one.find('.presets').exists()).toBe(false)
+    expect(one.text()).not.toContain('Nothing points here')
   })
 
-  // A deck holding no cards points at its preset all the same, which is not the
-  // same state as a preset nothing points at.
-  it('says of a preset whose decks are empty how many they are', () => {
+  it('leaves out a preset whose decks hold no card between them', () => {
     const one = shown([
-      preset({ decks: [], named: 1, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
+      preset({ decks: [], named: 2, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
     ])
 
-    expect(one.find('.presets__alone').text()).toBe('One deck, no cards')
-    expect(one.findAll('.presets__done')).toHaveLength(0)
+    expect(one.find('.presets').exists()).toBe(false)
+    expect(one.text()).not.toContain('no cards')
   })
 
-  // The decks naming no preset are a row like any other, and it carries no act.
-  it('draws the row of the defaults as an ordinary preset', () => {
+  // A preset that schedules nothing today is another matter: its decks are in
+  // the list saying so, and a person needs to see why.
+  it('keeps a preset that schedules nothing today, beside the ones that do', () => {
+    const one = shown([
+      preset({ path: 'A.md', name: 'Sanskrit' }),
+      preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
+      preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
+    ])
+    const drawn = one.findAll('.presets__preset')
+
+    expect(drawn).toHaveLength(2)
+    expect(drawn[1]?.text()).toBe('Stoppedno cards a day')
+  })
+
+  // The decks naming no preset are a tile like any other, and it carries no act.
+  it('draws the tile of the defaults as an ordinary preset', () => {
     const one = shown([preset({ path: '', name: 'The defaults' })])
 
     expect(one.text()).toContain('The defaults')

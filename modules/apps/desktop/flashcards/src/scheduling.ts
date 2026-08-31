@@ -230,6 +230,30 @@ export const load = (budget: Budget, due: number, fresh: number): number =>
 /** How many cards the day holds at most. */
 export const holds = (budget: Budget): number => budget.new + budget.reviews
 
+/**
+ * How far through its day a preset stands: what has been answered against the
+ * cards the day holds, and what it has taken against the minutes the day runs,
+ * whichever of the two is further along.
+ *
+ * A day answered past what its budget holds stands above one, which is a day
+ * over its budget and not a day that is done.
+ */
+export const through = (one: Preset): number => {
+  const ofCards = holds(one.budget)
+  const ofMinutes = one.budget.minutes
+  return Math.max(
+    0,
+    ofCards > 0 ? one.answered / ofCards : 0,
+    ofMinutes > 0 ? one.took / ofMinutes : 0,
+  )
+}
+
+/**
+ * Whether a preset's day is spent, which is what leaves every deck under it
+ * nothing more to ask however much those decks still hold.
+ */
+export const spent = (one: Preset): boolean => through(one) >= 1
+
 /** Why a preset schedules nothing, and empty while it schedules something. */
 export const paused = (settings: Settings, today: string): string => {
   if (settings.newADay === 0 && settings.reviewsADay === 0) return 'no cards a day'

@@ -119,6 +119,11 @@ message DeckOwing {
   int32 faces = 2;
   int32 due = 3;
   int32 new = 4;
+
+  // How many of this deck's cards were answered since the day opened, counted
+  // the way its preset counts. A deck holding nothing more today and answered
+  // nothing today was not studied.
+  int32 answered = 5;
 }
 
 // PresetOwing is one preset of a vault, and what the day comes to under it.

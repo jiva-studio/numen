@@ -113,9 +113,10 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
 		t.Errorf("preset = %+v", held.Preset)
 	}
-	if got := unseen(s.sittingAt(t, today, saturday)); got != history.Defaults().NewADay {
-		t.Errorf("on the defaults the day was asked %d new cards, want %d",
-			got, history.Defaults().NewADay)
+	// The defaults are steered by their minutes, and twenty of them hold every
+	// card the deck has left.
+	if got := unseen(s.sittingAt(t, today, saturday)); got != 20 {
+		t.Errorf("on the defaults the day was asked %d new cards, want 20", got)
 	}
 }
 

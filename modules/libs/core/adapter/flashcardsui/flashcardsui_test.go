@@ -582,9 +582,9 @@ func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
 // preset of two, and a deck of three cards under each.
 var twoPresets = map[string]string{
 	"Term.md": deck["Term.md"],
-	"Roots.md": "---\ntype: preset\nnew_a_day: 1\nreviews_a_day: 0\n" +
+	"Roots.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 1\nreviews_a_day: 0\n" +
 		"minutes_a_day: 0\n---\n\n# Roots\n",
-	"Mantras.md": "---\ntype: preset\nnew_a_day: 2\nreviews_a_day: 0\n" +
+	"Mantras.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 2\nreviews_a_day: 0\n" +
 		"minutes_a_day: 0\n---\n\n# Mantras\n",
 	"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
 		"  - to: Roots\n    role: ref\n    type: preset\n---\n" +

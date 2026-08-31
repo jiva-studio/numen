@@ -12,6 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
+import { spent } from './scheduling'
 import type { DeckOwing, Owing } from './core'
 import type { Preset } from './scheduling'
 
@@ -40,8 +41,24 @@ const owed = computed(() => props.vault.due + props.vault.new)
 /** Why a deck is not studied today, and empty while its preset schedules it. */
 const stopped = (deck: string): string => props.byDeck.get(deck)?.paused ?? ''
 
-/** Whether a deck's day is done: it holds cards, and none of them is left. */
-const met = (deck: DeckOwing): boolean => deck.faces > 0 && deck.due + deck.new === 0
+/**
+ * Whether a deck's day is done, which is the day's work met and not merely
+ * nothing standing: something was answered under its preset today, and its
+ * preset still had room for more.
+ */
+const done = (deck: DeckOwing): boolean => {
+  const one = props.byDeck.get(deck.deck)
+  return !!one && !spent(one) && one.answered > 0
+}
+
+/**
+ * What a deck with nothing left says where the day's work was not what emptied
+ * it: the preset's day is spent, or the day held nothing of this deck at all.
+ */
+const empty = (deck: DeckOwing): string => {
+  const one = props.byDeck.get(deck.deck)
+  return one && spent(one) ? 'the day is full' : 'Nothing today'
+}
 </script>
 
 <template>
@@ -76,11 +93,16 @@ const met = (deck: DeckOwing): boolean => deck.faces > 0 && deck.due + deck.new 
               byDeck.get(deck.deck)?.name
             }}</span>
           </span>
-          <!-- A deck holding nothing more today has met its goal, and a deck
-               holding no cards at all says nothing. -->
+          <!-- What is left of this deck today, or why nothing is. Having
+               nothing due is not having finished, so the day's work is only
+               met where something was answered. A deck holding no cards at all
+               says neither. -->
           <span v-if="stopped(deck.deck)" class="decks__stopped">{{ stopped(deck.deck) }}</span>
-          <span v-else-if="met(deck)" class="decks__met">Done today</span>
           <Owed v-else-if="deck.due + deck.new > 0" :waiting="deck.due + deck.new" />
+          <template v-else-if="deck.faces > 0">
+            <span v-if="done(deck)" class="decks__met">Done today</span>
+            <span v-else class="decks__stopped">{{ empty(deck) }}</span>
+          </template>
         </Button>
       </li>
     </ul>

@@ -2,6 +2,7 @@ package flashcards_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,8 +15,13 @@ import (
 const term = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
-// preset is a preset note carrying these frontmatter lines.
+// preset is a preset note carrying these frontmatter lines. Lines naming no
+// goal are steered by their retention, which is the goal the card counts close
+// the day under.
 func preset(front string) string {
+	if !strings.Contains(front, "goal:") {
+		front = "goal: retention\n" + front
+	}
 	return "---\ntype: preset\n" + front + "---\n\n# A preset\n"
 }
 
@@ -90,8 +96,8 @@ func mark(at int) string { return fmt.Sprintf("card%06d", at) }
 func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md":        term,
-		"Slow.md":        preset("new_a_day: 10\nreviews_a_day: 0\nminutes_a_day: 1\n"),
-		"Quick.md":       preset("new_a_day: 10\nreviews_a_day: 0\nminutes_a_day: 1\n"),
+		"Slow.md":        preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
+		"Quick.md":       preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
 		"decks/Slow.md":  deckOf("Slow", 20, 0),
 		"decks/Quick.md": deckOf("Quick", 20, 100),
 	})
@@ -104,10 +110,10 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 	}
 
 	got := byDeck(s.sittingAt(t, today, saturday))
-	// A minute of twenty-second cards is three of them, and the same minute of
-	// four-second cards is more than the count allows.
-	if got["decks/Slow.md"] != 3 {
-		t.Errorf("the slow cards were asked %d in a minute, want 3", got["decks/Slow.md"])
+	// Five cards of each are owed and paid for first. What is left of the minute
+	// buys one more twenty-second card and five more four-second ones.
+	if got["decks/Slow.md"] != 6 {
+		t.Errorf("the slow cards were asked %d in a minute, want 6", got["decks/Slow.md"])
 	}
 	if got["decks/Quick.md"] != 10 {
 		t.Errorf("the quick cards were asked %d in a minute, want 10", got["decks/Quick.md"])
@@ -154,9 +160,10 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 		at    time.Time
 		cards int
 	}{
-		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 5},
+		// The last day of it holds all the material still to begin.
+		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 20},
 		// The small hours after it are still the day it aims at.
-		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 5},
+		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 20},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 	} {
 		got := byDeck(s.sittingAt(t, today, one.at))["decks/By.md"]
@@ -341,13 +348,12 @@ func TestALightDayCutsTheDaysCards(t *testing.T) {
 	}
 }
 
-// Whichever budget runs out first closes the preset for the day: a day of one
-// minute holds three answers at the twenty seconds a new card costs, and the
-// ten cards the count allows are never reached.
-func TestTheMinutesBudgetClosesTheDayBeforeTheCount(t *testing.T) {
+// Under a goal of minutes the minutes close the day: a day of one minute holds
+// three answers at the twenty seconds a new card costs.
+func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md":        term,
-		"Short.md":       preset("new_a_day: 10\nreviews_a_day: 0\nminutes_a_day: 1\n"),
+		"Short.md":       preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
 		"decks/Short.md": deckOf("Short", 10, 0),
 	})
 
@@ -355,6 +361,98 @@ func TestTheMinutesBudgetClosesTheDayBeforeTheCount(t *testing.T) {
 	got := byDeck(s.sittingAt(t, today, saturday))
 	if got["decks/Short.md"] != held {
 		t.Errorf("a day of one minute was asked %d cards, want %d", got["decks/Short.md"], held)
+	}
+}
+
+// The goal names the budget that closes the day, and every other budget takes
+// no part: moved to either end of what a preset may hold, a budget the goal
+// does not name leaves the day asking the same cards.
+func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
+	for _, one := range []struct {
+		what  string
+		goal  string
+		aside []string
+		cards int
+	}{
+		// A minute of twenty-second cards is three of them.
+		{"minutes", "goal: minutes_a_day\nminutes_a_day: 1\n", []string{
+			"new_a_day: 0\nreviews_a_day: 0\n",
+			"new_a_day: 9999\nreviews_a_day: 9999\n",
+		}, 3},
+		// Four new cards a day.
+		{"retention", "goal: retention\nnew_a_day: 4\nreviews_a_day: 0\n", []string{
+			"minutes_a_day: 0\n",
+			"minutes_a_day: 1440\n",
+		}, 4},
+		// Forty cards over the ten days to the day it aims at.
+		{"a date", "goal: by_date\nby_date: 2026-09-14\n", []string{
+			"new_a_day: 0\nreviews_a_day: 0\nminutes_a_day: 0\n",
+			"new_a_day: 9999\nreviews_a_day: 9999\nminutes_a_day: 1440\n",
+		}, 4},
+	} {
+		for _, aside := range one.aside {
+			s := opened(t, map[string]string{
+				"Term.md":     term,
+				"On.md":       preset(one.goal + aside),
+				"decks/On.md": deckOf("On", 40, 0),
+			})
+
+			got := byDeck(s.sittingAt(t, today, saturday))["decks/On.md"]
+			if got != one.cards {
+				t.Errorf("steered by its %s under %q the day was asked %d cards, want %d",
+					one.what, aside, got, one.cards)
+			}
+		}
+	}
+}
+
+// A preset steered by its minutes goes on asking while the minutes last, and
+// the reviews it keeps none of do not close it. Beside it the decks naming no
+// preset are asked their own day.
+func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md": term,
+		"Steady.md": preset("goal: minutes_a_day\nminutes_a_day: 34\n" +
+			"new_a_day: 12\nreviews_a_day: 0\n"),
+		"decks/Steady.md": deckOf("Steady", 20, 0),
+		"decks/Loose.md":  deckOf("", 20, 100),
+	})
+
+	// Six cards answered long enough ago to be owed today, and nothing answered
+	// today.
+	before := s.run(t, saturday.AddDate(0, 0, -30))
+	for i := range 6 {
+		answer(t, before, mark(i), 6*time.Second)
+	}
+
+	sat := s.sittingAt(t, today, saturday)
+	got := byDeck(sat)
+	if got["decks/Steady.md"] != 20 {
+		t.Errorf("the preset of no reviews was asked %d cards, want its 20",
+			got["decks/Steady.md"])
+	}
+	if owed := asked(sat) - unseen(sat); owed != 6 {
+		t.Errorf("the day was asked %d cards it owed, want 6", owed)
+	}
+	if got["decks/Loose.md"] != 20 {
+		t.Errorf("the deck naming no preset was asked %d cards, want its 20",
+			got["decks/Loose.md"])
+	}
+}
+
+// A goal of a date paces the day: the material still to begin, over the days
+// left to begin it in. Neither the minutes nor the counts cut it short.
+func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Term.md": term,
+		// Ten days from the Saturday to the day it aims at, counting both.
+		"By.md": preset("goal: by_date\nby_date: 2026-09-14\n" +
+			"new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 1\n"),
+		"decks/By.md": deckOf("By", 40, 0),
+	})
+
+	if got := unseen(s.sittingAt(t, today, saturday)); got != 4 {
+		t.Errorf("forty cards over ten days was asked %d a day, want 4", got)
 	}
 }
 
@@ -393,15 +491,16 @@ func asked(sat flashcards.Sitting) int { return len(sat.Asked) }
 func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 	one := opened(t, map[string]string{
 		"Term.md":      term,
-		"decks/One.md": deckOf("", 20, 0),
+		"decks/One.md": deckOf("", 80, 0),
 	})
 	two := opened(t, map[string]string{
 		"Term.md":      term,
-		"decks/One.md": deckOf("", 20, 0),
-		"decks/Two.md": deckOf("", 20, 100),
+		"decks/One.md": deckOf("", 80, 0),
+		"decks/Two.md": deckOf("", 80, 100),
 	})
 
-	held := history.Defaults().NewADay
+	held := int(time.Duration(history.Defaults().MinutesADay) *
+		time.Minute / history.DefaultCost.New)
 	if got := asked(one.sittingAt(t, today, saturday)); got != held {
 		t.Fatalf("one deck on the defaults was asked %d cards, want %d", got, held)
 	}
@@ -426,9 +525,9 @@ func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 		t.Errorf("the two decks of one preset were asked %d and %d, want six between them",
 			got["decks/One.md"], got["decks/Two.md"])
 	}
-	if got["decks/Free.md"] != history.Defaults().NewADay {
-		t.Errorf("the deck naming no preset was asked %d cards, want %d",
-			got["decks/Free.md"], history.Defaults().NewADay)
+	if got["decks/Free.md"] != 20 {
+		t.Errorf("the deck naming no preset was asked %d cards, want its 20",
+			got["decks/Free.md"])
 	}
 }
 
@@ -437,14 +536,14 @@ func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 	apart := opened(t, map[string]string{
 		"Term.md":      term,
-		"First.md":     preset("new_a_day: 50\nreviews_a_day: 0\nminutes_a_day: 1\n"),
-		"Second.md":    preset("new_a_day: 50\nreviews_a_day: 0\nminutes_a_day: 1\n"),
+		"First.md":     preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
+		"Second.md":    preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
 		"decks/One.md": deckOf("First", 20, 0),
 		"decks/Two.md": deckOf("Second", 20, 100),
 	})
 	together := opened(t, map[string]string{
 		"Term.md":      term,
-		"First.md":     preset("new_a_day: 50\nreviews_a_day: 0\nminutes_a_day: 1\n"),
+		"First.md":     preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
 		"decks/One.md": deckOf("First", 20, 0),
 		"decks/Two.md": deckOf("First", 20, 100),
 	})
@@ -623,8 +722,9 @@ func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 			"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 20, 0),
 	})
-	if got := unseen(s.sittingAt(t, today, saturday)); got != 4 {
-		t.Fatalf("a preset aiming ahead was asked %d new cards, want 4", got)
+	// Twenty cards over the twenty-six days to the day it aims at.
+	if got := unseen(s.sittingAt(t, today, saturday)); got != 1 {
+		t.Fatalf("a preset aiming ahead was asked %d new cards, want 1", got)
 	}
 
 	write(t, s, "On.md", preset("goal: by_date\nby_date: 2026-09-01\n"+
@@ -647,10 +747,10 @@ func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 		t.Fatalf("a preset past the day it aims at was asked %d new cards", got)
 	}
 
-	write(t, s, "On.md", preset("goal: minutes_a_day\nby_date: 2026-09-01\n"+
+	write(t, s, "On.md", preset("goal: retention\nby_date: 2026-09-01\n"+
 		"new_a_day: 4\nreviews_a_day: 0\nminutes_a_day: 0\n"))
 	if got := unseen(s.sittingAt(t, today, saturday)); got != 4 {
-		t.Errorf("a preset steered by its minutes was asked %d new cards, want 4", got)
+		t.Errorf("a preset steered by its retention was asked %d new cards, want 4", got)
 	}
 }
 

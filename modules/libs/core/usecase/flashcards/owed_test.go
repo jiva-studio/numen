@@ -148,6 +148,34 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 	}
 }
 
+// What a day came to is counted deck by deck as well as preset by preset, so a
+// deck nobody answered today is not carried by the one beside it under the same
+// preset.
+func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
+	s := opened(t, scheduled)
+
+	// One card of one of the two decks the Sanskrit preset schedules.
+	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
+
+	owing, err := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]int{"decks/Roots.md": 1, "decks/Mantras.md": 0, "decks/Terms.md": 0}
+	for _, one := range owing.Decks {
+		if one.Answered != want[one.Deck] {
+			t.Errorf("%s was answered %d today, want %d", one.Deck, one.Answered, want[one.Deck])
+		}
+	}
+	for _, one := range owing.Presets {
+		if one.Preset == "Sanskrit.md" && one.Answered != 1 {
+			t.Errorf("the preset of the two decks was answered %d today, want 1", one.Answered)
+		}
+	}
+}
+
 // The front door reads the answers and writes nothing back. It is asked for
 // every vault a person holds, and again for each of them whenever a file moves.
 func TestCountingAVaultWritesNoScheduleCache(t *testing.T) {

@@ -59,7 +59,10 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
         <h2 class="settings__heading">{{ words.window }}</h2>
 
         <div class="settings__row">
-          <label class="settings__name" for="settings-theme">{{ words.theme }}</label>
+          <span class="settings__said">
+            <label class="settings__name" for="settings-theme">{{ words.theme }}</label>
+            <span class="settings__detail">{{ words.themeDetail }}</span>
+          </span>
           <span class="settings__value">
             <select
               id="settings-theme"
@@ -79,11 +82,15 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               </optgroup>
             </select>
           </span>
-          <span class="settings__detail">{{ words.themeDetail }}</span>
         </div>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-mode">{{ words.mode }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-mode">{{ words.mode }}</span>
+            <span class="settings__detail">
+              {{ held.pinned() ? words.pinned : words.modeDetail }}
+            </span>
+          </span>
           <span class="settings__value">
             <Segmented
               :model-value="held.mode()"
@@ -93,13 +100,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               @update:model-value="(one: string) => held.chooses(`${MODE}:${one as Mode}`)"
             />
           </span>
-          <span class="settings__detail">
-            {{ held.pinned() ? words.pinned : words.modeDetail }}
-          </span>
         </div>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-interface">{{ words.interfaceScale }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-interface">{{ words.interfaceScale }}</span>
+            <span class="settings__detail">{{ words.interfaceScaleDetail }}</span>
+          </span>
           <span class="settings__value">
             <NumberField
               :model-value="held.sizes().interfaceScale"
@@ -114,11 +121,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               "
             />
           </span>
-          <span class="settings__detail">{{ words.interfaceScaleDetail }}</span>
         </div>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-text">{{ words.textScale }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-text">{{ words.textScale }}</span>
+            <span class="settings__detail">{{ words.textScaleDetail }}</span>
+          </span>
           <span class="settings__value">
             <NumberField
               :model-value="held.sizes().textScale"
@@ -132,11 +141,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               "
             />
           </span>
-          <span class="settings__detail">{{ words.textScaleDetail }}</span>
         </div>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-hanging">{{ words.hanging }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-hanging">{{ words.hanging }}</span>
+            <span class="settings__detail">{{ words.hangingDetail }}</span>
+          </span>
           <span class="settings__value">
             <Switch
               :model-value="held.hangs()"
@@ -144,11 +155,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               @update:model-value="(on: boolean) => held.choosesHanging(on)"
             />
           </span>
-          <span class="settings__detail">{{ words.hangingDetail }}</span>
         </div>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-parts">{{ words.parts }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-parts">{{ words.parts }}</span>
+            <span class="settings__detail">{{ words.partsDetail }}</span>
+          </span>
           <span class="settings__value">
             <NumberField
               :model-value="held.parts()"
@@ -162,7 +175,6 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               "
             />
           </span>
-          <span class="settings__detail">{{ words.partsDetail }}</span>
         </div>
       </section>
 
@@ -170,7 +182,10 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
         <h2 class="settings__heading">{{ words.naming }}</h2>
 
         <div class="settings__row">
-          <span class="settings__name" id="settings-syncing">{{ words.syncing }}</span>
+          <span class="settings__said">
+            <span class="settings__name" id="settings-syncing">{{ words.syncing }}</span>
+            <span class="settings__detail">{{ words.syncingDetail }}</span>
+          </span>
           <span class="settings__value">
             <Switch
               :model-value="held.syncing()"
@@ -178,7 +193,6 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               @update:model-value="(on: boolean) => held.choosesSyncing(on)"
             />
           </span>
-          <span class="settings__detail">{{ words.syncingDetail }}</span>
         </div>
       </section>
 
@@ -186,11 +200,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
         <h2 class="settings__heading">{{ group }}</h2>
 
         <div v-for="one in reading(group)" :key="one.name" class="settings__row">
-          <span class="settings__name">{{ one.name }}</span>
+          <span class="settings__said">
+            <span class="settings__name">{{ one.name }}</span>
+            <span class="settings__detail">{{ one.detail }}</span>
+          </span>
           <span class="settings__value">
             <span class="settings__elsewhere">{{ words.inTheFile }}</span>
           </span>
-          <span class="settings__detail">{{ one.detail }}</span>
         </div>
       </section>
     </div>
@@ -204,10 +220,11 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
   /* Between one group and the next, and between a heading and its rows. */
   --settings-apart: 1.75rem;
   --settings-near: 0.375rem;
-  /* One row: its two set columns, and the air around it. */
-  --settings-name: 12rem;
+  /* One row: the box a number is typed into, the air around the row, and the
+     space between what it is called and what it means. */
   --settings-value: 6rem;
   --settings-row-air: 0.5rem;
+  --settings-said-gap: 0.125rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -247,18 +264,29 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
   text-transform: uppercase;
 }
 
+/* The name and what it means on the left, the control at the end of the row. */
 .settings__row {
   display: grid;
-  grid-template-columns: var(--settings-name) minmax(var(--settings-value), max-content) 1fr;
-  align-items: baseline;
+  grid-template-columns: 1fr max-content;
+  align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--settings-row-air);
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
+/* What the row is called, and under it what it means. */
+.settings__said {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-said-gap);
+  min-inline-size: 0;
+}
+
+/* Controls of every width end at the one edge. */
 .settings__value {
   display: flex;
   align-items: center;
+  justify-content: end;
 }
 
 .settings__number {

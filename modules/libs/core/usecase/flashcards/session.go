@@ -87,7 +87,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, deck string) (Sitt
 	schedules := u.Schedules.replayed(ctx, v, held, asks)
 
 	now := u.now()
-	day, err := budgeted(ctx, v, reading, u.Day, standing, held, u.Schedules.By, now)
+	day, err := budgeted(ctx, v, reading, u.Day, standing, schedules, held, u.Schedules.By, now)
 	if err != nil {
 		return Sitting{}, err
 	}
