@@ -647,13 +647,13 @@ func TestWhatStandsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	}
 }
 
-// A curve of retention names no day the material is learned on.
+// The day the whole material stands learned is drawn where a preset is steered
+// by its minutes and where it is steered by its retention, and nowhere under a
+// date: a preset aiming at a day is answered by that day.
 //
-// That control moves the scheduler: the day a card passes an interval is the
-// reviews it takes times the space between them, and a review is a whole one,
-// so the day steps wherever the range wants another and falls away between the
-// steps. A curve of minutes leaves the scheduler alone and names the day.
-func TestACurveOfRetentionNamesNoDayTheMaterialIsLearned(t *testing.T) {
+// It is a prediction under a stated assumption — that every card asked comes
+// back — so it is read off a run of its own and not off the run beside it.
+func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T) {
 	s := opened(t, studied(30))
 	for back := 60; back >= 15; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
@@ -666,34 +666,39 @@ func TestACurveOfRetentionNamesNoDayTheMaterialIsLearned(t *testing.T) {
 	p.MinutesADay, p.NewADay, p.ReviewsADay = 20, 4, 60
 	p.Rule, p.Interval = history.RuleInterval, 21
 
-	p.Goal = history.GoalRetention
-	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for i, one := range got.At {
-		if one.Learns != history.LearnsUnasked {
-			t.Errorf("at a target of %v the material is learned on day %d",
-				got.Grid[i], one.Learns)
+	for _, goal := range []history.Goal{history.GoalMinutes, history.GoalRetention} {
+		one := p
+		one.Goal = goal
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one)
+		if err != nil {
+			t.Fatal(err)
+		}
+		named := false
+		for i, place := range got.At {
+			if place.Learns == history.LearnsUnasked {
+				t.Errorf("steered by its %s, %v names no day the material is learned",
+					goal, got.Grid[i])
+			}
+			if place.Learns >= 0 {
+				named = true
+			}
+		}
+		if !named {
+			t.Errorf("steered by its %s, no place of the curve reaches that day", goal)
 		}
 	}
 
-	p.Goal = history.GoalMinutes
-	minutes, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	dated := p
+	dated.Goal = history.GoalDate
+	dated.By = noon.AddDate(0, 0, 40).Truncate(24 * time.Hour)
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", dated)
 	if err != nil {
 		t.Fatal(err)
 	}
-	named := false
-	for _, one := range minutes.At {
-		if one.Learns >= 0 {
-			named = true
+	for i, place := range got.At {
+		if place.Learns != history.LearnsUnasked {
+			t.Errorf("aiming at a day, %v names day %d as well", got.Grid[i], place.Learns)
 		}
-		if one.Learns == history.LearnsUnasked {
-			t.Error("a curve of minutes leaves the scheduler alone and names the day")
-		}
-	}
-	if !named {
-		t.Error("no place of a curve of minutes reaches the day the material is learned")
 	}
 }
 

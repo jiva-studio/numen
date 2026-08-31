@@ -159,6 +159,24 @@ func Recall(away time.Duration, stability float64) float64 {
 	return math.Pow(1+recallFactor*days/stability, recallDecay)
 }
 
+// Recalling is what a projection assumes about coming back: how likely a card
+// face standing here is to be recalled when it is asked at this instant.
+//
+// A projection follows one card down the middle of what it may do, weighing the
+// ending where it came back against the ending where it did not, and this is
+// the weight. Every figure a run draws is drawn under the assumption it was
+// given, so a caller naming one says which.
+type Recalling func(Schedule, time.Time) float64
+
+// AsModelled is the chance the scheduler's own forgetting curve gives a card
+// face, and is what a run not told otherwise reads.
+func AsModelled(c Schedule, at time.Time) float64 {
+	return Recall(at.Sub(c.Last), c.Stability)
+}
+
+// NothingForgotten is a run in which every card face asked comes back.
+func NothingForgotten(Schedule, time.Time) float64 { return 1 }
+
 // NewFSRSAt is the scheduler asking for this share of the cards to come back
 // when they come round. A share outside what a preset may hold is brought to
 // the nearest end of it.
@@ -326,6 +344,9 @@ type Simulation struct {
 	Cost Cost
 	// Days is how far ahead it runs, and runs Ahead days when it is zero.
 	Days int
+	// Recalls is what this run assumes about coming back. A run holding none
+	// reads AsModelled.
+	Recalls Recalling
 	// Spent is what the day holding now has already gone through under this
 	// preset. The first day of a run is a real day a person may be halfway
 	// through, and what it has left is what a sitting opened now would offer.
@@ -687,8 +708,9 @@ func learned(p Preset, cards []Schedule, at time.Time) int {
 // step is where one projected answer leaves a card face.
 //
 // Both endings are worked out and weighed by how likely the card is to come
-// back, so a projection follows one card down the middle of what it may do. The
-// phase is the one a card that came back is left in.
+// back, which is the run's own assumption, so a projection follows one card
+// down the middle of what it may do. The phase is the one a card that came back
+// is left in.
 func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedule {
 	if c.Seen() {
 		c.Stability = math.Max(c.Stability, LeastStability)
@@ -698,7 +720,7 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedul
 		good.Due = p.Places(on, at, good.Due)
 		return good
 	}
-	back := Recall(at.Sub(c.Last), c.Stability)
+	back := s.recalls(c, at)
 	again := s.By.Next(c, at, Again)
 
 	out := good
@@ -707,6 +729,15 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedul
 	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
 	out.Due = p.Places(on, at, at.Add(time.Duration(away*float64(time.Second))))
 	return out
+}
+
+// recalls is how likely a card face standing here is to come back at this
+// instant, under the assumption this run was given.
+func (s Simulation) recalls(c Schedule, at time.Time) float64 {
+	if s.Recalls == nil {
+		return AsModelled(c, at)
+	}
+	return s.Recalls(c, at)
 }
 
 // Budget is what one day of a preset holds: how many cards of each kind, and

@@ -1088,3 +1088,44 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 			half.Keeps.New, whole.Keeps.New)
 	}
 }
+
+// What a projection assumes about coming back is an input to the run.
+//
+// A run told that nothing is forgotten leaves a card face exactly where the
+// scheduler leaves one answered well, and a run told nothing follows it down
+// the middle of what it may do, which is somewhere short of that.
+func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 40)
+
+	// One day of review, so every card face falling due in it is answered once
+	// and left where that answer leaves it.
+	p := history.Preset{
+		Goal: history.GoalRetention, ReviewsADay: 9999, NewADay: 0, MinutesADay: 0,
+	}
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 1}
+
+	kept := run
+	kept.Recalls = history.NothingForgotten
+	modelled := ran(t, run, now, p, at, 0)
+	nothing := ran(t, kept, now, p, at, 0)
+
+	// The two runs answer the same cards, and leave them in different places.
+	if modelled.Answered != nothing.Answered || modelled.Answered == 0 {
+		t.Fatalf("the two runs answered %d and %d", modelled.Answered, nothing.Answered)
+	}
+	if nothing.Retained[0] <= modelled.Retained[0] {
+		t.Errorf("assuming nothing is forgotten leaves %v of the material in the head, "+
+			"and following the middle of what a card may do leaves %v",
+			nothing.Retained[0], modelled.Retained[0])
+	}
+
+	// A run told what the model says is the run told nothing.
+	said := run
+	said.Recalls = history.AsModelled
+	if got := ran(t, said, now, p, at, 0); got.Retained[0] != modelled.Retained[0] {
+		t.Errorf("told what the model says the run retained %v, and told nothing %v",
+			got.Retained[0], modelled.Retained[0])
+	}
+}

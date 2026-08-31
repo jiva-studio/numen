@@ -312,7 +312,11 @@ func (u Curves) minutes(
 		if err != nil {
 			return Curve{}, err
 		}
-		out.At = append(out.At, sitting(ran))
+		place := sitting(ran)
+		if place.Learns, err = learnt(ctx, run, now, one, at, unseen); err != nil {
+			return Curve{}, err
+		}
+		out.At = append(out.At, place)
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
@@ -361,13 +365,9 @@ func (u Curves) retention(
 			return Curve{}, err
 		}
 		place := point(ran)
-		// The day the whole material stands learned is not carried here. This
-		// control moves the scheduler itself: the day a card passes an interval
-		// is the reviews it takes times the space between them, and the reviews
-		// are a whole number, so the day steps up wherever the range wants one
-		// more of them and falls away between the steps. What a target buys over
-		// the run is the share learned, beside it.
-		place.Learns = history.LearnsUnasked
+		if place.Learns, err = learnt(ctx, asks, now, one, at, unseen); err != nil {
+			return Curve{}, err
+		}
 		out.At = append(out.At, place)
 	}
 
@@ -496,6 +496,26 @@ func (u Curves) date(
 		}
 	}
 	return out, nil
+}
+
+// learnt is how many days of review it takes before the whole material stands
+// learned, projected on the assumption that nothing is forgotten.
+//
+// A run following each card down the middle of what it may do reaches a day the
+// last of them passes the rule only where the pace outruns the fading, so the
+// day a person is shown is the day they reach if the answers go well. It is the
+// one figure drawn under that assumption, and it is the same run and the same
+// arithmetic as every figure beside it.
+func learnt(
+	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
+	at map[history.CardFace]history.Schedule, unseen int,
+) (int, error) {
+	run.Recalls = history.NothingForgotten
+	ran, err := run.Run(ctx, now, p, at, unseen)
+	if err != nil {
+		return 0, err
+	}
+	return ran.Learns, nil
 }
 
 // learns reports whether the whole material stands learned on this day: no card
