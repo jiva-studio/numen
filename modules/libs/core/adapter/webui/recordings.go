@@ -1,0 +1,220 @@
+package webui
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"io/fs"
+	"net/http"
+	"path"
+	"strings"
+	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
+	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+)
+
+// A recording crosses to the window twice: as the bytes a player is pointed at,
+// and as the words a model heard in them.
+
+// errNotARecording is what a facet of a recording answers for a file that is
+// not one.
+var errNotARecording = errors.New("not a recording this vault holds")
+
+// errNoHearing is what a build with nothing to read a transcript with answers.
+var errNoHearing = errors.New("this build cannot read what a recording says")
+
+// listened is what the window is told a recording is: how far the words reach,
+// and how much of it a run has written down, both in milliseconds.
+//
+// A recording nothing has listened to reaches nowhere, and the player it is
+// loaded into is what then says how long it runs.
+type listened struct {
+	Path   string `json:"path"`
+	Length int    `json:"length"`
+	Heard  int    `json:"heard"`
+}
+
+// spoken is what was heard in a recording, in the order it was said.
+type spoken struct {
+	Path string `json:"path"`
+	Cues []cue  `json:"cues"`
+}
+
+// cue is one stretch of speech: what was said, and the milliseconds it spans.
+type cue struct {
+	Text string `json:"text"`
+	From int    `json:"from"`
+	To   int    `json:"to"`
+}
+
+// About answers what the file at a path is. A recording is how long it runs,
+// and every other file is a document and is answered with its pages.
+func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
+	ctx, cancel := context.WithTimeout(r.Context(), patience)
+	defer cancel()
+
+	_, ref, err := a.held(ctx, path)
+	if err != nil || ref.Kind != domain.KindRecording {
+		a.Document(w, r, path)
+		return
+	}
+	raw, err := a.transcript(ctx, ref.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	heard, _ := transcript.Reached(raw)
+	_, cues := transcript.Read(raw)
+	told := listened{Path: ref.Path, Length: heard, Heard: heard}
+	if len(cues) > 0 {
+		told.Length = max(told.Length, cues[len(cues)-1].To)
+	}
+	answer(w, told)
+}
+
+// Media serves a recording's own bytes, which is what a player is pointed at. A
+// range is answered as a range, so seeking lands where it was asked to.
+func (a *API) Media(w http.ResponseWriter, r *http.Request, path string) {
+	reader, ref, err := a.held(r.Context(), path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if ref.Kind != domain.KindRecording {
+		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
+		return
+	}
+	// A vault hands over a file whole, so a recording is in memory for as long
+	// as the request it answers.
+	raw, err := reader.Read(r.Context(), ref.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	if sound := heardAs(ref.Path); sound != "" {
+		w.Header().Set("Content-Type", sound)
+	}
+	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.MTime), bytes.NewReader(raw))
+}
+
+// heardAs is what a recording of a container is served as. A container this
+// does not name is served as whatever its bytes look like.
+func heardAs(name string) string {
+	switch strings.ToLower(path.Ext(name)) {
+	case ".mp3":
+		return "audio/mpeg"
+	case ".wav":
+		return "audio/wav"
+	case ".flac":
+		return "audio/flac"
+	}
+	return ""
+}
+
+// Cues answers with the words heard in a recording, each against the
+// milliseconds it was spoken in. A recording nothing has listened to holds no
+// words, which is an answer.
+func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
+	if _, _, ok := a.hearing(); !ok {
+		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), patience)
+	defer cancel()
+
+	_, ref, err := a.held(ctx, path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if ref.Kind != domain.KindRecording {
+		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
+		return
+	}
+	raw, err := a.transcript(ctx, ref.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	_, cues := transcript.Read(raw)
+
+	told := spoken{Path: ref.Path, Cues: make([]cue, 0, len(cues))}
+	for _, one := range cues {
+		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
+	}
+	answer(w, told)
+}
+
+// held is the vault's reader and what it holds at a path. Everything from
+// outside reaches the vault through a reader, so a path leaving it is refused
+// there.
+func (a *API) held(ctx context.Context, path string) (port.VaultReader, domain.FileRef, error) {
+	showing := a.Showing()
+	if showing.ID == "" || a.Readers == nil {
+		return nil, domain.FileRef{}, errNoVault
+	}
+	reader, err := a.Readers.Open(showing)
+	if err != nil {
+		return nil, domain.FileRef{}, err
+	}
+	ref, err := reader.Stat(ctx, path)
+	if err != nil {
+		return nil, domain.FileRef{}, err
+	}
+	return reader, ref, nil
+}
+
+// hearing is what says which model listened to a recording and where what it
+// wrote is kept. They are the index and the store a passage is placed from,
+// which read the same artifacts.
+func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
+	if a.Marking == nil || a.Marking.Sources == nil || a.Marking.Derived == nil {
+		return nil, nil, false
+	}
+	return a.Marking.Sources, a.Marking.Derived, true
+}
+
+// transcript is what a model wrote down of the recording at a path, and nothing
+// where nothing has listened to it. A run still going is read as far as it has
+// got.
+func (a *API) transcript(ctx context.Context, path string) ([]byte, error) {
+	sources, stores, ok := a.hearing()
+	if !ok {
+		return nil, nil
+	}
+	said, held, err := sources.Reading(ctx, a.Showing().ID, path)
+	if err != nil || !held || said.From == "" {
+		return nil, err
+	}
+	store, err := stores.Open(a.Showing())
+	if err != nil {
+		return nil, err
+	}
+	for _, name := range []string{
+		derived.Artifact(said.From, said.Hash),
+		derived.Partial(said.From, said.Hash),
+	} {
+		raw, err := store.Read(ctx, name)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return raw, nil
+	}
+	// The store is a folder on the person's disk and they may empty it.
+	return nil, nil
+}
+
+// answer writes what the window is told, as the window reads it.
+func answer(w http.ResponseWriter, told any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	json.NewEncoder(w).Encode(told)
+}

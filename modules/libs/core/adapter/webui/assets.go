@@ -13,16 +13,19 @@ import (
 //	GET /assets/<id>                          what it is
 //	GET /assets/<id>/pages/<n>?wide=W         one page, where it has any
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
+//	GET /assets/<id>/media                    its own bytes, where it is sound
+//	GET /assets/<id>/cues                     the words heard in it
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
-// window holds, and a recording asked what it is would answer with a duration
-// and grow a facet of its own.
+// window holds.
 const assetsRoute = "/assets/"
 
 // The facets an asset offers.
 const (
 	pagesFacet = "pages"
 	marksFacet = "marks"
+	mediaFacet = "media"
+	cuesFacet  = "cues"
 )
 
 // An address is one question about one asset: which file, which facet, and what
@@ -69,11 +72,15 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 	}
 	switch at.facet {
 	case "":
-		a.Document(w, r, at.path)
+		a.About(w, r, at.path)
 	case pagesFacet:
 		a.Page(w, r, at.path, at.at)
 	case marksFacet:
 		a.Marks(w, r, at.path)
+	case mediaFacet:
+		a.Media(w, r, at.path)
+	case cuesFacet:
+		a.Cues(w, r, at.path)
 	default:
 		http.Error(w, "an asset has no "+at.facet, http.StatusNotFound)
 	}
@@ -91,3 +98,9 @@ func pageOf(path string, at, wide int) string {
 func marksOf(path string, start, length int) string {
 	return fmt.Sprintf("%s/%s?start=%d&length=%d", assetOf(path), marksFacet, start, length)
 }
+
+// mediaOf is where a recording is played from, and cuesOf where the words heard
+// in it are read.
+func mediaOf(path string) string { return assetOf(path) + "/" + mediaFacet }
+
+func cuesOf(path string) string { return assetOf(path) + "/" + cuesFacet }
