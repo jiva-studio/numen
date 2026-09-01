@@ -8,6 +8,7 @@
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
+import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
 export interface Cue {
@@ -26,14 +27,17 @@ export interface Cue {
 export interface Listened {
   readonly length: number
   readonly heard: number
+  /**
+   * Where the recording is played from. The application answers it, because the
+   * socket it stands on is opened afresh for every run.
+   */
+  readonly media: string
 }
 
 /** Everything a recording tab asks of the application. */
 export interface Recordings {
   /** How long the recording runs, and how much of it has been written down. */
   listened(path: string): Promise<Listened>
-  /** Where the recording's own bytes are played from, as an address for a player. */
-  media(path: string): string
   /** The words heard in the recording, in the order they were spoken. */
   cues(path: string): Promise<readonly Cue[]>
   /**
@@ -47,6 +51,15 @@ export interface Recordings {
 export interface Player {
   /** Play from a millisecond of the recording. */
   seek(ms: number): void
+}
+
+// What each of the player's own four failures is called. They are the codes a
+// media element reports, and each names somebody else's thing to put right.
+const FAILED: Record<number, string> = {
+  1: WORDS.stopped,
+  2: WORDS.unreached,
+  3: WORDS.undecoded,
+  4: WORDS.unwanted,
 }
 
 /** What a container of a recording is played as. */
@@ -117,8 +130,8 @@ const holding = (cues: readonly Cue[], ms: number): number => {
 export type Listening = ReturnType<typeof listening>
 
 export function listening(recordings: Recordings, path: string) {
-  /** Where the recording's own bytes are played from. */
-  const address = recordings.media(path)
+  /** Where the recording's own bytes are played from, once it is asked. */
+  const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
   const cues = ref<readonly Cue[]>([])
   /** How long the recording runs, as the application last said. */
@@ -155,6 +168,7 @@ export function listening(recordings: Recordings, path: string) {
       if (!open) return
       length.value = said.length
       heard.value = said.heard
+      address.value = said.media
       cues.value = await recordings.cues(path)
       if (!open) return
       trouble.value = ''
@@ -179,6 +193,15 @@ export function listening(recordings: Recordings, path: string) {
   const moved = (ms: number) => {
     if (!open) return
     now.value = Math.max(0, ms)
+  }
+
+  /**
+   * The player could not load the recording, and says which of the four things
+   * went wrong. Each is somebody else's to put right, so each is named.
+   */
+  const failed = (code: number | undefined) => {
+    if (!open) return
+    trouble.value = FAILED[code ?? 0] ?? WORDS.unreadable
   }
 
   /** The tab was drawn, and this is the player it drew. */
@@ -238,6 +261,7 @@ export function listening(recordings: Recordings, path: string) {
     trouble,
     go,
     moved,
+    failed,
     plays,
     ticks,
     reach,

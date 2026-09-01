@@ -27,20 +27,24 @@ watch(player, (element) => {
 
 /** Where the player stands now, in the milliseconds the words are counted in. */
 const moved = () => props.held.moved((player.value?.currentTime ?? 0) * 1000)
+
+/** The player could not load the recording, and says which failure it was. */
+const failed = () => props.held.failed(player.value?.error?.code)
 </script>
 
 <template>
   <div class="recording">
     <audio
-      v-if="props.held.playable"
+      v-if="props.held.playable && props.held.address.value"
       ref="player"
       class="recording__player"
       controls
       preload="none"
-      :src="props.held.address"
+      :src="props.held.address.value"
       :aria-label="words.player"
       @timeupdate="moved"
       @seeked="moved"
+      @error="failed"
     />
     <p v-else class="recording__note">{{ words.unplayable }}</p>
 

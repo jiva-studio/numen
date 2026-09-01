@@ -24,7 +24,6 @@ const assetsRoute = "/assets/"
 const (
 	pagesFacet = "pages"
 	marksFacet = "marks"
-	mediaFacet = "media"
 	cuesFacet  = "cues"
 )
 
@@ -77,8 +76,6 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 		a.Page(w, r, at.path, at.at)
 	case marksFacet:
 		a.Marks(w, r, at.path)
-	case mediaFacet:
-		a.Media(w, r, at.path)
 	case cuesFacet:
 		a.Cues(w, r, at.path)
 	default:
@@ -101,6 +98,5 @@ func marksOf(path string, start, length int) string {
 
 // mediaOf is where a recording is played from, and cuesOf where the words heard
 // in it are read.
-func mediaOf(path string) string { return assetOf(path) + "/" + mediaFacet }
 
 func cuesOf(path string) string { return assetOf(path) + "/" + cuesFacet }

@@ -22,7 +22,11 @@ const CUES: readonly Cue[] = [
   { text: 'The third thing said.', from: 5_000, to: 9_000 },
 ]
 
-const LISTENED: Listened = { length: 9_000, heard: 9_000 }
+const LISTENED: Listened = {
+  length: 9_000,
+  heard: 9_000,
+  media: 'http://127.0.0.1:1/media/talk?word=w',
+}
 
 /**
  * A recording of three cues, recording every question put to it. It answers
@@ -42,7 +46,6 @@ function talk(
       if (said instanceof Error) throw said
       return said
     },
-    media: (path) => `${path} played`,
     cues: async (path) => {
       asked.push(`cues ${path}`)
       if (cues instanceof Error) throw cues
@@ -67,12 +70,14 @@ function played() {
 const settled = () => new Promise((done) => setTimeout(done, 0))
 
 describe('a recording opened', () => {
-  it('is played from the address the application serves it at', () => {
+  it('is played from the address the application serves it at', async () => {
     const { recordings } = talk()
 
     const heard = listening(recordings, 'talks/Ants.mp3')
 
-    expect(heard.address).toBe('talks/Ants.mp3 played')
+    await settled()
+
+    expect(heard.address.value).toBe(LISTENED.media)
   })
 
   it('asks what it is and what was heard in it, once each', async () => {
@@ -89,7 +94,7 @@ describe('a recording opened', () => {
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { length: 0, heard: 0 })
+    const { recordings } = talk([], { length: 0, heard: 0, media: '' })
     const heard = listening(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -107,7 +112,7 @@ describe('a build that cannot read a transcript', () => {
     await settled()
 
     expect(heard.trouble.value).toContain('cannot read what a recording says')
-    expect(heard.address).toBe('talks/Ants.mp3 played')
+    expect(heard.address.value).toBe(LISTENED.media)
   })
 })
 

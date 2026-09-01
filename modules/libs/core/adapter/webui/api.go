@@ -93,6 +93,11 @@ type API struct {
 	// what it wrote. A build without them answers that it has no transcript.
 	Known   port.SourceQueries
 	Derived port.DerivedStores
+
+	// Playing is the socket a recording is played from. A build without one
+	// answers with no address, and the window says the recording cannot be
+	// played here.
+	Playing *Loopback
 	// Wrote is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
@@ -162,6 +167,11 @@ type API struct {
 	// Watching is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.
 	Watching audience[domain.Place]
+
+	// attending is what the person has open, as the window last said. It is
+	// replaced while requests are being served, so every reader takes it
+	// through Attended.
+	attending atomic.Pointer[domain.Attention]
 
 	// Leaving is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.

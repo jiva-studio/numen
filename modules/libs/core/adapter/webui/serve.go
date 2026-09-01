@@ -164,6 +164,14 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Known:   db.SourcesKnown(),
 		Derived: cfg.DerivedStores(),
 	}
+	// A recording is played from a socket of its own. A machine that refuses one
+	// leaves the player with no address, and the words are still read.
+	if playing, why := Reachable(api); why != nil {
+		fmt.Fprintf(out, "recordings will not play: %v\n", why)
+	} else {
+		api.Playing = playing
+	}
+
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.

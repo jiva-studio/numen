@@ -92,11 +92,12 @@ func spoke() []transcript.Cue {
 	}
 }
 
-// A recording is played from its own bytes.
+// A recording is played from its own bytes, over the socket a player reaches.
 func TestARecordingIsPlayedFromItsOwnBytes(t *testing.T) {
-	_, handler := listeningTo(t, nil)
+	api, _ := listeningTo(t, nil)
+	back, handler := played(t, api)
 
-	out := ask(handler, mediaOf(talk))
+	out := ask(handler, back.Address(api.Showing(), talk))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the recording and got %d: %s", out.Code, out.Body)
 	}
@@ -114,10 +115,11 @@ func TestARecordingIsPlayedFromItsOwnBytes(t *testing.T) {
 // A player seeking asks for the piece it lands in, and is answered with that
 // piece and no more.
 func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
-	_, handler := listeningTo(t, nil)
+	api, _ := listeningTo(t, nil)
+	back, handler := played(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, mediaOf(talk), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.Showing(), talk), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -166,7 +168,7 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 // A recording nobody has listened to holds no words, and is played all the
 // same.
 func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
-	_, handler := listeningTo(t, nil)
+	api, handler := listeningTo(t, nil)
 
 	out := ask(handler, cuesOf(talk))
 	if out.Code != http.StatusOK {
@@ -179,8 +181,9 @@ func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 	if len(told.Cues) != 0 {
 		t.Errorf("a recording nobody heard says %+v", told.Cues)
 	}
-	if played := ask(handler, mediaOf(talk)); played.Code != http.StatusOK {
-		t.Errorf("the recording itself was answered %d", played.Code)
+	back, playing := played(t, api)
+	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
+		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
 
@@ -216,12 +219,12 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 	}
 }
 
-// The facets of a recording are a recording's. A document is played from
-// nowhere and says nothing.
-func TestOnlyARecordingIsPlayedAndHeard(t *testing.T) {
+// What was heard is a recording's. A document holds no words and is asked for
+// none.
+func TestOnlyARecordingIsHeard(t *testing.T) {
 	_, handler := listeningTo(t, whole(spoke()))
 
-	for _, url := range []string{mediaOf(book), cuesOf(book), mediaOf("talks/none.mp3")} {
+	for _, url := range []string{cuesOf(book), cuesOf("talks/none.mp3")} {
 		if out := ask(handler, url); out.Code != http.StatusNotFound {
 			t.Errorf("%s was answered %d", url, out.Code)
 		}
@@ -239,7 +242,8 @@ func TestABuildThatReadsNoTranscriptSaysSo(t *testing.T) {
 	if out := ask(handler, cuesOf(talk)); out.Code != http.StatusNotImplemented {
 		t.Errorf("asked what was heard and got %d: %s", out.Code, out.Body)
 	}
-	if out := ask(handler, mediaOf(talk)); out.Code != http.StatusOK {
+	back, playing := played(t, api)
+	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -251,7 +255,6 @@ func TestARecordingsFacetsAreAddressed(t *testing.T) {
 		url   string
 		facet string
 	}{
-		{mediaOf(talk), mediaFacet},
 		{cuesOf(talk), cuesFacet},
 	} {
 		got, ok := addressed(httptest.NewRequest(http.MethodGet, one.url, nil))

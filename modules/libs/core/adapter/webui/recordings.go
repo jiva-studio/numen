@@ -8,10 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
-	"strings"
-	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -38,6 +35,10 @@ type listened struct {
 	Path   string `json:"path"`
 	Length int    `json:"length"`
 	Heard  int    `json:"heard"`
+	// Media is where the recording is played from. It is answered here and not
+	// worked out by the window, because the socket it stands on is opened afresh
+	// for every run.
+	Media string `json:"media"`
 }
 
 // spoken is what was heard in a recording, in the order it was said.
@@ -71,53 +72,16 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 	}
 	heard, _ := transcript.Reached(raw)
 	_, cues := transcript.Read(raw)
-	told := listened{Path: ref.Path, Length: heard, Heard: heard}
+	told := listened{
+		Path:   ref.Path,
+		Length: heard,
+		Heard:  heard,
+		Media:  a.Playing.Address(a.Showing(), ref.Path),
+	}
 	if len(cues) > 0 {
 		told.Length = max(told.Length, cues[len(cues)-1].To)
 	}
 	answer(w, told)
-}
-
-// Media serves a recording's own bytes, which is what a player is pointed at. A
-// range is answered as a range, so seeking lands where it was asked to.
-func (a *API) Media(w http.ResponseWriter, r *http.Request, path string) {
-	reader, ref, err := a.held(r.Context(), path)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if ref.Kind != domain.KindRecording {
-		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
-		return
-	}
-	// The file is read as it is played. An hour of speech is served a second at
-	// a time, and what a listener holds is the second they are on.
-	sound, err := reader.Open(r.Context(), ref.Path)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	defer sound.Close()
-
-	w.Header().Set("Cache-Control", "no-store")
-	if named := heardAs(ref.Path); named != "" {
-		w.Header().Set("Content-Type", named)
-	}
-	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.MTime), sound)
-}
-
-// heardAs is what a recording of a container is served as. A container this
-// does not name is served as whatever its bytes look like.
-func heardAs(name string) string {
-	switch strings.ToLower(path.Ext(name)) {
-	case ".mp3":
-		return "audio/mpeg"
-	case ".wav":
-		return "audio/wav"
-	case ".flac":
-		return "audio/flac"
-	}
-	return ""
 }
 
 // Cues answers with the words heard in a recording, each against the

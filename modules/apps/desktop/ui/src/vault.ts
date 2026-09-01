@@ -193,6 +193,9 @@ export const core: Core & Asking & Commanding = {
     }
   },
   focus: (signal) => vault.focus({}, { signal }),
+  attending: async (open) => {
+    await vault.attending({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+  },
   editing: (signal) => vault.editing({}, { signal }),
   async *tasks(signal) {
     for await (const said of vault.tasks({}, { signal })) {
@@ -342,16 +345,20 @@ export const documents: Documents = {
 }
 
 /**
- * The recordings the vault holds, over the same addresses. The bytes are served
- * a range at a time, so a player is pointed at the address and seeks in it.
+ * The recordings the vault holds, over the same addresses. The player is given
+ * an address of its own: the window is drawn from a scheme a browser does not
+ * load sound through, and the application answers where it does.
  */
 export const recordings: Recordings = {
   listened: async (path) => {
     const answer = await served(asset(path))
-    const said = (await answer.json()) as { length?: number; heard?: number }
-    return { length: said.length ?? 0, heard: said.heard ?? 0 }
+    const said = (await answer.json()) as {
+      length?: number
+      heard?: number
+      media?: string
+    }
+    return { length: said.length ?? 0, heard: said.heard ?? 0, media: said.media ?? '' }
   },
-  media: (path) => `${asset(path)}/media`,
   cues: async (path) => {
     const answer = await served(`${asset(path)}/cues`)
     const said = (await answer.json()) as { cues?: readonly Cue[] }
