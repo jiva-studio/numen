@@ -43,7 +43,7 @@ const on = ref<'vaults' | 'decks' | 'session'>('vaults')
 const vault = ref('')
 
 const { notices, says, failed, putAway } = raising()
-const { vaults, counting: busy, day: today, count } = counting({ cards, failed })
+const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
 const schedules = scheduling({ presets: cards })
@@ -122,7 +122,12 @@ const page = useTemplateRef<InstanceType<typeof Reading>>('page')
 
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
 
+/**
+ * Into a vault. A vault is opened once it has been counted, so what the rest of
+ * them come to is nobody's question any more and the counting is let go of.
+ */
 const choose = (id: string) => {
+  stop()
   vault.value = id
   on.value = 'decks'
   void done.read(id)
@@ -241,14 +246,13 @@ const keyed = (press: KeyboardEvent) => {
 
 /**
  * The keys a person picks a vault with: a letter opens the vault standing at
- * it, which is the letter drawn on that row. While the vaults are being counted
- * the list is empty and no letter stands anywhere.
+ * it, which is the letter drawn on that row. A vault whose count has not
+ * arrived carries no letter, and the letter standing at it opens nothing.
  */
 const picking = (press: KeyboardEvent) => {
-  if (busy.value) return
   const at = opensVault(press, vaults.value.length)
   const one = at === null ? undefined : vaults.value[at]
-  if (!one) return
+  if (!one || !one.counted) return
   press.preventDefault()
   choose(one.vaultId)
 }
@@ -312,6 +316,7 @@ onMounted(() => {
 })
 onUnmounted(() => {
   open = false
+  stop()
   window.removeEventListener('keydown', keyed)
 })
 </script>

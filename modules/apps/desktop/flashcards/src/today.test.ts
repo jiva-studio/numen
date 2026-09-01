@@ -28,6 +28,7 @@ const vault: Owing = {
   vaultId: '01A',
   name: 'Vault',
   path: '/vaults/01A',
+  counted: true,
   faces: 4,
   due: 3,
   new: 1,
@@ -49,8 +50,8 @@ afterEach(() => {
 describe('the day a goal is weighed against', () => {
   it('is the one the application counted', async () => {
     const cards: Counts = {
-      async owing() {
-        return { day: '2026-09-04', vaults: [] }
+      async *owing() {
+        yield { day: '2026-09-04', vaults: [] }
       },
     }
     const held = counting({ cards, failed: () => {} })
@@ -68,8 +69,8 @@ describe('the day a goal is weighed against', () => {
     expect(named(new Date())).toBe('2026-09-05')
 
     const cards: Counts = {
-      async owing() {
-        return { day: '2026-09-04', vaults: [] }
+      async *owing() {
+        yield { day: '2026-09-04', vaults: [] }
       },
     }
     const held = counting({ cards, failed: () => {} })

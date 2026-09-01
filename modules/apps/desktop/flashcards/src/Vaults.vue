@@ -5,6 +5,10 @@
  * It is the screen the editor opens on, drawn from the same component. The
  * screen knows nothing about cards; what stands at the end of a row is put
  * there from here.
+ *
+ * The list is on screen before any of it is counted, and each vault's number
+ * arrives on its own. A vault whose count has not arrived shows the shape that
+ * number will take and is not opened until it has one.
  */
 import { computed } from 'vue'
 import { Owed, Waiting, Welcome } from '@numen/ui'
@@ -25,19 +29,22 @@ const listed = computed<readonly Held[]>(() =>
     id: one.vaultId,
     name: one.name,
     path: one.path,
+    waiting: !one.counted,
     ...(one.unread ? { detail: one.unread } : {}),
   })),
 )
 
 /**
- * How many cards a vault has waiting, by the identity of the vault. A vault
- * that could not be counted is absent: what stands in its row is why, and not a
- * number.
+ * How many cards a vault has waiting, by the identity of the vault, and nothing
+ * for a vault whose count has not arrived. A vault that could not be counted is
+ * absent as well: what stands in its row is why, and not a number.
  */
 const waiting = computed(
   () =>
     new Map(
-      props.vaults.filter((one) => !one.unread).map((one) => [one.vaultId, one.due + one.new]),
+      props.vaults
+        .filter((one) => !one.unread)
+        .map((one) => [one.vaultId, one.counted ? one.due + one.new : null]),
     ),
 )
 </script>
@@ -45,22 +52,22 @@ const waiting = computed(
 <template>
   <Welcome
     name="flashcards"
-    :vaults="counting ? [] : listed"
+    :vaults="listed"
     heading="Vaults"
     :version="version"
     @opens="$emit('choose', $event)"
   >
     <!-- The list is where the room is shortest, so the number stands alone. -->
     <template #vault="{ vault }">
-      <Owed v-if="waiting.has(vault.id)" :waiting="waiting.get(vault.id)!" bare />
+      <Owed v-if="waiting.has(vault.id)" :waiting="waiting.get(vault.id) ?? null" bare />
     </template>
 
-    <!-- The cards of every vault are being counted, which is the one thing
-         the screen has to say until they are. -->
+    <!-- Nothing is known about the installation yet, not even which vaults it
+         holds, which is the one thing the screen has to say until it is. -->
     <template v-if="counting" #waiting>
       <p class="vaults__counting" role="status">
         <Waiting />
-        Counting the vaults
+        Reading the vaults
       </p>
     </template>
   </Welcome>

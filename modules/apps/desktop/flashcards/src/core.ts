@@ -90,6 +90,11 @@ export interface Owing {
   readonly vaultId: string
   readonly name: string
   readonly path: string
+  /**
+   * Whether this vault has been counted. Everything below stands at nothing
+   * until it has, and nothing under it is read as a vault owing nothing.
+   */
+  readonly counted: boolean
   readonly faces: number
   readonly due: number
   readonly new: number

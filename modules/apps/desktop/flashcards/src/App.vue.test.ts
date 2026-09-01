@@ -55,7 +55,11 @@ const { counted, started, waits } = vi.hoisted(() => ({
 vi.mock('./core', async (original) => ({
   ...(await original<typeof import('./core')>()),
   cards: {
-    owing: async () => counted,
+    // The vaults, then each of their counts, the way the front door answers.
+    owing: async function* () {
+      yield { day: counted.day, vaults: counted.vaults }
+      for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
+    },
     moving: () => waits(),
     asking: async () => ({ unreachable: '' }),
     reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),

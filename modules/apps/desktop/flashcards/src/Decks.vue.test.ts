@@ -44,6 +44,7 @@ const vault: Owing = {
   vaultId: '01A',
   name: 'Studies',
   path: '/vaults/01A',
+  counted: true,
   faces: 40,
   due: 12,
   new: 4,
