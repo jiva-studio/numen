@@ -18,7 +18,7 @@ const meta = {
           'A filled shape standing in the room a value will take while that ' +
           'value is being worked out. It is drawn at the size of what ' +
           'replaces it, so nothing moves when the value lands, and it says ' +
-          'that something is coming rather than that there is nothing.',
+          'that something is coming.',
       },
     },
   },
@@ -58,7 +58,7 @@ export const ARowThatDoesNotMove: Story = {
   }),
 }
 
-/** A line of text, where what is coming is a name rather than a figure. */
+/** A line of text, where what is coming is a name. */
 export const InPlaceOfWords: Story = {
   args: { wide: '9rem', high: '1em', pill: false },
   render: (args) => ({

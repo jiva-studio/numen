@@ -152,11 +152,6 @@
      a conversation are read at the same measure, so they keep the same one. */
   --numen-gutter: 1.25rem;
 
-  /* The step every gap down a page is set by, and the half step between things
-     that are parts of one block. A page has these two and nothing between. */
-  --numen-step: 1.25rem;
-  --numen-half-step: calc(var(--numen-step) / 2);
-
   /* The clearance a line of small print keeps from the corner it sits in. */
   --numen-inset: 0.5rem;
   --numen-inset-wide: 0.75rem;
