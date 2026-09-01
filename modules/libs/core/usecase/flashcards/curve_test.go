@@ -1029,3 +1029,37 @@ func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
 		}
 	}
 }
+
+// The curve carries why the settings it was drawn under schedule nothing, so
+// what a person is told is the verdict on the value under their hand.
+func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
+	s := answering(t, 30)
+	for _, one := range []struct {
+		why history.Stopped
+		p   history.Preset
+	}{
+		{history.StoppedNothing, history.Preset{
+			Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		}},
+		{history.StoppedNoMinutes, history.Preset{
+			Goal: history.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
+		}},
+		{history.StoppedNoCards, history.Preset{
+			Goal: history.GoalRetention, Retention: 0.9,
+		}},
+		{history.StoppedNoDay, history.Preset{Goal: history.GoalDate}},
+		{history.StoppedPastDay, history.Preset{
+			Goal: history.GoalDate, By: noon.AddDate(0, 0, -3).Truncate(24 * time.Hour),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		}},
+	} {
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one.p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Stops != one.why {
+			t.Errorf("%+v draws a curve saying %q, and it schedules nothing for %q",
+				one.p, got.Stops, one.why)
+		}
+	}
+}

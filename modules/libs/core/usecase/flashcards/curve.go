@@ -46,6 +46,11 @@ type Curve struct {
 	// most of it would sit at the far end of every curve and advise only asking
 	// for as much as memory allows.
 	Suggested Mark
+	// Stops is why the settings this curve was drawn under schedule nothing,
+	// and is empty where they schedule something. It is asked of the settings
+	// the request carried, so a person moving a control reads the verdict on
+	// the value under their hand.
+	Stops history.Stopped
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
 	Decks int
@@ -240,6 +245,7 @@ func (u Curves) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
+	out.Stops = p.Stops(u.Day, now)
 	out.Decks = mine
 	out.Cards = len(under)
 	out.Overdue = history.Overdue(u.Day, at, now)
