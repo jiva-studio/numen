@@ -1,0 +1,454 @@
+syntax = "proto3";
+
+// What a client may ask about the presets a vault holds.
+//
+// A preset is a note of `type: preset`, and its settings are frontmatter keys.
+// A deck names the preset it is scheduled by with an entry of its `links:`
+// block carrying `type: preset`, and a deck naming none is scheduled by the
+// defaults.
+//
+// One control steers a preset: `goal` says which value it moves, and the curve
+// says what the whole range of that value comes to. A curve is asked for with
+// the settings a person is moving and has not written yet, and asking for one
+// writes nothing.
+package numen.v1;
+
+import "numen/v1/vault.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// PresetsService answers about the presets of the one vault a client is looking
+// at.
+service PresetsService {
+  // Scheduling is the preset a deck is scheduled by. A deck naming none is
+  // answered with the defaults under no path, and a deck whose link reaches
+  // something that is not a preset is answered with the defaults and told so.
+  rpc Scheduling(SchedulingRequest) returns (SchedulingResponse);
+
+  // ListPresets is every preset the vault holds, by path and by what it is
+  // called. It is the list a deck's preset is chosen from, and the defaults are
+  // not in it: they are what schedules a deck naming no preset, and no note
+  // holds them.
+  rpc ListPresets(ListPresetsRequest) returns (ListPresetsResponse);
+
+  // Schedule puts a deck on a preset, by writing the entry of its `links:`
+  // block that carries `type: preset`. The entry keeps the role and the words
+  // the person wrote on it, and every other entry of the block is left as the
+  // bytes it was. An empty preset takes the entry out, and the deck is
+  // scheduled by the defaults.
+  //
+  // A preset the vault holds no note at is refused `missing`, and a preset
+  // naming a note that is not one is refused `not_a_preset`. A deck that no
+  // longer holds what the caller read is left alone and answered `changed`.
+  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+
+  // ReadPreset is the settings of one preset. A note that is not a preset is
+  // answered with the defaults and a problem: what is wrong with the file is
+  // settled in the editor, and nothing is guessed at here.
+  rpc ReadPreset(ReadPresetRequest) returns (ReadPresetResponse);
+
+  // WritePreset puts settings into a preset. Each key the application owns is
+  // replaced on its own, and every other key, the order they stand in and the
+  // body are left as the person wrote them.
+  //
+  // A path the vault holds no note at is refused `missing`. A note that is not
+  // a preset is refused `not_a_preset`, and one that no longer holds what the
+  // caller read is left alone and answered `changed`.
+  rpc WritePreset(WritePresetRequest) returns (WritePresetResponse);
+
+  // Curve is what the settings come to over the whole range of the goal they
+  // name. The whole range is worked out in one pass.
+  rpc Curve(CurveRequest) returns (CurveResponse);
+}
+
+// Goal is which value the one control steers. The value itself stands in the
+// field the goal names.
+enum Goal {
+  GOAL_UNSPECIFIED = 0;
+
+  // How long a day of review runs, in `minutes_a_day`.
+  GOAL_MINUTES_A_DAY = 1;
+
+  // The share of cards recalled when they come round again, in `retention`.
+  GOAL_RETENTION = 2;
+
+  // The day the material is to be in the head, in `by_date`.
+  GOAL_BY_DATE = 3;
+}
+
+// Rule is what a preset counts as learned, and stands under `learned`. The
+// value it reads stands under the key it names, and the other rule keeps its
+// value and takes no part.
+enum Rule {
+  RULE_UNSPECIFIED = 0;
+
+  // A card face is learned once it is sent away for `interval` days or longer.
+  RULE_INTERVAL = 1;
+
+  // A card face is learned once the chance of recalling it today is at or above
+  // `retention`.
+  RULE_RETENTION = 2;
+}
+
+// Counts is what a day's budget is spent on, and stands under `counts`.
+enum Counts {
+  COUNTS_UNSPECIFIED = 0;
+
+  // A card face is charged the first time it is answered in a review day, and
+  // comes round again in that day for nothing.
+  COUNTS_CARDS = 1;
+
+  // Every showing is charged.
+  COUNTS_SHOWS = 2;
+}
+
+// Settings are how the decks pointing at one preset are scheduled. A preset
+// carrying none of these keys is the defaults, and no cards a day is a pause.
+message Settings {
+  reserved 7;
+  reserved "light_days";
+
+  Goal goal = 1;
+
+  // The day the material is to be in the head, as the year, the month and the
+  // day. Empty for a preset aiming at no day.
+  string by_date = 2;
+
+  // How long a day of review runs, spent against the time each answer took. It
+  // closes the day under a goal of minutes, where zero is a pause, and no other
+  // goal reads it.
+  int32 minutes_a_day = 3;
+
+  // How many cards of each kind a day holds.
+  int32 new_a_day = 4;
+  int32 reviews_a_day = 5;
+
+  // The share of cards recalled when they come round again.
+  double retention = 6;
+
+  // Whether days are made to resemble each other.
+  bool even_load = 8;
+
+  // What a day's budget is spent on. Unspecified is the default, which charges
+  // a card face once a review day.
+  Counts counts = 9;
+
+  // How much of a day goes to what is overdue before anything unbegun is
+  // offered, as a share in hundredths. A hundred pays the debt first and begins
+  // new cards on what is left, nothing puts the new material first, and between
+  // them the day is split until one side runs out and the other takes the rest.
+  //
+  // It says what a day is spent on and closes nothing. A goal of a date carries
+  // the whole material by its own reckoning, so it takes no part there.
+  int32 backlog = 10;
+
+  // How much of a day's load each day of the week carries, in per cent, under
+  // the first three letters of the day's name in lower case. A day not named
+  // carries the whole of it, and a day at nothing schedules nothing.
+  map<string, int32> load = 11;
+
+  // What counts as a card face the person has learned. The value the rule reads
+  // stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
+  // RULE_RETENTION.
+  Rule learned = 12;
+
+  // How long a card face is sent away for before it is learned, in days.
+  int32 interval = 13;
+}
+
+// Stopped is why a preset schedules nothing. The list is closed, and a client
+// maps a value to a sentence.
+enum Stopped {
+  // A build that said nothing about it. It is read as scheduling.
+  STOPPED_UNSPECIFIED = 0;
+
+  // The preset schedules: its decks are handed a day of review.
+  STOPPED_NOTHING = 1;
+
+  // A goal of minutes with the minutes at zero.
+  STOPPED_NO_MINUTES = 2;
+
+  // A goal of retention with both card counts at zero.
+  STOPPED_NO_CARDS = 3;
+
+  // A goal of a date naming no day. The budget the goal names is the day, and
+  // a goal that cannot read its own budget schedules nothing.
+  STOPPED_NO_DAY = 4;
+
+  // A goal of a date whose day is behind us.
+  STOPPED_PAST_DAY = 5;
+
+  // A day of the week carrying none of the load. It is a fact about one day,
+  // so only `stops_on` ever carries it.
+  STOPPED_NO_LOAD = 6;
+
+  // A week carrying none of the load: every day of it stands at nothing, so
+  // there is no next day to pick the cards up.
+  STOPPED_NO_WEEK = 7;
+}
+
+// Preset is one preset as a read hands it over.
+message Preset {
+  // Path is the note the settings were read from, and is empty for a deck
+  // naming no preset.
+  string path = 1;
+  string title = 2;
+
+  Settings settings = 3;
+
+  // What was wrong in the file and was not guessed at, in the words to show.
+  // The settings stand at the defaults for each of them, and the editor is
+  // where they are settled.
+  repeated string problems = 4;
+
+  // Why the preset schedules nothing, asked against the day holding now: a goal
+  // of a date stops once the day it names is behind that one. It is the answer
+  // a window has before any curve exists.
+  Stopped stops = 5;
+
+  // The same asked of the day holding now: whatever stops the preset at all,
+  // and a day of the week carrying none of the load. A preset with a light
+  // Sunday is not a stopped preset; it is a preset with a stopped Sunday.
+  Stopped stops_on = 6;
+}
+
+// Curve is what the one control comes to over the whole range of its goal.
+message Curve {
+  Goal goal = 1;
+
+  // The value of the goal at each place: minutes for `minutes_a_day`, a share
+  // of cards for `retention`, and days from today for `by_date`.
+  repeated double grid = 2;
+
+  // The day of each place, filled for a goal of a date.
+  repeated string days = 3;
+
+  // What the preset comes to at each place of the grid, one for one with it.
+  repeated Point at = 4;
+
+  // Where the preset stands, and what is suggested.
+  Mark now = 5;
+  Mark suggested = 6;
+
+  // How many decks are scheduled by this preset. Zero is a preset no deck
+  // points at, and every place of the curve stands at zero with it.
+  int32 decks = 7;
+
+  // How many card faces stand in those decks. Zero is a preset with nothing to
+  // schedule, and every place of the curve stands at zero with it.
+  int32 cards = 8;
+
+  // How many of those card faces have had their day and were not answered on
+  // it. One number over the whole curve: it is a fact about the vault as it
+  // stands, and not about the setting being chosen. A card falling due later
+  // today is not one of these, and neither is a card nobody has begun.
+  int32 overdue = 9;
+
+  // How many of those card faces nobody has answered at all, so they have had
+  // no day. Overdue and these two never overlap, and `cards` holds both plus
+  // the ones whose day is still to come.
+  int32 unbegun = 10;
+}
+
+// Point is what a preset comes to at one place of the grid.
+message Point {
+  reserved 7;
+  reserved "met";
+
+  // `reviews` is counted in card faces and `minutes` in the showings they take,
+  // so a face the day comes back to costs its minutes and is the one card.
+  //
+  // Under a goal of minutes, the next sitting a person will sit down to: the
+  // first day the preset admits, which is the day the deck screen offers. A day
+  // at none of the load is no sitting, so the day after it is drawn. Under a
+  // goal of retention, the load over the days the preset admits.
+  //
+  // A goal of a date reads `reviews` off that first day, and fills `minutes`
+  // with what getting through the material by the day the place names costs,
+  // over the days of review up to it.
+  double reviews = 1;
+  double minutes = 2;
+
+  // The share of the material that comes back.
+  double retained = 3;
+
+  // The card faces standing owed on the last day the projection ran. Read
+  // `clears` for how long the backlog standing now takes to go.
+  int32 owed = 4;
+
+  // The share of the material learned by this day under the rule the settings
+  // name, and whether the pace this place sets learns every card face that can
+  // be learned by it.
+  double through = 5;
+  bool enough = 6;
+
+  // Every budget that closed the day here, each written as the preset writes
+  // the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
+  // is a day that asked for every card there was, so the material itself ran
+  // out. A budget the goal does not name is never here.
+  //
+  // A goal of retention holds a day to both card counts, and a day that ran out
+  // of new cards and of reviews names both: a person raising one of them and
+  // finding nothing changed is reading a day the other closed too.
+  repeated string closed = 8;
+
+  // How many days of review at this place it takes before nothing is overdue.
+  // Zero is a curve standing over nothing overdue, and -1 is a pace that never
+  // gets there, which a person reads as not at this one.
+  int32 clears = 9;
+
+  // How many card faces stand overdue at the end of each day projected at this
+  // place, one entry a day over the whole horizon. It runs over days, which is
+  // a different axis from the grid.
+  repeated int32 backlog = 10;
+
+  // How many card faces stand learned today under the rule the settings name.
+  int32 learned = 11;
+
+  // How many days of review at this place it takes before every card face the
+  // preset schedules is learned. Zero is a place standing over a material
+  // already learned, and -1 is a horizon that ends with one of them still to
+  // learn, which a person reads as further off than this projection saw.
+  //
+  // Absent where that day is not a day to name, and nothing is drawn for it
+  // there. A material counted by a chance of recall stands at a level: a card
+  // falls below the target as it fades and rises above it when it is answered,
+  // so no day holds all of them at once. A preset aiming at a date is answered
+  // by that date, with `short` for the card faces it cannot carry there. And a
+  // curve of retention moves the scheduler at every place, so the day steps
+  // wherever one more review is wanted to pass the interval and falls away
+  // between the steps; what a target buys there is `through` beside it.
+  optional int32 learns = 12;
+
+  // How many card faces cannot be learned by this day whatever the pace: the
+  // rule wants more days than the day leaves them, so no pace reaches them and
+  // the pace beside this is the one that reaches every other.
+  int32 short = 13;
+}
+
+// Mark is one place on the curve worth pointing at.
+message Mark {
+  // Where on the grid it stands, and -1 for a value that falls outside it.
+  int32 at = 1;
+
+  // The goal's value at the mark, in the units of the grid. What the preset
+  // stands at need not sit on the grid.
+  double value = 2;
+
+  // The day at the mark, filled for a goal of a date.
+  string day = 3;
+}
+
+message SchedulingRequest {
+  // The deck whose preset this is, by the path it is filed under.
+  string deck = 1;
+}
+
+message SchedulingResponse {
+  // Absent when the preset was refused.
+  optional Preset preset = 1;
+
+  // Set when the preset was not read, and why.
+  optional Refusal refusal = 2;
+
+  // The file the settings came out of, for the caller to present at its next
+  // write. Absent for a deck naming no preset, and when the preset was
+  // refused.
+  optional Fingerprint at = 3;
+}
+
+message ListPresetsRequest {}
+
+message ListPresetsResponse {
+  repeated Listed presets = 1;
+}
+
+// Listed is one preset as a person choosing between them sees it: where the
+// file is, and what it is called.
+message Listed {
+  string path = 1;
+
+  // What the preset is called. Empty where nothing names the note.
+  string title = 2;
+}
+
+message ScheduleRequest {
+  // The deck to schedule, by the path it is filed under.
+  string deck = 1;
+
+  // The preset that schedules it. Empty takes the deck off the preset it names,
+  // and it is scheduled by the defaults.
+  string preset = 2;
+
+  // The file this caller last read. Absent for a write that lands on whatever
+  // the deck now holds.
+  optional Fingerprint seen = 3;
+}
+
+message ScheduleResponse {
+  // Set when nothing was written, and why.
+  optional Refusal refusal = 1;
+
+  // Set when the deck is no longer the one this caller read. Nothing was
+  // written, and the person chooses what happens next.
+  bool changed = 2;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 3;
+}
+
+message ReadPresetRequest {
+  string path = 1;
+}
+
+message ReadPresetResponse {
+  // Absent when the preset was refused.
+  optional Preset preset = 1;
+
+  // Set when the preset was not read, and why.
+  optional Refusal refusal = 2;
+
+  // The file the settings came out of, for the caller to present at its next
+  // write. Absent when the preset was refused.
+  optional Fingerprint at = 3;
+}
+
+message WritePresetRequest {
+  string path = 1;
+
+  // The settings to write. A value outside what a preset may hold is the
+  // caller's to correct, and nothing is written.
+  Settings settings = 2;
+
+  // The file this caller last read. Absent for a write that lands on whatever
+  // the note now holds.
+  optional Fingerprint seen = 3;
+}
+
+message WritePresetResponse {
+  // Set when nothing was written, and why.
+  optional Refusal refusal = 1;
+
+  // Set when the file is no longer the one this caller read. Nothing was
+  // written, and the person chooses what happens to their settings.
+  bool changed = 2;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 3;
+}
+
+message CurveRequest {
+  // The note the preset stands in, which names the decks it schedules. Empty
+  // is the preset that schedules the decks naming none.
+  string path = 1;
+
+  // The settings a curve is wanted for. They are what a person is moving and
+  // has not written yet, so they need not be what the file holds.
+  Settings settings = 2;
+}
+
+message CurveResponse {
+  Curve curve = 1;
+}

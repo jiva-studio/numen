@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -122,6 +123,42 @@ func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 
 	if got := paths(j); len(got) != 1 || got[0] != "Migration.md" {
 		t.Fatalf("joined to %v", got)
+	}
+}
+
+// What a deck is joined to is the notes it was written from. A deck names the
+// preset that schedules it and may name another deck, and neither is a note
+// somebody wrote about the material. It holds on both sides: a deck pointing
+// at this one is a deck all the same.
+func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
+	j := around(t, map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
+			"\n# Sanskrit\n\nTwenty minutes a day.\n",
+		"decks/Roots.md": "---\ntype: deck\n---\n\n# Roots\n\nThe verbs.\n",
+		"decks/Songs.md": "---\ntype: deck\n---\n\n# Songs\n\nSung over [[decks/Birds]].\n",
+		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n" +
+			"  - to: decks/Roots\n    role: ref\n---\n" +
+			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSwift\n" +
+			"\n### Meaning\n\nSee [[Migration]] and [[Feathers]].\n",
+		"Migration.md": "# Migration\n\nBirds go south when the days shorten.\n",
+		"Feathers.md":  "# Feathers\n\nWhat a wing is made of.\n",
+	}, "decks/Birds.md")
+
+	want := []string{"Migration.md", "Feathers.md"}
+	got := paths(j)
+	if len(got) != len(want) {
+		t.Fatalf("joined to %v, want %v", got, want)
+	}
+	for _, path := range want {
+		if !slices.Contains(got, path) {
+			t.Errorf("joined to %v, want %v", got, want)
+		}
+	}
+	// What was left out was never on its way to being read, so nothing is
+	// reported as text a person did not get.
+	if j.Unread != 0 {
+		t.Errorf("%d of them are said to have come without their text", j.Unread)
 	}
 }
 

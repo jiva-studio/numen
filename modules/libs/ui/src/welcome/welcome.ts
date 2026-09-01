@@ -25,6 +25,11 @@ export interface Held {
   readonly path: string
   /** What is true of this row and not of the ones beside it. */
   readonly detail?: string
+  /**
+   * Whether what the window has to say about this row is still on its way. Such
+   * a row is drawn and carries no letter, and it is not pressed until it is.
+   */
+  readonly waiting?: boolean
 }
 
 /** What the screen offers below the list, where a window offers anything. */

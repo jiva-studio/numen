@@ -18,6 +18,8 @@ interface Knobs {
   icons?: Readonly<Record<string, Component>>
   at: { x: number; y: number }
   opening: MenuOpening
+  /** Which item is the one in force, if the menu names one. */
+  current: string | null
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -44,7 +46,9 @@ const asked = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
-    const at = ref(args.at)
+    const at = ref(
+      args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at,
+    )
     const node = ref<HTMLElement | null>(null)
     const from = ref<HTMLElement | null>(null)
 
@@ -73,6 +77,7 @@ const asked = (args: Knobs) => ({
         :open="open"
         :from="from"
         :opening="args.opening"
+        :current="args.current"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -108,6 +113,7 @@ const meta = {
   },
   argTypes: {
     opening: { control: 'inline-radio', options: MENU_OPENINGS_ALL },
+    current: { control: 'text' },
     margin: { control: { type: 'range', min: 0, max: 48, step: 2 } },
     name: { control: 'text' },
     items: { table: { disable: true } },
@@ -120,6 +126,7 @@ const meta = {
     items: ITEMS,
     at: { x: 480, y: 300 },
     opening: 'pointer',
+    current: null,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -269,6 +276,25 @@ export const NotClipped: Story = {
   },
 }
 
+/**
+ * A choice between the items, one of them in force. Each says whether it is
+ * the one, and the keyboard opens on it.
+ */
+export const TheOneInForce: Story = {
+  args: { opening: 'keyboard', current: 'child' },
+  play: async () => {
+    const chosen = within(menuElement()!).getAllByRole('menuitemradio')
+    await expect(chosen).toHaveLength(4)
+    await expect(chosen[1]).toHaveFocus()
+    await expect(chosen.map((one) => one.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'true',
+      'false',
+      'false',
+    ])
+  },
+}
+
 /** Nothing to choose at all. */
 export const Empty: Story = {
   args: { items: [] },
@@ -323,6 +349,37 @@ export const FarTooLong: Story = {
       { id: 'long', text: LONG },
       { id: 'open', text: 'Open' },
     ],
+  },
+}
+
+/**
+ * Asked for beside the far edge, where the room left is narrower than the
+ * choices. A menu is as wide as the longest thing it offers, so the words are
+ * read whole and the menu is the thing that moves.
+ */
+export const AskedForAtTheEdge: Story = {
+  args: {
+    // Counted back from the far edge: the room left is narrower than the
+    // words, whatever the page is drawn at.
+    at: { x: -200, y: 200 },
+    items: [
+      { id: 'wide', text: 'As wide as the longest of its words' },
+      { id: 'near', text: 'Beside the edge it was asked for at' },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const menu = document.body.querySelector<HTMLElement>('.menu')
+    expect(menu).not.toBeNull()
+    const lines = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__text'))
+    expect(lines).toHaveLength(2)
+    for (const line of lines) {
+      // Nothing is cut short: what the line holds fits the room it has.
+      expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
+    }
+    // And it stands inside the page it was asked for from.
+    const box = menu!.getBoundingClientRect()
+    expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
+    expect(box.left).toBeGreaterThanOrEqual(0)
   },
 }
 

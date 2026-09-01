@@ -18,6 +18,10 @@ export const FILES = 'files'
 export const DECK = 'deck'
 /** A stencil edited in the window, under the path the vault files it at. */
 export const STENCIL = 'stencil'
+/** A preset edited in the window, under the path the vault files it at. */
+export const PRESET = 'preset'
+/** What this installation is configured as, one tab of it to a window. */
+export const SETTINGS = 'settings'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'

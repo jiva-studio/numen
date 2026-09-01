@@ -27,9 +27,9 @@ const four = computed(() =>
 )
 
 /**
- * How much of what the person had learned came back to them, where anything
- * learned was asked at all. A day of nothing but new cards has no share to
- * give, and says none.
+ * How much of what the person is already reviewing came back to them, where any
+ * of it was asked at all. A day of nothing but new cards has no share to give,
+ * and says none.
  */
 const came = computed(() => {
   if (props.day.asked <= 0) return ''

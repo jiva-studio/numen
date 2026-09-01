@@ -48,7 +48,7 @@ The list is closed. Navigation and rendering read it, so a role nobody decided o
 | `ref` | a plain mention. It is the body `[[wikilink]]`, produced by the parser, and is never hand-authored in the block. A wikilink inside a code fence is an example of a link and not one. |
 | `attachment` | something that is not a note. It takes no part in the hierarchy. |
 
-`type` is an open vocabulary, and a value is introduced together with the code that reads it: one feature, one type.
+`type` is an open vocabulary, and a value is introduced together with the code that reads it: one feature, one type. `preset` is one of them: written on a deck's link, it says which note schedules that deck — [Cards](cards.md).
 
 ## The hierarchy
 

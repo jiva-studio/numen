@@ -131,6 +131,12 @@ export function editing(
   /** Whether the window has this note open at all. */
   const has = (id: string): boolean => tabs.value.has(id)
 
+  /**
+   * The file this tab last read or wrote, which a caller writing to the same
+   * note beside the tab presents. Empty where no file has been read.
+   */
+  const at = (id: string): string => tabs.value.get(id)?.at ?? ''
+
   /** The person typed. */
   const typed = (id: string, body: string): void => {
     bodies.value.set(id, body)
@@ -313,6 +319,7 @@ export function editing(
     settles,
     where,
     has,
+    at,
     typed,
     changed,
     save,
@@ -338,6 +345,6 @@ export function editing(
  */
 const refusalOf = (from: Refused): Refusal => {
   if (from === 'deckTooLarge') return 'tooLarge'
-  if (from === 'notAStencil' || from === 'notADeck') return 'notANote'
+  if (from === 'notAStencil' || from === 'notADeck' || from === 'notAPreset') return 'notANote'
   return from === 'missing' || from === 'occupied' || from === 'unnameable' ? 'unreadable' : from
 }

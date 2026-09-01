@@ -13,7 +13,6 @@ import {
   Naming,
   NoteType as NoteTypes,
   Owed,
-  Refusal,
   Role as Roles,
   SourceKind,
   VaultService,
@@ -28,8 +27,10 @@ import type {
   Known as KnownMessage,
   Moved as MovedMessage,
   Problem as ProblemMessage,
+  Refusal,
   Stencil as StencilMessage,
 } from '@numen/protocol'
+import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
@@ -391,22 +392,6 @@ const written = (link: NewLink) => ({
   label: link.label ?? '',
 })
 
-/** The schema's answer in the words the window uses. */
-/**
- * A file as one value the window carries about and never reads into.
- *
- * The schema holds the parts; what a tab does with one is present it back
- * unchanged, so the parts stay here and the string goes everywhere else.
- */
-const stamp = (at?: { path: string; size: bigint; mtime: bigint }): string | undefined =>
-  at && `${at.size} ${at.mtime} ${at.path}`
-
-/** The two numbers first: a path holds spaces, and everything after them is it. */
-const fingerprint = (at: string) => {
-  const [size = '0', mtime = '0', ...rest] = at.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
-}
-
 const seenOf = (seen: { prose: string; at: string }) => ({
   prose: seen.prose,
   at: fingerprint(seen.at),
@@ -427,9 +412,6 @@ const answered = (from: {
   }
 }
 
-const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
-  from.refusal === undefined ? null : refused[from.refusal]
-
 /** One row of a listing, kept as the plain value the window carries it as. */
 const listed = (one: EntryMessage): Entry => ({
   path: one.path,
@@ -446,11 +428,12 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.BOOK]: 'book',
 }
 
-/** Which of three a note is, in the words the window uses. */
+/** Which of four a note is, in the words the window uses. */
 const typed: Record<NoteTypes, NoteType> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
+  [NoteTypes.PRESET]: 'preset',
 }
 
 /** One stencil of the list, kept as the plain value the window carries it as. */
@@ -566,21 +549,6 @@ const unvaulted: Record<VaultsRefusal, VaultRefused> = {
   [VaultsRefusal.UNKNOWN]: 'unknown',
   [VaultsRefusal.NO_TRASH]: 'noTrash',
   [VaultsRefusal.ASKING]: 'asking',
-}
-
-const refused: Record<Refusal, Refused> = {
-  [Refusal.UNSPECIFIED]: 'unreadable',
-  [Refusal.MISSING]: 'missing',
-  [Refusal.NOT_A_NOTE]: 'notANote',
-  [Refusal.NOT_TEXT]: 'notText',
-  [Refusal.TOO_LARGE]: 'tooLarge',
-  [Refusal.BODY_REFUSED]: 'bodyRefused',
-  [Refusal.UNREADABLE]: 'unreadable',
-  [Refusal.OCCUPIED]: 'occupied',
-  [Refusal.UNNAMEABLE]: 'unnameable',
-  [Refusal.NOT_A_STENCIL]: 'notAStencil',
-  [Refusal.NOT_A_DECK]: 'notADeck',
-  [Refusal.DECK_TOO_LARGE]: 'deckTooLarge',
 }
 
 /** What the file did, in the shape the window carries it. */

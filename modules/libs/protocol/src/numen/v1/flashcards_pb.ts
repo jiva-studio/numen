@@ -15,6 +15,8 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Curve, Preset, Settings, Stopped } from "./presets_pb.js";
+import { file_numen_v1_presets } from "./presets_pb.js";
 import type { Refusal } from "./vault_pb.js";
 import { file_numen_v1_vault } from "./vault_pb.js";
 import type { Message } from "@bufbuild/protobuf";
@@ -23,7 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSKXAQoKVmF1bHRPd2luZxIQCgh2YXVsdF9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFZmFjZXMYBCABKAUSCwoDZHVlGAUgASgFEgsKA25ldxgGIAEoBRIiCgVkZWNrcxgHIAMoCzITLm51bWVuLnYxLkRlY2tPd2luZxIOCgZ1bnJlYWQYCCABKAkiQgoJRGVja093aW5nEgwKBGRlY2sYASABKAkSDQoFZmFjZXMYAiABKAUSCwoDZHVlGAMgASgFEgsKA25ldxgEIAEoBSJACgVBaGVhZBINCgVhZ2FpbhgBIAEoAxIMCgRoYXJkGAIgASgDEgwKBGdvb2QYAyABKAMSDAoEZWFzeRgEIAEoAyKrAQoFQXNrZWQSDAoEZGVjaxgBIAEoCRIPCgdzZWN0aW9uGAIgASgJEgwKBGNhcmQYAyABKAkSDAoEZmFjZRgEIAEoCRIPCgdoZWFkaW5nGAUgASgJEg0KBWZyb250GAYgASgJEgwKBGJhY2sYByABKAkSDAoEc2VlbhgIIAEoCBILCgNkdWUYCSABKAkSHgoFYWhlYWQYCiABKAsyDy5udW1lbi52MS5BaGVhZCIOCgxPd2luZ1JlcXVlc3QiNQoNT3dpbmdSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nIi4KDFN0YXJ0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJImAKDVN0YXJ0UmVzcG9uc2USCwoDcnVuGAEgASgJEh4KBWFza2VkGAIgAygLMg8ubnVtZW4udjEuQXNrZWQSEQoJdW53cml0dGVuGAMgAygJEg8KB3NraXBwZWQYBCABKAUifQoNQW5zd2VyUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiAKDkFuc3dlclJlc3BvbnNlEg4KBmFuc3dlchgBIAEoCSJACg9UYWtlQmFja1JlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSCwoDcnVuGAIgASgJEg4KBmFuc3dlchgDIAEoCSISChBUYWtlQmFja1Jlc3BvbnNlIiMKD1Jldmlld2VkUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCSJ5ChBSZXZpZXdlZFJlc3BvbnNlEiEKBGRheXMYASADKAsyEy5udW1lbi52MS5SZXZpZXdpbmcSIAoDZHVlGAQgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEg4KBnN0cmVhaxgCIAEoBRIQCghhbnN3ZXJlZBgDIAEoBSKEAQoJUmV2aWV3aW5nEgsKA2RheRgBIAEoCRIQCghhbnN3ZXJlZBgCIAEoBRINCgVhZ2FpbhgDIAEoBRIMCgRoYXJkGAQgASgFEgwKBGdvb2QYBSABKAUSDAoEZWFzeRgGIAEoBRINCgVhc2tlZBgHIAEoBRIQCghyZWNhbGxlZBgIIAEoBSIPCg1Bc2tpbmdSZXF1ZXN0IiUKDkFza2luZ1Jlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIi8KDUFyb3VuZFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEZGVjaxgCIAEoCSJECg5Bcm91bmRSZXNwb25zZRIiCgVub3RlcxgBIAMoCzITLm51bWVuLnYxLk5laWdoYm91chIOCgZ1bnJlYWQYAiABKAUirgEKCU5laWdoYm91chIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIOCgZwb2ludHMYBiABKAgSEQoJYW1iaWd1b3VzGAcgASgIEicKB3JlZnVzYWwYCCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiDwoNTW92aW5nUmVxdWVzdCIgCg5Nb3ZpbmdSZXNwb25zZRIOCgZyZWxvYWQYASABKAgqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMoMEChFGbGFzaGNhcmRzU2VydmljZRI4CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2USOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2USPQoGTW92aW5nEhcubnVtZW4udjEuTW92aW5nUmVxdWVzdBoYLm51bWVuLnYxLk1vdmluZ1Jlc3BvbnNlMAESQQoIUmV2aWV3ZWQSGS5udW1lbi52MS5SZXZpZXdlZFJlcXVlc3QaGi5udW1lbi52MS5SZXZpZXdlZFJlc3BvbnNlEjsKBkFza2luZxIXLm51bWVuLnYxLkFza2luZ1JlcXVlc3QaGC5udW1lbi52MS5Bc2tpbmdSZXNwb25zZRI7CgZBcm91bmQSFy5udW1lbi52MS5Bcm91bmRSZXF1ZXN0GhgubnVtZW4udjEuQXJvdW5kUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_vault]);
+  fileDesc("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GAggASgFIg8KDUFza2luZ1JlcXVlc3QiJQoOQXNraW5nUmVzcG9uc2USEwoLdW5yZWFjaGFibGUYASABKAkiLwoNQXJvdW5kUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRkZWNrGAIgASgJIkQKDkFyb3VuZFJlc3BvbnNlEiIKBW5vdGVzGAEgAygLMhMubnVtZW4udjEuTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSKuAQoJTmVpZ2hib3VyEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCRIMCgRib2R5GAQgASgJEg0KBWxhYmVsGAUgASgJEg4KBnBvaW50cxgGIAEoCBIRCglhbWJpZ3VvdXMYByABKAgSJwoHcmVmdXNhbBgIIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIPCg1Nb3ZpbmdSZXF1ZXN0IiAKDk1vdmluZ1Jlc3BvbnNlEg4KBnJlbG9hZBgBIAEoCCJECiJGbGFzaGNhcmRzU2VydmljZVNjaGVkdWxpbmdSZXF1ZXN0EhAKCHZhdWx0X2lkGAEgASgJEgwKBGRlY2sYAiABKAkijAEKI0ZsYXNoY2FyZHNTZXJ2aWNlU2NoZWR1bGluZ1Jlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbCJlCh1GbGFzaGNhcmRzU2VydmljZUN1cnZlUmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJEiQKCHNldHRpbmdzGAMgASgLMhIubnVtZW4udjEuU2V0dGluZ3MiQAoeRmxhc2hjYXJkc1NlcnZpY2VDdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMswFChFGbGFzaGNhcmRzU2VydmljZRI6CgVPd2luZxIWLm51bWVuLnYxLk93aW5nUmVxdWVzdBoXLm51bWVuLnYxLk93aW5nUmVzcG9uc2UwARI4CgVTdGFydBIWLm51bWVuLnYxLlN0YXJ0UmVxdWVzdBoXLm51bWVuLnYxLlN0YXJ0UmVzcG9uc2USOwoGQW5zd2VyEhcubnVtZW4udjEuQW5zd2VyUmVxdWVzdBoYLm51bWVuLnYxLkFuc3dlclJlc3BvbnNlEkEKCFRha2VCYWNrEhkubnVtZW4udjEuVGFrZUJhY2tSZXF1ZXN0GhoubnVtZW4udjEuVGFrZUJhY2tSZXNwb25zZRI9CgZNb3ZpbmcSFy5udW1lbi52MS5Nb3ZpbmdSZXF1ZXN0GhgubnVtZW4udjEuTW92aW5nUmVzcG9uc2UwARJBCghSZXZpZXdlZBIZLm51bWVuLnYxLlJldmlld2VkUmVxdWVzdBoaLm51bWVuLnYxLlJldmlld2VkUmVzcG9uc2USOwoGQXNraW5nEhcubnVtZW4udjEuQXNraW5nUmVxdWVzdBoYLm51bWVuLnYxLkFza2luZ1Jlc3BvbnNlEjsKBkFyb3VuZBIXLm51bWVuLnYxLkFyb3VuZFJlcXVlc3QaGC5udW1lbi52MS5Bcm91bmRSZXNwb25zZRJpCgpTY2hlZHVsaW5nEiwubnVtZW4udjEuRmxhc2hjYXJkc1NlcnZpY2VTY2hlZHVsaW5nUmVxdWVzdBotLm51bWVuLnYxLkZsYXNoY2FyZHNTZXJ2aWNlU2NoZWR1bGluZ1Jlc3BvbnNlEloKBUN1cnZlEicubnVtZW4udjEuRmxhc2hjYXJkc1NlcnZpY2VDdXJ2ZVJlcXVlc3QaKC5udW1lbi52MS5GbGFzaGNhcmRzU2VydmljZUN1cnZlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_vault]);
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -73,6 +75,14 @@ export type VaultOwing = Message<"numen.v1.VaultOwing"> & {
   decks: DeckOwing[];
 
   /**
+   * Presets is what the day comes to under each preset the vault's decks are
+   * scheduled by.
+   *
+   * @generated from field: repeated numen.v1.PresetOwing presets = 9;
+   */
+  presets: PresetOwing[];
+
+  /**
    * Set when the vault could not be counted: it has never been read by the
    * editor, or its files could not be reached. The three numbers are then zero
    * and this says why, in the person's own words.
@@ -112,6 +122,33 @@ export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
    * @generated from field: int32 new = 4;
    */
   new: number;
+
+  /**
+   * How many of this deck's cards were answered since the day opened, counted
+   * the way its preset counts. A deck holding nothing more today and answered
+   * nothing today was not studied.
+   *
+   * @generated from field: int32 answered = 5;
+   */
+  answered: number;
+
+  /**
+   * How many of the deck's card faces stand learned now, under the rule the
+   * preset scheduling the deck counts by. It is a count of faces, and says
+   * nothing about what a preset has got through of its day.
+   *
+   * @generated from field: int32 learned = 6;
+   */
+  learned: number;
+
+  /**
+   * How many of the deck's card faces nobody has answered at all. A deck every
+   * face of which is one of these has nothing that can come round until
+   * something begins them.
+   *
+   * @generated from field: int32 unbegun = 7;
+   */
+  unbegun: number;
 };
 
 /**
@@ -120,6 +157,146 @@ export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
  */
 export const DeckOwingSchema: GenMessage<DeckOwing> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 1);
+
+/**
+ * PresetOwing is one preset of a vault, and what the day comes to under it.
+ *
+ * @generated from message numen.v1.PresetOwing
+ */
+export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
+  /**
+   * The note the settings were read from, and empty for the decks naming no
+   * preset.
+   *
+   * @generated from field: string preset = 1;
+   */
+  preset: string;
+
+  /**
+   * What the preset is called. Empty where nothing names the note.
+   *
+   * @generated from field: string title = 7;
+   */
+  title: string;
+
+  /**
+   * How many decks point at it. Nothing points at a preset of no decks, and
+   * the day stands at nothing under it.
+   *
+   * @generated from field: int32 decks = 8;
+   */
+  decks: number;
+
+  /**
+   * How many card faces stand in those decks. A deck holding none points at
+   * its preset all the same, so a preset of decks and no cards is its own
+   * state.
+   *
+   * @generated from field: int32 cards = 9;
+   */
+  cards: number;
+
+  /**
+   * What the day leaves under it: the card faces owed and the ones nobody has
+   * answered, held to its budget. Their sum is what a sitting over this preset
+   * asks, because a preset is the whole scope of its own budget.
+   *
+   * @generated from field: int32 owed_due = 10;
+   */
+  owedDue: number;
+
+  /**
+   * @generated from field: int32 owed_new = 11;
+   */
+  owedNew: number;
+
+  /**
+   * How many of its cards were answered since the day opened, and how long
+   * those answers took. The two beside the total divide it the way a budget
+   * does, so each is weighed against the budget of its own kind.
+   *
+   * @generated from field: int32 answered = 2;
+   */
+  answered: number;
+
+  /**
+   * @generated from field: int64 took_ms = 3;
+   */
+  tookMs: bigint;
+
+  /**
+   * @generated from field: int32 answered_new = 17;
+   */
+  answeredNew: number;
+
+  /**
+   * @generated from field: int32 answered_reviews = 18;
+   */
+  answeredReviews: number;
+
+  /**
+   * What the preset keeps for this day of the week: how many cards of each
+   * kind, and how long the day runs, at the share of the load that day of the
+   * week carries.
+   *
+   * A budget the preset's goal does not name stands here as the person left it
+   * and closes nothing. `owed_due` and `owed_new` are already held to the ones
+   * that do, so holding them to these again is capping a number twice.
+   *
+   * @generated from field: int32 new = 4;
+   */
+  new: number;
+
+  /**
+   * @generated from field: int32 reviews = 5;
+   */
+  reviews: number;
+
+  /**
+   * @generated from field: double minutes = 6;
+   */
+  minutes: number;
+
+  /**
+   * Which of the three closes the day, each written as the preset writes the
+   * key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
+   * that budget takes no part.
+   *
+   * @generated from field: string closes_new = 12;
+   */
+  closesNew: string;
+
+  /**
+   * @generated from field: string closes_reviews = 13;
+   */
+  closesReviews: string;
+
+  /**
+   * @generated from field: string closes_minutes = 14;
+   */
+  closesMinutes: string;
+
+  /**
+   * @generated from field: string closes_backlog = 15;
+   */
+  closesBacklog: string;
+
+  /**
+   * Why the preset schedules nothing on this day: whatever stops it at all, and
+   * a day of the week carrying none of the load. It is the core's own verdict,
+   * so a window says of a preset what the sitting hands its cards out by.
+   *
+   * @generated from field: numen.v1.Stopped stops_on = 16;
+   */
+  stopsOn: Stopped;
+};
+
+/**
+ * Describes the message numen.v1.PresetOwing.
+ * Use `create(PresetOwingSchema)` to create a new message.
+ */
+export const PresetOwingSchema: GenMessage<PresetOwing> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 2);
 
 /**
  * Ahead is how long each of the four answers would leave this card, in seconds
@@ -155,7 +332,7 @@ export type Ahead = Message<"numen.v1.Ahead"> & {
  * Use `create(AheadSchema)` to create a new message.
  */
 export const AheadSchema: GenMessage<Ahead> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 2);
+  messageDesc(file_numen_v1_flashcards, 3);
 
 /**
  * Asked is one card face as it is put to a person.
@@ -237,7 +414,7 @@ export type Asked = Message<"numen.v1.Asked"> & {
  * Use `create(AskedSchema)` to create a new message.
  */
 export const AskedSchema: GenMessage<Asked> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 3);
+  messageDesc(file_numen_v1_flashcards, 4);
 
 /**
  * @generated from message numen.v1.OwingRequest
@@ -250,16 +427,39 @@ export type OwingRequest = Message<"numen.v1.OwingRequest"> & {
  * Use `create(OwingRequestSchema)` to create a new message.
  */
 export const OwingRequestSchema: GenMessage<OwingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 4);
+  messageDesc(file_numen_v1_flashcards, 5);
 
 /**
  * @generated from message numen.v1.OwingResponse
  */
 export type OwingResponse = Message<"numen.v1.OwingResponse"> & {
   /**
+   * Vaults is every vault the installation holds, by name and by where it is,
+   * with nothing counted. It stands in the first message and in no other, and
+   * it is what the list is drawn from.
+   *
    * @generated from field: repeated numen.v1.VaultOwing vaults = 1;
    */
   vaults: VaultOwing[];
+
+  /**
+   * Day is the review day these counts stand in, written as the year, the month
+   * and the day. A day of review begins at the hour the settings name, so an
+   * hour past midnight is still the day before. It stands in the first message
+   * beside the vaults.
+   *
+   * @generated from field: string day = 2;
+   */
+  day: string;
+
+  /**
+   * Counted is one vault worked out, and stands in every message after the
+   * first. Until one arrives for a vault, nothing is known about what that
+   * vault owes.
+   *
+   * @generated from field: numen.v1.VaultOwing counted = 3;
+   */
+  counted?: VaultOwing | undefined;
 };
 
 /**
@@ -267,7 +467,7 @@ export type OwingResponse = Message<"numen.v1.OwingResponse"> & {
  * Use `create(OwingResponseSchema)` to create a new message.
  */
 export const OwingResponseSchema: GenMessage<OwingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 5);
+  messageDesc(file_numen_v1_flashcards, 6);
 
 /**
  * @generated from message numen.v1.StartRequest
@@ -284,6 +484,16 @@ export type StartRequest = Message<"numen.v1.StartRequest"> & {
    * @generated from field: string deck = 2;
    */
   deck: string;
+
+  /**
+   * Preset is the note one preset stands in, and the empty path is the preset
+   * that schedules the decks naming none. Set it to sit to the cards of every
+   * deck pointing at that preset, held to its budget. Naming a deck and a
+   * preset at once is refused.
+   *
+   * @generated from field: optional string preset = 3;
+   */
+  preset?: string | undefined;
 };
 
 /**
@@ -291,7 +501,7 @@ export type StartRequest = Message<"numen.v1.StartRequest"> & {
  * Use `create(StartRequestSchema)` to create a new message.
  */
 export const StartRequestSchema: GenMessage<StartRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 6);
+  messageDesc(file_numen_v1_flashcards, 7);
 
 /**
  * @generated from message numen.v1.StartResponse
@@ -332,7 +542,7 @@ export type StartResponse = Message<"numen.v1.StartResponse"> & {
  * Use `create(StartResponseSchema)` to create a new message.
  */
 export const StartResponseSchema: GenMessage<StartResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 7);
+  messageDesc(file_numen_v1_flashcards, 8);
 
 /**
  * @generated from message numen.v1.AnswerRequest
@@ -377,7 +587,7 @@ export type AnswerRequest = Message<"numen.v1.AnswerRequest"> & {
  * Use `create(AnswerRequestSchema)` to create a new message.
  */
 export const AnswerRequestSchema: GenMessage<AnswerRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 8);
+  messageDesc(file_numen_v1_flashcards, 9);
 
 /**
  * @generated from message numen.v1.AnswerResponse
@@ -397,7 +607,7 @@ export type AnswerResponse = Message<"numen.v1.AnswerResponse"> & {
  * Use `create(AnswerResponseSchema)` to create a new message.
  */
 export const AnswerResponseSchema: GenMessage<AnswerResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 9);
+  messageDesc(file_numen_v1_flashcards, 10);
 
 /**
  * @generated from message numen.v1.TakeBackRequest
@@ -426,7 +636,7 @@ export type TakeBackRequest = Message<"numen.v1.TakeBackRequest"> & {
  * Use `create(TakeBackRequestSchema)` to create a new message.
  */
 export const TakeBackRequestSchema: GenMessage<TakeBackRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 10);
+  messageDesc(file_numen_v1_flashcards, 11);
 
 /**
  * @generated from message numen.v1.TakeBackResponse
@@ -439,7 +649,7 @@ export type TakeBackResponse = Message<"numen.v1.TakeBackResponse"> & {
  * Use `create(TakeBackResponseSchema)` to create a new message.
  */
 export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 11);
+  messageDesc(file_numen_v1_flashcards, 12);
 
 /**
  * @generated from message numen.v1.ReviewedRequest
@@ -456,7 +666,7 @@ export type ReviewedRequest = Message<"numen.v1.ReviewedRequest"> & {
  * Use `create(ReviewedRequestSchema)` to create a new message.
  */
 export const ReviewedRequestSchema: GenMessage<ReviewedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 12);
+  messageDesc(file_numen_v1_flashcards, 13);
 
 /**
  * @generated from message numen.v1.ReviewedResponse
@@ -500,7 +710,7 @@ export type ReviewedResponse = Message<"numen.v1.ReviewedResponse"> & {
  * Use `create(ReviewedResponseSchema)` to create a new message.
  */
 export const ReviewedResponseSchema: GenMessage<ReviewedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 13);
+  messageDesc(file_numen_v1_flashcards, 14);
 
 /**
  * Reviewing is one day, and what was answered on it.
@@ -546,11 +756,11 @@ export type Reviewing = Message<"numen.v1.Reviewing"> & {
   easy: number;
 
   /**
-   * How much of what the person had already learned came back to them:
-   * `asked` is the answers given to learned cards, `recalled` the ones among
-   * them that were not Again. A card still being learned is in neither — what
-   * is asked of one is whether it comes back after ten minutes, which says
-   * nothing about how well anything is remembered.
+   * How much of what came round in days came back: `asked` is the answers
+   * given to card faces the scheduler sends days away, `recalled` the ones
+   * among them that were not Again. A card face still coming round in minutes
+   * is in neither — what is asked of one is whether it comes back after ten
+   * minutes, which says nothing about memory.
    *
    * @generated from field: int32 asked = 7;
    */
@@ -567,7 +777,7 @@ export type Reviewing = Message<"numen.v1.Reviewing"> & {
  * Use `create(ReviewingSchema)` to create a new message.
  */
 export const ReviewingSchema: GenMessage<Reviewing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 14);
+  messageDesc(file_numen_v1_flashcards, 15);
 
 /**
  * @generated from message numen.v1.AskingRequest
@@ -580,7 +790,7 @@ export type AskingRequest = Message<"numen.v1.AskingRequest"> & {
  * Use `create(AskingRequestSchema)` to create a new message.
  */
 export const AskingRequestSchema: GenMessage<AskingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 15);
+  messageDesc(file_numen_v1_flashcards, 16);
 
 /**
  * @generated from message numen.v1.AskingResponse
@@ -600,7 +810,7 @@ export type AskingResponse = Message<"numen.v1.AskingResponse"> & {
  * Use `create(AskingResponseSchema)` to create a new message.
  */
 export const AskingResponseSchema: GenMessage<AskingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 16);
+  messageDesc(file_numen_v1_flashcards, 17);
 
 /**
  * @generated from message numen.v1.AroundRequest
@@ -625,7 +835,7 @@ export type AroundRequest = Message<"numen.v1.AroundRequest"> & {
  * Use `create(AroundRequestSchema)` to create a new message.
  */
 export const AroundRequestSchema: GenMessage<AroundRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 17);
+  messageDesc(file_numen_v1_flashcards, 18);
 
 /**
  * @generated from message numen.v1.AroundResponse
@@ -651,7 +861,7 @@ export type AroundResponse = Message<"numen.v1.AroundResponse"> & {
  * Use `create(AroundResponseSchema)` to create a new message.
  */
 export const AroundResponseSchema: GenMessage<AroundResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 18);
+  messageDesc(file_numen_v1_flashcards, 19);
 
 /**
  * Neighbour is one note the deck stands next to.
@@ -726,7 +936,7 @@ export type Neighbour = Message<"numen.v1.Neighbour"> & {
  * Use `create(NeighbourSchema)` to create a new message.
  */
 export const NeighbourSchema: GenMessage<Neighbour> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 19);
+  messageDesc(file_numen_v1_flashcards, 20);
 
 /**
  * @generated from message numen.v1.MovingRequest
@@ -739,7 +949,7 @@ export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
  * Use `create(MovingRequestSchema)` to create a new message.
  */
 export const MovingRequestSchema: GenMessage<MovingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 20);
+  messageDesc(file_numen_v1_flashcards, 21);
 
 /**
  * @generated from message numen.v1.MovingResponse
@@ -759,7 +969,106 @@ export type MovingResponse = Message<"numen.v1.MovingResponse"> & {
  * Use `create(MovingResponseSchema)` to create a new message.
  */
 export const MovingResponseSchema: GenMessage<MovingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 21);
+  messageDesc(file_numen_v1_flashcards, 22);
+
+/**
+ * @generated from message numen.v1.FlashcardsServiceSchedulingRequest
+ */
+export type FlashcardsServiceSchedulingRequest = Message<"numen.v1.FlashcardsServiceSchedulingRequest"> & {
+  /**
+   * @generated from field: string vault_id = 1;
+   */
+  vaultId: string;
+
+  /**
+   * The deck whose preset this is, by the path it is filed under.
+   *
+   * @generated from field: string deck = 2;
+   */
+  deck: string;
+};
+
+/**
+ * Describes the message numen.v1.FlashcardsServiceSchedulingRequest.
+ * Use `create(FlashcardsServiceSchedulingRequestSchema)` to create a new message.
+ */
+export const FlashcardsServiceSchedulingRequestSchema: GenMessage<FlashcardsServiceSchedulingRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 23);
+
+/**
+ * @generated from message numen.v1.FlashcardsServiceSchedulingResponse
+ */
+export type FlashcardsServiceSchedulingResponse = Message<"numen.v1.FlashcardsServiceSchedulingResponse"> & {
+  /**
+   * Absent when the preset was refused.
+   *
+   * @generated from field: optional numen.v1.Preset preset = 1;
+   */
+  preset?: Preset | undefined;
+
+  /**
+   * Set when the preset was not read, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 2;
+   */
+  refusal?: Refusal | undefined;
+};
+
+/**
+ * Describes the message numen.v1.FlashcardsServiceSchedulingResponse.
+ * Use `create(FlashcardsServiceSchedulingResponseSchema)` to create a new message.
+ */
+export const FlashcardsServiceSchedulingResponseSchema: GenMessage<FlashcardsServiceSchedulingResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 24);
+
+/**
+ * @generated from message numen.v1.FlashcardsServiceCurveRequest
+ */
+export type FlashcardsServiceCurveRequest = Message<"numen.v1.FlashcardsServiceCurveRequest"> & {
+  /**
+   * @generated from field: string vault_id = 1;
+   */
+  vaultId: string;
+
+  /**
+   * The note the preset stands in, which names the decks it schedules. Empty
+   * is the preset that schedules the decks naming none.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+
+  /**
+   * The settings a curve is wanted for. They need not be what the file holds.
+   *
+   * @generated from field: numen.v1.Settings settings = 3;
+   */
+  settings?: Settings | undefined;
+};
+
+/**
+ * Describes the message numen.v1.FlashcardsServiceCurveRequest.
+ * Use `create(FlashcardsServiceCurveRequestSchema)` to create a new message.
+ */
+export const FlashcardsServiceCurveRequestSchema: GenMessage<FlashcardsServiceCurveRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 25);
+
+/**
+ * @generated from message numen.v1.FlashcardsServiceCurveResponse
+ */
+export type FlashcardsServiceCurveResponse = Message<"numen.v1.FlashcardsServiceCurveResponse"> & {
+  /**
+   * @generated from field: numen.v1.Curve curve = 1;
+   */
+  curve?: Curve | undefined;
+};
+
+/**
+ * Describes the message numen.v1.FlashcardsServiceCurveResponse.
+ * Use `create(FlashcardsServiceCurveResponseSchema)` to create a new message.
+ */
+export const FlashcardsServiceCurveResponseSchema: GenMessage<FlashcardsServiceCurveResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_flashcards, 26);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and
@@ -819,14 +1128,19 @@ export const FlashcardsService: GenService<{
    * it holds, how much is due, and how much has never been asked. It is what
    * the application opens on.
    *
-   * A vault the index does not carry yet is listed with nothing counted and
-   * says so: the list of its decks is the index's answer, and this application
+   * The first message is every vault as the registry holds it, with nothing
+   * counted, and one message follows for each vault as it is worked out.
+   * Counting a vault reads every deck in it and replays its whole answer log,
+   * so the list stands while that runs.
+   *
+   * A vault the index does not carry yet arrives with nothing counted and says
+   * so: the list of its decks is the index's answer, and this application
    * builds none.
    *
    * @generated from rpc numen.v1.FlashcardsService.Owing
    */
   owing: {
-    methodKind: "unary";
+    methodKind: "server_streaming";
     input: typeof OwingRequestSchema;
     output: typeof OwingResponseSchema;
   },
@@ -834,8 +1148,13 @@ export const FlashcardsService: GenService<{
    * Start opens a run and hands over what to ask, in order. A run writes one
    * file of its own in the vault and nothing else ever appends to it.
    *
-   * Naming a deck asks that deck alone. Naming none asks the whole vault, which
-   * is the ordinary way to sit down to this.
+   * Naming a deck asks that deck alone. Naming a preset asks the cards of every
+   * deck pointing at it, held to that preset's own budget. Naming neither asks
+   * the whole vault, which is the ordinary way to sit down to this.
+   *
+   * Naming both is refused. A preset with nothing to ask today is refused with
+   * the reason, so a person pressing it is told why and not shown an empty
+   * sitting.
    *
    * @generated from rpc numen.v1.FlashcardsService.Start
    */
@@ -912,6 +1231,31 @@ export const FlashcardsService: GenService<{
     methodKind: "unary";
     input: typeof AroundRequestSchema;
     output: typeof AroundResponseSchema;
+  },
+  /**
+   * Scheduling is the preset a deck of the named vault is scheduled by. A deck
+   * naming none is answered with the defaults under no path, and a deck whose
+   * link reaches something that is not a preset is answered with the defaults
+   * and told so.
+   *
+   * @generated from rpc numen.v1.FlashcardsService.Scheduling
+   */
+  scheduling: {
+    methodKind: "unary";
+    input: typeof FlashcardsServiceSchedulingRequestSchema;
+    output: typeof FlashcardsServiceSchedulingResponseSchema;
+  },
+  /**
+   * Curve is what the settings come to over the whole range of the goal they
+   * name. Nothing is written: a curve is asked for the value a person is
+   * moving and has not settled.
+   *
+   * @generated from rpc numen.v1.FlashcardsService.Curve
+   */
+  curve: {
+    methodKind: "unary";
+    input: typeof FlashcardsServiceCurveRequestSchema;
+    output: typeof FlashcardsServiceCurveResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_flashcards, 0);

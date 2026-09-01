@@ -7,9 +7,9 @@
  */
 import type { PlexRelatedSeat } from '@numen/ui'
 import type { Deed, Shown } from './commanding'
+import type { Opened } from './putting'
 import type {
   Movement,
-  NoteType,
   Refused,
   Removed,
   Renamed,
@@ -18,7 +18,7 @@ import type {
 } from './core'
 import type { Made } from './note/creating'
 import type { Says } from './telling'
-import { AGENT, FILES, NOTE, PLEX } from './workspace'
+import { AGENT, FILES, NOTE, PLEX, SETTINGS } from './workspace'
 
 /**
  * The files the window has an editor open on, as a command reaches them. A
@@ -41,7 +41,7 @@ export interface Notes {
    */
   opens(path: string, title: string, showing: 'here' | 'beside'): void
   /** A file just made here, put in front of the person as what it was made as. */
-  made(path: string, title: string, type: NoteType, showing: 'here' | 'beside'): void
+  made(path: string, title: string, type: Opened, showing: 'here' | 'beside'): void
 }
 
 /**
@@ -136,6 +136,11 @@ export interface Doing {
   opening(): string
   /** A tab of a kind, opened and put in front. */
   opens(kind: string): void
+  /**
+   * The preset of a note, in a tab of its own: the note itself where it is one,
+   * and the preset a deck is scheduled by where it is a deck.
+   */
+  preset(path: string): Promise<void>
   /** A tab let go of. */
   closes(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
@@ -216,6 +221,8 @@ const carried: Record<string, Carries> = {
   ask: (deed, on) => on.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
   reveal: (deed, on) => on.reveals(deed.path),
+  preset: (deed, on) => on.preset(deed.path),
+  settings: (_, on) => on.opens(SETTINGS),
   move: (deed, on, words) => moves(deed, on, words),
   makeFolder: (deed, on, words) => makesFolder(deed, on, words),
   plex: (_, on) => on.opens(PLEX),

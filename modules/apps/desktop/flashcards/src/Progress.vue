@@ -27,7 +27,7 @@ const words: HeatmapWords = {
   hard: called.hard,
   good: called.good,
   easy: called.easy,
-  recalled: 'recalled',
+  recalled: 'of cards you are reviewing came back',
 }
 </script>
 

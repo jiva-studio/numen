@@ -33,6 +33,8 @@ The same grouping serves a watcher's refresh (ADR-0009). One event can name a wh
 
 ### The index's single write connection
 
+**Amended by [ADR-0035](0035-the-review-window-writes-the-index.md).** Two processes hold a writer, and a write transaction takes its lock at BEGIN so the busy timeout is the thing that covers a collision.
+
 The write pool is capped at one connection, and writes queue in Go. The read pool is unrestricted: under write-ahead logging a reader never waits, which is what lets a search answer while a scan is still running. A busy timeout covers a collision. Every connection opens with those pragmas in its connection string, foreign keys included.
 
 The per-vault file lock that guards a read-change-write of a note is a different lock, and it is ADR-0020's.

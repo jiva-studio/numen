@@ -5,47 +5,101 @@ import (
 	"strings"
 )
 
-// Replay works out where a history leaves every card face it names.
+// Replay works out where a history leaves every card face it names, each placed
+// on its day by the preset a deck naming none is scheduled by. Day is when a day
+// of review begins.
 //
 // The answers arrive in whatever order the files were read, and the files
 // arrive in whatever order they were synchronised, so they are put in the order
-// they were given first. A schedule depends on that order: an answer counted
-// after a later one leaves a card face somewhere neither of them would have.
+// they were given first. A schedule depends on that order.
 //
-// An answer some line takes back is left out. Both lines stay in the file —
-// nothing here is ever rewritten — and what a person took back is not counted.
-//
-// One identifier is one answer, however many lines carry it. A synchroniser
-// that met a conflict leaves a second copy of a run beside the first, and a
-// person restoring a backup puts one there by hand; counting those lines twice
-// would double what a card has been through and send it away for longer than it
-// was earned.
-func Replay(by Scheduler, answers []Answer) map[CardFace]Schedule {
-	return replayed(by, answers, nil)
+// An answer some line takes back is left out, and both lines stay in the file.
+// One identifier is one answer however many lines carry it: a synchroniser that
+// met a conflict leaves a second copy of a run beside the first, and a person
+// restoring a backup puts one there by hand.
+func Replay(d Day, by Scheduler, answers []Answer) map[CardFace]Schedule {
+	return ReplayUnder(d, By(by), answers)
 }
 
-// Retention is how much of what a person had learned came back to them, over
-// one day: the answers given to cards they had learned, and how many of those
-// came back at all.
+// Scheduling is how one card face is worked out: the scheduler that spaces it,
+// and the preset that says which day it lands on.
+type Scheduling struct {
+	By     Scheduler
+	Preset Preset
+}
+
+// Under is how one card face is scheduled. A card face is scheduled by the
+// preset its deck points at, and two presets asking for different shares of the
+// cards send the same card away for different lengths of time.
+type Under func(CardFace) Scheduling
+
+// By is one scheduler for every card face, on the preset a deck naming none is
+// scheduled by.
+func By(s Scheduler) Under {
+	return func(CardFace) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
+}
+
+// ReplayUnder works out where a history leaves every card face, each under the
+// scheduler its own preset asks for and on the day its own preset puts it.
+func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
+	return Give(answers).Replay(d, by)
+}
+
+// Given is a vault's answers in the order they were given: nothing a line takes
+// back, one line to an identifier, earliest first.
 //
-// A card still being learned is not in it. What is asked of one is whether it
-// comes back after ten minutes, which says nothing about how well anything is
-// remembered.
+// One request asks several things of one history — where it leaves each card,
+// what each day came to, what a preset spent. The order is worked out once and
+// handed to each of them.
+type Given []Answer
+
+// Give puts a vault's answers in the order they were given.
+func Give(answers []Answer) Given { return given(answers) }
+
+// Replay works out where this history leaves every card face, each under the
+// scheduler its own preset asks for and on the day its own preset puts it.
+//
+// The days the answers have already filled are what the next card is placed
+// against.
+func (g Given) Replay(d Day, by Under) map[CardFace]Schedule {
+	out := make(map[CardFace]Schedule)
+	on := Spreading(d)
+	for _, a := range g {
+		one := by(a.CardFace)
+		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
+		next.Due = one.Preset.Places(on, a.At, next.Due)
+		out[a.CardFace] = next
+	}
+	return out
+}
+
+// Retention is how much of what came round in days came back, over one day:
+// the answers given to spaced card faces, and how many of those came back at
+// all.
+//
+// A card face the scheduler is still putting into memory is in neither. What is
+// asked of one is whether it comes back after ten minutes, which says nothing
+// about memory.
 type Retention struct {
-	// Asked is the answers given to cards already learned, and Recalled the
-	// ones among them that were not Again.
+	// Asked is the answers given to spaced card faces, and Recalled the ones
+	// among them that were not Again.
 	Asked    int
 	Recalled int
 }
 
 // Retained is what came back on each day, by the name of the day.
 //
-// It is worked out with the replay and not beside it, because whether a card
-// was one the person had learned is a thing only the answers before it can say.
+// It is worked out with the replay: whether a card face was spaced is a thing
+// only the answers before it can say.
 func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
+	return Give(answers).Retained(by, d)
+}
+
+// Retained is the same over a history already in order.
+func (g Given) Retained(by Scheduler, d Day) map[string]Retention {
 	out := make(map[string]Retention)
-	replayed(by, answers, func(before Schedule, a Answer) {
-		if !by.Learned(before) {
+	g.replayed(by, func(before Schedule, a Answer) {
+		if !by.Spaced(before) {
 			return
 		}
 		day := d.Names(a.At)
@@ -64,26 +118,14 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
 func replayed(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFace]Schedule {
-	taken := make(map[string]bool)
-	for _, a := range answers {
-		if a.TakesBack() {
-			taken[a.Undoes] = true
-		}
-	}
+	return Give(answers).replayed(by, each)
+}
 
-	seen := make(map[string]bool, len(answers))
-	given := make([]Answer, 0, len(answers))
-	for _, a := range answers {
-		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
-			continue
-		}
-		seen[a.ID] = true
-		given = append(given, a)
-	}
-	slices.SortStableFunc(given, byWhen)
-
+func (g Given) replayed(
+	by Scheduler, each func(before Schedule, a Answer),
+) map[CardFace]Schedule {
 	out := make(map[CardFace]Schedule)
-	for _, a := range given {
+	for _, a := range g {
 		before := out[a.CardFace]
 		if each != nil {
 			each(before, a)
@@ -93,14 +135,39 @@ func replayed(
 	return out
 }
 
+// given is the answers that count, in the order they were given.
+//
+// An answer some line takes back is left out, and one identifier is one answer
+// however many lines carry it. The files arrive in whatever order they were
+// synchronised, and what a card face has been through is the order of the
+// answers themselves.
+func given(answers []Answer) []Answer {
+	taken := make(map[string]bool)
+	for _, a := range answers {
+		if a.TakesBack() {
+			taken[a.Undoes] = true
+		}
+	}
+
+	seen := make(map[string]bool, len(answers))
+	out := make([]Answer, 0, len(answers))
+	for _, a := range answers {
+		if a.TakesBack() || taken[a.ID] || seen[a.ID] {
+			continue
+		}
+		seen[a.ID] = true
+		out = append(out, a)
+	}
+	slices.SortStableFunc(out, byWhen)
+	return out
+}
+
 // byWhen puts answers in the order they were given.
 //
-// Two answers of one millisecond are put in the order of their identifiers.
-// Which of them was given first is not known: an identifier carries the
-// millisecond and then randomness, so inside one millisecond it orders by
-// chance. What this gives is one order, the same at every launch, which is what
-// a schedule worked out again has to have. A person does not answer two cards
-// inside a millisecond, so the two are only ever a machine's.
+// Two answers of one millisecond are put in the order of their identifiers,
+// which is one order and the same at every launch. Which of them was given
+// first is not known: an identifier carries the millisecond and then
+// randomness.
 func byWhen(a, b Answer) int {
 	if !a.At.Equal(b.At) {
 		return a.At.Compare(b.At)

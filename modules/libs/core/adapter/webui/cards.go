@@ -112,11 +112,11 @@ func (a *API) makes(
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.Made{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
-		return cards.Made{}, nil, connect.NewError(coded(err), err)
+		return cards.Made{}, nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return cards.Made{}, &refusal, nil
+	return cards.Made{}, &reason, nil
 }
 
 // RenameField gives one of a stencil's fields a different name, in the stencil
@@ -156,11 +156,11 @@ func (a *API) RenameField(
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
-		return nil, connect.NewError(coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.RenameFieldResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.RenameFieldResponse{Refusal: &reason}), nil
 }
 
 // ReadStencil is the fields and the faces of one stencil.
@@ -176,7 +176,7 @@ func (a *API) ReadStencil(
 	}
 	found, err := a.Cards.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
 	out := &v1.ReadStencilResponse{}
@@ -204,7 +204,7 @@ func (a *API) ReadDeck(
 	}
 	found, err := a.Cards.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
 	out := &v1.ReadDeckResponse{}
@@ -245,7 +245,9 @@ func (a *API) WriteDeck(
 	defer a.Writing.done()
 
 	wrote, err := a.Cuts.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
-	if err == nil {
+	// A write that reached the vault is a write that happened, so the client is
+	// handed the fingerprint it presents at its next save.
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
@@ -260,11 +262,11 @@ func (a *API) WriteDeck(
 			Refusal: &refusal, Bound: cards.MaxBytes,
 		}), nil
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
-		return nil, connect.NewError(coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.WriteDeckResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.WriteDeckResponse{Refusal: &reason}), nil
 }
 
 // WriteStencil puts fields and faces into a stencil. A stencil still holding
@@ -292,7 +294,9 @@ func (a *API) WriteStencil(
 
 	at, err := a.Cuts.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
-	if err == nil {
+	// A write that reached the vault is a write that happened, so the client is
+	// handed the fingerprint it presents at its next save.
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		if a.Wrote != nil {
 			a.Wrote()
 		}
@@ -301,11 +305,11 @@ func (a *API) WriteStencil(
 	if errors.Is(err, port.ErrChanged) {
 		return connect.NewResponse(&v1.WriteStencilResponse{Changed: true}), nil
 	}
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
-		return nil, connect.NewError(coded(err), err)
+		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &reason}), nil
 }
 
 // titled is what the vault calls the note at a path. A build with no index, and

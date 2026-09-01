@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // List is what one folder of the vault holds. The vault settles the order the
@@ -139,11 +140,11 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 		out.Moved = movedOf(moved)
 	}
 	if err != nil {
-		refusal, refused := refusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &refusal
+		out.Refusal = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -168,11 +169,11 @@ func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRe
 	}
 	out := &v1.MakeFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		refusal, refused := refusedBy(err)
+		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Refusal = &refusal
+		out.Refusal = &reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -189,7 +190,7 @@ func listing(err error) connect.Code {
 	}
 }
 
-// typeOf is which of three a note is, as the schema carries it. A note carrying
+// typeOf is which of four a note is, as the schema carries it. A note carrying
 // no type of its own is an ordinary note.
 func typeOf(noteType domain.NoteType) v1.NoteType {
 	switch noteType {
@@ -197,6 +198,8 @@ func typeOf(noteType domain.NoteType) v1.NoteType {
 		return v1.NoteType_NOTE_TYPE_DECK
 	case domain.TypeStencil:
 		return v1.NoteType_NOTE_TYPE_STENCIL
+	case domain.TypePreset:
+		return v1.NoteType_NOTE_TYPE_PRESET
 	default:
 		return v1.NoteType_NOTE_TYPE_UNSPECIFIED
 	}

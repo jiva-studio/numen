@@ -148,9 +148,16 @@ func (unreadable) All() ([]domain.Vault, error) {
 func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 	api := &API{Registry: unreadable{}, Now: time.Now}
 
-	_, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if connect.CodeOf(err) != connect.CodeInternal {
-		t.Errorf("refused with %v", connect.CodeOf(err))
+	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { stream.Close() })
+	if stream.Receive() {
+		t.Fatalf("a window that cannot read the vaults listed %+v", stream.Msg())
+	}
+	if connect.CodeOf(stream.Err()) != connect.CodeInternal {
+		t.Errorf("refused with %v", connect.CodeOf(stream.Err()))
 	}
 }
 

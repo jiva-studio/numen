@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -456,7 +457,9 @@ func changing(
 		seen = read.Ref
 	}
 	wrote, err := core.Cuts.Deck(ctx, v, path, body, seen)
-	if err != nil {
+	// A write that reached the vault is a write that happened, so the caller is
+	// handed the fingerprint it presents at its next write.
+	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return Written{}, nil, err
 	}
 	return Written{

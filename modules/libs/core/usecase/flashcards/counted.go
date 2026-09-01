@@ -12,7 +12,7 @@ import (
 
 // countedVersion is the shape of the cache file. A cache of another shape is
 // thrown away and worked out again, which costs a reading of the answers.
-const countedVersion = 1
+const countedVersion = 2
 
 type counted struct {
 	V int `json:"v"`
@@ -23,9 +23,13 @@ type counted struct {
 }
 
 type countedRun struct {
-	Name string                   `json:"name"`
-	Size int                      `json:"size"`
+	Name string `json:"name"`
+	Size int    `json:"size"`
+	// Days is what this run alone came to.
 	Days map[string]history.Tally `json:"days"`
+	// IDs are the identifiers its lines carry, which is what says an answer
+	// another run holds too is the one answer.
+	IDs []string `json:"ids"`
 }
 
 // Reviewed is how much of a vault was answered, and when.
@@ -37,8 +41,8 @@ type Reviewed struct {
 	// names. A card owed today or owed and late is not in it: what is behind is
 	// what the front door counts, and this is what is ahead.
 	Due map[string]int
-	// Retained is how much of what a person had learned came back to them on
-	// each day. A card still being learned is not in it.
+	// Retained is how much of what came round in days came back on each day. A
+	// card face the scheduler is still putting into memory is not in it.
 	Retained map[string]history.Retention
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
@@ -85,32 +89,67 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 	if err != nil {
 		return Reviewed{}, err
 	}
+	// One identifier is one answer over the whole log, so a line another run
+	// was counted for is not counted again.
+	seen := make(map[string]bool)
+	// What is still to come is worked out from the whole history, so every run
+	// is read here and the reading is handed on.
+	coming := u.Schedules.By != nil
+	var held Held
 	for _, file := range files {
-		one, held := was[file.Name]
-		if !held || one.Size != file.Size {
-			read, err := log.Run(ctx, store, file)
+		var ran Ran
+		var opened bool
+		one, kept := was[file.Name]
+		stale := !kept || one.Size != file.Size
+		if stale || coming {
+			ran, err = log.Run(ctx, store, file)
 			if err != nil {
 				return Reviewed{}, err
 			}
+			opened = true
+		}
+		if stale {
 			one = countedRun{
 				Name: file.Name,
-				Size: read.Size,
-				Days: history.Counted(u.Day, read.Answers),
+				Size: ran.Size,
+				Days: history.Counted(u.Day, ran.Answers),
+				IDs:  identifiers(ran.Answers),
 			}
 		}
 		now.Runs = append(now.Runs, one)
-		for day, count := range one.Days {
+		if opened && !ran.Gone && !ran.Shut {
+			held.Answers = append(held.Answers, ran.Answers...)
+			held.Files = append(held.Files, port.Stored{Name: file.Name, Size: ran.Size})
+		}
+
+		// What a run came to on its own is what is kept, and what the run adds
+		// to the counting is what no other run has been counted for.
+		days := one.Days
+		if repeats(one.IDs, seen) {
+			if !opened {
+				ran, err = log.Run(ctx, store, file)
+				if err != nil {
+					return Reviewed{}, err
+				}
+			}
+			days = history.Counted(u.Day, given(ran.Answers, seen))
+		}
+		for _, id := range one.IDs {
+			seen[id] = true
+		}
+		for day, count := range days {
 			out.Days[day] = added(out.Days[day], count)
 			out.Answered += count.Answered
 		}
 	}
 
+	held.order = ordered(held.Answers)
 	u.remember(ctx, v, now)
 	out.Streak = history.Streak(u.Day, out.Days, u.now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
-	due, retained, err := u.ahead(ctx, v)
+	due, retained, err := u.ahead(ctx, v, held)
 	if err != nil {
 		return Reviewed{}, err
 	}
@@ -131,26 +170,59 @@ func added(one, other history.Tally) history.Tally {
 	}
 }
 
-// ahead is how much falls on each day still to come, and how much of what a
-// person had learned came back to them on each day behind.
+// identifiers is what every line of a run is named by, the lines taking an
+// answer back among them.
+func identifiers(answers []history.Answer) []string {
+	out := make([]string, 0, len(answers))
+	for _, a := range answers {
+		out = append(out, a.ID)
+	}
+	return out
+}
+
+// repeats reports whether a run carries a line another run was counted for.
+func repeats(ids []string, seen map[string]bool) bool {
+	for _, id := range ids {
+		if seen[id] {
+			return true
+		}
+	}
+	return false
+}
+
+// given is the lines of a run no other run was counted for.
+func given(answers []history.Answer, seen map[string]bool) []history.Answer {
+	out := make([]history.Answer, 0, len(answers))
+	for _, a := range answers {
+		if !seen[a.ID] {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+// ahead is how much falls on each day still to come, and how much of what came
+// round in days came back on each day behind.
+//
+// The answers are the reading the days were counted from, so the whole log is
+// opened once for the screen.
 //
 // A card owed today, or owed and late, is not in what is to come: what a person
 // owes now is what the front door counts, and this says what is coming after
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
 func (u Counted) ahead(
-	ctx context.Context, v domain.Vault,
+	ctx context.Context, v domain.Vault, held Held,
 ) (map[string]int, map[string]history.Retention, error) {
 	falls := make(map[string]int)
 	if u.Schedules.By == nil {
 		return falls, nil, nil
 	}
 
-	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
+	schedules, err := u.Schedules.From(ctx, v, held)
 	if err != nil {
 		return nil, nil, err
 	}
-	schedules := u.Schedules.From(ctx, v, held)
 
 	now := u.now()
 	ends := u.Day.Ends(now)
@@ -160,7 +232,7 @@ func (u Counted) ahead(
 		}
 		falls[u.Day.Names(s.Due)]++
 	}
-	return falls, history.Retained(u.Schedules.By, u.Day, held.Answers), nil
+	return falls, held.Given().Retained(u.Schedules.By, u.Day), nil
 }
 
 // remembered is what was counted last time, by the name of the run it was

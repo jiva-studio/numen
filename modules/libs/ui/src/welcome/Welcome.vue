@@ -62,11 +62,17 @@ defineEmits<{
 
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ heading }}</h2>
-        <ul class="welcome__list">
+        <!-- The room the list will fill, while the window has no rows to give
+             it and something to say about that. -->
+        <div v-if="!vaults.length && $slots.waiting" class="welcome__waiting">
+          <slot name="waiting" />
+        </div>
+        <ul v-else class="welcome__list">
           <li v-for="(one, at) in vaults" :key="one.id">
             <button
               type="button"
               class="welcome__row welcome__row--vault"
+              :disabled="one.waiting"
               @click="$emit('opens', one.id)"
             >
               <FolderRoot class="welcome__icon" />
@@ -81,8 +87,12 @@ defineEmits<{
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
               <!-- The letter it is opened by, at the end of the row the ways in
                    carry their keystrokes at. Past the alphabet a vault is opened
-                   with the hand and carries none. -->
-              <KeyCap v-if="vaultLetter(at)" :keys="{ marks: [], letter: vaultLetter(at) }" />
+                   with the hand and carries none, and a row still waiting is
+                   drawn without the letter it will be opened by. -->
+              <KeyCap
+                v-if="vaultLetter(at) && !one.waiting"
+                :keys="{ marks: [], letter: vaultLetter(at) }"
+              />
             </button>
           </li>
         </ul>
@@ -205,8 +215,14 @@ defineEmits<{
   min-inline-size: 0;
 }
 
-.welcome__row:hover {
+.welcome__row:hover:not(:disabled) {
   background: var(--numen-bubble-bg);
+}
+
+/* A row whose answer is still on its way stands as it will stand, and does not
+   answer to a hand. */
+.welcome__row:disabled {
+  cursor: default;
 }
 
 .welcome__row:focus-visible {
@@ -244,6 +260,15 @@ defineEmits<{
   flex: none;
   color: var(--numen-edge-label);
   font-size: var(--numen-edge-label-size);
+}
+
+/* Where the rows will stand, so what is said while they are on their way is
+   said in the middle of the room they will take. */
+.welcome__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 4rem;
 }
 
 .welcome__heading {

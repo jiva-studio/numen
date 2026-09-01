@@ -2,17 +2,18 @@
 
 A card is a set of named values a person wrote, laid out by a stencil into a front and a back. This is a specification, not a decision record: every rule here traces to an accepted ADR.
 
-Two files are involved and both are ordinary notes. A **stencil** says what fields a card has and how they are shown. A **deck** holds the cards.
+Three files are involved and all are ordinary notes. A **stencil** says what fields a card has and how they are shown. A **deck** holds the cards. A **preset** says how the decks pointing at it are scheduled.
 
 ## What a note is
 
-The frontmatter key `type` says which of three a note is.
+The frontmatter key `type` says which of four a note is.
 
 | `type` | What the file is |
 | --- | --- |
 | `note` | An ordinary note. This is the default, and nearly every note in a vault carries no `type` at all. |
 | `stencil` | Fields and faces. |
 | `deck` | Cards. |
+| `preset` | How the decks pointing at it are scheduled. |
 
 The list is closed. A value outside it is a problem against the note, and the note is read as an ordinary note.
 
@@ -214,6 +215,88 @@ Two fields of one name in one card are a problem against the deck. The first sta
 On the screen a card's fields are in the stencil's order, whatever order the file wrote them in.
 
 In the file they stay where they are. A card the editor did not touch arrives on the other side in the order it went in, and a field is moved only by a person moving it.
+
+## The preset
+
+A preset is a note of `type: preset`, and it says how the decks pointing at it are scheduled. Its settings are frontmatter keys; its body is the person's, written for themselves.
+
+```markdown
+---
+type: preset
+goal: minutes_a_day
+minutes_a_day: 20
+new_a_day: 8
+reviews_a_day: 45
+retention: 0.87
+load:
+  sat: 50
+  sun: 0
+even_load: true
+---
+
+# Sanskrit
+
+Grammar and vocabulary. Three decks point here.
+```
+
+A deck names its preset with an entry of its `links:` block carrying `type: preset` — [Links](links.md).
+
+```markdown
+---
+type: deck
+links:
+  - to: Sanskrit
+    role: ref
+    type: preset
+---
+```
+
+A deck's tab reads which preset schedules it, and offers the defaults and every preset the vault holds. Choosing one repoints that entry; choosing the defaults removes it, and removes the `links:` key with it where the block held nothing else.
+
+| | |
+| --- | --- |
+| `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
+| `by_date` | the day the material is to be learned by, written `2026-09-30`. What learned means is this preset's own `learned` rule, asked of every card on that day. |
+| `minutes_a_day` | how long a day of review runs, spent against the time each answer took. Zero keeps no budget in time. |
+| `new_a_day` | how many unseen cards a day holds. 10. |
+| `reviews_a_day` | how many returning cards a day holds. 200. |
+| `retention` | the share of cards recalled when they come round again. 0.90, and it goes from 0.70 to 0.99. |
+| `learned` | what counts as a card learned: `interval`, or `retention`. The value stands under the key it names. `interval`. |
+| `interval` | how long a card is sent away for before it is learned, in days. 21, and it goes from 1 to 365. |
+| `counts` | what a day's budget is spent on: `cards`, where a card face counts once however often it comes round that day, or `shows`, where every showing spends a slot. `cards`. |
+| `backlog` | how much of a day goes to what is overdue before anything new is offered, in per cent. 100 is the overdue pile first and new cards only once it is empty; 0 is new cards first; 50 splits the day between them. 100. |
+| `load` | how much of a day's load each day of the week carries, in per cent, under `mon` to `sun`. A day not named carries 100, and a day at 0 schedules nothing. |
+| `even_load` | whether days are made to resemble each other. On, and a goal of `by_date` moves no card whatever it holds. |
+
+Several decks pointing at one preset is what sharing it looks like, and scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and one naming a note that is not a preset is scheduled by the defaults with a problem against it.
+
+Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
+
+**A preset's day is divided over the decks pointing at it**, and pressing one deck hands over that deck's share of it — the same count the deck stands at on the front door. The shares go by what each deck owes: three decks owing the same take a third each, and a deck owing nine times another's takes nine times the share. A share too small to buy a card, or larger than the deck has cards to spend it on, goes to the decks that can use it, so the day spends what it holds. What a deck was already sat through today comes off that deck's own share, so sitting one deck does not take from another and the decks may be sat in any order. Adding a deck adds nothing to the day's work; it spreads the same work over more decks, and raising the work is raising the budget ([ADR-0041](adr/0041-a-day-is-divided-over-the-decks.md)).
+
+**A day asks a card as often as it falls due in it.** An answer a card did not come back on sends it away for minutes, so it lands back inside the day it was asked in and that day asks it again. Under `counts: cards` a card face spends a slot the first time the day asks it and comes round again in it for nothing; under `counts: shows` every showing spends one. The minutes go on every showing either way, and the count a person reads beside the control is in cards: a card the day comes back to is the one card, and the showings it takes are what the clock runs out on.
+
+**`counts` is read where a count closes the day, which is `retention` alone.** A goal of `minutes_a_day` is closed by the clock, and the clock is spent on every showing whichever way the preset counts. A goal of `by_date` is closed by the cards it has to begin, and every showing after a card face's first is a review, which that goal holds to nothing. So `counts: shows` shortens a day held to `retention` and changes nothing under the other two.
+
+**A day names every budget that closed it.** Under `retention` the day is held to its new cards and to its reviews at once, and a day that hands over the whole of each has been closed by each. A person told only one of them raises that one and finds the day unchanged, so both are said.
+
+`learned` is what the preset counts as a card learned, and the value it reads stands under the key it names. Under `interval` a card is learned once the interval it is sent away for reaches `interval` days; under `retention` it is learned once the chance of recalling it today is at or above `retention`. The rule not named keeps its value and takes no part until it is chosen again, and a preset naming no rule at all counts by `interval` at 21 days. Learned is a state and not a milestone: both rules are asked of where the card stands now, and a lapse takes a card back out of that standing under either of them. How many cards stand learned today is answered by the rule in force. How long until all of them are is a prediction made under a stated assumption: the soonest the material could be learned, read off the run in which nothing is forgotten. It is what the deck could reach and not a forecast of what will happen. It stands beside a goal of `minutes_a_day` and a goal of `retention`, and is absent under `by_date`, whose day is the answer already; and it is asked only under `learned: interval`, since a chance of recall is a level a deck stands at and names no such day. Over the range of a `retention` goal it falls away and steps up wherever another review is wanted — the day a card passes an interval is the reviews it takes times the space between them, and a review is a whole number. Every value of it is right where it is asked, and a step is that arithmetic and not a fault.
+
+A goal of `by_date` aims at that same rule on the day it names, so the pace begins a card early enough to learn it by then: three weeks before the day under an interval of three weeks, and on the day itself under a chance of recall. Where a card cannot get there whatever the pace — a card added a fortnight before a day it must stand three weeks away from — the picture says how many card faces fall short. The day is not moved and the rule is not bent; the pace shown beside that number gets there every card that can. The day named is the answer, so no second day is offered beside it, and past that day the preset schedules nothing: what a projection shows there is a deck nobody is answering, with the debt climbing and what was learned fading.
+
+`load` gives a day of the week its share of the load, and that share scales every budget the day keeps: a Saturday at 50 holds half the minutes and half of each card count. It is read whether or not the days are evened out, and **a day at 0 schedules nothing** — a pause of that one day.
+
+`even_load` is whether a card is moved off the day it fell on. The day it comes back on is chosen inside the tolerance the scheduler allows around the interval, and a day carrying less of the load, or already holding more cards, is one the card is less likely to be put on. It is pressure and not a promise: no day is stopped from carrying more than its share, and a short interval leaves nowhere to move a card. With `even_load` off a card falls where the scheduler puts it, and a day that cannot show it leaves it standing over for the next one.
+
+A preset whose goal is `by_date` moves no card, whatever `even_load` holds. The pace is what spreads that material over the days to the day named, and the days it has are the days it needs.
+
+**No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere — and a preset aiming at a day and naming none is paused from the start, because the budget its goal names is the day.
+
+**Why a preset schedules nothing is one answer, worked out where the cards are handed out.** The reasons are a closed list — no minutes a day, no cards a day, a date with no day, a date behind us, a week no day of which carries any of the load — and an interface asking is given one of them and puts it into words. A day of the week at none of the load stands apart from all five: it is a fact about that one day, and a preset with a quiet Sunday has not stopped. A week at nothing is not, because there is no next day for the cards to be picked up on.
+
+The list says why a *preset* schedules nothing. A preset that schedules and has nothing it can schedule is a different thing and is said beside the material: a deck every card face of which nobody has begun, under a preset beginning none a day, is not stopped and never comes round either. The preset window says it in the control's place and the deck screen says it on the row.
+
+The hour a day of review begins at is not here: it is a fact about a person's clock, and it is in [Settings](settings.md).
 
 ## Size
 

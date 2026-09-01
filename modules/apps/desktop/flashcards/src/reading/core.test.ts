@@ -23,4 +23,10 @@ describe('why a note has no text', () => {
     expect(said(Refusal.MISSING)).toBe(REFUSED.missing)
     expect(said(Refusal.TOO_LARGE)).toBe(REFUSED.tooLarge)
   })
+
+  // The file is a note. What it is not is a preset, and a person told the one
+  // goes looking for the other.
+  it('says a note that is not a preset is not a preset', () => {
+    expect(said(Refusal.NOT_A_PRESET)).toBe('that note is not a preset')
+  })
 })

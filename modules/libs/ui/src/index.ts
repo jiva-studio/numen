@@ -24,6 +24,25 @@ export type {
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
 
+/** One line of digits, typed by hand and held inside its bounds. */
+export { NumberField } from './components/ui/number-field'
+export { clamped, numberOf, stepped, DEFAULT_BOUNDS } from './components/ui/number-field'
+export type { Bounds } from './components/ui/number-field'
+
+export { Switch } from './components/ui/switch'
+
+/** One value along a track, moved by a handle. */
+export { Slider } from './components/ui/slider'
+
+/** Two to four choices side by side, one of them chosen. */
+export { Segmented } from './components/ui/segmented'
+export type { SegmentedChoice } from './components/ui/segmented'
+
+/** The days of the week, each drawn at the level it stands at. */
+export { Days } from './components/ui/days'
+export { weekFrom, WEEK } from './components/ui/days'
+export type { Day, Named } from './components/ui/days'
+
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'
@@ -31,6 +50,9 @@ export { dayName as heatmapDayName } from './heatmap/dates'
 export type { Words as HeatmapWords } from './heatmap/words'
 /** What a thing is, said beside it while a person points at it. */
 export { default as Tooltip } from './tooltip/Tooltip.vue'
+/** Where a thing standing over the page goes, which the menu and tooltip share. */
+export { beside } from './placing/place'
+export type { Beside, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'
@@ -96,6 +118,7 @@ export type { Follows } from './following/following'
 
 export { default as Dots } from './dots/Dots.vue'
 export { default as Waiting } from './waiting/Waiting.vue'
+export { default as Coming } from './waiting/Coming.vue'
 
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'

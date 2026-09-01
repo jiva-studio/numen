@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
@@ -69,7 +70,10 @@ func (u Marking) Execute(ctx context.Context, v domain.Vault) (Marked, error) {
 			out.Unwritten = append(out.Unwritten, path)
 			continue
 		}
-		if _, err := write.Deck(ctx, v, path, body, deck.Ref); err != nil {
+		// A deck the index could not be brought level with carries its marks all
+		// the same, and its cards stand in this sitting.
+		if _, err := write.Deck(ctx, v, path, body, deck.Ref); err != nil &&
+			!errors.Is(err, note.ErrUnlevelled) {
 			out.Unwritten = append(out.Unwritten, path)
 		}
 	}

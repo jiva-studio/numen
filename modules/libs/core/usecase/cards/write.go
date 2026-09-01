@@ -64,7 +64,7 @@ func (u Write) Deck(
 	if err != nil {
 		return Wrote{}, err
 	}
-	return Wrote{At: at, Minted: minted}, nil
+	return Wrote{At: at, Minted: minted}, u.level(ctx, v, path)
 }
 
 // whole is the body every card of which has been made whole, and the marks that
@@ -99,10 +99,10 @@ func (u Write) Stencil(
 			"%w: %d bytes, and %d is the most a stencil is", note.ErrTooLarge, len(body), note.MaxBytes)
 	}
 	at, err := u.stencil(ctx, v, path, body, fields, fingerprint)
-	if err != nil || u.Index == nil {
+	if err != nil {
 		return at, err
 	}
-	return at, u.Index(ctx, v, []string{path})
+	return at, u.level(ctx, v, path)
 }
 
 // stencil is the read, the change and the write, under this vault's write lock
@@ -191,6 +191,15 @@ func (u Write) now() time.Time {
 	return u.Now()
 }
 
+// level brings what a write touched up to date. The levelling is done here so
+// that a caller holding the file's fingerprint is told which of the two failed.
+func (u Write) level(ctx context.Context, v domain.Vault, path string) error {
+	if u.Index == nil {
+		return nil
+	}
+	return note.Levelled(path, u.Index(ctx, v, []string{path}))
+}
+
 func (u Write) note() note.Write {
-	return note.Write{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
+	return note.Write{Readers: u.Readers, Writers: u.Writers, Now: u.Now}
 }

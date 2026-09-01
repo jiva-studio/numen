@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
-	"os"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -28,6 +27,9 @@ import (
 // where waiting is cheap and ordered. The read pool is unrestricted: in WAL
 // mode a reader never waits for the writer, which is what lets a search answer
 // while a scan is still running.
+//
+// Several processes open the one file. Their writers queue in SQLite, under the
+// busy timeout, and a writer still waiting when it runs out says so.
 type DB struct {
 	write *sql.DB
 	read  *sql.DB
@@ -46,7 +48,8 @@ var pragmas = []string{
 	"journal_mode(WAL)",
 	// Foreign keys so removing a vault cannot leave rows pointing at nothing.
 	"foreign_keys(1)",
-	// Wait for a writer, up to five seconds, before SQLITE_BUSY.
+	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
+	// waited for may be in another process.
 	"busy_timeout(5000)",
 	// The index is a cache: a crash costs a rescan, never data. Paying an fsync
 	// per commit to protect it buys nothing and dominates a rebuild.
@@ -55,7 +58,7 @@ var pragmas = []string{
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
-	write, err := sql.Open("sqlite", dsn(path))
+	write, err := sql.Open("sqlite", writeDSN(path))
 	if err != nil {
 		return nil, err
 	}
@@ -75,75 +78,6 @@ func Open(ctx context.Context, path string) (*DB, error) {
 	}
 	return &DB{write: write, read: read}, nil
 }
-
-// Reading is the cache opened by a process that only asks it questions.
-//
-// It holds the read pool alone: there is nothing here to write with, so a
-// binary that takes the index as it finds it cannot be the one that changes it.
-type Reading struct {
-	read *sql.DB
-}
-
-// readPragmas are what a connection that only reads opens with. The journal
-// mode is not among them: it is persisted in the database header, and setting
-// it is a write.
-var readPragmas = []string{
-	"query_only(1)",
-	"busy_timeout(5000)",
-	"cache_size(-65536)",
-}
-
-// OpenToRead opens the cache for asking, and never for building.
-//
-// A database that is not there is not made: the index is built by the
-// application that scans, and a machine where that has never run has an index
-// with nothing in it to read. Saying so is the answer; an empty database made
-// here would say the vaults are empty instead.
-func OpenToRead(ctx context.Context, path string) (*Reading, error) {
-	if _, err := os.Stat(path); err != nil {
-		return nil, err
-	}
-	read, err := sql.Open("sqlite", dsnOf(path, readPragmas))
-	if err != nil {
-		return nil, err
-	}
-	if err := read.PingContext(ctx); err != nil {
-		read.Close()
-		return nil, err
-	}
-	return &Reading{read: read}, nil
-}
-
-// OpenNothing is an index holding nothing, for a machine where nothing has
-// scanned yet.
-//
-// It is made in memory and goes with the process. One connection serves it,
-// because a second would open a database of its own and an empty index would
-// then differ from itself between two questions.
-func OpenNothing(ctx context.Context) (*Reading, error) {
-	db, err := sql.Open("sqlite", dsn(":memory:"))
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	if err := migrate(ctx, db); err != nil {
-		db.Close()
-		return nil, err
-	}
-	return &Reading{read: db}, nil
-}
-
-func (r *Reading) Close() error { return r.read.Close() }
-
-// NoteQueries is what the notes are asked through.
-func (r *Reading) NoteQueries() *note.Queries { return note.NewQueries(r.read) }
-
-// ChunkQueries is what the passages are asked through.
-func (r *Reading) ChunkQueries() *chunk.Queries { return chunk.NewQueries(r.read) }
-
-// SourcesKnown is what the index holds about sources, and which chunks owe a
-// vector. It is queries alone, so this opening hands out no repository.
-func (r *Reading) SourcesKnown() known { return known{read: r.ChunkQueries()} }
 
 func (d *DB) Close() error {
 	readErr := d.read.Close()
@@ -173,6 +107,11 @@ func (d *DB) Sources() sources {
 }
 
 func dsn(path string) string { return dsnOf(path, pragmas) }
+
+// writeDSN is what the write pool opens with. Every transaction on it takes the
+// write lock at BEGIN, so one that reads before it writes waits its turn under
+// the busy timeout.
+func writeDSN(path string) string { return dsn(path) + "&_txlock=immediate" }
 
 func dsnOf(path string, pragmas []string) string {
 	q := url.Values{}

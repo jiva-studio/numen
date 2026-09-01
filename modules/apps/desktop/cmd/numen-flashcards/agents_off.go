@@ -19,7 +19,7 @@ const unnamed = "this build reaches no agent"
 func serveAgents(
 	_ context.Context,
 	_ container.Config,
-	_ *container.ReadIndex,
+	_ *container.Index,
 	api *flashcardsui.API,
 	_ bool,
 	_ io.Writer,

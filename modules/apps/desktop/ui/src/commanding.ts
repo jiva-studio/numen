@@ -201,6 +201,8 @@ export interface Words extends Silences {
   readonly copy: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
+  /** The preset the note in front is, or the one the deck in front is scheduled by. */
+  readonly preset: string
   readonly newNote: string
   /** The two files a card is written in: the deck it is one of, and what cuts it. */
   readonly newDeck: string
@@ -224,6 +226,8 @@ export interface Words extends Silences {
   readonly hanging: string
   /** The command over how many of them stand under a node at once. */
   readonly parts: string
+  /** Everything this installation is configured as, in a tab of its own. */
+  readonly settings: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
@@ -369,6 +373,7 @@ export const commandsOf = (
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
   { id: 'reveal', text: words.reveal, band: 'note', where: onNote },
+  { id: 'preset', text: words.preset, band: 'note', where: onNote },
   {
     id: 'note',
     text: words.newNote,
@@ -415,6 +420,7 @@ export const commandsOf = (
   { id: 'syncing', text: words.syncing, band: 'window', needs: 'choosing', where: always },
   { id: 'hanging', text: words.hanging, band: 'window', needs: 'choosing', where: always },
   { id: 'parts', text: words.parts, band: 'window', needs: 'choosing', where: always },
+  { id: 'settings', text: words.settings, band: 'window', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   {
     id: 'goto',

@@ -29,8 +29,8 @@ var deck = map[string]string{
 }
 
 // window is this window as the binary builds it: an installation of its own, an
-// index opened for asking alone, and two vaults to sit down to.
-func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui.API, []domain.Vault) {
+// index it may write, and two vaults to sit down to.
+func window(t *testing.T) (container.Config, *container.Index, *flashcardsui.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -38,7 +38,7 @@ func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
 	}
-	db, err := cfg.OpenIndexToRead(t.Context())
+	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

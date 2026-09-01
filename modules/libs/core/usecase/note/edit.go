@@ -17,6 +17,20 @@ import (
 // it was given. A vault that cannot be reached at all comes back as it arrived.
 var ErrNoNote = errors.New("the vault holds no note at this path")
 
+// ErrUnlevelled is a file that was written and an index that could not be
+// brought up to date with it. The vault holds what the write put there, and the
+// path is levelled again at the next scan.
+var ErrUnlevelled = errors.New("the vault was written and the index was not brought level with it")
+
+// Levelled is what bringing the index up to date came to, said so that a caller
+// can tell it from a write that never landed.
+func Levelled(path string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("%w: %s: %w", ErrUnlevelled, path, err)
+}
+
 // missing is ErrNoNote where the vault holds no note at the path, and the error
 // as it arrived otherwise.
 func missing(err error) error {
@@ -56,7 +70,9 @@ func (e editing) apply(ctx context.Context, v domain.Vault, path string, change 
 	if e.index == nil {
 		return written, nil
 	}
-	return written, e.index(ctx, v, []string{path})
+	// The file is on disk, so the fingerprint stands beside whatever the
+	// levelling came to and a caller can tell the two apart.
+	return written, Levelled(path, e.index(ctx, v, []string{path}))
 }
 
 // splice is the read, the change and the write, under this vault's write lock

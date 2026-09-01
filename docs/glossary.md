@@ -18,7 +18,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | link | One relationship, as written in a file — [Links](links.md). | connection |
 | role | What kind of relationship a link is, from a closed list of five — [Links](links.md). | seat |
 | type | What a link is for, as a feature reads it. Open vocabulary — [Links](links.md). | |
-| type (of a note) | Which of three a note is: `note`, `deck` or `stencil`. Closed list, and absent means `note` — [Cards](cards.md). The word is spent twice: a link's `type` is what that link is for, and a note's `type` is what the file is. | |
+| type (of a note) | Which of four a note is: `note`, `deck`, `stencil` or `preset`. Closed list, and absent means `note` — [Cards](cards.md). The word is spent twice: a link's `type` is what that link is for, and a note's `type` is what the file is. | |
 | label | The few words a person writes for what a relationship is called — [Links](links.md). | title |
 | note (on a link) | Why the link exists, in the person's words. The word is spent twice on purpose: a note is a file, and a link's `note` is why the link is there. | |
 | address | Scheme and value; the only thing that says where a link goes — [Links](links.md). | |
@@ -31,6 +31,11 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | mark (of a card) | The ten characters after `^` at the end of a card's heading, which is what that card is wherever it goes — [Cards](cards.md). A page's mark and the marks an interface is drawn with are other things. | |
 | section (of a deck) | A first-level heading in a deck, and the cards standing under it until the next one. It is a name and nothing else. | |
 | deck | A note whose body is cards, in sections where a person made them — [Cards](cards.md). | collection |
+| preset | A note saying how the decks pointing at it are scheduled — [Cards](cards.md). A deck points at one with a link carrying `type: preset`, and a deck pointing at none is scheduled by the defaults. The word is spent twice: a theme that ships inside the application is named `preset:numen`. | profile, options |
+| goal | Which of three a preset's one control steers: minutes a day, a retention target, or a day the material is to be in the head by. | target |
+| learned | What a preset counts as a card the person has learned: under `interval` one sent away for the preset's interval or longer, under `retention` one whose chance of being recalled today is at or above the preset's target — [Cards](cards.md). Which of the two is the person's to choose, and a goal of a date aims at it on the day it names. It says nothing about how the scheduler is treating the card. | mature, known, graduated, spaced |
+| load (of a day of the week) | How much of a day's load one day of the week carries under a preset, in per cent. A day the preset does not name carries all of it, and a day at nothing schedules nothing. | light day, rest day |
+| even load | A preset moving a card off the day it fell on, onto a day of the tolerance around it carrying less. | spreading, levelling |
 
 ## What the application keeps
 
@@ -74,6 +79,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | watch | Following a vault for changes the application did not make. | |
 | hold | How long events are kept before they are acted on. | window |
 | trash | Where a removed note is kept: `.trash/` inside the vault. | |
+| spaced | A card face the scheduler sends days away. One it is still putting into memory comes round in minutes. Retention is measured over the answers given to spaced card faces and no others. It is the scheduler's own reckoning, and no setting reaches it. The word is for the code: on screen these are **cards you are reviewing**, which is how the review history says what a day's share of recall is a share of. | learned, mature, in review |
 
 ## What reaches a vault from outside
 

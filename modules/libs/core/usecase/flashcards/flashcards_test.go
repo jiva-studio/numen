@@ -40,13 +40,16 @@ var vault = map[string]string{
 type vaulted struct {
 	vault     domain.Vault
 	standings flashcards.Standings
+	presets   flashcards.Presets
 	marking   flashcards.Marking
 	kept      flashcards.Schedules
 	counted   flashcards.Counted
 	logs      filesystem.DerivedStores
+	// scan brings the index level with what the vault now holds.
+	scan func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-func opened(t *testing.T, notes map[string]string) vaulted {
+func opened(t testing.TB, notes map[string]string) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
@@ -70,33 +73,70 @@ func opened(t *testing.T, notes map[string]string) vaulted {
 	}
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
+	standings := flashcards.Standings{
+		Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
+	}
+	presets := flashcards.Presets{
+		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+		Links: db.NoteQueries(), Notes: db.NoteQueries(),
+		Problems: db.NoteQueries(), Index: scanned,
+	}
+	// Each card is worked out at the share of the cards its own preset asks
+	// for, which is how the application builds this.
+	schedules := flashcards.Schedules{
+		Logs:      logs,
+		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
+		By:        history.NewFSRS(),
+		Day:       today,
+		Standings: standings,
+		Presets:   presets,
+	}
+
 	return vaulted{
-		vault: v,
-		standings: flashcards.Standings{
-			Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
-		},
+		vault:     v,
+		standings: standings,
+		presets:   presets,
 		marking: flashcards.Marking{
 			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
 			Notes: db.NoteQueries(), Links: db.NoteQueries(),
 			Index: scanned, Now: time.Now,
 		},
-		kept: flashcards.Schedules{
-			Logs: logs,
-			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-			By:   history.NewFSRS(),
-		},
+		kept: schedules,
 		counted: flashcards.Counted{
-			Logs: logs,
-			Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
-			Schedules: flashcards.Schedules{
-				Logs: logs,
-				Kept: appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
-				By:   history.NewFSRS(),
-			},
-			Day: today,
-			Now: time.Now,
+			Logs:      logs,
+			Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
+			Schedules: schedules,
+			Day:       today,
+			Now:       time.Now,
 		},
 		logs: logs,
+		scan: scanned,
+	}
+}
+
+// write puts a file into the vault and brings the index level with it, which is
+// what a person editing their own note in another window leaves behind.
+func write(t *testing.T, s vaulted, path, body string) {
+	t.Helper()
+	at := filepath.Join(s.vault.Path, filepath.FromSlash(path))
+	if err := os.WriteFile(at, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.scan(t.Context(), s.vault, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// remove takes a file out of the vault and brings the index level with it,
+// which is what a person deleting their own note in another window leaves
+// behind.
+func remove(t *testing.T, s vaulted, path string) {
+	t.Helper()
+	if err := os.Remove(filepath.Join(s.vault.Path, filepath.FromSlash(path))); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.scan(t.Context(), s.vault, []string{path}); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -118,8 +158,26 @@ func (s vaulted) run(t *testing.T, at time.Time) flashcards.Record {
 	return flashcards.Record{Run: run, Now: func() time.Time { return at }}
 }
 
+// runNamed is a run whose file is named for one instant and whose answers were
+// given at another, which is what a run written on another machine and carried
+// here by a synchroniser looks like.
+func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Record {
+	t.Helper()
+	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return flashcards.Record{Run: run, Now: func() time.Time { return given }}
+}
+
 func (s vaulted) owed(day history.Day) flashcards.Owed {
-	return flashcards.Owed{Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now}
+	return s.owedAt(day, time.Now)
+}
+
+func (s vaulted) owedAt(day history.Day, now func() time.Time) flashcards.Owed {
+	return flashcards.Owed{
+		Standings: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
+	}
 }
 
 func (s vaulted) session(day history.Day) flashcards.Session {
@@ -430,7 +488,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		}
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -562,7 +620,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +649,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 	s := opened(t, vault)
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, "decks/Words.md")
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Deck("decks/Words.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -629,7 +687,7 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := history.Replay(history.NewFSRS(), held.Answers)
+	replayed := history.Replay(today, history.NewFSRS(), held.Answers)
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))

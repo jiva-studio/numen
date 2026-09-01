@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -133,6 +134,51 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	}
 }
 
+// One identifier is one answer, however many files carry it. A synchroniser
+// that met a conflict leaves a second copy of a run beside the first, and the
+// day holds what the person answered.
+func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
+	s := opened(t, vault)
+	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+		t.Fatal(err)
+	}
+	conflicted(t, s)
+
+	// Once from the files, and again from what the first counting kept.
+	for _, from := range []string{"the files", "the counting kept"} {
+		got, err := s.counted.Execute(t.Context(), s.vault)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Answered != 1 {
+			t.Errorf("counted from %s, the vault holds %d answers, want the one given",
+				from, got.Answered)
+		}
+		if day := got.Days[today.Names(time.Now())].Answered; day != 1 {
+			t.Errorf("counted from %s, today came to %d, want 1: %v", from, day, got.Days)
+		}
+	}
+}
+
+// conflicted puts a copy of every run beside it, under the name a synchroniser
+// that met a conflict leaves.
+func conflicted(t *testing.T, s vaulted) {
+	t.Helper()
+	at := filepath.Join(s.vault.Path, ".numen", "flashcards")
+	for _, name := range runsOf(t, s) {
+		raw, err := os.ReadFile(filepath.Join(at, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		beside := strings.TrimSuffix(name, flashcards.Suffix) +
+			" (conflicted copy)" + flashcards.Suffix
+		if err := os.WriteFile(filepath.Join(at, beside), raw, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 // runsOf is the files the vault's answers folder holds.
 func runsOf(t *testing.T, s vaulted) []string {
 	t.Helper()
@@ -210,6 +256,7 @@ type countedCachedRun struct {
 	Name string                   `json:"name"`
 	Size int                      `json:"size"`
 	Days map[string]history.Tally `json:"days"`
+	IDs  []string                 `json:"ids"`
 }
 
 // claiming puts a cache of its own over the vault's counting: the runs are the
@@ -275,7 +322,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	claiming(t, s, 1, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
+	claiming(t, s, 2, map[string]history.Tally{"1999-01-01": {Answered: 99, Good: 99}})
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {

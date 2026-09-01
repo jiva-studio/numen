@@ -162,6 +162,8 @@
   /* The corner of a box drawn in the page: a button, an item in a list, a
      block of code, the tab a gesture would drop where it is held. */
   --numen-radius: 0.375rem;
+  /* The corner of a control a row is filled with: half the curve of a box. */
+  --numen-radius-tight: calc(var(--numen-radius) / 2);
 
   /* The corner of a node's box, and the corner of the box around the one in
      front. */

@@ -26,6 +26,7 @@ import {
   FolderPlus,
   FolderRoot,
   FolderTree,
+  Gauge,
   Layers,
   LayoutTemplate,
   ListTree,
@@ -37,6 +38,7 @@ import {
   Rows3,
   Ruler,
   Search,
+  SlidersHorizontal,
   SquareX,
   Trash2,
   Type,
@@ -44,7 +46,8 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, STENCIL } from './workspace'
+import type { NoteType } from './core'
+import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, PRESET, SETTINGS, STENCIL } from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -59,6 +62,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['ask', Bot],
   ['copy', Copy],
   ['reveal', FolderOpen],
+  ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
   // What a tab of the tree does itself.
@@ -84,6 +88,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['syncing', RefreshCw],
   ['hanging', ListTree],
   ['parts', Rows3],
+  ['settings', SlidersHorizontal],
   // Over the vault.
   ['first', Compass],
   ['goto', Navigation],
@@ -106,7 +111,24 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [DOCUMENT, BookOpen],
   [DECK, Layers],
   [STENCIL, LayoutTemplate],
+  [PRESET, Gauge],
+  [SETTINGS, SlidersHorizontal],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */
 export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null
+
+/**
+ * What each kind of note is drawn as, wherever a note's kind is drawn: the
+ * files list, the plex, and the tab it opens in. One mark to a kind, so a
+ * preset is the same thing in the tree that it is in the tab.
+ */
+const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
+  ['note', FileText],
+  ['deck', Layers],
+  ['stencil', LayoutTemplate],
+  ['preset', Gauge],
+])
+
+/** The icon for a kind of note. Every kind has one. */
+export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText

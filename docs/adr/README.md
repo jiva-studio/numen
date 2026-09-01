@@ -6,7 +6,9 @@ A file here records **one decision**: something that could have been settled ano
 
 **Every ADR says what it applies to.** This repository holds several applications, and a decision about one of them is not a decision about the product. The header of each says which.
 
-**A rule is written once, in the present tense, as it now stands.** An ADR is not a changelog of itself. To change an accepted decision, rewrite the file and let git hold what was believed before.
+**A rule is written once, in the present tense, as it now stands.** No record narrates its own drafting, and git holds the drafts.
+
+**A decision that has been replaced keeps its text, under a banner.** The section that no longer holds opens with a line naming the record that replaced it and saying what holds now, and that record names this one in its `Supersedes:` or `Amends:` header. A decision that moved to a record of its own leaves nothing behind: nothing was settled differently.
 
 **A decision is in the record once it is on the default branch.** Until then it is its pull request's draft, and a draft is edited in place.
 
@@ -63,6 +65,14 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
 - [ADR-0032 — The reviewer's agent writes only cards](0032-the-reviewers-agent-writes-only-cards.md)
 - [ADR-0033 — What the deck is joined to is read beside the card](0033-what-the-deck-is-joined-to-is-read-beside-the-card.md)
+- [ADR-0034 — A preset is a note, and a deck points at one](0034-the-preset.md)
+- [ADR-0036 — The goal names the budget that closes the day](0036-the-goal-names-the-budget.md)
+- [ADR-0037 — A preset says what counts as learned, and a date aims at it](0037-what-counts-as-learned.md)
+- [ADR-0038 — What a day's budget is spent on, and in what order](0038-what-a-days-budget-is-spent-on.md)
+- [ADR-0039 — A day of the week carries a share of the load](0039-a-day-of-the-week-carries-a-share.md)
+- [ADR-0040 — One rule says which day a card lands on](0040-one-rule-says-which-day-a-card-lands-on.md)
+- [ADR-0041 — A preset's day is divided over the decks it schedules](0041-a-day-is-divided-over-the-decks.md)
+- [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
 
 ### Agents
 

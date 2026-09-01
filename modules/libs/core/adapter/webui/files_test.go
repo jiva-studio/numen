@@ -348,15 +348,16 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	}
 }
 
-// TestAListingSaysWhichOfThreeEachNoteIs. The folder says which of its entries
+// TestAListingSaysWhichOfFourEachNoteIs. The folder says which of its entries
 // are notes and the index says what each of those notes is, so a tree draws a
 // deck as a deck without opening it.
-func TestAListingSaysWhichOfThreeEachNoteIs(t *testing.T) {
+func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 	f := quitting(t, nil, map[string]string{
-		"Entropy.md": "# Entropy\n",
-		"Animal.md":  "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
-		"Animals.md": "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
-		"Notes.txt":  "a list\n",
+		"Entropy.md":  "# Entropy\n",
+		"Animal.md":   "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
+		"Animals.md":  "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Sanskrit.md": "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
+		"Notes.txt":   "a list\n",
 	})
 	if _, err := f.opened.API.Scan(t.Context(), f.opened.API.Showing()); err != nil {
 		t.Fatal(err)
@@ -368,10 +369,11 @@ func TestAListingSaysWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 
 	want := map[string]v1.NoteType{
-		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
-		"Animal.md":  v1.NoteType_NOTE_TYPE_STENCIL,
-		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
-		"Notes.txt":  v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+		"Animals.md":  v1.NoteType_NOTE_TYPE_DECK,
+		"Animal.md":   v1.NoteType_NOTE_TYPE_STENCIL,
+		"Sanskrit.md": v1.NoteType_NOTE_TYPE_PRESET,
+		"Entropy.md":  v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+		"Notes.txt":   v1.NoteType_NOTE_TYPE_UNSPECIFIED,
 	}
 	for name, one := range want {
 		if got := held[name].GetType(); got != one {
@@ -403,6 +405,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 		"Entropy.md":   "# Entropy\n",
 		"Animal.md":    "---\ntype: stencil\nfields:\n  - Height\n---\n\n## Recognise\n",
 		"Animals.md":   "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n",
+		"Sanskrit.md":  "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Physics.epub": "an epub\n",
 		"Notes.txt":    "a list\n",
 	})
@@ -410,8 +413,8 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	held := stands(t, f,
-		"Animals.md", "Animal.md", "Entropy.md", "Physics.epub", "Notes.txt", "Gone.md")
+	held := stands(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
+		"Entropy.md", "Physics.epub", "Notes.txt", "Gone.md")
 
 	want := map[string]struct {
 		kind v1.SourceKind
@@ -419,6 +422,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 	}{
 		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_DECK},
 		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_STENCIL},
+		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_PRESET},
 		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
 		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, v1.NoteType_NOTE_TYPE_UNSPECIFIED},
 		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, v1.NoteType_NOTE_TYPE_UNSPECIFIED},

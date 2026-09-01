@@ -63,6 +63,8 @@ const (
 	// The file is past the size a deck is read at, which stands above the size a
 	// note is read at.
 	Refusal_REFUSAL_DECK_TOO_LARGE Refusal = 11
+	// The note at the path is not a preset, and a preset was asked for.
+	Refusal_REFUSAL_NOT_A_PRESET Refusal = 12
 )
 
 // Enum value maps for Refusal.
@@ -80,6 +82,7 @@ var (
 		9:  "REFUSAL_NOT_A_STENCIL",
 		10: "REFUSAL_NOT_A_DECK",
 		11: "REFUSAL_DECK_TOO_LARGE",
+		12: "REFUSAL_NOT_A_PRESET",
 	}
 	Refusal_value = map[string]int32{
 		"REFUSAL_UNSPECIFIED":    0,
@@ -94,6 +97,7 @@ var (
 		"REFUSAL_NOT_A_STENCIL":  9,
 		"REFUSAL_NOT_A_DECK":     10,
 		"REFUSAL_DECK_TOO_LARGE": 11,
+		"REFUSAL_NOT_A_PRESET":   12,
 	}
 )
 
@@ -343,7 +347,7 @@ func (SourceKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
 }
 
-// NoteType is which of three a note is: the `type` key of its frontmatter. It
+// NoteType is which of four a note is: the `type` key of its frontmatter. It
 // says what the note is; whether the application reads text out of the file is
 // SourceKind.
 type NoteType int32
@@ -356,6 +360,8 @@ const (
 	NoteType_NOTE_TYPE_DECK NoteType = 1
 	// A note declaring the fields a card has and the faces it is shown by.
 	NoteType_NOTE_TYPE_STENCIL NoteType = 2
+	// A note saying how the decks pointing at it are scheduled.
+	NoteType_NOTE_TYPE_PRESET NoteType = 3
 )
 
 // Enum value maps for NoteType.
@@ -364,11 +370,13 @@ var (
 		0: "NOTE_TYPE_UNSPECIFIED",
 		1: "NOTE_TYPE_DECK",
 		2: "NOTE_TYPE_STENCIL",
+		3: "NOTE_TYPE_PRESET",
 	}
 	NoteType_value = map[string]int32{
 		"NOTE_TYPE_UNSPECIFIED": 0,
 		"NOTE_TYPE_DECK":        1,
 		"NOTE_TYPE_STENCIL":     2,
+		"NOTE_TYPE_PRESET":      3,
 	}
 )
 
@@ -3927,6 +3935,180 @@ func (x *ChooseHangingResponse) GetRefusal() Refusal {
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
+type ReviewingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewingRequest) Reset() {
+	*x = ReviewingRequest{}
+	mi := &file_numen_v1_vault_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewingRequest) ProtoMessage() {}
+
+func (x *ReviewingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewingRequest.ProtoReflect.Descriptor instead.
+func (*ReviewingRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{58}
+}
+
+type ReviewingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The hour a day of review begins at, written as `04:00`. It is the
+	// `review.day_starts` of the settings file, and an installation nobody has
+	// configured begins the day at four.
+	DayStarts     string `protobuf:"bytes,1,opt,name=day_starts,json=dayStarts,proto3" json:"day_starts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewingResponse) Reset() {
+	*x = ReviewingResponse{}
+	mi := &file_numen_v1_vault_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewingResponse) ProtoMessage() {}
+
+func (x *ReviewingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewingResponse.ProtoReflect.Descriptor instead.
+func (*ReviewingResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *ReviewingResponse) GetDayStarts() string {
+	if x != nil {
+		return x.DayStarts
+	}
+	return ""
+}
+
+type ChooseReviewingRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The hour to begin the day at, written as `04:00`. An hour outside 00:00 to
+	// 12:00 is refused, and the file is left as it was.
+	DayStarts     string `protobuf:"bytes,1,opt,name=day_starts,json=dayStarts,proto3" json:"day_starts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChooseReviewingRequest) Reset() {
+	*x = ChooseReviewingRequest{}
+	mi := &file_numen_v1_vault_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChooseReviewingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChooseReviewingRequest) ProtoMessage() {}
+
+func (x *ChooseReviewingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChooseReviewingRequest.ProtoReflect.Descriptor instead.
+func (*ChooseReviewingRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *ChooseReviewingRequest) GetDayStarts() string {
+	if x != nil {
+		return x.DayStarts
+	}
+	return ""
+}
+
+type ChooseReviewingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set when nothing was written, and why. What the settings hold is unchanged.
+	Refusal       *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChooseReviewingResponse) Reset() {
+	*x = ChooseReviewingResponse{}
+	mi := &file_numen_v1_vault_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChooseReviewingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChooseReviewingResponse) ProtoMessage() {}
+
+func (x *ChooseReviewingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChooseReviewingResponse.ProtoReflect.Descriptor instead.
+func (*ChooseReviewingResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *ChooseReviewingResponse) GetRefusal() Refusal {
+	if x != nil && x.Refusal != nil {
+		return *x.Refusal
+	}
+	return Refusal_REFUSAL_UNSPECIFIED
+}
+
 type MoveRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file or folder to move, as the vault calls it.
@@ -3939,7 +4121,7 @@ type MoveRequest struct {
 
 func (x *MoveRequest) Reset() {
 	*x = MoveRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[58]
+	mi := &file_numen_v1_vault_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3951,7 +4133,7 @@ func (x *MoveRequest) String() string {
 func (*MoveRequest) ProtoMessage() {}
 
 func (x *MoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[58]
+	mi := &file_numen_v1_vault_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3964,7 +4146,7 @@ func (x *MoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MoveRequest.ProtoReflect.Descriptor instead.
 func (*MoveRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{58}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *MoveRequest) GetFrom() string {
@@ -3993,7 +4175,7 @@ type MoveResponse struct {
 
 func (x *MoveResponse) Reset() {
 	*x = MoveResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[59]
+	mi := &file_numen_v1_vault_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4005,7 +4187,7 @@ func (x *MoveResponse) String() string {
 func (*MoveResponse) ProtoMessage() {}
 
 func (x *MoveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[59]
+	mi := &file_numen_v1_vault_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4018,7 +4200,7 @@ func (x *MoveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MoveResponse.ProtoReflect.Descriptor instead.
 func (*MoveResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{59}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *MoveResponse) GetMoved() *Moved {
@@ -4046,7 +4228,7 @@ type MakeFolderRequest struct {
 
 func (x *MakeFolderRequest) Reset() {
 	*x = MakeFolderRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[60]
+	mi := &file_numen_v1_vault_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4058,7 +4240,7 @@ func (x *MakeFolderRequest) String() string {
 func (*MakeFolderRequest) ProtoMessage() {}
 
 func (x *MakeFolderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[60]
+	mi := &file_numen_v1_vault_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4071,7 +4253,7 @@ func (x *MakeFolderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeFolderRequest.ProtoReflect.Descriptor instead.
 func (*MakeFolderRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{60}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *MakeFolderRequest) GetPath() string {
@@ -4091,7 +4273,7 @@ type MakeFolderResponse struct {
 
 func (x *MakeFolderResponse) Reset() {
 	*x = MakeFolderResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[61]
+	mi := &file_numen_v1_vault_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4103,7 +4285,7 @@ func (x *MakeFolderResponse) String() string {
 func (*MakeFolderResponse) ProtoMessage() {}
 
 func (x *MakeFolderResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[61]
+	mi := &file_numen_v1_vault_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4116,7 +4298,7 @@ func (x *MakeFolderResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MakeFolderResponse.ProtoReflect.Descriptor instead.
 func (*MakeFolderResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{61}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *MakeFolderResponse) GetRefusal() Refusal {
@@ -4139,7 +4321,7 @@ type RemoveRequest struct {
 
 func (x *RemoveRequest) Reset() {
 	*x = RemoveRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[62]
+	mi := &file_numen_v1_vault_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4151,7 +4333,7 @@ func (x *RemoveRequest) String() string {
 func (*RemoveRequest) ProtoMessage() {}
 
 func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[62]
+	mi := &file_numen_v1_vault_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4164,7 +4346,7 @@ func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveRequest.ProtoReflect.Descriptor instead.
 func (*RemoveRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{62}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *RemoveRequest) GetPath() string {
@@ -4196,7 +4378,7 @@ type RemoveResponse struct {
 
 func (x *RemoveResponse) Reset() {
 	*x = RemoveResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[63]
+	mi := &file_numen_v1_vault_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4208,7 +4390,7 @@ func (x *RemoveResponse) String() string {
 func (*RemoveResponse) ProtoMessage() {}
 
 func (x *RemoveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[63]
+	mi := &file_numen_v1_vault_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4221,7 +4403,7 @@ func (x *RemoveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveResponse.ProtoReflect.Descriptor instead.
 func (*RemoveResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{63}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *RemoveResponse) GetTrashed() string {
@@ -4253,7 +4435,7 @@ type QuittingRequest struct {
 
 func (x *QuittingRequest) Reset() {
 	*x = QuittingRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[64]
+	mi := &file_numen_v1_vault_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4265,7 +4447,7 @@ func (x *QuittingRequest) String() string {
 func (*QuittingRequest) ProtoMessage() {}
 
 func (x *QuittingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[64]
+	mi := &file_numen_v1_vault_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4278,7 +4460,7 @@ func (x *QuittingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuittingRequest.ProtoReflect.Descriptor instead.
 func (*QuittingRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{64}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{68}
 }
 
 type QuittingResponse struct {
@@ -4294,7 +4476,7 @@ type QuittingResponse struct {
 
 func (x *QuittingResponse) Reset() {
 	*x = QuittingResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[65]
+	mi := &file_numen_v1_vault_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4306,7 +4488,7 @@ func (x *QuittingResponse) String() string {
 func (*QuittingResponse) ProtoMessage() {}
 
 func (x *QuittingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[65]
+	mi := &file_numen_v1_vault_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4319,7 +4501,7 @@ func (x *QuittingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuittingResponse.ProtoReflect.Descriptor instead.
 func (*QuittingResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{65}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *QuittingResponse) GetToken() string {
@@ -4348,7 +4530,7 @@ type FlushedRequest struct {
 
 func (x *FlushedRequest) Reset() {
 	*x = FlushedRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[66]
+	mi := &file_numen_v1_vault_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4360,7 +4542,7 @@ func (x *FlushedRequest) String() string {
 func (*FlushedRequest) ProtoMessage() {}
 
 func (x *FlushedRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[66]
+	mi := &file_numen_v1_vault_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4373,7 +4555,7 @@ func (x *FlushedRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlushedRequest.ProtoReflect.Descriptor instead.
 func (*FlushedRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{66}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *FlushedRequest) GetToken() string {
@@ -4398,7 +4580,7 @@ type FlushedResponse struct {
 
 func (x *FlushedResponse) Reset() {
 	*x = FlushedResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[67]
+	mi := &file_numen_v1_vault_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4410,7 +4592,7 @@ func (x *FlushedResponse) String() string {
 func (*FlushedResponse) ProtoMessage() {}
 
 func (x *FlushedResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[67]
+	mi := &file_numen_v1_vault_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4423,7 +4605,7 @@ func (x *FlushedResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlushedResponse.ProtoReflect.Descriptor instead.
 func (*FlushedResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{67}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{71}
 }
 
 var File_numen_v1_vault_proto protoreflect.FileDescriptor
@@ -4652,6 +4834,17 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x15ChooseHangingResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
+	"\b_refusal\"\x12\n" +
+	"\x10ReviewingRequest\"2\n" +
+	"\x11ReviewingResponse\x12\x1d\n" +
+	"\n" +
+	"day_starts\x18\x01 \x01(\tR\tdayStarts\"7\n" +
+	"\x16ChooseReviewingRequest\x12\x1d\n" +
+	"\n" +
+	"day_starts\x18\x01 \x01(\tR\tdayStarts\"W\n" +
+	"\x17ChooseReviewingResponse\x120\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
+	"\n" +
 	"\b_refusal\"1\n" +
 	"\vMoveRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
@@ -4684,7 +4877,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x0eFlushedRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\"\n" +
 	"\x04owed\x18\x02 \x01(\x0e2\x0e.numen.v1.OwedR\x04owed\"\x11\n" +
-	"\x0fFlushedResponse*\xab\x02\n" +
+	"\x0fFlushedResponse*\xc5\x02\n" +
 	"\aRefusal\x12\x17\n" +
 	"\x13REFUSAL_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fREFUSAL_MISSING\x10\x01\x12\x16\n" +
@@ -4698,7 +4891,8 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x15REFUSAL_NOT_A_STENCIL\x10\t\x12\x16\n" +
 	"\x12REFUSAL_NOT_A_DECK\x10\n" +
 	"\x12\x1a\n" +
-	"\x16REFUSAL_DECK_TOO_LARGE\x10\v*^\n" +
+	"\x16REFUSAL_DECK_TOO_LARGE\x10\v\x12\x18\n" +
+	"\x14REFUSAL_NOT_A_PRESET\x10\f*^\n" +
 	"\x04Seat\x12\x14\n" +
 	"\x10SEAT_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSEAT_PARENT\x10\x01\x12\x0e\n" +
@@ -4719,11 +4913,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10SOURCE_KIND_NOTE\x10\x01\x12\x14\n" +
-	"\x10SOURCE_KIND_BOOK\x10\x02*P\n" +
+	"\x10SOURCE_KIND_BOOK\x10\x02*f\n" +
 	"\bNoteType\x12\x19\n" +
 	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +
-	"\x11NOTE_TYPE_STENCIL\x10\x02*o\n" +
+	"\x11NOTE_TYPE_STENCIL\x10\x02\x12\x14\n" +
+	"\x10NOTE_TYPE_PRESET\x10\x03*o\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vROLE_PARENT\x10\x01\x12\x0e\n" +
@@ -4740,7 +4935,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04Owed\x12\x14\n" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
-	"\vOWED_ASKING\x10\x022\x92\r\n" +
+	"\vOWED_ASKING\x10\x022\xb0\x0e\n" +
 	"\fVaultService\x128\n" +
 	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12>\n" +
 	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
@@ -4763,7 +4958,9 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\aSyncing\x12\x18.numen.v1.SyncingRequest\x1a\x19.numen.v1.SyncingResponse\x12P\n" +
 	"\rChooseSyncing\x12\x1e.numen.v1.ChooseSyncingRequest\x1a\x1f.numen.v1.ChooseSyncingResponse\x12>\n" +
 	"\aHanging\x12\x18.numen.v1.HangingRequest\x1a\x19.numen.v1.HangingResponse\x12P\n" +
-	"\rChooseHanging\x12\x1e.numen.v1.ChooseHangingRequest\x1a\x1f.numen.v1.ChooseHangingResponse\x12;\n" +
+	"\rChooseHanging\x12\x1e.numen.v1.ChooseHangingRequest\x1a\x1f.numen.v1.ChooseHangingResponse\x12D\n" +
+	"\tReviewing\x12\x1a.numen.v1.ReviewingRequest\x1a\x1b.numen.v1.ReviewingResponse\x12V\n" +
+	"\x0fChooseReviewing\x12 .numen.v1.ChooseReviewingRequest\x1a!.numen.v1.ChooseReviewingResponse\x12;\n" +
 	"\x06Remove\x12\x17.numen.v1.RemoveRequest\x1a\x18.numen.v1.RemoveResponse\x12G\n" +
 	"\n" +
 	"MakeFolder\x12\x1b.numen.v1.MakeFolderRequest\x1a\x1c.numen.v1.MakeFolderResponse\x12C\n" +
@@ -4783,85 +4980,89 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_vault_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
 var file_numen_v1_vault_proto_goTypes = []any{
-	(Refusal)(0),                  // 0: numen.v1.Refusal
-	(Seat)(0),                     // 1: numen.v1.Seat
-	(Counting)(0),                 // 2: numen.v1.Counting
-	(Way)(0),                      // 3: numen.v1.Way
-	(SourceKind)(0),               // 4: numen.v1.SourceKind
-	(NoteType)(0),                 // 5: numen.v1.NoteType
-	(Role)(0),                     // 6: numen.v1.Role
-	(Naming)(0),                   // 7: numen.v1.Naming
-	(Owed)(0),                     // 8: numen.v1.Owed
-	(*Note)(nil),                  // 9: numen.v1.Note
-	(*Seated)(nil),                // 10: numen.v1.Seated
-	(*StateRequest)(nil),          // 11: numen.v1.StateRequest
-	(*StateResponse)(nil),         // 12: numen.v1.StateResponse
-	(*TasksRequest)(nil),          // 13: numen.v1.TasksRequest
-	(*TasksResponse)(nil),         // 14: numen.v1.TasksResponse
-	(*Task)(nil),                  // 15: numen.v1.Task
-	(*OpeningRequest)(nil),        // 16: numen.v1.OpeningRequest
-	(*OpeningResponse)(nil),       // 17: numen.v1.OpeningResponse
-	(*ChangesRequest)(nil),        // 18: numen.v1.ChangesRequest
-	(*ChangesResponse)(nil),       // 19: numen.v1.ChangesResponse
-	(*Went)(nil),                  // 20: numen.v1.Went
-	(*FocusRequest)(nil),          // 21: numen.v1.FocusRequest
-	(*FocusResponse)(nil),         // 22: numen.v1.FocusResponse
-	(*Stretch)(nil),               // 23: numen.v1.Stretch
-	(*EditingRequest)(nil),        // 24: numen.v1.EditingRequest
-	(*EditingResponse)(nil),       // 25: numen.v1.EditingResponse
-	(*NeighbourhoodRequest)(nil),  // 26: numen.v1.NeighbourhoodRequest
-	(*NeighbourhoodResponse)(nil), // 27: numen.v1.NeighbourhoodResponse
-	(*NamesRequest)(nil),          // 28: numen.v1.NamesRequest
-	(*NamesResponse)(nil),         // 29: numen.v1.NamesResponse
-	(*Named)(nil),                 // 30: numen.v1.Named
-	(*Heading)(nil),               // 31: numen.v1.Heading
-	(*HeadingsRequest)(nil),       // 32: numen.v1.HeadingsRequest
-	(*HeadingsResponse)(nil),      // 33: numen.v1.HeadingsResponse
-	(*NoteHeadings)(nil),          // 34: numen.v1.NoteHeadings
-	(*StandingRequest)(nil),       // 35: numen.v1.StandingRequest
-	(*StandingResponse)(nil),      // 36: numen.v1.StandingResponse
-	(*Standing)(nil),              // 37: numen.v1.Standing
-	(*Span)(nil),                  // 38: numen.v1.Span
-	(*SearchRequest)(nil),         // 39: numen.v1.SearchRequest
-	(*SearchResponse)(nil),        // 40: numen.v1.SearchResponse
-	(*Passage)(nil),               // 41: numen.v1.Passage
-	(*ListRequest)(nil),           // 42: numen.v1.ListRequest
-	(*ListResponse)(nil),          // 43: numen.v1.ListResponse
-	(*Entry)(nil),                 // 44: numen.v1.Entry
-	(*ReadRequest)(nil),           // 45: numen.v1.ReadRequest
-	(*ReadResponse)(nil),          // 46: numen.v1.ReadResponse
-	(*Fingerprint)(nil),           // 47: numen.v1.Fingerprint
-	(*Seen)(nil),                  // 48: numen.v1.Seen
-	(*WriteRequest)(nil),          // 49: numen.v1.WriteRequest
-	(*WriteResponse)(nil),         // 50: numen.v1.WriteResponse
-	(*NewLink)(nil),               // 51: numen.v1.NewLink
-	(*CreateRequest)(nil),         // 52: numen.v1.CreateRequest
-	(*CreateResponse)(nil),        // 53: numen.v1.CreateResponse
-	(*JoinRequest)(nil),           // 54: numen.v1.JoinRequest
-	(*JoinResponse)(nil),          // 55: numen.v1.JoinResponse
-	(*RenameRequest)(nil),         // 56: numen.v1.RenameRequest
-	(*RenameResponse)(nil),        // 57: numen.v1.RenameResponse
-	(*Moved)(nil),                 // 58: numen.v1.Moved
-	(*SyncingRequest)(nil),        // 59: numen.v1.SyncingRequest
-	(*SyncingResponse)(nil),       // 60: numen.v1.SyncingResponse
-	(*ChooseSyncingRequest)(nil),  // 61: numen.v1.ChooseSyncingRequest
-	(*ChooseSyncingResponse)(nil), // 62: numen.v1.ChooseSyncingResponse
-	(*HangingRequest)(nil),        // 63: numen.v1.HangingRequest
-	(*HangingResponse)(nil),       // 64: numen.v1.HangingResponse
-	(*ChooseHangingRequest)(nil),  // 65: numen.v1.ChooseHangingRequest
-	(*ChooseHangingResponse)(nil), // 66: numen.v1.ChooseHangingResponse
-	(*MoveRequest)(nil),           // 67: numen.v1.MoveRequest
-	(*MoveResponse)(nil),          // 68: numen.v1.MoveResponse
-	(*MakeFolderRequest)(nil),     // 69: numen.v1.MakeFolderRequest
-	(*MakeFolderResponse)(nil),    // 70: numen.v1.MakeFolderResponse
-	(*RemoveRequest)(nil),         // 71: numen.v1.RemoveRequest
-	(*RemoveResponse)(nil),        // 72: numen.v1.RemoveResponse
-	(*QuittingRequest)(nil),       // 73: numen.v1.QuittingRequest
-	(*QuittingResponse)(nil),      // 74: numen.v1.QuittingResponse
-	(*FlushedRequest)(nil),        // 75: numen.v1.FlushedRequest
-	(*FlushedResponse)(nil),       // 76: numen.v1.FlushedResponse
+	(Refusal)(0),                    // 0: numen.v1.Refusal
+	(Seat)(0),                       // 1: numen.v1.Seat
+	(Counting)(0),                   // 2: numen.v1.Counting
+	(Way)(0),                        // 3: numen.v1.Way
+	(SourceKind)(0),                 // 4: numen.v1.SourceKind
+	(NoteType)(0),                   // 5: numen.v1.NoteType
+	(Role)(0),                       // 6: numen.v1.Role
+	(Naming)(0),                     // 7: numen.v1.Naming
+	(Owed)(0),                       // 8: numen.v1.Owed
+	(*Note)(nil),                    // 9: numen.v1.Note
+	(*Seated)(nil),                  // 10: numen.v1.Seated
+	(*StateRequest)(nil),            // 11: numen.v1.StateRequest
+	(*StateResponse)(nil),           // 12: numen.v1.StateResponse
+	(*TasksRequest)(nil),            // 13: numen.v1.TasksRequest
+	(*TasksResponse)(nil),           // 14: numen.v1.TasksResponse
+	(*Task)(nil),                    // 15: numen.v1.Task
+	(*OpeningRequest)(nil),          // 16: numen.v1.OpeningRequest
+	(*OpeningResponse)(nil),         // 17: numen.v1.OpeningResponse
+	(*ChangesRequest)(nil),          // 18: numen.v1.ChangesRequest
+	(*ChangesResponse)(nil),         // 19: numen.v1.ChangesResponse
+	(*Went)(nil),                    // 20: numen.v1.Went
+	(*FocusRequest)(nil),            // 21: numen.v1.FocusRequest
+	(*FocusResponse)(nil),           // 22: numen.v1.FocusResponse
+	(*Stretch)(nil),                 // 23: numen.v1.Stretch
+	(*EditingRequest)(nil),          // 24: numen.v1.EditingRequest
+	(*EditingResponse)(nil),         // 25: numen.v1.EditingResponse
+	(*NeighbourhoodRequest)(nil),    // 26: numen.v1.NeighbourhoodRequest
+	(*NeighbourhoodResponse)(nil),   // 27: numen.v1.NeighbourhoodResponse
+	(*NamesRequest)(nil),            // 28: numen.v1.NamesRequest
+	(*NamesResponse)(nil),           // 29: numen.v1.NamesResponse
+	(*Named)(nil),                   // 30: numen.v1.Named
+	(*Heading)(nil),                 // 31: numen.v1.Heading
+	(*HeadingsRequest)(nil),         // 32: numen.v1.HeadingsRequest
+	(*HeadingsResponse)(nil),        // 33: numen.v1.HeadingsResponse
+	(*NoteHeadings)(nil),            // 34: numen.v1.NoteHeadings
+	(*StandingRequest)(nil),         // 35: numen.v1.StandingRequest
+	(*StandingResponse)(nil),        // 36: numen.v1.StandingResponse
+	(*Standing)(nil),                // 37: numen.v1.Standing
+	(*Span)(nil),                    // 38: numen.v1.Span
+	(*SearchRequest)(nil),           // 39: numen.v1.SearchRequest
+	(*SearchResponse)(nil),          // 40: numen.v1.SearchResponse
+	(*Passage)(nil),                 // 41: numen.v1.Passage
+	(*ListRequest)(nil),             // 42: numen.v1.ListRequest
+	(*ListResponse)(nil),            // 43: numen.v1.ListResponse
+	(*Entry)(nil),                   // 44: numen.v1.Entry
+	(*ReadRequest)(nil),             // 45: numen.v1.ReadRequest
+	(*ReadResponse)(nil),            // 46: numen.v1.ReadResponse
+	(*Fingerprint)(nil),             // 47: numen.v1.Fingerprint
+	(*Seen)(nil),                    // 48: numen.v1.Seen
+	(*WriteRequest)(nil),            // 49: numen.v1.WriteRequest
+	(*WriteResponse)(nil),           // 50: numen.v1.WriteResponse
+	(*NewLink)(nil),                 // 51: numen.v1.NewLink
+	(*CreateRequest)(nil),           // 52: numen.v1.CreateRequest
+	(*CreateResponse)(nil),          // 53: numen.v1.CreateResponse
+	(*JoinRequest)(nil),             // 54: numen.v1.JoinRequest
+	(*JoinResponse)(nil),            // 55: numen.v1.JoinResponse
+	(*RenameRequest)(nil),           // 56: numen.v1.RenameRequest
+	(*RenameResponse)(nil),          // 57: numen.v1.RenameResponse
+	(*Moved)(nil),                   // 58: numen.v1.Moved
+	(*SyncingRequest)(nil),          // 59: numen.v1.SyncingRequest
+	(*SyncingResponse)(nil),         // 60: numen.v1.SyncingResponse
+	(*ChooseSyncingRequest)(nil),    // 61: numen.v1.ChooseSyncingRequest
+	(*ChooseSyncingResponse)(nil),   // 62: numen.v1.ChooseSyncingResponse
+	(*HangingRequest)(nil),          // 63: numen.v1.HangingRequest
+	(*HangingResponse)(nil),         // 64: numen.v1.HangingResponse
+	(*ChooseHangingRequest)(nil),    // 65: numen.v1.ChooseHangingRequest
+	(*ChooseHangingResponse)(nil),   // 66: numen.v1.ChooseHangingResponse
+	(*ReviewingRequest)(nil),        // 67: numen.v1.ReviewingRequest
+	(*ReviewingResponse)(nil),       // 68: numen.v1.ReviewingResponse
+	(*ChooseReviewingRequest)(nil),  // 69: numen.v1.ChooseReviewingRequest
+	(*ChooseReviewingResponse)(nil), // 70: numen.v1.ChooseReviewingResponse
+	(*MoveRequest)(nil),             // 71: numen.v1.MoveRequest
+	(*MoveResponse)(nil),            // 72: numen.v1.MoveResponse
+	(*MakeFolderRequest)(nil),       // 73: numen.v1.MakeFolderRequest
+	(*MakeFolderResponse)(nil),      // 74: numen.v1.MakeFolderResponse
+	(*RemoveRequest)(nil),           // 75: numen.v1.RemoveRequest
+	(*RemoveResponse)(nil),          // 76: numen.v1.RemoveResponse
+	(*QuittingRequest)(nil),         // 77: numen.v1.QuittingRequest
+	(*QuittingResponse)(nil),        // 78: numen.v1.QuittingResponse
+	(*FlushedRequest)(nil),          // 79: numen.v1.FlushedRequest
+	(*FlushedResponse)(nil),         // 80: numen.v1.FlushedResponse
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	9,  // 0: numen.v1.Seated.note:type_name -> numen.v1.Note
@@ -4907,68 +5108,73 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	0,  // 40: numen.v1.RenameResponse.refusal:type_name -> numen.v1.Refusal
 	0,  // 41: numen.v1.ChooseSyncingResponse.refusal:type_name -> numen.v1.Refusal
 	0,  // 42: numen.v1.ChooseHangingResponse.refusal:type_name -> numen.v1.Refusal
-	58, // 43: numen.v1.MoveResponse.moved:type_name -> numen.v1.Moved
-	0,  // 44: numen.v1.MoveResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 45: numen.v1.MakeFolderResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 46: numen.v1.RemoveResponse.refusal:type_name -> numen.v1.Refusal
-	8,  // 47: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
-	11, // 48: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
-	16, // 49: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
-	26, // 50: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	28, // 51: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
-	32, // 52: numen.v1.VaultService.Headings:input_type -> numen.v1.HeadingsRequest
-	35, // 53: numen.v1.VaultService.Standing:input_type -> numen.v1.StandingRequest
-	39, // 54: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
-	18, // 55: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	21, // 56: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
-	24, // 57: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
-	13, // 58: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
-	42, // 59: numen.v1.VaultService.List:input_type -> numen.v1.ListRequest
-	45, // 60: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
-	49, // 61: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
-	52, // 62: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
-	54, // 63: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
-	56, // 64: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
-	67, // 65: numen.v1.VaultService.Move:input_type -> numen.v1.MoveRequest
-	59, // 66: numen.v1.VaultService.Syncing:input_type -> numen.v1.SyncingRequest
-	61, // 67: numen.v1.VaultService.ChooseSyncing:input_type -> numen.v1.ChooseSyncingRequest
-	63, // 68: numen.v1.VaultService.Hanging:input_type -> numen.v1.HangingRequest
-	65, // 69: numen.v1.VaultService.ChooseHanging:input_type -> numen.v1.ChooseHangingRequest
-	71, // 70: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
-	69, // 71: numen.v1.VaultService.MakeFolder:input_type -> numen.v1.MakeFolderRequest
-	73, // 72: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
-	75, // 73: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
-	12, // 74: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	17, // 75: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
-	27, // 76: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	29, // 77: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
-	33, // 78: numen.v1.VaultService.Headings:output_type -> numen.v1.HeadingsResponse
-	36, // 79: numen.v1.VaultService.Standing:output_type -> numen.v1.StandingResponse
-	40, // 80: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
-	19, // 81: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	22, // 82: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
-	25, // 83: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
-	14, // 84: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
-	43, // 85: numen.v1.VaultService.List:output_type -> numen.v1.ListResponse
-	46, // 86: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
-	50, // 87: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
-	53, // 88: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
-	55, // 89: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
-	57, // 90: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
-	68, // 91: numen.v1.VaultService.Move:output_type -> numen.v1.MoveResponse
-	60, // 92: numen.v1.VaultService.Syncing:output_type -> numen.v1.SyncingResponse
-	62, // 93: numen.v1.VaultService.ChooseSyncing:output_type -> numen.v1.ChooseSyncingResponse
-	64, // 94: numen.v1.VaultService.Hanging:output_type -> numen.v1.HangingResponse
-	66, // 95: numen.v1.VaultService.ChooseHanging:output_type -> numen.v1.ChooseHangingResponse
-	72, // 96: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
-	70, // 97: numen.v1.VaultService.MakeFolder:output_type -> numen.v1.MakeFolderResponse
-	74, // 98: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
-	76, // 99: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
-	74, // [74:100] is the sub-list for method output_type
-	48, // [48:74] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	0,  // 43: numen.v1.ChooseReviewingResponse.refusal:type_name -> numen.v1.Refusal
+	58, // 44: numen.v1.MoveResponse.moved:type_name -> numen.v1.Moved
+	0,  // 45: numen.v1.MoveResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 46: numen.v1.MakeFolderResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 47: numen.v1.RemoveResponse.refusal:type_name -> numen.v1.Refusal
+	8,  // 48: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
+	11, // 49: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
+	16, // 50: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
+	26, // 51: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
+	28, // 52: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
+	32, // 53: numen.v1.VaultService.Headings:input_type -> numen.v1.HeadingsRequest
+	35, // 54: numen.v1.VaultService.Standing:input_type -> numen.v1.StandingRequest
+	39, // 55: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
+	18, // 56: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
+	21, // 57: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
+	24, // 58: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
+	13, // 59: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
+	42, // 60: numen.v1.VaultService.List:input_type -> numen.v1.ListRequest
+	45, // 61: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
+	49, // 62: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
+	52, // 63: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
+	54, // 64: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
+	56, // 65: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
+	71, // 66: numen.v1.VaultService.Move:input_type -> numen.v1.MoveRequest
+	59, // 67: numen.v1.VaultService.Syncing:input_type -> numen.v1.SyncingRequest
+	61, // 68: numen.v1.VaultService.ChooseSyncing:input_type -> numen.v1.ChooseSyncingRequest
+	63, // 69: numen.v1.VaultService.Hanging:input_type -> numen.v1.HangingRequest
+	65, // 70: numen.v1.VaultService.ChooseHanging:input_type -> numen.v1.ChooseHangingRequest
+	67, // 71: numen.v1.VaultService.Reviewing:input_type -> numen.v1.ReviewingRequest
+	69, // 72: numen.v1.VaultService.ChooseReviewing:input_type -> numen.v1.ChooseReviewingRequest
+	75, // 73: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
+	73, // 74: numen.v1.VaultService.MakeFolder:input_type -> numen.v1.MakeFolderRequest
+	77, // 75: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
+	79, // 76: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
+	12, // 77: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	17, // 78: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
+	27, // 79: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
+	29, // 80: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
+	33, // 81: numen.v1.VaultService.Headings:output_type -> numen.v1.HeadingsResponse
+	36, // 82: numen.v1.VaultService.Standing:output_type -> numen.v1.StandingResponse
+	40, // 83: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
+	19, // 84: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
+	22, // 85: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
+	25, // 86: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
+	14, // 87: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
+	43, // 88: numen.v1.VaultService.List:output_type -> numen.v1.ListResponse
+	46, // 89: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
+	50, // 90: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
+	53, // 91: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
+	55, // 92: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
+	57, // 93: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
+	72, // 94: numen.v1.VaultService.Move:output_type -> numen.v1.MoveResponse
+	60, // 95: numen.v1.VaultService.Syncing:output_type -> numen.v1.SyncingResponse
+	62, // 96: numen.v1.VaultService.ChooseSyncing:output_type -> numen.v1.ChooseSyncingResponse
+	64, // 97: numen.v1.VaultService.Hanging:output_type -> numen.v1.HangingResponse
+	66, // 98: numen.v1.VaultService.ChooseHanging:output_type -> numen.v1.ChooseHangingResponse
+	68, // 99: numen.v1.VaultService.Reviewing:output_type -> numen.v1.ReviewingResponse
+	70, // 100: numen.v1.VaultService.ChooseReviewing:output_type -> numen.v1.ChooseReviewingResponse
+	76, // 101: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
+	74, // 102: numen.v1.VaultService.MakeFolder:output_type -> numen.v1.MakeFolderResponse
+	78, // 103: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
+	80, // 104: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
+	77, // [77:105] is the sub-list for method output_type
+	49, // [49:77] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }
@@ -4988,16 +5194,17 @@ func file_numen_v1_vault_proto_init() {
 	file_numen_v1_vault_proto_msgTypes[53].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[56].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[57].OneofWrappers = []any{}
-	file_numen_v1_vault_proto_msgTypes[59].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[61].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[63].OneofWrappers = []any{}
+	file_numen_v1_vault_proto_msgTypes[65].OneofWrappers = []any{}
+	file_numen_v1_vault_proto_msgTypes[67].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      9,
-			NumMessages:   68,
+			NumMessages:   72,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

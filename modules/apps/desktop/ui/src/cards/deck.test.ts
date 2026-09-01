@@ -3,12 +3,17 @@
  * back, and what it does when the file moved past what it read.
  */
 import { describe, expect, it } from 'vitest'
+import { Stopped } from '@numen/protocol'
 import type { Cards, Carded, Problem, Refused } from '../core'
+import { DEFAULTS, NOWHERE, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
 import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
+
+/** A preset that schedules, which is what every preset here is. */
+const SCHEDULING = { stops: Stopped.NOTHING, stopsOn: Stopped.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => putting({ standing: async () => new Map() })
@@ -64,6 +69,16 @@ const vault = (
     wrote?: Refused
     /** How many listings of the stencils go unanswered before one answers. */
     unlisted?: number
+    /** The presets the vault holds, where a test wants other ones. */
+    presets?: readonly Listed[]
+    /** The preset the deck names, and nothing for a deck naming none. */
+    by?: string
+    /** What is said against what the deck names. */
+    saying?: string
+    /** What putting the deck on a preset is refused for. */
+    notScheduled?: Refused
+    /** Putting the deck on a preset answers that the file moved past it. */
+    schedulingChanged?: boolean
   } = {},
 ) => {
   const written: string[] = []
@@ -128,8 +143,62 @@ const vault = (
     writeStencil: async () => ({ refusal: null, changed: false, at: '' }),
   }
 
+  /** Which preset the deck names, as the vault answers it. */
+  let by = answers.by ?? ''
+  /** Every deck put on a preset, as the window asked for it. */
+  const put: { deck: string; preset: string; seen: string }[] = []
+
+  const presets: Presets = {
+    read: async (path) => ({
+      preset: { path, title: 'Sanskrit', settings: DEFAULTS, problems: [], ...SCHEDULING },
+      refusal: null,
+      at: '',
+    }),
+    list: async () =>
+      answers.presets ?? [
+        { path: 'Sanskrit.md', title: 'Sanskrit' },
+        { path: 'presets/Slow.md', title: '' },
+      ],
+    scheduling: async () => ({
+      preset: {
+        path: by,
+        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+        settings: DEFAULTS,
+        problems: answers.saying ? [answers.saying] : [],
+        ...SCHEDULING,
+      },
+      refusal: null,
+      at: '',
+    }),
+    schedules: async (deck, preset, seen) => {
+      put.push({ deck, preset, seen })
+      if (answers.notScheduled) {
+        return { refusal: answers.notScheduled, changed: false, at: '' }
+      }
+      if (answers.schedulingChanged) return { refusal: null, changed: true, at: '' }
+      by = preset
+      return { refusal: null, changed: false, at: 'scheduled' }
+    },
+    write: async () => ({ refusal: null, changed: false, at: '' }),
+    curve: async () => ({
+      goal: 'minutes',
+      grid: [],
+      days: [],
+      at: [],
+      now: NOWHERE,
+      suggested: NOWHERE,
+      decks: 0,
+      cards: 0,
+      overdue: 0,
+      unbegun: 0,
+      honest: true,
+    }),
+  }
+
   return {
     core,
+    presets,
+    put,
     written,
     wrote: () => wrote,
     seen,
@@ -150,7 +219,7 @@ const open = async (
   const one = vault(answers)
   const held = windowing()
   const road = puts()
-  const decks = decking(one.core, held.host, road)
+  const decks = decking(one.core, one.presets, held.host, road)
   held.declares([decks.kind])
   const id = await held.opens(DECK, path)
   await settles()
@@ -484,7 +553,7 @@ describe('the vault changing under the window', () => {
   it('asks for no stencil while the window holds no deck', async () => {
     const one = vault()
     const held = windowing()
-    const decks = decking(one.core, held.host, puts())
+    const decks = decking(one.core, one.presets, held.host, puts())
     held.declares([decks.kind])
 
     decks.changed(['Notes.md'])
@@ -788,3 +857,92 @@ describe('the stencils a listing did not answer with', () => {
   })
 })
 
+
+describe('the preset a deck is scheduled by', () => {
+  it('is what the vault says the deck names', async () => {
+    const { tab } = await open({ by: 'Sanskrit.md' })
+
+    expect(tab.scheduled()).toStrictEqual({
+      path: 'Sanskrit.md',
+      name: 'Sanskrit',
+      saying: '',
+    })
+  })
+
+  it('is the defaults for a deck naming none', async () => {
+    const { tab } = await open()
+
+    expect(tab.scheduled()).toStrictEqual({ path: '', name: words.defaults, saying: '' })
+  })
+
+  it('offers the defaults first, and a preset nothing names by its file', async () => {
+    const { tab } = await open()
+
+    expect(tab.choices()).toStrictEqual([
+      { path: '', name: words.defaults },
+      { path: 'Sanskrit.md', name: 'Sanskrit' },
+      { path: 'presets/Slow.md', name: 'Slow.md' },
+    ])
+  })
+
+  it('carries the file the deck was read at, so a write lands on what was read', async () => {
+    const { tab, put } = await open()
+
+    tab.schedules('Sanskrit.md')
+    await settles()
+
+    expect(put).toStrictEqual([{ deck: 'Animals.md', preset: 'Sanskrit.md', seen: 'read 1' }])
+  })
+
+  it('writes what the deck owes before it writes the preset', async () => {
+    const { tab, put, written } = await open()
+    tab.writes('k7m2xq9fzp', 'Name', 1, 'Vicuña')
+
+    tab.schedules('Sanskrit.md')
+    await settles()
+
+    expect(written).toStrictEqual(['Animals.md Vicuña, Alpaca'])
+    expect(put.map((one) => one.preset)).toStrictEqual(['Sanskrit.md'])
+    // The deck was written first, so what the preset write presents is the file
+    // that write made.
+    expect(put[0]?.seen).toBe('written')
+  })
+
+  it('reads the deck again, so the tab writes against the file the choice made', async () => {
+    const { tab, reads } = await open()
+    const was = reads()
+
+    tab.schedules('Sanskrit.md')
+    await settles()
+
+    expect(reads()).toBeGreaterThan(was)
+    expect(tab.scheduled().path).toBe('Sanskrit.md')
+  })
+
+  it('says a choice the vault would not write, and leaves the preset standing', async () => {
+    const { tab } = await open({ by: 'Sanskrit.md', notScheduled: 'notAPreset' })
+
+    tab.schedules('presets/Slow.md')
+    await settles()
+
+    expect(tab.scheduled().saying).toBe(words.notScheduled)
+    expect(tab.scheduled().path).toBe('Sanskrit.md')
+  })
+
+  it('says a deck the file moved past since the window read it', async () => {
+    const { tab } = await open({ schedulingChanged: true })
+
+    tab.schedules('Sanskrit.md')
+    await settles()
+
+    expect(tab.scheduled().saying).toBe(words.notScheduledChanged)
+    expect(tab.scheduled().path).toBe('')
+  })
+
+  it('says what the deck names and the vault does not hold', async () => {
+    const { tab } = await open({ saying: 'Sanskrit reaches no note, and the defaults stand' })
+
+    expect(tab.scheduled().path).toBe('')
+    expect(tab.scheduled().saying).toContain('reaches no note')
+  })
+})

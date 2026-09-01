@@ -88,3 +88,69 @@ func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
 		t.Errorf("counted in %v, want the machine's own", got.Location())
 	}
 }
+
+// zones is the spread of zones the days are counted over, taking in a clock
+// that goes forward at midnight, one that moves by half an hour, and one that
+// crossed the date line.
+var zones = []string{
+	"America/Santiago", "America/Havana", "Australia/Lord_Howe", "Pacific/Chatham",
+	"Pacific/Apia", "America/Sao_Paulo", "America/New_York", "Europe/London",
+	"Europe/Moscow", "Asia/Tehran", "Australia/Sydney",
+}
+
+// A day of review is named for its own date. A day beginning at midnight where
+// the clock goes forward at midnight has no boundary to count back from.
+func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
+	for _, name := range zones {
+		in, err := time.LoadLocation(name)
+		if err != nil {
+			t.Skipf("this machine carries no zone database: %v", err)
+		}
+		for hour := range 24 {
+			day := flashcards.Day{Starts: time.Duration(hour) * time.Hour, In: in}
+			from := time.Date(2025, 1, 1, 0, 0, 0, 0, in)
+			for i := range 800 * 24 {
+				at := from.Add(time.Duration(i) * time.Hour).In(in)
+				y, m, d := at.Date()
+				want := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+				if at.Hour() < hour {
+					want = want.AddDate(0, 0, -1)
+				}
+				if got := day.Names(at); got != want.Format(flashcards.Named) {
+					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
+						name, at, hour, got, want.Format(flashcards.Named))
+				}
+			}
+		}
+	}
+}
+
+// Each day of review carries away the card held on it: no two of them share a
+// number, and none of them is passed over.
+func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
+	for _, name := range zones {
+		in, err := time.LoadLocation(name)
+		if err != nil {
+			t.Skipf("this machine carries no zone database: %v", err)
+		}
+		for hour := range 24 {
+			day := flashcards.Day{Starts: time.Duration(hour) * time.Hour, In: in}
+			on := flashcards.Spreading(day)
+			days := make([]time.Time, 0, 800)
+			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.Ends(at) {
+				days = append(days, at)
+				if next := day.Ends(at); !next.After(at) {
+					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
+						"ends at %v", name, at, hour, next)
+				}
+				on.Holds(at)
+			}
+			for _, at := range days {
+				if got := on.On(at); got != 1 {
+					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
+						"carries %d of the 800 cards, want 1", name, at, hour, got)
+				}
+			}
+		}
+	}
+}

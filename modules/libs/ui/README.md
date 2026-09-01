@@ -2,7 +2,7 @@
 
 Interface components shared by the desktop and mobile clients.
 
-**The rules are [ADR-0020](../../../docs/adr/0020-how-an-interface-component-is-built.md).**
+**The rules are [ADR-0023](../../../docs/adr/0023-how-an-interface-component-is-built.md).**
 What follows is where they live in this tree.
 
 ## The one rule

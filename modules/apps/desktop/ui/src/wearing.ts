@@ -545,6 +545,8 @@ export function wearing(
     applied,
     mode,
     sized,
+    bounds,
+    pinned,
     lost,
     offers,
     modes,

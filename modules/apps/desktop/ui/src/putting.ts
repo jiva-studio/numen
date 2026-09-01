@@ -10,6 +10,12 @@ import type { PlexShowing } from '@numen/ui'
 import type { NoteType, Run, Standing } from './core'
 
 /**
+ * What a file the window opens is opened as: which of three a note is, or the
+ * preset a fourth kind of note holds.
+ */
+export type Opened = NoteType | 'preset'
+
+/**
  * A file put in front of the person in one editor. A line is somewhere inside
  * the file, and what standing there comes to is the editor's own.
  */
@@ -35,13 +41,13 @@ export interface Asking {
 const ORDINARY: Standing = { kind: 'note', type: 'note' }
 
 export function putting(vault: Asking) {
-  /** The editor each of three notes opens in, as its kind handed it over. */
-  const editors = new Map<NoteType, Opens>()
+  /** The editor each kind of note opens in, as its kind handed it over. */
+  const editors = new Map<Opened, Opens>()
   /** The reader a source that is not a note opens in, handed over the same way. */
   let reader: Reads | null = null
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
-  const holds = (type: NoteType, opens: Opens) => {
+  const holds = (type: Opened, opens: Opens) => {
     editors.set(type, opens)
   }
 
@@ -69,7 +75,7 @@ export function putting(vault: Asking) {
   const made = (
     path: string,
     title: string,
-    type: NoteType,
+    type: Opened,
     showing: PlexShowing = 'here',
     line?: number,
   ): void => {

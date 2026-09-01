@@ -3,8 +3,10 @@ package flashcards
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -25,6 +27,9 @@ type Log struct{ Stores port.DerivedStores }
 // Held is what a vault's log came to.
 type Held struct {
 	Answers []history.Answer
+	// order is what Given hands out, worked out at the first asking and kept
+	// for the rest of them.
+	order func() history.Given
 	// Files are what the answers were read from, sorted by name. What tells a
 	// cache it is out of date is any difference in this list.
 	//
@@ -35,6 +40,23 @@ type Held struct {
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
 	Skipped int
+}
+
+// Given is the answers in the order they were given: nothing a line takes back,
+// one line to an identifier, earliest first.
+//
+// One request asks several things of one reading, and each of them reads this
+// order. It is worked out once for the reading and handed to all of them.
+func (h Held) Given() history.Given {
+	if h.order == nil {
+		return history.Give(h.Answers)
+	}
+	return h.order()
+}
+
+// ordered is a reading that works its order out at the first asking.
+func ordered(answers []history.Answer) func() history.Given {
+	return sync.OnceValue(func() history.Given { return history.Give(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is
@@ -67,13 +89,14 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 		if err != nil {
 			return Held{}, err
 		}
-		if ran.Gone {
+		out.Skipped += ran.Skipped
+		if ran.Gone || ran.Shut {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
 		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
-		out.Skipped += ran.Skipped
 	}
+	out.order = ordered(out.Answers)
 	return out, nil
 }
 
@@ -89,6 +112,10 @@ type Ran struct {
 	// Gone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
 	Gone bool
+	// Shut is a file the permissions on it keep closed. It is counted among
+	// the lines that could not be acted on and left out of the files the
+	// history was read from, so a schedule worked out without it says so.
+	Shut bool
 }
 
 // Run is one file of a vault's log, read.
@@ -96,6 +123,9 @@ func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored)
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return Ran{Gone: true}, nil
+	}
+	if errors.Is(err, fs.ErrPermission) {
+		return Ran{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {
 		return Ran{}, err
@@ -140,6 +170,10 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*Run, erro
 type Run struct {
 	store port.DerivedStore
 	name  string
+	// stopped is the append that did not land. A run whose file refused one
+	// answer writes nothing further to it, and every answer after it is
+	// refused with what stopped the first.
+	stopped error
 }
 
 // Name is the file this run writes, as a name of the vault's own store.
@@ -150,9 +184,16 @@ func (r *Run) Name() string { return r.name }
 // An append is not atomic: a machine that stopped mid-line leaves a tail no
 // newline closes, and reading the file back leaves that line out.
 func (r *Run) Append(ctx context.Context, a history.Answer) error {
+	if r.stopped != nil {
+		return r.stopped
+	}
 	raw, err := history.Write(a)
 	if err != nil {
 		return err
 	}
-	return r.store.Append(ctx, r.name, raw)
+	if err := r.store.Append(ctx, r.name, raw); err != nil {
+		r.stopped = fmt.Errorf("%s took no more answers: %w", r.name, err)
+		return r.stopped
+	}
+	return nil
 }

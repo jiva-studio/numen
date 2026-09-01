@@ -101,10 +101,7 @@ export const swallows = (asked: Asks | null): boolean =>
   asked?.does === 'scroll'
 
 /** What a keystroke asks for while a person is choosing what to sit down to. */
-export type Picks =
-  | { does: 'all' }
-  | { does: 'deck'; at: number }
-  | { does: 'back' }
+export type Picks = { does: 'all' } | { does: 'deck'; at: number } | { does: 'back' }
 
 /** The letters the decks are picked by, in the order they are listed. */
 export const LETTERS = 'abcdefghijklmnopqrstuvwxyz'

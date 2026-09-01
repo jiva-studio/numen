@@ -1,6 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
+import { beside } from '../placing/place'
 import type { Point } from '../plex/model'
 import type { Size } from '../plex/arrange'
 
@@ -54,23 +55,29 @@ export interface MenuPlacing {
 }
 
 /**
- * One axis.
+ * Where a menu of this size, asked for at this point, is drawn.
  *
- * A menu runs on from the point it was asked for. Where the far edge is nearer
- * than its own length it runs back over the point instead, and either way it
- * is brought inside the edges it may touch. Wider than the area it is placed
- * in, it sits at the near edge and scrolls.
+ * The point is a span of no width, touching the menu: the menu runs on from it
+ * and folds back over it at an edge. Wider than the area it is placed in, it
+ * sits at the near edge and scrolls.
  */
-const along = (at: number, size: number, room: number, margin: number): number => {
-  const back = at - size
-  const start = at + size + margin <= room || back < margin ? at : back
-  return Math.max(margin, Math.min(start, room - size - margin))
-}
-
-/** Where a menu of this size, asked for at this point, is drawn. */
 export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): MenuPlacing => ({
-  x: along(at.x, size.width, viewport.width, margin),
-  y: along(at.y, size.height, viewport.height, margin),
+  x: beside({
+    from: at.x,
+    to: at.x,
+    size: size.width,
+    room: viewport.width,
+    margin,
+    gap: 0,
+  }),
+  y: beside({
+    from: at.y,
+    to: at.y,
+    size: size.height,
+    room: viewport.height,
+    margin,
+    gap: 0,
+  }),
 })
 
 /**
@@ -111,7 +118,16 @@ export const MENU_OPENINGS_ALL = Object.keys(MENU_OPENINGS) as readonly MenuOpen
 
 /**
  * Where the keyboard is as a menu opens. Opened by hand it is on no item, and
- * the first step down from there lands on the first one.
+ * the first step down from there lands on the first one. Opened by the
+ * keyboard it lands on the item in force, and on the first where the menu
+ * holds none.
  */
-export const landsOn = (opening: MenuOpening, items: readonly MenuItem[]): number =>
-  MENU_OPENINGS[opening].lands ? stepTo(items, -1, 1) : -1
+export const landsOn = (
+  opening: MenuOpening,
+  items: readonly MenuItem[],
+  current: string | null = null,
+): number => {
+  if (!MENU_OPENINGS[opening].lands) return -1
+  const at = items.findIndex((item) => item.id === current && !item.disabled)
+  return at >= 0 ? at : stepTo(items, -1, 1)
+}

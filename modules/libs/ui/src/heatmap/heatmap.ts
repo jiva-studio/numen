@@ -18,8 +18,8 @@ export interface Tally {
   readonly good: number
   readonly easy: number
   /**
-   * The answers given to cards the person had already learned, and how many of
-   * those came back. A card still being learned is in neither.
+   * The answers given to cards the person is already reviewing, and how many of
+   * those came back. A card still coming round in minutes is in neither.
    */
   readonly asked: number
   readonly recalled: number

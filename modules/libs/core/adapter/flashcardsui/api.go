@@ -3,8 +3,8 @@
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
 // the installation — the registry and the four scenarios flashcards is made of.
-// No scan runs behind it and nothing is embedded. An agent is reached, and
-// every tool it may call reads.
+// No scan runs behind it and nothing is embedded. What it writes into a vault
+// is levelled in the index by the paths it touched.
 package flashcardsui
 
 import (
@@ -48,9 +48,20 @@ type API struct {
 	Log       flashcards.Log
 	Counted   flashcards.Counted
 	Joined    flashcards.Around
+	// Presets is which preset each deck of a vault is scheduled by. Curves is
+	// what the one control of a preset comes to over the whole range of its
+	// goal.
+	Presets flashcards.Presets
+	Curves  flashcards.Curves
+	// Notes is what a vault calls the note a preset stands in. A build with none
+	// names a preset by nothing.
+	Notes port.NoteQueries
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
+	// Day is where one day of review gives way to the next. A build holding none
+	// counts the day from midnight.
+	Day history.Day
 	// Now is when this is happening.
 	Now func() time.Time
 

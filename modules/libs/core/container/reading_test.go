@@ -52,10 +52,11 @@ func scanned(t *testing.T) (container.Config, domain.Vault) {
 	return cfg, vault
 }
 
-// read is the index of that configuration, opened for asking alone.
-func read(t *testing.T, cfg container.Config) *container.ReadIndex {
+// read is the index of that configuration, opened again beside the one that
+// built it.
+func read(t *testing.T, cfg container.Config) *container.Index {
 	t.Helper()
-	db, err := cfg.OpenIndexToRead(t.Context())
+	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,8 +84,8 @@ func TestASearchWithNoModelIsAnsweredByTheWords(t *testing.T) {
 	}
 }
 
-// The index opened for asking says what the vault holds.
-func TestTheIndexOpenedForAskingKnowsItsSources(t *testing.T) {
+// A second opening of the index says what the vault holds.
+func TestASecondOpeningOfTheIndexKnowsItsSources(t *testing.T) {
 	cfg, vault := scanned(t)
 
 	held, err := read(t, cfg).SourcesKnown().Under(t.Context(), vault.ID, "Entropy.md")
@@ -99,8 +100,7 @@ func TestTheIndexOpenedForAskingKnowsItsSources(t *testing.T) {
 	}
 }
 
-// A machine where nothing has scanned reads as a vault holding nothing, and no
-// index is made on disk for it.
+// A machine where nothing has scanned reads as a vault holding nothing.
 func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
@@ -117,8 +117,5 @@ func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
 	}
 	if held, err := db.SourcesKnown().Under(t.Context(), vault.ID, ""); err != nil || len(held) != 0 {
 		t.Errorf("the vault holds %d sources: %v", len(held), err)
-	}
-	if _, err := os.Stat(at); !os.IsNotExist(err) {
-		t.Errorf("an index was made at %s", at)
 	}
 }

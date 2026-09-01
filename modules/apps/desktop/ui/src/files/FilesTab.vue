@@ -21,7 +21,7 @@ import {
   type LucideIcon,
 } from '@lucide/vue'
 import type { NoteType, Source } from '../core'
-import { iconFor } from '../icons'
+import { iconFor, iconOfNote } from '../icons'
 import type { Dropped, Held } from './kind'
 import type { Row } from './listing'
 import { itemsFor } from './menu'
@@ -64,9 +64,10 @@ const entryIcon = (id: string, open: boolean): LucideIcon => {
   const kind = kindOf(id)
   if (kind === 'folder') return open ? FolderOpen : Folder
   if (kind === 'book') return Book
-  if (kind === 'deck') return Layers
-  if (kind === 'stencil') return LayoutTemplate
-  return kind === 'note' ? FileText : File
+  if (kind === 'note' || kind === 'deck' || kind === 'stencil' || kind === 'preset') {
+    return iconOfNote(kind)
+  }
+  return File
 }
 
 /** What the menu offers: on the row it was asked for on, or off every row. */

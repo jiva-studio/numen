@@ -1,11 +1,22 @@
 package flashcards_test
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
+
+// busy is an index that cannot be brought level, which is what a second writer
+// holding it leaves behind.
+func busy(context.Context, domain.Vault, []string) error {
+	return errors.New("the index is busy")
+}
 
 // A deck that could not be written is named and left as it stands. The editor
 // may be holding it, and a person is told which deck their cards are missing
@@ -32,6 +43,34 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 	}
 	if !slices.Contains(marked.Unwritten, "decks/Own.md") {
 		t.Errorf("the deck that could not be written is %v", marked.Unwritten)
+	}
+}
+
+// A deck the index could not be brought level with was written all the same.
+// Its cards carry the marks that were minted, so they stand in this sitting and
+// nothing has to mint them a second time.
+func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
+	s := opened(t, handwritten)
+	marking := s.marking
+	marking.Index = busy
+
+	marked, err := marking.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatalf("a levelling that failed was trouble: %v", err)
+	}
+	if len(marked.Unwritten) != 0 {
+		t.Fatalf("the deck was written and is named as unwritten: %v", marked.Unwritten)
+	}
+	if held := read(t, s.vault, "decks/Own.md"); !strings.Contains(held, "## Leaf mould ^") {
+		t.Errorf("the deck carries no mark: %q", held)
+	}
+
+	stood, err := s.standings.Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stood) != 1 {
+		t.Errorf("the marked card stands %d times, want once", len(stood))
 	}
 }
 

@@ -6,6 +6,7 @@
  * with it.
  */
 import { ref } from 'vue'
+import { ConnectError } from '@connectrpc/connect'
 
 import type { Notice, Tone } from '@numen/ui'
 
@@ -32,12 +33,20 @@ export function raising() {
     ]
   }
 
-  /** Trouble, in the person's own words. */
-  const failed = (why: unknown) => says(String(why), 'alarm')
+  /** Trouble, in the person's own words: what the application said, as a sentence. */
+  const failed = (why: unknown) => says(sentence(ConnectError.from(why).rawMessage), 'alarm')
 
   const putAway = (id: string) => {
     notices.value = notices.value.filter((one) => one.id !== id)
   }
 
   return { notices, says, failed, putAway }
+}
+
+/** One thing said, as a sentence: it opens with a capital and it ends. */
+const sentence = (said: string): string => {
+  const words = said.trim()
+  if (!words) return ''
+  const ended = /[.!?]$/.test(words) ? words : `${words}.`
+  return (ended[0]?.toUpperCase() ?? '') + ended.slice(1)
 }
