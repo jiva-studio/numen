@@ -1261,3 +1261,39 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 		}
 	}
 }
+
+// The pace of a date divides the material by days of review, in the one unit.
+//
+// How many days there are counts each day for the share of the load it carries,
+// and how many a card face needs counts days of review. A week at half the load
+// has half a week of room and needs as many days of review as any other, so the
+// second is weighed at the shares of the days it takes.
+func TestAPaceUnderALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	by := history.NewFSRS()
+	p := history.Defaults()
+	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 29).Truncate(24*time.Hour)
+	p.Rule, p.Interval, p.EvenLoad = history.RuleInterval, 21, false
+	p.Load = map[time.Weekday]int{}
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		p.Load[day] = 50
+	}
+
+	full := history.Defaults()
+	full.Goal, full.By = p.Goal, p.By
+	full.Rule, full.Interval, full.EvenLoad = p.Rule, p.Interval, p.EvenLoad
+
+	for _, out := range []int{29, 45, 60} {
+		p.By = now.AddDate(0, 0, out).Truncate(24 * time.Hour)
+		full.By = p.By
+		light := history.Left{New: 500, Ripens: history.Ripens(by, ahead, p, now)}
+		whole := history.Left{New: 500, Ripens: history.Ripens(by, ahead, full, now)}
+
+		at := p.Admits(ahead, now, history.Spent{}, light).Keeps.New
+		was := full.Admits(ahead, now, history.Spent{}, whole).Keeps.New
+		if at > was {
+			t.Errorf("%d days out, a week at half the load begins %d card faces "+
+				"a day and a whole week begins %d", out, at, was)
+		}
+	}
+}
