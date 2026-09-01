@@ -159,6 +159,27 @@ type Curves struct {
 	At func(retention float64) history.Scheduler
 }
 
+// steered is what is wrong with the value the goal moves, and is nil where the
+// value stands inside its bounds. A goal of a date names a day and no number.
+func steered(p history.Preset) error {
+	var value float64
+	var bounds history.Bounds
+	var key string
+	switch p.Goal {
+	case history.GoalMinutes:
+		value, bounds, key = float64(p.MinutesADay), history.MinutesADayBounds, minutesADayKey
+	case history.GoalRetention:
+		value, bounds, key = p.Retention, history.RetentionBounds, retentionKey
+	default:
+		return nil
+	}
+	if bounds.Holds(value) {
+		return nil
+	}
+	return fmt.Errorf("%w: %s %g is outside %g to %g",
+		ErrOutOfBounds, key, value, bounds.Least, bounds.Most)
+}
+
 // Execute is the curve of the goal this preset steers.
 //
 // The preset is passed in: what a curve is wanted for is the value a person is
@@ -168,6 +189,11 @@ type Curves struct {
 func (u Curves) Execute(
 	ctx context.Context, v domain.Vault, path string, p history.Preset,
 ) (Curve, error) {
+	// The value the goal steers is written into the grid, so a value outside its
+	// bounds is a grid the range no longer runs along.
+	if err := steered(p); err != nil {
+		return Curve{}, err
+	}
 	scheduled, err := u.scheduled(ctx, v, path)
 	if err != nil {
 		return Curve{}, err

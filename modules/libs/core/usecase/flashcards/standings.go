@@ -69,6 +69,9 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 // and this application does not walk them: the list of decks is the index's
 // answer, and a vault absent from it is not a vault holding no cards.
 func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
+	if u.Notes == nil {
+		return nil, ErrUnread
+	}
 	held, err := u.Notes.Holds(ctx, v.ID)
 	if err != nil {
 		return nil, err

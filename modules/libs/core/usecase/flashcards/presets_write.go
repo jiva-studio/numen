@@ -39,6 +39,10 @@ var ErrNotAPreset = errors.New("this note is not a preset")
 // the settings are weighed before the file is opened.
 var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold")
 
+// ErrNoPresets is a build carrying no index. It reaches no preset by name, so
+// it points no deck at one, and nothing is written.
+var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
+
 // Point puts the deck at path on a preset, by writing the entry of its `links:`
 // block that carries `type: preset`.
 //
@@ -56,6 +60,9 @@ func (u Presets) Point(
 ) (domain.FileRef, error) {
 	var to domain.Address
 	if preset != "" {
+		if u.Notes == nil {
+			return domain.FileRef{}, ErrNoPresets
+		}
 		at, err := u.Read(ctx, v, preset)
 		if err != nil {
 			return domain.FileRef{}, err

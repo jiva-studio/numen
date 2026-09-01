@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -1123,5 +1124,48 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+// A curve is drawn under the settings a save would take.
+//
+// A control asks for a curve at the value under the hand, and that value is
+// written the moment the hand is let go of. Settings the writer refuses draw no
+// curve.
+func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
+	s := answering(t, 4)
+	for _, one := range []struct {
+		named string
+		said  history.Preset
+	}{
+		{"a chance of recall past one", history.Preset{
+			Goal: history.GoalRetention, NewADay: 8, ReviewsADay: 45, Retention: 5,
+		}},
+		{"a chance of recall at nothing", history.Preset{
+			Goal: history.GoalRetention, NewADay: 8, ReviewsADay: 45,
+		}},
+		{"a day longer than one runs", history.Preset{
+			Goal: history.GoalMinutes, MinutesADay: 1 << 30, NewADay: 8, ReviewsADay: 45,
+		}},
+	} {
+		_, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one.said)
+		if !errors.Is(err, flashcards.ErrOutOfBounds) {
+			t.Errorf("%s draws a curve, and answered %v", one.named, err)
+		}
+	}
+}
+
+// A build carrying no index reaches no deck, and answers rather than falling
+// over.
+func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
+	s := answering(t, 4)
+	u := s.curves(noon)
+	u.Standings.Notes = nil
+
+	p := history.Preset{
+		Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+	}
+	if _, err := u.Execute(t.Context(), s.vault, "Sanskrit.md", p); !errors.Is(err, flashcards.ErrUnread) {
+		t.Errorf("a build with no index answered %v", err)
 	}
 }
