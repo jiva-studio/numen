@@ -236,19 +236,28 @@ export const daysUntil = (today: Date, day: string): number => {
 }
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
-export type Idle = 'unpointed' | 'noCards' | ''
+export type Idle = 'unpointed' | 'noCards' | 'beginsNothing' | ''
 
 /**
- * Whether the goal has nothing to work on, and why. The two counts the curve
- * carries say it: no deck points here, or the decks that do hold nothing
- * between them. What the curve comes to says nothing about it, so a preset
- * holding cards is never told it holds none.
+ * Whether the goal has nothing to work on, and why. The counts the curve
+ * carries say the first two: no deck points here, or the decks that do hold
+ * nothing between them. A preset holding cards is never told it holds none.
+ *
+ * The third is a preset that schedules and has nothing it can schedule: every
+ * card face here is one nobody has begun, and no place of the range begins one.
+ * It is a fact about the material, and not a reason the preset is stopped.
  */
 export const idle = (curve: Curve): Idle => {
   if (!curve.honest) return ''
   if (curve.decks === 0) return 'unpointed'
-  return curve.cards === 0 ? 'noCards' : ''
+  if (curve.cards === 0) return 'noCards'
+  if (curve.unbegun === curve.cards && asksNothing(curve)) return 'beginsNothing'
+  return ''
 }
+
+/** Whether no place of the range asks for a card. A range with no place says nothing. */
+const asksNothing = (curve: Curve): boolean =>
+  curve.at.length > 0 && curve.at.every((one) => one.reviews === 0)
 
 /**
  * The line the window draws while the application is still working the honest

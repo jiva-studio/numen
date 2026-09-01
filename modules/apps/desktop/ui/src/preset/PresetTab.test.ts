@@ -1051,6 +1051,14 @@ describe('a preset that schedules nothing', () => {
   it('says the reasons only the vault knows', () => {
     expect(stopped(Stopped.NO_DAY).text()).toContain(words.stopped(Stopped.NO_DAY))
     expect(stopped(Stopped.NO_LOAD).text()).toContain(words.stopped(Stopped.NO_LOAD))
+    expect(stopped(Stopped.NO_WEEK).text()).toContain(words.stopped(Stopped.NO_WEEK))
+  })
+
+  // One quiet day promises a next day that carries some load, and a week at
+  // nothing has none to promise.
+  it('promises a next day for one quiet day and not for a quiet week', () => {
+    expect(words.stopped(Stopped.NO_LOAD)).toContain('next day')
+    expect(words.stopped(Stopped.NO_WEEK)).not.toContain('next day')
   })
 })
 
@@ -1076,6 +1084,14 @@ describe('a goal with nothing to work on', () => {
     expect(drawn({ ...nothing, decks: 1 }).tab.text()).toContain(words.noCards(1))
     expect(drawn({ ...nothing, decks: 4 }).tab.text()).toContain(words.noCards(4))
     expect(drawn({ ...nothing, decks: 1 }).tab.text()).not.toContain(words.unpointed)
+  })
+
+  // The preset schedules and there is nothing here it can schedule. It is said
+  // in the control's place, and it is not a reason the preset is stopped.
+  it('says a material nobody has begun that no place of the range begins', () => {
+    const { tab } = drawn({ ...nothing, decks: 1, cards: 900, unbegun: 900 })
+    expect(tab.text()).toContain(words.beginsNothing)
+    expect(tab.findAll('.preset__stopped')).toHaveLength(0)
   })
 
   // A preset holding cards is never told it holds none, so a curve of zeros

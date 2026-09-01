@@ -49,6 +49,12 @@ export interface DeckOwing {
    * scheduling it counts by.
    */
   readonly learned: number
+  /**
+   * How many of its card faces nobody has answered at all. A deck every face of
+   * which is one of these has nothing that can come round until something
+   * begins them.
+   */
+  readonly unbegun: number
 }
 
 /** One preset of a vault, and what the day comes to under it. */

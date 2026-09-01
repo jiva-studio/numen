@@ -12,7 +12,7 @@ import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
-import { learned, opens, spent, LEARNED, STOPPED } from './scheduling'
+import { beginsNothing, learned, opens, spent, LEARNED, STOPPED } from './scheduling'
 import type { DeckOwing, Owing } from './core'
 import type { Preset } from './scheduling'
 
@@ -57,11 +57,13 @@ const done = (deck: DeckOwing): boolean => {
 
 /**
  * What a deck with nothing left says where the day's work was not what emptied
- * it: the preset's day is spent, or the day held nothing of this deck at all.
+ * it: the preset's day is spent, nothing here can be begun at all, or the day
+ * held nothing of this deck.
  */
 const empty = (deck: DeckOwing): string => {
   const one = props.byDeck.get(deck.deck)
-  return one && spent(one) ? STOPPED.full : STOPPED.nothing
+  if (one && spent(one)) return STOPPED.full
+  return beginsNothing(deck, one) ? STOPPED.beginsNothing : STOPPED.nothing
 }
 
 /**

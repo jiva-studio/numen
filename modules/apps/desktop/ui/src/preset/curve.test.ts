@@ -290,6 +290,23 @@ describe('a goal with nothing to work on', () => {
     expect(idle({ ...nothing, honest: false })).toBe('')
     expect(idle({ ...nothing, decks: 4, honest: false })).toBe('')
   })
+
+  // The preset is not stopped: it schedules reviews, and nothing here can ever
+  // become one.
+  it('is a material nobody has begun that no place of the range begins', () => {
+    const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
+    expect(idle(all)).toBe('beginsNothing')
+  })
+
+  it('is not a material a place of the range asks for', () => {
+    const all = { ...nothing, decks: 1, cards: 900, unbegun: 900 }
+    expect(idle({ ...all, at: [point(), point({ reviews: 12 }), point()] })).toBe('')
+  })
+
+  it('is not a material some of which somebody has begun', () => {
+    const some = { ...nothing, decks: 1, cards: 900, unbegun: 899 }
+    expect(idle(some)).toBe('')
+  })
 })
 
 describe('the settings a goal schedules by', () => {

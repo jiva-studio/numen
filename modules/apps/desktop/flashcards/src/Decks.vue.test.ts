@@ -51,8 +51,8 @@ const vault: Owing = {
   due: 12,
   new: 4,
   decks: [
-    { deck: 'decks/Words.md', faces: 20, due: 8, new: 2, learned: 5 },
-    { deck: 'decks/Roots.md', faces: 20, due: 4, new: 2, learned: 10 },
+    { deck: 'decks/Words.md', faces: 20, due: 8, new: 2, learned: 5, unbegun: 2 },
+    { deck: 'decks/Roots.md', faces: 20, due: 4, new: 2, learned: 10, unbegun: 2 },
   ],
   presets: [
     {
@@ -117,11 +117,11 @@ describe('the decks of a vault', () => {
 
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
-  const holding = (faces: number, due: number, fresh: number): Owing => ({
+  const holding = (faces: number, due: number, fresh: number, unbegun = 0): Owing => ({
     ...vault,
     due,
     new: fresh,
-    decks: [{ deck: 'decks/Words.md', faces, due, new: fresh, learned: 0 }],
+    decks: [{ deck: 'decks/Words.md', faces, due, new: fresh, learned: 0, unbegun }],
   })
 
   // Something was answered under the preset today and nothing of this deck is
@@ -150,6 +150,37 @@ describe('a deck with nothing waiting', () => {
 
     expect(one.find('.decks__stopped').text()).toBe('the day is full')
     expect(one.findAll('.decks__met')).toHaveLength(0)
+  })
+
+  // Every card face here is one nobody has begun and the preset begins none a
+  // day, so no next day picks any of them up. The preset is not stopped.
+  it('says nothing here can be begun where the preset begins none a day', () => {
+    const one = shown(
+      [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
+      holding(20, 0, 0, 20),
+    )
+
+    expect(one.find('.decks__stopped').text()).toBe('no cards to begin')
+    expect(one.findAll('.decks__met')).toHaveLength(0)
+  })
+
+  // A deck some of which has been begun has cards that come round, so its
+  // quiet day is a quiet day.
+  it('says nothing today where some of the deck has been begun', () => {
+    const one = shown(
+      [preset({ cards: 0, budget: { new: 0, reviews: 200, minutes: 20 } })],
+      holding(20, 0, 0, 19),
+    )
+
+    expect(one.find('.decks__stopped').text()).toBe('nothing today')
+  })
+
+  // The preset begins cards a day, so the unbegun material is waiting on the
+  // day and not on a setting.
+  it('says nothing today where the preset does begin cards a day', () => {
+    const one = shown([preset({ cards: 0 })], holding(20, 0, 0, 20))
+
+    expect(one.find('.decks__stopped').text()).toBe('nothing today')
   })
 
   it('says the reason instead where the preset schedules nothing today', () => {
@@ -197,9 +228,9 @@ describe('the tile and the decks under it', () => {
       due: 10,
       new: 0,
       decks: [
-        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0, learned: 0 },
-        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0, learned: 0 },
-        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0, learned: 0 },
+        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0, learned: 0, unbegun: 0 },
+        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
+        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
       ],
     }
     const one = shown(

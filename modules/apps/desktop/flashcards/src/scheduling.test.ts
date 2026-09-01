@@ -97,6 +97,7 @@ const vault = (
     due: one.due,
     new: one.new,
     learned: 0,
+    unbegun: 0,
   })),
   presets,
   unread: '',
@@ -157,6 +158,12 @@ describe('why a preset schedules nothing, in words', () => {
   // The fifth of September in 2026 is a Saturday.
   it('names the day of the week carrying none of the load', () => {
     expect(stoppedWords(Stopped.NO_LOAD, settings(), on)).toBe('no load on Saturday')
+  })
+
+  // A week at nothing names no day: there is no next one to name.
+  it('names no day for a week carrying none of the load', () => {
+    expect(stoppedWords(Stopped.NO_WEEK, settings(), on)).toBe('no load on any day')
+    expect(stoppedWords(Stopped.NO_WEEK, null, on)).toBe('no load on any day')
   })
 })
 
@@ -291,6 +298,7 @@ describe('whether sitting down to a deck is offered', () => {
     due,
     new: fresh,
     learned: 0,
+    unbegun: 0,
   })
   const by = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
 

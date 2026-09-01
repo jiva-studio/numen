@@ -47,6 +47,7 @@ const deck = (said: Partial<DeckOwing> = {}): DeckOwing => ({
   due: 8,
   new: 2,
   learned: 5,
+  unbegun: 0,
   ...said,
 })
 

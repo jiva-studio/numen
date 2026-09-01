@@ -328,6 +328,16 @@ const refusedFor = (answered: readonly Answered[]): string => {
 export const opens = (deck: DeckOwing, by: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
 
+/**
+ * Whether a deck holds nothing that can ever be asked for: every card face in
+ * it is one nobody has begun, and the preset scheduling it begins none a day.
+ *
+ * It is a fact about the material, and not a reason the preset is stopped. The
+ * preset schedules; there is nothing here for it to schedule.
+ */
+export const beginsNothing = (deck: DeckOwing, by: Preset | undefined): boolean =>
+  deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
+
 /** How many cards the day holds at most. */
 export const holds = (budget: Budget): number => budget.new + budget.reviews
 
@@ -374,6 +384,10 @@ export const STOPPED = {
   pastDay: 'the day has passed',
   passed: (day: string) => `${dayWords(day)} has passed`,
   noLoad: (day: string) => `no load on ${weekdayWords(day)}`,
+  /** No day of the week carries any of the load, so there is no next day. */
+  noWeek: 'no load on any day',
+  /** Every card face here is unbegun, and the preset begins none a day. */
+  beginsNothing: 'no cards to begin',
 } as const
 
 /**
@@ -419,6 +433,7 @@ const WHY: Record<Stopped, (settings: Settings | null, today: string) => string>
   [Stopped.PAST_DAY]: (settings) =>
     settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay,
   [Stopped.NO_LOAD]: (settings, today) => STOPPED.noLoad(today),
+  [Stopped.NO_WEEK]: () => STOPPED.noWeek,
 }
 
 /**

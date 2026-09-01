@@ -131,6 +131,9 @@ const STOPPED: Record<Stopped, string> = {
   [Stopped.NO_LOAD]:
     'Today carries none of this load, so this preset schedules nothing today. ' +
     'The next day that carries some picks its cards up.',
+  [Stopped.NO_WEEK]:
+    'No day of the week carries any of this load, so this preset schedules ' +
+    'nothing on any of them, and every deck pointing at it stops.',
 }
 
 /** A share as a person reads one, which is a percentage and not a fraction. */
@@ -278,6 +281,11 @@ export const WORDS = {
       ? 'One deck points here and it holds no cards, so this preset schedules nothing.'
       : `${count(decks)} decks point here and they hold no cards, ` +
         'so this preset schedules nothing.',
+  /** The decks hold cards, and none of them is one this preset can begin. */
+  beginsNothing:
+    'Nobody has begun a card in these decks and this preset begins none a day, ' +
+    'so it has nothing to schedule. Raise the new cards a day and its goal has ' +
+    'cards to work on.',
   /** Why the preset schedules nothing on the day it was read in. */
   stopped: (why: Stopped) => STOPPED[why],
   /** What is wrong with the file, said above the control. */

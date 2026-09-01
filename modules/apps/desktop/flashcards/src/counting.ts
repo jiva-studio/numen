@@ -33,6 +33,7 @@ export interface Vaulted {
     due: number
     new: number
     learned: number
+    unbegun: number
   }[]
   presets: readonly {
     preset: string
@@ -137,6 +138,7 @@ export function counting(deps: Counting) {
       due: deck.due,
       new: deck.new,
       learned: deck.learned,
+      unbegun: deck.unbegun,
     })),
     presets: one.presets.map((preset) => ({
       preset: preset.preset,

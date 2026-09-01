@@ -32,7 +32,7 @@ const vault: Owing = {
   faces: 4,
   due: 3,
   new: 1,
-  decks: [{ deck: 'decks/Words.md', faces: 4, due: 3, new: 1, learned: 2 }],
+  decks: [{ deck: 'decks/Words.md', faces: 4, due: 3, new: 1, learned: 2, unbegun: 1 }],
   presets: [],
   unread: '',
 }

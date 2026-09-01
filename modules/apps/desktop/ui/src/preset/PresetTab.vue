@@ -30,7 +30,8 @@ const nothing = computed(() => idle(curve.value))
 /** What is said in the control's place where the goal has nothing to work on. */
 const saidInstead = computed(() => {
   if (nothing.value === 'unpointed') return words.unpointed
-  return nothing.value === 'noCards' ? words.noCards(curve.value.decks) : ''
+  if (nothing.value === 'noCards') return words.noCards(curve.value.decks)
+  return nothing.value === 'beginsNothing' ? words.beginsNothing : ''
 })
 
 /** The rows the chosen goal schedules by, which are the ones drawn. */
