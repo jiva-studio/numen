@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -140,5 +141,56 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	}
 	if got := out.Body.String(); got != sound[4:13] {
 		t.Errorf("the piece came back as %q", got)
+	}
+}
+
+// The player reaches it over a socket, not through this process, so the whole
+// way in is what is asked here.
+func TestARecordingIsReachedOverTheSocket(t *testing.T) {
+	api, _ := listeningTo(t, nil)
+	back, err := Reachable(api)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer back.Close()
+
+	out, err := http.Get(back.Address(api.Showing(), talk))
+	if err != nil {
+		t.Fatalf("the socket answered nothing: %v", err)
+	}
+	defer out.Body.Close()
+	if out.StatusCode != http.StatusOK {
+		t.Fatalf("the socket answered %d", out.StatusCode)
+	}
+	if got := out.Header.Get("Content-Type"); got != "audio/mpeg" {
+		t.Errorf("it came back as %q", got)
+	}
+	said, err := io.ReadAll(out.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(said) != sound {
+		t.Errorf("it came back as %q", said)
+	}
+}
+
+// A page is held to loading nothing but what its own handler serves, and the
+// socket a recording is played from is the one thing named beside it.
+func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
+	api, _ := listeningTo(t, nil)
+	back, err := Reachable(api)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer back.Close()
+	api.Playing = back
+
+	said := handed(api.Serving(http.NotFoundHandler()), "/").
+		Header().Get("Content-Security-Policy")
+	if !strings.Contains(said, "media-src 'self' "+back.at) {
+		t.Errorf("the socket is not what a recording may be played from: %q", said)
+	}
+	if strings.Contains(said, "img-src 'self' "+back.at) {
+		t.Error("naming where a recording plays from widened where a picture comes from")
 	}
 }

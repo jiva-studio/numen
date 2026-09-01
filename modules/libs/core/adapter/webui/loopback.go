@@ -189,3 +189,12 @@ func servedAs(name string) string {
 	}
 	return ""
 }
+
+// named is where the window may play from, for the policy the page is served
+// under. A build that opened no socket names nowhere.
+func (l *Loopback) named() []string {
+	if l == nil {
+		return nil
+	}
+	return []string{l.at}
+}

@@ -144,6 +144,9 @@ export function listening(recordings: Recordings, path: string) {
   const working = ref(false)
   /** What this recording could not do, in words the tab puts up for it. */
   const trouble = ref('')
+  /** What the player could not do. It stands under the player, which is whose
+   * failure it is. */
+  const broken = ref('')
 
   /** Which cue is being said now, and nothing where none has begun. */
   const current = computed(() => holding(cues.value, now.value))
@@ -201,7 +204,7 @@ export function listening(recordings: Recordings, path: string) {
    */
   const failed = (code: number | undefined) => {
     if (!open) return
-    trouble.value = FAILED[code ?? 0] ?? WORDS.unreadable
+    broken.value = FAILED[code ?? 0] ?? WORDS.unreadable
   }
 
   /** The tab was drawn, and this is the player it drew. */
@@ -259,6 +262,7 @@ export function listening(recordings: Recordings, path: string) {
     current,
     working,
     trouble,
+    broken,
     go,
     moved,
     failed,

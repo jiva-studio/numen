@@ -85,12 +85,10 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	const held = "default-src 'self'; img-src 'self'; media-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
-	if policy != held {
-		t.Errorf("the policy reads %q", policy)
-	}
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {

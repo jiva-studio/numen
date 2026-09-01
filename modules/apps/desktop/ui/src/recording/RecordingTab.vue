@@ -47,6 +47,9 @@ const failed = () => props.held.failed(player.value?.error?.code)
       @error="failed"
     />
     <p v-else class="recording__note">{{ words.unplayable }}</p>
+    <p v-if="props.held.broken.value" class="recording__note">
+      {{ props.held.broken.value }}
+    </p>
 
     <ol
       v-if="props.held.cues.value.length"
@@ -77,16 +80,15 @@ const failed = () => props.held.failed(player.value?.error?.code)
 
 <style scoped>
 .recording {
-  /* The measure the words are read at, and the column the times stand in. */
+  /* The measure the words are read at. */
   --recording-measure: 46rem;
-  --recording-at: 4.5rem;
   /* Between the player and the words, and between one cue and the next. */
   --recording-apart: 1rem;
   --recording-near: 0.25rem;
-  display: flex;
-  flex-direction: column;
+  /* The tab is what scrolls, so the bar stands at the edge of the pane and not
+     beside the words. */
   block-size: 100%;
-  min-block-size: 0;
+  overflow-y: auto;
   padding: var(--numen-gutter);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
@@ -94,28 +96,36 @@ const failed = () => props.held.failed(player.value?.error?.code)
 }
 
 .recording__player {
+  /* Held at the top: an hour of words scrolls past, and the pause is where it
+     was left. */
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  display: block;
   inline-size: 100%;
   max-inline-size: var(--recording-measure);
   margin-inline: auto;
   margin-block-end: var(--recording-apart);
+  background: var(--numen-node-bg);
 }
 
 /* The words are read in one column, centred in whatever room the pane has. */
 .recording__said {
-  flex: 1;
-  min-block-size: 0;
   max-inline-size: var(--recording-measure);
   margin: 0 auto;
   padding: 0;
-  overflow-y: auto;
   list-style: none;
 }
 
-/* One cue: the moment it was spoken at, and what was said then. */
+/* One cue: the moment it was spoken at, and what was said then. The one being
+   said is lit and not thickened: a line that changes weight moves the words
+   under it. */
 .recording__cue {
   display: grid;
-  grid-template-columns: var(--recording-at) 1fr;
-  gap: 0 var(--numen-node-gap);
+  /* The times take the room the longest of them needs and no more, so an hour
+     in and a minute in line up without a column set by hand. */
+  grid-template-columns: max-content 1fr;
+  gap: 0 var(--recording-near);
   inline-size: 100%;
   padding: var(--recording-near) var(--numen-node-gap);
   border: none;
@@ -130,14 +140,9 @@ const failed = () => props.held.failed(player.value?.error?.code)
   background: var(--numen-field-bg);
 }
 
-.recording__cue:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: var(--numen-stroke);
-}
 
 .recording__cue--now {
   background: var(--numen-field-bg);
-  font-weight: 600;
 }
 
 .recording__at {
