@@ -36,6 +36,11 @@ type DeckOwing struct {
 	// Answered is how many of the deck's cards were answered in the day holding
 	// now, counted the way its preset counts.
 	Answered int
+	// Learned is how many of the deck's card faces stand learned at this
+	// instant, under the rule the preset scheduling the deck counts by. Two
+	// decks on one preset are counted under the one rule, and a deck naming no
+	// preset under the defaults.
+	Learned int
 }
 
 // PresetOwing is one preset's day, by the path of the note it stands in. A
@@ -136,8 +141,14 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 		}
 		return one
 	}
+	// The schedules and the presets are both in hand, so what stands learned is
+	// counted off the reading that is already here.
 	for _, one := range standing {
-		at(one.Deck).Faces++
+		row := at(one.Deck)
+		row.Faces++
+		if asks.under(one.CardFace).Preset.Learned(schedules[one.CardFace], now) {
+			row.Learned++
+		}
 	}
 	for deck, one := range day.sat {
 		at(deck).Answered = one.Answered
