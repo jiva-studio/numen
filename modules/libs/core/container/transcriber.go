@@ -252,11 +252,18 @@ func (t *Transcribing) owing(ctx context.Context, known port.SourceQueries, v do
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	under := t.cfg.TranscribesUnder
 	out := make([]string, 0, len(held))
-	for path := range held {
-		if !t.answered[named(v, path)] {
-			out = append(out, path)
+	for path, ref := range held {
+		if t.answered[named(v, path)] {
+			continue
 		}
+		if under > 0 && ref.Size > under {
+			// A recording this large is somebody's music or somebody's archive.
+			// It is listened to when it is asked for by name.
+			continue
+		}
+		out = append(out, path)
 	}
 	slices.Sort(out)
 	return out

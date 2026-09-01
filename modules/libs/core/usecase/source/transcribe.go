@@ -39,6 +39,11 @@ type Transcribe struct {
 	// stopped keeps what it had. Zero takes the default.
 	Batch int
 
+	// Again throws away what a run before this one heard and listens from the
+	// start. It is how a person asks for a recording to be heard by whatever
+	// model is configured now, and nothing sets it on its own.
+	Again bool
+
 	// Cut makes a source's chunks. It is called as speech is written down, so
 	// what has been heard is searchable before the rest of it is.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
@@ -100,6 +105,16 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		return res, err
 	}
 	defer release()
+
+	if u.Again {
+		// Somebody asked for this recording to be heard afresh. What a run
+		// before this one made goes, and the listening starts from the top.
+		for _, name := range []string{final, partial, text.Answer(area, hash)} {
+			if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return res, err
+			}
+		}
+	}
 
 	// A recording already listened to is not listened to again. The name is the
 	// hash of what was heard, so this holds however the file was renamed or

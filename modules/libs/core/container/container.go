@@ -63,6 +63,11 @@ type Config struct {
 	// it to the hand.
 	Transcribes bool
 
+	// TranscribesUnder is how many bytes a recording may run to and still be
+	// listened to unasked. A larger one is left for somebody to ask for by
+	// name. Zero is no limit.
+	TranscribesUnder int64
+
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
@@ -97,6 +102,7 @@ func (c Config) Indexing(said settings.Indexing) Config {
 	c.Proofreading = said.Proofreading
 	c.Transcription = said.Transcription
 	c.Transcribes = said.Transcribes()
+	c.TranscribesUnder = said.TranscribesUnder()
 	return c
 }
 

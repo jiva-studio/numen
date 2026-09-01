@@ -20,8 +20,18 @@ import (
 // text there is. The window listens to a vault's recordings on its own; this is
 // the hand asking for one.
 func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+	again := false
+	rest := make([]string, 0, len(args))
+	for _, one := range args {
+		if one == "--again" {
+			again = true
+			continue
+		}
+		rest = append(rest, one)
+	}
+	args = rest
 	if len(args) != 2 {
-		return errors.New("usage: numen-cli transcribe <vault> <file>")
+		return errors.New("usage: numen-cli transcribe <vault> <file> [--again]")
 	}
 	v, err := findVault(cfg, args[0])
 	if err != nil {
@@ -64,6 +74,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config,
 		Sources: db.Sources(),
 		Derived: cfg.DerivedStores(),
 		By:      models,
+		Again:   again,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err

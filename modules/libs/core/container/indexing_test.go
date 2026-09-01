@@ -30,6 +30,9 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if cfg.Transcribes != said.Transcribes() {
 		t.Error("whether a recording is heard without being asked did not arrive")
 	}
+	if cfg.TranscribesUnder != said.TranscribesUnder() {
+		t.Error("how large a recording heard unasked may be did not arrive")
+	}
 	if cfg.IndexPath != "/somewhere/index.db" {
 		t.Error("what the command line said was written over")
 	}
@@ -39,7 +42,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 // until it is carried, which is the failure the sections themselves cannot
 // have: an unconfigured model is a model nobody asked for.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
-	if held := reflect.TypeOf(settings.Indexing{}).NumField(); held != 5 {
+	if held := reflect.TypeOf(settings.Indexing{}).NumField(); held != 6 {
 		t.Errorf("indexing holds %d sections; carry the new one in Config.Indexing", held)
 	}
 }

@@ -59,7 +59,9 @@ A recording is transcribed without anybody asking ([ADR-0044](adr/0044-a-recordi
 | somebody else holds it | nothing | yes |
 | stopped part way | `<hash>.partial.vtt` | yes, from the note |
 
-Deleting an answer is how a person asks for a recording to be tried again.
+Deleting an answer is how a person asks for a recording to be tried again, and `numen-cli transcribe <vault> <file> --again` is how they ask without going into the folder. It throws away the transcript, the run that was going and the answer, and listens from the start — which is what a person who changed the model wants.
+
+The queue takes what it can carry: a recording larger than `indexing.transcribe_under_mb` is left alone until somebody asks for it by name. A folder of albums is days of a machine, and nobody put them in a vault to be read.
 
 ## Which recordings
 

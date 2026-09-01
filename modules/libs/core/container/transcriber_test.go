@@ -236,3 +236,48 @@ func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
 		t.Errorf("the recording was heard %d times once the turn was free", got)
 	}
 }
+
+// sized is an index holding recordings of a given size.
+type sized struct {
+	port.SourceQueries
+	recordings map[string]int64
+}
+
+func (s sized) Fingerprints(
+	_ context.Context, _ string, _ domain.SourceKind,
+) (map[string]domain.FileRef, error) {
+	out := map[string]domain.FileRef{}
+	for path, size := range s.recordings {
+		out[path] = domain.FileRef{Path: path, Size: size}
+	}
+	return out, nil
+}
+
+func (sized) Recognised(
+	_ context.Context, _ string, _ domain.SourceKind,
+) ([]port.Recognised, error) {
+	return nil, nil
+}
+
+// A folder of albums is days of a machine, and nobody put them there to be read.
+// What the queue takes on its own stops at a size; the hand still asks for
+// anything.
+func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
+	held, v := listens(t, &deaf{}, "talk.mp3", "album.flac")
+	held.cfg.TranscribesUnder = 10 << 20
+
+	known := sized{recordings: map[string]int64{
+		"talk.mp3":   5 << 20,
+		"album.flac": 400 << 20,
+	}}
+	owed := held.owing(t.Context(), known, v)
+	if len(owed) != 1 || owed[0] != "talk.mp3" {
+		t.Errorf("the queue took %v", owed)
+	}
+
+	// Naming no size takes whatever the vault holds.
+	held.cfg.TranscribesUnder = 0
+	if owed := held.owing(t.Context(), known, v); len(owed) != 2 {
+		t.Errorf("with no limit the queue took %v", owed)
+	}
+}

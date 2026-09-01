@@ -370,3 +370,70 @@ func TestWhatListenedIsKeptBesideWhatItHeard(t *testing.T) {
 		t.Errorf("what is kept beside the artifact says %q", raw)
 	}
 }
+
+// A transcript is kept and never made twice, so a person who changed the model
+// has to be able to say "hear this one again". Nothing sets it on its own.
+func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
+	u, v, _, shelf, model, hash := listener(t, "one", "two")
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	first := len(model.heard)
+	if first == 0 {
+		t.Fatal("the model was handed nothing")
+	}
+
+	// Asked again without saying so, the transcript stands and the model is
+	// left alone.
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(model.heard) != first {
+		t.Errorf("the model was handed %d more stretches", len(model.heard)-first)
+	}
+
+	u.Again = true
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(model.heard) != first*2 {
+		t.Errorf("asked again, the model was handed %d stretches, want %d", len(model.heard), first*2)
+	}
+	if res.Resumed != 0 {
+		t.Errorf("asked again, it took up a run at %d ms", res.Resumed)
+	}
+	raw, err := shelf.Read(t.Context(), text.Artifact("asr", hash))
+	if err != nil {
+		t.Fatalf("nothing was written the second time: %v", err)
+	}
+	if said := spoken(t, raw); len(said) != 2 {
+		t.Errorf("the transcript reads back as %v", said)
+	}
+}
+
+// An answer stops a recording being offered again, so asking for it again has
+// to get past it. What it says the second time is whatever it says.
+func TestAskingAgainAfterAnAnswer(t *testing.T) {
+	u, v, _, shelf, model, hash := listener(t, "", "", "")
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := shelf.Read(t.Context(), text.Answer("asr", hash)); err != nil {
+		t.Fatalf("the recording left no answer: %v", err)
+	}
+	first := len(model.heard)
+
+	u.Again = true
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(model.heard) <= first {
+		t.Error("the answer stood, and the recording was not heard again")
+	}
+	if !res.Silent {
+		t.Error("a recording still carrying no speech was not answered")
+	}
+}

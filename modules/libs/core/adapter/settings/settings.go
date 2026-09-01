@@ -197,12 +197,37 @@ type Indexing struct {
 	// hundred hours is a day of a machine, and how much of it to spend is the
 	// person's.
 	TranscribeRecordings *bool `json:"transcribe_recordings"`
+
+	// TranscribeUnderMB is how large a recording may be and still be listened
+	// to without anybody asking, in megabytes. A larger one waits to be asked
+	// for by name, because a folder of albums is days of a machine and nobody
+	// put them there to be read.
+	//
+	// Zero takes the default. A negative number is no limit at all.
+	TranscribeUnderMB int `json:"transcribe_under_mb"`
 }
+
+// DefaultTranscribeUnderMB is how large a recording listened to unasked may be.
+// It is a talk of a few hours at the bitrates a recorder writes, and larger than
+// anything a person speaks into a phone.
+const DefaultTranscribeUnderMB = 300
 
 // Transcribes is whether a recording is listened to without being asked. A
 // section naming nothing listens to them.
 func (i Indexing) Transcribes() bool {
 	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
+}
+
+// TranscribesUnder is how many bytes a recording may run to and still be
+// listened to unasked. A negative setting is no limit.
+func (i Indexing) TranscribesUnder() int64 {
+	switch {
+	case i.TranscribeUnderMB < 0:
+		return 0
+	case i.TranscribeUnderMB == 0:
+		return DefaultTranscribeUnderMB << 20
+	}
+	return int64(i.TranscribeUnderMB) << 20
 }
 
 // Naming is how a note's title and the name of its file are held together.
