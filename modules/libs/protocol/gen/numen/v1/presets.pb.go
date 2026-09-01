@@ -219,6 +219,9 @@ const (
 	// A day of the week carrying none of the load. It is a fact about one day,
 	// so only `stops_on` ever carries it.
 	Stopped_STOPPED_NO_LOAD Stopped = 6
+	// A week carrying none of the load: every day of it stands at nothing, so
+	// there is no next day to pick the cards up.
+	Stopped_STOPPED_NO_WEEK Stopped = 7
 )
 
 // Enum value maps for Stopped.
@@ -231,6 +234,7 @@ var (
 		4: "STOPPED_NO_DAY",
 		5: "STOPPED_PAST_DAY",
 		6: "STOPPED_NO_LOAD",
+		7: "STOPPED_NO_WEEK",
 	}
 	Stopped_value = map[string]int32{
 		"STOPPED_UNSPECIFIED": 0,
@@ -240,6 +244,7 @@ var (
 		"STOPPED_NO_DAY":      4,
 		"STOPPED_PAST_DAY":    5,
 		"STOPPED_NO_LOAD":     6,
+		"STOPPED_NO_WEEK":     7,
 	}
 )
 
@@ -1743,7 +1748,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06Counts\x12\x16\n" +
 	"\x12COUNTS_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCOUNTS_CARDS\x10\x01\x12\x10\n" +
-	"\fCOUNTS_SHOWS\x10\x02*\xa4\x01\n" +
+	"\fCOUNTS_SHOWS\x10\x02*\xb9\x01\n" +
 	"\aStopped\x12\x17\n" +
 	"\x13STOPPED_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fSTOPPED_NOTHING\x10\x01\x12\x16\n" +
@@ -1751,7 +1756,8 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x10STOPPED_NO_CARDS\x10\x03\x12\x12\n" +
 	"\x0eSTOPPED_NO_DAY\x10\x04\x12\x14\n" +
 	"\x10STOPPED_PAST_DAY\x10\x05\x12\x13\n" +
-	"\x0fSTOPPED_NO_LOAD\x10\x062\xb7\x03\n" +
+	"\x0fSTOPPED_NO_LOAD\x10\x06\x12\x13\n" +
+	"\x0fSTOPPED_NO_WEEK\x10\a2\xb7\x03\n" +
 	"\x0ePresetsService\x12G\n" +
 	"\n" +
 	"Scheduling\x12\x1b.numen.v1.SchedulingRequest\x1a\x1c.numen.v1.SchedulingResponse\x12J\n" +

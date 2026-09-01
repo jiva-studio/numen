@@ -181,6 +181,10 @@ enum Stopped {
   // A day of the week carrying none of the load. It is a fact about one day,
   // so only `stops_on` ever carries it.
   STOPPED_NO_LOAD = 6;
+
+  // A week carrying none of the load: every day of it stands at nothing, so
+  // there is no next day to pick the cards up.
+  STOPPED_NO_WEEK = 7;
 }
 
 // Preset is one preset as a read hands it over.
