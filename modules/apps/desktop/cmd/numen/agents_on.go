@@ -136,10 +136,11 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	cutting := cfg.Cards(queries, opened.Index.Links(), index)
 
 	return mcp.Core{
-		Showing: mcp.One(opened.Showing(), root),
-		Readers: readers,
-		View:    opened.API.Viewing(),
-		Notes:   queries,
+		Showing:   mcp.One(opened.Showing(), root),
+		Readers:   readers,
+		View:      opened.API.Viewing(),
+		Attending: opened.API.Attended,
+		Notes:     queries,
 
 		Vaults:     opened.API.Vaults,
 		Choosing:   opened.API.Choosing,

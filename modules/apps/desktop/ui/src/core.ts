@@ -113,6 +113,33 @@ export interface Hanging {
   readonly parts: number
 }
 
+/**
+ * One tab of the window, as whoever answers on the person's behalf is told
+ * about it: what kind it is, and what it holds.
+ */
+export interface Tab {
+  readonly id: string
+  readonly kind: string
+  /** The file it holds, empty for a tab holding none. A plex holds its note. */
+  readonly path: string
+  /** What the tab is called, as the person reads it. */
+  readonly title: string
+  /**
+   * Where in what it holds the person stands, and how much there is of it,
+   * both in whatever that thing is measured in: a document in pages, counted
+   * from one, and a recording in milliseconds, where `at` is how much of it
+   * has been written down.
+   */
+  readonly at: number
+  readonly of: number
+}
+
+/** What the person has open: every tab, and which of them is in front. */
+export interface Attention {
+  readonly tabs: readonly Tab[]
+  readonly front: string
+}
+
 export interface Core {
   neighbourhood(path: string): Promise<Neighbourhood>
   /**
@@ -169,6 +196,12 @@ export interface Core {
     length?: number
     also?: readonly { start?: number; length?: number }[]
   }>
+  /**
+   * What the person has open, said again whenever any of it changes. It is the
+   * other direction to `focus`: a place is put in front of the person there,
+   * and here the window says what is in front of them now.
+   */
+  attending(open: Attention): Promise<void>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<Answered & { at?: string }>
   /**
