@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -31,6 +32,13 @@ type Preset struct {
 	// Preset is how the decks pointing here are scheduled. It stands at the
 	// defaults for every outcome but Ok.
 	Preset history.Preset
+	// Stops is why the preset schedules nothing, and empty where it schedules
+	// something. It is a fact about the preset and holds on every day.
+	Stops history.Stopped
+	// StopsToday is why it schedules nothing on the day this was read in. A
+	// preset that schedules is stopped today by a day of the week carrying none
+	// of the load.
+	StopsToday history.Stopped
 	// Problems are what was wrong in the file and was not guessed at. They are
 	// shown against the preset, and the editor is where they are settled.
 	Problems []string
@@ -57,6 +65,21 @@ type Presets struct {
 	// Index brings what a write touched up to date. A build holding none leaves
 	// the index to the next scan.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	// Day is where one day of review gives way to the next, and Now what time
+	// it is. They answer whether a preset schedules anything today. A build
+	// holding no clock reads the machine's.
+	Day history.Day
+	Now func() time.Time
+}
+
+// stops is why a preset schedules nothing, and why it schedules nothing today.
+func (u Presets) stops(p history.Preset) (history.Stopped, history.Stopped) {
+	now := time.Now
+	if u.Now != nil {
+		now = u.Now
+	}
+	at := now()
+	return p.Stops(u.Day, at), p.StopsOn(u.Day, at)
 }
 
 // Listed is one preset as a person choosing between them sees it: where the
@@ -144,6 +167,7 @@ func (r *Reading) Of(ctx context.Context, v domain.Vault, deck string) (Preset, 
 	if err != nil {
 		return Preset{}, err
 	}
+	out.Stops, out.StopsToday = r.stops(out.Preset)
 	r.scheduling[deck] = out
 	return out, nil
 }
@@ -241,6 +265,16 @@ func (r *Reading) read(ctx context.Context, v domain.Vault, path string) (Preset
 // An error is the vault being out of reach. What is wrong with the note itself
 // is an outcome or a problem, and the preset stands at the defaults.
 func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (Preset, error) {
+	out, err := u.opened(ctx, v, path)
+	if err != nil {
+		return Preset{}, err
+	}
+	out.Stops, out.StopsToday = u.stops(out.Preset)
+	return out, nil
+}
+
+// opened is the note at path as a preset, before it is asked what it schedules.
+func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Preset, error) {
 	out := Preset{Path: path, Preset: history.Defaults()}
 
 	reader, err := u.Readers.Open(v)

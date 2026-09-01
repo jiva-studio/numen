@@ -415,3 +415,154 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 			after.New, after.Reviews)
 	}
 }
+
+// What a preset schedules is the core's answer, over every goal and every
+// budget at zero and not.
+//
+// The budget the goal names decides it, and a budget the goal does not name
+// takes no part whatever it holds.
+func TestWhatAPresetSchedules(t *testing.T) {
+	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	// A Thursday, and the two days a preset may aim at from it.
+	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	ahead := time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)
+	behind := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+
+	for _, one := range []struct {
+		what string
+		p    flashcards.Preset
+		want flashcards.Stopped
+	}{
+		{
+			what: "minutes, and the minutes it names",
+			p:    flashcards.Preset{Goal: flashcards.GoalMinutes, MinutesADay: 20},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "minutes at zero",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
+			},
+			want: flashcards.StoppedNoMinutes,
+		},
+		{
+			what: "minutes, with both card counts at zero",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalMinutes, MinutesADay: 20, NewADay: 0, ReviewsADay: 0,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "minutes, past a day it does not aim at",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalMinutes, MinutesADay: 20, By: behind,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "retention, and both counts",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "retention, with no new cards a day",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalRetention, NewADay: 0, ReviewsADay: 45,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "retention, with no reviews a day",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 0,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "retention, with both counts at zero",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalRetention, NewADay: 0, ReviewsADay: 0, MinutesADay: 20,
+			},
+			want: flashcards.StoppedNoCards,
+		},
+		{
+			what: "retention, with the minutes at zero",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45, MinutesADay: 0,
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "a day ahead, with every other budget at zero",
+			p:    flashcards.Preset{Goal: flashcards.GoalDate, By: ahead},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "the day it aims at",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalDate, By: time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC),
+			},
+			want: flashcards.StoppedNothing,
+		},
+		{
+			what: "a day behind us",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalDate, By: behind,
+				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			},
+			want: flashcards.StoppedPastDay,
+		},
+		{
+			what: "a date and no day",
+			p: flashcards.Preset{
+				Goal: flashcards.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			},
+			want: flashcards.StoppedNoDay,
+		},
+	} {
+		if got := one.p.Stops(day, now); got != one.want {
+			t.Errorf("%s stops on %q, want %q", one.what, got, one.want)
+		}
+		if got, want := one.p.Paused(day, now), one.want != flashcards.StoppedNothing; got != want {
+			t.Errorf("%s is paused %v, want %v", one.what, got, want)
+		}
+		// A day of the week at the whole of the load stops nothing of its own.
+		if got := one.p.StopsOn(day, now); got != one.want {
+			t.Errorf("%s stops today on %q, want %q", one.what, got, one.want)
+		}
+	}
+}
+
+// A day of the week carrying none of the load is a fact about that one day. The
+// preset schedules, and it schedules again on the next day that carries some.
+func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
+	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	thursday := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	if thursday.Weekday() != time.Thursday {
+		t.Fatalf("%v is a %v", thursday, thursday.Weekday())
+	}
+
+	p := flashcards.Preset{
+		Goal: flashcards.GoalMinutes, MinutesADay: 20,
+		Load: map[time.Weekday]int{time.Thursday: 0},
+	}
+
+	if got := p.Stops(day, thursday); got != flashcards.StoppedNothing {
+		t.Errorf("a preset with a light Thursday stops on %q", got)
+	}
+	if got := p.StopsOn(day, thursday); got != flashcards.StoppedNoLoad {
+		t.Errorf("its Thursday stops on %q, want %q", got, flashcards.StoppedNoLoad)
+	}
+	if got := p.StopsOn(day, thursday.AddDate(0, 0, 1)); got != flashcards.StoppedNothing {
+		t.Errorf("its Friday stops on %q", got)
+	}
+
+	// A preset that schedules nothing at all says so on a light day too, and the
+	// day of the week is not what to fix.
+	p.MinutesADay = 0
+	if got := p.StopsOn(day, thursday); got != flashcards.StoppedNoMinutes {
+		t.Errorf("a paused preset stops today on %q, want %q", got, flashcards.StoppedNoMinutes)
+	}
+}

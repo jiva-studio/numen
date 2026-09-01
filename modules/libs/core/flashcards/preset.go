@@ -274,9 +274,13 @@ type Allowance struct {
 	// spent between the two stands at the whole of it, and the debt is paid
 	// first.
 	Backlog int
-	// Paused is a preset that schedules nothing at all.
-	Paused bool
+	// Stops is why this day schedules nothing, and empty where it schedules
+	// something.
+	Stops Stopped
 }
+
+// Paused reports whether this day schedules nothing.
+func (a Allowance) Paused() bool { return a.Stops != StoppedNothing }
 
 // Left is what a preset has still to get through: the card faces nobody has
 // begun, and how many days of review one begun now needs before the preset
@@ -295,9 +299,7 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
 		Closes: p.closing(),
-		// A day carrying none of the load schedules nothing, as a budget of
-		// zero does.
-		Paused: p.Paused(d, now) || p.Share(opened.Weekday()) == 0,
+		Stops:  p.StopsOn(d, now),
 	}
 	if p.Goal == GoalDate {
 		// The pace is a whole day's share of the material, and this day carries
@@ -356,23 +358,69 @@ func (p Preset) closing() Closes {
 	}
 }
 
-// Paused reports whether the preset schedules nothing: the budget its goal
-// names is zero or absent, or a day that has passed.
-func (p Preset) Paused(d Day, now time.Time) bool {
-	if p.Past(d, now) {
-		return true
-	}
+// Stopped is why a preset schedules nothing, and empty where it schedules
+// something. The list is closed, and a caller maps a value to a sentence.
+type Stopped string
+
+const (
+	// StoppedNothing is a preset that schedules: its decks are handed a day of
+	// review.
+	StoppedNothing Stopped = ""
+	// StoppedNoMinutes is a goal of minutes with the minutes at zero.
+	StoppedNoMinutes Stopped = "no_minutes"
+	// StoppedNoCards is a goal of retention with both card counts at zero.
+	StoppedNoCards Stopped = "no_cards"
+	// StoppedNoDay is a goal of a date naming no day. The budget the goal names
+	// is the day, and a goal that cannot read its own budget schedules nothing.
+	StoppedNoDay Stopped = "no_day"
+	// StoppedPastDay is a goal of a date whose day is behind us.
+	StoppedPastDay Stopped = "past_day"
+	// StoppedNoLoad is a day of the week carrying none of the load. It is a
+	// fact about one day: the preset schedules on the days that carry some.
+	StoppedNoLoad Stopped = "no_load"
+)
+
+// Stops is why this preset schedules nothing, and StoppedNothing where it
+// schedules something.
+//
+// It is a fact about the preset and holds on every day. It is the one place the
+// rule is read, so what a caller says about a preset is what the core hands its
+// cards out by.
+func (p Preset) Stops(d Day, now time.Time) Stopped {
 	switch p.Goal {
 	case GoalRetention:
-		return p.NewADay == 0 && p.ReviewsADay == 0
+		if p.NewADay == 0 && p.ReviewsADay == 0 {
+			return StoppedNoCards
+		}
 	case GoalDate:
-		// A preset aiming at a day that names none has no budget at all, and a
-		// budget the goal names and cannot read is a pause.
-		return p.By.IsZero()
+		if p.By.IsZero() {
+			return StoppedNoDay
+		}
+		if p.Past(d, now) {
+			return StoppedPastDay
+		}
 	default:
-		return p.MinutesADay == 0
+		if p.MinutesADay == 0 {
+			return StoppedNoMinutes
+		}
 	}
+	return StoppedNothing
 }
+
+// StopsOn is why this preset schedules nothing on the day holding now: whatever
+// stops the preset at all, and a day of the week carrying none of the load.
+func (p Preset) StopsOn(d Day, now time.Time) Stopped {
+	if why := p.Stops(d, now); why != StoppedNothing {
+		return why
+	}
+	if p.Share(d.Ends(now).AddDate(0, 0, -1).Weekday()) == 0 {
+		return StoppedNoLoad
+	}
+	return StoppedNothing
+}
+
+// Paused reports whether the preset schedules nothing.
+func (p Preset) Paused(d Day, now time.Time) bool { return p.Stops(d, now) != StoppedNothing }
 
 // paces is how much of the material a day holds when a date sets the pace: what
 // is left to begin, over the days on which beginning a card still leaves it time

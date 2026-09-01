@@ -134,7 +134,7 @@ func budgeted(
 // the preset counts.
 func (b *budgets) takes(face history.CardFace, fresh bool) bool {
 	one, held := b.left[b.under[face]]
-	if !held || one.admits.Paused {
+	if !held || one.admits.Paused() {
 		return false
 	}
 	counted := one.counts == history.CountsShows || !b.faced[face]
@@ -181,7 +181,7 @@ func (b *budgets) refuses(preset string) error {
 	switch {
 	case !scheduling:
 		return fmt.Errorf("%w: no deck of this vault is scheduled by it", ErrSchedulesNothing)
-	case one.admits.Paused:
+	case one.admits.Paused():
 		return fmt.Errorf("%w: it is paused", ErrSchedulesNothing)
 	case one.spent.Answered > 0:
 		return fmt.Errorf("%w: its day is spent", ErrSchedulesNothing)
