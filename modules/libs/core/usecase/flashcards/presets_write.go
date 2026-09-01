@@ -39,6 +39,41 @@ var ErrNotAPreset = errors.New("this note is not a preset")
 // the settings are weighed before the file is opened.
 var ErrOutOfBounds = errors.New("this setting is outside what a preset may hold")
 
+// Point puts the deck at path on a preset, by writing the entry of its `links:`
+// block that carries `type: preset`.
+//
+// An empty preset takes that entry out, and the deck is scheduled by the
+// defaults. A path naming a note that is not a preset is refused ErrNotAPreset,
+// and a path the vault holds no note at is refused note.ErrNoNote.
+//
+// Fingerprint, when it is given, is what the caller believes is on disk. A deck
+// that has changed since it was read is left alone and port.ErrChanged comes
+// back. What comes back otherwise is the fingerprint of the file this write
+// produced, which is what the caller presents at its next write. An index that
+// could not be brought level is note.ErrUnlevelled beside that fingerprint.
+func (u Presets) Point(
+	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.FileRef,
+) (domain.FileRef, error) {
+	var to domain.Address
+	if preset != "" {
+		at, err := u.Read(ctx, v, preset)
+		if err != nil {
+			return domain.FileRef{}, err
+		}
+		switch {
+		case at.Outcome == note.Missing:
+			return domain.FileRef{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
+		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
+			return domain.FileRef{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
+		}
+		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
+			return domain.FileRef{}, err
+		}
+	}
+	linking := note.Linking{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
+	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, fingerprint)
+}
+
 // Save writes the settings into the preset at path.
 //
 // Each key the application owns is replaced on its own. Every other key, the

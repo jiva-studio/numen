@@ -777,3 +777,134 @@ func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
 		}
 	}
 }
+
+// A note names one place under a link type. The entry carrying the type is the
+// one that moves, and every other entry comes out as the bytes it went in as.
+func TestOneTypeNamesOnePlace(t *testing.T) {
+	raw := "---\n" +
+		"links:\n" +
+		"  - to: Thermodynamics\n" +
+		"    role: parent\n" +
+		"  - to: Sanskrit   # twenty minutes\n" +
+		"    role: ref\n" +
+		"    type: preset\n" +
+		"    note: as much as I have\n" +
+		"---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	if err := d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef,
+	); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	if !strings.Contains(got, "  - to: Thermodynamics\n    role: parent\n") {
+		t.Errorf("the other entry was rewritten in\n%s", got)
+	}
+	if strings.Contains(got, "to: Sanskrit") {
+		t.Errorf("the entry still names where it went in\n%s", got)
+	}
+	if !strings.Contains(got, "to: Slow going") || !strings.Contains(got, "note: as much as I have") {
+		t.Errorf("the entry did not move whole in\n%s", got)
+	}
+	if strings.Count(got, "type: preset") != 1 {
+		t.Errorf("the note names more than one place under the type in\n%s", got)
+	}
+}
+
+// A note naming no place under the type grows an entry for it, and one written
+// with no block grows the block too.
+func TestATypeNobodyNamedIsWrittenIn(t *testing.T) {
+	for name, raw := range map[string]string{
+		"no block":       "---\ntype: deck\n---\nbody\n",
+		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",
+		"no frontmatter": "body\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := d.SetLinkOfType(
+				"preset", domain.Address{Scheme: domain.SchemeName, Value: "Sanskrit"}, domain.RoleRef,
+			); err != nil {
+				t.Fatalf("set: %v", err)
+			}
+
+			n := Parse(domain.FileRef{Path: "decks/Roots.md"}, d.Bytes())
+			var named []domain.Link
+			for _, link := range n.Links {
+				if link.Type == "preset" {
+					named = append(named, link)
+				}
+			}
+			if len(named) != 1 {
+				t.Fatalf("the note names %d presets:\n%s", len(named), d.Bytes())
+			}
+			if named[0].Target.Value != "Sanskrit" || named[0].Role != domain.RoleRef {
+				t.Errorf("the entry says %+v", named[0])
+			}
+		})
+	}
+}
+
+// An empty address takes the entry out, and the block goes with it when it held
+// nothing else.
+func TestNamingNoPlaceUnderATypeTakesTheEntryOut(t *testing.T) {
+	d, err := Open([]byte(
+		"---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\nbody\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetLinkOfType("preset", domain.Address{}, domain.RoleRef); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	if got := string(d.Bytes()); got != "---\ntype: deck\n---\nbody\n" {
+		t.Errorf("got %q", got)
+	}
+}
+
+// An entry carrying a key the application does not own is left as the person
+// wrote it, and nothing is written.
+func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
+	raw := "---\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n    mine: keep me\n---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	err = d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef)
+	if !errors.Is(err, ErrNotOurs) {
+		t.Fatalf("want ErrNotOurs, got %v", err)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the refused change was made anyway\n%s", got)
+	}
+}
+
+// An entry written with no role is not a link, so it names nothing under the
+// type and is left exactly as it stands.
+func TestAnEntryWithNoRoleIsLeftWhereItStands(t *testing.T) {
+	d, err := Open([]byte(
+		"---\nlinks:\n  - to: Sanskrit\n    type: preset\n---\nbody\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef,
+	); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	if !strings.Contains(got, "  - to: Sanskrit\n    type: preset\n") {
+		t.Errorf("the entry the parser could not read was rewritten in\n%s", got)
+	}
+	if !strings.Contains(got, "to: Slow going") {
+		t.Errorf("the entry was not written in\n%s", got)
+	}
+}

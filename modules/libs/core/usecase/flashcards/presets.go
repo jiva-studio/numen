@@ -47,12 +47,52 @@ type Presets struct {
 	Writers port.VaultWriters
 	// Links answers where a deck's link to its preset lands.
 	Links port.LinkQueries
+	// Notes says which notes of the vault are presets and what each is called,
+	// and answers what name a link written to one reaches. A build holding none
+	// lists no preset and points no deck at one.
+	Notes port.NoteQueries
 	// Problems is what parsing each file of the vault turned up. A build holding
 	// none says nothing against a deck whose link the parser could not read.
 	Problems port.ProblemQueries
 	// Index brings what a write touched up to date. A build holding none leaves
 	// the index to the next scan.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
+}
+
+// Listed is one preset as a person choosing between them sees it: where the
+// file is, and what it is called. A note nothing names is a title of nothing,
+// and the path says which file it is.
+type Listed struct {
+	Path  string
+	Title string
+}
+
+// List is every preset the vault holds, by path. The defaults are not among
+// them: they are what schedules a deck naming no preset, and no note holds
+// them.
+//
+// The index says which notes are presets, so no file is opened.
+func (u Presets) List(ctx context.Context, v domain.Vault) ([]Listed, error) {
+	if u.Notes == nil {
+		return nil, nil
+	}
+	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	if err != nil {
+		return nil, fmt.Errorf("the presets of %s: %w", v.ID, err)
+	}
+	if len(paths) == 0 {
+		return nil, nil
+	}
+	titles, err := u.Notes.Notes(ctx, v.ID, paths)
+	if err != nil {
+		return nil, fmt.Errorf("what the presets of %s are called: %w", v.ID, err)
+	}
+
+	out := make([]Listed, 0, len(paths))
+	for _, path := range paths {
+		out = append(out, Listed{Path: path, Title: titles[path].Title})
+	}
+	return out, nil
 }
 
 // Default is a deck scheduled by no preset.

@@ -71,6 +71,34 @@ func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to dom
 	return err
 }
 
+// PointAt makes a note name one place under a link `type`, in one read and one
+// write. An empty address takes the entry out, so the note names none.
+//
+// The entry is written where a feature reads it: one type, one place. What the
+// person wrote on it — its role, its label, why it exists — is kept, and every
+// other entry of the block comes out of the write as the bytes it went in as.
+//
+// Fingerprint, when it is given, is what the caller believes is on disk. A note
+// that has changed since it was read is left alone and port.ErrChanged comes
+// back. What comes back otherwise is the fingerprint of the file this write
+// produced.
+func (u Linking) PointAt(
+	ctx context.Context, v domain.Vault, from, of string,
+	to domain.Address, role domain.LinkRole, fingerprint domain.FileRef,
+) (domain.FileRef, error) {
+	if of == "" {
+		return domain.FileRef{}, errors.New("a link is pointed at under a type")
+	}
+	if to.Value != "" && !domain.KnownRole(role) {
+		return domain.FileRef{}, fmt.Errorf("%q is not a role a link can carry", role)
+	}
+	e := u.editing()
+	e.fingerprint = fingerprint
+	return e.apply(ctx, v, from, func(doc *markdown.Document) error {
+		return doc.SetLinkOfType(of, to, role)
+	})
+}
+
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.

@@ -171,6 +171,71 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 	return removed, nil
 }
 
+// SetLinkOfType makes the block name one note under a `type`.
+//
+// The first entry carrying that type is pointed at the address and keeps the
+// role and the words the person wrote on it; any further entry carrying it is
+// taken out, so a note names one place under one type. An empty address takes
+// them all out, and an empty block goes with them.
+//
+// An entry carrying a key the application does not own is refused. An entry the
+// application cannot read carries no role, so it names nothing and is left as
+// it was written.
+func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkRole) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+
+	var carrying []int
+	kept := 0
+	for i, e := range b.entries {
+		if e.link.Type != of || !e.readable {
+			kept++
+			continue
+		}
+		if !e.ours {
+			return fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+		}
+		carrying = append(carrying, i)
+	}
+
+	for at := len(carrying) - 1; at >= 0; at-- {
+		e := b.entries[carrying[at]]
+		if at > 0 || to.Value == "" {
+			d.splice(e.start, e.end, nil)
+			continue
+		}
+		next := e.link
+		next.Target, next.Type = to, of
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+	}
+
+	switch {
+	case to.Value == "":
+		if len(carrying) > 0 && kept == 0 {
+			return d.set("links", nil)
+		}
+		return nil
+	case len(carrying) > 0:
+		return nil
+	}
+
+	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: of}, b.indent, d.eol)
+	if err != nil {
+		return err
+	}
+	if !b.found {
+		return d.set("links", append([]byte("links:"+d.eol), rendered...))
+	}
+	d.splice(b.end, b.end, rendered)
+	return nil
+}
+
 // UpdateLink changes what an entry says about itself without moving where it
 // goes. An entry carrying anything the application does not own is refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {

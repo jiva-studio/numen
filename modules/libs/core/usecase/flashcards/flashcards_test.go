@@ -78,7 +78,8 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	}
 	presets := flashcards.Presets{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: db.NoteQueries(), Problems: db.NoteQueries(), Index: scanned,
+		Links: db.NoteQueries(), Notes: db.NoteQueries(),
+		Problems: db.NoteQueries(), Index: scanned,
 	}
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is how the application builds this.

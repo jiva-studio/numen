@@ -112,7 +112,7 @@ func (c Config) Flashcards(
 
 	presets := flashcards.Presets{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
-		Links: links, Index: index,
+		Links: links, Notes: notes, Index: index,
 	}
 	// A link the index does not carry is accounted for in what parsing turned
 	// up, which is the same reader answering both.
