@@ -15,10 +15,11 @@ import (
 type Transcription struct {
 	// Model is what turns speech into words.
 	Model string
-	// Segmenter is what finds the speech in the silence, and Threshold is how
-	// sure it has to be.
+	// Segmenter is what finds the speech in the silence, and Cutting is every
+	// setting it cuts by, as one value. Where a stretch of speech ends decides
+	// what words come out of it, so all of them are named.
 	Segmenter string
-	Threshold float32
+	Cutting   string
 
 	// From is where the models were loaded from. Two models answering to one
 	// name from two places are two models.
@@ -27,14 +28,14 @@ type Transcription struct {
 
 // String is the identity as one value, for saying what is listening.
 func (t Transcription) String() string {
-	return fmt.Sprintf("%s+%s@%.2f", t.Model, t.Segmenter, t.Threshold)
+	return fmt.Sprintf("%s+%s", t.Model, t.Segmenter)
 }
 
 // Recipe is everything about this transcription that decides what a text is, as
 // one value. It is kept beside an artifact so that a person can ask what heard
 // the words they are reading.
 func (t Transcription) Recipe() string {
-	return fmt.Sprintf("%s|%s|%s|%.2f", t.From, t.Model, t.Segmenter, t.Threshold)
+	return fmt.Sprintf("%s|%s|%s|%s", t.From, t.Model, t.Segmenter, t.Cutting)
 }
 
 // Audio is one stretch of a recording that carries words, as the samples a

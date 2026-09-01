@@ -106,7 +106,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		named: port.Transcription{
 			Model:     named(cfg.Model.Name, found.encoder),
 			Segmenter: named(cfg.Speech.Name, found.speech),
-			Threshold: cfg.Speech.threshold(),
+			Cutting:   cfg.Speech.cutting(),
 			From:      found.from,
 		},
 	}

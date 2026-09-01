@@ -64,3 +64,38 @@ func TestSpeechThatRunsOnIsCutWhereItIsQuietest(t *testing.T) {
 		t.Errorf("the second stretch ends at %d", got[1].to)
 	}
 }
+
+// A line of a transcript is read, so a stretch too short to be one is put
+// together with what follows it.
+func TestAShortStretchJoinsTheNextOne(t *testing.T) {
+	// least 10 windows, longest 100.
+	got := joined([]run{
+		{from: 0, to: 3},   // "So"
+		{from: 5, to: 8},   // "The"
+		{from: 10, to: 40}, // a sentence
+		{from: 50, to: 90}, // another
+	}, 10, 100)
+
+	want := []run{{from: 0, to: 40}, {from: 50, to: 90}}
+	if len(got) != len(want) {
+		t.Fatalf("joined into %v", got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("stretch %d is %v, want %v", i, got[i], want[i])
+		}
+	}
+}
+
+// Joining stops at the longest a stretch may run to, however short the pieces.
+func TestJoiningStopsAtTheLongest(t *testing.T) {
+	got := joined([]run{
+		{from: 0, to: 5},
+		{from: 6, to: 11},
+		{from: 12, to: 17},
+	}, 100, 12)
+
+	if len(got) != 2 || got[0] != (run{from: 0, to: 11}) {
+		t.Errorf("joined into %v", got)
+	}
+}

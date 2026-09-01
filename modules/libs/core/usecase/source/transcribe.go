@@ -279,13 +279,13 @@ func (u Transcribe) cut(ctx context.Context, v domain.Vault, path string) error 
 func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
 	named := u.By.Transcription()
 	raw, err := json.MarshalIndent(struct {
-		Model     string  `json:"model"`
-		Segmenter string  `json:"segmenter"`
-		Threshold float32 `json:"threshold"`
-		From      string  `json:"from"`
-		Heard     string  `json:"heard"`
-		Recipe    string  `json:"recipe"`
-	}{named.Model, named.Segmenter, named.Threshold, named.From, named.String(), named.Recipe()}, "", "  ")
+		Model     string `json:"model"`
+		Segmenter string `json:"segmenter"`
+		Cutting   string `json:"cutting"`
+		From      string `json:"from"`
+		Heard     string `json:"heard"`
+		Recipe    string `json:"recipe"`
+	}{named.Model, named.Segmenter, named.Cutting, named.From, named.String(), named.Recipe()}, "", "  ")
 	if err != nil {
 		return err
 	}

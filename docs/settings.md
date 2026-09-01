@@ -332,7 +332,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
       "download": true,
       "threads": 4,
       "model": { "name": "parakeet-tdt-0.6b-v3-int8" },
-      "speech": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100 }
+      "speech": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100, "least": 2500 }
     }
   }
 }
@@ -356,6 +356,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | `speech.pad` | how many milliseconds are kept on each side of a stretch. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
 | `speech.longest` | how many milliseconds one stretch may run to. 30000. One stretch is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
 | `speech.shortest` | how many milliseconds a stretch carries to be a stretch at all. 100. |
+| `speech.least` | how many milliseconds a stretch runs to before it stands as a line of its own. 2500. A shorter one is put together with the stretch after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model hears a sentence better than it hears a word out of one. |
 
 Reading a scan and listening to a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is heard, and the one waiting says so in the list of what is being done.
 

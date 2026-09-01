@@ -89,6 +89,9 @@ type SpeechModel struct {
 	// Shortest is how many milliseconds a stretch carries to be a stretch at
 	// all.
 	Shortest int `json:"shortest"`
+	// Least is how many milliseconds a stretch runs to before it stands as a
+	// line of its own. A shorter one is put together with the stretch after it.
+	Least int `json:"least"`
 }
 
 // The files one Parakeet export is published as.
@@ -163,6 +166,23 @@ func (s SpeechModel) shortest() int {
 		return 100
 	}
 	return s.Shortest
+}
+
+// A line of a transcript is read, so it holds a phrase and not a breath. A
+// speaker hesitating in the middle of a sentence stops for about this long.
+func (s SpeechModel) least() int {
+	if s.Least <= 0 {
+		return 2500
+	}
+	return s.Least
+}
+
+// cutting is every setting a stretch of speech is cut by, as one value. Each of
+// them moves where a stretch ends, and a stretch that ends elsewhere is heard
+// as other words.
+func (s SpeechModel) cutting() string {
+	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
+		s.threshold(), s.silence(), s.pad(), s.longest(), s.shortest(), s.least())
 }
 
 // paths are the files this run listens through, and where they were found.

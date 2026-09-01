@@ -39,10 +39,15 @@ func (t *Transcriber) stretches(ctx context.Context, sound []float32) ([]port.Au
 	}
 
 	windows := func(ms int) int { return ms * sampleRate / (1000 * speechWindow) }
+	found := joined(
+		runs(scores, t.cutting.threshold(),
+			windows(t.cutting.silence()), windows(t.cutting.pad()),
+			windows(t.cutting.longest()), windows(t.cutting.shortest())),
+		windows(t.cutting.least()), windows(t.cutting.longest()),
+	)
+
 	var out []port.Audio
-	for _, one := range runs(scores, t.cutting.threshold(),
-		windows(t.cutting.silence()), windows(t.cutting.pad()),
-		windows(t.cutting.longest()), windows(t.cutting.shortest())) {
+	for _, one := range found {
 		from := min(one.from*speechWindow, len(sound))
 		to := min(one.to*speechWindow, len(sound))
 		out = append(out, port.Audio{
@@ -52,6 +57,30 @@ func (t *Transcriber) stretches(ctx context.Context, sound []float32) ([]port.Au
 		})
 	}
 	return out, nil
+}
+
+// joined puts a stretch too short to stand on its own together with the one
+// after it, up to the longest a stretch may run to.
+//
+// A person pausing in the middle of a sentence closes a stretch, and what comes
+// back is a line holding one word. A line is a thing somebody reads, and the
+// model hears a sentence better than it hears a word out of one.
+func joined(found []run, least, longest int) []run {
+	out := make([]run, 0, len(found))
+	for _, one := range found {
+		if len(out) == 0 {
+			out = append(out, one)
+			continue
+		}
+		last := &out[len(out)-1]
+		short := last.to-last.from < least
+		if short && one.to-last.from <= longest {
+			last.to = one.to
+			continue
+		}
+		out = append(out, one)
+	}
+	return out
 }
 
 // voiced is how sure the model is that each window of the recording carries
