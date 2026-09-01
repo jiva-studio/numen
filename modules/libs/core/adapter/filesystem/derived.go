@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -44,6 +45,19 @@ type Derived struct {
 	id      string // the identity that folder carried when this store was opened
 	root    string // <vault>/<serviceDir>
 	area    string // the one folder inside it this store answers for
+	// seen is the configuration file as it stood when the identity was last
+	// read out of it. Every name checks the identity, and a file that has not
+	// moved carries the identity already read.
+	seen atomic.Pointer[stamp]
+}
+
+// stamp is a file as it stood: what says whether it is still the one read.
+type stamp struct{ info os.FileInfo }
+
+// holds reports whether a file is the one a stamp was taken of.
+func (s *stamp) holds(now os.FileInfo) bool {
+	return s != nil && os.SameFile(s.info, now) &&
+		s.info.Size() == now.Size() && s.info.ModTime().Equal(now.ModTime())
 }
 
 // ErrNotThisVault is what a name gets when the folder underneath it no longer
@@ -78,17 +92,19 @@ func OpenDerived(vaultRoot string, opts Options, area string) (*Derived, error) 
 	if _, err := os.Stat(abs); err != nil {
 		return nil, err
 	}
-	id, err := carried(abs, opts.serviceDir())
+	id, was, err := carried(abs, opts.serviceDir())
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", abs, err)
 	}
-	return &Derived{
+	d := &Derived{
 		vault:   abs,
 		service: opts.serviceDir(),
 		id:      id,
 		root:    filepath.Join(abs, opts.serviceDir()),
 		area:    area,
-	}, nil
+	}
+	d.seen.Store(was)
+	return d, nil
 }
 
 // Area is the folder inside the service folder this store keeps, which is the
@@ -239,27 +255,51 @@ func (d *Derived) Remove(_ context.Context, name string) error {
 // carries its identity inside itself, and a folder that has lost the identity
 // it had is somewhere else: an unmounted disk, a synchroniser's stub, an empty
 // folder this store made on its way to a name.
+//
+// Every name is checked, so the check is a stat of the file the identity is
+// written in: the same file, of the same length and the same age, carries the
+// identity already read out of it. Anything else is read again.
 func (d *Derived) still() error {
-	id, err := carried(d.vault, d.service)
+	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.seen.Load().holds(now) {
+		return nil
+	}
+	id, was, err := carried(d.vault, d.service)
 	if err != nil {
 		return fmt.Errorf("%s: %w", d.vault, err)
 	}
 	if id != d.id {
 		return fmt.Errorf("%s carries %q and not %q: %w", d.vault, id, d.id, ErrNotThisVault)
 	}
+	// A folder that carried no identity carries none when it is gone, so the
+	// folder itself is what says this one is there.
+	if id == "" {
+		if _, err := os.Stat(d.vault); err != nil {
+			return fmt.Errorf("%s: %w", d.vault, err)
+		}
+	}
+	d.seen.Store(was)
 	return nil
 }
 
-// carried is the identity a folder holds, and nothing where it holds none.
-func carried(root, serviceDir string) (string, error) {
+// carried is the identity a folder holds, and nothing where it holds none. The
+// file it was read from comes back with it, stamped before the reading, so a
+// file that changed under the reading is read again at the next asking.
+func carried(root, serviceDir string) (string, *stamp, error) {
+	if serviceDir == "" {
+		serviceDir = DefaultServiceDir
+	}
+	var was *stamp
+	if info, err := os.Stat(configAt(root, serviceDir)); err == nil {
+		was = &stamp{info: info}
+	}
 	cfg, err := ReadConfig(root, serviceDir)
 	if errors.Is(err, ErrNotAVault) || errors.Is(err, fs.ErrNotExist) {
-		return "", nil
+		return "", nil, nil
 	}
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return cfg.ID, nil
+	return cfg.ID, was, nil
 }
 
 // at is where one name lands on this machine. Every name is answered where the

@@ -80,6 +80,59 @@ func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 	}
 }
 
+// A store opened on a folder carrying no identity has none to lose, so the
+// folder itself is what says it is still there.
+func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsGone(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "vault")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("appending into a folder that is gone gave %v", err)
+	}
+	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the folder was made again to write into: %v", err)
+	}
+}
+
+// The identity is read out of a file, and a store that has read it once goes on
+// answering from that reading. A file written again is another reading.
+func TestAStoreNoticesTheIdentityChangingUnderIt(t *testing.T) {
+	derived, root := store(t)
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	// A synchroniser bringing another machine's vault down over this path
+	// leaves the folder where it was and the identity in it another.
+	at := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
+	other := `{"v":1,"id":"01J0000000000000000000000A"}` + "\n"
+	if err := os.WriteFile(at, []byte(other), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	when := time.Now().Add(time.Second)
+	if err := os.Chtimes(at, when, when); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into another vault at the same path gave %v", err)
+	}
+}
+
 func TestWhatIsWrittenIsRead(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()

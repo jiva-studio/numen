@@ -16,6 +16,7 @@ go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -tim
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m
 go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
+go test ./adapter/filesystem/ -run XXX -bench Derived -benchmem -count 3
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -667,6 +668,24 @@ The editor draws only the lines that are on screen — thirty-six of the four hu
 Those two columns are read against each other. A page carrying the whole stylesheet costs more to recalculate than one carrying the tokens, which is why neither column meets the table above.
 
 A held arrow key crosses a row of the size list every 40 ms, and a size is worn once the keyboard has stood on a row for 150 ms.
+
+## What a name of the derived store costs
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkDerived` in `adapter/filesystem`. Every name the store takes is answered where the vault still is, and the check that it is asks the folder what identity it carries.
+
+| | Before | After |
+| --- | --- | --- |
+| One name read | 92.2 µs · 5504 B · 57 allocs | 67.0 µs · 4584 B · 48 allocs |
+| One folder listed | 79.6 µs · 4895 B · 60 allocs | 66.9 µs · 3989 B · 51 allocs |
+| One line appended | 2.43 ms · 5334 B · 58 allocs | 2.24 ms · 4413 B · 49 allocs |
+
+Each column is the median of three runs. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations.
+
+**The identity was read out of the file at every name.** `config.json` opened, its bytes parsed and the identity in it checked, which is 19.9 µs and 12 allocations on its own — a fifth of a read and a quarter of a listing. It is now a stat of that file, and a file of the same length and the same age carries the identity already read out of it. A file that moved is read again, so a folder carrying another vault's identity is still refused at the first name after it arrives.
+
+**An append is what a person answering a card pays**, one file of the log to a sitting, and it is unchanged in every way that shows: the `fsync` at the end of it is two milliseconds of the two and a quarter.
+
+**A vault carrying no identity is stated by its folder.** A store opened on a folder that never held one has none to lose, and the check now asks whether that folder is there.
 
 ## What a window asks of one vault
 
