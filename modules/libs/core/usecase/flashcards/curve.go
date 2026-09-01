@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -340,18 +342,22 @@ func (u Curves) minutes(
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
-	for _, minutes := range out.Grid {
+	out.At = make([]Point, len(out.Grid))
+	if err := places(len(out.Grid), func(i int) error {
 		one := p
-		one.MinutesADay = int(minutes)
+		one.MinutesADay = int(out.Grid[i])
 		ran, err := run.Run(ctx, now, one, at, unseen)
 		if err != nil {
-			return Curve{}, err
+			return err
 		}
 		place := sitting(ran)
 		if place.Learns, err = learnt(ctx, run, now, one, at, unseen); err != nil {
-			return Curve{}, err
+			return err
 		}
-		out.At = append(out.At, place)
+		out.At[i] = place
+		return nil
+	}); err != nil {
+		return Curve{}, err
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
@@ -394,19 +400,23 @@ func (u Curves) retention(
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
-	for _, share := range out.Grid {
+	out.At = make([]Point, len(out.Grid))
+	if err := places(len(out.Grid), func(i int) error {
 		one, asks := p, run
-		one.Retention = share
-		asks.By = u.at(share)
+		one.Retention = out.Grid[i]
+		asks.By = u.at(out.Grid[i])
 		ran, err := asks.Run(ctx, now, one, at, unseen)
 		if err != nil {
-			return Curve{}, err
+			return err
 		}
 		place := point(ran)
 		if place.Learns, err = learnt(ctx, asks, now, one, at, unseen); err != nil {
-			return Curve{}, err
+			return err
 		}
-		out.At = append(out.At, place)
+		out.At[i] = place
+		return nil
+	}); err != nil {
+		return Curve{}, err
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
@@ -464,8 +474,12 @@ func (u Curves) date(
 	// Every place runs the same horizon, however near its own day is, so what it
 	// says about a backlog is the same question answered on every goal and not
 	// one asked over as many days as the place stands off.
-	for _, step := range naming(spread(last-first+1, Points), named-first) {
-		day := first + step
+	steps := naming(spread(last-first+1, Points), named-first)
+	out.Grid = make([]float64, len(steps))
+	out.Days = make([]string, len(steps))
+	out.At = make([]Point, len(steps))
+	if err := places(len(steps), func(i int) error {
+		day := first + steps[i]
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
 		asks.Days = max(day+1, history.Ahead)
@@ -474,14 +488,14 @@ func (u Curves) date(
 		asks.Retains = []int{day}
 		ran, err := asks.Run(ctx, now, aiming, at, unseen)
 		if err != nil {
-			return Curve{}, err
+			return err
 		}
 		back, _ := ran.Retained.On(day)
 		// A day at none of the load is no sitting at all, so what a day of
 		// review holds is read off the first day this run admits.
 		opening, sitting := ran.Sitting()
-		out.Grid = append(out.Grid, float64(day))
-		out.Days = append(out.Days, u.Day.Names(aiming.By))
+		out.Grid[i] = float64(day)
+		out.Days[i] = u.Day.Names(aiming.By)
 		one := Point{
 			// What it costs is what the days up to that one spend, and the days
 			// past it are no part of getting through by it.
@@ -504,7 +518,10 @@ func (u Curves) date(
 		if sitting {
 			one.Reviews, one.Closed = float64(ran.Load[opening]), ran.Closed[opening]
 		}
-		out.At = append(out.At, one)
+		out.At[i] = one
+		return nil
+	}); err != nil {
+		return Curve{}, err
 	}
 
 	// The day the file names is a place of the grid, so what stands under the
@@ -538,6 +555,39 @@ func (u Curves) date(
 		}
 	}
 	return out, nil
+}
+
+// places works out every place of a grid, each of them alongside the others.
+//
+// No place reads another's answer: a run is given the schedules the answers
+// have already produced, reads them and nothing else, and writes only what it
+// hands back. Each answer is put down at the place it belongs to, so a curve is
+// the same curve however the runs finish, on however many cores.
+//
+// A place that fails is left to the places beside it, and the error handed back
+// is the earliest place's. A request nobody is waiting for is ended by the run
+// of each place reading the context it was given.
+func places(count int, each func(at int) error) error {
+	failed := make([]error, count)
+	room := make(chan struct{}, max(1, runtime.GOMAXPROCS(0)))
+	var running sync.WaitGroup
+	for at := range count {
+		room <- struct{}{}
+		running.Add(1)
+		go func() {
+			defer running.Done()
+			defer func() { <-room }()
+			failed[at] = each(at)
+		}()
+	}
+	running.Wait()
+
+	for _, err := range failed {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // learnt is how many days of review it takes before the whole material stands
