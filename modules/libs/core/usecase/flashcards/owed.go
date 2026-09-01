@@ -33,6 +33,10 @@ type DeckOwing struct {
 	Faces int
 	Due   int
 	New   int
+	// Unbegun is how many of the deck's card faces nobody has answered at all.
+	// A deck every face of which is one of these has nothing that can come
+	// round until something begins them.
+	Unbegun int
 	// Answered is how many of the deck's cards were answered in the day holding
 	// now, counted the way its preset counts.
 	Answered int
@@ -150,6 +154,9 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	for _, one := range standing {
 		row := at(one.Deck)
 		row.Faces++
+		if !schedules[one.CardFace].Seen() {
+			row.Unbegun++
+		}
 		if asks.under(one.CardFace).Preset.Learned(schedules[one.CardFace], now) {
 			row.Learned++
 		}

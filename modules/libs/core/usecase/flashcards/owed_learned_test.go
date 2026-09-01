@@ -102,3 +102,36 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 		}
 	}
 }
+
+// How many of a deck's card faces nobody has begun is counted off the same
+// pass, so a deck every face of which is unbegun says so on its own row.
+func TestADecksUnbegunFacesAreCounted(t *testing.T) {
+	s := opened(t, learnedVault)
+
+	before, err := s.owedAt(today, func() time.Time { return learnedHour }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range before.Decks {
+		if one.Unbegun != one.Faces {
+			t.Errorf("%s stands at %d unbegun of %d, want all of them",
+				one.Deck, one.Unbegun, one.Faces)
+		}
+	}
+
+	run := s.run(t, learnedHour)
+	answer(t, run, "card000000", 5*time.Second)
+
+	after, err := s.owedAt(today, func() time.Time { return learnedHour.Add(time.Minute) }).
+		Execute(t.Context(), s.vault)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]int{"decks/One.md": 2, "decks/Two.md": 2, "decks/Three.md": 2}
+	for _, one := range after.Decks {
+		if one.Unbegun != want[one.Deck] {
+			t.Errorf("%s stands at %d unbegun, want %d", one.Deck, one.Unbegun, want[one.Deck])
+		}
+	}
+}
