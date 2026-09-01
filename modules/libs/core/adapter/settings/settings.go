@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -185,6 +186,23 @@ type Indexing struct {
 	// Proofreading is what puts a reading right. Naming nothing here is naming
 	// no proofreader, and a reading is used as it was read.
 	Proofreading proofreading.Config `json:"proofreading"`
+
+	// Transcription is how a recording is listened to: which models hear it,
+	// where they came from, and how the speech in it is found.
+	Transcription transcription.Config `json:"transcription"`
+
+	// TranscribeRecordings is whether a recording the vault holds no transcript
+	// for is listened to without anybody asking. A file leaving it out listens
+	// to them, and a file naming false leaves it to the hand. A vault of a
+	// hundred hours is a day of a machine, and how much of it to spend is the
+	// person's.
+	TranscribeRecordings *bool `json:"transcribe_recordings"`
+}
+
+// Transcribes is whether a recording is listened to without being asked. A
+// section naming nothing listens to them.
+func (i Indexing) Transcribes() bool {
+	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
 }
 
 // Naming is how a note's title and the name of its file are held together.
@@ -284,9 +302,11 @@ func Defaults() Config {
 			PartsUnderANode:     DefaultParts,
 		},
 		Indexing: Indexing{
-			Embedding:    embed.Defaults(),
-			Recognition:  recognition.Defaults(),
-			Proofreading: proofreading.Defaults(),
+			Embedding:            embed.Defaults(),
+			Recognition:          recognition.Defaults(),
+			Proofreading:         proofreading.Defaults(),
+			Transcription:        transcription.Defaults(),
+			TranscribeRecordings: on(),
 		},
 		Agent:  agent.Defaults(),
 		Naming: Naming{SyncTitleAndFilename: on()},

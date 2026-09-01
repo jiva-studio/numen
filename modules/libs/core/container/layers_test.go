@@ -22,7 +22,10 @@ var owed = map[string][]string{
 	// The window assembles what it serves.
 	"adapter/webui": {"container"},
 	// One settings file is the union of every adapter's section.
-	"adapter/settings": {"adapter/agent", "adapter/embed", "adapter/proofreading", "adapter/recognition"},
+	"adapter/settings": {
+		"adapter/agent", "adapter/embed", "adapter/proofreading",
+		"adapter/recognition", "adapter/transcription",
+	},
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is

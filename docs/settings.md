@@ -319,6 +319,46 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 
 The boundary the detector answers with is the text's own outline drawn inside the letters, short by a share of the line's height, and the widening is a flat number of pixels. At 10 the top of every capital and the last letter of every line were cut away. 18 is the middle of where it stops mattering, and it is a setting because it was measured on one book at one resolution — the sweep is in [Performance](performance.md).
 
+## Listening to a recording
+
+`indexing.transcription` is how a recording is listened to. A recording carries no text of its own, so what a model heard is the only text there is: a recording the vault holds no transcript for is listened to without anybody asking, and `indexing.transcribe_recordings` is what stops that. What a transcript is and where it is kept is in [Reading](reading.md).
+
+```json
+{
+  "indexing": {
+    "transcribe_recordings": true,
+    "transcription": {
+      "download": true,
+      "threads": 4,
+      "model": { "name": "parakeet-tdt-0.6b-v3-int8" },
+      "speech": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100 }
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `transcribe_recordings` | whether a recording the vault holds no transcript for is listened to on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
+| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, and then the one the platform holds. |
+| `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
+| `download` | whether what is not on this machine may be fetched. |
+| `threads` | how many threads one model may use. 4. |
+| `model.name` | what the transducer is called in the record kept beside a transcript. |
+| `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
+| `model.encoder`, `model.decoder`, `model.joiner`, `model.tokens` | the files on this machine. A path is used as given; an empty one is the file of that name under `model.from`. |
+| `speech.name` | what the segmenter is called in that same record. Where a stretch of speech is cut is part of what the words are, so it is named beside the model that heard them. |
+| `speech.from`, `speech.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
+| `speech.threshold` | how sure the model has to be that a window carries speech. 0.5. |
+| `speech.silence` | how much quiet, in milliseconds, closes a stretch of speech. 500. |
+| `speech.pad` | how many milliseconds are kept on each side of a stretch. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
+| `speech.longest` | how many milliseconds one stretch may run to. 30000. One stretch is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
+| `speech.shortest` | how many milliseconds a stretch carries to be a stretch at all. 100. |
+
+Reading a scan and listening to a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is heard, and the one waiting says so in the list of what is being done.
+
+Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
+
 ## Putting a reading right
 
 `indexing.proofreading` is what corrects a reading. Naming nothing here names no proofreader: a reading is used exactly as it was read, and nothing asks for a key or a network. What a correction may change, and what refuses one, is in [Reading](reading.md).

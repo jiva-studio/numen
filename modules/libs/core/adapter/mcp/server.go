@@ -62,6 +62,9 @@ type Core struct {
 	// Without them the tools for those documents are not added.
 	Sources   port.SourceQueries
 	Recognise Recognising
+	// Transcribe hears a recording. Without it the tool that asks for one is
+	// served and answers that this installation cannot.
+	Transcribe Transcribing
 	// Derived is where a reading of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores

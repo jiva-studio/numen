@@ -198,6 +198,16 @@ func (r *Recognising) Start(v domain.Vault, path string) bool {
 // read is the work itself: what is missing arrives, and then the document is
 // read.
 func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
+	// One heavy run on a machine: a recording being heard holds the turn, and
+	// this waits for it.
+	turn, err := takeHeavy(ctx, func() {
+		r.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path})
+	})
+	if err != nil {
+		return err
+	}
+	defer turn()
+
 	models, close, err := r.open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.

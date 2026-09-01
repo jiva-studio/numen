@@ -187,7 +187,7 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
 		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
 		"vault_get", "vault_problems", "vault_named",
-		"source_list", "source_read", "source_recognise",
+		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
 }
 

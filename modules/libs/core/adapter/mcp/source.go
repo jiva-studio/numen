@@ -171,6 +171,45 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		}
 		return nil, out{Started: true, Says: says}, nil
 	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "source_transcribe",
+		Title: "Write down what a recording says",
+		Description: "Have a model listen to one recording and write down the words it " +
+			"carries. What has been heard is searchable as it goes, so a search finds " +
+			"the first minutes of a talk long before the last of them are heard. This " +
+			"is slow — about as long as the recording itself. A vault's recordings are " +
+			"listened to on their own where the installation is set to; ask for this " +
+			"when one is wanted now, or when the installation leaves it to the hand.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path string `json:"path" jsonschema:"the recording, as source_list gives it"`
+	}) (*sdk.CallToolResult, struct {
+		Started bool   `json:"started"`
+		Says    string `json:"says"`
+	}, error) {
+		type out = struct {
+			Started bool   `json:"started"`
+			Says    string `json:"says"`
+		}
+		if core.Transcribe == nil {
+			return nil, out{}, fmt.Errorf("this installation cannot hear recordings")
+		}
+
+		// Nothing here happens inside this question. Fetching the models is
+		// minutes and hearing a talk is an hour, and how far either has got is
+		// among everything else the window shows being done.
+		if !core.Transcribe.Start(core.shown().Vault, in.Path) {
+			// Nothing here remembers a request that was not taken.
+			return nil, out{Says: "another recording is being listened to and this one was not " +
+				"taken; nothing is hearing it — ask again once none is being heard"}, nil
+		}
+		says := "started; it runs in the background, and what has been heard is searchable " +
+			"as it goes"
+		if !core.Transcribe.Ready() {
+			says = "started; what is needed to hear recordings is being fetched first"
+		}
+		return nil, out{Started: true, Says: says}, nil
+	})
 }
 
 // Recognising is what the tools need in order to read a document: a way to
@@ -187,5 +226,22 @@ type Recognising interface {
 	// Start begins reading one document behind whoever asked, and says whether
 	// it began. It does not begin a second while one runs, and it runs under
 	// the application rather than under the call that asked for it.
+	Start(v domain.Vault, path string) bool
+}
+
+// Transcribing is what the tools need in order to hear a recording: a way to
+// begin, a way to say how far it has got, and whether it could begin at once.
+//
+// It is an interface so that a server can be built without one, and so that the
+// tools can say "it has started" rather than "there is nothing to listen with".
+type Transcribing interface {
+	// Ready says whether listening could begin now without waiting for anything
+	// to arrive.
+	Ready() bool
+	// Running says whether a recording is being listened to.
+	Running() bool
+	// Start begins listening to one recording behind whoever asked, and says
+	// whether it began. It does not begin a second while one runs, and it runs
+	// under the application rather than under the call that asked for it.
 	Start(v domain.Vault, path string) bool
 }
