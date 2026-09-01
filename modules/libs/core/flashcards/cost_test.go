@@ -1517,3 +1517,44 @@ func TestADaysShowingsAndItsCardFacesAreTwoCounts(t *testing.T) {
 		t.Errorf("the daily load is %v card faces, want %v", got.ReviewsADay, want)
 	}
 }
+
+// An answer carrying no time at all says nothing about how long its kind takes,
+// so the answers that do carry one are the whole of what a cost is read from.
+func TestAnAnswerCarryingNoTimeSaysNothingAboutItsKind(t *testing.T) {
+	by := history.NewFSRS()
+	at := time.Now().Add(-400 * 24 * time.Hour)
+
+	// Twenty-four card faces answered three times each, at nine seconds an
+	// answer. Half the card faces were answered with no time recorded at all.
+	answers := timed(at, 24, 3, func(face, _ int) time.Duration {
+		if face%2 == 0 {
+			return 0
+		}
+		return 9 * time.Second
+	})
+
+	cost := history.Costed(by, answers)
+	if cost.New != 9*time.Second || cost.Review != 9*time.Second {
+		t.Errorf("cost = %+v, want both halves at 9s", cost)
+	}
+}
+
+// A card face begun on any day of the week is learned in the days of review the
+// preset is paced by, so a week carrying a quiet day ripens as slowly as its
+// slowest day and answers the same figure whichever day it is asked on.
+func TestAWeekRipensAsSlowlyAsItsSlowestDay(t *testing.T) {
+	by := history.NewFSRS()
+	p := history.Defaults()
+	p.Rule, p.Interval = history.RuleInterval, 21
+	p.Load = map[time.Weekday]int{time.Saturday: 0, time.Sunday: 0}
+
+	from := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	want := history.Ripens(by, ahead, p, from)
+	for i := 1; i < 7; i++ {
+		on := from.AddDate(0, 0, i)
+		if got := history.Ripens(by, ahead, p, on); got != want {
+			t.Errorf("a week ripens in %d days of review asked on a %s and %d asked on a %s",
+				got, on.Weekday(), want, from.Weekday())
+		}
+	}
+}
