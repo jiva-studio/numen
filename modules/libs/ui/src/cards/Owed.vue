@@ -31,13 +31,16 @@ withDefaults(
 </script>
 
 <template>
+  <!-- A generic element carries no name, so the pill takes a role and is read
+       out while the figure is still coming. -->
   <span
     class="owed"
+    role="status"
     :class="{ 'owed--over': over }"
     :aria-label="waiting === null ? 'still being counted' : undefined"
   >
-    <!-- Two figures wide, which is what a day's cards come to for most
-         collections, and the box keeps the height of the line either way. -->
+    <!-- Narrower than the pill's own least width, so the box is the same width
+         whether the figure has landed or not. -->
     <Coming v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
     <template v-else>{{ waiting }}<template v-if="!bare"> to review</template></template>
   </span>

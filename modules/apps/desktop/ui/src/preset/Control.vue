@@ -515,8 +515,8 @@ const released = (event: KeyboardEvent) => {
           </span>
 
           <span
-            v-for="one in honest ? heights : []"
-            :key="one.text"
+            v-for="(one, at) in honest ? heights : []"
+            :key="at"
             class="control__number"
             :style="one.at"
             >{{ one.text }}</span
@@ -586,8 +586,8 @@ const released = (event: KeyboardEvent) => {
           </div>
 
           <span
-            v-for="one in banded ? backlogHeights : []"
-            :key="one.text"
+            v-for="(one, at) in banded ? backlogHeights : []"
+            :key="at"
             class="control__number"
             :style="one.at"
             >{{ one.text }}</span

@@ -9,7 +9,7 @@
  * where the far one has no room for it, and is brought inside the edge where
  * neither side has. A menu is placed the same way.
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { beside, type Box } from '../placing/place'
 import type { Size } from '../plex/arrange'
@@ -33,10 +33,11 @@ const held = ref<HTMLElement | null>(null)
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
 
+/** The window, measured, and measured again whenever it changes size. */
+const window_ = ref<Size>({ width: window.innerWidth, height: window.innerHeight })
+
 /** The area to stay inside. The browser's, unless a caller measures its own. */
-const room = computed<Size>(
-  () => props.viewport ?? { width: window.innerWidth, height: window.innerHeight },
-)
+const room = computed<Size>(() => props.viewport ?? window_.value)
 
 /**
  * Across, it stands beside the thing it is about. Down, it begins where that
@@ -66,7 +67,17 @@ const measure = () => {
   if (box) size.value = { width: box.width, height: box.height }
 }
 
-onMounted(measure)
+const resized = () => {
+  window_.value = { width: window.innerWidth, height: window.innerHeight }
+  measure()
+}
+
+onMounted(() => {
+  measure()
+  window.addEventListener('resize', resized)
+})
+
+onBeforeUnmount(() => window.removeEventListener('resize', resized))
 
 // Measured again once the drawing has caught up with the thing it is about.
 watch(() => props.at, measure, { flush: 'post' })

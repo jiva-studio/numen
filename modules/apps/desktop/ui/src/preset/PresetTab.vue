@@ -58,15 +58,18 @@ const loads = (day: string, level: number) => {
   chose('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
 }
 
-/** Where the rules were asked for, and nothing while they are not. */
-const asking = ref<Point | null>(null)
+/**
+ * Where the rules were asked for and what asked for them, and nothing while
+ * they are not. What asked takes the focus back when the menu closes.
+ */
+const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
 
 /** The line the row stands on opens the rules under itself. */
 const asks = (event: Event) => {
   const line = event.currentTarget
   if (!(line instanceof HTMLElement)) return
   const box = line.getBoundingClientRect()
-  asking.value = { x: box.left, y: box.bottom }
+  asking.value = { at: { x: box.left, y: box.bottom }, from: line }
 }
 
 const ruled = (said: string) => {
@@ -278,7 +281,9 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
     <Menu
       v-if="asking"
       :items="rules"
-      :at="asking"
+      :at="asking.at"
+      :from="asking.from"
+      :current="settings.learned"
       open
       opening="keyboard"
       :name="words.fieldName('learned')"

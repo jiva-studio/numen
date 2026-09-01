@@ -1448,3 +1448,24 @@ describe('the row a chance of recall is typed into', () => {
     expect(done).toStrictEqual(['types retention 0.9'])
   })
 })
+
+// The rules are a choice between two, and the line that asked for them is where
+// the keyboard comes back to.
+describe('the rules under the learned row', () => {
+  it('marks the rule in force and returns the focus to the line that asked', async () => {
+    // Attached to the page, because taking the focus back is what is measured.
+    const one = standing({}, { learned: 'interval' })
+    const tab = mount(PresetTab, { props: { held: one.held }, attachTo: document.body })
+    const line = tab.get('.preset__choice')
+    await line.trigger('click')
+
+    // The menu is drawn onto the page rather than inside the tab.
+    const items = [...document.querySelectorAll('[role="menuitemradio"]')]
+    expect(items.map((one) => one.getAttribute('aria-checked'))).toStrictEqual(['true', 'false'])
+
+    ;(items[1] as HTMLElement).click()
+    await tab.vm.$nextTick()
+    await tab.vm.$nextTick()
+    expect(document.activeElement).toBe(line.element)
+  })
+})
