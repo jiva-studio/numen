@@ -2,6 +2,7 @@ package flashcards_test
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -61,6 +62,70 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 	}
 	if got := by.Next(flashcards.Schedule{}, when, flashcards.Good).Last; !got.Equal(when) {
 		t.Errorf("answered at %v, recorded at %v", when, got)
+	}
+}
+
+// A scheduler carries nothing from one answer to the next, so one of them
+// answers for many card faces at once and each answer is the answer it would
+// have given on its own.
+//
+// Run under the race detector this is what holds the scheduler to carrying no
+// state: one that wrote anything into itself while working an interval out
+// could not be shared, and a projection of a preset shares one across every
+// place of a curve.
+func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
+	by := flashcards.NewFSRS()
+	when := at("2026-08-29T09:00:00Z")
+
+	// A spread of card faces: one nobody has answered, ones the scheduler is
+	// still putting into memory, and ones it has put into review.
+	cards := []flashcards.Schedule{{}}
+	for _, r := range []flashcards.Rating{flashcards.Again, flashcards.Good, flashcards.Easy} {
+		one := by.Next(flashcards.Schedule{}, when.Add(-30*24*time.Hour), r)
+		cards = append(cards, one, by.Next(one, one.Due, flashcards.Good))
+	}
+
+	alone := make([]flashcards.Schedule, len(cards))
+	good := make([]flashcards.Schedule, len(cards))
+	again := make([]flashcards.Schedule, len(cards))
+	for i, c := range cards {
+		alone[i] = by.Next(c, when, flashcards.Good)
+		good[i], again[i] = by.Endings(c, when)
+	}
+
+	// Every asking writes its own answer down, so what the detector sees is the
+	// scheduler being shared and nothing this test does with the answers.
+	const rounds = 8
+	at := make([][]flashcards.Schedule, rounds)
+	ends := make([][]flashcards.Schedule, rounds)
+	fell := make([][]flashcards.Schedule, rounds)
+	var together sync.WaitGroup
+	for round := range rounds {
+		at[round] = make([]flashcards.Schedule, len(cards))
+		ends[round] = make([]flashcards.Schedule, len(cards))
+		fell[round] = make([]flashcards.Schedule, len(cards))
+		for i, c := range cards {
+			together.Add(1)
+			go func() {
+				defer together.Done()
+				at[round][i] = by.Next(c, when, flashcards.Good)
+				ends[round][i], fell[round][i] = by.Endings(c, when)
+			}()
+		}
+	}
+	together.Wait()
+
+	for round := range rounds {
+		for i := range cards {
+			if at[round][i] != alone[i] {
+				t.Errorf("card face %d answered %v at once and %v alone",
+					i, at[round][i], alone[i])
+			}
+			if ends[round][i] != good[i] || fell[round][i] != again[i] {
+				t.Errorf("card face %d ends %v and %v at once, %v and %v alone",
+					i, ends[round][i], fell[round][i], good[i], again[i])
+			}
+		}
 	}
 }
 

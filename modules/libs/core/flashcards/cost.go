@@ -185,7 +185,7 @@ func NewFSRSAt(retention float64) FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
 	p.RequestRetention = math.Min(math.Max(retention, RetentionBounds.Least), RetentionBounds.Most)
-	return FSRS{engine: fsrs.NewFSRS(p), name: FSRSName + "." + weighed(p)}
+	return FSRS{p: p, name: FSRSName + "." + weighed(p)}
 }
 
 // Projection is what a preset comes to over the days ahead.

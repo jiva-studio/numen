@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"time"
 
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
@@ -17,9 +18,13 @@ const FSRSName = "fsrs-5"
 
 // FSRS spaces a card by how well it came back, carrying two numbers between
 // answers: how long the card is expected to stay recalled, and how hard it is.
+//
+// The parameters are the library's and the arithmetic over them is here, so a
+// scheduler carries no state between answers and one may be asked about many
+// card faces at once.
 type FSRS struct {
-	engine *fsrs.FSRS
-	name   string
+	p    fsrs.Parameters
+	name string
 }
 
 // NewFSRS is the scheduler on its published parameters.
@@ -31,7 +36,7 @@ type FSRS struct {
 func NewFSRS() FSRS {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
-	return FSRS{engine: fsrs.NewFSRS(p), name: FSRSName + "." + weighed(p)}
+	return FSRS{p: p, name: FSRSName + "." + weighed(p)}
 }
 
 func (f FSRS) Name() string { return f.name }
@@ -50,52 +55,215 @@ func (FSRS) Spaced(s Schedule) bool {
 	return s.Seen() && fsrs.State(s.Phase) == fsrs.Review
 }
 
+// Next is where an answer leaves a schedule.
 func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
-	return left(f.engine.Next(carded(s), at, fsrs.Rating(r)).Card)
+	one := f.opens(s, at)
+	switch one.phase {
+	case fsrs.New:
+		return f.begun(one, at, fsrs.Rating(r))
+	case fsrs.Review:
+		return f.reviewed(one, at, f.recalled(one), fsrs.Rating(r))
+	default:
+		return f.learning(one, at, fsrs.Rating(r))
+	}
 }
 
 // Endings is where the two endings leave a card face.
 //
-// A card face this scheduler has put into review is settled at every rating in
-// one reckoning of it, so both endings are asked for together. One it is still
-// putting into memory is settled a rating at a time, and is asked a rating at a
-// time.
+// A card face this scheduler has put into review is settled at every rating by
+// one reckoning of how likely it was to come back, so both endings are worked
+// out from that one reckoning.
 func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
-	card := carded(s)
-	if !f.Spaced(s) {
-		return left(f.engine.Next(card, at, fsrs.Good).Card),
-			left(f.engine.Next(card, at, fsrs.Again).Card)
-	}
-	both := f.engine.Repeat(card, at)
-	return left(both[fsrs.Good].Card), left(both[fsrs.Again].Card)
-}
-
-// carded is a schedule as the library reads a card. One nobody has answered is
-// the card that library opens with.
-func carded(s Schedule) fsrs.Card {
-	if !s.Seen() {
-		return fsrs.NewCard()
-	}
-	return fsrs.Card{
-		Due:        s.Due,
-		Stability:  s.Stability,
-		Difficulty: s.Difficulty,
-		Reps:       uint64(s.Reps),
-		Lapses:     uint64(s.Lapses),
-		State:      fsrs.State(s.Phase),
-		LastReview: s.Last,
+	one := f.opens(s, at)
+	switch one.phase {
+	case fsrs.New:
+		return f.begun(one, at, fsrs.Good), f.begun(one, at, fsrs.Again)
+	case fsrs.Review:
+		back := f.recalled(one)
+		return f.reviewed(one, at, back, fsrs.Good), f.reviewed(one, at, back, fsrs.Again)
+	default:
+		return f.learning(one, at, fsrs.Good), f.learning(one, at, fsrs.Again)
 	}
 }
 
-// left is where the library's card stands, as a schedule.
-func left(c fsrs.Card) Schedule {
-	return Schedule{
-		Due:        c.Due,
-		Last:       c.LastReview,
-		Reps:       int(c.Reps),
-		Lapses:     int(c.Lapses),
-		Stability:  c.Stability,
-		Difficulty: c.Difficulty,
-		Phase:      uint8(c.State),
+// opened is a card face at the instant it is answered: the phase the answer
+// finds it in, how many whole days it stood away, and where the answer leaves
+// what no rating decides.
+type opened struct {
+	phase fsrs.State
+	// away is how many whole days the card face stood away, and is none for one
+	// nobody has answered.
+	away float64
+	// last is where the card face stood before the answer, and out is where the
+	// answer leaves it but for what the rating decides.
+	last Schedule
+	out  Schedule
+}
+
+// opens reads a card face at the instant it is answered. One nobody has
+// answered opens at the phase the scheduler begins a card in, at no stability
+// and no difficulty.
+func (f FSRS) opens(s Schedule, at time.Time) opened {
+	one := opened{phase: fsrs.New}
+	if s.Seen() {
+		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
+	// The days away are counted as a whole number without a sign. A card face
+	// answered before the answer it already carries stands as far away as that
+	// count carries it, and comes back to nobody.
+	if one.phase != fsrs.New {
+		one.away = float64(uint64(math.Floor(at.Sub(one.last.Last).Hours() / 24)))
+	}
+	one.out = one.last
+	one.out.Last = at
+	one.out.Reps = one.last.Reps + 1
+	return one
+}
+
+// begun is where an answer leaves a card face nobody had answered. Three of the
+// four put it into memory over minutes, and the fourth sends it away in days.
+func (f FSRS) begun(one opened, at time.Time, r fsrs.Rating) Schedule {
+	out := one.out
+	out.Difficulty = f.first(r)
+	out.Stability = math.Max(f.p.W[r-1], 0.1)
+	out.Phase = uint8(fsrs.Learning)
+	switch r {
+	case fsrs.Again:
+		out.Due = at.Add(1 * time.Minute)
+	case fsrs.Hard:
+		out.Due = at.Add(5 * time.Minute)
+	case fsrs.Good:
+		out.Due = at.Add(10 * time.Minute)
+	case fsrs.Easy:
+		out.Due = at.Add(days(f.away(out.Stability)))
+		out.Phase = uint8(fsrs.Review)
+	}
+	return out
+}
+
+// learning is where an answer leaves a card face the scheduler is still putting
+// into memory. The two lower ratings leave it where it was and ask again in
+// minutes; the two higher send it away in days and put it into review.
+func (f FSRS) learning(one opened, at time.Time, r fsrs.Rating) Schedule {
+	out := one.out
+	out.Difficulty = f.harder(one.last.Difficulty, r)
+	out.Stability = f.shortly(one.last.Stability, r)
+	switch r {
+	case fsrs.Again:
+		out.Due = at.Add(5 * time.Minute)
+	case fsrs.Hard:
+		out.Due = at.Add(10 * time.Minute)
+	case fsrs.Good:
+		out.Due = at.Add(days(f.away(out.Stability)))
+		out.Phase = uint8(fsrs.Review)
+	case fsrs.Easy:
+		good := f.away(f.shortly(one.last.Stability, fsrs.Good))
+		out.Due = at.Add(days(math.Max(f.away(out.Stability), good+1)))
+		out.Phase = uint8(fsrs.Review)
+	}
+	return out
+}
+
+// reviewed is where an answer leaves a card face the scheduler has put into
+// review, worked out from how likely it was to come back. The ending it did not
+// come back on is a lapse and is asked again in minutes.
+//
+// Each interval is held past the one below it, so the day an answer names is
+// worked out from the endings under it and not from its own stability alone.
+func (f FSRS) reviewed(one opened, at time.Time, back float64, r fsrs.Rating) Schedule {
+	d, s := one.last.Difficulty, one.last.Stability
+	out := one.out
+	out.Difficulty = f.harder(d, r)
+	if r == fsrs.Again {
+		out.Stability = math.Min(s/math.Exp(f.p.W[17]*f.p.W[18]), f.forgotten(d, s, back))
+		out.Lapses = one.last.Lapses + 1
+		out.Phase = uint8(fsrs.Relearning)
+		out.Due = at.Add(5 * time.Minute)
+		return out
+	}
+
+	out.Stability = f.kept(d, s, back, r)
+	out.Phase = uint8(fsrs.Review)
+	hard := math.Min(f.away(f.kept(d, s, back, fsrs.Hard)), f.away(f.kept(d, s, back, fsrs.Good)))
+	good := math.Max(f.away(f.kept(d, s, back, fsrs.Good)), hard+1)
+	switch r {
+	case fsrs.Hard:
+		out.Due = at.Add(days(hard))
+	case fsrs.Easy:
+		out.Due = at.Add(days(math.Max(f.away(out.Stability), good+1)))
+	default:
+		out.Due = at.Add(days(good))
+	}
+	return out
+}
+
+// recalled is how likely a card face was to come back at the instant it was
+// answered, on the scheduler's own forgetting curve.
+func (f FSRS) recalled(one opened) float64 {
+	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
+}
+
+// away is how many days an answer sends a card face standing at this stability
+// away for, at the share of the cards this scheduler asks to bring back.
+//
+// The parameters carry no fuzz, so the interval is the number this arithmetic
+// gives, and a card face answered the same way is sent away for the same day at
+// every launch.
+func (f FSRS) away(stability float64) float64 {
+	out := stability / f.p.Factor * (math.Pow(f.p.RequestRetention, 1/f.p.Decay) - 1)
+	return math.Max(math.Min(math.Round(out), f.p.MaximumInterval), 1)
+}
+
+// first is the difficulty a card face is opened at by the answer that begins it.
+func (f FSRS) first(r fsrs.Rating) float64 {
+	return held(f.p.W[4] - math.Exp(f.p.W[5]*float64(r-1)) + 1)
+}
+
+// harder is where an answer leaves a difficulty, pulled back towards the
+// difficulty an easy answer opens a card face at.
+func (f FSRS) harder(d float64, r fsrs.Rating) float64 {
+	delta := -f.p.W[6] * float64(r-3)
+	next := d + (10.0-d)*delta/9.0
+	return held(f.p.W[7]*f.first(fsrs.Easy) + (1-f.p.W[7])*next)
+}
+
+// shortly is where an answer leaves the stability of a card face the scheduler
+// is still putting into memory.
+func (f FSRS) shortly(s float64, r fsrs.Rating) float64 {
+	return s * math.Exp(f.p.W[17]*(float64(r-3)+f.p.W[18]))
+}
+
+// kept is where an answer the card face came back on leaves its stability. The
+// two ratings either side of a good answer carry a weight of their own.
+func (f FSRS) kept(d, s, back float64, r fsrs.Rating) float64 {
+	hard, easy := 1.0, 1.0
+	if r == fsrs.Hard {
+		hard = f.p.W[15]
+	}
+	if r == fsrs.Easy {
+		easy = f.p.W[16]
+	}
+	return s * (1 + math.Exp(f.p.W[8])*
+		(11-d)*
+		math.Pow(s, -f.p.W[9])*
+		(math.Exp((1-back)*f.p.W[10])-1)*
+		hard*
+		easy)
+}
+
+// forgotten is where an answer the card face did not come back on leaves its
+// stability.
+func (f FSRS) forgotten(d, s, back float64) float64 {
+	return f.p.W[11] *
+		math.Pow(d, -f.p.W[12]) *
+		(math.Pow(s+1, f.p.W[13]) - 1) *
+		math.Exp((1-back)*f.p.W[14])
+}
+
+// held keeps a difficulty inside the scale it is read on.
+func held(d float64) float64 { return math.Min(math.Max(d, 1), 10) }
+
+// days is a whole number of days as a length of time.
+func days(one float64) time.Duration {
+	return time.Duration(one) * 24 * time.Hour
 }
