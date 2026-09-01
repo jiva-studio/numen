@@ -739,13 +739,38 @@ Both columns are the median of two runs of three on an idle machine, where the t
 
 **Three of the four are gone.** A card face is filed under the day of review its schedule falls in, so a day takes what fell in it: what the day before did not reach and what falls due in this one, put into one run in the order the debt fell, and the material behind them is never looked at. What the day left standing is then what fell due in it less what it reached, which is a subtraction. What stands learned under a rule of an interval is a fact about a card face's schedule, so the count is carried from day to day and asked again only of the card faces the day answered; under a rule of a chance of recall it is a fact about the instant, and is read off the same number as the share that comes back.
 
-**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises rather than a faster way to keep it, and it is not made here.
+**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises rather than a faster way to keep it, and it is the section below.
 
 **Both endings of an answer come from one reckoning of the card.** A projection weighs the ending where the card came back against the ending where it did not, and asked the scheduler for each of them separately. A card face the scheduler has put into review is settled at every rating in one working out, so the two are asked for together and the second costs nothing. A card face it is still putting into memory is settled a rating at a time and is asked a rating at a time: asking for all four there costs more than it saves, and measured 5.40 GB against 4.86 GB at twenty thousand card faces.
 
 **What is left is the scheduler's own arithmetic.** `Simulation.Run` is 97 % of the request, and half of that is the answers themselves. Nine tenths of what a request allocates is allocated inside that call by the scheduling library, which builds a table of every rating for every card it is asked about.
 
 **What does not change over the twenty-five places was left where it stands.** The order the card faces are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and a reading handed in from outside is a second path to an answer there is one path to.
+
+## What a projection is asked to answer for
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
+
+| card faces | Before | After |
+| --- | --- | --- |
+| 500 | 0.29 s · 145 MB | 0.23 s · 145 MB |
+| 5 000 | 2.59 s · 1.29 GB | 2.30 s · 1.29 GB |
+| 20 000 | 9.5 s · 4.86 GB | 6.6 s · 4.86 GB |
+| 50 000 | 24.4 s · 11.68 GB | 15.5 s · 11.68 GB |
+
+Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on**, which is the other way round from every row above: what is taken off is arithmetic over a slice that is already there, so it allocates nothing, and the memory of every row moved by under a hundredth of a per cent — 92.17 million allocations at fifty thousand card faces either way.
+
+The two runs of a row landed within 8 % of each other on the clock, and the last two rows within 1 %. Those two are what this table rests on; the 5 000 row's two runs after the change are a fifth apart, and it is the row that says least.
+
+**A projection is asked which days it must answer for.** A run is given the days whose returning share it works out, and the projection holds a share under those days and under no other. A day nobody named is answered as a day the run does not answer for, and there is no number to read off it.
+
+**A curve names one day a run**, which is the day the place is read on: the last day of the horizon under a goal of minutes or of retention, and the day the place stands for under a goal of a date. The twenty-five second runs that ask when the material is learned name no day at all. Fifty-one runs of ninety days were filling four and a half thousand days of it; they now fill twenty-five.
+
+**What the days that are asked for come to is unmoved.** The projections written down over four materials and eight settings — every scalar and every series, day by day — are byte-identical, their runs asking for every day of themselves.
+
+**Where a card face counts as learned by a chance of recall, the walk stands.** That count is a fact about the instant and is read off the same numbers as the share, so such a day goes over the whole material whether the share was asked for or not. The saving is a preset counting by an interval, where the count is carried from day to day and the walk is made only on a day that was named.
+
+**What is left is the scheduler's own arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 96 % of the request and the reckoning that closes a day is 0.2 % of it. That is the pass that was 32 %.
 
 ## What a window asks of every vault
 
