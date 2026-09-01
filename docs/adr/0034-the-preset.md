@@ -45,7 +45,7 @@ Keys are the application's, in the spelling `numen.json` already uses. A key the
 
 A deck names its preset with an entry of its `links:` block carrying `type: preset`. `type` is an open vocabulary in that block, so nothing about the note format changes.
 
-Several decks pointing at one preset is what sharing it looks like. Scheduling a deck differently is repointing one link. **A deck naming no preset is scheduled by the defaults**, and a deck naming a note that is not a preset is a problem against the deck.
+Several decks pointing at one preset is what sharing it looks like. Scheduling a deck differently is repointing one link, and the deck's own tab is where a person picks the preset from the ones the vault holds. **A deck naming no preset is scheduled by the defaults**, and a deck naming a note that is not a preset is a problem against the deck.
 
 ### The goal names the budget, and nothing else closes the day
 

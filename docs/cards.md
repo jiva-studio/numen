@@ -251,6 +251,8 @@ links:
 ---
 ```
 
+A deck's tab reads which preset schedules it, and offers the defaults and every preset the vault holds. Choosing one repoints that entry; choosing the defaults removes it, and removes the `links:` key with it where the block held nothing else.
+
 | | |
 | --- | --- |
 | `goal` | which value the one control steers: `minutes_a_day`, `retention` or `by_date`. The value stands under the key it names. |
@@ -270,6 +272,8 @@ Several decks pointing at one preset is what sharing it looks like, and scheduli
 
 Each preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Inside one preset, the budget its `goal` names is what closes the day: the minutes under `minutes_a_day`, the two card counts under `retention`, and under `by_date` what has to be got through to have the material learned by that day. A setting the goal does not name keeps its value and takes no part until its own goal is chosen again.
 
+**A day names every budget that closed it.** Under `retention` the day is held to its new cards and to its reviews at once, and a day that hands over the whole of each has been closed by each. A person told only one of them raises that one and finds the day unchanged, so both are said.
+
 `learned` is what the preset counts as a card learned, and the value it reads stands under the key it names. Under `interval` a card is learned once the interval it is sent away for reaches `interval` days; under `retention` it is learned once the chance of recalling it today is at or above `retention`. The rule not named keeps its value and takes no part until it is chosen again, and a preset naming no rule at all counts by `interval` at 21 days. Learned is a state and not a milestone: both rules are asked of where the card stands now, and a lapse takes a card back out of that standing under either of them. How many cards stand learned today is answered by the rule in force. How long until all of them are is a prediction made under a stated assumption: the soonest the material could be learned, read off the run in which nothing is forgotten. It is what the deck could reach and not a forecast of what will happen. It stands beside a goal of `minutes_a_day` and a goal of `retention`, and is absent under `by_date`, whose day is the answer already; and it is asked only under `learned: interval`, since a chance of recall is a level a deck stands at and names no such day. Over the range of a `retention` goal it falls away and steps up wherever another review is wanted — the day a card passes an interval is the reviews it takes times the space between them, and a review is a whole number. Every value of it is right where it is asked, and a step is that arithmetic and not a fault.
 
 A goal of `by_date` aims at that same rule on the day it names, so the pace begins a card early enough to learn it by then: three weeks before the day under an interval of three weeks, and on the day itself under a chance of recall. Where a card cannot get there whatever the pace — a card added a fortnight before a day it must stand three weeks away from — the picture says how many card faces fall short. The day is not moved and the rule is not bent; the pace shown beside that number gets there every card that can. The day named is the answer, so no second day is offered beside it, and past that day the preset schedules nothing: what a projection shows there is a deck nobody is answering, with the debt climbing and what was learned fading.
@@ -281,6 +285,8 @@ A goal of `by_date` aims at that same rule on the day it names, so the pace begi
 A preset whose goal is `by_date` moves no card, whatever `even_load` holds. The pace is what spreads that material over the days to the day named, and the days it has are the days it needs.
 
 **No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere — and a preset aiming at a day and naming none is paused from the start, because the budget its goal names is the day.
+
+**What a preset schedules is one answer, worked out where the cards are handed out.** The reasons are a closed list — no minutes a day, no cards a day, a date with no day, a date behind us — and an interface asking is given one of them and puts it into words. A day of the week at none of the load stands apart from all four: it is a fact about that one day, and a preset with a quiet Sunday has not stopped.
 
 The hour a day of review begins at is not here: it is a fact about a person's clock, and it is in [Settings](settings.md).
 
