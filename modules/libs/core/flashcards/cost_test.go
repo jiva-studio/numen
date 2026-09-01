@@ -45,6 +45,16 @@ func ran(
 	return out
 }
 
+// everyDay is every day of a run, as the days a run answers the returning share
+// for.
+func everyDay(days int) []int {
+	out := make([]int, days)
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
 // learned is a vault of card faces answered a few times each, which leaves them
 // at stabilities of days and weeks.
 func learned(by history.Scheduler, at time.Time, faces int) map[history.CardFace]history.Schedule {
@@ -1047,10 +1057,12 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 	p.NewADay, p.ReviewsADay = 40, 4000
 	run := history.Simulation{
 		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 30,
+		Retains: everyDay(30),
 	}
 	got := ran(t, run, now, p, at, 40)
 
-	for day, one := range got.Retained {
+	for _, day := range got.Retained.Days() {
+		one, _ := got.Retained.On(day)
 		if math.IsNaN(one) || one < 0 || one > 1 {
 			t.Fatalf("day %d leaves %v of the material in the head", day, one)
 		}
@@ -1107,7 +1119,9 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	p := history.Preset{
 		Goal: history.GoalRetention, ReviewsADay: 9999, NewADay: 0, MinutesADay: 0,
 	}
-	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 1}
+	run := history.Simulation{
+		By: by, Day: ahead, Cost: history.DefaultCost, Days: 1, Retains: []int{0},
+	}
 
 	kept := run
 	kept.Recalls = history.NothingForgotten
@@ -1118,18 +1132,19 @@ func TestWhatAProjectionAssumesAboutRecallIsAnInputToTheRun(t *testing.T) {
 	if modelled.Answered != nothing.Answered || modelled.Answered == 0 {
 		t.Fatalf("the two runs answered %d and %d", modelled.Answered, nothing.Answered)
 	}
-	if nothing.Retained[0] <= modelled.Retained[0] {
+	forgot, _ := nothing.Retained.On(0)
+	middle, _ := modelled.Retained.On(0)
+	if forgot <= middle {
 		t.Errorf("assuming nothing is forgotten leaves %v of the material in the head, "+
-			"and following the middle of what a card may do leaves %v",
-			nothing.Retained[0], modelled.Retained[0])
+			"and following the middle of what a card may do leaves %v", forgot, middle)
 	}
 
 	// A run told what the model says is the run told nothing.
 	said := run
 	said.Recalls = history.AsModelled
-	if got := ran(t, said, now, p, at, 0); got.Retained[0] != modelled.Retained[0] {
+	if got, _ := ran(t, said, now, p, at, 0).Retained.On(0); got != middle {
 		t.Errorf("told what the model says the run retained %v, and told nothing %v",
-			got.Retained[0], modelled.Retained[0])
+			got, middle)
 	}
 }
 

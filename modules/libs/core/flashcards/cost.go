@@ -3,6 +3,7 @@ package flashcards
 import (
 	"cmp"
 	"context"
+	"maps"
 	"math"
 	"slices"
 	"time"
@@ -199,9 +200,9 @@ type Projection struct {
 	// admitted.
 	ReviewsADay float64
 	MinutesADay float64
-	// Retained is the share of the material that comes back at the end of each
-	// day projected.
-	Retained []float64
+	// Retained is the share of the material that comes back, on the days the run
+	// was asked to answer for.
+	Retained Kept
 	// Answered is how many answers were given over the days projected.
 	Answered int
 	// Faces is the material: every card face the preset schedules. Seen is how
@@ -252,6 +253,30 @@ type Projection struct {
 	// projected, under the rule the preset names. Getting through the material
 	// is learning it, and there is no second reckoning of it.
 	Through []float64
+}
+
+// Kept is the share of the material that comes back at the end of a day, on the
+// days a run was asked to answer for. A day it was not asked for holds no share,
+// and On says so.
+type Kept struct{ on map[int]float64 }
+
+// On is the share of the material that came back at the end of this day of the
+// run, counting the day the run opens as none, and whether the run answers for
+// that day.
+func (k Kept) On(day int) (float64, bool) {
+	share, answers := k.on[day]
+	return share, answers
+}
+
+// Days is every day this answers for, in order.
+func (k Kept) Days() []int { return slices.Sorted(maps.Keys(k.on)) }
+
+// holds the share one day came to.
+func (k *Kept) holds(day int, share float64) {
+	if k.on == nil {
+		k.on = make(map[int]float64)
+	}
+	k.on[day] = share
 }
 
 // NeverClears is a pace that leaves something overdue on every day projected.
@@ -392,6 +417,13 @@ type Simulation struct {
 	Cost Cost
 	// Days is how far ahead it runs, and runs Ahead days when it is zero.
 	Days int
+	// Retains is the days of the run whose returning share it works out, counting
+	// the day it opens as none. A day nobody names is not worked out, and the
+	// projection answers for none of it.
+	//
+	// The share is a pass over every card face the preset holds, and it is the
+	// one thing a day counts over the whole material.
+	Retains []int
 	// Recalls is what this run assumes about coming back. A run holding none
 	// reads AsModelled.
 	Recalls Recalling
@@ -399,6 +431,15 @@ type Simulation struct {
 	// preset. The first day of a run is a real day a person may be halfway
 	// through, and what it has left is what a sitting opened now would offer.
 	Spent Spent
+}
+
+// Covers is how many days this run walks, counting the day it opens as the
+// first. A run told nothing walks Ahead of them.
+func (s Simulation) Covers() int {
+	if s.Days <= 0 {
+		return Ahead
+	}
+	return s.Days
 }
 
 // Run projects the card faces forward from now.
@@ -413,9 +454,13 @@ type Simulation struct {
 func (s Simulation) Run(
 	ctx context.Context, now time.Time, p Preset, at map[CardFace]Schedule, unseen int,
 ) (Projection, error) {
-	days := s.Days
-	if days <= 0 {
-		days = Ahead
+	days := s.Covers()
+	// The days this run answers the returning share for.
+	answers := make(map[int]bool, len(s.Retains))
+	for _, day := range s.Retains {
+		if day >= 0 && day < days {
+			answers[day] = true
+		}
 	}
 
 	// The map hands its schedules over in whatever order it holds them, and a
@@ -583,7 +628,7 @@ func (s Simulation) Run(
 		// How much of the material stands learned at the close of the day, which
 		// is how far through it the day leaves a person, and how much of it
 		// comes back at that hour.
-		stands, back := reckoned.closes(cards, ends, out.Faces)
+		stands, back := reckoned.closes(cards, ends, out.Faces, answers[today])
 		out.Through = append(out.Through, through(stands, out.Faces))
 		if out.Learns == NeverLearns && stands == out.Faces {
 			out.Learns = len(out.Load)
@@ -596,7 +641,9 @@ func (s Simulation) Run(
 		if out.Clears == NeverClears && standing == 0 {
 			out.Clears = len(out.Load)
 		}
-		out.Retained = append(out.Retained, back)
+		if answers[today] {
+			out.Retained.holds(today, back)
+		}
 		open = ends
 	}
 
@@ -696,27 +743,36 @@ func (r *reckoning) begun(c Schedule, at time.Time) {
 	}
 }
 
-// closes is how many card faces stand learned at this instant and what share of
-// the material comes back at it. A card face nobody has begun comes back to
-// nobody, and counts in the material.
-func (r *reckoning) closes(cards []Schedule, at time.Time, faces int) (int, float64) {
-	if faces == 0 {
-		return r.count, 0
-	}
-	back := 0.0
+// closes is how many card faces stand learned at this instant, and what share of
+// the material comes back at it where the day is one the run answers for. A card
+// face nobody has begun comes back to nobody, and counts in the material.
+//
+// A carried count is a fact about a card face's schedule, so the walk over the
+// whole material is made on the days the share is wanted. A count read off the
+// chance of recall is the same walk, and the share falls out of it.
+func (r *reckoning) closes(
+	cards []Schedule, at time.Time, faces int, wanted bool,
+) (int, float64) {
 	if r.carried {
+		if !wanted || faces == 0 {
+			return r.count, 0
+		}
+		back := 0.0
 		for _, c := range cards {
 			back += Recall(at.Sub(c.Last), c.Stability)
 		}
 		return r.count, back / float64(faces)
 	}
-	stands := 0
+	stands, back := 0, 0.0
 	for _, c := range cards {
 		one := Recall(at.Sub(c.Last), c.Stability)
 		back += one
 		if c.Seen() && one >= r.target {
 			stands++
 		}
+	}
+	if faces == 0 {
+		return stands, 0
 	}
 	return stands, back / float64(faces)
 }

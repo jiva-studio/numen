@@ -73,7 +73,7 @@ func projections(t *testing.T) string {
 	for _, m := range goldenMaterials(by) {
 		for _, p := range goldenPresets() {
 			run := history.Simulation{
-				By: by, Day: goldenDay, Days: 60,
+				By: by, Day: goldenDay, Days: 60, Retains: goldenDays(60),
 				Cost: history.Cost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: history.Spent{
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
@@ -102,6 +102,17 @@ func projections(t *testing.T) string {
 	return out.String()
 }
 
+// goldenDays is every day of a run, which is what the projections are asked to
+// answer the returning share for: what this file writes down is the whole of
+// what a run can say.
+func goldenDays(days int) []int {
+	out := make([]int, days)
+	for i := range out {
+		out[i] = i
+	}
+	return out
+}
+
 // written puts one projection down, every scalar and every series of it.
 func written(out *strings.Builder, p history.Projection) {
 	fmt.Fprintf(out, "days %d faces %d seen %d owed %d clears %d learned %d learns %d short %d\n",
@@ -114,7 +125,18 @@ func written(out *strings.Builder, p history.Projection) {
 	fmt.Fprintf(out, "admitted %s\n", admitted(p.Admitted))
 	fmt.Fprintf(out, "closed %s\n", closed(p.Closed))
 	fmt.Fprintf(out, "through %s\n", shares(p.Through))
-	fmt.Fprintf(out, "retained %s\n", shares(p.Retained))
+	fmt.Fprintf(out, "retained %s\n", shares(kept(p.Retained)))
+}
+
+// kept is the share that came back on each day the run answers for, in order.
+func kept(one history.Kept) []float64 {
+	days := one.Days()
+	out := make([]float64, 0, len(days))
+	for _, day := range days {
+		share, _ := one.On(day)
+		out = append(out, share)
+	}
+	return out
 }
 
 func numbers(one []int) string {

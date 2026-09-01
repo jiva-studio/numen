@@ -7,6 +7,53 @@ import (
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 )
 
+// A projection answers the returning share for the days it was asked for, and
+// holds no number under any other day.
+//
+// The share is the one pass a day makes over the whole material, and a day
+// nobody asked about is a day it is not worked out on. What the days that were
+// asked for come to does not stand on which of them were.
+func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 40)
+
+	// Both rules: one carries the count from day to day and walks the material
+	// only where the share is wanted, and the other walks it every day.
+	interval, recall := history.Defaults(), history.Defaults()
+	recall.Rule, recall.Retention = history.RuleRetention, 0.9
+	for name, p := range map[string]history.Preset{
+		"an interval": interval, "a chance of recall": recall,
+	} {
+		run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 10}
+		whole := run
+		whole.Retains = everyDay(10)
+		run.Retains = []int{2, 7}
+
+		some, all := ran(t, run, now, p, at, 5), ran(t, whole, now, p, at, 5)
+		if days := some.Retained.Days(); len(days) != 2 || days[0] != 2 || days[1] != 7 {
+			t.Errorf("under %s a run asked for days 2 and 7 answers for %v", name, days)
+		}
+		for day := range 10 {
+			share, answers := some.Retained.On(day)
+			if answers != (day == 2 || day == 7) {
+				t.Errorf("under %s day %d answers %v with %v", name, day, answers, share)
+			}
+			if !answers {
+				continue
+			}
+			if want, _ := all.Retained.On(day); share != want {
+				t.Errorf("under %s day %d leaves %v of the material in the head, and a run "+
+					"asked for every day leaves %v", name, day, share, want)
+			}
+		}
+		// A day outside the run is a day it never covered.
+		if share, answers := some.Retained.On(10); answers {
+			t.Errorf("under %s a run of ten days answers for day 10 with %v", name, share)
+		}
+	}
+}
+
 // A preset scheduling nothing answers nothing inside a projection, whatever
 // room the budgets it is not steered by would have left.
 //
@@ -136,7 +183,9 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	fourth, fourthAt := standing("fourth", 101, -2)
 	fifth, fifthAt := standing("fifth", 102, -1)
 
-	run := history.Simulation{By: history.NewFSRS(), Day: day, Cost: history.DefaultCost, Days: 1}
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: day, Cost: history.DefaultCost, Days: 1, Retains: []int{0},
+	}
 	p := history.Preset{Goal: history.GoalRetention, ReviewsADay: 2}
 
 	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{
@@ -160,9 +209,11 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 		t.Fatalf("the day owed the two oldest answered %d and left %d standing",
 			want.Load[0], want.Backlog[0])
 	}
-	if got.Retained[0] != want.Retained[0] {
+	one, _ := got.Retained.On(0)
+	other, _ := want.Retained.On(0)
+	if one != other {
 		t.Errorf("the day left %v of the material in the head, and answering the two oldest leaves %v",
-			got.Retained[0], want.Retained[0])
+			one, other)
 	}
 }
 

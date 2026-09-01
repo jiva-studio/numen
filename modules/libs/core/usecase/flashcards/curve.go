@@ -337,6 +337,9 @@ func (u Curves) minutes(
 	// The day the preset keeps is a place of the grid, so what is drawn under
 	// the mark is drawn for the setting the person is standing at.
 	standing(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
+	// A place is read on the last day of its run, and that is the day the run
+	// works the returning share out on.
+	run.Retains = []int{run.Covers() - 1}
 	for _, minutes := range out.Grid {
 		one := p
 		one.MinutesADay = int(minutes)
@@ -388,6 +391,9 @@ func (u Curves) retention(
 	// no setting displaces them.
 	standing(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
+	// A place is read on the last day of its run, and that is the day the run
+	// works the returning share out on.
+	run.Retains = []int{run.Covers() - 1}
 	for _, share := range out.Grid {
 		one, asks := p, run
 		one.Retention = share
@@ -463,10 +469,14 @@ func (u Curves) date(
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
 		asks.Days = max(day+1, history.Ahead)
+		// A place of this range is read on the day it names, and that is the day
+		// the run works the returning share out on.
+		asks.Retains = []int{day}
 		ran, err := asks.Run(ctx, now, aiming, at, unseen)
 		if err != nil {
 			return Curve{}, err
 		}
+		back, _ := ran.Retained.On(day)
 		// A day at none of the load is no sitting at all, so what a day of
 		// review holds is read off the first day this run admits.
 		opening, sitting := ran.Sitting()
@@ -480,7 +490,7 @@ func (u Curves) date(
 			// the preset schedules nothing, so a debt read off the end of the
 			// horizon is a debt nobody was asked to pay.
 			Owed:     ran.Backlog[day],
-			Retained: ran.Retained[day],
+			Retained: back,
 			Through:  ran.Through[day],
 			Enough:   reached(ran, day, ran.Short),
 			Met:      reached(ran, day, ran.Short),
@@ -543,6 +553,8 @@ func learnt(
 	at map[history.CardFace]history.Schedule, unseen int,
 ) (int, error) {
 	run.Recalls = history.NothingForgotten
+	// The day the material is learned is all this run is read for.
+	run.Retains = nil
 	ran, err := run.Run(ctx, now, p, at, unseen)
 	if err != nil {
 		return 0, err
@@ -566,10 +578,13 @@ func reached(p history.Projection, day, short int) bool {
 // point is a projection as one place of a curve, at the load it carries over
 // the days the preset admits.
 func point(p history.Projection) Point {
+	// A place is read on the last day of its run, and that is the day the run
+	// works the returning share out on.
+	back, _ := p.Retained.On(p.Days - 1)
 	return Point{
 		Reviews:  p.ReviewsADay,
 		Minutes:  p.MinutesADay,
-		Retained: p.Retained[len(p.Retained)-1],
+		Retained: back,
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],
 		Closed:   closing(p),
