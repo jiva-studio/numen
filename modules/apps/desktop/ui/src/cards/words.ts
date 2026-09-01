@@ -26,6 +26,16 @@ export const WORDS = {
   notAStencil: 'That note is not a stencil.',
   /** A deck past the size one is read at, with the bound it is past. */
   tooLarge: (bound: number) => `This deck is over ${bound} bytes, so none of it was read.`,
+  /** The line at the top of a deck, which says which preset schedules it. */
+  scheduledBy: 'Scheduled by',
+  /** The choice a deck naming no preset stands at. */
+  defaults: 'The defaults',
+  /** A preset the note carries no name for, drawn by the file it stands in. */
+  unnamed: (path: string) => path.split('/').pop() ?? path,
+  /** A deck the vault would not put on the preset chosen. */
+  notScheduled: 'This deck was not put on that preset.',
+  /** A deck the file has moved past since the window read it. */
+  notScheduledChanged: 'This deck changed on disk, so it was not put on that preset.',
   /** What is wrong with the file itself, standing against no card and no face. */
   problems: 'What is wrong with this file',
   /** What a mark on a card, a face or a field is announced as. */

@@ -257,10 +257,28 @@ export interface Curve extends Material {
   readonly honest: boolean
 }
 
+/** One preset as a person choosing between them sees it. */
+export interface Listed {
+  readonly path: string
+  /** What it is called. Empty where nothing names the note. */
+  readonly title: string
+}
+
 /** What the window asks about the presets of a vault. */
 export interface Presets {
   /** The settings of one preset, and the file they came out of. */
   read(path: string): Promise<Read>
+  /**
+   * Every preset the vault holds. The defaults are no note and are not among
+   * them: they are what schedules a deck naming no preset.
+   */
+  list(): Promise<readonly Listed[]>
+  /**
+   * A deck put on a preset, and on the defaults where the path is empty. Seen
+   * is what a read of the deck gave this caller, and a deck that moved past it
+   * comes back changed with nothing written.
+   */
+  schedules(deck: string, preset: string, seen: string): Promise<Written>
   /** The preset a deck is scheduled by. A deck naming none answers under no path. */
   scheduling(deck: string): Promise<Read>
   /**
@@ -284,6 +302,17 @@ const asking = createClient(
 export const presets: Presets = {
   read: async (path) => took(await asking.readPreset({ path })),
   scheduling: async (deck) => took(await asking.scheduling({ deck })),
+  list: async () => (await asking.listPresets({})).presets.map(
+    (one) => ({ path: one.path, title: one.title }),
+  ),
+  schedules: async (deck, preset, seen) => {
+    const answer = await asking.schedule({
+      deck,
+      preset,
+      ...(seen === '' ? {} : { seen: fingerprint(seen) }),
+    })
+    return { refusal: refusalIn(answer), changed: answer.changed, at: stamp(answer.at) ?? '' }
+  },
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
       path,

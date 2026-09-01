@@ -144,7 +144,7 @@ const puts = putting(core)
 const noted = noting(core, notes, drawings, held.host, puts)
 
 /** The decks and the stencils the window has open, each saved the way a note is. */
-const decks = decking(cards, held.host, puts)
+const decks = decking(cards, presets, held.host, puts)
 const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
 
 /** The presets the window has open, each written as one group of settings. */

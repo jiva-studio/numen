@@ -94,6 +94,8 @@ const opened = async (
       ...reading(times++),
     }),
     scheduling: async () => ({ preset: null, refusal: null, at: '' }),
+    list: async () => [],
+    schedules: async () => ({ refusal: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)
       return { refusal: null, changed: false, at: 'two', ...(await writing(writes++)) }
