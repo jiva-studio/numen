@@ -304,6 +304,7 @@ const (
 	SourceKind_SOURCE_KIND_UNSPECIFIED SourceKind = 0
 	SourceKind_SOURCE_KIND_NOTE        SourceKind = 1
 	SourceKind_SOURCE_KIND_BOOK        SourceKind = 2
+	SourceKind_SOURCE_KIND_RECORDING   SourceKind = 3
 )
 
 // Enum value maps for SourceKind.
@@ -312,11 +313,13 @@ var (
 		0: "SOURCE_KIND_UNSPECIFIED",
 		1: "SOURCE_KIND_NOTE",
 		2: "SOURCE_KIND_BOOK",
+		3: "SOURCE_KIND_RECORDING",
 	}
 	SourceKind_value = map[string]int32{
 		"SOURCE_KIND_UNSPECIFIED": 0,
 		"SOURCE_KIND_NOTE":        1,
 		"SOURCE_KIND_BOOK":        2,
+		"SOURCE_KIND_RECORDING":   3,
 	}
 )
 
@@ -4908,12 +4911,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
 	"\vWAY_MEANING\x10\x02\x12\r\n" +
-	"\tWAY_NAMES\x10\x03*U\n" +
+	"\tWAY_NAMES\x10\x03*p\n" +
 	"\n" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10SOURCE_KIND_NOTE\x10\x01\x12\x14\n" +
-	"\x10SOURCE_KIND_BOOK\x10\x02*f\n" +
+	"\x10SOURCE_KIND_BOOK\x10\x02\x12\x19\n" +
+	"\x15SOURCE_KIND_RECORDING\x10\x03*f\n" +
 	"\bNoteType\x12\x19\n" +
 	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +

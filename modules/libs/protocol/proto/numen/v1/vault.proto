@@ -614,6 +614,7 @@ enum SourceKind {
   SOURCE_KIND_UNSPECIFIED = 0;
   SOURCE_KIND_NOTE = 1;
   SOURCE_KIND_BOOK = 2;
+  SOURCE_KIND_RECORDING = 3;
 }
 
 // NoteType is which of four a note is: the `type` key of its frontmatter. It
