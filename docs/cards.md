@@ -292,7 +292,9 @@ A preset whose goal is `by_date` moves no card, whatever `even_load` holds. The 
 
 **No cards a day is a pause**: the preset schedules nothing, and every deck pointing at it stops. Pausing one deck is a preset of its own. A goal of a day ends the same way — past that day the preset schedules nothing until the day is moved or the deck is pointed elsewhere — and a preset aiming at a day and naming none is paused from the start, because the budget its goal names is the day.
 
-**What a preset schedules is one answer, worked out where the cards are handed out.** The reasons are a closed list — no minutes a day, no cards a day, a date with no day, a date behind us — and an interface asking is given one of them and puts it into words. A day of the week at none of the load stands apart from all four: it is a fact about that one day, and a preset with a quiet Sunday has not stopped.
+**Why a preset schedules nothing is one answer, worked out where the cards are handed out.** The reasons are a closed list — no minutes a day, no cards a day, a date with no day, a date behind us, a week no day of which carries any of the load — and an interface asking is given one of them and puts it into words. A day of the week at none of the load stands apart from all five: it is a fact about that one day, and a preset with a quiet Sunday has not stopped. A week at nothing is not, because there is no next day for the cards to be picked up on.
+
+The list says why a *preset* schedules nothing. A preset that schedules and has nothing it can schedule is a different thing and is said beside the material: a deck every card face of which nobody has begun, under a preset beginning none a day, is not stopped and never comes round either. The preset window says it in the control's place and the deck screen says it on the row.
 
 The hour a day of review begins at is not here: it is a fact about a person's clock, and it is in [Settings](settings.md).
 
