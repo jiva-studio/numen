@@ -251,6 +251,9 @@ message Curve {
 // that day costs, and `through` and `enough` with what the budget the preset
 // keeps gets through by it. The rest stands at zero there.
 message Point {
+  reserved 7;
+  reserved "met";
+
   // Under a goal of minutes, the next sitting a person will sit down to: the
   // first day the preset admits, which is the day the deck screen offers. A day
   // at none of the load is no sitting, so the day after it is drawn. Under the
@@ -267,11 +270,10 @@ message Point {
   int32 owed = 4;
 
   // The share of the material learned by this day under the rule the settings
-  // name, whether the budget the preset keeps learns every card face that can
-  // be learned by it, and whether the pace this place sets does.
+  // name, and whether the pace this place sets learns every card face that can
+  // be learned by it.
   double through = 5;
   bool enough = 6;
-  bool met = 7;
 
   // Every budget that closed the day here, each written as the preset writes
   // the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None

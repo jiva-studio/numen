@@ -310,7 +310,6 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
     owed: 0,
     through: 0,
     enough: true,
-    met: true,
     closed: [],
     clears: 0,
     learned: 0,
@@ -326,7 +325,7 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
     const minutes = ((settings.minutesADay || DEFAULTS.minutesADay) * span) / Math.max(value, 1)
     const enough = minutes <= (settings.minutesADay || DEFAULTS.minutesADay)
     const through = Math.min(value / span, 1)
-    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, enough, met: true }
+    return { ...flat, minutes, reviews: (minutes * 60) / ANSWER, through, enough }
   }
   const retained = (CEILING * value) / (value + HALF)
   return { ...flat, minutes: value, reviews: (value * 60) / ANSWER, retained }

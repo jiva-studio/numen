@@ -4,7 +4,7 @@
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
 - **Amends:** ADR-0027 (a fourth value of `type`)
-- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037
+- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038
 
 ## Context
 
@@ -80,20 +80,6 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 **A preset aiming at a day evens no load.** The pace is what spreads a date's material over its days, and the days it has are the days it needs. A window of a placement holds nothing beyond the front of a run, so its lightest day is its last, and a card put there is a card asked for later than the pace was told it would be.
 
 **An even load off is no placement at all.** The card lands where the scheduler put it. If the day it lands on does not admit it, it is not shown that day: it stands overdue, the next day picks it up, and that day is larger by the share the light day shed. Nothing is written anywhere — there is no schedule in the vault to write to.
-
-### How a day is spent between the overdue and the new
-
-`backlog` is how much of a day goes to what is overdue before anything new is offered, in per cent: 100 is the overdue pile first, 0 is new cards first, and the values between split the day. A side that runs short leaves the rest of the day to the other, so a day is never left unspent.
-
-It is not a budget and it does not close a day; it says what the day the goal admits is spent on. A goal of a date does not use it — the material is to be through by that day, all of it, so the order decides nothing that matters.
-
-### A budget counts cards, and may be told to count showings
-
-`counts: cards` is the default: a card face counts against the day's budget the first time it is answered that day, and every further showing of it that day is free. A hundred a day is a hundred cards, whatever it takes to settle each of them.
-
-`counts: shows` spends a slot on every showing. A subject where a card either comes back or does not is studied differently from one whose cards take four steps to settle, and the preset is where that is said.
-
-The time budget is unaffected: minutes are spent as they are spent, on every answer.
 
 ## Consequences
 

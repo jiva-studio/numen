@@ -176,7 +176,6 @@ export interface Point {
   /** The share got through by this day, and whether a budget gets through it. */
   readonly through: number
   readonly enough: boolean
-  readonly met: boolean
   /**
    * Every budget that closed the day here, each written as the preset writes
    * the key: `minutes_a_day`, `new_a_day`, `reviews_a_day`, `by_date`, or
@@ -404,7 +403,6 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     owed: one.owed,
     through: one.through,
     enough: one.enough,
-    met: one.met,
     closed: one.closed,
     clears: one.clears,
     learned: one.learned,

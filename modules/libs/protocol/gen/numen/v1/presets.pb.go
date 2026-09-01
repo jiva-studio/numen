@@ -675,11 +675,10 @@ type Point struct {
 	// for how long the backlog standing now takes to go.
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
 	// The share of the material learned by this day under the rule the settings
-	// name, whether the budget the preset keeps learns every card face that can
-	// be learned by it, and whether the pace this place sets does.
+	// name, and whether the pace this place sets learns every card face that can
+	// be learned by it.
 	Through float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
 	Enough  bool    `protobuf:"varint,6,opt,name=enough,proto3" json:"enough,omitempty"`
-	Met     bool    `protobuf:"varint,7,opt,name=met,proto3" json:"met,omitempty"`
 	// Every budget that closed the day here, each written as the preset writes
 	// the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
 	// is a day that asked for every card there was, so the material itself ran
@@ -790,13 +789,6 @@ func (x *Point) GetThrough() float64 {
 func (x *Point) GetEnough() bool {
 	if x != nil {
 		return x.Enough
-	}
-	return false
-}
-
-func (x *Point) GetMet() bool {
-	if x != nil {
-		return x.Met
 	}
 	return false
 }
@@ -1661,15 +1653,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05cards\x18\b \x01(\x05R\x05cards\x12\x18\n" +
 	"\aoverdue\x18\t \x01(\x05R\aoverdue\x12\x18\n" +
 	"\aunbegun\x18\n" +
-	" \x01(\x05R\aunbegun\"\xd1\x02\n" +
+	" \x01(\x05R\aunbegun\"\xca\x02\n" +
 	"\x05Point\x12\x18\n" +
 	"\areviews\x18\x01 \x01(\x01R\areviews\x12\x18\n" +
 	"\aminutes\x18\x02 \x01(\x01R\aminutes\x12\x1a\n" +
 	"\bretained\x18\x03 \x01(\x01R\bretained\x12\x12\n" +
 	"\x04owed\x18\x04 \x01(\x05R\x04owed\x12\x18\n" +
 	"\athrough\x18\x05 \x01(\x01R\athrough\x12\x16\n" +
-	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x10\n" +
-	"\x03met\x18\a \x01(\bR\x03met\x12\x16\n" +
+	"\x06enough\x18\x06 \x01(\bR\x06enough\x12\x16\n" +
 	"\x06closed\x18\b \x03(\tR\x06closed\x12\x16\n" +
 	"\x06clears\x18\t \x01(\x05R\x06clears\x12\x18\n" +
 	"\abacklog\x18\n" +
@@ -1677,7 +1668,7 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\alearned\x18\v \x01(\x05R\alearned\x12\x1b\n" +
 	"\x06learns\x18\f \x01(\x05H\x00R\x06learns\x88\x01\x01\x12\x14\n" +
 	"\x05short\x18\r \x01(\x05R\x05shortB\t\n" +
-	"\a_learns\">\n" +
+	"\a_learnsJ\x04\b\a\x10\bR\x03met\">\n" +
 	"\x04Mark\x12\x0e\n" +
 	"\x02at\x18\x01 \x01(\x05R\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
