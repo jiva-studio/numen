@@ -1,10 +1,10 @@
-# ADR-0034: A preset says how a deck is scheduled
+# ADR-0034: A preset is a note, and a deck points at one
 
 - **Status:** Accepted
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
 - **Amends:** ADR-0027 (a fourth value of `type`)
-- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038, ADR-0039
+- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038, ADR-0039, ADR-0040
 
 ## Context
 
@@ -59,19 +59,7 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 
 **Inside one preset, one budget closes the day**, and which of them it is the preset's goal says (ADR-0036).
 
-**How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own shares and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
-
-### One rule says which day a card lands on
-
-**A card's day is chosen in one function, and the sitting and the picture both go through it.** The scheduler works out an interval; the day inside the tolerance around that interval is chosen by weight, where a day's weight is the share of the load its day of the week carries over what already falls on it. A day at nothing weighs nothing and takes no card; a day already carrying more takes fewer. Two implementations kept in step by tests are two answers to one question, and the fault they produce is a picture promising a load the sitting never delivers.
-
-It is pressure and not a promise. No day is forbidden to carry more than its share, and nothing is solved over the collection: the tolerance is empty on short intervals and closed on long ones, so a card with nowhere to go stands where it fell.
-
-**The picture draws the next sitting, not today.** The control's curve reads the first day of the run the preset admits. A day at none of the load is no sitting at all, so a person moving a control on such a day reads what the setting buys them on the day they will next sit down, rather than a row of noughts. It is one real day of the projection, worked out by the arithmetic the sitting runs, so the count on the curve is the count that sitting hands them. Days the preset does not admit take no part in any summary over the run.
-
-**A preset aiming at a day evens no load.** The pace is what spreads a date's material over its days, and the days it has are the days it needs. A window of a placement holds nothing beyond the front of a run, so its lightest day is its last, and a card put there is a card asked for later than the pace was told it would be.
-
-**An even load off is no placement at all.** The card lands where the scheduler put it. If the day it lands on does not admit it, it is not shown that day: it stands overdue, the next day picks it up, and that day is larger by the share the light day shed. Nothing is written anywhere — there is no schedule in the vault to write to.
+**A day is one day whatever presets fall on it**, so how loaded each of them is, is one table, and the day a card is put on is read off it (ADR-0040).
 
 ## Consequences
 
@@ -80,8 +68,6 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 - **A number is enforced where it was typed.** Decks are files and nothing contains anything, so no limit is displaced onto a parent.
 - **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
-- **The mark carries the placement too.** A preset's shares, its even load, the goal that decides whether that load is evened at all, and the hour a day of review begins at all decide which day a card lands on, so all of them stand in the mark the cache is filed under.
-- **A day is a whole number.** The days are counted from the day the clock is counted from, so the same answers name the same days in every process and a schedule worked out again is the schedule that was worked out.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
 
 ## Alternatives considered
@@ -95,7 +81,3 @@ It is pressure and not a promise. No day is forbidden to carry more than its sha
 **Keys in the language of the interface.** Rejected: the vault format is one spelling, and `type`, `fields` and `links` are already written in it.
 
 **A deck carrying its own limits.** Rejected: two decks that should agree would have no way to say so, and the settings would be copied by hand into every deck of a subject.
-
-**A list of light days, each carrying a fixed half and shedding the rest onto the day either side.** Rejected: the half was a number nothing decided, and a person who wants a quiet Saturday and no Sunday at all has one word for both. A share says every one of them, and nothing is shed anywhere a person did not ask for.
-
-**A day chosen once for the picture and again for the sitting.** Rejected: the two were kept in step by tests, and drifted the moment one of them was touched. The control drew an even load the scheduler never delivered.
