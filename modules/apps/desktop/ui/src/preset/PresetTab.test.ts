@@ -1424,3 +1424,29 @@ describe('the line the tab is read against', () => {
     }
   })
 })
+
+// Every figure a person reads of a chance of recall is a percentage: the mark
+// on the curve, the words beside it, the axis. The row it is typed into is one.
+describe('the row a chance of recall is typed into', () => {
+  it('stands in per cent, and is bounded and stepped in per cent', () => {
+    const { tab } = drawn({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
+    const field = tab
+      .findAll('[role="spinbutton"]')
+      .find((one) => one.attributes('aria-valuemax') === '99')
+
+    expect(field).toBeDefined()
+    expect((field?.element as HTMLInputElement).value).toBe('87')
+    expect(field?.attributes('aria-valuemin')).toBe('70')
+    expect(field?.attributes('aria-valuenow')).toBe('87')
+  })
+
+  it('hands a percentage back as the share the settings hold', async () => {
+    const { tab, done } = drawn({ goal: 'retention' }, { goal: 'retention', retention: 0.87 })
+    const field = tab
+      .findAll('[role="spinbutton"]')
+      .find((one) => one.attributes('aria-valuemax') === '99')
+
+    await field?.setValue('90')
+    expect(done).toStrictEqual(['types retention 0.9'])
+  })
+})

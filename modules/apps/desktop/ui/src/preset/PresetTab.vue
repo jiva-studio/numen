@@ -15,7 +15,7 @@ import Control from './Control.vue'
 import type { Held, Said } from './kind'
 import { BOUNDS, COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
 import type { Counts, Goal, Rule } from './core'
-import { fieldsUnder, idle, type Field } from './curve'
+import { fieldsUnder, idle, round, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -94,7 +94,11 @@ const reading = computed(() => words.value(curve.value.goal, value.value, day.va
 const boundsOf = (field: Field): { least: number; most: number } => {
   if (field === 'newADay') return BOUNDS.newADay
   if (field === 'reviewsADay') return BOUNDS.reviewsADay
-  if (field === 'retention') return BOUNDS.retention
+  // A chance of recall is read and typed in per cent, which is how every figure
+  // beside it is said.
+  if (field === 'retention') {
+    return { least: BOUNDS.retention.least * 100, most: BOUNDS.retention.most * 100 }
+  }
   if (field === 'minutesADay') return BOUNDS.minutesADay
   if (field === 'backlog') return BOUNDS.backlog
   if (field === 'interval') return BOUNDS.interval
@@ -105,18 +109,16 @@ const boundsOf = (field: Field): { least: number; most: number } => {
 const counted = (field: Field): number | null => {
   if (field === 'newADay') return settings.value.newADay
   if (field === 'reviewsADay') return settings.value.reviewsADay
-  if (field === 'retention') return settings.value.retention
+  if (field === 'retention') return Math.round(settings.value.retention * 100)
   if (field === 'minutesADay') return settings.value.minutesADay
   if (field === 'interval') return settings.value.interval
   return null
 }
 
-const stepOf = (field: Field): number => (field === 'retention' ? 0.01 : 1)
-
 /** A number typed into a row. An empty field leaves the setting as it stands. */
 const typed = (field: Field, said: number | null) => {
   if (said === null) return
-  props.held.types(field, said)
+  props.held.types(field, field === 'retention' ? round(said / 100, 2) : said)
 }
 
 /**
@@ -235,7 +237,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                   :model-value="settings.backlog"
                   :min="boundsOf(field).least"
                   :max="boundsOf(field).most"
-                  :step="stepOf(field)"
+                  :step="1"
                   :aria-labelledby="`preset-${field}`"
                   class="preset__slider"
                   @update:model-value="(share: number) => props.held.types(field, share)"
@@ -261,7 +263,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                 :model-value="counted(field)"
                 :min="boundsOf(field).least"
                 :max="boundsOf(field).most"
-                :step="stepOf(field)"
+                :step="1"
                 :aria-labelledby="`preset-${field}`"
                 class="preset__number"
                 @update:model-value="(said: number | null) => typed(field, said)"

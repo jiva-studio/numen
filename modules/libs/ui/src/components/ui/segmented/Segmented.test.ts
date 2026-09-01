@@ -85,3 +85,13 @@ describe('choosing', () => {
     expect(handed(control)).toEqual([])
   })
 })
+
+// One press is one turn. The row already walks to its ends on these keys, and
+// a choice made twice is written twice by whoever is listening.
+it('hands a choice on once for one press of Home or End', async () => {
+  const control = mountSegmented({ modelValue: 'medium' })
+  const segments = control.findAll('[role="radio"]')
+
+  await segments[1]?.trigger('keydown', { key: 'End' })
+  expect(handed(control)).toEqual(['large'])
+})

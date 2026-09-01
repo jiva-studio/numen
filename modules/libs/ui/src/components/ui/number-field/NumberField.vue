@@ -16,7 +16,7 @@
  * and act on the number the field comes to rest at. A field left standing where
  * it stood has come to rest nowhere new and says nothing.
  */
-import { computed, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 import {
   allowed,
@@ -119,15 +119,24 @@ const took = (event: Event) => {
 /**
  * Leaving writes back what holds: the number on a place of the step, in bounds.
  * A field left standing where it stood has not settled anywhere new.
+ *
+ * What the caller does with the number is the caller's, and the field stands on
+ * whatever the caller holds once it has answered.
  */
-const settle = () => {
+const settle = async () => {
   const value = numberOf(typed.value)
   const now = value === null ? null : settled(value, bounds.value)
   model.value = now
   typed.value = written(now)
-  if (now === rested) return
-  rested = now
-  raises('settles', now)
+  if (now !== rested) {
+    rested = now
+    raises('settles', now)
+  }
+  await nextTick()
+  if (!standsFor(typed.value, model.value)) {
+    typed.value = written(model.value)
+    rested = model.value
+  }
 }
 
 /**

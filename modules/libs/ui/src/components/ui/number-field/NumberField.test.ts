@@ -330,3 +330,48 @@ describe('a number set from outside', () => {
     expect(field.get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 })
+
+/**
+ * A field whose caller holds the value and may refuse one.
+ *
+ * Passing the value and the listener both leaves the value the caller's: what
+ * the field hands on is a request, and what stands in the field is whatever the
+ * caller holds after it.
+ */
+describe('a field the caller holds the value of', () => {
+  const held = (refuses: (said: number | null) => boolean) => {
+    let standing: number | null = 20
+    const field = mount(NumberField, {
+      props: {
+        modelValue: standing,
+        min: 0,
+        max: 240,
+        step: 5,
+        'onUpdate:modelValue': async (said: number | null) => {
+          if (refuses(said)) return
+          standing = said
+          await field.setProps({ modelValue: standing })
+        },
+      },
+    })
+    return field
+  }
+
+  it('stands on the number the caller holds where the caller refuses one', async () => {
+    const field = held((said) => said === null)
+    await field.get('input').setValue('')
+    await field.get('input').trigger('blur')
+    await field.vm.$nextTick()
+
+    expect(field.get('input').element.value).toBe('20')
+  })
+
+  it('stands on the number the caller took where the caller took one', async () => {
+    const field = held((said) => said === null)
+    await field.get('input').setValue('45')
+    await field.get('input').trigger('blur')
+    await field.vm.$nextTick()
+
+    expect(field.get('input').element.value).toBe('45')
+  })
+})
