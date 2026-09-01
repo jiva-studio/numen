@@ -332,6 +332,10 @@ type PresetOwing struct {
 	ClosesReviews string `protobuf:"bytes,13,opt,name=closes_reviews,json=closesReviews,proto3" json:"closes_reviews,omitempty"`
 	ClosesMinutes string `protobuf:"bytes,14,opt,name=closes_minutes,json=closesMinutes,proto3" json:"closes_minutes,omitempty"`
 	ClosesBacklog string `protobuf:"bytes,15,opt,name=closes_backlog,json=closesBacklog,proto3" json:"closes_backlog,omitempty"`
+	// Why the preset schedules nothing on this day: whatever stops it at all, and
+	// a day of the week carrying none of the load. It is the core's own verdict,
+	// so a window says of a preset what the sitting hands its cards out by.
+	StopsOn       Stopped `protobuf:"varint,16,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.Stopped" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -469,6 +473,13 @@ func (x *PresetOwing) GetClosesBacklog() string {
 		return x.ClosesBacklog
 	}
 	return ""
+}
+
+func (x *PresetOwing) GetStopsOn() Stopped {
+	if x != nil {
+		return x.StopsOn
+	}
+	return Stopped_STOPPED_UNSPECIFIED
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -2000,7 +2011,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
-	"\banswered\x18\x05 \x01(\x05R\banswered\"\xac\x03\n" +
+	"\banswered\x18\x05 \x01(\x05R\banswered\"\xda\x03\n" +
 	"\vPresetOwing\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
@@ -2018,7 +2029,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"closes_new\x18\f \x01(\tR\tclosesNew\x12%\n" +
 	"\x0ecloses_reviews\x18\r \x01(\tR\rclosesReviews\x12%\n" +
 	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\x12%\n" +
-	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\"Y\n" +
+	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\x12,\n" +
+	"\bstops_on\x18\x10 \x01(\x0e2\x11.numen.v1.StoppedR\astopsOn\"Y\n" +
 	"\x05Ahead\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
@@ -2181,52 +2193,54 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*FlashcardsServiceSchedulingResponse)(nil), // 25: numen.v1.FlashcardsServiceSchedulingResponse
 	(*FlashcardsServiceCurveRequest)(nil),       // 26: numen.v1.FlashcardsServiceCurveRequest
 	(*FlashcardsServiceCurveResponse)(nil),      // 27: numen.v1.FlashcardsServiceCurveResponse
-	(Refusal)(0),                                // 28: numen.v1.Refusal
-	(*Preset)(nil),                              // 29: numen.v1.Preset
-	(*Settings)(nil),                            // 30: numen.v1.Settings
-	(*Curve)(nil),                               // 31: numen.v1.Curve
+	(Stopped)(0),                                // 28: numen.v1.Stopped
+	(Refusal)(0),                                // 29: numen.v1.Refusal
+	(*Preset)(nil),                              // 30: numen.v1.Preset
+	(*Settings)(nil),                            // 31: numen.v1.Settings
+	(*Curve)(nil),                               // 32: numen.v1.Curve
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
 	3,  // 1: numen.v1.VaultOwing.presets:type_name -> numen.v1.PresetOwing
-	4,  // 2: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
-	1,  // 3: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
-	1,  // 4: numen.v1.OwingResponse.counted:type_name -> numen.v1.VaultOwing
-	5,  // 5: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
-	0,  // 6: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
-	16, // 7: numen.v1.ReviewedResponse.days:type_name -> numen.v1.Reviewing
-	16, // 8: numen.v1.ReviewedResponse.due:type_name -> numen.v1.Reviewing
-	21, // 9: numen.v1.AroundResponse.notes:type_name -> numen.v1.Neighbour
-	28, // 10: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
-	29, // 11: numen.v1.FlashcardsServiceSchedulingResponse.preset:type_name -> numen.v1.Preset
-	28, // 12: numen.v1.FlashcardsServiceSchedulingResponse.refusal:type_name -> numen.v1.Refusal
-	30, // 13: numen.v1.FlashcardsServiceCurveRequest.settings:type_name -> numen.v1.Settings
-	31, // 14: numen.v1.FlashcardsServiceCurveResponse.curve:type_name -> numen.v1.Curve
-	6,  // 15: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
-	8,  // 16: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
-	10, // 17: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
-	12, // 18: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	22, // 19: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
-	14, // 20: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
-	17, // 21: numen.v1.FlashcardsService.Asking:input_type -> numen.v1.AskingRequest
-	19, // 22: numen.v1.FlashcardsService.Around:input_type -> numen.v1.AroundRequest
-	24, // 23: numen.v1.FlashcardsService.Scheduling:input_type -> numen.v1.FlashcardsServiceSchedulingRequest
-	26, // 24: numen.v1.FlashcardsService.Curve:input_type -> numen.v1.FlashcardsServiceCurveRequest
-	7,  // 25: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
-	9,  // 26: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
-	11, // 27: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
-	13, // 28: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	23, // 29: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
-	15, // 30: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
-	18, // 31: numen.v1.FlashcardsService.Asking:output_type -> numen.v1.AskingResponse
-	20, // 32: numen.v1.FlashcardsService.Around:output_type -> numen.v1.AroundResponse
-	25, // 33: numen.v1.FlashcardsService.Scheduling:output_type -> numen.v1.FlashcardsServiceSchedulingResponse
-	27, // 34: numen.v1.FlashcardsService.Curve:output_type -> numen.v1.FlashcardsServiceCurveResponse
-	25, // [25:35] is the sub-list for method output_type
-	15, // [15:25] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	28, // 2: numen.v1.PresetOwing.stops_on:type_name -> numen.v1.Stopped
+	4,  // 3: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
+	1,  // 4: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
+	1,  // 5: numen.v1.OwingResponse.counted:type_name -> numen.v1.VaultOwing
+	5,  // 6: numen.v1.StartResponse.asked:type_name -> numen.v1.Asked
+	0,  // 7: numen.v1.AnswerRequest.rating:type_name -> numen.v1.Rating
+	16, // 8: numen.v1.ReviewedResponse.days:type_name -> numen.v1.Reviewing
+	16, // 9: numen.v1.ReviewedResponse.due:type_name -> numen.v1.Reviewing
+	21, // 10: numen.v1.AroundResponse.notes:type_name -> numen.v1.Neighbour
+	29, // 11: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
+	30, // 12: numen.v1.FlashcardsServiceSchedulingResponse.preset:type_name -> numen.v1.Preset
+	29, // 13: numen.v1.FlashcardsServiceSchedulingResponse.refusal:type_name -> numen.v1.Refusal
+	31, // 14: numen.v1.FlashcardsServiceCurveRequest.settings:type_name -> numen.v1.Settings
+	32, // 15: numen.v1.FlashcardsServiceCurveResponse.curve:type_name -> numen.v1.Curve
+	6,  // 16: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
+	8,  // 17: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
+	10, // 18: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
+	12, // 19: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	22, // 20: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
+	14, // 21: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
+	17, // 22: numen.v1.FlashcardsService.Asking:input_type -> numen.v1.AskingRequest
+	19, // 23: numen.v1.FlashcardsService.Around:input_type -> numen.v1.AroundRequest
+	24, // 24: numen.v1.FlashcardsService.Scheduling:input_type -> numen.v1.FlashcardsServiceSchedulingRequest
+	26, // 25: numen.v1.FlashcardsService.Curve:input_type -> numen.v1.FlashcardsServiceCurveRequest
+	7,  // 26: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
+	9,  // 27: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
+	11, // 28: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
+	13, // 29: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	23, // 30: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
+	15, // 31: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
+	18, // 32: numen.v1.FlashcardsService.Asking:output_type -> numen.v1.AskingResponse
+	20, // 33: numen.v1.FlashcardsService.Around:output_type -> numen.v1.AroundResponse
+	25, // 34: numen.v1.FlashcardsService.Scheduling:output_type -> numen.v1.FlashcardsServiceSchedulingResponse
+	27, // 35: numen.v1.FlashcardsService.Curve:output_type -> numen.v1.FlashcardsServiceCurveResponse
+	26, // [26:36] is the sub-list for method output_type
+	16, // [16:26] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_flashcards_proto_init() }

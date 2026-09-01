@@ -13,6 +13,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -144,6 +145,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 			ClosesReviews: string(preset.Closes.Reviews),
 			ClosesMinutes: string(preset.Closes.Minutes),
 			ClosesBacklog: string(preset.Closes.Backlog),
+			StopsOn:       wire.StoppedOf(preset.Stops),
 		})
 	}
 	return one

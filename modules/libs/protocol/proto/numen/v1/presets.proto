@@ -156,6 +156,33 @@ message Settings {
   int32 interval = 13;
 }
 
+// Stopped is why a preset schedules nothing. The list is closed, and a client
+// maps a value to a sentence.
+enum Stopped {
+  // A build that said nothing about it. It is read as scheduling.
+  STOPPED_UNSPECIFIED = 0;
+
+  // The preset schedules: its decks are handed a day of review.
+  STOPPED_NOTHING = 1;
+
+  // A goal of minutes with the minutes at zero.
+  STOPPED_NO_MINUTES = 2;
+
+  // A goal of retention with both card counts at zero.
+  STOPPED_NO_CARDS = 3;
+
+  // A goal of a date naming no day. The budget the goal names is the day, and
+  // a goal that cannot read its own budget schedules nothing.
+  STOPPED_NO_DAY = 4;
+
+  // A goal of a date whose day is behind us.
+  STOPPED_PAST_DAY = 5;
+
+  // A day of the week carrying none of the load. It is a fact about one day,
+  // so only `stops_on` ever carries it.
+  STOPPED_NO_LOAD = 6;
+}
+
 // Preset is one preset as a read hands it over.
 message Preset {
   // Path is the note the settings were read from, and is empty for a deck
@@ -169,6 +196,15 @@ message Preset {
   // The settings stand at the defaults for each of them, and the editor is
   // where they are settled.
   repeated string problems = 4;
+
+  // Why the preset schedules nothing. It is a fact about the preset and holds
+  // on every day, and it is the answer a window has before any curve exists.
+  Stopped stops = 5;
+
+  // The same asked of the day holding now: whatever stops the preset at all,
+  // and a day of the week carrying none of the load. A preset with a light
+  // Sunday is not a stopped preset; it is a preset with a stopped Sunday.
+  Stopped stops_on = 6;
 }
 
 // Curve is what the one control comes to over the whole range of its goal.
@@ -237,11 +273,15 @@ message Point {
   bool enough = 6;
   bool met = 7;
 
-  // The budget that closed the day here, written as the preset writes the key:
-  // minutes_a_day, new_a_day, reviews_a_day, or paused. Empty is a day that
-  // asked for every card there was, so the material itself ran out. A budget
-  // the goal does not name is never here.
-  string closed = 8;
+  // Every budget that closed the day here, each written as the preset writes
+  // the key: minutes_a_day, new_a_day, reviews_a_day, by_date, or paused. None
+  // is a day that asked for every card there was, so the material itself ran
+  // out. A budget the goal does not name is never here.
+  //
+  // A goal of retention holds a day to both card counts, and a day that ran out
+  // of new cards and of reviews names both: a person raising one of them and
+  // finding nothing changed is reading a day the other closed too.
+  repeated string closed = 8;
 
   // How many days of review at this place it takes before nothing is overdue.
   // Zero is a curve standing over nothing overdue, and -1 is a pace that never

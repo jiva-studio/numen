@@ -63,6 +63,9 @@ type PresetOwing struct {
 	// Closes is which of the three closes the day, and what each is called when
 	// it does.
 	Closes history.Closes
+	// Stops is why the preset schedules nothing on this day, and empty where it
+	// schedules something.
+	Stops history.Stopped
 }
 
 // Owed is what a vault owes, which is what its front door shows.
@@ -205,9 +208,18 @@ func (u Owed) presets(
 		return nil, err
 	}
 	for _, path := range paths {
-		if !pointed[path] {
-			out = append(out, PresetOwing{Preset: path, Decks: naming[path]})
+		if pointed[path] {
+			continue
 		}
+		// A preset no deck names has no day worked out for it, and its own
+		// settings are what say whether it would schedule anything.
+		one, err := reading.read(ctx, v, path)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, PresetOwing{
+			Preset: path, Decks: naming[path], Stops: one.StopsToday,
+		})
 	}
 	slices.SortFunc(out, func(a, b PresetOwing) int {
 		return strings.Compare(a.Preset, b.Preset)
@@ -227,6 +239,7 @@ func (b *budgets) owing(due, fresh map[string]int) []PresetOwing {
 			Answered: one.spent.Answered,
 			Took:     one.spent.Took,
 			Budget:   one.admits.Keeps, Closes: one.admits.Closes,
+			Stops: one.admits.Stops,
 		})
 	}
 	return out

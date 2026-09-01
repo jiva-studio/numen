@@ -71,7 +71,7 @@ func (r registry) Last() (domain.Vault, bool, error) {
 }
 
 // windowed is the API as the window builds it, over vaults of a test's own.
-func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) {
+func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) {
 	t.Helper()
 	ctx := t.Context()
 
@@ -773,12 +773,12 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 			if got := int(drawn.GetAt()[at].GetReviews()); one.sameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
-			if got := drawn.GetAt()[at].GetClosed(); got != string(one.closed) {
-				t.Errorf("the day closed on %q, want %q", got, one.closed)
+			if got := drawn.GetAt()[at].GetClosed(); !slices.Contains(got, string(one.closed)) {
+				t.Errorf("the day closed on %q, want %q among them", got, one.closed)
 			}
 			for i, point := range drawn.GetAt() {
 				for _, never := range one.never {
-					if point.GetClosed() == string(never) {
+					if slices.Contains(point.GetClosed(), string(never)) {
 						t.Errorf("at %v the day closed on %q, which its goal does not name",
 							drawn.GetGrid()[i], never)
 					}
@@ -795,7 +795,7 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 	v := held[0]
 
 	drawn := pictured(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
-	if got := drawn.GetAt()[len(drawn.GetAt())-1].GetClosed(); got != "" {
+	if got := drawn.GetAt()[len(drawn.GetAt())-1].GetClosed(); len(got) != 0 {
 		t.Errorf("the longest day on the range is closed by %q", got)
 	}
 }
@@ -829,7 +829,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	if got := drawn.GetAt()[at].GetReviews(); got != whole {
 		t.Errorf("the suggested day asks %v cards, and a day of any length asks %v", got, whole)
 	}
-	if got := drawn.GetAt()[at].GetClosed(); got != "" {
+	if got := drawn.GetAt()[at].GetClosed(); len(got) != 0 {
 		t.Errorf("the suggested day closed on %q, and a day that asks everything closes on nothing",
 			got)
 	}

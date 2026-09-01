@@ -25,7 +25,26 @@ func PresetOf(p flashcards.Preset, title string) *v1.Preset {
 		Title:    title,
 		Settings: SettingsOf(p.Preset),
 		Problems: p.Problems,
+		Stops:    StoppedOf(p.Stops),
+		StopsOn:  StoppedOf(p.StopsToday),
 	}
+}
+
+// StoppedOf is why a preset schedules nothing, as the schema names it.
+func StoppedOf(s history.Stopped) v1.Stopped {
+	switch s {
+	case history.StoppedNoMinutes:
+		return v1.Stopped_STOPPED_NO_MINUTES
+	case history.StoppedNoCards:
+		return v1.Stopped_STOPPED_NO_CARDS
+	case history.StoppedNoDay:
+		return v1.Stopped_STOPPED_NO_DAY
+	case history.StoppedPastDay:
+		return v1.Stopped_STOPPED_PAST_DAY
+	case history.StoppedNoLoad:
+		return v1.Stopped_STOPPED_NO_LOAD
+	}
+	return v1.Stopped_STOPPED_NOTHING
 }
 
 // SettingsOf is how a preset schedules, as the schema carries it.
@@ -111,7 +130,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Through:  one.Through,
 			Enough:   one.Enough,
 			Met:      one.Met,
-			Closed:   one.Closed.Name(),
+			Closed:   one.Closed.Names(),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
