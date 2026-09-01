@@ -113,7 +113,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	}
 	// A recording that gave no words gave an answer all the same, and it is
 	// recorded. Taking the record away is how a person asks for it again.
-	if held, err := store.Read(ctx, answered(area, hash)); err == nil {
+	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
 		res.Silent = bytes.HasPrefix(held, []byte(silent))
 		res.Unopened = bytes.HasPrefix(held, []byte(unopened))
 		return res, u.stand(ctx, v, ref, hash, "")
@@ -224,7 +224,7 @@ func (u Transcribe) answer(
 	store port.DerivedStore,
 	gave string,
 ) error {
-	if err := store.Write(ctx, answered(area, hash), []byte(gave+"\n")); err != nil {
+	if err := store.Write(ctx, text.Answer(area, hash), []byte(gave+"\n")); err != nil {
 		return err
 	}
 	if err := u.record(ctx, store, area, hash); err != nil {
@@ -283,12 +283,6 @@ const (
 	silent   = "silent"
 	unopened = "unopened"
 )
-
-// answered is the name what a recording gave, where it gave no words, is kept
-// under. It is not a transcript and nothing reads it as one.
-func answered(area, hash string) string {
-	return area + "/" + hash + ".answer"
-}
 
 // said is a failure as one line, which is what a file holding one line takes.
 func said(why string) string {

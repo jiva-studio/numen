@@ -289,7 +289,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if len(model.heard) != heard {
 		t.Errorf("the model was handed %d more stretches", len(model.heard)-heard)
 	}
-	if _, err := shelf.Read(t.Context(), answered("asr", hash)); err != nil {
+	if _, err := shelf.Read(t.Context(), text.Answer("asr", hash)); err != nil {
 		t.Errorf("nothing says what the recording answered: %v", err)
 	}
 }
@@ -308,7 +308,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
 		t.Errorf("the source was pointed at %q", src.TextFrom)
 	}
-	raw, err := shelf.Read(t.Context(), answered("asr", hash))
+	raw, err := shelf.Read(t.Context(), text.Answer("asr", hash))
 	if err != nil {
 		t.Fatalf("nothing says what the recording answered: %v", err)
 	}

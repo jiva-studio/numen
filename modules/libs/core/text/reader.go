@@ -235,6 +235,14 @@ func Proofread(from, hash string) string {
 	return from + "/" + hash + ".proofread"
 }
 
+// Answer is the name of what a recording gave where it gave no words: silence,
+// or bytes nothing here can open. It is not a transcript and nothing reads it as
+// one; it is there so that a recording nothing can be heard in is not listened
+// to again every time the vault is scanned.
+func Answer(from, hash string) string {
+	return from + "/" + hash + ".answer"
+}
+
 // Beside is the name of what says which models produced an artifact. Nothing on
 // any hot path reads it; it is there so a person can ask what read a text they
 // are looking at, and so a sweep can find everything a recogniser now known to
@@ -253,6 +261,7 @@ func Names(from, hash string) []string {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
+			Answer(from, hash),
 			Beside(from, hash),
 		}
 	}

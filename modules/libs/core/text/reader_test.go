@@ -66,7 +66,12 @@ func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
 // A sweep works through the names a producer writes, and a transcription writes
 // no coordinates, parts or corrections.
 func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
-	want := []string{"asr/abc123.vtt", "asr/abc123.partial.vtt", "asr/abc123.json"}
+	want := []string{
+		"asr/abc123.vtt",
+		"asr/abc123.partial.vtt",
+		"asr/abc123.answer",
+		"asr/abc123.json",
+	}
 	if got := text.Names(text.Speech, "abc123"); !slices.Equal(got, want) {
 		t.Errorf("a sweep takes %v, want %v", got, want)
 	}
