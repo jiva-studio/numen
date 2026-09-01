@@ -11,7 +11,9 @@ require (
 	github.com/gomlx/go-huggingface v0.4.1
 	github.com/gomlx/gomlx v0.28.4
 	github.com/gomlx/onnx-gomlx v0.5.2
+	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/klippa-app/go-pdfium v1.19.8
+	github.com/mewkiz/flac v1.0.14
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/rjeczalik/notify v0.9.3
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
@@ -28,8 +30,11 @@ require (
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gomlx/exceptions v0.0.3 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
+	github.com/icza/bitio v1.1.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/mewkiz/pkg v0.0.0-20250417130911-3f050ff8c56d // indirect
+	github.com/mewpkg/term v0.0.0-20241026122259-37a80af23985 // indirect
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
