@@ -7,6 +7,7 @@
  * overwritten.
  */
 import { ref, shallowRef, type Ref } from 'vue'
+import { Stopped } from '@numen/protocol'
 import type { PlexShowing } from '@numen/ui'
 import type { Refused, Went } from '../core'
 import type { Says } from '../telling'
@@ -68,6 +69,11 @@ export interface Held {
   waiting(): boolean
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
+  /**
+   * Why it schedules nothing on the day it was read in, as the vault says it.
+   * The rule is the core's, and it is the rule a sitting hands its cards out by.
+   */
+  stopped(): Stopped
   /** What the file was refused for, in words a person reads, or nothing. */
   saying(): string
   /** The file moved under the window and nothing was written. */
@@ -109,6 +115,8 @@ export function presetting(
     readonly material: Ref<Material | null>
     readonly place: Ref<number>
     readonly problems: Ref<readonly string[]>
+    /** Why it schedules nothing on the day the last read was answered in. */
+    readonly stopped: Ref<Stopped>
     readonly changed: Ref<boolean>
     readonly saying: Ref<string>
     /** An answer to the picture is on its way, and the tab says it is reading. */
@@ -143,6 +151,7 @@ export function presetting(
     material: shallowRef<Material | null>(null),
     place: ref(0),
     problems: shallowRef<readonly string[]>([]),
+    stopped: ref(Stopped.NOTHING),
     changed: ref(false),
     saying: ref(''),
     // A tab opens by reading the file the picture is worked out over.
@@ -182,11 +191,13 @@ export function presetting(
     one.answers.clear()
     if (!answer.preset) {
       one.problems.value = []
+      one.stopped.value = Stopped.NOTHING
       one.waiting.value = false
       return
     }
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
     one.problems.value = answer.preset.problems
+    one.stopped.value = answer.preset.stopsOn
     // A setting a person has moved and not yet written is theirs, and the file
     // is taken up where nothing of the kind stands.
     if (!one.edited) one.settings.value = answer.preset.settings
@@ -413,6 +424,7 @@ export function presetting(
       place: () => one.place.value,
       waiting: () => one.waiting.value,
       problems: () => one.problems.value,
+      stopped: () => one.stopped.value,
       saying: () => one.saying.value,
       changed: () => one.changed.value,
       again: () => void reads(one),

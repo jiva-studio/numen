@@ -15,7 +15,7 @@ import Control from './Control.vue'
 import type { Held, Said } from './kind'
 import { BOUNDS, COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
 import type { Counts, Goal, Rule } from './core'
-import { fieldsUnder, idle, paused, spent, type Field } from './curve'
+import { fieldsUnder, idle, type Field } from './curve'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
@@ -134,12 +134,8 @@ const dated = (said: Event) => {
   chose('byDate', (said.target as HTMLInputElement).value)
 }
 
-/** Whether the preset schedules nothing, and why. */
-const stopped = computed(() => {
-  const today = new Date()
-  if (spent(settings.value, today)) return words.spent
-  return paused(settings.value, today) ? words.paused(settings.value.goal) : ''
-})
+/** Why the preset schedules nothing, and empty while it schedules something. */
+const stopped = computed(() => words.stopped(props.held.stopped()))
 </script>
 
 <template>

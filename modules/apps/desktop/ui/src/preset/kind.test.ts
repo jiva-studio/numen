@@ -6,6 +6,7 @@
  * views of it. Every other field is a person's to take out of the goal's hands.
  */
 import { describe, expect, it } from 'vitest'
+import { Stopped } from '@numen/protocol'
 
 import { presetting, type Said } from './kind'
 import { fieldsUnder, nearest, standing, steers, type Field } from './curve'
@@ -88,7 +89,14 @@ const opened = async (
   let writes = 0
   const core: Presets = {
     read: async (path) => ({
-      preset: { path, title: 'Steady', settings: { ...STEADY, ...settings }, problems: [] },
+      preset: {
+        path,
+        title: 'Steady',
+        settings: { ...STEADY, ...settings },
+        problems: [],
+        stops: Stopped.NOTHING,
+        stopsOn: Stopped.NOTHING,
+      },
       refusal: null,
       at: 'one',
       ...reading(times++),
@@ -538,6 +546,8 @@ describe('a file read again', () => {
               title: 'Steady',
               settings: STEADY,
               problems: ['a line nobody could read'],
+              stops: Stopped.NOTHING,
+              stopsOn: Stopped.NOTHING,
             },
           }
         : { preset: null, refusal: 'notAPreset' },

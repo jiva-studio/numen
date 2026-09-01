@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
+import { Stopped } from '@numen/protocol'
 
 import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
@@ -114,6 +115,7 @@ const standing = (
     place: () => place.value,
     waiting: () => waiting,
     problems: () => [],
+    stopped: () => Stopped.NOTHING,
     saying: () => '',
     changed: () => false,
     again: () => void done.push('again'),
@@ -1013,21 +1015,45 @@ describe('what the control stands at', () => {
     expect(words.heightAt('minutes', 80)).toBe('80 cards')
   })
 
-  // How far behind, and what this pace does about it. The user's own vault:
-  // 45 overdue of 160 faces, cleared in 5 days at the place the knob stands at.
-  it('says a preset past the day it aimed at has spent its budget', () => {
-    const gone = drawn({}, { goal: 'date', byDate: '2000-01-01' })
-    expect(gone.tab.text()).toContain(words.spent)
+})
+
+// The verdict is the vault's, so the tab draws what it was handed and works
+// nothing out of the settings in front of it.
+describe('a preset that schedules nothing', () => {
+  /** Every verdict the schema carries, read off the schema itself. */
+  const VERDICTS = Object.values(Stopped).filter((one): one is Stopped => typeof one === 'number')
+
+  /** Those of them a person is told something about. */
+  const STOPPING = VERDICTS.filter((one) => one !== Stopped.NOTHING && one !== Stopped.UNSPECIFIED)
+
+  /** The tab drawn for a preset stopped for that reason. */
+  const stopped = (why: Stopped) => {
+    const { held } = standing()
+    return mount(PresetTab, { props: { held: { ...held, stopped: () => why } } })
+  }
+
+  it('has a sentence of its own for each verdict there is', () => {
+    const said = STOPPING.map((one) => words.stopped(one))
+    expect(said.filter((one) => one !== '')).toHaveLength(STOPPING.length)
+    expect(new Set(said).size).toBe(STOPPING.length)
   })
 
-  // A preset steered by minutes with no new cards a day is a deck of reviews
-  // only, and it holds a full day.
-  it('says nothing is scheduled where the budget the goal names stands at nothing', () => {
-    const reviewing = drawn({}, { goal: 'minutes', newADay: 0, reviewsADay: 0 })
-    expect(reviewing.tab.findAll('.preset__stopped')).toHaveLength(0)
+  it('says why, in the words that verdict has', () => {
+    for (const why of STOPPING) {
+      expect(stopped(why).get('.preset__stopped').text(), `${why}`).toBe(words.stopped(why))
+    }
+  })
 
-    const stopped = drawn({}, { goal: 'minutes', minutesADay: 0 })
-    expect(stopped.tab.get('.preset__stopped').text()).toBe(words.paused('minutes'))
+  it('says nothing at all of a preset that schedules', () => {
+    expect(stopped(Stopped.NOTHING).findAll('.preset__stopped')).toHaveLength(0)
+    expect(stopped(Stopped.UNSPECIFIED).findAll('.preset__stopped')).toHaveLength(0)
+  })
+
+  // A goal of a date reading no day, and a day of the week carrying none of the
+  // load: neither is a reason the tab could reach on its own.
+  it('says the reasons only the vault knows', () => {
+    expect(stopped(Stopped.NO_DAY).text()).toContain(words.stopped(Stopped.NO_DAY))
+    expect(stopped(Stopped.NO_LOAD).text()).toContain(words.stopped(Stopped.NO_LOAD))
   })
 })
 

@@ -1,4 +1,5 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
+import { Stopped } from '@numen/protocol'
 import type { Refused } from '../core'
 import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
@@ -109,6 +110,28 @@ const WRITING: Partial<Record<Refused, string>> = {
 /** The write was refused and the vault named no reason the window knows. */
 const UNWRITTEN =
   'These settings could not be written, and the vault named no reason. They are still here.'
+
+/**
+ * Why the preset schedules nothing, one sentence to each verdict the vault may
+ * hand over. A verdict scheduling something says nothing. Every value stands
+ * here, so a verdict added to the schema is one this window is made to answer.
+ */
+const STOPPED: Record<Stopped, string> = {
+  [Stopped.UNSPECIFIED]: '',
+  [Stopped.NOTHING]: '',
+  [Stopped.NO_MINUTES]:
+    'No minutes a day: this preset schedules nothing, and every deck pointing at it stops.',
+  [Stopped.NO_CARDS]:
+    'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
+  [Stopped.NO_DAY]:
+    'This preset aims at no day, so it schedules nothing. ' +
+    'Name the day the material is to be in the head.',
+  [Stopped.PAST_DAY]:
+    'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
+  [Stopped.NO_LOAD]:
+    'Today carries none of this load, so this preset schedules nothing today. ' +
+    'The next day that carries some picks its cards up.',
+}
 
 /** A share as a person reads one, which is a percentage and not a fraction. */
 const share = (value: number): string => `${Math.round(value * 100)}%`
@@ -257,12 +280,8 @@ export const WORDS = {
       ? 'One deck points here and it holds no cards, so this preset schedules nothing.'
       : `${count(decks)} decks point here and they hold no cards, ` +
         'so this preset schedules nothing.',
-  /** The preset schedules nothing, for either of the two reasons. */
-  spent: 'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
-  /** The budget the goal names stands at zero, said in the units it holds. */
-  paused: (goal: Goal) =>
-    `${goal === 'retention' ? 'No cards a day' : 'No minutes a day'}: ` +
-    'this preset schedules nothing, and every deck pointing at it stops.',
+  /** Why the preset schedules nothing on the day it was read in. */
+  stopped: (why: Stopped) => STOPPED[why],
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */

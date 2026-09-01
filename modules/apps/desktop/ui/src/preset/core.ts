@@ -9,6 +9,7 @@ import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
 import type {
+  Stopped,
   Curve as CurveMessage,
   Mark as MarkMessage,
   Preset as PresetMessage,
@@ -138,6 +139,13 @@ export interface Preset {
   readonly settings: Settings
   /** What was wrong in the file and was not guessed at, in the words to show. */
   readonly problems: readonly string[]
+  /** Why it schedules nothing at all, which holds on every day. */
+  readonly stops: Stopped
+  /**
+   * The same asked of the day holding now. A day of the week carrying none of
+   * the load is said here alone.
+   */
+  readonly stopsOn: Stopped
 }
 
 /** What reading a preset came back with. */
@@ -345,6 +353,8 @@ const held = (one: PresetMessage): Preset => ({
   title: one.title,
   settings: settingsOf(one.settings),
   problems: one.problems,
+  stops: one.stops,
+  stopsOn: one.stopsOn,
 })
 
 /** The settings in the window's own words. A preset carrying none is the defaults. */

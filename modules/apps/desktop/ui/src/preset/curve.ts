@@ -250,22 +250,6 @@ export const idle = (curve: Curve): Idle => {
   return curve.cards === 0 ? 'noCards' : ''
 }
 
-/** Whether the day the goal names is behind us, which spends the budget. */
-export const spent = (settings: Settings, today: Date): boolean =>
-  settings.goal === 'date' && settings.byDate !== '' && daysUntil(today, settings.byDate) < 0
-
-/**
- * Whether the preset schedules nothing at all: the budget the goal names is
- * zero, or the day it aimed at has passed. A budget the goal does not name
- * holds whatever it holds and closes no day.
- */
-export const paused = (settings: Settings, today: Date): boolean => {
-  if (spent(settings, today)) return true
-  if (settings.goal === 'retention') return settings.newADay === 0 && settings.reviewsADay === 0
-  if (settings.goal === 'date') return false
-  return settings.minutesADay === 0
-}
-
 /**
  * The line the window draws while the application is still working the honest
  * one out. It is arithmetic over the settings alone, and it says so.

@@ -7,6 +7,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { Stopped } from '@numen/protocol'
 import type { Cards, Carded, Problem, Refused } from '../core'
 import { DEFAULTS, NOWHERE, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
@@ -15,6 +16,9 @@ import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
+
+/** A preset that schedules, which is what every preset here is. */
+const SCHEDULING = { stops: Stopped.NOTHING, stopsOn: Stopped.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => putting({ standing: async () => new Map() })
@@ -114,7 +118,7 @@ const drawn = async (
 
   const presets: Presets = {
     read: async (path) => ({
-      preset: { path, title: '', settings: DEFAULTS, problems: [] },
+      preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
       refusal: null,
       at: '',
     }),
@@ -129,6 +133,7 @@ const drawn = async (
         title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
         settings: DEFAULTS,
         problems: scheduling.saying ? [scheduling.saying] : [],
+        ...SCHEDULING,
       },
       refusal: null,
       at: '',
