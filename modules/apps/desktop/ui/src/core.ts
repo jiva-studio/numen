@@ -50,9 +50,9 @@ export interface Heading {
 
 /**
  * What the vault holds at a path. A file it holds no source for — a picture,
- * an archive — is neither of the two.
+ * an archive — is none of the three.
  */
-export type Source = 'note' | 'book' | 'other'
+export type Source = 'note' | 'book' | 'recording' | 'other'
 
 /**
  * Which of four a note is, as the `type` key of its frontmatter says. It says

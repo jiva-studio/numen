@@ -34,6 +34,7 @@ import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
+import type { Cue, Recordings } from './recording/listening'
 import type {
   Added,
   Answered,
@@ -341,6 +342,30 @@ export const documents: Documents = {
 }
 
 /**
+ * The recordings the vault holds, over the same addresses. The bytes are served
+ * a range at a time, so a player is pointed at the address and seeks in it.
+ */
+export const recordings: Recordings = {
+  listened: async (path) => {
+    const answer = await served(asset(path))
+    const said = (await answer.json()) as { length?: number; heard?: number }
+    return { length: said.length ?? 0, heard: said.heard ?? 0 }
+  },
+  media: (path) => `${asset(path)}/media`,
+  cues: async (path) => {
+    const answer = await served(`${asset(path)}/cues`)
+    const said = (await answer.json()) as { cues?: readonly Cue[] }
+    return said.cues ?? []
+  },
+  plays: async (path, run) => {
+    const where = `start=${run.start}&length=${run.length}`
+    const answer = await served(`${asset(path)}/cues?${where}`)
+    const said = (await answer.json()) as { cues?: readonly Cue[] }
+    return said.cues?.[0]?.from ?? null
+  },
+}
+
+/**
  * Where a file of the vault is asked about. The path is written out whole, so a
  * file in a folder is one part of the address and the facet asked of it is the
  * next.
@@ -426,6 +451,7 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
+  [SourceKind.RECORDING]: 'recording',
 }
 
 /** Which of four a note is, in the words the window uses. */

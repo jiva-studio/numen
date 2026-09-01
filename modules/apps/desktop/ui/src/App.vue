@@ -12,7 +12,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, conversation, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { cards, core, documents, vaults } from './vault'
+import { cards, core, documents, recordings, vaults } from './vault'
 import type { Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
@@ -59,6 +59,8 @@ import { presets } from './preset/core'
 import { presetting } from './preset/kind'
 import { settling } from './settings/kind'
 import { documentKind, documenting } from './document/kind'
+import { recordingKind } from './recording/kind'
+import { listening } from './recording/listening'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
 import { noting, type Held as NoteHeld } from './note/kind'
@@ -196,6 +198,13 @@ const agents = agentKind(held.host, () =>
 /** The document tabs, each reading the document it is filed at. */
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
 
+/** The recording tabs, each playing the recording it is filed at. */
+const heard = recordingKind(held.host, (path) => listening(recordings, path), puts)
+
+// A transcript grows while a model listens, and the list of work is the only
+// word of it the window gets.
+watch(tasks, () => heard.ticked(tasks.value))
+
 /** Where the window is taken when something is chosen, wherever it was chosen. */
 const places: Places = {
   travel: (path) => plexes.travel(path),
@@ -256,6 +265,7 @@ held.declares([
   plexes.kind,
   agents.kind,
   read.kind,
+  heard.kind,
   files.kind,
   decks.kind,
   stencils.kind,
