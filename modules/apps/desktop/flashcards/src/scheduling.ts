@@ -7,7 +7,7 @@
  * together however many there are.
  */
 import { computed, ref } from 'vue'
-import { Goal } from '@numen/protocol'
+import { Goal, Stopped } from '@numen/protocol'
 import type { Refusal } from '@numen/protocol'
 
 import { deckName } from './core'
@@ -56,6 +56,8 @@ export interface Asks {
           title: string
           settings?: Settings | undefined
           problems: readonly string[]
+          /** Why it schedules nothing on the day it was read in. */
+          stopsOn: Stopped
         }
       | undefined
     refusal?: Refusal | undefined
@@ -150,6 +152,7 @@ interface Answered {
     name: string
     settings: Settings
     problems: readonly string[]
+    stopsOn: Stopped
   } | null
   /** Why it was not read, in the words to show, and empty where it was. */
   readonly refused: string
@@ -173,6 +176,7 @@ const scheduled = async (presets: Asks, vaultId: string, deck: string): Promise<
         name: answer.preset.title,
         settings,
         problems: answer.preset.problems,
+        stopsOn: answer.preset.stopsOn,
       },
       refused: '',
     }
@@ -186,6 +190,7 @@ interface Gathering {
   path: string
   name: string
   settings: Settings
+  stopsOn: Stopped
   decks: string[]
   due: number
   fresh: number
@@ -219,6 +224,7 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
         path: one.held.path,
         name: one.held.name || 'The defaults',
         settings: one.held.settings,
+        stopsOn: one.held.stopsOn,
         decks: [],
         due: 0,
         fresh: 0,
@@ -234,7 +240,6 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
   }
 
   const out = [...at.values()].map((one): Preset => {
-    const why = paused(one.settings, today)
     const day = came.get(one.path)
     const budget = day ?? budgetOf(one.settings)
     return {
@@ -251,7 +256,7 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
       closes: day?.closes ?? CLOSES_NOTHING,
       answered: day?.answered ?? 0,
       took: day?.took ?? 0,
-      paused: why,
+      paused: stoppedWords(one.stopsOn, one.settings, today),
       wrong: [...one.problems].join('; '),
     }
   })
@@ -276,7 +281,8 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
       closes: one.closes,
       answered: one.answered,
       took: one.took,
-      paused: '',
+      // The count answered for this preset, so its verdict is the count's.
+      paused: stoppedWords(one.stopsOn, null, today),
       wrong: one.decks > 0 ? why : '',
     })
   }
@@ -345,6 +351,9 @@ export const STOPPED = {
   full: 'the day is full',
   noCards: 'no cards a day',
   noMinutes: 'no budget in time',
+  noDay: 'by no day',
+  /** The day it aimed at is behind us, named where the window holds it. */
+  pastDay: 'the day has passed',
   passed: (day: string) => `${dayWords(day)} has passed`,
   noLoad: (day: string) => `no load on ${weekdayWords(day)}`,
 } as const
@@ -361,40 +370,27 @@ export const leftWords = (one: Preset): string => {
 }
 
 /**
- * Why a preset schedules nothing, and empty while it schedules something.
+ * Why a preset schedules nothing today, in the words to show, and empty while
+ * it schedules something.
  *
- * The budget the goal names is the one that pauses it, and a budget the goal
- * does not name stands as the person left it and pauses nothing. A day of the
- * week carrying none of the load is a pause of that one day.
+ * The verdict is the core's: it is what the sitting hands its cards out by. Two
+ * of the reasons name a day, and the settings carry the one a date aimed at.
  */
-export const paused = (settings: Settings, today: string): string => {
-  const why = budgeted(settings, today)
-  if (why) return why
-  return shareOn(settings, today) === 0 ? STOPPED.noLoad(today) : ''
-}
-
-/** Why the budget the goal names schedules nothing, and empty while it does. */
-const budgeted = (settings: Settings, today: string): string => {
-  switch (settings.goal) {
-    case Goal.RETENTION:
-      return settings.newADay === 0 && settings.reviewsADay === 0 ? STOPPED.noCards : ''
-    case Goal.BY_DATE:
-      return settings.byDate && settings.byDate < today ? STOPPED.passed(settings.byDate) : ''
+export const stoppedWords = (why: Stopped, settings: Settings | null, today: string): string => {
+  switch (why) {
+    case Stopped.NO_MINUTES:
+      return STOPPED.noMinutes
+    case Stopped.NO_CARDS:
+      return STOPPED.noCards
+    case Stopped.NO_DAY:
+      return STOPPED.noDay
+    case Stopped.PAST_DAY:
+      return settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay
+    case Stopped.NO_LOAD:
+      return STOPPED.noLoad(today)
     default:
-      return settings.minutesADay === 0 ? STOPPED.noMinutes : ''
+      return ''
   }
-}
-
-/** The first three letters of each day's name, which is how a preset writes one. */
-const DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
-
-/**
- * How much of a day's load the day of the week carries, as a share of one. A
- * day the preset does not name carries the whole of it.
- */
-const shareOn = (settings: Settings, today: string): number => {
-  const carried = settings.load[DAYS[dated(today).getDay()] ?? '']
-  return carried === undefined ? 1 : carried / 100
 }
 
 /**

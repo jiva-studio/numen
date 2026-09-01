@@ -5,7 +5,7 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Goal } from '@numen/protocol'
+import { Goal, Stopped } from '@numen/protocol'
 
 import { counting } from './counting'
 import type { Counts } from './counting'
@@ -39,7 +39,15 @@ const vault: Owing = {
 
 const answering = (settings: Settings): Asks => ({
   async scheduling() {
-    return { preset: { path: 'Sanskrit.md', title: 'Sanskrit', settings, problems: [] } }
+    return {
+      preset: {
+        path: 'Sanskrit.md',
+        title: 'Sanskrit',
+        settings,
+        problems: [],
+        stopsOn: Stopped.NOTHING,
+      },
+    }
   },
 })
 

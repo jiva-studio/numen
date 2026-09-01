@@ -6,6 +6,7 @@
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import { Rating, FlashcardsService } from '@numen/protocol'
+import type { Stopped } from '@numen/protocol'
 
 const transport = createConnectTransport({ baseUrl: window.location.origin })
 
@@ -73,6 +74,11 @@ export interface PresetOwing {
   readonly minutes: number
   /** Which key each budget closes the day on, and empty where it closes none. */
   readonly closes: Closes
+  /**
+   * Why it schedules nothing on this day, as the core says it. A preset no deck
+   * points at is answered here and nowhere else.
+   */
+  readonly stopsOn: Stopped
 }
 
 /**

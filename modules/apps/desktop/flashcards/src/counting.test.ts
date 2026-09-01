@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { Stopped } from '@numen/protocol'
 
 import { counting } from './counting'
 import type { Counted, Counts, Vaulted } from './counting'
@@ -27,6 +28,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
       closesNew: '',
       closesReviews: '',
       closesMinutes: 'minutes_a_day',
+      stopsOn: Stopped.NOTHING,
     },
   ],
   unread: '',
@@ -133,6 +135,7 @@ describe('counting what every vault owes', () => {
       reviews: 45,
       minutes: 20,
       closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
+      stopsOn: Stopped.NOTHING,
     })
   })
 

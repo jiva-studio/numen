@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal, Refusal } from '@numen/protocol'
+import { Goal, Refusal, Stopped } from '@numen/protocol'
 
 import {
   CLOSES_NOTHING,
@@ -8,10 +8,10 @@ import {
   leftWords,
   named,
   opens,
-  paused,
   scheduling,
   spent,
   STOPPED,
+  stoppedWords,
   through,
 } from './scheduling'
 import type { Asks, Budget, Closes, Preset, Settings } from './scheduling'
@@ -72,6 +72,7 @@ const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
   reviews: 200,
   minutes: 20,
   closes: byMinutes,
+  stopsOn: Stopped.NOTHING,
   ...said,
 })
 
@@ -93,12 +94,20 @@ const vault = (
 
 /** An application answering one preset for each deck named here. */
 const answering = (
-  by: Record<string, { path: string; title: string; settings: Settings }>,
+  by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: Stopped }>,
 ): Asks => ({
   async scheduling({ deck }) {
     const one = by[deck]
     if (!one) return {}
-    return { preset: { path: one.path, title: one.title, settings: one.settings, problems: [] } }
+    return {
+      preset: {
+        path: one.path,
+        title: one.title,
+        settings: one.settings,
+        problems: [],
+        stopsOn: one.stopsOn ?? Stopped.NOTHING,
+      },
+    }
   },
 })
 
@@ -107,62 +116,37 @@ describe('what a day of a preset holds', () => {
     expect(holds(budget({ new: 10, reviews: 45 }))).toBe(55)
   })
 
-  it('is nothing where the preset schedules nothing', () => {
-    expect(paused(settings({ goal: Goal.RETENTION, newADay: 0, reviewsADay: 0 }), '2026-09-05')).toBe(
-      'no cards a day',
-    )
-    expect(paused(settings(), '2026-09-05')).toBe('')
-  })
-
-  it('is nothing past the day the goal names', () => {
-    const by = settings({ goal: Goal.BY_DATE, byDate: '2026-08-31' })
-    expect(paused(by, '2026-09-05')).toMatch(/has passed$/)
-    expect(paused(by, '2026-08-31')).toBe('')
-  })
 })
 
-// The budget the goal names is the one that pauses the preset. A budget the
-// goal does not name stands as the person left it and pauses nothing, so a
-// preset steered by its minutes runs a full day of reviews at no cards a day.
-describe('the budget each goal is paused by', () => {
+// Why a preset schedules nothing is the core's verdict, and the window says it
+// in words. Two of the reasons name a day: the day the goal aimed at, which the
+// settings carry, and the day of the week the person is standing in.
+describe('why a preset schedules nothing, in words', () => {
   const on = '2026-09-05'
 
-  it('is the minutes under a goal of minutes a day', () => {
-    expect(paused(settings({ minutesADay: 0 }), on)).toBe('no budget in time')
-    expect(paused(settings({ minutesADay: 20, newADay: 0, reviewsADay: 0 }), on)).toBe('')
+  it('says nothing at all of a preset that schedules', () => {
+    expect(stoppedWords(Stopped.NOTHING, settings(), on)).toBe('')
+    // A build that said nothing about it is read as scheduling.
+    expect(stoppedWords(Stopped.UNSPECIFIED, settings(), on)).toBe('')
   })
 
-  it('is both card counts under a goal of retention', () => {
-    const asked = (said: Partial<Settings>) =>
-      paused(settings({ goal: Goal.RETENTION, ...said }), on)
-
-    expect(asked({ newADay: 0, reviewsADay: 0 })).toBe('no cards a day')
-    expect(asked({ newADay: 0, reviewsADay: 45 })).toBe('')
-    expect(asked({ minutesADay: 0 })).toBe('')
+  it('says which budget stands at nothing', () => {
+    expect(stoppedWords(Stopped.NO_MINUTES, settings(), on)).toBe('no budget in time')
+    expect(stoppedWords(Stopped.NO_CARDS, settings(), on)).toBe('no cards a day')
+    expect(stoppedWords(Stopped.NO_DAY, settings(), on)).toBe('by no day')
   })
 
-  it('is the day itself under a goal of a date, and neither budget beside it', () => {
-    const asked = (said: Partial<Settings>) =>
-      paused(settings({ goal: Goal.BY_DATE, byDate: '2026-09-30', ...said }), on)
+  it('names the day a goal aimed at, where the settings carry one', () => {
+    const by = settings({ goal: Goal.BY_DATE, byDate: '2026-08-31' })
 
-    expect(asked({ minutesADay: 0 })).toBe('')
-    expect(asked({ newADay: 0, reviewsADay: 0 })).toBe('')
-    expect(asked({ byDate: '2026-09-04' })).toMatch(/has passed$/)
+    expect(stoppedWords(Stopped.PAST_DAY, by, on)).toMatch(/has passed$/)
+    // A preset counted with no settings on hand still says what stopped it.
+    expect(stoppedWords(Stopped.PAST_DAY, null, on)).toBe('the day has passed')
   })
-})
 
-// A day of the week at none of the load schedules nothing, and it is a pause of
-// that one day.
-describe('the share a day of the week carries', () => {
   // The fifth of September in 2026 is a Saturday.
-  it('pauses the day it stands at nothing on', () => {
-    expect(paused(settings({ load: { sat: 0 } }), '2026-09-05')).toMatch(/^no load on /)
-    expect(paused(settings({ load: { sat: 0 } }), '2026-09-04')).toBe('')
-  })
-
-  it('leaves a day carrying any of it scheduling something', () => {
-    expect(paused(settings({ load: { sat: 50 } }), '2026-09-05')).toBe('')
-    expect(paused(settings({ load: {} }), '2026-09-05')).toBe('')
+  it('names the day of the week carrying none of the load', () => {
+    expect(stoppedWords(Stopped.NO_LOAD, settings(), on)).toBe('no load on Saturday')
   })
 })
 
@@ -399,6 +383,7 @@ describe('which preset schedules each deck', () => {
           path: 'Stopped.md',
           title: 'Stopped',
           settings: settings({ goal: Goal.RETENTION, newADay: 0, reviewsADay: 0 }),
+          stopsOn: Stopped.NO_CARDS,
         },
       }),
     })
@@ -470,6 +455,35 @@ describe('which preset schedules each deck', () => {
     // Nothing points at it, so no deck is scheduled by it.
     expect(one.byDeck.value.get('decks/Words.md')?.name).toBe('Sanskrit')
     expect(one.byDeck.value.size).toBe(1)
+  })
+
+  // A preset no deck answers for has no settings on hand, so the count's own
+  // verdict is the only thing that can say it schedules nothing.
+  it('says why a preset no deck points at schedules nothing', async () => {
+    const one = scheduling({ presets: answering({}) })
+
+    await one.read(
+      vault(
+        [],
+        [
+          owing({ preset: 'Empty.md', title: 'Empty', decks: 0, cards: 0 }),
+          owing({
+            preset: 'Quiet.md',
+            title: 'Quiet',
+            decks: 0,
+            cards: 0,
+            stopsOn: Stopped.NO_MINUTES,
+          }),
+        ],
+      ),
+      '2026-09-05',
+    )
+
+    expect(one.presets.value[0]).toMatchObject({ path: 'Empty.md', paused: '' })
+    expect(one.presets.value[1]).toMatchObject({
+      path: 'Quiet.md',
+      paused: 'no budget in time',
+    })
   })
 
   // An empty deck owes nothing, so no deck answers for the preset it names and
@@ -578,6 +592,7 @@ describe('which preset schedules each deck', () => {
               title: 'Sanskrit',
               settings: settings(),
               problems: ['`new_a_day` is not a number'],
+              stopsOn: Stopped.NOTHING,
             },
           }
         },
@@ -630,6 +645,7 @@ describe('which preset schedules each deck', () => {
               title: 'Sanskrit',
               settings: settings(),
               problems: [],
+              stopsOn: Stopped.NOTHING,
             },
           }
         },
