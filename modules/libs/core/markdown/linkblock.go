@@ -11,8 +11,8 @@ import (
 )
 
 // ErrNotOurs is what changing an entry says when the entry carries something
-// the application does not own. A collision is the person's win: their key is
-// reported, and their link is left as they wrote it.
+// the application does not own. A collision is the person's win: the link is
+// named in the error and left as they wrote it.
 var ErrNotOurs = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
@@ -24,10 +24,10 @@ var owned = map[string]bool{
 // entry is one record of the `links:` block: what it says, and the bytes it
 // occupies.
 //
-// The bytes are why this exists. An entry is changed by replacing its own span
-// and nothing else, so the entries around it — including ones the parser could
-// not act on, keys the application has never heard of, and comments somebody
-// wrote to themselves — come out of a write as they went in.
+// An entry is changed by replacing its own span and nothing else, so the
+// entries around it — including ones the parser could not act on, keys the
+// application has never heard of, and comments somebody wrote to themselves —
+// come out of a write as they went in.
 type entry struct {
 	link       domain.Link
 	start, end int
@@ -37,8 +37,7 @@ type entry struct {
 	// ours is whether every key in it is one the application owns.
 	ours bool
 	// address is the node holding where the link goes, so changing it is a
-	// change to that scalar. A key called `proto`, or the word `to:` inside
-	// somebody's sentence, both look the same to a search and are not this.
+	// change to that scalar.
 	address *yaml.Node
 }
 
@@ -178,9 +177,8 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 // taken out, so a note names one place under one type. An empty address takes
 // them all out, and an empty block goes with them.
 //
-// An entry carrying a key the application does not own is refused. An entry the
-// application cannot read carries no role, so it names nothing and is left as
-// it was written.
+// An entry carrying a key the application does not own is refused, and one it
+// cannot read is left as it was written.
 func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
 	if err != nil {
@@ -253,9 +251,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if !e.ours {
 			return 0, fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
 		}
-		// What was not sent is kept. A caller changing a label has not asked
-		// for the person's own words about why the link exists to be dropped.
-		// Every field here behaves the same way, so there is one rule to hold.
+		// What was not sent is kept, and every field here behaves the same way.
 		next := e.link
 		if change.Role != "" {
 			next.Role = change.Role
@@ -502,7 +498,6 @@ func valueOf(item *yaml.Node, key string) *yaml.Node {
 
 // scalar is a value as YAML has to spell it, so that a name carrying `[`, `#`,
 // `&` or a word YAML reads as a number goes into a file as the text it is.
-// Writing it raw is how a rename makes somebody else's note unparseable.
 func scalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)

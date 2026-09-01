@@ -22,7 +22,8 @@ type Preset struct {
 	By time.Time
 
 	// MinutesADay is how long a day of review runs, spent against the time each
-	// answer took. Zero is a preset keeping no budget in time.
+	// answer took. It closes the day under a goal of minutes, where zero is a
+	// pause, and no other goal reads it.
 	MinutesADay int
 	// NewADay and ReviewsADay are how many cards of each kind a day holds.
 	NewADay     int
@@ -48,8 +49,8 @@ type Preset struct {
 	// material comes first; between them the day is split, and a side that runs
 	// short leaves the rest to the other.
 	//
-	// It says what a day is spent on rather than what closes it, and it is read
-	// where one pot is spent between the two.
+	// It says what a day is spent on, closes nothing, and is read where one pot
+	// is spent between the two.
 	Backlog int
 
 	// Load is how much of a day's load each day of the week carries, in per
@@ -138,8 +139,7 @@ func KnownRule(r Rule) bool {
 //
 // A card face nobody has answered is learned by neither rule.
 //
-// It is the one place the rule is read, so a projection and everything drawn
-// beside it answer the same question.
+// It is the one place the rule is read.
 func (p Preset) Learned(s Schedule, at time.Time) bool {
 	if !s.Seen() {
 		return false
@@ -156,7 +156,7 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 //
 // A preset naming no rule counts by the default rule, and a value the rule
 // cannot hold stands at the default. A preset that says nothing holds its cards
-// to the threshold in Defaults, which is the threshold the docs write down.
+// to the threshold in Defaults.
 func (p Preset) counting() (Rule, int, float64) {
 	standing := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
@@ -256,9 +256,8 @@ type Closes struct {
 // Allowance is what one day of a preset admits: how many cards of each kind it
 // has room for, how long the day still runs, and which of the three closes it.
 //
-// It is the one answer to what a day admits. A sitting spends against it and a
-// projection runs on it, so the picture a person drags a control over is the
-// arithmetic the sitting will run.
+// It is the one answer to what a day admits: a sitting spends against it, and a
+// projection runs on it.
 type Allowance struct {
 	// Keeps is what the preset keeps for the whole of this day, the day of the
 	// week having had its say.
@@ -319,15 +318,14 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
 }
 
 // Paying reports whether the next card of this day comes from the debt before
-// it rather than from the material it has not begun.
+// it. False is a card from the material the preset has not begun.
 //
 // Debt and begun are how many of each the day has taken so far, and owed and
 // fresh whether either side has a card left to give. The day is spent between
 // the two in the share the preset names; a side with nothing left leaves the
 // rest of the day to the other, and an odd card goes to the debt.
 //
-// It is the one rule for how a day is spent, so a sitting and a projection of
-// that same day put the same cards in the same order.
+// It is the one rule for how a day is spent.
 func (a Allowance) Paying(debt, begun int, owed, fresh bool) bool {
 	if !owed {
 		return false
@@ -383,9 +381,8 @@ const (
 // Stops is why this preset schedules nothing, and StoppedNothing where it
 // schedules something.
 //
-// It is a fact about the preset and holds on every day. It is the one place the
-// rule is read, so what a caller says about a preset is what the core hands its
-// cards out by.
+// It is the one place the rule is read. A goal of a date is answered against the
+// day holding now, and stops once the day it names is behind that one.
 func (p Preset) Stops(d Day, now time.Time) Stopped {
 	switch p.Goal {
 	case GoalRetention:
@@ -522,8 +519,7 @@ func (p Preset) Past(d Day, now time.Time) bool {
 // read in it.
 //
 // A key that cannot be read is a problem against the note and keeps its
-// default: the file is never repaired, because repairing means guessing at
-// what the person wrote.
+// default, and the file is never repaired.
 func ReadPreset(front map[string]any) (Preset, []string) {
 	p := Defaults()
 	var problems []string

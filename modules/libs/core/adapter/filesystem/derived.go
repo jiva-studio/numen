@@ -237,8 +237,8 @@ func (d *Derived) Remove(_ context.Context, name string) error {
 
 // still confirms the folder is the vault this store was opened on. A vault
 // carries its identity inside itself, and a folder that has lost the identity
-// it had is somewhere else: an unmounted disk, a synchroniser's stub, a folder
-// this store's own creation of its parents would otherwise make.
+// it had is somewhere else: an unmounted disk, a synchroniser's stub, an empty
+// folder this store made on its way to a name.
 func (d *Derived) still() error {
 	id, err := carried(d.vault, d.service)
 	if err != nil {

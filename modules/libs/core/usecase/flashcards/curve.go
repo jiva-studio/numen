@@ -12,22 +12,22 @@ import (
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 )
 
-// Points is how many places a curve is worked out at. The whole range is
-// worked out in one pass, so a control moving over it reads a finished array.
+// Points is how many places a curve is worked out at. A goal of minutes and a
+// goal of retention run at exactly this many, and a goal of a date whose range
+// is shorter runs at one place a day.
 const Points = 25
 
 // LeastCeiling is the shortest day a curve of minutes runs to.
 const LeastCeiling = 60
 
 // MostAhead is how far ahead a goal of a date is projected. A day further off
-// than this gets no curve.
+// than this stands nowhere on the range, and the curve is drawn to the end of
+// the range.
 const MostAhead = 5 * 365
 
 // Curve is what the one control of a preset comes to over the whole range of
-// its goal.
-//
-// Nothing in it is worked out again as the control moves: the grid, what stands
-// at each place of it, and the two marks are all here.
+// its goal. The grid, what stands at each place of it, and the two marks are
+// all here.
 type Curve struct {
 	Goal history.Goal
 	// Grid is the value of the goal at each place: minutes for minutes_a_day, a
@@ -41,17 +41,12 @@ type Curve struct {
 	Now Mark
 	// Suggested is the place worth pointing at: under a goal of minutes the
 	// shortest day the clock no longer cuts short, and under a goal of a date
-	// the first day the budget the preset keeps gets through the material.
-	//
-	// A goal of retention has none, and stands at Nowhere. What a target leaves
-	// in the head climbs the whole way to the top of the range, so a mark on the
-	// most of it would sit at the far end of every curve and advise only asking
-	// for as much as memory allows.
+	// the soonest day the material is learned by at a cost the minutes the
+	// preset keeps allow. A goal of retention has none, and stands at Nowhere.
 	Suggested Mark
 	// Stops is why the settings this curve was drawn under schedule nothing,
 	// and is empty where they schedule something. It is asked of the settings
-	// the request carried, so a person moving a control reads the verdict on
-	// the value under their hand.
+	// the request carried.
 	Stops history.Stopped
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
@@ -69,25 +64,14 @@ type Curve struct {
 
 // Point is what a preset comes to at one place of the grid.
 //
-// What Reviews and Minutes are the height of is the goal's own question.
+// What Reviews and Minutes are the height of is the goal's own question. Under
+// a goal of minutes they are the first day of the run the preset admits: the
+// next sitting a person will actually sit down to. Under a goal of retention
+// they are the load over the days the preset admits.
 //
-// Under a goal of minutes and a goal of a date they are the first day of the
-// run the preset admits: the next sitting a person will actually sit down to. A
-// day at none of the load is no sitting at all, so the picture draws the day
-// after it, and a person moving a control on such a day reads what the setting
-// buys them rather than a row of noughts.
-//
-// It is one real day of the run, worked out by the arithmetic the deck screen
-// runs, so the count read off the curve is the count that sitting hands a
-// person.
-//
-// Under a goal of retention they are the load over the days the preset admits.
-// A target does nothing to today and everything to the weeks after it, so every
-// place of that grid would otherwise draw the same day.
-//
-// A goal of a date fills Minutes with what getting through the material by that
-// day costs and Owed with the backlog that pace leaves standing on it, and
-// Through and Enough with what the budget the preset keeps gets through by it.
+// A goal of a date reads Reviews off that first day, and fills Minutes with
+// what getting through the material by the day the place names costs, over the
+// days of review up to it.
 type Point struct {
 	Reviews float64
 	Minutes float64
@@ -96,8 +80,7 @@ type Point struct {
 	Retained float64
 	// Owed is the card faces standing owed on the last day the projection ran:
 	// Ahead days off under a goal of minutes or of retention, and the day the
-	// place names under a goal of a date. It is the backlog left at the end and
-	// not the debt a day carries.
+	// place names under a goal of a date.
 	Owed int
 	// Through is the share of the material learned by this day, and Enough is
 	// whether the pace this place sets learns every card face that can be
@@ -122,8 +105,7 @@ type Point struct {
 	Learns  int
 	// Backlog is how many card faces stand overdue at the end of each day
 	// projected at this place, one entry a day over the whole horizon. It runs
-	// over days and not over the goal's range, so it is drawn beside the curve
-	// rather than under it.
+	// over days and not over the goal's range.
 	Backlog []int
 }
 
@@ -144,8 +126,7 @@ var Nowhere = Mark{At: -1}
 // Curves is the simulator behind the one control of a preset.
 //
 // It reads the vault's answers once and projects them forward at every place of
-// the goal's range. Nothing here writes: a curve is shown beside a control, and
-// what the control settles is written by the person moving it.
+// the goal's range. Nothing here writes.
 type Curves struct {
 	Standings Standings
 	Schedules Schedules
@@ -182,15 +163,15 @@ func steered(p history.Preset) error {
 
 // Execute is the curve of the goal this preset steers.
 //
-// The preset is passed in: what a curve is wanted for is the value a person is
-// moving and has not written yet. Path is the note the preset stands in and
-// names the decks it schedules, and a preset standing in no note schedules the
-// decks that name none.
+// The preset is the settings the curve is drawn under, and need not be what its
+// note holds. Path is the note the preset stands in and names the decks it
+// schedules, and a preset standing in no note schedules the decks that name
+// none.
 func (u Curves) Execute(
 	ctx context.Context, v domain.Vault, path string, p history.Preset,
 ) (Curve, error) {
-	// The value the goal steers is written into the grid, so a value outside its
-	// bounds is a grid the range no longer runs along.
+	// The value the goal steers is written into the grid, and a grid runs only
+	// between the bounds of it.
 	if err := steered(p); err != nil {
 		return Curve{}, err
 	}
@@ -360,8 +341,7 @@ func (u Curves) minutes(
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
 	}
-	// The day the preset keeps is a place of the grid, so what is drawn under
-	// the mark is drawn for the setting the person is standing at.
+	// The day the preset keeps is a place of the grid.
 	standing(out.Grid, float64(p.MinutesADay), 0, len(out.Grid)-1)
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
@@ -416,9 +396,8 @@ func (u Curves) retention(
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}
-	// The target the preset asks for is a place of the grid, so what is drawn
-	// under the mark is drawn for it. The two ends are what memory allows, and
-	// no setting displaces them.
+	// The target the preset asks for is a place of the grid. The two ends are
+	// what memory allows, and no setting displaces them.
 	standing(out.Grid, p.Retention, 1, len(out.Grid)-2)
 
 	// A place is read on the last day of its run, and that is the day the run
@@ -444,9 +423,7 @@ func (u Curves) retention(
 	}
 
 	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
-	// Nothing is suggested. What a target leaves in the head climbs to the top
-	// of the range, so a mark on the most of it would stand at the far end every
-	// time and say only to ask for as much as memory allows.
+	// A goal of retention suggests nothing, and its mark stands at Nowhere.
 	return out, nil
 }
 
@@ -472,8 +449,7 @@ func (u Curves) date(
 	}
 	// How far off the day the file names is, counting the day holding now as
 	// none. A day further off than the projection reaches stands nowhere on the
-	// range, and the range is drawn as far as it goes so that a person can see
-	// where their day fell off it.
+	// range, and the range is drawn as far as it goes.
 	named := 0
 	for day := open; u.Day.Names(day) < by; day = day.AddDate(0, 0, 1) {
 		named++
@@ -492,12 +468,10 @@ func (u Curves) date(
 
 	// Each place of the range is one day named, run at the pace that day sets:
 	// the material spread over the days up to it. Everything read off a place
-	// comes from that one run, so the height of the curve and the mark on it are
-	// one answer.
+	// comes from that one run.
 	//
-	// Every place runs the same horizon, however near its own day is, so what it
-	// says about a backlog is the same question answered on every goal and not
-	// one asked over as many days as the place stands off.
+	// A place runs a horizon of Ahead days, and of its own day where that stands
+	// further off.
 	steps := naming(spread(last-first+1, Points), named-first)
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
@@ -558,8 +532,7 @@ func (u Curves) date(
 	}
 	// What is suggested is the soonest day the material can be learned by:
 	// nothing out of reach on it and the pace through the whole of it. Where the
-	// preset keeps minutes, the soonest such day whose cost fits them, which is
-	// being through it without changing the day a person sits to.
+	// preset keeps minutes, it is the soonest such day whose cost fits them.
 	if p.MinutesADay > 0 {
 		for i, one := range out.At {
 			if learns(one) && one.Minutes <= float64(p.MinutesADay) {
@@ -584,8 +557,7 @@ func (u Curves) date(
 //
 // No place reads another's answer: a run is given the schedules the answers
 // have already produced, reads them and nothing else, and writes only what it
-// hands back. Each answer is put down at the place it belongs to, so a curve is
-// the same curve however the runs finish, on however many cores.
+// hands back. Each answer is put down at the place it belongs to.
 //
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
@@ -616,11 +588,9 @@ func places(count int, each func(at int) error) error {
 // learnt is how many days of review it takes before the whole material stands
 // learned, projected on the assumption that nothing is forgotten.
 //
-// A run following each card down the middle of what it may do reaches a day the
-// last of them passes the rule only where the pace outruns the fading, so the
-// day a person is shown is the day they reach if the answers go well. It is the
-// one figure drawn under that assumption, and it is the same run and the same
-// arithmetic as every figure beside it.
+// The day it names is the day a person reaches if the answers go well. It is
+// the one figure drawn under that assumption, and the run and the arithmetic
+// are those of every figure beside it.
 func learnt(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFace]history.Schedule, unseen int,
@@ -719,8 +689,7 @@ func spread(days, places int) []int {
 // nearest it. The two ends stand: a range begins tomorrow and reaches as far as
 // it reaches, whatever day the file names.
 //
-// The day the preset aims at is the day a person is looking at, so the point
-// under the mark is worked out for that day and not for the day beside it.
+// The point under the mark is worked out for the day the preset aims at.
 func naming(steps []int, at int) []int {
 	if at < 0 || len(steps) < 3 {
 		return steps

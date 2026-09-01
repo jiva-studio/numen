@@ -49,8 +49,8 @@ func weighed(p fsrs.Parameters) string {
 	return hex.EncodeToString(sum[:4])
 }
 
-// Spaced is a card face this scheduler has put into review: it has been
-// answered well enough to come round in days.
+// Spaced reports whether this scheduler has put a card face into review: it has
+// been answered well enough to come round in days.
 func (FSRS) Spaced(s Schedule) bool {
 	return s.Seen() && fsrs.State(s.Phase) == fsrs.Review
 }

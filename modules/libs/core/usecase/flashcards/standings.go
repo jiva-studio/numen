@@ -54,7 +54,8 @@ type Standings struct {
 // yet, and the application that reads a vault is the editor.
 var ErrUnread = errors.New("this vault has not been read yet: open it in the editor once")
 
-// Execute reads every deck the vault holds and says what stands in it.
+// Execute reads every deck the vault holds and says what stands in it. A vault
+// the index does not carry gets ErrUnread.
 func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, error) {
 	paths, err := u.Decks(ctx, v)
 	if err != nil {
@@ -86,10 +87,9 @@ func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) 
 // cards of one preset hands it the decks pointing there, and the rest of the
 // vault is left unread.
 //
-// A deck that cannot be read contributes no card face and is not an error: one
-// unreadable file is not a reason to refuse a person the rest of their cards.
-// What was wrong with it is the deck's own problem, and the editor is where it
-// is settled.
+// A deck that cannot be read contributes no card face and is not an error. What
+// was wrong with it is the deck's own problem, and the editor is where it is
+// settled.
 func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Standing {
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	stencils := make(map[string]format.Stencil)

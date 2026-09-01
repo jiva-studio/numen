@@ -148,8 +148,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 }
 
 // A higher target is shorter intervals, so the curve of what a day costs rises
-// with it. Nothing is suggested: what a target leaves in the head climbs the
-// whole way, and a mark on the most of it would stand at the far end every time.
+// with it. Nothing is suggested, and the mark stands at Nowhere.
 func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	s := answering(t, 30)
 	p := history.Preset{
@@ -179,8 +178,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
 			got.Suggested.Value)
 	}
-	// What the cost buys climbs the range rather than peaking inside it, which
-	// is why there is nothing to point at.
+	// What the cost buys climbs the whole range, and peaks at the far end of it.
 	least, most := got.At[0].Retained, got.At[len(got.At)-1].Retained
 	if most <= least {
 		t.Errorf("the easiest target retains %v and the hardest %v", least, most)
@@ -510,8 +508,8 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 // goal.
 //
 // A goal of a date runs each place to its own day, and a place near the left of
-// the range would otherwise be asked how long a backlog takes to clear over a
-// horizon of a day or two and answer that it never does.
+// the range is still asked how long a backlog takes to clear over the horizon
+// every other place answers over.
 func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	s := answering(t, 30)
 	p := history.Preset{
@@ -1155,8 +1153,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	}
 }
 
-// A build carrying no index reaches no deck, and answers rather than falling
-// over.
+// A build carrying no index reaches no deck, and answers ErrUnread.
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	s := answering(t, 4)
 	u := s.curves(noon)

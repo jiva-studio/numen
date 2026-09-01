@@ -19,9 +19,9 @@ import (
 // What a person waits for when the review window opens on an installation of
 // several vaults.
 //
-// The first two are what the window costs now: the list of vaults on screen,
-// and the last of their counts landing. The third counts every vault inside one
-// answer, which is what the window cost before.
+// The first two are what the window costs: the list of vaults on screen, and
+// the last of their counts landing. The third counts every vault inside one
+// answer.
 func BenchmarkFrontDoor(b *testing.B) {
 	const vaults, cards, days, perDay = 4, 5000, 60, 100
 

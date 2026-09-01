@@ -81,7 +81,7 @@ func TestADeckNobodyHasAnsweredStandsAtNothingLearned(t *testing.T) {
 }
 
 // A deck holding no cards is counted for nothing: it has no card face to stand
-// learned, and none to be a share of.
+// learned.
 func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 	s := opened(t, map[string]string{
 		"Term.md":        term,

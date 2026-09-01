@@ -239,8 +239,8 @@ func DefaultStarts() time.Duration { return flashcards.DayStarts }
 
 // Starting is the hour a day of review is to begin at, as it goes into the
 // file. An hour past LatestDayStarts, anything that is not an hour of the
-// clock, and no hour at all, are flashcards.ErrNotAnHour. The file is left as
-// it is.
+// clock, and no hour at all, are flashcards.ErrNotAnHour. It reads and writes
+// no file.
 func Starting(written string) (string, error) {
 	starts, hour := Review{DayStarts: written}.Starts()
 	if !hour || strings.TrimSpace(written) == "" {

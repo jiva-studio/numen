@@ -108,7 +108,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 }
 
 // Every transaction the write pool opens takes the write lock at BEGIN, so one
-// that reads before it writes waits its turn instead of being refused.
+// that reads before it writes waits its turn.
 func TestTheWritePoolBeginsItsTransactionsImmediate(t *testing.T) {
 	got := writeDSN("/tmp/index.db")
 	if !strings.HasSuffix(got, "&_txlock=immediate") {

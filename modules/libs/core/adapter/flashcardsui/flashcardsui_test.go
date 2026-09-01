@@ -936,9 +936,7 @@ var spread = map[string]string{
 // The tile over a preset and the sitting it opens are one number.
 //
 // A preset is the whole scope of its own budget, so what the count leaves under
-// it is what a sitting over it asks. The count carries that figure, because a
-// window working one out of the budget would be reading limits the goal may not
-// even name.
+// it is what a sitting over it asks, and the count carries that figure.
 func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 	api, held := windowed(t, spread)
 	v := held[0]

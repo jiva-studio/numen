@@ -490,7 +490,7 @@ func TestAVaultHoldingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 }
 
 // A backlog is cleared the sooner the longer the day, and a pace that never
-// gets through it says so rather than naming a day.
+// gets through it answers NeverClears.
 func TestHowLongABacklogTakesToClear(t *testing.T) {
 	by := history.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -551,9 +551,8 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 // A day that begins new cards still clears the backlog it answered.
 //
 // A card begun this morning is asked for again ten minutes later, so it stands
-// past its hour for the rest of the day. It is not a card the day left behind,
-// and a preset with new material to begin every day would otherwise never be
-// through its backlog however much of it a day carries.
+// past its hour for the rest of the day. It is no part of what the day left
+// behind.
 func TestBeginningNewCardsDoesNotHoldTheBacklogOpen(t *testing.T) {
 	by := history.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
@@ -705,8 +704,8 @@ func TestWhatStandsLearnedToday(t *testing.T) {
 	}{
 		// Sent away for 21 days or longer: the long one and the faded one.
 		{history.RuleInterval, 21, 0.9, 2},
-		// And for 45 or longer: the long one alone, which is what says the
-		// threshold is read rather than assumed.
+		// And for 45 or longer: none of them, where 40 still learns the long
+		// one.
 		{history.RuleInterval, 45, 0.9, 0},
 		{history.RuleInterval, 40, 0.9, 1},
 		// Recalled today with a chance of nine in ten: everything but the faded

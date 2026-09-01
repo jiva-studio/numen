@@ -13,7 +13,8 @@ import (
 // two and calls half of it late.
 const DayStarts = 4 * time.Hour
 
-// ErrNotAnHour is an hour a day of review cannot be made to begin at.
+// ErrNotAnHour is the error of an hour a day of review cannot be made to begin
+// at.
 var ErrNotAnHour = errors.New("a day of review begins at an hour of the day")
 
 // Clock writes a length of time past midnight as an hour of the day.

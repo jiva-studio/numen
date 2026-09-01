@@ -12,7 +12,7 @@ import (
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 )
 
-// update writes the projections down again instead of comparing against them.
+// update writes the projections down again, and compares against none of them.
 var update = flag.Bool("update", false, "write testdata/projection.golden again")
 
 // The projection is the arithmetic every picture and every sitting rests on, so

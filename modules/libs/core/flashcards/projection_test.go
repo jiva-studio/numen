@@ -55,7 +55,7 @@ func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T)
 }
 
 // A preset scheduling nothing answers nothing inside a projection, whatever
-// room the budgets it is not steered by would have left.
+// room the budgets it is not steered by stand at.
 //
 // A goal of a date past holds the day to a count of new cards alone, so nothing
 // but the pause stands between the reviews and the debt.

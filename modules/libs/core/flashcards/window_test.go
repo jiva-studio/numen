@@ -18,7 +18,7 @@ func TestTheWindowACardMayBeMovedInside(t *testing.T) {
 		// last.
 		{days: 2},
 		{days: 91},
-		// A day and a half of slack on a week, and two on twenty days.
+		// Two days either side of a week, and three either side of twenty days.
 		{days: 5, first: 4, last: 6, opens: true},
 		{days: 7, first: 5, last: 9, opens: true},
 		{days: 20, first: 17, last: 23, opens: true},

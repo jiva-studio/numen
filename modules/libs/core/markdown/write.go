@@ -11,19 +11,15 @@ import (
 )
 
 // ErrUnreadable is what opening a note says when its frontmatter is not YAML.
-// Such a note is never written: repairing the block means guessing at what the
-// person wrote, and rewriting around it means dropping what could not be read.
+// Such a note is never written.
 var ErrUnreadable = errors.New("the frontmatter of this note cannot be read")
 
 // Document is a note held open so that one part of it can be changed and every
 // other part left as the bytes it arrived as.
 //
-// This is why it is not a struct marshalled back out. The frontmatter is shared
-// with the person: their key order, their comments, their quoting
-// and their line endings are theirs, and a writer that rebuilds the block from
-// what it understands returns a file full of changes nobody asked for. So a
-// change here is a splice — the span of one key is replaced, and the rest of
-// the file is never rewritten at all.
+// The frontmatter is shared with the person: their key order, their comments,
+// their quoting and their line endings are theirs. A change here is a splice —
+// the span of one key is replaced, and the rest of the file is never rewritten.
 type Document struct {
 	bom   []byte
 	open  []byte // the opening `---` line, with its ending
@@ -69,11 +65,9 @@ func Open(raw []byte) (*Document, error) {
 		at = next
 	}
 
-	// Unterminated: not a frontmatter block, and the whole file is body — but a
-	// file that opens with the delimiter and never closes it is somebody's
-	// frontmatter with a line missing, not prose that happens to start that way.
-	// Writing would put a second block above the first and turn their keys into
-	// text, so it is refused instead.
+	// A file that opens with the delimiter and never closes it is somebody's
+	// frontmatter with a line missing. The whole of it stands as body here, and
+	// every write to it is refused.
 	d.body = rest
 	d.unterminated = true
 	return d, nil
@@ -211,8 +205,7 @@ func (d *Document) List(key string) ([]string, bool) {
 // SetList writes the names one top-level frontmatter key holds from now on,
 // one to a line. No names removes the key.
 //
-// A name already in the list is written the way it was written, because how
-// somebody spells their own frontmatter is theirs.
+// A name already in the list is written the way it was written.
 func (d *Document) SetList(key string, names []string) error {
 	if len(names) == 0 {
 		return d.set(key, nil)
@@ -496,10 +489,8 @@ func indented(rendered []byte, indent string) []byte {
 // span is the byte range one top-level key occupies in the frontmatter,
 // including the lines its value continues onto.
 //
-// The end is walked back over blank lines and comments, because a comment
-// written above the next key belongs to that key and not to this one. Taking
-// it with the entry being replaced would delete somebody's note to themselves
-// on the way past.
+// The end is walked back over blank lines and comments: a comment written
+// above the next key belongs to that key.
 func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
@@ -608,8 +599,7 @@ func anchored(node *yaml.Node) bool {
 }
 
 // ErrUnterminated is a note that opens a frontmatter block and never closes it.
-// What the person meant is not knowable from here, and writing would decide it
-// for them.
+// Nothing is changed in it.
 var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
 
 // flow reports whether a collection is written on one line, which is what puts

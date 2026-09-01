@@ -5,21 +5,18 @@ import (
 	"strings"
 )
 
-// Replay works out where a history leaves every card face it names.
+// Replay works out where a history leaves every card face it names, each placed
+// on its day by the preset a deck naming none is scheduled by. Day is when a day
+// of review begins.
 //
 // The answers arrive in whatever order the files were read, and the files
 // arrive in whatever order they were synchronised, so they are put in the order
-// they were given first. A schedule depends on that order: an answer counted
-// after a later one leaves a card face somewhere neither of them would have.
+// they were given first. A schedule depends on that order.
 //
-// An answer some line takes back is left out. Both lines stay in the file —
-// nothing here is ever rewritten — and what a person took back is not counted.
-//
-// One identifier is one answer, however many lines carry it. A synchroniser
-// that met a conflict leaves a second copy of a run beside the first, and a
-// person restoring a backup puts one there by hand; counting those lines twice
-// would double what a card has been through and send it away for longer than it
-// was earned.
+// An answer some line takes back is left out, and both lines stay in the file.
+// One identifier is one answer however many lines carry it: a synchroniser that
+// met a conflict leaves a second copy of a run beside the first, and a person
+// restoring a backup puts one there by hand.
 func Replay(d Day, by Scheduler, answers []Answer) map[CardFace]Schedule {
 	return ReplayUnder(d, By(by), answers)
 }
@@ -92,8 +89,8 @@ type Retention struct {
 
 // Retained is what came back on each day, by the name of the day.
 //
-// It is worked out with the replay and not beside it, because whether a card
-// face was spaced is a thing only the answers before it can say.
+// It is worked out with the replay: whether a card face was spaced is a thing
+// only the answers before it can say.
 func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
 	return Give(answers).Retained(by, d)
 }
@@ -167,12 +164,10 @@ func given(answers []Answer) []Answer {
 
 // byWhen puts answers in the order they were given.
 //
-// Two answers of one millisecond are put in the order of their identifiers.
-// Which of them was given first is not known: an identifier carries the
-// millisecond and then randomness, so inside one millisecond it orders by
-// chance. What this gives is one order, the same at every launch, which is what
-// a schedule worked out again has to have. A person does not answer two cards
-// inside a millisecond, so the two are only ever a machine's.
+// Two answers of one millisecond are put in the order of their identifiers,
+// which is one order and the same at every launch. Which of them was given
+// first is not known: an identifier carries the millisecond and then
+// randomness.
 func byWhen(a, b Answer) int {
 	if !a.At.Equal(b.At) {
 		return a.At.Compare(b.At)
