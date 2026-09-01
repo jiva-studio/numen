@@ -31,7 +31,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
-  closed: '',
+  closed: [],
   clears: 0,
   learned: 0,
   short: 0,

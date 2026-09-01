@@ -176,13 +176,13 @@ const CLOSES: Record<Goal, readonly string[]> = {
 const CLOSERS: readonly string[] = ['minutes_a_day', 'new_a_day', 'reviews_a_day']
 
 /**
- * What closes the day here where the goal on screen is not what closes it, and
- * empty where it is. A day nothing closed asked for every card there was.
+ * What closes the day here besides the goal on screen, and nothing where the
+ * goal is the whole of it. A day nothing closed asked for every card there was,
+ * and a day two budgets closed names both.
  */
-export const limiting = (curve: Curve, point: Point | null): string => {
-  if (!curve.honest || !point) return ''
-  if (!CLOSERS.includes(point.closed)) return ''
-  return CLOSES[curve.goal].includes(point.closed) ? '' : point.closed
+export const limiting = (curve: Curve, point: Point | null): readonly string[] => {
+  if (!curve.honest || !point) return []
+  return point.closed.filter((one) => CLOSERS.includes(one) && !CLOSES[curve.goal].includes(one))
 }
 
 /**
@@ -327,7 +327,7 @@ const guessed = (settings: Settings, value: number, grid: readonly number[]): Po
     through: 0,
     enough: true,
     met: true,
-    closed: '',
+    closed: [],
     clears: 0,
     learned: 0,
     short: 0,

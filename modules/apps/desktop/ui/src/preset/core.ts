@@ -170,11 +170,12 @@ export interface Point {
   readonly enough: boolean
   readonly met: boolean
   /**
-   * The budget that closed the day here, written as the preset writes the key:
-   * `minutes_a_day`, `new_a_day`, `reviews_a_day`, or `paused`. Empty is a day
-   * that asked for every card there was.
+   * Every budget that closed the day here, each written as the preset writes
+   * the key: `minutes_a_day`, `new_a_day`, `reviews_a_day`, `by_date`, or
+   * `paused`. None is a day that asked for every card there was, and a day
+   * held to two counts names both.
    */
-  readonly closed: string
+  readonly closed: readonly string[]
   /**
    * How many days of review at this place before nothing is overdue. Zero is a
    * preset standing over nothing overdue, and -1 is a pace that never gets

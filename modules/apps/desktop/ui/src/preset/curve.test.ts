@@ -39,7 +39,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
-  closed: '',
+  closed: [],
   clears: 0,
   learned: 0,
   short: 0,
@@ -248,31 +248,49 @@ describe('what closes the day where the goal on screen does not', () => {
   // A target closes no day of its own, so a count closing one is always
   // something other than the goal on screen.
   it('is the count that closed a day worked to a target', () => {
-    expect(limiting(over('retention'), point({ closed: 'reviews_a_day' }))).toBe('reviews_a_day')
-    expect(limiting(over('retention'), point({ closed: 'new_a_day' }))).toBe('new_a_day')
+    expect(limiting(over('retention'), point({ closed: ['reviews_a_day'] }))).toStrictEqual([
+      'reviews_a_day',
+    ])
+    expect(limiting(over('retention'), point({ closed: ['new_a_day'] }))).toStrictEqual([
+      'new_a_day',
+    ])
+  })
+
+  // A person raising one of two counts and finding nothing changed is reading a
+  // day the other closed too, so both are named.
+  it('is both counts where both closed the day', () => {
+    const both = point({ closed: ['new_a_day', 'reviews_a_day'] })
+    expect(limiting(over('retention'), both)).toStrictEqual(['new_a_day', 'reviews_a_day'])
   })
 
   it('is the count that closed a day of minutes before the clock did', () => {
-    expect(limiting(over('minutes'), point({ closed: 'new_a_day' }))).toBe('new_a_day')
+    expect(limiting(over('minutes'), point({ closed: ['new_a_day'] }))).toStrictEqual(['new_a_day'])
   })
 
   it('is nothing where the goal on screen is what closed the day', () => {
-    expect(limiting(over('minutes'), point({ closed: 'minutes_a_day' }))).toBe('')
-    expect(limiting(over('date'), point({ closed: 'by_date' }))).toBe('')
+    expect(limiting(over('minutes'), point({ closed: ['minutes_a_day'] }))).toStrictEqual([])
+    expect(limiting(over('date'), point({ closed: ['by_date'] }))).toStrictEqual([])
+  })
+
+  // The goal on screen is left out of a day it closed alongside another budget,
+  // and the other is named.
+  it('is what closed the day besides the goal on screen', () => {
+    const both = point({ closed: ['minutes_a_day', 'new_a_day'] })
+    expect(limiting(over('minutes'), both)).toStrictEqual(['new_a_day'])
   })
 
   // A day that asked for every card there was closed on nothing, and a pause
   // is said elsewhere.
   it('is nothing for a day no budget closed, nor for a preset paused', () => {
-    expect(limiting(over('minutes'), point({ closed: '' }))).toBe('')
-    expect(limiting(over('minutes'), point({ closed: 'paused' }))).toBe('')
+    expect(limiting(over('minutes'), point({ closed: [] }))).toStrictEqual([])
+    expect(limiting(over('minutes'), point({ closed: ['paused'] }))).toStrictEqual([])
   })
 
   it('is nothing of a line the window guessed, nor where there is no place', () => {
-    expect(limiting({ ...over('retention'), honest: false }, point({ closed: 'new_a_day' }))).toBe(
-      '',
-    )
-    expect(limiting(over('retention'), null)).toBe('')
+    expect(
+      limiting({ ...over('retention'), honest: false }, point({ closed: ['new_a_day'] })),
+    ).toStrictEqual([])
+    expect(limiting(over('retention'), null)).toStrictEqual([])
   })
 })
 

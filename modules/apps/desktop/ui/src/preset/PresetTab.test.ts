@@ -65,7 +65,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   through: 0,
   enough: true,
   met: true,
-  closed: '',
+  closed: [],
   clears: 0,
   learned: 0,
   short: 0,
@@ -884,10 +884,10 @@ describe('what the control stands at', () => {
   it('says nothing of what closes the day where the goal on screen closes it', () => {
     const { tab } = drawn({
       at: [
-        point({ closed: 'minutes_a_day' }),
-        point({ closed: 'minutes_a_day' }),
-        point({ reviews: 80, closed: 'minutes_a_day' }),
-        point({ closed: 'minutes_a_day' }),
+        point({ closed: ['minutes_a_day'] }),
+        point({ closed: ['minutes_a_day'] }),
+        point({ reviews: 80, closed: ['minutes_a_day'] }),
+        point({ closed: ['minutes_a_day'] }),
       ],
     })
     expect(tab.text()).not.toContain('is not what limits this preset')
