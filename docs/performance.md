@@ -772,6 +772,31 @@ The two runs of a row landed within 8 % of each other on the clock, and the last
 
 **What is left is the scheduler's own arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 96 % of the request and the reckoning that closes a day is 0.2 % of it. That is the pass that was 32 %.
 
+## What the scheduler is asked to work out
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
+
+| card faces | Before | After |
+| --- | --- | --- |
+| 500 | 0.27 s · 145 MB | 0.12 s · 19.6 MB |
+| 5 000 | 2.17 s · 1.29 GB | 1.01 s · 150 MB |
+| 20 000 | 7.4 s · 4.86 GB | 3.5 s · 592 MB |
+| 50 000 | 17.6 s · 11.68 GB | 8.8 s · 1.52 GB |
+
+Both columns are the median of two runs of three on an idle machine. **The allocation is the column these are read on.** It is what the change takes away, and it is steady: the two runs of a row are within 0.05 % of each other everywhere. The clock halves at every size, which is far outside the spread of the runs behind it — 3 % or less at every size but 5 000, whose two runs after the change are a sixth apart. **That row says nothing on the clock** and is here for its memory.
+
+**The Before column is this machine on this day.** Its 50 000 row reads 17.6 s where the section above wrote 15.5 s, on the same build and the same allocation to a hundredth of a per cent. It is what the After beside it is read against and not a figure to carry anywhere else.
+
+**A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now stands beside the port, on the library's own weights: at fifty thousand card faces a request allocated 92.2 million times and now allocates 3.3 million.
+
+**87 % was the estimate and 87 % is the measurement.** A profile before the change put 87 % of every byte a request allocates inside the library. The four rows came to 86.5, 88.3, 87.8 and 87.0 per cent.
+
+**Good is worked out from hard.** The interval a good answer names is held a day past the one a hard answer names, so the two endings a projection weighs cost the hard ending's stability as well. Easy is worked out only where an easy answer is asked for.
+
+**What the transcription had to keep.** The days a card face stood away are counted into a whole number that carries no sign. A card face answered before the answer it already holds — which is in every material a projection opens on, wherever an interval runs past the day the run begins — stands about 9.2 × 10¹⁸ days away, and comes back to nobody. That is the arithmetic this application has always run and it is the arithmetic here. The conversion is the machine's, so a build for another architecture may make a different number of it and send that card face to a different day.
+
+**What is left is arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 77 % of the request, the answers themselves are 49 %, and the scheduler is 30 %. `math.Pow` and `math.Exp` together are 22 %, and choosing the day a card lands on is 15 %. Reading the vault, which was 4 %, is now 7 % of a shorter request.
+
 ## What a window asks of every vault
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/flashcardsui`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
