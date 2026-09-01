@@ -6,7 +6,9 @@ A file here records **one decision**: something that could have been settled ano
 
 **Every ADR says what it applies to.** This repository holds several applications, and a decision about one of them is not a decision about the product. The header of each says which.
 
-**A rule is written once, in the present tense, as it now stands.** An ADR is not a changelog of itself. To change an accepted decision, rewrite the file and let git hold what was believed before.
+**A rule is written once, in the present tense, as it now stands.** No record narrates its own drafting, and git holds the drafts.
+
+**A decision that has been replaced keeps its text, under a banner.** The section that no longer holds opens with a line naming the record that replaced it and saying what holds now, and that record names this one in its `Supersedes:` or `Amends:` header. A decision that moved to a record of its own leaves nothing behind: nothing was settled differently.
 
 **A decision is in the record once it is on the default branch.** Until then it is its pull request's draft, and a draft is edited in place.
 
