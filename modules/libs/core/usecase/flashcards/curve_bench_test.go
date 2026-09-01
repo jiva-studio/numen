@@ -30,6 +30,54 @@ func curveLoad(cards int) map[string]string {
 	return out
 }
 
+// curveWhole is the vault of twenty decks with every one of them pointing at
+// one preset, so the curve of that preset is drawn over the whole of it.
+func curveWhole(cards int) map[string]string {
+	out := loadDeck(cards)
+	out["Whole.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
+		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\n---\n"
+	for at := range 20 {
+		path := fmt.Sprintf("decks/Deck%02d.md", at)
+		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
+			"---\ntype: deck\n"+names("Whole"), 1)
+	}
+	return out
+}
+
+// The curve of a preset holding the whole vault, at four sizes of it.
+//
+// What the projection costs stands on the card faces the preset holds, and
+// these four rows are what says how it grows with them. The log grows with the
+// vault too, at the same half an answer a card face the row above is built on.
+//
+// The schedule cache is filled before the clock starts, which is what opening
+// the window and then a preset tab costs.
+func BenchmarkCurveCards(b *testing.B) {
+	for _, cards := range []int{500, 5000, 20000, 50000} {
+		b.Run(fmt.Sprint(cards), func(b *testing.B) {
+			s := opened(b, curveWhole(cards))
+			loadAnswers(b, s, cards, 180, max(1, cards*150/50000))
+
+			ctx := b.Context()
+			if _, err := s.kept.Execute(ctx, s.vault); err != nil {
+				b.Fatal(err)
+			}
+			p := history.Preset{
+				Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			}
+			curves := s.curves(time.Now())
+			if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
+				b.Fatal(err)
+			}
+			for b.Loop() {
+				if _, err := curves.Execute(ctx, s.vault, "Whole.md", p); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 // The curve of one preset, over fifty thousand card faces in twenty decks
 // answered a hundred and fifty times a day for six months.
 //
