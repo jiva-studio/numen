@@ -134,6 +134,11 @@ message DeckOwing {
   // the way its preset counts. A deck holding nothing more today and answered
   // nothing today was not studied.
   int32 answered = 5;
+
+  // How many of the deck's card faces stand learned now, under the rule the
+  // preset scheduling the deck counts by. It is a share of faces, and it is
+  // not what a preset has got through of its day.
+  int32 learned = 6;
 }
 
 // PresetOwing is one preset of a vault, and what the day comes to under it.

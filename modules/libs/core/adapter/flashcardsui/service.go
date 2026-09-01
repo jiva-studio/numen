@@ -126,6 +126,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 			Due:      int32(deck.Due),
 			New:      int32(deck.New),
 			Answered: int32(deck.Answered),
+			Learned:  int32(deck.Learned),
 		})
 	}
 	for _, preset := range owing.Presets {
