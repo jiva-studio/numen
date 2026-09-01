@@ -338,6 +338,7 @@ onUnmounted(() => {
       :due="done.due.value"
       :presets="schedules.presets.value"
       :by-deck="schedules.byDeck.value"
+      :scheduled="schedules.known.value"
       :today="today"
       @start="start"
       @start-preset="startPreset"

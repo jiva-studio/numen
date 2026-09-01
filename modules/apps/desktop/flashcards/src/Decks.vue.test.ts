@@ -49,8 +49,8 @@ const vault: Owing = {
   due: 12,
   new: 4,
   decks: [
-    { deck: 'decks/Words.md', faces: 20, due: 8, new: 2 },
-    { deck: 'decks/Roots.md', faces: 20, due: 4, new: 2 },
+    { deck: 'decks/Words.md', faces: 20, due: 8, new: 2, learned: 5 },
+    { deck: 'decks/Roots.md', faces: 20, due: 4, new: 2, learned: 10 },
   ],
   presets: [
     {
@@ -79,6 +79,7 @@ const shown = (presets: readonly Preset[], over: Owing = vault) =>
       due: new Map(),
       presets,
       byDeck: new Map(presets.flatMap((one) => one.decks.map((deck) => [deck, one] as const))),
+      scheduled: true,
       today: '2026-09-05',
     },
   })
@@ -116,7 +117,7 @@ describe('a deck with nothing waiting', () => {
     ...vault,
     due,
     new: fresh,
-    decks: [{ deck: 'decks/Words.md', faces, due, new: fresh }],
+    decks: [{ deck: 'decks/Words.md', faces, due, new: fresh, learned: 0 }],
   })
 
   // Something was answered under the preset today and nothing of this deck is
@@ -192,9 +193,9 @@ describe('the tile and the decks under it', () => {
       due: 10,
       new: 0,
       decks: [
-        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0 },
-        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0 },
-        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0 },
+        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0, learned: 0 },
+        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0, learned: 0 },
+        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0, learned: 0 },
       ],
     }
     const one = shown(

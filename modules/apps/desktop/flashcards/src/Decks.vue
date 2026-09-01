@@ -6,13 +6,13 @@
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
-import { Button, KeyCap, Owed } from '@numen/ui'
+import { Button, Coming, KeyCap, Owed } from '@numen/ui'
 import type { HeatmapTally } from '@numen/ui'
 import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { deckName } from './core'
 import { letterOf } from './keying'
-import { opens, spent, STOPPED } from './scheduling'
+import { learned, opens, spent, LEARNED, STOPPED } from './scheduling'
 import type { DeckOwing, Owing } from './core'
 import type { Preset } from './scheduling'
 
@@ -26,6 +26,8 @@ const props = defineProps<{
   presets: readonly Preset[]
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   byDeck: ReadonlyMap<string, Preset>
+  /** Whether those presets have been read, which a deck missing from them needs. */
+  scheduled: boolean
   /** The day this is being read on, as the year, the month and the day. */
   today: string
 }>()
@@ -61,6 +63,17 @@ const empty = (deck: DeckOwing): string => {
   const one = props.byDeck.get(deck.deck)
   return one && spent(one) ? STOPPED.full : STOPPED.nothing
 }
+
+/**
+ * How much of a deck stands learned, and empty where the share cannot be said:
+ * a deck holding no card face is a share of nothing, and a deck whose preset
+ * was not read has no rule to be counted by.
+ */
+const share = (deck: DeckOwing): string => {
+  if (props.scheduled && !props.byDeck.has(deck.deck)) return LEARNED.unruled
+  const of = learned(deck)
+  return of === null ? '' : LEARNED.share(of)
+}
 </script>
 
 <template>
@@ -95,6 +108,12 @@ const empty = (deck: DeckOwing): string => {
               byDeck.get(deck.deck)?.name
             }}</span>
           </span>
+          <!-- How much of the deck stands learned, under the rule its own
+               preset counts by. The word is said with the figure: a bare share
+               on this screen is how far through its day a preset stands. -->
+          <Coming v-if="!vault.counted" class="decks__learned" wide="3.5rem" high="0.7em" />
+          <span v-else-if="share(deck)" class="decks__learned">{{ share(deck) }}</span>
+
           <!-- What is left of this deck today, or why nothing is. Having
                nothing due is not having finished, so the day's work is only
                met where something was answered. A deck holding no cards at all
@@ -196,6 +215,16 @@ const empty = (deck: DeckOwing): string => {
 .decks__by {
   color: var(--numen-hushed);
   font-size: var(--numen-edge-label-size);
+}
+
+/* The share stands to the left of what the deck owes, in the screen's quiet
+   voice: it is read on the way to the counts and never instead of them. */
+.decks__learned {
+  flex: none;
+  color: var(--numen-hushed);
+  font-size: var(--numen-edge-label-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .decks__stopped,

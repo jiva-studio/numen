@@ -44,6 +44,11 @@ export interface DeckOwing {
   readonly faces: number
   readonly due: number
   readonly new: number
+  /**
+   * How many of its card faces stand learned now, under the rule the preset
+   * scheduling it counts by.
+   */
+  readonly learned: number
 }
 
 /** One preset of a vault, and what the day comes to under it. */

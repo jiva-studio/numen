@@ -87,7 +87,13 @@ const vault = (
   faces: 0,
   due: 0,
   new: 0,
-  decks: decks.map((one) => ({ deck: one.deck, faces: 0, due: one.due, new: one.new })),
+  decks: decks.map((one) => ({
+    deck: one.deck,
+    faces: 0,
+    due: one.due,
+    new: one.new,
+    learned: 0,
+  })),
   presets,
   unread: '',
 })
@@ -241,7 +247,13 @@ describe('what sitting down to a preset would ask', () => {
 
 // The row of a deck and the letter drawn on it are one act, and both ask this.
 describe('whether sitting down to a deck is offered', () => {
-  const deck = (due: number, fresh = 0) => ({ deck: 'decks/Words.md', faces: 20, due, new: fresh })
+  const deck = (due: number, fresh = 0) => ({
+    deck: 'decks/Words.md',
+    faces: 20,
+    due,
+    new: fresh,
+    learned: 0,
+  })
   const by = (one?: Preset) => new Map(one ? [['decks/Words.md', one]] : [])
 
   it('is offered where the deck owes and its preset schedules something', () => {

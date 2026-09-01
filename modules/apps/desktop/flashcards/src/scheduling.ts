@@ -109,6 +109,13 @@ export function scheduling(deps: Scheduling) {
   /** Which vault the presets on hand belong to. */
   const of = ref('')
 
+  /**
+   * Whether the presets of that vault have been read. A deck the reading passed
+   * over is a deck whose preset could not be read, and until it has run nothing
+   * is known either way.
+   */
+  const known = ref(false)
+
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   const byDeck = computed(() => {
     const out = new Map<string, Preset>()
@@ -121,6 +128,7 @@ export function scheduling(deps: Scheduling) {
   const forget = () => {
     presets.value = []
     of.value = ''
+    known.value = false
   }
 
   // Today is the review day, which the application measures and this window is
@@ -130,6 +138,9 @@ export function scheduling(deps: Scheduling) {
       forget()
       return
     }
+    // A vault read again keeps what is known of it while the reading runs, so
+    // the screen it is read behind does not empty and fill.
+    if (of.value !== vault.vaultId) known.value = false
     of.value = vault.vaultId
 
     const held = await Promise.all(
@@ -138,9 +149,10 @@ export function scheduling(deps: Scheduling) {
     if (of.value !== vault.vaultId) return
 
     presets.value = gather(vault, held, today)
+    known.value = true
   }
 
-  return { presets, byDeck, of, read, forget }
+  return { presets, byDeck, of, known, read, forget }
 }
 
 /** What was answered about one deck's preset. */
@@ -357,6 +369,26 @@ export const STOPPED = {
   passed: (day: string) => `${dayWords(day)} has passed`,
   noLoad: (day: string) => `no load on ${weekdayWords(day)}`,
 } as const
+
+/**
+ * How much of a deck stands learned, and what is said where no share can be.
+ *
+ * The word stands with the figure. A bare share on this screen is how far
+ * through its day a preset is, and how far through its material a deck is is
+ * another question.
+ */
+export const LEARNED = {
+  share: (of: number) => `${Math.round(of * 100)}% learned`,
+  /** The preset scheduling the deck could not be read, and the rule is its. */
+  unruled: 'no rule to count by',
+} as const
+
+/**
+ * How much of a deck stands learned, as a share of its card faces, and null for
+ * a deck holding none: a share of nothing is no share.
+ */
+export const learned = (deck: DeckOwing): number | null =>
+  deck.faces > 0 ? deck.learned / deck.faces : null
 
 /**
  * How many cards sitting down to this preset would put in front of a person,

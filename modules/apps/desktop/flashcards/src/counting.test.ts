@@ -11,7 +11,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
   faces: 3,
   due: 1,
   new: 2,
-  decks: [{ deck: 'decks/Words.md', faces: 3, due: 1, new: 2 }],
+  decks: [{ deck: 'decks/Words.md', faces: 3, due: 1, new: 2, learned: 1 }],
   presets: [
     {
       preset: 'Sanskrit.md',
