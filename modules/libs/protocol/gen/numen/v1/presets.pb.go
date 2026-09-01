@@ -13,8 +13,8 @@
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
 // says what the whole range of that value comes to. A curve is asked for with
-// the settings a person is moving and has not written yet, so nothing here
-// writes anything.
+// the settings a person is moving and has not written yet, and asking for one
+// writes nothing.
 
 package numenv1
 
@@ -278,8 +278,9 @@ type Settings struct {
 	// The day the material is to be in the head, as the year, the month and the
 	// day. Empty for a preset aiming at no day.
 	ByDate string `protobuf:"bytes,2,opt,name=by_date,json=byDate,proto3" json:"by_date,omitempty"`
-	// How long a day of review runs, spent against the time each answer took.
-	// Zero keeps no budget in time.
+	// How long a day of review runs, spent against the time each answer took. It
+	// closes the day under a goal of minutes, where zero is a pause, and no other
+	// goal reads it.
 	MinutesADay int32 `protobuf:"varint,3,opt,name=minutes_a_day,json=minutesADay,proto3" json:"minutes_a_day,omitempty"`
 	// How many cards of each kind a day holds.
 	NewADay     int32 `protobuf:"varint,4,opt,name=new_a_day,json=newADay,proto3" json:"new_a_day,omitempty"`
@@ -296,8 +297,8 @@ type Settings struct {
 	// new cards on what is left, nothing puts the new material first, and between
 	// them the day is split until one side runs out and the other takes the rest.
 	//
-	// It says what a day is spent on rather than what closes it. A goal of a date
-	// carries the whole material by its own reckoning, so it takes no part there.
+	// It says what a day is spent on and closes nothing. A goal of a date carries
+	// the whole material by its own reckoning, so it takes no part there.
 	Backlog int32 `protobuf:"varint,10,opt,name=backlog,proto3" json:"backlog,omitempty"`
 	// How much of a day's load each day of the week carries, in per cent, under
 	// the first three letters of the day's name in lower case. A day not named
@@ -439,8 +440,9 @@ type Preset struct {
 	// The settings stand at the defaults for each of them, and the editor is
 	// where they are settled.
 	Problems []string `protobuf:"bytes,4,rep,name=problems,proto3" json:"problems,omitempty"`
-	// Why the preset schedules nothing. It is a fact about the preset and holds
-	// on every day, and it is the answer a window has before any curve exists.
+	// Why the preset schedules nothing, asked against the day holding now: a goal
+	// of a date stops once the day it names is behind that one. It is the answer
+	// a window has before any curve exists.
 	Stops Stopped `protobuf:"varint,5,opt,name=stops,proto3,enum=numen.v1.Stopped" json:"stops,omitempty"`
 	// The same asked of the day holding now: whatever stops the preset at all,
 	// and a day of the week carrying none of the load. A preset with a light
@@ -656,23 +658,22 @@ func (x *Curve) GetUnbegun() int32 {
 }
 
 // Point is what a preset comes to at one place of the grid.
-//
-// A goal of a date fills `minutes` with what getting through the material by
-// that day costs, and `through` and `enough` with what the budget the preset
-// keeps gets through by it. The rest stands at zero there.
 type Point struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Under a goal of minutes, the next sitting a person will sit down to: the
 	// first day the preset admits, which is the day the deck screen offers. A day
-	// at none of the load is no sitting, so the day after it is drawn. Under the
-	// other two, the load over the days the preset admits.
+	// at none of the load is no sitting, so the day after it is drawn. Under a
+	// goal of retention, the load over the days the preset admits.
+	//
+	// A goal of a date reads `reviews` off that first day, and fills `minutes`
+	// with what getting through the material by the day the place names costs,
+	// over the days of review up to it.
 	Reviews float64 `protobuf:"fixed64,1,opt,name=reviews,proto3" json:"reviews,omitempty"`
 	Minutes float64 `protobuf:"fixed64,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// The share of the material that comes back.
 	Retained float64 `protobuf:"fixed64,3,opt,name=retained,proto3" json:"retained,omitempty"`
-	// The card faces standing owed on the last day the projection ran, which is
-	// the backlog left at the end and not the debt a day carries. Read `clears`
-	// for how long the backlog standing now takes to go.
+	// The card faces standing owed on the last day the projection ran. Read
+	// `clears` for how long the backlog standing now takes to go.
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
 	// The share of the material learned by this day under the rule the settings
 	// name, and whether the pace this place sets learns every card face that can
@@ -694,7 +695,7 @@ type Point struct {
 	Clears int32 `protobuf:"varint,9,opt,name=clears,proto3" json:"clears,omitempty"`
 	// How many card faces stand overdue at the end of each day projected at this
 	// place, one entry a day over the whole horizon. It runs over days, which is
-	// a different axis from the grid, so it is drawn as a plot of its own.
+	// a different axis from the grid.
 	Backlog []int32 `protobuf:"varint,10,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
 	// How many card faces stand learned today under the rule the settings name.
 	Learned int32 `protobuf:"varint,11,opt,name=learned,proto3" json:"learned,omitempty"`
@@ -714,8 +715,7 @@ type Point struct {
 	Learns *int32 `protobuf:"varint,12,opt,name=learns,proto3,oneof" json:"learns,omitempty"`
 	// How many card faces cannot be learned by this day whatever the pace: the
 	// rule wants more days than the day leaves them, so no pace reaches them and
-	// the pace beside this is the one that reaches every other. Say the number;
-	// the day is not moved and the rule is not bent to hide it.
+	// the pace beside this is the one that reaches every other.
 	Short         int32 `protobuf:"varint,13,opt,name=short,proto3" json:"short,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

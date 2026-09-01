@@ -11,8 +11,8 @@
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
 // says what the whole range of that value comes to. A curve is asked for with
-// the settings a person is moving and has not written yet, so nothing here
-// writes anything.
+// the settings a person is moving and has not written yet, and asking for one
+// writes nothing.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -47,8 +47,9 @@ export type Settings = Message<"numen.v1.Settings"> & {
   byDate: string;
 
   /**
-   * How long a day of review runs, spent against the time each answer took.
-   * Zero keeps no budget in time.
+   * How long a day of review runs, spent against the time each answer took. It
+   * closes the day under a goal of minutes, where zero is a pause, and no other
+   * goal reads it.
    *
    * @generated from field: int32 minutes_a_day = 3;
    */
@@ -94,8 +95,8 @@ export type Settings = Message<"numen.v1.Settings"> & {
    * new cards on what is left, nothing puts the new material first, and between
    * them the day is split until one side runs out and the other takes the rest.
    *
-   * It says what a day is spent on rather than what closes it. A goal of a date
-   * carries the whole material by its own reckoning, so it takes no part there.
+   * It says what a day is spent on and closes nothing. A goal of a date carries
+   * the whole material by its own reckoning, so it takes no part there.
    *
    * @generated from field: int32 backlog = 10;
    */
@@ -168,8 +169,9 @@ export type Preset = Message<"numen.v1.Preset"> & {
   problems: string[];
 
   /**
-   * Why the preset schedules nothing. It is a fact about the preset and holds
-   * on every day, and it is the answer a window has before any curve exists.
+   * Why the preset schedules nothing, asked against the day holding now: a goal
+   * of a date stops once the day it names is behind that one. It is the answer
+   * a window has before any curve exists.
    *
    * @generated from field: numen.v1.Stopped stops = 5;
    */
@@ -283,18 +285,18 @@ export const CurveSchema: GenMessage<Curve> = /*@__PURE__*/
 /**
  * Point is what a preset comes to at one place of the grid.
  *
- * A goal of a date fills `minutes` with what getting through the material by
- * that day costs, and `through` and `enough` with what the budget the preset
- * keeps gets through by it. The rest stands at zero there.
- *
  * @generated from message numen.v1.Point
  */
 export type Point = Message<"numen.v1.Point"> & {
   /**
    * Under a goal of minutes, the next sitting a person will sit down to: the
    * first day the preset admits, which is the day the deck screen offers. A day
-   * at none of the load is no sitting, so the day after it is drawn. Under the
-   * other two, the load over the days the preset admits.
+   * at none of the load is no sitting, so the day after it is drawn. Under a
+   * goal of retention, the load over the days the preset admits.
+   *
+   * A goal of a date reads `reviews` off that first day, and fills `minutes`
+   * with what getting through the material by the day the place names costs,
+   * over the days of review up to it.
    *
    * @generated from field: double reviews = 1;
    */
@@ -313,9 +315,8 @@ export type Point = Message<"numen.v1.Point"> & {
   retained: number;
 
   /**
-   * The card faces standing owed on the last day the projection ran, which is
-   * the backlog left at the end and not the debt a day carries. Read `clears`
-   * for how long the backlog standing now takes to go.
+   * The card faces standing owed on the last day the projection ran. Read
+   * `clears` for how long the backlog standing now takes to go.
    *
    * @generated from field: int32 owed = 4;
    */
@@ -361,7 +362,7 @@ export type Point = Message<"numen.v1.Point"> & {
   /**
    * How many card faces stand overdue at the end of each day projected at this
    * place, one entry a day over the whole horizon. It runs over days, which is
-   * a different axis from the grid, so it is drawn as a plot of its own.
+   * a different axis from the grid.
    *
    * @generated from field: repeated int32 backlog = 10;
    */
@@ -396,8 +397,7 @@ export type Point = Message<"numen.v1.Point"> & {
   /**
    * How many card faces cannot be learned by this day whatever the pace: the
    * rule wants more days than the day leaves them, so no pace reaches them and
-   * the pace beside this is the one that reaches every other. Say the number;
-   * the day is not moved and the rule is not bent to hide it.
+   * the pace beside this is the one that reaches every other.
    *
    * @generated from field: int32 short = 13;
    */
@@ -1045,8 +1045,7 @@ export const PresetsService: GenService<{
   },
   /**
    * Curve is what the settings come to over the whole range of the goal they
-   * name. It is worked out in one pass, so a control moving over the range
-   * reads a finished answer and asks for nothing more.
+   * name. The whole range is worked out in one pass.
    *
    * @generated from rpc numen.v1.PresetsService.Curve
    */

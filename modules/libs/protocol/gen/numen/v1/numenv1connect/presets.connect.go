@@ -11,8 +11,8 @@
 //
 // One control steers a preset: `goal` says which value it moves, and the curve
 // says what the whole range of that value comes to. A curve is asked for with
-// the settings a person is moving and has not written yet, so nothing here
-// writes anything.
+// the settings a person is moving and has not written yet, and asking for one
+// writes nothing.
 package numenv1connect
 
 import (
@@ -96,8 +96,7 @@ type PresetsServiceClient interface {
 	// caller read is left alone and answered `changed`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
 	// Curve is what the settings come to over the whole range of the goal they
-	// name. It is worked out in one pass, so a control moving over the range
-	// reads a finished answer and asks for nothing more.
+	// name. The whole range is worked out in one pass.
 	Curve(context.Context, *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error)
 }
 
@@ -225,8 +224,7 @@ type PresetsServiceHandler interface {
 	// caller read is left alone and answered `changed`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
 	// Curve is what the settings come to over the whole range of the goal they
-	// name. It is worked out in one pass, so a control moving over the range
-	// reads a finished answer and asks for nothing more.
+	// name. The whole range is worked out in one pass.
 	Curve(context.Context, *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error)
 }
 

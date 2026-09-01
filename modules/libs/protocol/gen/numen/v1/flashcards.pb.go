@@ -222,8 +222,8 @@ type DeckOwing struct {
 	// nothing today was not studied.
 	Answered int32 `protobuf:"varint,5,opt,name=answered,proto3" json:"answered,omitempty"`
 	// How many of the deck's card faces stand learned now, under the rule the
-	// preset scheduling the deck counts by. It is a share of faces, and it is
-	// not what a preset has got through of its day.
+	// preset scheduling the deck counts by. It is a count of faces, and says
+	// nothing about what a preset has got through of its day.
 	Learned       int32 `protobuf:"varint,6,opt,name=learned,proto3" json:"learned,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -318,8 +318,7 @@ type PresetOwing struct {
 	Cards int32 `protobuf:"varint,9,opt,name=cards,proto3" json:"cards,omitempty"`
 	// What the day leaves under it: the card faces owed and the ones nobody has
 	// answered, held to its budget. Their sum is what a sitting over this preset
-	// asks, because a preset is the whole scope of its own budget, so it is the
-	// figure to print against it rather than one worked out from the budget.
+	// asks, because a preset is the whole scope of its own budget.
 	OwedDue int32 `protobuf:"varint,10,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
 	OwedNew int32 `protobuf:"varint,11,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
 	// How many of its cards were answered since the day opened, and how long

@@ -134,8 +134,8 @@ export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
 
   /**
    * How many of the deck's card faces stand learned now, under the rule the
-   * preset scheduling the deck counts by. It is a share of faces, and it is
-   * not what a preset has got through of its day.
+   * preset scheduling the deck counts by. It is a count of faces, and says
+   * nothing about what a preset has got through of its day.
    *
    * @generated from field: int32 learned = 6;
    */
@@ -190,8 +190,7 @@ export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
   /**
    * What the day leaves under it: the card faces owed and the ones nobody has
    * answered, held to its budget. Their sum is what a sitting over this preset
-   * asks, because a preset is the whole scope of its own budget, so it is the
-   * figure to print against it rather than one worked out from the budget.
+   * asks, because a preset is the whole scope of its own budget.
    *
    * @generated from field: int32 owed_due = 10;
    */
