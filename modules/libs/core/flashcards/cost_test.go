@@ -180,31 +180,32 @@ func TestAHigherTargetIsMoreReviews(t *testing.T) {
 	}
 }
 
-// A day carrying a share of the load answers that share of the cards, and the
-// day it is answers no fewer than the same day carrying all of it would.
+// A day carrying a share of the load answers that share of the cards.
+//
+// A pile deep enough to fill every day is what says the count is the budget's
+// and not the material's: each day hands over what it keeps, and the half day
+// hands over half of it.
 func TestADayCarriesTheShareOfTheLoadItIsGiven(t *testing.T) {
 	by := history.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	at := learned(by, now, 600)
-	run := history.Simulation{
-		By: by, Day: ahead,
-		Cost: history.Cost{New: 20 * time.Second, Review: 10 * time.Second}, Days: 7,
+	at := owing(by, now, 600)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 7}
+	p := history.Preset{
+		Goal: history.GoalRetention, ReviewsADay: 40,
+		Load: map[time.Weekday]int{time.Wednesday: 50, time.Sunday: 20},
 	}
-	p := history.Preset{MinutesADay: 14, ReviewsADay: 9999}
 
-	flat := ran(t, run, now, p, at, 0)
-	light := p
-	light.Load = map[time.Weekday]int{time.Wednesday: 50}
-	cut := ran(t, run, now, light, at, 0)
-
-	if cut.Answered >= flat.Answered {
-		t.Errorf("a week with a half day answered %d, and the same week of whole days %d",
-			cut.Answered, flat.Answered)
-	}
-	for i, day := range weekdays(now, len(cut.Load)) {
-		if day == time.Wednesday && cut.Load[i] >= flat.Load[i] {
-			t.Errorf("the half %s carried %d, and the same day whole %d",
-				day, cut.Load[i], flat.Load[i])
+	got := ran(t, run, now, p, at, 0)
+	for i, day := range weekdays(now, len(got.Load)) {
+		want := 40
+		switch day {
+		case time.Wednesday:
+			want = 20
+		case time.Sunday:
+			want = 8
+		}
+		if got.Load[i] != want {
+			t.Errorf("the %s answered %d card faces, want %d", day, got.Load[i], want)
 		}
 	}
 }
@@ -296,9 +297,11 @@ func TestAnEvenLoadEvensTheDaysOut(t *testing.T) {
 
 	// The first week pays the backlog, which stands where the answers already
 	// given left it.
-	was, is := widest(lumpy.Load[7:]), widest(even.Load[7:])
-	if is >= was {
-		t.Errorf("an even load spread a week over %d answers, and a load left alone over %d", is, was)
+	if got := widest(lumpy.Load[7:]); got != 120 {
+		t.Errorf("a load left alone spread its widest week over %d answers, want 120", got)
+	}
+	if got := widest(even.Load[7:]); got != 30 {
+		t.Errorf("an even load spread its widest week over %d answers, want 30", got)
 	}
 }
 

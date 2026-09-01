@@ -286,13 +286,20 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	p := flashcards.Defaults()
 	p.Rule, p.Interval, p.Retention = flashcards.RuleInterval, 21, 0.9
 
-	// An interval of 21 days learns the card sent away for 21 and not the one
-	// sent away for 20, whatever the chance of recalling either today.
-	if !p.Learned(standing(200, 21, 10), now) {
-		t.Error("a card sent away for 21 days is not learned at an interval of 21")
-	}
-	if p.Learned(standing(0, 20, 90), now) {
-		t.Error("a card sent away for 20 days is learned at an interval of 21")
+	// The threshold is the interval the preset carries: a card sent away for
+	// exactly it is learned and one sent away a day short of it is not,
+	// whatever the chance of recalling either today.
+	for _, days := range []int{7, 21, 60} {
+		one := p
+		one.Interval = days
+		if !one.Learned(standing(200, days, 10), now) {
+			t.Errorf("a card sent away for %d days is not learned at an interval of %d",
+				days, days)
+		}
+		if one.Learned(standing(0, days-1, 90), now) {
+			t.Errorf("a card sent away for %d days is learned at an interval of %d",
+				days-1, days)
+		}
 	}
 	// Nobody has answered it, so neither rule has anything to read.
 	if p.Learned(flashcards.Schedule{}, now) {

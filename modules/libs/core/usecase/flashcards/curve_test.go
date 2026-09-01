@@ -107,9 +107,42 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 				got.At[i].Owed, got.At[i-1].Owed)
 		}
 	}
-	inRange(t, got)
+	inRange(t, got, "now", "suggested")
 	if got.At[len(got.At)-1].Owed != 0 {
 		t.Errorf("the longest day on the grid still leaves %d owed", got.At[len(got.At)-1].Owed)
+	}
+}
+
+// What a curve of minutes suggests is the first place of the grid the minutes
+// no longer close: the shortest day that asks everything the day holds.
+func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
+	// A vault deep enough that the short days of the grid are cut short by the
+	// clock and the long ones are not.
+	s := answering(t, 200)
+	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+
+	got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := flashcards.Nowhere
+	for i, one := range got.At {
+		if len(one.Closed) == 0 {
+			want = flashcards.Mark{At: i, Value: got.Grid[i]}
+			break
+		}
+	}
+	if want.At <= 0 || want.At >= len(got.At)-1 {
+		t.Fatalf("the first place asking everything the day holds is %d of %d",
+			want.At, len(got.At))
+	}
+	if got.Suggested != want {
+		t.Errorf("%+v is suggested, and the shortest day asking everything is %+v",
+			got.Suggested, want)
+	}
+	// And the place before it is one the minutes closed.
+	if before := got.At[want.At-1]; !before.Closed.Holds(history.ClosedMinutes) {
+		t.Errorf("the place under the one suggested was closed by %v", before.Closed.Names())
 	}
 }
 
@@ -139,7 +172,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 				got.Grid[i], got.At[i].Minutes, got.Grid[i-1], got.At[i-1].Minutes)
 		}
 	}
-	inRange(t, got)
+	inRange(t, got, "now")
 
 	if got.Suggested != flashcards.Nowhere {
 		t.Errorf("a target of %v is suggested, and this goal points at none",
@@ -206,7 +239,7 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 				got.Days[i], now.Through, got.Days[i-1], was.Through)
 		}
 	}
-	inRange(t, got)
+	inRange(t, got, "now", "suggested")
 }
 
 // More days to do the same material in is never more minutes a day: the date
@@ -328,7 +361,7 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		inRange(t, got)
+		inRange(t, got, "now")
 		if got.Now.At != flat.Now.At {
 			t.Fatalf("with %s the preset stands at place %d, and without at %d",
 				name, got.Now.At, flat.Now.At)
@@ -413,10 +446,17 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 	}
 }
 
-// inRange says the two marks fall on the curve.
-func inRange(t *testing.T, c flashcards.Curve) {
+// inRange says the two marks fall on the curve, and that each mark named
+// stands on it at all.
+func inRange(t *testing.T, c flashcards.Curve, stands ...string) {
 	t.Helper()
-	for name, mark := range map[string]flashcards.Mark{"now": c.Now, "suggested": c.Suggested} {
+	marks := map[string]flashcards.Mark{"now": c.Now, "suggested": c.Suggested}
+	for _, name := range stands {
+		if marks[name] == flashcards.Nowhere {
+			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
+		}
+	}
+	for name, mark := range marks {
 		if mark == flashcards.Nowhere {
 			continue
 		}
