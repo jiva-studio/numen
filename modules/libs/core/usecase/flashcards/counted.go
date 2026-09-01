@@ -117,7 +117,6 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 			}
 		}
 		now.Runs = append(now.Runs, one)
-		held.Skipped += ran.Skipped
 		if opened && !ran.Gone && !ran.Shut {
 			held.Answers = append(held.Answers, ran.Answers...)
 			held.Files = append(held.Files, port.Stored{Name: file.Name, Size: ran.Size})
