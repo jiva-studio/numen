@@ -4,7 +4,7 @@
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
 - **Amends:** ADR-0027 (a fourth value of `type`)
-- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036
+- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037
 
 ## Context
 
@@ -52,36 +52,6 @@ Several decks pointing at one preset is what sharing it looks like. Scheduling a
 Everything about how a deck is scheduled is the preset's: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, how much of a day goes to what is overdue, the share of the load each day of the week carries, an even load, and the goal that steers them. Each of them is settled in a record of its own. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
 
 `numen.json` keeps the hour a day begins at. It is a fact about a person's clock rather than about a subject.
-
-### A preset says what counts as learned
-
-`learned` names the rule a preset counts by — `interval` or `retention` — and the value stands under the key it names, as `goal` does.
-
-Under `learned: interval` a card is learned once the interval it is sent away for reaches `interval` days: it is learned when it is being asked for at long range. Under `learned: retention` it is learned once the chance of recalling it today stands at or above `retention`: it is learned while it is still in the head. The rule the preset does not name keeps its value and takes no part, exactly as a budget the goal does not name does.
-
-**The rule is the person's.** A hundred words of vocabulary and a hundred ślokas are not learned at the same interval, and a person carrying a subject to an examination means something else by the word than one keeping a language alive. It is a fact about a subject and the person studying it, so it stands in the preset beside everything else about how a deck is scheduled.
-
-**One question, one function.** How much of a preset's material stands learned is read from the rule in one place, so the number on a screen and the number in a projection are one number. A preset that names no rule counts by the default rule at its default value: a key nobody wrote leaves the default in force, and never a threshold every card passes.
-
-**Learned is a state and not a milestone.** A card face stands learned while its reviews are far enough apart, or while it is likely enough to be recalled, and a lapse takes it back out of that standing: the interval collapses and the chance of recall with it. Both rules are asked of where the card stands now.
-
-**A day the whole material is learned is a prediction made under a stated assumption.** A projection takes what it assumes about recall as an input. The figures beside this one are read off the run that follows each card down the middle of what it may do; this one is read off the run in which nothing is forgotten, and it is the soonest the material could be learned. It says what the material could reach, not what will happen.
-
-**It is drawn under a goal of minutes and under a goal of retention, and it is absent under a date.** A preset aiming at a day names its day already, and what qualifies that day is the count no pace reaches. The figure is asked only where the rule is an interval: an interval is passed once and stays passed, while a chance of recall is a level a material stands at and reaches no such day.
-
-**The shape steps.** The day a card passes an interval is the reviews it takes to get there times the space between them, a review is a whole number, and a retention target moves both — it shortens every interval and it decides how many reviews the card wants. So over that control's range the figure falls away and steps up wherever another review is wanted. Every value of it is right where it is asked, and a step is the world's arithmetic and not a fault to be smoothed. A prediction may be drawn across one, because what it claims is the day its assumption reaches and that claim holds at a step as everywhere else. A measurement could not: it would be read as the day the run will meet, and no such day stands steady under a control that moves the scheduler.
-
-The scheduler's own reckoning is another thing and carries another word: a card it has stopped sending minutes away and begun sending days away is **spaced**, and retention is measured over the answers to spaced cards. No setting reaches that.
-
-### A date aims at that rule, tested on the day it names
-
-A person who names a day means they will know the material by it. `by_date` is that day, and what knowing means is the `learned` rule of the same preset, asked of every card face on the day itself.
-
-**The pace follows from the rule.** A card face has to be begun early enough to be learned by then, so the material is spread over the days on which beginning one still leaves it time: under `learned: interval` a card that must be sent away for three weeks is begun weeks before the day, and under `learned: retention` one that has only to be recalled on the day may be begun on it. The same material and the same date are two paces, and each is worked out from the same rule the deck screen counts by.
-
-**What no pace can reach is counted and said.** A card face added a fortnight before a day it must stand three weeks away from cannot get there, whatever a person does: the arithmetic forbids it, and no pace is a remedy. The projection carries how many card faces the day leaves short, and the picture says the number. The day is not moved, the rule is not bent, and the pace beside that number is the one that gets there every card face that can.
-
-**The date is the answer, and nothing beside it answers again.** A preset aiming at a day names no other day the material is learned on: the day it names is that day, and what qualifies it is the count no pace reaches. Past that day the preset schedules nothing, so what a projection shows past it is a material nobody is answering: the debt climbs and what was learned fades. Those days belong to the pause and are drawn as no part of the choice.
 
 ### Budgets add up
 
