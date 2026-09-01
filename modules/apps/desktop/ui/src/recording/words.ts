@@ -6,6 +6,7 @@ export const WORDS = {
   silence: 'No transcript yet.',
   /** A run is going, and more words arrive as they are written down. */
   transcribing: 'Still transcribing…',
-  /** This window has nothing to play sound with, and the words stand alone. */
-  unplayable: 'This system cannot play sound here. The words are below.',
+  /** This window has nothing to play sound with. It says so and no more: what
+   * was heard in the recording is the transcript's to say. */
+  unplayable: 'This system cannot play sound here.',
 }
