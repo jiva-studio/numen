@@ -303,7 +303,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, one := range got.At {
-		if !one.Met {
+		if !one.Enough {
 			t.Errorf("%s is out of reach at %+v, and a date paces what it holds",
 				got.Days[i], one)
 		}
@@ -862,10 +862,6 @@ func TestAPlaceOfADateIsOneRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, one := range got.At {
-		if one.Enough != one.Met {
-			t.Errorf("%s is got through by the budget %t and by the pace %t",
-				got.Days[i], one.Enough, one.Met)
-		}
 		if i > 0 && got.At[i-1].Enough && !one.Enough {
 			t.Errorf("%s is got through and %s, a day later, is not",
 				got.Days[i-1], got.Days[i])
@@ -1100,6 +1096,32 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
 		if got.Stops != one.why {
 			t.Errorf("%+v draws a curve saying %q, and it schedules nothing for %q",
 				one.p, got.Stops, one.why)
+		}
+	}
+}
+
+// A goal keeping no account of what its pace gets through leaves no place of
+// its curve falling short.
+//
+// The stretch a budget does not get through is drawn as a line of its own over
+// the curve. A goal of minutes and a goal of retention set no pace at a day,
+// and every place of theirs stands as one nothing is short of.
+func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
+	s := answering(t, 30)
+	for _, goal := range []history.Goal{history.GoalMinutes, history.GoalRetention} {
+		p := history.Preset{
+			Goal: goal, MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Retention: 0.9,
+		}
+
+		got, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i, one := range got.At {
+			if !one.Enough {
+				t.Errorf("%s draws place %d as one the budget does not get through", goal, i)
+				break
+			}
 		}
 	}
 }

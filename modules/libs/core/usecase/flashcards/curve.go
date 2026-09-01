@@ -99,13 +99,11 @@ type Point struct {
 	// place names under a goal of a date. It is the backlog left at the end and
 	// not the debt a day carries.
 	Owed int
-	// Through is the share of the material learned by this day, and Enough and
-	// Met are whether the pace this place sets learns every card face that can
-	// be learned by it. Under a date the pace is the budget, so the two are one
-	// question and are read off the one run the place is drawn from.
+	// Through is the share of the material learned by this day, and Enough is
+	// whether the pace this place sets learns every card face that can be
+	// learned by it. A goal keeping no such account stands at true.
 	Through float64
 	Enough  bool
-	Met     bool
 	// Short is how many card faces cannot be learned by this day whatever the
 	// pace, which is the rule wanting more days than the day leaves them.
 	Short int
@@ -507,7 +505,6 @@ func (u Curves) date(
 			Retained: back,
 			Through:  ran.Through[day],
 			Enough:   reached(ran, day, ran.Short),
-			Met:      reached(ran, day, ran.Short),
 			Short:    ran.Short,
 			Closed:   history.Closing{history.ClosedPaused},
 			Clears:   ran.Clears,
@@ -632,8 +629,11 @@ func point(p history.Projection) Point {
 	// works the returning share out on.
 	back, _ := p.Retained.On(p.Days - 1)
 	return Point{
-		Reviews:  p.ReviewsADay,
-		Minutes:  p.MinutesADay,
+		Reviews: p.ReviewsADay,
+		Minutes: p.MinutesADay,
+		// A goal of minutes and a goal of retention set no pace at a day, so no
+		// place of theirs falls short of one.
+		Enough:   true,
 		Retained: back,
 		Owed:     p.Owed,
 		Through:  p.Through[len(p.Through)-1],

@@ -195,3 +195,66 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 		t.Errorf("an unspecified counts was read as %q", p.Counts)
 	}
 }
+
+// Every verdict is the schema value of the same name.
+//
+// Both windows hold a sentence per verdict, and each of them names the schema
+// value. A verdict carried across as another one puts the wrong sentence in
+// front of the person.
+func TestEveryVerdictCrossesAsItself(t *testing.T) {
+	for _, one := range []struct {
+		why  history.Stopped
+		said v1.Stopped
+	}{
+		{history.StoppedNothing, v1.Stopped_STOPPED_NOTHING},
+		{history.StoppedNoMinutes, v1.Stopped_STOPPED_NO_MINUTES},
+		{history.StoppedNoCards, v1.Stopped_STOPPED_NO_CARDS},
+		{history.StoppedNoDay, v1.Stopped_STOPPED_NO_DAY},
+		{history.StoppedPastDay, v1.Stopped_STOPPED_PAST_DAY},
+		{history.StoppedNoLoad, v1.Stopped_STOPPED_NO_LOAD},
+	} {
+		if got := StoppedOf(one.why); got != one.said {
+			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)
+		}
+	}
+
+	if got := StoppedOf(history.Stopped("sideways")); got != v1.Stopped_STOPPED_NOTHING {
+		t.Errorf("a verdict the schema does not name crosses as %v", got)
+	}
+}
+
+// A goal, a rule and a count the schema does not name cross as unspecified.
+//
+// A note names them in its own words, and a word the reader made nothing of
+// leaves the field where its default stands.
+func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
+	if got := GoalOf(history.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
+		t.Errorf("a goal the schema does not name crosses as %v", got)
+	}
+	if got := RuleOf(history.Rule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
+		t.Errorf("a rule the schema does not name crosses as %v", got)
+	}
+	if got := CountsOf(history.Counts("sideways")); got != v1.Counts_COUNTS_UNSPECIFIED {
+		t.Errorf("a count the schema does not name crosses as %v", got)
+	}
+}
+
+// A day that is not one, and a load kept on something that is not a day of the
+// week, are the client's to correct.
+func TestSettingsTheCoreCannotMakeOutAreRefused(t *testing.T) {
+	for _, one := range []struct {
+		named string
+		said  *v1.Settings
+	}{
+		{"a day written in no form the core reads", &v1.Settings{ByDate: "30 September"}},
+		{"a load on a name no week carries", &v1.Settings{Load: map[string]int32{"caturday": 50}}},
+	} {
+		p, err := SettingsIn(one.said)
+		if err == nil {
+			t.Errorf("%s is taken", one.named)
+		}
+		if !reflect.DeepEqual(p, history.Preset{}) {
+			t.Errorf("%s comes back as a preset", one.named)
+		}
+	}
+}
