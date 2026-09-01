@@ -71,6 +71,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0038 — What a day's budget is spent on, and in what order](0038-what-a-days-budget-is-spent-on.md)
 - [ADR-0039 — A day of the week carries a share of the load](0039-a-day-of-the-week-carries-a-share.md)
 - [ADR-0040 — One rule says which day a card lands on](0040-one-rule-says-which-day-a-card-lands-on.md)
+- [ADR-0041 — A preset's day is divided over the decks it schedules](0041-a-day-is-divided-over-the-decks.md)
 - [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
 
 ### Agents
