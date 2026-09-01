@@ -135,7 +135,10 @@ func (d *Derived) Write(_ context.Context, name string, content []byte) error {
 
 // Append adds to the end of what is there, in place. What it is given lands
 // whole or does not land at all: a write that stopped partway is cut back to
-// the length the file had, so the next append begins where this one found it.
+// where it began, so the next append begins where this one found it.
+//
+// A name two callers append to is held under a claim, because the cut reaches
+// whatever was written after this append's own bytes.
 //
 // A machine that stopped mid-write leaves a torn tail all the same, and what
 // reads the file back takes the whole pages and drops what follows them.
@@ -151,13 +154,8 @@ func (d *Derived) Append(_ context.Context, name string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	had, err := file.Stat()
-	if err != nil {
-		file.Close()
-		return err
-	}
 	if n, err := file.Write(content); err != nil || n != len(content) {
-		return errors.Join(short(name, n, len(content), err), back(file, had.Size()))
+		return errors.Join(short(name, n, len(content), err), back(file, n))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
@@ -174,10 +172,19 @@ func short(name string, wrote, asked int, why error) error {
 	return fmt.Errorf("%s: %d of %d bytes: %w", name, wrote, asked, why)
 }
 
-// back cuts a file to the length it had and closes it.
-func back(file *os.File, to int64) error {
-	err := errors.Join(file.Truncate(to), file.Sync())
-	return errors.Join(err, file.Close())
+// back cuts the bytes an append left behind and closes the file. What it wrote
+// ends where the offset now stands, so the cut is that offset less what
+// landed, and a write that landed nothing leaves the file as it found it.
+func back(file *os.File, wrote int) error {
+	if wrote <= 0 {
+		return file.Close()
+	}
+	at, err := file.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return errors.Join(err, file.Close())
+	}
+	cut := errors.Join(file.Truncate(at-int64(wrote)), file.Sync())
+	return errors.Join(cut, file.Close())
 }
 
 // claimSuffix names the file a claim on a name is held on. It outlives the
