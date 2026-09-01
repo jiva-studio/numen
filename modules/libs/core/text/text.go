@@ -115,6 +115,9 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 	if ref.Kind == domain.KindNote {
 		return ReaderNote, true
 	}
+	if ref.Kind == domain.KindRecording {
+		return ReaderRecording, true
+	}
 	switch strings.ToLower(path.Ext(ref.Path)) {
 	case ".epub":
 		return ReaderEPUB, true

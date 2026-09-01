@@ -4,13 +4,19 @@ import (
 	"context"
 	"errors"
 	"io/fs"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/lit"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
+
+// Speech is the producer that writes down what a model heard in a recording.
+// What it writes is WebVTT, and the names it keeps its files under say so.
+const Speech = "asr"
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
@@ -71,13 +77,17 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 // chunks are places in.
 //
 // The corrections are read before the coordinates, and a reading nothing
-// proofread is composed from its own bytes alone.
+// proofread is composed from its own bytes alone. A transcript is its own bytes
+// and nothing else: a transcription keeps nothing beside what it heard.
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
 	from, hash string,
 	raw []byte,
 ) (*Document, error) {
+	if from == Speech {
+		return Transcribed(raw), nil
+	}
 	parts, err := beside(ctx, store, Parts(from, hash))
 	if err != nil {
 		return nil, err
@@ -134,6 +144,27 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	return doc
 }
 
+// Transcribed is what a model heard, as the text its chunks are places in and
+// the moments of the recording those places stand at.
+//
+// A transcript names no parts: the cues are where the speech was, and a chunk
+// is located by when what it holds was said.
+func Transcribed(raw []byte) *Document {
+	prose, cues := transcript.Read(raw)
+	doc := &Document{Text: prose}
+	for _, cue := range cues {
+		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: clock(cue.From)})
+	}
+	return doc
+}
+
+// clock is a moment of a recording as a person reads a position in one: the
+// stamp the transcript is written in, without its thousandths.
+func clock(ms int) string {
+	at, _, _ := strings.Cut(transcript.Stamp(ms), ".")
+	return at
+}
+
 // divided is the parts a sidecar names, as parts of the prose. A part is named
 // by its heading run as the scan was read, mangled or not.
 //
@@ -161,13 +192,22 @@ func divided(prose string, parts []ocr.Part) []cutting.Part {
 // It is the hash of what was read and not the path it was read from, so a
 // document renamed or moved keeps its recognition, and two copies of one
 // document in a vault share the one file rather than being read twice.
+//
+// The extension is the producer's: a transcript is WebVTT and opens in a player
+// under the name a player knows it by.
 func Artifact(from, hash string) string {
+	if from == Speech {
+		return from + "/" + hash + ".vtt"
+	}
 	return from + "/" + hash + ".txt"
 }
 
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
+	if from == Speech {
+		return from + "/" + hash + ".partial.vtt"
+	}
 	return from + "/" + hash + ".partial"
 }
 
@@ -205,7 +245,17 @@ func Beside(from, hash string) string {
 
 // Names is every file one recognition of these bytes is kept under. One run
 // made them and none of them means anything without the others.
+//
+// Each producer's own files are named: a sweep works through this list, and a
+// transcription writes no coordinates, parts or corrections.
 func Names(from, hash string) []string {
+	if from == Speech {
+		return []string{
+			Artifact(from, hash),
+			Partial(from, hash),
+			Beside(from, hash),
+		}
+	}
 	return []string{
 		Artifact(from, hash),
 		Partial(from, hash),
