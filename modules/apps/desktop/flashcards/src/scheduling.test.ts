@@ -679,7 +679,7 @@ describe('which preset schedules each deck', () => {
   })
 
   // A person who moves on while the presets of the vault they left are still
-  // being asked would otherwise be handed that vault's answer over this one.
+  // being asked is handed nothing of that vault.
   it('holds no preset of a vault left while its presets were being asked', async () => {
     let answer = () => {}
     const asked = new Promise<void>((then) => {

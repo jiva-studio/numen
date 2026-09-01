@@ -109,8 +109,7 @@ export interface Held {
   choices(): readonly Choice[]
   /**
    * This deck put on the preset at that path, and on the defaults where the
-   * path is empty. What it is owed reaches the file first, so the write lands
-   * on the deck the window read.
+   * path is empty. What it is owed reaches the file first.
    */
   schedules(preset: string): void
   /**
@@ -542,7 +541,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
     draws: DeckTab,
     identity: (id) => id,
     // A tab back on screen is a tab a person is about to draw cards in, so a
-    // listing that never answered is asked for again.
+    // listing that never answered is asked for again. Both of them are.
     shown: () => {
       listsAgain()
       listsPresetsAgain()
@@ -568,9 +567,8 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   puts.holds('deck', shows)
 
   /**
-   * The vault changed: every open deck hears it, and the stencils are listed
-   * again. The list is what a deck tab draws its cards under, so a window
-   * holding no deck asks for none.
+   * The vault changed: every open deck hears it, and the stencils and the
+   * presets are listed again. A window holding no deck asks for neither.
    */
   const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
     // What the vault said about a file is filed under that file, so a file

@@ -9,9 +9,9 @@
  * on the way round the screen, and the arrow keys walk the grid a place at a
  * time.
  *
- * Every word on the picture is HTML set over it, so the type is the page's and
- * not the picture's. Where two of them would touch, the one further down this
- * file's order gives way: a name is dropped rather than overprinted.
+ * Every word on the picture is HTML set over it, so the type is the page's.
+ * Where two of them touch, the one further down this file's order gives way and
+ * its name is dropped.
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Waiting } from '@numen/ui'
@@ -252,9 +252,9 @@ const heights = computed(() => {
     if (over && !apart(box, over)) return []
     return [{ at: against(y, lift), box, text: said(value) }]
   }
-  // A band of no width has one number and nothing else to read, so it is set
-  // over the line it names rather than given way to it. That line is the foot,
-  // which is where a run with no height is drawn.
+  // A band of no width has one number and nothing else to read, and it is set
+  // over the line it names. That line is the foot, which is where a run with no
+  // height is drawn.
   if (most === least) {
     return [{ at: against(FOOT, '0'), box: againstBox(FOOT, '0'), text: said(most) }]
   }

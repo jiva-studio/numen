@@ -222,7 +222,7 @@ export const WORDS = {
       { figure: count(decks), name: decks === 1 ? 'deck' : 'decks' },
       { figure: count(cards), name: cards === 1 ? 'card' : 'cards' },
     ]
-    // A figure standing at nothing is left out rather than said as a nought.
+    // A figure standing at nothing is left out.
     if (overdue > 0) said.push({ figure: count(overdue), name: 'overdue' })
     if (fresh > 0) said.push({ figure: count(fresh), name: 'new' })
     return said
@@ -254,11 +254,9 @@ export const WORDS = {
   knob: 'The goal of this preset',
   /** Said in the picture's place while the application works the curve out. */
   waiting: 'Reading the vault…',
-  /** The three marks on the curve, each named where it stands. */
-  now: 'you are here',
   /**
-   * The other mark, named for what it is under each goal. Under minutes it is
-   * where the clock stops being the limit, which is not a recommendation.
+   * The suggested mark, named for what it is under each goal. Under minutes it
+   * is where the clock stops being the limit.
    */
   markName: (goal: Goal) => {
     if (goal === 'retention') return 'most kept'

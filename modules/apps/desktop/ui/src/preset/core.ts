@@ -35,9 +35,8 @@ export type Counts = 'cards' | 'shows'
 export const COUNTS: readonly Counts[] = ['cards', 'shows']
 
 /**
- * What a preset counts as learned. A card sent days away rather than minutes
- * away is spaced, which is the scheduler's own doing; learned is the person's
- * rule for when the material is theirs.
+ * What a preset counts as learned. It is the person's rule for when the
+ * material is theirs.
  *
  * Under `interval` a card face is learned once it is sent away for that many
  * days; under `retention` once the chance of recalling it today stands at the

@@ -18,9 +18,6 @@ export const RIGHT = WIDE - 12
 export const TOP = 16
 export const FOOT = HIGH - 16
 
-/** The height a curve of one value is drawn at. */
-export const MIDDLE = (TOP + FOOT) / 2
-
 /** The height a plot's line is drawn between, and the picture it stands in. */
 export interface Room {
   readonly high: number
@@ -93,8 +90,7 @@ export const backlogSpotsOf = (values: readonly number[], band: Band): readonly 
 /**
  * Where every place of the curve is drawn, in the band the picture is scaled
  * to. The band is the goal's and not this answer's, so a curve that is flat
- * within it is drawn flat; a band of no width has no scale and is drawn
- * through the middle.
+ * within it is drawn flat, and a band of no width lies along the foot.
  */
 export const spotsOf = (curve: Curve, band: Band): readonly Spot[] =>
   seriesOf(

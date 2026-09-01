@@ -143,8 +143,8 @@ describe('a deck with nothing waiting', () => {
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
-  // The budget was spent elsewhere under this preset, which is why this deck is
-  // asked nothing. That is the preset's reason, the way a paused one's is.
+  // The budget was spent elsewhere under this preset, so this deck is asked
+  // nothing. That is the preset's reason, the way a paused one's is.
   it('says the preset is full where its budget is what left the deck nothing', () => {
     const one = shown([preset({ cards: 0, answered: 55, took: 20 })], holding(20, 0, 0))
 

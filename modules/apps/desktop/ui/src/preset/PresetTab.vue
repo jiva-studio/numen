@@ -292,6 +292,8 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
 .preset {
   /* The measure a preset is read at, which the goal and the settings share. */
   --preset-measure: 46rem;
+  /* The step every gap down the column is set by. */
+  --preset-step: 1.25rem;
   /* One row of the receipt: the box a number is typed into, the air around the
      row, and the space between what it is called and what it means. */
   --preset-value: 6rem;
@@ -331,7 +333,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
 .preset__column {
   display: flex;
   flex-direction: column;
-  gap: var(--numen-step);
+  gap: var(--preset-step);
   inline-size: 100%;
   max-inline-size: var(--preset-measure);
   margin-inline: auto;

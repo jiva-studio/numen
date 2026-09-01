@@ -2,9 +2,8 @@
  * Which preset schedules each deck of a vault, and what a day under each of
  * them comes to.
  *
- * Apart from the template because it is asked for when a vault is opened and
- * again whenever that vault moves, and the decks of one preset are counted
- * together however many there are.
+ * It is asked for when a vault is opened and again whenever that vault moves,
+ * and the decks of one preset are counted together however many there are.
  */
 import { computed, ref } from 'vue'
 import { Goal, Stopped } from '@numen/protocol'
@@ -325,8 +324,6 @@ const refusedFor = (answered: readonly Answered[]): string => {
 /**
  * Whether sitting down to one deck is offered: it owes something today, and the
  * preset scheduling it schedules something.
- *
- * The row and the letter drawn on it are one act, so both ask this.
  */
 export const opens = (deck: DeckOwing, by: ReadonlyMap<string, Preset>): boolean =>
   deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
@@ -339,8 +336,7 @@ export const holds = (budget: Budget): number => budget.new + budget.reviews
  * cards the day holds, and what it has taken against the minutes the day runs,
  * whichever of the two is further along.
  *
- * A day answered past what its budget holds stands above one, which is a day
- * over its budget and not a day that is done.
+ * A day answered past what its budget holds stands above one.
  */
 export const through = (one: Preset): number => {
   // Only a budget that closes the day is weighed against, and each is weighed
@@ -364,8 +360,7 @@ const share = (spent: number, budget: number): number => (budget > 0 ? spent / b
 export const spent = (one: Preset): boolean => through(one) >= 1
 
 /**
- * Why a preset or a deck under it is asking nothing. They stand in one column,
- * under a tile and along a deck row, so they read in one voice.
+ * Why a preset or a deck under it is asking nothing.
  */
 export const STOPPED = {
   /** The day held none of its cards. */
@@ -384,9 +379,7 @@ export const STOPPED = {
 /**
  * How much of a deck stands learned, and what is said where no share can be.
  *
- * The word stands with the figure. A bare share on this screen is how far
- * through its day a preset is, and how far through its material a deck is is
- * another question.
+ * The word stands with the figure.
  */
 export const LEARNED = {
   share: (of: number) => `${Math.round(of * 100)}% learned`,

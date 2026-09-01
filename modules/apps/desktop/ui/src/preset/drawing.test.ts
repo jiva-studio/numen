@@ -12,7 +12,6 @@ import {
   FOOT,
   LEFT,
   lineOf,
-  MIDDLE,
   placeUnder,
   RIGHT,
   shortOf,
@@ -83,7 +82,6 @@ describe('the curve as it is drawn', () => {
   it('draws a curve that is flat within its band flat', () => {
     const spots = spotsOf(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
     expect(spots.every((spot) => spot.y === spots[0]?.y)).toBe(true)
-    expect(spots[0]?.y).not.toBe(MIDDLE)
   })
 
   it('keeps a curve past either end of its band inside the picture', () => {
@@ -93,11 +91,10 @@ describe('the curve as it is drawn', () => {
   })
 
   // A count does not go below nothing, so nothing is the foot of the picture
-  // and a run of it lies along that foot rather than through the middle.
+  // and a run of it lies along that foot.
   it('lies along the floor where the band has no width', () => {
     const spots = spotsOf(curve([0, 0, 0]), { least: 0, most: 0 })
     expect(spots.every((one) => one.y === FOOT)).toBe(true)
-    expect(spots.every((one) => one.y === MIDDLE)).toBe(false)
   })
 
   it('stands a band on nothing, whatever the run it holds comes to', () => {

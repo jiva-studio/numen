@@ -570,8 +570,7 @@ describe('when the material is learned', () => {
 })
 
 // Past the day a person names, the preset schedules nothing: no card is
-// answered, the pile stacks up and the picture would be drawing the arithmetic
-// of doing nothing. Every series stops at that day.
+// answered and the pile stacks up. Every series stops at that day.
 describe('what a goal of a date draws', () => {
   const climbing = [0, 0, 0, 4, 9, 16, 27, 42, 57, 69, 80, 91, 100]
 
@@ -704,8 +703,7 @@ describe('the band of what stands overdue', () => {
   })
 
   // Nothing overdue is the floor the band is read up from, and a run holding
-  // nothing at all lies along it. A line through the middle would read as a
-  // pile standing at something.
+  // nothing at all lies along it.
   it('lays a run of nothing overdue along the floor, not through the middle', () => {
     const heights = (d: string) =>
       d
@@ -985,7 +983,7 @@ describe('what the control stands at', () => {
     expect(ends).not.toContain('·')
   })
 
-  // The knob says the value it stands on, so the end under it would say it twice.
+  // The knob says the value it stands on, and the end under it says nothing.
   it('leaves the end the knob stands on to the knob', async () => {
     const { tab } = drawn()
     const ends = () =>
