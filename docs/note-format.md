@@ -43,7 +43,8 @@ The frontmatter is shared, not owned:
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
 | `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | ADR-0027, ADR-0034 |
 | `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | ADR-0027 |
-| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention`, `learned`, `interval`, `counts`, `backlog`, `load`, `even_load` | How the decks pointing at this preset are scheduled. Read on a preset and nowhere else. | ADR-0034 |
+| `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | ADR-0034, ADR-0036 |
+| `learned`, `interval`, `counts`, `backlog`, `load`, `even_load` | How the decks pointing at this preset are scheduled. Read on a preset and nowhere else. | ADR-0034 |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 

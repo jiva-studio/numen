@@ -66,6 +66,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0032 — The reviewer's agent writes only cards](0032-the-reviewers-agent-writes-only-cards.md)
 - [ADR-0033 — What the deck is joined to is read beside the card](0033-what-the-deck-is-joined-to-is-read-beside-the-card.md)
 - [ADR-0034 — A preset says how a deck is scheduled](0034-the-preset.md)
+- [ADR-0036 — The goal names the budget that closes the day](0036-the-goal-names-the-budget.md)
 - [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
 
 ### Agents
