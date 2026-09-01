@@ -106,6 +106,11 @@ func (b countingBy) Next(s history.Schedule, at time.Time, r history.Rating) his
 	return b.inner.Next(s, at, r)
 }
 
+func (b countingBy) Endings(s history.Schedule, at time.Time) (history.Schedule, history.Schedule) {
+	b.on.Dated += 2
+	return b.inner.Endings(s, at)
+}
+
 func (b countingBy) Spaced(s history.Schedule) bool { return b.inner.Spaced(s) }
 
 // loaded is a vault of many cards and many run files, with everything a request

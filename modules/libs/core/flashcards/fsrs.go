@@ -51,26 +51,51 @@ func (FSRS) Spaced(s Schedule) bool {
 }
 
 func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
-	card := fsrs.NewCard()
-	if s.Seen() {
-		card = fsrs.Card{
-			Due:        s.Due,
-			Stability:  s.Stability,
-			Difficulty: s.Difficulty,
-			Reps:       uint64(s.Reps),
-			Lapses:     uint64(s.Lapses),
-			State:      fsrs.State(s.Phase),
-			LastReview: s.Last,
-		}
+	return left(f.engine.Next(carded(s), at, fsrs.Rating(r)).Card)
+}
+
+// Endings is where the two endings leave a card face.
+//
+// A card face this scheduler has put into review is settled at every rating in
+// one reckoning of it, so both endings are asked for together. One it is still
+// putting into memory is settled a rating at a time, and is asked a rating at a
+// time.
+func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
+	card := carded(s)
+	if !f.Spaced(s) {
+		return left(f.engine.Next(card, at, fsrs.Good).Card),
+			left(f.engine.Next(card, at, fsrs.Again).Card)
 	}
-	out := f.engine.Next(card, at, fsrs.Rating(r)).Card
+	both := f.engine.Repeat(card, at)
+	return left(both[fsrs.Good].Card), left(both[fsrs.Again].Card)
+}
+
+// carded is a schedule as the library reads a card. One nobody has answered is
+// the card that library opens with.
+func carded(s Schedule) fsrs.Card {
+	if !s.Seen() {
+		return fsrs.NewCard()
+	}
+	return fsrs.Card{
+		Due:        s.Due,
+		Stability:  s.Stability,
+		Difficulty: s.Difficulty,
+		Reps:       uint64(s.Reps),
+		Lapses:     uint64(s.Lapses),
+		State:      fsrs.State(s.Phase),
+		LastReview: s.Last,
+	}
+}
+
+// left is where the library's card stands, as a schedule.
+func left(c fsrs.Card) Schedule {
 	return Schedule{
-		Due:        out.Due,
-		Last:       out.LastReview,
-		Reps:       int(out.Reps),
-		Lapses:     int(out.Lapses),
-		Stability:  out.Stability,
-		Difficulty: out.Difficulty,
-		Phase:      uint8(out.State),
+		Due:        c.Due,
+		Last:       c.LastReview,
+		Reps:       int(c.Reps),
+		Lapses:     int(c.Lapses),
+		Stability:  c.Stability,
+		Difficulty: c.Difficulty,
+		Phase:      uint8(c.State),
 	}
 }
