@@ -14,6 +14,7 @@ go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
+go test ./usecase/flashcards/ -run XXX -bench CurveCards -benchtime 3x -count 2 -benchmem -timeout 180m
 go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
 ```
 
@@ -715,11 +716,36 @@ Both columns are the median of two runs of three. The memory column is the one t
 
 **A curve reads the decks pointing at its preset.** The index answers what points at one note, so a preset of one deck opens one deck file and the other nineteen are never read. The second row is the same request where there is nothing to leave out — nineteen decks of twenty — and it stands here as what the first is read against.
 
-**What the projection costs stands on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and nothing was taken off it.
+**What the projection costs stands on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and it is what the section below takes off.
 
 **A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault stands at, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
 
 **The curve of the defaults reads every deck.** Nothing points at a preset that stands in no note, so which decks name none is a question only the deck files answer, and that one curve pays what the front door pays.
+
+## What a curve costs as the preset grows
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`. Twenty decks with every one of them pointing at one preset, so the curve is drawn over the whole vault; the log grows with the vault at about half an answer a card face, in 180 run files. The schedule cache is filled before the clock starts.
+
+| card faces | Before | After |
+| --- | --- | --- |
+| 500 | 0.42 s · 158 MB | 0.31 s · 145 MB |
+| 5 000 | 3.90 s · 1.43 GB | 2.67 s · 1.29 GB |
+| 20 000 | 15.5 s · 5.51 GB | 9.9 s · 4.86 GB |
+| 50 000 | 40.4 s · 14.08 GB | 23.4 s · 11.68 GB |
+
+Both columns are the median of two runs of three on an idle machine, where the two runs of a row landed within 7 % of each other on the clock and within 0.01 % on the memory. The memory column is the one these are read on: on a vault where a change cannot help, a row's time moves by a quarter between runs while its memory moves by tenths of a per cent. The last row is 105.1 million allocations before and 92.2 million after.
+
+**A curve is fifty-one runs of the scheduler.** One at each of twenty-five places of the grid, one more at each place for the day the material is learned, and one at the top of the range to find how far the range reaches. Each of them walks ninety days, and each of those days used to go over every card face of the preset four times: to find what was due, to count what stood learned, to count what the day left behind, and to count what comes back. At fifty thousand card faces that is nine hundred million card visits in one request.
+
+**Three of the four are gone.** A card face is filed under the day of review its schedule falls in, so a day takes what fell in it: what the day before did not reach and what falls due in this one, put into one run in the order the debt fell, and the material behind them is never looked at. What the day left standing is then what fell due in it less what it reached, which is a subtraction. What stands learned under a rule of an interval is a fact about a card face's schedule, so the count is carried from day to day and asked again only of the card faces the day answered; under a rule of a chance of recall it is a fact about the instant, and is read off the same number as the share that comes back.
+
+**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises rather than a faster way to keep it, and it is not made here.
+
+**Both endings of an answer come from one reckoning of the card.** A projection weighs the ending where the card came back against the ending where it did not, and asked the scheduler for each of them separately. A card face the scheduler has put into review is settled at every rating in one working out, so the two are asked for together and the second costs nothing. A card face it is still putting into memory is settled a rating at a time and is asked a rating at a time: asking for all four there costs more than it saves, and measured 5.40 GB against 4.86 GB at twenty thousand card faces.
+
+**What is left is the scheduler's own arithmetic.** `Simulation.Run` is 97 % of the request, and half of that is the answers themselves. Nine tenths of what a request allocates is allocated inside that call by the scheduling library, which builds a table of every rating for every card it is asked about.
+
+**What does not change over the twenty-five places was left where it stands.** The order the card faces are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and a reading handed in from outside is a second path to an answer there is one path to.
 
 ## What a window asks of every vault
 
