@@ -793,7 +793,11 @@ Both columns are the median of two runs of three on an idle machine. **The alloc
 
 **Good is worked out from hard.** The interval a good answer names is held a day past the one a hard answer names, so the two endings a projection weighs cost the hard ending's stability as well. Easy is worked out only where an easy answer is asked for.
 
-**What the transcription had to keep.** The days a card face stood away are counted into a whole number that carries no sign. A card face answered before the answer it already holds — which is in every material a projection opens on, wherever an interval runs past the day the run begins — stands about 9.2 × 10¹⁸ days away, and comes back to nobody. That is the arithmetic this application has always run and it is the arithmetic here. The conversion is the machine's, so a build for another architecture may make a different number of it and send that card face to a different day.
+**A day count does not go below none.** The days a card face stood away are the whole days gone by. A card face asked about at an instant no later than the answer it already holds stood none of them, and the forgetting curve is read at none.
+
+That is the one place the arithmetic here parts from the library, which counts those days into a whole number carrying no sign and reads such a card face as one nobody could recall. What that count comes to is the machine's, so the same card face read one way on one architecture and the other way on another.
+
+**No schedule a vault can hold moves with it.** A due day is always worked out forward from the instant of an answer, so a card face is never asked about before its own last answer: over a curve of five thousand card faces the days away were read 602 102 times and not once fell below none, and the same vault with twenty answers timestamped a week ahead by a wrong clock reads the same 0. The state needs a due day standing behind the answer that produced it, which is what the written-down projections build by hand — 96 of their 10 523 readings, 36 of them where the phase makes it count.
 
 **What is left is arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 77 % of the request, the answers themselves are 49 %, and the scheduler is 30 %. `math.Pow` and `math.Exp` together are 22 %, and choosing the day a card lands on is 15 %. Reading the vault, which was 4 %, is now 7 % of a shorter request.
 

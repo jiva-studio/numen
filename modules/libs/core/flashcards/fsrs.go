@@ -108,11 +108,9 @@ func (f FSRS) opens(s Schedule, at time.Time) opened {
 	if s.Seen() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
-	// The days away are counted as a whole number without a sign. A card face
-	// answered before the answer it already carries stands as far away as that
-	// count carries it, and comes back to nobody.
+	// The days away are the whole days gone by, and they do not go below none.
 	if one.phase != fsrs.New {
-		one.away = float64(uint64(math.Floor(at.Sub(one.last.Last).Hours() / 24)))
+		one.away = math.Max(math.Floor(at.Sub(one.last.Last).Hours()/24), 0)
 	}
 	one.out = one.last
 	one.out.Last = at

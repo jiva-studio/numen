@@ -79,21 +79,78 @@ func scheduling(retention float64) (flashcards.FSRS, *fsrs.FSRS) {
 
 // libraryAgrees asks both about one card face, at every rating and at both
 // endings, and holds the two answers to being the same schedule.
+//
+// What the library is asked about is the card face as it stood away. A card
+// face answered no later than the answer it already carries stood no time away,
+// and that is the card face the library is asked about instead — the same
+// arithmetic on the days that actually went by. What the library makes of such a
+// card face asked about as it stands is written down in the test below, and is
+// the one thing here the scheduler does not do.
 func libraryAgrees(
 	t *testing.T, retention float64, by flashcards.FSRS, engine *fsrs.FSRS,
 	s flashcards.Schedule,
 ) {
 	t.Helper()
+	stood := standingAway(s)
 	for _, r := range libraryRatings {
-		want := asSchedule(engine.Next(asCard(s), libraryNow, r).Card)
+		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
 		got := by.Next(s, libraryNow, flashcards.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, standing(s)), got, want)
 	}
 	good, again := by.Endings(s, libraryNow)
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, standing(s)),
-		good, asSchedule(engine.Next(asCard(s), libraryNow, fsrs.Good).Card))
+		good, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Good).Card))
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, standing(s)),
-		again, asSchedule(engine.Next(asCard(s), libraryNow, fsrs.Again).Card))
+		again, asSchedule(engine.Next(asCard(stood), libraryNow, fsrs.Again).Card))
+}
+
+// standingAway is a card face at the days it stood away. One answered no later
+// than the answer it already carries stood none of them.
+func standingAway(s flashcards.Schedule) flashcards.Schedule {
+	if s.Seen() && libraryNow.Before(s.Last) {
+		s.Last = libraryNow
+	}
+	return s
+}
+
+// A card face answered no later than the answer it already carries stood no
+// time away, and the scheduler reads it as standing no time away.
+//
+// This is the one place the scheduler and the library part. The library counts
+// the days into a whole number carrying no sign, so a card face a day ahead of
+// its own last answer reads as one nobody could recall — and what that count
+// comes to is the machine's, so the same card face reads one way on one
+// architecture and the other way on another. The scheduler counts no days and
+// asks the forgetting curve at none of them.
+func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
+	by, engine := scheduling(0)
+
+	// A card face the scheduler has put into review, carrying an answer given
+	// after the instant it is asked about.
+	ahead := by.Next(by.Next(flashcards.Schedule{},
+		libraryNow.AddDate(0, 0, -30), flashcards.Good),
+		libraryNow.AddDate(0, 0, 1), flashcards.Good)
+	if fsrs.State(ahead.Phase) != fsrs.Review {
+		t.Fatalf("the card face this is asked of stands in phase %d, want review", ahead.Phase)
+	}
+
+	for _, r := range libraryRatings {
+		// The days that went by are none, and the answer is the library's own on
+		// a card face that stood no time away.
+		stood := ahead
+		stood.Last = libraryNow
+		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
+		got := by.Next(ahead, libraryNow, flashcards.Rating(r))
+		sameSchedule(t, fmt.Sprintf("%s of a card face a day ahead of its last answer", r), got, want)
+
+		// What the library makes of that card face as it stands, which is what
+		// the scheduler does not do.
+		refused := asSchedule(engine.Next(asCard(ahead), libraryNow, r).Card)
+		if refused.Stability == got.Stability && refused.Due.Equal(got.Due) {
+			t.Errorf("%s leaves the card face at a stability of %v either way, and this is"+
+				" the case the scheduler and the library part on", r, got.Stability)
+		}
+	}
 }
 
 // libraryWalked is every card face a walk of seven answers reaches, each answer

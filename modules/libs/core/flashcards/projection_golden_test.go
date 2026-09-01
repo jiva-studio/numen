@@ -207,6 +207,11 @@ func goldenMaterials(by history.Scheduler) []goldenMaterial {
 
 // goldenAt is a material answered a varying number of times each, some of it
 // long overdue and some of it falling due in the weeks ahead.
+//
+// The overdue part has its due day put behind the answer that produced it,
+// which is a state a vault does not hold: a due day is worked out forward from
+// the instant of an answer. It stands here as a stress case, and the figures
+// written down under "a large debt" are not a picture of anybody's vault.
 func goldenAt(by history.Scheduler, faces, overdue int) map[history.CardFace]history.Schedule {
 	out := make(map[history.CardFace]history.Schedule, faces)
 	for i := range faces {
