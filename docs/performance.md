@@ -797,6 +797,29 @@ Both columns are the median of two runs of three on an idle machine. **The alloc
 
 **What is left is arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 77 % of the request, the answers themselves are 49 %, and the scheduler is 30 %. `math.Pow` and `math.Exp` together are 22 %, and choosing the day a card lands on is 15 %. Reading the vault, which was 4 %, is now 7 % of a shorter request.
 
+## Every place of a curve at once
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, which has eight cores and sixteen threads, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
+
+| card faces | Before | After |
+| --- | --- | --- |
+| 500 | 0.12 s · 19.6 MB | 0.08 s · 19.7 MB |
+| 5 000 | 1.01 s · 150 MB | 0.29 s · 150 MB |
+| 20 000 | 3.5 s · 592 MB | 1.06 s · 592 MB |
+| 50 000 | 8.8 s · 1.52 GB | 2.5 s · 1.52 GB |
+
+Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on, and the allocation is the control.** The same work on other cores allocates the same bytes, and three of the four rows moved by under 0.05 %; a memory figure that had moved would have said something changed that was not meant to. The 500 row's allocation is 0.4 % higher, which is the stacks of the goroutines a request of eighty milliseconds now starts.
+
+**The 500 row says least.** Its two runs after the change are a sixth apart, and what it is here for is that the smallest preset did not get slower, which was the thing worth checking. The factor beside it is not a figure to quote.
+
+**Three and a half times, on eight cores.** The estimate before the measurement was 2.8, from the 77 % of a request that the runs are and eight cores to carry it. The measurement is 3.4 at twenty thousand card faces and 3.5 at fifty thousand, so the threads past the eight cores are worth something to arithmetic that waits for no memory.
+
+**Twenty-five places over sixteen threads is two waves, and the second is smaller.** A curve is twenty-five places and each is two runs of the scheduler, handed out a thread at a time. That unevenness, and the reading of the vault that no place shares, are most of what stands between three and a half and eight.
+
+**A place holds the preset's cards while it runs.** Peak memory at fifty thousand card faces is 164 MB with one place running at a time and 307 MB with all of them, sampled from the kernel's own high-water mark over the whole benchmark. A run holds about four and a half megabytes of cards at that size, and a request now holds as many of those as the machine has threads.
+
+**What a person waits for.** A preset tab over fifty thousand card faces answers in about two and a half seconds. It was 8.8 s before this change, 17.6 s before the one above it, and 40.4 s at the top of the section three above. Twenty thousand card faces is a second, and five thousand is under a third of one.
+
 ## What a window asks of every vault
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/flashcardsui`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
