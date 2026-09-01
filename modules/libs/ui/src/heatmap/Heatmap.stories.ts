@@ -6,7 +6,7 @@
  * room there is can only be answered by a browser that laid them out.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
 import { names, ROWS } from './heatmap'
@@ -204,5 +204,86 @@ export const ADayOfNothing: Story = {
     await expect(said.querySelector('.summary__count')?.textContent?.trim()).toBe('Nothing answered')
     await expect(said.querySelector('.summary__four')).toBeNull()
     await expect(said.querySelector('.summary__came')).toBeNull()
+  },
+}
+
+/**
+ * A corner of the window the grid is put in, and which of its cells stands in
+ * that corner. The days run down each column, so the top of the last column is
+ * a whole week back from the end.
+ */
+const CORNERS = [
+  { name: 'top left', pin: { insetBlockStart: '0px', insetInlineStart: '0px' }, cell: () => 0 },
+  {
+    name: 'top right',
+    pin: { insetBlockStart: '0px', insetInlineEnd: '0px' },
+    cell: (drawn: number) => drawn - ROWS,
+  },
+  {
+    name: 'bottom left',
+    pin: { insetBlockEnd: '0px', insetInlineStart: '0px' },
+    cell: () => ROWS - 1,
+  },
+  {
+    name: 'bottom right',
+    pin: { insetBlockEnd: '0px', insetInlineEnd: '0px' },
+    cell: (drawn: number) => drawn - 1,
+  },
+]
+
+/**
+ * The grid hard against each edge of the window in turn, pointed at in the
+ * corner it reaches.
+ *
+ * An account stands beside the day it is about, and the side it wants is off
+ * the screen in two of these four, so this is where the whole of it being read
+ * is decided.
+ */
+export const AtEveryEdge: Story = {
+  args: { did: worked(), now, words },
+  render: (args) => ({
+    components: { Heatmap },
+    setup: () => ({ args }),
+    template: `
+      <div class="numen" style="position: fixed; inset: 0; background: var(--numen-surface)">
+        <div data-pinned style="position: fixed; inline-size: 240px">
+          <Heatmap v-bind="args" />
+        </div>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const pinned = canvasElement.querySelector('[data-pinned]') as HTMLElement
+    const drawn = [...cells(canvasElement)]
+    await expect(drawn.length).toBeGreaterThan(ROWS)
+
+    for (const corner of CORNERS) {
+      Object.assign(pinned.style, {
+        insetBlockStart: '',
+        insetBlockEnd: '',
+        insetInlineStart: '',
+        insetInlineEnd: '',
+        ...corner.pin,
+      })
+
+      const cell = drawn[corner.cell(drawn.length)] as Element
+      await userEvent.hover(cell)
+
+      await waitFor(() => {
+        const said = canvasElement.querySelector('.tooltip')
+        expect(said, corner.name).not.toBeNull()
+
+        // The whole of it is on the screen, on every side.
+        const box = (said as HTMLElement).getBoundingClientRect()
+        expect(box.left, corner.name).toBeGreaterThanOrEqual(0)
+        expect(box.top, corner.name).toBeGreaterThanOrEqual(0)
+        expect(box.right, corner.name).toBeLessThanOrEqual(window.innerWidth)
+        expect(box.bottom, corner.name).toBeLessThanOrEqual(window.innerHeight)
+
+        // And beside the day it is about, on one side of it or the other.
+        const day = cell.getBoundingClientRect()
+        expect(box.right <= day.left || box.left >= day.right, corner.name).toBe(true)
+      })
+    }
   },
 }

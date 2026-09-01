@@ -50,6 +50,9 @@ export { dayName as heatmapDayName } from './heatmap/dates'
 export type { Words as HeatmapWords } from './heatmap/words'
 /** What a thing is, said beside it while a person points at it. */
 export { default as Tooltip } from './tooltip/Tooltip.vue'
+/** Where a thing standing over the page goes, which the menu and tooltip share. */
+export { beside } from './placing/place'
+export type { Beside, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'

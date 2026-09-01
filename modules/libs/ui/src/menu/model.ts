@@ -1,6 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
+import { beside } from '../placing/place'
 import type { Point } from '../plex/model'
 import type { Size } from '../plex/arrange'
 
@@ -54,23 +55,29 @@ export interface MenuPlacing {
 }
 
 /**
- * One axis.
+ * Where a menu of this size, asked for at this point, is drawn.
  *
- * A menu runs on from the point it was asked for. Where the far edge is nearer
- * than its own length it runs back over the point instead, and either way it
- * is brought inside the edges it may touch. Wider than the area it is placed
- * in, it sits at the near edge and scrolls.
+ * The point is a span of no width, touching the menu: the menu runs on from it
+ * and folds back over it at an edge. Wider than the area it is placed in, it
+ * sits at the near edge and scrolls.
  */
-const along = (at: number, size: number, room: number, margin: number): number => {
-  const back = at - size
-  const start = at + size + margin <= room || back < margin ? at : back
-  return Math.max(margin, Math.min(start, room - size - margin))
-}
-
-/** Where a menu of this size, asked for at this point, is drawn. */
 export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): MenuPlacing => ({
-  x: along(at.x, size.width, viewport.width, margin),
-  y: along(at.y, size.height, viewport.height, margin),
+  x: beside({
+    from: at.x,
+    to: at.x,
+    size: size.width,
+    room: viewport.width,
+    margin,
+    gap: 0,
+  }),
+  y: beside({
+    from: at.y,
+    to: at.y,
+    size: size.height,
+    room: viewport.height,
+    margin,
+    gap: 0,
+  }),
 })
 
 /**

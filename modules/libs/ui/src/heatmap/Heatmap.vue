@@ -15,6 +15,7 @@
 import { computed, ref } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
+import type { Box } from '../placing/place'
 import Summary from './Summary.vue'
 import { days, fits, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
@@ -54,12 +55,15 @@ const height = computed(() => ROWS * step.value - laid.value.gap)
 const xOf = (at: number) => Math.floor(at / ROWS) * step.value
 const yOf = (at: number) => (at % ROWS) * step.value
 
-/** The day a person is pointing at, and where on the page they are pointing. */
-const pointed = ref<{ day: Day; at: { x: number; y: number } } | null>(null)
+/** The day a person is pointing at, and the cell on the page it is drawn in. */
+const pointed = ref<{ day: Day; at: Box } | null>(null)
 
 const reaches = (day: Day, press: MouseEvent) => {
   const cell = (press.target as SVGRectElement).getBoundingClientRect()
-  pointed.value = { day, at: { x: cell.right + 8, y: cell.top } }
+  pointed.value = {
+    day,
+    at: { x: cell.x, y: cell.y, width: cell.width, height: cell.height },
+  }
 }
 </script>
 
