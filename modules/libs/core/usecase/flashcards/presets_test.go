@@ -734,3 +734,56 @@ func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
 		t.Errorf("the note was rewritten\n was %q\n got %q", was, got)
 	}
 }
+
+// A day the block already names carries its new share in the place it was
+// written in, and is written once.
+func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
+			"load:\n  wed: 50\n  mon: 80\n---\n\n# Sanskrit\n",
+	})
+
+	p := minutes()
+	p.Load = map[time.Weekday]int{time.Wednesday: 30, time.Monday: 80}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := read(t, s.vault, "Sanskrit.md"); !strings.Contains(
+		got, "load:\n  wed: 30\n  mon: 80\n") {
+		t.Errorf("the load was rewritten as:\n%s", got)
+	}
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
+		t.Errorf("load = %v, want %v", held.Preset.Load, p.Load)
+	}
+}
+
+// A day named twice, under names that differ only in how they are written, is
+// one day to the read. The share goes into the entry the read takes, and the
+// save does not report a value the next read will not find.
+func TestADayNamedTwiceIsSavedWhereTheReadTakesIt(t *testing.T) {
+	s := opened(t, map[string]string{
+		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
+			"load:\n  Mon: 100\n  mon: 50\n---\n\n# Sanskrit\n",
+	})
+
+	p := minutes()
+	p.Load = map[time.Weekday]int{time.Monday: 80}
+	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.FileRef{}); err != nil {
+		t.Fatal(err)
+	}
+
+	held, err := s.presets.Read(t.Context(), s.vault, "Sanskrit.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := held.Preset.Load[time.Monday]; got != 80 {
+		t.Errorf("monday came back at %d, and the save put it at 80\n%s",
+			got, read(t, s.vault, "Sanskrit.md"))
+	}
+}

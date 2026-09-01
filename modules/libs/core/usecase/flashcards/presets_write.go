@@ -220,18 +220,23 @@ func settle(doc *markdown.Document, p, was history.Preset) error {
 // what the settings say or is taken out, and every other entry stands where it
 // was, in the order it was written in. A day the block does not name is written
 // after the ones it does.
+//
+// A day named more than once, under names that differ only in how they are
+// written, is one day to the read. The entry the read took carries the share
+// and the rest are taken out.
 func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry {
 	out := make([]markdown.Entry, 0, len(entries)+len(load))
+	taken := reading(entries, read)
 	written := make(map[time.Weekday]bool, len(load))
 	for _, name := range entries {
 		weekday, isDay := history.Weekday(name)
 		_, could := read[weekday]
-		if !isDay || !could || written[weekday] {
+		if !isDay || !could {
 			out = append(out, markdown.Entry{Key: name, Standing: true})
 			continue
 		}
 		share, named := load[weekday]
-		if !named {
+		if !named || name != taken[weekday] {
 			continue
 		}
 		written[weekday] = true
@@ -240,6 +245,23 @@ func shares(entries []string, load, read map[time.Weekday]int) []markdown.Entry 
 	for _, weekday := range week {
 		if share, named := load[weekday]; named && !written[weekday] {
 			out = append(out, markdown.Entry{Key: history.DayName(weekday), Value: share})
+		}
+	}
+	return out
+}
+
+// reading is the entry a read takes for each day of the week. Keys reach the
+// reader in the order their names sort in, so the last of the names standing
+// for one day is the one whose share it holds.
+func reading(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
+	out := make(map[time.Weekday]string, len(entries))
+	for _, name := range entries {
+		weekday, isDay := history.Weekday(name)
+		if _, could := read[weekday]; !isDay || !could {
+			continue
+		}
+		if standing, held := out[weekday]; !held || name > standing {
+			out[weekday] = name
 		}
 	}
 	return out
