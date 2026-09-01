@@ -224,7 +224,11 @@ type DeckOwing struct {
 	// How many of the deck's card faces stand learned now, under the rule the
 	// preset scheduling the deck counts by. It is a count of faces, and says
 	// nothing about what a preset has got through of its day.
-	Learned       int32 `protobuf:"varint,6,opt,name=learned,proto3" json:"learned,omitempty"`
+	Learned int32 `protobuf:"varint,6,opt,name=learned,proto3" json:"learned,omitempty"`
+	// How many of the deck's card faces nobody has answered at all. A deck every
+	// face of which is one of these has nothing that can come round until
+	// something begins them.
+	Unbegun       int32 `protobuf:"varint,7,opt,name=unbegun,proto3" json:"unbegun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -297,6 +301,13 @@ func (x *DeckOwing) GetAnswered() int32 {
 func (x *DeckOwing) GetLearned() int32 {
 	if x != nil {
 		return x.Learned
+	}
+	return 0
+}
+
+func (x *DeckOwing) GetUnbegun() int32 {
+	if x != nil {
+		return x.Unbegun
 	}
 	return 0
 }
@@ -2032,14 +2043,15 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03new\x18\x06 \x01(\x05R\x03new\x12)\n" +
 	"\x05decks\x18\a \x03(\v2\x13.numen.v1.DeckOwingR\x05decks\x12/\n" +
 	"\apresets\x18\t \x03(\v2\x15.numen.v1.PresetOwingR\apresets\x12\x16\n" +
-	"\x06unread\x18\b \x01(\tR\x06unread\"\x8f\x01\n" +
+	"\x06unread\x18\b \x01(\tR\x06unread\"\xa9\x01\n" +
 	"\tDeckOwing\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
 	"\banswered\x18\x05 \x01(\x05R\banswered\x12\x18\n" +
-	"\alearned\x18\x06 \x01(\x05R\alearned\"\xa8\x04\n" +
+	"\alearned\x18\x06 \x01(\x05R\alearned\x12\x18\n" +
+	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xa8\x04\n" +
 	"\vPresetOwing\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +

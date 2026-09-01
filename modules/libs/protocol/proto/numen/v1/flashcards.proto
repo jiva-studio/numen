@@ -139,6 +139,11 @@ message DeckOwing {
   // preset scheduling the deck counts by. It is a count of faces, and says
   // nothing about what a preset has got through of its day.
   int32 learned = 6;
+
+  // How many of the deck's card faces nobody has answered at all. A deck every
+  // face of which is one of these has nothing that can come round until
+  // something begins them.
+  int32 unbegun = 7;
 }
 
 // PresetOwing is one preset of a vault, and what the day comes to under it.
