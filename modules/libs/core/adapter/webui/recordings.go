@@ -1,7 +1,6 @@
 package webui
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -88,18 +87,20 @@ func (a *API) Media(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
 		return
 	}
-	// A vault hands over a file whole, so a recording is in memory for as long
-	// as the request it answers.
-	raw, err := reader.Read(r.Context(), ref.Path)
+	// The file is read as it is played. An hour of speech is served a second at
+	// a time, and what a listener holds is the second they are on.
+	sound, err := reader.Open(r.Context(), ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
 	}
+	defer sound.Close()
+
 	w.Header().Set("Cache-Control", "no-store")
-	if sound := heardAs(ref.Path); sound != "" {
-		w.Header().Set("Content-Type", sound)
+	if named := heardAs(ref.Path); named != "" {
+		w.Header().Set("Content-Type", named)
 	}
-	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.MTime), bytes.NewReader(raw))
+	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.MTime), sound)
 }
 
 // heardAs is what a recording of a container is served as. A container this
