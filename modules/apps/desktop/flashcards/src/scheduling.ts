@@ -370,28 +370,30 @@ export const leftWords = (one: Preset): string => {
 }
 
 /**
+ * The words each verdict the vault may hand over comes to. A verdict scheduling
+ * something says nothing. Every value stands here, so a verdict added to the
+ * schema is one this window is made to answer.
+ */
+const WHY: Record<Stopped, (settings: Settings | null, today: string) => string> = {
+  [Stopped.UNSPECIFIED]: () => '',
+  [Stopped.NOTHING]: () => '',
+  [Stopped.NO_MINUTES]: () => STOPPED.noMinutes,
+  [Stopped.NO_CARDS]: () => STOPPED.noCards,
+  [Stopped.NO_DAY]: () => STOPPED.noDay,
+  [Stopped.PAST_DAY]: (settings) =>
+    settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay,
+  [Stopped.NO_LOAD]: (settings, today) => STOPPED.noLoad(today),
+}
+
+/**
  * Why a preset schedules nothing today, in the words to show, and empty while
  * it schedules something.
  *
  * The verdict is the core's: it is what the sitting hands its cards out by. Two
  * of the reasons name a day, and the settings carry the one a date aimed at.
  */
-export const stoppedWords = (why: Stopped, settings: Settings | null, today: string): string => {
-  switch (why) {
-    case Stopped.NO_MINUTES:
-      return STOPPED.noMinutes
-    case Stopped.NO_CARDS:
-      return STOPPED.noCards
-    case Stopped.NO_DAY:
-      return STOPPED.noDay
-    case Stopped.PAST_DAY:
-      return settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay
-    case Stopped.NO_LOAD:
-      return STOPPED.noLoad(today)
-    default:
-      return ''
-  }
-}
+export const stoppedWords = (why: Stopped, settings: Settings | null, today: string): string =>
+  WHY[why](settings, today)
 
 /**
  * What the goal of a preset comes to, in the few words a person reads at a
