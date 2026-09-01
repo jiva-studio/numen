@@ -241,8 +241,9 @@ type Projection struct {
 	// Admitted is whether the preset admitted each day projected. A day it did
 	// not is no sitting at all, and the summaries over the run pass over it.
 	Admitted []bool
-	// Closed is what stopped each day projected asking for more.
-	Closed []Closed
+	// Closed is every budget that stopped each day projected asking for more,
+	// one entry a day.
+	Closed []Closing
 	// Backlog is how many card faces stood overdue at the end of each day
 	// projected: their day had passed and that day did not get to them. It is
 	// the pile a person watches shrink, and it begins where Overdue stands now.
@@ -310,11 +311,10 @@ func Overdue(d Day, at map[CardFace]Schedule, now time.Time) int {
 	return out
 }
 
-// Closed is what stopped a day of review asking for more.
-//
-// A day that asked for everything there was is closed by nothing: the material
-// ran out. The three others name the budget in the words the preset writes it
-// in, and a budget the goal does not name can never be one of them.
+// Closed is one budget a day of review may be stopped by, in the words the
+// preset writes the key in. A budget the goal does not name is never one of
+// them, and a day that asked for everything there was is closed by nothing:
+// the material ran out.
 type Closed string
 
 const (
@@ -331,6 +331,54 @@ const (
 	// ClosedPaused is a preset scheduling nothing at all.
 	ClosedPaused Closed = "paused"
 )
+
+// Closing is every budget that closed one day of review.
+//
+// A goal of retention holds a day to both card counts, and a day that ran out
+// of new cards and of reviews names both: a person raising one of them and
+// finding nothing changed is reading a day the other closed too.
+type Closing []Closed
+
+// closers is every budget a day may be closed by, in the order a closing names
+// them.
+var closers = []Closed{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
+
+// Holds reports whether this budget is one of those that closed the day.
+func (c Closing) Holds(one Closed) bool { return slices.Contains(c, one) }
+
+// with is this closing and one budget more, named once and in the order closers
+// stands in.
+func (c Closing) with(one Closed) Closing {
+	if !slices.Contains(closers, one) || c.Holds(one) {
+		return c
+	}
+	out := make(Closing, 0, len(c)+1)
+	for _, each := range closers {
+		if each == one || c.Holds(each) {
+			out = append(out, each)
+		}
+	}
+	return out
+}
+
+// Names is every budget that closed the day, each in the words the preset
+// writes the key in.
+func (c Closing) Names() []string {
+	out := make([]string, 0, len(c))
+	for _, one := range c {
+		out = append(out, string(one))
+	}
+	return out
+}
+
+// Name is the key one budget is written under, and empty where the day was
+// closed by none or by more than one.
+func (c Closing) Name() string {
+	if len(c) != 1 {
+		return ""
+	}
+	return string(c[0])
+}
 
 // Simulation projects a preset forward over the days ahead: its card faces
 // answered day after day, inside the budgets it keeps.
@@ -451,18 +499,18 @@ func (s Simulation) Run(
 		// leaves the cards least overdue standing.
 		slices.SortFunc(due, func(a, b int) int { return older(cards[a], cards[b]) })
 
-		// What closed the day is the budget that turned a card away. A day that
-		// asked for every card there was is closed by nothing.
-		closed := ClosedNothing
-		if admits.Paused {
-			closed = ClosedPaused
+		// What closed the day is every budget that turned a card away. A day
+		// that asked for every card there was is closed by nothing.
+		var closed Closing
+		if admits.Paused() {
+			closed = closed.with(ClosedPaused)
 		}
 
 		// The day is spent between the debt and the material it has not begun,
 		// in the share the preset names. A side the day has no more room for is
 		// done with, and the other goes on with what is left of the day.
 		answered, seen, begun, take := 0, 0, 0, 0
-		paid, all := admits.Paused, admits.Paused
+		paid, all := admits.Paused(), admits.Paused()
 		for !paid || !all {
 			owed, fresh := !paid && take < len(due), !all && left > 0
 			if !owed {
@@ -477,11 +525,11 @@ func (s Simulation) Run(
 
 			if admits.Paying(seen, begun, owed, fresh) {
 				if admits.Closes.Reviews != ClosedNothing && seen >= admits.Reviews {
-					closed, paid = admits.Closes.Reviews, true
+					closed, paid = closed.with(admits.Closes.Reviews), true
 					continue
 				}
 				if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
-					closed, paid = admits.Closes.Minutes, true
+					closed, paid = closed.with(admits.Closes.Minutes), true
 					continue
 				}
 				at := due[take]
@@ -495,11 +543,11 @@ func (s Simulation) Run(
 			}
 
 			if admits.Closes.New != ClosedNothing && begun >= admits.New {
-				closed, all = admits.Closes.New, true
+				closed, all = closed.with(admits.Closes.New), true
 				continue
 			}
 			if admits.Closes.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
-				closed, all = admits.Closes.Minutes, true
+				closed, all = closed.with(admits.Closes.Minutes), true
 				continue
 			}
 			used += s.Cost.New
@@ -515,7 +563,7 @@ func (s Simulation) Run(
 		spent += used
 		out.Load = append(out.Load, answered)
 		out.Spent = append(out.Spent, used)
-		out.Admitted = append(out.Admitted, !admits.Paused)
+		out.Admitted = append(out.Admitted, !admits.Paused())
 		out.Closed = append(out.Closed, closed)
 
 		// How much of the material stands learned at the close of the day, which

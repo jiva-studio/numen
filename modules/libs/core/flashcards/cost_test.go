@@ -271,10 +271,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if at.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", at, at.Weekday())
 	}
-	if !p.Admits(ahead, at, history.Spent{}, history.Left{}).Paused {
+	if !p.Admits(ahead, at, history.Spent{}, history.Left{}).Paused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, history.Left{}).Paused {
+	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, history.Left{}).Paused() {
 		t.Error("the day after it is a pause")
 	}
 }
@@ -1186,5 +1186,60 @@ func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	if !button.Equal(replayed) {
 		t.Errorf("the button said %v and the replay put the card on %v",
 			button.In(in), replayed.In(in))
+	}
+}
+
+// owing is this many card faces answered once a long while ago, so every one of
+// them stands overdue.
+func owing(by history.Scheduler, at time.Time, faces int) map[history.CardFace]history.Schedule {
+	out := make(map[history.CardFace]history.Schedule, faces)
+	for i := range faces {
+		out[history.CardFace{Card: fmt.Sprintf("owed%06d", i), Face: "Recognise"}] =
+			by.Next(history.Schedule{}, at.AddDate(0, 0, -60), history.Good)
+	}
+	return out
+}
+
+// A day two budgets closed names both.
+//
+// Under a goal of retention the day is held to its new cards and to its reviews
+// at once. A day that hands over the whole of each has been closed by each, and
+// a person told only one of them raises that one and finds nothing changed.
+func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 1}
+	at := owing(by, now, 30)
+
+	for _, one := range []struct {
+		what        string
+		new, review int
+		want        history.Closing
+	}{
+		{
+			what: "both counts spent", new: 12, review: 5,
+			want: history.Closing{history.ClosedNew, history.ClosedReviews},
+		},
+		{
+			what: "the reviews over", new: 12, review: 500,
+			want: history.Closing{history.ClosedNew},
+		},
+		{
+			what: "the new cards over", new: 500, review: 5,
+			want: history.Closing{history.ClosedReviews},
+		},
+		{
+			what: "both over", new: 500, review: 500,
+			want: nil,
+		},
+	} {
+		p := history.Preset{
+			Goal: history.GoalRetention, NewADay: one.new, ReviewsADay: one.review,
+		}
+		got := ran(t, run, now, p, at, 20)
+
+		if !slices.Equal(got.Closed[0], one.want) {
+			t.Errorf("%s: the day closed on %v, want %v", one.what, got.Closed[0], one.want)
+		}
 	}
 }

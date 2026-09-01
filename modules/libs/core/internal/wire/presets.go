@@ -111,7 +111,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 			Through:  one.Through,
 			Enough:   one.Enough,
 			Met:      one.Met,
-			Closed:   string(one.Closed),
+			Closed:   one.Closed.Name(),
 			Short:    int32(one.Short),
 			Clears:   int32(one.Clears),
 			Learned:  int32(one.Learned),
