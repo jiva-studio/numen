@@ -14,6 +14,7 @@ go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
+go test ./adapter/flashcardsui/ -run XXX -bench FrontDoor -benchtime 5x -count 2 -timeout 40m
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -719,3 +720,21 @@ Both columns are the median of two runs of three. The memory column is the one t
 **A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault stands at, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
 
 **The curve of the defaults reads every deck.** Nothing points at a preset that stands in no note, so which decks name none is a question only the deck files answer, and that one curve pays what the front door pays.
+
+## What a window asks of every vault
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/flashcardsui`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
+
+| | Measured |
+| --- | --- |
+| Every vault counted inside one answer — what the window opened on before | 0.52 s |
+| The list of vaults on screen | 1.3 ms |
+| The last of the four counts landing | 0.21 s |
+
+Each figure is the median of two runs of five. The first row is the old front door, run here as it stood: the four vaults counted one after another before anything was handed over.
+
+**What a person waits for is a reading of the registry.** The list is names and paths, which the registry answers before any database is opened, so it is on screen in about a millisecond whatever the vaults hold. Everything after that arrives at its own row.
+
+**Four counts at once cost the slowest, not the sum.** The four vaults here are the same size, so the last count lands in about a quarter of what counting them in turn took, less what they spend competing for the same cores. An installation of one vault waits exactly as long as it did.
+
+Nothing here says what a vault of fifty thousand card faces does to the row beside it: these four are alike on purpose, and the claim being measured is the shape and not the spread.
