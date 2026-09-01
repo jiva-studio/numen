@@ -31,6 +31,14 @@ A day is one day whatever presets fall on it, so spreading a card reads what eve
 
 The control's curve reads the first day of the run the preset admits. A day at none of the load is no sitting at all, so a person moving a control on such a day reads what the setting buys them on the day they will next sit down, rather than a row of noughts. It is one real day of the projection, worked out by the arithmetic the sitting runs, so the count on the curve is the count that sitting hands them. Days the preset does not admit take no part in any summary over the run.
 
+### A day asks a card as often as it falls due in it
+
+An answer a card did not come back on sends it away for minutes, so the day it lands back in is the day it was asked in, and that day asks it again. A day asks one card face a fixed number of times at most; a card that keeps landing back in it stands over, and the day after picks it up.
+
+The budget a preset keeps in cards is spent on the first showing of a face, and one kept in showings on every showing. The minutes are spent on every showing either way.
+
+What a curve draws is counted in card faces: a card the day comes back to is the one card, and the showings it takes are what the clock runs out on. What the sitting hands over is that same count, over the whole day and not one of its sittings, because a card the day comes back to is in a later sitting than the one that first showed it.
+
 ## Consequences
 
 - **The mark the schedule cache is filed under carries the placement.** A preset's shares, its even load, the goal that decides whether that load is evened at all, and the hour a day of review begins at all decide which day a card lands on, so all of them stand in the mark (ADR-0034).
