@@ -822,7 +822,7 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 **A place holds the preset's cards while it runs.** Peak memory at fifty thousand card faces is 164 MB with one place running at a time and 307 MB with all of them, sampled from the kernel's own high-water mark over the whole benchmark. A run holds about four and a half megabytes of cards at that size, and a request now holds as many of those as the machine has threads.
 
-**What a person waits for.** A preset tab over fifty thousand card faces answers in about two and a half seconds. It was 8.8 s before this change, 17.6 s before the one above it, and 40.4 s at the top of the section three above. Twenty thousand card faces is a second, and five thousand is under a third of one.
+**What a person waits for.** A preset tab over fifty thousand card faces answers in between two and a half and three seconds: four runs of three on this machine spread from 2.47 s to 2.99 s, and allocated the same 1.52 GB to within 0.02 % every time. The work is the same work and the spread is the clock, so three seconds is the figure to hold this to. It was 8.8 s before this change, 17.6 s before the one above it, and 40.4 s at the top of the section three above. Twenty thousand card faces is a second, and five thousand is under a third of one.
 
 ## What a window asks of every vault
 
