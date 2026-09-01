@@ -43,6 +43,8 @@ func StoppedOf(s history.Stopped) v1.Stopped {
 		return v1.Stopped_STOPPED_PAST_DAY
 	case history.StoppedNoLoad:
 		return v1.Stopped_STOPPED_NO_LOAD
+	case history.StoppedNoWeek:
+		return v1.Stopped_STOPPED_NO_WEEK
 	}
 	return v1.Stopped_STOPPED_NOTHING
 }

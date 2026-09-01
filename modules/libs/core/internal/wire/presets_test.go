@@ -212,6 +212,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		{history.StoppedNoDay, v1.Stopped_STOPPED_NO_DAY},
 		{history.StoppedPastDay, v1.Stopped_STOPPED_PAST_DAY},
 		{history.StoppedNoLoad, v1.Stopped_STOPPED_NO_LOAD},
+		{history.StoppedNoWeek, v1.Stopped_STOPPED_NO_WEEK},
 	} {
 		if got := StoppedOf(one.why); got != one.said {
 			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)

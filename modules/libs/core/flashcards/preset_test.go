@@ -573,3 +573,53 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 		t.Errorf("a paused preset stops today on %q, want %q", got, flashcards.StoppedNoMinutes)
 	}
 }
+
+// A week no day of which carries any of the load stops the preset itself: there
+// is no next day for the cards to be picked up on, which is what a quiet day of
+// an otherwise loud week promises.
+func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
+	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	at := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+
+	dead := map[time.Weekday]int{}
+	for one := time.Sunday; one <= time.Saturday; one++ {
+		dead[one] = 0
+	}
+
+	for what, p := range map[string]flashcards.Preset{
+		"minutes": {Goal: flashcards.GoalMinutes, MinutesADay: 20, Load: dead},
+		"retention": {
+			Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45, Load: dead,
+		},
+		"a date": {
+			Goal: flashcards.GoalDate, By: at.AddDate(0, 0, 30),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Load: dead,
+		},
+	} {
+		t.Run(what, func(t *testing.T) {
+			if got := p.Stops(day, at); got != flashcards.StoppedNoWeek {
+				t.Errorf("a dead week stops on %q, want %q", got, flashcards.StoppedNoWeek)
+			}
+			if got := p.StopsOn(day, at); got != flashcards.StoppedNoWeek {
+				t.Errorf("its day stops on %q, want %q", got, flashcards.StoppedNoWeek)
+			}
+			for i := range 7 {
+				on := at.AddDate(0, 0, i)
+				if got := p.StopsOn(day, on); got == flashcards.StoppedNoLoad {
+					t.Errorf("its %v promises a next day that carries some load", on.Weekday())
+				}
+			}
+		})
+	}
+
+	// A week with one loud day is a week of quiet days and not a dead one.
+	alive := maps.Clone(dead)
+	alive[time.Friday] = flashcards.FullLoad
+	p := flashcards.Preset{Goal: flashcards.GoalMinutes, MinutesADay: 20, Load: alive}
+	if got := p.Stops(day, at); got != flashcards.StoppedNothing {
+		t.Errorf("a week with one loud day stops on %q", got)
+	}
+	if got := p.StopsOn(day, at); got != flashcards.StoppedNoLoad {
+		t.Errorf("its Thursday stops on %q, want %q", got, flashcards.StoppedNoLoad)
+	}
+}

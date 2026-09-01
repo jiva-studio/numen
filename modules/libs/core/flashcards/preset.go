@@ -382,13 +382,18 @@ const (
 	// StoppedNoLoad is a day of the week carrying none of the load. It is a
 	// fact about one day: the preset schedules on the days that carry some.
 	StoppedNoLoad Stopped = "no_load"
+	// StoppedNoWeek is a week carrying none of the load. Every day of it stands
+	// at nothing, so there is no day for the cards to be picked up on.
+	StoppedNoWeek Stopped = "no_week"
 )
 
 // Stops is why this preset schedules nothing, and StoppedNothing where it
 // schedules something.
 //
 // It is the one place the rule is read. A goal of a date is answered against the
-// day holding now, and stops once the day it names is behind that one.
+// day holding now, and stops once the day it names is behind that one. A week
+// every day of which carries none of the load is read whatever the goal, since
+// no budget is spent on a day that schedules nothing.
 func (p Preset) Stops(d Day, now time.Time) Stopped {
 	switch p.Goal {
 	case GoalRetention:
@@ -407,11 +412,26 @@ func (p Preset) Stops(d Day, now time.Time) Stopped {
 			return StoppedNoMinutes
 		}
 	}
+	if p.Week() == 0 {
+		return StoppedNoWeek
+	}
 	return StoppedNothing
 }
 
+// Week is how many whole days of review a week of this preset holds, counting
+// each day of it for the share of the load it carries.
+func (p Preset) Week() float64 {
+	out := 0.0
+	for day := time.Sunday; day <= time.Saturday; day++ {
+		out += p.Share(day)
+	}
+	return out
+}
+
 // StopsOn is why this preset schedules nothing on the day holding now: whatever
-// stops the preset at all, and a day of the week carrying none of the load.
+// stops the preset at all, and a day of the week carrying none of the load. A
+// week with no day carrying any stops the preset itself, so this day is one of
+// the quiet days of a week that has loud ones.
 func (p Preset) StopsOn(d Day, now time.Time) Stopped {
 	if why := p.Stops(d, now); why != StoppedNothing {
 		return why
@@ -500,12 +520,8 @@ func (p Preset) admits(from time.Time, days int) float64 {
 	if days <= 0 {
 		return 0
 	}
-	week := 0.0
-	for day := time.Sunday; day <= time.Saturday; day++ {
-		week += p.Share(day)
-	}
 	whole := days / 7
-	out := week * float64(whole)
+	out := p.Week() * float64(whole)
 	for i := range days % 7 {
 		out += p.Share(from.AddDate(0, 0, whole*7+i).Weekday())
 	}
