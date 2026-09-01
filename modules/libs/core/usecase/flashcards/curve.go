@@ -2,6 +2,7 @@ package flashcards
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"time"
 
@@ -101,9 +102,9 @@ type Point struct {
 	// Short is how many card faces cannot be learned by this day whatever the
 	// pace, which is the rule wanting more days than the day leaves them.
 	Short int
-	// Closed is the budget that closed the day here, in the words the preset
-	// writes it in, and is empty where the material itself ran out.
-	Closed history.Closed
+	// Closed is every budget that closed the day here, in the words the preset
+	// writes them in, and is empty where the material itself ran out.
+	Closed history.Closing
 	// Clears is how many days of review at this place it takes before nothing
 	// is overdue. A curve standing over nothing overdue clears in none, and a
 	// place whose pace never gets there is history.NeverClears.
@@ -162,10 +163,11 @@ type Curves struct {
 func (u Curves) Execute(
 	ctx context.Context, v domain.Vault, path string, p history.Preset,
 ) (Curve, error) {
-	standing, err := u.Standings.Execute(ctx, v)
+	scheduled, err := u.scheduled(ctx, v, path)
 	if err != nil {
 		return Curve{}, err
 	}
+	standing := u.Standings.Of(ctx, v, scheduled)
 	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
 		return Curve{}, err
@@ -177,7 +179,7 @@ func (u Curves) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
-	schedules := u.Schedules.worked(ctx, v, held, asks)
+	schedules := u.Schedules.worked(held, asks)
 
 	decks := make(map[string]bool)
 	at := make(map[history.CardFace]history.Schedule)
@@ -206,9 +208,9 @@ func (u Curves) Execute(
 		at[one.CardFace] = s
 	}
 
-	// How many decks this preset schedules, counted over every deck the vault
-	// holds: a deck of no cards points at its preset like any other.
-	mine, err := u.pointing(ctx, v, reading, path, decks)
+	// How many decks this preset schedules, counted over every deck that could
+	// name it: a deck of no cards points at its preset like any other.
+	mine, err := u.pointing(ctx, v, reading, path, scheduled, decks)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -245,25 +247,49 @@ func (u Curves) Execute(
 	return out, nil
 }
 
-// pointing is how many of the vault's decks name the preset at path. Asked is
-// what has already been worked out from the cards standing.
-func (u Curves) pointing(
-	ctx context.Context, v domain.Vault, reading *Reading, path string, asked map[string]bool,
-) (int, error) {
-	if u.Standings.Notes == nil {
-		out := 0
-		for _, points := range asked {
-			if points {
-				out++
-			}
-		}
-		return out, nil
+// scheduled is the decks a curve of the preset at path is worked out over.
+//
+// A deck names its preset with an entry of its `links:` block, so what points
+// at that note is what the preset could schedule, and the rest of the vault is
+// left unread. Which of them the preset does schedule is the reading's answer:
+// a deck naming two presets is scheduled by the first.
+//
+// A preset standing in no note is the defaults, and nothing points at those.
+// The decks they schedule are the decks naming no preset, which is a question
+// only the decks answer: every one of them is read, and the curve of the
+// defaults pays for the whole vault.
+func (u Curves) scheduled(ctx context.Context, v domain.Vault, path string) ([]string, error) {
+	decks, err := u.Standings.Decks(ctx, v)
+	if err != nil || path == "" || u.Presets.Links == nil {
+		return decks, err
 	}
 
-	decks, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	at, err := u.Presets.Links.Backlinks(ctx, v.ID, path)
 	if err != nil {
-		return 0, err
+		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}
+	naming := make(map[string]bool, len(at))
+	for _, link := range at {
+		if link.Type == LinkType {
+			naming[link.From] = true
+		}
+	}
+
+	out := make([]string, 0, len(naming))
+	for _, deck := range decks {
+		if naming[deck] {
+			out = append(out, deck)
+		}
+	}
+	return out, nil
+}
+
+// pointing is how many of these decks name the preset at path. Asked is what
+// has already been worked out from the cards standing.
+func (u Curves) pointing(
+	ctx context.Context, v domain.Vault, reading *Reading, path string,
+	decks []string, asked map[string]bool,
+) (int, error) {
 	out := 0
 	for _, deck := range decks {
 		points, held := asked[deck]
@@ -325,7 +351,7 @@ func (u Curves) minutes(
 	// nothing on the grid carries is suggested at the longest day on it.
 	out.Suggested = Mark{At: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
 	for i, one := range out.At {
-		if one.Closed == history.ClosedNothing {
+		if len(one.Closed) == 0 {
 			out.Suggested = Mark{At: i, Value: out.Grid[i]}
 			break
 		}
@@ -453,7 +479,7 @@ func (u Curves) date(
 			Enough:   reached(ran, day, ran.Short),
 			Met:      reached(ran, day, ran.Short),
 			Short:    ran.Short,
-			Closed:   history.ClosedPaused,
+			Closed:   history.Closing{history.ClosedPaused},
 			Clears:   ran.Clears,
 			Learned:  ran.Learned,
 			Learns:   ran.Learns,
@@ -551,10 +577,10 @@ func point(p history.Projection) Point {
 
 // closing is what closed the first day the preset admits. A preset admitting no
 // day is closed by the pause.
-func closing(p history.Projection) history.Closed {
+func closing(p history.Projection) history.Closing {
 	day, any := p.Sitting()
 	if !any {
-		return history.ClosedPaused
+		return history.Closing{history.ClosedPaused}
 	}
 	return p.Closed[day]
 }

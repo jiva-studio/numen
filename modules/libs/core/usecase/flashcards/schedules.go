@@ -231,17 +231,14 @@ func (u Schedules) From(
 	return u.replayed(ctx, v, held, asks), nil
 }
 
-// worked is where a log a caller has already read leaves every card face.
+// worked is where a log a caller has already read leaves the card faces of one
+// assignment.
 //
-// The cache answers where it was worked out from the log the caller is holding,
-// so the answers are replayed at most once. Nothing is written: a caller whose
-// work is worth keeping asks for replayed.
-func (u Schedules) worked(
-	ctx context.Context, v domain.Vault, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
-	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
-		return out
-	}
+// The cache is filed under the assignment a whole vault stands at, and the
+// caller here holds the card faces of one preset. A cache is thrown away when
+// what it was worked out under changes, so the two are never one answer and the
+// cache takes no part: neither read nor written.
+func (u Schedules) worked(held Held, asks scheduling) map[history.CardFace]history.Schedule {
 	return projected(u.Day, held, asks)
 }
 

@@ -55,16 +55,20 @@ type Standings struct {
 var ErrUnread = errors.New("this vault has not been read yet: open it in the editor once")
 
 // Execute reads every deck the vault holds and says what stands in it.
+func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, error) {
+	paths, err := u.Decks(ctx, v)
+	if err != nil {
+		return nil, err
+	}
+	return u.Of(ctx, v, paths), nil
+}
+
+// Decks is the path of every deck the vault holds.
 //
 // A vault the index does not carry gets ErrUnread. Its files are on the disk
 // and this application does not walk them: the list of decks is the index's
 // answer, and a vault absent from it is not a vault holding no cards.
-//
-// A deck that cannot be read contributes no card face and is not an error: one
-// unreadable file is not a reason to refuse a person the rest of their cards.
-// What was wrong with it is the deck's own problem, and the editor is where it
-// is settled.
-func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, error) {
+func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
 	held, err := u.Notes.Holds(ctx, v.ID)
 	if err != nil {
 		return nil, err
@@ -72,12 +76,18 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 	if !held {
 		return nil, ErrUnread
 	}
+	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+}
 
-	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
-	if err != nil {
-		return nil, err
-	}
-
+// Of reads the decks named and says what stands in them. A caller after the
+// cards of one preset hands it the decks pointing there, and the rest of the
+// vault is left unread.
+//
+// A deck that cannot be read contributes no card face and is not an error: one
+// unreadable file is not a reason to refuse a person the rest of their cards.
+// What was wrong with it is the deck's own problem, and the editor is where it
+// is settled.
+func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Standing {
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	stencils := make(map[string]format.Stencil)
 	var out []Standing
@@ -88,7 +98,7 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 		}
 		out = append(out, u.standing(ctx, v, read, deck, stencils)...)
 	}
-	return out, nil
+	return out
 }
 
 // standing is the card faces one deck holds: every card of a mark, through every

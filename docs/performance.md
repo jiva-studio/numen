@@ -13,6 +13,7 @@ go test ./usecase/vault/ -run XXX -bench 'WarmScan|Incremental|Search'
 go test ./usecase/vault/ -run XXX -bench 'Links|Backlinks' -benchtime 300x
 NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 go test ./usecase/flashcards/ -run XXX -bench Vault -benchtime 5x -benchmem -timeout 40m
+go test ./usecase/flashcards/ -run XXX -bench PresetCurve -benchtime 3x -benchmem -timeout 40m
 ```
 
 The vault is generated, not downloaded: `testsupport.GenerateVault` writes notes of varying length across fifty folders, each naming a parent and pointing at a few others, from a fixed seed.
@@ -699,3 +700,22 @@ A sitting and the history screen each worked the whole log out again and wrote w
 **Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
 
 By profile, over the front door on this vault: **57 % of the request is `Standings.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
+
+## The curve of one preset
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkPresetCurve` in `usecase/flashcards`. The vault is the one above — fifty thousand card faces over twenty decks, 27 000 answers in 180 run files — with its decks pointing at two presets: one deck points at the first and the other nineteen at the second. Each row is the curve of one of those presets, drawn under a goal of minutes, with the schedule cache filled before the clock starts: opening the window and then a preset tab.
+
+| | Before | After |
+| --- | --- | --- |
+| A preset holding one deck of the twenty | 2.84 s · 1.21 GB | 2.07 s · 0.83 GB |
+| A preset holding nineteen of them | 44.7 s · 13.31 GB | 42.4 s · 13.30 GB |
+
+Both columns are the median of two runs of three. The memory column is the one these are read on: the times of the second row spread by a quarter between runs, and its memory by under 0.1 %.
+
+**A curve reads the decks pointing at its preset.** The index answers what points at one note, so a preset of one deck opens one deck file and the other nineteen are never read. The second row is the same request where there is nothing to leave out — nineteen decks of twenty — and it stands here as what the first is read against.
+
+**What the projection costs stands on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and nothing was taken off it.
+
+**A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault stands at, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
+
+**The curve of the defaults reads every deck.** Nothing points at a preset that stands in no note, so which decks name none is a question only the deck files answer, and that one curve pays what the front door pays.
