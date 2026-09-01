@@ -1,92 +1,218 @@
-// Package transcript says when a run of a recording's text was spoken.
+// Package transcript is what a model heard in a recording, written down as
+// WebVTT.
 //
-// It is pure: no filesystem, no clock, no model. A viewer asks where a run of
-// the words sits and is told the moment to play from.
+//	WEBVTT
 //
-// The moment is milliseconds from the start, so a player is given a number it
-// already understands and nothing is recomputed.
+//	NOTE heard 9100
+//
+//	00:00:01.500 --> 00:00:04.200
+//	what was said
+//
+//	00:00:04.200 --> 00:00:09.100
+//	what was said next
+//
+// The format is the W3C one, so the file opens in a player, shows the words
+// against the recording in a browser, and is read by anything a person already
+// has. A run stopped part way says how far it got in a NOTE, which every reader
+// of the format passes over.
+//
+// The timings are not the words. Reading takes them out, so an offset in what
+// comes back is an offset in the speech, and a chunk cut from it holds what was
+// said and not the bookkeeping around it.
+//
+// It is pure: no filesystem, no clock, no model.
 package transcript
 
 import (
-	"encoding/binary"
+	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 )
 
-// A Moment is one stretch of speech and where it was heard: the run of bytes it
-// produced, and the milliseconds it spans.
-type Moment struct {
-	Start  int
-	Length int
-	FromMs int
-	ToMs   int
+// Head is the line every WebVTT file begins with.
+const Head = "WEBVTT"
+
+// arrow separates the two timings of a cue.
+const arrow = "-->"
+
+// A Cue is one stretch of speech: what was said, when it was said, and where it
+// stands in the words a transcript reads as. At is filled by reading, because
+// only then is there a text for it to be an offset into.
+type Cue struct {
+	Text string
+	From int
+	To   int
+	At   int
 }
 
-// A Run is a stretch of a source's text, in bytes.
-type Run struct {
-	Start  int
-	Length int
+// Write is the artifact for a run of cues.
+//
+// A cue carrying no words is not written: silence is not something a person
+// scrolls past, and a timing over nothing is a moment the recording never had.
+func Write(cues []Cue) []byte {
+	var out strings.Builder
+	out.WriteString(Head)
+	out.WriteString("\n")
+	for _, cue := range cues {
+		text := strings.TrimSpace(cue.Text)
+		if text == "" {
+			continue
+		}
+		fmt.Fprintf(&out, "\n%s %s %s\n%s\n", Stamp(cue.From), arrow, Stamp(cue.To), text)
+	}
+	return []byte(out.String())
 }
 
-// At is where a run of the words sits: the moments it falls in, in the order
-// they were heard. A run crossing a silence is in both of them.
-func At(moments []Moment, start, length int) []Moment {
-	if length <= 0 || len(moments) == 0 {
+// Read is an artifact, as the words it holds and the cues they came from.
+//
+// The words of a cue stand one to a line, which is what a person reading the
+// transcript sees and what a chunk is cut out of.
+func Read(raw []byte) (string, []Cue) {
+	var out strings.Builder
+	var cues []Cue
+	for _, block := range strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n\n") {
+		cue, ok := parse(block)
+		if !ok {
+			continue
+		}
+		if out.Len() > 0 {
+			out.WriteString("\n")
+		}
+		cue.At = out.Len()
+		out.WriteString(cue.Text)
+		cues = append(cues, cue)
+	}
+	return out.String(), cues
+}
+
+// parse is one block of the file as a cue, and whether it is one. The header,
+// a note and anything a later version of the format adds are not.
+func parse(block string) (Cue, bool) {
+	lines := strings.Split(strings.Trim(block, "\n"), "\n")
+	for at, line := range lines {
+		before, after, found := strings.Cut(line, arrow)
+		if !found {
+			// A cue may be named on the line above its timing. Anything else
+			// standing there is not a cue.
+			if at > 0 || strings.HasPrefix(line, Head) || strings.HasPrefix(line, "NOTE") {
+				return Cue{}, false
+			}
+			continue
+		}
+		from, ok := parseStamp(before)
+		if !ok {
+			return Cue{}, false
+		}
+		// Cue settings may follow the second timing, separated by a space.
+		to, ok := parseStamp(strings.Fields(after)[0])
+		if !ok {
+			return Cue{}, false
+		}
+		text := strings.TrimSpace(strings.Join(lines[at+1:], "\n"))
+		if text == "" {
+			return Cue{}, false
+		}
+		return Cue{Text: text, From: from, To: to}, true
+	}
+	return Cue{}, false
+}
+
+// Stamp is a millisecond as the format writes it: hours, minutes, seconds and
+// thousandths.
+func Stamp(ms int) string {
+	if ms < 0 {
+		ms = 0
+	}
+	return fmt.Sprintf("%02d:%02d:%02d.%03d", ms/3600000, ms/60000%60, ms/1000%60, ms%1000)
+}
+
+// parseStamp is a timing the format writes. The hours are optional, which is
+// what the format says and what other tools write.
+func parseStamp(raw string) (int, bool) {
+	parts := strings.Split(strings.TrimSpace(raw), ":")
+	if len(parts) < 2 || len(parts) > 3 {
+		return 0, false
+	}
+	ms := 0
+	for _, part := range parts[:len(parts)-1] {
+		n, err := strconv.Atoi(part)
+		if err != nil {
+			return 0, false
+		}
+		ms = ms*60 + n
+	}
+	ms *= 60000
+
+	seconds, thousandths, found := strings.Cut(parts[len(parts)-1], ".")
+	if !found {
+		return 0, false
+	}
+	s, err := strconv.Atoi(seconds)
+	if err != nil {
+		return 0, false
+	}
+	t, err := strconv.Atoi(thousandths)
+	if err != nil || len(thousandths) != 3 {
+		return 0, false
+	}
+	return ms + s*1000 + t, true
+}
+
+// At is where a run of the words sits: the cues it falls in, in the order they
+// were spoken. A run crossing a silence is in both of them.
+func At(cues []Cue, start, length int) []Cue {
+	if length <= 0 || len(cues) == 0 {
 		return nil
 	}
 	end := start + length
 
-	// The first moment that reaches into the run. A moment before it ends
-	// before the run begins.
-	at := sort.Search(len(moments), func(i int) bool {
-		return moments[i].Start+moments[i].Length > start
+	// The first cue that reaches into the run. A cue before it ends before the
+	// run begins.
+	at := sort.Search(len(cues), func(i int) bool {
+		return cues[i].At+len(cues[i].Text) > start
 	})
 
-	var out []Moment
-	for ; at < len(moments) && moments[at].Start < end; at++ {
-		out = append(out, moments[at])
+	var out []Cue
+	for ; at < len(cues) && cues[at].At < end; at++ {
+		out = append(out, cues[at])
 	}
 	return out
 }
 
-// Plays is the millisecond a run is played from, and whether any moment holds
-// it. A run the recording never said is nowhere to play.
-func Plays(moments []Moment, start, length int) (int, bool) {
-	found := At(moments, start, length)
+// Plays is the millisecond a run of the words is played from, and whether any
+// cue holds it. A run no cue holds is nowhere to play.
+func Plays(cues []Cue, start, length int) (int, bool) {
+	found := At(cues, start, length)
 	if len(found) == 0 {
 		return 0, false
 	}
-	return found[0].FromMs, true
+	return found[0].From, true
 }
 
-// The record one moment is written as: four numbers, each of them small enough
-// for a recording of any length a person keeps.
-const record = 4 * 4
-
-// Pack writes the moments down.
-func Pack(moments []Moment) []byte {
-	raw := make([]byte, 0, len(moments)*record)
-	var one [record]byte
-	for _, m := range moments {
-		binary.LittleEndian.PutUint32(one[0:], uint32(m.Start))
-		binary.LittleEndian.PutUint32(one[4:], uint32(m.Length))
-		binary.LittleEndian.PutUint32(one[8:], uint32(m.FromMs))
-		binary.LittleEndian.PutUint32(one[12:], uint32(m.ToMs))
-		raw = append(raw, one[:]...)
-	}
-	return raw
+// Heard is the note a run stopped part way leaves: how many milliseconds of the
+// recording have been written down. It stands after the cues it claims, so a
+// batch that did not land whole is one no note claims.
+func Heard(ms int) []byte {
+	return []byte(fmt.Sprintf("\nNOTE heard %d\n", ms))
 }
 
-// Unpack is the moments a file holds. Bytes past the last whole record are a
-// write that did not land, and they are not a moment.
-func Unpack(raw []byte) []Moment {
-	out := make([]Moment, 0, len(raw)/record)
-	for at := 0; at+record <= len(raw); at += record {
-		out = append(out, Moment{
-			Start:  int(binary.LittleEndian.Uint32(raw[at:])),
-			Length: int(binary.LittleEndian.Uint32(raw[at+4:])),
-			FromMs: int(binary.LittleEndian.Uint32(raw[at+8:])),
-			ToMs:   int(binary.LittleEndian.Uint32(raw[at+12:])),
-		})
+// Reached is how far a run before this one got, and where the last note about
+// it ends. A file carrying none is a recording nothing has listened to.
+func Reached(raw []byte) (ms, end int) {
+	const note = "NOTE heard "
+	at := strings.LastIndex(string(raw), note)
+	if at < 0 {
+		return 0, 0
 	}
-	return out
+	line := string(raw[at+len(note):])
+	stop := strings.IndexByte(line, '\n')
+	if stop < 0 {
+		return Reached(raw[:at])
+	}
+	ms, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
+	if err != nil {
+		return Reached(raw[:at])
+	}
+	return ms, at + len(note) + stop + 1
 }
