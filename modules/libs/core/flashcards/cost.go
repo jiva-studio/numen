@@ -445,21 +445,22 @@ func (s Simulation) Run(
 	}
 	left := unseen
 	var spent time.Duration
-	// Which day of the projection last answered each card face, so a card the
-	// day has just had is not counted as one the day left standing.
-	answeredOn := make([]int, len(cards), len(cards)+unseen)
-	for i := range answeredOn {
-		answeredOn[i] = -1
-	}
 
 	open := s.Day.Ends(now).AddDate(0, 0, -1)
 	// Where the answers so far have left every card face is what the days
-	// ahead are loaded with.
+	// ahead are loaded with, and which day of the run first asks for it. A card
+	// face falling due past the run is asked for on none of them.
 	on := Spreading(s.Day)
-	for _, c := range cards {
+	base := on.number(open)
+	falls := make([][]int, days)
+	for i, c := range cards {
 		on.Holds(c.Due)
+		if day := max(0, on.number(c.Due)-base); day < days {
+			falls[day] = append(falls[day], i)
+		}
 	}
-	out.Learned = learned(p, cards, open)
+	reckoned := reckons(p, cards, open)
+	out.Learned = reckoned.count
 	// A run opening with the whole material learned has nothing left to learn.
 	if out.Learns == NeverLearns && out.Learned == out.Faces {
 		out.Learns = 0
@@ -472,6 +473,11 @@ func (s Simulation) Run(
 	if p.Goal == GoalDate {
 		ripens = Ripens(s.By, s.Day, p, now)
 	}
+	// The card faces the day may answer, and how many of them it reached. Both
+	// are carried from one day to the next: what a day did not reach is the
+	// front of what the day after it owes.
+	var due, spare []int
+	take := 0
 	for today := range days {
 		if err := ctx.Err(); err != nil {
 			return Projection{}, err
@@ -489,15 +495,14 @@ func (s Simulation) Run(
 		}
 		admits := p.Admits(s.Day, open, gone, Left{New: left, Ripens: ripens})
 
-		var due []int
-		for i, c := range cards {
-			if c.Due.Before(ends) {
-				due = append(due, i)
-			}
-		}
-		// The oldest debt is paid first, so a day that cannot pay all of it
-		// leaves the cards least overdue standing.
-		slices.SortFunc(due, func(a, b int) int { return older(cards[a], cards[b]) })
+		// What has fallen due by the close of the day, the oldest debt first, so
+		// a day that cannot pay all of it leaves the cards least overdue
+		// standing: what the day before did not reach, and what falls due in
+		// this one.
+		slices.SortFunc(falls[today], func(a, b int) int { return older(cards[a], cards[b]) })
+		spare = merges(spare[:0], due[take:], falls[today], cards)
+		due, spare = spare, due
+		take = 0
 
 		// What closed the day is every budget that turned a card away. A day
 		// that asked for every card there was is closed by nothing.
@@ -509,7 +514,7 @@ func (s Simulation) Run(
 		// The day is spent between the debt and the material it has not begun,
 		// in the share the preset names. A side the day has no more room for is
 		// done with, and the other goes on with what is left of the day.
-		answered, seen, begun, take := 0, 0, 0, 0
+		answered, seen, begun := 0, 0, 0
 		paid, all := admits.Paused(), admits.Paused()
 		for !paid || !all {
 			owed, fresh := !paid && take < len(due), !all && left > 0
@@ -538,7 +543,12 @@ func (s Simulation) Run(
 				seen++
 				answered++
 				cards[at] = s.answers(cards[at], open, ends, p, on)
-				answeredOn[at] = today
+				reckoned.answered(at, cards[at], ends)
+				// The day it comes round on is the day that asks for it again,
+				// and never this one: a card face is answered once in a day.
+				if day := max(today+1, on.number(cards[at].Due)-base); day < days {
+					falls[day] = append(falls[day], at)
+				}
 				continue
 			}
 
@@ -555,8 +565,12 @@ func (s Simulation) Run(
 			answered++
 			left--
 			out.Seen++
-			cards = append(cards, s.answers(Schedule{}, open, ends, p, on))
-			answeredOn = append(answeredOn, today)
+			one := s.answers(Schedule{}, open, ends, p, on)
+			cards = append(cards, one)
+			reckoned.begun(one, ends)
+			if day := max(today+1, on.number(one.Due)-base); day < days {
+				falls[day] = append(falls[day], len(cards)-1)
+			}
 		}
 
 		out.Answered += answered
@@ -567,20 +581,22 @@ func (s Simulation) Run(
 		out.Closed = append(out.Closed, closed)
 
 		// How much of the material stands learned at the close of the day, which
-		// is how far through it the day leaves a person.
-		stands := learned(p, cards, ends)
+		// is how far through it the day leaves a person, and how much of it
+		// comes back at that hour.
+		stands, back := reckoned.closes(cards, ends, out.Faces)
 		out.Through = append(out.Through, through(stands, out.Faces))
 		if out.Learns == NeverLearns && stands == out.Faces {
 			out.Learns = len(out.Load)
 		}
 
-		// What the day left standing, and the day the backlog is gone.
-		standing := behind(cards, answeredOn, ends, today)
+		// What the day left standing is what fell due in it and was not reached,
+		// and the day the backlog is gone is the first day none is.
+		standing := len(due) - take
 		out.Backlog = append(out.Backlog, standing)
 		if out.Clears == NeverClears && standing == 0 {
 			out.Clears = len(out.Load)
 		}
-		out.Retained = append(out.Retained, retained(cards, ends, out.Faces))
+		out.Retained = append(out.Retained, back)
 		open = ends
 	}
 
@@ -596,33 +612,113 @@ func (s Simulation) Run(
 	return out, nil
 }
 
-// retained is the share of the material that comes back at this instant. A card
-// face nobody has begun comes back to nobody, and counts in the material.
-func retained(cards []Schedule, at time.Time, faces int) float64 {
-	if faces == 0 {
-		return 0
+// merges puts what a day before did not reach and what falls due in this one
+// into one run, the card face owed longest first.
+//
+// Both are in that order already, so a day sees the whole of what it owes for
+// the cost of what it owes.
+func merges(into, carried, fell []int, cards []Schedule) []int {
+	a, b := 0, 0
+	for a < len(carried) && b < len(fell) {
+		if older(cards[carried[a]], cards[fell[b]]) <= 0 {
+			into = append(into, carried[a])
+			a++
+			continue
+		}
+		into = append(into, fell[b])
+		b++
 	}
-	out := 0.0
-	for _, c := range cards {
-		out += Recall(at.Sub(c.Last), c.Stability)
-	}
-	return out / float64(faces)
+	into = append(into, carried[a:]...)
+	return append(into, fell[b:]...)
 }
 
-// behind is how many card faces this day left standing: their day has passed
-// and the day did not get to them.
+// reckoning is how much of the material stands learned and how much of it comes
+// back, at the close of a day.
 //
-// A card the day answered is not one of them, whatever the scheduler did with
-// it: a card begun this morning and asked for again ten minutes later has had
-// its day, and is picked up in the next.
-func behind(cards []Schedule, answeredOn []int, at time.Time, today int) int {
-	out := 0
+// Under a rule of an interval what stands learned is a fact about a card face's
+// schedule: the count is carried from day to day and asked again only of a card
+// face the day answered. Under a rule of a chance of recall it is a fact about
+// the instant, and is read off the same number as the share that comes back.
+type reckoning struct {
+	preset  Preset
+	carried bool
+	target  float64
+	learned []bool
+	count   int
+}
+
+// reckons opens the count over the card faces a run begins with, at the instant
+// it opens on.
+func reckons(p Preset, cards []Schedule, at time.Time) *reckoning {
+	rule, _, retention := p.counting()
+	out := &reckoning{preset: p, carried: rule == RuleInterval, target: retention}
+	if out.carried {
+		out.learned = make([]bool, len(cards))
+	}
 	for i, c := range cards {
-		if c.Due.Before(at) && answeredOn[i] != today {
-			out++
+		if !p.Learned(c, at) {
+			continue
+		}
+		out.count++
+		if out.carried {
+			out.learned[i] = true
 		}
 	}
 	return out
+}
+
+// answered carries one card face the day has answered.
+func (r *reckoning) answered(card int, c Schedule, at time.Time) {
+	if !r.carried {
+		return
+	}
+	stands := r.preset.Learned(c, at)
+	if stands == r.learned[card] {
+		return
+	}
+	r.learned[card] = stands
+	if stands {
+		r.count++
+		return
+	}
+	r.count--
+}
+
+// begun carries one card face the day has begun.
+func (r *reckoning) begun(c Schedule, at time.Time) {
+	if !r.carried {
+		return
+	}
+	stands := r.preset.Learned(c, at)
+	r.learned = append(r.learned, stands)
+	if stands {
+		r.count++
+	}
+}
+
+// closes is how many card faces stand learned at this instant and what share of
+// the material comes back at it. A card face nobody has begun comes back to
+// nobody, and counts in the material.
+func (r *reckoning) closes(cards []Schedule, at time.Time, faces int) (int, float64) {
+	if faces == 0 {
+		return r.count, 0
+	}
+	back := 0.0
+	if r.carried {
+		for _, c := range cards {
+			back += Recall(at.Sub(c.Last), c.Stability)
+		}
+		return r.count, back / float64(faces)
+	}
+	stands := 0
+	for _, c := range cards {
+		one := Recall(at.Sub(c.Last), c.Stability)
+		back += one
+		if c.Seen() && one >= r.target {
+			stands++
+		}
+	}
+	return stands, back / float64(faces)
 }
 
 // NeverRipens is a rule a card face begun now does not reach in the years
@@ -741,18 +837,6 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 	return out
 }
 
-// learned is how many of these card faces the preset counts as learned at this
-// instant. A card face nobody has answered is in none of them.
-func learned(p Preset, cards []Schedule, at time.Time) int {
-	out := 0
-	for _, c := range cards {
-		if p.Learned(c, at) {
-			out++
-		}
-	}
-	return out
-}
-
 // step is where one projected answer leaves a card face.
 //
 // Both endings are worked out and weighed by how likely the card is to come
@@ -763,13 +847,13 @@ func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedul
 	if c.Seen() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
-	good := s.By.Next(c, at, Good)
 	if !c.Seen() {
+		good := s.By.Next(c, at, Good)
 		good.Due = p.Places(on, at, good.Due)
 		return good
 	}
 	back := s.recalls(c, at)
-	again := s.By.Next(c, at, Again)
+	good, again := s.By.Endings(c, at)
 
 	out := good
 	out.Stability = back*good.Stability + (1-back)*again.Stability
