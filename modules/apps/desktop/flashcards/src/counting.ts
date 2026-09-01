@@ -42,6 +42,8 @@ export interface Vaulted {
     owedDue: number
     owedNew: number
     answered: number
+    answeredNew: number
+    answeredReviews: number
     tookMs: bigint
     new: number
     reviews: number
@@ -143,6 +145,8 @@ export function counting(deps: Counting) {
       cards: preset.cards,
       owed: preset.owedDue + preset.owedNew,
       answered: preset.answered,
+      answeredNew: preset.answeredNew,
+      answeredReviews: preset.answeredReviews,
       took: minutes(preset.tookMs),
       new: preset.new,
       reviews: preset.reviews,

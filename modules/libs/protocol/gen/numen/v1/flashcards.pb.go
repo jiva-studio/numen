@@ -323,9 +323,12 @@ type PresetOwing struct {
 	OwedDue int32 `protobuf:"varint,10,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
 	OwedNew int32 `protobuf:"varint,11,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
 	// How many of its cards were answered since the day opened, and how long
-	// those answers took.
-	Answered int32 `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
-	TookMs   int64 `protobuf:"varint,3,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
+	// those answers took. The two beside the total divide it the way a budget
+	// does, so each is weighed against the budget of its own kind.
+	Answered        int32 `protobuf:"varint,2,opt,name=answered,proto3" json:"answered,omitempty"`
+	TookMs          int64 `protobuf:"varint,3,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
+	AnsweredNew     int32 `protobuf:"varint,17,opt,name=answered_new,json=answeredNew,proto3" json:"answered_new,omitempty"`
+	AnsweredReviews int32 `protobuf:"varint,18,opt,name=answered_reviews,json=answeredReviews,proto3" json:"answered_reviews,omitempty"`
 	// What the preset keeps for this day of the week: how many cards of each
 	// kind, and how long the day runs, at the share of the load that day of the
 	// week carries.
@@ -433,6 +436,20 @@ func (x *PresetOwing) GetAnswered() int32 {
 func (x *PresetOwing) GetTookMs() int64 {
 	if x != nil {
 		return x.TookMs
+	}
+	return 0
+}
+
+func (x *PresetOwing) GetAnsweredNew() int32 {
+	if x != nil {
+		return x.AnsweredNew
+	}
+	return 0
+}
+
+func (x *PresetOwing) GetAnsweredReviews() int32 {
+	if x != nil {
+		return x.AnsweredReviews
 	}
 	return 0
 }
@@ -2023,7 +2040,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
 	"\banswered\x18\x05 \x01(\x05R\banswered\x12\x18\n" +
-	"\alearned\x18\x06 \x01(\x05R\alearned\"\xda\x03\n" +
+	"\alearned\x18\x06 \x01(\x05R\alearned\"\xa8\x04\n" +
 	"\vPresetOwing\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
@@ -2033,7 +2050,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	" \x01(\x05R\aowedDue\x12\x19\n" +
 	"\bowed_new\x18\v \x01(\x05R\aowedNew\x12\x1a\n" +
 	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x17\n" +
-	"\atook_ms\x18\x03 \x01(\x03R\x06tookMs\x12\x10\n" +
+	"\atook_ms\x18\x03 \x01(\x03R\x06tookMs\x12!\n" +
+	"\fanswered_new\x18\x11 \x01(\x05R\vansweredNew\x12)\n" +
+	"\x10answered_reviews\x18\x12 \x01(\x05R\x0fansweredReviews\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x18\n" +
 	"\areviews\x18\x05 \x01(\x05R\areviews\x12\x18\n" +
 	"\aminutes\x18\x06 \x01(\x01R\aminutes\x12\x1d\n" +

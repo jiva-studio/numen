@@ -52,14 +52,16 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 
 	want := []flashcards.PresetOwing{
 		{
-			Preset: "", Decks: 1, Cards: 1, Due: 1, Answered: 1, Took: 4 * time.Second,
+			Preset: "", Decks: 1, Cards: 1, Due: 1,
+			Answered: 1, AnsweredNew: 1, Took: 4 * time.Second,
 			Budget: history.Budget{New: 10, Reviews: 200, Minutes: 20},
 			Closes: history.Closes{
 				Minutes: history.ClosedMinutes, Backlog: history.ClosedBacklog,
 			},
 		},
 		{
-			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Due: 2, Answered: 2, Took: 15 * time.Second,
+			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Due: 2,
+			Answered: 2, AnsweredNew: 2, Took: 15 * time.Second,
 			Budget: history.Budget{New: 4, Reviews: 23, Minutes: 10},
 			Closes: history.Closes{
 				Minutes: history.ClosedMinutes, Backlog: history.ClosedBacklog,

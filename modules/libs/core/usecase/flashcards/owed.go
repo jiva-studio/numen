@@ -58,9 +58,13 @@ type PresetOwing struct {
 	Due int
 	New int
 	// Answered is how many of its cards were answered in the day holding now,
-	// and Took is how long those answers took.
-	Answered int
-	Took     time.Duration
+	// and Took is how long those answers took. AnsweredNew and AnsweredReviews
+	// divide that count the way a budget does, so each is weighed against the
+	// budget of its own kind.
+	Answered        int
+	AnsweredNew     int
+	AnsweredReviews int
+	Took            time.Duration
 	// Budget is what the preset keeps for this day of the week. A budget its
 	// goal does not name stands here as the person left it and closes nothing,
 	// so Due and New are held to Closes and not to all three of these.
@@ -247,9 +251,11 @@ func (b *budgets) owing(due, fresh map[string]int) []PresetOwing {
 		out = append(out, PresetOwing{
 			Preset: path, Cards: b.cards[path],
 			Due: due[path], New: fresh[path],
-			Answered: one.spent.Answered,
-			Took:     one.spent.Took,
-			Budget:   one.admits.Keeps, Closes: one.admits.Closes,
+			Answered:        one.spent.Answered,
+			AnsweredNew:     one.spent.New,
+			AnsweredReviews: one.spent.Reviews,
+			Took:            one.spent.Took,
+			Budget:          one.admits.Keeps, Closes: one.admits.Closes,
 			Stops: one.admits.Stops,
 		})
 	}

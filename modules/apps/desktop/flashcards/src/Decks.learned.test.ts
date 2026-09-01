@@ -33,6 +33,8 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
   answered: 0,
+  answeredNew: 0,
+  answeredReviews: 0,
   took: 0,
   paused: '',
   wrong: '',

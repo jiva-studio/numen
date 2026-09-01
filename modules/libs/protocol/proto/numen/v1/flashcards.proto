@@ -167,9 +167,12 @@ message PresetOwing {
   int32 owed_new = 11;
 
   // How many of its cards were answered since the day opened, and how long
-  // those answers took.
+  // those answers took. The two beside the total divide it the way a budget
+  // does, so each is weighed against the budget of its own kind.
   int32 answered = 2;
   int64 took_ms = 3;
+  int32 answered_new = 17;
+  int32 answered_reviews = 18;
 
   // What the preset keeps for this day of the week: how many cards of each
   // kind, and how long the day runs, at the share of the load that day of the

@@ -53,6 +53,8 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   budget: budget(),
   closes: byMinutes,
   answered: 0,
+  answeredNew: 0,
+  answeredReviews: 0,
   took: 0,
   paused: '',
   wrong: '',
@@ -67,6 +69,8 @@ const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
   cards: 30,
   owed: 0,
   answered: 0,
+  answeredNew: 0,
+  answeredReviews: 0,
   took: 0,
   new: 10,
   reviews: 200,
@@ -204,10 +208,44 @@ describe('how far through its day a preset stands', () => {
       budget: budget({ new: 10, reviews: 45, minutes: 20 }),
       closes: byCounts,
       answered: 11,
+      answeredNew: 2,
+      answeredReviews: 9,
       took: 40,
     })
 
     expect(through(one)).toBeCloseTo(0.2)
+  })
+
+  // Two budgets closing one day are two walls, and a day stands as far along as
+  // the nearer of them. Answering every new card the day holds is the whole of
+  // what the day could give on that side.
+  it('stands at the fuller of two counts and not at their sum', () => {
+    const one = preset({
+      budget: budget({ new: 10, reviews: 200, minutes: 20 }),
+      closes: byCounts,
+      answered: 10,
+      answeredNew: 10,
+      answeredReviews: 0,
+      took: 4,
+    })
+
+    expect(through(one)).toBeCloseTo(1)
+    expect(spent(one)).toBe(true)
+  })
+
+  // A goal of a date paces the new cards and leaves the reviews unbounded, so
+  // the reviews close nothing and are weighed against nothing.
+  it('leaves a day of reviews under a paced count inside its budget', () => {
+    const one = preset({
+      budget: budget({ new: 10, reviews: 0, minutes: 0 }),
+      closes: { new: 'by_date', reviews: '', minutes: '' },
+      answered: 50,
+      answeredNew: 10,
+      answeredReviews: 40,
+      took: 30,
+    })
+
+    expect(through(one)).toBeCloseTo(1)
   })
 
   it('keeps the fuller of them where both close the day', () => {

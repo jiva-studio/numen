@@ -66,8 +66,14 @@ export interface PresetOwing {
    * It is what a sitting over this preset asks, and is printed as it stands.
    */
   readonly owed: number
-  /** Cards answered under it since the day opened, and the minutes they took. */
+  /**
+   * Cards answered under it since the day opened, and the minutes they took.
+   * The two beside the total divide it the way a budget does, so each is
+   * weighed against the budget of its own kind.
+   */
   readonly answered: number
+  readonly answeredNew: number
+  readonly answeredReviews: number
   readonly took: number
   /**
    * What the day holds under it, the day of the week having had its say: cards

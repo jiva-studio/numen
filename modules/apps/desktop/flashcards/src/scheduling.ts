@@ -86,8 +86,14 @@ export interface Preset {
   readonly budget: Budget
   /** Which key each of those budgets closes on, and empty where it closes none. */
   readonly closes: Closes
-  /** Cards answered under it since the day opened, and the minutes they took. */
+  /**
+   * Cards answered under it since the day opened, and the minutes they took.
+   * The two beside the total divide it the way a budget does, so each is
+   * weighed against the budget of its own kind.
+   */
   readonly answered: number
+  readonly answeredNew: number
+  readonly answeredReviews: number
   readonly took: number
   /** Why it schedules nothing, and empty while it schedules something. */
   readonly paused: string
@@ -267,6 +273,8 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
       budget: { new: budget.new, reviews: budget.reviews, minutes: budget.minutes },
       closes: day?.closes ?? CLOSES_NOTHING,
       answered: day?.answered ?? 0,
+      answeredNew: day?.answeredNew ?? 0,
+      answeredReviews: day?.answeredReviews ?? 0,
       took: day?.took ?? 0,
       paused: stoppedWords(one.stopsOn, one.settings, today),
       wrong: [...one.problems].join('; '),
@@ -292,6 +300,8 @@ const gather = (vault: Owing, answered: readonly Answered[], today: string): Pre
       budget: { new: one.new, reviews: one.reviews, minutes: one.minutes },
       closes: one.closes,
       answered: one.answered,
+      answeredNew: one.answeredNew,
+      answeredReviews: one.answeredReviews,
       took: one.took,
       // The count answered for this preset, so its verdict is the count's.
       paused: stoppedWords(one.stopsOn, null, today),
@@ -333,18 +343,19 @@ export const holds = (budget: Budget): number => budget.new + budget.reviews
  * over its budget and not a day that is done.
  */
 export const through = (one: Preset): number => {
-  // Only a budget that closes the day is weighed against. A preset steered by
-  // its minutes keeps its card counts as the person left them, and a share
-  // worked out from those would be a share of a number that binds nothing.
-  const ofCards =
-    (one.closes.new ? one.budget.new : 0) + (one.closes.reviews ? one.budget.reviews : 0)
-  const ofMinutes = one.closes.minutes ? one.budget.minutes : 0
-  return Math.max(
-    0,
-    ofCards > 0 ? one.answered / ofCards : 0,
-    ofMinutes > 0 ? one.took / ofMinutes : 0,
-  )
+  // Only a budget that closes the day is weighed against, and each is weighed
+  // against what was answered of its own kind. A preset steered by its minutes
+  // keeps its card counts as the person left them.
+  const shares = [
+    one.closes.new ? share(one.answeredNew, one.budget.new) : 0,
+    one.closes.reviews ? share(one.answeredReviews, one.budget.reviews) : 0,
+    one.closes.minutes ? share(one.took, one.budget.minutes) : 0,
+  ]
+  return Math.max(0, ...shares)
 }
+
+/** What a count comes to against a budget. A budget of nothing is no share. */
+const share = (spent: number, budget: number): number => (budget > 0 ? spent / budget : 0)
 
 /**
  * Whether a preset's day is spent, which is what leaves every deck under it

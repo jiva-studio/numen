@@ -21,6 +21,8 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
       owedDue: 2,
       owedNew: 1,
       answered: 4,
+      answeredNew: 1,
+      answeredReviews: 3,
       tookMs: 90000n,
       new: 8,
       reviews: 45,
@@ -130,6 +132,8 @@ describe('counting what every vault owes', () => {
       // What the day leaves is the two the count sends, added up once here.
       owed: 3,
       answered: 4,
+      answeredNew: 1,
+      answeredReviews: 3,
       took: 1.5,
       new: 8,
       reviews: 45,

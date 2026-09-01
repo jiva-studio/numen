@@ -32,6 +32,8 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
   answered: 11,
+  answeredNew: 2,
+  answeredReviews: 9,
   took: 4,
   paused: '',
   wrong: '',
@@ -132,6 +134,8 @@ describe('what the goals come to today', () => {
         budget: { new: 3, reviews: 10, minutes: 20 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
         answered: 66,
+        answeredNew: 6,
+        answeredReviews: 60,
       }),
     ])
     const said = one.find('.presets__done')
