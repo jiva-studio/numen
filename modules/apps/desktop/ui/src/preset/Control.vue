@@ -15,7 +15,7 @@
  */
 import { computed, shallowRef, watch, useTemplateRef } from 'vue'
 import { Waiting } from '@numen/ui'
-import type { Curve } from './core'
+import type { Curve, Material } from './core'
 import { clearing } from './curve'
 import {
   apart,
@@ -52,6 +52,12 @@ import { WORDS as words } from './words'
 
 const props = defineProps<{
   curve: Curve
+  /**
+   * What the preset schedules, and nothing where it has never been counted.
+   * These figures are facts about the material and stand under every answer, so
+   * they are handed in beside the curve and not read off it.
+   */
+  material: Material | null
   /** Where the knob stands, as a place of the curve's grid. */
   place: number
   /** What the knob is announced as standing at. */
@@ -330,14 +336,10 @@ const reading = computed(() => {
 const atKnob = computed(() => words.widthAt(props.curve.goal, held.value))
 
 /** What the control is acting on, in the pieces the row is scanned in. */
-const material = computed(() =>
-  words.material(
-    props.curve.decks,
-    props.curve.cards,
-    props.curve.overdue,
-    props.curve.unbegun,
-  ),
-)
+const figures = computed(() => {
+  const one = props.material
+  return one ? words.material(one.decks, one.cards, one.overdue, one.unbegun) : []
+})
 /**
  * When the material this place buys is learned, said as tiles under the
  * picture. It is read off the very point the line is drawn through, so the
@@ -422,9 +424,9 @@ const released = (event: KeyboardEvent) => {
   <div class="control">
     <!-- What the control is acting on, said before the picture of it. Each
          figure is its own tile, and the tiles share the width of the column.
-         The row keeps its height while the answer is on its way. -->
+         The figures stand while the answer to a new curve is on its way. -->
     <div class="control__material">
-      <span v-for="one in honest ? material : []" :key="one.name" class="control__tile">
+      <span v-for="one in figures" :key="one.name" class="control__tile">
         <span class="control__figure">{{ one.figure }}</span>
         <span class="control__word">{{ one.name }}</span>
       </span>
@@ -640,8 +642,7 @@ const released = (event: KeyboardEvent) => {
  * scanned, so each figure is a tile of its own and the tiles take an equal
  * share of the width the tab is read at.
  */
-/* The tiles hang out by their own border, so the figures on them begin on the
-   line every line of the page begins on. */
+/* The row of tiles draws a box, so its edge stands on the column's own. */
 .control__material {
   display: grid;
   grid-auto-flow: column;
@@ -649,7 +650,6 @@ const released = (event: KeyboardEvent) => {
   gap: var(--numen-node-gap);
   min-block-size: var(--control-tile);
   margin: 0;
-  margin-inline: calc(-1 * var(--numen-stroke));
 }
 
 /* One tile: the figure, and under it the word for what it counts. */
@@ -689,12 +689,10 @@ const released = (event: KeyboardEvent) => {
  * name and number read off either. The surface stands around the plots and
  * adds nothing to the room inside them.
  */
-/* The chart hangs out by its own border for the same reason the tiles do. */
 .control__island {
   display: flex;
   flex-direction: column;
   gap: var(--numen-dot-gap);
-  margin-inline: calc(-1 * var(--numen-stroke));
   padding: var(--numen-box-air);
   border: var(--numen-stroke) solid var(--numen-node-border);
   border-radius: var(--numen-radius-tight);

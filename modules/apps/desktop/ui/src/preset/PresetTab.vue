@@ -174,7 +174,6 @@ const stopped = computed(() => {
           <p class="preset__label">{{ words.goal }}</p>
 
           <Segmented
-            class="preset__goals"
             :model-value="settings.goal"
             :choices="goals"
             @update:model-value="(one: string) => props.held.chooses(one as Goal)"
@@ -185,6 +184,7 @@ const stopped = computed(() => {
           <template v-else>
             <Control
               :curve="curve"
+              :material="props.held.material()"
               :place="place"
               :value-text="reading"
               :waiting="props.held.waiting()"
@@ -294,11 +294,6 @@ const stopped = computed(() => {
 .preset {
   /* The measure a preset is read at, which the goal and the settings share. */
   --preset-measure: 46rem;
-  /* Where every line of this tab begins, measured from the column: the
-     clearance a box keeps inside its own border. A block that draws a box is
-     pulled out by that border so what it holds lands on the line, and a block
-     that draws none is inset to it. */
-  --preset-ink: var(--numen-box-air);
   /* One row of the receipt: the box a number is typed into, the air around the
      row, and the space between what it is called and what it means. */
   --preset-value: 6rem;
@@ -329,7 +324,12 @@ const stopped = computed(() => {
   padding: var(--numen-gutter);
 }
 
-/* The column the tab is read in, centred in whatever room the pane has. */
+/*
+ * The column the tab is read in, centred in whatever room the pane has. Its
+ * two edges are the lines this tab is read against: a block that draws a box
+ * puts the box's edge on them, and a block that draws none puts its text
+ * there. Nothing in the column is inset from them, and nothing is pulled out.
+ */
 .preset__column {
   display: flex;
   flex-direction: column;
@@ -347,18 +347,9 @@ const stopped = computed(() => {
   gap: var(--numen-node-gap);
 }
 
-/* The switch spans the column and hangs out at both ends by its own border and
-   the hairline inside it, so what stands on its first segment begins on the
-   line every line of this tab begins on and its far end reads level with the
-   blocks under it. */
-.preset__goals {
-  margin-inline: calc(-2 * var(--numen-stroke));
-}
-
 /* What the three segments are, said over them. */
 .preset__label {
   margin: 0;
-  padding-inline: var(--preset-ink);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
   font-weight: 600;
@@ -369,7 +360,6 @@ const stopped = computed(() => {
 /* No deck points here, said where the curve would stand. */
 .preset__unpointed {
   margin: 0;
-  padding-inline: var(--preset-ink);
   color: var(--numen-hushed);
   line-height: var(--numen-line-height);
 }
@@ -399,9 +389,6 @@ const stopped = computed(() => {
   align-items: center;
   gap: 0 var(--numen-panel-gap);
   padding-block: var(--preset-row-air);
-  padding-inline-start: calc(var(--preset-ink) - var(--numen-caret));
-  padding-inline-end: var(--preset-ink);
-  border-inline-start: var(--numen-caret) solid transparent;
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 

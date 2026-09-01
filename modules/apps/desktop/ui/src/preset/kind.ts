@@ -14,7 +14,15 @@ import type { Host, Kind } from '../windowing'
 import type { Putting } from '../putting'
 import { PRESET } from '../workspace'
 import PresetTab from './PresetTab.vue'
-import { DEFAULTS, type Curve, type Goal, type Load, type Presets, type Settings } from './core'
+import {
+  DEFAULTS,
+  type Curve,
+  type Goal,
+  type Load,
+  type Material,
+  type Presets,
+  type Settings,
+} from './core'
 import {
   approximate,
   dayAfter,
@@ -48,6 +56,12 @@ export interface Held {
   settings(): Settings
   /** The curve of the goal, which is the control the person moves. */
   curve(): Curve
+  /**
+   * What the preset schedules, as the last answer counted it, and nothing until
+   * one has. No setting moves these figures, so they stand while a curve asked
+   * under other settings is on its way.
+   */
+  material(): Material | null
   /** Where the knob stands on that curve. */
   place(): number
   /** An answer to the picture is on its way. */
@@ -91,6 +105,8 @@ export function presetting(
     readonly path: Ref<string>
     readonly settings: Ref<Settings>
     readonly curve: Ref<Curve>
+    /** What the last answer counted the material at, and nothing until one has. */
+    readonly material: Ref<Material | null>
     readonly place: Ref<number>
     readonly problems: Ref<readonly string[]>
     readonly changed: Ref<boolean>
@@ -124,6 +140,7 @@ export function presetting(
     path: ref(path),
     settings: shallowRef<Settings>(DEFAULTS),
     curve: shallowRef<Curve>(approximate(DEFAULTS, today())),
+    material: shallowRef<Material | null>(null),
     place: ref(0),
     problems: shallowRef<readonly string[]>([]),
     changed: ref(false),
@@ -193,9 +210,7 @@ export function presetting(
 
     const answered = one.answers.get(shape)
     if (answered) {
-      one.curve.value = answered
-      one.real = true
-      one.waiting.value = false
+      lands(one, answered)
       one.place.value = standsAt(answered, one.settings.value)
       return
     }
@@ -230,11 +245,25 @@ export function presetting(
     }
     if (mine !== one.asked) return
     one.answers.set(shape, answer)
-    one.curve.value = answer
-    one.real = true
-    one.waiting.value = false
+    lands(one, answer)
     if (standsAlready && alike(riding, answer.grid)) return
     one.place.value = standsAt(answer, one.settings.value)
+  }
+
+  /**
+   * A curve landed and drawn. The figures it counts the material at are kept
+   * beside it, so what no setting moves stands on while the next curve is out.
+   */
+  const lands = (one: Kept, curve: Curve): void => {
+    one.curve.value = curve
+    one.material.value = {
+      decks: curve.decks,
+      cards: curve.cards,
+      overdue: curve.overdue,
+      unbegun: curve.unbegun,
+    }
+    one.real = true
+    one.waiting.value = false
   }
 
   /** Whether two curves are drawn over the same range, place for place. */
@@ -380,6 +409,7 @@ export function presetting(
       id,
       settings: () => one.settings.value,
       curve: () => one.curve.value,
+      material: () => one.material.value,
       place: () => one.place.value,
       waiting: () => one.waiting.value,
       problems: () => one.problems.value,

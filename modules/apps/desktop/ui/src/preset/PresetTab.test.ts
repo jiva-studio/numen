@@ -10,7 +10,17 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from './PresetTab.vue'
-import { BOUNDS, DEFAULTS, NOWHERE, type Curve, type Point, type Settings } from './core'
+import tabSource from './PresetTab.vue?raw'
+import controlSource from './Control.vue?raw'
+import {
+  BOUNDS,
+  DEFAULTS,
+  NOWHERE,
+  type Curve,
+  type Material,
+  type Point,
+  type Settings,
+} from './core'
 import { clearing, type Field } from './curve'
 import { FOOT } from './drawing'
 import type { Held, Said } from './kind'
@@ -83,11 +93,16 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
   ...over,
 })
 
+/** What an answer counted the material at, and nothing where none has landed. */
+const counted = (one: Curve): Material | null =>
+  one.honest ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun } : null
+
 /** A tab standing at those settings, and everything it was asked to do. */
 const standing = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   waiting = true,
+  told?: Material | null,
 ) => {
   const done: string[] = []
   const place = ref(2)
@@ -95,6 +110,7 @@ const standing = (
     id: 'Sanskrit.md',
     settings: () => ({ ...DEFAULTS, ...settings }),
     curve: () => curve(over),
+    material: () => (told === undefined ? counted(curve(over)) : told),
     place: () => place.value,
     waiting: () => waiting,
     problems: () => [],
@@ -113,8 +129,13 @@ const standing = (
   return { held, done }
 }
 
-const drawn = (over: Partial<Curve> = {}, settings: Partial<Settings> = {}, waiting = true) => {
-  const one = standing(over, settings, waiting)
+const drawn = (
+  over: Partial<Curve> = {},
+  settings: Partial<Settings> = {},
+  waiting = true,
+  told?: Material | null,
+) => {
+  const one = standing(over, settings, waiting, told)
   return { ...one, tab: mount(PresetTab, { props: { held: one.held } }) }
 }
 
@@ -790,14 +811,36 @@ describe('what the control stands at', () => {
   })
 
   // The window's own arithmetic never reaches the eye as a figure now: until
-  // the answer lands the picture says it is reading the vault, and no tile, no
-  // axis number and no readout is drawn.
+  // the first answer lands the picture says it is reading the vault, and no
+  // tile, no axis number and no readout is drawn.
   it('draws no figure at all until the answer lands', () => {
     const { tab } = drawn({ honest: false })
     expect(tab.get('.control__waiting').text()).toContain(words.waiting)
     expect(tab.findAll('.control__tile')).toHaveLength(0)
     expect(tab.findAll('.control__number')).toHaveLength(0)
     expect(tab.get('.control__ends').text()).toBe('')
+  })
+
+  // What the tiles count is a fact about the material, and no setting moves
+  // one of those figures. They stand at what the window was last told while
+  // the curve of the settings a person is moving is worked out.
+  it('keeps the figures the material stands at while a curve is on its way', () => {
+    const { tab } = drawn({ honest: false }, {}, true, {
+      decks: 4,
+      cards: 160,
+      overdue: 45,
+      unbegun: 30,
+    })
+    const tiles = tab
+      .findAll('.control__material:not(.control__learned) .control__tile')
+      .map((one) => [one.get('.control__figure').text(), one.get('.control__word').text()])
+    expect(tiles).toStrictEqual([
+      ['4', 'decks'],
+      ['160', 'cards'],
+      ['45', 'overdue'],
+      ['30', 'new'],
+    ])
+    expect(tab.get('.control__waiting').text()).toContain(words.waiting)
   })
 
   // A line drawn before the answer has to move when it lands, and a picture
@@ -1311,5 +1354,48 @@ describe('the load of the week', () => {
     await tab.vm.$nextTick()
 
     expect(put).toStrictEqual([['load', { sun: 0 }]])
+  })
+})
+
+describe('the line the tab is read against', () => {
+  /** What one selector declares, as the file it is written in writes it. */
+  const styleOf = (sheet: string, selector: string): string => {
+    const opens = sheet.indexOf(`\n${selector} {`)
+    expect(opens, `no rule for ${selector}`).toBeGreaterThan(-1)
+    return sheet.slice(opens, sheet.indexOf('}', opens))
+  }
+
+  /** What a rule holds a block off the column by, on the two sides it has. */
+  const heldOff = (style: string, names: readonly string[]): readonly string[] =>
+    [...style.matchAll(/^\s*([a-z-]+):\s*([^;]+);/gm)]
+      .filter(([, name]) => names.includes(name ?? ''))
+      .map(([, name, value]) => `${name}: ${value}`)
+      .filter((one) => !one.endsWith(': 0'))
+
+  const APART = ['margin', 'margin-inline', 'margin-inline-start', 'margin-inline-end']
+  const AIR = ['padding', 'padding-inline', 'padding-inline-start', 'padding-inline-end']
+
+  /** The blocks of the column that draw a box, and the ones that draw none. */
+  const BOXED = [
+    [controlSource, '.control__material'],
+    [controlSource, '.control__island'],
+    [tabSource, '.preset__stopped'],
+  ] as const
+  const BARE = [
+    [tabSource, '.preset__label'],
+    [tabSource, '.preset__unpointed'],
+    [tabSource, '.preset__row'],
+  ] as const
+
+  it('puts the edge of every box on the edge of the column', () => {
+    for (const [sheet, selector] of BOXED) {
+      expect(heldOff(styleOf(sheet, selector), APART), selector).toStrictEqual([])
+    }
+  })
+
+  it('puts the text of every block that draws no box on that same edge', () => {
+    for (const [sheet, selector] of BARE) {
+      expect(heldOff(styleOf(sheet, selector), [...APART, ...AIR]), selector).toStrictEqual([])
+    }
   })
 })

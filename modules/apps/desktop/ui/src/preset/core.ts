@@ -220,15 +220,11 @@ export interface Mark {
 export const NOWHERE: Mark = { at: -1, value: 0, day: '' }
 
 /** What the one control comes to over the whole range of its goal. */
-export interface Curve {
-  readonly goal: Goal
-  /** The goal's value at each place: minutes, a share of cards, or days from today. */
-  readonly grid: readonly number[]
-  /** The day of each place, filled for a goal of a date. */
-  readonly days: readonly string[]
-  readonly at: readonly Point[]
-  readonly now: Mark
-  readonly suggested: Mark
+/**
+ * What a preset schedules, as the figures over the picture count it. No setting
+ * moves one of them.
+ */
+export interface Material {
   /** How many decks are scheduled by this preset. */
   readonly decks: number
   /** How many card faces stand in those decks. */
@@ -243,6 +239,17 @@ export interface Curve {
    * no day. It never overlaps the overdue.
    */
   readonly unbegun: number
+}
+
+export interface Curve extends Material {
+  readonly goal: Goal
+  /** The goal's value at each place: minutes, a share of cards, or days from today. */
+  readonly grid: readonly number[]
+  /** The day of each place, filled for a goal of a date. */
+  readonly days: readonly string[]
+  readonly at: readonly Point[]
+  readonly now: Mark
+  readonly suggested: Mark
   /**
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.

@@ -225,6 +225,24 @@ describe('the curve behind the knob', () => {
     expect(asked).toStrictEqual(['minutes', 'minutes'])
   })
 
+  // What the material comes to is a fact about the vault: no setting moves one
+  // of those figures, so they are kept beside the curve and stand at what the
+  // last answer counted them while the next one is out.
+  it('keeps what the material comes to while a curve is on its way', async () => {
+    const { held } = await opened()
+    expect(held.material()).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
+
+    held.types('newADay', 4)
+    expect(held.waiting()).toBe(true)
+    expect(held.curve().honest).toBe(false)
+    expect(held.material()).toStrictEqual({ decks: 1, cards: 400, overdue: 0, unbegun: 0 })
+  })
+
+  it('counts the material at nothing until an answer has counted it', async () => {
+    const { held } = await opened({}, () => new Promise<Curve>(() => {}))
+    expect(held.material()).toBeNull()
+  })
+
   // A goal already worked out is drawn again as it was, so moving between the
   // three is instant and never puts the picture back into its waiting state.
   it('is asked for once for each goal, however often they are moved between', async () => {
