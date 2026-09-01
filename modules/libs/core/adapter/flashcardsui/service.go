@@ -3,6 +3,8 @@ package flashcardsui
 import (
 	"context"
 	"errors"
+	"slices"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -14,28 +16,96 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
+// atOnce is how many vaults are counted alongside each other.
+//
+// Counting one reads every deck it holds and replays its whole answer log, so
+// each of them holds a vault's worth of cards while it runs.
+const atOnce = 4
+
 // Owing counts every vault the installation knows.
 //
-// A vault that could not be counted is on the list with nothing counted and the
-// reason beside it. One vault the editor has never read is not a reason to
-// refuse a person the others.
+// The vaults go first, by name and by where they are, and each count follows as
+// it is worked out. A vault that could not be counted arrives with nothing
+// counted and the reason on it. One vault the editor has never read is not a
+// reason to refuse a person the others.
 func (a *API) Owing(
 	ctx context.Context, _ *connect.Request[v1.OwingRequest],
-) (*connect.Response[v1.OwingResponse], error) {
+	out *connect.ServerStream[v1.OwingResponse],
+) error {
 	all, err := a.Registry.All()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return connect.NewError(connect.CodeInternal, err)
 	}
 
-	// The day these counts stand in, which is the day a goal is weighed against.
-	out := &v1.OwingResponse{
-		Day:    a.Day.Names(a.now()),
-		Vaults: make([]*v1.VaultOwing, 0, len(all)),
-	}
+	listed := make([]*v1.VaultOwing, 0, len(all))
 	for _, v := range all {
-		out.Vaults = append(out.Vaults, a.counted(ctx, v))
+		listed = append(listed, &v1.VaultOwing{VaultId: v.ID, Name: v.Name, Path: v.Path})
 	}
-	return connect.NewResponse(out), nil
+	// The day these counts stand in, which is the day a goal is weighed against.
+	if err := out.Send(&v1.OwingResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
+		return err
+	}
+
+	// A count left running is a vault read for a window that has gone, so the
+	// counters are ended with this call whichever way it ends.
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+
+	for one := range a.counting(ctx, a.wanted(all)) {
+		if err := out.Send(&v1.OwingResponse{Counted: one}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// wanted is the order the vaults are counted in: the one opened last, then the
+// rest as the registry holds them. A person coming back to this window is most
+// often coming back to the vault they were last in.
+func (a *API) wanted(all []domain.Vault) []domain.Vault {
+	last, held, err := a.Registry.Last()
+	if err != nil || !held {
+		return all
+	}
+	at := slices.IndexFunc(all, func(v domain.Vault) bool { return v.ID == last.ID })
+	if at <= 0 {
+		return all
+	}
+	order := make([]domain.Vault, 0, len(all))
+	order = append(order, all[at])
+	order = append(order, all[:at]...)
+	return append(order, all[at+1:]...)
+}
+
+// counting works the vaults out, a few at a time, and hands each over as it
+// comes. A vault that takes a minute holds up nothing but the ones behind it in
+// the queue.
+func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.VaultOwing {
+	counted := make(chan *v1.VaultOwing)
+	go func() {
+		defer close(counted)
+		var running sync.WaitGroup
+		room := make(chan struct{}, atOnce)
+		for _, v := range all {
+			select {
+			case room <- struct{}{}:
+			case <-ctx.Done():
+				running.Wait()
+				return
+			}
+			running.Add(1)
+			go func() {
+				defer running.Done()
+				defer func() { <-room }()
+				select {
+				case counted <- a.counted(ctx, v):
+				case <-ctx.Done():
+				}
+			}()
+		}
+		running.Wait()
+	}()
+	return counted
 }
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {

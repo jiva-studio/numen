@@ -47,8 +47,12 @@ var other = map[string]string{
 		"\n### Who\n\nGreen woodpecker\n",
 }
 
-// registry is the vaults an installation holds, as the API asks for them.
-type registry struct{ held []domain.Vault }
+// registry is the vaults an installation holds, as the API asks for them, and
+// which of them a window was last opened on.
+type registry struct {
+	held []domain.Vault
+	last string
+}
 
 func (r registry) All() ([]domain.Vault, error) { return r.held, nil }
 func (r registry) Save(domain.Vault) error      { return nil }
@@ -56,7 +60,15 @@ func (r registry) Remove(string) error          { return nil }
 func (r registry) Opened(string) error          { return nil }
 
 func (r registry) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
-func (r registry) Last() (domain.Vault, bool, error)       { return domain.Vault{}, false, nil }
+
+func (r registry) Last() (domain.Vault, bool, error) {
+	for _, v := range r.held {
+		if v.ID == r.last {
+			return v, true, nil
+		}
+	}
+	return domain.Vault{}, false, nil
+}
 
 // windowed is the API as the window builds it, over vaults of a test's own.
 func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) {
@@ -111,6 +123,50 @@ func windowed(t *testing.T, vaults ...map[string]string) (*API, []domain.Vault) 
 		Day:     running.Day,
 		Now:     time.Now,
 	}, held
+}
+
+// serving is the window's own client, over a server of the test's own. The
+// front door is a stream, and a stream is asked for the way the page asks for
+// it.
+func serving(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
+	t.Helper()
+	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+}
+
+// front is the whole front door: the vaults it opens on, with each count
+// filled into the row it belongs to as it arrives.
+func front(t *testing.T, api *API) *v1.OwingResponse {
+	t.Helper()
+	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { stream.Close() })
+
+	out, at, first := &v1.OwingResponse{}, map[string]int{}, true
+	for stream.Receive() {
+		said := stream.Msg()
+		if first {
+			first = false
+			out.Day, out.Vaults = said.GetDay(), said.GetVaults()
+			for where, one := range out.GetVaults() {
+				at[one.GetVaultId()] = where
+			}
+			continue
+		}
+		one := said.GetCounted()
+		where, listed := at[one.GetVaultId()]
+		if !listed {
+			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetVaultId())
+		}
+		out.Vaults[where] = one
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 // started is a sitting opened on one vault, and what it holds to ask.
@@ -207,11 +263,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	api, held := windowed(t, deck, other)
 	one, two := held[0], held[1]
 
-	before, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	was := counted(t, before.Msg, two.ID)
+	was := counted(t, front(t, api), two.ID)
 
 	sitting := started(t, api, one)
 	for _, card := range sitting.GetAsked() {
@@ -224,15 +276,12 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 		}
 	}
 
-	after, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if now := counted(t, after.Msg, two.ID); now.GetNew() != was.GetNew() ||
+	after := front(t, api)
+	if now := counted(t, after, two.ID); now.GetNew() != was.GetNew() ||
 		now.GetDue() != was.GetDue() || now.GetFaces() != was.GetFaces() {
 		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
 	}
-	if now := counted(t, after.Msg, one.ID); now.GetNew() != 0 || now.GetDue() != 0 {
+	if now := counted(t, after, one.ID); now.GetNew() != 0 || now.GetDue() != 0 {
 		t.Errorf("the answered vault still owes %+v", now)
 	}
 	// Nothing was written into the other vault's folder either.
@@ -314,14 +363,11 @@ func TestAVaultNothingHasReadSaysSoAndTheRestAreCounted(t *testing.T) {
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: append(held, unread)}
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
+	out := front(t, api)
+	if len(out.GetVaults()) != 2 {
+		t.Fatalf("counted %d vaults", len(out.GetVaults()))
 	}
-	if len(out.Msg.GetVaults()) != 2 {
-		t.Fatalf("counted %d vaults", len(out.Msg.GetVaults()))
-	}
-	for _, one := range out.Msg.GetVaults() {
+	for _, one := range out.GetVaults() {
 		if one.GetVaultId() == unread.ID {
 			if one.GetUnread() == "" {
 				t.Error("a vault nothing has read is listed as one holding no cards")
@@ -470,14 +516,11 @@ func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
 func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	api, held := windowed(t, deck, other)
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
+	out := front(t, api)
+	if len(out.GetVaults()) != len(held) {
+		t.Fatalf("counted %d of %d vaults", len(out.GetVaults()), len(held))
 	}
-	if len(out.Msg.GetVaults()) != len(held) {
-		t.Fatalf("counted %d of %d vaults", len(out.Msg.GetVaults()), len(held))
-	}
-	for _, one := range out.Msg.GetVaults() {
+	for _, one := range out.GetVaults() {
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
 			t.Errorf("%s comes to %+v", one.GetName(), one)
 		}
@@ -499,9 +542,7 @@ func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{})); err != nil {
-		t.Fatal(err)
-	}
+	front(t, api)
 	after, err := os.ReadFile(at)
 	if err != nil {
 		t.Fatal(err)
@@ -541,11 +582,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	presets := out.Msg.GetVaults()[0].GetPresets()
+	presets := front(t, api).GetVaults()[0].GetPresets()
 	if len(presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the one preset", presets)
 	}
@@ -563,11 +600,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
 	api, _ := windowed(t, deck)
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	presets := out.Msg.GetVaults()[0].GetPresets()
+	presets := front(t, api).GetVaults()[0].GetPresets()
 	if len(presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", presets)
 	}
@@ -625,13 +658,8 @@ func TestASittingOverTwoPresetsIsTheUnionOfTheirBudgets(t *testing.T) {
 func TestTheFrontDoorSaysWhatEachPresetOfAVaultHolds(t *testing.T) {
 	api, _ := windowed(t, twoPresets)
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	got := make(map[string]int32)
-	for _, one := range out.Msg.GetVaults()[0].GetPresets() {
+	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
 		got[one.GetPreset()] = one.GetNew()
 	}
 	want := map[string]int32{"Mantras.md": 2, "Roots.md": 1}

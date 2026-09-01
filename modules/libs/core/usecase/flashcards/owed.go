@@ -83,9 +83,18 @@ type Owed struct {
 // the vault: the person is shown every vault they hold, and none of them is
 // written for that. What a replay came to is kept, because this is the path
 // every launch waits on.
+//
+// A count nobody is waiting for is dropped at the next phase: reading the
+// decks, reading the log and replaying it each run to their end.
 func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
+	if err := ctx.Err(); err != nil {
+		return Owing{}, err
+	}
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
+		return Owing{}, err
+	}
+	if err := ctx.Err(); err != nil {
 		return Owing{}, err
 	}
 	log, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
@@ -100,6 +109,9 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 		return Owing{}, err
 	}
 	schedules := u.Schedules.replayed(ctx, v, log, asks)
+	if err := ctx.Err(); err != nil {
+		return Owing{}, err
+	}
 
 	now := u.now()
 	day, err := budgeted(

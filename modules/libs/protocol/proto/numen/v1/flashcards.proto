@@ -23,10 +23,15 @@ service FlashcardsService {
   // it holds, how much is due, and how much has never been asked. It is what
   // the application opens on.
   //
-  // A vault the index does not carry yet is listed with nothing counted and
-  // says so: the list of its decks is the index's answer, and this application
+  // The first message is every vault as the registry holds it, with nothing
+  // counted, and one message follows for each vault as it is worked out.
+  // Counting a vault reads every deck in it and replays its whole answer log,
+  // so the list stands while that runs.
+  //
+  // A vault the index does not carry yet arrives with nothing counted and says
+  // so: the list of its decks is the index's answer, and this application
   // builds none.
-  rpc Owing(OwingRequest) returns (OwingResponse);
+  rpc Owing(OwingRequest) returns (stream OwingResponse);
 
   // Start opens a run and hands over what to ask, in order. A run writes one
   // file of its own in the vault and nothing else ever appends to it.
@@ -225,12 +230,21 @@ message Asked {
 message OwingRequest {}
 
 message OwingResponse {
+  // Vaults is every vault the installation holds, by name and by where it is,
+  // with nothing counted. It stands in the first message and in no other, and
+  // it is what the list is drawn from.
   repeated VaultOwing vaults = 1;
 
   // Day is the review day these counts stand in, written as the year, the month
   // and the day. A day of review begins at the hour the settings name, so an
-  // hour past midnight is still the day before.
+  // hour past midnight is still the day before. It stands in the first message
+  // beside the vaults.
   string day = 2;
+
+  // Counted is one vault worked out, and stands in every message after the
+  // first. Until one arrives for a vault, nothing is known about what that
+  // vault owes.
+  VaultOwing counted = 3;
 }
 
 message StartRequest {

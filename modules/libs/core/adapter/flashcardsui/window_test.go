@@ -135,11 +135,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 // owing is what the front door says about one vault.
 func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultOwing {
 	t.Helper()
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, one := range out.Msg.GetVaults() {
+	for _, one := range front(t, api).GetVaults() {
 		if one.GetVaultId() == v.ID {
 			if one.GetUnread() != "" {
 				t.Fatalf("the vault could not be counted: %s", one.GetUnread())
@@ -381,11 +377,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 	api, held := windowed(t, lived, deck)
 	standing(api, firstMorning)
 
-	out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	rows := out.Msg.GetVaults()
+	rows := front(t, api).GetVaults()
 	if len(rows) != len(held) {
 		t.Fatalf("the front door holds %d rows for %d vaults", len(rows), len(held))
 	}

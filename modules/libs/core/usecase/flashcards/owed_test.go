@@ -1,9 +1,12 @@
 package flashcards_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
@@ -306,4 +309,20 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 		return
 	}
 	t.Error("the preset was not among what the vault holds")
+}
+
+// A count is dropped once the window that asked for it has gone. Counting a
+// vault reads every deck in it and replays its whole answer log, and nobody is
+// waiting for either.
+//
+// The scenario here holds nothing to read a vault through, so nothing past the
+// first check can run.
+func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
+	gone, went := context.WithCancel(t.Context())
+	went()
+
+	_, err := flashcards.Owed{}.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("the count came back with %v", err)
+	}
 }

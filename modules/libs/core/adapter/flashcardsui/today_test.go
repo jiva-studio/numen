@@ -4,10 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // The counts the window is handed stand in a review day, and the window weighs
@@ -34,11 +31,7 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			api.Now = func() time.Time { return c.at }
-			out, err := api.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := out.Msg.GetDay(); got != c.want {
+			if got := front(t, api).GetDay(); got != c.want {
 				t.Errorf("at %v the counts stand in %q, want %q", c.at, got, c.want)
 			}
 		})

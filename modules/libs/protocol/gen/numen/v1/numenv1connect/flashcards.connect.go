@@ -78,10 +78,15 @@ type FlashcardsServiceClient interface {
 	// it holds, how much is due, and how much has never been asked. It is what
 	// the application opens on.
 	//
-	// A vault the index does not carry yet is listed with nothing counted and
-	// says so: the list of its decks is the index's answer, and this application
+	// The first message is every vault as the registry holds it, with nothing
+	// counted, and one message follows for each vault as it is worked out.
+	// Counting a vault reads every deck in it and replays its whole answer log,
+	// so the list stands while that runs.
+	//
+	// A vault the index does not carry yet arrives with nothing counted and says
+	// so: the list of its decks is the index's answer, and this application
 	// builds none.
-	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error)
+	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error)
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
@@ -214,8 +219,8 @@ type flashcardsServiceClient struct {
 }
 
 // Owing calls numen.v1.FlashcardsService.Owing.
-func (c *flashcardsServiceClient) Owing(ctx context.Context, req *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error) {
-	return c.owing.CallUnary(ctx, req)
+func (c *flashcardsServiceClient) Owing(ctx context.Context, req *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error) {
+	return c.owing.CallServerStream(ctx, req)
 }
 
 // Start calls numen.v1.FlashcardsService.Start.
@@ -269,10 +274,15 @@ type FlashcardsServiceHandler interface {
 	// it holds, how much is due, and how much has never been asked. It is what
 	// the application opens on.
 	//
-	// A vault the index does not carry yet is listed with nothing counted and
-	// says so: the list of its decks is the index's answer, and this application
+	// The first message is every vault as the registry holds it, with nothing
+	// counted, and one message follows for each vault as it is worked out.
+	// Counting a vault reads every deck in it and replays its whole answer log,
+	// so the list stands while that runs.
+	//
+	// A vault the index does not carry yet arrives with nothing counted and says
+	// so: the list of its decks is the index's answer, and this application
 	// builds none.
-	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error)
+	Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
@@ -323,7 +333,7 @@ type FlashcardsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	flashcardsServiceMethods := v1.File_numen_v1_flashcards_proto.Services().ByName("FlashcardsService").Methods()
-	flashcardsServiceOwingHandler := connect.NewUnaryHandler(
+	flashcardsServiceOwingHandler := connect.NewServerStreamHandler(
 		FlashcardsServiceOwingProcedure,
 		svc.Owing,
 		connect.WithSchema(flashcardsServiceMethods.ByName("Owing")),
@@ -414,8 +424,8 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 // UnimplementedFlashcardsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedFlashcardsServiceHandler struct{}
 
-func (UnimplementedFlashcardsServiceHandler) Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Owing is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Owing is not implemented"))
 }
 
 func (UnimplementedFlashcardsServiceHandler) Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error) {
