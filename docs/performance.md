@@ -394,6 +394,39 @@ What that means for the default: a personal vault of a few thousand notes is ten
 
 The default model is a 470 MB fp32 ONNX file, fetched on first use. An int8 export was not tried.
 
+### Hearing a recording
+
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U — 8 threads of it — with the models quantised to int8 where the column says so. The figure is wall time over audio time, so 0.10 is ten minutes of speech heard in one.
+
+**The target: a recording is heard faster than it plays.** Anything slower and a vault of lectures never catches up with itself.
+
+| | ru | en | Peak RSS |
+| --- | --- | --- | --- |
+| parakeet-tdt-0.6b-v3 int8, ONNX | 0.08–0.15 | 0.08–0.11 | 1.2 GB |
+| whisper tiny, ggml | 0.08 | 0.06 | 0.3 GB |
+| whisper small, ggml | 0.33 | 0.22 | 0.9 GB |
+| whisper small int8, ONNX | 0.39 | 0.26 | 1.4 GB |
+| whisper large-v3-turbo int8, ONNX | 0.41 | 0.39 | 2.2 GB |
+| whisper large-v3-turbo, ggml | 0.92 | 0.84 | 1.9 GB |
+
+Quantising is what makes the largest model usable: the same weights through ggml at fp16 take 0.92, and through ONNX Runtime at int8 take 0.41. The ggml build of `small` quantised to q5\_1 is **slower** than the same model unquantised — 0.73 against 0.38 — so quantisation is worth measuring per build and not assumed.
+
+Words wrong, against [FLEURS](https://huggingface.co/datasets/google/fleurs), 60 utterances a language, lowercased and stripped of punctuation:
+
+| | ru | en |
+| --- | --- | --- |
+| parakeet-tdt-0.6b-v3 int8 | 7.1% | 8.6% |
+| whisper large-v3-turbo, ggml | 4.6% | 9.2% |
+| whisper small, ggml | 10.3% | 19.7% |
+
+The two are not measured the same way and the numbers are not directly comparable: parakeet was given one utterance at a time, as a segmenter feeds it, and whisper was given the utterances joined into one file, which is how it does its best work. Read the table as two separate answers to "is this good enough", not as a race.
+
+What settles it is the pair. Parakeet is better than `small` on Russian and five times quicker than it, and a third of the time of the turbo model that beats it. Half an hour of Russian speech is two and a half to four and a half minutes of one core.
+
+One more thing decides it on real recordings, and no table above shows it. Whisper's encoder always reads a window of exactly 30 seconds, whatever is in it, so speech cut at the silences — which is how a recording is fed to a model — costs three times what its length says. Parakeet pays by the second.
+
+The weights are 641 MB, fetched when the first recording is heard.
+
 ### Why the markup is not parsed as XML
 
 Four books hold documents that `encoding/xml` refuses — 125 documents in all, failing with `element <p> closed by </html>`. `golang.org/x/net/html` reads every one of them. That is the whole case for the dependency: a strict parser drops a tenth of this corpus, and ADR-0006 does not allow extraction to refuse.
