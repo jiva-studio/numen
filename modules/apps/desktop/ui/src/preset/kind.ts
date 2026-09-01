@@ -132,6 +132,9 @@ export function presetting(
     told: boolean
     /** Which curve is the current one. An answer for a goal since left is dropped. */
     asked: number
+    /** A curve is out, and whether the settings moved again while it was. */
+    drawing: boolean
+    drawAgain: boolean
     /** The settings the curve in hand was asked under, as `shapeOf` reads them. */
     shape: string
     /** Whether the curve on screen is an answer, though a newer one may be out. */
@@ -162,6 +165,8 @@ export function presetting(
     flight: null,
     told: false,
     asked: 0,
+    drawing: false,
+    drawAgain: false,
     shape: '',
     real: false,
     edited: false,
@@ -214,17 +219,40 @@ export function presetting(
    * preset stands.
    */
   const curves = async (one: Kept): Promise<void> => {
+    // A curve already answered stands at once, and a control dragged over a
+    // range it has been over reads it without asking again.
+    const shape = shapeOf(one.settings.value)
+    const held = one.answers.get(shape)
+    if (held) {
+      ++one.asked
+      one.shape = shape
+      lands(one, held)
+      one.place.value = standsAt(held, one.settings.value)
+      return
+    }
+    // One curve is in the air at a time. A hand still moving asks for the
+    // settings it comes to rest on, and the range in between is not drawn.
+    if (one.drawing) {
+      one.drawAgain = true
+      return
+    }
+    one.drawing = true
+    try {
+      await drawing(one)
+    } finally {
+      one.drawing = false
+    }
+    if (!one.drawAgain) return
+    one.drawAgain = false
+    await curves(one)
+  }
+
+  /** One curve, asked for and landed. */
+  const drawing = async (one: Kept): Promise<void> => {
     const mine = ++one.asked
     const shape = shapeOf(one.settings.value)
     one.shape = shape
     const riding = one.curve.value.grid
-
-    const answered = one.answers.get(shape)
-    if (answered) {
-      lands(one, answered)
-      one.place.value = standsAt(answered, one.settings.value)
-      return
-    }
 
     const standsAlready = one.real && one.curve.value.goal === one.settings.value.goal
     if (standsAlready) {

@@ -693,3 +693,25 @@ describe('a field the goal does not steer, typed', () => {
   })
 })
 
+
+// A hand on a track moves through every value between where it started and
+// where it stops, and each of those is a curve nobody asked to see.
+describe('a control dragged across its range', () => {
+  it('keeps one curve in the air and asks again for where the hand came to rest', async () => {
+    const waiting: ((one: Curve) => void)[] = []
+    const { held: tab, asked } = await opened(
+      { goal: 'retention' },
+      () => new Promise<Curve>((take) => waiting.push(take)),
+    )
+
+    // The read's own curve is the one in the air; every step of the drag lands
+    // on top of it.
+    for (const share of [0.8, 0.82, 0.84, 0.86]) tab.types('retention', share)
+    await after()
+    expect(asked).toHaveLength(1)
+
+    waiting[0]?.(curve)
+    await after()
+    expect(asked).toHaveLength(2)
+  })
+})
