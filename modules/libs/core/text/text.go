@@ -103,9 +103,10 @@ func preceding(marks []mark, offset int) int {
 // Readers are the names of what takes text out of a file. A name is part of a
 // source's recipe and changes when the text or the offsets it produces do.
 const (
-	ReaderNote = "note-1"
-	ReaderEPUB = "epub-1"
-	ReaderPDF  = "pdf-1"
+	ReaderNote      = "note-1"
+	ReaderEPUB      = "epub-1"
+	ReaderPDF       = "pdf-1"
+	ReaderRecording = "recording-1"
 )
 
 // ReaderName names what would read this file. A file nothing reads has no name,
@@ -119,6 +120,8 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 		return ReaderEPUB, true
 	case ".pdf":
 		return ReaderPDF, true
+	case ".mp3", ".wav", ".flac":
+		return ReaderRecording, true
 	}
 	return "", false
 }
@@ -145,6 +148,10 @@ func Read(ctx context.Context, docs port.Documents, ref domain.FileRef, raw []by
 			return nil, ErrUnreadable
 		}
 		return fromPages(ctx, docs, raw)
+	case ReaderRecording:
+		// A recording says nothing until a model has listened to it. What it
+		// then says is an artifact, and this is never asked for it.
+		return nil, ErrUnreadable
 	}
 	return nil, ErrUnreadable
 }

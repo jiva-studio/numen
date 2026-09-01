@@ -10,6 +10,9 @@ const (
 	// KindBook is a source with text that nobody typed here: an EPUB, a PDF.
 	// What reads one is decided from its name and recorded in its recipe.
 	KindBook SourceKind = "book"
+	// KindRecording is speech: an MP3, a WAV. It carries no text of its own,
+	// and what it says is there once a model has listened to it.
+	KindRecording SourceKind = "recording"
 )
 
 // FileRef is what a walk of a vault reports before anything is read: enough to
