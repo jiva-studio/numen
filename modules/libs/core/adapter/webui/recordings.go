@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -143,12 +146,39 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	_, cues := transcript.Read(raw)
+	cues, err = narrowed(r.URL.Query(), cues)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	told := spoken{Path: ref.Path, Cues: make([]cue, 0, len(cues))}
 	for _, one := range cues {
 		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
 	}
 	answer(w, told)
+}
+
+// narrowed cuts the cues down to a run of the words, where the question named one.
+// A question naming none is about the whole transcript.
+//
+// The run is a `start` and a `length` in the words, which is how a passage is
+// addressed everywhere else, and what comes back is the speech those bytes were
+// said in. A search hit is played from the first of them.
+func narrowed(query url.Values, cues []transcript.Cue) ([]transcript.Cue, error) {
+	at, wide := query.Get("start"), query.Get("length")
+	if at == "" && wide == "" {
+		return cues, nil
+	}
+	start, err := strconv.Atoi(at)
+	if err != nil || start < 0 {
+		return nil, fmt.Errorf("start: %q is not a place in the words", at)
+	}
+	length, err := strconv.Atoi(wide)
+	if err != nil || length <= 0 {
+		return nil, fmt.Errorf("length: %q is not a run of words", wide)
+	}
+	return transcript.At(cues, start, length), nil
 }
 
 // held is the vault's reader and what it holds at a path. Everything from

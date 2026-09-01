@@ -87,6 +87,12 @@ type API struct {
 	// Marking says where a run of a source's text sits on the pages it was read
 	// from. A build without one answers that it cannot say where a passage is.
 	Marking *source.Marks
+	// Known is what the index holds about a vault's sources, and Derived is the
+	// shelf the application keeps what it made on. A recording's transcript is
+	// read through the two: the index says what listened, and the shelf holds
+	// what it wrote. A build without them answers that it has no transcript.
+	Known   port.SourceQueries
+	Derived port.DerivedStores
 	// Wrote is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.

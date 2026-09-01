@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -260,5 +261,34 @@ func TestARecordingsFacetsAreAddressed(t *testing.T) {
 		if got.path != talk || got.facet != one.facet {
 			t.Errorf("%s reads as %q/%q", one.url, got.path, got.facet)
 		}
+	}
+}
+
+// A question about a run of the words is answered with the speech those bytes
+// were said in, so a search hit is played from where it was said.
+func TestCuesNarrowToARunOfTheWords(t *testing.T) {
+	said := []transcript.Cue{
+		{Text: "first", From: 0, To: 1000},
+		{Text: "second", From: 1000, To: 2000},
+		{Text: "third", From: 2000, To: 3000},
+	}
+	_, cues := transcript.Read(transcript.Write(said))
+
+	// "second" begins after "first\n".
+	got, err := narrowed(url.Values{"start": {"6"}, "length": {"6"}}, cues)
+	if err != nil {
+		t.Fatalf("a run of the words was refused: %v", err)
+	}
+	if len(got) != 1 || got[0].From != 1000 {
+		t.Errorf("the run was placed at %v", got)
+	}
+
+	whole, err := narrowed(url.Values{}, cues)
+	if err != nil || len(whole) != 3 {
+		t.Errorf("a question naming no run answered with %d cues (%v)", len(whole), err)
+	}
+
+	if _, err := narrowed(url.Values{"start": {"-1"}, "length": {"6"}}, cues); err == nil {
+		t.Errorf("a place before the words was taken")
 	}
 }
