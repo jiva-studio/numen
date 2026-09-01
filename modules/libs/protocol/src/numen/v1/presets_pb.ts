@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/presets.proto.
  */
 export const file_numen_v1_presets: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyJdCgZQcmVzZXQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIkCghzZXR0aW5ncxgDIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEhAKCHByb2JsZW1zGAQgAygJIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIugBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBILCgNtZXQYByABKAgSDgoGY2xvc2VkGAggASgJEg4KBmNsZWFycxgJIAEoBRIPCgdiYWNrbG9nGAogAygFEg8KB2xlYXJuZWQYCyABKAUSEwoGbGVhcm5zGAwgASgFSACIAQESDQoFc2hvcnQYDSABKAVCCQoHX2xlYXJucyIuCgRNYXJrEgoKAmF0GAEgASgFEg0KBXZhbHVlGAIgASgBEgsKA2RheRgDIAEoCSIhChFTY2hlZHVsaW5nUmVxdWVzdBIMCgRkZWNrGAEgASgJIqoBChJTY2hlZHVsaW5nUmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiIQoRUmVhZFByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCSKqAQoSUmVhZFByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0InsKEldyaXRlUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iigEKE1dyaXRlUHJlc2V0UmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARIPCgdjaGFuZ2VkGAIgASgIEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiQgoMQ3VydmVSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncyIvCg1DdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipECgZDb3VudHMSFgoSQ09VTlRTX1VOU1BFQ0lGSUVEEAASEAoMQ09VTlRTX0NBUkRTEAESEAoMQ09VTlRTX1NIT1dTEAIyqAIKDlByZXNldHNTZXJ2aWNlEkcKClNjaGVkdWxpbmcSGy5udW1lbi52MS5TY2hlZHVsaW5nUmVxdWVzdBocLm51bWVuLnYxLlNjaGVkdWxpbmdSZXNwb25zZRJHCgpSZWFkUHJlc2V0EhsubnVtZW4udjEuUmVhZFByZXNldFJlcXVlc3QaHC5udW1lbi52MS5SZWFkUHJlc2V0UmVzcG9uc2USSgoLV3JpdGVQcmVzZXQSHC5udW1lbi52MS5Xcml0ZVByZXNldFJlcXVlc3QaHS5udW1lbi52MS5Xcml0ZVByZXNldFJlc3BvbnNlEjgKBUN1cnZlEhYubnVtZW4udjEuQ3VydmVSZXF1ZXN0GhcubnVtZW4udjEuQ3VydmVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_vault]);
+  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyJdCgZQcmVzZXQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIkCghzZXR0aW5ncxgDIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEhAKCHByb2JsZW1zGAQgAygJIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIugBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBILCgNtZXQYByABKAgSDgoGY2xvc2VkGAggASgJEg4KBmNsZWFycxgJIAEoBRIPCgdiYWNrbG9nGAogAygFEg8KB2xlYXJuZWQYCyABKAUSEwoGbGVhcm5zGAwgASgFSACIAQESDQoFc2hvcnQYDSABKAVCCQoHX2xlYXJucyIuCgRNYXJrEgoKAmF0GAEgASgFEg0KBXZhbHVlGAIgASgBEgsKA2RheRgDIAEoCSIhChFTY2hlZHVsaW5nUmVxdWVzdBIMCgRkZWNrGAEgASgJIqoBChJTY2hlZHVsaW5nUmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiFAoSTGlzdFByZXNldHNSZXF1ZXN0IjgKE0xpc3RQcmVzZXRzUmVzcG9uc2USIQoHcHJlc2V0cxgBIAMoCzIQLm51bWVuLnYxLkxpc3RlZCIlCgZMaXN0ZWQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSJiCg9TY2hlZHVsZVJlcXVlc3QSDAoEZGVjaxgBIAEoCRIOCgZwcmVzZXQYAiABKAkSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4ihwEKEFNjaGVkdWxlUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARIPCgdjaGFuZ2VkGAIgASgIEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiIQoRUmVhZFByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCSKqAQoSUmVhZFByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0InsKEldyaXRlUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iigEKE1dyaXRlUHJlc2V0UmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARIPCgdjaGFuZ2VkGAIgASgIEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXQiQgoMQ3VydmVSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncyIvCg1DdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipECgZDb3VudHMSFgoSQ09VTlRTX1VOU1BFQ0lGSUVEEAASEAoMQ09VTlRTX0NBUkRTEAESEAoMQ09VTlRTX1NIT1dTEAIytwMKDlByZXNldHNTZXJ2aWNlEkcKClNjaGVkdWxpbmcSGy5udW1lbi52MS5TY2hlZHVsaW5nUmVxdWVzdBocLm51bWVuLnYxLlNjaGVkdWxpbmdSZXNwb25zZRJKCgtMaXN0UHJlc2V0cxIcLm51bWVuLnYxLkxpc3RQcmVzZXRzUmVxdWVzdBodLm51bWVuLnYxLkxpc3RQcmVzZXRzUmVzcG9uc2USQQoIU2NoZWR1bGUSGS5udW1lbi52MS5TY2hlZHVsZVJlcXVlc3QaGi5udW1lbi52MS5TY2hlZHVsZVJlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USOAoFQ3VydmUSFi5udW1lbi52MS5DdXJ2ZVJlcXVlc3QaFy5udW1lbi52MS5DdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_vault]);
 
 /**
  * Settings are how the decks pointing at one preset are scheduled. A preset
@@ -486,6 +486,133 @@ export const SchedulingResponseSchema: GenMessage<SchedulingResponse> = /*@__PUR
   messageDesc(file_numen_v1_presets, 6);
 
 /**
+ * @generated from message numen.v1.ListPresetsRequest
+ */
+export type ListPresetsRequest = Message<"numen.v1.ListPresetsRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.ListPresetsRequest.
+ * Use `create(ListPresetsRequestSchema)` to create a new message.
+ */
+export const ListPresetsRequestSchema: GenMessage<ListPresetsRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 7);
+
+/**
+ * @generated from message numen.v1.ListPresetsResponse
+ */
+export type ListPresetsResponse = Message<"numen.v1.ListPresetsResponse"> & {
+  /**
+   * @generated from field: repeated numen.v1.Listed presets = 1;
+   */
+  presets: Listed[];
+};
+
+/**
+ * Describes the message numen.v1.ListPresetsResponse.
+ * Use `create(ListPresetsResponseSchema)` to create a new message.
+ */
+export const ListPresetsResponseSchema: GenMessage<ListPresetsResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 8);
+
+/**
+ * Listed is one preset as a person choosing between them sees it: where the
+ * file is, and what it is called.
+ *
+ * @generated from message numen.v1.Listed
+ */
+export type Listed = Message<"numen.v1.Listed"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * What the preset is called. Empty where nothing names the note.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.Listed.
+ * Use `create(ListedSchema)` to create a new message.
+ */
+export const ListedSchema: GenMessage<Listed> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 9);
+
+/**
+ * @generated from message numen.v1.ScheduleRequest
+ */
+export type ScheduleRequest = Message<"numen.v1.ScheduleRequest"> & {
+  /**
+   * The deck to schedule, by the path it is filed under.
+   *
+   * @generated from field: string deck = 1;
+   */
+  deck: string;
+
+  /**
+   * The preset that schedules it. Empty takes the deck off the preset it names,
+   * and it is scheduled by the defaults.
+   *
+   * @generated from field: string preset = 2;
+   */
+  preset: string;
+
+  /**
+   * The file this caller last read. Absent for a write that lands on whatever
+   * the deck now holds.
+   *
+   * @generated from field: optional numen.v1.Fingerprint seen = 3;
+   */
+  seen?: Fingerprint | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ScheduleRequest.
+ * Use `create(ScheduleRequestSchema)` to create a new message.
+ */
+export const ScheduleRequestSchema: GenMessage<ScheduleRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 10);
+
+/**
+ * @generated from message numen.v1.ScheduleResponse
+ */
+export type ScheduleResponse = Message<"numen.v1.ScheduleResponse"> & {
+  /**
+   * Set when nothing was written, and why.
+   *
+   * @generated from field: optional numen.v1.Refusal refusal = 1;
+   */
+  refusal?: Refusal | undefined;
+
+  /**
+   * Set when the deck is no longer the one this caller read. Nothing was
+   * written, and the person chooses what happens next.
+   *
+   * @generated from field: bool changed = 2;
+   */
+  changed: boolean;
+
+  /**
+   * The file the write produced, for the caller to present at its next write.
+   * Absent when nothing was written.
+   *
+   * @generated from field: optional numen.v1.Fingerprint at = 3;
+   */
+  at?: Fingerprint | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ScheduleResponse.
+ * Use `create(ScheduleResponseSchema)` to create a new message.
+ */
+export const ScheduleResponseSchema: GenMessage<ScheduleResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 11);
+
+/**
  * @generated from message numen.v1.ReadPresetRequest
  */
 export type ReadPresetRequest = Message<"numen.v1.ReadPresetRequest"> & {
@@ -500,7 +627,7 @@ export type ReadPresetRequest = Message<"numen.v1.ReadPresetRequest"> & {
  * Use `create(ReadPresetRequestSchema)` to create a new message.
  */
 export const ReadPresetRequestSchema: GenMessage<ReadPresetRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 7);
+  messageDesc(file_numen_v1_presets, 12);
 
 /**
  * @generated from message numen.v1.ReadPresetResponse
@@ -534,7 +661,7 @@ export type ReadPresetResponse = Message<"numen.v1.ReadPresetResponse"> & {
  * Use `create(ReadPresetResponseSchema)` to create a new message.
  */
 export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 8);
+  messageDesc(file_numen_v1_presets, 13);
 
 /**
  * @generated from message numen.v1.WritePresetRequest
@@ -567,7 +694,7 @@ export type WritePresetRequest = Message<"numen.v1.WritePresetRequest"> & {
  * Use `create(WritePresetRequestSchema)` to create a new message.
  */
 export const WritePresetRequestSchema: GenMessage<WritePresetRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 9);
+  messageDesc(file_numen_v1_presets, 14);
 
 /**
  * @generated from message numen.v1.WritePresetResponse
@@ -602,7 +729,7 @@ export type WritePresetResponse = Message<"numen.v1.WritePresetResponse"> & {
  * Use `create(WritePresetResponseSchema)` to create a new message.
  */
 export const WritePresetResponseSchema: GenMessage<WritePresetResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 10);
+  messageDesc(file_numen_v1_presets, 15);
 
 /**
  * @generated from message numen.v1.CurveRequest
@@ -630,7 +757,7 @@ export type CurveRequest = Message<"numen.v1.CurveRequest"> & {
  * Use `create(CurveRequestSchema)` to create a new message.
  */
 export const CurveRequestSchema: GenMessage<CurveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 11);
+  messageDesc(file_numen_v1_presets, 16);
 
 /**
  * @generated from message numen.v1.CurveResponse
@@ -647,7 +774,7 @@ export type CurveResponse = Message<"numen.v1.CurveResponse"> & {
  * Use `create(CurveResponseSchema)` to create a new message.
  */
 export const CurveResponseSchema: GenMessage<CurveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 12);
+  messageDesc(file_numen_v1_presets, 17);
 
 /**
  * Goal is which value the one control steers. The value itself stands in the
@@ -775,6 +902,37 @@ export const PresetsService: GenService<{
     methodKind: "unary";
     input: typeof SchedulingRequestSchema;
     output: typeof SchedulingResponseSchema;
+  },
+  /**
+   * ListPresets is every preset the vault holds, by path and by what it is
+   * called. It is the list a deck's preset is chosen from, and the defaults are
+   * not in it: they are what schedules a deck naming no preset, and no note
+   * holds them.
+   *
+   * @generated from rpc numen.v1.PresetsService.ListPresets
+   */
+  listPresets: {
+    methodKind: "unary";
+    input: typeof ListPresetsRequestSchema;
+    output: typeof ListPresetsResponseSchema;
+  },
+  /**
+   * Schedule puts a deck on a preset, by writing the entry of its `links:`
+   * block that carries `type: preset`. The entry keeps the role and the words
+   * the person wrote on it, and every other entry of the block is left as the
+   * bytes it was. An empty preset takes the entry out, and the deck is
+   * scheduled by the defaults.
+   *
+   * A preset the vault holds no note at is refused `missing`, and a preset
+   * naming a note that is not one is refused `not_a_preset`. A deck that no
+   * longer holds what the caller read is left alone and answered `changed`.
+   *
+   * @generated from rpc numen.v1.PresetsService.Schedule
+   */
+  schedule: {
+    methodKind: "unary";
+    input: typeof ScheduleRequestSchema;
+    output: typeof ScheduleResponseSchema;
   },
   /**
    * ReadPreset is the settings of one preset. A note that is not a preset is

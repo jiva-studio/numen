@@ -47,6 +47,73 @@ func (a *API) Scheduling(
 	return connect.NewResponse(out), nil
 }
 
+// ListPresets is every preset the vault holds, by path and by what it is
+// called. A deck's preset is chosen from this list, and from the defaults,
+// which are no note and are not in it.
+func (a *API) ListPresets(
+	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
+) (*connect.Response[v1.ListPresetsResponse], error) {
+	if a.Presets == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
+	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	held, err := a.Presets.List(ctx, showing)
+	if err != nil {
+		return nil, connect.NewError(refusal.Coded(err), err)
+	}
+
+	out := &v1.ListPresetsResponse{Presets: make([]*v1.Listed, 0, len(held))}
+	for _, one := range held {
+		out.Presets = append(out.Presets, &v1.Listed{Path: one.Path, Title: one.Title})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// Schedule puts a deck on a preset. A deck still holding what the client read
+// is written; one holding something else is left alone and the client is told
+// the deck changed.
+func (a *API) Schedule(
+	ctx context.Context, r *connect.Request[v1.ScheduleRequest],
+) (*connect.Response[v1.ScheduleResponse], error) {
+	if a.Presets == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
+	}
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	if !a.Writing.begin() {
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	}
+	defer a.Writing.done()
+
+	at, err := a.Presets.Point(
+		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), refOf(r.Msg.GetSeen()))
+	// A write that reached the vault is a write that happened, so the client is
+	// handed the fingerprint it presents at its next save.
+	if err == nil || errors.Is(err, note.ErrUnlevelled) {
+		if a.Wrote != nil {
+			a.Wrote()
+		}
+		return connect.NewResponse(&v1.ScheduleResponse{At: fingerprintOf(at)}), nil
+	}
+	if errors.Is(err, port.ErrChanged) {
+		return connect.NewResponse(&v1.ScheduleResponse{Changed: true}), nil
+	}
+	if errors.Is(err, flashcards.ErrNotAPreset) {
+		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
+		return connect.NewResponse(&v1.ScheduleResponse{Refusal: &reason}), nil
+	}
+	reason, refused := refusal.By(err)
+	if !refused {
+		return nil, connect.NewError(refusal.Coded(err), err)
+	}
+	return connect.NewResponse(&v1.ScheduleResponse{Refusal: &reason}), nil
+}
+
 // ReadPreset is the settings of one preset.
 func (a *API) ReadPreset(
 	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],

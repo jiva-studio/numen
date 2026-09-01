@@ -307,3 +307,157 @@ func TestACurveComesBackWithItsTwoMarks(t *testing.T) {
 		t.Errorf("the preset keeps 20 minutes a day and stands at %v", value)
 	}
 }
+
+// TestThePresetsOfTheVaultAreListed. The list a deck's preset is chosen from is
+// every preset the vault holds, and the defaults are no note.
+func TestThePresetsOfTheVaultAreListed(t *testing.T) {
+	f := steering(t, map[string]string{
+		"Sanskrit.md":     sanskrit,
+		"presets/Slow.md": "---\ntype: preset\ntitle: Slow going\n---\n\n# Slow going\n",
+		"decks/Roots.md":  roots,
+	})
+
+	answer, err := f.client.ListPresets(t.Context(), connect.NewRequest(&v1.ListPresetsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	held := answer.Msg.GetPresets()
+	if len(held) != 2 {
+		t.Fatalf("listed %+v", held)
+	}
+	if held[0].GetPath() != "Sanskrit.md" || held[0].GetTitle() != "Sanskrit" {
+		t.Errorf("the first is %+v", held[0])
+	}
+	if held[1].GetPath() != "presets/Slow.md" || held[1].GetTitle() != "Slow going" {
+		t.Errorf("the second is %+v", held[1])
+	}
+}
+
+// TestADeckIsPutOnAPresetAndTakenOffAgain. Choosing a preset writes the deck's
+// one entry, and choosing the defaults takes it out.
+func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
+	f := steering(t, pointed)
+
+	put, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if put.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED || put.Msg.GetChanged() {
+		t.Fatalf("the write was refused: %+v", put.Msg)
+	}
+	if put.Msg.GetAt() == nil {
+		t.Error("the write says nothing about the file it made")
+	}
+
+	read, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+		Deck: "decks/Terms.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if read.Msg.GetPreset().GetPath() != "Sanskrit.md" {
+		t.Errorf("the deck is scheduled by %+v", read.Msg.GetPreset())
+	}
+	if read.Msg.GetPreset().GetSettings().GetMinutesADay() != 20 {
+		t.Errorf("the settings are %+v", read.Msg.GetPreset().GetSettings())
+	}
+
+	// The fingerprint the write answered with is what the next write presents.
+	off, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Terms.md", Seen: put.Msg.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if off.Msg.GetChanged() {
+		t.Fatal("the deck this caller had just written was answered as changed")
+	}
+	if held := onDisk(t, f.root, "decks/Terms.md"); strings.Contains(held, "preset") {
+		t.Errorf("the deck still names a preset: %q", held)
+	}
+
+	again, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+		Deck: "decks/Terms.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again.Msg.GetPreset().GetPath() != "" {
+		t.Errorf("the deck is scheduled by %+v", again.Msg.GetPreset())
+	}
+}
+
+// TestADeckIsNotScheduledByANoteThatIsNotAPreset. A note that is not a preset
+// schedules nothing, so the client is told and the deck is left alone.
+func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
+	f := steering(t, map[string]string{
+		"Sanskrit.md":    sanskrit,
+		"Grammar.md":     "---\ntype: note\n---\n\n# Grammar\n",
+		"decks/Terms.md": terms,
+	})
+
+	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Terms.md", Preset: "Grammar.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_NOT_A_PRESET {
+		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	}
+	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
+		t.Errorf("the deck on disk is now %q", held)
+	}
+}
+
+// TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
+// refused, and nothing is written.
+func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
+	f := steering(t, pointed)
+
+	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Terms.md", Preset: "Pali.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_MISSING {
+		t.Errorf("the write was answered %v", answer.Msg.GetRefusal())
+	}
+	if held := onDisk(t, f.root, "decks/Terms.md"); held != terms {
+		t.Errorf("the deck on disk is now %q", held)
+	}
+}
+
+// TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead. Somebody editing
+// their own deck outranks a client that read it and arrived late.
+func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
+	f := steering(t, pointed)
+
+	read, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Roots.md", Preset: "Sanskrit.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	theirs := roots + "\n## Another ^zpqrstvwxy\n"
+	if err := os.WriteFile(
+		filepath.Join(f.root, "decks", "Roots.md"), []byte(theirs), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+		Deck: "decks/Roots.md", Seen: read.Msg.GetAt(),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !answer.Msg.GetChanged() {
+		t.Error("a write over a deck the person had edited was not answered as changed")
+	}
+	if held := onDisk(t, f.root, "decks/Roots.md"); held != theirs {
+		t.Errorf("the deck on disk is now %q", held)
+	}
+}

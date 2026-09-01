@@ -25,6 +25,23 @@ service PresetsService {
   // something that is not a preset is answered with the defaults and told so.
   rpc Scheduling(SchedulingRequest) returns (SchedulingResponse);
 
+  // ListPresets is every preset the vault holds, by path and by what it is
+  // called. It is the list a deck's preset is chosen from, and the defaults are
+  // not in it: they are what schedules a deck naming no preset, and no note
+  // holds them.
+  rpc ListPresets(ListPresetsRequest) returns (ListPresetsResponse);
+
+  // Schedule puts a deck on a preset, by writing the entry of its `links:`
+  // block that carries `type: preset`. The entry keeps the role and the words
+  // the person wrote on it, and every other entry of the block is left as the
+  // bytes it was. An empty preset takes the entry out, and the deck is
+  // scheduled by the defaults.
+  //
+  // A preset the vault holds no note at is refused `missing`, and a preset
+  // naming a note that is not one is refused `not_a_preset`. A deck that no
+  // longer holds what the caller read is left alone and answered `changed`.
+  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+
   // ReadPreset is the settings of one preset. A note that is not a preset is
   // answered with the defaults and a problem: what is wrong with the file is
   // settled in the editor, and nothing is guessed at here.
@@ -289,6 +306,47 @@ message SchedulingResponse {
   // The file the settings came out of, for the caller to present at its next
   // write. Absent for a deck naming no preset, and when the preset was
   // refused.
+  optional Fingerprint at = 3;
+}
+
+message ListPresetsRequest {}
+
+message ListPresetsResponse {
+  repeated Listed presets = 1;
+}
+
+// Listed is one preset as a person choosing between them sees it: where the
+// file is, and what it is called.
+message Listed {
+  string path = 1;
+
+  // What the preset is called. Empty where nothing names the note.
+  string title = 2;
+}
+
+message ScheduleRequest {
+  // The deck to schedule, by the path it is filed under.
+  string deck = 1;
+
+  // The preset that schedules it. Empty takes the deck off the preset it names,
+  // and it is scheduled by the defaults.
+  string preset = 2;
+
+  // The file this caller last read. Absent for a write that lands on whatever
+  // the deck now holds.
+  optional Fingerprint seen = 3;
+}
+
+message ScheduleResponse {
+  // Set when nothing was written, and why.
+  optional Refusal refusal = 1;
+
+  // Set when the deck is no longer the one this caller read. Nothing was
+  // written, and the person chooses what happens next.
+  bool changed = 2;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
   optional Fingerprint at = 3;
 }
 
