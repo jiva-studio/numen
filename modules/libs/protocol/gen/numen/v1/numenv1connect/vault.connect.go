@@ -60,6 +60,8 @@ const (
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
 	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
+	// VaultServiceAttendingProcedure is the fully-qualified name of the VaultService's Attending RPC.
+	VaultServiceAttendingProcedure = "/numen.v1.VaultService/Attending"
 	// VaultServiceEditingProcedure is the fully-qualified name of the VaultService's Editing RPC.
 	VaultServiceEditingProcedure = "/numen.v1.VaultService/Editing"
 	// VaultServiceTasksProcedure is the fully-qualified name of the VaultService's Tasks RPC.
@@ -144,6 +146,11 @@ type VaultServiceClient interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
+	// Attending says what the person has open — every tab of the window, and
+	// which of them is in front. The client says so again whenever any of it
+	// changes, and an agent working the vault beside them reads what it last
+	// said.
+	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
 	// Editing reports a change being made to a note's prose while it is being
 	// made, for as long as the caller listens. It is what a person reading that
 	// note is shown; the note itself arrives the way every other change does.
@@ -284,6 +291,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 			connect.WithClientOptions(opts...),
 		),
+		attending: connect.NewClient[v1.AttendingRequest, v1.AttendingResponse](
+			httpClient,
+			baseURL+VaultServiceAttendingProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Attending")),
+			connect.WithClientOptions(opts...),
+		),
 		editing: connect.NewClient[v1.EditingRequest, v1.EditingResponse](
 			httpClient,
 			baseURL+VaultServiceEditingProcedure,
@@ -412,6 +425,7 @@ type vaultServiceClient struct {
 	search          *connect.Client[v1.SearchRequest, v1.SearchResponse]
 	changes         *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
 	focus           *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	attending       *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
 	editing         *connect.Client[v1.EditingRequest, v1.EditingResponse]
 	tasks           *connect.Client[v1.TasksRequest, v1.TasksResponse]
 	list            *connect.Client[v1.ListRequest, v1.ListResponse]
@@ -476,6 +490,11 @@ func (c *vaultServiceClient) Changes(ctx context.Context, req *connect.Request[v
 // Focus calls numen.v1.VaultService.Focus.
 func (c *vaultServiceClient) Focus(ctx context.Context, req *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error) {
 	return c.focus.CallServerStream(ctx, req)
+}
+
+// Attending calls numen.v1.VaultService.Attending.
+func (c *vaultServiceClient) Attending(ctx context.Context, req *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error) {
+	return c.attending.CallUnary(ctx, req)
 }
 
 // Editing calls numen.v1.VaultService.Editing.
@@ -614,6 +633,11 @@ type VaultServiceHandler interface {
 	// person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
 	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error
+	// Attending says what the person has open — every tab of the window, and
+	// which of them is in front. The client says so again whenever any of it
+	// changes, and an agent working the vault beside them reads what it last
+	// said.
+	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
 	// Editing reports a change being made to a note's prose while it is being
 	// made, for as long as the caller listens. It is what a person reading that
 	// note is shown; the note itself arrives the way every other change does.
@@ -750,6 +774,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Focus")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceAttendingHandler := connect.NewUnaryHandler(
+		VaultServiceAttendingProcedure,
+		svc.Attending,
+		connect.WithSchema(vaultServiceMethods.ByName("Attending")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceEditingHandler := connect.NewServerStreamHandler(
 		VaultServiceEditingProcedure,
 		svc.Editing,
@@ -884,6 +914,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceChangesHandler.ServeHTTP(w, r)
 		case VaultServiceFocusProcedure:
 			vaultServiceFocusHandler.ServeHTTP(w, r)
+		case VaultServiceAttendingProcedure:
+			vaultServiceAttendingHandler.ServeHTTP(w, r)
 		case VaultServiceEditingProcedure:
 			vaultServiceEditingHandler.ServeHTTP(w, r)
 		case VaultServiceTasksProcedure:
@@ -965,6 +997,10 @@ func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Focus is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Attending is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error {
