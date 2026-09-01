@@ -95,9 +95,9 @@ func folding(text string) ([]rune, []int) {
 	return runes, append(units, at)
 }
 
-// How much of a passage is drawn, and how much of that stands before the run
-// that matched, both counted in UTF-16 code units. The words a hit sits among
-// are read from their own beginning and not from the middle of one.
+// How much of a passage is drawn at most, and how much of that stands before
+// the run that matched, both counted in UTF-16 code units. The words a hit sits
+// among are read from their own beginning and not from the middle of one.
 const (
 	glancing = 240
 	leading  = 60
@@ -130,10 +130,9 @@ func around(text string, at []domain.Span, from int) (string, []domain.Span) {
 	if point > leading {
 		opens = point - leading
 	}
-	to := opens + glancing
-	if to > total {
-		to, opens = total, total-glancing
-	}
+	// A window reaching past the end of the passage closes there and holds less
+	// than a glance.
+	to := min(opens+glancing, total)
 	first, last := begins(units, opens), ends(units, to)
 	shift := units[first]
 
