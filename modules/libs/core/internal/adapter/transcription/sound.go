@@ -356,6 +356,7 @@ func resampled(in []float32, from, to int) []float32 {
 	ratio := float64(to) / float64(from)
 	cutoff := math.Min(ratio, 1)
 	reach := sincWidth / cutoff
+	kernel := weighing(cutoff, reach)
 
 	out := make([]float32, int(float64(len(in))*ratio))
 	for i := range out {
@@ -365,8 +366,7 @@ func resampled(in []float32, from, to int) []float32 {
 
 		var sum, weight float64
 		for j := first; j <= last; j++ {
-			d := centre - float64(j)
-			w := sinc(cutoff*d) * blackman(d/reach)
+			w := kernel.at(centre - float64(j))
 			sum += w * float64(in[j])
 			weight += w
 		}
@@ -375,6 +375,40 @@ func resampled(in []float32, from, to int) []float32 {
 		}
 	}
 	return out
+}
+
+// The kernel is read off a table this many steps to the input sample. An hour
+// of sound is tens of millions of output samples of a hundred taps each, and
+// the shape they are read from does not change between any two of them.
+const kernelSteps = 512
+
+// A weights is the windowed sinc, worked out once and read from.
+type weights struct {
+	held []float64
+	step float64
+}
+
+// weighing works the kernel out over its whole reach.
+func weighing(cutoff, reach float64) weights {
+	step := float64(kernelSteps)
+	held := make([]float64, int(reach*step)+2)
+	for i := range held {
+		d := float64(i) / step
+		held[i] = sinc(cutoff*d) * blackman(d/reach)
+	}
+	return weights{held: held, step: step}
+}
+
+// at is the kernel at a distance, between the two steps it falls between. The
+// kernel is even, so a distance either side of nothing reads the same.
+func (w weights) at(d float64) float64 {
+	at := math.Abs(d) * w.step
+	i := int(at)
+	if i+1 >= len(w.held) {
+		return 0
+	}
+	part := at - float64(i)
+	return w.held[i]*(1-part) + w.held[i+1]*part
 }
 
 // sinc is the interpolating kernel, one at nothing.
