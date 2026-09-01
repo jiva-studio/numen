@@ -184,6 +184,12 @@ const (
 	CountsShows Counts = "shows"
 )
 
+// Charges reports whether a showing of a card face spends a slot of a day's
+// count, where shown is whether the day has asked that face already.
+//
+// It is the one place the counting is read.
+func (c Counts) Charges(shown bool) bool { return c == CountsShows || !shown }
+
 // KnownCounts reports whether a value is one of the two.
 func KnownCounts(c Counts) bool {
 	switch c {

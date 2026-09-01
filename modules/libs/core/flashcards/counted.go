@@ -125,7 +125,7 @@ func (g Given) Sat(
 			continue
 		}
 		one := out[path]
-		if counts[path] == CountsShows || !counted[a.CardFace] {
+		if counts[path].Charges(counted[a.CardFace]) {
 			counted[a.CardFace] = true
 			one.Answered++
 			if first {

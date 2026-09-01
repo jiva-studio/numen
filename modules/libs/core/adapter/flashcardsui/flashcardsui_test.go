@@ -803,9 +803,10 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 // The day suggested under a goal of minutes means what it says: the shortest
 // day that asks everything the day holds, on a vault carrying a backlog.
 //
-// A shorter day leaves cards standing, so no place before it asks as much, and
-// the shortest day on the range is never the answer to a vault behind on its
-// reviews.
+// A shorter day is cut short by the clock, and the shortest day on the range is
+// never the answer to a vault behind on its reviews. The cards a shorter day
+// asks may already be the whole count: a card the day comes back to is the one
+// card, and the showings it takes are what the clock runs out on.
 func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	api, held := windowed(t, lived)
 	v := held[0]
@@ -834,9 +835,9 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 			got)
 	}
 	for i := range at {
-		if drawn.GetAt()[i].GetReviews() >= whole {
-			t.Errorf("%v minutes a day already asks %v cards, and %v is suggested",
-				drawn.GetGrid()[i], drawn.GetAt()[i].GetReviews(), drawn.GetGrid()[at])
+		if got := drawn.GetAt()[i].GetClosed(); !slices.Contains(got, string(history.ClosedMinutes)) {
+			t.Errorf("%v minutes a day closed on %q, and %v is suggested",
+				drawn.GetGrid()[i], got, drawn.GetGrid()[at])
 		}
 	}
 }
@@ -1125,11 +1126,14 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	for _, one := range []struct {
 		what             string
 		newADay, reviews int
+		counts           history.Counts
 		climbs           bool
 	}{
-		// A day of one review is a day the target cannot spend, whatever it is.
-		{"a count binding at every place", 12, 1, false},
-		{"counts that never bind", 50, 200, true},
+		// A budget of one showing is a day the target cannot spend, whatever it
+		// is. Counting cards it could: the one card is asked again for nothing,
+		// and how often it comes back is the target's own answer.
+		{"a count binding at every place", 12, 1, history.CountsShows, false},
+		{"counts that never bind", 50, 200, history.CountsCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, held := windowed(t, lived)
@@ -1140,6 +1144,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = history.GoalRetention
 			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
+			p.Counts = one.counts
 			writtenBack(t, api, v, "Sanskrit.md", p)
 			drawn := pictured(t, api, v, "Sanskrit.md", p)
 

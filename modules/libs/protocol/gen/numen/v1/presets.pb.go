@@ -660,6 +660,9 @@ func (x *Curve) GetUnbegun() int32 {
 // Point is what a preset comes to at one place of the grid.
 type Point struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
+	// `reviews` is counted in card faces and `minutes` in the showings they take,
+	// so a face the day comes back to costs its minutes and is the one card.
+	//
 	// Under a goal of minutes, the next sitting a person will sit down to: the
 	// first day the preset admits, which is the day the deck screen offers. A day
 	// at none of the load is no sitting, so the day after it is drawn. Under a

@@ -64,10 +64,13 @@ type Curve struct {
 
 // Point is what a preset comes to at one place of the grid.
 //
-// What Reviews and Minutes are the height of is the goal's own question. Under
-// a goal of minutes they are the first day of the run the preset admits: the
-// next sitting a person will actually sit down to. Under a goal of retention
-// they are the load over the days the preset admits.
+// Reviews is counted in card faces and Minutes in the showings they take, so a
+// face the day comes back to costs its minutes and is the one card.
+//
+// What the two are the height of is the goal's own question. Under a goal of
+// minutes they are the first day of the run the preset admits: the next sitting
+// a person will actually sit down to. Under a goal of retention they are the
+// load over the days the preset admits.
 //
 // A goal of a date reads Reviews off that first day, and fills Minutes with
 // what getting through the material by the day the place names costs, over the
@@ -513,7 +516,7 @@ func (u Curves) date(
 			Backlog:  ran.Backlog,
 		}
 		if sitting {
-			one.Reviews, one.Closed = float64(ran.Load[opening]), ran.Closed[opening]
+			one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
 		}
 		out.At[i] = one
 		return nil
@@ -664,7 +667,7 @@ func sitting(p history.Projection) Point {
 	if !any {
 		return out
 	}
-	out.Reviews, out.Minutes = float64(p.Load[day]), p.Spent[day].Minutes()
+	out.Reviews, out.Minutes = float64(p.Faced[day]), p.Spent[day].Minutes()
 	return out
 }
 

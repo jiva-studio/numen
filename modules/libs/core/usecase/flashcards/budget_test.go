@@ -888,9 +888,14 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 // The sitting and the curve are one arithmetic.
 //
 // What a day admits is worked out in one place, so the count the curve draws at
-// the value the preset holds is the count the deck screen hands a person on the
-// day the curve draws. That day is the next one the preset admits: a day at none
-// of the load is no sitting at all, so the curve draws the day after it.
+// the value the preset holds is the count the sittings of that day hand a person.
+// That day is the next one the preset admits: a day at none of the load is no
+// sitting at all, so the curve draws the day after it.
+//
+// The day is driven the way a person drives it, a sitting at a time until it has
+// nothing left to ask. A card the day comes back to is in a later sitting than
+// the one that first showed it, so a single sitting is a batch of that day and
+// not the day.
 func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 	// A day of the week the vault's own preset is read on, so a light Saturday
 	// and a dead Saturday are read where a person meets them.
@@ -1026,9 +1031,9 @@ func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 			}
 
 			drawn := curve.At[curve.Now.At].Reviews
-			offers := asked(s.sittingAt(t, today, admitting(read.Preset, today, saturday)))
-			if drawn != float64(offers) {
-				t.Errorf("the curve draws %v and the sitting hands over %d", drawn, offers)
+			faces := s.through(t, today, admitting(read.Preset, today, saturday))
+			if drawn != float64(faces) {
+				t.Errorf("the curve draws %v and the day hands over %d", drawn, faces)
 			}
 		})
 	}
@@ -1256,4 +1261,33 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 				counts, asked, spent)
 		}
 	}
+}
+
+// through is how many card faces one whole day of review hands over, driven the
+// way a person drives it: a sitting at a time until the day has nothing left to
+// ask, answering everything each of them holds.
+//
+// A card the day comes back to is the one card, so a face is counted once
+// however many sittings show it. Each answer takes what a projection costs its
+// kind at, so driving the day does not move the day's own arithmetic under it.
+func (s vaulted) through(t *testing.T, day history.Day, now time.Time) int {
+	t.Helper()
+	faces := make(map[history.CardFace]bool)
+	for range 100 {
+		sat := s.sittingAt(t, day, now)
+		if len(sat.Asked) == 0 {
+			return len(faces)
+		}
+		record := s.run(t, now)
+		for _, one := range sat.Asked {
+			took := history.DefaultCost.Review
+			if !one.Schedule.Seen() {
+				took = history.DefaultCost.New
+			}
+			faces[one.CardFace] = true
+			answer(t, record, one.CardFace.Card, took)
+		}
+	}
+	t.Fatal("the day went on asking and never ran out")
+	return 0
 }

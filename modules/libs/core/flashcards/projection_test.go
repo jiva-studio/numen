@@ -236,8 +236,11 @@ func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 		t.Errorf("%d card faces of %d are out of reach of a year in five days",
 			got.Short, got.Faces)
 	}
-	if got.Load[0] != 30 {
-		t.Errorf("the first day was handed %d of the thirty card faces", got.Load[0])
+	// The whole material is begun in the first day, so the day after it is
+	// handed nothing.
+	if got.Seen != 30 || got.Load[1] != 0 {
+		t.Errorf("the first day began %d of the thirty card faces, and the day "+
+			"after it was handed %d showings", got.Seen, got.Load[1])
 	}
 }
 

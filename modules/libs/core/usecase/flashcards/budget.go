@@ -137,7 +137,7 @@ func (b *budgets) takes(face history.CardFace, fresh bool) bool {
 	if !held || one.admits.Paused() {
 		return false
 	}
-	counted := one.counts == history.CountsShows || !b.faced[face]
+	counted := one.counts.Charges(b.faced[face])
 	cost, left, closes := one.cost.Review, &one.admits.Reviews, one.admits.Closes.Reviews
 	if fresh {
 		cost, left, closes = one.cost.New, &one.admits.New, one.admits.Closes.New

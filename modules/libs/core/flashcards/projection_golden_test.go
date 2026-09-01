@@ -79,7 +79,8 @@ func projections(t *testing.T) string {
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
 				},
 			}
-			if p.name == "retention, asking much of memory" {
+			// A goal of retention runs under the scheduler it asks for.
+			if p.preset.Goal == history.GoalRetention {
 				run.By = history.NewFSRSAt(p.preset.Retention)
 			}
 			fmt.Fprintf(&out, "== %s / %s\n", m.name, p.name)
@@ -246,7 +247,8 @@ type goldenPreset struct {
 
 // goldenPresets is the spread of settings: each goal, each rule for what counts
 // as learned, a week with a light day and a day at nothing, a day spent new
-// material first, and a preset that schedules nothing.
+// material first, a preset that schedules nothing, and each counting of what a
+// day's budget is spent on set against the same settings at the other.
 func goldenPresets() []goldenPreset {
 	light := map[time.Weekday]int{time.Saturday: 50, time.Sunday: 0}
 	return []goldenPreset{
@@ -275,11 +277,22 @@ func goldenPresets() []goldenPreset {
 			Retention: 0.97, Rule: history.RuleInterval, Interval: 21,
 			Counts: history.CountsCards, Backlog: 60, Load: light, EvenLoad: true,
 		}},
+		{"retention, counting showings", history.Preset{
+			Goal: history.GoalRetention, MinutesADay: 20, NewADay: 6, ReviewsADay: 30,
+			Retention: 0.97, Rule: history.RuleInterval, Interval: 21,
+			Counts: history.CountsShows, Backlog: 60, Load: light, EvenLoad: true,
+		}},
 		{"a date, forty-five days off", history.Preset{
 			Goal: history.GoalDate, By: goldenNow.AddDate(0, 0, 45),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			Retention: 0.9, Rule: history.RuleInterval, Interval: 7,
 			Counts: history.CountsCards, EvenLoad: true,
+		}},
+		{"a date, counting showings", history.Preset{
+			Goal: history.GoalDate, By: goldenNow.AddDate(0, 0, 45),
+			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			Retention: 0.9, Rule: history.RuleInterval, Interval: 7,
+			Counts: history.CountsShows, EvenLoad: true,
 		}},
 		{"a date, learned by a chance of recall", history.Preset{
 			Goal: history.GoalDate, By: goldenNow.AddDate(0, 0, 20),

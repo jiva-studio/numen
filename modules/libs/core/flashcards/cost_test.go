@@ -1296,3 +1296,224 @@ func TestAPaceUnderALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
 		}
 	}
 }
+
+// allForgotten is a run in which no card face asked comes back. It is what puts
+// a lapse inside the day it was answered in, on every card.
+func allForgotten(history.Schedule, time.Time) float64 { return 0 }
+
+// A day counting showings spends a slot on every one of them, and a day
+// counting cards charges a face once and asks it again for nothing.
+//
+// Nothing comes back here, so every card the day asks falls back into it. A day
+// counting showings hands over as many showings as its budget holds, and a day
+// counting cards hands over that many faces, each asked until the day puts it
+// down.
+func TestADayCountingShowingsSpendsASlotOnEveryShowing(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: by, Day: ahead, Cost: history.DefaultCost, Days: 1, Recalls: allForgotten,
+	}
+	at := owing(by, now, 40)
+	reviews := 6
+
+	for _, one := range []struct {
+		counts history.Counts
+		want   int
+	}{
+		{history.CountsShows, reviews},
+		{history.CountsCards, reviews * history.MostShowings},
+	} {
+		p := history.Preset{
+			Goal: history.GoalRetention, NewADay: 0, ReviewsADay: reviews, Counts: one.counts,
+		}
+		if got := ran(t, run, now, p, at, 0).Load[0]; got != one.want {
+			t.Errorf("counting in %s the day gave %d showings, want %d", one.counts, got, one.want)
+		}
+	}
+}
+
+// What a day's budget is spent on is read where a count closes the day, and
+// only a goal of retention keeps one on each side.
+//
+// A goal of minutes is closed by the clock, and the minutes go on every showing
+// at either counting. A goal of a date is closed by the count of cards it has to
+// begin, and every showing after the first is a review, which that goal holds to
+// nothing. So the counting shortens the day under retention and decides nothing
+// under the other two.
+func TestWhatADaysBudgetIsSpentOnIsReadUnderEachGoal(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 60)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 30}
+	newADay, reviewsADay := 10, 40
+
+	for _, one := range []struct {
+		goal  history.Goal
+		binds bool
+	}{
+		{history.GoalMinutes, false},
+		{history.GoalRetention, true},
+		{history.GoalDate, false},
+	} {
+		p := history.Preset{
+			Goal: one.goal, MinutesADay: 20, NewADay: newADay, ReviewsADay: reviewsADay,
+			Retention: 0.9, Rule: history.RuleInterval, Interval: 21,
+		}
+		if one.goal == history.GoalDate {
+			p.By = now.AddDate(0, 0, 40).Truncate(24 * time.Hour)
+		}
+
+		p.Counts = history.CountsCards
+		cards := ran(t, run, now, p, at, 40).Load[0]
+		p.Counts = history.CountsShows
+		shows := ran(t, run, now, p, at, 40).Load[0]
+
+		if !one.binds {
+			if shows != cards {
+				t.Errorf("under %s the day gave %d showings counting showings and %d "+
+					"counting cards, and no count closes that day", one.goal, shows, cards)
+			}
+			continue
+		}
+		// Every showing is charged, so the day is over when both counts are, and
+		// a day counting cards asks for more on the same budget.
+		if want := newADay + reviewsADay; shows != want {
+			t.Errorf("under %s the day gave %d showings counting showings, want %d",
+				one.goal, shows, want)
+		}
+		if shows >= cards {
+			t.Errorf("under %s the day gave %d showings counting showings and %d "+
+				"counting cards", one.goal, shows, cards)
+		}
+	}
+}
+
+// A card begun today is put into memory over minutes, so the step that sends it
+// away in days falls in the day it was begun and not the day after.
+func TestANewCardsLearningStepFallsInTheDayItWasBegun(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 2}
+	p := history.Preset{
+		Goal: history.GoalRetention, NewADay: 1, ReviewsADay: 9999,
+	}
+
+	got := ran(t, run, now, p, nil, 1)
+	if got.Load[0] != 2 {
+		t.Errorf("the day the card was begun gave %d showings, want 2", got.Load[0])
+	}
+	if got.Load[1] != 0 {
+		t.Errorf("the day after gave %d showings, and the card was settled in the "+
+			"day it was begun", got.Load[1])
+	}
+}
+
+// A card the day answers into minutes falls due again before that day closes,
+// and the day asks it again.
+func TestAnAnswerThatLandsInsideTheDayIsAskedAgainInIt(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 1,
+		Recalls: allForgotten,
+	}
+	p := history.Preset{Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 9999}
+
+	face, one := sent("lapsing", now, 30, 1, 2)
+	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: one}, 0)
+	if got.Load[0] <= 1 {
+		t.Errorf("a day that forgot its one card gave it %d showings, and a card "+
+			"answered into minutes comes round again in the day", got.Load[0])
+	}
+}
+
+// A day asks one card face MostShowings times and no more. A card that keeps
+// landing back in the day it was answered in is put down, and the day after it
+// picks it up.
+func TestADayAsksOneCardFaceNoMoreThanMostShowings(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 2,
+		Recalls: allForgotten,
+	}
+	// A budget that never binds, so nothing but the cap stops the day.
+	p := history.Preset{Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 9999}
+
+	face, one := sent("looping", now, 30, 1, 2)
+	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: one}, 0)
+	if got.Load[0] != history.MostShowings {
+		t.Errorf("the day gave one card face %d showings, want %d",
+			got.Load[0], history.MostShowings)
+	}
+	if got.Load[1] != history.MostShowings {
+		t.Errorf("the day after gave the card it picked up %d showings, want %d",
+			got.Load[1], history.MostShowings)
+	}
+}
+
+// A budget that never binds gets through the same material at either counting:
+// what a day is spent on decides nothing where nothing closes the day.
+func TestABudgetThatNeverBindsGetsThroughTheSameAtEitherCounting(t *testing.T) {
+	by := history.NewFSRS()
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	at := learned(by, now, 40)
+	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 20}
+
+	p := history.Preset{Goal: history.GoalRetention, NewADay: 9999, ReviewsADay: 9999}
+	p.Counts = history.CountsCards
+	cards := ran(t, run, now, p, at, 20)
+	p.Counts = history.CountsShows
+	shows := ran(t, run, now, p, at, 20)
+
+	if !slices.Equal(cards.Load, shows.Load) {
+		t.Errorf("counting cards the days carried %v, and counting showings %v",
+			cards.Load, shows.Load)
+	}
+}
+
+// A deck of nothing projects nothing at either counting.
+func TestADeckOfNothingProjectsNothingAtEitherCounting(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 10,
+	}
+
+	for _, counts := range []history.Counts{history.CountsCards, history.CountsShows} {
+		p := history.Preset{
+			Goal: history.GoalRetention, NewADay: 10, ReviewsADay: 40, Counts: counts,
+		}
+		got := ran(t, run, now, p, nil, 0)
+		if got.Answered != 0 || got.Faces != 0 {
+			t.Errorf("counting in %s a deck of nothing answered %d over %d faces",
+				counts, got.Answered, got.Faces)
+		}
+	}
+}
+
+// A day's showings and the card faces they are of are two counts, and what
+// separates them is the card the day comes back to.
+//
+// The load a caller draws is counted in faces: a card asked twice in a day is
+// the one card, and the second showing is time and not another card.
+func TestADaysShowingsAndItsCardFacesAreTwoCounts(t *testing.T) {
+	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
+	run := history.Simulation{
+		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 3,
+	}
+	// A budget that never binds, so the day asks everything it has.
+	p := history.Preset{Goal: history.GoalRetention, NewADay: 1, ReviewsADay: 9999}
+
+	got := ran(t, run, now, p, nil, 1)
+	if got.Load[0] != 2 || got.Faced[0] != 1 {
+		t.Errorf("the day gave %d showings of %d card faces, want 2 of 1",
+			got.Load[0], got.Faced[0])
+	}
+	if got.Answered != 2 {
+		t.Errorf("the run gave %d showings, want 2", got.Answered)
+	}
+	// One face over three days of review, two of which the preset admitted
+	// nothing to ask on.
+	if want := 1.0 / 3.0; math.Abs(got.ReviewsADay-want) > 1e-9 {
+		t.Errorf("the daily load is %v card faces, want %v", got.ReviewsADay, want)
+	}
+}

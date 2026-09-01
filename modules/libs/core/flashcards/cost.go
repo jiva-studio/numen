@@ -37,6 +37,12 @@ const (
 // before it could be read is a key hit and not review.
 const ShortestAnswer = time.Second
 
+// MostShowings is how many times one day of review asks a card face. An answer
+// a card did not come back on sends it away for minutes, and the day it lands
+// back in is the day it was asked in; a card that keeps landing there is put
+// down and picked up by the day after.
+const MostShowings = 8
+
 // LeastAnswers is how many answers of a kind a history holds before it says
 // what that kind costs. A kind the history holds fewer of stands at the
 // default.
@@ -197,7 +203,7 @@ type Projection struct {
 	// Days is how many days were projected.
 	Days int
 	// ReviewsADay and MinutesADay are the daily load, over the days the preset
-	// admitted.
+	// admitted: the card faces a day asks, and how long its showings take.
 	ReviewsADay float64
 	MinutesADay float64
 	// Retained is the share of the material that comes back, on the days the run
@@ -235,9 +241,14 @@ type Projection struct {
 	// at, whatever the pace: the rule wants more days than the date leaves them.
 	// A preset aiming at no day has none.
 	Short int
-	// Load is how many answers each day projected carried, and Spent is how
-	// long those answers took.
+	// Load is how many showings each day projected carried, Faced is how many
+	// card faces those showings were of, and Spent is how long they took.
+	//
+	// A day asks a card face again while its answer leaves it falling due before
+	// the day closes. A budget kept in cards is spent on Faced and one kept in
+	// showings on Load, and the minutes go on every showing either way.
 	Load  []int
+	Faced []int
 	Spent []time.Duration
 	// Admitted is whether the preset admitted each day projected. A day it did
 	// not is no sitting at all, and the summaries over the run pass over it.
@@ -446,8 +457,8 @@ func (s Simulation) Covers() int {
 //
 // The map is where the answers have left every card face the preset schedules,
 // and unseen is how many of its card faces nobody has answered. A day's answers
-// are all given at the hour the day opens, and a card face is answered at most
-// once in a day.
+// are all given at the hour the day opens, and the day asks a card face again
+// while its answer leaves it falling due before the day closes.
 //
 // A run over many days is long enough that a caller may give up on it, so the
 // day it is on is where it is left.
@@ -523,6 +534,10 @@ func (s Simulation) Run(
 	// front of what the day after it owes.
 	var due, spare []int
 	take := 0
+	// How many times the day has asked each card face, and the faces it has
+	// still to ask again before it closes.
+	shown := make([]int, len(cards))
+	var again []int
 	for today := range days {
 		if err := ctx.Err(); err != nil {
 			return Projection{}, err
@@ -548,6 +563,9 @@ func (s Simulation) Run(
 		spare = merges(spare[:0], due[take:], falls[today], cards)
 		due, spare = spare, due
 		take = 0
+		clear(shown)
+		again = again[:0]
+		next := 0
 
 		// What closed the day is every budget that turned a card away. A day
 		// that asked for every card there was is closed by nothing.
@@ -559,38 +577,73 @@ func (s Simulation) Run(
 		// The day is spent between the debt and the material it has not begun,
 		// in the share the preset names. A side the day has no more room for is
 		// done with, and the other goes on with what is left of the day.
-		answered, seen, begun := 0, 0, 0
-		paid, all := admits.Paused(), admits.Paused()
-		for !paid || !all {
-			owed, fresh := !paid && take < len(due), !all && left > 0
-			if !owed {
-				paid = true
-			}
-			if !fresh {
-				all = true
-			}
-			if !owed && !fresh {
+		// Answered is every showing the day gave; charged is the slots of the
+		// count they spent, which is the first showing of a face or every one of
+		// them, as the preset counts.
+		answered, seen, begun, charged, faced := 0, 0, 0, 0, 0
+		// Paid, settled and all are the three sides the day is done with: the
+		// debt it opened on, the cards it has answered into the day itself, and
+		// the material it has not begun.
+		paid, settled, all := admits.Paused(), admits.Paused(), admits.Paused()
+		for {
+			owed := !paid && take < len(due)
+			fresh := !all && left > 0
+			back := !settled && next < len(again)
+			if !owed && !fresh && !back {
 				break
 			}
 
-			if admits.Paying(seen, begun, owed, fresh) {
-				if admits.Closes.Reviews != ClosedNothing && seen >= admits.Reviews {
-					closed, paid = closed.with(admits.Closes.Reviews), true
+			// A day hands over everything it owes and everything it begins
+			// before it comes back to a card it has already shown, which is the
+			// order the sittings of that day put them in.
+			repeat := !owed && !fresh
+			if repeat || admits.Paying(seen, begun, owed, fresh) {
+				at := 0
+				if repeat {
+					at = again[next]
+				} else {
+					at = due[take]
+				}
+				counted := p.Counts.Charges(shown[at] > 0)
+				if counted && admits.Closes.Reviews != ClosedNothing && charged >= admits.Reviews {
+					closed = closed.with(admits.Closes.Reviews)
+					if repeat {
+						settled = true
+					} else {
+						paid = true
+					}
 					continue
 				}
 				if admits.Closes.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
-					closed, paid = closed.with(admits.Closes.Minutes), true
+					closed = closed.with(admits.Closes.Minutes)
+					if repeat {
+						settled = true
+					} else {
+						paid = true
+					}
 					continue
 				}
-				at := due[take]
-				take++
+				if repeat {
+					next++
+				} else {
+					take++
+				}
 				used += s.Cost.Review
 				seen++
 				answered++
+				if counted {
+					charged++
+				}
+				if shown[at] == 0 {
+					faced++
+				}
+				shown[at]++
 				cards[at] = s.answers(cards[at], open, ends, p, on)
 				reckoned.answered(at, cards[at], ends)
-				// The day it comes round on is the day that asks for it again,
-				// and never this one: a card face is answered once in a day.
+				if s.Day.Owed(cards[at], open) && shown[at] < MostShowings {
+					again = append(again, at)
+					continue
+				}
 				if day := max(today+1, on.number(cards[at].Due)-base); day < days {
 					falls[day] = append(falls[day], at)
 				}
@@ -608,19 +661,33 @@ func (s Simulation) Run(
 			used += s.Cost.New
 			begun++
 			answered++
+			faced++
 			left--
 			out.Seen++
 			one := s.answers(Schedule{}, open, ends, p, on)
 			cards = append(cards, one)
+			shown = append(shown, 1)
 			reckoned.begun(one, ends)
-			if day := max(today+1, on.number(one.Due)-base); day < days {
-				falls[day] = append(falls[day], len(cards)-1)
+			at := len(cards) - 1
+			if s.Day.Owed(one, open) && shown[at] < MostShowings {
+				again = append(again, at)
+				continue
 			}
+			if day := max(today+1, on.number(one.Due)-base); day < days {
+				falls[day] = append(falls[day], at)
+			}
+		}
+
+		// A card face the day put down before it settled falls due in a day that
+		// is over, so the day after it picks it up.
+		if today+1 < days {
+			falls[today+1] = append(falls[today+1], again[next:]...)
 		}
 
 		out.Answered += answered
 		spent += used
 		out.Load = append(out.Load, answered)
+		out.Faced = append(out.Faced, faced)
 		out.Spent = append(out.Spent, used)
 		out.Admitted = append(out.Admitted, !admits.Paused())
 		out.Closed = append(out.Closed, closed)
@@ -636,7 +703,7 @@ func (s Simulation) Run(
 
 		// What the day left standing is what fell due in it and was not reached,
 		// and the day the backlog is gone is the first day none is.
-		standing := len(due) - take
+		standing := len(due) - take + len(again) - next
 		out.Backlog = append(out.Backlog, standing)
 		if out.Clears == NeverClears && standing == 0 {
 			out.Clears = len(out.Load)
@@ -648,7 +715,11 @@ func (s Simulation) Run(
 	}
 
 	if admitted := out.Admits(); admitted > 0 {
-		out.ReviewsADay = float64(out.Answered) / float64(admitted)
+		asked := 0
+		for _, one := range out.Faced {
+			asked += one
+		}
+		out.ReviewsADay = float64(asked) / float64(admitted)
 		out.MinutesADay = spent.Minutes() / float64(admitted)
 	}
 	for _, c := range cards {
@@ -826,7 +897,7 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 			open = ends
 			continue
 		}
-		c = s.answers(c, open, ends, p, nil)
+		c = s.settles(c, open, ends, p)
 		if p.Learned(c, ends) {
 			return days
 		}
@@ -836,16 +907,29 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 	return NeverRipens
 }
 
-// answers is where one day of review leaves a card face: a card face falling
-// due in the day is answered once in it, at the hour the day opens.
-//
-// It is the one model of a review day, so the day a card face ripens is the day
-// the projection learns it.
+// answers is where one showing leaves a card face, at the hour the day opens. A
+// card face the day is not asking for stands where it is.
 func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *Spread) Schedule {
 	if c.Seen() && !c.Due.Before(ends) {
 		return c
 	}
 	return s.step(c, open, p, on)
+}
+
+// settles is where a day of review leaves a card face when the day answers
+// every showing it asks for: an answer that leaves the card falling due before
+// the day closes is a card the day asks again, up to MostShowings.
+//
+// It is the day with no budget over it, which is the day the ripening of a card
+// face is counted in.
+func (s Simulation) settles(c Schedule, open, ends time.Time, p Preset) Schedule {
+	for range MostShowings {
+		if c.Seen() && !s.Day.Owed(c, open) {
+			break
+		}
+		c = s.step(c, open, p, nil)
+	}
+	return c
 }
 
 // reaches reports whether a card face standing here is learned on the day the
@@ -867,7 +951,7 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 		// A day of the week at none of the load asks it nothing, and the next
 		// day of review picks it up.
 		if p.Share(open.Weekday()) != 0 {
-			c = s.answers(c, open, ends, p, nil)
+			c = s.settles(c, open, ends, p)
 		}
 		open = ends
 	}
