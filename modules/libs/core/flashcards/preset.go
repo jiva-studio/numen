@@ -300,7 +300,7 @@ type Left struct {
 // Now is any instant of the review day, spent is what that day has already gone
 // through under the preset, and left is the material it has still to begin.
 func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
-	opened := d.Ends(now).AddDate(0, 0, -1)
+	opened := d.Opened(now)
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
 		Closes: p.closing(),
@@ -416,7 +416,7 @@ func (p Preset) StopsOn(d Day, now time.Time) Stopped {
 	if why := p.Stops(d, now); why != StoppedNothing {
 		return why
 	}
-	if p.Share(d.Ends(now).AddDate(0, 0, -1).Weekday()) == 0 {
+	if p.Share(d.Opened(now).Weekday()) == 0 {
 		return StoppedNoLoad
 	}
 	return StoppedNothing

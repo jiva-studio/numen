@@ -337,7 +337,7 @@ func (p Projection) Sitting() (int, bool) {
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
 func Overdue(d Day, at map[CardFace]Schedule, now time.Time) int {
-	opened := d.Ends(now).AddDate(0, 0, -1)
+	opened := d.Opens(now)
 	out := 0
 	for _, s := range at {
 		if s.Seen() && s.Due.Before(opened) {
@@ -502,7 +502,7 @@ func (s Simulation) Run(
 	left := unseen
 	var spent time.Duration
 
-	open := s.Day.Ends(now).AddDate(0, 0, -1)
+	open := s.Day.Opens(now)
 	// Where the answers so far have left every card face is what the days
 	// ahead are loaded with, and which day of the run first asks for it. A card
 	// face falling due past the run is asked for on none of them.
@@ -874,7 +874,7 @@ const mostAnswers = 1000
 // week does, so the pace holds for a card face begun on any of them.
 func Ripens(by Scheduler, d Day, p Preset, now time.Time) int {
 	s := Simulation{By: by, Day: d}
-	from := d.Ends(now).AddDate(0, 0, -1)
+	from := d.Opens(now)
 	out := 0
 	for range 7 {
 		one := s.ripens(p, from)
@@ -945,7 +945,7 @@ func (s Simulation) reaches(p Preset, c Schedule, open, by time.Time) bool {
 		}
 		if c.Seen() && !c.Due.Before(s.Day.Ends(open)) {
 			// Nothing is asked of it until the day its schedule falls in.
-			open = s.Day.Ends(c.Due).AddDate(0, 0, -1)
+			open = s.Day.Opens(c.Due)
 		}
 		ends := s.Day.Ends(open)
 		// A day of the week at none of the load asks it nothing, and the next
@@ -1064,9 +1064,7 @@ func (s *Spread) On(at time.Time) int {
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
 func (s *Spread) number(at time.Time) int {
-	opened := s.day.Ends(at).AddDate(0, 0, -1)
-	y, m, d := opened.Date()
-	return int(time.Date(y, m, d, 0, 0, 0, 0, time.UTC).Unix() / int64(24*time.Hour/time.Second))
+	return int(s.day.Opened(at).Unix() / int64(24*time.Hour/time.Second))
 }
 
 // weekday is the day of the week a numbered day of review falls on. The day the

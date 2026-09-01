@@ -12,9 +12,7 @@ const Named = "2006-01-02"
 // review day began — an answer given at one in the morning belongs to the day
 // before, and is named for it.
 func (d Day) Names(at time.Time) string {
-	// The day runs to its next boundary, so it began at the one before that,
-	// and the date it began on is what a person calls it.
-	return d.Ends(at).AddDate(0, 0, -1).Format(Named)
+	return d.Opened(at).Format(Named)
 }
 
 // Tally is one day's answers: how many were given, and how each of the four was

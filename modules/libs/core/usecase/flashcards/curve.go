@@ -445,7 +445,7 @@ func (u Curves) date(
 	at map[history.CardFace]history.Schedule, unseen int,
 ) (Curve, error) {
 	out := Curve{Goal: history.GoalDate, Now: Nowhere, Suggested: Nowhere}
-	open := u.Day.Ends(now).AddDate(0, 0, -1)
+	open := u.Day.Opens(now)
 	by := p.By.Format(history.Named)
 	if p.By.IsZero() || by < u.Day.Names(open) {
 		return out, nil
