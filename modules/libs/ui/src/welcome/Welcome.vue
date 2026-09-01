@@ -72,6 +72,7 @@ defineEmits<{
             <button
               type="button"
               class="welcome__row welcome__row--vault"
+              :disabled="one.waiting"
               @click="$emit('opens', one.id)"
             >
               <FolderRoot class="welcome__icon" />
@@ -86,8 +87,12 @@ defineEmits<{
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
               <!-- The letter it is opened by, at the end of the row the ways in
                    carry their keystrokes at. Past the alphabet a vault is opened
-                   with the hand and carries none. -->
-              <KeyCap v-if="vaultLetter(at)" :keys="{ marks: [], letter: vaultLetter(at) }" />
+                   with the hand and carries none, and a row still waiting is
+                   drawn without the letter it will be opened by. -->
+              <KeyCap
+                v-if="vaultLetter(at) && !one.waiting"
+                :keys="{ marks: [], letter: vaultLetter(at) }"
+              />
             </button>
           </li>
         </ul>
@@ -210,8 +215,14 @@ defineEmits<{
   min-inline-size: 0;
 }
 
-.welcome__row:hover {
+.welcome__row:hover:not(:disabled) {
   background: var(--numen-bubble-bg);
+}
+
+/* A row whose answer is still on its way stands as it will stand, and does not
+   answer to a hand. */
+.welcome__row:disabled {
+  cursor: default;
 }
 
 .welcome__row:focus-visible {

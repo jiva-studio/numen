@@ -118,6 +118,7 @@ export type { Follows } from './following/following'
 
 export { default as Dots } from './dots/Dots.vue'
 export { default as Waiting } from './waiting/Waiting.vue'
+export { default as Coming } from './waiting/Coming.vue'
 
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'

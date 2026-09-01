@@ -60,6 +60,38 @@ describe('a vault on the list', () => {
   })
 })
 
+describe('a vault the window has not answered for yet', () => {
+  const waiting = (id: string): Held => ({ ...vault(id), waiting: true })
+
+  it('stands on the list under its own name', () => {
+    const screen = draw([waiting('physics')])
+
+    expect(screen.find('.welcome__row--vault').text()).toContain('physics')
+  })
+
+  it('is not opened by a hand', async () => {
+    const screen = draw([waiting('physics'), vault('heat')])
+
+    await screen.findAll('.welcome__row--vault')[0]!.trigger('click')
+
+    expect(screen.emitted('opens')).toBeUndefined()
+  })
+
+  // The letter is the whole of how a row is opened from the keyboard, so a row
+  // that opens nothing carries none. The rows below it keep theirs.
+  it('carries no letter, and moves no letter off the rows beside it', () => {
+    expect(caps(draw([waiting('physics'), vault('heat')]))).toStrictEqual(['B'])
+  })
+
+  it('is opened once the window has answered for it', async () => {
+    const screen = draw([vault('physics')])
+
+    await screen.findAll('.welcome__row--vault')[0]!.trigger('click')
+
+    expect(screen.emitted('opens')).toStrictEqual([['physics']])
+  })
+})
+
 describe('the room the list will fill', () => {
   const drawEmpty = (vaults: readonly Held[]) =>
     mount(Welcome, {

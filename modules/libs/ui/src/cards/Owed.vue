@@ -7,11 +7,17 @@
  * One number, and the word for what it counts. What is owed and what has never
  * been asked are both cards to sit down to, and a person choosing where to
  * start is not choosing between them.
+ *
+ * A count that has not been worked out yet is drawn as the shape of the figure
+ * it will be, in the same box, so the row it stands in does not move when the
+ * figure lands.
  */
+import Coming from '../waiting/Coming.vue'
+
 withDefaults(
   defineProps<{
-    /** Cards waiting today: owed, and never asked. */
-    waiting: number
+    /** Cards waiting today: owed, and never asked. Nothing until it is counted. */
+    waiting: number | null
     /**
      * The number alone. Where a list is long and the room is short, the word is
      * said once above the list and not on every row of it.
@@ -25,8 +31,15 @@ withDefaults(
 </script>
 
 <template>
-  <span class="owed" :class="{ 'owed--over': over }">
-    {{ waiting }}<template v-if="!bare"> to review</template>
+  <span
+    class="owed"
+    :class="{ 'owed--over': over }"
+    :aria-label="waiting === null ? 'still being counted' : undefined"
+  >
+    <!-- Two figures wide, which is what a day's cards come to for most
+         collections, and the box keeps the height of the line either way. -->
+    <Coming v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
+    <template v-else>{{ waiting }}<template v-if="!bare"> to review</template></template>
   </span>
 </template>
 
