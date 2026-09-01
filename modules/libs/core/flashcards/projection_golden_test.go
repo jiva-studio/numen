@@ -196,13 +196,16 @@ type goldenMaterial struct {
 
 // goldenMaterials is the spread of vaults the projections are drawn over:
 // nothing at all, a material nobody has begun, one standing on a large debt,
-// and one answered every which way.
+// one answered every which way, and one where the day runs out with both the
+// debt and the unbegun material still holding cards, so that the share the day
+// is split in decides what it asks for.
 func goldenMaterials(by history.Scheduler) []goldenMaterial {
 	return []goldenMaterial{
 		{name: "an empty vault", at: nil, unseen: 0},
 		{name: "nothing begun", at: nil, unseen: 40},
 		{name: "a small debt", at: goldenAt(by, 25, 3), unseen: 5},
 		{name: "a large debt", at: goldenAt(by, 90, 40), unseen: 60},
+		{name: "more than a day holds of each", at: goldenAt(by, 120, 120), unseen: 200},
 	}
 }
 
