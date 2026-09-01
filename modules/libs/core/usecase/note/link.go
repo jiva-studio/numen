@@ -123,6 +123,10 @@ type Names interface {
 	Named(ctx context.Context, vaultID, name string) ([]string, error)
 }
 
+// ErrUnaddressable is a note no link reaches: its name carries a character a
+// link is read up to. Nothing is written.
+var ErrUnaddressable = errors.New("no link reaches a note named this")
+
 // Addressed is how a note the application knows by path is written into a
 // link: by its name, or by its path where the name would mean another note.
 //
@@ -134,6 +138,12 @@ func Addressed(ctx context.Context, names Names, vaultID, path string) (domain.A
 	name := domain.Basename(path)
 	if name == "" {
 		return domain.Address{}, errors.New("a link needs a note to go to")
+	}
+	// A link is read up to the first `#` or `|`, whichever comes first, and
+	// what stands after it names a heading or the words to show. A name
+	// carrying one is read back as the name in front of it.
+	if strings.ContainsAny(name, "#|") {
+		return domain.Address{}, fmt.Errorf("%w: %s", ErrUnaddressable, name)
 	}
 	shares, err := names.Named(ctx, vaultID, name)
 	if err != nil {
