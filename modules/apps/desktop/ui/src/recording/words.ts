@@ -4,6 +4,8 @@ export const WORDS = {
   transcript: 'What was heard',
   /** Nothing has listened to this recording. */
   silence: 'No transcript yet.',
-  /** A run is going, and more words arrive as they are heard. */
-  listening: 'Still listening…',
+  /** A run is going, and more words arrive as they are written down. */
+  transcribing: 'Still transcribing…',
+  /** This window has nothing to play sound with, and the words stand alone. */
+  unplayable: 'This system cannot play sound here. The words are below.',
 }

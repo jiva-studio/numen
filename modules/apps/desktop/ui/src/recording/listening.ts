@@ -49,6 +49,50 @@ export interface Player {
   seek(ms: number): void
 }
 
+/** What a container of a recording is played as. */
+const SOUNDS: Record<string, string> = {
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  flac: 'audio/flac',
+}
+
+/**
+ * Whether this window can play a kind of sound.
+ *
+ * A build whose media backend is missing answers no to every kind, and a player
+ * made for one takes the window down with it. The answer is the window's and
+ * not one tab's, so it is asked once however many recordings are open.
+ */
+const asked = new Map<string, boolean>()
+
+/** Answers is what says whether a kind of sound can be played. A test says. */
+export type Answers = (type: string) => boolean
+
+let answers: Answers = (type) => {
+  try {
+    return document.createElement('audio').canPlayType(type) !== ''
+  } catch {
+    return false
+  }
+}
+
+/** Asking puts a different answer in front of the window's own. */
+export function asking(said: Answers) {
+  answers = said
+  asked.clear()
+}
+
+/** Playable is whether a recording at a path can be played in this window. */
+export function playable(path: string): boolean {
+  const type = SOUNDS[path.split('.').pop()?.toLowerCase() ?? '']
+  if (!type) return false
+  const held = asked.get(type)
+  if (held !== undefined) return held
+  const can = answers(type)
+  asked.set(type, can)
+  return can
+}
+
 /** A millisecond written out as a person reads a clock. */
 export const timed = (ms: number): string => {
   const whole = Math.max(0, Math.floor(ms / 1000))
@@ -183,6 +227,8 @@ export function listening(recordings: Recordings, path: string) {
   return {
     path,
     address,
+    /** Whether this window can play the recording at all. */
+    playable: playable(path),
     cues,
     length,
     heard,

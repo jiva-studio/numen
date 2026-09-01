@@ -5,8 +5,16 @@
  * words are asked for again are decisions, and they are the ones asked about
  * here.
  */
-import { describe, expect, it } from 'vitest'
-import { listening, timed, type Cue, type Listened, type Recordings } from './listening'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  asking,
+  listening,
+  playable,
+  timed,
+  type Cue,
+  type Listened,
+  type Recordings,
+} from './listening'
 
 const CUES: readonly Cue[] = [
   { text: 'The first thing said.', from: 0, to: 2_000 },
@@ -260,5 +268,36 @@ describe('a moment written out', () => {
     expect(timed(9_400)).toBe('0:09')
     expect(timed(125_000)).toBe('2:05')
     expect(timed(3_725_000)).toBe('1:02:05')
+  })
+})
+
+describe('what this window can play', () => {
+  afterEach(() => asking(() => true))
+
+  it('asks the window once, however many recordings are open', () => {
+    let asks = 0
+    asking((type) => {
+      asks++
+      return type === 'audio/mpeg'
+    })
+
+    expect(playable('a/talk.mp3')).toBe(true)
+    expect(playable('b/other.mp3')).toBe(true)
+    expect(playable('c/third.mp3')).toBe(true)
+    expect(asks).toBe(1)
+
+    expect(playable('d/lecture.wav')).toBe(false)
+    expect(asks).toBe(2)
+  })
+
+  it('plays nothing it has no name for', () => {
+    asking(() => true)
+    expect(playable('talk.m4a')).toBe(false)
+    expect(playable('talk')).toBe(false)
+  })
+
+  it('plays nothing where the window answers for nothing', () => {
+    asking(() => false)
+    expect(playable('talk.mp3')).toBe(false)
   })
 })

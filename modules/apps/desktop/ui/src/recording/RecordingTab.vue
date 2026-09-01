@@ -32,15 +32,17 @@ const moved = () => props.held.moved((player.value?.currentTime ?? 0) * 1000)
 <template>
   <div class="recording">
     <audio
+      v-if="props.held.playable"
       ref="player"
       class="recording__player"
       controls
-      preload="metadata"
+      preload="none"
       :src="props.held.address"
       :aria-label="words.player"
       @timeupdate="moved"
       @seeked="moved"
     />
+    <p v-else class="recording__note">{{ words.unplayable }}</p>
 
     <ol
       v-if="props.held.cues.value.length"
@@ -64,7 +66,7 @@ const moved = () => props.held.moved((player.value?.currentTime ?? 0) * 1000)
     <p v-if="props.held.trouble.value" class="recording__note">
       {{ props.held.trouble.value }}
     </p>
-    <p v-else-if="props.held.working.value" class="recording__note">{{ words.listening }}</p>
+    <p v-else-if="props.held.working.value" class="recording__note">{{ words.transcribing }}</p>
     <p v-else-if="!props.held.cues.value.length" class="recording__note">{{ words.silence }}</p>
   </div>
 </template>
