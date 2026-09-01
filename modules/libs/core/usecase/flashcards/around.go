@@ -143,6 +143,10 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 				// A deck points at the preset it is scheduled by. A preset is how
 				// the cards come round and not what they were written from.
 				continue
+			case domain.TypeDeck:
+				// Another deck is more cards to answer, and this is what the cards
+				// in front of a person were written from.
+				continue
 			}
 			one.Title = ref.Title
 		}
