@@ -4,7 +4,7 @@
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
 - **Amends:** ADR-0027 (a fourth value of `type`)
-- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038
+- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038, ADR-0039
 
 ## Context
 
@@ -60,14 +60,6 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 **Inside one preset, one budget closes the day**, and which of them it is the preset's goal says (ADR-0036).
 
 **How loaded each day is, is one table.** A day is one day whatever presets fall on it, so spreading a card reads what every preset has already put there and applies its own shares and its own willingness to move a card. The projection behind the control does this over the cards of one preset; the table across every preset arrives with the scheduling that reads it.
-
-### A day of the week carries a share of the load
-
-`load` is how much of a day's load each day of the week carries, in per cent, under the first three letters of the day's name. A day the preset does not name carries the whole of it.
-
-That share scales every budget the day keeps: a Saturday at 50 holds half the minutes and half of each card count. **A day at nothing schedules nothing**, the way a governing budget of zero is a pause, and it is a pause of that one day.
-
-The share is read whether or not the days are evened out. It is what a day admits, and evening the days out is what moves a card off one.
 
 ### One rule says which day a card lands on
 

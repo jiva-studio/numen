@@ -46,7 +46,8 @@ The frontmatter is shared, not owned:
 | `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | ADR-0034, ADR-0036 |
 | `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | ADR-0037 |
 | `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | ADR-0038 |
-| `load`, `even_load` | How the decks pointing at this preset are scheduled. Read on a preset and nowhere else. | ADR-0034 |
+| `load` | The share of a day's load each day of the week carries. Read on a preset and nowhere else. | ADR-0039 |
+| `even_load` | Whether a card is moved off the day it fell on. Read on a preset and nowhere else. | ADR-0034 |
 
 A note with no `title` is named by its filename. A heading in the prose names nothing: what a person writes in the body is the body, and typing one does not rename the note.
 

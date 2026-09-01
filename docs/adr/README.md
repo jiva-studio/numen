@@ -69,6 +69,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0036 — The goal names the budget that closes the day](0036-the-goal-names-the-budget.md)
 - [ADR-0037 — A preset says what counts as learned, and a date aims at it](0037-what-counts-as-learned.md)
 - [ADR-0038 — What a day's budget is spent on, and in what order](0038-what-a-days-budget-is-spent-on.md)
+- [ADR-0039 — A day of the week carries a share of the load](0039-a-day-of-the-week-carries-a-share.md)
 - [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
 
 ### Agents
