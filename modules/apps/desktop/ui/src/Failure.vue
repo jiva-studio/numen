@@ -20,7 +20,7 @@ const props = defineProps<{
 .failure {
   margin: auto;
   font-family: var(--numen-font-sans);
-  font-size: 0.9rem;
+  font-size: var(--numen-text-2);
   color: var(--numen-alarm);
   max-width: 40rem;
   text-align: center;

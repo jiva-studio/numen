@@ -49,10 +49,9 @@ const pressed = (press: MouseEvent) => {
 </template>
 
 <style scoped>
-/* An answer is set a shade above the size a note is read at, and every size in
-   the scale above it is in `em`. */
+/* An answer is marked-up text, and is set at the size that is read at. */
 .prose {
-  font-size: calc(var(--numen-reading-size) * 14 / 13);
+  font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
 }

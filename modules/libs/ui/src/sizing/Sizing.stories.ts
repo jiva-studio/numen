@@ -37,7 +37,7 @@ const CHROME = [
 ] as const
 
 /** What the text multiplier reaches, over whatever the interface is drawing. */
-const READING = ['--numen-reading-size'] as const
+const READING = ['--numen-reading-size', '--numen-prose-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
 const NEITHER = [
@@ -67,6 +67,7 @@ const AS_DESIGNED: Record<Token, number> = {
   '--numen-field-text-inset': 14,
   '--numen-turn-gap': 16,
   '--numen-reading-size': 13,
+  '--numen-prose-size': 14,
   '--numen-stroke': 1,
   '--numen-ring-width': 2,
   '--numen-plex-radius': 6,

@@ -105,10 +105,10 @@ onBeforeUnmount(() => watching?.disconnect())
      where it passes behind an edge, and how far the composer stands off the
      foot. */
   --inset: var(--numen-gutter);
-  --fade: 20px;
-  --lift: 12px;
+  --fade: 1.25rem;
+  --lift: 0.75rem;
   /* What is left between the last turn and the composer written over it. */
-  --breath: 28px;
+  --breath: 1.75rem;
 
   position: relative;
   block-size: 100%;

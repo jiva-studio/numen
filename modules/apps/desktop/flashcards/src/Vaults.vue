@@ -88,6 +88,6 @@ const waiting = computed(
   align-items: center;
   gap: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 </style>

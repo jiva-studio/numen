@@ -136,7 +136,7 @@ defineEmits<{
   inset-block-end: var(--numen-inset);
   inset-inline-end: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 
 .welcome__column {
@@ -248,7 +248,7 @@ defineEmits<{
 .welcome__aside {
   overflow: hidden;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -259,7 +259,7 @@ defineEmits<{
 .welcome__state {
   flex: none;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 
 /* Where the rows will stand, so what is said while they are on their way is
@@ -275,7 +275,7 @@ defineEmits<{
   margin: 0 0 0.25rem;
   padding-inline: 0.6rem;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-weight: inherit;
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;
