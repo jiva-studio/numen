@@ -382,10 +382,19 @@ const attends = (): Attention => ({
   }),
 })
 
-/** The same, told to the application whenever any of it changes. */
+/** The same, told to the application as the window opens and whenever it changes. */
 const attention = computed<Attention>(() => attends())
-// Nothing waits on this arriving.
-watch(attention, (open) => void core.attending(open).catch(() => {}))
+watch(
+  attention,
+  (open) => {
+    void core.attending(open).catch((why) => {
+      // An agent asking what is open is answered from what last arrived, so a
+      // report that never lands leaves it reading a window that has moved on.
+      console.error('what the window has open was not told:', why)
+    })
+  },
+  { immediate: true },
+)
 
 /** What kind of tab this is drawn as, before the name it carries. */
 const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')

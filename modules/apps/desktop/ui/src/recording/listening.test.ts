@@ -15,6 +15,7 @@ import {
   type Listened,
   type Recordings,
 } from './listening'
+import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [
   { text: 'The first thing said.', from: 0, to: 2_000 },
@@ -304,5 +305,90 @@ describe('what this window can play', () => {
   it('plays nothing where the window answers for nothing', () => {
     asking(() => false)
     expect(playable('talk.mp3')).toBe(false)
+  })
+})
+
+describe('a transcript asked for twice at once', () => {
+  it('keeps the answer to the later asking, however they arrive', async () => {
+    // The first asking is answered with fewer words, and answered last.
+    const early: readonly Cue[] = [CUES[0]!]
+    const first: { answer: ((cues: readonly Cue[]) => void) | null } = { answer: null }
+
+    const recordings: Recordings = {
+      listened: async () => LISTENED,
+      cues: () =>
+        first.answer
+          ? Promise.resolve(CUES)
+          : new Promise<readonly Cue[]>((done) => {
+              first.answer = done
+            }),
+      plays: async () => null,
+    }
+
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    heard.ticks(true)
+    await settled()
+
+    // The later asking lands first, then the earlier one answers.
+    first.answer?.(early)
+    await settled()
+
+    expect(heard.cues.value).toStrictEqual(CUES)
+  })
+})
+
+describe('a player that could not load the recording', () => {
+  it('says which of the failures it was', async () => {
+    const said: Record<number, string> = {}
+    for (const code of [1, 2, 3, 4]) {
+      const { recordings } = talk()
+      const heard = listening(recordings, 'talks/Ants.mp3')
+      heard.failed(code)
+      said[code] = heard.broken.value
+    }
+
+    expect(new Set(Object.values(said)).size).toBe(4)
+    expect(said[2]).toContain('read from the vault')
+    expect(said[3]).toContain('cannot decode')
+    expect(said[4]).toContain('does not play recordings of this kind')
+  })
+
+  it('says something for a failure it has no name for', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+
+    heard.failed(undefined)
+
+    expect(heard.broken.value).not.toBe('')
+  })
+})
+
+describe('what the tab says where the words would stand', () => {
+  it('is what went wrong before it is anything else', async () => {
+    const { recordings } = talk(new Error('the words are being written'))
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    heard.ticks(true)
+
+    expect(heard.note.value).toContain('the words are being written')
+  })
+
+  it('is that a run is going, where nothing went wrong', async () => {
+    const { recordings } = talk([])
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    heard.ticks(true)
+
+    expect(heard.note.value).toBe(WORDS.transcribing)
+  })
+
+  it('is nothing at all once there are words', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.note.value).toBe('')
   })
 })

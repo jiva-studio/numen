@@ -4,10 +4,9 @@
  * it.
  *
  * A cue is a place in the recording, so choosing one plays from there. What the
- * recording could not be read as is said where the words would stand.
+ * tab draws is what `listening` hands it, and nothing is worked out here.
  */
 import { ref, watch } from 'vue'
-import { timed } from './listening'
 import { WORDS as words } from './words'
 import type { Held } from './kind'
 
@@ -15,6 +14,9 @@ const props = defineProps<{ held: Held }>()
 
 /** The player, which stands only while the tab is drawn. */
 const player = ref<HTMLAudioElement | null>(null)
+
+/** The lines of the transcript, in the order they are drawn. */
+const said = ref<HTMLElement[]>([])
 
 watch(player, (element) => {
   if (!element) return props.held.plays(null)
@@ -24,6 +26,13 @@ watch(player, (element) => {
     },
   })
 })
+
+// The words move under the recording as it plays: the line being said is
+// brought back into view.
+watch(
+  () => props.held.lines.value.findIndex((line) => line.now),
+  (at) => said.value[at]?.scrollIntoView({ block: 'nearest' }),
+)
 
 /** Where the player stands now, in the milliseconds the words are counted in. */
 const moved = () => props.held.moved((player.value?.currentTime ?? 0) * 1000)
@@ -35,7 +44,7 @@ const failed = () => props.held.failed(player.value?.error?.code)
 <template>
   <div class="recording">
     <audio
-      v-if="props.held.playable && props.held.address.value"
+      v-if="props.held.playing.value"
       ref="player"
       class="recording__player"
       controls
@@ -52,29 +61,27 @@ const failed = () => props.held.failed(player.value?.error?.code)
     </p>
 
     <ol
-      v-if="props.held.cues.value.length"
-      class="recording__said"
+      v-if="props.held.lines.value.length"
+      class="recording__transcript"
       :aria-label="words.transcript"
     >
-      <li v-for="(cue, at) in props.held.cues.value" :key="at">
+      <li v-for="(line, at) in props.held.lines.value" :key="at" ref="said">
         <button
           type="button"
           class="recording__cue"
-          :class="{ 'recording__cue--now': at === props.held.current.value }"
-          :aria-current="at === props.held.current.value ? 'true' : undefined"
-          @click="props.held.go(cue.from)"
+          :class="{ 'recording__cue--now': line.now }"
+          :aria-current="line.now ? 'true' : undefined"
+          @click="props.held.go(line.from)"
         >
-          <span class="recording__at">{{ timed(cue.from) }}</span>
-          <span class="recording__text">{{ cue.text }}</span>
+          <span class="recording__at">{{ line.at }}</span>
+          <span class="recording__text">{{ line.text }}</span>
         </button>
       </li>
     </ol>
 
-    <p v-if="props.held.trouble.value" class="recording__note">
-      {{ props.held.trouble.value }}
+    <p v-if="props.held.note.value" class="recording__note">
+      {{ props.held.note.value }}
     </p>
-    <p v-else-if="props.held.working.value" class="recording__note">{{ words.transcribing }}</p>
-    <p v-else-if="!props.held.cues.value.length" class="recording__note">{{ words.silence }}</p>
   </div>
 </template>
 
@@ -85,8 +92,7 @@ const failed = () => props.held.failed(player.value?.error?.code)
   /* Between the player and the words, and between one cue and the next. */
   --recording-apart: 1rem;
   --recording-near: 0.25rem;
-  /* The tab is what scrolls, so the bar stands at the edge of the pane and not
-     beside the words. */
+  /* The tab is what scrolls, so the bar stands at the edge of the pane. */
   block-size: 100%;
   overflow-y: auto;
   padding: var(--numen-gutter);
@@ -95,9 +101,8 @@ const failed = () => props.held.failed(player.value?.error?.code)
   color: var(--numen-node-fg);
 }
 
+/* Held at the top: the pause stays where a person can reach it. */
 .recording__player {
-  /* Held at the top: an hour of words scrolls past, and the pause is where it
-     was left. */
   position: sticky;
   inset-block-start: 0;
   z-index: 1;
@@ -106,24 +111,20 @@ const failed = () => props.held.failed(player.value?.error?.code)
   max-inline-size: var(--recording-measure);
   margin-inline: auto;
   margin-block-end: var(--recording-apart);
-  background: var(--numen-node-bg);
 }
 
 /* The words are read in one column, centred in whatever room the pane has. */
-.recording__said {
+.recording__transcript {
   max-inline-size: var(--recording-measure);
   margin: 0 auto;
   padding: 0;
   list-style: none;
 }
 
-/* One cue: the moment it was spoken at, and what was said then. The one being
-   said is lit and not thickened: a line that changes weight moves the words
-   under it. */
+/* One cue: the moment it was spoken at, and what was said then. The times take
+   the room the longest of them needs, so an hour in and a minute in line up. */
 .recording__cue {
   display: grid;
-  /* The times take the room the longest of them needs and no more, so an hour
-     in and a minute in line up without a column set by hand. */
   grid-template-columns: max-content 1fr;
   gap: 0 var(--recording-near);
   inline-size: 100%;
@@ -140,9 +141,10 @@ const failed = () => props.held.failed(player.value?.error?.code)
   background: var(--numen-field-bg);
 }
 
-
+/* The line being said is lit in the ink a selection is drawn in, so it is told
+   apart from the line under the pointer. */
 .recording__cue--now {
-  background: var(--numen-field-bg);
+  background: var(--numen-selection);
 }
 
 .recording__at {

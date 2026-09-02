@@ -27,10 +27,7 @@ export interface Cue {
 export interface Listened {
   readonly length: number
   readonly heard: number
-  /**
-   * Where the recording is played from. The application answers it, because the
-   * socket it stands on is opened afresh for every run.
-   */
+  /** Where the recording is played from, as the application answers it. */
   readonly media: string
 }
 
@@ -53,29 +50,30 @@ export interface Player {
   seek(ms: number): void
 }
 
-// What each of the player's own four failures is called. They are the codes a
-// media element reports, and each names somebody else's thing to put right.
+// The codes a MediaError carries, under the names the standard gives them. A
+// window with no media element of its own defines none of them.
+const MEDIA_ERR_ABORTED = 1
+const MEDIA_ERR_NETWORK = 2
+const MEDIA_ERR_DECODE = 3
+const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
+
+/** What each of them is called where a person reads it. */
 const FAILED: Record<number, string> = {
-  1: WORDS.stopped,
-  2: WORDS.unreached,
-  3: WORDS.undecoded,
-  4: WORDS.unwanted,
+  [MEDIA_ERR_ABORTED]: WORDS.stopped,
+  [MEDIA_ERR_NETWORK]: WORDS.unreached,
+  [MEDIA_ERR_DECODE]: WORDS.undecoded,
+  [MEDIA_ERR_SRC_NOT_SUPPORTED]: WORDS.unwanted,
 }
 
-/** What a container of a recording is played as. */
-const SOUNDS: Record<string, string> = {
+/** The media type each container is played as. */
+const TYPES: Record<string, string> = {
   mp3: 'audio/mpeg',
   wav: 'audio/wav',
   flac: 'audio/flac',
 }
 
-/**
- * Whether this window can play a kind of sound.
- *
- * A build whose media backend is missing answers no to every kind, and a player
- * made for one takes the window down with it. The answer is the window's and
- * not one tab's, so it is asked once however many recordings are open.
- */
+// Whether this window can play a kind of sound. The answer is the window's and
+// is asked once, however many recordings are open.
 const asked = new Map<string, boolean>()
 
 /** Answers is what says whether a kind of sound can be played. A test says. */
@@ -97,7 +95,7 @@ export function asking(said: Answers) {
 
 /** Playable is whether a recording at a path can be played in this window. */
 export function playable(path: string): boolean {
-  const type = SOUNDS[path.split('.').pop()?.toLowerCase() ?? '']
+  const type = TYPES[path.split('.').pop()?.toLowerCase() ?? '']
   if (!type) return false
   const held = asked.get(type)
   if (held !== undefined) return held
@@ -144,8 +142,7 @@ export function listening(recordings: Recordings, path: string) {
   const working = ref(false)
   /** What this recording could not do, in words the tab puts up for it. */
   const trouble = ref('')
-  /** What the player could not do. It stands under the player, which is whose
-   * failure it is. */
+  /** What the player could not do. It stands under the player. */
   const broken = ref('')
 
   /** Which cue is being said now, and nothing where none has begun. */
@@ -161,22 +158,38 @@ export function listening(recordings: Recordings, path: string) {
   let wanted = -1
 
   /**
+   * asking counts the times the words have been asked for, and answered holds
+   * the last count to have landed. A run being written down is asked about
+   * again while it goes, and two answers may arrive in either order; the older
+   * of them carries fewer words, and writing it down would take words off the
+   * screen a person is reading.
+   */
+  let asking = 0
+  let answered = 0
+
+  /**
    * What the recording is and what has been heard in it. A build that cannot
    * read a transcript says so where the words would stand, and the recording
    * still plays.
    */
   const hear = async () => {
+    const count = ++asking
     try {
       const said = await recordings.listened(path)
-      if (!open) return
+      if (!open || count < answered) return
+      answered = count
       length.value = said.length
       heard.value = said.heard
       address.value = said.media
-      cues.value = await recordings.cues(path)
-      if (!open) return
+
+      const cued = await recordings.cues(path)
+      if (!open || count < answered) return
+      answered = count
+      cues.value = cued
       trouble.value = ''
     } catch (error) {
-      if (!open) return
+      if (!open || count < answered) return
+      answered = count
       trouble.value = String(error)
     }
   }
@@ -198,10 +211,7 @@ export function listening(recordings: Recordings, path: string) {
     now.value = Math.max(0, ms)
   }
 
-  /**
-   * The player could not load the recording, and says which of the four things
-   * went wrong. Each is somebody else's to put right, so each is named.
-   */
+  /** The player could not load the recording, and says which failure it was. */
   const failed = (code: number | undefined) => {
     if (!open) return
     broken.value = FAILED[code ?? 0] ?? WORDS.unreadable
@@ -250,11 +260,36 @@ export function listening(recordings: Recordings, path: string) {
     cues.value = []
   }
 
+  /**
+   * The words as the tab draws them: the moment each was said at, on a clock,
+   * and which of them is being said now.
+   */
+  const lines = computed(() =>
+    cues.value.map((cue, at) => ({
+      text: cue.text,
+      from: cue.from,
+      at: timed(cue.from),
+      now: at === current.value,
+    })),
+  )
+
+  /** Whether a player stands in the tab at all. */
+  const playing = computed(() => playable(path) && address.value !== '')
+
+  /** What the tab says where the words would stand, and nothing where they do. */
+  const note = computed(() => {
+    if (trouble.value) return trouble.value
+    if (working.value) return WORDS.transcribing
+    if (cues.value.length === 0) return WORDS.silence
+    return ''
+  })
+
   return {
     path,
     address,
-    /** Whether this window can play the recording at all. */
-    playable: playable(path),
+    playing,
+    lines,
+    note,
     cues,
     length,
     heard,
