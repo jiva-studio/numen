@@ -174,6 +174,47 @@ func TestATranscriptIsTakenUpWhereTheRunBeforeStopped(t *testing.T) {
 	}
 }
 
+// A batch reaches back over the lines it shares with the one before it, and a
+// run taking up in it reads those lines again. What it says it has read never
+// passes what the transcript holds.
+func TestAResumedRunReadsNoMoreLinesThanTheTranscriptHas(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
+	u, v, shelved, _, hash := hearing(t, nil, words...)
+	u.Lines, u.Overlap, u.Batches = 2, 1, 1
+	if err := shelved.Write(t.Context(), text.Said(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
+		t.Fatal(err)
+	}
+	stood, err := json.Marshal(putting{By: "a proofreader", At: stretch(1).To})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+		t.Fatal(err)
+	}
+
+	furthest := 0
+	u.OnProgress = func(res PutRightResult) {
+		if res.Read > res.Lines {
+			t.Errorf("read %d lines of %d", res.Read, res.Lines)
+		}
+		if res.Left < 0 {
+			t.Errorf("%d lines stand as they were heard", res.Left)
+		}
+		furthest = max(furthest, res.Read)
+	}
+
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Resumed != 2 || res.Lines != 4 {
+		t.Errorf("got %+v", res)
+	}
+	if furthest != 4 {
+		t.Errorf("the run stopped at line %d of 4", furthest)
+	}
+}
+
 func TestOneRunToARecordingBeingPutRight(t *testing.T) {
 	u, v, shelved, by, hash := hearing(t, nil, "first thing", "secnd thing")
 	shelved.hold(text.Partial(text.ASR, hash))

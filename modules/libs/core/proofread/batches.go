@@ -41,6 +41,9 @@ func Scanned(prose string, boxes []lit.Box) []Batch {
 //
 // A line is known by the index of its cue in the transcript, and a batch by its
 // place in the run. A cue saying nothing carries no line.
+//
+// A run of lines is answered for inside one batch, so overlap is how far a
+// sentence broken over a cut may reach and still be put back together.
 func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
@@ -57,7 +60,7 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{At: len(out), Lines: lines[start:end:end]})
+		out = append(out, Batch{At: len(out), Lines: lines[start:end:end], Joining: true})
 		if end == len(lines) {
 			break
 		}

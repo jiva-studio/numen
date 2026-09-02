@@ -58,6 +58,7 @@ func putRightCommand(
 		By:      by,
 		Lines:   profile.BatchSize,
 		Overlap: profile.Overlap,
+		Batches: profile.InFlight,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err
@@ -84,7 +85,7 @@ func putRightCommand(
 	case res.None:
 		fmt.Fprintf(out, "%s has no transcript to proofread\n", res.Path)
 	default:
-		fmt.Fprintf(out, "put %d lines of %s right over %d, %d of them left as they were heard, in %s\n",
+		fmt.Fprintf(out, "put %d lines of %s right over %d lines, %d batches left as they were heard, in %s\n",
 			res.Fixed, res.Path, res.Read, res.Refused, time.Since(started).Round(time.Second))
 	}
 	return nil

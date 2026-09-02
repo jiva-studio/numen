@@ -17,12 +17,13 @@ const MaxEditDistance = 0.30
 //
 // A mark of ours coming back refuses the batch, as does a reply row that is not
 // a number the batch carries and, after it, the line, and as does an answer
-// that empties a line which said something.
+// with no letters over a line that had them. A run of lines answered for as one
+// refuses a batch that does not put lines together.
 //
 // A correction saying what the line already says is dropped, as is one that
 // only puts something wordless in front of it, and as is one whose letters
 // stand further than maxDistance from the line as read. A maxDistance at or
-// below zero holds a correction to no distance at all.
+// below zero sets no limit.
 func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
@@ -47,6 +48,9 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if !named {
 			return nil, false
 		}
+		if through > at && !batch.Joining {
+			return nil, false
+		}
 		// Every line a run puts together has to be one the batch carries: a run
 		// reaching past them is a run answering about lines nobody asked about.
 		joined := was
@@ -64,7 +68,9 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
 			return nil, false
 		}
-		if text == "" && strings.TrimSpace(was) != "" {
+		// An answer of nothing, or of marks that are not words, over a line that
+		// said something empties it.
+		if len(letters(text)) == 0 && len(letters(was)) > 0 {
 			return nil, false
 		}
 		// A run answered with what its lines already say is still a change:

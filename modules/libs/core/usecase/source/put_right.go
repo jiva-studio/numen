@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -40,7 +42,8 @@ type PutRight struct {
 	// settled between them. Zero takes the default.
 	Overlap int
 
-	// Batches is how many batches one request carries. Zero takes the default.
+	// Batches is how many batches one request carries, which is how many a
+	// proofreader may be asked about at once. Zero takes the default.
 	Batches int
 
 	// Cut makes a source's chunks. It is called as the words are written down,
@@ -145,8 +148,11 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	}
 
 	batches := proofread.Spoken(cues, u.lines(), u.overlap())
-	res.Lines = linesTo(cues, cues[len(cues)-1].To)
-	res.Resumed = linesTo(cues, stood.At)
+	// A batch reaches back over the lines it shares with the one before it, so
+	// what this run counts as read begins where the run before it stopped.
+	from := unasked(cues, stood.At)
+	res.Lines = linesBefore(cues, len(cues))
+	res.Resumed = linesBefore(cues, from)
 	res.Read, res.Left = res.Resumed, 0
 	u.progress(res)
 
@@ -161,7 +167,9 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		return res, err
 	}
 
-	asked, fixed := map[int]bool{}, map[int]bool{}
+	// together is every cue a run of lines has been put together into, and every
+	// cue such a run swallowed.
+	asked, fixed, together := map[int]bool{}, map[int]bool{}, map[int]bool{}
 	for ; at < len(batches); at += u.batch() {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
@@ -178,27 +186,47 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		res.Refused += refused(group, replies, unbounded)
 		for _, batch := range group {
 			for _, line := range batch.Lines {
-				asked[line.At] = true
+				if line.At >= from {
+					asked[line.At] = true
+				}
 			}
 		}
+
+		wrote := false
 		put := proofread.Gathered(group, replies, unbounded)
-		for line, said := range put {
+		// The corrections go in by the line, so what a transcript ends as does
+		// not turn on the order a map hands them back in.
+		for _, line := range slices.Sorted(maps.Keys(put)) {
+			said := put[line]
+			if joined(together, said) {
+				continue
+			}
 			cues[line].Text = said.Text
-			fixed[line] = true
+			wrote = true
+			if line >= from {
+				fixed[line] = true
+			}
+			if !said.Joins() {
+				continue
+			}
 			// A sentence put back together is one cue, from the first moment of
 			// the run to the last. The cues it swallowed say nothing, and
 			// nothing is what a transcript writes them as.
-			for gone := said.At + 1; gone <= said.Through && gone < len(cues); gone++ {
-				cues[said.At].To = max(cues[said.At].To, cues[gone].To)
+			together[line] = true
+			for gone := line + 1; gone <= said.Through; gone++ {
+				cues[line].To = max(cues[line].To, cues[gone].To)
 				cues[gone].Text = ""
-				fixed[gone] = true
+				together[gone] = true
+				if gone >= from {
+					fixed[gone] = true
+				}
 			}
 		}
 		res.Fixed, res.Left = len(fixed), len(asked)-len(fixed)
 
 		// The words are written, the source is cut, and the count stands after
 		// both: a batch no count claims is one the next run asks about again.
-		if len(put) > 0 {
+		if wrote {
 			if err := store.Write(ctx, stands, transcript.Marshal(cues)); err != nil {
 				return res, err
 			}
@@ -287,11 +315,34 @@ func refused(asked []proofread.Batch, replies map[int]string, apart float64) int
 
 // after is the first batch holding a line no run has asked about.
 func after(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
+	from := unasked(cues, ms)
 	at := 0
-	for at < len(batches) && cues[last(batches[at])].To <= ms {
+	for at < len(batches) && last(batches[at]) < from {
 		at++
 	}
 	return at
+}
+
+// unasked is the first line no run has asked about. A line ending at the moment
+// a run reached is one that run asked about.
+func unasked(cues []transcript.Cue, ms int) int {
+	for at, cue := range cues {
+		if cue.To > ms {
+			return at
+		}
+	}
+	return len(cues)
+}
+
+// joined says whether a correction answers about a line already put together
+// with another. Those words no longer stand on their own.
+func joined(together map[int]bool, said proofread.Line) bool {
+	for at := said.At; at <= said.Through; at++ {
+		if together[at] {
+			return true
+		}
+	}
+	return false
 }
 
 // beyond is the moment a run of batches reaches to. Each batch reaches further
@@ -305,21 +356,17 @@ func last(batch proofread.Batch) int {
 	return batch.Lines[len(batch.Lines)-1].At
 }
 
-// linesTo is how many lines a transcript reads as up to a moment. A cue saying
+// linesBefore is how many of the cues before one carry a line. A cue saying
 // nothing is no line.
-func linesTo(cues []transcript.Cue, ms int) int {
+func linesBefore(cues []transcript.Cue, at int) int {
 	out := 0
-	for _, cue := range cues {
-		if cue.To > ms {
-			break
-		}
+	for _, cue := range cues[:min(at, len(cues))] {
 		if cue.Text != "" {
 			out++
 		}
 	}
 	return out
 }
-
 
 // cut makes this source's chunks from the transcript as it now stands.
 func (u PutRight) cut(ctx context.Context, v domain.Vault, path string) error {

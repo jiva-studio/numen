@@ -30,6 +30,10 @@ func (l Line) Joins() bool { return l.Through > l.At }
 type Batch struct {
 	At    int
 	Lines []Line
+
+	// Joining is whether a reply may answer for a run of these lines as one.
+	// Where it does not, a run refuses the batch.
+	Joining bool
 }
 
 // A line's number is written between marks no recogniser can produce, so a mark
