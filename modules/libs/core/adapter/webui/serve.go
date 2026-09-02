@@ -64,9 +64,10 @@ type Opened struct {
 // showing is the half of the window that belongs to one vault: the passes
 // running behind it and what ends them.
 type showing struct {
-	scan        usecase.Scan
-	refresh     usecase.Refresh
-	recognising *container.Recognising
+	scan         usecase.Scan
+	refresh      usecase.Refresh
+	recognising  *container.Recognising
+	transcribing *container.Transcribing
 	// stop ends every pass this vault started, and ended waits for them.
 	stop  context.CancelFunc
 	ended func()
@@ -289,6 +290,15 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		_ = db.Close()
 		return nil, err
 	}
+
+	// A recording is played over a socket of its own, opened once everything it
+	// answers through is in place. A machine that refuses one leaves the player
+	// with no address, and the words are still read.
+	if playing, why := Listen(api); why != nil {
+		fmt.Fprintf(out, "recordings will not play: %v\n", why)
+	} else {
+		api.Playing = playing
+	}
 	return opened, nil
 }
 
@@ -420,10 +430,22 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		return nil
 	}
 
+	// A transcript the window put right is cut there too.
+	o.API.Cut = recognising.Cut
+
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
 	go recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+
+	// A recording says nothing until a model has listened to it, so the ones
+	// this vault holds no transcript for are work whether or not anybody asks.
+	// What it writes is cut where every other cut happens.
+	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
+	transcribing.Cut = recognising.Cut
+	if o.cfg.Transcribes {
+		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
+	}
 
 	scan := usecase.Scan{
 		Readers:      o.cfg.VaultReaders(),
@@ -449,11 +471,12 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		held, o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
 	return &showing{
-		scan:        scan,
-		refresh:     refresh,
-		recognising: recognising,
-		stop:        stop,
-		ended:       ended,
+		scan:         scan,
+		refresh:      refresh,
+		recognising:  recognising,
+		transcribing: transcribing,
+		stop:         stop,
+		ended:        ended,
 	}, nil
 }
 
@@ -466,9 +489,10 @@ func (o *Opened) leave() {
 	}
 	on.stop()
 	on.ended()
-	// A reading writes to the index, so it ends before anything reads what it
-	// wrote.
+	// A reading and a transcription both write to the index, so they end before
+	// anything reads what they wrote.
 	on.recognising.Wait()
+	on.transcribing.Wait()
 	// The documents held open go with the vault, and each gives back the worker
 	// it was holding.
 	if o.API.Viewer != nil {
@@ -560,6 +584,9 @@ func (o *Opened) Close() error {
 	if o.API.Viewer != nil {
 		o.API.Viewer.close()
 	}
+	// The socket a recording was played over answers with the vault's files, so
+	// it stops before the vault does.
+	_ = o.API.Playing.Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
 	err := o.stopEmbedder()
@@ -590,6 +617,17 @@ func (o *Opened) Refresh() usecase.Refresh {
 func (o *Opened) Recognising() *container.Recognising {
 	if on := o.on.Load(); on != nil {
 		return on.recognising
+	}
+	return nil
+}
+
+// Transcribing hears a recording, for whoever asks and for the queue behind the
+// vault. It is one job for the window and for an agent alike, so that what a
+// person started through one of them is shown by the other. Nothing while the
+// window has no vault.
+func (o *Opened) Transcribing() *container.Transcribing {
+	if on := o.on.Load(); on != nil {
+		return on.transcribing
 	}
 	return nil
 }
@@ -720,6 +758,11 @@ const settled = 8 * time.Second
 // collectedEvery is how often the batches left with a proofreader are asked
 // after. A batch is answered in hours.
 const collectedEvery = 5 * time.Minute
+
+// heardEvery is how often the vault is asked which recordings owe their text. A
+// recording is dropped into a folder by hand, and one arriving a minute after a
+// round is heard by the next.
+const heardEvery = time.Minute
 
 // nudges are the two ways work reaches the reading behind the window once the
 // first pass is over: a book, which is found and cut before anything is

@@ -207,9 +207,15 @@ func smallChunks(text string, words []word, location string, s Sizes) []Chunk {
 	return out
 }
 
-// enclose puts each small chunk under the first large chunk holding its middle.
-// Both lists ascend, so one pass over each is enough. A small chunk that no
-// large chunk holds is produced only where a large chunk holds its middle.
+// enclose puts each small chunk under a large chunk holding it.
+//
+// The one preferred holds the small chunk whole. A large chunk holding only
+// part of it is what a person is shown, and the words after the part it holds
+// are the rest of the sentence the hit is in.
+//
+// Large chunks overlap, so where none holds the whole of it the middle decides,
+// and that is the first large chunk reaching past it. Both lists ascend and the
+// look forward stops at the middle, so one pass over each is enough.
 func enclose(large, small []Chunk) []Chunk {
 	at := 0
 	for _, c := range small {
@@ -219,9 +225,17 @@ func enclose(large, small []Chunk) []Chunk {
 		if at == len(large) {
 			break
 		}
-		if large[at].Start <= c.middle() {
-			large[at].Small = append(large[at].Small, c)
+		if large[at].Start > c.middle() {
+			continue
 		}
+		under := at
+		for i := at; i < len(large) && large[i].Start <= c.middle(); i++ {
+			if large[i].Start <= c.Start && c.Start+c.Length <= large[i].Start+large[i].Length {
+				under = i
+				break
+			}
+		}
+		large[under].Small = append(large[under].Small, c)
 	}
 	return large
 }

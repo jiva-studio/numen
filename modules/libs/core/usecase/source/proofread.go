@@ -38,9 +38,9 @@ type Proofread struct {
 	// Pages is how many pages are asked about at once. Zero takes the default.
 	Pages int
 
-	// Apart is how far a correction may move a line's letters and still be a
-	// correction. Zero takes what was measured.
-	Apart float64
+	// MaxEditDistance is how far a correction may stand from the line as read
+	// and still be a correction. Zero takes what was measured.
+	MaxEditDistance float64
 
 	// Cut makes a source's chunks. It is called as corrections are written
 	// down, so a book answers about the pages already put right while the rest
@@ -183,7 +183,7 @@ func (u Proofread) lines(
 	ctx context.Context,
 	store port.DerivedStore,
 	area, hash string,
-) ([]proofread.Page, error) {
+) ([]proofread.Batch, error) {
 	artifact, err := store.Read(ctx, text.Artifact(area, hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -199,7 +199,7 @@ func (u Proofread) lines(
 		return nil, err
 	}
 	prose, _ := ocr.Read(artifact)
-	return proofread.Pages(prose, lit.Unpack(boxes)), nil
+	return proofread.Scanned(prose, lit.Unpack(boxes)), nil
 }
 
 // gathered is what a run of pages had put right, and how many of them answered
@@ -208,7 +208,7 @@ func (u Proofread) lines(
 // A page nothing came back about and a page whose reply the gates refused are
 // the same outcome: the page is left as it was read.
 func (u Proofread) gathered(
-	asked []proofread.Page,
+	asked []proofread.Batch,
 	replies map[int]string,
 ) (put []fixes.Line, refused int) {
 	for _, page := range asked {
@@ -216,7 +216,7 @@ func (u Proofread) gathered(
 		if !answered {
 			continue
 		}
-		lines, ok := proofread.Fixed(page, reply, u.apart())
+		lines, ok := proofread.Fixed(page, reply, u.distance())
 		if !ok {
 			refused++
 			continue
@@ -264,7 +264,7 @@ func (u Proofread) await(
 	v domain.Vault,
 	store port.DerivedStore,
 	path string,
-	pages []proofread.Page,
+	pages []proofread.Batch,
 	stood standing,
 	corrections, far string,
 	res ProofreadResult,
@@ -323,7 +323,7 @@ func cropped(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections string,
-	pages []proofread.Page,
+	pages []proofread.Batch,
 	done int,
 ) error {
 	beyond, ok := opening(pages, done)
@@ -354,7 +354,7 @@ func cropped(
 }
 
 // opening is the number of the first line no count claims.
-func opening(pages []proofread.Page, done int) (int, bool) {
+func opening(pages []proofread.Batch, done int) (int, bool) {
 	for _, page := range pages[min(done, len(pages)):] {
 		if len(page.Lines) > 0 {
 			return page.Lines[0].At, true
@@ -396,11 +396,11 @@ func (u Proofread) batch() int {
 	return u.Pages
 }
 
-func (u Proofread) apart() float64 {
-	if u.Apart <= 0 {
-		return proofread.LettersApart
+func (u Proofread) distance() float64 {
+	if u.MaxEditDistance <= 0 {
+		return proofread.MaxEditDistance
 	}
-	return u.Apart
+	return u.MaxEditDistance
 }
 
 func (u Proofread) progress(res ProofreadResult) {

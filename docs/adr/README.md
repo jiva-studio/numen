@@ -49,6 +49,12 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0015 — A book's text is a cache or an artifact](0015-a-books-text-is-a-cache-or-an-artifact.md)
 - [ADR-0016 — A passage is a range of bytes](0016-a-passage-is-a-range-of-bytes.md)
 
+### Recordings
+
+- [ADR-0042 — A recording is a source of its own](0042-a-recording-is-a-source-of-its-own.md)
+- [ADR-0043 — A transcript is WebVTT](0043-a-transcript-is-webvtt.md)
+- [ADR-0044 — A recording is transcribed without being asked](0044-a-recording-is-transcribed-without-being-asked.md)
+
 ### The vault, written
 
 - [ADR-0017 — The application writes to the vault](0017-the-application-writes-to-the-vault.md)
@@ -95,7 +101,9 @@ What the product does, and what its words mean.
 - [flashcards.md](../flashcards.md) — running the cards: what is due, and what an answer is
 - [editing.md](../editing.md) — a note in a tab: saving, renaming, removing
 - [vaults.md](../vaults.md) — several vaults, one window
-- [reading.md](../reading.md) — how a book is read, and proofread
+- [reading.md](../reading.md) — how a book is read
+- [transcribing.md](../transcribing.md) — how a recording is heard
+- [proofreading.md](../proofreading.md) — how a reading and a transcript are put right
 - [agents.md](../agents.md) — what the panel's agent can reach
 - [starting.md](../starting.md) — what the application says when it cannot start
 - [settings.md](../settings.md) — every setting

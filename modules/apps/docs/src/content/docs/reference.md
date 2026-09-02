@@ -110,21 +110,28 @@ How a scanned document is read when a person asks for it.
 | `regions` |  | says what the parts of a page are for. A part the model names that `body` does not carry is not read. |
 | `regions.body` | a list of words | carry what the document says. |
 | `regions.head` | a list of words | open a part of the document, outermost first: where a name stands in the list is how deep the part it opens sits. |
+| `proofread.with` | text | which profile under `indexing.proofreading.profiles` puts a reading right. Empty proofreads nothing. A name no profile carries is an error at startup. |
+| `proofread.automatically` | yes or no | whether a reading is put right as soon as it is read. Off leaves it to the hand. |
 
 ### `indexing.proofreading`
 
-What puts a reading right. `naming` nothing here is naming no proofreader, and a reading is used as it was read.
+What puts a reading right. It holds one threshold and the profiles, and naming no profile is naming no proofreader: a reading is used as it was read.
 
 | | | |
 | --- | --- | --- |
-| `use` | text | `service`, or empty for an installation that proofreads nothing. |
-| `service` |  | a hosted model reached over HTTP. |
-| `service.base_url` | text | points at anything speaking the /v1/chat/completions request shape. |
-| `service.batch_url` | text | a queue the pages are left in and collected from later, at half the price. |
-| `service.name` | text | which model corrects a reading. It stands beside every line it corrected. |
-| `service.key_env` | text | names the environment variable holding the key, for an installation that keeps it out of the file. |
-| `service.pages_at_once` | a number | how many pages one request carries. |
-| `service.letters_apart` | a number | how far a correction may move a line's letters and still be a correction, as a share of the longer of the two. |
+| `max_edit_distance` | a number | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between them, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
+| `profiles` |  | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is your own word. |
+| `profiles.<name>.use` | text | `service` or `agent`. Every key below stands at the profile's own level, and one `use` does not apply to is ignored. |
+| `profiles.<name>.base_url` | text | `service`: points at anything speaking the /v1/chat/completions request shape. |
+| `profiles.<name>.batch_url` | text | `service`: a queue the batches are left in and collected from later, at half the price. Empty asks a batch at a time and waits. |
+| `profiles.<name>.name` | text | `service`: which model corrects a reading. It stands beside every line it corrected. |
+| `profiles.<name>.key_env` | text | `service`: names the environment variable holding the key, for an installation that keeps it out of the file. |
+| `profiles.<name>.key` | text | `service`: the key, where you write it into the file. It is never written back. |
+| `profiles.<name>.command` | a list of words | `agent`: what starts the command line, and anything it is started through. Empty runs `claude` from the path. |
+| `profiles.<name>.model` | text | `agent`: which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. |
+| `profiles.<name>.batch_size` | a number | how many lines one request carries. 40 at a service, 60 at the command line. |
+| `profiles.<name>.overlap` | a number | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. |
+| `profiles.<name>.in_flight` | a number | how many batches are being asked about at any moment. 4 at a service, 2 at the command line. |
 
 ### `agent`
 

@@ -12,6 +12,7 @@
 import {
   ALargeSmall,
   ArrowRightLeft,
+  AudioLines,
   BookOpen,
   Bot,
   Command,
@@ -47,7 +48,18 @@ import {
   type LucideIcon,
 } from '@lucide/vue'
 import type { NoteType } from './core'
-import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, PRESET, SETTINGS, STENCIL } from './workspace'
+import {
+  AGENT,
+  DECK,
+  DOCUMENT,
+  FILES,
+  NOTE,
+  PLEX,
+  PRESET,
+  RECORDING,
+  SETTINGS,
+  STENCIL,
+} from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -109,6 +121,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
+  [RECORDING, AudioLines],
   [DECK, Layers],
   [STENCIL, LayoutTemplate],
   [PRESET, Gauge],

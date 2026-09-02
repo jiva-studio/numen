@@ -213,6 +213,8 @@ func kindOf(kind domain.SourceKind) v1.SourceKind {
 		return v1.SourceKind_SOURCE_KIND_NOTE
 	case domain.KindBook:
 		return v1.SourceKind_SOURCE_KIND_BOOK
+	case domain.KindRecording:
+		return v1.SourceKind_SOURCE_KIND_RECORDING
 	default:
 		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
 	}

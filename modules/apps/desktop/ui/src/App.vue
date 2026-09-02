@@ -12,8 +12,8 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, conversation, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { cards, core, documents, vaults } from './vault'
-import type { Listed } from './core'
+import { cards, core, documents, recordings, vaults } from './vault'
+import type { Attention, Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
@@ -58,7 +58,9 @@ import { stencilling } from './cards/stencil'
 import { presets } from './preset/core'
 import { presetting } from './preset/kind'
 import { settling } from './settings/kind'
-import { documentKind, documenting } from './document/kind'
+import { documentKind, documenting, type Held as DocumentHeld } from './document/kind'
+import { recordingKind } from './recording/kind'
+import { listening, type Listening as RecordingHeld } from './recording/listening'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
 import { noting, type Held as NoteHeld } from './note/kind'
@@ -68,7 +70,18 @@ import { WORDS as talk } from './agent/words'
 import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
 import { VERSION } from './version'
-import { AGENT, CONVERSATION, FILES, NOTE, PLEX, SETTINGS, named, opening } from './workspace'
+import {
+  AGENT,
+  CONVERSATION,
+  DOCUMENT,
+  FILES,
+  NOTE,
+  PLEX,
+  RECORDING,
+  SETTINGS,
+  named,
+  opening,
+} from './workspace'
 
 const drawings = drawn()
 const notes = editing(core, undefined, drawings.arrived)
@@ -187,7 +200,6 @@ const plexes = plexKind(held.host, () => standing(core), {
 /** The agent tabs, and the one a question about a note is put in. */
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, talk, named(CONVERSATION)), {
-    looking: () => plexes.looking(),
     opens: (path, ...runs) => void puts.opensAt(path, runs),
     unreachable: () => unreachable.value,
   }),
@@ -195,6 +207,13 @@ const agents = agentKind(held.host, () =>
 
 /** The document tabs, each reading the document it is filed at. */
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
+
+/** The recording tabs, each playing the recording it is filed at. */
+const heard = recordingKind(held.host, (path) => listening(recordings, path), puts)
+
+// A transcript grows while a model listens, and the list of work is the only
+// word of it the window gets.
+watch(tasks, () => heard.ticked(tasks.value))
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
 const places: Places = {
@@ -256,6 +275,7 @@ held.declares([
   plexes.kind,
   agents.kind,
   read.kind,
+  heard.kind,
   files.kind,
   decks.kind,
   stencils.kind,
@@ -315,6 +335,66 @@ const where = (): Where => {
   }
   return { tab, kind, path: '', title: '', vault, ready }
 }
+
+/**
+ * The tab the person is looking at. A question is written into an agent tab, so
+ * the tab in front of one is the one they were last in beside it.
+ */
+const looked = (): string => {
+  const at = held.host.front()
+  if (at && at.kind !== AGENT) return at.id
+  const beside = [...held.tabs.value]
+    .reverse()
+    .find((one) => held.heldIn(one.id)?.kind.kind !== AGENT)
+  return beside?.id ?? at?.id ?? ''
+}
+
+/**
+ * What the person has open, as whoever answers on their behalf is told it:
+ * every tab, what it holds, and which of them is in front.
+ *
+ * A kind named here says what its tab holds; any other says what kind it is and
+ * no more.
+ */
+const attends = (): Attention => ({
+  front: looked(),
+  tabs: held.tabs.value.map(({ id, title }) => {
+    const kind = held.heldIn(id)?.kind.kind ?? ''
+    const tab = { id, kind, title, path: '', at: 0, of: 0 }
+    if (kind === NOTE) {
+      const note = held.host.holds<NoteHeld>(NOTE, id)
+      return { ...tab, path: note && notes.has(note.id) ? notes.where(note.id) : '' }
+    }
+    if (kind === PLEX) {
+      return { ...tab, path: held.host.holds<PlexHeld>(PLEX, id)?.view.here.value ?? '' }
+    }
+    if (kind === DOCUMENT) {
+      const page = held.host.holds<DocumentHeld>(DOCUMENT, id)
+      if (!page) return tab
+      return { ...tab, path: page.path, at: page.at.value + 1, of: page.pages.value }
+    }
+    if (kind === RECORDING) {
+      const sound = held.host.holds<RecordingHeld>(RECORDING, id)
+      if (!sound) return tab
+      return { ...tab, path: sound.path, at: sound.heard.value, of: sound.length.value }
+    }
+    return tab
+  }),
+})
+
+/** The same, told to the application as the window opens and whenever it changes. */
+const attention = computed<Attention>(() => attends())
+watch(
+  attention,
+  (open) => {
+    void core.attending(open).catch((why) => {
+      // An agent asking what is open is answered from what last arrived, so a
+      // report that never lands leaves it reading a window that has moved on.
+      console.error('what the window has open was not told:', why)
+    })
+  },
+  { immediate: true },
+)
 
 /** What kind of tab this is drawn as, before the name it carries. */
 const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')

@@ -136,10 +136,11 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	cutting := cfg.Cards(queries, opened.Index.Links(), index)
 
 	return mcp.Core{
-		Showing: mcp.One(opened.Showing(), root),
-		Readers: readers,
-		View:    opened.API.Viewing(),
-		Notes:   queries,
+		Showing:   mcp.One(opened.Showing(), root),
+		Readers:   readers,
+		View:      opened.API.Viewing(),
+		Attending: opened.API.Attended,
+		Notes:     queries,
 
 		Vaults:     opened.API.Vaults,
 		Choosing:   opened.API.Choosing,
@@ -148,10 +149,11 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Forgetting: opened.API.Forgetting,
 		Opens:      opening(opened, out),
 
-		Sources:   opened.Index.SourcesKnown(),
-		Recognise: recogniser(opened),
-		Derived:   cfg.DerivedStores(),
-		Documents: cfg.Documents(),
+		Sources:    opened.Index.SourcesKnown(),
+		Recognise:  recogniser(opened),
+		Transcribe: opened.Transcribing(),
+		Derived:    cfg.DerivedStores(),
+		Documents:  cfg.Documents(),
 
 		Search: cfg.Searching(opened.Index, opened.Asking,
 			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),

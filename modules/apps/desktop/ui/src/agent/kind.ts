@@ -2,8 +2,9 @@
  * What one agent tab holds: a talk of its own, and what pressing anything in
  * it comes to.
  *
- * A question carries the note the person is looking at. A line about work and
- * a link inside an answer both name a place in a source, and both open it.
+ * What the person has open is the window's to report, and it says so as it
+ * changes. A line about work and a link inside an answer both name a place in a
+ * source, and both open it.
  */
 import { ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
@@ -16,8 +17,6 @@ import { WORDS as words } from './words'
 
 /** What an agent tab asks of the window it is drawn in. */
 export interface Talking {
-  /** The note the person is looking at, which is what a question is about. */
-  looking(): string
   /** A source opened at stretches of its own text, the first of them in front. */
   opens(path: string, ...runs: readonly Run[]): void
   /** Why the agent cannot be reached, which the tab says where its answers stand. */
@@ -35,10 +34,10 @@ export function talking(talk: Conversation, deps: Talking) {
     asked.value = text
   }
 
-  /** A question sent, about the note the person is looking at. */
+  /** A question sent. What the person has open the agent reads for itself. */
   const send = (text: string) => {
     asked.value = ''
-    void talk.ask(text, deps.looking())
+    void talk.ask(text, '')
   }
 
   /** A line about work pressed: the place that call was on is put in front. */

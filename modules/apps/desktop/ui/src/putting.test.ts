@@ -29,8 +29,9 @@ const vault = (stands: Record<string, Standing> = {}) => {
 /** A note of one of three, as the vault answers what stands at its path. */
 const note = (type: Standing['type']): Standing => ({ kind: 'note', type })
 
-/** A book, and a file the vault holds no source for. */
+/** A book, a recording, and a file the vault holds no source for. */
 const BOOK: Standing = { kind: 'book', type: 'note' }
+const TALK: Standing = { kind: 'recording', type: 'note' }
 const OTHER: Standing = { kind: 'other', type: 'note' }
 
 /** A vault that cannot answer at all. */
@@ -40,7 +41,7 @@ const unreachable: Asking = {
   },
 }
 
-/** The three editors and the reader, each writing down what it was given. */
+/** The three editors, the reader and the player, each writing down what it was given. */
 const editors = (puts: ReturnType<typeof putting>) => {
   const opened: string[] = []
   for (const type of ['note', 'deck', 'stencil'] as const) {
@@ -51,6 +52,11 @@ const editors = (puts: ReturnType<typeof putting>) => {
   puts.reads((path, runs) =>
     opened.push(
       `document ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`,
+    ),
+  )
+  puts.hears((path, runs) =>
+    opened.push(
+      `recording ${path} [${runs.map((one) => `${one.start}+${one.length}`).join(', ')}]`,
     ),
   )
   return opened
@@ -95,6 +101,16 @@ describe('a path opened', () => {
     await puts.opens('Physics.epub', 'Physics')
 
     expect(opened).toStrictEqual(['document Physics.epub []'])
+  })
+
+  it('opens a recording in the player, and in no reader', async () => {
+    const one = vault({ 'talks/Ants.mp3': TALK })
+    const puts = putting(one.core)
+    const opened = editors(puts)
+
+    await puts.opens('talks/Ants.mp3', 'Ants')
+
+    expect(opened).toStrictEqual(['recording talks/Ants.mp3 []'])
   })
 
   it('opens a file the vault holds no source for in nothing at all', async () => {
@@ -173,6 +189,16 @@ describe('a source opened at a stretch of its own text', () => {
     ])
 
     expect(opened).toStrictEqual(['document Physics.epub [10+4, 30+2]'])
+  })
+
+  it('plays a recording at the stretch of the words it was asked at', async () => {
+    const one = vault({ 'talks/Ants.mp3': TALK })
+    const puts = putting(one.core)
+    const opened = editors(puts)
+
+    await puts.opensAt('talks/Ants.mp3', [{ start: 22, length: 6 }])
+
+    expect(opened).toStrictEqual(['recording talks/Ants.mp3 [22+6]'])
   })
 
   it('opens a note in the editor made for what it is, and not in the reader', async () => {

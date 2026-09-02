@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -51,8 +52,8 @@ var errLateRuntime = errors.New("what reads a scan arrived just now; open numen 
 // reading dismissed is one reading dismissed.
 func reading() string { return fmt.Sprintf("reading-%d", time.Now().UnixNano()) }
 
-// correcting is what one reading's proofreading is called, wherever it is
-// shown. One reading is one line, and it replaces itself as pages are put right.
+// correcting is what putting one file's text right is called, wherever it is
+// shown. One file is one line, and it replaces itself as the text is put right.
 func correcting(path string) string { return "proofreading-" + path }
 
 // Recognising reads scanned documents behind whoever asked.
@@ -114,7 +115,9 @@ func (c Config) Recognising(ctx context.Context, sources port.SourceRepository, 
 		},
 		ready:    c.RecogniserReady,
 		standing: recognition.Prepared,
-		queue:    c.ProofreadQueue,
+		queue: func() (port.ProofreadQueue, error) {
+			return c.ProofreadQueue(c.ScanProofreading.With, proofread.ScanInstruction)
+		},
 	}
 }
 
@@ -198,6 +201,17 @@ func (r *Recognising) Start(v domain.Vault, path string) bool {
 // read is the work itself: what is missing arrives, and then the document is
 // read.
 func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
+	// One heavy run on a machine: a recording being heard holds the turn, and
+	// this waits for it.
+	// A scan is read only where somebody asked for it.
+	turn, err := heavy.take(ctx, true, func() {
+		r.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path})
+	})
+	if err != nil {
+		return err
+	}
+	defer turn()
+
 	models, close, err := r.open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
@@ -248,12 +262,18 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 }
 
 // correct puts a reading right, where a person configured something to
-// proofread it with. An installation that named none does nothing here.
+// proofread it with. An installation that named no profile, or asked for a
+// reading to be put right by hand, does nothing here.
 //
 // It reports itself under its own name, and a reading whose proofreading failed
 // is the reading as it was read.
 func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) {
-	by, err := r.cfg.Proofreader()
+	said := r.cfg.ScanProofreading
+	if !said.Automatically {
+		return
+	}
+
+	by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
 	if err != nil {
 		r.say(task.Task{ID: correcting(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
 		return
@@ -271,17 +291,17 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 	}
 
 	id := correcting(path)
-	service := r.cfg.Proofreading.Service
+	profile := r.cfg.Proofreading.Profiles[said.With]
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	_, err = source.Proofread{
-		Readers: r.cfg.VaultReaders(),
-		Derived: r.cfg.DerivedStores(),
-		By:      by,
-		Queue:   queue,
-		Pages:   service.PagesAtOnce,
-		Apart:   service.LettersApart,
-		Cut:     r.Cut,
+		Readers:         r.cfg.VaultReaders(),
+		Derived:         r.cfg.DerivedStores(),
+		By:              by,
+		Queue:           queue,
+		Pages:           profile.BatchSize,
+		MaxEditDistance: r.cfg.Proofreading.Distance(),
+		Cut:             r.Cut,
 		OnProgress: func(res source.ProofreadResult) {
 			r.say(task.Task{
 				ID:    id,
@@ -356,20 +376,20 @@ func (r *Recognising) collect(
 	if err != nil {
 		return
 	}
-	service := r.cfg.Proofreading.Service
+	profile := r.cfg.Proofreading.Profiles[r.cfg.ScanProofreading.With]
 	for _, said := range read {
 		if ctx.Err() != nil {
 			return
 		}
 		id := correcting(said.Path)
 		res, err := source.Proofread{
-			Readers: r.cfg.VaultReaders(),
-			Derived: r.cfg.DerivedStores(),
-			By:      queue,
-			Queue:   queue,
-			Pages:   service.PagesAtOnce,
-			Apart:   service.LettersApart,
-			Cut:     r.Cut,
+			Readers:         r.cfg.VaultReaders(),
+			Derived:         r.cfg.DerivedStores(),
+			By:              queue,
+			Queue:           queue,
+			Pages:           profile.BatchSize,
+			MaxEditDistance: r.cfg.Proofreading.Distance(),
+			Cut:             r.Cut,
 		}.Execute(ctx, v, said.Path)
 
 		switch {

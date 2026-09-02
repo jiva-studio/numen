@@ -87,10 +87,19 @@ type API struct {
 	// Marking says where a run of a source's text sits on the pages it was read
 	// from. A build without one answers that it cannot say where a passage is.
 	Marking *source.Marks
+	// Playing is the socket a recording is played from. A build without one
+	// answers with no address, and the window says the recording cannot be
+	// played here.
+	Playing *Loopback
 	// Wrote is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
+	// Cut asks for a source to be cut again from whatever its text now says. A
+	// window that put a transcript right calls it, so search answers with the
+	// words as they now read. Nil for a build with nothing cutting behind it,
+	// and then a correction is seen in the tab alone.
+	Cut func(context.Context, domain.Vault, string) error
 
 	// Makes is how the window makes a note, and Joins how it writes a
 	// relationship into one. A build without them answers that a note cannot be
@@ -156,6 +165,11 @@ type API struct {
 	// Watching is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.
 	Watching audience[domain.Place]
+
+	// attending is what the person has open, as the window last said. It is
+	// replaced while requests are being served, so every reader takes it
+	// through Attended.
+	attending atomic.Pointer[domain.Attention]
 
 	// Leaving is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.

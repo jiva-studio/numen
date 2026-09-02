@@ -35,7 +35,7 @@ const arranged = `{
                 }
             }
         },
-        "proofreading": {"letters_apart": 0.30}
+        "proofreading": {"max_edit_distance": 0.30}
     },
 
     "agent": {"use": "claude"}

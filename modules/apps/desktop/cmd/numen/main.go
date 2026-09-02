@@ -20,6 +20,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
@@ -28,7 +29,7 @@ import (
 )
 
 func main() {
-	var cfg container.Config
+	cfg := platform.Config()
 	var letting agentOptions
 	var said sizes
 	var vault string
@@ -104,6 +105,11 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// A machine holding no runtime yet is told so by the first reading.
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
+	}
+	// Likewise for a recording: every one this process hears is heard through
+	// the runtime made here.
+	if err := cfg.PrepareTranscriber(ctx); err != nil {
+		fmt.Fprintln(os.Stderr, "numen: nothing to hear a recording with:", err)
 	}
 
 	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)

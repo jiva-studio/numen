@@ -162,6 +162,39 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 		}
 	})
 
+	t.Run("a run near the end of a passage opens the window all the same", func(t *testing.T) {
+		text := long(500) + " engine ends here"
+		cut, kept := around(text, marks(text, "engine"), 0)
+
+		if len(kept) != 1 {
+			t.Fatalf("kept %+v runs, want the one that matched", kept)
+		}
+		// The mark for what was left off stands before the text, so the run
+		// begins one unit further along than the words before it.
+		if kept[0].From > leading+1 {
+			t.Errorf("the run opens %d units in, want no more than %d",
+				kept[0].From, leading+1)
+		}
+		if got := string([]rune(cut)[kept[0].From:kept[0].To]); got != "engine" {
+			t.Errorf("the run stands on %q, want it still on the word", got)
+		}
+		if !strings.HasSuffix(cut, "ends here") {
+			t.Errorf("cut ends on %q, want the end of the passage", cut[len(cut)-12:])
+		}
+	})
+
+	t.Run("a run near the end of a passage of two bytes a character", func(t *testing.T) {
+		text := strings.Repeat("слово ", 200) + "дышать не можем"
+		cut, kept := around(text, marks(text, "дышать"), 0)
+
+		if len(kept) != 1 {
+			t.Fatalf("kept %+v runs, want the one that matched", kept)
+		}
+		if got := string([]rune(cut)[kept[0].From:kept[0].To]); got != "дышать" {
+			t.Errorf("the run stands on %q, want it still on the word", got)
+		}
+	})
+
 	t.Run("a run left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
 		at := marks(text, "engine")

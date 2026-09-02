@@ -440,3 +440,37 @@ func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 		t.Error("the store listed a folder outside itself")
 	}
 }
+
+// A use case reading what two producers wrote opens one store on both areas.
+func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
+	root := t.TempDir()
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, filesystem.SpeechDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+
+	for _, name := range []string{"ocr/abc.txt", "asr/abc.vtt"} {
+		if err := derived.Write(ctx, name, []byte("said")); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	if err := derived.Write(ctx, "flashcards/abc.jsonl", []byte("answered")); err == nil {
+		t.Error("the store wrote into an area it was not opened on")
+	}
+	if area := derived.Area(); area != filesystem.OCRDir {
+		t.Errorf("the store is called %q, want the first area it was opened on", area)
+	}
+}
+
+// The areas of a store are each one folder, and one that is not is refused with
+// the rest of it.
+func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
+	root := t.TempDir()
+	if _, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, "a/b"); err == nil {
+		t.Error("opened a store on a name that is not one folder")
+	}
+}

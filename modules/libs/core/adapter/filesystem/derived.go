@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // OCRDir is where the text of a source that has none of its own is kept.
@@ -23,6 +24,9 @@ import (
 // is called all belong to the thing that wrote them, and another producer's
 // would not be the same.
 const OCRDir = "ocr"
+
+// SpeechDir is where the words a model heard in a recording are kept.
+const SpeechDir = text.ASR
 
 // FlashcardsDir is where the answers a person gave their cards are kept. They
 // are the one thing here nobody can produce a second time: the notes are the
@@ -36,15 +40,15 @@ const FlashcardsDir = "flashcards"
 // the one place VaultWriter refuses and refuses everywhere VaultWriter writes.
 // Neither can be made to do the other's work, and that is why there are two.
 //
-// Every name it takes begins with the name of its own area, and it answers for
-// no other, so the vault's identity — which is in the folder and in no area —
-// is not a name this can express.
+// Every name it takes begins with the name of one of its areas, and it answers
+// for no other, so the vault's identity — which is in the folder and in no area
+// — is not a name this can express.
 type Derived struct {
-	vault   string // the vault folder
-	service string // the application's folder inside it
-	id      string // the identity that folder carried when this store was opened
-	root    string // <vault>/<serviceDir>
-	area    string // the one folder inside it this store answers for
+	vault   string   // the vault folder
+	service string   // the application's folder inside it
+	id      string   // the identity that folder carried when this store was opened
+	root    string   // <vault>/<serviceDir>
+	areas   []string // the folders inside it this store answers for
 	// seen is the configuration file as it stood when the identity was last
 	// read out of it. Every name checks the identity, and a file that has not
 	// moved carries the identity already read.
@@ -67,23 +71,36 @@ var ErrNotThisVault = errors.New("the folder is not the vault this store was ope
 // DerivedStores opens the shelf of whichever vault a use case is working on.
 type DerivedStores struct {
 	Options Options
-	// Area is the folder inside the service folder these files belong to.
-	Area string
+	// Area is the folder inside the service folder these files belong to, and
+	// Areas are the further folders the same store answers for. A use case
+	// reading what two producers wrote names both.
+	Area  string
+	Areas []string
 }
 
 func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
-	return OpenDerived(v.Path, d.Options, d.Area)
+	return OpenDerived(v.Path, d.Options, append([]string{d.Area}, d.Areas...)...)
 }
 
 // OpenDerived opens one vault's store, and holds on to the identity that vault
 // carries. Nothing is written: a store that created its folder on being opened
 // would put one in every vault the application looks at.
-func OpenDerived(vaultRoot string, opts Options, area string) (*Derived, error) {
-	if area == "" {
-		area = OCRDir
+//
+// The store answers for every area named and the first of them is what it is
+// called. Naming none is the default area alone.
+func OpenDerived(vaultRoot string, opts Options, areas ...string) (*Derived, error) {
+	kept := make([]string, 0, len(areas))
+	for _, area := range areas {
+		if area == "" {
+			continue
+		}
+		if strings.ContainsAny(area, `/\`) || area == "." || area == ".." {
+			return nil, fmt.Errorf("%q is not one folder", area)
+		}
+		kept = append(kept, area)
 	}
-	if strings.ContainsAny(area, `/\`) || area == "." || area == ".." {
-		return nil, fmt.Errorf("%q is not one folder", area)
+	if len(kept) == 0 {
+		kept = []string{OCRDir}
 	}
 	abs, err := filepath.Abs(vaultRoot)
 	if err != nil {
@@ -101,15 +118,15 @@ func OpenDerived(vaultRoot string, opts Options, area string) (*Derived, error) 
 		service: opts.serviceDir(),
 		id:      id,
 		root:    filepath.Join(abs, opts.serviceDir()),
-		area:    area,
+		areas:   kept,
 	}
 	d.seen.Store(was)
 	return d, nil
 }
 
-// Area is the folder inside the service folder this store keeps, which is the
-// first part of every name the index records.
-func (d *Derived) Area() string { return d.area }
+// Area is the folder inside the service folder this store is called by, which
+// is the first part of every name the index records.
+func (d *Derived) Area() string { return d.areas[0] }
 
 func (d *Derived) Read(_ context.Context, name string) ([]byte, error) {
 	target, err := d.at(name)
@@ -247,13 +264,18 @@ func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
 	return out, nil
 }
 
+// Remove takes a name out of the store, along with the file a claim on it is
+// held on. A caller works in names and knows of no claim, so a name it takes
+// away leaves none behind.
 func (d *Derived) Remove(_ context.Context, name string) error {
-	target, err := d.at(name)
-	if err != nil {
-		return err
-	}
-	if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
+	for _, one := range []string{name, name + claimSuffix} {
+		target, err := d.at(one)
+		if err != nil {
+			return err
+		}
+		if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
 	}
 	return nil
 }
@@ -309,6 +331,16 @@ func carried(root, serviceDir string) (string, *stamp, error) {
 	return cfg.ID, was, nil
 }
 
+// holds says whether a cleaned name is in one of this store's areas.
+func (d *Derived) holds(clean string) bool {
+	for _, area := range d.areas {
+		if clean == area || strings.HasPrefix(clean, area+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 // at is where one name lands on this machine. Every name is answered where the
 // vault still is, so nothing here reads or writes a folder that is no longer
 // the one this store was opened on.
@@ -328,11 +360,11 @@ func (d *Derived) at(name string) (string, error) {
 	if err := d.still(); err != nil {
 		return "", err
 	}
-	// A name says which store it belongs to, and a store answers for its own
+	// A name says which area it belongs to, and a store answers for its own
 	// only. That is what keeps the vault's identity out of reach: `config.json`
-	// is in the folder and in no store, so no name can express it.
-	if clean != d.area && !strings.HasPrefix(clean, d.area+"/") {
-		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.area, ErrOutside)
+	// is in the folder and in no area, so no name can express it.
+	if !d.holds(clean) {
+		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), ErrOutside)
 	}
 	target := filepath.Join(d.root, filepath.FromSlash(clean))
 

@@ -431,7 +431,8 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 // behind the allowlist it is drawn through: no script, no form submitted
 // anywhere, and no request off the machine.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
+	const held = "default-src 'self'; img-src 'self' data:; media-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
 	if policy != held {

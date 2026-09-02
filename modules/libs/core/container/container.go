@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -54,6 +55,19 @@ type Config struct {
 	// Recognition is how a scanned document is read when a person asks for it.
 	Recognition recognition.Config
 
+	// Transcription is how a recording is listened to.
+	Transcription transcription.Config
+
+	// Transcribes is whether a recording the vault holds no transcript for is
+	// listened to without anybody asking. A configuration naming nothing leaves
+	// it to the hand.
+	Transcribes bool
+
+	// TranscribesUnder is how many bytes a recording may run to and still be
+	// listened to unasked. A larger one is left for somebody to ask for by
+	// name. Zero is no limit.
+	TranscribesUnder int64
+
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
@@ -61,8 +75,19 @@ type Config struct {
 	Embedding embed.Config
 
 	// Proofreading is what puts a reading right. It arrives the way Embedding
-	// does, and naming nothing here is naming no proofreader.
+	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
+
+	// ScanProofreading and SpeechProofreading name the profile each kind of
+	// reading is put right at, and say whether that happens without anybody
+	// asking.
+	ScanProofreading   proofreading.Proofread
+	SpeechProofreading proofreading.Proofread
+
+	// AgentProofreader opens a profile that reaches the command line a person
+	// already has. The platform supplies it, since core starts no process; an
+	// installation that supplies none names no such profile.
+	AgentProofreader func(AgentProofreading) (port.Proofreader, error)
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
@@ -84,8 +109,13 @@ type Config struct {
 // off.
 func (c Config) Indexing(said settings.Indexing) Config {
 	c.Embedding = said.Embedding
-	c.Recognition = said.Recognition
+	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
+	c.ScanProofreading = said.Recognition.Proofread
+	c.SpeechProofreading = said.Transcription.Proofread
+	c.Transcription = said.Transcription.Config
+	c.Transcribes = said.Transcribes()
+	c.TranscribesUnder = said.TranscribesUnder()
 	return c
 }
 
@@ -292,8 +322,15 @@ func (c Config) VaultOptions() filesystem.Options {
 // files on, inside a vault. It is a third opener beside the readers and the
 // writers because it is a third right: reading a person's vault, changing it,
 // and keeping something of our own in it are not the same permission.
+//
+// It answers for what a reading wrote and for what a transcription wrote, since
+// a use case that places a passage reads both.
 func (c Config) DerivedStores() port.DerivedStores {
-	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.OCRDir}
+	return filesystem.DerivedStores{
+		Options: c.VaultOptions(),
+		Area:    filesystem.OCRDir,
+		Areas:   []string{filesystem.SpeechDir},
+	}
 }
 
 // indexPath defaults to the platform cache directory. The index is a cache in

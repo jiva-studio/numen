@@ -41,6 +41,11 @@ type Core struct {
 	// served the vault and nothing that puts a note in front of anybody.
 	View port.View
 
+	// Attending is what the person has open, asked at every call so that an
+	// agent reads the window as it stands. Without it an agent is told nothing
+	// of what is in front of anybody.
+	Attending func() domain.Attention
+
 	// Vaults is the list of vaults this installation holds. Without it an agent
 	// is told of the vault it is working and of no other.
 	Vaults port.VaultRegistry
@@ -62,6 +67,9 @@ type Core struct {
 	// Without them the tools for those documents are not added.
 	Sources   port.SourceQueries
 	Recognise Recognising
+	// Transcribe hears a recording. Without it the tool that asks for one is
+	// served and answers that this installation cannot.
+	Transcribe Transcribing
 	// Derived is where a reading of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores
@@ -137,6 +145,7 @@ func New(core Core) *sdk.Server {
 	addVaultTools(server, core)
 	addVaultsTools(server, core)
 	addViewTools(server, core)
+	addWindowTools(server, core)
 	addSourceTools(server, core)
 	return server
 }
@@ -244,6 +253,13 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
 	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")
 	b.WriteString("files, `note_read` gives you the same text.\n\n")
+
+	if core.Attending != nil {
+		b.WriteString("What the person has open is `window_tabs`: every tab of their window, ")
+		b.WriteString("and which of them they are looking at. Ask it before saying anything ")
+		b.WriteString("about what is in front of them, and ask again when it matters — they ")
+		b.WriteString("move between tabs while you work.\n\n")
+	}
 }
 
 // readingInstructions is what an agent served the reading tools is told once,

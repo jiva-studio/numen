@@ -3,6 +3,7 @@ package source
 import (
 	"errors"
 	"io/fs"
+	"slices"
 	"strings"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 const bookPath = "library/book.epub"
@@ -531,5 +533,141 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 	}
 	if from := index.sources[first.ID]["shelf/two.epub"].TextFrom; from == "" {
 		t.Error("the copy that stayed lost its reading")
+	}
+}
+
+const talkPath = "talks/a lecture.mp3"
+
+// transcribed is the transcript a model leaves of one talk.
+func transcribed() []byte {
+	return transcript.Marshal([]transcript.Cue{
+		{Text: words(sanskrit, 200), From: 1500, To: 5025000},
+		{Text: words(latin, 200), From: 5025000, To: 5400000},
+	})
+}
+
+// A recording nobody has listened to is a source found by its name, with
+// nothing to cut into chunks.
+func TestARecordingNobodyHasHeardIsASourceWithNoChunks(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index}
+	res, err := extract.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Seen != 1 || res.Recorded != 1 {
+		t.Errorf("the run reports %+v, want the recording found and recorded", res)
+	}
+	if res.Chunks != 0 || res.Extracted != 0 {
+		t.Errorf("the run cut %d chunks out of a recording nobody has heard", res.Chunks)
+	}
+	if _, held := index.sources[first.ID][talkPath]; !held {
+		t.Error("the vault holds a recording the index does not")
+	}
+}
+
+// What a model heard is the text of the recording, and a chunk of it is located
+// by when it was said.
+func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := []byte("ID3 and then the samples")
+	shelf.hold(talkPath, domain.KindRecording, raw, 1)
+	if err := made.Write(ctx, text.Artifact(text.ASR, fingerprint(raw)), transcribed()); err != nil {
+		t.Fatal(err)
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	res, err := extract.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Extracted != 1 || res.Chunks == 0 {
+		t.Fatalf("the run reports %+v, want the recording cut into chunks", res)
+	}
+
+	src := index.sources[first.ID][talkPath]
+	if src.TextFrom != text.ASR {
+		t.Errorf("the source names %q as the producer of its text, want %q", src.TextFrom, text.ASR)
+	}
+	if want := recipe(text.ReaderRecording, extract.sizes()); src.Recipe != want {
+		t.Errorf("recipe = %q, want %q", src.Recipe, want)
+	}
+	if !slices.Contains(recipes(extract.sizes()), src.Recipe) {
+		t.Error("the recipe a recording is cut by is not one the next run knows")
+	}
+
+	for _, c := range index.chunks {
+		if c.location == "" {
+			t.Fatal("a chunk of a recording says nothing about where it is")
+		}
+	}
+}
+
+// A transcription writes a transcript and the note of what heard it, and a
+// recording the vault no longer holds takes both with it.
+func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
+	ctx := t.Context()
+	index, shelf, made := newStore(), newLibrary(), newShelf()
+
+	raw := []byte("ID3 and then the samples")
+	shelf.hold(talkPath, domain.KindRecording, raw, 1)
+	hash := fingerprint(raw)
+	if err := made.Write(ctx, text.Artifact(text.ASR, hash), transcribed()); err != nil {
+		t.Fatal(err)
+	}
+	if err := made.Write(ctx, text.Beside(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	delete(shelf.files, talkPath)
+	res, err := extract.Execute(ctx, first)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Removed != 1 {
+		t.Fatalf("removed = %d, want the one recording the vault no longer holds", res.Removed)
+	}
+	if left := made.names(); len(left) != 0 {
+		t.Errorf("the store still holds %v", left)
+	}
+}
+
+// A vault already read is not read again: what a book is cut by, and where its
+// reading is kept, are what they were before recordings were a kind of their
+// own.
+func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	raw := bookOf(t, "A Book", words(sanskrit, 400))
+	shelf.hold(bookPath, domain.KindBook, raw, 1)
+	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
+
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index}
+	if _, err := extract.Execute(ctx, first); err != nil {
+		t.Fatal(err)
+	}
+
+	sizes := extract.sizes()
+	if want := "epub-1/large=200+40/small=50+10/limit=1000"; recipe(text.ReaderEPUB, sizes) != want {
+		t.Errorf("a book is cut by %q, want %q", recipe(text.ReaderEPUB, sizes), want)
+	}
+	if got := index.sources[first.ID][bookPath].Recipe; got != recipe(text.ReaderEPUB, sizes) {
+		t.Errorf("the book was cut by %q", got)
+	}
+	if got := extract.producer(domain.FileRef{Kind: domain.KindBook}); got != "ocr" {
+		t.Errorf("a book's reading is kept under %q, want ocr", got)
+	}
+	if got := text.Artifact("ocr", "abc123"); got != "ocr/abc123.txt" {
+		t.Errorf("a reading is kept under %q", got)
 	}
 }

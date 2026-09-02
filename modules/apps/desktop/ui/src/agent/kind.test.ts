@@ -1,8 +1,8 @@
 /**
  * What pressing something in an agent tab comes to, asked without a screen.
  *
- * A question carries the note the person is looking at, and a place named in
- * an answer opens the source it is in.
+ * A question carries nothing about what is open, and a place named in an answer
+ * opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
@@ -30,14 +30,10 @@ const talked = (places: Record<string, { path: string; start: number; length: nu
 }
 
 /** An agent tab with the window it is drawn in written down. */
-const tab = (
-  looking = 'Looking.md',
-  places: Record<string, { path: string; start: number; length: number }> = {},
-) => {
+const tab = (places: Record<string, { path: string; start: number; length: number }> = {}) => {
   const talk = talked(places)
   const opened: [string, readonly Run[]][] = []
   const held = talking(talk.talk, {
-    looking: () => looking,
     opens: (path, ...runs) => opened.push([path, runs]),
     unreachable: () => '',
   })
@@ -73,12 +69,12 @@ const turn = (id: string, text: string): Turn =>
   ({ id, text, voice: 'said', state: 'done' }) as unknown as Turn
 
 describe('a question sent', () => {
-  it('carries the note the person is looking at', () => {
-    const one = tab('Looking.md')
+  it('names nothing the person has open, which the window reports itself', () => {
+    const one = tab()
 
     one.held.send('what is this about')
 
-    expect(one.asked).toEqual([['what is this about', 'Looking.md']])
+    expect(one.asked).toEqual([['what is this about', '']])
   })
 
   it('empties the composer, so the question is not sent twice', () => {
@@ -93,7 +89,7 @@ describe('a question sent', () => {
 
 describe('a line about work pressed', () => {
   it('opens the place that call was on', () => {
-    const one = tab('Looking.md', { call: { path: 'Source.pdf', start: 10, length: 4 } })
+    const one = tab({ call: { path: 'Source.pdf', start: 10, length: 4 } })
 
     one.held.opensTurn(turn('call', 'read Source.pdf'))
 

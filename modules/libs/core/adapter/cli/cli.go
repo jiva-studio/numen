@@ -28,6 +28,7 @@ usage:
   numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
   numen-cli recognise <vault> <file>          read a scanned document with a model
   numen-cli proofread <vault> <file>          put a document's reading right with a model
+  numen-cli transcribe <vault> <file> [--again]  write down what a model hears in a recording
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -41,9 +42,13 @@ options:
   --note-extensions <list>  which files are notes (default: .md)
 `
 
-// Main runs the command line and returns a process exit code.
-func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing settings.Indexing) int {
-	if err := Run(ctx, out, args, indexing); err != nil {
+// Main runs the command line and returns a process exit code. Platform carries
+// what this machine supplies rather than the settings file, and the settings
+// are read over it.
+func Main(ctx context.Context, out, errOut io.Writer, args []string,
+	indexing settings.Indexing, platform container.Config,
+) int {
+	if err := Run(ctx, out, args, indexing, platform); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -52,8 +57,10 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing se
 
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
-func Run(ctx context.Context, out io.Writer, args []string, indexing settings.Indexing) error {
-	cfg := container.Config{}.Indexing(indexing)
+func Run(ctx context.Context, out io.Writer, args []string,
+	indexing settings.Indexing, platform container.Config,
+) error {
+	cfg := platform.Indexing(indexing)
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
@@ -85,6 +92,8 @@ func Run(ctx context.Context, out io.Writer, args []string, indexing settings.In
 		return recogniseCommand(ctx, out, cfg, rest[1:])
 	case "proofread":
 		return proofreadCommand(ctx, out, cfg, rest[1:])
+	case "transcribe":
+		return transcribeCommand(ctx, out, cfg, rest[1:])
 	case "search":
 		return searchCommand(ctx, out, cfg, rest[1:])
 	case "links":

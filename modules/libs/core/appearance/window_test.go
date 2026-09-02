@@ -11,10 +11,11 @@ import (
 // person may have downloaded, and this is the whole of what stops one reaching
 // the network.
 func TestAWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	const held = "default-src 'self'; img-src 'self'; media-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
-	if got := appearance.Policy(); got != held {
+	if got := appearance.Policy(appearance.Sources{}); got != held {
 		t.Errorf("the policy reads %q", got)
 	}
 }
@@ -22,8 +23,8 @@ func TestAWindowIsHeldToOnePolicy(t *testing.T) {
 // A window drawing text that carries its own pictures says where a picture may
 // come from, and changes nothing else.
 func TestAWindowDrawingItsOwnPicturesSaysSoAndNoMore(t *testing.T) {
-	own := appearance.Policy()
-	with := appearance.Policy("data:")
+	own := appearance.Policy(appearance.Sources{})
+	with := appearance.Policy(appearance.Sources{Images: []string{"data:"}})
 
 	if with == own {
 		t.Fatal("naming where pictures come from changed nothing")
@@ -46,7 +47,7 @@ func TestAWindowDrawingItsOwnPicturesSaysSoAndNoMore(t *testing.T) {
 // carry a form with it, and `form-action` is what a policy says about one:
 // nothing else in the policy answers for where a form posts to.
 func TestAFormIsSubmittedNowhere(t *testing.T) {
-	if !strings.Contains(appearance.Policy(), "form-action 'none'") {
+	if !strings.Contains(appearance.Policy(appearance.Sources{}), "form-action 'none'") {
 		t.Error("a form on the page could be submitted somewhere")
 	}
 }

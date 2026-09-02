@@ -23,6 +23,7 @@ import {
   type PaletteBand,
   type WorkspaceLayout,
 } from '@numen/ui'
+import type { Tab } from './core'
 import AgentTab from './agent/AgentTab.vue'
 import { linkOf } from './agent/places'
 import DeckTab from './cards/DeckTab.vue'
@@ -169,6 +170,8 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
     opened: [] as string[],
     /** How often a folder was asked for, which is a vault being added. */
     chose: 0,
+    /** What the window said the person has open, the last of it last. */
+    attending: [] as { tabs: readonly Tab[]; front: string }[],
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
@@ -310,6 +313,9 @@ vi.mock('./vault', () => ({
     editing: held,
     tasks: held,
     focus: outside.stream,
+    attending: async (open: { tabs: readonly Tab[]; front: string }) => {
+      asked.attending.push(open)
+    },
     quitting: held,
     flushed: async () => {},
     names: async () => said.names,
@@ -436,6 +442,7 @@ afterEach(() => {
   asked.measured = 0
   asked.opened = []
   asked.chose = 0
+  asked.attending = []
   listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })
@@ -2017,4 +2024,54 @@ describe('every road to a file', () => {
       expect(drew).not.toContain('note')
     })
   }
+})
+
+describe('what the person has open, as whoever answers for them is told it', () => {
+  /** The last the window said about it, and nothing where it has said nothing. */
+  const reported = () => asked.attending.at(-1) ?? null
+
+  /** The tab the window said is in front, of the last it said. */
+  const front = () => {
+    const open = reported()
+    return open?.tabs.find((one) => one.id === open.front) ?? null
+  }
+
+  it('lists every tab the window holds, the plex it opens on in front', async () => {
+    await drawn()
+
+    expect([...(reported()?.tabs ?? [])].map((one) => one.kind).sort()).toEqual([
+      'agent',
+      'files',
+      'plex',
+    ])
+    expect(front()?.kind).toBe('plex')
+    expect(front()?.path).toBe('Root.md')
+  })
+
+  it('names the tab beside the agent, where the person is writing in one', async () => {
+    const window = await drawn()
+    const workspace = window.findComponent(Workspace)
+
+    // The person is in the agent, which is where a question is written.
+    workspace.vm.$emit('update:modelValue', {
+      ...(workspace.props('modelValue') as WorkspaceLayout),
+      focus: 'aside',
+    })
+    await settles()
+
+    expect(front()?.kind).toBe('plex')
+  })
+
+  it('names the document in front, and the note the plex stands on beside it', async () => {
+    const window = await drawn()
+
+    outside.asks({ path: 'Ants.epub', start: 0, length: 4 })
+    await settles()
+    await settles()
+    window.unmount()
+
+    expect(front()?.kind).toBe('document')
+    expect(front()?.path).toBe('Ants.epub')
+    expect(reported()?.tabs.some((one) => one.kind === 'plex' && one.path === 'Root.md')).toBe(true)
+  })
 })

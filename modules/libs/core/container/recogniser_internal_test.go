@@ -274,10 +274,13 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	t.Setenv(proofreading.KeyEnvVar, "sk-test")
 	w := recognising(t, nil)
 
+	service := proofreading.ServiceDefaults()
+	service.Name = "a-model"
+
 	cfg := Config{ServiceDir: ".numen"}
 	cfg.Proofreading = proofreading.Defaults()
-	cfg.Proofreading.Use = proofreading.UseService
-	cfg.Proofreading.Service.Name = "a-model"
+	cfg.Proofreading.Profiles = map[string]proofreading.Profile{"a-service": service}
+	cfg.ScanProofreading = proofreading.Proofread{With: "a-service", Automatically: true}
 	w.Recognising.cfg = cfg
 	w.Recognising.queue = func() (port.ProofreadQueue, error) {
 		return nil, errors.New("no queue for the proofreading service")

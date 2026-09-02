@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	pathpkg "path"
@@ -187,6 +188,19 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 		return nil, err
 	}
 	return os.ReadFile(target)
+}
+
+// Open is one file, to read a part of. The path is checked by the same rule
+// Read checks it by, and what comes back is the file itself.
+func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	target, err := inside(s.root, path, s.opts.serviceDir())
+	if err != nil {
+		return nil, err
+	}
+	return os.Open(target)
 }
 
 // Stat answers the same question about one path that Walk answers about all of

@@ -10,7 +10,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/lit"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
+
+// ASR is the producer that writes down what a model heard in a recording. What
+// it writes is WebVTT, and the names it keeps its files under say so.
+const ASR = "asr"
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
@@ -71,13 +76,26 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 // chunks are places in.
 //
 // The corrections are read before the coordinates, and a reading nothing
-// proofread is composed from its own bytes alone.
+// proofread is composed from its own bytes alone. A transcript is composed from
+// what it was put right to, and from its own bytes where nothing put it right.
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
 	from, hash string,
 	raw []byte,
 ) (*Document, error) {
+	if from == ASR {
+		put, err := beside(ctx, store, Corrected(from, hash))
+		if err != nil {
+			return nil, err
+		}
+		// A file beside the artifact holding no words is nothing put right, and
+		// the recording says what was heard in it.
+		if doc := Transcribed(put); doc.Text != "" {
+			return doc, nil
+		}
+		return Transcribed(raw), nil
+	}
 	parts, err := beside(ctx, store, Parts(from, hash))
 	if err != nil {
 		return nil, err
@@ -134,6 +152,20 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	return doc
 }
 
+// Transcribed is what a model heard, as the text its chunks are places in and
+// the moments of the recording those places stand at.
+//
+// A transcript names no parts: the cues are where the speech was, and a chunk
+// is located by when what it holds was said.
+func Transcribed(raw []byte) *Document {
+	prose, cues := transcript.Parse(raw)
+	doc := &Document{Text: prose}
+	for _, cue := range cues {
+		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: transcript.Clock(cue.From)})
+	}
+	return doc
+}
+
 // divided is the parts a sidecar names, as parts of the prose. A part is named
 // by its heading run as the scan was read, mangled or not.
 //
@@ -161,14 +193,32 @@ func divided(prose string, parts []ocr.Part) []cutting.Part {
 // It is the hash of what was read and not the path it was read from, so a
 // document renamed or moved keeps its recognition, and two copies of one
 // document in a vault share the one file rather than being read twice.
+//
+// The extension is the producer's: a transcript is WebVTT and opens in a player
+// under the name a player knows it by.
 func Artifact(from, hash string) string {
+	if from == ASR {
+		return from + "/" + hash + ".vtt"
+	}
 	return from + "/" + hash + ".txt"
 }
 
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
+	if from == ASR {
+		return from + "/" + hash + ".partial.vtt"
+	}
 	return from + "/" + hash + ".partial"
+}
+
+// Corrected is the name a transcript put right is kept under: the words as they
+// now stand, WebVTT under the extension that format is opened by.
+//
+// The artifact stays what was heard, so deleting this file gives that back. A
+// transcript nothing put right has no such file.
+func Corrected(from, hash string) string {
+	return from + "/" + hash + ".corrected.vtt"
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
@@ -195,6 +245,14 @@ func Proofread(from, hash string) string {
 	return from + "/" + hash + ".proofread"
 }
 
+// Answer is the name of what a recording gave where it gave no words: silence,
+// or bytes nothing here can open. It is not a transcript and nothing reads it as
+// one; it is there so that a recording nothing can be heard in is not listened
+// to again every time the vault is scanned.
+func Answer(from, hash string) string {
+	return from + "/" + hash + ".answer"
+}
+
 // Beside is the name of what says which models produced an artifact. Nothing on
 // any hot path reads it; it is there so a person can ask what read a text they
 // are looking at, and so a sweep can find everything a recogniser now known to
@@ -205,7 +263,20 @@ func Beside(from, hash string) string {
 
 // Names is every file one recognition of these bytes is kept under. One run
 // made them and none of them means anything without the others.
+//
+// Each producer's own files are named: a sweep works through this list, and a
+// transcription writes no coordinates or parts.
 func Names(from, hash string) []string {
+	if from == ASR {
+		return []string{
+			Artifact(from, hash),
+			Partial(from, hash),
+			Corrected(from, hash),
+			Proofread(from, hash),
+			Answer(from, hash),
+			Beside(from, hash),
+		}
+	}
 	return []string{
 		Artifact(from, hash),
 		Partial(from, hash),

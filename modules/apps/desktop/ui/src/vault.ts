@@ -34,6 +34,7 @@ import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Marked, Sheet } from './document/reading'
+import type { Cue, Recordings } from './recording/listening'
 import type {
   Added,
   Answered,
@@ -192,6 +193,9 @@ export const core: Core & Asking & Commanding = {
     }
   },
   focus: (signal) => vault.focus({}, { signal }),
+  attending: async (open) => {
+    await vault.attending({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+  },
   editing: (signal) => vault.editing({}, { signal }),
   async *tasks(signal) {
     for await (const said of vault.tasks({}, { signal })) {
@@ -341,6 +345,47 @@ export const documents: Documents = {
 }
 
 /**
+ * The recordings the vault holds, over the same addresses. The player is given
+ * an address of its own: the window is drawn from a scheme a browser does not
+ * load sound through, and the application answers where it does.
+ */
+export const recordings: Recordings = {
+  listened: async (path) => {
+    const answer = await served(asset(path))
+    const said = (await answer.json()) as {
+      length?: number
+      heard?: number
+      media?: string
+      type?: string
+    }
+    return {
+      length: said.length ?? 0,
+      heard: said.heard ?? 0,
+      media: said.media ?? '',
+      type: said.type ?? '',
+    }
+  },
+  cues: async (path) => {
+    const answer = await served(`${asset(path)}/cues`)
+    const said = (await answer.json()) as { cues?: readonly Cue[]; editable?: boolean }
+    return { cues: said.cues ?? [], editable: said.editable ?? true }
+  },
+  writes: async (path, cues) => {
+    await served(`${asset(path)}/cues`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, cues }),
+    })
+  },
+  plays: async (path, run) => {
+    const where = `start=${run.start}&length=${run.length}`
+    const answer = await served(`${asset(path)}/cues?${where}`)
+    const said = (await answer.json()) as { cues?: readonly Cue[] }
+    return said.cues?.[0]?.from ?? null
+  },
+}
+
+/**
  * Where a file of the vault is asked about. The path is written out whole, so a
  * file in a folder is one part of the address and the facet asked of it is the
  * next.
@@ -354,9 +399,9 @@ const PATIENCE = 3
  * What the application answered. A document held by whoever is drawing from it
  * is asked for again, after the wait it names.
  */
-const served = async (address: string): Promise<Response> => {
+const served = async (address: string, asking?: RequestInit): Promise<Response> => {
   for (let asked = 0; ; asked++) {
-    const answer = await fetch(address)
+    const answer = await fetch(address, asking)
     if (answer.ok) return answer
     if (answer.status !== 503 || asked >= PATIENCE) {
       throw new Error((await answer.text()).trim() || `${answer.status}`)
@@ -426,6 +471,7 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
+  [SourceKind.RECORDING]: 'recording',
 }
 
 /** Which of four a note is, in the words the window uses. */
