@@ -68,3 +68,60 @@ func TestSequenceLengthsRoundUpToAStep(t *testing.T) {
 		}
 	}
 }
+
+// A shape is compiled the first time it appears and the cache holds one entry
+// per sequence length, so a batch that is not full is laid out as one that is.
+func TestABatchIsLaidOutAtTheSizeAFullOneCarries(t *testing.T) {
+	const rows, seq = 8, 64
+	for texts := 1; texts <= rows; texts++ {
+		batch := make([][]int, texts)
+		for i := range batch {
+			batch[i] = []int{7, 8, 9}
+		}
+		ids, mask, types := padded(batch, rows, seq, 1)
+		for _, held := range [][][]int64{ids, mask, types} {
+			if len(held) != rows {
+				t.Fatalf("%d texts were laid out in %d rows", texts, len(held))
+			}
+			for _, row := range held {
+				if len(row) != seq {
+					t.Fatalf("%d texts gave a row of %d", texts, len(row))
+				}
+			}
+		}
+		// A row nothing was written into is padding, and what pools it divides
+		// by the tokens it is marked at.
+		for row := texts; row < rows; row++ {
+			if ids[row][0] != 1 {
+				t.Errorf("row %d of %d holds %d", row, texts, ids[row][0])
+			}
+			var marked int64
+			for _, at := range mask[row] {
+				marked += at
+			}
+			if marked != 1 {
+				t.Errorf("row %d of %d is marked at %d tokens", row, texts, marked)
+			}
+		}
+	}
+}
+
+// The shapes one run meets are the sequence lengths and no more, whatever a
+// batch holds.
+func TestARunMeetsOneShapePerSequenceLength(t *testing.T) {
+	const rows, limit, step = 8, 256, 64
+	seen := map[[2]int]bool{}
+	for texts := 1; texts <= rows; texts++ {
+		for _, tokens := range []int{1, 40, 65, 200, 300} {
+			batch := make([][]int, texts)
+			for i := range batch {
+				batch[i] = make([]int, tokens)
+			}
+			ids, _, _ := padded(batch, rows, bucket(tokens, step, limit), 1)
+			seen[[2]int{len(ids), len(ids[0])}] = true
+		}
+	}
+	if want := limit/step + 2; len(seen) > want {
+		t.Errorf("a run met %d shapes, and the cache holds %d", len(seen), want)
+	}
+}
