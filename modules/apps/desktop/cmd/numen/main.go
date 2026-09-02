@@ -149,9 +149,8 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		stop,
 	)
 
-	// The window settles the vault before it lets a quit through, so what runs
-	// behind it here is asked for with nothing left owed. A run that returns
-	// having never drawn a window settles it itself.
+	// The vault settles before a quit is let through, so the steps behind it are
+	// asked for here with nothing left owed.
 	defer func() {
 		going.wait()
 		behind.Go()
@@ -175,9 +174,9 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		// Run once the windows are gone, and on the thread they were drawn on.
-		// The settling is not among these steps: it is what let the quit
-		// through, and it is waited for on a thread of its own.
+		// Run on the thread the window is drawn on, once the application has
+		// stopped dispatching. The door on the vault's questions is shut in the
+		// step that closes it, and a request arriving after that is refused.
 		PostShutdown: behind.Go,
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the

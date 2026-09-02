@@ -566,9 +566,12 @@ func (o *Opened) Settle(ctx context.Context) bool {
 // again.
 func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.Leaving) }
 
-// Close stops the passes behind the vault, waits for them, and closes the
-// index.
+// Close shuts the door on every question, stops the passes behind the vault,
+// waits for them, and closes the index.
 func (o *Opened) Close() error {
+	// First: a search, a note and a link are answered straight from the index,
+	// and the index closes here.
+	o.API.Shut()
 	o.leave()
 	if o.API.Viewer != nil {
 		o.API.Viewer.close()

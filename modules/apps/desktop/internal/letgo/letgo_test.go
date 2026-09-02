@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-// TestTheStepsRunInTheOrderTheyWereGiven.
 func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 	var ran []string
 	mark := func(what string) func() { return func() { ran = append(ran, what) } }
@@ -19,9 +18,8 @@ func TestTheStepsRunInTheOrderTheyWereGiven(t *testing.T) {
 	}
 }
 
-// TestTheStepsRunOnceHoweverOftenTheyAreAskedFor. The application's shutdown
-// and the return of the run it was made in both ask, and the window is let go
-// of once.
+// The application's shutdown and the return of the run it was made in both ask,
+// and the window is let go of once.
 func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 	times := 0
 	steps := InOrder(func() { times++ })
@@ -35,37 +33,39 @@ func TestTheStepsRunOnceHoweverOftenTheyAreAskedFor(t *testing.T) {
 	}
 }
 
-// TestAskingWhileTheStepsRunWaitsForThem. A second ask does not go on to close
-// what a step still has open.
+// An ask that returned while a step was still running would be a run going on
+// to close what that step has open.
 func TestAskingWhileTheStepsRunWaitsForThem(t *testing.T) {
+	running := make(chan struct{})
 	held := make(chan struct{})
-	over := false
 	steps := InOrder(func() {
+		close(running)
 		<-held
-		over = true
 	})
 
 	go steps.Go()
+	<-running
 
-	waited := make(chan struct{})
+	returned := make(chan struct{})
 	go func() {
-		defer close(waited)
-		time.Sleep(50 * time.Millisecond)
 		steps.Go()
-		if !over {
-			t.Error("an ask arriving while the steps ran did not wait for them")
-		}
+		close(returned)
 	}()
+
+	select {
+	case <-returned:
+		t.Fatal("an ask arriving while the steps ran was answered before they were over")
+	case <-time.After(300 * time.Millisecond):
+	}
 
 	close(held)
 	select {
-	case <-waited:
+	case <-returned:
 	case <-time.After(5 * time.Second):
-		t.Fatal("the second ask was never answered")
+		t.Fatal("the ask was never answered")
 	}
 }
 
-// TestEveryoneAskingAtOnceLetsGoOnce.
 func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 	var mu sync.Mutex
 	times := 0
@@ -92,7 +92,6 @@ func TestEveryoneAskingAtOnceLetsGoOnce(t *testing.T) {
 	}
 }
 
-// TestAWindowHoldingNothingIsLetGoOfWithoutTrouble.
 func TestAWindowHoldingNothingIsLetGoOfWithoutTrouble(t *testing.T) {
 	InOrder().Go()
 }

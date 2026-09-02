@@ -32,6 +32,10 @@ type API struct {
 	// being served, so every reader takes it through Showing.
 	vault atomic.Pointer[domain.Vault]
 
+	// shut is the door on every question. It is closed before the index and the
+	// embedder an answer reaches into are taken away.
+	shut atomic.Bool
+
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
@@ -237,6 +241,12 @@ func (a *API) Showing() domain.Vault {
 
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
+
+// Shut refuses every question from now on, and there is no opening it again.
+// It is closed while everything an answer reaches into is still there.
+func (a *API) Shut() { a.shut.Store(true) }
+
+func (a *API) closed() bool { return a.shut.Load() }
 
 // shown is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.

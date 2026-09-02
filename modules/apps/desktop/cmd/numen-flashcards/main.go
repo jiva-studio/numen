@@ -170,9 +170,9 @@ func run(cfg container.Config, noAgent bool) error {
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		// Run once the windows are gone, and on the thread they were drawn on.
-		// The walk and the watch are waited for with no bound, so a window still
-		// on the screen is not what waits.
+		// Run on the thread the window is drawn on, once the application has
+		// stopped dispatching. The walk and the watch are waited for with no
+		// bound, and a window not yet destroyed holds until they are done.
 		PostShutdown: held.Go,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
