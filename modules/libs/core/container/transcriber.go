@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -60,28 +61,86 @@ func hearing(path string) string { return "hearing-" + path }
 // heavy is the one heavy run this machine does at a time. Reading a scan and
 // listening to a recording each hold the models and the processor, and they
 // take turns.
-var heavy = make(chan struct{}, 1)
+var heavy gate
 
-// takeHeavy waits for this machine's turn at the models and hands back what
-// gives the turn up. waiting is called where the turn is not free, so that a
-// person watching is told why nothing is moving. A context that ends while
-// waiting takes no turn.
-func takeHeavy(ctx context.Context, waiting func()) (func(), error) {
-	release := func() { <-heavy }
-	select {
-	case heavy <- struct{}{}:
-		return release, nil
-	default:
+// The lines a run waits in, the first of them served first. Work a person is
+// sitting in front of goes before work the vault set itself.
+const (
+	lineAsked = iota
+	lineUnasked
+	lines
+)
+
+// A gate hands out one turn at a time. A waiter stands in the line its work
+// belongs to and is served in the order it arrived there.
+type gate struct {
+	mu      sync.Mutex
+	held    bool
+	waiting [lines][]chan struct{}
+}
+
+// take waits for this machine's turn at the models and hands back what gives
+// the turn up. waiting is called where the turn is not free, so that a person
+// watching is told why nothing is moving. A context that ends while waiting
+// takes no turn.
+func (g *gate) take(ctx context.Context, asked bool, waiting func()) (func(), error) {
+	at := lineUnasked
+	if asked {
+		at = lineAsked
 	}
+
+	g.mu.Lock()
+	if !g.held {
+		g.held = true
+		g.mu.Unlock()
+		return g.give, nil
+	}
+	stand := make(chan struct{})
+	g.waiting[at] = append(g.waiting[at], stand)
+	g.mu.Unlock()
+
 	if waiting != nil {
 		waiting()
 	}
 	select {
-	case heavy <- struct{}{}:
-		return release, nil
+	case <-stand:
+		return g.give, nil
 	case <-ctx.Done():
+		g.leave(at, stand)
 		return nil, ctx.Err()
 	}
+}
+
+// give hands the turn to whoever has waited longest in the first line anybody
+// stands in, and lets it go where nobody does.
+func (g *gate) give() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for at := range g.waiting {
+		if len(g.waiting[at]) > 0 {
+			next := g.waiting[at][0]
+			g.waiting[at] = g.waiting[at][1:]
+			close(next)
+			return
+		}
+	}
+	g.held = false
+}
+
+// leave takes a waiter out of its line. One already handed the turn holds it,
+// so it is given on rather than dropped.
+func (g *gate) leave(at int, stand chan struct{}) {
+	g.mu.Lock()
+	for i, one := range g.waiting[at] {
+		if one == stand {
+			g.waiting[at] = slices.Delete(g.waiting[at], i, i+1)
+			g.mu.Unlock()
+			return
+		}
+	}
+	g.mu.Unlock()
+	<-stand
+	g.give()
 }
 
 // Transcribing listens to recordings behind whoever asked, and behind nobody.
@@ -307,8 +366,68 @@ func (t *Transcribing) hear(ctx context.Context, v domain.Vault, path string, as
 	default:
 		t.done(id)
 		t.recordAnswer(v, path)
+		if !res.Silent && !res.Unopened {
+			t.correct(ctx, v, path, asked)
+		}
 	}
 	return err
+}
+
+// correct puts a transcript right, where a person configured something to
+// proofread it with. An installation that named no profile, or asked for a
+// transcript to be put right by hand, does nothing here.
+//
+// A transcript whose proofreading failed is the transcript as it was heard.
+func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string, asked bool) {
+	said := t.cfg.SpeechProofreading
+	if !said.Automatically {
+		return
+	}
+
+	id := correcting(path)
+	fail := func(err error) {
+		t.say(task.Task{
+			ID: id, Doing: "Proofreading a transcript", About: path, Failed: err.Error(),
+		}, asked)
+	}
+
+	by, err := t.cfg.Proofreader(said.With, proofread.SpeechInstruction)
+	if err != nil {
+		fail(err)
+		return
+	}
+	if by == nil {
+		return
+	}
+
+	profile := t.cfg.Proofreading.Profiles[said.With]
+	t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
+
+	_, err = source.PutRight{
+		Readers: t.cfg.VaultReaders(),
+		Derived: t.cfg.DerivedStores(),
+		By:      by,
+		Lines:   profile.BatchSize,
+		Overlap: profile.Overlap,
+		Apart:   t.cfg.Proofreading.Apart(),
+		Cut:     t.Cut,
+		OnProgress: func(res source.PutRightResult) {
+			t.say(task.Task{
+				ID:    id,
+				Doing: "Proofreading a transcript",
+				About: path,
+				Done:  int64(res.Read),
+				Total: int64(res.Lines),
+			}, asked)
+		},
+	}.Execute(ctx, v, path)
+
+	switch {
+	case err == nil, errors.Is(err, context.Canceled):
+		t.done(id)
+	default:
+		fail(err)
+	}
 }
 
 // listen is the work itself: this machine's turn at the models, what is missing
@@ -332,7 +451,7 @@ func (t *Transcribing) listen(
 
 	// One heavy run on a machine: a scan being read holds the turn, and this
 	// waits for it.
-	release, err := takeHeavy(ctx, func() {
+	release, err := heavy.take(ctx, asked, func() {
 		t.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path}, asked)
 	})
 	if err != nil {

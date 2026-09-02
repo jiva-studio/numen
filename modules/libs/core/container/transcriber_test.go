@@ -212,7 +212,10 @@ func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by, "talks/one.mp3")
 
-	heavy <- struct{}{}
+	held, err := heavy.take(t.Context(), true, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	listening.Start(v, "talks/one.mp3")
 	waited := false
 	for range 200 {
@@ -226,7 +229,7 @@ func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
-	<-heavy
+	held()
 	listening.Wait()
 
 	if !waited {
