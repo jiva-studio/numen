@@ -3,10 +3,10 @@ title: Scanned books
 description: How a scan of paper becomes text you can search, and the settings that decide how it is read.
 ---
 
-A PDF that is scans of paper carries no text. Ask the [agent](/agent/) to read it and the pages
-are read here, on your machine: three small models — one that divides a page into its parts, one
-that finds the lines in a part, one that reads what a line says. Nothing is uploaded and no
-account is involved.
+A PDF that is scans of paper carries no text. Right-click it in the [files](/files/) and choose
+**Recognise** — or ask the [agent](/agent/) to read it — and the pages are read here, on your
+machine: three small models, one that divides a page into its parts, one that finds the lines in
+a part, one that reads what a line says. Nothing is uploaded and no account is involved.
 
 What comes out is kept in the vault's own `.numen/` folder, named after the bytes of the
 document, so a book that moves keeps its reading and two copies of one book share it.
