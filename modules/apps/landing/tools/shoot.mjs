@@ -23,25 +23,41 @@ const PORT = GIVEN ? Number(GIVEN) : 6099
 const QUALITY = 90
 /** The fewest bytes a drawn window comes to. Under it, nothing was drawn. */
 const DRAWN = 20_000
-/**
- * What the page shows, one to a band and one over them all.
- *
- * `over` names what the pointer is left on: the picture is taken once whatever
- * a hand resting there brings out is all the way out.
- */
-const SHOTS = [
-  { name: 'filing' },
-  { name: 'writing' },
-  { name: 'mapping', over: '[aria-label="The second law, child"]' },
-  { name: 'searching' },
-  { name: 'asking' },
-]
 /*
  * A window narrower than the column it is drawn in, so the application's own
  * text lands on the page larger than it stands on screen and can be read at a
  * glance.
  */
 const VIEWPORT = { width: 1180, height: 740 }
+/** The window a person runs their cards in: standing, and not a wide window. */
+const NARROW = { width: 760, height: 940 }
+
+/**
+ * What the page shows, one to a band and one over them all.
+ *
+ * `over` names what the pointer is left on: the picture is taken once whatever
+ * a hand resting there brings out is all the way out. `size` is the window it
+ * is drawn in, and the wide one where it names none.
+ */
+const SHOTS = [
+  { name: 'filing', story: 'application-window--filing' },
+  { name: 'writing', story: 'application-window--writing' },
+  {
+    name: 'mapping',
+    story: 'application-window--mapping',
+    over: '[aria-label="The second law, child"]',
+  },
+  { name: 'searching', story: 'application-window--searching' },
+  { name: 'asking', story: 'application-window--asking' },
+  { name: 'hearing', story: 'desktop-window--recording' },
+  { name: 'transcribing', story: 'desktop-window--transcribed' },
+  { name: 'recognising', story: 'desktop-window--recognised' },
+  { name: 'decking', story: 'desktop-window--deck' },
+  { name: 'cutting', story: 'desktop-window--stencil' },
+  { name: 'pacing', story: 'desktop-window--preset' },
+  { name: 'owing', story: 'flash-cards-window--owing', size: NARROW },
+  { name: 'reviewing', story: 'flash-cards-window--reviewing', size: NARROW },
+]
 /** Pixels for one, so the picture holds up where it is drawn wide. */
 const SCALE = 2.5
 /** How long Storybook is given to answer before this gives up. */
@@ -100,15 +116,16 @@ try {
   const chrome = systemChrome()
   const browser = await chromium.launch(chrome ? { executablePath: chrome } : {})
   for (const theme of ['light', 'dark']) {
-    const page = await browser.newPage({
-      viewport: VIEWPORT,
-      deviceScaleFactor: SCALE,
-      colorScheme: theme,
-    })
     for (const shot of SHOTS) {
-      const story = `application-window--${shot.name}`
+      // A window of its own size for each picture: the page holds two shapes,
+      // and one browser drawn at both would take the second at the first's.
+      const page = await browser.newPage({
+        viewport: shot.size ?? VIEWPORT,
+        deviceScaleFactor: SCALE,
+        colorScheme: theme,
+      })
       await page.goto(
-        `${base}/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`,
+        `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
         { waitUntil: 'networkidle' },
       )
       if (shot.over) await page.hover(shot.over)
@@ -118,8 +135,8 @@ try {
       if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
       await writeFile(join(INTO, name), taken)
       console.log(name)
+      await page.close()
     }
-    await page.close()
   }
   await browser.close()
 } finally {
