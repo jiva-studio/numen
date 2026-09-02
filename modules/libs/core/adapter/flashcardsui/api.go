@@ -3,8 +3,9 @@
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
 // the installation — the registry and the four scenarios flashcards is made of.
-// No scan runs behind it and nothing is embedded. What it writes into a vault
-// is levelled in the index by the paths it touched.
+// Nothing is embedded here. A vault the index does not carry is read into it,
+// and what this window writes into a vault is levelled in the index by the paths
+// it touched.
 package flashcardsui
 
 import (
@@ -18,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -59,6 +61,9 @@ type API struct {
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
+	// Tasking is everything being done behind the window. A build holding none
+	// says there is nothing.
+	Tasking *task.Tasks
 	// Day is where one day of review gives way to the next. A build holding none
 	// counts the day from midnight.
 	Day history.Day
@@ -79,6 +84,14 @@ type API struct {
 	mu sync.Mutex
 	// runs is the sitting open on each vault, by the vault's identity.
 	runs map[string]*flashcards.Run
+
+	// reads is how a vault the index does not carry is read into it, and behind
+	// is the life those readings run for. underway is the vaults being read now,
+	// and unreadable is why the last reading of one failed.
+	reads      Read
+	behind     context.Context
+	underway   map[string]bool
+	unreadable map[string]string
 
 	// following is everyone waiting to hear that a vault moved.
 	following following

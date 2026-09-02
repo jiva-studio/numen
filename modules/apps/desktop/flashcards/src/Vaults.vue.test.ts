@@ -20,6 +20,7 @@ const vault = (said: Partial<Owing> = {}): Owing => ({
   decks: [],
   presets: [],
   unread: '',
+  reading: false,
   ...said,
 })
 
@@ -124,9 +125,18 @@ describe('the front door once the counts are in', () => {
 
   // A vault that could not be counted says why, and says nothing about cards.
   it('says why a vault could not be counted, and prints no shape for it', () => {
-    const one = shown(false, [vault({ unread: 'this vault has not been read yet' })])
+    const one = shown(false, [vault({ unread: 'this folder cannot be read as a vault' })])
 
-    expect(one.find('.welcome__row--vault').text()).toContain('not been read')
+    expect(one.find('.welcome__row--vault').text()).toContain('cannot be read')
+    expect(one.findComponent(Coming).exists()).toBe(false)
+  })
+
+  // A vault the index does not carry is being read into it, which is what its
+  // row says while that runs.
+  it('says a vault is being read, and prints no shape for it', () => {
+    const one = shown(false, [vault({ counted: false, reading: true })])
+
+    expect(one.find('.welcome__row--vault').text()).toContain('Reading the vault')
     expect(one.findComponent(Coming).exists()).toBe(false)
   })
 })

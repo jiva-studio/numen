@@ -28,9 +28,8 @@ service FlashcardsService {
   // Counting a vault reads every deck in it and replays its whole answer log,
   // so the list stands while that runs.
   //
-  // A vault the index does not carry yet arrives with nothing counted and says
-  // so: the list of its decks is the index's answer, and this application
-  // builds none.
+  // A vault the index does not carry is read into it here, and its counts
+  // follow when the reading is done. What that reading is doing is Tasks.
   rpc Owing(OwingRequest) returns (stream OwingResponse);
 
   // Start opens a run and hands over what to ask, in order. A run writes one
@@ -82,6 +81,21 @@ service FlashcardsService {
   // name. Nothing is written: a curve is asked for the value a person is
   // moving and has not settled.
   rpc Curve(FlashcardsServiceCurveRequest) returns (FlashcardsServiceCurveResponse);
+
+  // Tasks is everything this window is doing behind itself, for as long as the
+  // caller listens. Reading a vault is the work it reports, and a vault is read
+  // without anyone asking, so the whole list arrives at once and again whenever
+  // any of it changes.
+  rpc Tasks(FlashcardsServiceTasksRequest) returns (stream FlashcardsServiceTasksResponse);
+}
+
+message FlashcardsServiceTasksRequest {}
+
+message FlashcardsServiceTasksResponse {
+  // Everything being done now, in the order the work began. The list arrives
+  // whole, because what is being done is a list and not a set of differences to
+  // apply.
+  repeated Task tasks = 1;
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -118,10 +132,14 @@ message VaultOwing {
   // scheduled by.
   repeated PresetOwing presets = 9;
 
-  // Set when the vault could not be counted: it has never been read by the
-  // editor, or its files could not be reached. The three numbers are then zero
-  // and this says why, in the person's own words.
+  // Set when the vault could not be counted: its files could not be reached, or
+  // reading it into the index failed. The three numbers are then zero and this
+  // says why, in the person's own words.
   string unread = 8;
+
+  // Set while the vault is being read into the index. The three numbers are not
+  // in yet, and a further count follows when the reading is done.
+  bool reading = 10;
 }
 
 message DeckOwing {

@@ -125,6 +125,11 @@ export interface Owing {
   readonly presets: readonly PresetOwing[]
   /** Why nothing was counted, where nothing was. */
   readonly unread: string
+  /**
+   * Whether the vault is being read into the index now. Its counts follow when
+   * the reading is done.
+   */
+  readonly reading: boolean
 }
 
 /** One card face as it is put to a person. */

@@ -23,15 +23,21 @@ const props = defineProps<{
 
 defineEmits<{ (event: 'choose', vaultId: string): void }>()
 
-/** A vault as a row of the list. One that could not be counted says why. */
+/**
+ * A vault as a row of the list. One being read into the index says so, and one
+ * that could not be counted says why.
+ */
 const listed = computed<readonly Held[]>(() =>
-  props.vaults.map((one) => ({
-    id: one.vaultId,
-    name: one.name,
-    path: one.path,
-    waiting: !one.counted,
-    ...(one.unread ? { detail: one.unread } : {}),
-  })),
+  props.vaults.map((one) => {
+    const said = one.reading ? 'Reading the vault' : one.unread
+    return {
+      id: one.vaultId,
+      name: one.name,
+      path: one.path,
+      waiting: !one.counted,
+      ...(said ? { detail: said } : {}),
+    }
+  }),
 )
 
 /**
@@ -43,7 +49,7 @@ const waiting = computed(
   () =>
     new Map(
       props.vaults
-        .filter((one) => !one.unread)
+        .filter((one) => !one.unread && !one.reading)
         .map((one) => [one.vaultId, one.counted ? one.due + one.new : null]),
     ),
 )

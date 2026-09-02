@@ -113,6 +113,14 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	one := &v1.VaultOwing{VaultId: v.ID, Name: v.Name, Path: v.Path}
 	owing, err := a.Owed.Execute(ctx, v)
 	if err != nil {
+		// A vault the index does not carry is read into it here, and its numbers
+		// arrive with the count that reading wakes.
+		if errors.Is(err, flashcards.ErrUnread) {
+			if underway, failed := a.reading(v); underway || failed != "" {
+				one.Reading, one.Unread = underway, failed
+				return one
+			}
+		}
 		one.Unread = err.Error()
 		return one
 	}

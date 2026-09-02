@@ -42,7 +42,7 @@ const on = ref<'vaults' | 'decks' | 'session'>('vaults')
 /** The vault whose decks are open, and whose cards are being asked. */
 const vault = ref('')
 
-const { notices, says, failed, putAway } = raising()
+const { notices, says, failed, doing, putAway } = raising()
 const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
@@ -311,6 +311,22 @@ onMounted(() => {
       if (!vault.value) return
       await done.read(vault.value)
       await schedules.read(chosen.value, today.value)
+    },
+  )
+  // What is being done behind the window, which is a vault read into the index.
+  // It is a stream because a reading begins without the page asking for one.
+  void follows(
+    () => cards.tasks({}),
+    (said) => {
+      doing(
+        said.tasks.map((at) => ({
+          id: at.id,
+          doing: at.doing,
+          about: at.about,
+          failed: at.failed,
+          asked: at.asked,
+        })),
+      )
     },
   )
 })

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 
 import { raising } from './notices'
+import type { Task } from './notices'
 
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {
@@ -55,4 +56,52 @@ describe('what the window has to say', () => {
 
     expect(one.notices.value).toHaveLength(1)
   })
+
+  // Reading a vault is what this window does behind itself, and a person opened
+  // the window on that vault, so the card is drawn the moment it arrives.
+  it('draws work being done, and draws it at once', () => {
+    const one = raising()
+    one.doing([reads()])
+
+    expect(one.notices.value[0]).toMatchObject({
+      id: 'reading\t01A',
+      says: 'Reading the vault',
+      about: 'Sanskrit',
+      working: true,
+      asked: true,
+    })
+  })
+
+  it('says why work stopped, and stands until it is put away', () => {
+    const one = raising()
+    one.doing([reads({ failed: 'no such folder' })])
+
+    expect(one.notices.value[0]).toMatchObject({
+      says: 'no such folder',
+      working: false,
+      tone: 'alarm',
+      stay: 'kept',
+    })
+  })
+
+  // The whole list arrives at once, so the whole list is what stands: work that
+  // finished is work the next list leaves out.
+  it('lets go of work the list no longer names', () => {
+    const one = raising()
+    one.doing([reads()])
+    one.says('the first', 'caution')
+    one.doing([])
+
+    expect(one.notices.value.map((said) => said.says)).toEqual(['the first'])
+  })
+})
+
+/** One vault being read, as the answer holds it. */
+const reads = (said: Partial<Task> = {}): Task => ({
+  id: 'reading\t01A',
+  doing: 'Reading the vault',
+  about: 'Sanskrit',
+  failed: '',
+  asked: true,
+  ...said,
 })

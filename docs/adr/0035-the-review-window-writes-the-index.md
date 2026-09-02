@@ -21,6 +21,8 @@ Which preset schedules a deck is now among what the index answers (ADR-0034), so
 
 ### The review window opens the index for writing
 
+**Superseded in part by [ADR-0045](0045-the-review-window-reads-a-vault-it-does-not-carry.md).** A vault the index does not carry is walked whole here; a vault it carries is still levelled by the paths that changed and no more. What follows in this section is the decision as it stood.
+
 Both pools, the schema put in place, and the same connection settings the editor opens with. Every write the window makes brings the paths it touched up to date before it returns, through the same refresh the editor uses and over the same cutting sizes, so neither application re-cuts what the other wrote.
 
 Only the paths that changed are read again. Nothing here rescans a vault.
@@ -32,6 +34,8 @@ Two processes now hold a writer each. A transaction that reads before it writes 
 The write pool therefore begins every transaction immediately. A writer whose turn has not come waits out the timeout and then fails, and a write is never lost quietly.
 
 ### An index nobody has built is built here
+
+**Superseded in part by [ADR-0045](0045-the-review-window-reads-a-vault-it-does-not-carry.md).** A vault the index does not carry is walked into it here, over the same scan the editor walks one with. What follows in this section is the decision as it stood.
 
 ADR-0030 left the file to the application that scans. Opening for writing makes it, so a machine that has only ever run its cards now has an index file. What a person is told is unchanged: a vault nothing has scanned still reads as one nothing has read.
 

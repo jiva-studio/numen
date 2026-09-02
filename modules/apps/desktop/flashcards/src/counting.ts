@@ -55,6 +55,7 @@ export interface Vaulted {
     stopsOn: Stopped
   }[]
   unread: string
+  reading: boolean
 }
 
 /** One message of the count. */
@@ -120,7 +121,8 @@ export function counting(deps: Counting) {
     new: 0,
     decks: [],
     presets: [],
-    unread: '',
+    unread: one.unread,
+    reading: one.reading,
   })
 
   /** A vault as its own count leaves it. */
@@ -161,6 +163,7 @@ export function counting(deps: Counting) {
       stopsOn: preset.stopsOn,
     })),
     unread: one.unread,
+    reading: false,
   })
 
   /**
@@ -176,9 +179,13 @@ export function counting(deps: Counting) {
     })
   }
 
-  /** One vault's count, into the row it belongs to. */
+  /**
+   * One vault's count, into the row it belongs to. A vault being read into the
+   * index has no count yet, and its row goes on waiting for one.
+   */
   const fills = (one: Vaulted) => {
-    vaults.value = vaults.value.map((row) => (row.vaultId === one.vaultId ? owed(one) : row))
+    const now = one.reading ? listed(one) : owed(one)
+    vaults.value = vaults.value.map((row) => (row.vaultId === one.vaultId ? now : row))
   }
 
   const ask = async () => {

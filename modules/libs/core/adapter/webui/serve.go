@@ -453,14 +453,10 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
 
-	scan := usecase.Scan{
-		Readers:      o.cfg.VaultReaders(),
-		Vaults:       o.Index.Vaults(),
-		Notes:        o.Index.NotesCutAt(o.cfg.Cutting()),
-		Known:        o.Index.Queries(),
-		Maintenance:  o.Index.Maintenance(),
-		RebuildIndex: rebuild,
-	}
+	// A rebuild is asked for at this opening, and the scan the container hands
+	// over is told which opening this is.
+	scan := o.cfg.Scan(o.Index)
+	scan.RebuildIndex = rebuild
 
 	// Following the vault is a use case; this adapter only says who hears about
 	// it. Whatever a change turns out to mean is decided in one place, so a

@@ -7,7 +7,8 @@
 // It writes into the vault it is sitting to — a mark for a card that carries
 // none — and the answers, which go to the vault's own folder. Each write is
 // levelled in the index before it returns, so what the window draws next is
-// what it just wrote.
+// what it just wrote. A vault the index does not carry at all is read into it
+// here.
 package main
 
 import (
@@ -22,8 +23,11 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func main() {
@@ -88,9 +92,21 @@ func run(cfg container.Config, noAgent bool) error {
 		Presets: running.Presets,
 		Curves:  running.Curves,
 		Notes:   db.Queries(),
+		Tasking: task.New(),
 		Day:     running.Day,
 		Now:     time.Now,
 	}
+
+	// A vault the index does not carry is walked into it here, over the same
+	// scan the editor and the command line walk one with. The reading outlives
+	// the count that asked for it, so it runs for the life of the window.
+	scan := cfg.Scan(db)
+	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
+		walk := scan
+		walk.OnProgress = func(res vault.ScanResult) { got(int64(res.Indexed)) }
+		_, err := walk.Execute(ctx, v)
+		return err
+	})
 
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is

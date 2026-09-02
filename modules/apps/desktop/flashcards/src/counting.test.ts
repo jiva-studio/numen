@@ -34,6 +34,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
     },
   ],
   unread: '',
+  reading: false,
   ...said,
 })
 
@@ -149,14 +150,29 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.says(listing(vault('01A'), vault('01B')))
-    front.says(count(vault('01A', { unread: 'this vault has not been read yet' })))
+    front.says(count(vault('01A', { unread: 'this folder cannot be read as a vault' })))
     front.says(count(vault('01B', { due: 6, new: 0 })))
     front.ends()
     await settles()
 
-    expect(one.vaults.value[0]?.unread).toBe('this vault has not been read yet')
+    expect(one.vaults.value[0]?.unread).toBe('this folder cannot be read as a vault')
     expect(one.vaults.value[1]).toMatchObject({ counted: true, due: 6 })
     expect(one.counting.value).toBe(false)
+  })
+
+  // A vault being read into the index has no numbers yet, so its row goes on
+  // waiting for them rather than standing at nothing.
+  it('leaves a vault being read uncounted, and says it is being read', async () => {
+    const front = feeding()
+    const one = counting({ cards: front.cards, failed: () => {} })
+
+    void one.count()
+    front.says(listing(vault('01A')))
+    front.says(count(vault('01A', { reading: true, faces: 0, due: 0, new: 0 })))
+    front.ends()
+    await settles()
+
+    expect(one.vaults.value[0]).toMatchObject({ counted: false, reading: true, unread: '' })
   })
 
   it('is still counting until the last of them has arrived', async () => {

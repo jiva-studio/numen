@@ -50,9 +50,9 @@ type Standings struct {
 	Links   port.LinkQueries
 }
 
-// ErrUnread is what a vault the index does not carry gets. Nothing has read it
-// yet, and the application that reads a vault is the editor.
-var ErrUnread = errors.New("this vault has not been read yet: open it in the editor once")
+// ErrUnread is what a vault the index does not carry gets. It is the signal to
+// read that vault, and a window holding one reads it.
+var ErrUnread = errors.New("the index does not carry this vault yet")
 
 // Execute reads every deck the vault holds and says what stands in it. A vault
 // the index does not carry gets ErrUnread.
@@ -66,9 +66,8 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 
 // Decks is the path of every deck the vault holds.
 //
-// A vault the index does not carry gets ErrUnread. Its files are on the disk
-// and this application does not walk them: the list of decks is the index's
-// answer, and a vault absent from it is not a vault holding no cards.
+// A vault the index does not carry gets ErrUnread. The list of decks is the
+// index's answer, and a vault absent from it is not a vault holding no cards.
 func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
 	if u.Notes == nil {
 		return nil, ErrUnread

@@ -79,6 +79,7 @@ The numbers are identity, not order. This list is the order.
 - [ADR-0040 — One rule says which day a card lands on](0040-one-rule-says-which-day-a-card-lands-on.md)
 - [ADR-0041 — A preset's day is divided over the decks it schedules](0041-a-day-is-divided-over-the-decks.md)
 - [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
+- [ADR-0045 — The review window reads a vault the index does not carry](0045-the-review-window-reads-a-vault-it-does-not-carry.md)
 
 ### Agents
 
