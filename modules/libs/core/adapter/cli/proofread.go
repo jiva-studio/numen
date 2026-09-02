@@ -25,6 +25,9 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	if err != nil {
 		return err
 	}
+	if domain.MediaType(args[1]) != "" {
+		return putRightCommand(ctx, out, cfg, v, args[1])
+	}
 	named := cfg.ScanProofreading.With
 	by, err := cfg.Proofreader(named, proofread.ScanInstruction)
 	if err != nil {
