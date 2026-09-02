@@ -42,9 +42,13 @@ options:
   --note-extensions <list>  which files are notes (default: .md)
 `
 
-// Main runs the command line and returns a process exit code.
-func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing settings.Indexing) int {
-	if err := Run(ctx, out, args, indexing); err != nil {
+// Main runs the command line and returns a process exit code. Platform carries
+// what this machine supplies rather than the settings file, and the settings
+// are read over it.
+func Main(ctx context.Context, out, errOut io.Writer, args []string,
+	indexing settings.Indexing, platform container.Config,
+) int {
+	if err := Run(ctx, out, args, indexing, platform); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -53,8 +57,10 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string, indexing se
 
 // Run is Main with its output injected and errors returned, so what the person
 // sees is testable.
-func Run(ctx context.Context, out io.Writer, args []string, indexing settings.Indexing) error {
-	cfg := container.Config{}.Indexing(indexing)
+func Run(ctx context.Context, out io.Writer, args []string,
+	indexing settings.Indexing, platform container.Config,
+) error {
+	cfg := platform.Indexing(indexing)
 	fs := flag.NewFlagSet("numen-cli", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	fs.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
