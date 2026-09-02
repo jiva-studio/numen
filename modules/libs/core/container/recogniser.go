@@ -389,7 +389,7 @@ func (r *Recognising) Collecting(
 	defer r.going.Done()
 	for {
 		for _, v := range vaults {
-			r.collect(ctx, known, queue, v)
+			r.collect(ctx, known, queue, queue, v)
 		}
 		select {
 		case <-ctx.Done():
@@ -399,10 +399,41 @@ func (r *Recognising) Collecting(
 	}
 }
 
-// collect takes up every reading of one vault that has a batch out.
+// TakingUp puts right what a run before this one stopped part way through.
+//
+// A proofreading stands at the page it reached, so the pages after it are asked
+// about again once, when the application opens. A proofreader with a queue
+// leaves a batch behind it and is taken up by Collecting.
+func (r *Recognising) TakingUp(
+	ctx context.Context,
+	known port.SourceQueries,
+	vaults ...domain.Vault,
+) {
+	said := r.cfg.ScanProofreading
+	if !said.Automatically {
+		return
+	}
+	queue, err := r.queue()
+	if err != nil || queue != nil {
+		return
+	}
+	by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
+	if err != nil || by == nil {
+		return
+	}
+	r.going.Add(1)
+	defer r.going.Done()
+	for _, v := range vaults {
+		r.collect(ctx, known, by, nil, v)
+	}
+}
+
+// collect takes up every reading of one vault that stands short of its last
+// page.
 func (r *Recognising) collect(
 	ctx context.Context,
 	known port.SourceQueries,
+	by port.Proofreader,
 	queue port.ProofreadQueue,
 	v domain.Vault,
 ) {
@@ -419,11 +450,22 @@ func (r *Recognising) collect(
 		res, err := source.Proofread{
 			Readers:         r.cfg.VaultReaders(),
 			Derived:         r.cfg.DerivedStores(),
-			By:              queue,
+			By:              by,
 			Queue:           queue,
 			Pages:           profile.BatchSize,
 			MaxEditDistance: r.cfg.Proofreading.Distance(),
 			Cut:             r.Cut,
+			OnProgress: func(res source.ProofreadResult) {
+				// A reading already put right to its last page is one nobody is
+				// waiting on, and it is shown nowhere.
+				if res.Read >= res.Pages {
+					return
+				}
+				r.say(task.Task{
+					ID: id, Doing: "Proofreading a reading", About: said.Path,
+					Done: int64(res.Read), Total: int64(res.Pages),
+				})
+			},
 		}.Execute(ctx, v, said.Path)
 
 		switch {
@@ -432,7 +474,10 @@ func (r *Recognising) collect(
 				ID: id, Doing: "Proofreading a reading",
 				About: said.Path, Failed: err.Error(),
 			})
-		case res.None, res.Busy, res.Read >= res.Pages:
+		case res.Busy:
+			// The reading is held by another run, and that run is the one whose
+			// progress the list carries.
+		case res.None, res.Read >= res.Pages:
 			// A reading with nothing left to put right is a reading nobody is
 			// waiting on.
 			r.done(id)

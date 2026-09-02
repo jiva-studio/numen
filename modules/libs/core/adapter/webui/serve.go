@@ -442,6 +442,10 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// vault this installation holds is asked after.
 	go recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
 
+	// A proofreading stands at the page it reached, so one that ended among the
+	// batches is taken up when the application opens.
+	go recognising.TakingUp(watching, o.Index.SourcesKnown(), known...)
+
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
@@ -451,6 +455,10 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	if o.cfg.Transcribes {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
+
+	// A transcript's proofreading stands at the line it reached, and is taken up
+	// here whether or not this installation listens to recordings on its own.
+	go transcribing.TakingUp(watching, o.Index.SourcesKnown(), v)
 
 	// Opening a vault is the same act in both windows, so it is one thing in the
 	// container. What this window says about it while it runs is below.

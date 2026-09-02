@@ -418,9 +418,8 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	}
 
 	profile := t.cfg.Proofreading.Profiles[said.With]
-	t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
 
-	_, err = source.PutRight{
+	res, err := source.PutRight{
 		Readers:   t.cfg.VaultReaders(),
 		Derived:   t.cfg.DerivedStores(),
 		By:        by,
@@ -429,6 +428,11 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 		InFlight:  profile.InFlight,
 		Cut:       t.Cut,
 		OnProgress: func(res source.PutRightResult) {
+			// A transcript already put right to its last line is one nobody is
+			// waiting on, and it is shown nowhere.
+			if res.Read >= res.Lines {
+				return
+			}
 			t.say(task.Task{
 				ID:    id,
 				Doing: "Proofreading a transcript",
@@ -440,10 +444,42 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	}.Execute(ctx, v, path)
 
 	switch {
+	case res.Busy:
+		// The transcript is held by another run, and that run is the one whose
+		// progress the list carries.
 	case err == nil, errors.Is(err, context.Canceled):
 		t.done(id)
 	default:
 		fail(err)
+	}
+}
+
+// TakingUp puts right what a run before this one stopped part way through.
+//
+// A proofreading stands at the line it reached, so the lines after it are asked
+// about again once, when the application opens. Which transcripts those are is
+// a question the store already answers, and no queue of them is kept.
+func (t *Transcribing) TakingUp(
+	ctx context.Context,
+	known port.SourceQueries,
+	vaults ...domain.Vault,
+) {
+	if !t.cfg.SpeechProofreading.Automatically || known == nil {
+		return
+	}
+	t.going.Add(1)
+	defer t.going.Done()
+	for _, v := range vaults {
+		heard, err := known.Recognised(ctx, v.ID, domain.KindRecording)
+		if err != nil {
+			continue
+		}
+		for _, said := range heard {
+			if ctx.Err() != nil {
+				return
+			}
+			t.correct(ctx, v, said.Path, false)
+		}
 	}
 }
 
