@@ -21,7 +21,11 @@ An installation may turn this off and ask by hand instead. A vault of a hundred 
 
 ### One heavy run on a machine
 
-Reading a scan and listening to a recording both hold the models and the processor. They take turns.
+Reading a scan and listening to a recording both hold the models and the processor. They take turns, and a run that has the turn keeps it until it ends.
+
+### The queue takes what it can carry
+
+A recording larger than the size the settings name is left for somebody to ask for by name. A folder of albums is days of a machine, and nobody put them in a vault to be read.
 
 ### Every ending is an answer, and only one of them is "later"
 
@@ -43,13 +47,12 @@ What listened is recorded beside what it produced, so a transcript made by somet
 
 ## Consequences
 
-- Dropping a recording into a folder is the whole gesture.
+- Dropping a recording into a folder is the whole gesture, up to the size the settings name.
 - A vault of recordings is a machine at work for as long as it takes, and the
 setting that stops it is the only thing that stops it.
 - An answer is a file, so a person who deletes the service folder is asking for
 every recording in the vault to be heard again.
-- Recognition and transcription cannot both be running, so a person who asked
-for a scan waits for it before a recording is heard.
+- Recognition and transcription cannot both be running. A person who asks for a scan while a recording is being heard waits for that recording, which is hours for a long one.
 
 ## Alternatives considered
 

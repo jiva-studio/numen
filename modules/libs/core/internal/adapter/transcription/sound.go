@@ -57,7 +57,11 @@ func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, 
 		if err != nil {
 			return nil, err
 		}
-		if r.found, err = r.by.stretches(ctx, resampled(sound, rate, sampleRate)); err != nil {
+		at, err := resampled(ctx, sound, rate, sampleRate)
+		if err != nil {
+			return nil, err
+		}
+		if r.found, err = r.by.stretches(ctx, at); err != nil {
 			return nil, err
 		}
 		r.raw, r.cut = nil, true
@@ -349,9 +353,9 @@ const sincWidth = 16
 //
 // Each output sample is what the input says at that moment, band-limited to
 // whichever of the two rates is the lower.
-func resampled(in []float32, from, to int) []float32 {
+func resampled(ctx context.Context, in []float32, from, to int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
-		return in
+		return in, nil
 	}
 	ratio := float64(to) / float64(from)
 	cutoff := math.Min(ratio, 1)
@@ -360,6 +364,13 @@ func resampled(in []float32, from, to int) []float32 {
 
 	out := make([]float32, int(float64(len(in))*ratio))
 	for i := range out {
+		// An hour of sound is tens of millions of these, and a person closing
+		// the window waits for whichever one it is on.
+		if i%(1<<16) == 0 {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+		}
 		centre := float64(i) / ratio
 		first := max(int(math.Ceil(centre-reach)), 0)
 		last := min(int(math.Floor(centre+reach)), len(in)-1)
@@ -374,7 +385,7 @@ func resampled(in []float32, from, to int) []float32 {
 			out[i] = float32(sum / weight)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // The kernel is read off a table this many steps to the input sample. An hour

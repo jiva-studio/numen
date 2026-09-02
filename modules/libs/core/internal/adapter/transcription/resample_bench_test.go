@@ -10,6 +10,6 @@ func BenchmarkResampledAMinute(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		resampled(in, 44100, sampleRate)
+		_, _ = resampled(b.Context(), in, 44100, sampleRate)
 	}
 }

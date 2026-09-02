@@ -2,7 +2,9 @@ package transcription
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
+	"errors"
 	"math"
 	"testing"
 )
@@ -84,7 +86,10 @@ func TestResamplingKeepsTheTone(t *testing.T) {
 		in[n] = float32(math.Sin(2 * math.Pi * hz * float64(n) / from))
 	}
 
-	out := resampled(in, from, sampleRate)
+	out, err := resampled(t.Context(), in, from, sampleRate)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if want := sampleRate / 2; out == nil || len(out) < want-8 || len(out) > want+8 {
 		t.Fatalf("half a second at %d hertz came out as %d samples", from, len(out))
 	}
@@ -102,7 +107,11 @@ func TestResamplingKeepsTheTone(t *testing.T) {
 // A recording already at the rate the models take is left alone.
 func TestResamplingWhatIsAlreadyRight(t *testing.T) {
 	in := []float32{1, 2, 3}
-	if out := resampled(in, sampleRate, sampleRate); &out[0] != &in[0] {
+	out, err := resampled(t.Context(), in, sampleRate, sampleRate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if &out[0] != &in[0] {
 		t.Error("a recording at the right rate was resampled")
 	}
 }
@@ -120,5 +129,17 @@ func TestSignedSamplesOfAnyWidth(t *testing.T) {
 		if got := signed(one.raw); got != one.want {
 			t.Errorf("%v is %d and should be %d", one.raw, got, one.want)
 		}
+	}
+}
+
+// An hour of sound is minutes of arithmetic, and a person closing the window
+// waits for none of it.
+func TestResamplingStopsWhenAsked(t *testing.T) {
+	ctx, stop := context.WithCancel(t.Context())
+	stop()
+
+	in := make([]float32, 44100*10)
+	if _, err := resampled(ctx, in, 44100, sampleRate); !errors.Is(err, context.Canceled) {
+		t.Errorf("stopping the resampling gave %v", err)
 	}
 }

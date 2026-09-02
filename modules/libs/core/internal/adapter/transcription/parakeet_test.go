@@ -198,7 +198,11 @@ func TestHearingAWholeRecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	text, err := by.Hear(t.Context(), port.Audio{Samples: resampled(sound, rate, sampleRate)})
+	at, err := resampled(t.Context(), sound, rate, sampleRate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text, err := by.Hear(t.Context(), port.Audio{Samples: at})
 	if err != nil {
 		t.Fatal(err)
 	}
