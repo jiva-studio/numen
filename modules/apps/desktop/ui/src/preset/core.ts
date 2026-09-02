@@ -164,6 +164,13 @@ export interface Written {
   readonly at: string
 }
 
+/** What making a preset came back with. */
+export interface Made {
+  /** Where it is filed. Empty when nothing was made. */
+  readonly path: string
+  readonly refusal: Refused | null
+}
+
 /** What a preset comes to at one place of the grid. */
 export interface Point {
   readonly reviews: number
@@ -281,6 +288,11 @@ export interface Presets {
    */
   list(): Promise<readonly Listed[]>
   /**
+   * A preset made in a folder under the name it is given, naming none of its
+   * settings. Every key it does not carry stands at the default.
+   */
+  makes(title: string, folder: string): Promise<Made>
+  /**
    * A deck put on a preset, and on the defaults where the path is empty. Seen
    * is what a read of the deck gave this caller, and a deck that moved past it
    * comes back changed with nothing written.
@@ -312,6 +324,10 @@ export const presets: Presets = {
   list: async () => (await asking.listPresets({})).presets.map(
     (one) => ({ path: one.path, title: one.title }),
   ),
+  makes: async (title, folder) => {
+    const answer = await asking.makePreset({ title, folder })
+    return { path: answer.path, refusal: refusalIn(answer) }
+  },
   schedules: async (deck, preset, seen) => {
     const answer = await asking.schedule({
       deck,

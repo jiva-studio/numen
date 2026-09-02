@@ -150,6 +150,8 @@ export const WORDS = {
   preset: 'Preset',
   /** What a preset tab is called before the vault has said what the note is. */
   newPreset: 'Preset',
+  /** What a preset's file is called before a name has been typed over it. */
+  made: 'New preset',
   /** What the three segments are, said over them. */
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],

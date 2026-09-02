@@ -114,9 +114,10 @@ type API struct {
 	Joins *note.Linking
 
 	// Cards reads a deck or a stencil, Offered lists the stencils the vault
-	// holds, and Cuts puts either back. MakesCards makes a deck or a stencil, and
-	// RenamesField gives one of a stencil's fields a different name everywhere it
-	// is written. A build without them answers that cards cannot be worked here.
+	// holds, and Cuts puts either back. MakesCards makes a deck, a stencil or a
+	// preset, and RenamesField gives one of a stencil's fields a different name
+	// everywhere it is written. A build without them answers that cards cannot
+	// be worked here.
 	Cards        *cards.Read
 	Offered      *cards.List
 	Cuts         *cards.Write

@@ -369,6 +369,38 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 	}
 }
 
+// A preset is made with the key that says what it is and with none of its
+// settings, and every key it does not carry stands at the default.
+func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
+	vs := indexed(t)
+	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+
+	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Folder: "presets"})
+	if err != nil {
+		t.Fatalf("make a preset: %v", err)
+	}
+	if made.Path != "presets/Prosody.md" {
+		t.Errorf("path = %q", made.Path)
+	}
+	got := read(t, vs.first, made.Path)
+	if !strings.Contains(got, "type: preset\n") {
+		t.Errorf("no stamp: %q", got)
+	}
+	for _, key := range []string{"goal:", "minutes_a_day:", "fields:"} {
+		if strings.Contains(got, key) {
+			t.Errorf("the file names %s: %q", key, got)
+		}
+	}
+
+	types, err := vs.db.NoteQueries().Types(t.Context(), vs.first.ID, []string{made.Path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if types[made.Path] != domain.TypePreset {
+		t.Errorf("the index does not hold it as what it is: %v", types)
+	}
+}
+
 // A stencil's first field is what its cards are named by, so a stencil is made
 // with one and nothing is written where there is none.
 func TestAStencilIsMadeWithAFirstField(t *testing.T) {

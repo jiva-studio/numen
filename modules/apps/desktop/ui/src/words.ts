@@ -11,6 +11,7 @@ import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
+import { WORDS as preset } from './preset/words'
 
 /** What the vault refused a command, in words a person reads. */
 export const REFUSED: Record<Refused, string> = {
@@ -86,6 +87,8 @@ export const WORDS = {
   newNote: note.newNote,
   newDeck: cards.newDeck,
   newStencil: cards.newStencil,
+  /** The note that says how the decks pointing at it are scheduled. */
+  newPreset: preset.made,
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   files: 'Show the files of the vault',

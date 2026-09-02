@@ -219,6 +219,8 @@ export interface Words extends Silences {
   /** The two files a card is written in: the deck it is one of, and what cuts it. */
   readonly newDeck: string
   readonly newStencil: string
+  /** The note that says how the decks pointing at it are scheduled. */
+  readonly newPreset: string
   readonly newPlex: string
   /** The folders and files of the vault, put in front of the person. */
   readonly files: string
@@ -436,6 +438,13 @@ export const commandsOf = (
   {
     id: 'stencil',
     text: words.newStencil,
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
+  {
+    id: 'newPreset',
+    text: words.newPreset,
     band: 'window',
     needs: 'naming',
     where: (at) => at.ready,

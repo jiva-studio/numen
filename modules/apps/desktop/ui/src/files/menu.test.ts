@@ -8,7 +8,15 @@ import { describe, expect, it } from 'vitest'
 import { banded } from '@numen/ui'
 import { cannotRun, runsAgain } from '../commanding'
 import type { Source } from '../core'
-import { itemsFor, OFFERED } from './menu'
+import {
+  itemsFor,
+  NEW_DECK,
+  NEW_FOLDER,
+  NEW_NOTE,
+  NEW_PRESET,
+  NEW_STENCIL,
+  OFFERED,
+} from './menu'
 
 /** What a row of that kind offers, by the identity of each item. */
 const on = (source: Source, folder = false): readonly string[] =>
@@ -70,6 +78,7 @@ describe('where a run stands in the menu', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -83,6 +92,7 @@ describe('where a run stands in the menu', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -103,9 +113,36 @@ describe('the menu where this build cannot do a run at all', () => {
   })
 })
 
+describe('the four files the menu makes', () => {
+  it('offers a preset off every row, beside the note, the deck and the stencil', () => {
+    expect(itemsFor(null, false).map((one) => one.id)).toStrictEqual([
+      NEW_NOTE,
+      NEW_DECK,
+      NEW_STENCIL,
+      NEW_PRESET,
+      NEW_FOLDER,
+    ])
+  })
+
+  it('offers a preset on a row of every kind', () => {
+    for (const source of ['note', 'book', 'recording', 'other'] as Source[]) {
+      expect(on(source), source).toContain(NEW_PRESET)
+      expect(on(source, true), source).toContain(NEW_PRESET)
+    }
+  })
+
+  it('offers a preset in the band the files stand in', () => {
+    expect(drawn('note')).toContain(NEW_PRESET)
+  })
+})
+
 describe('what the menu offers anywhere', () => {
   it('holds both runs, so choosing one is the menu’s own', () => {
     expect(OFFERED.has('transcribe')).toBe(true)
     expect(OFFERED.has('recognise')).toBe(true)
+  })
+
+  it('holds the preset, so choosing it is the menu’s own', () => {
+    expect(OFFERED.has(NEW_PRESET)).toBe(true)
   })
 })
