@@ -111,7 +111,7 @@ export interface Doing {
   moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   makesFolder(path: string): Promise<Refused | null>
-  /** A recording listened to, and what was heard written down. */
+  /** A recording transcribed, and the words of it written down. */
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>

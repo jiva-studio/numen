@@ -97,6 +97,8 @@ const window = (
 ) => {
   const done: string[] = []
   const said: string[] = []
+  /** The voice each sentence was said in, one to a sentence. */
+  const tones: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
   const refusal = answers.turnedDown ?? null
   const on: Doing = {
@@ -189,9 +191,13 @@ const window = (
     syncing: async (chosen) => void done.push(`syncing ${chosen}`),
     hanging: async (chosen) => void done.push(`hanging ${chosen}`),
     parts: async (chosen) => void done.push(`parts ${chosen}`),
-    says: (text) => void (text ? said.push(text) : undefined),
+    says: (text, kind) => {
+      if (!text) return
+      said.push(text)
+      tones.push(kind ?? '')
+    },
   }
-  return { on, done, said }
+  return { on, done, said, tones }
 }
 
 /** One command carried out over the note in front. */
@@ -320,12 +326,17 @@ describe('a note made', () => {
  * its own words, and the window shows what it is given.
  */
 const WHY: Record<Answer, string> = {
-  started: 'This recording is being heard now.',
-  queued: 'This recording is waiting its turn to be heard.',
-  running: 'This recording is being heard already.',
-  done: 'This recording has already been heard.',
-  unfit: 'Only a recording is heard, and this file is not one.',
+  started: 'Transcribing this recording has begun.',
+  queued: 'This recording is in line, behind the one being transcribed now.',
+  running: 'This recording is being transcribed now.',
+  done: 'This recording has already been transcribed.',
+  unfit: 'Only a recording is transcribed, and this file is not one.',
+  answered:
+    'Nothing came of transcribing this recording: unopened: the mp3 recording: mp3: MPEG version 2.5 is not supported',
 }
+
+/** The outcomes the window says as a report, which are the runs under way. */
+const REPORTED: readonly Answer[] = ['started', 'queued']
 
 /** A run asked for over the recording in front, as it came out. */
 const asked = (answer: Answer) => {
@@ -354,9 +365,21 @@ describe('a run asked for over a file', () => {
     }
   })
 
-  // The person asked for this one by name, and a recording already heard would
-  // otherwise look like a command that did nothing.
-  it('says a recording already heard has been heard', async () => {
+  // Only a run under way is a report. Everything else is a refusal: the person
+  // asked for work, and none is being done.
+  it('says a run under way as a report and the rest as refusals', async () => {
+    for (const answer of Object.keys(WHY) as Answer[]) {
+      const { one, deed } = asked(answer)
+
+      await carry(deed, one.on)
+
+      expect(one.tones, answer).toStrictEqual([REPORTED.includes(answer) ? 'report' : 'refusal'])
+    }
+  })
+
+  // The person asked for this one by name, and a recording already transcribed
+  // would otherwise look like a command that did nothing.
+  it('says a recording already transcribed has been transcribed', async () => {
     const { one, deed } = asked('done')
 
     await carry(deed, one.on)
@@ -364,8 +387,19 @@ describe('a run asked for over a file', () => {
     expect(one.said).toStrictEqual([WHY.done])
   })
 
-  it('says the same of a scan already read', async () => {
-    const why = 'This scan has already been read.'
+  // A run that got no words out of the recording wrote down what it got, and
+  // asking again gets the same until that record is taken away.
+  it('says what a run answered about a recording it got no words out of', async () => {
+    const { one, deed } = asked('answered')
+
+    await carry(deed, one.on)
+
+    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
+    expect(one.said).toStrictEqual([WHY.answered])
+  })
+
+  it('says the same of a scan already recognised', async () => {
+    const why = 'This scan has already been recognised.'
     const one = window({ outcome: { able: true, path: 'books/Ants.pdf', answer: 'done', why } })
 
     await carry(deedOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)

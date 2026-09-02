@@ -75,7 +75,7 @@ export const WORDS = {
   destroy: 'Destroy note',
   ask: 'Ask the agent about this note',
   copy: 'Copy path',
-  /** The two runs over the file in front: a recording heard, a scan read. */
+  /** The two runs over the file in front: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe this recording',
   recognise: 'Recognise the text of this document',
   reveal: 'Show this note in the files',

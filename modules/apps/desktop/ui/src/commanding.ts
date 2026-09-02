@@ -342,16 +342,16 @@ const onVault = (at: Where): boolean => at.vault.id !== ''
  * The runs this build cannot do at all. The application says so the first time
  * one is asked for, and it is offered nowhere after that.
  */
-const beyond = new Set<string>()
+const beyond = ref<ReadonlySet<string>>(new Set())
 
-/** Whether this build can do a run at all. */
-export const canRun = (run: string): boolean => !beyond.has(run)
+/** Whether this build can do a run at all. A view drawing it follows the answer. */
+export const canRun = (run: string): boolean => !beyond.value.has(run)
 
 /** A run the application answered it cannot do at all. */
-export const cannotRun = (run: string): void => void beyond.add(run)
+export const cannotRun = (run: string): void => void (beyond.value = new Set(beyond.value).add(run))
 
 /** Every run offerable again, which a test asks for. */
-export const runsAgain = (): void => beyond.clear()
+export const runsAgain = (): void => void (beyond.value = new Set())
 
 /**
  * A run over the file in front, which the vault has to hold that kind of and

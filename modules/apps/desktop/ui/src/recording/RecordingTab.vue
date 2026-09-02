@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * A recording tab: a player for one recording, and under it the words heard in
+ * A recording tab: a player for one recording, and under it the transcript of
  * it, written as one text.
  *
  * A cue is a place in the recording, so its time in the gutter is clicked to
- * play from there. What the tab draws is what `listening` hands it, and nothing
- * is worked out here.
+ * play from there. A recording with no transcript is a pane with the player in
+ * the middle of it and the run that writes one down under that.
  */
 import { computed, watchPostEffect } from 'vue'
 import { LocateFixed } from '@lucide/vue'
@@ -31,32 +31,50 @@ watchPostEffect(() =>
 /** Whether the view keeps the line being said in sight. */
 const follows = computed(() => props.held.following.value)
 
+/** Whether this recording has no transcript, which the whole pane is given to. */
+const empty = computed(() => props.held.times.value.length === 0)
 </script>
 
 <template>
-  <div class="recording">
-    <div class="recording__head">
-      <Player
-        v-if="props.held.playable.value"
-        class="recording__player"
-        :at="props.held.now.value"
-        :length="props.held.runs.value"
-        :playing="props.held.playing.value"
-        :label="words.player"
-        @play="props.held.play()"
-        @pause="props.held.pause()"
-        @seek="props.held.go($event)"
-      />
-      <p v-else class="recording__note">{{ words.unplayable }}</p>
+  <div class="recording" :class="{ 'recording--empty': empty }">
+    <div
+      class="recording__head"
+      :class="empty ? 'recording__head--middle' : 'recording__head--card'"
+    >
+      <div class="recording__controls">
+        <Player
+          v-if="props.held.playable.value"
+          class="recording__player"
+          :at="props.held.now.value"
+          :length="props.held.runs.value"
+          :playing="props.held.playing.value"
+          :label="words.player"
+          @play="props.held.play()"
+          @pause="props.held.pause()"
+          @seek="props.held.go($event)"
+        />
+        <p v-else class="recording__note">{{ words.unplayable }}</p>
+        <button
+          v-if="!empty"
+          type="button"
+          class="recording__follow"
+          :aria-label="words.follow"
+          :title="words.follow"
+          :aria-pressed="follows ? 'true' : 'false'"
+          @click="props.held.follows(!follows)"
+        >
+          <LocateFixed class="recording__icon" />
+        </button>
+      </div>
+
+      <p v-if="empty" class="recording__note">{{ props.held.note.value }}</p>
       <button
+        v-if="props.held.transcribable.value"
         type="button"
-        class="recording__follow"
-        :aria-label="words.follow"
-        :title="words.follow"
-        :aria-pressed="follows ? 'true' : 'false'"
-        @click="props.held.follows(!follows)"
+        class="recording__ask"
+        @click="props.held.transcribes()"
       >
-        <LocateFixed class="recording__icon" />
+        {{ words.transcribe }}
       </button>
     </div>
     <!-- What went wrong stands above the words, where it is read whether or
@@ -69,7 +87,7 @@ const follows = computed(() => props.held.following.value)
     </p>
 
     <Editor
-      v-if="props.held.times.value.length"
+      v-if="!empty"
       class="recording__transcript"
       :model-value="props.held.prose.value"
       :readonly="!props.held.editable.value"
@@ -79,10 +97,6 @@ const follows = computed(() => props.held.following.value)
       @update:model-value="(said: string) => props.held.typed(said)"
       @save="props.held.keep()"
     />
-
-    <p v-if="props.held.note.value" class="recording__note">
-      {{ props.held.note.value }}
-    </p>
   </div>
 </template>
 
@@ -90,7 +104,7 @@ const follows = computed(() => props.held.following.value)
 .recording {
   /* The measure the words are read at. */
   --recording-measure: 46rem;
-  /* Between the player and the follow. */
+  /* Between the player and whatever stands beside it or under it. */
   --recording-apart: 1rem;
   /* What the card standing over the words takes at the top of the pane. */
   --recording-card: calc(2rem + 2 * var(--numen-panel-padding) + 2 * var(--numen-panel-gap));
@@ -105,18 +119,20 @@ const follows = computed(() => props.held.following.value)
   color: var(--numen-node-fg);
 }
 
+.recording__head {
+  display: flex;
+  max-inline-size: var(--recording-measure);
+  margin-inline: auto;
+}
+
 /* The pause and the follow float over the words and stay where a person can
    reach them, whatever the words do underneath. */
-.recording__head {
+.recording__head--card {
   position: absolute;
   inset-block-start: var(--numen-panel-gap);
   inset-inline: var(--numen-gutter);
   z-index: 1;
-  display: flex;
   align-items: center;
-  gap: var(--recording-apart);
-  max-inline-size: var(--recording-measure);
-  margin-inline: auto;
   padding: var(--numen-panel-padding);
   border: var(--numen-stroke) solid var(--numen-panel-border);
   border-radius: var(--numen-radius-panel);
@@ -124,6 +140,44 @@ const follows = computed(() => props.held.following.value)
      through. */
   background: var(--numen-node-bg);
   box-shadow: var(--numen-shadow-card);
+}
+
+/* With no transcript the player is the whole of the pane, and what a person can
+   ask for stands under it. */
+.recording__head--middle {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--recording-apart);
+  inline-size: 100%;
+  margin: auto;
+  padding: var(--numen-gutter);
+}
+
+.recording__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--recording-apart);
+  inline-size: 100%;
+}
+
+.recording__head--middle .recording__note {
+  padding: 0;
+  text-align: center;
+}
+
+.recording__ask {
+  flex: none;
+  padding: 0.3rem 0.9rem;
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius-field);
+  background: var(--numen-field-bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.recording__ask:hover {
+  border-color: var(--numen-focus-border);
 }
 
 .recording__player {
@@ -195,7 +249,7 @@ const follows = computed(() => props.held.following.value)
 }
 
 /* Whatever stands where the words would begins below the card. */
-.recording > .recording__note:first-of-type {
+.recording:not(.recording--empty) > .recording__note:first-of-type {
   padding-block-start: var(--recording-card);
 }
 </style>

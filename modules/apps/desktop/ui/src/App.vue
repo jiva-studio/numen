@@ -209,10 +209,18 @@ const agents = agentKind(held.host, () =>
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
 
 /** The recording tabs, each playing the recording it is filed at. */
-const heard = recordingKind(held.host, (path) => listening(recordings, path), puts)
+const heard = recordingKind(
+  held.host,
+  (path) => listening(recordings, path),
+  {
+    runs: (id, path) =>
+      carries(id, { ...where(), path: '', title: '', file: path, source: 'recording' }),
+  },
+  puts,
+)
 
-// A transcript grows while a model listens, and the list of work is the only
-// word of it the window gets.
+// A transcript grows while a run goes, and the list of work is the only word of
+// it the window gets.
 watch(tasks, () => heard.ticked(tasks.value))
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */

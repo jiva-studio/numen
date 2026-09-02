@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -46,25 +47,36 @@ const (
 	outcomeRunning = "running"
 	outcomeDone    = "done"
 	outcomeUnfit   = "unfit"
+	// answered is a run having got no words out of this source and written
+	// down what it got instead. Asking again gets the same.
+	outcomeAnswered = "answered"
 )
 
 // The sentences the window shows, one for every outcome and told apart by what
 // they say.
+//
+// They answer a person who chose Transcribe or Recognise from a menu, and they
+// say the word that person chose.
 const (
-	notAScan      = "Only a scan is read, and this file is not one."
-	notARecording = "Only a recording is heard, and this file is not one."
+	notAScan      = "Only a scan is recognised, and this file is not one."
+	notARecording = "Only a recording is transcribed, and this file is not one."
 
-	readAlready  = "This scan has already been read."
-	heardAlready = "This recording has already been heard."
+	readAlready  = "This scan has already been recognised."
+	heardAlready = "This recording has already been transcribed."
 
-	readingNow = "This scan is being read now."
-	hearingNow = "This recording is being heard now."
+	readingNow = "This scan is being recognised now."
+	hearingNow = "This recording is being transcribed now."
 
-	readingQueued = "This scan is in line, behind the scan being read now."
-	hearingQueued = "This recording is in line, behind the recording being heard now."
+	readingQueued = "This scan is in line, behind the one being recognised now."
+	hearingQueued = "This recording is in line, behind the one being transcribed now."
 
-	readingBegun = "Reading this scan has begun."
-	hearingBegun = "Listening to this recording has begun."
+	readingBegun = "Recognising this scan has begun."
+	hearingBegun = "Transcribing this recording has begun."
+
+	// What a run said about a source it got no words out of stands after
+	// these, and asking again gets the same until that record is taken away.
+	readingAnswered = "Nothing came of recognising this scan:"
+	hearingAnswered = "Nothing came of transcribing this recording:"
 )
 
 // began is what the window is told of a run it asked for: what became of the
@@ -88,6 +100,9 @@ type telling struct {
 	queued  string
 	// started is a run over this source, begun now.
 	started string
+	// answered opens what a run said about a source it got no words out of.
+	// What it said follows it.
+	answered string
 }
 
 // Recognise begins reading the scan at a path.
@@ -97,11 +112,12 @@ func (a *API) Recognise(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	a.begin(w, r, path, domain.KindBook, a.Recognises, telling{
-		unfit:   notAScan,
-		done:    readAlready,
-		running: readingNow,
-		queued:  readingQueued,
-		started: readingBegun,
+		unfit:    notAScan,
+		done:     readAlready,
+		running:  readingNow,
+		queued:   readingQueued,
+		started:  readingBegun,
+		answered: readingAnswered,
 	})
 }
 
@@ -112,11 +128,12 @@ func (a *API) Transcribe(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	a.begin(w, r, path, domain.KindRecording, a.Transcribes, telling{
-		unfit:   notARecording,
-		done:    heardAlready,
-		running: hearingNow,
-		queued:  hearingQueued,
-		started: hearingBegun,
+		unfit:    notARecording,
+		done:     heardAlready,
+		running:  hearingNow,
+		queued:   hearingQueued,
+		started:  hearingBegun,
+		answered: hearingAnswered,
 	})
 }
 
@@ -161,6 +178,13 @@ func (a *API) begin(
 	case got.under:
 		answer(w, began{Path: ref.Path, Answer: outcomeRunning, Why: says.running})
 		return
+	case got.answered != "":
+		answer(w, began{
+			Path:   ref.Path,
+			Answer: outcomeAnswered,
+			Why:    says.answered + " " + got.answered,
+		})
+		return
 	}
 
 	// What this machine has fetched is not asked about. A run comes up in its
@@ -173,11 +197,13 @@ func (a *API) begin(
 }
 
 // reached is how far a run over one source has got: done is the whole of the
-// text a model produced already standing, and under is a run holding this very
-// source now.
+// text a model produced already standing, under is a run holding this very
+// source now, and answered is what a run said about a source it got no words
+// out of.
 type reached struct {
-	done  bool
-	under bool
+	done     bool
+	under    bool
+	answered string
 }
 
 // far says how far a run over the source at a path has got.
@@ -205,6 +231,17 @@ func (a *API) far(ctx context.Context, v domain.Vault, path string) (reached, er
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err
 	}
+	// A run that got no words out of a source wrote down what it got instead,
+	// and asking again gets the same. Taking that record away is how a person
+	// asks for the source to be tried afresh.
+	switch held, err := store.Read(ctx, derived.Answer(said.From, said.Hash)); {
+	case err == nil:
+		got.answered = strings.TrimSpace(string(held))
+		return got, nil
+	case !errors.Is(err, fs.ErrNotExist):
+		return got, err
+	}
+
 	got.under = !free(ctx, store, derived.Partial(said.From, said.Hash))
 	return got, nil
 }

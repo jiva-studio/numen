@@ -79,8 +79,8 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
-  // Over the file in front: the words heard in a recording, and the text read
-  // off a scan.
+  // Over the file in front: the transcript of a recording, and the text
+  // recognised off a scan.
   ['transcribe', Captions],
   ['recognise', ScanText],
   // What a tab of the tree does itself.

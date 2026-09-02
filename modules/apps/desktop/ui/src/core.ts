@@ -109,10 +109,12 @@ export interface Task {
 
 /**
  * How a run asked for over a file came out: it began now, it waits its turn
- * behind another, this file is being worked on already, it has been done, or
- * the file is not of that kind.
+ * behind another, this file is being worked on already, it has been done, the
+ * file is not of that kind, or a run got no words out of it and wrote down what
+ * it got. Asking again over that last one gets the same until the record of it
+ * is taken away.
  */
-export type Answer = 'started' | 'queued' | 'running' | 'done' | 'unfit'
+export type Answer = 'started' | 'queued' | 'running' | 'done' | 'unfit' | 'answered'
 
 /**
  * What asking for a run answered: how it came out, and one sentence beside it
@@ -130,7 +132,7 @@ export type Outcome =
 
 /** The runs a person asks for over one file of the vault. */
 export interface Runs {
-  /** A recording listened to, and what was heard written down. */
+  /** A recording transcribed, and the words of it written down. */
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>
