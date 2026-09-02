@@ -94,7 +94,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 // nobody recorded as a link is answered as a link is.
 func (q *Queries) Resolve(
 	ctx context.Context, vaultID, from string, written []string,
-) (map[string]string, error) {
+) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -104,18 +104,18 @@ func (q *Queries) Resolve(
 	}
 
 	asked := make(map[string]bool, len(written))
-	out := make(map[string]string, len(written))
+	out := make(map[string]domain.ResolvedLink, len(written))
 	for _, raw := range written {
 		if asked[raw] {
 			continue
 		}
 		asked[raw] = true
-		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}}
+		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
 		if err := q.resolve(ctx, vault, vaultID, from, &one); err != nil {
 			return nil, err
 		}
 		if one.To != "" {
-			out[raw] = one.To
+			out[raw] = one
 		}
 	}
 	return out, nil

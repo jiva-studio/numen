@@ -295,6 +295,17 @@ export const core: Core & Asking & Commanding = {
       answer.found.map((one) => [one.path, { kind: holding[one.kind], type: typed[one.type] }]),
     )
   },
+  /**
+   * Where each of those addresses lands, by the address it was asked about. A
+   * note an identifier reaches in another vault is left out: this window puts
+   * the vault it is showing in its tabs.
+   */
+  resolve: async (from, written) => {
+    const answer = await vault.resolve({ from, written: [...written] })
+    return new Map(
+      answer.reached.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
+    )
+  },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
     const answer = await vault.names({ query, limit })

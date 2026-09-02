@@ -358,6 +358,40 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	return connect.NewResponse(out), nil
 }
 
+// Resolve answers where addresses written in one note land. An address that
+// reaches nothing is left out of the answer.
+func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, and an address asked about twice is
+	// one answer.
+	out := &v1.ResolveResponse{}
+	said := make(map[string]bool, len(found))
+	for _, written := range r.Msg.GetWritten() {
+		one, reached := found[written]
+		if !reached || said[written] {
+			continue
+		}
+		said[written] = true
+		vault, crossed := one.InVault(showing.ID)
+		out.Reached = append(out.Reached, &v1.Reached{
+			Written:   written,
+			Path:      one.To,
+			Vault:     vault,
+			Crossed:   crossed,
+			Ambiguous: one.Ambiguous,
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
 // Changes reports what moved, for as long as the caller listens.
 func (a *API) Changes(
 	ctx context.Context,

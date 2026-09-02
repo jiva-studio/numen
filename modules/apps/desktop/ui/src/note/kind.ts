@@ -8,7 +8,7 @@
  * it is owed is in `entering.ts`.
  */
 import { computed } from 'vue'
-import type { PlexShowing } from '@numen/ui'
+import { pointsAtNote, type PlexShowing } from '@numen/ui'
 import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
 import type { Change } from './drawing'
@@ -26,6 +26,16 @@ type Notes = ReturnType<typeof editing>
 type Drawings = ReturnType<typeof drawn>
 
 export type { Called }
+
+/** What the notes of a window ask of the vault, beside what names them. */
+export interface Asked extends Called {
+  /**
+   * Where each of those addresses lands, by the address it was asked about.
+   * They are written in the note at `from`, and one that reaches nothing is
+   * absent.
+   */
+  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
+}
 
 /** What one note tab holds: its text, and the answers a person gives it. */
 export interface Held {
@@ -46,12 +56,17 @@ export interface Held {
   /** The editor of this note, as it is drawn and as it goes. */
   drew(editor: unknown): void
   measure(): void
+  /**
+   * A link in the prose followed. One naming a note opens it beside this one;
+   * an address no note answers to opens nothing.
+   */
+  follows(address: string): void
   /** The tab is closing, and what is unwritten goes to the file first. */
   shuts(id: string): void
 }
 
 export function noting(
-  vault: Called,
+  vault: Asked,
   notes: Notes,
   drawings: Drawings,
   host: Host,
@@ -145,6 +160,14 @@ export function noting(
     take: () => notes.take(id),
     drew: (editor: unknown) => keyboard.drew(id, editor),
     measure: () => keyboard.measure(id),
+    follows: (address: string) => {
+      if (!pointsAtNote(address)) return
+      const from = notes.where(id)
+      void vault.resolve(from, [address]).then((landed) => {
+        const path = landed.get(address)
+        if (path) void puts.opens(path, '', 'beside')
+      })
+    },
     /** The tab stands until the note says the write is done, and goes then. */
     shuts: (tab: string) => {
       keyboard.drops(id)

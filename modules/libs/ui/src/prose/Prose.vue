@@ -7,6 +7,7 @@
  * is the typography plugin's.
  */
 import { computed } from 'vue'
+import { pointsAtNote } from '../linking/address'
 import { render } from './render'
 
 const props = withDefaults(
@@ -15,8 +16,13 @@ const props = withDefaults(
     text: string
     /** Still being written: a word that has just arrived is shown arriving. */
     arriving?: boolean
+    /**
+     * The addresses this text points at that reach nothing. A link carrying
+     * one is drawn as not resolving.
+     */
+    unresolved?: readonly string[]
   }>(),
-  { arriving: false },
+  { arriving: false, unresolved: () => [] },
 )
 
 const emit = defineEmits<{
@@ -28,13 +34,16 @@ const emit = defineEmits<{
   (event: 'follow', href: string, press: MouseEvent): void
 }>()
 
-const drawn = computed(() => render(props.text))
+const drawn = computed(() => render(props.text, new Set(props.unresolved)))
 const Drawn = () => drawn.value
 
 const pressed = (press: MouseEvent) => {
   const link = (press.target as HTMLElement | null)?.closest?.('a')
   const href = link?.getAttribute('href')
-  if (href) emit('follow', href, press)
+  if (!href) return
+  // A note is addressed and not located, so a browser has nowhere to take one.
+  if (pointsAtNote(href)) press.preventDefault()
+  emit('follow', href, press)
 }
 </script>
 
@@ -55,6 +64,14 @@ const pressed = (press: MouseEvent) => {
   font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* A link that reaches nothing is drawn as the words it is, under a broken
+   line. */
+.prose :deep(a[data-reaches='nothing']) {
+  color: var(--numen-hushed);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
 }
 
 /* A table wider than the measure scrolls inside itself, carrying its own

@@ -134,6 +134,18 @@ export { conversation } from './thread/conversation'
 export type { Conversation, Wording } from './thread/conversation'
 export type { AgentPort, AgentStep, Place } from './thread/agent'
 
+/** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
+export {
+  addressOf,
+  pointsAtNote,
+  stated,
+  wikilinkAt,
+  wikilinksIn,
+  NAME,
+  NOTE,
+} from './linking/address'
+export type { Address, Wikilink } from './linking/address'
+
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'
 

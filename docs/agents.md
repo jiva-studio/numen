@@ -44,6 +44,14 @@ Three things, appended to whatever the model already carries:
 
 Where the person has a note in front of them, its path is named, and a task saying "this note" means that one.
 
+## What an answer links to
+
+A note an answer speaks about is named as `[[Harmonic oscillator]]` — the same brackets a note is written with, resolved the same way, and pressing one opens the note in a tab beside what the person is looking at. A name no note answers to is drawn as reaching nothing, and pressing it opens nothing. `[[note://<identifier>]]` names one note where a title is shared. See [Links](links.md).
+
+A passage of a book is named as `[the Remuna episode](numen:library%2FA%20Book.pdf?start=62690&length=1246)`: a document's path, percent-encoded, and the run of its text the search gave. Pressing one opens the document there, with the other passages of that answer lit beside it.
+
+The window a person runs their cards in opens neither: an answer there says where each part came from in words, and a link is not a place a person can go.
+
 ## The tools
 
 Five families and a reader of files, served over the vault's own endpoint.

@@ -24,6 +24,9 @@ service VaultService {
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
 
+  // Resolve answers where addresses written in one note land.
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
   // Names is the names in a vault that match what was typed: a note's own
   // title, and the headings inside notes. It is asked as a person types, and
   // the last word matches on its prefix.
@@ -464,6 +467,43 @@ message NeighbourhoodResponse {
   // Which of three the note in focus is, so a client draws a deck and a stencil
   // as what they are.
   NoteType focus_type = 3;
+}
+
+message ResolveRequest {
+  // The note the addresses are written in. A name resolves by a path relative
+  // to it, so a caller with no note to name gets the priority that is left.
+  string from = 1;
+
+  // The addresses to answer about. A scheme written before `://` is read as
+  // one — `name://Entropy`, `note://<identifier>` — and everything else is a
+  // name, so what a file carries between its brackets is taken as it stands.
+  repeated string written = 2;
+}
+
+message ResolveResponse {
+  // Where each address lands, in the order they were asked about. One that
+  // reaches nothing is absent, and so is one asked about twice.
+  repeated Reached reached = 1;
+}
+
+// Reached is one address and the note it reaches now.
+message Reached {
+  // The address as it was asked about, which is how the caller finds its answer.
+  string written = 1;
+
+  // Where the note it reaches is filed.
+  string path = 2;
+
+  // The vault holding that note. An identifier names one note in the world, so
+  // an address may land outside the vault it was written in.
+  string vault = 3;
+
+  // Set where that vault is not the one this call was answered about.
+  bool crossed = 4;
+
+  // Set where several notes answer to the name. It reaches the nearest of them,
+  // which is a fact about where the notes currently sit.
+  bool ambiguous = 5;
 }
 
 message NamesRequest {
