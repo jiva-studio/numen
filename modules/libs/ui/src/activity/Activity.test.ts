@@ -1,14 +1,14 @@
 /**
- * How a line of work is laid out.
- *
- * The stories draw it; what is asserted here is which words go where, which a
- * browser is not needed to read.
+ * How a line of work is laid out: which words go where, and what stands beside
+ * them. The stories are where it is drawn.
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Activity from './Activity.vue'
 
-const line = (props: Record<string, unknown>) => mount(Activity, { props })
+type Props = InstanceType<typeof Activity>['$props']
+
+const line = (props: Props) => mount(Activity, { props })
 
 describe('a line of work', () => {
   it('carries what is happening and what it is happening to on lines of their own', () => {
