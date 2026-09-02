@@ -82,12 +82,12 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	_, ref, err := a.held(ctx, path)
+	showing, ref, err := a.held(ctx, path)
 	if err != nil || ref.Kind != domain.KindRecording {
 		a.Document(w, r, path)
 		return
 	}
-	raw, err := a.transcript(ctx, ref.Path)
+	raw, err := a.transcript(ctx, showing, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -98,7 +98,7 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 		Path:   ref.Path,
 		Length: heard,
 		Heard:  heard,
-		Media:  a.Playing.Address(a.Showing(), ref.Path),
+		Media:  a.Playing.Address(showing, ref.Path),
 		Type:   domain.MediaType(ref.Path),
 	}
 	if len(cues) > 0 {
@@ -124,7 +124,7 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	_, ref, err := a.held(ctx, path)
+	showing, ref, err := a.held(ctx, path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -133,7 +133,7 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
 		return
 	}
-	said, store, listened, err := a.heard(ctx, ref.Path)
+	said, store, listened, err := a.heard(ctx, showing, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -141,11 +141,13 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 	told := spoken{Path: ref.Path}
 	var raw []byte
 	if listened {
-		told.Editable = free(ctx, store, derived.Partial(said.From, said.Hash))
 		if raw, err = a.transcribed(ctx, store, said); err != nil {
 			refuse(w, err)
 			return
 		}
+		// Taken after the words, so a run that began while they were being read
+		// is one the window is told about.
+		told.Editable = free(ctx, store, derived.Partial(said.From, said.Hash))
 	}
 	_, cues := transcript.Parse(raw)
 	cues, err = narrowed(r.URL.Query(), cues)
@@ -190,7 +192,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 
-	_, ref, err := a.held(ctx, put.Path)
+	showing, ref, err := a.held(ctx, put.Path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -199,7 +201,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
 		return
 	}
-	said, store, listened, err := a.heard(ctx, ref.Path)
+	said, store, listened, err := a.heard(ctx, showing, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -233,7 +235,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 	// is cut again from what it now says. A write that landed is not refused
 	// for a cut that could not be asked for.
 	if a.Cut != nil {
-		if err := a.Cut(ctx, a.Showing(), ref.Path); err != nil {
+		if err := a.Cut(ctx, showing, ref.Path); err != nil {
 			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Failed: err.Error()})
 		}
 	}
@@ -251,6 +253,10 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 // Speech runs forward: a cue ends no earlier than it begins, and begins after
 // the one before it ends. A cue whose words trim away is dropped, and its
 // timings still bound the cue after it.
+//
+// A transcript carrying no words at all is refused: what was heard comes back
+// by deleting the file beside it, and writing nothing over the words leaves the
+// recording saying nothing with nothing to edit.
 func ordered(cues []cue) ([]transcript.Cue, error) {
 	out := make([]transcript.Cue, 0, len(cues))
 	last := cue{From: -1, To: -1}
@@ -262,12 +268,20 @@ func ordered(cues []cue) ([]transcript.Cue, error) {
 			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", at, one.From, last.From)
 		case one.From < last.To:
 			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, one.From, last.To)
+		case strings.ContainsAny(one.Text, "\r\n"):
+			// One cue is one line of the transcript, and the window edits it as
+			// one. A cue broken over two lines is two the window would offer to
+			// edit and one the recording would play.
+			return nil, fmt.Errorf("cue %d: a cue stands on one line", at)
 		}
 		last = one
 		if strings.TrimSpace(one.Text) == "" {
 			continue
 		}
 		out = append(out, transcript.Cue{Text: one.Text, From: one.From, To: one.To})
+	}
+	if len(out) == 0 {
+		return nil, errors.New("a transcript of no words is not one this recording was put right to")
 	}
 	return out, nil
 }
@@ -294,23 +308,26 @@ func narrowed(query url.Values, cues []transcript.Cue) ([]transcript.Cue, error)
 	return transcript.At(cues, start, length), nil
 }
 
-// held is the vault's reader and what it holds at a path. Everything from
-// outside reaches the vault through a reader, so a path leaving it is refused
-// there.
-func (a *API) held(ctx context.Context, path string) (port.VaultReader, domain.FileRef, error) {
+// held is the vault the window is showing and what it holds at a path. It is
+// the one reading of the vault a request gets, and everything the request goes
+// on to do is done to that vault.
+//
+// Everything from outside reaches the vault through a reader, so a path leaving
+// it is refused there.
+func (a *API) held(ctx context.Context, path string) (domain.Vault, domain.FileRef, error) {
 	showing := a.Showing()
 	if showing.ID == "" || a.Readers == nil {
-		return nil, domain.FileRef{}, errNoVault
+		return domain.Vault{}, domain.FileRef{}, errNoVault
 	}
 	reader, err := a.Readers.Open(showing)
 	if err != nil {
-		return nil, domain.FileRef{}, err
+		return domain.Vault{}, domain.FileRef{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if err != nil {
-		return nil, domain.FileRef{}, err
+		return domain.Vault{}, domain.FileRef{}, err
 	}
-	return reader, ref, nil
+	return showing, ref, nil
 }
 
 // hearing is what says which model listened to a recording and where what it
@@ -325,16 +342,20 @@ func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
 
 // heard is what listened to the recording at a path and the store holding what
 // it wrote. It answers false for a recording nothing has listened to.
-func (a *API) heard(ctx context.Context, path string) (port.Recognised, port.DerivedStore, bool, error) {
+func (a *API) heard(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+) (port.Recognised, port.DerivedStore, bool, error) {
 	sources, stores, ok := a.hearing()
 	if !ok {
 		return port.Recognised{}, nil, false, nil
 	}
-	said, held, err := sources.Reading(ctx, a.Showing().ID, path)
+	said, held, err := sources.Reading(ctx, v.ID, path)
 	if err != nil || !held || said.From == "" {
 		return port.Recognised{}, nil, false, err
 	}
-	store, err := stores.Open(a.Showing())
+	store, err := stores.Open(v)
 	if err != nil {
 		return port.Recognised{}, nil, false, err
 	}
@@ -344,8 +365,8 @@ func (a *API) heard(ctx context.Context, path string) (port.Recognised, port.Der
 // transcript is what a model wrote down of the recording at a path, and nothing
 // where nothing has listened to it. A run still going is read as far as it has
 // got.
-func (a *API) transcript(ctx context.Context, path string) ([]byte, error) {
-	said, store, listened, err := a.heard(ctx, path)
+func (a *API) transcript(ctx context.Context, v domain.Vault, path string) ([]byte, error) {
+	said, store, listened, err := a.heard(ctx, v, path)
 	if err != nil || !listened {
 		return nil, err
 	}

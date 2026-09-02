@@ -264,13 +264,18 @@ func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
 	return out, nil
 }
 
+// Remove takes a name out of the store, along with the file a claim on it is
+// held on. A caller works in names and knows of no claim, so a name it takes
+// away leaves none behind.
 func (d *Derived) Remove(_ context.Context, name string) error {
-	target, err := d.at(name)
-	if err != nil {
-		return err
-	}
-	if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return err
+	for _, one := range []string{name, name + claimSuffix} {
+		target, err := d.at(one)
+		if err != nil {
+			return err
+		}
+		if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
 	}
 	return nil
 }

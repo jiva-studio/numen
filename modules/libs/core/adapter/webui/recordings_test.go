@@ -473,6 +473,13 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 		{"a cue beginning before the recording", edited(cue{Text: "said", From: -1, To: 4200})},
 		{"bytes that are not a transcript", "{"},
 		{"a transcript of another recording", `{"path":"talks/other.mp3","cues":[]}`},
+		// One cue is one line, and the window edits it as one.
+		{"a cue broken over two lines", edited(
+			cue{Text: "said\nand said next", From: 1500, To: 4200},
+		)},
+		{"a cue carrying a carriage return", edited(
+			cue{Text: "said\rand said next", From: 1500, To: 4200},
+		)},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			held := whole(spoke())
@@ -549,5 +556,127 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	}
 	if len(held) != 0 {
 		t.Errorf("a transcript was written for a recording nothing heard: %v", held)
+	}
+}
+
+// A transcript of no words is not one a recording was put right to. Taking away
+// the file beside the artifact is what gives back what was heard.
+func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
+	for _, one := range []struct {
+		what string
+		body string
+	}{
+		{"a transcript naming no cues", `{"path":"` + talk + `"}`},
+		{"a transcript of empty cues", edited(cue{Text: "  ", From: 1500, To: 4200})},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			held := whole(spoke())
+			_, handler := listeningTo(t, held)
+
+			out := putting(handler, one.body)
+			if out.Code != http.StatusBadRequest {
+				t.Fatalf("the transcript was answered with %d: %s", out.Code, out.Body)
+			}
+			if _, kept := held[derived.Said(listener, hashed)]; kept {
+				t.Error("a transcript of no words was written over the recording")
+			}
+			if told := heard(t, handler); len(told.Cues) != 2 {
+				t.Errorf("the recording now says %+v", told.Cues)
+			}
+		})
+	}
+}
+
+// swapping is a window whose vault is put away while a request is being
+// answered, as it is when a person opens another one.
+type swapping struct {
+	port.VaultReaders
+	then func()
+}
+
+func (s swapping) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := s.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return stating{VaultReader: reader, then: s.then}, nil
+}
+
+type stating struct {
+	port.VaultReader
+	then func()
+}
+
+func (s stating) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+	ref, err := s.VaultReader.Stat(ctx, path)
+	s.then()
+	return ref, err
+}
+
+// The vault a path belongs to is the vault it is cut again in. A window moved
+// to another vault while the write was being made does not cut this recording
+// there.
+func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
+	held := whole(spoke())
+	api, handler := listeningTo(t, held)
+	standing := api.Showing()
+	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
+
+	api.Readers = swapping{VaultReaders: filesystem.Readers{}, then: func() { api.show(elsewhere) }}
+
+	var cutIn []domain.Vault
+	api.Cut = func(_ context.Context, v domain.Vault, _ string) error {
+		cutIn = append(cutIn, v)
+		return nil
+	}
+
+	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
+	if out.Code != http.StatusOK {
+		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	}
+	if len(cutIn) != 1 {
+		t.Fatalf("the recording was cut again in %v", cutIn)
+	}
+	if cutIn[0].ID != standing.ID {
+		t.Errorf("the recording was cut again in %q, and it belongs to %q", cutIn[0].ID, standing.ID)
+	}
+}
+
+// refusing is a store that will not take what a transcript was put right to.
+type refusing struct {
+	stored
+	why error
+}
+
+func (r refusing) Open(domain.Vault) (port.DerivedStore, error) { return r, nil }
+
+func (r refusing) Write(ctx context.Context, name string, content []byte) error {
+	if name == derived.Said(listener, hashed) {
+		return r.why
+	}
+	return r.stored.Write(ctx, name, content)
+}
+
+// A correction that could not be written is said so, and the source is not cut
+// again from words that are not on disk.
+func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
+	held := refusing{stored: whole(spoke()), why: errors.New("the disk is full")}
+	api, handler := windowOn(t, held)
+
+	var asked []string
+	api.Cut = func(_ context.Context, _ domain.Vault, path string) error {
+		asked = append(asked, path)
+		return nil
+	}
+
+	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
+	if out.Code == http.StatusOK {
+		t.Fatalf("a correction that was not written was answered %d: %s", out.Code, out.Body)
+	}
+	if len(asked) != 0 {
+		t.Errorf("the source was cut again from words nothing holds: %v", asked)
+	}
+	if told := heard(t, handler); told.Cues[1].Text != "what was said next" {
+		t.Errorf("the recording now says %+v", told.Cues)
 	}
 }

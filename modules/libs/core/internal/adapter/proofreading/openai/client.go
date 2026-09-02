@@ -22,7 +22,8 @@ import (
 // ErrNoKey is a service configured without a key anywhere to find it.
 var ErrNoKey = errors.New("no key in the configuration or the environment")
 
-// inFlight is how many pages are being asked about at any moment.
+// inFlight is how many batches are being asked about at any moment where the
+// profile names no number.
 const inFlight = 4
 
 // Client is one hosted model, asked about several pages at once.
@@ -57,6 +58,14 @@ func New(cfg proofreading.Profile, instruction string) (*Client, error) {
 // Name is the model, recorded beside every correction it made.
 func (c *Client) Name() string { return c.service.Name }
 
+// inFlight is how many batches this service is asked about at once.
+func (c *Client) inFlight() int {
+	if c.service.InFlight <= 0 {
+		return inFlight
+	}
+	return c.service.InFlight
+}
+
 // Read asks about every page and answers with what came back about each, by the
 // page it is about. A page nothing came back about is left out.
 //
@@ -87,7 +96,7 @@ func (c *Client) Read(ctx context.Context, pages []proofread.Batch) (map[int]str
 		failed error
 		wg     sync.WaitGroup
 	)
-	for range min(inFlight, len(pages)) {
+	for range min(c.inFlight(), len(pages)) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

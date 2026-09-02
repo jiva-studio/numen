@@ -89,8 +89,10 @@ func Composed(
 		if err != nil {
 			return nil, err
 		}
-		if len(put) > 0 {
-			raw = put
+		// A file beside the artifact holding no words is nothing put right, and
+		// the recording says what was heard in it.
+		if doc := Transcribed(put); doc.Text != "" {
+			return doc, nil
 		}
 		return Transcribed(raw), nil
 	}

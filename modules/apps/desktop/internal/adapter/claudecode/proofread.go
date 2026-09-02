@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
@@ -133,6 +134,12 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	cmd := exec.CommandContext(ctx, name, append(rest, p.arguments()...)...)
 	cmd.Dir = dir
 	cmd.Env = environment(os.Environ())
+	detach(cmd)
+
+	// The whole group goes, and the pipes are let go of shortly after: a
+	// grandchild holding the child's output keeps a wait from returning.
+	cmd.Cancel = func() error { return kill(cmd) }
+	cmd.WaitDelay = 2 * time.Second
 
 	// The batch goes on the input: --disallowed-tools takes as many names as
 	// follow it, and a batch is longer than a command line holds.

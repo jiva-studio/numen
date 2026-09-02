@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -78,5 +79,28 @@ func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 	}
 	if got := most(); got != 1 {
 		t.Errorf("%d stood at once", got)
+	}
+}
+
+// The limit is the proofreader's and not one run's: two callers asking at once
+// take no more of a person's own model between them than the profile allows.
+func TestTwoCallersAtOnceShareTheLimit(t *testing.T) {
+	command, most := counting(t)
+	by := &Proofreader{Command: command, Instruction: "put it right", InFlight: 2}
+
+	var wg sync.WaitGroup
+	for range 2 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := by.Read(context.Background(), batches(3)); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	if got := most(); got > 2 {
+		t.Errorf("2 allowed, %d stood at once", got)
 	}
 }

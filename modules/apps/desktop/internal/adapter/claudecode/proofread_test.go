@@ -1,11 +1,15 @@
 package claudecode
 
 import (
+	"context"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 )
@@ -131,5 +135,90 @@ func TestACommandLineThatFailedEndsTheRun(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "no model") {
 		t.Errorf("the error does not say what the command line said: %v", err)
+	}
+}
+
+// The folder the command line is started in is the run's own, and it goes when
+// the run does however the run ended.
+func TestTheFolderTheRunWasStartedInGoesWithIt(t *testing.T) {
+	for _, one := range []struct {
+		what   string
+		script string
+	}{
+		{"a run that finished", "#!/bin/sh\ncat > /dev/null\npwd > " + "%s" + "\nprintf ''\n"},
+		{"a run that failed", "#!/bin/sh\ncat > /dev/null\npwd > " + "%s" + "\nexit 1\n"},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			told := filepath.Join(t.TempDir(), "where")
+			script := filepath.Join(t.TempDir(), "telling")
+			written := strings.Replace(one.script, "%s", told, 1)
+			if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
+
+			_, _ = by.Read(t.Context(), []proofread.Batch{aBatch})
+
+			where := strings.TrimSpace(held(t, filepath.Dir(told), "where"))
+			if where == "" {
+				t.Fatal("the run said nothing about where it stood")
+			}
+			if _, err := os.Stat(where); !errors.Is(err, fs.ErrNotExist) {
+				t.Errorf("%s is still there: %v", where, err)
+			}
+		})
+	}
+}
+
+// A command line the person stopped is a run that failed, and it ends when they
+// stop it. Nothing it wrote before it was killed is an answer.
+//
+// The command line starts programs of its own: one of them holding the output
+// after the child is gone is what a wait would sit on.
+func TestARunTheContextKilledEndsWithIt(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "dawdling")
+	written := "#!/bin/sh\ncat > /dev/null\nprintf '0|the quick brown fox'\nsleep 60 &\nwait\n"
+	if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
+
+	ctx, stop := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(150 * time.Millisecond)
+		stop()
+	}()
+
+	began := time.Now()
+	out, err := by.Read(ctx, []proofread.Batch{aBatch})
+	took := time.Since(began)
+
+	if err == nil {
+		t.Fatal("a run that was killed came back with no reason")
+	}
+	if out != nil {
+		t.Errorf("what a killed run wrote was taken as an answer: %v", out)
+	}
+	if took > 10*time.Second {
+		t.Errorf("the run was stopped and went on for %v", took)
+	}
+}
+
+// What a command line that failed wrote on its output is not an answer: a
+// refusal printed where a correction goes is not a correction.
+func TestWhatAFailedRunWroteIsNotAnAnswer(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "refusing")
+	written := "#!/bin/sh\ncat > /dev/null\nprintf 'I will not do that'\nexit 2\n"
+	if err := os.WriteFile(script, []byte(written), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	by := &Proofreader{Command: []string{script}, Instruction: proofread.ScanInstruction}
+
+	out, err := by.Read(t.Context(), []proofread.Batch{aBatch})
+	if err == nil {
+		t.Fatal("a run that failed came back with no reason")
+	}
+	if out != nil {
+		t.Errorf("what a failed run wrote was taken as an answer: %v", out)
 	}
 }

@@ -223,9 +223,20 @@ func Hand() []byte {
 	return []byte("\n" + ByHand + "\n")
 }
 
-// Written says whether a person wrote these words.
+// Written says whether a person wrote these words. The mark is a note of its
+// own, and the same words spoken in a cue are speech.
 func Written(raw []byte) bool {
-	return bytes.Contains(raw, []byte(ByHand))
+	for at := 0; at <= len(raw)-len(ByHand); {
+		found := bytes.Index(raw[at:], []byte(ByHand))
+		if found < 0 {
+			return false
+		}
+		if found += at; begins(raw, found) {
+			return true
+		}
+		at = found + 1
+	}
+	return false
 }
 
 // Reached is how far a run before this one got, and where the last note about
@@ -238,7 +249,7 @@ func Reached(raw []byte) (ms, end int) {
 	}
 	line := string(raw[at+len(note):])
 	stop := strings.IndexByte(line, '\n')
-	if stop < 0 {
+	if stop < 0 || !begins(raw, at) {
 		return Reached(raw[:at])
 	}
 	ms, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
@@ -246,4 +257,20 @@ func Reached(raw []byte) (ms, end int) {
 		return Reached(raw[:at])
 	}
 	return ms, at + len(note) + stop + 1
+}
+
+// begins says whether a byte is where a block of the file starts: the top of
+// it, or the line after a blank one. A note stands at the top of its own block.
+func begins(raw []byte, at int) bool {
+	if at == 0 {
+		return true
+	}
+	if raw[at-1] != '\n' {
+		return false
+	}
+	blank := at - 1
+	if blank > 0 && raw[blank-1] == '\r' {
+		blank--
+	}
+	return blank > 0 && raw[blank-1] == '\n'
 }

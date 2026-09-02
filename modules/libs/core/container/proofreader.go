@@ -25,6 +25,13 @@ func (c Config) Profile(name string) (proofreading.Profile, error) {
 	if !held {
 		return proofreading.Profile{}, fmt.Errorf("no proofreading profile named %q", name)
 	}
+	switch profile.Use {
+	case proofreading.UseService, proofreading.UseAgent:
+	default:
+		return proofreading.Profile{}, fmt.Errorf(
+			"proofreading profile %q is used through %q, which is neither %q nor %q",
+			name, profile.Use, proofreading.UseService, proofreading.UseAgent)
+	}
 	if !profile.Named() {
 		return proofreading.Profile{}, fmt.Errorf(
 			"proofreading profile %q names no model to use with %q", name, profile.Use)
@@ -47,27 +54,23 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		return nil, err
 	}
 
-	switch profile.Use {
-	case proofreading.UseService:
+	if profile.Use == proofreading.UseService {
 		client, err := openai.New(profile, instruction)
 		if err != nil {
 			return nil, err
 		}
 		return client, nil
-	case proofreading.UseAgent:
-		if c.AgentProofreader == nil {
-			return nil, fmt.Errorf(
-				"proofreading profile %q reaches a command line this application does not start", name)
-		}
-		return c.AgentProofreader(AgentProofreading{
-			Command:     profile.Command,
-			Model:       profile.Model,
-			Instruction: instruction,
-			InFlight:    profile.InFlight,
-		})
 	}
-	return nil, fmt.Errorf("proofreading profile %q is used through %q, which is neither %q nor %q",
-		name, profile.Use, proofreading.UseService, proofreading.UseAgent)
+	if c.AgentProofreader == nil {
+		return nil, fmt.Errorf(
+			"proofreading profile %q reaches a command line this application does not start", name)
+	}
+	return c.AgentProofreader(AgentProofreading{
+		Command:     profile.Command,
+		Model:       profile.Model,
+		Instruction: instruction,
+		InFlight:    profile.InFlight,
+	})
 }
 
 // ProofreadQueue is where batches are left for the profile named to answer
