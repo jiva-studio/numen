@@ -32,7 +32,7 @@ watchPostEffect(() =>
 /** Whether the view keeps the line being said in sight. */
 const follows = computed(() => props.held.following.value)
 
-/** Whether this recording has no transcript, which is what stands below the player. */
+/** Whether this recording has no transcript, which decides what stands below the player. */
 const empty = computed(() => props.held.times.value.length === 0)
 </script>
 
@@ -121,14 +121,15 @@ const empty = computed(() => props.held.times.value.length === 0)
 }
 
 /* The player heads the pane at its full width, on the rule that separates it
-   from what stands below. It takes the height it needs and nothing more, so
-   what stands below never moves it. */
+   from what stands below. The strip is one row of controls tall whatever it
+   holds, so nothing drawn below moves the player. */
 .recording__head {
   display: flex;
   align-items: center;
   flex: none;
   gap: var(--recording-apart);
   inline-size: 100%;
+  min-block-size: calc(var(--numen-action-size) + 2 * var(--numen-box-air));
   padding: var(--numen-box-air) var(--numen-gutter);
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
