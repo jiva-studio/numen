@@ -146,9 +146,10 @@ service VaultService {
   // installation in, and the models the settings that name one can be set to.
   rpc Settings(SettingsRequest) returns (SettingsResponse);
 
-  // ChooseSetting writes one setting into that file. The file is patched as an
-  // object, so every key a person typed stays where it was.
-  rpc ChooseSetting(ChooseSettingRequest) returns (ChooseSettingResponse);
+  // ChooseSettings writes settings into that file. The file is patched as an
+  // object, so every key a person typed stays where it was, and a file the
+  // settings could not be read out of again is not written at all.
+  rpc ChooseSettings(ChooseSettingsRequest) returns (ChooseSettingsResponse);
 
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
@@ -945,11 +946,11 @@ message SettingsResponse {
   string path = 2;
 
   // The models the settings that name one can be set to.
-  repeated NamedModel models = 3;
+  repeated Model models = 3;
 }
 
-// NamedModel is one model a setting that names a model can be set to.
-message NamedModel {
+// Model is one model a setting that names a model can be set to.
+message Model {
   // The setting the model is read from, as a path through the file. The model
   // in force is the one whose name stands there.
   repeated string named_at = 1;
@@ -966,28 +967,25 @@ message NamedModel {
 
   // What choosing it writes. One model is several keys where the model decides
   // more than its own name.
-  repeated Written writes = 6;
+  repeated Setting writes = 6;
 }
 
-// Written is one setting and what to put there.
-message Written {
+// Setting is one setting of the file and what to put there.
+message Setting {
   // The setting, as a path through the file.
   repeated string at = 1;
 
-  // What to write there, as JSON. A value that is not JSON is refused and the
-  // file is left as it was.
+  // What to write there, as JSON. A value the settings cannot be read out of
+  // again is refused, and the file is left as it was.
   string value = 2;
 }
 
-message ChooseSettingRequest {
+message ChooseSettingsRequest {
   // The settings to write. They are written together, or none of them is.
-  repeated Written settings = 1;
+  repeated Setting settings = 1;
 }
 
-message ChooseSettingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
+message ChooseSettingsResponse {}
 
 message MoveRequest {
   // The file or folder to move, as the vault calls it.

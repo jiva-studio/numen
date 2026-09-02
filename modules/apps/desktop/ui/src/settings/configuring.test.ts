@@ -29,7 +29,7 @@ const holding = (written: string, refuses: string | null = null) => {
     settings: () => Promise.resolve({ written, path: '/numen.json', models: MODELS }),
     choosesSetting: (said) => {
       asked.push(said)
-      return Promise.resolve(refuses)
+      return refuses ? Promise.reject(new Error(refuses)) : Promise.resolve()
     },
   }
   const said = vi.fn()
@@ -53,7 +53,7 @@ describe('what stands at a setting', () => {
   it('is nothing where the vault cannot be asked', async () => {
     const said = vi.fn()
     const kept = configuring(
-      { settings: () => Promise.reject(new Error('gone')), choosesSetting: () => Promise.resolve(null) },
+      { settings: () => Promise.reject(new Error('gone')), choosesSetting: () => Promise.resolve() },
       words,
       said,
     )

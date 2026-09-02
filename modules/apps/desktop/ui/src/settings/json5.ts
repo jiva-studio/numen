@@ -11,13 +11,9 @@
  * and JSON does not is left as it was typed, and refused.
  */
 
-/** What is not JSON5 at all, and where in the text it stands. */
+/** What is not JSON5 at all. */
 export class Unreadable extends Error {
-  constructor(
-    message: string,
-    /** How far into the text the trouble is. */
-    readonly at: number,
-  ) {
+  constructor(message: string) {
     super(message)
     this.name = 'Unreadable'
   }
@@ -81,7 +77,7 @@ const past = (text: string, at: number): number => {
     return end < 0 ? text.length : end
   }
   const end = text.indexOf('*/', at + 2)
-  if (end < 0) throw new Unreadable('a comment nothing closes', at)
+  if (end < 0) throw new Unreadable('a comment nothing closes')
   return end + 2
 }
 
@@ -102,38 +98,42 @@ const ESCAPES: Readonly<Record<string, string>> = {
   '0': '\0',
 }
 
+/** A character named by its number: how many digits it takes, and what they are. */
+const NAMED: Readonly<Record<string, { length: number; digits: RegExp }>> = {
+  u: { length: 4, digits: /^[0-9a-fA-F]{4}$/ },
+  x: { length: 2, digits: /^[0-9a-fA-F]{2}$/ },
+}
+
 /** One string as it reads, written the way JSON writes it, and where the text goes on. */
 const quoted = (text: string, at: number): [string, number] => {
   const mark = text[at]
   let said = ''
-  let read = at + 1
-  while (read < text.length) {
-    const one = text[read]!
+  let walk = at + 1
+  while (walk < text.length) {
+    const one = text[walk]!
     if (one === '\\') {
-      const next = text[read + 1]
+      const next = text[walk + 1]
       if (next === undefined) break
       // A line broken with a backslash is one line.
       if (next === '\n') {
-        read += 2
+        walk += 2
         continue
       }
-      if (next === 'u' || next === 'x') {
-        const digits = next === 'u' ? 4 : 2
-        const code = text.slice(read + 2, read + 2 + digits)
-        if (!new RegExp(`^[0-9a-fA-F]{${digits}}$`).test(code)) {
-          throw new Unreadable('a character nothing names', read)
-        }
+      const named = NAMED[next]
+      if (named) {
+        const code = text.slice(walk + 2, walk + 2 + named.length)
+        if (!named.digits.test(code)) throw new Unreadable('a character nothing names')
         said += String.fromCharCode(parseInt(code, 16))
-        read += 2 + digits
+        walk += 2 + named.length
         continue
       }
       said += ESCAPES[next] ?? next
-      read += 2
+      walk += 2
       continue
     }
-    if (one === mark) return [JSON.stringify(said), read + 1]
+    if (one === mark) return [JSON.stringify(said), walk + 1]
     said += one
-    read += 1
+    walk += 1
   }
-  throw new Unreadable('a string nothing closes', at)
+  throw new Unreadable('a string nothing closes')
 }

@@ -8,6 +8,7 @@ package container
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -269,15 +270,15 @@ func (c Config) Models() func() []port.Model {
 }
 
 // TurnsSetting writes settings into the file. The file is patched as an object,
-// so every key a person typed stays where it was, and a value that is not JSON
-// is refused before anything is written.
+// so every key a person typed stays where it was, and a value the settings
+// could not be read out of again is refused before anything is written.
 func (c Config) TurnsSetting() func(written []port.Setting) error {
 	return func(written []port.Setting) error {
 		held := make([]settings.Setting, 0, len(written))
 		for _, one := range written {
 			var value json.RawMessage
 			if err := json.Unmarshal([]byte(one.Value), &value); err != nil {
-				return err
+				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
 			}
 			held = append(held, settings.Setting{At: one.At, Value: value})
 		}

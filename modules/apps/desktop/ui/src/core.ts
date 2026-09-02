@@ -341,10 +341,11 @@ export interface Core {
   /** Every setting as it stands, and the models the settings offer. */
   settings(): Promise<Configured>
   /**
-   * Settings written into the settings file, together or not at all. What could
-   * not be written, and nothing where it was.
+   * Settings written into the settings file, together or not at all. A value
+   * the settings could not be read out of again is refused, and what the file
+   * holds is unchanged.
    */
-  choosesSetting(written: readonly Written[]): Promise<Refused | null>
+  choosesSetting(written: readonly Written[]): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

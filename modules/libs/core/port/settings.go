@@ -1,5 +1,12 @@
 package port
 
+import "errors"
+
+// ErrNotASetting is a value the settings cannot be read out of again: one that
+// is not JSON, one of the wrong shape, or a number past what its setting goes
+// to. Nothing is written, and the value is the caller's to correct.
+var ErrNotASetting = errors.New("the settings cannot be read out of that value")
+
 // Setting is one setting of the file a person configures this installation in,
 // and what to put there.
 type Setting struct {

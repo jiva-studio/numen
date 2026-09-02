@@ -143,3 +143,6 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | interface_scale | How large the interface is drawn — [Settings](settings.md). A multiplier, 1 being as designed. | zoom |
 | text_scale | How large the text a person reads is set — [Settings](settings.md). A multiplier, 1 being as designed. | zoom |
 | current | The row a list opens on, which is the one in force: the theme shelf, light and dark, the two size ladders, the vaults. | worn now, the size now |
+| setting | One field of `numen.json` and what stands there: a path through the file, and a value written as JSON — [Settings](settings.md). | option, preference |
+| model | What a setting that runs against a model names: the model the vault is indexed by, the one a scanned page is read by, and the one the agent answers with — [Settings](settings.md). | engine |
+| shelf | The heading a run of rows stands under in a list: the two a theme comes off, and the ones the agent's models stand on. | group, category |

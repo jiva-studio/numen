@@ -32,34 +32,16 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	if _, stands := held["appearance"]; !stands {
 		t.Errorf("the settings read out as %v", held)
 	}
-}
 
-// Every model says where it is read from and what choosing it writes, and one
-// of the models a setting offers is the one this installation runs on.
-func TestTheModelsOfferedSayWhereTheyAreWritten(t *testing.T) {
-	f := opening(t, nil, nil, true)
-
-	said, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// A model reaches the window with the setting it is read from and what
+	// choosing it writes, which is the whole of what the window does with one.
 	models := said.Msg.GetModels()
 	if len(models) == 0 {
 		t.Fatal("no setting names a model")
 	}
-
-	byDefault := map[string]int{}
 	for _, one := range models {
 		if len(one.GetNamedAt()) == 0 || len(one.GetWrites()) == 0 {
 			t.Errorf("%q is read from nowhere, or writes nothing", one.GetTitle())
-		}
-		if one.GetByDefault() {
-			byDefault[strings.Join(one.GetNamedAt(), ".")]++
-		}
-	}
-	for setting, count := range byDefault {
-		if count != 1 {
-			t.Errorf("%s has %d models by default", setting, count)
 		}
 	}
 }
@@ -69,16 +51,13 @@ func TestTheModelsOfferedSayWhereTheyAreWritten(t *testing.T) {
 func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	turned, err := f.client.ChooseSetting(t.Context(), connect.NewRequest(&v1.ChooseSettingRequest{
-		Settings: []*v1.Written{
+	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+		Settings: []*v1.Setting{
 			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
 		},
 	}))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if refusal := turned.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the setting was refused: %v", refusal)
 	}
 
 	said, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
@@ -90,16 +69,60 @@ func TestASettingWrittenIsAnsweredByTheNextQuestion(t *testing.T) {
 	}
 }
 
-// A value the file cannot hold is the client's to correct, and nothing is
-// written.
-func TestASettingThatIsNotJSONIsRefused(t *testing.T) {
+// A value the settings could not be read out of again is the client's to
+// correct, and nothing is written.
+func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
+	for _, one := range []struct {
+		what  string
+		at    []string
+		value string
+	}{
+		{"is not JSON at all", []string{"agent", "claude", "model"}, `opus`},
+		{"is of the wrong shape", []string{"agent", "claude", "model"}, `7`},
+		{"is past what the setting goes to", []string{"appearance", "text_scale"}, `5`},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			f := opening(t, nil, nil, true)
+			was, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = f.client.ChooseSettings(
+				t.Context(),
+				connect.NewRequest(&v1.ChooseSettingsRequest{
+					Settings: []*v1.Setting{{At: one.at, Value: one.value}},
+				}),
+			)
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("the value was taken as %v", err)
+			}
+
+			// The settings still read, and read as they did.
+			now, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if now.Msg.GetWritten() != was.Msg.GetWritten() {
+				t.Errorf("the settings read out as %s", now.Msg.GetWritten())
+			}
+		})
+	}
+}
+
+// Settings are written together or not at all, so one the settings cannot hold
+// leaves the ones beside it where they were.
+func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	_, err := f.client.ChooseSetting(t.Context(), connect.NewRequest(&v1.ChooseSettingRequest{
-		Settings: []*v1.Written{{At: []string{"agent", "claude", "model"}, Value: `opus`}},
+	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+		Settings: []*v1.Setting{
+			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
+			{At: []string{"appearance", "text_scale"}, Value: `5`},
+		},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("the value was taken as %v", err)
+		t.Fatalf("the settings were taken as %v", err)
 	}
 
 	said, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))

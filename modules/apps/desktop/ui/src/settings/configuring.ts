@@ -27,8 +27,8 @@ export interface Called {
     readonly path: string
     readonly models: readonly Model[]
   }>
-  /** Settings written. What could not be written, and nothing where it was. */
-  choosesSetting(written: readonly Written[]): Promise<string | null>
+  /** Settings written. A value the settings cannot hold is refused. */
+  choosesSetting(written: readonly Written[]): Promise<void>
 }
 
 /** What stands at a path through a tree of settings, and nothing where none does. */
@@ -82,13 +82,12 @@ export function configuring(core: Called, words: Words, said: Says) {
     if (written.length === 0) return
     said('')
 
-    let failed: string | null
     try {
-      failed = await core.choosesSetting(written)
+      await core.choosesSetting(written)
     } catch (thrown) {
-      failed = thrown instanceof Error ? thrown.message : `${thrown}`
+      const failed = thrown instanceof Error ? thrown.message : `${thrown}`
+      said(`${words.unturned} ${failed}`, 'refusal')
     }
-    if (failed) said(`${words.unturned} ${failed}`, 'refusal')
     await start()
   }
 

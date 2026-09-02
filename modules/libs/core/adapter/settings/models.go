@@ -25,11 +25,9 @@ var (
 	AgentAt            = []string{"agent", "use"}
 )
 
-// Models are the models each setting that names one can be set to.
-//
-// Every adapter behind these hands the name it is given to a service or to a
-// command line, so what a person may write is not a list. These are the models
-// this application is built around.
+// Models are the models each setting that names one can be set to. Every
+// adapter behind them hands the name it is given to a service or to a command
+// line, and these are the models this application is built around.
 func Models() []port.Model {
 	models := make([]port.Model, 0, 10)
 	models = append(models, embedding()...)
@@ -49,14 +47,14 @@ func embedding() []port.Model {
 		Title:     held.Model.Name,
 		Shelf:     shelfMachine,
 		ByDefault: true,
-		Writes: holding(
+		Writes: []port.Setting{
 			setting([]string{"indexing", "embedding", "model"}, held.Model),
 			setting([]string{"indexing", "embedding", "indexing", "use"}, embed.UseLocal),
 			setting(
 				[]string{"indexing", "embedding", "indexing", "local", "name"},
 				held.Indexing.Local.Name,
 			),
-		),
+		},
 	}}
 }
 
@@ -70,7 +68,7 @@ func recognising() []port.Model {
 		Title:     "PP-OCRv6, small",
 		Shelf:     shelfMachine,
 		ByDefault: true,
-		Writes:    holding(setting(RecognitionModelAt, held.Recognise.Name)),
+		Writes:    []port.Setting{setting(RecognitionModelAt, held.Recognise.Name)},
 	}}
 }
 
@@ -94,7 +92,7 @@ func answering() []port.Model {
 		})
 	}
 	for at := range models {
-		models[at].Writes = holding(setting(AgentModelAt, models[at].Name))
+		models[at].Writes = []port.Setting{setting(AgentModelAt, models[at].Name)}
 	}
 	return models
 }
@@ -108,39 +106,28 @@ func Agents() []port.Model {
 			Name:      agent.UseClaude,
 			Title:     "Claude Code",
 			ByDefault: true,
-			Writes:    holding(setting(AgentAt, agent.UseClaude)),
+			Writes:    []port.Setting{setting(AgentAt, agent.UseClaude)},
 		},
 		{
 			NamedAt: AgentAt,
 			Title:   "Nothing answers",
-			Writes:  holding(setting(AgentAt, "")),
+			Writes:  []port.Setting{setting(AgentAt, "")},
 		},
 	}
 }
 
-// setting is one setting written down, and nothing where the value cannot be.
+// setting is one setting written down. Every value here is written in this
+// file, so one that cannot be written down is this file being wrong.
 func setting(at []string, value any) port.Setting {
 	said, err := json.Marshal(value)
 	if err != nil {
-		return port.Setting{}
+		panic("settings: " + err.Error())
 	}
 	return port.Setting{At: at, Value: string(said)}
 }
 
-// holding is the settings a model writes, less any that could not be written
-// down at all.
-func holding(held ...port.Setting) []port.Setting {
-	kept := make([]port.Setting, 0, len(held))
-	for _, one := range held {
-		if len(one.At) > 0 {
-			kept = append(kept, one)
-		}
-	}
-	return kept
-}
-
-// Written is this installation's settings as JSON, with what an installation
-// nobody has configured does standing under everything the file leaves out.
+// Written is settings as JSON. What is handed in is what is written out, so a
+// Config read from a file carries the defaults the file leaves out.
 func Written(held Config) (string, error) {
 	said, err := json.Marshal(held)
 	if err != nil {

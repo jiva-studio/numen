@@ -285,12 +285,11 @@ export const core: Core & Asking & Commanding = {
       })),
     } satisfies Configured
   },
-  choosesSetting: async (written) =>
-    refusalIn(
-      await vault.chooseSetting({
-        settings: written.map((one) => ({ at: [...one.at], value: one.value })),
-      }),
-    ),
+  choosesSetting: async (written) => {
+    await vault.chooseSettings({
+      settings: written.map((one) => ({ at: [...one.at], value: one.value })),
+    })
+  },
   reviewing: async () => (await vault.reviewing({})).dayStarts,
   choosesReviewing: async (starts) =>
     refusalIn(await vault.chooseReviewing({ dayStarts: starts })),
