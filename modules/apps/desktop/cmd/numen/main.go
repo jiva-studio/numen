@@ -21,6 +21,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
@@ -135,19 +136,26 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 
 	going := &going{settle: opened.Settle}
 
-	// What the window holds is let go of in one order: what the page owes lands,
-	// the agents are let go of, the scan and the follower stop, and the database
-	// closes. It happens once.
-	var once sync.Once
-	ending := func() {
-		once.Do(func() {
-			going.wait()
-			reachable.Off()
-			opened.Close()
-			stop()
-		})
-	}
-	defer ending()
+	// Everything behind the settling, in the order each part needs the next: the
+	// agents are let go of, then the scan and the follower stop and the database
+	// closes, then what they ran under ends.
+	behind := letgo.InOrder(
+		reachable.Off,
+		func() {
+			if err := opened.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen:", err)
+			}
+		},
+		stop,
+	)
+
+	// The window settles the vault before it lets a quit through, so what runs
+	// behind it here is asked for with nothing left owed. A run that returns
+	// having never drawn a window settles it itself.
+	defer func() {
+		going.wait()
+		behind.Go()
+	}()
 
 	// The window is taken out of sight before the settling begins, and put back
 	// where a page calls the close off: the question is asked on the screen the
@@ -167,7 +175,10 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		OnShutdown: ending,
+		// Run once the windows are gone, and on the thread they were drawn on.
+		// The settling is not among these steps: it is what let the quit
+		// through, and it is waited for on a thread of its own.
+		PostShutdown: behind.Go,
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
 		// quit is asked for again once it is over. A settling that ended with a
