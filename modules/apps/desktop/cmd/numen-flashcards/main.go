@@ -16,6 +16,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -72,17 +73,11 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
 	vaults := &opened{cfg: cfg, db: db, under: ctx, out: os.Stderr}
-
-	// A walk and a watch both write to the index, so they are let go of and
-	// waited for before it closes.
-	defer vaults.wait()
-	defer stop()
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
@@ -120,11 +115,22 @@ func run(cfg container.Config, noAgent bool) error {
 	// itself. The agent works the vault the person sat down to, so it is
 	// started and stopped around a sitting.
 	away := serveAgents(ctx, cfg, db, vaults, api, noAgent, os.Stderr)
-	defer func() {
-		if err := away(); err != nil {
-			fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
-		}
-	}()
+
+	// What the window holds is let go of in one order: the agents, then the walk
+	// and the watch, which write to the index, and then the index. It happens
+	// once.
+	var once sync.Once
+	ending := func() {
+		once.Do(func() {
+			if err := away(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
+			}
+			stop()
+			vaults.wait()
+			db.Close()
+		})
+	}
+	defer ending()
 
 	// What the window draws from is followed while it is open, so a card changed
 	// or a deck written is counted again without a person asking. The vaults are
@@ -157,6 +163,11 @@ func run(cfg container.Config, noAgent bool) error {
 		Assets: application.AssetOptions{
 			Handler: api.Serving(pages),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		OnShutdown: ending,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",
