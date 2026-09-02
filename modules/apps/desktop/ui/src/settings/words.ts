@@ -1,7 +1,10 @@
 /** What the settings tab says: the groups it draws, and what each setting is. */
 export const WORDS = {
   settings: 'Settings',
-  /** Where the settings stand, said once at the head of the page. */
+  /**
+   * Where the settings stand, said once at the head of the page. The file
+   * itself is named where the vault has said where it is.
+   */
   file: 'One file, numen.json, in this machine’s configuration folder.',
   /** The groups, in the order they are drawn. */
   window: 'The window',

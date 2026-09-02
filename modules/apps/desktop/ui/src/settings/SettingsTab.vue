@@ -123,7 +123,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
 <template>
   <div class="settings">
     <div class="settings__page">
-      <p class="settings__where">{{ words.file }}</p>
+      <p class="settings__where">{{ held.file() || words.file }}</p>
 
       <section class="settings__group" :aria-label="words.window">
         <h2 class="settings__heading">{{ words.window }}</h2>

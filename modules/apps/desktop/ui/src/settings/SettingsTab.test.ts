@@ -118,6 +118,10 @@ describe('the settings tab', () => {
     expect(done).toStrictEqual(['hanging false', 'syncing false'])
   })
 
+  it('names the file the settings stand in, where the vault has said where it is', () => {
+    expect(standing().tab.get('.settings__where').text()).toBe('/numen.json')
+  })
+
   it('draws the settings it reads out of the file, each under the group it is in', () => {
     const { tab } = standing()
     expect(tab.text()).toContain(words.indexingModel)
