@@ -146,6 +146,15 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	going := &going{settle: opened.Settle}
 	defer func() { going.wait() }()
 
+	// The window is taken out of sight before the settling begins, and put back
+	// where a page calls the close off: the question is asked on the screen the
+	// person is looking at.
+	var window *application.WebviewWindow
+	seen := sight{
+		hide: func() { window.Hide() },
+		show: func() { window.Show() },
+	}
+
 	app := application.New(application.Options{
 		Name: "numen",
 		Assets: application.AssetOptions{
@@ -157,11 +166,11 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		// question standing asks for nothing: the person is answering it, and
 		// this refusal is the whole of what a stale goroutine may do.
 		ShouldQuit: func() bool {
-			return asked(going, func() { application.Get().Quit() })
+			return asked(going, seen, func() { application.Get().Quit() })
 		},
 	})
 
-	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
+	window = app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  titled(opened.Showing()),
 		Width:  1280,
 		Height: 860,
@@ -210,7 +219,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// A cancelled event is where the hooks stop, and the destroy the window
 	// registered for itself is one of the listeners after them.
 	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
-		if !closing(ctx, going, opened.Answered, window.Close) {
+		if !closing(ctx, going, seen, opened.Answered, window.Close) {
 			event.Cancel()
 		}
 	})
@@ -232,20 +241,32 @@ func titled(v domain.Vault) string {
 	return "numen — " + v.Name
 }
 
+// sight is the window going out of sight and coming back into it. Hiding
+// leaves the page drawing and answering, so what only it holds is handed over
+// after the window is gone from the screen.
+type sight struct {
+	hide func()
+	show func()
+}
+
 // closing is the window being asked to go, and answers with whether it may.
 //
-// A page holding text a person has to answer for calls the close off, and the
-// close is asked for again once they have answered. That wait is on a person
-// and is not measured.
+// The window goes out of sight first and the vault settles behind it. A page
+// holding text a person has to answer for calls the close off, the window comes
+// back, and the close is asked for again once they have answered. That wait is
+// on a person and is not measured.
 func closing(
 	ctx context.Context,
 	g *going,
+	s sight,
 	answered func(context.Context) bool,
 	again func(),
 ) bool {
+	s.hide()
 	if g.wait() {
 		return true
 	}
+	s.show()
 	go func() {
 		if answered(ctx) {
 			again()
@@ -257,18 +278,22 @@ func closing(
 // asked is a quit that did not come through the window, and answers with
 // whether the application may go.
 //
-// It is answered on the thread the page is served on, so the settling happens
-// off it and the quit is asked for again once it is over. A settling that ended
-// with a question standing asks for nothing: the person is answering it, and
-// this refusal is the whole of what the goroutine left behind may do.
-func asked(g *going, quit func()) bool {
+// It is answered on the thread the page is served on, so the window is hidden
+// and the settling happens off it, and the quit is asked for again once it is
+// over. A settling that ended with a question standing puts the window back and
+// asks for nothing: the person is answering it, and that is the whole of what
+// the goroutine left behind may do.
+func asked(g *going, s sight, quit func()) bool {
 	if g.settled() {
 		return true
 	}
 	go func() {
+		s.hide()
 		if g.wait() {
 			quit()
+			return
 		}
+		s.show()
 	}()
 	return false
 }
