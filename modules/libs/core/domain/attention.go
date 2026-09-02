@@ -10,6 +10,17 @@ type Attention struct {
 	Front string
 }
 
+// Fronted is the tab the person is looking at. A window holding none answers
+// with no tab at all.
+func (a Attention) Fronted() (Tab, bool) {
+	for _, one := range a.Tabs {
+		if one.ID != "" && one.ID == a.Front {
+			return one, true
+		}
+	}
+	return Tab{}, false
+}
+
 // A Tab is one tab of a window: what kind it is, and what it holds.
 //
 // The kind is the window's own word for it. A window is free to open a kind

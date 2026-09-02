@@ -30,6 +30,9 @@ func (a *API) Attending(
 		})
 	}
 	a.attending.Store(&open)
+	if a.Attends != nil {
+		a.Attends(open)
+	}
 	return connect.NewResponse(&v1.AttendingResponse{}), nil
 }
 

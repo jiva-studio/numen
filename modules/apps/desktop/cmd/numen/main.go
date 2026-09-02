@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -106,12 +107,6 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
-	// Likewise for a recording: every one this process hears is heard through
-	// the runtime made here.
-	if err := cfg.PrepareTranscriber(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: nothing to hear a recording with:", err)
-	}
-
 	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
@@ -162,7 +157,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	})
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  titled(opened.Showing()),
+		Title:  titled(opened.Showing(), opened.API.Attended()),
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
@@ -173,6 +168,11 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 
 	// Picking a folder is the machine's own, and it opens over this window.
 	opened.API.Choosing = &picker{window: window}
+
+	// The window is named after what the person is looking at, and is named
+	// again each time the page says what it has open.
+	naming := func(open domain.Attention) { window.SetTitle(titled(opened.Showing(), open)) }
+	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under
 	// the pointer names. A drop that landed on no mark is not this window's.
@@ -193,7 +193,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// reach it through is stopped and started again around the swap.
 	opened.API.Opens = func(ctx context.Context, v domain.Vault) error {
 		err := reachable.Around(func() error { return opened.Show(ctx, v) })
-		window.SetTitle(titled(opened.Showing()))
+		naming(opened.API.Attended())
 		return err
 	}
 
@@ -223,9 +223,13 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 // the empty path. The name is the one the window's own drag and drop looks for.
 const droppedInto = "data-file-drop-target"
 
-// titled is what the window is called: the application, and the vault it is
-// showing where it is showing one.
-func titled(v domain.Vault) string {
+// titled is what the window is called: the application, and the file the
+// person is looking at. A window with no file in front of it is called after
+// the vault it is showing.
+func titled(v domain.Vault, open domain.Attention) string {
+	if front, held := open.Fronted(); held && front.Path != "" {
+		return "numen — " + path.Base(front.Path)
+	}
 	if v.Name == "" {
 		return "numen"
 	}

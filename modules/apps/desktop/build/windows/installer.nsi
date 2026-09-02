@@ -12,12 +12,30 @@
 !ifndef BINARY
   !error "BINARY is the numen.exe to install"
 !endif
+; The drawing is installed beside the program, and the Start Menu shortcut and
+; the entry in the list of installed programs point at it there.
+!ifndef NUMEN_ICON
+  !error "NUMEN_ICON is the numen.ico to install"
+!endif
+; The two windows ship together, one version, one installer.
+!ifndef FLASHCARDS
+  !error "FLASHCARDS is the numen-flashcards.exe to install"
+!endif
+; The flashcards window wears a mark of its own. The drawing is installed
+; beside the program, and the Start Menu shortcut points at it there.
+!ifndef FLASHCARDS_ICON
+  !error "FLASHCARDS_ICON is the numen-flashcards.ico to install"
+!endif
 !ifndef WEBVIEW2
   !error "WEBVIEW2 is the Microsoft bootstrapper to carry"
 !endif
 !ifndef OUTFILE
   !error "OUTFILE is the installer to write"
 !endif
+
+; The installer and the uninstaller wear the program's mark.
+!define MUI_ICON "${NUMEN_ICON}"
+!define MUI_UNICON "${NUMEN_ICON}"
 
 !include "MUI2.nsh"
 !include "x64.nsh"
@@ -70,15 +88,22 @@ SectionEnd
 Section "Numen"
   SetOutPath "$INSTDIR"
   File "/oname=numen.exe" "${BINARY}"
+  File "/oname=numen-flashcards.exe" "${FLASHCARDS}"
+  File "/oname=numen.ico" "${NUMEN_ICON}"
+  File "/oname=numen-flashcards.ico" "${FLASHCARDS_ICON}"
 
   WriteRegStr HKLM "Software\Numen" "InstallDir" "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
-  CreateShortcut "$SMPROGRAMS\Numen.lnk" "$INSTDIR\numen.exe"
+  CreateShortcut "$SMPROGRAMS\Numen.lnk" "$INSTDIR\numen.exe" \
+    "" "$INSTDIR\numen.ico"
+  CreateShortcut "$SMPROGRAMS\Numen Flashcards.lnk" "$INSTDIR\numen-flashcards.exe" \
+    "" "$INSTDIR\numen-flashcards.ico"
 
   !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Numen"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayName" "Numen"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayIcon" "$INSTDIR\numen.ico"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "Publisher" "Jiva Studio"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr HKLM "${UNINSTALL_KEY}" "InstallLocation" "$INSTDIR"
@@ -89,9 +114,13 @@ SectionEnd
 ; A vault is a folder of the person's own and is left where it is.
 Section "Uninstall"
   Delete "$INSTDIR\numen.exe"
+  Delete "$INSTDIR\numen-flashcards.exe"
+  Delete "$INSTDIR\numen.ico"
+  Delete "$INSTDIR\numen-flashcards.ico"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\Numen.lnk"
+  Delete "$SMPROGRAMS\Numen Flashcards.lnk"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Numen"
   DeleteRegKey HKLM "Software\Numen"
 SectionEnd

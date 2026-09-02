@@ -205,6 +205,9 @@ jobs:
           cp modules/apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
           cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
           cp modules/apps/desktop/build/linux/numen.svg "$staged/"
+          cp modules/apps/desktop/build/linux/numen-flashcards.svg "$staged/"
+          # The rasters come across whole: the flashcards ones stand in a folder
+          # of their own inside it.
           cp -r modules/apps/desktop/build/linux/icons "$staged/"
 
           cd "$staged"
@@ -251,6 +254,8 @@ jobs:
           make install
           make interface
 
+      # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
+      # into it.
       - name: Window
         working-directory: modules/apps/desktop
         env:
@@ -258,15 +263,26 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
+          go install github.com/akavel/rsrc@v0.10.2
+
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
-          GOOS=windows GOARCH=amd64 go build -trimpath \
-            -ldflags "-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT" \
-            -o "$RUNNER_TEMP/numen.exe" ./cmd/numen
+          stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
+
+          # The two windows are always the same build: they ship together, one
+          # version, one installer. A resource is linked into the command it is
+          # written beside, and its name holds the system and the machine the
+          # builds that take it are for.
+          for window in numen numen-flashcards; do
+            rsrc -arch amd64 -ico "build/windows/$window.ico" \
+              -o "cmd/$window/rsrc_windows_amd64.syso"
+            GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "$stamp" \
+              -o "$RUNNER_TEMP/$window.exe" "./cmd/$window"
+          done
 
       - name: Archive
         env:
           VERSION: ${{ needs.naming.outputs.version }}
-        run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe
+        run: cd "$RUNNER_TEMP" && zip -q "numen_${VERSION}_windows_amd64.zip" numen.exe numen-flashcards.exe
 
       # The installer carries Microsoft's own bootstrapper and runs it on a
       # machine whose Windows does not already have the engine the window draws
@@ -284,6 +300,9 @@ jobs:
             "-DVERSION=$VERSION" \
             "-DNUMERIC_VERSION=$NUMERIC" \
             "-DBINARY=$RUNNER_TEMP/numen.exe" \
+            "-DNUMEN_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen.ico" \
+            "-DFLASHCARDS=$RUNNER_TEMP/numen-flashcards.exe" \
+            "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen-flashcards.ico" \
             "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
             "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
             modules/apps/desktop/build/windows/installer.nsi
@@ -336,11 +355,15 @@ jobs:
         run: |
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
           stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
-          CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-arm64" ./cmd/numen
-          CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/numen-amd64" ./cmd/numen
-          lipo -create "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64" -output "$RUNNER_TEMP/numen"
-          lipo -info "$RUNNER_TEMP/numen"
-          rm "$RUNNER_TEMP/numen-arm64" "$RUNNER_TEMP/numen-amd64"
+          # The two windows are always the same build: they ship together, one
+          # version, one image.
+          for window in numen numen-flashcards; do
+            CGO_ENABLED=1 GOARCH=arm64 go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/$window-arm64" "./cmd/$window"
+            CGO_ENABLED=1 GOARCH=amd64 CC="clang -arch x86_64" go build -trimpath -ldflags "$stamp" -o "$RUNNER_TEMP/$window-amd64" "./cmd/$window"
+            lipo -create "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64" -output "$RUNNER_TEMP/$window"
+            lipo -info "$RUNNER_TEMP/$window"
+            rm "$RUNNER_TEMP/$window-arm64" "$RUNNER_TEMP/$window-amd64"
+          done
 
       # The version a person reads stands in one key, and the number that rises
       # with every build in the other, which is the only thing macOS orders two
@@ -350,15 +373,24 @@ jobs:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
         run: |
-          APP="$RUNNER_TEMP/Numen.app"
-          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          mv "$RUNNER_TEMP/numen" "$APP/Contents/MacOS/numen"
-          cp modules/apps/desktop/build/darwin/Info.plist "$APP/Contents/Info.plist"
-          cp modules/apps/desktop/build/darwin/numen.icns "$APP/Contents/Resources/numen.icns"
-          printf 'APPL????' > "$APP/Contents/PkgInfo"
-          plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
-          plutil -replace CFBundleVersion -string "$BUILD" "$APP/Contents/Info.plist"
-          plutil -lint "$APP/Contents/Info.plist"
+          # Each window is a bundle of its own and wears its own icon. The name
+          # the icon goes into Resources under is the one its plist declares in
+          # CFBundleIconFile.
+          # bundle <application> <binary> <plist> <icon>
+          bundle() {
+            APP="$RUNNER_TEMP/$1.app"
+            mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+            mv "$RUNNER_TEMP/$2" "$APP/Contents/MacOS/$2"
+            cp "modules/apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
+            cp "modules/apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
+            printf 'APPL????' > "$APP/Contents/PkgInfo"
+            plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP/Contents/Info.plist"
+            plutil -replace CFBundleVersion -string "$BUILD" "$APP/Contents/Info.plist"
+            plutil -lint "$APP/Contents/Info.plist"
+          }
+
+          bundle Numen numen Info.plist numen.icns
+          bundle "Numen Flashcards" numen-flashcards numen-flashcards-Info.plist numen-flashcards.icns
 
       # The identity lives in a keychain of this run's own, which the last step
       # deletes.
@@ -394,11 +426,15 @@ jobs:
 
       - name: Sign
         run: |
-          codesign --force --timestamp --options runtime \
-            --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
-            --keychain "$KEYCHAIN" --sign "$IDENTITY" \
-            "$RUNNER_TEMP/Numen.app"
-          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/Numen.app"
+          # A signature covers one bundle, so each is signed and read back on
+          # its own.
+          for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
+            codesign --force --timestamp --options runtime \
+              --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+              --keychain "$KEYCHAIN" --sign "$IDENTITY" \
+              "$app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+          done
 
       - name: Disk image
         env:
@@ -409,7 +445,7 @@ jobs:
           go clean -cache
 
           mkdir -p "$RUNNER_TEMP/image"
-          mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/image/"
+          mv "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app" "$RUNNER_TEMP/image/"
           ln -s /Applications "$RUNNER_TEMP/image/Applications"
 
           # The volume is sized here. Asked to size it itself, hdiutil measures
@@ -450,6 +486,7 @@ jobs:
           hdiutil attach "$RUNNER_TEMP/Numen-${VERSION}.dmg" \
             -mountpoint "$RUNNER_TEMP/mounted" -nobrowse -quiet
           spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen.app"
+          spctl --assess --type execute -vv "$RUNNER_TEMP/mounted/Numen Flashcards.app"
           hdiutil detach "$RUNNER_TEMP/mounted" -quiet
 
       - uses: actions/upload-artifact@v7

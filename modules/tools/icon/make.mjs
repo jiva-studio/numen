@@ -1,10 +1,11 @@
 /**
- * Every icon the product ships, cut from one drawing.
+ * Every icon the product ships, cut from the drawing.
  *
- * `icon.svg` is the drawing: a rounded plate and the letter as an outline, so
- * nothing here needs the face it was set in. What comes out of it is what each
- * platform asks for, and the formats are written by hand because they are three
- * headers and a list of PNGs between them.
+ * `icon.svg` is the drawing: one letter as an outline on a rounded plate, so
+ * nothing here needs the face it was set in. Each family wears it with the
+ * plate in its own colour. What comes out is what each platform asks for, and
+ * the formats are written by hand because they are three headers and a list of
+ * PNGs between them.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -25,26 +26,56 @@ const BUILD = join(ROOT, 'modules', 'apps', 'desktop', 'build')
  */
 const MAC_PLATE = 0.82
 
+/** The colour the plate is drawn in, and the colour flashcards wears it in. */
+const PLATE = '#191b1e'
+const FLASHCARDS_PLATE = '#1b1a3a'
+
 const drawing = readFileSync(MASTER)
 
-/** The plate at a size, square, with nothing around it. */
-const flat = (size) => sharp(drawing, { density: 600 }).resize(size, size).png()
+/** The drawing with the plate in another colour. */
+const repaint = (art, colour) => {
+  const text = art.toString('utf8')
+  if (!text.includes(PLATE)) throw new Error(`the drawing has no plate in ${PLATE}`)
+  return Buffer.from(text.replaceAll(PLATE, colour), 'utf8')
+}
 
-/** The plate inside the clearance a mac icon is drawn with. */
-const macos = async (size) => {
+/**
+ * A PNG carrying no physical resolution. An icon is measured in points, and a
+ * `pHYs` chunk makes the system read a side of 1024 pixels as 2903 points.
+ */
+const bare = (png) => {
+  const keep = [png.subarray(0, 8)]
+  let at = 8
+  while (at + 8 <= png.length) {
+    const length = png.readUInt32BE(at)
+    const type = png.toString('ascii', at + 4, at + 8)
+    if (type !== 'pHYs') keep.push(png.subarray(at, at + 12 + length))
+    at += 12 + length
+  }
+  return Buffer.concat(keep)
+}
+
+/** A drawing at a size, square, with nothing around it. */
+const flat = async (art, size) =>
+  bare(await sharp(art, { density: 600 }).resize(size, size).png().toBuffer())
+
+/** A drawing inside the clearance a mac icon is drawn with. */
+const macos = async (art, size) => {
   const plate = Math.round(size * MAC_PLATE)
   const inset = Math.round((size - plate) / 2)
-  return sharp({
-    create: {
-      width: size,
-      height: size,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite([{ input: await flat(plate).toBuffer(), left: inset, top: inset }])
-    .png()
-    .toBuffer()
+  return bare(
+    await sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite([{ input: await flat(art, plate), left: inset, top: inset }])
+      .png()
+      .toBuffer(),
+  )
 }
 
 /**
@@ -94,20 +125,28 @@ const icns = (blocks) => {
   return Buffer.concat([head, ...body])
 }
 
-/** What each mac block is called, by the side it holds. */
+/**
+ * What each mac block is called, by the side it holds. A block names a size in
+ * points, and the retina half of a pair holds twice that in pixels.
+ */
 const MAC_BLOCKS = [
+  ['icp4', 16],
+  ['icp5', 32],
   ['ic07', 128],
   ['ic08', 256],
   ['ic09', 512],
   ['ic10', 1024],
   ['ic11', 32],
   ['ic12', 64],
-  ['ic13', 512],
-  ['ic14', 1024],
+  ['ic13', 256],
+  ['ic14', 512],
 ]
 
 /** The sides a Linux desktop keeps an icon at. */
 const LINUX = [16, 24, 32, 48, 64, 128, 256, 512]
+
+/** The sides a Windows icon holds. */
+const WINDOWS = [16, 24, 32, 48, 64, 128, 256]
 
 const write = (path, data) => {
   mkdirSync(dirname(path), { recursive: true })
@@ -115,35 +154,42 @@ const write = (path, data) => {
   console.log(path.replace(`${ROOT}/`, ''))
 }
 
-// The page on the web: the drawing itself, and the one raster iOS asks for.
-write(join(LANDING, 'favicon.svg'), drawing)
-write(join(LANDING, 'apple-touch-icon.png'), await flat(180).toBuffer())
+/** Every desktop icon one drawing is cut into, under the name it ships as. */
+const cut = async (art, name, rasters) => {
+  // Linux: the drawing, and a raster at every size a desktop looks for.
+  write(join(BUILD, 'linux', `${name}.svg`), art)
+  for (const size of LINUX) {
+    write(join(rasters, `${size}.png`), await flat(art, size))
+  }
 
-// Linux: the drawing, and a raster at every size a desktop looks for.
-write(join(BUILD, 'linux', 'numen.svg'), drawing)
-for (const size of LINUX) {
-  write(join(BUILD, 'linux', 'icons', `${size}.png`), await flat(size).toBuffer())
+  // Windows: one file holding every size.
+  write(
+    join(BUILD, 'windows', `${name}.ico`),
+    ico(
+      await Promise.all(
+        WINDOWS.map(async (size) => ({ size, data: await flat(art, size) })),
+      ),
+    ),
+  )
+
+  // macOS: one file holding every size, each drawn with its clearance.
+  write(
+    join(BUILD, 'darwin', `${name}.icns`),
+    icns(
+      await Promise.all(
+        MAC_BLOCKS.map(async ([type, size]) => ({ type, data: await macos(art, size) })),
+      ),
+    ),
+  )
 }
 
-// Windows: one file holding every size.
-write(
-  join(BUILD, 'windows', 'numen.ico'),
-  ico(
-    await Promise.all(
-      [16, 24, 32, 48, 64, 128, 256].map(async (size) => ({
-        size,
-        data: await flat(size).toBuffer(),
-      })),
-    ),
-  ),
-)
+// The page on the web: the drawing itself, and the one raster iOS asks for.
+write(join(LANDING, 'favicon.svg'), drawing)
+write(join(LANDING, 'apple-touch-icon.png'), await flat(drawing, 180))
 
-// macOS: one file holding every size, each drawn with its clearance.
-write(
-  join(BUILD, 'darwin', 'numen.icns'),
-  icns(
-    await Promise.all(
-      MAC_BLOCKS.map(async ([type, size]) => ({ type, data: await macos(size) })),
-    ),
-  ),
+await cut(drawing, 'numen', join(BUILD, 'linux', 'icons'))
+await cut(
+  repaint(drawing, FLASHCARDS_PLATE),
+  'numen-flashcards',
+  join(BUILD, 'linux', 'icons', 'flashcards'),
 )

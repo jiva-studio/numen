@@ -203,17 +203,17 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		}
 
 		// Nothing here happens inside this question. Fetching the models is
-		// minutes and hearing a talk is an hour, and how far either has got is
-		// among everything else the window shows being done.
-		says := "started; it runs in the background, and what has been heard is searchable " +
-			"as it goes"
+		// minutes and transcribing a talk is an hour, and how far either has got
+		// is among everything else the window shows being done.
+		says := "started; it runs in the background, and what has been transcribed is " +
+			"searchable as it goes"
 		switch core.Transcribe.Start(core.shown().Vault, in.Path) {
 		case port.Queued:
-			says = "queued; another recording is being heard and this one is in line behind " +
-				"it — nothing more is needed, it begins when that listening is over"
+			says = "queued; another recording is being transcribed and this one is in line " +
+				"behind it — nothing more is needed, it begins when that one is over"
 		default:
 			if !core.Transcribe.Ready() {
-				says = "started; what is needed to hear recordings is being fetched first"
+				says = "started; what is needed to transcribe recordings is being fetched first"
 			}
 		}
 		return nil, out{Started: true, Says: says}, nil

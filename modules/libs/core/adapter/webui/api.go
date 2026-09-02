@@ -181,6 +181,11 @@ type API struct {
 	// through Attended.
 	attending atomic.Pointer[domain.Attention]
 
+	// Attends hears what the person has open each time the window says it,
+	// once what it said stands. A build without one takes the report and tells
+	// nobody.
+	Attends func(domain.Attention)
+
 	// Leaving is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.
 	Leaving leaving
