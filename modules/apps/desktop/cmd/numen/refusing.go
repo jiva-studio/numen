@@ -42,7 +42,7 @@ func refuse(cfg container.Config, why error) {
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		OnShutdown: func() { os.Exit(1) },
+		PostShutdown: func() { os.Exit(1) },
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen",
