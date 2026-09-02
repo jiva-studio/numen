@@ -12,10 +12,13 @@ Every file is named by the hash of the recording's bytes, so a file renamed or m
 | --- | --- |
 | `<hash>.vtt` | the transcript, complete |
 | `<hash>.partial.vtt` | a run still going, or one that stopped part way |
+| `<hash>.said` | the transcript as it now reads, once something has been put right |
 | `<hash>.answer` | why there will never be a transcript |
 | `<hash>.json` | what listened: the model, the segmenter and where they came from |
 
-Only one of the first three exists at a time. A recording with none of them has not been heard yet.
+Only one of `.vtt`, `.partial.vtt` and `.answer` exists at a time. A recording with none of them has not been heard yet.
+
+`.said` is a transcript that has been put right — by a proofreader, by a person editing it in the recording tab, or by both. It is WebVTT, in the same format as the artifact, and the artifact is not rewritten: it stays what the model heard. A recording the vault holds a `.said` for is cut from that file, and deleting it gives back what was heard. What a proofreader is shown and what it may change is [Proofreading](proofreading.md).
 
 ## What the artifact holds
 
