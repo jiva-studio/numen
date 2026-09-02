@@ -20,12 +20,12 @@ import (
 func queued(t *testing.T, batchURL string) *openai.Client {
 	t.Helper()
 	t.Setenv(proofreading.KeyEnvVar, theKey)
-	cfg := proofreading.Defaults()
+	cfg := proofreading.ServiceDefaults()
 	// Nowhere: no test here asks a page at a time.
-	cfg.Service.BaseURL = "http://127.0.0.1:1/v1"
-	cfg.Service.BatchURL = batchURL
-	cfg.Service.Name = "test-model"
-	c, err := openai.New(cfg.Service)
+	cfg.BaseURL = "http://127.0.0.1:1/v1"
+	cfg.BatchURL = batchURL
+	cfg.Name = "test-model"
+	c, err := openai.New(cfg, proofread.ScanInstruction)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
 
-	if _, err := queued(t, s.URL).Leave(context.Background(), []proofread.Page{page(1, "a line")}); err != nil {
+	if _, err := queued(t, s.URL).Leave(context.Background(), []proofread.Batch{page(1, "a line")}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,7 +112,7 @@ func TestTheRunIsLeftWithItsFieldsInTheOrderTheServiceReadsThem(t *testing.T) {
 }
 
 func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
-	pages := []proofread.Page{page(7, "the frst line", "the second"), page(8, "another page")}
+	pages := []proofread.Batch{page(7, "the frst line", "the second"), page(8, "another page")}
 
 	var raw []byte
 	s := takes(t, "batch_1", &raw)
@@ -147,7 +147,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 		if len(one.Body.Messages) != 2 {
 			t.Fatalf("request %d has %d messages", i, len(one.Body.Messages))
 		}
-		if one.Body.Messages[0].Role != "system" || one.Body.Messages[0].Content != proofread.Instruction {
+		if one.Body.Messages[0].Role != "system" || one.Body.Messages[0].Content != proofread.ScanInstruction {
 			t.Errorf("request %d system message %q: %q", i,
 				one.Body.Messages[0].Role, one.Body.Messages[0].Content)
 		}
@@ -162,7 +162,7 @@ func TestLeaveAnswersWithTheNameTheServiceGave(t *testing.T) {
 	var raw []byte
 	s := takes(t, "batch_1e9f", &raw)
 
-	name, err := queued(t, s.URL).Leave(context.Background(), []proofread.Page{page(1, "a line")})
+	name, err := queued(t, s.URL).Leave(context.Background(), []proofread.Batch{page(1, "a line")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,7 +281,7 @@ func TestARefusedBatchNamesTheStatusAndNotTheKey(t *testing.T) {
 	})
 	c := queued(t, s.URL)
 
-	name, err := c.Leave(context.Background(), []proofread.Page{page(1, "a line")})
+	name, err := c.Leave(context.Background(), []proofread.Batch{page(1, "a line")})
 	if err == nil {
 		t.Fatal("no error out of Leave")
 	}

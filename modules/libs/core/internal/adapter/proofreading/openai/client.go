@@ -27,21 +27,31 @@ const inFlight = 4
 
 // Client is one hosted model, asked about several pages at once.
 type Client struct {
-	service proofreading.Service
-	http    *http.Client
+	service proofreading.Profile
+	// instruction is what the model is told it is doing. A scan and speech are
+	// corrected for different mistakes, and the caller says which.
+	instruction string
+	http        *http.Client
 }
 
 // New builds a client from configuration. The key is never an argument: it is
 // read from the configuration or the environment, where no call site can copy
 // it into a log.
-func New(cfg proofreading.Service) (*Client, error) {
+func New(cfg proofreading.Profile, instruction string) (*Client, error) {
 	if cfg.Name == "" {
 		return nil, errors.New("no model name for the proofreading service")
+	}
+	if instruction == "" {
+		return nil, errors.New("no instruction for the proofreading service")
 	}
 	if cfg.Key() == "" {
 		return nil, fmt.Errorf("%w: %s", ErrNoKey, cfg)
 	}
-	return &Client{service: cfg, http: &http.Client{Timeout: 120 * time.Second}}, nil
+	return &Client{
+		service:     cfg,
+		instruction: instruction,
+		http:        &http.Client{Timeout: 120 * time.Second},
+	}, nil
 }
 
 // Name is the model, recorded beside every correction it made.
@@ -52,14 +62,14 @@ func (c *Client) Name() string { return c.service.Name }
 //
 // One page that fails ends the run: the pages already answered are dropped and
 // the caller asks again.
-func (c *Client) Read(ctx context.Context, pages []proofread.Page) (map[int]string, error) {
+func (c *Client) Read(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	if len(pages) == 0 {
 		return nil, nil
 	}
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	queue := make(chan proofread.Page)
+	queue := make(chan proofread.Batch)
 	go func() {
 		defer close(queue)
 		for _, page := range pages {
@@ -126,12 +136,12 @@ type response struct {
 }
 
 // ask sends one page and returns what the service said about it.
-func (c *Client) ask(ctx context.Context, page proofread.Page) (string, error) {
+func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) {
 	body, err := json.Marshal(request{
 		Model:       c.service.Name,
 		Temperature: 0,
 		Messages: []message{
-			{Role: "system", Content: proofread.Instruction},
+			{Role: "system", Content: c.instruction},
 			{Role: "user", Content: proofread.Ask(page)},
 		},
 	})

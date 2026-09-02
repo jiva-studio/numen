@@ -8,25 +8,25 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// LettersApart is how far a correction's letters may stand from the line as
-// read: the share measured over proofread pages.
-const LettersApart = 0.30
+// MaxEditDistance is how far a correction's letters may stand from the line as
+// read, as a share of the longer of the two.
+const MaxEditDistance = 0.30
 
 // Fixed is the lines a reply puts right, and whether the reply answers the
 // question that was asked.
 //
-// A mark of ours coming back refuses the page, as does a reply row that is not
-// a number the page carries and, after it, the line. A correction whose letters
-// stand further than apart from the line as read is dropped, as is one saying
-// what the line already says and one that only puts something wordless in
-// front of it.
-func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
+// A mark of ours coming back refuses the batch, as does a reply row that is not
+// a number the batch carries and, after it, the line. A correction whose
+// letters stand further than maxDistance from the line as read is dropped, as
+// is one saying what the line already says and one that only puts something
+// wordless in front of it.
+func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
 	}
 
-	read := make(map[int]string, len(page.Lines))
-	for _, line := range page.Lines {
+	read := make(map[int]string, len(batch.Lines))
+	for _, line := range batch.Lines {
 		read[line.At] = line.Text
 	}
 
@@ -46,8 +46,7 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		}
 		// A line opening with the digits the row opens with, and no bar to tell
 		// the two apart, is a row whose number was left out: the line's own
-		// first word reads as the number, and the page is refused rather than
-		// have that word eaten.
+		// first word reads as the number, and the batch is refused.
 		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
 			return nil, false
 		}
@@ -57,12 +56,47 @@ func Fixed(page Page, reply string, apart float64) ([]Line, bool) {
 		if fronted(was, text) {
 			continue
 		}
-		if Apart(was, text) > apart {
+		if Apart(was, text) > maxDistance {
 			continue
 		}
 		out = append(out, Line{At: at, Text: text})
 	}
 	return out, true
+}
+
+// Gathered is what a run of batches put right, keyed by the line, with the
+// batches as they were asked and the replies keyed by the number each batch is
+// known by.
+//
+// Where two batches answer about one line, the correction is the one from the
+// batch in which the line stands further from the end; where they stand equally
+// far, it is the one from the later batch. A reply the gates refuse puts
+// nothing right, and a line no accepted reply covers is not in the result.
+func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]string {
+	put := make(map[int]string)
+	standing := make(map[int]int)
+	for _, batch := range asked {
+		reply, answered := replies[batch.At]
+		if !answered {
+			continue
+		}
+		lines, ok := Fixed(batch, reply, maxDistance)
+		if !ok {
+			continue
+		}
+		after := make(map[int]int, len(batch.Lines))
+		for i, line := range batch.Lines {
+			after[line.At] = len(batch.Lines) - 1 - i
+		}
+		for _, line := range lines {
+			if stood, seen := standing[line.At]; seen && after[line.At] < stood {
+				continue
+			}
+			put[line.At] = line.Text
+			standing[line.At] = after[line.At]
+		}
+	}
+	return put
 }
 
 // numbered is the line a reply row is about, what that line now says, and
