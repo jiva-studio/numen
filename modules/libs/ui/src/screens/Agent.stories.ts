@@ -170,6 +170,10 @@ export const LongConversation: Story = {
     await expect(ground.backgroundColor).toMatch(/^rgba\(/)
     await expect(ground.backdropFilter).toContain('blur')
 
+    // Read halfway up, where the conversation runs on under the composer.
+    const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
+    thread.scrollTop = thread.scrollHeight / 2
+
     // A turn is drawn under the composer's own top edge.
     const over = composer.getBoundingClientRect()
     const stack = canvasElement.ownerDocument.elementsFromPoint(
