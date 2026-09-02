@@ -252,11 +252,10 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 }
 
 // Drop takes the transcript of a recording away, with everything listening to
-// it produced: the words a model heard, the words a person put right, and the
-// chunks cut from them.
+// it produced. It answers with the words the recording now has, which are none.
 //
-// The recording is left saying nothing, and it is offered to be listened to
-// again.
+// A recording a run is listening to is refused, and one nothing has listened to
+// is not found.
 func (a *API) Drop(w http.ResponseWriter, r *http.Request, path string) {
 	if a.Drops == nil {
 		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)

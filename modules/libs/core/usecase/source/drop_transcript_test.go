@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -177,6 +178,90 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	}
 	if left := kept.names(); len(left) != 0 {
 		t.Errorf("the store holds %v", left)
+	}
+}
+
+// watching is the index, with a look at the store taken as the source is
+// written.
+type watching struct {
+	*store
+	saw func()
+}
+
+func (w watching) SaveExtraction(ctx context.Context, vaultID string, e port.Extraction) error {
+	w.saw()
+	return w.store.SaveExtraction(ctx, vaultID, e)
+}
+
+// The recording is held for as long as the drop takes, so nothing listens to it
+// and writes words the drop is about to say it has none of.
+func TestTheRecordingIsHeldUntilTheIndexIsWritten(t *testing.T) {
+	listen, drop, v, index, kept, _, hash := dropping(t, "one", "two")
+
+	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	free := false
+	partial := text.Partial(text.ASR, hash)
+	drop.Sources = watching{store: index, saw: func() { free = !kept.claims(partial) }}
+
+	if _, err := drop.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if free {
+		t.Error("the recording was free to be listened to before the index was written")
+	}
+	if kept.claims(partial) {
+		t.Error("the drop left the recording held")
+	}
+}
+
+// The store is a folder on the person's disk and they may empty it. What the
+// index says about words nothing holds is the drop's to take away.
+func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
+	listen, drop, v, index, kept, _, hash := dropping(t, "one", "two")
+
+	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range text.Names(text.ASR, hash) {
+		if err := kept.Remove(t.Context(), name); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	res, err := drop.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.None {
+		t.Error("a recording the index stands on came back as nothing to drop")
+	}
+	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" || src.Hash != "" {
+		t.Errorf("the source still stands on a reading: %+v", src)
+	}
+	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
+		t.Errorf("the index still holds %d chunks of words nothing holds", len(chunks))
+	}
+}
+
+// A recording that gave no words is out of the queue's reach for the life of a
+// run, and dropping its answer puts it back.
+func TestDroppingAnAnswerPutsTheRecordingBackInReach(t *testing.T) {
+	listen, drop, v, _, _, _, _ := dropping(t, "", "")
+
+	if _, err := listen.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	var forgotten []string
+	drop.Forgets = func(_ domain.Vault, path string) { forgotten = append(forgotten, path) }
+
+	if _, err := drop.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(forgotten, []string{recordingPath}) {
+		t.Errorf("the queue was told about %v", forgotten)
 	}
 }
 

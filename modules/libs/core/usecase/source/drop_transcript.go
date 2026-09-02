@@ -23,6 +23,11 @@ type DropTranscript struct {
 	Owing   port.SourceQueries
 	Derived port.DerivedStores
 
+	// Forgets takes a recording out of what a queue has already had an answer
+	// about, so one that gave no words is offered again. A build without one
+	// leaves the queue as it stands.
+	Forgets func(v domain.Vault, path string)
+
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
 }
@@ -46,23 +51,20 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	if err != nil {
 		return res, fmt.Errorf("stat %s: %w", path, err)
 	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
-	}
 	store, err := u.Derived.Open(v)
 	if err != nil {
 		return res, err
 	}
 
-	from, hash, err := u.produced(ctx, v, path, raw)
+	from, hash, stood, err := u.produced(ctx, v, reader, path)
 	if err != nil {
 		return res, err
 	}
 
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to. Nothing is taken away underneath it.
-	release, err := store.Claim(ctx, text.Partial(from, hash))
+	partial := text.Partial(from, hash)
+	release, err := store.Claim(ctx, partial)
 	if errors.Is(err, port.ErrClaimed) {
 		res.Busy = true
 		return res, nil
@@ -72,16 +74,22 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	}
 	defer release()
 
+	// A store the person emptied leaves the index standing on a reading, and
+	// those rows are this use case's to take away as well.
 	names := text.Names(from, hash)
 	held, err := u.kept(ctx, store, names)
 	if err != nil {
 		return res, err
 	}
-	if !held {
+	if !held && !stood {
 		res.None = true
 		return res, nil
 	}
+
 	for _, name := range names {
+		if name == partial {
+			continue
+		}
 		if err := store.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return res, fmt.Errorf("remove %s: %w", name, err)
 		}
@@ -93,29 +101,38 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	if err := u.Sources.SaveExtraction(ctx, v.ID, port.Extraction{Source: port.Source{Ref: ref}}); err != nil {
 		return res, fmt.Errorf("record %s: %w", path, err)
 	}
-	return res, nil
+	if u.Forgets != nil {
+		u.Forgets(v, ref.Path)
+	}
+
+	// The claim is a lock on the file the name is claimed by, so that file goes
+	// last: the name is free from the moment it does.
+	return res, store.Remove(ctx, partial)
 }
 
 // produced is the producer and the fingerprint a recording's transcript is kept
-// under.
+// under, and whether the index says the recording stands on one.
 //
-// The index names both for a recording it holds words for. A recording that
-// gave no words is recorded as standing on nothing, and what the run wrote is
-// kept under the fingerprint of the bytes.
+// A recording that gave no words is recorded as standing on nothing, and what
+// the run wrote is kept under the fingerprint of the bytes.
 func (u DropTranscript) produced(
 	ctx context.Context,
 	v domain.Vault,
+	reader port.VaultReader,
 	path string,
-	raw []byte,
-) (from, hash string, err error) {
+) (from, hash string, stood bool, err error) {
 	said, held, err := u.Owing.Reading(ctx, v.ID, path)
 	if err != nil {
-		return "", "", fmt.Errorf("read index: %w", err)
+		return "", "", false, fmt.Errorf("read index: %w", err)
 	}
 	if held && said.From != "" {
-		return said.From, said.Hash, nil
+		return said.From, said.Hash, true, nil
 	}
-	return u.area(), text.Fingerprint(raw), nil
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return "", "", false, fmt.Errorf("read %s: %w", path, err)
+	}
+	return u.area(), text.Fingerprint(raw), false, nil
 }
 
 // kept says whether the store has something under any of these names.
