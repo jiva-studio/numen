@@ -1,7 +1,8 @@
 // Package letgo is the order the things a window holds are let go of in.
 //
-// The application runs the steps once its windows are gone, and the run they
-// were made in runs them where it returns. They happen once.
+// The application runs the steps as it stops, and the run they were made in
+// runs them where it returns. They happen once, and an ask arriving while they
+// run waits for them.
 package letgo
 
 import "sync"
