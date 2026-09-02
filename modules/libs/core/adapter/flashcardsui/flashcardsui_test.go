@@ -1,6 +1,7 @@
 package flashcardsui
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -88,11 +90,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(),
-		Notes: db.NotesCutAt(cfg.Cutting()),
-		Known: db.Queries(), Maintenance: db.Maintenance(),
-	}
+	scan := cfg.Scan(db)
 	held := make([]domain.Vault, 0, len(vaults))
 	for _, notes := range vaults {
 		v := testsupport.NewVault(t, notes)
@@ -105,7 +103,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	// The window levels the index itself, so what it writes is what the next
 	// question is answered from.
 	running := cfg.Flashcards(db.Queries(), db.Links(), cfg.Level(db))
-	return &API{
+	api := &API{
 		Registry:  registry{held: held},
 		Owed:      running.Owed,
 		Session:   running.Session,
@@ -120,9 +118,19 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 		Presets: running.Presets,
 		Curves:  running.Curves,
 		Notes:   db.Queries(),
+		Tasking: task.New(),
 		Day:     running.Day,
 		Now:     time.Now,
-	}, held
+	}
+
+	// The window reads a vault the index does not carry, over the same scan.
+	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
+		walk := scan
+		walk.OnProgress = func(res usecase.ScanResult) { got(int64(res.Indexed)) }
+		_, err := walk.Execute(ctx, v)
+		return err
+	})
+	return api, held
 }
 
 // serving is the window's own client, over a server of the test's own. The
@@ -135,15 +143,37 @@ func serving(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
-// front is the whole front door: the vaults it opens on, with each count
-// filled into the row it belongs to as it arrives.
+// front is the whole front door as a person comes to see it: the vaults it
+// opens on, each count filled into its row, and the vaults read before they are
+// counted.
+//
+// A row saying it is being read is a row the page asks about again when the
+// reading wakes it, so the asking is done here until nothing is being read.
 func front(t *testing.T, api *API) *v1.OwingResponse {
 	t.Helper()
-	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	client := serving(t, api)
+
+	var out *v1.OwingResponse
+	for at := time.Now(); time.Since(at) < 30*time.Second; {
+		out = asked(t, client)
+		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultOwing).GetReading) {
+			return out
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("a vault was still being read")
+	return out
+}
+
+// asked is one opening of the front door, with each count filled into the row
+// it belongs to as it arrives.
+func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.OwingResponse {
+	t.Helper()
+	stream, err := client.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { stream.Close() })
+	defer stream.Close()
 
 	out, at, first := &v1.OwingResponse{}, map[string]int{}, true
 	for stream.Receive() {
@@ -356,34 +386,78 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	}
 }
 
-// A vault the index does not carry is counted as nothing and says why, and the
-// other vaults are counted all the same.
-func TestAVaultNothingHasReadSaysSoAndTheRestAreCounted(t *testing.T) {
+// Every vault the window opens is read before it is counted, and its numbers
+// arrive with the count the finished reading wakes.
+func TestAVaultIsReadBeforeItIsCounted(t *testing.T) {
 	api, held := windowed(t, deck)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: append(held, unread)}
 
-	out := front(t, api)
-	if len(out.GetVaults()) != 2 {
-		t.Fatalf("counted %d vaults", len(out.GetVaults()))
-	}
-	for _, one := range out.GetVaults() {
-		if one.GetVaultId() == unread.ID {
-			if one.GetUnread() == "" {
-				t.Error("a vault nothing has read is listed as one holding no cards")
-			}
-			continue
+	// Nothing is counted from a walk half done, so the first opening finds every
+	// row waiting on one.
+	for _, one := range asked(t, serving(t, api)).GetVaults() {
+		if !one.GetReading() || one.GetUnread() != "" {
+			t.Errorf("a vault came back %+v", one)
 		}
+	}
+
+	// The readings finish and the count that follows them holds the cards, for
+	// the vault the index carried and for the one it did not.
+	out := front(t, api).GetVaults()
+	if len(out) != 2 {
+		t.Fatalf("counted %d vaults", len(out))
+	}
+	for _, one := range out {
 		if one.GetUnread() != "" || one.GetNew() == 0 {
-			t.Errorf("the scanned vault came back %+v", one)
+			t.Errorf("a vault came back %+v", one)
 		}
 	}
 }
 
-// Sitting down to a vault nothing has read is refused, and says which
-// application reads a vault.
-func TestSittingDownToAVaultNothingHasReadIsRefused(t *testing.T) {
+// A vault the index already carries is read again when the window opens it. A
+// vault edited while nothing was running went past every watcher.
+func TestAVaultTheIndexCarriesIsReadAgainOnOpening(t *testing.T) {
+	api, held := windowed(t, deck)
+	v := held[0]
+
+	var read atomic.Int64
+	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+		read.Add(1)
+		return nil
+	})
+
+	waitFor(t, func() bool {
+		api.counted(t.Context(), v)
+		return read.Load() == 1
+	})
+
+	// And once only: the watcher carries the vault from there.
+	api.counted(t.Context(), v)
+	api.counted(t.Context(), v)
+	if got := read.Load(); got != 1 {
+		t.Errorf("the vault was read %d times", got)
+	}
+}
+
+// A window that reads no vault leaves one the index does not carry uncounted,
+// and says why nothing could be counted.
+func TestAVaultTheIndexDoesNotCarryIsUncountedWhereNothingReadsIt(t *testing.T) {
 	api, _ := windowed(t)
+	api.Reading(t.Context(), nil)
+	unread := testsupport.NewVault(t, deck)
+	api.Registry = registry{held: []domain.Vault{unread}}
+
+	out := front(t, api)
+	one := out.GetVaults()[0]
+	if one.GetReading() || one.GetUnread() == "" {
+		t.Errorf("a vault nothing reads came back %+v", one)
+	}
+}
+
+// Sitting down to a vault the index does not carry is refused, and says so.
+func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
+	api, _ := windowed(t)
+	api.Reading(t.Context(), nil)
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
@@ -391,9 +465,21 @@ func TestSittingDownToAVaultNothingHasReadIsRefused(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
 	}
-	if !strings.Contains(err.Error(), "editor") {
-		t.Errorf("says %q, and not which application reads a vault", err)
+	if !errors.Is(err, flashcards.ErrUnread) {
+		t.Errorf("says %q, and not that the index does not carry the vault", err)
 	}
+}
+
+// waitFor holds until something is so, and fails the test if it never is.
+func waitFor(t *testing.T, so func() bool) {
+	t.Helper()
+	for at := time.Now(); time.Since(at) < 20*time.Second; {
+		if so() {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatal("it never came to be so")
 }
 
 // A question about a vault the installation does not hold is refused.

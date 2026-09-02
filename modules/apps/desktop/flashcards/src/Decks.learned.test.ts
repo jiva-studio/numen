@@ -62,6 +62,7 @@ const vault = (said: Partial<Owing> = {}): Owing => ({
   decks: [deck()],
   presets: [],
   unread: '',
+  reading: false,
   ...said,
 })
 

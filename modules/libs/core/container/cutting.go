@@ -30,6 +30,19 @@ func (i *Index) NotesCutAt(sizes cutting.Sizes) port.NoteRepository {
 	return i.db.Notes().Cut(sizes)
 }
 
+// Scan is the walk that reads a vault's notes into the index, cut at this
+// installation's sizes. Every application that reads a vault takes it from here.
+func (c Config) Scan(db *Index) vault.Scan {
+	return vault.Scan{
+		Readers:      c.VaultReaders(),
+		Vaults:       db.Vaults(),
+		Notes:        db.NotesCutAt(c.Cutting()),
+		Known:        db.Queries(),
+		Maintenance:  db.Maintenance(),
+		RebuildIndex: c.RebuildIndex,
+	}
+}
+
 // Searchable is what makes a vault answer, put together the one way: the notes
 // read, the books read, and the vectors made. Every entry point takes it from
 // here, so a vault made searchable in a terminal and a vault made searchable in
@@ -53,14 +66,7 @@ func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedde
 		return vault.Searchable{}, err
 	}
 	return vault.Searchable{
-		Notes: vault.Scan{
-			Readers:      c.VaultReaders(),
-			Vaults:       db.Vaults(),
-			Notes:        db.NotesCutAt(c.Cutting()),
-			Known:        db.Queries(),
-			Maintenance:  db.Maintenance(),
-			RebuildIndex: c.RebuildIndex,
-		},
+		Notes:   c.Scan(db),
 		Books:   books,
 		Vectors: vectors,
 	}, nil
