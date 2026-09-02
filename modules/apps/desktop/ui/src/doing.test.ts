@@ -93,6 +93,10 @@ const window = (
     folderRefused?: Refused
     /** How a run asked for over a file came out. */
     outcome?: Outcome
+    /** What dropping a transcript was refused with. */
+    dropRefused?: string
+    /** Whether this build cannot drop a transcript at all. */
+    undroppable?: boolean
   } = {},
 ) => {
   const done: string[] = []
@@ -129,6 +133,11 @@ const window = (
     recognises: async (path) => {
       done.push(`recognises ${path}`)
       return answers.outcome ?? outcome('started', '')
+    },
+    drops: async (path) => {
+      done.push(`drops ${path}`)
+      if (answers.dropRefused) throw new Error(answers.dropRefused)
+      return answers.undroppable !== true
     },
     cuts: async (folder, name) => {
       done.push(`cuts ${folder || '—'} ${name}`)
@@ -430,6 +439,40 @@ describe('a run asked for over a file', () => {
       expect(one.said).toStrictEqual([words.unrunnable])
       expect(canRun('transcribe')).toBe(false)
       expect(canRun('recognise')).toBe(true)
+    } finally {
+      runsAgain()
+    }
+  })
+})
+
+describe('the transcript of a recording dropped', () => {
+  it('asks the application over the file the tab in front holds', async () => {
+    const one = window()
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.done).toStrictEqual(['drops talks/Ants.mp3'])
+    expect(one.said).toStrictEqual([])
+  })
+
+  it('says what the application refused, in the words it sent', async () => {
+    const why = 'this recording is being listened to'
+    const one = window({ dropRefused: why })
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.said).toStrictEqual([`Error: ${why}`])
+    expect(one.tones).toStrictEqual(['refusal'])
+  })
+
+  it('says this build cannot do it, and offers it nowhere after that', async () => {
+    const one = window({ undroppable: true })
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    try {
+      expect(one.said).toStrictEqual([words.unrunnable])
+      expect(canRun('dropTranscript')).toBe(false)
     } finally {
       runsAgain()
     }

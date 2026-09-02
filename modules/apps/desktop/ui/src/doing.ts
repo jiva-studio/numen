@@ -116,6 +116,12 @@ export interface Doing {
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>
   /**
+   * The transcript of a recording taken away, with everything cut from it, and
+   * whether this build can do it at all. The recording is left saying nothing,
+   * and it is offered to be heard again.
+   */
+  drops(path: string): Promise<boolean>
+  /**
    * A deck made in a folder under the name it is given, and put in front of the
    * person. The path it landed at, and nothing where none was made.
    */
@@ -233,6 +239,11 @@ const carried: Record<string, Carries> = {
   destroy: (deed, on, words) => removes(deed, true, on, words),
   transcribe: async (deed, on, words) => began(deed, await on.transcribes(deed.file), on, words),
   recognise: async (deed, on, words) => began(deed, await on.recognises(deed.file), on, words),
+  dropTranscript: async (deed, on, words) => {
+    if (await on.drops(deed.file)) return
+    cannotRun(deed.id)
+    on.says(words.unrunnable, 'refusal')
+  },
   ask: (deed, on) => on.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
   reveal: (deed, on) => on.reveals(deed.path),

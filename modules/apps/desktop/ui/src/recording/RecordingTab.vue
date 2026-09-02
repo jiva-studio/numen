@@ -90,17 +90,29 @@ const empty = computed(() => props.held.times.value.length === 0)
         </button>
       </div>
 
-      <Editor
-        v-else
-        class="recording__transcript"
-        :model-value="props.held.prose.value"
-        :readonly="!props.held.editable.value"
-        :live="false"
-        :extensions="times.extension"
-        :aria-label="words.transcript"
-        @update:model-value="(said: string) => props.held.typed(said)"
-        @save="props.held.keep()"
-      />
+      <template v-else>
+        <!-- One button, and which it is the words decide: writing them down
+             where there are none, taking them away where there are. -->
+        <button
+          v-if="props.held.droppable.value"
+          type="button"
+          class="recording__ask recording__ask--aside"
+          @click="props.held.drops()"
+        >
+          {{ words.drop }}
+        </button>
+
+        <Editor
+          class="recording__transcript"
+          :model-value="props.held.prose.value"
+          :readonly="!props.held.editable.value"
+          :live="false"
+          :extensions="times.extension"
+          :aria-label="words.transcript"
+          @update:model-value="(said: string) => props.held.typed(said)"
+          @save="props.held.keep()"
+        />
+      </template>
     </div>
   </div>
 </template>
@@ -167,6 +179,12 @@ const empty = computed(() => props.held.times.value.length === 0)
 
 .recording__ask:hover {
   border-color: var(--numen-focus-border);
+}
+
+/* The button stands beside the words, at the end of the line above them. */
+.recording__ask--aside {
+  align-self: end;
+  margin: var(--numen-box-air) var(--numen-gutter) 0;
 }
 
 .recording__player {

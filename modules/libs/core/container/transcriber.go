@@ -509,6 +509,14 @@ func (t *Transcribing) recordAnswer(v domain.Vault, path string) {
 	t.answered[named(v, path)] = true
 }
 
+// Forget puts a recording back within the queue's reach. The answer it gave is
+// gone from the vault, and the queue hands it over again.
+func (t *Transcribing) Forget(v domain.Vault, path string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.answered, named(v, path))
+}
+
 // named is one recording of one vault, as the one string a set is keyed by.
 func named(v domain.Vault, path string) string { return v.ID + "\x00" + path }
 

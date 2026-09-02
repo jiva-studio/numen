@@ -55,7 +55,7 @@ function played(): Player {
 function tab(cues: readonly Cue[] = CUES) {
   const asked: string[] = []
   const held = transcribed(listening(talk(cues), 'talks/Ants.mp3', played()), {
-    runs: (id, path) => void asked.push(`${id} ${path}`),
+    runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`),
   })
   return { held, asked }
 }
@@ -146,7 +146,7 @@ describe('a recording with no transcript', () => {
 
     await drawn.find('.recording__ask').trigger('click')
 
-    expect(asked).toStrictEqual(['transcribe talks/Ants.mp3'])
+    expect(asked).toStrictEqual(['transcribe talks/Ants.mp3 Ants.mp3'])
 
     drawn.unmount()
   })
@@ -237,8 +237,56 @@ describe('a transcript still growing', () => {
 
     drawn.unmount()
   })
+})
 
-  it('offers no run where the words already stand', async () => {
+describe('a recording with a transcript', () => {
+  it('offers the words taken away where they already stand', async () => {
+    const { held } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').text()).toBe(WORDS.drop)
+
+    drawn.unmount()
+  })
+
+  it('asks the window for the words to be taken away when it is pressed', async () => {
+    const { held, asked } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    await drawn.find('.recording__ask').trigger('click')
+
+    expect(asked).toStrictEqual(['dropTranscript talks/Ants.mp3 Ants.mp3'])
+
+    drawn.unmount()
+  })
+
+  // A run appends to the words, and what is being appended to is not taken
+  // away underneath it.
+  it('offers none while a run is writing the words down', async () => {
+    const { held } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    held.ticks(true)
+    await settled()
+    await drawn.vm.$nextTick()
+
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+
+  it('offers none where this build cannot take them away at all', async () => {
+    cannotRun('dropTranscript')
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 

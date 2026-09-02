@@ -266,6 +266,12 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Known:   db.SourcesKnown(),
 		Index:   opened.level,
 	}
+	api.Drops = &source.DropTranscript{
+		Readers: cfg.VaultReaders(),
+		Sources: db.Sources(),
+		Owing:   db.SourcesKnown(),
+		Derived: cfg.DerivedStores(),
+	}
 
 	// The vaults this installation holds, beside the one the window is showing.
 	// Erase is Forget and a folder that goes, so the two hold one Forget.
@@ -449,6 +455,9 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
 	o.API.Transcribes = transcribing
+	// A recording whose answer was dropped is one the queue has had no answer
+	// about.
+	o.API.Drops.Forgets = transcribing.Forget
 	if o.cfg.Transcribes {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}

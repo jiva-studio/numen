@@ -213,8 +213,8 @@ const heard = recordingKind(
   held.host,
   (path) => listening(recordings, path),
   {
-    runs: (id, path) =>
-      carries(id, { ...where(), path: '', title: '', file: path, source: 'recording' }),
+    runs: (id, path, called) =>
+      carries(id, { ...where(), path: '', title: called, file: path, source: 'recording' }),
   },
   puts,
 )
@@ -557,6 +557,11 @@ const doing: Doing = {
   makesFolder: (path) => core.makeFolder(path),
   transcribes: (path) => running.transcribes(path),
   recognises: (path) => running.recognises(path),
+  drops: async (path) => {
+    const able = await running.drops(path)
+    if (able) heard.dropped(path)
+    return able
+  },
   cuts: (folder, name) => opensCards(folder, name, false),
   stencils: (folder, name) => opensCards(folder, name, true),
   presets: (folder, name) => opensMadePreset(folder, name),

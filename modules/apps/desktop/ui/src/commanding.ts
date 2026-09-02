@@ -211,6 +211,11 @@ export interface Words extends Silences {
   /** The two runs a person asks for over the file in front. */
   readonly transcribe: string
   readonly recognise: string
+  /** The transcript of the recording in front, taken away, and the two answers. */
+  readonly dropTranscript: string
+  readonly keepsTranscript: string
+  readonly drops: string
+  readonly dropped: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
   /** The preset the note in front is, or the one the deck in front is scheduled by. */
@@ -418,6 +423,19 @@ export const commandsOf = (
     text: words.transcribe,
     band: 'file',
     where: onSource('transcribe', 'recording'),
+  },
+  {
+    id: 'dropTranscript',
+    text: words.dropTranscript,
+    band: 'file',
+    needs: 'asking',
+    where: onSource('dropTranscript', 'recording'),
+    answers: {
+      keeps: words.keepsTranscript,
+      kept: words.kept,
+      does: words.drops,
+      then: words.dropped,
+    },
   },
   { id: 'recognise', text: words.recognise, band: 'file', where: onSource('recognise', 'book') },
   {
