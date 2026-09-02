@@ -67,16 +67,16 @@ export function configuring(core: Called, words: Words, said: Says) {
   }
 
   /** What stands at a setting, and nothing where the file names none. */
-  const at = (path: readonly string[]): unknown => standing(held.value, path)
+  const at = (setting: readonly string[]): unknown => standing(held.value, setting)
 
   /** The models one setting can be set to, in the order they are offered. */
   const offers = (setting: readonly string[]): readonly Model[] =>
     models.value.filter((one) => one.namedAt.join('.') === setting.join('.'))
 
   /**
-   * Settings written into the file, together or not at all. The window stands
-   * on what it wrote until the file answers otherwise; a write that was refused
-   * is said, and the window goes back to what the settings hold.
+   * Settings written into the file, together or not at all. A write that was
+   * refused is said, and the window reads the file again either way, so what is
+   * drawn is what the settings hold.
    */
   const chooses = async (written: readonly Written[]): Promise<void> => {
     if (written.length === 0) return

@@ -58,6 +58,14 @@ describe('choosing', () => {
       .toBe('medium')
   })
 
+  it('stands on the value in force where the choices arrive after it', async () => {
+    const control = mountSelect({ choices: [], modelValue: 'large' })
+    await control.setProps({ choices: CHOICES })
+
+    expect((control.get('select').element as HTMLSelectElement).value).toBe('large')
+    expect(handed(control)).toStrictEqual([])
+  })
+
   it('hands back the identifier it was given', async () => {
     const control = mountSelect()
     await control.get('select').setValue('large')

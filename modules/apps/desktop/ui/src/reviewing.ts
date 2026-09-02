@@ -37,7 +37,7 @@ export function reviewing(core: Called, words: Words, said: Says) {
     try {
       starts.value = await core.reviewing()
     } catch {
-      return
+      // A vault that cannot be asked leaves the hour where it stands.
     }
   }
 

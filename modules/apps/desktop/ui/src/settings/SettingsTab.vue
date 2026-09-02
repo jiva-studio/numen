@@ -69,10 +69,12 @@ const AT = {
   agentCommand: ['agent', 'claude', 'command'],
 } as const
 
-/** How many megabytes a recording listened to unasked may be, at each end. */
+/**
+ * The ends the two fields type between. The settings take any whole number, and
+ * these are as far as a hand is asked to turn one. Below nothing megabytes are
+ * no limit at all, which is what the setting reads a negative number as.
+ */
 const UNDER = { least: -1, most: 100000 }
-
-/** How many times the agent may act in one turn, at each end. */
 const STEPS = { least: 1, most: 200 }
 
 /** What stands at a setting, read as the kind the row draws it as. */
@@ -117,7 +119,6 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   const names = kept && typeof kept === 'object' ? Object.keys(kept) : []
   return [{ id: '', text: words.proofreadingNone }, ...names.map((one) => ({ id: one, text: one }))]
 })
-
 </script>
 
 <template>
