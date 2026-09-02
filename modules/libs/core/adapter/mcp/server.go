@@ -140,6 +140,7 @@ func New(core Core) *sdk.Server {
 	)
 
 	addNoteTools(server, core)
+	addFileReadingTools(server, core)
 	addCardTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
@@ -216,7 +217,10 @@ func instructions(core Core) string {
 	b.WriteString("draws is the parent and child links, not the folder tree.\n")
 	b.WriteString("- Prose is yours to write; the frontmatter is the person's. Change it with ")
 	b.WriteString("the link and rename tools rather than by writing the file yourself.\n")
-	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n\n")
+	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n")
+	b.WriteString("- Any file the vault holds is read by its path with `file_read`, a run at ")
+	b.WriteString("a time. The tools here write notes, so a file of another kind is read and ")
+	b.WriteString("not written.\n\n")
 
 	b.WriteString("A vault holds books and papers beside its notes, and asking them is not ")
 	b.WriteString("like asking a note:\n")

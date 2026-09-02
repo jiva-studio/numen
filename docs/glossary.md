@@ -10,6 +10,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | --- | --- | --- |
 | vault | A folder the person added, carrying its own identity. | |
 | note | A markdown file in a vault. Its shape is [Note format](note-format.md). | |
+| file | A path in a vault and the bytes at it, whichever kind the vault holds it as. A note and an asset are both files. | |
 | asset | A file in a vault that is not a note. | |
 | entry | One file or folder, as a listing of a folder reports it. | item |
 | title | The name a note is shown by, and one of the keys the application owns — [Note format](note-format.md). A title names a note; a label names a relationship. | label |

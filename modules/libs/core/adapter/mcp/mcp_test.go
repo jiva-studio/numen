@@ -183,6 +183,7 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	exactly(t, serves(t, session), []string{
 		"note_search", "note_get", "note_read", "note_neighbourhood",
 		"note_create", "note_write", "note_edit", "note_rename", "note_move", "note_remove",
+		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
 		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
 		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
