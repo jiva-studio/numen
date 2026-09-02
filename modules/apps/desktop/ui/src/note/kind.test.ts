@@ -6,9 +6,10 @@
  * before it can take anything.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import { noting, type Called } from './kind'
+import { noting, type Asked } from './kind'
 import { putting } from '../putting'
 import type { Drawn } from './entering'
 import type { drawn } from './drawn'
@@ -17,11 +18,16 @@ import type { State } from './tab'
 import { windowing } from '../windowing'
 
 /** A vault that answers with the heading written into each note. */
-const vault = (titles: Record<string, string> = {}): Called => ({
+const vault = (
+  titles: Record<string, string> = {},
+  notes: Record<string, string> = {},
+): Asked => ({
   neighbourhood: async (path) => {
     if (titles[path] === undefined) throw new Error('not reached')
     return { focus: { title: titles[path] } }
   },
+  resolve: async (_from, written) =>
+    new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
 })
 
 /**
@@ -105,12 +111,19 @@ const editor = (takes = true) => {
 }
 
 /** A window holding notes, and what it draws while it holds them. */
-const window = (titles: Record<string, string> = {}, states: Record<string, State> = {}) => {
+const window = (
+  titles: Record<string, string> = {},
+  states: Record<string, State> = {},
+  reaches: Record<string, string> = {},
+) => {
   const store = notes(states)
   const drawing = drawings()
   const held = windowing()
-  const puts = putting({ standing: async () => new Map() })
-  const noted = noting(vault(titles), store.store, drawing.store, held.host, puts)
+  const puts = putting({
+    standing: async (paths) =>
+      new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
+  })
+  const noted = noting(vault(titles, reaches), store.store, drawing.store, held.host, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
@@ -122,6 +135,44 @@ const window = (titles: Record<string, string> = {}, states: Record<string, Stat
     puts.made(path, title, 'note', showing)
   return { noted, held, open, shows, ...store, drawings: drawing }
 }
+
+describe('a link in the prose followed', () => {
+  /** A window holding one note, and the tab that note stands in. */
+  const written = async (reaches: Record<string, string> = {}) => {
+    const one = window({}, {}, reaches)
+    one.shows('Note.md')
+    await flushPromises()
+    return { ...one, held: one.noted.opens(one.noted.holding('Note.md') ?? 'Note.md') }
+  }
+
+  it('opens the note it names, in a tab beside the one it was written in', async () => {
+    const one = await written({ 'name://Entropy': 'physics/Entropy.md' })
+
+    one.held.follows('name://Entropy')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(2)
+    expect(one.noted.holding('physics/Entropy.md')).not.toBeNull()
+  })
+
+  it('opens nothing where no note answers to it', async () => {
+    const one = await written()
+
+    one.held.follows('name://Nowhere')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(1)
+  })
+
+  it('opens nothing for an address that names no note at all', async () => {
+    const one = await written({ 'https://example.com': 'physics/Entropy.md' })
+
+    one.held.follows('https://example.com')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(1)
+  })
+})
 
 describe('a note opened', () => {
   it('is owed the keyboard until there is an editor to take it', async () => {

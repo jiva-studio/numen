@@ -24,6 +24,11 @@ service VaultService {
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
 
+  // Resolve answers where addresses written in one note land. It is the
+  // question a link is answered with, asked about text nobody recorded as a
+  // link: a wikilink in an answer, a wikilink under the pointer.
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
   // Names is the names in a vault that match what was typed: a note's own
   // title, and the headings inside notes. It is asked as a person types, and
   // the last word matches on its prefix.
@@ -464,6 +469,29 @@ message NeighbourhoodResponse {
   // Which of three the note in focus is, so a client draws a deck and a stencil
   // as what they are.
   NoteType focus_type = 3;
+}
+
+message ResolveRequest {
+  // The note the addresses are written in. A name resolves by a path relative
+  // to it, so a caller with no note to name gets the priority that is left.
+  string from = 1;
+
+  // The addresses as they stand in the text: `Entropy`, `notes/Entropy` or
+  // `note://<identifier>`.
+  repeated string written = 2;
+}
+
+message ResolveResponse {
+  // Where each address lands. One that reaches nothing is absent, and so is
+  // one asked about twice.
+  repeated Landed landed = 1;
+}
+
+// Landed is one address and the note it reaches now.
+message Landed {
+  // The address as it was asked about, which is how the caller finds its answer.
+  string written = 1;
+  string path = 2;
 }
 
 message NamesRequest {

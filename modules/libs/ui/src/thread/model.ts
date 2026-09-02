@@ -44,6 +44,11 @@ export interface Turn {
   readonly state?: TurnState
   /** Whether the turn stands for somewhere the person can be taken. */
   readonly opens?: boolean
+  /**
+   * The addresses this turn points at that reach nothing. A link carrying one
+   * is drawn as not resolving.
+   */
+  readonly unresolved?: readonly string[]
 }
 
 /** A turn with everything about how to draw it worked out. */

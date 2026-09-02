@@ -178,6 +178,18 @@ func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	}
 }
 
+// A note an answer speaks about is a place the person can go, and the brackets
+// are the form that takes.
+func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
+	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	said := session.InitializeResult().Instructions
+	for _, rule := range []string{"[[Harmonic oscillator]]", "[[note://<identifier>]]"} {
+		if !strings.Contains(said, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		}
+	}
+}
+
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
 	exactly(t, serves(t, session), []string{

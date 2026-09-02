@@ -65,6 +65,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     standing: async () => new Map(),
+    resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield

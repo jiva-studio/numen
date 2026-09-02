@@ -12,13 +12,23 @@
  */
 import MarkdownIt, { type Token } from 'markdown-it'
 import { h, type VNode } from 'vue'
+import { wikilinks } from '../linking/marks'
 
-const marks = new MarkdownIt({ html: false, linkify: true })
+const marks = new MarkdownIt({ html: false, linkify: true }).use(wikilinks)
 
 /** The class every word is drawn in. */
 export const WORD = 'prose__word'
 
-export const render = (text: string): VNode[] => nodes(marks.parse(text, {}))
+/** The attribute a link that reaches nothing is drawn with. */
+const REACHES = 'data-reaches'
+
+/** The addresses a text points at that reach nothing. */
+export type Unresolved = ReadonlySet<string>
+
+const NONE: Unresolved = new Set()
+
+export const render = (text: string, unresolved: Unresolved = NONE): VNode[] =>
+  nodes(marks.parse(text, {}), unresolved)
 
 /**
  * Tokens arrive flat, with the nesting written on them. A frame is one element
@@ -30,7 +40,7 @@ interface Frame {
   children: (VNode | string)[]
 }
 
-const nodes = (tokens: readonly Token[]): VNode[] => {
+const nodes = (tokens: readonly Token[], unresolved: Unresolved): VNode[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
   const stack: Frame[] = [root]
   const top = () => stack[stack.length - 1]!
@@ -42,7 +52,7 @@ const nodes = (tokens: readonly Token[]): VNode[] => {
     if (token.hidden) continue
 
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -54,7 +64,7 @@ const nodes = (tokens: readonly Token[]): VNode[] => {
 
     switch (token.type) {
       case 'inline':
-        top().children.push(...inline(token.children ?? [], () => placed++))
+        top().children.push(...inline(token.children ?? [], unresolved, () => placed++))
         break
       case 'fence':
       case 'code_block':
@@ -85,14 +95,18 @@ const nodes = (tokens: readonly Token[]): VNode[] => {
  *
  * Every word is a node of its own, keyed by where it falls in the answer.
  */
-const inline = (tokens: readonly Token[], next: () => number): (VNode | string)[] => {
+const inline = (
+  tokens: readonly Token[],
+  unresolved: Unresolved,
+  next: () => number,
+): (VNode | string)[] => {
   const root: Frame = { tag: '', attrs: {}, children: [] }
   const stack: Frame[] = [root]
   const top = () => stack[stack.length - 1]!
 
   for (const token of tokens) {
     if (token.nesting === 1) {
-      stack.push({ tag: token.tag, attrs: attrs(token), children: [] })
+      stack.push({ tag: token.tag, attrs: attrs(token, unresolved), children: [] })
       continue
     }
     if (token.nesting === -1) {
@@ -142,5 +156,11 @@ const words = (text: string, next: () => number): (VNode | string)[] =>
       /^\s+$/.test(piece) ? piece : h('span', { key: next(), class: WORD }, piece),
     )
 
-const attrs = (token: Token): Record<string, string> =>
-  Object.fromEntries((token.attrs ?? []).map(([name, value]) => [name, String(value)]))
+const attrs = (token: Token, unresolved: Unresolved = NONE): Record<string, string> => {
+  const written: Record<string, string> = Object.fromEntries(
+    (token.attrs ?? []).map(([name, value]) => [name, String(value)]),
+  )
+  const href = written.href
+  if (href !== undefined && unresolved.has(href)) written[REACHES] = 'nothing'
+  return written
+}

@@ -201,6 +201,8 @@ const plexes = plexKind(held.host, () => standing(core), {
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, talk, named(CONVERSATION)), {
     opens: (path, ...runs) => void puts.opensAt(path, runs),
+    beside: (path) => void puts.opens(path, '', 'beside'),
+    resolve: (written) => core.resolve('', written),
     unreachable: () => unreachable.value,
   }),
 )

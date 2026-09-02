@@ -184,6 +184,12 @@ export interface Core {
    * with what stands there; a path with nothing at it is absent.
    */
   standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
+  /**
+   * Where each of those addresses lands, by the address it was asked about. A
+   * name resolves by a path relative to the note it is written in, which is
+   * `from`; an address that reaches nothing is absent.
+   */
+  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string

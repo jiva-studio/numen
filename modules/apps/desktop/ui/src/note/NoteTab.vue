@@ -50,6 +50,7 @@ watch(
       class="note__text"
       @update:model-value="(body: string) => props.held.typed(body)"
       @save="props.held.save()"
+      @open="(address: string) => props.held.follows(address)"
     />
   </div>
 </template>

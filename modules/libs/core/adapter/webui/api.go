@@ -354,6 +354,30 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	return connect.NewResponse(out), nil
 }
 
+// Resolve answers where addresses written in one note land, keyed by what was
+// written. An address that reaches nothing is left out of the answer.
+func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	landed, err := a.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	out := &v1.ResolveResponse{}
+	for _, written := range r.Msg.GetWritten() {
+		path, reached := landed[written]
+		if !reached {
+			continue
+		}
+		out.Landed = append(out.Landed, &v1.Landed{Written: written, Path: path})
+		delete(landed, written)
+	}
+	return connect.NewResponse(out), nil
+}
+
 // Changes reports what moved, for as long as the caller listens.
 func (a *API) Changes(
 	ctx context.Context,
