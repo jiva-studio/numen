@@ -142,21 +142,27 @@ const reaches = (day: Day, press: MouseEvent) => {
   stroke: none;
 }
 
-/* A day still to come is drawn in outline: what is done is filled in, and what
-   is coming is not done. It is the same weight, so a heavy week ahead reads as
-   a heavy week. */
-.heatmap__day[data-ahead][data-weight='1'],
-.heatmap__day[data-ahead][data-weight='2'],
-.heatmap__day[data-ahead][data-weight='3'],
-.heatmap__day[data-ahead][data-weight='4'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 12%, var(--numen-node-bg));
-  stroke: var(--numen-focus-bg);
-  stroke-width: 1;
+/* A day still to come is said quietly: what is done stands at full strength,
+   and what is coming is the same weight drawn dim. It carries its weight, so a
+   heavy week ahead reads as a heavy week. */
+.heatmap__day[data-ahead][data-weight='1'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 8%, var(--numen-node-bg));
+  stroke: none;
 }
 
-.heatmap__day[data-ahead][data-weight='3'],
+.heatmap__day[data-ahead][data-weight='2'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 15%, var(--numen-node-bg));
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='3'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 23%, var(--numen-node-bg));
+  stroke: none;
+}
+
 .heatmap__day[data-ahead][data-weight='4'] {
-  stroke-width: 1.5;
+  fill: color-mix(in oklab, var(--numen-focus-bg) 32%, var(--numen-node-bg));
+  stroke: none;
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */
