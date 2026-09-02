@@ -166,10 +166,27 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Width:  1280,
 		Height: 860,
 		URL:    "/",
+		// Files a person drags off their desktop reach the page, which marks
+		// the places one may be let go of.
+		EnableFileDrop: true,
 	})
 
 	// Picking a folder is the machine's own, and it opens over this window.
 	opened.API.Choosing = &picker{window: window}
+
+	// Files let go of over the window, copied into the folder the mark under
+	// the pointer names. A drop that landed on no mark is not this window's.
+	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
+		landed := event.Context().DropTargetDetails()
+		if landed == nil {
+			return
+		}
+		into, marked := landed.Attributes[droppedInto]
+		if !marked {
+			return
+		}
+		opened.Brings(ctx, into, event.Context().DroppedFiles())
+	})
 
 	// Opening another vault, as a person asks for it. The agents are told which
 	// vault they are working when their session opens, so the endpoint they
@@ -200,6 +217,11 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 
 	return app.Run()
 }
+
+// droppedInto is the attribute a page marks a drop target with. Its value is
+// the folder of the vault a file let go of there is filed in, the root being
+// the empty path. The name is the one the window's own drag and drop looks for.
+const droppedInto = "data-file-drop-target"
 
 // titled is what the window is called: the application, and the vault it is
 // showing where it is showing one.

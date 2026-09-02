@@ -45,6 +45,16 @@ const props = withDefaults(
     name?: string
     /** How many rows are being carried, said at the pointer. */
     counted?: (rows: number) => string
+    /**
+     * Where a file carried in from outside the window and let go on a row is
+     * filed, and nothing for a row nothing may be let go on. The tree itself is
+     * asked about as no row at all.
+     *
+     * What comes back stands on the element as `data-file-drop-target`, which
+     * is the attribute the window reads to find where a drop landed. A tree
+     * that answers nothing takes no files.
+     */
+    lands?: (row: RowId | null) => string | null
     /** When the next frame comes. */
     frame?: (run: () => void) => void
   }>(),
@@ -54,6 +64,7 @@ const props = withDefaults(
     threshold: 4,
     name: 'Tree',
     counted: (rows: number) => `${rows} rows`,
+    lands: () => null,
     frame: (run: () => void) => {
       requestAnimationFrame(run)
     },
@@ -381,6 +392,7 @@ onBeforeUnmount(() => {
     ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
+    :data-file-drop-target="props.lands(null) ?? undefined"
     @contextmenu.prevent="askMenu(null, { x: $event.clientX, y: $event.clientY })"
   >
     <div
@@ -406,6 +418,7 @@ onBeforeUnmount(() => {
         :data-last="row.last || undefined"
         :data-into="row.id === into || undefined"
         :data-before="row.id === before || undefined"
+        :data-file-drop-target="props.lands(row.id) ?? undefined"
         :style="{ '--level': row.level }"
         @focus="here = row.id"
         @pointerdown="lift(row.id, $event)"
@@ -515,6 +528,14 @@ onBeforeUnmount(() => {
 
 /* The whole of it, for what would land at the top level. */
 .tree[data-into] {
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
+/* Where a file carried in from outside would land. The window marks the
+   element under the pointer with this class for as long as the drag is over
+   it. */
+.tree__row.file-drop-target-active,
+.tree.file-drop-target-active {
   box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
 

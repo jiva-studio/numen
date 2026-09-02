@@ -259,6 +259,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Sources: db.Sources(),
 		Notes:   moving,
 	}
+	api.Bringing = &usecase.Bring{Writers: cfg.VaultWriters()}
 	api.Removes = &note.Remove{
 		Writers: cfg.VaultWriters(),
 		Links:   api.Links,

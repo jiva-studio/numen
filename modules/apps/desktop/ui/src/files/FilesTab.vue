@@ -6,6 +6,9 @@
  * The tree takes names and hands identities back, and a row's identity here is
  * the path the vault files it under. Every gesture is handed to what the tab
  * holds. What is drawn beside a name is what the vault holds there.
+ *
+ * A row also names the folder a file dropped on it from outside the window is
+ * filed in. The copying is the window's, and nothing of it is drawn here.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
@@ -102,6 +105,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       :selected="props.held.list.chosen.value"
       :name="words.tree"
       :counted="words.carrying"
+      :lands="(row: string | null) => props.held.folderFor(row)"
       @open="(row: string) => props.held.open(row)"
       @close="(row: string) => props.held.close(row)"
       @select="(rows: readonly string[]) => props.held.select(rows)"

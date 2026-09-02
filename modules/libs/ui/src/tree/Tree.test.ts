@@ -615,3 +615,36 @@ describe('a name being typed', () => {
     expect(held.emitted('select')).toBeUndefined()
   })
 })
+
+describe('where a file carried in from outside lands', () => {
+  const landsIn = (held: Tree, row: string) => rowIn(held, row).attributes('data-file-drop-target')
+
+  /** The folder a row stands for, or the folder it sits in. */
+  const lands = (row: string | null): string => {
+    if (row === null) return ''
+    if (row === 'work' || row === 'plans' || row === 'empty') return row
+    return row === 'friday' ? 'plans' : 'work'
+  }
+
+  it('is marked on each row, and on the tree for the top level', () => {
+    const held = mountTree({ lands })
+
+    expect(landsIn(held, 'plans')).toBe('plans')
+    expect(landsIn(held, 'notes')).toBe('work')
+    expect(held.get('.tree').attributes('data-file-drop-target')).toBe('')
+  })
+
+  it('is marked nowhere while the tree takes no files', () => {
+    const held = mountTree()
+
+    expect(landsIn(held, 'plans')).toBeUndefined()
+    expect(held.get('.tree').attributes('data-file-drop-target')).toBeUndefined()
+  })
+
+  it('is marked on the rows a tree answers for and on no other', () => {
+    const held = mountTree({ lands: (row: string | null) => (row === 'empty' ? 'empty' : null) })
+
+    expect(landsIn(held, 'empty')).toBe('empty')
+    expect(landsIn(held, 'plans')).toBeUndefined()
+  })
+})

@@ -30,6 +30,17 @@ import (
 // the use case, where no server is needed to ask it.
 func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
 	t.Helper()
+	client, root, _ := serving(t, notes)
+	return client, root
+}
+
+// serving is that same vault, with the window's half of it as well, for a test
+// asking what something the window does reaches the client as.
+func serving(
+	t *testing.T,
+	notes map[string]string,
+) (numenv1connect.VaultServiceClient, string, *webui.Opened) {
+	t.Helper()
 	root := t.TempDir()
 	for name, body := range notes {
 		path := filepath.Join(root, filepath.FromSlash(name))
@@ -85,7 +96,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 			t.Fatal(err)
 		}
 		if state.Msg.GetReady() {
-			return client, root
+			return client, root, opened
 		}
 		if reason := state.Msg.GetFailed(); reason != "" {
 			t.Fatalf("the first scan failed: %s", reason)
@@ -93,7 +104,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal("the first scan did not finish")
-	return nil, ""
+	return nil, "", nil
 }
 
 // TestAnEditReachesAListener is the whole path: a file on disk, the watcher,

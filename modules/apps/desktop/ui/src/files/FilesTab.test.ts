@@ -91,6 +91,16 @@ describe('the tree the tab draws', () => {
 
     expect(window.findAll('.files__icon')).toHaveLength(3)
   })
+
+  it('names the folder a file carried in from outside is filed in', async () => {
+    const { window } = await drawn(['physics'])
+    const lands = window.findComponent(Tree).props('lands') as (row: string | null) => string
+
+    expect(lands('physics')).toBe('physics')
+    expect(lands('physics/Kelvin.md')).toBe('physics')
+    expect(lands('Entropy.md')).toBe(ROOT)
+    expect(lands(null)).toBe(ROOT)
+  })
 })
 
 describe('a row the tree reports', () => {
