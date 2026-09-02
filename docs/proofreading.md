@@ -97,6 +97,8 @@ A profile is flat: `use`, the keys of both stations and the two sizes all sit at
 
 A profile carries `batch_size` — how many lines one request carries — and `overlap` — how many lines neighbouring batches share. Overlap is what keeps a phrase torn at a batch boundary whole for at least one of the batches that see it. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows the line.
 
+It also carries `in_flight`: how many batches are being asked about at any moment. What a batch costs is what the model writes back rather than what it took to ask, so a run is as long as its batches are asked one after another. At the command line this is a person's own model, and it is left most of itself while they are using it.
+
 `indexing.proofreading.max_edit_distance` stands above the profiles. It is one threshold for the installation, not a property of a transport: how far a correction may move a line's letters says nothing about what the correction was asked for through. It is 0.30 because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
 Every key is in [Settings](settings.md).
@@ -140,4 +142,4 @@ A **follow** toggle says whether the view moves with the recording. On, the line
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.
+Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.

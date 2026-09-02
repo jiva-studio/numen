@@ -389,13 +389,15 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
           "name": "anthropic/claude-haiku-4.5",
           "key_env": "NUMEN_PROOFREADING_KEY",
           "batch_size": 40,
-          "overlap": 0
+          "overlap": 0,
+          "in_flight": 4
         },
         "agent": {
           "use": "agent",
           "model": "haiku",
-          "batch_size": 20,
-          "overlap": 2
+          "batch_size": 60,
+          "overlap": 2,
+          "in_flight": 3
         }
       }
     }
@@ -413,8 +415,9 @@ A profile is flat: every key sits at the profile's own level, and `use` says whi
 | | |
 | --- | --- |
 | `use` | `service` or `agent`. |
-| `batch_size` | how many lines one request carries. |
+| `batch_size` | how many lines one request carries. 40 at a service, 60 at the command line, where starting it costs the same whatever it is asked. |
 | `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
+| `in_flight` | how many batches are being asked about at any moment. 4 at a service, 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
 | `base_url` | `service`: anything speaking the `/v1/chat/completions` request shape. |
 | `batch_url` | `service`: the queue batches are left in and collected later, at half the price. Empty asks a batch at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
 | `name` | `service`: which model answers. The name of the model that corrected a line stands beside what it corrected. |
@@ -448,13 +451,15 @@ The key is in the environment, under the name `key_env` gives. Nothing in this f
           "name": "anthropic/claude-haiku-4.5",
           "key_env": "NUMEN_PROOFREADING_KEY",
           "batch_size": 40,
-          "overlap": 0
+          "overlap": 0,
+          "in_flight": 4
         },
         "agent": {
           "use": "agent",
           "model": "haiku",
-          "batch_size": 20,
-          "overlap": 2
+          "batch_size": 60,
+          "overlap": 2,
+          "in_flight": 3
         }
       }
     },
