@@ -3,12 +3,14 @@
  * The conversation. What was said sits in a bubble; what came back is prose on
  * the surface; what the agent reached for is a quiet line between them.
  *
- * Scrolls on its own, and stays at the foot while an answer arrives: that is
- * the browser's own scroll anchoring.
+ * Scrolls on its own, and follows the foot: a turn that arrives is brought
+ * into view, and reading further up leaves it where it was read until the foot
+ * is reached again.
  */
-import { computed } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Prose from '../prose/Prose.vue'
 import Tool from '../tool/Tool.vue'
+import { atFoot, footOf } from './foot'
 import { placeTurns, type PlacedTurn, type Turn } from './model'
 
 const props = defineProps<{
@@ -31,11 +33,35 @@ const toolOf = (entry: PlacedTurn) => ({
   aside: entry.turn.aside ?? '',
   working: entry.state === 'arriving',
 })
+
+const area = useTemplateRef<HTMLElement>('area')
+
+/** Whether the foot is followed. Scrolling away from it stops that. */
+const follows = ref(true)
+
+const scrolled = () => {
+  if (area.value) follows.value = atFoot(area.value)
+}
+
+/** Brings the foot into view. Asked to, it takes the following up again. */
+const toFoot = (again = false) => {
+  if (again) follows.value = true
+  if (!follows.value || !area.value) return
+  area.value.scrollTop = footOf(area.value)
+}
+
+watch(() => props.turns, () => toFoot(), { deep: true, flush: 'post' })
+
+onMounted(() => toFoot())
+
+defineExpose({ toFoot })
 </script>
 
 <template>
   <div
+    ref="area"
     class="thread numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
+    @scroll="scrolled"
   >
     <p v-if="!placed.length" class="m-auto text-hushed">
       <slot name="silence">Nothing said yet</slot>

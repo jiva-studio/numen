@@ -3,11 +3,13 @@
  * An agent talked to: the conversation, and the field it is carried on with.
  *
  * The composer is written over the conversation, and the words pass behind it
- * as they scroll. How much room it takes is measured on every change of size.
+ * as they scroll. How much room it takes is measured on every change of size,
+ * and the conversation is held clear of that much and sits at its foot when a
+ * question is sent.
  *
  * It fills whatever it is put in, and says nothing about where that is.
  */
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Thread from '../thread/Thread.vue'
 import Composer from '../composer/Composer.vue'
 import type { Turn } from '../thread/model'
@@ -46,9 +48,19 @@ const emit = defineEmits<{
 const text = defineModel<string>({ default: '' })
 
 const composer = useTemplateRef<InstanceType<typeof Composer>>('composer')
+const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
 
 defineExpose({ focus: (how?: FocusOptions) => composer.value?.focus(how) })
 const room = ref('0px')
+
+/** Sent. The conversation takes up following its foot, where the question is. */
+const sent = (text: string) => {
+  emit('submit', text)
+  thread.value?.toFoot(true)
+}
+
+// A field grown taller carries the foot of the conversation up with it.
+watch(room, () => thread.value?.toFoot(), { flush: 'post' })
 
 let watching: ResizeObserver | undefined
 
@@ -72,6 +84,7 @@ onBeforeUnmount(() => watching?.disconnect())
     :style="{ '--agent-room': room }"
   >
     <Thread
+      ref="thread"
       class="agent__thread"
       :turns="turns"
       @open="emit('open', $event)"
@@ -93,7 +106,7 @@ onBeforeUnmount(() => watching?.disconnect())
       :disabled="disabled"
       :sends="sends"
       :stops="stops"
-      @submit="emit('submit', $event)"
+      @submit="sent"
       @stop="emit('stop')"
     />
   </div>
