@@ -50,7 +50,12 @@ func (c Config) OpeningWith(
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: vault.Refresh{Readers: c.VaultReaders(), Notes: held},
+		refresh: vault.Refresh{
+			Readers: c.VaultReaders(),
+			Notes:   held,
+			Known:   db.SourcesKnown(),
+			Sources: db.Sources(),
+		},
 	}
 }
 
