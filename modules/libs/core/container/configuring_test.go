@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// standing is a settings file holding that text, and the container reading it.
-func standing(t *testing.T, written string) (Config, string) {
+// given is a settings file holding that text, and the container reading it.
+func given(t *testing.T, written string) (Config, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(written), 0o600); err != nil {
@@ -24,7 +24,7 @@ func standing(t *testing.T, written string) (Config, string) {
 // What the window is given is every setting, so a setting the file leaves out
 // is read out as what this installation is doing about it.
 func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
-	cfg, path := standing(t, `{"appearance": {"theme": "mine:sea"}}`)
+	cfg, path := given(t, `{"appearance": {"theme": "mine:sea"}}`)
 
 	written, said, err := cfg.Configured()()
 	if err != nil {
@@ -49,7 +49,7 @@ func TestTheSettingsReadOutHoldWhatTheFileLeavesOut(t *testing.T) {
 // A setting written is written where it stands, and every key a person typed
 // stays where it was.
 func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
-	cfg, path := standing(t, `{
+	cfg, path := given(t, `{
   "appearance": {"theme": "mine:sea"},
   "something_this_build_knows_nothing_about": 7
 }`)
@@ -84,7 +84,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 // Several settings are written together, which is what choosing one model that
 // decides more than its own name asks for.
 func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
-	cfg, path := standing(t, `{}`)
+	cfg, path := given(t, `{}`)
 
 	err := cfg.TurnsSetting()([]port.Setting{
 		{At: []string{"agent", "use"}, Value: `"claude"`},
