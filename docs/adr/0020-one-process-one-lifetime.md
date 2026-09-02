@@ -39,6 +39,8 @@ sequenceDiagram
     participant S as scan and follower
     participant D as database
 
+    W->>W: out of sight
+    Note over W: at once
     W->>P: write what only you hold
     P-->>W: written
     Note over W,P: 3 s
@@ -57,13 +59,17 @@ sequenceDiagram
 
 The order is what each part needs from the next: the page holds text nothing else has, an agent writes through the core, the scan and the follower write to the index, and the database is what they write into.
 
+**The window leaves the screen the moment it is asked to go, and the order runs behind it.** A hidden window is a page still drawing and still answered, so it hands over what only it holds with nothing in front of a person. The window is destroyed once the settling is over.
+
+**A settling that ends with a question standing puts the window back.** The question is asked on the screen the person is looking at, and the close is asked for again once they have answered.
+
 **A page has three seconds to hand over what it holds.** A page whose script has stopped answers never, and this is what that costs.
 
 **The agents' transport has two seconds to be cut off.** A session an agent left open holds its connection until it is closed under it. The calls already running are waited for afterwards with no bound.
 
 **The writes already taken are waited for with no bound.** The door is shut first, so what is left is a fixed set of filesystem operations.
 
-A quit that does not arrive through the window is answered on the thread the page is served on, and asked for again once the settling is over. It happens once, whichever way the window is asked to go.
+A quit that does not arrive through the window is answered on the thread the page is served on, so the window is taken out of sight off that thread and the quit is asked for again once the settling is over. It happens once, whichever way the window is asked to go.
 
 ### The runtime a page is read through is made before the window
 
@@ -84,6 +90,8 @@ A grandchild holding the child's error output keeps a wait from returning, so th
 - There is no lock between two processes on one vault: two windows, or a window and the command line, interleave their reads and renames.
 - A create, a move and a removal are not serialised against a save, so a note renamed while a save is in the air leaves the tab at the name it was read from.
 - A page that says nothing inside its bound loses what only it held.
+- The process outlives the window on the screen, and on macOS the dock tile stays lit until it ends.
+- A close a page calls off is a window that went and came back.
 - A machine that fetched its runtime during a reading reads that document at the next opening, and is told so where the reading was asked for.
 - A note an agent was part of the way through writing is whatever its last complete write left.
 - Four bounds are four constants, and nothing measures what any of them is a bound on.
