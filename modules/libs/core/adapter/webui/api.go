@@ -164,6 +164,14 @@ type API struct {
 	Reviews          func() string
 	ChoosesReviewing func(starts string) error
 
+	// Configured reads every setting as JSON and the file it stands in, Models
+	// the models the settings that name one can be set to, and ChoosesSetting
+	// writes settings into that file. A build without them answers that it
+	// configures nothing.
+	Configured     func() (string, string, error)
+	Models         func() []port.Model
+	ChoosesSetting func(written []port.Setting) error
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.

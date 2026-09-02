@@ -78,6 +78,8 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     choosesHanging: async () => null,
     reviewing: async () => '04:00',
     choosesReviewing: async () => null,
+    settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
+    choosesSetting: async () => null,
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},

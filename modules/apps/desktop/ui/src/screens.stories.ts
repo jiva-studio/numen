@@ -123,6 +123,10 @@ const INSTALLATION: Installation = {
   choosesParts: () => {},
   dayStarts: () => '04:00',
   choosesDayStarts: () => {},
+  setting: () => undefined,
+  models: () => [],
+  writes: () => {},
+  file: () => '/numen.json',
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */

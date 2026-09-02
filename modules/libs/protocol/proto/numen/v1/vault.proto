@@ -142,6 +142,14 @@ service VaultService {
   // typed stays where it was.
   rpc ChooseReviewing(ChooseReviewingRequest) returns (ChooseReviewingResponse);
 
+  // Settings is every setting of the file a person configures this
+  // installation in, and the models the settings that name one can be set to.
+  rpc Settings(SettingsRequest) returns (SettingsResponse);
+
+  // ChooseSetting writes one setting into that file. The file is patched as an
+  // object, so every key a person typed stays where it was.
+  rpc ChooseSetting(ChooseSettingRequest) returns (ChooseSettingResponse);
+
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
   // written: a link is not wrong because the note it names is gone.
@@ -922,6 +930,61 @@ message ChooseReviewingRequest {
 }
 
 message ChooseReviewingResponse {
+  // Set when nothing was written, and why. What the settings hold is unchanged.
+  optional Refusal refusal = 1;
+}
+
+message SettingsRequest {}
+
+message SettingsResponse {
+  // Every setting as it stands, as JSON: what the file says, and what an
+  // installation nobody has configured does under everything it does not.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+
+  // The models the settings that name one can be set to.
+  repeated NamedModel models = 3;
+}
+
+// NamedModel is one model a setting that names a model can be set to.
+message NamedModel {
+  // The setting the model is read from, as a path through the file. The model
+  // in force is the one whose name stands there.
+  repeated string named_at = 1;
+
+  // What stands there while this model is the one in force.
+  string name = 2;
+
+  // What is drawn on the row, and the shelf the rows around it stand under.
+  string title = 3;
+  string shelf = 4;
+
+  // Set on the model an installation nobody has configured runs on.
+  bool by_default = 5;
+
+  // What choosing it writes. One model is several keys where the model decides
+  // more than its own name.
+  repeated Written writes = 6;
+}
+
+// Written is one setting and what to put there.
+message Written {
+  // The setting, as a path through the file.
+  repeated string at = 1;
+
+  // What to write there, as JSON. A value that is not JSON is refused and the
+  // file is left as it was.
+  string value = 2;
+}
+
+message ChooseSettingRequest {
+  // The settings to write. They are written together, or none of them is.
+  repeated Written settings = 1;
+}
+
+message ChooseSettingResponse {
   // Set when nothing was written, and why. What the settings hold is unchanged.
   optional Refusal refusal = 1;
 }

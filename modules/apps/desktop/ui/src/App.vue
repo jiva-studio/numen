@@ -58,6 +58,7 @@ import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
 import { presets } from './preset/core'
 import { presetting } from './preset/kind'
+import { configuring } from './settings/configuring'
 import { settling } from './settings/kind'
 import { documentKind, documenting, type Held as DocumentHeld } from './document/kind'
 import { recordingKind } from './recording/kind'
@@ -491,6 +492,9 @@ const oneName = syncing(core, words, tell.under('named'))
 /** The hour a day of review begins at, on the clock on the wall. */
 const dayBegins = reviewing(core, words, tell.under('reviewed'))
 
+/** The rest of the settings file, which no command of the window turns. */
+const rest = configuring(core, words, tell.under('configured'))
+
 /**
  * Everything this installation is configured as, in a tab of its own. It holds
  * nothing: each row reaches the same value the command of that name reaches.
@@ -511,6 +515,10 @@ const configured = settling(held.host, {
   choosesParts: (count) => void hungParts.choosesCount(`${count}`),
   dayStarts: () => dayBegins.starts.value,
   choosesDayStarts: (hour) => void dayBegins.chooses(hour),
+  setting: (at) => rest.at(at),
+  models: (at) => rest.offers(at),
+  writes: (written) => void rest.chooses(written),
+  file: () => rest.path.value,
 })
 
 held.declares([configured.kind])
@@ -783,6 +791,7 @@ onMounted(async () => {
   void oneName.start()
   void hungParts.start()
   void dayBegins.start()
+  void rest.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)
