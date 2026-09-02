@@ -155,6 +155,10 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Assets: application.AssetOptions{
 			Handler: opened.API.Serving(pages),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
 		// quit is asked for again once it is over. A settling that ended with a

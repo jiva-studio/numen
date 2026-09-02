@@ -157,6 +157,10 @@ func run(cfg container.Config, noAgent bool) error {
 		Assets: application.AssetOptions{
 			Handler: api.Serving(pages),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",

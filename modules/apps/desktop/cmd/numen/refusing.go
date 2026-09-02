@@ -37,6 +37,10 @@ func refuse(cfg container.Config, why error) {
 				_, _ = w.Write(page)
 			}),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen",
