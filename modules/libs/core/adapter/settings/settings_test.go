@@ -738,16 +738,16 @@ func TestAnAgentProfileMayNameItsCommand(t *testing.T) {
 
 // How far a correction may move a line's letters stands over the profiles: it
 // is a property of the text, and one threshold holds for the installation.
-func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
+func TestLettersApartIsReadFromAboveTheProfiles(t *testing.T) {
 	cfg, err := settings.At(write(t, `{"indexing":{"proofreading":{
-		"max_edit_distance": 0.5,
+		"letters_apart": 0.5,
 		"profiles":{"openrouter":{"use":"service","name":"a-model"}}
 	}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got := cfg.Indexing.Proofreading.Apart(); got != 0.5 {
-		t.Errorf("the edit distance is %v", got)
+		t.Errorf("the letters stand %v apart", got)
 	}
 
 	silent, err := settings.At(write(t,
@@ -755,7 +755,7 @@ func TestTheEditDistanceIsReadFromAboveTheProfiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := silent.Indexing.Proofreading.Apart(); got != proofreading.DefaultMaxEditDistance {
+	if got := silent.Indexing.Proofreading.Apart(); got != proofreading.DefaultLettersApart {
 		t.Errorf("a file saying nothing gives %v", got)
 	}
 }

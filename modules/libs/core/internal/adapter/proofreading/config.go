@@ -21,10 +21,9 @@ const (
 // does not carry one.
 const KeyEnvVar = "NUMEN_PROOFREADING_KEY"
 
-// DefaultMaxEditDistance is how far a correction may move a line's letters
-// where nobody said. It was measured on one book and the next book is not that
-// one.
-const DefaultMaxEditDistance = 0.30
+// DefaultLettersApart is how far a correction may move a line's letters where
+// nobody said. It was measured on one book and the next book is not that one.
+const DefaultLettersApart = 0.30
 
 // DefaultBatchSize is how many lines one request carries where nobody said.
 const DefaultBatchSize = 40
@@ -45,10 +44,10 @@ const DefaultAgentBatchSize = 60
 // profiles a reading may be put right at, and the one threshold they are all
 // held to.
 type Config struct {
-	// MaxEditDistance is how far a correction may move a line's letters and
-	// still be a correction, as a share of the longer of the two. It stands
-	// over every profile: it is a property of the text, not of a transport.
-	MaxEditDistance float64 `json:"max_edit_distance"`
+	// LettersApart is how far a correction may move a line's letters and still
+	// be a correction, as a share of the longer of the two. It stands over
+	// every profile: it is a property of the text, not of a transport.
+	LettersApart float64 `json:"letters_apart"`
 
 	// Profiles are the stations a reading is put right at, by the name a
 	// consumer asks for one under. An installation naming none proofreads
@@ -111,7 +110,7 @@ type Proofread struct {
 // Defaults proofread nothing. The models are there and a person asks, which is
 // what recognition already does.
 func Defaults() Config {
-	return Config{MaxEditDistance: DefaultMaxEditDistance}
+	return Config{LettersApart: DefaultLettersApart}
 }
 
 // ServiceDefaults are what a service profile keeps for the fields it leaves
@@ -142,10 +141,10 @@ func (c Config) Named() bool { return len(c.Profiles) > 0 }
 // Apart is how far a correction may move a line's letters. A file naming
 // nothing takes what was measured.
 func (c Config) Apart() float64 {
-	if c.MaxEditDistance <= 0 {
-		return DefaultMaxEditDistance
+	if c.LettersApart <= 0 {
+		return DefaultLettersApart
 	}
-	return c.MaxEditDistance
+	return c.LettersApart
 }
 
 // Named says whether this profile carries a model to correct a reading with.
@@ -162,8 +161,8 @@ func (p Profile) Named() bool {
 // configFile is the shape on disk, with every field a pointer so that what the
 // file omits keeps its default.
 type configFile struct {
-	MaxEditDistance *float64           `json:"max_edit_distance"`
-	Profiles        map[string]Profile `json:"profiles"`
+	LettersApart *float64           `json:"letters_apart"`
+	Profiles     map[string]Profile `json:"profiles"`
 }
 
 // profileFile is one profile on disk, with the key among the fields a person
@@ -190,7 +189,7 @@ func (c *Config) UnmarshalJSON(raw []byte) error {
 		return err
 	}
 	*c = Defaults()
-	assign(&c.MaxEditDistance, f.MaxEditDistance)
+	assign(&c.LettersApart, f.LettersApart)
 	c.Profiles = f.Profiles
 	return nil
 }

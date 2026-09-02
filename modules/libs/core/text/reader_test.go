@@ -71,7 +71,7 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 	want := []string{
 		"asr/abc123.vtt",
 		"asr/abc123.partial.vtt",
-		"asr/abc123.said",
+		"asr/abc123.corrected.vtt",
 		"asr/abc123.proofread",
 		"asr/abc123.answer",
 		"asr/abc123.json",
@@ -107,8 +107,8 @@ func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
 		{Text: closing, From: 5400000, To: 5403500},
 	})
 	store := beside{
-		text.Artifact(text.ASR, "abc123"): heard(),
-		text.Said(text.ASR, "abc123"):     append(put, transcript.Hand()...),
+		text.Artifact(text.ASR, "abc123"):  heard(),
+		text.Corrected(text.ASR, "abc123"): append(put, transcript.Hand()...),
 	}
 
 	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
@@ -136,8 +136,8 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			store := beside{
-				text.Artifact(text.ASR, "abc123"): heard(),
-				text.Said(text.ASR, "abc123"):     one.put,
+				text.Artifact(text.ASR, "abc123"):  heard(),
+				text.Corrected(text.ASR, "abc123"): one.put,
 			}
 			doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
 			if err != nil {
@@ -155,8 +155,8 @@ func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
 func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 	torn := append(heard(), "\n00:1"...)
 	store := beside{
-		text.Artifact(text.ASR, "abc123"): heard(),
-		text.Said(text.ASR, "abc123"):     torn,
+		text.Artifact(text.ASR, "abc123"):  heard(),
+		text.Corrected(text.ASR, "abc123"): torn,
 	}
 
 	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())

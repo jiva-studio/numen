@@ -9,7 +9,7 @@ import (
 // Work a person is sitting in front of takes the turn before work the vault set
 // itself, whatever order they arrived in.
 func TestTheTurnGoesToWhatWasAskedFor(t *testing.T) {
-	var g gate
+	var g turn
 
 	held, err := g.take(t.Context(), false, nil)
 	if err != nil {
@@ -48,8 +48,8 @@ func TestTheTurnGoesToWhatWasAskedFor(t *testing.T) {
 
 // A run that gave up while waiting takes no turn, and the one behind it is not
 // left standing.
-func TestAWaiterThatLeavesHandsTheTurnOn(t *testing.T) {
-	var g gate
+func TestARunThatLeavesHandsTheTurnOn(t *testing.T) {
+	var g turn
 
 	held, err := g.take(context.Background(), true, nil)
 	if err != nil {
@@ -86,6 +86,6 @@ func TestAWaiterThatLeavesHandsTheTurnOn(t *testing.T) {
 	select {
 	case <-after:
 	case <-time.After(time.Second):
-		t.Fatal("the turn was dropped when the waiter before it left")
+		t.Fatal("the turn was dropped when the run before it left")
 	}
 }

@@ -1,8 +1,8 @@
 /**
- * A time against every line, and the line being read now.
+ * A time against every line, and the line being said now.
  *
  * The times stand in the gutter and are clicked to go to one. Which line is
- * being read, and whether the view moves to keep it in sight, are the caller's
+ * being said, and whether the view moves to keep it in sight, are the caller's
  * to say.
  */
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
@@ -12,13 +12,13 @@ import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codem
 export interface Timed {
   /** What stands in the gutter, one for each line from the first. */
   readonly times: readonly string[]
-  /** The line being read, counted from zero. None is -1. */
-  readonly now: number
-  /** The view moves to keep the line being read in sight. */
-  readonly follows: boolean
+  /** The line being said, counted from zero. None is -1. */
+  readonly current: number
+  /** The view moves to keep the line being said in sight. */
+  readonly following: boolean
 }
 
-const NOTHING: Timed = { times: [], now: -1, follows: false }
+const NOTHING: Timed = { times: [], current: -1, following: false }
 
 const told = StateEffect.define<Timed>()
 
@@ -30,13 +30,13 @@ const held = StateField.define<Timed>({
   },
 })
 
-/** The line being read. It is drawn in the accent and carries no fill. */
-const reading = Decoration.line({ class: 'cm-reading' })
+/** The line being said. It is drawn in the accent and carries no fill. */
+const current = Decoration.line({ class: 'cm-current' })
 
 const marked = EditorView.decorations.compute([held, 'doc'], (state) => {
-  const { now } = state.field(held)
-  if (now < 0 || now >= state.doc.lines) return Decoration.none
-  return Decoration.set([reading.range(state.doc.line(now + 1).from)])
+  const at = state.field(held).current
+  if (at < 0 || at >= state.doc.lines) return Decoration.none
+  return Decoration.set([current.range(state.doc.line(at + 1).from)])
 })
 
 /** One time in the gutter. It is clicked to go to the line it stands on. */
@@ -46,15 +46,15 @@ class Time extends GutterMarker {
   constructor(
     readonly text: string,
     readonly at: number,
-    readonly now: boolean,
+    readonly current: boolean,
     readonly goes: (line: number) => void,
   ) {
     super()
-    this.elementClass = now ? 'cm-reading' : ''
+    this.elementClass = current ? 'cm-current' : ''
   }
 
   override eq(other: Time): boolean {
-    return other.text === this.text && other.at === this.at && other.now === this.now
+    return other.text === this.text && other.at === this.at && other.current === this.current
   }
 
   override toDOM(): Node {
@@ -78,9 +78,9 @@ const times = (goes: (line: number) => void): Extension =>
     class: 'cm-times',
     lineMarker: (view, line) => {
       const at = view.state.doc.lineAt(line.from).number - 1
-      const { times: all, now } = view.state.field(held)
+      const { times: all, current } = view.state.field(held)
       const text = all[at]
-      return text === undefined ? null : new Time(text, at, at === now, goes)
+      return text === undefined ? null : new Time(text, at, at === current, goes)
     },
     lineMarkerChange: (update) => update.startState.field(held) !== update.state.field(held),
   })
@@ -112,7 +112,7 @@ const painted = EditorView.theme({
     userSelect: 'none',
   },
   '.cm-time:focus-visible': { outline: 'none' },
-  '.cm-reading, .cm-reading .cm-time': {
+  '.cm-current, .cm-current .cm-time': {
     color: 'var(--numen-focus-border)',
   },
 })
@@ -127,8 +127,8 @@ export interface Timing {
 
 /** Whether two of these say the same thing. */
 const same = (one: Timed, two: Timed): boolean =>
-  one.now === two.now &&
-  one.follows === two.follows &&
+  one.current === two.current &&
+  one.following === two.following &&
   (one.times === two.times ||
     (one.times.length === two.times.length &&
       one.times.every((text, at) => text === two.times[at])))
@@ -163,9 +163,9 @@ export function timing(goes: (line: number) => void): Timing {
     const effects: StateEffect<unknown>[] = [told.of(timed)]
     // The view is moved only where following is on and the line to keep in
     // sight is one the document has.
-    const moved = timed.now !== was.now || timed.follows !== was.follows
-    if (timed.follows && moved && timed.now >= 0 && timed.now < view.state.doc.lines) {
-      const { from } = view.state.doc.line(timed.now + 1)
+    const moved = timed.current !== was.current || timed.following !== was.following
+    if (timed.following && moved && timed.current >= 0 && timed.current < view.state.doc.lines) {
+      const { from } = view.state.doc.line(timed.current + 1)
       effects.push(EditorView.scrollIntoView(from, { y: 'nearest' }))
     }
     view.dispatch({ effects })

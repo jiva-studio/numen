@@ -61,32 +61,32 @@ func hearing(path string) string { return "hearing-" + path }
 // heavy is the one heavy run this machine does at a time. Reading a scan and
 // listening to a recording each hold the models and the processor, and they
 // take turns.
-var heavy gate
+var heavy turn
 
-// The lines a run waits in, the first of them served first. Work a person is
+// The queues a run waits in, the first of them served first. Work a person is
 // sitting in front of goes before work the vault set itself.
 const (
-	lineAsked = iota
-	lineUnasked
-	lines
+	queueAsked = iota
+	queueUnasked
+	queues
 )
 
-// A gate hands out one turn at a time. A waiter stands in the line its work
+// A turn is handed out to one run at a time. A run waits in the queue its work
 // belongs to and is served in the order it arrived there.
-type gate struct {
+type turn struct {
 	mu      sync.Mutex
 	held    bool
-	waiting [lines][]chan struct{}
+	waiting [queues][]chan struct{}
 }
 
 // take waits for this machine's turn at the models and hands back what gives
 // the turn up. waiting is called where the turn is not free, so that a person
 // watching is told why nothing is moving. A context that ends while waiting
 // takes no turn.
-func (g *gate) take(ctx context.Context, asked bool, waiting func()) (func(), error) {
-	at := lineUnasked
+func (g *turn) take(ctx context.Context, asked bool, waiting func()) (func(), error) {
+	at := queueUnasked
 	if asked {
-		at = lineAsked
+		at = queueAsked
 	}
 
 	g.mu.Lock()
@@ -111,9 +111,9 @@ func (g *gate) take(ctx context.Context, asked bool, waiting func()) (func(), er
 	}
 }
 
-// give hands the turn to whoever has waited longest in the first line anybody
+// give hands the turn to whoever has waited longest in the first queue anybody
 // stands in, and lets it go where nobody does.
-func (g *gate) give() {
+func (g *turn) give() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	for at := range g.waiting {
@@ -127,9 +127,9 @@ func (g *gate) give() {
 	g.held = false
 }
 
-// leave takes a waiter out of its line. One already handed the turn holds it,
-// so it is given on rather than dropped.
-func (g *gate) leave(at int, stand chan struct{}) {
+// leave takes a run out of its queue. One already handed the turn holds it, and
+// gives it on.
+func (g *turn) leave(at int, stand chan struct{}) {
 	g.mu.Lock()
 	for i, one := range g.waiting[at] {
 		if one == stand {
@@ -404,13 +404,13 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
 
 	_, err = source.PutRight{
-		Readers: t.cfg.VaultReaders(),
-		Derived: t.cfg.DerivedStores(),
-		By:      by,
-		Lines:   profile.BatchSize,
-		Overlap: profile.Overlap,
-		Batches: profile.InFlight,
-		Cut:     t.Cut,
+		Readers:   t.cfg.VaultReaders(),
+		Derived:   t.cfg.DerivedStores(),
+		By:        by,
+		BatchSize: profile.BatchSize,
+		Overlap:   profile.Overlap,
+		InFlight:  profile.InFlight,
+		Cut:       t.Cut,
 		OnProgress: func(res source.PutRightResult) {
 			t.say(task.Task{
 				ID:    id,

@@ -58,10 +58,10 @@ func TestAProfileKeepsTheDefaultsOfItsKind(t *testing.T) {
 // One threshold stands over every profile, and a file naming none takes what
 // was measured.
 func TestOneThresholdStandsOverEveryProfile(t *testing.T) {
-	if got := read(t, `{}`).Apart(); got != proofreading.DefaultMaxEditDistance {
+	if got := read(t, `{}`).Apart(); got != proofreading.DefaultLettersApart {
 		t.Errorf("a file naming nothing holds a correction to %v", got)
 	}
-	if got := read(t, `{"max_edit_distance":0.1}`).Apart(); got != 0.1 {
+	if got := read(t, `{"letters_apart":0.1}`).Apart(); got != 0.1 {
 		t.Errorf("a file naming 0.1 holds a correction to %v", got)
 	}
 	if read(t, `{}`).Named() {

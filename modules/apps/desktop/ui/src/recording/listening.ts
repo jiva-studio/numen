@@ -81,7 +81,7 @@ export function asking(said: Answers) {
   asked.clear()
 }
 
-/** Playable is whether this window can play a recording of a media type. */
+/** Plays is whether this window can play a recording of a media type. */
 export function plays(type: string): boolean {
   if (!type) return false
   const held = asked.get(type)

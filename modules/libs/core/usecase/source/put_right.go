@@ -33,18 +33,18 @@ type PutRight struct {
 	// Area is the store the transcript is kept in. Empty means the default.
 	Area string
 
-	// Lines is how many lines of the transcript one batch holds. Zero takes the
-	// default.
-	Lines int
+	// BatchSize is how many lines of the transcript one batch holds. Zero takes
+	// the default.
+	BatchSize int
 
 	// Overlap is how many lines a batch holds over from the one before it.
 	// Speech runs on past the cut, and a line two batches answer about is
 	// settled between them. Zero takes the default.
 	Overlap int
 
-	// Batches is how many batches one request carries, which is how many a
-	// proofreader may be asked about at once. Zero takes the default.
-	Batches int
+	// InFlight is how many batches a proofreader is asked about at once. Zero
+	// takes the default.
+	InFlight int
 
 	// Cut makes a source's chunks. It is called as the words are written down,
 	// so a recording answers about the speech already put right while the rest
@@ -72,9 +72,9 @@ type PutRightResult struct {
 // batch, the lines a batch holds over from the one before it, and the batches
 // to a request.
 const (
-	DefaultLines   = 40
-	DefaultOverlap = 4
-	DefaultBatches = 4
+	DefaultBatchSize = 40
+	DefaultOverlap   = 4
+	DefaultInFlight  = 4
 )
 
 // putting is what says who put a transcript right and how far they got.
@@ -107,7 +107,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 
 	hash := fingerprint(raw)
 	area := u.area()
-	stands, far := text.Said(area, hash), text.Proofread(area, hash)
+	stands, far := text.Corrected(area, hash), text.Proofread(area, hash)
 
 	// One run to a recording. The name a transcription holds is the name held
 	// here, so a run listening to a recording and a run putting its transcript
@@ -147,7 +147,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		stood = putting{}
 	}
 
-	batches := proofread.Spoken(cues, u.lines(), u.overlap())
+	batches := proofread.Spoken(cues, u.batchSize(), u.overlap())
 	// A batch reaches back over the lines it shares with the one before it, so
 	// what this run counts as read begins where the run before it stopped.
 	from := unasked(cues, stood.At)
@@ -170,13 +170,13 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	// together is every cue a run of lines has been put together into, and every
 	// cue such a run swallowed.
 	asked, fixed, together := map[int]bool{}, map[int]bool{}, map[int]bool{}
-	for ; at < len(batches); at += u.batch() {
+	for ; at < len(batches); at += u.inFlight() {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
 			// line this one stopped on.
 			return res, err
 		}
-		end := min(at+u.batch(), len(batches))
+		end := min(at+u.inFlight(), len(batches))
 		group := batches[at:end]
 
 		replies, err := u.By.Read(ctx, group)
@@ -251,7 +251,7 @@ func (u PutRight) standing(
 	store port.DerivedStore,
 	area, hash string,
 ) ([]byte, bool, error) {
-	raw, err := store.Read(ctx, text.Said(area, hash))
+	raw, err := store.Read(ctx, text.Corrected(area, hash))
 	if err == nil {
 		return raw, true, nil
 	}
@@ -383,11 +383,11 @@ func (u PutRight) area() string {
 	return u.Area
 }
 
-func (u PutRight) lines() int {
-	if u.Lines <= 0 {
-		return DefaultLines
+func (u PutRight) batchSize() int {
+	if u.BatchSize <= 0 {
+		return DefaultBatchSize
 	}
-	return u.Lines
+	return u.BatchSize
 }
 
 func (u PutRight) overlap() int {
@@ -397,11 +397,11 @@ func (u PutRight) overlap() int {
 	return u.Overlap
 }
 
-func (u PutRight) batch() int {
-	if u.Batches <= 0 {
-		return DefaultBatches
+func (u PutRight) inFlight() int {
+	if u.InFlight <= 0 {
+		return DefaultInFlight
 	}
-	return u.Batches
+	return u.InFlight
 }
 
 // unbounded holds a correction to speech to no distance from what was heard.

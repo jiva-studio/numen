@@ -8,9 +8,9 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// MaxEditDistance is how far a correction's letters may stand from the line as
+// LettersApart is how far a correction's letters may stand from the line as
 // read, as a share of the longer of the two.
-const MaxEditDistance = 0.30
+const LettersApart = 0.30
 
 // Fixed is the lines a reply puts right, and whether the reply answers the
 // question that was asked.
@@ -22,9 +22,9 @@ const MaxEditDistance = 0.30
 //
 // A correction saying what the line already says is dropped, as is one that
 // only puts something wordless in front of it, and as is one whose letters
-// stand further than maxDistance from the line as read. A maxDistance at or
-// below zero sets no limit.
-func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
+// stand further than apart from the line as read. An apart at or below zero
+// sets no limit.
+func Fixed(batch Batch, reply string, apart float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
 	}
@@ -93,7 +93,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 			if fronted(was, text) {
 				continue
 			}
-			if maxDistance > 0 && Apart(was, text) > maxDistance {
+			if apart > 0 && Apart(was, text) > apart {
 				continue
 			}
 		}
@@ -110,7 +110,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]Line {
+func Gathered(asked []Batch, replies map[int]string, apart float64) map[int]Line {
 	put := make(map[int]Line)
 	standing := make(map[int]int)
 	for _, batch := range asked {
@@ -118,7 +118,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[in
 		if !answered {
 			continue
 		}
-		lines, ok := Fixed(batch, reply, maxDistance)
+		lines, ok := Fixed(batch, reply, apart)
 		if !ok {
 			continue
 		}

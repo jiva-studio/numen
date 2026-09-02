@@ -380,7 +380,7 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
 {
   "indexing": {
     "proofreading": {
-      "max_edit_distance": 0.30,
+      "letters_apart": 0.30,
       "profiles": {
         "openrouter": {
           "use": "service",
@@ -407,7 +407,7 @@ An installation naming no profile proofreads nothing, and nothing asks for a key
 
 | | |
 | --- | --- |
-| `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
+| `letters_apart` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
 | `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
 
 A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps a station it is not on and the other is a word away.
@@ -428,9 +428,9 @@ A profile is flat: every key sits at the profile's own level, and `use` says whi
 
 An `agent` profile is the command line the person already has installed, run as a plain one-shot process: no MCP servers, no tools, nothing it can write. It is given the batch and answers with text. There is no queue, so a batch is asked and waited for, and `batch_url` is one of the keys such a profile ignores.
 
-`max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
+`letters_apart` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
-`pages_at_once` and `letters_apart` are gone. `batch_size` is what one request carries, counted in lines rather than pages, so a transcript with no pages in it is asked about the same way. `max_edit_distance` is the threshold, one for the installation and above the profiles.
+`pages_at_once` is gone. `batch_size` is what one request carries, counted in lines rather than pages, so a transcript with no pages in it is asked about the same way. `letters_apart` has moved out of the service and above the profiles, where it is one threshold for the installation.
 
 ## Worked example, proofreading
 
@@ -442,7 +442,7 @@ The key is in the environment, under the name `key_env` gives. Nothing in this f
 {
   "indexing": {
     "proofreading": {
-      "max_edit_distance": 0.30,
+      "letters_apart": 0.30,
       "profiles": {
         "openrouter": {
           "use": "service",

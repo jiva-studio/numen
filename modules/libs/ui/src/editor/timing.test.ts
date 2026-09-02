@@ -18,18 +18,18 @@ const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
 
-const TIMED: Timed = { times: ['0:01', '0:03', '0:06'], now: -1, follows: false }
+const TIMED: Timed = { times: ['0:01', '0:03', '0:06'], current: -1, following: false }
 
 const editor = (goes: (line: number) => void = () => {}) => {
-  const heard = timing(goes)
-  return { heard, view: drawing(heard) }
+  const times = timing(goes)
+  return { times, view: drawing(times) }
 }
 
 /** One more editor these times are shown in. */
-const drawing = (heard: { extension: Extension }) => {
+const drawing = (times: { extension: Extension }) => {
   const view = new EditorView({
     parent: document.body,
-    state: EditorState.create({ doc: TEXT, extensions: [heard.extension] }),
+    state: EditorState.create({ doc: TEXT, extensions: [times.extension] }),
   })
   drawn.push(view)
   return view
@@ -42,9 +42,9 @@ const attached = () => new Promise((done) => setTimeout(done, 0))
 const gutter = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.textContent ?? '')
 
-/** The lines drawn as being read. */
-const reading = (view: EditorView): string[] =>
-  [...view.dom.querySelectorAll('.cm-content .cm-reading')].map((one) => one.textContent ?? '')
+/** The lines drawn as being said. */
+const current = (view: EditorView): string[] =>
+  [...view.dom.querySelectorAll('.cm-content .cm-current')].map((one) => one.textContent ?? '')
 
 afterEach(() => {
   for (const view of drawn.splice(0)) view.destroy()
@@ -52,9 +52,9 @@ afterEach(() => {
 
 describe('the times of an editor', () => {
   it('stand in the gutter, one to a line', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show(TIMED)
+    times.show(TIMED)
 
     expect(gutter(view)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
@@ -66,18 +66,18 @@ describe('the times of an editor', () => {
   })
 
   it('are replaced by the ones given next', () => {
-    const { heard, view } = editor()
-    heard.show(TIMED)
+    const { times, view } = editor()
+    times.show(TIMED)
 
-    heard.show({ ...TIMED, times: ['1:00:01', '1:00:03', '1:00:06'] })
+    times.show({ ...TIMED, times: ['1:00:01', '1:00:03', '1:00:06'] })
 
     expect(gutter(view)).toStrictEqual(['1:00:01', '1:00:03', '1:00:06'])
   })
 
   it('say which line was clicked', () => {
     const asked: number[] = []
-    const { heard, view } = editor((line) => asked.push(line))
-    heard.show(TIMED)
+    const { times, view } = editor((line) => asked.push(line))
+    times.show(TIMED)
 
     const marks = view.dom.querySelectorAll('.cm-times .cm-time')
     marks[1]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
@@ -88,54 +88,54 @@ describe('the times of an editor', () => {
 
 describe('the line being read', () => {
   it('is drawn as the one being read, and no other is', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show({ ...TIMED, now: 1 })
+    times.show({ ...TIMED, current: 1 })
 
-    expect(reading(view)).toStrictEqual(['Rain on the awning.'])
+    expect(current(view)).toStrictEqual(['Rain on the awning.'])
   })
 
   it('is no line where none is being read', () => {
-    const { heard, view } = editor()
-    heard.show({ ...TIMED, now: 1 })
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1 })
 
-    heard.show({ ...TIMED, now: -1 })
+    times.show({ ...TIMED, current: -1 })
 
-    expect(reading(view)).toStrictEqual([])
+    expect(current(view)).toStrictEqual([])
   })
 
   it('is no line where the document is shorter than the one asked for', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show({ ...TIMED, now: 9 })
+    times.show({ ...TIMED, current: 9 })
 
-    expect(reading(view)).toStrictEqual([])
+    expect(current(view)).toStrictEqual([])
   })
 
   it('is drawn whether or not the view follows it', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show({ ...TIMED, now: 2, follows: true })
-    expect(reading(view)).toStrictEqual(['Someone counting change.'])
+    times.show({ ...TIMED, current: 2, following: true })
+    expect(current(view)).toStrictEqual(['Someone counting change.'])
 
-    heard.show({ ...TIMED, now: 2, follows: false })
-    expect(reading(view)).toStrictEqual(['Someone counting change.'])
+    times.show({ ...TIMED, current: 2, following: false })
+    expect(current(view)).toStrictEqual(['Someone counting change.'])
   })
 
   it('is marked in the gutter as well as in the words', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show({ ...TIMED, now: 0 })
+    times.show({ ...TIMED, current: 0 })
 
-    const marks = [...view.dom.querySelectorAll('.cm-times .cm-gutterElement.cm-reading .cm-time')]
+    const marks = [...view.dom.querySelectorAll('.cm-times .cm-gutterElement.cm-current .cm-time')]
     expect(marks.map((one) => one.textContent)).toStrictEqual(['0:01'])
   })
 })
 
 describe('an editor these are shown in', () => {
   it('is still the text it holds, and is still typed into', () => {
-    const { heard, view } = editor()
-    heard.show({ ...TIMED, now: 1 })
+    const { times, view } = editor()
+    times.show({ ...TIMED, current: 1 })
 
     view.dispatch({ changes: { from: 0, to: 0, insert: 'Then. ' } })
 
@@ -146,48 +146,48 @@ describe('an editor these are shown in', () => {
 
 describe('an editor drawn a second time', () => {
   it('is shown what the one before it was shown', async () => {
-    const heard = timing(() => {})
-    const first = drawing(heard)
-    heard.show({ ...TIMED, now: 1 })
+    const times = timing(() => {})
+    const first = drawing(times)
+    times.show({ ...TIMED, current: 1 })
     first.destroy()
 
-    const again = drawing(heard)
+    const again = drawing(times)
     await attached()
 
     expect(gutter(again)).toStrictEqual(['0:01', '0:03', '0:06'])
-    expect(reading(again)).toStrictEqual(['Rain on the awning.'])
+    expect(current(again)).toStrictEqual(['Rain on the awning.'])
   })
 
   it('is shown them where nothing was drawn when they were given', async () => {
-    const heard = timing(() => {})
-    heard.show(TIMED)
+    const times = timing(() => {})
+    times.show(TIMED)
 
-    const view = drawing(heard)
+    const view = drawing(times)
     await attached()
 
     expect(gutter(view)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
 
   it('is the one shown what comes next, and the one before it is left alone', async () => {
-    const heard = timing(() => {})
-    const first = drawing(heard)
-    heard.show(TIMED)
-    const again = drawing(heard)
+    const times = timing(() => {})
+    const first = drawing(times)
+    times.show(TIMED)
+    const again = drawing(times)
     await attached()
 
-    heard.show({ ...TIMED, times: ['9:01', '9:03', '9:06'] })
+    times.show({ ...TIMED, times: ['9:01', '9:03', '9:06'] })
 
     expect(gutter(again)).toStrictEqual(['9:01', '9:03', '9:06'])
     expect(gutter(first)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
 
   it('goes on being shown them once the one before it is destroyed', () => {
-    const heard = timing(() => {})
-    const first = drawing(heard)
-    const again = drawing(heard)
+    const times = timing(() => {})
+    const first = drawing(times)
+    const again = drawing(times)
 
     first.destroy()
-    heard.show(TIMED)
+    times.show(TIMED)
 
     expect(gutter(again)).toStrictEqual(['0:01', '0:03', '0:06'])
   })
@@ -195,9 +195,9 @@ describe('an editor drawn a second time', () => {
 
 describe('the times in the gutter', () => {
   it('are not walked over by the tab key on the way to the words', () => {
-    const { heard, view } = editor()
+    const { times, view } = editor()
 
-    heard.show(TIMED)
+    times.show(TIMED)
 
     const marks = [...view.dom.querySelectorAll<HTMLElement>('.cm-times .cm-time')]
     expect(marks.length).toBe(3)

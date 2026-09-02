@@ -60,8 +60,8 @@ func said() []byte {
 // moments they were said at stand where they were.
 func TestATranscriptPutRightReadsAsTheWordsItWasPutRightTo(t *testing.T) {
 	store := beside{
-		text.Artifact(text.ASR, "abc123"): heard(),
-		text.Said(text.ASR, "abc123"):     said(),
+		text.Artifact(text.ASR, "abc123"):  heard(),
+		text.Corrected(text.ASR, "abc123"): said(),
 	}
 
 	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
@@ -88,8 +88,8 @@ func TestATranscriptNothingPutRightReadsAsWhatWasHeard(t *testing.T) {
 // A sweep works through the names a producer writes, and what a transcript was
 // put right to goes with the recording it belongs to.
 func TestWhatATranscriptWasPutRightToIsSweptWithIt(t *testing.T) {
-	name := text.Said(text.ASR, "abc123")
-	if name != "asr/abc123.said" {
+	name := text.Corrected(text.ASR, "abc123")
+	if name != "asr/abc123.corrected.vtt" {
 		t.Errorf("a transcript put right is kept under %q", name)
 	}
 

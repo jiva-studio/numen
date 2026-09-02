@@ -53,12 +53,12 @@ func putRightCommand(
 	shown := false
 	profile := cfg.Proofreading.Profiles[named]
 	res, err := source.PutRight{
-		Readers: cfg.VaultReaders(),
-		Derived: cfg.DerivedStores(),
-		By:      by,
-		Lines:   profile.BatchSize,
-		Overlap: profile.Overlap,
-		Batches: profile.InFlight,
+		Readers:   cfg.VaultReaders(),
+		Derived:   cfg.DerivedStores(),
+		By:        by,
+		BatchSize: profile.BatchSize,
+		Overlap:   profile.Overlap,
+		InFlight:  profile.InFlight,
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err

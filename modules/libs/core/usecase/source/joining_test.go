@@ -20,7 +20,7 @@ func joins(at, through int, said string) string {
 func wholly(t *testing.T, says map[int]string, words ...string) (PutRight, domain.Vault, *shelf, string) {
 	t.Helper()
 	u, v, kept, _, hash := hearing(t, says, words...)
-	u.Lines = len(words)
+	u.BatchSize = len(words)
 	return u, v, kept, hash
 }
 
@@ -36,7 +36,7 @@ func TestASentenceBrokenAcrossStretchesBecomesOneLine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Said(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
 	if len(cues) != 2 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -77,7 +77,7 @@ func overlapping(t *testing.T, batches int, says map[int]string) (PutRight, doma
 	u, v, kept, _, hash := hearing(t,
 		says,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
-	u.Lines, u.Overlap, u.Batches = 3, 2, batches
+	u.BatchSize, u.Overlap, u.InFlight = 3, 2, batches
 	return u, v, kept, hash
 }
 
@@ -104,7 +104,7 @@ func TestALineAlreadyPutIntoARunIsLeftInIt(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			cues := cued(t, shelved, text.Said(text.ASR, hash))
+			cues := cued(t, shelved, text.Corrected(text.ASR, hash))
 			if len(cues) != 3 {
 				t.Fatalf("the transcript says %+v", cues)
 			}
@@ -130,7 +130,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cues := cued(t, shelved, text.Said(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
 	if len(cues) != 3 {
 		t.Fatalf("the transcript says %+v", cues)
 	}
@@ -150,7 +150,7 @@ func TestARunOverLinesAlreadyPutTogetherIsDropped(t *testing.T) {
 func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
 	u, v, shelved, by, hash := hearing(t, map[int]string{0: joins(0, 1, putTogether)}, words...)
-	u.Lines, u.Overlap, u.Batches = 2, 0, 1
+	u.BatchSize, u.Overlap, u.InFlight = 2, 0, 1
 
 	ctx, stop := context.WithCancel(t.Context())
 	by.stop = func(requests int) {
@@ -174,7 +174,7 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 		t.Errorf("got %+v", res)
 	}
 
-	cues := cued(t, shelved, text.Said(text.ASR, hash))
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
 	}

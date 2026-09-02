@@ -398,7 +398,7 @@ func (u Proofread) batch() int {
 
 func (u Proofread) apart() float64 {
 	if u.Apart <= 0 {
-		return proofread.MaxEditDistance
+		return proofread.LettersApart
 	}
 	return u.Apart
 }

@@ -85,7 +85,7 @@ func Composed(
 	raw []byte,
 ) (*Document, error) {
 	if from == ASR {
-		put, err := beside(ctx, store, Said(from, hash))
+		put, err := beside(ctx, store, Corrected(from, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -212,13 +212,13 @@ func Partial(from, hash string) string {
 	return from + "/" + hash + ".partial"
 }
 
-// Said is the name a transcript put right is kept under: the words as they now
-// stand, in the format the artifact is written in.
+// Corrected is the name a transcript put right is kept under: the words as they
+// now stand, WebVTT under the extension that format is opened by.
 //
 // The artifact stays what was heard, so deleting this file gives that back. A
 // transcript nothing put right has no such file.
-func Said(from, hash string) string {
-	return from + "/" + hash + ".said"
+func Corrected(from, hash string) string {
+	return from + "/" + hash + ".corrected.vtt"
 }
 
 // Parts is the name the parts of a reading are kept under. A reading whose
@@ -271,7 +271,7 @@ func Names(from, hash string) []string {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
-			Said(from, hash),
+			Corrected(from, hash),
 			Proofread(from, hash),
 			Answer(from, hash),
 			Beside(from, hash),

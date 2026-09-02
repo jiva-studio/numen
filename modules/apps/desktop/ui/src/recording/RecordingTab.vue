@@ -15,15 +15,15 @@ import type { Held } from './kind'
 const props = defineProps<{ held: Held }>()
 
 /** The times in the editor's gutter, and the line being said. */
-const heard = timing((line) => props.held.goes(line))
+const times = timing((line) => props.held.goes(line))
 
 // The words move under the recording as it plays: the line being said is drawn
 // in the accent, and following is what brings it back into view.
 watchPostEffect(() =>
-  heard.show({
+  times.show({
     times: props.held.times.value,
-    now: props.held.current.value,
-    follows: props.held.following.value && !props.held.typing.value,
+    current: props.held.current.value,
+    following: props.held.following.value && !props.held.typing.value,
   }),
 )
 
@@ -71,7 +71,7 @@ const follows = computed(() => props.held.following.value)
       :model-value="props.held.prose.value"
       :readonly="!props.held.editable.value"
       :live="false"
-      :extensions="heard.extension"
+      :extensions="times.extension"
       :aria-label="words.transcript"
       @update:model-value="(said: string) => props.held.typed(said)"
       @save="props.held.keep()"

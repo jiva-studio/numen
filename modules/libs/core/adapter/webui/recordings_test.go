@@ -354,7 +354,7 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
 	}
 
-	put, kept := held[derived.Said(listener, hashed)]
+	put, kept := held[derived.Corrected(listener, hashed)]
 	if !kept {
 		t.Fatalf("nothing was kept beside the transcript: %v", held)
 	}
@@ -375,8 +375,8 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
 	}
-	if !transcript.Written(held[derived.Said(listener, hashed)]) {
-		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Said(listener, hashed)])
+	if !transcript.Written(held[derived.Corrected(listener, hashed)]) {
+		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrected(listener, hashed)])
 	}
 }
 
@@ -413,7 +413,7 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	if out.Code != http.StatusOK {
 		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
 	}
-	if _, kept := held[derived.Said(listener, hashed)]; !kept {
+	if _, kept := held[derived.Corrected(listener, hashed)]; !kept {
 		t.Error("the correction was not kept")
 	}
 }
@@ -434,7 +434,7 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 		t.Errorf("the window is told %+v", told.Cues)
 	}
 
-	delete(held, derived.Said(listener, hashed))
+	delete(held, derived.Corrected(listener, hashed))
 	if told := heard(t, handler); told.Cues[1].Text != "what was said next" {
 		t.Errorf("what was heard did not come back: %+v", told.Cues)
 	}
@@ -492,7 +492,7 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 			if strings.TrimSpace(out.Body.String()) == "" {
 				t.Error("the transcript was refused without saying why")
 			}
-			if _, kept := held[derived.Said(listener, hashed)]; kept {
+			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
 				t.Error("a transcript that was refused was written")
 			}
 		})
@@ -511,7 +511,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 	)); out.Code != http.StatusOK {
 		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
 	}
-	if _, cues := transcript.Parse(held[derived.Said(listener, hashed)]); len(cues) != 2 {
+	if _, cues := transcript.Parse(held[derived.Corrected(listener, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
 	}
 }
@@ -526,7 +526,7 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 	if out.Code != http.StatusConflict {
 		t.Fatalf("edited a recording being listened to and got %d: %s", out.Code, out.Body)
 	}
-	if _, kept := held.stored[derived.Said(listener, hashed)]; kept {
+	if _, kept := held.stored[derived.Corrected(listener, hashed)]; kept {
 		t.Error("the transcript was written while a run held the recording")
 	}
 
@@ -577,7 +577,7 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 			if out.Code != http.StatusBadRequest {
 				t.Fatalf("the transcript was answered with %d: %s", out.Code, out.Body)
 			}
-			if _, kept := held[derived.Said(listener, hashed)]; kept {
+			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
 			if told := heard(t, handler); len(told.Cues) != 2 {
@@ -651,7 +651,7 @@ type refusing struct {
 func (r refusing) Open(domain.Vault) (port.DerivedStore, error) { return r, nil }
 
 func (r refusing) Write(ctx context.Context, name string, content []byte) error {
-	if name == derived.Said(listener, hashed) {
+	if name == derived.Corrected(listener, hashed) {
 		return r.why
 	}
 	return r.stored.Write(ctx, name, content)

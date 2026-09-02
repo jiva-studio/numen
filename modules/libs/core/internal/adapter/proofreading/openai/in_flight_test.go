@@ -40,13 +40,13 @@ func crowd(t *testing.T) (*httptest.Server, func() int) {
 	}
 }
 
-func asking(t *testing.T, baseURL string, flight int) *openai.Client {
+func asking(t *testing.T, baseURL string, inFlight int) *openai.Client {
 	t.Helper()
 	t.Setenv(proofreading.KeyEnvVar, theKey)
 	cfg := proofreading.ServiceDefaults()
 	cfg.BaseURL = baseURL
 	cfg.Name = "test-model"
-	cfg.InFlight = flight
+	cfg.InFlight = inFlight
 	c, err := openai.New(cfg, proofread.ScanInstruction)
 	if err != nil {
 		t.Fatal(err)

@@ -107,7 +107,7 @@ export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
 export type { EditorChange } from './editor/change'
-/** A time against every line of an editor, and the line being read now. */
+/** A time against every line of an editor, and the line being said now. */
 export { timing } from './editor/timing'
 
 /** The controls a recording is played by. What plays is somewhere else. */

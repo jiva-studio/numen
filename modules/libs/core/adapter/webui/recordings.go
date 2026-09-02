@@ -226,7 +226,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 
 	// The words are a person's, and a proofreader leaves them alone.
 	written := append(transcript.Marshal(cues), transcript.Hand()...)
-	if err := store.Write(ctx, derived.Said(said.From, said.Hash), written); err != nil {
+	if err := store.Write(ctx, derived.Corrected(said.From, said.Hash), written); err != nil {
 		refuse(w, err)
 		return
 	}
@@ -380,7 +380,7 @@ func (a *API) transcript(ctx context.Context, v domain.Vault, path string) ([]by
 // right to, and what was heard where nothing put it right.
 func (a *API) transcribed(ctx context.Context, store port.DerivedStore, said port.Recognised) ([]byte, error) {
 	return written(ctx, store,
-		derived.Said(said.From, said.Hash),
+		derived.Corrected(said.From, said.Hash),
 		derived.Artifact(said.From, said.Hash),
 		derived.Partial(said.From, said.Hash),
 	)
