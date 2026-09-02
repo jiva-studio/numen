@@ -18,7 +18,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const UI = join(HERE, '..', '..', '..', 'libs', 'ui')
 const INTO = join(HERE, '..', 'src', 'assets')
 /** The palettes that ship inside the application, as the window wears them. */
-const PRESETS = join(HERE, '..', '..', 'desktop', 'internal', 'adapter', 'theme', 'presets')
+const PRESETS = join(HERE, '..', '..', '..', 'libs', 'core', 'internal', 'adapter', 'theme', 'presets')
 
 /** A Storybook already running, for a machine that keeps one up. */
 const GIVEN = process.env['STORYBOOK_PORT']
@@ -63,6 +63,16 @@ export const SHOTS = [
   { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
   { name: 'reader', story: 'application-window--reading', width: 1180, height: 740 },
   { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
+  { name: 'settings', story: 'desktop-window--settings', width: 1180, height: 740 },
+  { name: 'recording', story: 'desktop-window--recording', width: 1180, height: 740 },
+  { name: 'transcribe', story: 'desktop-window--transcribed', width: 1180, height: 740 },
+  { name: 'recognise', story: 'desktop-window--recognised', width: 1180, height: 740 },
+  { name: 'deck', story: 'desktop-window--deck', width: 1180, height: 740 },
+  { name: 'stencil', story: 'desktop-window--stencil', width: 1180, height: 740 },
+  { name: 'preset', story: 'desktop-window--preset', width: 1180, height: 740 },
+  // The window a person runs their cards in, which is not a wide window.
+  { name: 'decks', story: 'flash-cards-window--owing', width: 760, height: 540 },
+  { name: 'sitting', story: 'flash-cards-window--reviewing', width: 760, height: 540 },
 ]
 
 const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
