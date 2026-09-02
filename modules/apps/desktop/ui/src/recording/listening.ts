@@ -10,6 +10,7 @@
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
 import { cued, same, spanning, spoken } from './cueing'
+import { player, type Player } from './playing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -58,27 +59,6 @@ export interface Recordings {
   plays(path: string, run: Run): Promise<number | null>
 }
 
-/** The player one recording is heard through, once its tab is drawn. */
-export interface Player {
-  /** Play from a millisecond of the recording. */
-  seek(ms: number): void
-}
-
-// The codes a MediaError carries, under the names the standard gives them. A
-// window with no media element of its own defines none of them.
-const MEDIA_ERR_ABORTED = 1
-const MEDIA_ERR_NETWORK = 2
-const MEDIA_ERR_DECODE = 3
-const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
-
-/** What each of them is called where a person reads it. */
-const FAILED: Record<number, string> = {
-  [MEDIA_ERR_ABORTED]: WORDS.stopped,
-  [MEDIA_ERR_NETWORK]: WORDS.unreached,
-  [MEDIA_ERR_DECODE]: WORDS.undecoded,
-  [MEDIA_ERR_SRC_NOT_SUPPORTED]: WORDS.unwanted,
-}
-
 // Whether this window can play a kind of sound. The answer is the window's and
 // is asked once, however many recordings are open.
 const asked = new Map<string, boolean>()
@@ -101,7 +81,7 @@ export function asking(said: Answers) {
 }
 
 /** Playable is whether this window can play a recording of a media type. */
-export function playable(type: string): boolean {
+export function plays(type: string): boolean {
   if (!type) return false
   const held = asked.get(type)
   if (held !== undefined) return held
@@ -136,7 +116,12 @@ export type Listening = ReturnType<typeof listening>
 /** How long the words have to have been still before they are written. */
 export const QUIET = 800
 
-export function listening(recordings: Recordings, path: string, quiet = QUIET) {
+export function listening(
+  recordings: Recordings,
+  path: string,
+  through: Player = player,
+  quiet = QUIET,
+) {
   /** Where the recording's own bytes are played from, once it is asked. */
   const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
@@ -151,14 +136,25 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   const length = ref(0)
   /** How much of it has been written down, in milliseconds. */
   const heard = ref(0)
-  /** Where the player stands, in milliseconds. */
-  const now = ref(0)
+  /** Whether the recording the player holds is this one. */
+  const held = computed(() => address.value !== '' && through.address.value === address.value)
+
+  /**
+   * Where the player stands in this recording, in milliseconds.
+   *
+   * The window plays one recording at a time, so one the player is not holding
+   * stands at its beginning until somebody plays it.
+   */
+  const now = computed(() => (held.value ? through.at.value : 0))
+
+  /** Whether this recording is the one playing. */
+  const playing = computed(() => held.value && through.playing.value)
   /** Whether something is writing down what this recording says. */
   const working = ref(false)
   /** What this recording could not do, in words the tab puts up for it. */
   const trouble = ref('')
-  /** What the player could not do. It stands under the player. */
-  const broken = ref('')
+  /** What the player could not do, while this is the recording it holds. */
+  const broken = computed(() => (held.value ? through.failed.value : ''))
 
   /**
    * The lines on screen against the milliseconds they cover. The lines are
@@ -172,10 +168,11 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   /** Whether the tab this recording stands in is still open. */
   let open = true
 
-  /** The player this recording is loaded into, once its tab is drawn. */
-  let player: Player | null = null
-
-  /** A moment gone to before there was a player, played from once there is one. */
+  /**
+   * A moment gone to before the recording knew its own address, played from
+   * once it does. A hit in the words opens a tab and asks for a moment in the
+   * same breath.
+   */
   let wanted = -1
 
   /**
@@ -210,6 +207,12 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
       heard.value = said.heard
       address.value = said.media
       type.value = said.type
+      // A moment asked for before the recording knew where its bytes are.
+      if (wanted >= 0 && address.value) {
+        const at = wanted
+        wanted = -1
+        through.seek(address.value, at)
+      }
 
       const spoke = await recordings.cues(path)
       if (!open || count < answered) return
@@ -232,9 +235,20 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   /** The moment the person went to. Before the beginning is the beginning. */
   const go = (ms: number) => {
     if (!open) return
-    now.value = Math.max(0, Math.round(ms))
-    if (player) return player.seek(now.value)
-    wanted = now.value
+    const at = Math.max(0, Math.round(ms))
+    if (!address.value) return void (wanted = at)
+    through.seek(address.value, at)
+  }
+
+  /** Play this recording, taking the sound from whatever else held it. */
+  const play = () => {
+    if (!open || !address.value) return
+    through.play(address.value)
+  }
+
+  /** Stop it, while it is this recording that is playing. */
+  const pause = () => {
+    if (playing.value) through.pause()
   }
 
   /** The line a person asked for, counted from the first line on screen. */
@@ -291,26 +305,6 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
     }
   }
 
-  /** The player moved, of itself or under the person's hand. */
-  const moved = (ms: number) => {
-    if (!open) return
-    now.value = Math.max(0, ms)
-  }
-
-  /** The player could not load the recording, and says which failure it was. */
-  const failed = (code: number | undefined) => {
-    if (!open) return
-    broken.value = FAILED[code ?? 0] ?? WORDS.unreadable
-  }
-
-  /** The tab was drawn, and this is the player it drew. */
-  const plays = (into: Player | null) => {
-    player = into
-    if (!player || wanted < 0) return
-    player.seek(wanted)
-    wanted = -1
-  }
-
   /**
    * Work on this recording, as the application last reported it. The words are
    * asked for again while a run is going and once more when it stops.
@@ -346,7 +340,6 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   const close = () => {
     void keep()
     open = false
-    player = null
     cues.value = []
     prose.value = ''
   }
@@ -367,8 +360,10 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   /** What the recording is played as, as the application answers it. */
   const type = ref('')
 
-  /** Whether a player stands in the tab at all. */
-  const playing = computed(() => address.value !== '' && playable(type.value))
+  /** Whether this window can play a recording of this kind at all. */
+  const playable = computed(() => address.value !== '' && plays(type.value))
+
+
 
   /** What the tab says where the words would stand, and nothing where they do. */
   const note = computed(() => {
@@ -381,7 +376,7 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   return {
     path,
     address,
-    playing,
+    playable,
     lines,
     note,
     cues,
@@ -400,9 +395,9 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
     follows,
     typed,
     keep,
-    moved,
-    failed,
-    plays,
+    playing,
+    play,
+    pause,
     ticks,
     reach,
     close,

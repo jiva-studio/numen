@@ -7,27 +7,15 @@
  * play from there. What the tab draws is what `listening` hands it, and nothing
  * is worked out here.
  */
-import { computed, ref, watch, watchPostEffect } from 'vue'
-import { Editor, timing } from '@numen/ui'
+import { computed, watchPostEffect } from 'vue'
+import { Editor, Player, timing } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
 
-/** The player, which stands only while the tab is drawn. */
-const player = ref<HTMLAudioElement | null>(null)
-
 /** The times in the editor's gutter, and the line being said. */
 const heard = timing((line) => props.held.goes(line))
-
-watch(player, (element) => {
-  if (!element) return props.held.plays(null)
-  props.held.plays({
-    seek: (ms) => {
-      element.currentTime = ms / 1000
-    },
-  })
-})
 
 // The words move under the recording as it plays: the line being said is drawn
 // in the accent, and following is what brings it back into view.
@@ -42,27 +30,21 @@ watchPostEffect(() =>
 /** Whether the view keeps the line being said in sight. */
 const follows = computed(() => props.held.following.value)
 
-/** Where the player stands now, in the milliseconds the words are counted in. */
-const moved = () => props.held.moved((player.value?.currentTime ?? 0) * 1000)
-
-/** The player could not load the recording, and says which failure it was. */
-const failed = () => props.held.failed(player.value?.error?.code)
 </script>
 
 <template>
   <div class="recording">
     <div class="recording__head">
-      <audio
-        v-if="props.held.playing.value"
-        ref="player"
+      <Player
+        v-if="props.held.playable.value"
         class="recording__player"
-        controls
-        preload="none"
-        :src="props.held.address.value"
-        :aria-label="words.player"
-        @timeupdate="moved"
-        @seeked="moved"
-        @error="failed"
+        :at="props.held.now.value"
+        :length="props.held.length.value"
+        :playing="props.held.playing.value"
+        :label="words.player"
+        @play="props.held.play()"
+        @pause="props.held.pause()"
+        @seek="props.held.go($event)"
       />
       <p v-else class="recording__note">{{ words.unplayable }}</p>
       <button
@@ -103,26 +85,27 @@ const failed = () => props.held.failed(player.value?.error?.code)
   /* Between the player and the words. */
   --recording-apart: 1rem;
   /* The tab is what scrolls, so the bar stands at the edge of the pane. */
+  /* The words scroll and the player does not, so the two are laid out one
+     above the other and only the words are given the room that is left. */
+  display: flex;
+  flex-direction: column;
   block-size: 100%;
-  overflow-y: auto;
-  padding: var(--numen-gutter);
+  min-block-size: 0;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   color: var(--numen-node-fg);
 }
 
-/* Held at the top: the pause and the follow stay where a person can reach them. */
+/* The pause and the follow stay where a person can reach them. */
 .recording__head {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 1;
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--recording-apart);
   max-inline-size: var(--recording-measure);
   margin-inline: auto;
-  margin-block-end: var(--recording-apart);
-  background: var(--numen-panel-bg);
+  padding: var(--numen-gutter) var(--numen-gutter) var(--recording-apart);
+  inline-size: 100%;
 }
 
 .recording__player {
@@ -145,29 +128,36 @@ const failed = () => props.held.failed(player.value?.error?.code)
   color: var(--numen-focus-border);
 }
 
-/* The words are read in one column, centred in whatever room the pane has. The
-   tab owns the scrollbar, so the text stands at its full height. */
+/* The editor scrolls, so the bar stands at the edge of the pane and only the
+   lines on screen are drawn. */
 .recording .recording__transcript {
-  max-inline-size: var(--recording-measure);
-  margin: 0 auto;
-  block-size: auto;
+  flex: 1;
   min-block-size: 0;
-  overflow: visible;
   font-size: inherit;
 }
 
 .recording .recording__transcript :deep(.cm-editor) {
-  height: auto;
+  block-size: 100%;
   font-size: inherit;
 }
 
+/* The words are read in one column, centred in whatever room the pane has. */
+.recording .recording__transcript :deep(.cm-content),
+.recording .recording__transcript :deep(.cm-gutters) {
+  max-inline-size: var(--recording-measure);
+}
+
 .recording .recording__transcript :deep(.cm-scroller) {
-  overflow: visible;
+  justify-content: center;
+  padding-inline: var(--numen-gutter);
 }
 
 .recording__note {
+  flex: none;
   max-inline-size: var(--recording-measure);
   margin: 0 auto;
+  padding: 0 var(--numen-gutter) var(--numen-gutter);
+  inline-size: 100%;
   color: var(--numen-hushed);
 }
 </style>

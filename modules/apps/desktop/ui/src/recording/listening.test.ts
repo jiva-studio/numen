@@ -6,16 +6,18 @@
  * here.
  */
 import { afterEach, describe, expect, it } from 'vitest'
+import { ref } from 'vue'
 import {
   asking,
   listening,
-  playable,
+  plays,
   timed,
   type Cue,
   type Listened,
   type Recordings,
   type Spoken,
 } from './listening'
+import type { Player } from './playing'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [
@@ -70,10 +72,44 @@ function talk(
   return { recordings, asked, written }
 }
 
-/** A player that writes down every moment it was sent to. */
+/**
+ * The one player the window has, faked: it writes down every moment it was
+ * sent to and holds one recording at a time, as the real one does.
+ */
 function played() {
+  const address = ref('')
+  const at = ref(0)
+  const length = ref(0)
+  const playing = ref(false)
+  const failed = ref('')
   const sought: number[] = []
-  return { player: { seek: (ms: number) => void sought.push(ms) }, sought }
+
+  const player: Player = {
+    address,
+    at,
+    length,
+    playing,
+    failed,
+    load: (wanted) => void (address.value = wanted),
+    play: (wanted) => {
+      address.value = wanted
+      playing.value = true
+    },
+    pause: () => void (playing.value = false),
+    seek: (wanted, ms) => {
+      address.value = wanted
+      at.value = ms
+      sought.push(ms)
+    },
+  }
+
+  /** The recording plays on: the player moves of itself. */
+  const moves = (ms: number) => {
+    address.value = LISTENED.media
+    at.value = ms
+  }
+
+  return { player, sought, moves, failed, address }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
@@ -132,32 +168,51 @@ describe('a build that cannot read a transcript', () => {
 describe('the cue being said', () => {
   it('is the one the player stands in', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3')
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
-    heard.moved(3_000)
+    moves(3_000)
 
     expect(heard.current.value).toBe(1)
   })
 
   it('is the last one said while a silence stands there', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3')
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
-    heard.moved(2_200)
+    moves(2_200)
 
     expect(heard.current.value).toBe(0)
   })
 
   it('is none before the first of them begins', async () => {
     const { recordings } = talk([{ text: 'Said late.', from: 4_000, to: 5_000 }])
-    const heard = listening(recordings, 'talks/Ants.mp3')
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
-    heard.moved(1_000)
+    moves(1_000)
 
     expect(heard.current.value).toBe(-1)
+  })
+
+  it('is none while the player holds another recording', async () => {
+    const { recordings } = talk()
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    moves(3_000)
+    expect(heard.now.value).toBe(3_000)
+
+    // The player is given another recording: this one stands at its beginning
+    // until somebody plays it again.
+    player.load('http://127.0.0.1:1/files/w/v/another.mp3')
+
+    expect(heard.now.value).toBe(0)
   })
 })
 
@@ -165,8 +220,8 @@ describe('a moment gone to', () => {
   it('is played from, and is where the recording stands', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
 
     heard.go(2_500)
 
@@ -174,23 +229,23 @@ describe('a moment gone to', () => {
     expect(heard.now.value).toBe(2_500)
   })
 
-  it('is played from once the tab is drawn, where it was gone to before', async () => {
+  it('is played from once the recording knows where its bytes are', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
 
     heard.go(5_000)
     expect(sought).toStrictEqual([])
 
-    heard.plays(player)
+    await settled()
     expect(sought).toStrictEqual([5_000])
   })
 
   it('is the beginning when it is gone to before that', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
 
     heard.go(-400)
 
@@ -198,12 +253,49 @@ describe('a moment gone to', () => {
   })
 })
 
+describe('the one player the window has', () => {
+  it('is taken by whichever recording is played', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    heard.play()
+
+    expect(player.address.value).toBe(LISTENED.media)
+    expect(heard.playing.value).toBe(true)
+  })
+
+  it('says this recording is not playing while it holds another', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    heard.play()
+    player.play('http://127.0.0.1:1/files/w/v/another.mp3')
+
+    expect(heard.playing.value).toBe(false)
+  })
+
+  it('is stopped only by the recording it holds', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    player.play('http://127.0.0.1:1/files/w/v/another.mp3')
+    heard.pause()
+
+    expect(player.playing.value).toBe(true)
+  })
+})
+
 describe('a recording opened at a place in its words', () => {
   it('plays from the moment the first stretch was spoken at', async () => {
     const { recordings, asked } = talk(CUES, LISTENED, 2_500)
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
 
     await heard.reach({ start: 22, length: 6 })
 
@@ -215,8 +307,7 @@ describe('a recording opened at a place in its words', () => {
   it('stands where it stands when no cue holds the stretch', async () => {
     const { recordings } = talk(CUES, LISTENED, null)
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
 
     await heard.reach({ start: 900_000, length: 6 })
 
@@ -268,8 +359,7 @@ describe('a recording tab that closes', () => {
   it('holds no words, and is played from no other moment', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
     heard.close()
@@ -299,23 +389,23 @@ describe('what this window can play', () => {
       return type === 'audio/mpeg'
     })
 
-    expect(playable('audio/mpeg')).toBe(true)
-    expect(playable('audio/mpeg')).toBe(true)
-    expect(playable('audio/mpeg')).toBe(true)
+    expect(plays('audio/mpeg')).toBe(true)
+    expect(plays('audio/mpeg')).toBe(true)
+    expect(plays('audio/mpeg')).toBe(true)
     expect(asks).toBe(1)
 
-    expect(playable('audio/wav')).toBe(false)
+    expect(plays('audio/wav')).toBe(false)
     expect(asks).toBe(2)
   })
 
   it('plays nothing where the application named no type', () => {
     asking(() => true)
-    expect(playable('')).toBe(false)
+    expect(plays('')).toBe(false)
   })
 
   it('plays nothing where the window answers for nothing', () => {
     asking(() => false)
-    expect(playable('audio/mpeg')).toBe(false)
+    expect(plays('audio/mpeg')).toBe(false)
   })
 })
 
@@ -350,28 +440,28 @@ describe('a transcript asked for twice at once', () => {
 })
 
 describe('a player that could not load the recording', () => {
-  it('says which of the failures it was', async () => {
-    const said: Record<number, string> = {}
-    for (const code of [1, 2, 3, 4]) {
-      const { recordings } = talk()
-      const heard = listening(recordings, 'talks/Ants.mp3')
-      heard.failed(code)
-      said[code] = heard.broken.value
-    }
+  it('says so under the recording it could not load', async () => {
+    const { recordings } = talk()
+    const { player, failed, address } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
 
-    expect(new Set(Object.values(said)).size).toBe(4)
-    expect(said[2]).toContain('read from the vault')
-    expect(said[3]).toContain('cannot decode')
-    expect(said[4]).toContain('does not play recordings of this kind')
+    address.value = LISTENED.media
+    failed.value = 'the recording could not be read from the vault'
+
+    expect(heard.broken.value).toContain('read from the vault')
   })
 
-  it('says something for a failure it has no name for', async () => {
+  it('says nothing where the failure was another recording', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3')
+    const { player, failed, address } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
 
-    heard.failed(undefined)
+    address.value = 'http://127.0.0.1:1/files/w/v/another.mp3'
+    failed.value = 'the recording could not be read from the vault'
 
-    expect(heard.broken.value).not.toBe('')
+    expect(heard.broken.value).toBe('')
   })
 })
 
@@ -418,7 +508,7 @@ describe('the words as a person edits them', () => {
 
   it('are written once they have been still', async () => {
     const { recordings, written } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('The first thing said.\nThe second thing heard.\nThe third thing said.')
@@ -437,7 +527,7 @@ describe('the words as a person edits them', () => {
 
   it('are written once for a run of typing', async () => {
     const { recordings, written } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('The first thing said.\nThe second thing h\nThe third thing said.')
@@ -450,7 +540,7 @@ describe('the words as a person edits them', () => {
 
   it('are the cues the tab then holds', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('The first thing said.\n\nThe third thing said.')
@@ -461,7 +551,7 @@ describe('the words as a person edits them', () => {
 
   it('stay on screen while a transcript arriving beside them is read', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 200)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 200)
     await settled()
 
     heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
@@ -476,7 +566,7 @@ describe('the words as a person edits them', () => {
     recordings.writes = async () => {
       throw new Error('the transcript is held')
     }
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
@@ -488,7 +578,7 @@ describe('the words as a person edits them', () => {
 
   it('reach the file as the tab closes', async () => {
     const { recordings, written } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 10_000)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 10_000)
     await settled()
 
     heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
@@ -526,8 +616,7 @@ describe('the line a person asked for', () => {
   it('is played from the moment it was said at', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
     heard.goes(2)
@@ -538,8 +627,7 @@ describe('the line a person asked for', () => {
   it('leaves the player where it stands where there is no such line', async () => {
     const { recordings } = talk()
     const { player, sought } = played()
-    const heard = listening(recordings, 'talks/Ants.mp3')
-    heard.plays(player)
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
     await settled()
 
     heard.goes(9)
@@ -567,11 +655,12 @@ describe('following the line being said', () => {
 describe('the line being said while the words are edited', () => {
   it('is the one the player stands in, as the lines now read', async () => {
     const { recordings } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 10_000)
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player, 10_000)
     await settled()
 
     heard.typed('The first thing said. The second thing said.\nThe third thing said.')
-    heard.moved(3_000)
+    moves(3_000)
 
     expect(heard.current.value).toBe(0)
     expect(heard.lines.value.length).toBe(2)
@@ -588,7 +677,7 @@ describe('typing that lands while a write is in the air', () => {
         held.answer = done
       })
     }
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('One.\nThe second thing said.\nThe third thing said.')
@@ -607,7 +696,7 @@ describe('typing that lands while a write is in the air', () => {
 describe('a transcript nobody edited', () => {
   it('is not written down when the editor hands back what it was given', async () => {
     const { recordings, written } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     // The editor hands the document back carrying a newline of its own.
@@ -619,7 +708,7 @@ describe('a transcript nobody edited', () => {
 
   it('is written down once a word actually changes', async () => {
     const { recordings, written } = talk()
-    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
     await settled()
 
     heard.typed('The first thing Rupa said.\nThe second thing said.\nThe third thing said.')

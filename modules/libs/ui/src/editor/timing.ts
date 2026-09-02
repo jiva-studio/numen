@@ -132,8 +132,18 @@ const same = (one: Timed, two: Timed): boolean =>
 export function timing(goes: (line: number) => void): Timing {
   let view: EditorView | null = null
 
+  // What was last shown. An editor drawn again — a tab moved, a pane split —
+  // is a new editor holding none of it, and is given it as it attaches.
+  let last: Timed | null = null
+
   const holding = ViewPlugin.define((got) => {
     view = got
+    if (last) {
+      const shown = last
+      queueMicrotask(() => {
+        if (view === got) show(shown)
+      })
+    }
     return {
       destroy: () => {
         if (view === got) view = null
@@ -142,6 +152,7 @@ export function timing(goes: (line: number) => void): Timing {
   })
 
   const show = (timed: Timed) => {
+    last = timed
     if (!view) return
     const was = view.state.field(held)
     if (same(was, timed)) return
