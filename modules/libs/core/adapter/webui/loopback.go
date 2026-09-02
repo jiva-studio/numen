@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -148,7 +147,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	defer file.Close()
 
 	w.Header().Set("Cache-Control", "no-store")
-	if named := servedAs(ref.Path); named != "" {
+	if named := domain.MediaType(ref.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}
 	http.ServeContent(w, r, ref.Path, time.Unix(0, ref.MTime), file)
@@ -173,21 +172,6 @@ func (a *API) vaultOf(id string) (domain.Vault, bool) {
 		}
 	}
 	return domain.Vault{}, false
-}
-
-// servedAs is what a file of a name is served as. A name this does not know is
-// served as whatever its bytes look like, which is what the player then decides
-// on.
-func servedAs(name string) string {
-	switch strings.ToLower(path.Ext(name)) {
-	case ".mp3":
-		return "audio/mpeg"
-	case ".wav":
-		return "audio/wav"
-	case ".flac":
-		return "audio/flac"
-	}
-	return ""
 }
 
 // named is where the window may play from, for the policy the page is served

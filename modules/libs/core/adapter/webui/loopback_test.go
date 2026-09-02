@@ -111,21 +111,6 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	}
 }
 
-// What a file is served as is read off its name, so a player is not left to
-// guess from the bytes.
-func TestWhatAFileIsServedAs(t *testing.T) {
-	for name, want := range map[string]string{
-		"talks/one.mp3":  "audio/mpeg",
-		"talks/one.wav":  "audio/wav",
-		"talks/one.flac": "audio/flac",
-		"talks/one.md":   "",
-	} {
-		if got := servedAs(name); got != want {
-			t.Errorf("%s is served as %q, want %q", name, got, want)
-		}
-	}
-}
-
 // A player asks for a piece and is answered with that piece.
 func TestTheSocketAnswersAPiece(t *testing.T) {
 	api, _ := listeningTo(t, nil)

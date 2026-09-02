@@ -52,7 +52,7 @@ func (s stored) Claim(context.Context, string) (func() error, error) {
 
 // The model a test's words were heard by, and the bytes it heard them in.
 const (
-	listener = "parakeet-1"
+	listener = derived.ASR
 	hashed   = "2fd4e1c6"
 )
 

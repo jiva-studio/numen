@@ -78,7 +78,7 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 		Length: heard,
 		Heard:  heard,
 		Media:  a.Playing.Address(a.Showing(), ref.Path),
-		Type:   servedAs(ref.Path),
+		Type:   domain.MediaType(ref.Path),
 	}
 	if len(cues) > 0 {
 		told.Length = max(told.Length, cues[len(cues)-1].To)

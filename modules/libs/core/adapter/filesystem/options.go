@@ -63,7 +63,7 @@ var DefaultBookExtensions = []string{".epub", ".pdf"}
 // DefaultRecordingExtensions is what counts as a recording: the containers a
 // model is given speech out of. A recording is a source whose words nobody has
 // written down yet.
-var DefaultRecordingExtensions = []string{".mp3", ".wav", ".flac"}
+var DefaultRecordingExtensions = domain.RecordingExtensions()
 
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's

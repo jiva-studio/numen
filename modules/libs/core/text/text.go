@@ -118,13 +118,14 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 	if ref.Kind == domain.KindRecording {
 		return ReaderRecording, true
 	}
+	if domain.MediaType(ref.Path) != "" {
+		return ReaderRecording, true
+	}
 	switch strings.ToLower(path.Ext(ref.Path)) {
 	case ".epub":
 		return ReaderEPUB, true
 	case ".pdf":
 		return ReaderPDF, true
-	case ".mp3", ".wav", ".flac":
-		return ReaderRecording, true
 	}
 	return "", false
 }
