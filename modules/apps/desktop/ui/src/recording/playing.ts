@@ -82,25 +82,25 @@ export function audio(makes: Makes = made): Player {
       const runs = element?.duration ?? 0
       length.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
     })
-    element.addEventListener('play', () => void (playing.value =true))
-    element.addEventListener('pause', () => void (playing.value =false))
-    element.addEventListener('ended', () => void (playing.value =false))
+    element.addEventListener('play', () => void (playing.value = true))
+    element.addEventListener('pause', () => void (playing.value = false))
+    element.addEventListener('ended', () => void (playing.value = false))
     element.addEventListener('error', () => {
       failed.value = FAILED[element?.error?.code ?? 0] ?? WORDS.unreadable
     })
     return element
   }
 
-  /** Put a recording in the sound, and say whether it is there. */
+  /** Put a recording in the player, and say whether it is there. */
   const load = (wanted: string): boolean => {
-    const sound = held()
-    if (!sound || !wanted) return false
+    const element = held()
+    if (!element || !wanted) return false
     if (address.value === wanted) return true
-    sound.src = wanted
+    element.src = wanted
     address.value = wanted
     at.value = 0
     length.value = 0
-    playing.value =false
+    playing.value = false
     failed.value = ''
     return true
   }
@@ -117,7 +117,7 @@ export function audio(makes: Makes = made): Player {
     play: (wanted) => {
       if (!load(wanted)) return
       void element?.play().catch(() => {
-        playing.value =false
+        playing.value = false
       })
     },
 

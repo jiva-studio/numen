@@ -9,6 +9,7 @@
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
+import { clock } from '@numen/ui'
 import { cued, same, spanning, spoken } from './cueing'
 import { player, type Player } from './playing'
 import { WORDS } from './words'
@@ -90,16 +91,6 @@ export function plays(type: string): boolean {
   return can
 }
 
-/** A millisecond written out as a person reads a clock. */
-export const timed = (ms: number): string => {
-  const whole = Math.max(0, Math.floor(ms / 1000))
-  const hours = Math.floor(whole / 3600)
-  const minutes = Math.floor(whole / 60) % 60
-  const seconds = `${whole % 60}`.padStart(2, '0')
-  if (hours === 0) return `${minutes}:${seconds}`
-  return `${hours}:${`${minutes}`.padStart(2, '0')}:${seconds}`
-}
-
 /**
  * The cue being said at a millisecond, and the last one said where a silence
  * stands there. Nothing until the first cue begins.
@@ -136,8 +127,16 @@ export function listening(
   const length = ref(0)
   /** How much of it has been written down, in milliseconds. */
   const heard = ref(0)
+  /** What the recording is played as, as the application answers it. */
+  const type = ref('')
   /** Whether the recording the player holds is this one. */
   const held = computed(() => address.value !== '' && through.address.value === address.value)
+
+  /**
+   * How long the recording runs. The application says, and the recording
+   * itself says where it is loaded and knows better.
+   */
+  const runs = computed(() => Math.max(length.value, held.value ? through.length.value : 0))
 
   /**
    * Where the player stands in this recording, in milliseconds.
@@ -159,8 +158,13 @@ export function listening(
   /**
    * The lines on screen against the milliseconds they cover. The lines are
    * what a person edits, and these follow them until the file is written.
+   *
+   * A recording nothing was heard in and nothing was typed into has no lines
+   * at all, and the tab says so where they would stand.
    */
-  const spans = computed(() => spanning(cues.value, prose.value))
+  const spans = computed(() =>
+    cues.value.length === 0 && prose.value === '' ? [] : spanning(cues.value, prose.value),
+  )
 
   /** Which line is being said now, and nothing where none has begun. */
   const current = computed(() => holding(spans.value, now.value))
@@ -213,6 +217,10 @@ export function listening(
         wanted = -1
         through.seek(address.value, at)
       }
+      // The player holding nothing takes this recording, so the controls read
+      // how long it runs before anybody presses play. One already in the
+      // player is left where it is.
+      if (address.value && through.address.value === '') through.load(address.value)
 
       const spoke = await recordings.cues(path)
       if (!open || count < answered) return
@@ -335,55 +343,47 @@ export function listening(
 
   /**
    * The tab has closed: what the person typed reaches the file, nothing is
-   * asked for again and nothing is played.
+   * asked for again, and the recording stops where the player stands in it.
+   *
+   * Two tabs may stand on one recording, and closing either of them stops it.
    */
   const close = () => {
     void keep()
+    pause()
     open = false
     cues.value = []
     prose.value = ''
   }
 
   /**
-   * The words as the tab draws them: the moment each was said at, on a clock,
-   * and which of them is being said now.
+   * The moment each line was said at, on a clock, as the editor's gutter draws
+   * them. These follow the words alone, so a transcript of any length is
+   * written out once and left alone while the recording plays.
    */
-  const lines = computed(() =>
-    spans.value.map((cue, at) => ({
-      text: cue.text,
-      from: cue.from,
-      at: timed(cue.from),
-      now: at === current.value,
-    })),
-  )
-
-  /** What the recording is played as, as the application answers it. */
-  const type = ref('')
+  const times = computed(() => spans.value.map((cue) => clock(cue.from)))
 
   /** Whether this window can play a recording of this kind at all. */
   const playable = computed(() => address.value !== '' && plays(type.value))
 
-
-
   /** What the tab says where the words would stand, and nothing where they do. */
   const note = computed(() => {
-    if (trouble.value) return trouble.value
+    if (times.value.length) return ''
     if (working.value) return WORDS.transcribing
-    if (cues.value.length === 0) return WORDS.silence
-    return ''
+    return WORDS.silence
   })
 
   return {
     path,
     address,
     playable,
-    lines,
+    times,
     note,
     cues,
     prose,
     editable,
     following,
     length,
+    runs,
     heard,
     now,
     current,

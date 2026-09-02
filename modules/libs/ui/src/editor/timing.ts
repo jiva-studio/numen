@@ -61,6 +61,9 @@ class Time extends GutterMarker {
     const mark = document.createElement('button')
     mark.type = 'button'
     mark.className = 'cm-time'
+    // The gutter holds one of these for every line on screen, and the tab key
+    // walks past all of them to the words.
+    mark.tabIndex = -1
     mark.textContent = this.text
     mark.addEventListener('mousedown', (event) => {
       event.preventDefault()
@@ -126,8 +129,9 @@ export interface Timing {
 const same = (one: Timed, two: Timed): boolean =>
   one.now === two.now &&
   one.follows === two.follows &&
-  one.times.length === two.times.length &&
-  one.times.every((text, at) => text === two.times[at])
+  (one.times === two.times ||
+    (one.times.length === two.times.length &&
+      one.times.every((text, at) => text === two.times[at])))
 
 export function timing(goes: (line: number) => void): Timing {
   let view: EditorView | null = null

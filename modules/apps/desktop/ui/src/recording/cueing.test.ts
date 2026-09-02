@@ -6,7 +6,7 @@
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
-import { cued, spanning, spoken } from './cueing'
+import { cued, same, spanning, spoken } from './cueing'
 import type { Cue } from './listening'
 
 const CUES: readonly Cue[] = [
@@ -215,6 +215,79 @@ describe('a line typed where no cue stood', () => {
 
   it('is all there is where the recording held no words', () => {
     expect(after([], 'A thought.')).toStrictEqual([{ text: 'A thought.', from: 0, to: 0 }])
+  })
+})
+
+describe('a cue that spans no time at all', () => {
+  it('gives both halves of a split the moment it stands at', () => {
+    const was: readonly Cue[] = [{ text: 'abcd', from: 5_000, to: 5_000 }]
+
+    expect(after(was, 'ab\ncd')).toStrictEqual([
+      { text: 'ab', from: 5_000, to: 5_000 },
+      { text: 'cd', from: 5_000, to: 5_000 },
+    ])
+  })
+
+  it('is joined to the one before it without moving either', () => {
+    const was: readonly Cue[] = [
+      { text: 'A bell.', from: 1_000, to: 3_000 },
+      { text: 'And rain.', from: 3_000, to: 3_000 },
+    ]
+
+    expect(after(was, 'A bell. And rain.')).toStrictEqual([
+      { text: 'A bell. And rain.', from: 1_000, to: 3_000 },
+    ])
+  })
+})
+
+describe('a line of nothing but spaces', () => {
+  it('is a cue like any other, and is not dropped', () => {
+    const kept = after(CUES, 'A bell over the door.\n   \nSomeone counting change.')
+
+    expect(kept).toStrictEqual([
+      CUES[0],
+      { text: '   ', from: 3_000, to: 6_000 },
+      CUES[2],
+    ])
+  })
+})
+
+describe('lines that read alike', () => {
+  it('leave the one that stayed where it was, and drop the other', () => {
+    const was: readonly Cue[] = [
+      { text: 'Again.', from: 0, to: 1_000 },
+      { text: 'Again.', from: 1_000, to: 2_000 },
+    ]
+
+    expect(after(was, 'Again.')).toStrictEqual([{ text: 'Again.', from: 0, to: 1_000 }])
+  })
+})
+
+describe('the words as the application gave them', () => {
+  it('are given back unchanged, so a transcript nobody edited is not written', () => {
+    expect(same(cued(CUES, spoken(CUES)), CUES)).toBe(true)
+  })
+
+  it('are given back unchanged where the editor added a newline of its own', () => {
+    expect(same(cued(CUES, `${spoken(CUES)}\n`), CUES)).toBe(true)
+  })
+
+  it('are not what a changed word gives back, however small the change', () => {
+    const text = spoken(CUES).replace('awning', 'awnings')
+
+    expect(same(cued(CUES, text), CUES)).toBe(false)
+  })
+
+  it('are not what a line moved past another gives back', () => {
+    const text = [CUES[1]!.text, CUES[0]!.text, CUES[2]!.text].join('\n')
+
+    expect(same(cued(CUES, text), CUES)).toBe(false)
+  })
+
+  it('are not what the same words at another moment give back', () => {
+    const moved = CUES.map((cue) => ({ ...cue, from: cue.from + 1 }))
+
+    expect(same(moved, CUES)).toBe(false)
   })
 })
 

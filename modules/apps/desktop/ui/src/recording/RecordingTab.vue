@@ -21,7 +21,7 @@ const heard = timing((line) => props.held.goes(line))
 // in the accent, and following is what brings it back into view.
 watchPostEffect(() =>
   heard.show({
-    times: props.held.lines.value.map((line) => line.at),
+    times: props.held.times.value,
     now: props.held.current.value,
     follows: props.held.following.value,
   }),
@@ -39,7 +39,7 @@ const follows = computed(() => props.held.following.value)
         v-if="props.held.playable.value"
         class="recording__player"
         :at="props.held.now.value"
-        :length="props.held.length.value"
+        :length="props.held.runs.value"
         :playing="props.held.playing.value"
         :label="words.player"
         @play="props.held.play()"
@@ -56,12 +56,17 @@ const follows = computed(() => props.held.following.value)
         {{ words.follow }}
       </button>
     </div>
+    <!-- What went wrong stands above the words, where it is read whether or
+         not there are any. -->
     <p v-if="props.held.broken.value" class="recording__note">
       {{ props.held.broken.value }}
     </p>
+    <p v-if="props.held.trouble.value" role="alert" class="recording__note">
+      {{ props.held.trouble.value }}
+    </p>
 
     <Editor
-      v-if="props.held.lines.value.length"
+      v-if="props.held.times.value.length"
       class="recording__transcript"
       :model-value="props.held.prose.value"
       :readonly="!props.held.editable.value"
@@ -82,11 +87,12 @@ const follows = computed(() => props.held.following.value)
 .recording {
   /* The measure the words are read at. */
   --recording-measure: 46rem;
-  /* Between the player and the words. */
+  /* Between the player and the follow. */
   --recording-apart: 1rem;
-  /* The tab is what scrolls, so the bar stands at the edge of the pane. */
-  /* The words scroll and the player does not, so the two are laid out one
-     above the other and only the words are given the room that is left. */
+  /* What the card standing over the words takes at the top of the pane. */
+  --recording-card: calc(2rem + 2 * var(--numen-panel-padding) + 2 * var(--numen-panel-gap));
+  /* The tab is what the card is placed in, and the editor fills it. */
+  position: relative;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -96,16 +102,24 @@ const follows = computed(() => props.held.following.value)
   color: var(--numen-node-fg);
 }
 
-/* The pause and the follow stay where a person can reach them. */
+/* The pause and the follow float over the words and stay where a person can
+   reach them, whatever the words do underneath. */
 .recording__head {
+  position: absolute;
+  inset-block-start: var(--numen-panel-gap);
+  inset-inline: var(--numen-gutter);
+  z-index: 1;
   display: flex;
-  flex: none;
   align-items: center;
   gap: var(--recording-apart);
   max-inline-size: var(--recording-measure);
   margin-inline: auto;
-  padding: var(--numen-gutter) var(--numen-gutter) var(--recording-apart);
-  inline-size: 100%;
+  padding: var(--numen-panel-padding);
+  border: var(--numen-stroke) solid var(--numen-panel-border);
+  border-radius: var(--numen-radius-panel);
+  background: var(--numen-panel-bg);
+  backdrop-filter: blur(var(--numen-panel-blur));
+  box-shadow: var(--numen-shadow-card);
 }
 
 .recording__player {
@@ -129,10 +143,11 @@ const follows = computed(() => props.held.following.value)
 }
 
 /* The editor scrolls, so the bar stands at the edge of the pane and only the
-   lines on screen are drawn. */
+   lines on screen are drawn. Its own layers stay under the card. */
 .recording .recording__transcript {
   flex: 1;
   min-block-size: 0;
+  isolation: isolate;
   font-size: inherit;
 }
 
@@ -147,8 +162,10 @@ const follows = computed(() => props.held.following.value)
   max-inline-size: var(--recording-measure);
 }
 
+/* The first line clears the card, so no word is ever hidden under it. */
 .recording .recording__transcript :deep(.cm-scroller) {
   justify-content: center;
+  padding-block-start: var(--recording-card);
   padding-inline: var(--numen-gutter);
 }
 
@@ -159,5 +176,10 @@ const follows = computed(() => props.held.following.value)
   padding: 0 var(--numen-gutter) var(--numen-gutter);
   inline-size: 100%;
   color: var(--numen-hushed);
+}
+
+/* Whatever stands where the words would begins below the card. */
+.recording > .recording__note:first-of-type {
+  padding-block-start: var(--recording-card);
 }
 </style>

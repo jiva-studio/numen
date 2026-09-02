@@ -11,7 +11,6 @@ import {
   asking,
   listening,
   plays,
-  timed,
   type Cue,
   type Listened,
   type Recordings,
@@ -109,7 +108,7 @@ function played() {
     at.value = ms
   }
 
-  return { player, sought, moves, failed, address }
+  return { player, sought, moves, failed, address, length, playing, at }
 }
 
 /** Everything asked for has been answered and everything waiting has run. */
@@ -368,14 +367,106 @@ describe('a recording tab that closes', () => {
     expect(heard.cues.value).toStrictEqual([])
     expect(sought).toStrictEqual([])
   })
+
+  it('stops the recording it holds', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+    heard.play()
+    expect(player.playing.value).toBe(true)
+
+    heard.close()
+
+    expect(player.playing.value).toBe(false)
+  })
+
+  it('leaves another recording playing', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+    player.play('http://127.0.0.1:1/files/w/v/another.mp3')
+
+    heard.close()
+
+    expect(player.playing.value).toBe(true)
+    expect(player.address.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
+  })
+
+  it('leaves the recording where it stopped, for whoever opens it again', async () => {
+    const { recordings } = talk()
+    const { player, at } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+    heard.play()
+    at.value = 6_200
+
+    heard.close()
+    const again = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    expect(player.address.value).toBe(LISTENED.media)
+    expect(again.now.value).toBe(6_200)
+  })
 })
 
-describe('a moment written out', () => {
-  it('is read as a clock, and carries an hour only where there is one', () => {
-    expect(timed(0)).toBe('0:00')
-    expect(timed(9_400)).toBe('0:09')
-    expect(timed(125_000)).toBe('2:05')
-    expect(timed(3_725_000)).toBe('1:02:05')
+describe('a recording tab as it opens', () => {
+  it('puts its recording in a player holding nothing, and plays none of it', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    expect(player.address.value).toBe(LISTENED.media)
+    expect(player.playing.value).toBe(false)
+    expect(heard.playing.value).toBe(false)
+  })
+
+  it('leaves the player alone where another recording is playing', async () => {
+    const { recordings } = talk()
+    const { player } = played()
+    player.play('http://127.0.0.1:1/files/w/v/another.mp3')
+
+    listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    expect(player.address.value).toBe('http://127.0.0.1:1/files/w/v/another.mp3')
+    expect(player.playing.value).toBe(true)
+  })
+})
+
+describe('how long the recording runs, as the controls read it', () => {
+  it('is what the application said about it', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player)
+    await settled()
+
+    expect(heard.runs.value).toBe(9_000)
+  })
+
+  it('is what the recording itself says, where nothing has listened to it', async () => {
+    const { recordings } = talk([], { ...LISTENED, length: 0, heard: 0 })
+    const { player, length } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    length.value = 85_000
+
+    expect(heard.runs.value).toBe(85_000)
+  })
+
+  it('is what the application said while the player holds another recording', async () => {
+    const { recordings } = talk()
+    const { player, length } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+
+    player.load('http://127.0.0.1:1/files/w/v/another.mp3')
+    length.value = 400_000
+
+    expect(heard.runs.value).toBe(9_000)
   })
 })
 
@@ -466,14 +557,32 @@ describe('a player that could not load the recording', () => {
 })
 
 describe('what the tab says where the words would stand', () => {
-  it('is what went wrong before it is anything else', async () => {
+  // What went wrong is drawn above the words, so it is read whether or not
+  // there are any and the note goes on saying what the transcript is.
+  it('is what the transcript is, and what went wrong is said apart from it', async () => {
     const { recordings } = talk(new Error('the words are being written'))
     const heard = listening(recordings, 'talks/Ants.mp3')
     await settled()
 
     heard.ticks(true)
 
-    expect(heard.note.value).toContain('the words are being written')
+    expect(heard.trouble.value).toContain('the words are being written')
+    expect(heard.note.value).toBe(WORDS.transcribing)
+  })
+
+  it('says what went wrong even where the words are on screen', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
+    await settled()
+
+    recordings.writes = async () => {
+      throw new Error('the transcript is being listened to')
+    }
+    heard.typed('One.\nThe second thing said.\nThe third thing said.')
+    await still()
+
+    expect(heard.note.value).toBe('')
+    expect(heard.trouble.value).toContain('being listened to')
   })
 
   it('is that a run is going, where nothing went wrong', async () => {
@@ -492,6 +601,70 @@ describe('what the tab says where the words would stand', () => {
     await settled()
 
     expect(heard.note.value).toBe('')
+  })
+
+  it('is nothing at all while a run goes on adding to words already there', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    heard.ticks(true)
+
+    expect(heard.note.value).toBe('')
+  })
+
+  it('is that nothing was heard where the recording holds no words', async () => {
+    const { recordings } = talk([])
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.note.value).toBe(WORDS.silence)
+  })
+})
+
+describe('the moments in the editor gutter', () => {
+  it('are one to a line, on a clock', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.times.value).toStrictEqual(['0:00', '0:02', '0:05'])
+  })
+
+  it('are none where nothing was heard in the recording and nothing was typed', async () => {
+    const { recordings } = talk([])
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.times.value).toStrictEqual([])
+    expect(heard.current.value).toBe(-1)
+  })
+
+  it('are the one line a person typed into a recording nothing was heard in', async () => {
+    const { recordings } = talk([])
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 10_000)
+    await settled()
+
+    heard.typed('The first thing I heard.')
+
+    expect(heard.times.value).toStrictEqual(['0:00'])
+    expect(heard.note.value).toBe('')
+  })
+
+  // They are worked out once for the whole transcript, however long it is, and
+  // the recording playing does not touch them.
+  it('are not worked out again as the recording plays', async () => {
+    const { recordings } = talk()
+    const { player, moves } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3', player)
+    await settled()
+    const written = heard.times.value
+
+    moves(3_000)
+    moves(6_000)
+
+    expect(heard.current.value).toBe(2)
+    expect(heard.times.value).toBe(written)
   })
 })
 
@@ -663,7 +836,7 @@ describe('the line being said while the words are edited', () => {
     moves(3_000)
 
     expect(heard.current.value).toBe(0)
-    expect(heard.lines.value.length).toBe(2)
+    expect(heard.times.value.length).toBe(2)
   })
 })
 
