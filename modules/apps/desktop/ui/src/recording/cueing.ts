@@ -11,6 +11,13 @@ import type { Cue } from './listening'
 /** The prose of a transcript: one cue to a line. */
 export const spoken = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')
 
+/** Whether two runs of cues say the same words at the same moments. */
+export const same = (a: readonly Cue[], b: readonly Cue[]): boolean =>
+  a.length === b.length &&
+  a.every(
+    (cue, at) => cue.text === b[at]!.text && cue.from === b[at]!.from && cue.to === b[at]!.to,
+  )
+
 /**
  * Where the lines of `text` fall in the cues they were edited from: one cue
  * for each line, in the order they are read, and an emptied line as the empty

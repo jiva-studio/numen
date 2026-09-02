@@ -9,7 +9,7 @@
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
-import { cued, spanning, spoken } from './cueing'
+import { cued, same, spanning, spoken } from './cueing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -268,6 +268,9 @@ export function listening(recordings: Recordings, path: string, quiet = QUIET) {
     const body = prose.value
     const next = cued(cues.value, body)
     owed = false
+    // A transcript written down is a transcript a person owns, and a
+    // proofreader leaves it alone. Only words that changed are written.
+    if (same(next, cues.value)) return
     writing = true
     try {
       await recordings.writes(path, next)

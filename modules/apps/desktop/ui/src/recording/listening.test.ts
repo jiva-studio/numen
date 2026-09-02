@@ -603,3 +603,30 @@ describe('typing that lands while a write is in the air', () => {
     expect(written[1]![0]!.text).toBe('Two.')
   })
 })
+
+describe('a transcript nobody edited', () => {
+  it('is not written down when the editor hands back what it was given', async () => {
+    const { recordings, written } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    // The editor hands the document back carrying a newline of its own.
+    heard.typed(heard.prose.value + '\n')
+    await still()
+
+    expect(written).toStrictEqual([])
+  })
+
+  it('is written down once a word actually changes', async () => {
+    const { recordings, written } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('The first thing Rupa said.\nThe second thing said.\nThe third thing said.')
+    await still()
+
+    expect(written).toHaveLength(1)
+    expect(written[0]![0]!.text).toBe('The first thing Rupa said.')
+    expect(written[0]![0]!.from).toBe(0)
+  })
+})
