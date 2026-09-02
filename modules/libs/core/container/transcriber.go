@@ -306,10 +306,10 @@ func (t *Transcribing) hear(ctx context.Context, v domain.Vault, path string, as
 	case errors.Is(err, errNothingListens), errors.Is(err, errLateListening):
 		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Failed: err.Error()}, asked)
 	case err != nil:
-		// A failure nobody was shown is a failure nobody can act on, so it
-		// stays in the list until it is dismissed.
+		// The recording is left where the next round finds it. A store that
+		// would not write and an index that would not answer are the machine,
+		// and the recording has said nothing about itself.
 		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Failed: err.Error()}, asked)
-		t.recordAnswer(v, path)
 	case res.Busy:
 		t.done(id)
 	default:
@@ -328,6 +328,15 @@ func (t *Transcribing) listen(
 	asked bool,
 ) (source.TranscribeResult, error) {
 	var res source.TranscribeResult
+
+	// Every recording of this process is heard through the runtime it made
+	// before its window. What was missing is here now, and the listening is the
+	// next opening's to do — asked before the models are fetched, so a machine
+	// whose runtime arrived late does not load them and throw them away every
+	// round.
+	if t.standing != nil && !t.standing() {
+		return res, errLateListening
+	}
 
 	// One heavy run on a machine: a scan being read holds the turn, and this
 	// waits for it.
@@ -351,14 +360,6 @@ func (t *Transcribing) listen(
 		return res, fmt.Errorf("%w: %w", errNothingListens, err)
 	}
 	defer close()
-
-	// Every recording of this process is heard through the runtime it made
-	// before its window, and a runtime this process fetched afterwards is not
-	// that one. What was missing is here now, and the listening is the next
-	// opening's to do.
-	if t.standing != nil && !t.standing() {
-		return res, errLateListening
-	}
 
 	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, asked)
 	return source.Transcribe{

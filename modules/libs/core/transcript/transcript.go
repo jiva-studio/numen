@@ -104,8 +104,14 @@ func parse(block string) (Cue, bool) {
 		if !ok {
 			return Cue{}, false
 		}
-		// Cue settings may follow the second timing, separated by a space.
-		to, ok := parseStamp(strings.Fields(after)[0])
+		// Cue settings may follow the second timing, separated by a space. A
+		// timing with nothing after the arrow is a line somebody was still
+		// writing.
+		second := strings.Fields(after)
+		if len(second) == 0 {
+			return Cue{}, false
+		}
+		to, ok := parseStamp(second[0])
 		if !ok {
 			return Cue{}, false
 		}

@@ -87,13 +87,6 @@ type API struct {
 	// Marking says where a run of a source's text sits on the pages it was read
 	// from. A build without one answers that it cannot say where a passage is.
 	Marking *source.Marks
-	// Known is what the index holds about a vault's sources, and Derived is the
-	// shelf the application keeps what it made on. A recording's transcript is
-	// read through the two: the index says what listened, and the shelf holds
-	// what it wrote. A build without them answers that it has no transcript.
-	Known   port.SourceQueries
-	Derived port.DerivedStores
-
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be
 	// played here.

@@ -161,17 +161,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 			Derived:   cfg.DerivedStores(),
 			Documents: cfg.Documents(),
 		},
-		Known:   db.SourcesKnown(),
-		Derived: cfg.DerivedStores(),
 	}
-	// A recording is played from a socket of its own. A machine that refuses one
-	// leaves the player with no address, and the words are still read.
-	if playing, why := Reachable(api); why != nil {
-		fmt.Fprintf(out, "recordings will not play: %v\n", why)
-	} else {
-		api.Playing = playing
-	}
-
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
@@ -299,6 +289,15 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		_ = closeEmbedder()
 		_ = db.Close()
 		return nil, err
+	}
+
+	// A recording is played over a socket of its own, opened once everything it
+	// answers through is in place. A machine that refuses one leaves the player
+	// with no address, and the words are still read.
+	if playing, why := Reachable(api); why != nil {
+		fmt.Fprintf(out, "recordings will not play: %v\n", why)
+	} else {
+		api.Playing = playing
 	}
 	return opened, nil
 }
@@ -582,6 +581,9 @@ func (o *Opened) Close() error {
 	if o.API.Viewer != nil {
 		o.API.Viewer.close()
 	}
+	// The socket a recording was played over answers with the vault's files, so
+	// it stops before the vault does.
+	_ = o.API.Playing.Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
 	err := o.stopEmbedder()

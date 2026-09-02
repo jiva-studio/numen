@@ -367,6 +367,9 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 	}
 
 	var said []int
+	// How many words one frame has given. A frame may give several: the model
+	// answers with a duration of nothing to say it has more to say here.
+	spoken := 0
 	for at := 0; at < d.frames; {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -385,14 +388,25 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 			if upto, err = d.predict(token); err != nil {
 				return nil, err
 			}
+			spoken++
 		}
-		if step < 1 {
+		// The blank moves on whatever it says, and a frame that has given all
+		// the words one frame may give moves on too.
+		if step < 1 && (token == d.blank || spoken >= mostPerFrame) {
 			step = 1
+		}
+		if step > 0 {
+			spoken = 0
 		}
 		at += step
 	}
 	return said, nil
 }
+
+// mostPerFrame is how many words one frame may give before the decoding moves
+// on whatever the model says. It is what keeps a run of durations of nothing
+// from standing on one frame for ever.
+const mostPerFrame = 10
 
 // largest is where the highest of a run of scores stands.
 func largest(scores []float32) int {

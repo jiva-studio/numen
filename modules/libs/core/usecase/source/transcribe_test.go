@@ -269,8 +269,8 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if !res.Silent {
 		t.Error("a recording carrying no speech was not reported as silent")
 	}
-	for _, name := range shelf.names() {
-		if strings.HasSuffix(name, ".txt") || strings.HasSuffix(name, ".partial") {
+	for _, name := range []string{text.Artifact("asr", hash), text.Partial("asr", hash)} {
+		if _, err := shelf.Read(t.Context(), name); err == nil {
 			t.Errorf("it left %q behind", name)
 		}
 	}
