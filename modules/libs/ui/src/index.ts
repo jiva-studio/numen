@@ -107,6 +107,9 @@ export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
 export type { EditorChange } from './editor/change'
+/** A time against every line of an editor, and the line being read now. */
+export { timing } from './editor/timing'
+export type { Timed, Timing } from './editor/timing'
 
 export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'

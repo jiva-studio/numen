@@ -1,6 +1,7 @@
 /**
  * One recording as its tab hears it: where the player stands in it, the words
- * heard in it, and which of them is being said now.
+ * heard in it, which of them is being said now, and the words as a person
+ * edits them.
  *
  * Apart from the template the way `reading.ts` is: where the player is sent,
  * which cue that lands in, and when the words are asked for again are
@@ -8,6 +9,7 @@
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
+import { cued, spanning, spoken } from './cueing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -15,6 +17,13 @@ export interface Cue {
   readonly text: string
   readonly from: number
   readonly to: number
+}
+
+/** What was heard in a recording, and whether it may be written over. */
+export interface Spoken {
+  readonly cues: readonly Cue[]
+  /** False while a run listening to the recording holds it. */
+  readonly editable: boolean
 }
 
 /**
@@ -39,7 +48,9 @@ export interface Recordings {
   /** How long the recording runs, and how much of it has been written down. */
   listened(path: string): Promise<Listened>
   /** The words heard in the recording, in the order they were spoken. */
-  cues(path: string): Promise<readonly Cue[]>
+  cues(path: string): Promise<Spoken>
+  /** The words as a person has edited them, kept against the recording. */
+  writes(path: string, cues: readonly Cue[]): Promise<void>
   /**
    * The millisecond a run of the words written down is played from, and nothing
    * where no cue holds it.
@@ -122,11 +133,20 @@ const holding = (cues: readonly Cue[], ms: number): number => {
 
 export type Listening = ReturnType<typeof listening>
 
-export function listening(recordings: Recordings, path: string) {
+/** How long the words have to have been still before they are written. */
+export const QUIET = 800
+
+export function listening(recordings: Recordings, path: string, quiet = QUIET) {
   /** Where the recording's own bytes are played from, once it is asked. */
   const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
   const cues = ref<readonly Cue[]>([])
+  /** The words as the editor shows them, one cue to a line. */
+  const prose = ref('')
+  /** Whether the transcript may be written over now. */
+  const editable = ref(true)
+  /** Whether the view keeps the line being said in sight. */
+  const following = ref(true)
   /** How long the recording runs, as the application last said. */
   const length = ref(0)
   /** How much of it has been written down, in milliseconds. */
@@ -140,8 +160,14 @@ export function listening(recordings: Recordings, path: string) {
   /** What the player could not do. It stands under the player. */
   const broken = ref('')
 
-  /** Which cue is being said now, and nothing where none has begun. */
-  const current = computed(() => holding(cues.value, now.value))
+  /**
+   * The lines on screen against the milliseconds they cover. The lines are
+   * what a person edits, and these follow them until the file is written.
+   */
+  const spans = computed(() => spanning(cues.value, prose.value))
+
+  /** Which line is being said now, and nothing where none has begun. */
+  const current = computed(() => holding(spans.value, now.value))
 
   /** Whether the tab this recording stands in is still open. */
   let open = true
@@ -162,6 +188,13 @@ export function listening(recordings: Recordings, path: string) {
   let asking = 0
   let answered = 0
 
+  /** Whether what is on screen has still to reach the file. */
+  let owed = false
+  /** A write of the words that has not answered yet. */
+  let writing = false
+  /** The wait the typing is being let settle over. */
+  let settling: ReturnType<typeof setTimeout> | undefined
+
   /**
    * What the recording is and what has been heard in it. A build that cannot
    * read a transcript says so where the words would stand, and the recording
@@ -178,10 +211,13 @@ export function listening(recordings: Recordings, path: string) {
       address.value = said.media
       type.value = said.type
 
-      const cued = await recordings.cues(path)
+      const spoke = await recordings.cues(path)
       if (!open || count < answered) return
       answered = count
-      cues.value = cued
+      cues.value = spoke.cues
+      editable.value = spoke.editable
+      // Words the person has typed and not yet had written stay on screen.
+      if (!owed) prose.value = spoken(spoke.cues)
       trouble.value = ''
     } catch (error) {
       if (!open || count < answered) return
@@ -199,6 +235,57 @@ export function listening(recordings: Recordings, path: string) {
     now.value = Math.max(0, Math.round(ms))
     if (player) return player.seek(now.value)
     wanted = now.value
+  }
+
+  /** The line a person asked for, counted from the first line on screen. */
+  const goes = (line: number) => {
+    const span = spans.value[line]
+    if (span) go(span.from)
+  }
+
+  /** Whether the view keeps the line being said in sight. */
+  const follows = (on: boolean) => {
+    following.value = on
+  }
+
+  /** The person typed. The words are written once they have been still. */
+  const typed = (body: string) => {
+    if (!open || body === prose.value) return
+    prose.value = body
+    owed = true
+    clearTimeout(settling)
+    settling = setTimeout(() => void keep(), quiet)
+  }
+
+  /**
+   * The words as they now read, kept against the recording. A write that is
+   * refused leaves them owed, so the next stillness offers them again.
+   */
+  const keep = async () => {
+    clearTimeout(settling)
+    settling = undefined
+    if (!open || !owed || writing || !editable.value) return
+    const body = prose.value
+    const next = cued(cues.value, body)
+    owed = false
+    writing = true
+    try {
+      await recordings.writes(path, next)
+      if (!open) return
+      cues.value = next
+      trouble.value = ''
+    } catch (error) {
+      if (!open) return
+      owed = true
+      trouble.value = String(error)
+    } finally {
+      writing = false
+      // Typing that landed while the write was in the air is still owed.
+      if (open && prose.value !== body) {
+        owed = true
+        settling = setTimeout(() => void keep(), quiet)
+      }
+    }
   }
 
   /** The player moved, of itself or under the person's hand. */
@@ -249,11 +336,16 @@ export function listening(recordings: Recordings, path: string) {
     }
   }
 
-  /** The tab has closed: nothing is asked for again and nothing is played. */
+  /**
+   * The tab has closed: what the person typed reaches the file, nothing is
+   * asked for again and nothing is played.
+   */
   const close = () => {
+    void keep()
     open = false
     player = null
     cues.value = []
+    prose.value = ''
   }
 
   /**
@@ -261,7 +353,7 @@ export function listening(recordings: Recordings, path: string) {
    * and which of them is being said now.
    */
   const lines = computed(() =>
-    cues.value.map((cue, at) => ({
+    spans.value.map((cue, at) => ({
       text: cue.text,
       from: cue.from,
       at: timed(cue.from),
@@ -290,6 +382,9 @@ export function listening(recordings: Recordings, path: string) {
     lines,
     note,
     cues,
+    prose,
+    editable,
+    following,
     length,
     heard,
     now,
@@ -298,6 +393,10 @@ export function listening(recordings: Recordings, path: string) {
     trouble,
     broken,
     go,
+    goes,
+    follows,
+    typed,
+    keep,
     moved,
     failed,
     plays,

@@ -14,6 +14,7 @@ import {
   type Cue,
   type Listened,
   type Recordings,
+  type Spoken,
 } from './listening'
 import { WORDS } from './words'
 
@@ -42,6 +43,9 @@ function talk(
   /** Every address asked of it, in the order they were asked. */
   const asked: string[] = []
 
+  /** Every set of words written to it, in the order they were written. */
+  const written: (readonly Cue[])[] = []
+
   const recordings: Recordings = {
     listened: async (path) => {
       asked.push(`about ${path}`)
@@ -51,7 +55,11 @@ function talk(
     cues: async (path) => {
       asked.push(`cues ${path}`)
       if (cues instanceof Error) throw cues
-      return cues
+      return { cues, editable: true }
+    },
+    writes: async (path, kept) => {
+      asked.push(`writes ${path}`)
+      written.push(kept)
     },
     plays: async (path, run) => {
       asked.push(`plays ${path} ${run.start} ${run.length}`)
@@ -59,7 +67,7 @@ function talk(
     },
   }
 
-  return { recordings, asked }
+  return { recordings, asked, written }
 }
 
 /** A player that writes down every moment it was sent to. */
@@ -70,6 +78,9 @@ function played() {
 
 /** Everything asked for has been answered and everything waiting has run. */
 const settled = () => new Promise((done) => setTimeout(done, 0))
+
+/** The words have been still long enough to be written, and were. */
+const still = () => new Promise((done) => setTimeout(done, 20))
 
 describe('a recording opened', () => {
   it('is played from the address the application serves it at', async () => {
@@ -311,17 +322,18 @@ describe('what this window can play', () => {
 describe('a transcript asked for twice at once', () => {
   it('keeps the answer to the later asking, however they arrive', async () => {
     // The first asking is answered with fewer words, and answered last.
-    const early: readonly Cue[] = [CUES[0]!]
-    const first: { answer: ((cues: readonly Cue[]) => void) | null } = { answer: null }
+    const early: Spoken = { cues: [CUES[0]!], editable: true }
+    const first: { answer: ((said: Spoken) => void) | null } = { answer: null }
 
     const recordings: Recordings = {
       listened: async () => LISTENED,
       cues: () =>
         first.answer
-          ? Promise.resolve(CUES)
-          : new Promise<readonly Cue[]>((done) => {
+          ? Promise.resolve({ cues: CUES, editable: true })
+          : new Promise<Spoken>((done) => {
               first.answer = done
             }),
+      writes: async () => {},
       plays: async () => null,
     }
 
@@ -390,5 +402,204 @@ describe('what the tab says where the words would stand', () => {
     await settled()
 
     expect(heard.note.value).toBe('')
+  })
+})
+
+describe('the words as a person edits them', () => {
+  it('stand in the editor, one cue to a line', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.prose.value).toBe(
+      'The first thing said.\nThe second thing said.\nThe third thing said.',
+    )
+  })
+
+  it('are written once they have been still', async () => {
+    const { recordings, written } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('The first thing said.\nThe second thing heard.\nThe third thing said.')
+    expect(written).toStrictEqual([])
+
+    await still()
+
+    expect(written).toStrictEqual([
+      [
+        CUES[0],
+        { text: 'The second thing heard.', from: 2_500, to: 5_000 },
+        CUES[2],
+      ],
+    ])
+  })
+
+  it('are written once for a run of typing', async () => {
+    const { recordings, written } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('The first thing said.\nThe second thing h\nThe third thing said.')
+    heard.typed('The first thing said.\nThe second thing he\nThe third thing said.')
+    heard.typed('The first thing said.\nThe second thing heard.\nThe third thing said.')
+    await still()
+
+    expect(written.length).toBe(1)
+  })
+
+  it('are the cues the tab then holds', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('The first thing said.\n\nThe third thing said.')
+    await still()
+
+    expect(heard.cues.value).toStrictEqual([CUES[0], CUES[2]])
+  })
+
+  it('stay on screen while a transcript arriving beside them is read', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 200)
+    await settled()
+
+    heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
+    heard.ticks(true)
+    await settled()
+
+    expect(heard.prose.value.startsWith('Mine.')).toBe(true)
+  })
+
+  it('are owed again where the write was refused', async () => {
+    const { recordings } = talk()
+    recordings.writes = async () => {
+      throw new Error('the transcript is held')
+    }
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
+    await still()
+
+    expect(heard.trouble.value).toContain('the transcript is held')
+    expect(heard.cues.value).toStrictEqual(CUES)
+  })
+
+  it('reach the file as the tab closes', async () => {
+    const { recordings, written } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 10_000)
+    await settled()
+
+    heard.typed('Mine.\nThe second thing said.\nThe third thing said.')
+    heard.close()
+    await settled()
+
+    expect(written.length).toBe(1)
+  })
+})
+
+describe('a transcript a run still holds', () => {
+  it('is not edited', async () => {
+    const recordings: Recordings = {
+      listened: async () => LISTENED,
+      cues: async () => ({ cues: CUES, editable: false }),
+      writes: async () => {},
+      plays: async () => null,
+    }
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.editable.value).toBe(false)
+  })
+
+  it('is edited once nothing holds it', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.editable.value).toBe(true)
+  })
+})
+
+describe('the line a person asked for', () => {
+  it('is played from the moment it was said at', async () => {
+    const { recordings } = talk()
+    const { player, sought } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    heard.plays(player)
+    await settled()
+
+    heard.goes(2)
+
+    expect(sought).toStrictEqual([5_000])
+  })
+
+  it('leaves the player where it stands where there is no such line', async () => {
+    const { recordings } = talk()
+    const { player, sought } = played()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    heard.plays(player)
+    await settled()
+
+    heard.goes(9)
+
+    expect(sought).toStrictEqual([])
+  })
+})
+
+describe('following the line being said', () => {
+  it('is on as a recording opens, and is turned off and on again', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3')
+    await settled()
+
+    expect(heard.following.value).toBe(true)
+
+    heard.follows(false)
+    expect(heard.following.value).toBe(false)
+
+    heard.follows(true)
+    expect(heard.following.value).toBe(true)
+  })
+})
+
+describe('the line being said while the words are edited', () => {
+  it('is the one the player stands in, as the lines now read', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', 10_000)
+    await settled()
+
+    heard.typed('The first thing said. The second thing said.\nThe third thing said.')
+    heard.moved(3_000)
+
+    expect(heard.current.value).toBe(0)
+    expect(heard.lines.value.length).toBe(2)
+  })
+})
+
+describe('typing that lands while a write is in the air', () => {
+  it('is written once the one before it has answered', async () => {
+    const held: { answer: (() => void) | null } = { answer: null }
+    const { recordings, written } = talk()
+    recordings.writes = (_, kept) => {
+      written.push(kept)
+      return new Promise<void>((done) => {
+        held.answer = done
+      })
+    }
+    const heard = listening(recordings, 'talks/Ants.mp3', 5)
+    await settled()
+
+    heard.typed('One.\nThe second thing said.\nThe third thing said.')
+    await still()
+    expect(written.length).toBe(1)
+
+    heard.typed('Two.\nThe second thing said.\nThe third thing said.')
+    held.answer?.()
+    await still()
+
+    expect(written.length).toBe(2)
+    expect(written[1]![0]!.text).toBe('Two.')
   })
 })
