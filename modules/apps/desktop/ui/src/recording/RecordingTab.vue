@@ -23,7 +23,7 @@ watchPostEffect(() =>
   heard.show({
     times: props.held.times.value,
     now: props.held.current.value,
-    follows: props.held.following.value,
+    follows: props.held.following.value && !props.held.typing.value,
   }),
 )
 

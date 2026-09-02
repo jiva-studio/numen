@@ -123,6 +123,8 @@ export function listening(
   const editable = ref(true)
   /** Whether the view keeps the line being said in sight. */
   const following = ref(true)
+  /** Whether a person has been typing too recently for the view to move. */
+  const typing = ref(false)
   /** How long the recording runs, as the application last said. */
   const length = ref(0)
   /** How much of it has been written down, in milliseconds. */
@@ -195,6 +197,8 @@ export function listening(
   let writing = false
   /** The wait the typing is being let settle over. */
   let settling: ReturnType<typeof setTimeout> | undefined
+  /** The wait after which the view may go after the words again. */
+  let stilling: ReturnType<typeof setTimeout> | undefined
 
   /**
    * What the recording is and what has been heard in it. A build that cannot
@@ -275,6 +279,12 @@ export function listening(
     if (!open || body === prose.value) return
     prose.value = body
     owed = true
+    // An edit that adds or takes away a line moves which line is being said,
+    // and the view does not go after a line a person moved under their own
+    // hands.
+    typing.value = true
+    clearTimeout(stilling)
+    stilling = setTimeout(() => void (typing.value = false), quiet)
     clearTimeout(settling)
     settling = setTimeout(() => void keep(), quiet)
   }
@@ -351,6 +361,7 @@ export function listening(
     void keep()
     pause()
     open = false
+    clearTimeout(stilling)
     cues.value = []
     prose.value = ''
   }
@@ -382,6 +393,7 @@ export function listening(
     prose,
     editable,
     following,
+    typing,
     length,
     runs,
     heard,

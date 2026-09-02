@@ -892,3 +892,30 @@ describe('a transcript nobody edited', () => {
     expect(written[0]![0]!.from).toBe(0)
   })
 })
+
+describe('the view going after the words', () => {
+  it('stops while a person is typing, and starts again once they stop', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
+    await settled()
+
+    expect(heard.typing.value).toBe(false)
+
+    heard.typed('One.\nThe second thing said.\nThe third thing said.')
+    expect(heard.typing.value).toBe(true)
+
+    await still()
+    expect(heard.typing.value).toBe(false)
+  })
+
+  it('is not stopped by the words arriving from the application', async () => {
+    const { recordings } = talk()
+    const heard = listening(recordings, 'talks/Ants.mp3', played().player, 5)
+    await settled()
+
+    heard.ticks(true)
+    await settled()
+
+    expect(heard.typing.value).toBe(false)
+  })
+})
