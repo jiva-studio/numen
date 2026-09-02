@@ -129,8 +129,8 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Path != book {
 		t.Errorf("the answer is about %q", back.Path)
 	}
-	if back.Why != readingBegun {
-		t.Errorf("it was told %q", back.Why)
+	if back.Why != "" {
+		t.Errorf("a run begun was told %q, which the list of what is being done says", back.Why)
 	}
 	if scans.times != 1 || scans.path != book || scans.vault != api.Showing().ID {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
@@ -149,8 +149,8 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Path != talk {
 		t.Errorf("the answer is about %q", back.Path)
 	}
-	if back.Why != hearingBegun {
-		t.Errorf("it was told %q", back.Why)
+	if back.Why != "" {
+		t.Errorf("a run begun was told %q, which the list of what is being done says", back.Why)
 	}
 	if hears.times != 1 || hears.path != talk || hears.vault != api.Showing().ID {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
@@ -408,7 +408,8 @@ func TestARunIsAskedForWithPost(t *testing.T) {
 	}
 }
 
-// Every outcome carries a sentence, and no two outcomes say the same thing.
+// Every outcome but the run begun carries a sentence, and no two outcomes say
+// the same thing.
 func TestEveryOutcomeSaysSomethingOfItsOwn(t *testing.T) {
 	said := map[string]bool{}
 	for _, why := range []string{
@@ -416,7 +417,8 @@ func TestEveryOutcomeSaysSomethingOfItsOwn(t *testing.T) {
 		readAlready, heardAlready,
 		readingNow, hearingNow,
 		readingQueued, hearingQueued,
-		readingBegun, hearingBegun,
+		readingSilent, hearingSilent,
+		readingUnopened, hearingUnopened,
 	} {
 		if why == "" {
 			t.Fatal("an outcome carries no sentence")

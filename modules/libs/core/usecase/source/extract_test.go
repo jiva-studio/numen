@@ -379,7 +379,7 @@ func TestASourceCutFromAPartialReadsBackFromThePartial(t *testing.T) {
 		read  = "What the pages read so far say."
 		whole = "What every page of the document says."
 	)
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	if err := made.Write(ctx, text.Partial("ocr", hash), []byte(read)); err != nil {
 		t.Fatal(err)
 	}
@@ -426,7 +426,7 @@ func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
 	shelf.hold("library/kept.epub", domain.KindBook, kept, 1)
 
 	for _, raw := range [][]byte{gone, kept} {
-		for _, name := range text.Names("ocr", fingerprint(raw)) {
+		for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
 			if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
 				t.Fatal(err)
 			}
@@ -450,12 +450,12 @@ func TestABookTakenOutTakesTheFilesOfItsReading(t *testing.T) {
 		t.Fatalf("removed = %d, want the one book the vault no longer holds", res.Removed)
 	}
 
-	for _, name := range text.Names("ocr", fingerprint(gone)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(gone)) {
 		if _, err := made.Read(ctx, name); !errors.Is(err, fs.ErrNotExist) {
 			t.Errorf("%s is still in the store", name)
 		}
 	}
-	for _, name := range text.Names("ocr", fingerprint(kept)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(kept)) {
 		if _, err := made.Read(ctx, name); err != nil {
 			t.Errorf("%s went with the other book: %v", name, err)
 		}
@@ -471,7 +471,7 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 
 	raw := bookOf(t, "Read", words(sanskrit, 200))
 	shelf.hold("library/before.epub", domain.KindBook, raw, 1)
-	for _, name := range text.Names("ocr", fingerprint(raw)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
 		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
 			t.Fatal(err)
 		}
@@ -491,7 +491,7 @@ func TestARenamedBookKeepsItsReading(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, name := range text.Names("ocr", fingerprint(raw)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
 		if _, err := made.Read(ctx, name); err != nil {
 			t.Errorf("renaming the book threw away %s: %v", name, err)
 		}
@@ -510,7 +510,7 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 	raw := bookOf(t, "Twice", words(sanskrit, 200))
 	shelf.hold("library/one.epub", domain.KindBook, raw, 1)
 	shelf.hold("shelf/two.epub", domain.KindBook, raw, 1)
-	for _, name := range text.Names("ocr", fingerprint(raw)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
 		if err := made.Write(ctx, name, []byte("What the pages say.")); err != nil {
 			t.Fatal(err)
 		}
@@ -526,7 +526,7 @@ func TestOneOfTwoCopiesTakenOutLeavesTheOtherReading(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, name := range text.Names("ocr", fingerprint(raw)) {
+	for _, name := range text.Names("ocr", text.Fingerprint(raw)) {
 		if _, err := made.Read(ctx, name); err != nil {
 			t.Errorf("one copy going took %s with it: %v", name, err)
 		}
@@ -577,7 +577,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	if err := made.Write(ctx, text.Artifact(text.ASR, fingerprint(raw)), transcribed()); err != nil {
+	if err := made.Write(ctx, text.Artifact(text.ASR, text.Fingerprint(raw)), transcribed()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -616,7 +616,7 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	if err := made.Write(ctx, text.Artifact(text.ASR, hash), transcribed()); err != nil {
 		t.Fatal(err)
 	}

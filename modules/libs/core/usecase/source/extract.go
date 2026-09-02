@@ -2,8 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -405,7 +403,7 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 
 	// A document read by a recogniser has a text of its own, and the chunks are
 	// places in that. It is found by the hash of the bytes it was read from, so a
@@ -513,12 +511,6 @@ func (u Extract) sizes() cutting.Sizes {
 		s.Limit = cutting.DefaultLimit
 	}
 	return s
-}
-
-// fingerprint addresses the content of a file the index has read.
-func fingerprint(raw []byte) string {
-	sum := sha256.Sum256(raw)
-	return hex.EncodeToString(sum[:])
 }
 
 func (u Extract) progress(res ExtractResult) {

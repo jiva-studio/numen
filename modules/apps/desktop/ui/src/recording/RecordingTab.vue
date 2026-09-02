@@ -67,7 +67,11 @@ const empty = computed(() => props.held.times.value.length === 0)
         </button>
       </div>
 
-      <p v-if="empty" class="recording__note">{{ props.held.note.value }}</p>
+      <!-- The button says there is no transcript, so the note says it only
+           where there is no button. -->
+      <p v-if="empty && !props.held.transcribable.value" class="recording__note">
+        {{ props.held.note.value }}
+      </p>
       <button
         v-if="props.held.transcribable.value"
         type="button"

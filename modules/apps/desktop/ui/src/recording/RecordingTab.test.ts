@@ -92,7 +92,8 @@ describe('a recording tab', () => {
 })
 
 describe('a recording with no transcript', () => {
-  it('says so, and draws no editor at all', async () => {
+  // The button says there is no transcript, so nothing says it twice.
+  it('draws no editor at all, and offers the run in place of the words', async () => {
     const { held } = tab([])
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
@@ -101,6 +102,23 @@ describe('a recording with no transcript', () => {
     await settled()
 
     expect(drawn.find('.recording__transcript').exists()).toBe(false)
+    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
+    expect(drawn.find('.recording__note').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+
+  // Where the run cannot be asked for, what there is to say is said.
+  it('says there is no transcript where the run cannot be asked for', async () => {
+    cannotRun('transcribe')
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
     expect(drawn.find('.recording__note').text()).toBe(WORDS.silence)
 
     drawn.unmount()

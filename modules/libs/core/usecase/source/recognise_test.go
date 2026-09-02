@@ -373,7 +373,7 @@ func document(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return fingerprint(raw)
+	return text.Fingerprint(raw)
 }
 
 // reads checks that every coordinate names the words it was read from, in the

@@ -105,7 +105,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		return res, err
 	}
 
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	area := u.area()
 	stands, far := text.Corrected(area, hash), text.Proofread(area, hash)
 
