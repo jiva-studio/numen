@@ -434,6 +434,10 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// A transcript the window put right is cut there too.
 	o.API.Cut = recognising.Cut
 
+	// The window asks for a scan to be read through the same job an agent asks
+	// through.
+	o.API.Recognises = recognising
+
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
@@ -444,6 +448,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// What it writes is cut where every other cut happens.
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
+	o.API.Transcribes = transcribing
 	if o.cfg.Transcribes {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}

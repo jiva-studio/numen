@@ -106,7 +106,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 		Derived: kept,
 		By:      model,
 		Batch:   1,
-	}, first, index, kept, model, fingerprint(raw)
+	}, first, index, kept, model, text.Fingerprint(raw)
 }
 
 // spoken is the words of an artifact, in the order they were said.

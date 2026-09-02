@@ -3,12 +3,14 @@
  *
  * A row standing for a note offers every command over a note that has a row of
  * its own in the palette, beside the three the tab does itself. A row standing
- * for anything else offers what can be done to a file. The items stand in
- * bands: what opens the note, what is done to its file, what is made off it in
- * the plex, what is asked of the agent, and what takes it out of the vault.
+ * for anything else offers what can be done to a file, and a row standing for a
+ * recording or a scanned document offers the run over it. The items stand in
+ * bands: what opens the note, what is done to its file, what is run over it,
+ * what is made off it in the plex, what is asked of the agent, and what takes
+ * it out of the vault.
  */
 import type { MenuItem } from '@numen/ui'
-import { commandsOf, overNote } from '../commanding'
+import { canRun, commandsOf, overNote } from '../commanding'
 import type { Source } from '../core'
 import { WORDS as words } from '../words'
 import { WORDS as own } from './words'
@@ -24,6 +26,7 @@ export const RENAME = 'rename'
 const BAND = {
   open: 'open',
   file: 'file',
+  run: 'run',
   plex: 'plex',
   agent: 'agent',
   remove: 'remove',
@@ -65,12 +68,25 @@ const NOTE: readonly MenuItem[] = [
   ...noted('remove', BAND.remove),
 ]
 
-/** What a row standing for anything but a note offers. */
-const FILED: readonly MenuItem[] = [
+/**
+ * What a row standing for anything but a note offers, with the runs its kind
+ * can be put through.
+ */
+const filed = (...runs: readonly MenuItem[]): readonly MenuItem[] => [
   ...OWN,
   ...noted('copy', BAND.file),
+  ...runs,
   { id: 'remove', text: own.remove, band: BAND.remove },
 ]
+
+const FILED = filed()
+
+/** The run a recording can be put through, and the one a scan can. */
+const TRANSCRIBE: MenuItem = { id: 'transcribe', text: own.transcribe, band: BAND.run }
+const RECOGNISE: MenuItem = { id: 'recognise', text: own.recognise, band: BAND.run }
+
+/** The run offered where this build can do it, and the file's own items alone where it cannot. */
+const runnable = (run: MenuItem): readonly MenuItem[] => (canRun(run.id) ? filed(run) : FILED)
 
 /** What a selection of several offers, which is what means something for all of them. */
 const SEVERAL: readonly MenuItem[] = [{ id: 'remove', text: own.remove, band: BAND.remove }]
@@ -89,10 +105,13 @@ export interface On {
 export const itemsFor = (on: On | null, several: boolean): readonly MenuItem[] => {
   if (!on) return MADE
   if (several) return SEVERAL
-  return !on.folder && on.source === 'note' ? NOTE : FILED
+  if (on.folder) return FILED
+  if (on.source === 'note') return NOTE
+  if (on.source === 'recording') return runnable(TRANSCRIBE)
+  return on.source === 'book' ? runnable(RECOGNISE) : FILED
 }
 
 /** What the menu offers anywhere. A choice outside this is not the menu's. */
 export const OFFERED: ReadonlySet<string> = new Set(
-  [...NOTE, ...FILED, ...MADE].map((one) => one.id),
+  [...NOTE, ...filed(TRANSCRIBE, RECOGNISE), ...MADE].map((one) => one.id),
 )

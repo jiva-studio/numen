@@ -88,7 +88,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		return res, err
 	}
 
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
 	boxes, parts := text.Boxes(area, hash), text.Parts(area, hash)

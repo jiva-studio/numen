@@ -93,6 +93,8 @@ type Recognising struct {
 
 	mu      sync.Mutex
 	running bool
+	// asked is the documents a person named that have not been read yet.
+	asked asked
 	// last is what the reading before this one was called. A reading that
 	// failed is left in the list under that name, and the next reading takes it
 	// out.
@@ -140,25 +142,59 @@ func (r *Recognising) Running() bool {
 	return r.running
 }
 
-// Start begins reading one document behind whoever asked, and says whether it
-// began.
+// Start reads one document a person named, and says whether it began now or
+// waits its turn.
 //
 // One at a time: the models hold a worker each, and a second reading would take
-// twice as long and say so half as clearly.
+// twice as long and say so half as clearly. A document named while one is being
+// read goes to the back of the line and is read as soon as the turn is free.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the reading carries on.
-func (r *Recognising) Start(v domain.Vault, path string) bool {
-	ctx := r.under
-	if ctx == nil {
-		ctx = context.Background()
-	}
+func (r *Recognising) Start(v domain.Vault, path string) port.Taking {
 	r.mu.Lock()
+	r.asked.want(v, path)
 	if r.running {
 		r.mu.Unlock()
-		return false
+		return port.Queued
 	}
 	r.running = true
+	r.mu.Unlock()
+
+	r.going.Add(1)
+	go func() {
+		defer r.going.Done()
+		defer r.stopped()
+		r.drain(r.context())
+	}()
+	return port.Began
+}
+
+// Waiting is how many documents a person named are still in line.
+func (r *Recognising) Waiting() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.asked.waiting()
+}
+
+// drain reads every document a person named, in the order they named them. A
+// document is out of the line before it is read, so one whose reading ends
+// where nothing expected it to holds nothing afterwards.
+func (r *Recognising) drain(ctx context.Context) {
+	for {
+		r.mu.Lock()
+		one, waiting := r.asked.take()
+		r.mu.Unlock()
+		if !waiting || ctx.Err() != nil {
+			return
+		}
+		r.one(ctx, one.vault, one.path)
+	}
+}
+
+// one is a single document read, put right, and reported.
+func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
+	r.mu.Lock()
 	before := r.last
 	id := reading()
 	r.last = id
@@ -167,35 +203,33 @@ func (r *Recognising) Start(v domain.Vault, path string) bool {
 	r.done(before)
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
-	r.going.Add(1)
-	go func() {
-		defer r.going.Done()
-		// The task is finished before the run is, so that a reading begun the
-		// moment this one ends has the list to itself. It is finished however
-		// this reading ends.
-		defer func() {
-			r.mu.Lock()
-			r.running = false
-			r.mu.Unlock()
-		}()
+	err := r.read(ctx, v, id, path)
+	if err == nil {
+		r.correct(ctx, v, path)
+	}
 
-		err := r.read(ctx, v, id, path)
-		if err == nil {
-			r.correct(ctx, v, path)
-		}
+	switch {
+	case err == nil, errors.Is(err, context.Canceled):
+		// A reading somebody stopped is a reading that is over.
+		r.done(id)
+	default:
+		// A failure nobody was shown is a failure nobody can act on, so it
+		// stays in the list until it is dismissed or the next reading begins.
+		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
+	}
+}
 
-		switch {
-		case err == nil, errors.Is(err, context.Canceled):
-			// A reading somebody stopped is a reading that is over.
-			r.done(id)
-		default:
-			// A failure nobody was shown is a failure nobody can act on, so it
-			// stays in the list until it is dismissed or the next reading
-			// begins.
-			r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
-		}
-	}()
-	return true
+func (r *Recognising) stopped() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.running = false
+}
+
+func (r *Recognising) context() context.Context {
+	if r.under == nil {
+		return context.Background()
+	}
+	return r.under
 }
 
 // read is the work itself: what is missing arrives, and then the document is

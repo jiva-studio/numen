@@ -6,10 +6,12 @@
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import type { Deed, Shown } from './commanding'
+import { cannotRun, type Deed, type Shown } from './commanding'
 import type { Opened } from './putting'
 import type {
+  Answer,
   Movement,
+  Outcome,
   Refused,
   Removed,
   Renamed,
@@ -109,6 +111,10 @@ export interface Doing {
   moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   makesFolder(path: string): Promise<Refused | null>
+  /** A recording transcribed, and the words of it written down. */
+  transcribes(path: string): Promise<Outcome>
+  /** A scanned document read, and the text of it written down. */
+  recognises(path: string): Promise<Outcome>
   /**
    * A deck made in a folder under the name it is given, and put in front of the
    * person. The path it landed at, and nothing where none was made.
@@ -195,6 +201,8 @@ export interface Words {
   readonly overtaken: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
+  /** This build cannot do the run at all, and stops offering it. */
+  readonly unrunnable: string
 }
 
 /** One command, carried out. */
@@ -218,6 +226,8 @@ const carried: Record<string, Carries> = {
   title: (deed, on, words) => renames(deed, on, words),
   remove: (deed, on, words) => removes(deed, false, on, words),
   destroy: (deed, on, words) => removes(deed, true, on, words),
+  transcribe: async (deed, on, words) => began(deed, await on.transcribes(deed.file), on, words),
+  recognise: async (deed, on, words) => began(deed, await on.recognises(deed.file), on, words),
   ask: (deed, on) => on.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
   reveal: (deed, on) => on.reveals(deed.path),
@@ -325,6 +335,23 @@ const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   const answer = await on.moves(deed.path, deed.name)
   if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
+}
+
+/** The outcomes a run is under way in, which the window says as what it did. */
+const UNDER_WAY: readonly Answer[] = ['started', 'queued']
+
+/**
+ * A run asked for over a file. The application answers how it came out in one
+ * sentence, which is what the person is told; a run under way shows what it is
+ * doing in the work behind the window. A build that cannot do the run at all is
+ * told once and offers it nowhere after that.
+ */
+const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
+  if (!outcome.able) {
+    cannotRun(deed.id)
+    return on.says(words.unrunnable, 'refusal')
+  }
+  on.says(outcome.why, UNDER_WAY.includes(outcome.answer) ? 'report' : 'refusal')
 }
 
 /** An empty folder, made under the path that was typed. */

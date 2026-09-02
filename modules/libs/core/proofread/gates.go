@@ -11,8 +11,12 @@ import (
 // MaxEditDistance is how far a correction may stand from the line as read.
 const MaxEditDistance = 0.30
 
-// Fixed is the lines a reply puts right, and whether the reply answers the
-// question that was asked.
+// Fixed is the lines a reply puts right, whether any of its runs ran on past
+// the last line the batch carries, and whether the reply answers the question
+// that was asked.
+//
+// A sentence carried on past the end of a batch is one the cut after that batch
+// broke, and past is how a caller learns of it.
 //
 // A mark of ours coming back refuses the batch, as does a reply row that is not
 // a number the batch carries and, after it, the line, and as does an answer
@@ -23,9 +27,9 @@ const MaxEditDistance = 0.30
 // only puts something wordless in front of it, and as is one standing further
 // than maxDistance from the line as read. A maxDistance at or below zero sets
 // no limit.
-func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
+func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
-		return nil, false
+		return nil, false, false
 	}
 
 	read := make(map[int]string, len(batch.Lines))
@@ -39,16 +43,16 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if row == "" {
 			continue
 		}
-		at, through, text, barred, ok := numbered(row)
-		if !ok {
-			return nil, false
+		at, through, text, barred, numbers := numbered(row)
+		if !numbers {
+			return nil, false, false
 		}
 		was, named := read[at]
 		if !named {
-			return nil, false
+			return nil, false, false
 		}
 		if through > at && !batch.Joining {
-			return nil, false
+			return nil, false, false
 		}
 		// A sentence runs on past the last line a batch was given, and a model
 		// reading it names the whole of it. Such a run is dropped and the rest
@@ -62,11 +66,12 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 					reaches = true
 					break
 				}
-				return nil, false
+				return nil, false, false
 			}
 			joined += " " + next
 		}
 		if reaches {
+			past = true
 			continue
 		}
 		was = joined
@@ -74,12 +79,12 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		// the two apart, is a row whose number was left out: the line's own
 		// first word reads as the number, and the batch is refused.
 		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
-			return nil, false
+			return nil, false, false
 		}
 		// An answer of nothing, or of marks that are not words, over a line that
 		// said something empties it.
 		if len(letters(text)) == 0 && len(letters(was)) > 0 {
-			return nil, false
+			return nil, false, false
 		}
 		// A run answered with what its lines already say is still a change:
 		// the lines are put together.
@@ -98,28 +103,33 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		}
 		out = append(out, Line{At: at, Through: through, Text: text})
 	}
-	return out, true
+	return out, past, true
 }
 
-// Gathered is what a run of batches put right, keyed by the line, with the
-// batches as they were asked and the replies keyed by the number each batch is
-// known by.
+// Gathered is what a run of batches put right, keyed by the line, and the
+// batches whose reply ran on past the last line they carry, in the order they
+// were asked. It is given the batches as they were asked and the replies keyed
+// by the number each batch is known by.
 //
 // Where two batches answer about one line, the correction is the one from the
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]Line {
+func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	put := make(map[int]Line)
 	standing := make(map[int]int)
+	var past []int
 	for _, batch := range asked {
 		reply, answered := replies[batch.At]
 		if !answered {
 			continue
 		}
-		lines, ok := Fixed(batch, reply, maxDistance)
+		lines, ran, ok := Fixed(batch, reply, maxDistance)
 		if !ok {
 			continue
+		}
+		if ran {
+			past = append(past, batch.At)
 		}
 		after := make(map[int]int, len(batch.Lines))
 		for i, line := range batch.Lines {
@@ -133,7 +143,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[in
 			standing[line.At] = after[line.At]
 		}
 	}
-	return put
+	return put, past
 }
 
 // numbered is the line a reply row is about, what that line now says, and

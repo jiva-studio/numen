@@ -24,7 +24,7 @@ func hearing(t *testing.T, says map[int]string, words ...string) (PutRight, doma
 	shelved.hold(recordingPath, domain.KindRecording, raw, 1)
 	kept := newShelf()
 
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	if err := kept.Write(t.Context(), text.Artifact(text.ASR, hash), transcript.Marshal(heard(words))); err != nil {
 		t.Fatal(err)
 	}

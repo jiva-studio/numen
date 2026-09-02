@@ -37,6 +37,7 @@ import type { Documents, Marked, Sheet } from './document/reading'
 import type { Cue, Recordings } from './recording/listening'
 import type {
   Added,
+  Answer,
   Answered,
   Cards,
   Carded,
@@ -53,11 +54,13 @@ import type {
   NewLink,
   NoteType,
   Offer,
+  Outcome,
   Problem,
   Refused,
   Removed,
   Renamed,
   Role,
+  Runs,
   Source,
   Stencilled,
   VaultRefused,
@@ -383,6 +386,32 @@ export const recordings: Recordings = {
     const said = (await answer.json()) as { cues?: readonly Cue[] }
     return said.cues?.[0]?.from ?? null
   },
+}
+
+/**
+ * The runs a person asks for over one file, over the same addresses. The
+ * application answers how each came out, in a word and one sentence.
+ */
+export const running: Runs = {
+  transcribes: (path) => begins(`${asset(path)}/transcribe`),
+  recognises: (path) => begins(`${asset(path)}/recognise`),
+}
+
+/**
+ * A run asked for. A build that cannot do it at all says so in a status, and
+ * the run is offered nowhere from then on.
+ */
+const begins = async (address: string): Promise<Outcome> => {
+  const answer = await fetch(address, { method: 'POST' })
+  if (answer.status === 501) return { able: false }
+  if (!answer.ok) throw new Error((await answer.text()).trim() || `${answer.status}`)
+  const said = (await answer.json()) as { path?: string; answer?: Answer; why?: string }
+  return {
+    able: true,
+    path: said.path ?? '',
+    answer: said.answer ?? 'started',
+    why: said.why ?? '',
+  }
 }
 
 /**

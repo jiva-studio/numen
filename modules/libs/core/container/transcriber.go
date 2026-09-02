@@ -176,6 +176,8 @@ type Transcribing struct {
 
 	mu      sync.Mutex
 	running bool
+	// asked is the recordings a person named that have not been heard yet.
+	asked asked
 	// answered is every recording this run has had an answer about, by vault
 	// and path. Words, silence and a file that will not open are all answers,
 	// and a recording that has answered is not offered again.
@@ -214,24 +216,54 @@ func (t *Transcribing) Ready() bool { return t.ready() }
 // index the application still holds open.
 func (t *Transcribing) Wait() { t.going.Wait() }
 
-// Start begins listening to one recording behind whoever asked, and says
-// whether it began.
+// Start listens to one recording a person named, and says whether it began now
+// or waits its turn.
 //
-// One at a time: the models hold a worker each.
+// One at a time: the models hold a worker each. A recording named while one is
+// being heard goes to the back of the line and is heard as soon as the turn is
+// free, ahead of everything the vault set itself.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the listening carries on.
-func (t *Transcribing) Start(v domain.Vault, path string) bool {
-	if !t.claim() {
-		return false
+func (t *Transcribing) Start(v domain.Vault, path string) port.Taking {
+	t.mu.Lock()
+	t.asked.want(v, path)
+	if t.running {
+		t.mu.Unlock()
+		return port.Queued
 	}
+	t.running = true
+	t.mu.Unlock()
+
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
 		defer t.release()
-		t.hear(t.context(), v, path, true)
+		t.drain(t.context())
 	}()
-	return true
+	return port.Began
+}
+
+// Waiting is how many recordings a person named are still in line.
+func (t *Transcribing) Waiting() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.asked.waiting()
+}
+
+// drain hears every recording a person named, in the order they named them. A
+// recording is out of the line before it is heard, so one whose listening ends
+// where nothing expected it to holds nothing afterwards.
+func (t *Transcribing) drain(ctx context.Context) {
+	for {
+		t.mu.Lock()
+		one, waiting := t.asked.take()
+		t.mu.Unlock()
+		if !waiting || ctx.Err() != nil {
+			return
+		}
+		t.hear(ctx, one.vault, one.path, true)
+	}
 }
 
 // Queue listens to every recording this vault holds no transcript for, one
@@ -259,24 +291,30 @@ func (t *Transcribing) Queue(
 	}
 }
 
-// round hands over the recordings that owe their text, one after another. It
-// ends early where what stopped a recording was the machine and not the file:
-// the rest of the round would reach the same nothing.
+// round hands over the recordings a person named and then the ones that owe
+// their text, one after another. It ends early where what stopped a recording
+// was the machine and not the file: the rest of the round would reach the same
+// nothing.
 func (t *Transcribing) round(ctx context.Context, known port.SourceQueries, v domain.Vault) {
+	if !t.claim() {
+		// The hand is listening to something. What this round did not hand over
+		// is handed over by the next one.
+		return
+	}
+	defer t.release()
+
+	t.drain(ctx)
 	for _, path := range t.owing(ctx, known, v) {
 		if ctx.Err() != nil {
 			return
 		}
-		if !t.claim() {
-			// The hand is listening to something. What this round did not hand
-			// over is handed over by the next one.
-			return
-		}
 		err := t.hear(ctx, v, path, false)
-		t.release()
 		if errors.Is(err, errNothingListens) || errors.Is(err, errLateListening) {
 			return
 		}
+		// A recording named while this round ran is heard before the next one
+		// the vault owes.
+		t.drain(ctx)
 	}
 }
 

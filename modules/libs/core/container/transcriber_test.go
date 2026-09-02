@@ -67,7 +67,9 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*Transcribing, domai
 		if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(at, []byte("not a recording"), 0o644); err != nil {
+		// Bytes of its own: a recording is kept under the hash of what it
+		// holds, and two files holding the same thing are one recording.
+		if err := os.WriteFile(at, []byte("not a recording: "+path), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -178,32 +180,113 @@ func (h heard) Reading(context.Context, string, string) (port.Recognised, bool, 
 	return port.Recognised{}, false, nil
 }
 
-// One at a time: the models hold a worker each.
-func TestASecondRecordingIsNotTakenWhileOneIsBeingHeard(t *testing.T) {
+// One at a time: the models hold a worker each. A recording named while one is
+// being heard waits its turn and is heard when the turn is free, and one named
+// twice waits once.
+func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by, "talks/one.mp3", "talks/two.mp3")
 
-	going := make(chan struct{})
+	hearing, going := make(chan struct{}, 1), make(chan struct{})
+	first := true
 	listening.open = func(
 		context.Context, func(string, int64, int64),
 	) (port.Transcriber, func() error, error) {
-		<-going
-		return nil, nil, errors.New("nothing to listen with")
+		if first {
+			first = false
+			hearing <- struct{}{}
+			<-going
+		}
+		return by, by.Close, nil
 	}
 
-	if !listening.Start(v, "talks/one.mp3") {
-		t.Fatal("the first recording was not taken")
+	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
+		t.Fatalf("the first recording was not heard: %v", got)
 	}
-	if listening.Start(v, "talks/two.mp3") {
-		t.Error("a second recording was taken while one was being heard")
+	// The first recording is out of the line and being heard.
+	<-hearing
+
+	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
+		t.Errorf("a second recording was heard while one was being heard: %v", got)
 	}
+	if got := listening.Start(v, "talks/two.mp3"); got != port.Queued {
+		t.Errorf("the same recording named again: %v", got)
+	}
+	if listening.Waiting() != 1 {
+		t.Errorf("%d recordings are in line", listening.Waiting())
+	}
+
 	close(going)
 	listening.Wait()
 
-	if !listening.Start(v, "talks/two.mp3") {
-		t.Error("nothing was taken once the first transcription was over")
+	if got := by.times(); got != 2 {
+		t.Errorf("%d recordings were heard", got)
+	}
+	if listening.Waiting() != 0 {
+		t.Errorf("%d recordings were left in line", listening.Waiting())
+	}
+}
+
+// A recording named by hand is heard whatever the queue would leave alone. A
+// person naming a file has said that this file is worth the machine's time.
+func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
+	by := &deaf{}
+	listening, v := listens(t, by, "album.flac")
+	listening.cfg.TranscribesUnder = 10 << 20
+
+	known := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
+	if owed := listening.owing(t.Context(), known, v); len(owed) != 0 {
+		t.Fatalf("the queue took %v on its own", owed)
+	}
+
+	if got := listening.Start(v, "album.flac"); got != port.Began {
+		t.Fatalf("the recording was not heard: %v", got)
 	}
 	listening.Wait()
+
+	if got := by.times(); got != 1 {
+		t.Errorf("the recording was heard %d times", got)
+	}
+}
+
+// An installation that listens to nothing on its own still listens to what is
+// asked for: nothing here calls Queue.
+func TestAnInstallationListeningToNothingStillHearsWhatIsAsked(t *testing.T) {
+	by := &deaf{}
+	listening, v := listens(t, by, "talks/one.mp3")
+
+	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
+		t.Fatalf("the recording was not heard: %v", got)
+	}
+	listening.Wait()
+
+	if got := by.times(); got != 1 {
+		t.Errorf("the recording was heard %d times", got)
+	}
+}
+
+// A round hands over what a person named before what the vault owes on its own.
+func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
+	by := &deaf{}
+	listening, v := listens(t, by, "talks/owed.mp3", "talks/named.mp3")
+
+	var mu sync.Mutex
+	var order []string
+	listening.Cut = func(_ context.Context, _ domain.Vault, path string) error {
+		mu.Lock()
+		defer mu.Unlock()
+		order = append(order, path)
+		return nil
+	}
+	listening.asked.want(v, "talks/named.mp3")
+
+	listening.round(t.Context(), held{recordings: []string{"talks/owed.mp3"}}, v)
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(order) != 2 || order[0] != "talks/named.mp3" {
+		t.Errorf("the recordings were heard in the order %v", order)
+	}
 }
 
 // One heavy run on a machine: a scan being read holds the turn, and a

@@ -9,11 +9,6 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { timing, type Timed } from './timing'
 
-// Nothing here has a size, and the editor measures anyway.
-Range.prototype.getClientRects = () =>
-  Object.assign([], { item: () => null }) as unknown as DOMRectList
-Range.prototype.getBoundingClientRect = () => new DOMRect()
-
 const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
@@ -202,5 +197,103 @@ describe('the times in the gutter', () => {
     const marks = [...view.dom.querySelectorAll<HTMLElement>('.cm-times .cm-time')]
     expect(marks.length).toBe(3)
     expect(marks.every((one) => one.tabIndex === -1)).toBe(true)
+  })
+})
+
+describe('the view going after the line being said', () => {
+  /**
+   * Every scroll the extension asked for, counted. It shows what it shows in
+   * one effect and asks to be moved in a second, so a dispatch carrying two is
+   * a dispatch that moves the view.
+   */
+  const watching = (view: EditorView) => {
+    let scrolls = 0
+    const was = view.dispatch.bind(view)
+    view.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
+      for (const one of specs) {
+        const effects = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+        if (Array.isArray(effects) && effects.length > 1) scrolls++
+      }
+      return was(...specs)
+    }) as EditorView['dispatch']
+    return () => scrolls
+  }
+
+  it('does not move for words arriving while nothing is being said', async () => {
+    const { times, view } = editor()
+    await attached()
+    times.show({ ...TIMED, current: 1, following: true })
+
+    const scrolls = watching(view)
+    // The transcript grows: another line arrives, and the line being said is
+    // the one it was.
+    times.show({ times: [...TIMED.times, '0:09'], current: 1, following: true })
+
+    expect(scrolls()).toBe(0)
+  })
+
+  it('moves where the line being said becomes another', async () => {
+    const { times, view } = editor()
+    await attached()
+    times.show({ ...TIMED, current: 0, following: true })
+
+    const scrolls = watching(view)
+    times.show({ ...TIMED, current: 2, following: true })
+
+    expect(scrolls()).toBe(1)
+  })
+})
+
+describe('an editor drawn a second time', () => {
+  it('is shown the times without the view being moved', async () => {
+    const { times, view } = editor()
+    await attached()
+    times.show({ ...TIMED, current: 2, following: true })
+    view.destroy()
+
+    // A tab moved between panes is drawn again while the recording stands
+    // where it stood.
+    const again = drawing(times)
+    let effects = 0
+    const was = again.dispatch.bind(again)
+    again.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
+      for (const one of specs) {
+        const put = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+        if (Array.isArray(put) && put.length > 1) effects++
+      }
+      return was(...specs)
+    }) as EditorView['dispatch']
+    await attached()
+
+    expect(gutter(again)).toStrictEqual(TIMED.times)
+    expect(effects).toBe(0)
+  })
+})
+
+describe('an editor drawn again while the recording stands still', () => {
+  it('is not moved by the words being asked for again', async () => {
+    const times = timing(() => {})
+    const first = drawing(times)
+    times.show({ ...TIMED, current: 2, following: true })
+    first.destroy()
+
+    const again = drawing(times)
+    await attached()
+
+    let effects = 0
+    const was = again.dispatch.bind(again)
+    again.dispatch = ((...specs: Parameters<EditorView['dispatch']>) => {
+      for (const one of specs) {
+        const put = one && typeof one === 'object' && 'effects' in one ? one.effects : null
+        if (Array.isArray(put) && put.length > 1) effects++
+      }
+      return was(...specs)
+    }) as EditorView['dispatch']
+
+    // The transcript is asked for again while nothing is being said: the words
+    // grow and the line being said is the one it was.
+    times.show({ times: [...TIMED.times, '0:09'], current: 2, following: true })
+
+    expect(effects).toBe(0)
   })
 })

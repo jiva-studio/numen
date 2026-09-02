@@ -90,7 +90,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		return res, err
 	}
 
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	area := u.area()
 	final, partial := text.Artifact(area, hash), text.Partial(area, hash)
 
@@ -129,15 +129,16 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// A recording that gave no words gave an answer all the same, and it is
 	// recorded. Taking the record away is how a person asks for it again.
 	if held, err := store.Read(ctx, text.Answer(area, hash)); err == nil {
-		res.Silent = bytes.HasPrefix(held, []byte(silent))
-		res.Unopened = bytes.HasPrefix(held, []byte(unopened))
+		gave, _ := text.Answered(held)
+		res.Silent = gave == text.Silent
+		res.Unopened = gave == text.Unopened
 		return res, u.stand(ctx, v, ref, hash, "")
 	}
 
 	recording, err := u.By.Open(ctx, raw)
 	if err != nil {
 		res.Unopened = true
-		return res, u.answer(ctx, v, ref, hash, area, store, unopened+": "+said(err.Error()))
+		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+said(err.Error()))
 	}
 	defer recording.Close()
 	res.Length = recording.Length()
@@ -213,7 +214,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		// A recording carrying no speech says so, and nothing stands as its
 		// text. An artifact with no cues in it is a transcription that worked.
 		res.Silent = true
-		return res, u.answer(ctx, v, ref, hash, area, store, silent)
+		return res, u.answer(ctx, v, ref, hash, area, store, text.Silent)
 	}
 
 	if err := store.Write(ctx, final, whole); err != nil {
@@ -291,13 +292,6 @@ func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, h
 	}
 	return store.Write(ctx, text.Beside(area, hash), append(raw, '\n'))
 }
-
-// The two answers a recording gives that carry no words. A queue hands over
-// every recording it finds, and a recording that answers this answers it once.
-const (
-	silent   = "silent"
-	unopened = "unopened"
-)
 
 // said is a failure as one line, which is what a file holding one line takes.
 func said(why string) string {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -177,5 +178,182 @@ func TestARunTakesUpATranscriptWhoseLinesWerePutTogether(t *testing.T) {
 	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
 	if len(cues) != 3 || cues[0].Text != putTogether {
 		t.Errorf("the transcript says %+v", cues)
+	}
+}
+
+// The stretches of speech one recording was heard as. The third, fourth and
+// fifth of them are one sentence.
+var stretches = []string{
+	"Welcome, everyone.",
+	"Today we will read",
+	"a verse that the teacher",
+	"explained at some length",
+	"in the morning class.",
+	"The point of it",
+	"is very simple.",
+	"Let us begin.",
+}
+
+// What those three stretches say, as one line.
+const crossed = "A verse that the teacher explained at some length in the morning class."
+
+// crossing is a run over those stretches, cut into batches of four sharing one
+// line, one batch to a request. The batches are numbered 0 to 2 and the seams
+// over the two cuts between them 3 and 4.
+func crossing(t *testing.T, says map[int]string) (PutRight, domain.Vault, *shelf, *corrector, string) {
+	t.Helper()
+	u, v, kept, by, hash := hearing(t, says, stretches...)
+	u.BatchSize, u.Overlap, u.InFlight = 4, 1, 1
+	return u, v, kept, by, hash
+}
+
+// A sentence beginning further before a cut than the shared lines reach, and
+// ending after it, is in no batch of the first pass. The seam over that cut
+// holds it whole, and it is put back together there.
+func TestASentenceCrossingACutIsPutBackTogether(t *testing.T) {
+	u, v, shelved, by, hash := crossing(t, map[int]string{
+		0: joins(2, 4, crossed),
+		3: joins(2, 4, crossed),
+	})
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	// The batch the sentence begins in reaches only to the cut, and the run
+	// naming the whole sentence there is dropped.
+	if len(by.asked) < 4 {
+		t.Fatalf("it asked %v", by.asked)
+	}
+
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	if len(cues) != 6 {
+		t.Fatalf("the transcript says %+v", cues)
+	}
+	if cues[2].Text != crossed {
+		t.Errorf("the sentence says %q", cues[2].Text)
+	}
+	if cues[2].From != stretch(2).From || cues[2].To != stretch(4).To {
+		t.Errorf("the sentence runs %d-%d", cues[2].From, cues[2].To)
+	}
+	if cues[3].Text != stretches[5] {
+		t.Errorf("the line after it says %q", cues[3].Text)
+	}
+}
+
+// Where no reply ran on past the end of its batch, no sentence crossed a cut,
+// and the transcript costs what its own batches cost.
+func TestATranscriptNothingRanPastAsksAboutItsBatchesOnly(t *testing.T) {
+	u, v, _, by, _ := crossing(t, map[int]string{
+		0: corrects(0, "Welcome, everybody."),
+		1: joins(3, 4, "Today we will read a verse that the teacher"),
+	})
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(by.asked, [][]int{{0}, {1}, {2}}) {
+		t.Errorf("it asked %v, want the three batches of the transcript", by.asked)
+	}
+
+	// The transcript is answered whole, seams and all, and a run over it again
+	// asks nothing.
+	again := &corrector{}
+	u.By = again
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(again.asked) != 0 {
+		t.Errorf("it asked %v again", again.asked)
+	}
+}
+
+// One batch answered for a sentence running on past its end. The seam over that
+// cut is asked about, and the other cut costs nothing.
+func TestOnlyTheCutASentenceRanPastIsAskedAbout(t *testing.T) {
+	u, v, _, by, _ := crossing(t, map[int]string{0: joins(2, 4, crossed)})
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(by.asked, [][]int{{0}, {1}, {2}, {3}}) {
+		t.Errorf("it asked %v, want the three batches and the seam over the first cut", by.asked)
+	}
+}
+
+// A transcript of one batch has no cut, and nothing is asked about twice.
+func TestATranscriptOfOneBatchAsksNothingMore(t *testing.T) {
+	u, v, _, by, _ := crossing(t, nil)
+	u.BatchSize = len(stretches)
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(by.asked, [][]int{{0}}) {
+		t.Errorf("it asked %v, want the one batch", by.asked)
+	}
+}
+
+// A run stopped in the seam pass takes up at the seam it stopped on. What the
+// pass before it asked about is not asked about again.
+func TestARunStoppedInTheSeamPassTakesUpWhereItStopped(t *testing.T) {
+	u, v, shelved, by, hash := crossing(t, map[int]string{
+		0: joins(2, 4, crossed),
+		1: joins(5, 7, "The point of it is very simple. Let us begin."),
+		2: corrects(7, "Let us begin!"),
+	})
+
+	ctx, stop := context.WithCancel(t.Context())
+	by.stop = func(requests int) {
+		if requests == 5 {
+			stop()
+		}
+	}
+	if _, err := u.Execute(ctx, v, recordingPath); !errors.Is(err, context.Canceled) {
+		t.Fatalf("stopped with %v", err)
+	}
+
+	again := &corrector{says: map[int]string{4: joins(5, 6, "The point of it is very simple.")}}
+	u.By = again
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(again.asked, [][]int{{4}}) {
+		t.Errorf("it asked %v, want the seam it stopped on", again.asked)
+	}
+
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	if len(cues) != 7 {
+		t.Fatalf("the transcript says %+v", cues)
+	}
+	if cues[6].Text != "Let us begin!" {
+		t.Errorf("what the pass before put right says %q", cues[6].Text)
+	}
+	if cues[5].Text != "The point of it is very simple." || cues[5].To != stretch(6).To {
+		t.Errorf("the sentence says %q and runs to %d", cues[5].Text, cues[5].To)
+	}
+}
+
+// A line the first pass put into a run stands in it. A seam answering for that
+// line again is answered too late.
+func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
+	u, v, shelved, _, hash := crossing(t, map[int]string{
+		0: joins(1, 2, "Today we will read a verse that the teacher") + "\n" +
+			joins(3, 5, "Explained at some length in the morning class."),
+		3: joins(2, 3, "A verse that the teacher explained at some length"),
+	})
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	cues := cued(t, shelved, text.Corrected(text.ASR, hash))
+	if len(cues) != 7 {
+		t.Fatalf("the transcript says %+v", cues)
+	}
+	if cues[1].Text != "Today we will read a verse that the teacher" || cues[1].To != stretch(2).To {
+		t.Errorf("the run says %q and runs to %d", cues[1].Text, cues[1].To)
+	}
+	if cues[2].Text != stretches[3] {
+		t.Errorf("the line after the run says %q", cues[2].Text)
 	}
 }

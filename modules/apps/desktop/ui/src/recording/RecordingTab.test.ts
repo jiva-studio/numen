@@ -5,12 +5,14 @@
  * gutter. The transcript arrives after the tab is drawn, so the times have to
  * reach an editor that was not there when they were first shown.
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
+import { transcribed } from './kind'
 import { asking, listening, type Cue, type Recordings } from './listening'
 import type { Player } from './playing'
+import { cannotRun, runsAgain } from '../commanding'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [
@@ -49,9 +51,22 @@ function played(): Player {
   }
 }
 
+/** One recording tab, and every run it asked the window for. */
+function tab(cues: readonly Cue[] = CUES) {
+  const asked: string[] = []
+  const held = transcribed(listening(talk(cues), 'talks/Ants.mp3', played()), {
+    runs: (id, path) => void asked.push(`${id} ${path}`),
+  })
+  return { held, asked }
+}
+
 // The window plays what it is given, so the controls stand where they stand
 // and the only note drawn is the one about the words.
 beforeEach(() => asking(() => true))
+
+// A build that answered it cannot do a run offers it nowhere after that, and
+// the answer outlives the tab that got it.
+afterEach(() => runsAgain())
 
 /** Everything asked for has been answered and everything drawn has settled. */
 const settled = async () => {
@@ -61,7 +76,7 @@ const settled = async () => {
 
 describe('a recording tab', () => {
   it('stands the moment each line was said in the editor gutter', async () => {
-    const held = listening(talk(), 'talks/Ants.mp3', played())
+    const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -76,9 +91,10 @@ describe('a recording tab', () => {
   })
 })
 
-describe('a recording nothing was heard in', () => {
-  it('says so, and draws no editor at all', async () => {
-    const held = listening(talk([]), 'talks/Ants.mp3', played())
+describe('a recording with no transcript', () => {
+  // The button says there is no transcript, so nothing says it twice.
+  it('draws no editor at all, and offers the run in place of the words', async () => {
+    const { held } = tab([])
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -86,13 +102,72 @@ describe('a recording nothing was heard in', () => {
     await settled()
 
     expect(drawn.find('.recording__transcript').exists()).toBe(false)
+    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
+    expect(drawn.find('.recording__note').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+
+  // Where the run cannot be asked for, what there is to say is said.
+  it('says there is no transcript where the run cannot be asked for', async () => {
+    cannotRun('transcribe')
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
     expect(drawn.find('.recording__note').text()).toBe(WORDS.silence)
 
     drawn.unmount()
   })
 
-  it('says a run is going while one is, and still draws no editor', async () => {
-    const held = listening(talk([]), 'talks/Ants.mp3', played())
+  it('offers the run under the player', async () => {
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
+
+    drawn.unmount()
+  })
+
+  it('asks the window for that run when it is pressed', async () => {
+    const { held, asked } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    await drawn.find('.recording__ask').trigger('click')
+
+    expect(asked).toStrictEqual(['transcribe talks/Ants.mp3'])
+
+    drawn.unmount()
+  })
+
+  it('offers nothing where this build cannot do the run at all', async () => {
+    cannotRun('transcribe')
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
+    expect(drawn.find('.recording__note').text()).toBe(WORDS.silence)
+
+    drawn.unmount()
+  })
+
+  it('says a run is going while one is, and offers none beside it', async () => {
+    const { held } = tab([])
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
 
@@ -102,6 +177,24 @@ describe('a recording nothing was heard in', () => {
 
     expect(drawn.find('.recording__transcript').exists()).toBe(false)
     expect(drawn.find('.recording__note').text()).toBe(WORDS.transcribing)
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+
+  // The player is what a recording is for, and a build with nothing to play it
+  // with says so where the controls would stand.
+  it('says a recording it cannot play at all is one', async () => {
+    asking(() => false)
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.text()).toContain(WORDS.unplayable)
+    expect(drawn.find('.recording__ask').text()).toBe(WORDS.transcribe)
 
     drawn.unmount()
   })
@@ -109,7 +202,7 @@ describe('a recording nothing was heard in', () => {
 
 describe('a transcript still growing', () => {
   it('draws the words and says nothing under them', async () => {
-    const held = listening(talk(), 'talks/Ants.mp3', played())
+    const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
@@ -124,11 +217,24 @@ describe('a transcript still growing', () => {
 
     drawn.unmount()
   })
+
+  it('offers no run where the words already stand', async () => {
+    const { held } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__ask').exists()).toBe(false)
+
+    drawn.unmount()
+  })
 })
 
 describe('a recording tab drawn again', () => {
   it('still stands the times in its gutter', async () => {
-    const held = listening(talk(), 'talks/Ants.mp3', played())
+    const { held } = tab()
     const first = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
     await first.vm.$nextTick()

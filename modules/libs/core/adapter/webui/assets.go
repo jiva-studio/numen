@@ -15,6 +15,8 @@ import (
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
 //	GET /assets/<id>/media                    its own bytes, where it is sound
 //	GET /assets/<id>/cues                     the words heard in it
+//	POST /assets/<id>/recognise               read the scan
+//	POST /assets/<id>/transcribe              hear the recording
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
 // window holds.
@@ -22,9 +24,11 @@ const assetsRoute = "/assets/"
 
 // The facets an asset offers.
 const (
-	pagesFacet = "pages"
-	marksFacet = "marks"
-	cuesFacet  = "cues"
+	pagesFacet      = "pages"
+	marksFacet      = "marks"
+	cuesFacet       = "cues"
+	recogniseFacet  = "recognise"
+	transcribeFacet = "transcribe"
 )
 
 // An address is one question about one asset: which file, which facet, and what
@@ -78,6 +82,10 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 		a.Marks(w, r, at.path)
 	case cuesFacet:
 		a.Cues(w, r, at.path)
+	case recogniseFacet:
+		a.Recognise(w, r, at.path)
+	case transcribeFacet:
+		a.Transcribe(w, r, at.path)
 	default:
 		http.Error(w, "an asset has no "+at.facet, http.StatusNotFound)
 	}

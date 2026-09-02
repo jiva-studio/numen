@@ -42,20 +42,13 @@ func Scanned(prose string, boxes []lit.Box) []Batch {
 // A line is known by the index of its cue in the transcript, and a batch by its
 // place in the run. A cue saying nothing carries no line.
 //
-// A run of lines is answered for inside one batch, so overlap is how far a
-// sentence broken over a cut may reach and still be put back together.
+// A run of lines is answered for inside one batch, so a sentence broken over a
+// cut is put back together here where the overlap carries it whole.
 func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	var lines []Line
-	for at, cue := range cues {
-		if cue.Text == "" {
-			continue
-		}
-		lines = append(lines, Line{At: at, Text: cue.Text})
-	}
-
+	lines := heard(cues)
 	step := size - shared(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
@@ -64,6 +57,61 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 		if end == len(lines) {
 			break
 		}
+	}
+	return out
+}
+
+// Seams is a batch for each of the cuts, holding the size lines around that
+// cut, half of them before it and half after, and numbered on from the batches
+// Spoken gives back. A cut is named by the batch it comes after, and the cuts
+// come in the order they stand in the transcript.
+//
+// A run of lines is answered for inside one batch, and a sentence reaching
+// across a cut further than the overlap carries is in no batch Spoken makes.
+// The seam batch for that cut holds it whole.
+//
+// A transcript of one batch has no cut, and a batch of one line has no room
+// for a line on either side of one. The last batch is followed by no cut.
+func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
+	batches := Spoken(cues, size, overlap)
+	if size < 2 || len(batches) < 2 {
+		return nil
+	}
+
+	lines := heard(cues)
+	step := size - shared(size, overlap)
+	var out []Batch
+	reach := -1
+	for _, cut := range cuts {
+		if cut < 0 || cut >= len(batches)-1 {
+			continue
+		}
+		// One window covers two cuts near the end of the transcript, and each
+		// seam batch reaches further than the one before it.
+		end := min(max((cut+1)*step-size/2, 0)+size, len(lines))
+		if end <= reach {
+			continue
+		}
+		reach = end
+		start := max(end-size, 0)
+		out = append(out, Batch{
+			At:      len(batches) + len(out),
+			Lines:   lines[start:end:end],
+			Joining: true,
+		})
+	}
+	return out
+}
+
+// heard is every cue that says something, as a line known by the index of its
+// cue in the transcript.
+func heard(cues []transcript.Cue) []Line {
+	var out []Line
+	for at, cue := range cues {
+		if cue.Text == "" {
+			continue
+		}
+		out = append(out, Line{At: at, Text: cue.Text})
 	}
 	return out
 }

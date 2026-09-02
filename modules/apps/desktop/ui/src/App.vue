@@ -12,7 +12,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { closeTab, conversation, Notices, Palette, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { cards, core, documents, recordings, vaults } from './vault'
+import { cards, core, documents, recordings, running, vaults } from './vault'
 import type { Attention, Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
@@ -209,10 +209,18 @@ const agents = agentKind(held.host, () =>
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
 
 /** The recording tabs, each playing the recording it is filed at. */
-const heard = recordingKind(held.host, (path) => listening(recordings, path), puts)
+const heard = recordingKind(
+  held.host,
+  (path) => listening(recordings, path),
+  {
+    runs: (id, path) =>
+      carries(id, { ...where(), path: '', title: '', file: path, source: 'recording' }),
+  },
+  puts,
+)
 
-// A transcript grows while a model listens, and the list of work is the only
-// word of it the window gets.
+// A transcript grows while a run goes, and the list of work is the only word of
+// it the window gets.
 watch(tasks, () => heard.ticked(tasks.value))
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
@@ -256,8 +264,10 @@ const opensCards = async (folder: string, name: string, stencil: boolean): Promi
 /** The tree of the vault, and what a gesture on a row of it comes to. */
 const files = filesKind(held.host, () => folders(core), {
   lands: (landing) => void lands(landing, places),
-  runs: (id, paths, name) =>
-    carries(id, { ...where(), path: paths[0] ?? '', title: name, others: paths.slice(1) }),
+  runs: (id, paths, name, source) => {
+    const path = paths[0] ?? ''
+    carries(id, { ...where(), path, title: name, file: path, source, others: paths.slice(1) })
+  },
   moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
   carries: (paths) => {
     carried.value = paths
@@ -308,10 +318,11 @@ const listing = async () => {
 }
 
 /**
- * What a command is over: the tab in front, and the note it means. A note tab
- * means the note it holds and a plex tab the note it is standing on; an agent
- * means the note the plex the person was last in is standing on; anything else
- * means none.
+ * What a command is over: the tab in front, the note it means, and the file a
+ * run is over. A note tab means the note it holds and a plex tab the note it is
+ * standing on; an agent means the note the plex the person was last in is
+ * standing on; anything else means none. A document tab and a recording tab
+ * each name the file they hold, which is what a run is asked over.
  */
 const where = (): Where => {
   const ready = !failure.value && !indexing.value
@@ -319,21 +330,30 @@ const where = (): Where => {
   const front = held.host.front()
   const tab = front?.id ?? ''
   const kind = front?.kind ?? null
+  const noRun = { file: '', source: null }
   if (kind === NOTE) {
     const note = held.host.holds<NoteHeld>(NOTE, tab)
     const path = note && notes.has(note.id) ? notes.where(note.id) : ''
-    return { tab, kind, path, title: note && path ? noted.titled(note.id) : '', vault, ready }
+    const title = note && path ? noted.titled(note.id) : ''
+    return { tab, kind, path, title, ...noRun, vault, ready }
   }
   if (kind === PLEX) {
     const plex = held.host.holds<PlexHeld>(PLEX, tab)
     const path = plex?.view.here.value ?? ''
-    return { tab, kind, path, title: (path && plex?.nameOf(path)) || path, vault, ready }
+    const title = (path && plex?.nameOf(path)) || path
+    return { tab, kind, path, title, ...noRun, vault, ready }
   }
   if (kind === AGENT) {
     const path = plexes.looking()
-    return { tab, kind, path, title: plexes.names(path) || path, vault, ready }
+    const title = plexes.names(path) || path
+    return { tab, kind, path, title, ...noRun, vault, ready }
   }
-  return { tab, kind, path: '', title: '', vault, ready }
+  if (kind === DOCUMENT || kind === RECORDING) {
+    const file = held.host.holds<DocumentHeld | RecordingHeld>(kind, tab)?.path ?? ''
+    const source = kind === DOCUMENT ? 'book' : 'recording'
+    return { tab, kind, path: '', title: '', file, source, vault, ready }
+  }
+  return { tab, kind, path: '', title: '', ...noRun, vault, ready }
 }
 
 /**
@@ -507,6 +527,8 @@ const doing: Doing = {
   removes: (path, destroy) => core.remove(path, destroy),
   moves: (from, to) => core.move(from, to),
   makesFolder: (path) => core.makeFolder(path),
+  transcribes: (path) => running.transcribes(path),
+  recognises: (path) => running.recognises(path),
   cuts: (folder, name) => opensCards(folder, name, false),
   stencils: (folder, name) => opensCards(folder, name, true),
   reveals: (path) => void files.reveals(path),

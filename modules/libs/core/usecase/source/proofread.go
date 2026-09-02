@@ -97,7 +97,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, err
 	}
 
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 	area := u.area()
 	corrections, far := text.Fixes(area, hash), text.Proofread(area, hash)
 
@@ -216,7 +216,7 @@ func (u Proofread) gathered(
 		if !answered {
 			continue
 		}
-		lines, ok := proofread.Fixed(page, reply, u.distance())
+		lines, _, ok := proofread.Fixed(page, reply, u.distance())
 		if !ok {
 			refused++
 			continue

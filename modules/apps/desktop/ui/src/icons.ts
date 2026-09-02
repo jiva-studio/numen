@@ -15,6 +15,7 @@ import {
   AudioLines,
   BookOpen,
   Bot,
+  Captions,
   Command,
   Compass,
   Contrast,
@@ -38,6 +39,7 @@ import {
   RefreshCw,
   Rows3,
   Ruler,
+  ScanText,
   Search,
   SlidersHorizontal,
   SquareX,
@@ -77,6 +79,10 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
+  // Over the file in front: the transcript of a recording, and the text
+  // recognised off a scan.
+  ['transcribe', Captions],
+  ['recognise', ScanText],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],
   ['newDeck', Layers],

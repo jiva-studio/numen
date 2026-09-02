@@ -2,8 +2,11 @@ package text
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io/fs"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
@@ -188,6 +191,14 @@ func divided(prose string, parts []ocr.Part) []cutting.Part {
 	return out
 }
 
+// Fingerprint addresses the content of a file. Everything one run wrote about
+// those bytes is kept under it, and whoever asks about them works it out the
+// same way.
+func Fingerprint(raw []byte) string {
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:])
+}
+
 // Artifact is the name a producer's recognition of these bytes is kept under.
 //
 // It is the hash of what was read and not the path it was read from, so a
@@ -251,6 +262,29 @@ func Proofread(from, hash string) string {
 // to again every time the vault is scanned.
 func Answer(from, hash string) string {
 	return from + "/" + hash + ".answer"
+}
+
+// The two answers a recording gives that carry no words: it holds no speech, or
+// nothing here opens it. What is kept under Answer opens with one of them.
+const (
+	Silent   = "silent"
+	Unopened = "unopened"
+)
+
+// Answered is which of the two a recording gave and what the run said about it,
+// read from what is kept under Answer. Bytes opening with neither word are
+// nothing this wrote.
+func Answered(raw []byte) (gave, said string) {
+	line := strings.TrimSpace(string(raw))
+	for _, one := range []string{Silent, Unopened} {
+		if line == one {
+			return one, ""
+		}
+		if rest, cut := strings.CutPrefix(line, one+": "); cut {
+			return one, rest
+		}
+	}
+	return "", ""
 }
 
 // Beside is the name of what says which models produced an artifact. Nothing on
