@@ -182,6 +182,26 @@ describe('a recording with no transcript', () => {
     drawn.unmount()
   })
 
+  // The player heads the pane, and a run going changes only what is below it.
+  it('draws the player the same while a run goes as before it began', async () => {
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    const head = drawn.find('.recording__head').html()
+
+    held.ticks(true)
+    await settled()
+    await drawn.vm.$nextTick()
+
+    expect(drawn.find('.recording__head').html()).toBe(head)
+    expect(drawn.find('.recording__below').text()).toBe(WORDS.transcribing)
+
+    drawn.unmount()
+  })
+
   // The player is what a recording is for, and a build with nothing to play it
   // with says so where the controls would stand.
   it('says a recording it cannot play at all is one', async () => {
