@@ -66,7 +66,7 @@ const spoken = computed(() =>
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   line-height: 1;
 }
 

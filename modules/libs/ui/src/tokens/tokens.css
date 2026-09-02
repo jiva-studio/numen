@@ -225,6 +225,9 @@
 /* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
   --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+  /* Marked-up text is set a shade above a plain line of it. An answer and a
+     card are read at this. */
+  --numen-prose-size: calc(0.875rem * var(--numen-text-scale, 1));
 }
 
 /*

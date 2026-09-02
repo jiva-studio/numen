@@ -55,7 +55,7 @@ withDefaults(
   border-radius: var(--numen-radius-pill);
   background: var(--numen-highlight);
   color: var(--numen-caution-fg);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

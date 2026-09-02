@@ -43,7 +43,7 @@ const pressed = (press: MouseEvent) => {
 <style scoped>
 /* A card is read at the size an answer is read at. */
 .marks {
-  font-size: calc(var(--numen-reading-size) * 14 / 13);
+  font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
 }

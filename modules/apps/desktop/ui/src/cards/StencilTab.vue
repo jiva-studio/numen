@@ -81,7 +81,7 @@ const marks = computed(() => props.held.marks())
   margin: 0;
   padding: 0.4rem 1rem;
   font-family: var(--numen-font-sans);
-  font-size: calc(var(--numen-font-size) * 12.8 / 13);
+  font-size: var(--numen-text-2);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
   overflow-wrap: break-word;
