@@ -14,6 +14,7 @@ type AgentProofreading struct {
 	Command     []string
 	Model       string
 	Instruction string
+	InFlight    int
 }
 
 // Profile is the station a reading is put right at, by the name a consumer
@@ -62,6 +63,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 			Command:     profile.Command,
 			Model:       profile.Model,
 			Instruction: instruction,
+			InFlight:    profile.InFlight,
 		})
 	}
 	return nil, fmt.Errorf("proofreading profile %q is used through %q, which is neither %q nor %q",

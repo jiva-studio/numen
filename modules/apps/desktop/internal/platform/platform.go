@@ -24,5 +24,6 @@ func proofreading(said container.AgentProofreading) (port.Proofreader, error) {
 		Command:     said.Command,
 		Model:       said.Model,
 		Instruction: said.Instruction,
+		InFlight:    said.InFlight,
 	}, nil
 }

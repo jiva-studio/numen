@@ -29,6 +29,18 @@ const DefaultMaxEditDistance = 0.30
 // DefaultBatchSize is how many lines one request carries where nobody said.
 const DefaultBatchSize = 40
 
+// DefaultInFlight is how many batches are asked about at once where nobody
+// said. A service is asked over four connections; the command line is a
+// person's own, and is left most of itself while they are using it.
+const (
+	DefaultInFlight      = 4
+	DefaultAgentInFlight = 2
+)
+
+// DefaultAgentBatchSize is how many lines one run of the command line carries.
+// Starting it costs the same whatever it is asked, so it is asked a lot.
+const DefaultAgentBatchSize = 60
+
 // Config is the proofreading section of this installation's settings: the
 // profiles a reading may be put right at, and the one threshold they are all
 // held to.
@@ -75,6 +87,10 @@ type Profile struct {
 	// both answered about is taken from the later one, which saw more of what
 	// follows it.
 	Overlap int `json:"overlap"`
+	// InFlight is how many batches are being asked about at any moment. At the
+	// command line this is how much of a person's own model is taken while
+	// they are using it.
+	InFlight int `json:"in_flight"`
 
 	// key is unexported: no value a caller formats or serialises carries it.
 	// Key reads it.
@@ -107,12 +123,17 @@ func ServiceDefaults() Profile {
 		BatchURL:  "https://openrouter.ai/api/beta/batches",
 		KeyEnv:    KeyEnvVar,
 		BatchSize: DefaultBatchSize,
+		InFlight:  DefaultInFlight,
 	}
 }
 
 // AgentDefaults are what an agent profile keeps for the fields it leaves out.
 func AgentDefaults() Profile {
-	return Profile{Use: UseAgent, BatchSize: DefaultBatchSize}
+	return Profile{
+		Use:       UseAgent,
+		BatchSize: DefaultAgentBatchSize,
+		InFlight:  DefaultAgentInFlight,
+	}
 }
 
 // Named says whether this installation asked for anything to proofread with.
@@ -159,6 +180,7 @@ type profileFile struct {
 	Command   *[]string `json:"command,omitempty"`
 	BatchSize *int      `json:"batch_size"`
 	Overlap   *int      `json:"overlap"`
+	InFlight  *int      `json:"in_flight"`
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
@@ -200,13 +222,14 @@ func (p *Profile) UnmarshalJSON(raw []byte) error {
 	assign(&p.Command, f.Command)
 	assign(&p.BatchSize, f.BatchSize)
 	assign(&p.Overlap, f.Overlap)
+	assign(&p.InFlight, f.InFlight)
 	return nil
 }
 
 // MarshalJSON writes what this profile's use applies to, and never the key.
 // Rewriting the file is not how a key is set.
 func (p Profile) MarshalJSON() ([]byte, error) {
-	f := profileFile{Use: &p.Use, BatchSize: &p.BatchSize, Overlap: &p.Overlap}
+	f := profileFile{Use: &p.Use, BatchSize: &p.BatchSize, Overlap: &p.Overlap, InFlight: &p.InFlight}
 	switch p.Use {
 	case UseService:
 		f.BaseURL, f.BatchURL, f.Name, f.KeyEnv = &p.BaseURL, &p.BatchURL, &p.Name, &p.KeyEnv

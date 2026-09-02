@@ -26,9 +26,28 @@ type Proofreader struct {
 	// speech are corrected for different mistakes, and the caller says which.
 	Instruction string
 
-	// turn is one batch at a time: a person's own command line is not run
-	// against itself.
-	turn sync.Mutex
+	// InFlight is how many batches are asked about at once. It is how much of
+	// a person's own model is taken while they are using it. Zero or less
+	// takes one.
+	InFlight int
+
+	// turns is how many runs may stand at once, taken before one starts and
+	// given back after it ends.
+	once  sync.Once
+	turns chan struct{}
+}
+
+// take waits for a turn at the command line, and hands back what gives it up.
+func (p *Proofreader) take(ctx context.Context) (func(), error) {
+	p.once.Do(func() {
+		p.turns = make(chan struct{}, max(p.InFlight, 1))
+	})
+	select {
+	case p.turns <- struct{}{}:
+		return func() { <-p.turns }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 // disallowed are the tools the command line is started without. It reads one
@@ -59,9 +78,6 @@ func (p *Proofreader) Read(ctx context.Context, batches []proofread.Batch) (map[
 		return nil, errors.New("no instruction for the proofreading command line")
 	}
 
-	p.turn.Lock()
-	defer p.turn.Unlock()
-
 	// The command line reads whatever standing instructions and settings live
 	// where it was started, and those would land in the proofreading prompt.
 	// An empty folder holds none.
@@ -71,17 +87,44 @@ func (p *Proofreader) Read(ctx context.Context, batches []proofread.Batch) (map[
 	}
 	defer os.RemoveAll(empty)
 
-	out := make(map[int]string, len(batches))
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+
+	var (
+		mu     sync.Mutex
+		out    = make(map[int]string, len(batches))
+		failed error
+		wg     sync.WaitGroup
+	)
 	for _, batch := range batches {
-		reply, err := p.ask(ctx, empty, batch)
+		turn, err := p.take(ctx)
 		if err != nil {
-			return nil, err
+			break
 		}
-		if reply != "" {
-			out[batch.At] = reply
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer turn()
+			reply, err := p.ask(ctx, empty, batch)
+			mu.Lock()
+			defer mu.Unlock()
+			switch {
+			case err != nil:
+				if failed == nil {
+					failed = err
+					stop()
+				}
+			case reply != "":
+				out[batch.At] = reply
+			}
+		}()
 	}
-	return out, nil
+	wg.Wait()
+
+	if failed != nil {
+		return nil, failed
+	}
+	return out, ctx.Err()
 }
 
 // ask sends one batch and returns what the command line said about it.
