@@ -418,9 +418,8 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	}
 
 	profile := t.cfg.Proofreading.Profiles[said.With]
-	t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
 
-	_, err = source.PutRight{
+	res, err := source.PutRight{
 		Readers:   t.cfg.VaultReaders(),
 		Derived:   t.cfg.DerivedStores(),
 		By:        by,
@@ -440,11 +439,47 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	}.Execute(ctx, v, path)
 
 	switch {
+	case res.Busy:
+		// The transcript is held by another run, and that run is the one whose
+		// progress the list carries.
 	case err == nil, errors.Is(err, context.Canceled):
 		t.done(id)
 	default:
 		fail(err)
 	}
+}
+
+// TakingUp puts right the transcripts of these vaults that stand short of their
+// last line, once, behind the caller.
+//
+// A proofreading stands at the line it reached, so a run that ended among the
+// batches is taken up at that line. A transcript no proofreader has been over
+// stands at its first line and is put right whole. Which transcripts a vault
+// holds is a question the index already answers.
+func (t *Transcribing) TakingUp(
+	ctx context.Context,
+	known port.SourceQueries,
+	vaults ...domain.Vault,
+) {
+	if !t.cfg.SpeechProofreading.Automatically || known == nil {
+		return
+	}
+	t.going.Add(1)
+	go func() {
+		defer t.going.Done()
+		for _, v := range vaults {
+			heard, err := known.Recognised(ctx, v.ID, domain.KindRecording)
+			if err != nil {
+				continue
+			}
+			for _, said := range heard {
+				if ctx.Err() != nil {
+					return
+				}
+				t.correct(ctx, v, said.Path, false)
+			}
+		}
+	}()
 }
 
 // listen is the work itself: this machine's turn at the models, what is missing

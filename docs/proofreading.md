@@ -147,6 +147,8 @@ A run claims the text for as long as the proofreading takes, and a second run ag
 
 After each batch a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
 
+What takes a run up is a vault opening. Where `automatically` is on, every reading and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole. Where the profile has a queue, the batch out is collected instead, and one run collects one batch and leaves the next.
+
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
 Neither artifact is rewritten: what the model read or heard stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Reading](reading.md); what a transcript's are kept in is [Transcribing](transcribing.md).

@@ -478,3 +478,26 @@ func TestABatchTheProofreaderHasForgottenIsLeftAgain(t *testing.T) {
 		t.Errorf("the pages left again are %v", same)
 	}
 }
+
+// A reading nothing is left to be asked about is not work, and nothing is told
+// about it.
+func TestAReadingAtItsLastPageReportsNoProgress(t *testing.T) {
+	put, v, _, _ := proofreading(t, map[int]string{0: corrects(0, "the WORDS 1")})
+	if _, err := put.Execute(t.Context(), v, documentPath); err != nil {
+		t.Fatal(err)
+	}
+
+	told := 0
+	put.By = &corrector{}
+	put.OnProgress = func(ProofreadResult) { told++ }
+	res, err := put.Execute(t.Context(), v, documentPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Read != res.Pages {
+		t.Fatalf("got %+v", res)
+	}
+	if told != 0 {
+		t.Errorf("a reading with nothing left to put right was told about %d times", told)
+	}
+}

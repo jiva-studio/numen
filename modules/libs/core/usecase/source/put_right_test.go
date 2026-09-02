@@ -333,3 +333,57 @@ func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
 		}
 	}
 }
+
+// A transcript nothing is left to be asked about is not work, and nothing is
+// told about it.
+func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
+	words := []string{"first thing", "secnd thing"}
+	u, v, _, _, _ := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	told := 0
+	u.By = &corrector{}
+	u.OnProgress = func(PutRightResult) { told++ }
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Read != res.Lines {
+		t.Fatalf("got %+v", res)
+	}
+	if told != 0 {
+		t.Errorf("a transcript with nothing left to put right was told about %d times", told)
+	}
+}
+
+// The seams are asked about after the whole transcript is, and a run taking up
+// among them is work a person is told about.
+func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
+	u, v, shelved, _, hash := hearing(t, nil, words...)
+	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	// The shelf as a run that ended between the two passes left it: every line
+	// asked about, and no seam.
+	stood, err := json.Marshal(putting{By: u.By.Name(), At: stretch(len(words) - 1).To})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+		t.Fatal(err)
+	}
+
+	told := 0
+	u.OnProgress = func(PutRightResult) { told++ }
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if told == 0 {
+		t.Error("a run over the seams was told about no times")
+	}
+}
