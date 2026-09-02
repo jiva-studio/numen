@@ -8,7 +8,7 @@
  * window does not reach yet is drawn where it belongs and says where it stands.
  */
 import { computed } from 'vue'
-import { NumberField, Segmented, Switch } from '@numen/ui'
+import { NumberField, Segmented, Select, Switch, type SelectChoice } from '@numen/ui'
 import type { Held } from './kind'
 import type { Mode } from '../theme'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../wearing'
@@ -29,8 +29,15 @@ const modes = [
 ]
 
 /** The themes, in the two shelves they come off. */
-const shipped = computed(() => held.value.themes().filter((one) => one.shipped))
-const owned = computed(() => held.value.themes().filter((one) => !one.shipped))
+const themes = computed<readonly SelectChoice[]>(() =>
+  [...held.value.themes()]
+    .sort((one, other) => Number(other.shipped) - Number(one.shipped))
+    .map((one) => ({
+      id: one.name,
+      text: one.title,
+      group: one.shipped ? words.shipped : words.owned,
+    })),
+)
 
 /** How fine a size may be turned, which is where the ladder of them steps. */
 const STEP = 0.1
@@ -64,23 +71,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
             <span class="settings__detail">{{ words.themeDetail }}</span>
           </span>
           <span class="settings__value">
-            <select
+            <Select
               id="settings-theme"
-              class="settings__select"
-              :value="held.applied()"
-              @change="held.chooses(($event.target as HTMLSelectElement).value)"
-            >
-              <optgroup :label="words.shipped">
-                <option v-for="one in shipped" :key="one.name" :value="one.name">
-                  {{ one.title }}
-                </option>
-              </optgroup>
-              <optgroup v-if="owned.length" :label="words.owned">
-                <option v-for="one in owned" :key="one.name" :value="one.name">
-                  {{ one.title }}
-                </option>
-              </optgroup>
-            </select>
+              :model-value="held.applied()"
+              :choices="themes"
+              class="settings__choice"
+              @update:model-value="(name: string) => held.chooses(name)"
+            />
           </span>
         </div>
 
@@ -220,9 +217,11 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
   /* Between one group and the next, and between a heading and its rows. */
   --settings-apart: 1.75rem;
   --settings-near: 0.375rem;
-  /* One row: the box a number is typed into, the air around the row, and the
-     space between what it is called and what it means. */
+  /* One row: the box a number is typed into, the box a choice is taken from,
+     the air around the row, and the space between what it is called and what
+     it means. */
   --settings-value: 6rem;
+  --settings-choice: 14rem;
   --settings-row-air: 0.5rem;
   --settings-said-gap: 0.125rem;
   display: flex;
@@ -293,24 +292,13 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
   inline-size: var(--settings-value);
 }
 
+.settings__choice {
+  inline-size: var(--settings-choice);
+}
+
 .settings__detail {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
-}
-
-.settings__select {
-  min-block-size: var(--numen-field-min);
-  padding: 0 var(--numen-field-padding);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius-field);
-  background: var(--numen-field-bg);
-  color: inherit;
-  font: inherit;
-}
-
-.settings__select:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: var(--numen-stroke);
 }
 
 /* A setting this window shows and does not write. */

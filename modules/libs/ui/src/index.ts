@@ -38,6 +38,10 @@ export { Slider } from './components/ui/slider'
 export { Segmented } from './components/ui/segmented'
 export type { SegmentedChoice } from './components/ui/segmented'
 
+/** One choice out of a list, taken from a menu the machine draws. */
+export { Select } from './components/ui/select'
+export type { SelectChoice } from './components/ui/select'
+
 /** The days of the week, each drawn at the level it stands at. */
 export { Days } from './components/ui/days'
 export { weekFrom, WEEK } from './components/ui/days'
