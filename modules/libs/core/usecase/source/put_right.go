@@ -163,7 +163,6 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	res.Lines = linesBefore(cues, len(cues))
 	res.Resumed = linesBefore(cues, from)
 	res.Read, res.Left = res.Resumed, 0
-	u.progress(res)
 
 	at := after(spoken, cues, stood.At)
 	if at >= len(spoken) {
@@ -176,6 +175,9 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	if at >= len(batches) {
 		return res, nil
 	}
+	// Progress is reported once there is a batch to ask about, so a transcript
+	// nothing is left to be asked about is never work anybody is shown.
+	u.progress(res)
 	// Who is putting this transcript right stands before the first words do,
 	// and the count of what they have asked about stands after the lines it
 	// claims.

@@ -357,8 +357,12 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 
 // say puts this reading in the list of what is being done. A person asked for
 // it and is waiting to be told it began.
-func (r *Recognising) say(at task.Task) {
-	at.Asked = true
+func (r *Recognising) say(at task.Task) { r.says(at, true) }
+
+// says puts one piece of work in the list. Work a person started is shown at
+// once, and work nobody asked for is shown once it has lasted.
+func (r *Recognising) says(at task.Task, asked bool) {
+	at.Asked = asked
 	if r.tasks != nil {
 		r.tasks.Set(at)
 	}
@@ -399,10 +403,12 @@ func (r *Recognising) Collecting(
 	}
 }
 
-// TakingUp puts right what a run before this one stopped part way through.
+// TakingUp puts right the readings of these vaults that stand short of their
+// last page, once, behind the caller.
 //
-// A proofreading stands at the page it reached, so the pages after it are asked
-// about again once, when the application opens. A proofreader with a queue
+// A proofreading stands at the page it reached, so a run that ended among the
+// batches is taken up at that page. A reading no proofreader has been over
+// stands at its first page and is put right whole. A proofreader with a queue
 // leaves a batch behind it and is taken up by Collecting.
 func (r *Recognising) TakingUp(
 	ctx context.Context,
@@ -413,19 +419,21 @@ func (r *Recognising) TakingUp(
 	if !said.Automatically {
 		return
 	}
-	queue, err := r.queue()
-	if err != nil || queue != nil {
-		return
-	}
-	by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
-	if err != nil || by == nil {
-		return
-	}
 	r.going.Add(1)
-	defer r.going.Done()
-	for _, v := range vaults {
-		r.collect(ctx, known, by, nil, v)
-	}
+	go func() {
+		defer r.going.Done()
+		queue, err := r.queue()
+		if err != nil || queue != nil {
+			return
+		}
+		by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
+		if err != nil || by == nil {
+			return
+		}
+		for _, v := range vaults {
+			r.collect(ctx, known, by, nil, v)
+		}
+	}()
 }
 
 // collect takes up every reading of one vault that stands short of its last
@@ -456,24 +464,19 @@ func (r *Recognising) collect(
 			MaxEditDistance: r.cfg.Proofreading.Distance(),
 			Cut:             r.Cut,
 			OnProgress: func(res source.ProofreadResult) {
-				// A reading already put right to its last page is one nobody is
-				// waiting on, and it is shown nowhere.
-				if res.Read >= res.Pages {
-					return
-				}
-				r.say(task.Task{
+				r.says(task.Task{
 					ID: id, Doing: "Proofreading a reading", About: said.Path,
 					Done: int64(res.Read), Total: int64(res.Pages),
-				})
+				}, false)
 			},
 		}.Execute(ctx, v, said.Path)
 
 		switch {
 		case err != nil:
-			r.say(task.Task{
+			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading",
 				About: said.Path, Failed: err.Error(),
-			})
+			}, false)
 		case res.Busy:
 			// The reading is held by another run, and that run is the one whose
 			// progress the list carries.
@@ -482,10 +485,10 @@ func (r *Recognising) collect(
 			// waiting on.
 			r.done(id)
 		default:
-			r.say(task.Task{
+			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: said.Path,
 				Done: int64(res.Read), Total: int64(res.Pages),
-			})
+			}, false)
 		}
 	}
 }

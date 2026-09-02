@@ -428,11 +428,6 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 		InFlight:  profile.InFlight,
 		Cut:       t.Cut,
 		OnProgress: func(res source.PutRightResult) {
-			// A transcript already put right to its last line is one nobody is
-			// waiting on, and it is shown nowhere.
-			if res.Read >= res.Lines {
-				return
-			}
 			t.say(task.Task{
 				ID:    id,
 				Doing: "Proofreading a transcript",
@@ -454,11 +449,13 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	}
 }
 
-// TakingUp puts right what a run before this one stopped part way through.
+// TakingUp puts right the transcripts of these vaults that stand short of their
+// last line, once, behind the caller.
 //
-// A proofreading stands at the line it reached, so the lines after it are asked
-// about again once, when the application opens. Which transcripts those are is
-// a question the store already answers, and no queue of them is kept.
+// A proofreading stands at the line it reached, so a run that ended among the
+// batches is taken up at that line. A transcript no proofreader has been over
+// stands at its first line and is put right whole. Which transcripts a vault
+// holds is a question the index already answers.
 func (t *Transcribing) TakingUp(
 	ctx context.Context,
 	known port.SourceQueries,
@@ -468,19 +465,21 @@ func (t *Transcribing) TakingUp(
 		return
 	}
 	t.going.Add(1)
-	defer t.going.Done()
-	for _, v := range vaults {
-		heard, err := known.Recognised(ctx, v.ID, domain.KindRecording)
-		if err != nil {
-			continue
-		}
-		for _, said := range heard {
-			if ctx.Err() != nil {
-				return
+	go func() {
+		defer t.going.Done()
+		for _, v := range vaults {
+			heard, err := known.Recognised(ctx, v.ID, domain.KindRecording)
+			if err != nil {
+				continue
 			}
-			t.correct(ctx, v, said.Path, false)
+			for _, said := range heard {
+				if ctx.Err() != nil {
+					return
+				}
+				t.correct(ctx, v, said.Path, false)
+			}
 		}
-	}
+	}()
 }
 
 // listen is the work itself: this machine's turn at the models, what is missing

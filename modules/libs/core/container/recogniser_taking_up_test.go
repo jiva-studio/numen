@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
@@ -152,6 +153,7 @@ func TestAReadingLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T
 	w, v, store, hash := halted(t, by, 1, lines...)
 
 	w.TakingUp(t.Context(), books{}, v)
+	w.Wait()
 
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
@@ -172,6 +174,7 @@ func TestAReadingAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	w, v, _, _ := halted(t, by, 2, lines...)
 
 	w.TakingUp(t.Context(), books{}, v)
+	w.Wait()
 
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
@@ -190,6 +193,7 @@ func TestAReadingWithABatchOutIsLeftToTheCollection(t *testing.T) {
 	w.Recognising.queue = func() (port.ProofreadQueue, error) { return leaves{}, nil }
 
 	w.TakingUp(t.Context(), books{}, v)
+	w.Wait()
 
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
@@ -208,4 +212,31 @@ func (leaves) Leave(context.Context, []proofread.Batch) (string, error) { return
 
 func (leaves) Collect(context.Context, string) (map[int]string, bool, error) {
 	return nil, false, nil
+}
+
+// One run to a reading. A run that finds it held leaves the list to the run that
+// holds it.
+func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
+	lines := []string{"the words one", "the words two"}
+	by := &puts{}
+	w, v, store, hash := halted(t, by, 1, lines...)
+	release, err := store.Claim(t.Context(), text.Fixes("ocr", hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	w.tasks.Set(task.Task{
+		ID: correcting(document), Doing: "Proofreading a reading", About: document,
+		Done: 1, Total: 2,
+	})
+
+	w.TakingUp(t.Context(), books{}, v)
+	w.Wait()
+
+	if at, held := w.said(t); !held || at.Doing != "Proofreading a reading" {
+		t.Errorf("the run holding the reading is in the list as %+v", at)
+	}
+	if got := by.lines(); len(got) != 0 {
+		t.Errorf("the proofreader was asked about lines %v", got)
+	}
 }

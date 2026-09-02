@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -202,6 +203,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 	held, v, store, hash := stopped(t, by, 1, "first thing", "second thing", "third thing")
 
 	held.TakingUp(t.Context(), heard{recording}, v)
+	held.Wait()
 
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
@@ -222,6 +224,7 @@ func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	held, v, _, _ := stopped(t, by, 3, "first thing", "second thing", "third thing")
 
 	held.TakingUp(t.Context(), heard{recording}, v)
+	held.Wait()
 
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
@@ -239,7 +242,34 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 	held.cfg.SpeechProofreading.Automatically = false
 
 	held.TakingUp(t.Context(), heard{recording}, v)
+	held.Wait()
 
+	if got := by.lines(); len(got) != 0 {
+		t.Errorf("the proofreader was asked about lines %v", got)
+	}
+}
+
+// One run to a transcript. A run that finds it held leaves the list to the run
+// that holds it.
+func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
+	by := &puts{}
+	held, v, store, hash := stopped(t, by, 1, "first thing", "second thing")
+	release, err := store.Claim(t.Context(), text.Partial(text.ASR, hash))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+	held.tasks.Set(task.Task{
+		ID: correcting(recording), Doing: "Proofreading a transcript", About: recording,
+		Done: 1, Total: 2,
+	})
+
+	held.TakingUp(t.Context(), heard{recording}, v)
+	held.Wait()
+
+	if doing, _ := said(held, recording); doing != "Proofreading a transcript" {
+		t.Errorf("the run holding the transcript is in the list as %q", doing)
+	}
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
