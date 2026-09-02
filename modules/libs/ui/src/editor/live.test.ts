@@ -113,6 +113,11 @@ describe('the address under a position in the text', () => {
   it('is nothing where the position stands in no link', () => {
     expect(at('under nothing at all', 'nothing')).toBeNull()
   })
+
+  it('is nothing inside code, where a link is an example of one', () => {
+    expect(at('```\n[[Thermodynamics]]\n```', 'Thermo')).toBeNull()
+    expect(at('write `[[Thermodynamics]]` for it', 'Thermo')).toBeNull()
+  })
 })
 
 describe('a list', () => {

@@ -312,20 +312,29 @@ export const live = ViewPlugin.fromClass(
   },
 )
 
+/** Whether a position stands in code, where a link is an example of one. */
+const coded = (node: SyntaxNode): boolean => {
+  for (let one: SyntaxNode | null = node; one; one = one.parent) {
+    if (one.name === 'FencedCode' || one.name === 'CodeBlock' || one.name === 'InlineCode') {
+      return true
+    }
+  }
+  return false
+}
+
 /**
  * The address a position in the text stands in, and nothing where it stands in
  * none. A note in brackets is read by the parser every link is read by.
  */
 export const addressAt = (state: EditorState, at: number): string | null => {
-  const line = state.doc.lineAt(at)
-  const wiki = wikilinkAt(line.text, at - line.from)
-  if (wiki) return wiki.address
+  const standing = syntaxTree(state).resolveInner(at, 1)
+  if (!coded(standing)) {
+    const line = state.doc.lineAt(at)
+    const wiki = wikilinkAt(line.text, at - line.from)
+    if (wiki) return wiki.address
+  }
 
-  for (
-    let node: SyntaxNode | null = syntaxTree(state).resolveInner(at, 1);
-    node;
-    node = node.parent
-  ) {
+  for (let node: SyntaxNode | null = standing; node; node = node.parent) {
     if (node.name !== 'Link' && node.name !== 'Autolink') continue
     const address = childOf(node, 'URL')
     return address

@@ -116,9 +116,7 @@ type VaultServiceClient interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
-	// Resolve answers where addresses written in one note land. It is the
-	// question a link is answered with, asked about text nobody recorded as a
-	// link: a wikilink in an answer, a wikilink under the pointer.
+	// Resolve answers where addresses written in one note land.
 	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
 	// Names is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
@@ -619,9 +617,7 @@ type VaultServiceHandler interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
-	// Resolve answers where addresses written in one note land. It is the
-	// question a link is answered with, asked about text nobody recorded as a
-	// link: a wikilink in an answer, a wikilink under the pointer.
+	// Resolve answers where addresses written in one note land.
 	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
 	// Names is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
