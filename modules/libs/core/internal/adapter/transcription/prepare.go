@@ -4,30 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 )
-
-// standing says whether the runtime a recording is heard through was made.
-var standing atomic.Bool
-
-// Prepared says whether this process made the runtime before it made anything
-// else.
-func Prepared() bool { return standing.Load() }
-
-// Prepare makes the runtime a recording is heard through, and is called before
-// a window is. Every recording this process hears is heard through it, and one
-// made after a window says nothing about every recording it is given.
-//
-// Nothing is fetched: a machine that holds no runtime says so, and listening is
-// what fetches one.
-func Prepare(ctx context.Context, cfg Config) error {
-	cfg.Download = false
-	if _, _, err := library(ctx, cfg); err != nil {
-		return err
-	}
-	standing.Store(true)
-	return nil
-}
 
 // Ready says whether everything a transcription needs is already on this
 // machine. It opens nothing and fetches nothing, so it is answered while a

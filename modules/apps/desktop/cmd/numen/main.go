@@ -106,12 +106,6 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
-	// Likewise for a recording: every one this process hears is heard through
-	// the runtime made here.
-	if err := cfg.PrepareTranscriber(ctx); err != nil {
-		fmt.Fprintln(os.Stderr, "numen: nothing to hear a recording with:", err)
-	}
-
 	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err

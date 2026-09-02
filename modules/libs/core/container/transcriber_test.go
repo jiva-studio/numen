@@ -367,3 +367,29 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 		t.Errorf("with no limit the queue took %v", owed)
 	}
 }
+
+// A recording is transcribed through whatever runtime this process has, opened
+// when there is a recording to transcribe.
+func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
+	by := &deaf{}
+	held, v := listens(t, by, "talk.mp3")
+
+	var opened, given int
+	held.open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+		opened++
+		return by, func() error { given++; return by.Close() }, nil
+	}
+
+	if err := held.hear(t.Context(), v, "talk.mp3", true); err != nil {
+		t.Fatalf("the recording was not transcribed: %v", err)
+	}
+	if opened != 1 {
+		t.Errorf("what was missing was fetched %d times", opened)
+	}
+	if given != 1 {
+		t.Error("what was opened was not given back")
+	}
+	if by.times() != 1 {
+		t.Errorf("the recording was handed over %d times", by.times())
+	}
+}

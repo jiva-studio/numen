@@ -21,16 +21,6 @@ import (
 // every other choice of adapter.
 func (c Config) TranscriberReady() bool { return transcription.Ready(c.Transcription) }
 
-// PrepareTranscriber makes the runtime this process hears a recording through,
-// and is called before a window is made. One made after a window hears every
-// recording it is given as silence.
-//
-// A machine holding no runtime says so and is left as it is: listening is what
-// fetches one.
-func (c Config) PrepareTranscriber(ctx context.Context) error {
-	return transcription.Prepare(ctx, c.Transcription)
-}
-
 // Transcriber is what listens to a recording on this machine, opened now: the
 // transcriber, what gives it back, and why there is none.
 //
@@ -44,14 +34,10 @@ func (c Config) Transcriber(ctx context.Context) (transcriber port.Transcriber, 
 	return models, models.Close, nil
 }
 
-// errLateListening is a recording left unheard because what would hear it was
-// fetched after the window was made.
-var errLateListening = errors.New("what hears a recording arrived just now; open numen again to hear it")
-
-// errNothingListens is a run that reached nothing: what listens to a recording
+// errNothingListens is a run that reached nothing: what transcribes a recording
 // is not on this machine. It is about the machine and not about the file, so a
 // queue leaves the work where it is and comes back to it.
-var errNothingListens = errors.New("nothing to listen with")
+var errNothingListens = errors.New("nothing to transcribe with")
 
 // hearing is what one recording's transcription is called, wherever it is
 // shown. One recording is one line, and it replaces itself as the words are
@@ -165,10 +151,6 @@ type Transcribing struct {
 	open  listening
 	ready func() bool
 
-	// standing says whether the runtime a recording is heard through was made
-	// before the window. A test that hears through nothing leaves it unset.
-	standing func() bool
-
 	// Cut makes a source's chunks from what has been heard of it. It is called
 	// as speech is written down, so the beginning of a recording is searchable
 	// while the end of it is still being heard.
@@ -203,7 +185,6 @@ func (c Config) Transcribing(ctx context.Context, sources port.SourceRepository,
 			return models, models.Close, nil
 		},
 		ready:    c.TranscriberReady,
-		standing: transcription.Prepared,
 		answered: map[string]bool{},
 	}
 }
@@ -309,7 +290,7 @@ func (t *Transcribing) round(ctx context.Context, known port.SourceQueries, v do
 			return
 		}
 		err := t.hear(ctx, v, path, false)
-		if errors.Is(err, errNothingListens) || errors.Is(err, errLateListening) {
+		if errors.Is(err, errNothingListens) {
 			return
 		}
 		// A recording named while this round ran is heard before the next one
@@ -392,8 +373,6 @@ func (t *Transcribing) hear(ctx context.Context, v domain.Vault, path string, as
 		// A transcription somebody stopped is one that is over, and the
 		// recording is where the next round finds it.
 		t.done(id)
-	case errors.Is(err, errNothingListens), errors.Is(err, errLateListening):
-		t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path, Failed: err.Error()}, asked)
 	case err != nil:
 		// The recording is left where the next round finds it. A store that
 		// would not write and an index that would not answer are the machine,
@@ -477,15 +456,6 @@ func (t *Transcribing) listen(
 	asked bool,
 ) (source.TranscribeResult, error) {
 	var res source.TranscribeResult
-
-	// Every recording of this process is heard through the runtime it made
-	// before its window. What was missing is here now, and the listening is the
-	// next opening's to do — asked before the models are fetched, so a machine
-	// whose runtime arrived late does not load them and throw them away every
-	// round.
-	if t.standing != nil && !t.standing() {
-		return res, errLateListening
-	}
 
 	// One heavy run on a machine: a scan being read holds the turn, and this
 	// waits for it.

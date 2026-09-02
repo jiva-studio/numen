@@ -47,15 +47,15 @@ func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config,
 	// what is missing and waits for it. It is said out loud first: a program
 	// that prints nothing for minutes looks broken.
 	if !cfg.TranscriberReady() {
-		fmt.Fprintln(out, "fetching what is needed to hear recordings")
+		fmt.Fprintln(out, "fetching what is needed to transcribe recordings")
 	}
 	models, closeModels, why := cfg.Transcriber(ctx)
 	if why != nil {
-		return fmt.Errorf("nothing to listen with: %w", why)
+		return fmt.Errorf("nothing to transcribe with: %w", why)
 	}
 	defer closeModels()
 
-	fmt.Fprintf(out, "listening to %s with %s\n", args[1], models.Transcription())
+	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], models.Transcription())
 	started := time.Now()
 
 	// What a batch of speech writes down is cut before the next batch is heard,

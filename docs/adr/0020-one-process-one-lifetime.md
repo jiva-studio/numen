@@ -67,9 +67,11 @@ A quit that does not arrive through the window is answered on the thread the pag
 
 ### The runtime a page is read through is made before the window
 
-Every model this process runs is run through one ONNX Runtime environment, made once and kept for the life of the process. It is made before the window is, and a reading is refused where it was not.
+Every model this process runs is run through one ONNX Runtime environment, made once and kept for the life of the process. The one a page is read through is made before the window, and a reading is refused where it was not.
 
 A machine holding no runtime at all is left as it is, and a reading is what fetches one. The reading that fetched it says so, and the document is the next opening's to read.
+
+**A recording is transcribed through a runtime opened when there is a recording to transcribe.** On macOS and on Linux a runtime opened after the window writes down the same words as one opened before, measured on both, so nothing is refused and nothing is left for the next opening. What that measurement says about reading a page is not known: the rule above stands until somebody measures it.
 
 ### An agent does not outlive the window
 
