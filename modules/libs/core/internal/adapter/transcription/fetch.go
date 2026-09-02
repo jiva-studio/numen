@@ -37,19 +37,28 @@ func patience(size int64) time.Duration {
 	return opening + time.Duration(size/slowest)*time.Second
 }
 
+// kept is where a downloaded file is put: the folder the settings name, or this
+// platform's cache directory.
+func kept(cfg Config) (string, error) {
+	if cfg.Dir != "" {
+		return cfg.Dir, nil
+	}
+	cache, err := os.UserCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(cache, filepath.FromSlash(cacheDir)), nil
+}
+
 // fetched is the file one address names, downloaded if it is not already here.
 //
 // The name it is kept under carries the address, so two models with one filename
 // do not collide and a changed address is a different file rather than a stale
 // one wearing the right name.
 func fetched(ctx context.Context, cfg Config, address string, allowed bool) (string, error) {
-	dir := cfg.Dir
-	if dir == "" {
-		cache, err := os.UserCacheDir()
-		if err != nil {
-			return "", err
-		}
-		dir = filepath.Join(cache, filepath.FromSlash(cacheDir))
+	dir, err := kept(cfg)
+	if err != nil {
+		return "", err
 	}
 	at := filepath.Join(dir, cached(address))
 	if _, err := os.Stat(at); err == nil {

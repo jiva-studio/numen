@@ -127,13 +127,21 @@ func keep(engine *ort.Engine, at string) (*ort.Engine, string, error) {
 }
 
 // present is every ONNX Runtime this machine holds without fetching one: beside
-// the application, wherever this platform keeps its packages, and by the name
-// the loader searches for on its own.
+// the application, where a fetched one was unpacked, wherever this platform
+// keeps its packages, and by the name the loader searches for on its own.
 func present(cfg Config) []string {
 	var out []string
 	for _, at := range beside(cfg.Dir, runtimeNames...) {
 		if _, err := os.Stat(at); err == nil {
 			out = append(out, at)
+		}
+	}
+	if dir, err := kept(cfg); err == nil {
+		for _, name := range runtimeNames {
+			at := filepath.Join(dir, name)
+			if _, err := os.Stat(at); err == nil {
+				out = append(out, at)
+			}
 		}
 	}
 	out = append(out, installed(runtimeName(), "*-onnxruntime-*")...)
@@ -287,9 +295,16 @@ func write(at string, from io.Reader) error {
 
 // isLibrary says whether one name in an archive is the library.
 //
-// It is the plain name or that name with a version after it, and it is not one
-// of the libraries published beside it: those are named for what they add, so
-// they carry the same prefix and a different word.
+// It is the plain name, that name with a version after it, or the name carrying
+// a version before its extension, which is where a mac library keeps one. It is
+// not one of the libraries published beside it: those are named for what they
+// add, so they carry the same prefix and a different word.
 func isLibrary(found, name string) bool {
-	return found == name || strings.HasPrefix(found, name+".")
+	if found == name || strings.HasPrefix(found, name+".") {
+		return true
+	}
+	ext := path.Ext(name)
+	return ext != "" &&
+		strings.HasPrefix(found, strings.TrimSuffix(name, ext)+".") &&
+		strings.HasSuffix(found, ext)
 }
