@@ -151,8 +151,10 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	}
 
 	// The transcript is asked about batch by batch, and then once more around
-	// the cuts a sentence was answered for past the end of.
-	spoken := proofread.Spoken(cues, u.batchSize(), u.overlap())
+	// the cuts a sentence was answered for past the end of. What the whole
+	// recording holds stands on every batch of it.
+	about := proofread.About(cues)
+	spoken := told(proofread.Spoken(cues, u.batchSize(), u.overlap()), about)
 	batches := spoken
 	// The seams are cut from the transcript as this run found it, so the batch
 	// a line falls in does not move as sentences are put back together.
@@ -170,7 +172,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		// A run taking up after the first pass holds no reply saying which cuts
 		// a sentence was answered for past the end of, and asks about every
 		// seam standing past the count.
-		batches = slices.Concat(spoken, proofread.Seams(asHeard, u.batchSize(), u.overlap(), everyCut(len(spoken))))
+		batches = slices.Concat(spoken, u.seams(asHeard, everyCut(len(spoken)), about))
 		at = len(spoken) + after(batches[len(spoken):], cues, stood.Seam)
 	}
 	if at >= len(batches) {
@@ -257,7 +259,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 			return res, err
 		}
 		if end == len(spoken) {
-			batches = slices.Concat(spoken, proofread.Seams(asHeard, u.batchSize(), u.overlap(), cuts))
+			batches = slices.Concat(spoken, u.seams(asHeard, cuts, about))
 		}
 		if err := u.counted(ctx, store, far, reached(batches, len(spoken), end, cues)); err != nil {
 			return res, err
@@ -388,6 +390,19 @@ func reached(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) 
 		stood.Seam = cues[last(batches[end-1])].To
 	}
 	return stood
+}
+
+// seams is a batch for each of the cuts, carrying what the recording holds.
+func (u PutRight) seams(cues []transcript.Cue, cuts []int, about string) []proofread.Batch {
+	return told(proofread.Seams(cues, u.batchSize(), u.overlap(), cuts), about)
+}
+
+// told is the batches with what the recording holds on each of them.
+func told(batches []proofread.Batch, about string) []proofread.Batch {
+	for at := range batches {
+		batches[at].About = about
+	}
+	return batches
 }
 
 // everyCut is the cut after each of a run of batches but the last.

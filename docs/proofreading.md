@@ -1,6 +1,6 @@
 # Putting a text right
 
-What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines and nothing else, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
+What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
 
 ## One mechanism, two texts
 
@@ -62,12 +62,29 @@ The reply is only the lines that changed. A batch the proofreader would leave al
 
 A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the batch is refused.
 
+## What a transcript says it holds
+
+A batch is forty lines of an hour, and a name or a term the rest of the recording establishes is, inside those forty lines, a word with no support. It reads as a mishearing and comes back an ordinary word, differently in each batch.
+
+So a transcript's batches carry a digest of the whole of it, standing before the first mark:
+
+```
+The speech opens: welcome everyone today we will read a verse that the teacher …
+
+Words recurring through it, as the machine heard them: Kenduvilva, Gaudiya, Ajay
+```
+
+It is drawn from the transcript and from nothing else — the opening words as they were heard, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
+
+A reading carries no digest: a page of a book is proofread against the page.
+
 ## The gates
 
 None of them asks whether a correction is right.
 
 - **A mark of ours coming back refuses the batch.** No recogniser and no transcriber produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole batch.
 - **A line number the batch did not name refuses the batch.**
+- **A line two rows both answer for refuses the batch.** A line stands in one answer, so the words of a line are in that answer and in no other.
 - **Letters that moved further than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the Levenshtein distance between what is left is taken as a share of the longer. 0.30 where the file names nothing.
 
 Two more corrections are dropped without refusing the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
@@ -82,7 +99,9 @@ A scan is corrected for what a machine misread off paper: letters, diacritics, w
 
 A transcript is corrected for what a machine misheard: a word for its homophone, a name spelled as it sounded, a sentence ended in the wrong place, the punctuation a model that hears has no way to place. The words a person actually said are not rewritten into better ones, and a stretch heard correctly is left alone.
 
-Both instructions carry the same rules about the answer: every word stays in the line it is in, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
+Both instructions carry the same rules about the answer: a line is answered for once, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
+
+A printed line holds its words: on a page they stay where they were printed. Speech runs on past the stretch it was cut into, so a transcript is also answered for in runs, written as the first line of the run and the last: `12-14|the whole sentence, put right`. The lines of a run become one cue, spanning the moments they were spoken between. A line where one sentence ends and the next begins stands in the run of both, and that run is answered with every sentence it covers.
 
 ## Profiles
 
