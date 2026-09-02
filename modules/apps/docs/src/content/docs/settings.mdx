@@ -3,7 +3,22 @@ title: Settings
 description: What you change from the window, where the settings file lives, and how it behaves.
 ---
 
-Most of what you would want to change is in the commands — <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
+import Shot from '../../components/Shot.astro'
+
+**Settings** in the commands opens a page over the whole file, in the groups the file keeps them
+in.
+
+<Shot
+  name="settings"
+  alt="The numen window: the settings page, in the groups the file keeps them in."
+  caption="A row you can change is a control; a row this window does not write says where it stands."
+/>
+
+A row here and the command of the same name go through one piece of code, so it makes no
+difference which you use. A setting the window does not write yet is drawn where it belongs and
+says **Set in numen.json**.
+
+The same settings are in the commands — <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
 <kbd>P</kbd>, under **This window**:
 
 | | |
@@ -53,6 +68,8 @@ parse is never written over — numen says so and leaves it alone.
 | `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [search by meaning](/meaning/). |
 | `indexing.recognition` | how a scanned book is read. See [reading scanned books](/reading/). |
 | `indexing.proofreading` | what corrects a reading afterwards, and nothing by default. |
+| `indexing.transcription` | how a recording is listened to, and how large one may be to be listened to unasked. See [recordings](/recordings/). |
+| `review` | the hour a day of review begins at. Everything else about review is a [preset](/review/#a-preset) in the vault. |
 | `agent` | which assistant answers in the panel, and how it is started. See [the agent](/agent/). |
 | `naming` | whether a note's title and its filename are kept as one name. See [writing notes](/writing/#renaming). |
 

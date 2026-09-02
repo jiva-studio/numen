@@ -51,7 +51,12 @@ export default defineConfig({
             { slug: 'files' },
             { slug: 'finding' },
             { slug: 'documents' },
+            { slug: 'recordings' },
           ],
+        },
+        {
+          label: 'Cards',
+          items: [{ slug: 'cards' }, { slug: 'review' }],
         },
         {
           label: 'The agent',

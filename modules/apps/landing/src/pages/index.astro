@@ -7,6 +7,7 @@
  */
 import { getImage } from 'astro:assets'
 import Page from '../layouts/Page.astro'
+import Carousel from '../components/Carousel.astro'
 import mappingLight from '../assets/window-mapping-light.webp'
 import mappingDark from '../assets/window-mapping-dark.webp'
 import writingLight from '../assets/window-writing-light.webp'
@@ -17,6 +18,22 @@ import searchingLight from '../assets/window-searching-light.webp'
 import searchingDark from '../assets/window-searching-dark.webp'
 import askingLight from '../assets/window-asking-light.webp'
 import askingDark from '../assets/window-asking-dark.webp'
+import hearingLight from '../assets/window-hearing-light.webp'
+import hearingDark from '../assets/window-hearing-dark.webp'
+import transcribingLight from '../assets/window-transcribing-light.webp'
+import transcribingDark from '../assets/window-transcribing-dark.webp'
+import recognisingLight from '../assets/window-recognising-light.webp'
+import recognisingDark from '../assets/window-recognising-dark.webp'
+import deckingLight from '../assets/window-decking-light.webp'
+import deckingDark from '../assets/window-decking-dark.webp'
+import cuttingLight from '../assets/window-cutting-light.webp'
+import cuttingDark from '../assets/window-cutting-dark.webp'
+import owingLight from '../assets/window-owing-light.webp'
+import owingDark from '../assets/window-owing-dark.webp'
+import reviewingLight from '../assets/window-reviewing-light.webp'
+import reviewingDark from '../assets/window-reviewing-dark.webp'
+import pacingLight from '../assets/window-pacing-light.webp'
+import pacingDark from '../assets/window-pacing-dark.webp'
 
 /**
  * Where the builds are served from. A store of their own, in front of which
@@ -109,6 +126,78 @@ const SHOTS = [
     light: askingLight,
     dark: askingDark,
   },
+  {
+    id: 'hearing',
+    name: 'A recording',
+    caption: 'The words of a recording, each line against the moment it was said.',
+    alt: 'The numen window: a lecture playing, with its transcript under the '
+      + 'player and the line being said drawn in the accent.',
+    light: hearingLight,
+    dark: hearingDark,
+  },
+  {
+    id: 'transcribing',
+    name: 'Transcribe',
+    caption: 'Right-click a recording and the words are written down on your machine.',
+    alt: 'The numen window: the menu on a recording in the file tree, offering '
+      + 'to transcribe it.',
+    light: transcribingLight,
+    dark: transcribingDark,
+  },
+  {
+    id: 'recognising',
+    name: 'Recognise',
+    caption: 'Right-click a scan and the pages are read, page by page, where they are.',
+    alt: 'The numen window: a scanned book open beside the file tree, with the '
+      + 'menu on it offering to recognise its text.',
+    light: recognisingLight,
+    dark: recognisingDark,
+  },
+  {
+    id: 'decking',
+    name: 'A deck',
+    caption: 'Cards as a grid, under the sections you filed them in.',
+    alt: 'The numen window: a deck of Sanskrit roots as a grid of cards under '
+      + 'their sections.',
+    light: deckingLight,
+    dark: deckingDark,
+  },
+  {
+    id: 'cutting',
+    name: 'A stencil',
+    caption: 'Name the fields once; every card of that kind is cut the same way.',
+    alt: 'The numen window: a stencil naming four fields, and the faces that '
+      + 'show them, each drawn beside its preview.',
+    light: cuttingLight,
+    dark: cuttingDark,
+  },
+  {
+    id: 'owing',
+    name: 'What is due',
+    caption: 'What each deck owes today, and the year you have put in behind it.',
+    alt: 'The flashcards window: a year of answering as a grid of weeks, the '
+      + 'goals of the vault, and the decks with what each owes today.',
+    light: owingLight,
+    dark: owingDark,
+  },
+  {
+    id: 'reviewing',
+    name: 'A sitting',
+    caption: 'One card, four answers, and how long each of them buys you.',
+    alt: 'The flashcards window: one card with its answer showing and the four '
+      + 'ways of answering it under it.',
+    light: reviewingLight,
+    dark: reviewingDark,
+  },
+  {
+    id: 'pacing',
+    name: 'A preset',
+    caption: 'Move the one knob and see what the year costs before you commit to it.',
+    alt: 'The numen window: a preset, with the curve of its goal and the '
+      + 'settings it schedules by under it.',
+    light: pacingLight,
+    dark: pacingDark,
+  },
 ]
 
 const shown = { format: 'webp' as const, quality: 82 }
@@ -162,17 +251,13 @@ const description =
         <span class="beside">macOS · Windows · Linux</span>
       </div>
 
-      <div class="stage rise" style="--wait: 260ms">
-        <picture class="shot">
-          <source srcset={shotOf('filing').unlit.src} media="(prefers-color-scheme: dark)" />
-          <img
-            src={shotOf('filing').lit.src}
-            width={shotOf('filing').width}
-            height={shotOf('filing').height}
-            alt={shotOf('filing').alt}
-            loading="eager"
-          />
-        </picture>
+      <div class="rise" style="--wait: 260ms">
+        <Carousel
+          name="shot"
+          label="What the window is shown doing"
+          shots={['filing', 'mapping', 'searching', 'asking', 'decking', 'hearing'].map(shotOf)}
+          eager
+        />
       </div>
     </section>
 
@@ -430,6 +515,184 @@ const description =
           </picture>
         </div>
       </section>
+
+      <section class="band">
+        <p class="eyebrow">Recordings</p>
+        <div class="band__body rise">
+          <h2>What you recorded, in words</h2>
+          <p class="band__lede">
+            A lecture you taped is as searchable as anything you typed. It is listened to
+            on your own machine — no upload, no account, no per-minute bill.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Right-click, transcribe</h3>
+              <p>
+                A recording in the folder is written down where it stands. The words
+                arrive while it runs, so a long talk is searchable before it is finished.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Every line has a time</h3>
+              <p>
+                Press a line and the recording plays from there. Search finds the
+                sentence and takes you to the second it was said.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>The words are yours</h3>
+              <p>
+                Correct a line and it is kept against the recording, in a subtitle file
+                you can take anywhere numen has never been.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('transcribing').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('transcribing').lit.src}
+              width={shotOf('transcribing').width}
+              height={shotOf('transcribing').height}
+              alt={shotOf('transcribing').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">Books</p>
+        <div class="band__body rise">
+          <h2>Your books, searched with your notes</h2>
+          <p class="band__lede">
+            PDFs and EPUBs sitting in the folder are read as documents, and a result opens
+            the book at the page the words are on. A book that carries no text of its own
+            is read here, on your machine, and joins the search like everything else.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Open at the page</h3>
+              <p>
+                A search sends you into the book itself, at the page and the line, with
+                everything that book is joined to already around it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Lit where it stands</h3>
+              <p>
+                A result opens the book at the page, with the passage lit where it sits on
+                the paper rather than lifted out of it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>The reading follows the book</h3>
+              <p>
+                It is kept beside the vault under the book's own bytes. Move or rename the
+                file and it keeps its reading; keep two copies and they share one.
+              </p>
+            </div>
+          </div>
+
+          <picture class="shot band__shot">
+            <source srcset={shotOf('recognising').unlit.src} media="(prefers-color-scheme: dark)" />
+            <img
+              src={shotOf('recognising').lit.src}
+              width={shotOf('recognising').width}
+              height={shotOf('recognising').height}
+              alt={shotOf('recognising').alt}
+              loading="lazy"
+            />
+          </picture>
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">Cards</p>
+        <div class="band__body rise">
+          <h2>Remember what you looked up</h2>
+          <p class="band__lede">
+            Cards live in the same folder as the notes, in markdown you can read. A
+            stencil says what a card of some kind holds; the deck fills it in.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Fields, not two blank sides</h3>
+              <p>
+                Name the fields once. Every card of that kind is cut the same way, and
+                one stencil can ask about them from several directions.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>A grid you can move</h3>
+              <p>
+                Cards stand under headings you chose, and drag between them. Nothing is
+                hidden in a database you cannot open.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Joined to the note</h3>
+              <p>
+                A card can point at the note it came out of, and the note is one press
+                away while you are answering.
+              </p>
+            </div>
+          </div>
+
+          <Carousel
+            name="cards"
+            label="A deck, the stencil that cuts it, and the preset that schedules it"
+            shots={['decking', 'cutting', 'pacing'].map(shotOf)}
+            band
+          />
+        </div>
+      </section>
+
+      <section class="band">
+        <p class="eyebrow">Review</p>
+        <div class="band__body rise">
+          <h2>A day of review, in its own window</h2>
+          <p class="band__lede">
+            Sitting down to your cards is a window of its own: what is due, and then one
+            card at a time. You need not know an editor exists.
+          </p>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Say what a day is worth</h3>
+              <p>
+                Twenty-five minutes, a share you want to remember, or a date to be ready
+                by. Move the one knob and the rest is worked out for you.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>See the cost first</h3>
+              <p>
+                The curve says what each pace asks of you and when the backlog clears,
+                before you commit a year to it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Read it while you answer</h3>
+              <p>
+                Take the note beside the card, or ask the assistant about it, without
+                leaving the sitting.
+              </p>
+            </div>
+          </div>
+
+          <Carousel
+            name="review"
+            label="A day of review"
+            shots={['owing', 'reviewing'].map(shotOf)}
+            band
+            narrow
+          />
+        </div>
+      </section>
     </main>
 
     <section class="close rise" id="get">
@@ -529,11 +792,28 @@ const description =
   <script>
     // The shots go round on their own until somebody takes hold of them, and
     // only while they are on screen and the reader has not asked for stillness.
-    const stage = document.querySelector<HTMLElement>('.stage')
-    const picks = [...document.querySelectorAll<HTMLInputElement>('input[name="shot"]')]
+    // Every carousel on the page turns itself; each keeps its own place.
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    if (stage && picks.length > 1 && !still) {
+    for (const stage of document.querySelectorAll<HTMLElement>('.stage')) {
+      const picks = [...stage.querySelectorAll<HTMLInputElement>('input[type="radio"]')]
+      if (picks.length < 2) continue
+
+      /** The chosen shot moved along the row, round the end and back. */
+      const step = (by: number) => {
+        const at = picks.findIndex((pick) => pick.checked)
+        const next = picks[(at + by + picks.length) % picks.length]
+        if (next) next.checked = true
+      }
+
+      // The steps are carried out here, so they stand up only where they work.
+      stage.setAttribute('data-stepping', '')
+      for (const one of stage.querySelectorAll<HTMLButtonElement>('.switch__step')) {
+        one.addEventListener('click', () => step(Number(one.dataset['step'] ?? 1)))
+      }
+
+      if (still) continue
+
       /** How long one shot is held, said once in the stylesheet. */
       const written = getComputedStyle(stage).getPropertyValue('--hold').trim()
       const HOLD = written.endsWith('ms') ? parseFloat(written) : parseFloat(written) * 1000
@@ -547,11 +827,7 @@ const description =
         stage.removeAttribute('data-turning')
       }
 
-      const turn = () => {
-        const at = picks.findIndex((pick) => pick.checked)
-        const next = picks[(at + 1) % picks.length]
-        if (next) next.checked = true
-      }
+      const turn = () => step(1)
 
       const run = () => {
         clearInterval(turning)

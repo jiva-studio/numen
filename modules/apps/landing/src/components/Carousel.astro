@@ -1,0 +1,94 @@
+---
+/**
+ * Several pictures of the window in one place, one of them on screen.
+ *
+ * Which one is lit is a radio, so the row of dots under the picture works with
+ * nothing running. The rule that lights it is written here from the same list
+ * the pictures are drawn from: a name in one place and not the other lights
+ * nothing.
+ */
+interface Shot {
+  /** The name it is filed under, which is what the radio is named. */
+  id: string
+  /** What the dot is called, for whoever is not looking at it. */
+  name: string
+  /** What the picture shows, for whoever is not looking at it. */
+  alt: string
+  width: number
+  height: number
+  lit: { src: string }
+  unlit: { src: string }
+}
+
+interface Props {
+  /** What this carousel is called, which is what its radios are named. */
+  name: string
+  /** What the row of dots is, said to whoever is not looking at it. */
+  label: string
+  shots: readonly Shot[]
+  /** Whether the first picture is fetched before the page is scrolled to it. */
+  eager?: boolean
+  /** Whether it stands under the reasons for it, at the foot of a band. */
+  band?: boolean
+  /** Whether the window in it is a narrow one, drawn no wider than it is. */
+  narrow?: boolean
+}
+
+const { name, label, shots, eager = false, band = false, narrow = false } = Astro.props
+
+const at = (shot: Shot) => `${name}-${shot.id}`
+
+/** Which picture each radio lights. */
+const lights = shots
+  .map(
+    (shot) =>
+      `.stage:has(#${at(shot)}:checked) [data-shot="${at(shot)}"]` +
+      `{opacity:1;visibility:visible}`,
+  )
+  .join('')
+---
+
+<div class:list={['stage', band && 'stage--band', narrow && 'stage--narrow']}>
+  <div class="shots">
+    {
+      shots.map((shot, i) => (
+        <picture class="shot" data-shot={at(shot)}>
+          <source srcset={shot.unlit.src} media="(prefers-color-scheme: dark)" />
+          <img
+            src={shot.lit.src}
+            width={shot.width}
+            height={shot.height}
+            alt={shot.alt}
+            loading={eager && i === 0 ? 'eager' : 'lazy'}
+          />
+        </picture>
+      ))
+    }
+  </div>
+
+  <div class="switch">
+    <!-- The steps move the chosen one along, which no radio does by itself:
+         they are drawn once the script that carries them out is running. -->
+    <button class="switch__step" type="button" data-step="-1" aria-label="Previous">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg>
+    </button>
+
+    <div class="switch__picks" role="radiogroup" aria-label={label}>
+      {
+        shots.map((shot, i) => (
+          <label class="switch__pick">
+            <input type="radio" name={name} id={at(shot)} checked={i === 0} />
+            <span class="switch__bar" />
+            <span class="switch__name">{shot.name}</span>
+          </label>
+        ))
+      }
+    </div>
+
+    <button class="switch__step" type="button" data-step="1" aria-label="Next">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+    </button>
+  </div>
+
+  <style is:inline set:html={lights} />
+</div>
