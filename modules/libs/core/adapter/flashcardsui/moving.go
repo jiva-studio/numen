@@ -58,8 +58,7 @@ func (f *following) say() {
 func (a *API) Moved() { a.following.say() }
 
 // Follows says Moved for everything one channel reports, until it closes or ctx
-// is done. Something having moved is also what lets a vault that could not be
-// read be tried again.
+// is done.
 func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
 	go func() {
 		for {
@@ -70,7 +69,6 @@ func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
 				if !open {
 					return
 				}
-				a.forgetting()
 				a.Moved()
 			}
 		}

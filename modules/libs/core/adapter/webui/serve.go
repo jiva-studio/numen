@@ -867,10 +867,10 @@ func begin(
 
 	var running sync.WaitGroup
 
-	open, err := opening.Begin(ctx, v)
-	if err != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, err)
-		api.Unwatched.Store(err.Error())
+	open := opening.Begin(ctx, v)
+	if why := open.Unwatched(); why != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, why)
+		api.Unwatched.Store(why.Error())
 	}
 	running.Add(1)
 	go func() {
@@ -879,7 +879,7 @@ func begin(
 		open.Run(ctx)
 		// Nothing reaches the window once the watch stops, so from here on the
 		// vault is one that is not being followed.
-		if err == nil && ctx.Err() == nil {
+		if open.Unwatched() == nil && ctx.Err() == nil {
 			api.Unwatched.Store("the watch stopped")
 		}
 	}()

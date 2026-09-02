@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -106,13 +107,19 @@ func run(cfg container.Config, noAgent bool) error {
 
 	// A vault is walked into the index before it is counted. The walk outlives
 	// the count that asked for it, so it runs for the life of the window.
-	vaults.moved = api.Moved
+	//
+	// A vault that moved is counted again, and is one whose walk is worth trying
+	// again where the last one failed.
+	vaults.told = func(v domain.Vault) {
+		api.Forget(v.ID)
+		api.Moved()
+	}
 	api.Reading(ctx, vaults.reads)
 
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is
 	// started and stopped around a sitting.
-	away := serveAgents(ctx, cfg, db, api, noAgent, os.Stderr)
+	away := serveAgents(ctx, cfg, db, vaults, api, noAgent, os.Stderr)
 	defer func() {
 		if err := away(); err != nil {
 			fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)

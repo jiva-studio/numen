@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -10,6 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
+
+// errGoing is work asked for once the window has begun closing.
+var errGoing = errors.New("the window is closing")
 
 // opened is every vault this window has open.
 //
@@ -22,77 +26,104 @@ type opened struct {
 	// under is the life a vault stays open for. It outlives the question that
 	// first asked after the vault.
 	under context.Context
-	// moved is called when the index and a vault are level again.
-	moved func()
-	out   io.Writer
+	// told is called with the vault the index has just been brought level with.
+	told func(domain.Vault)
+	out  io.Writer
 
 	// running is every walk and every watch this window has over a vault. They
 	// write to the index, so they are waited for before it closes.
 	running sync.WaitGroup
 
-	mu      sync.Mutex
-	opening map[string]*container.Opening
-	open    map[string]*container.Open
+	mu    sync.Mutex
+	going bool
+	held  map[string]*vaulted
 }
 
-// wait holds until nothing this window opened is still writing.
-func (o *opened) wait() { o.running.Wait() }
+// vaulted is one vault's opening, made once however many ask for it.
+type vaulted struct {
+	once    sync.Once
+	opening *container.Opening
+	open    *container.Open
+}
 
-// of is the vault opened, and opens it the first time it is asked for.
-func (o *opened) of(v domain.Vault) (*container.Opening, *container.Open) {
+// wait lets go of every vault and holds until nothing is still writing.
+func (o *opened) wait() {
+	o.mu.Lock()
+	o.going = true
+	o.mu.Unlock()
+
+	o.running.Wait()
+}
+
+// starts takes a piece of work on and says whether it may run. A window that is
+// going takes none, so nothing begins writing after the index is waited for.
+func (o *opened) starts() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	if open, held := o.open[v.ID]; held {
-		return o.opening[v.ID], open
+	if o.going {
+		return false
 	}
+	o.running.Add(1)
+	return true
+}
 
+// of is the vault opened, and opens it the first time it is asked for. Opening
+// one registers a watch over its whole tree, which is done outside the lock.
+func (o *opened) of(v domain.Vault) *vaulted {
+	o.mu.Lock()
+	one, there := o.held[v.ID]
+	if !there {
+		one = &vaulted{}
+		if o.held == nil {
+			o.held = map[string]*vaulted{}
+		}
+		o.held[v.ID] = one
+	}
+	o.mu.Unlock()
+
+	one.once.Do(func() { o.opens(v, one) })
+	return one
+}
+
+// opens starts one vault's watch and leaves it running.
+func (o *opened) opens(v domain.Vault, one *vaulted) {
 	opening := o.cfg.Opening(o.db)
-	opening.Told = func(vault.Moved) { o.moved() }
+	opening.Told = func(vault.Moved) { o.told(v) }
 	opening.Trouble = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
 		}
 	}
 
-	open, err := opening.Begin(o.under, v)
-	if err != nil {
-		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, err)
+	open := opening.Begin(o.under, v)
+	if why := open.Unwatched(); why != nil {
+		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
 	}
-	// A window that is going follows nothing new: what is already running is
-	// what the index waits for before it closes.
-	if o.under.Err() == nil {
-		o.running.Add(1)
+	one.opening, one.open = opening, open
+
+	if o.starts() {
 		go func() {
 			defer o.running.Done()
 			open.Run(o.under)
 		}()
 	}
-
-	if o.open == nil {
-		o.opening, o.open = map[string]*container.Opening{}, map[string]*container.Open{}
-	}
-	o.opening[v.ID], o.open[v.ID] = opening, open
-	return opening, open
 }
 
 // reads walks a vault into the index, saying how far it has got in the notes
-// written. A window that is going walks nothing.
+// written.
 func (o *opened) reads(ctx context.Context, v domain.Vault, got func(int64)) error {
-	if err := o.under.Err(); err != nil {
-		return err
+	if !o.starts() {
+		return errGoing
 	}
-	o.running.Add(1)
 	defer o.running.Done()
 
-	_, open := o.of(v)
-	_, err := open.Read(ctx, func(res vault.ScanResult) { got(int64(res.Indexed)) })
+	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { got(int64(res.Indexed)) })
 	return err
 }
 
 // level brings the paths a write touched up to date, through the opening of the
 // vault they are in.
 func (o *opened) level(ctx context.Context, v domain.Vault, paths []string) error {
-	opening, _ := o.of(v)
-	return opening.Level(ctx, v, paths)
+	return o.of(v).opening.Level(ctx, v, paths)
 }

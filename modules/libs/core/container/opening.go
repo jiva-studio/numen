@@ -30,8 +30,8 @@ type Opening struct {
 	refresh vault.Refresh
 }
 
-// Opening opens a vault over this installation's index, the way the settings
-// say it is read and watched.
+// Opening is how this installation opens a vault, the way the settings say one
+// is read and watched.
 func (c Config) Opening(db *Index) *Opening {
 	return c.OpeningWith(db, c.VaultReaders(), c.VaultWatcher())
 }
@@ -74,12 +74,10 @@ func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) err
 	return err
 }
 
-// Begin starts watching the vault, and hands back the vault opened.
+// Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
-// The watch belongs before the walk: an edit made while the vault is being read
-// is then held. Acting on what the watch collects is Run, and it belongs after
-// the walk. A watch that could not be started is said and the opening stands.
-func (o *Opening) Begin(ctx context.Context, v domain.Vault) (*Open, error) {
+// A vault that cannot be watched is opened all the same, and Unwatched says why.
+func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Open {
 	scan := o.Scanning()
 	follow := vault.Follow{
 		Watcher: o.watcher,
@@ -89,17 +87,29 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) (*Open, error) {
 		Trouble: o.Trouble,
 	}
 	watching, err := follow.Begin(ctx, v)
-	return &Open{opening: o, vault: v, scan: scan, follow: follow, watching: watching}, err
+	return &Open{
+		opening:   o,
+		vault:     v,
+		scan:      scan,
+		follow:    follow,
+		watching:  watching,
+		unwatched: err,
+	}
 }
 
 // Open is one vault an application has opened.
 type Open struct {
-	opening  *Opening
-	vault    domain.Vault
-	scan     vault.Scan
-	follow   vault.Follow
-	watching *vault.Following
+	opening   *Opening
+	vault     domain.Vault
+	scan      vault.Scan
+	follow    vault.Follow
+	watching  *vault.Following
+	unwatched error
 }
+
+// Unwatched is why the vault is not being followed, and nothing while it is. A
+// vault nobody is following looks exactly like a vault nothing happens to.
+func (o *Open) Unwatched() error { return o.unwatched }
 
 // Read walks the vault into the index, handing back how far it has got as it
 // goes.
@@ -108,6 +118,8 @@ type Open struct {
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
 func (o *Open) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
+	o.opening.held.begin()
+
 	walk := o.scan
 	walk.OnProgress = got
 	res, err := walk.Execute(ctx, o.vault)
@@ -162,6 +174,17 @@ func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) er
 		h.hold(path)
 	}
 	return h.NoteRepository.Remove(ctx, vaultID, paths)
+}
+
+// begin holds the paths written through this, for the length of one walk. Every
+// walk holds again: a vault read a second time is read with the same guard as
+// the first.
+func (h *holding) begin() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.over = false
+	h.paths, h.kept = nil, nil
 }
 
 // hold takes the path before the write it belongs to, so a note whose write

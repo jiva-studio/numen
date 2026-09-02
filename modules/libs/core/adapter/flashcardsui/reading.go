@@ -110,10 +110,10 @@ func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 	a.Moved()
 }
 
-// forgetting lets go of why a vault could not be read. A vault that moved is
-// read again.
-func (a *API) forgetting() {
+// Forget lets go of why a vault could not be read. A vault that moved
+// underneath the window is read again.
+func (a *API) Forget(vaultID string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	clear(a.unreadable)
+	delete(a.unreadable, vaultID)
 }
