@@ -13,10 +13,17 @@ import (
 
 // A Line is one run of words the recogniser read in one go: the number it is
 // known by, and what it says.
+//
+// A correction may cover a run of lines, and Through is the last of them. One
+// line's correction has Through equal to At.
 type Line struct {
-	At   int
-	Text string
+	At      int
+	Through int
+	Text    string
 }
+
+// Joins says whether this correction puts more than one line together.
+func (l Line) Joins() bool { return l.Through > l.At }
 
 // A Batch is the lines one reply is accepted or refused as a whole: the number
 // it is known by, and its lines in the order they are read.
@@ -64,11 +71,18 @@ Answer with the lines you would put right, one to a line:
 
 12|the line, put right
 
+A sentence broken across a run of lines is answered for as one line, written
+as the first and the last of them:
+
+12-14|the whole sentence, put right
+
 - Put right what the machine misheard: a word for one that sounds like it,
   words run together or split apart, punctuation and capitalisation that are
   missing or wrong, numbers and names.
-- Every word stays in the line it is in. Nothing moves from one line to
-  another, and nothing is added that was not said.
+- Put a sentence broken across lines back together as one line. The run is
+  every line it covers, from first to last, with none left out.
+- Nothing is added that was not said, and no word moves to a line outside the
+  run it is answered in.
 - Do not write ` + Opens + ` or ` + Closes + ` in your answer.
 - Do not translate, rephrase, summarise or improve speech that was heard
   correctly. Every hesitation, repetition and false start that was spoken

@@ -58,7 +58,6 @@ func putRightCommand(
 		By:      by,
 		Lines:   profile.BatchSize,
 		Overlap: profile.Overlap,
-		Apart:   cfg.Proofreading.Apart(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err

@@ -268,11 +268,10 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 			t.Errorf("the speech instruction does not mention %q", word)
 		}
 	}
-	// Both are answered the same way, and neither moves a word.
+	// Both are answered the same way.
 	for _, one := range []string{proofread.ScanInstruction, proofread.SpeechInstruction} {
 		for _, word := range []string{
 			"12|the line, put right",
-			"Nothing moves from one line to\n  another",
 			"A line you would leave alone is a line you do not answer with.",
 			proofread.Opens,
 			proofread.Closes,
@@ -281,5 +280,14 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 				t.Errorf("an instruction does not say %q", word)
 			}
 		}
+	}
+
+	// A page's printed lines stay where they were printed. A sentence broken
+	// across lines of speech is answered for as one line.
+	if !strings.Contains(proofread.ScanInstruction, "Nothing moves from one line to\n  another") {
+		t.Error("the scan instruction lets a word move between lines")
+	}
+	if !strings.Contains(proofread.SpeechInstruction, "12-14|the whole sentence, put right") {
+		t.Error("the speech instruction does not say how a broken sentence is answered for")
 	}
 }

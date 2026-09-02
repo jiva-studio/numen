@@ -16,10 +16,13 @@ const MaxEditDistance = 0.30
 // question that was asked.
 //
 // A mark of ours coming back refuses the batch, as does a reply row that is not
-// a number the batch carries and, after it, the line. A correction whose
-// letters stand further than maxDistance from the line as read is dropped, as
-// is one saying what the line already says and one that only puts something
-// wordless in front of it.
+// a number the batch carries and, after it, the line, and as does an answer
+// that empties a line which said something.
+//
+// A correction saying what the line already says is dropped, as is one that
+// only puts something wordless in front of it, and as is one whose letters
+// stand further than maxDistance from the line as read. A maxDistance at or
+// below zero holds a correction to no distance at all.
 func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
@@ -36,7 +39,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if row == "" {
 			continue
 		}
-		at, text, barred, ok := numbered(row)
+		at, through, text, barred, ok := numbered(row)
 		if !ok {
 			return nil, false
 		}
@@ -44,22 +47,42 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if !named {
 			return nil, false
 		}
+		// Every line a run puts together has to be one the batch carries: a run
+		// reaching past them is a run answering about lines nobody asked about.
+		joined := was
+		for line := at + 1; line <= through; line++ {
+			next, held := read[line]
+			if !held {
+				return nil, false
+			}
+			joined += " " + next
+		}
+		was = joined
 		// A line opening with the digits the row opens with, and no bar to tell
 		// the two apart, is a row whose number was left out: the line's own
 		// first word reads as the number, and the batch is refused.
 		if !barred && strings.HasPrefix(strings.TrimSpace(was), opening(row)) {
 			return nil, false
 		}
-		if text == strings.TrimSpace(was) {
+		if text == "" && strings.TrimSpace(was) != "" {
+			return nil, false
+		}
+		// A run answered with what its lines already say is still a change:
+		// the lines are put together.
+		if through == at && text == strings.TrimSpace(was) {
 			continue
 		}
-		if fronted(was, text) {
-			continue
+		// What is dropped is a correction that changes nothing. A run changes
+		// the lines whatever it says: they become one.
+		if through == at {
+			if fronted(was, text) {
+				continue
+			}
+			if maxDistance > 0 && Apart(was, text) > maxDistance {
+				continue
+			}
 		}
-		if Apart(was, text) > maxDistance {
-			continue
-		}
-		out = append(out, Line{At: at, Text: text})
+		out = append(out, Line{At: at, Through: through, Text: text})
 	}
 	return out, true
 }
@@ -72,8 +95,8 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]string {
-	put := make(map[int]string)
+func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]Line {
+	put := make(map[int]Line)
 	standing := make(map[int]int)
 	for _, batch := range asked {
 		reply, answered := replies[batch.At]
@@ -92,7 +115,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[in
 			if stood, seen := standing[line.At]; seen && after[line.At] < stood {
 				continue
 			}
-			put[line.At] = line.Text
+			put[line.At] = line
 			standing[line.At] = after[line.At]
 		}
 	}
@@ -104,22 +127,39 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[in
 //
 // A row opens with the number, and a bar, spaces, or both stand between the
 // number and the line.
-func numbered(row string) (at int, text string, barred, ok bool) {
+func numbered(row string) (at, through int, text string, barred, ok bool) {
 	digits := opening(row)
 	if digits == "" || len(digits) == len(row) {
-		return 0, "", false, false
+		return 0, 0, "", false, false
 	}
 	at, err := strconv.Atoi(digits)
 	if err != nil {
-		return 0, "", false, false
+		return 0, 0, "", false, false
 	}
 	rest := row[len(digits):]
+	through = at
+
+	// A run of lines put together is written as the first and the last of them.
+	if rest[0] == '-' {
+		last := opening(rest[1:])
+		if last == "" {
+			return 0, 0, "", false, false
+		}
+		if through, err = strconv.Atoi(last); err != nil || through <= at {
+			return 0, 0, "", false, false
+		}
+		rest = rest[1+len(last):]
+		if rest == "" {
+			return 0, 0, "", false, false
+		}
+	}
+
 	if rest[0] != '|' && rest[0] != ' ' && rest[0] != '\t' {
-		return 0, "", false, false
+		return 0, 0, "", false, false
 	}
 	rest = strings.TrimLeft(rest, " \t")
 	barred = strings.HasPrefix(rest, "|")
-	return at, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
+	return at, through, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
 }
 
 // opening is the run of digits a row opens with, and nothing for a row opening

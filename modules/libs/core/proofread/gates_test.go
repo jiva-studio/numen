@@ -245,8 +245,8 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 		if len(put) != 1 {
 			t.Fatalf("%v put right, want line 3 alone", put)
 		}
-		if put[3] != "we spoke of the harbour lights" {
-			t.Errorf("line 3 says %q, want the batch that saw the four lines after it", put[3])
+		if put[3].Text != "we spoke of the harbour lights" {
+			t.Errorf("line 3 says %q, want the batch that saw the four lines after it", put[3].Text)
 		}
 	}
 }
@@ -260,8 +260,8 @@ func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
 	}
 
 	put := proofread.Gathered([]proofread.Batch{early, late}, replies, proofread.MaxEditDistance)
-	if put[3] != "we spoke of the harbor lite" {
-		t.Errorf("line 3 says %q, want the later batch", put[3])
+	if put[3].Text != "we spoke of the harbor lite" {
+		t.Errorf("line 3 says %q, want the later batch", put[3].Text)
 	}
 }
 
@@ -272,11 +272,11 @@ func TestARefusedReplyLeavesItsLinesToTheOtherBatch(t *testing.T) {
 	}
 
 	put := proofread.Gathered([]proofread.Batch{wide(), narrow()}, replies, proofread.MaxEditDistance)
-	if put[3] != "we spoke of the harbor lite" {
-		t.Errorf("line 3 says %q, want the batch whose reply was an answer", put[3])
+	if put[3].Text != "we spoke of the harbor lite" {
+		t.Errorf("line 3 says %q, want the batch whose reply was an answer", put[3].Text)
 	}
-	if put[4] != "until the fogg came in" {
-		t.Errorf("line 4 says %q, want the batch whose reply was an answer", put[4])
+	if put[4].Text != "until the fogg came in" {
+		t.Errorf("line 4 says %q, want the batch whose reply was an answer", put[4].Text)
 	}
 }
 
@@ -286,7 +286,7 @@ func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 	put := proofread.Gathered([]proofread.Batch{wide(), narrow()}, replies, proofread.MaxEditDistance)
 	for _, at := range []int{1, 2, 4, 5} {
 		if text, named := put[at]; named {
-			t.Errorf("line %d was put right to %q with nothing answered about it", at, text)
+			t.Errorf("line %d was put right to %q with nothing answered about it", at, text.Text)
 		}
 	}
 }
@@ -296,10 +296,10 @@ func TestACorrectionThatMovedTooFarIsInNoBatchesGathering(t *testing.T) {
 
 	put := proofread.Gathered([]proofread.Batch{narrow()}, replies, proofread.MaxEditDistance)
 	if _, named := put[4]; named {
-		t.Errorf("line 4 was put right to %q, whose letters moved too far", put[4])
+		t.Errorf("line 4 was put right to %q, whose letters moved too far", put[4].Text)
 	}
-	if put[3] != "we spoke of the harbour lights" {
-		t.Errorf("line 3 says %q, want the correction that stayed put", put[3])
+	if put[3].Text != "we spoke of the harbour lights" {
+		t.Errorf("line 3 says %q, want the correction that stayed put", put[3].Text)
 	}
 }
 

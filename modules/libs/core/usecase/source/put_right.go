@@ -43,10 +43,6 @@ type PutRight struct {
 	// Batches is how many batches one request carries. Zero takes the default.
 	Batches int
 
-	// Apart is how far a correction may move a line's letters and still be a
-	// correction. Zero takes what was measured.
-	Apart float64
-
 	// Cut makes a source's chunks. It is called as the words are written down,
 	// so a recording answers about the speech already put right while the rest
 	// is still being asked about.
@@ -78,11 +74,12 @@ const (
 	DefaultBatches = 4
 )
 
-// putting is what says who put a transcript right and how far they got. Line is
-// the first line no request has covered.
+// putting is what says who put a transcript right and how far they got.
 type putting struct {
-	By   string `json:"by"`
-	Line int    `json:"line"`
+	By string `json:"by"`
+	// At is the millisecond past which nothing has been asked about. It counts
+	// in time, which putting a broken sentence back together does not move.
+	At int `json:"at"`
 }
 
 // Execute puts one recording's transcript right.
@@ -148,12 +145,12 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	}
 
 	batches := proofread.Spoken(cues, u.lines(), u.overlap())
-	res.Lines = counting(cues, len(cues))
-	res.Resumed = counting(cues, stood.Line)
+	res.Lines = linesTo(cues, cues[len(cues)-1].To)
+	res.Resumed = linesTo(cues, stood.At)
 	res.Read, res.Left = res.Resumed, 0
 	u.progress(res)
 
-	at := after(batches, stood.Line)
+	at := after(batches, cues, stood.At)
 	if at >= len(batches) {
 		return res, nil
 	}
@@ -178,16 +175,24 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}
-		res.Refused += refused(group, replies, u.apart())
+		res.Refused += refused(group, replies, unbounded)
 		for _, batch := range group {
 			for _, line := range batch.Lines {
 				asked[line.At] = true
 			}
 		}
-		put := proofread.Gathered(group, replies, u.apart())
+		put := proofread.Gathered(group, replies, unbounded)
 		for line, said := range put {
-			cues[line].Text = said
+			cues[line].Text = said.Text
 			fixed[line] = true
+			// A sentence put back together is one cue, from the first moment of
+			// the run to the last. The cues it swallowed say nothing, and
+			// nothing is what a transcript writes them as.
+			for gone := said.At + 1; gone <= said.Through && gone < len(cues); gone++ {
+				cues[said.At].To = max(cues[said.At].To, cues[gone].To)
+				cues[gone].Text = ""
+				fixed[gone] = true
+			}
 		}
 		res.Fixed, res.Left = len(fixed), len(asked)-len(fixed)
 
@@ -202,7 +207,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.counted(ctx, store, far, putting{Line: beyond(group)}); err != nil {
+		if err := u.counted(ctx, store, far, putting{At: beyond(group, cues)}); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -281,18 +286,18 @@ func refused(asked []proofread.Batch, replies map[int]string, apart float64) int
 }
 
 // after is the first batch holding a line no run has asked about.
-func after(batches []proofread.Batch, line int) int {
+func after(batches []proofread.Batch, cues []transcript.Cue, ms int) int {
 	at := 0
-	for at < len(batches) && last(batches[at]) < line {
+	for at < len(batches) && cues[last(batches[at])].To <= ms {
 		at++
 	}
 	return at
 }
 
-// beyond is the number of the first line past a run of batches. Each batch
-// reaches further into the transcript than the one before it.
-func beyond(group []proofread.Batch) int {
-	return last(group[len(group)-1]) + 1
+// beyond is the moment a run of batches reaches to. Each batch reaches further
+// into the transcript than the one before it.
+func beyond(group []proofread.Batch, cues []transcript.Cue) int {
+	return cues[last(group[len(group)-1])].To
 }
 
 // last is the number of the final line a batch holds.
@@ -300,12 +305,12 @@ func last(batch proofread.Batch) int {
 	return batch.Lines[len(batch.Lines)-1].At
 }
 
-// counting is how many of the cues before a line carry one. A cue saying
-// nothing carries no line.
-func counting(cues []transcript.Cue, before int) int {
+// linesTo is how many lines a transcript reads as up to a moment. A cue saying
+// nothing is no line.
+func linesTo(cues []transcript.Cue, ms int) int {
 	out := 0
-	for at, cue := range cues {
-		if at >= before {
+	for _, cue := range cues {
+		if cue.To > ms {
 			break
 		}
 		if cue.Text != "" {
@@ -314,6 +319,7 @@ func counting(cues []transcript.Cue, before int) int {
 	}
 	return out
 }
+
 
 // cut makes this source's chunks from the transcript as it now stands.
 func (u PutRight) cut(ctx context.Context, v domain.Vault, path string) error {
@@ -351,12 +357,8 @@ func (u PutRight) batch() int {
 	return u.Batches
 }
 
-func (u PutRight) apart() float64 {
-	if u.Apart <= 0 {
-		return proofread.MaxEditDistance
-	}
-	return u.Apart
-}
+// unbounded holds a correction to speech to no distance from what was heard.
+const unbounded = 0.0
 
 func (u PutRight) progress(res PutRightResult) {
 	if u.OnProgress != nil {

@@ -409,7 +409,6 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 		By:      by,
 		Lines:   profile.BatchSize,
 		Overlap: profile.Overlap,
-		Apart:   t.cfg.Proofreading.Apart(),
 		Cut:     t.Cut,
 		OnProgress: func(res source.PutRightResult) {
 			t.say(task.Task{

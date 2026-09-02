@@ -93,7 +93,7 @@ func TestATranscriptIsPutRightAndEveryTimingStands(t *testing.T) {
 	if err := json.Unmarshal(kept(t, shelved, text.Proofread(text.ASR, hash)), &stood); err != nil {
 		t.Fatal(err)
 	}
-	if stood.By != "a proofreader" || stood.Line != 3 {
+	if stood.By != "a proofreader" || stood.At != stretch(2).To {
 		t.Errorf("got %+v", stood)
 	}
 }
@@ -199,9 +199,9 @@ func TestATranscriptSomebodyElseWroteIsLeftAsTheyLeftIt(t *testing.T) {
 		said  []byte
 		stood putting
 	}{
-		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", Line: 2}},
+		{"a person wrote it in the window", append(own, transcript.Hand()...), putting{By: "a proofreader", At: stretch(1).To}},
 		{"nobody here wrote it", own, putting{}},
-		{"another proofreader wrote it", own, putting{By: "somebody else", Line: 2}},
+		{"another proofreader wrote it", own, putting{By: "somebody else", At: stretch(1).To}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			u, v, shelved, by, hash := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
