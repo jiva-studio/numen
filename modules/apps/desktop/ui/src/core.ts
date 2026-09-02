@@ -107,6 +107,35 @@ export interface Task {
   readonly asked: boolean
 }
 
+/**
+ * How a run asked for over a file came out: it began now, it waits its turn
+ * behind another, this file is being worked on already, it has been done, or
+ * the file is not of that kind.
+ */
+export type Answer = 'started' | 'queued' | 'running' | 'done' | 'unfit'
+
+/**
+ * What asking for a run answered: how it came out, and one sentence beside it
+ * in the application's own words. A build that cannot do the run at all answers
+ * nothing else, and the run is offered nowhere after that.
+ */
+export type Outcome =
+  | { readonly able: false }
+  | {
+      readonly able: true
+      readonly path: string
+      readonly answer: Answer
+      readonly why: string
+    }
+
+/** The runs a person asks for over one file of the vault. */
+export interface Runs {
+  /** A recording listened to, and what was heard written down. */
+  transcribes(path: string): Promise<Outcome>
+  /** A scanned document read, and the text of it written down. */
+  recognises(path: string): Promise<Outcome>
+}
+
 /** Whether a node hangs the parts of its note, and how many stand at once. */
 export interface Hanging {
   readonly hangs: boolean

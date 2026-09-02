@@ -18,7 +18,7 @@ import type { NoteType, Source } from './core'
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
   itemsFor(null, false),
-  ...(['note', 'book', 'other'] as Source[]).flatMap((source) => [
+  ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
     itemsFor({ source, folder: false }, false),
     itemsFor({ source, folder: true }, false),
   ]),

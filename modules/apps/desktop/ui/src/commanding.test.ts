@@ -10,9 +10,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   asksCommands,
+  cannotRun,
   commanding,
   commandsOf,
   creates,
+  runsAgain,
   MAKING,
   offering,
   overNote,
@@ -31,6 +33,8 @@ const front = (over: Partial<Where> = {}): Where => ({
   kind: 'note',
   path: 'physics/Ontology.md',
   title: 'Ontology',
+  file: '',
+  source: null,
   vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
@@ -293,6 +297,7 @@ describe('a command that needs nothing', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
+      file: '',
       others: [],
       name: '',
       kind: 'note',
@@ -351,6 +356,7 @@ describe('a command that asks for a name', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Ontology',
+      file: '',
       others: [],
       name: 'Entropy',
       kind: 'note',
@@ -486,6 +492,66 @@ describe('a note that moves under an open step', () => {
   })
 })
 
+/** A recording in front of the window, and a scanned document. */
+const heard: Partial<Where> = {
+  kind: 'recording',
+  path: '',
+  title: '',
+  file: 'talks/Ants.mp3',
+  source: 'recording',
+}
+const scanned: Partial<Where> = {
+  kind: 'document',
+  path: '',
+  title: '',
+  file: 'books/Ants.pdf',
+  source: 'book',
+}
+
+describe('the runs over the file in front', () => {
+  it('offers a recording to be transcribed, and nothing to recognise', () => {
+    const { commands } = asking(heard)
+
+    expect(drawn(commands.bands).file).toStrictEqual(['transcribe'])
+  })
+
+  it('offers a scan to be recognised, and nothing to transcribe', () => {
+    const { commands } = asking(scanned)
+
+    expect(drawn(commands.bands).file).toStrictEqual(['recognise'])
+  })
+
+  // The band stands where there is something in it, so a note is offered no
+  // empty shelf of runs.
+  it('offers neither over a note, and draws no band for them', () => {
+    const { commands } = asking()
+
+    expect(drawn(commands.bands).file).toBeUndefined()
+  })
+
+  it('offers neither while the vault is still being read', () => {
+    const { commands } = asking({ ...heard, ready: false })
+
+    expect(drawn(commands.bands).file).toBeUndefined()
+  })
+
+  it('carries the file the tab in front holds', () => {
+    const { commands } = asking(heard)
+
+    expect(commands.chose('transcribe', 'transcribe')?.file).toBe('talks/Ants.mp3')
+  })
+
+  it('is offered nowhere once this build has said it cannot do it at all', () => {
+    cannotRun('transcribe')
+    try {
+      expect(drawn(asking(heard).commands.bands).file).toBeUndefined()
+      expect(drawn(asking(scanned).commands.bands).file).toStrictEqual(['recognise'])
+    } finally {
+      runsAgain()
+    }
+  })
+})
+
 describe('a command that was not offered over what it was asked over', () => {
   it('says the vault is still being read', () => {
     const { commands } = asking({ ready: false })
@@ -538,6 +604,7 @@ describe('a command that asks for a note', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: 'Entropy',
+      file: '',
       others: [],
       name: '',
       kind: 'note',
@@ -651,6 +718,7 @@ describe('a command that offers a list the window holds', () => {
       path: 'physics/Ontology.md',
       note: null,
       title: 'Ontology',
+      file: '',
       others: [],
       name: 'preset:dracula',
       kind: 'note',
@@ -799,6 +867,7 @@ describe('a search that turned up nothing', () => {
       vault: { id: 'physics', name: 'Physics' },
       note: null,
       title: '',
+      file: '',
       others: [],
       name: 'Entropy',
       kind: 'note',

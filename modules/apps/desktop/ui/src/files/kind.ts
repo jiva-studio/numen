@@ -8,7 +8,7 @@
  * screen.
  */
 import { ref } from 'vue'
-import type { Entry, Went } from '../core'
+import type { Entry, Source, Went } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_STENCIL, OFFERED, RENAME } from './menu'
@@ -32,10 +32,11 @@ export interface Filing {
   /** Somewhere chosen, taken. Nothing chosen takes the person nowhere. */
   lands(landing: Landing | null): void
   /**
-   * A command asked for on the files the rows stand for. One that needs
-   * something asks for it in the palette; the rest happen where they stand.
+   * A command asked for on the files the rows stand for, under what the vault
+   * holds at the first of them. One that needs something asks for it in the
+   * palette; the rest happen where they stand.
    */
-  runs(id: string, paths: readonly string[], name: string): void
+  runs(id: string, paths: readonly string[], name: string, source: Source): void
   /** A file or a folder filed somewhere else, under the name the path ends in. */
   moves(from: string, to: string): Promise<void>
   /**
@@ -257,7 +258,7 @@ export function filing(list: Listing, deps: Filing) {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps.runs('remove', paths, nameOf(first))
+    deps.runs('remove', paths, nameOf(first), sourceOf(first))
   }
 
   /**
@@ -325,12 +326,15 @@ export function filing(list: Listing, deps: Filing) {
       renaming.value = path
       return
     }
-    deps.runs(id, over(path), nameOf(path))
+    deps.runs(id, over(path), nameOf(path), sourceOf(path))
   }
 
   /** What a file is called, which is the last segment of the path it is filed at. */
   const nameOf = (path: string): string =>
     list.entryAt(path)?.name ?? (path.split('/').pop() ?? path)
+
+  /** What the vault holds at a row, and none of the three where it holds none. */
+  const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'
 
   return {
     list,

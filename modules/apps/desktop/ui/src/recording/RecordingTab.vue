@@ -120,8 +120,9 @@ const follows = computed(() => props.held.following.value)
   padding: var(--numen-panel-padding);
   border: var(--numen-stroke) solid var(--numen-panel-border);
   border-radius: var(--numen-radius-panel);
-  background: var(--numen-panel-bg);
-  backdrop-filter: blur(var(--numen-panel-blur));
+  /* The card is opaque: the words go on under it, and nothing of them shows
+     through. */
+  background: var(--numen-node-bg);
   box-shadow: var(--numen-shadow-card);
 }
 

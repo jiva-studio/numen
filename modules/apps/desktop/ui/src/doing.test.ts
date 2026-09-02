@@ -5,9 +5,19 @@
  * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, deedOf, type Deed, type Where } from './commanding'
+import { canRun, commandsOf, deedOf, runsAgain, type Deed, type Where } from './commanding'
 import { does, reaching, type Doing, type Store } from './doing'
-import type { Added, Known, Movement, Refused, Removed, Renamed, VaultRefused } from './core'
+import type {
+  Added,
+  Answer,
+  Known,
+  Movement,
+  Outcome,
+  Refused,
+  Removed,
+  Renamed,
+  VaultRefused,
+} from './core'
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
@@ -16,6 +26,8 @@ const front = (over: Partial<Where> = {}): Where => ({
   kind: 'plex',
   path: 'physics/Ontology.md',
   title: 'Ontology',
+  file: '',
+  source: null,
   vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
@@ -37,6 +49,14 @@ const renamed = (over: Partial<Renamed> = {}): Renamed => ({
   refusal: null,
   changed: false,
   ...over,
+})
+
+/** How a run came out, as the application answers it: a word and a sentence. */
+const outcome = (answer: Answer, why: string): Outcome => ({
+  able: true,
+  path: 'talks/Ants.mp3',
+  answer,
+  why,
 })
 
 const removed = (over: Partial<Removed> = {}): Removed => ({
@@ -71,6 +91,8 @@ const window = (
     movement?: Movement
     /** What making a folder was refused with. */
     folderRefused?: Refused
+    /** How a run asked for over a file came out. */
+    outcome?: Outcome
   } = {},
 ) => {
   const done: string[] = []
@@ -97,6 +119,14 @@ const window = (
     makesFolder: async (path) => {
       done.push(`makes folder ${path}`)
       return answers.folderRefused ?? null
+    },
+    transcribes: async (path) => {
+      done.push(`transcribes ${path}`)
+      return answers.outcome ?? outcome('started', '')
+    },
+    recognises: async (path) => {
+      done.push(`recognises ${path}`)
+      return answers.outcome ?? outcome('started', '')
     },
     cuts: async (folder, name) => {
       done.push(`cuts ${folder || '—'} ${name}`)
@@ -282,6 +312,80 @@ describe('a note made', () => {
     await carry(deedOf('child', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
+  })
+})
+
+/**
+ * The sentences the application answers a run with, one to an outcome. They are
+ * its own words, and the window shows what it is given.
+ */
+const WHY: Record<Answer, string> = {
+  started: 'This recording is being heard now.',
+  queued: 'This recording is waiting its turn to be heard.',
+  running: 'This recording is being heard already.',
+  done: 'This recording has already been heard.',
+  unfit: 'Only a recording is heard, and this file is not one.',
+}
+
+/** A run asked for over the recording in front, as it came out. */
+const asked = (answer: Answer) => {
+  const one = window({ outcome: outcome(answer, WHY[answer]) })
+  return { one, deed: deedOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
+}
+
+describe('a run asked for over a file', () => {
+  it('asks the application over that file', async () => {
+    const { one, deed } = asked('started')
+
+    await carry(deed, one.on)
+
+    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
+  })
+
+  // Every outcome carries a sentence, so the person is told one whatever
+  // happened.
+  it('says how it came out, in the words the application sent', async () => {
+    for (const answer of Object.keys(WHY) as Answer[]) {
+      const { one, deed } = asked(answer)
+
+      await carry(deed, one.on)
+
+      expect(one.said, answer).toStrictEqual([WHY[answer]])
+    }
+  })
+
+  // The person asked for this one by name, and a recording already heard would
+  // otherwise look like a command that did nothing.
+  it('says a recording already heard has been heard', async () => {
+    const { one, deed } = asked('done')
+
+    await carry(deed, one.on)
+
+    expect(one.said).toStrictEqual([WHY.done])
+  })
+
+  it('says the same of a scan already read', async () => {
+    const why = 'This scan has already been read.'
+    const one = window({ outcome: { able: true, path: 'books/Ants.pdf', answer: 'done', why } })
+
+    await carry(deedOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
+
+    expect(one.done).toStrictEqual(['recognises books/Ants.pdf'])
+    expect(one.said).toStrictEqual([why])
+  })
+
+  it('says this build cannot do it, and offers it nowhere after that', async () => {
+    const one = window({ outcome: { able: false } })
+
+    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    try {
+      expect(one.said).toStrictEqual([words.unrunnable])
+      expect(canRun('transcribe')).toBe(false)
+      expect(canRun('recognise')).toBe(true)
+    } finally {
+      runsAgain()
+    }
   })
 })
 

@@ -95,6 +95,12 @@ type API struct {
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
+	// Recognises reads a scanned document and Transcribes hears a recording,
+	// each for whoever asks. They are the jobs an agent asks through too, so
+	// what a person started in the window is shown to both. A build without one
+	// answers that it cannot do that run.
+	Recognises  Run
+	Transcribes Run
 	// Cut asks for a source to be cut again from whatever its text now says. A
 	// window that put a transcript right calls it, so search answers with the
 	// words as they now read. Nil for a build with nothing cutting behind it,

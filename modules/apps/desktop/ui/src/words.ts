@@ -61,8 +61,9 @@ export const WORDS = {
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
-  /** The commands, and the three bands they are drawn in. */
+  /** The commands, and the bands they are drawn in. */
   overNote: 'This note',
+  overFile: 'This file',
   overWindow: 'This window',
   overVault: 'This vault',
   beside: 'Open beside',
@@ -74,6 +75,9 @@ export const WORDS = {
   destroy: 'Destroy note',
   ask: 'Ask the agent about this note',
   copy: 'Copy path',
+  /** The two runs over the file in front: a recording heard, a scan read. */
+  transcribe: 'Transcribe this recording',
+  recognise: 'Recognise the text of this document',
   reveal: 'Show this note in the files',
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
@@ -184,6 +188,8 @@ export const WORDS = {
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
+  /** This build cannot do the run at all, and stops offering it. */
+  unrunnable: 'this installation of numen cannot do that at all',
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',
