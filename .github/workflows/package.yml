@@ -637,15 +637,32 @@ jobs:
           mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
           for at in "${paths[@]}"; do
             want=$(stat -c%s "$at")
+            sum=$(sha256sum "$at" | cut -d' ' -f1)
+
             # A purge is answered before it has reached every edge, so a name
-            # asked for straight after one can come back as nothing yet.
-            # -w ends no line of its own, and read wants one.
-            read -r code length < <(curl -sS -o /dev/null -L \
-              --retry 6 --retry-delay 5 --retry-all-errors -f \
-              -w '%{http_code} %{size_download}\n' "$SERVED_FROM/$at" || true)
+            # asked for straight after one comes back as nothing yet, or as the
+            # part of it that has arrived. A part carries 200, which curl reads
+            # as an answer, so the asking is counted here.
+            code= length= got=
+            for try in 1 2 3 4 5 6 7 8; do
+              [ "$try" = 1 ] || sleep 10
+              # -w ends no line of its own, and read wants one.
+              read -r code length < <(curl -sS -o "$RUNNER_TEMP/fetched" -L \
+                -w '%{http_code} %{size_download}\n' "$SERVED_FROM/$at" || true)
+              [ "${code:-0}" = 200 ] && [ "${length:-0}" = "$want" ] || continue
+              got=$(sha256sum "$RUNNER_TEMP/fetched" | cut -d' ' -f1)
+              [ "$got" = "$sum" ] && break
+            done
+
             echo "${code:-—}  $at  ${length:-0} of $want"
             if [ "${code:-0}" != 200 ] || [ "${length:-0}" != "$want" ]; then
               echo "::error::$at did not come back whole from $SERVED_FROM"
+              exit 1
+            fi
+            # A name can come back whole and be other bytes: an edge holding
+            # what stood there before the purge answers the same length.
+            if [ "$got" != "$sum" ]; then
+              echo "::error::$at came back as other bytes from $SERVED_FROM"
               exit 1
             fi
           done
