@@ -121,6 +121,8 @@ const INSTALLATION: Installation = {
   parts: () => 6,
   choosesHanging: () => {},
   choosesParts: () => {},
+  dayStarts: () => '04:00',
+  choosesDayStarts: () => {},
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */

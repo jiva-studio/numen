@@ -38,6 +38,7 @@ import { chorded, commandFor, keysOf } from './keying'
 import { iconFor, iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
+import { reviewing } from './reviewing'
 import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type Doing, type Store } from './doing'
@@ -487,6 +488,9 @@ const dressed = wearing(themes, words, tell.under('worn'))
 /** Whether a note's title and the name of its file are kept as one name. */
 const oneName = syncing(core, words, tell.under('named'))
 
+/** The hour a day of review begins at, on the clock on the wall. */
+const dayBegins = reviewing(core, words, tell.under('reviewed'))
+
 /**
  * Everything this installation is configured as, in a tab of its own. It holds
  * nothing: each row reaches the same value the command of that name reaches.
@@ -505,6 +509,8 @@ const configured = settling(held.host, {
   parts: () => hungParts.parts.value,
   choosesHanging: (on) => void hungParts.chooses(on ? ON : OFF),
   choosesParts: (count) => void hungParts.choosesCount(`${count}`),
+  dayStarts: () => dayBegins.starts.value,
+  choosesDayStarts: (hour) => void dayBegins.chooses(hour),
 })
 
 held.declares([configured.kind])
@@ -776,6 +782,7 @@ onMounted(async () => {
   void dressed.start()
   void oneName.start()
   void hungParts.start()
+  void dayBegins.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)

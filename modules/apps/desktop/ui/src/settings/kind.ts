@@ -32,6 +32,9 @@ export interface Installation {
   parts(): number
   choosesHanging(on: boolean): void
   choosesParts(count: number): void
+  /** The hour a day of review begins at, written as `04:00`. */
+  dayStarts(): string
+  choosesDayStarts(hour: string): void
 }
 
 /** What the settings tab holds. */

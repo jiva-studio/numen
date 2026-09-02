@@ -76,6 +76,8 @@ function fake(over: Partial<Faked> = {}) {
     hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
+    reviewing: async () => '04:00',
+    choosesReviewing: async () => null,
     ...over,
   }
   return { core, files, wrote }

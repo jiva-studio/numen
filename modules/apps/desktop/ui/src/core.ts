@@ -297,6 +297,16 @@ export interface Core {
    * and nothing where it was. A count left out stands as it is.
    */
   choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
+  /**
+   * The hour a day of review begins at, on the clock on the wall, written as
+   * `04:00`.
+   */
+  reviewing(): Promise<string>
+  /**
+   * That hour written into the settings file. What could not be written, and
+   * nothing where it was.
+   */
+  choosesReviewing(starts: string): Promise<Refused | null>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

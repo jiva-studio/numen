@@ -269,6 +269,9 @@ export const core: Core & Asking & Commanding = {
     refusalIn(
       await vault.chooseHanging({ hangPartsUnderANode: hangs, partsUnderANode: parts }),
     ),
+  reviewing: async () => (await vault.reviewing({})).dayStarts,
+  choosesReviewing: async (starts) =>
+    refusalIn(await vault.chooseReviewing({ dayStarts: starts })),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {

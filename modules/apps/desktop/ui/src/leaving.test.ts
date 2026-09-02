@@ -107,6 +107,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
+    reviewing: async () => '04:00',
+    choosesReviewing: async () => null,
   }
   return {
     core,

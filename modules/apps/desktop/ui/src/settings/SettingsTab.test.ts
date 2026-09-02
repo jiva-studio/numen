@@ -44,6 +44,8 @@ const standing = (pinned = false) => {
       done.push(`hanging ${on}`)
     },
     choosesParts: (count) => void done.push(`parts ${count}`),
+    dayStarts: () => '04:00',
+    choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
   return { done, tab: mount(SettingsTab, { props: { held: { installation } } }) }
 }
@@ -94,9 +96,21 @@ describe('the settings tab', () => {
   it('draws a setting it does not write where it belongs, and says where it stands', () => {
     const { tab } = standing()
     const elsewhere = tab.findAll('.settings__elsewhere')
-    expect(elsewhere).toHaveLength(5)
+    expect(elsewhere).toHaveLength(4)
     expect(elsewhere[0]!.text()).toBe(words.inTheFile)
-    expect(tab.text()).toContain(words.dayStarts)
     expect(tab.text()).toContain(words.agentUse)
+  })
+
+  it('opens on the hour the settings begin a day of review at', () => {
+    const { tab } = standing()
+    const hour = tab.get('[data-slot="time-field"]').element as HTMLInputElement
+    expect(hour.value).toBe('04:00')
+    expect(tab.text()).toContain(words.dayStarts)
+  })
+
+  it('writes the hour a day of review begins at', async () => {
+    const { tab, done } = standing()
+    await tab.get('[data-slot="time-field"]').setValue('06:30')
+    expect(done).toStrictEqual(['day starts 06:30'])
   })
 })

@@ -31,6 +31,9 @@ export type { Bounds } from './components/ui/number-field'
 
 export { Switch } from './components/ui/switch'
 
+/** An hour and a minute of the day, typed on the clock the machine draws. */
+export { TimeField, onTheClock } from './components/ui/time-field'
+
 /** One value along a track, moved by a handle. */
 export { Slider } from './components/ui/slider'
 

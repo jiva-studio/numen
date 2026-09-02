@@ -8,9 +8,10 @@
  * window does not reach yet is drawn where it belongs and says where it stands.
  */
 import { computed } from 'vue'
-import { NumberField, Segmented, Select, Switch, type SelectChoice } from '@numen/ui'
+import { NumberField, Segmented, Select, Switch, TimeField, type SelectChoice } from '@numen/ui'
 import type { Held } from './kind'
 import type { Mode } from '../theme'
+import { LATEST_STARTS as LATEST } from '../reviewing'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../wearing'
 import { WORDS as words } from './words'
 
@@ -42,9 +43,11 @@ const themes = computed<readonly SelectChoice[]>(() =>
 /** How fine a size may be turned, which is where the ladder of them steps. */
 const STEP = 0.1
 
+/** How early in the day a day of review may be asked to begin. */
+const EARLIEST = '00:00'
+
 /** The settings the window shows and does not write. Each says where it stands. */
 const elsewhere = [
-  { group: words.review, name: words.dayStarts, detail: words.dayStartsDetail },
   { group: words.indexing, name: words.embedding, detail: words.embeddingDetail },
   { group: words.indexing, name: words.recognition, detail: words.recognitionDetail },
   { group: words.indexing, name: words.proofreading, detail: words.proofreadingDetail },
@@ -52,7 +55,7 @@ const elsewhere = [
 ]
 
 /** The groups those stand in, in the order they are drawn. */
-const groups = [words.review, words.indexing, words.agent]
+const groups = [words.indexing, words.agent]
 
 const reading = (group: string) => elsewhere.filter((one) => one.group === group)
 </script>
@@ -188,6 +191,27 @@ const reading = (group: string) => elsewhere.filter((one) => one.group === group
               :model-value="held.syncing()"
               :aria-labelledby="'settings-syncing'"
               @update:model-value="(on: boolean) => held.choosesSyncing(on)"
+            />
+          </span>
+        </div>
+      </section>
+
+      <section class="settings__group" :aria-label="words.review">
+        <h2 class="settings__heading">{{ words.review }}</h2>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <label class="settings__name" for="settings-day-starts">{{ words.dayStarts }}</label>
+            <span class="settings__detail">{{ words.dayStartsDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <TimeField
+              id="settings-day-starts"
+              :model-value="held.dayStarts()"
+              :min="EARLIEST"
+              :max="LATEST"
+              class="settings__number"
+              @settles="(hour: string) => held.choosesDayStarts(hour)"
             />
           </span>
         </div>
