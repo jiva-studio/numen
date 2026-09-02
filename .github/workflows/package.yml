@@ -254,6 +254,8 @@ jobs:
           make install
           make interface
 
+      # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
+      # into it.
       - name: Window
         working-directory: modules/apps/desktop
         env:
@@ -261,12 +263,18 @@ jobs:
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
+          go install github.com/akavel/rsrc@v0.10.2
+
           into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
           stamp="-X $into.version=$VERSION -X $into.build=$BUILD -X $into.commit=$COMMIT"
 
           # The two windows are always the same build: they ship together, one
-          # version, one installer.
+          # version, one installer. A resource is linked into the command it is
+          # written beside, and its name holds the system and the machine the
+          # builds that take it are for.
           for window in numen numen-flashcards; do
+            rsrc -arch amd64 -ico "build/windows/$window.ico" \
+              -o "cmd/$window/rsrc_windows_amd64.syso"
             GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "$stamp" \
               -o "$RUNNER_TEMP/$window.exe" "./cmd/$window"
           done
@@ -292,6 +300,7 @@ jobs:
             "-DVERSION=$VERSION" \
             "-DNUMERIC_VERSION=$NUMERIC" \
             "-DBINARY=$RUNNER_TEMP/numen.exe" \
+            "-DNUMEN_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen.ico" \
             "-DFLASHCARDS=$RUNNER_TEMP/numen-flashcards.exe" \
             "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen-flashcards.ico" \
             "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \

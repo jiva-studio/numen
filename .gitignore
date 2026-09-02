@@ -11,6 +11,9 @@ node_modules/
 # worktrees it makes, which is the one place it can put them
 .claude/worktrees/
 
+# the drawing a windows build links into a command, written beside it
+*.syso
+
 # what a build leaves at the root
 /numen
 /numen-cli
