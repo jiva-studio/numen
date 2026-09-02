@@ -130,3 +130,43 @@ describe('what the screen offers below the list', () => {
     expect(caps(drawWith({ text: offer.text }))).toStrictEqual(['A'])
   })
 })
+
+/**
+ * The width the screen is drawn at is the column's own, so what a narrow one
+ * gives up is given up in the stylesheet. What is asked here is that everything
+ * it gives up is marked to be given up, and that what it says is still said
+ * somewhere a person can reach.
+ */
+describe('the screen drawn narrow', () => {
+  const drawWith = (one: Offer) =>
+    mount(Welcome, {
+      props: {
+        vaults: [vault('physics')],
+        heading: 'Vaults',
+        offer: one,
+        ways: [{ id: 'find', text: 'Search', keys: { marks: ['control'], letter: 'K' } }],
+      },
+    })
+
+  it('marks every keystroke it gives up, on a way in, on a vault and on the offer', () => {
+    const screen = drawWith(offer)
+    expect(screen.findAllComponents(KeyCap)).toHaveLength(3)
+    expect(screen.findAll('.welcome__keys')).toHaveLength(3)
+  })
+
+  it('leaves the row itself pressed by hand where its keystroke is given up', async () => {
+    const screen = drawWith(offer)
+
+    await screen.get('.welcome__row').trigger('click')
+
+    expect(screen.emitted('runs')).toStrictEqual([['find']])
+  })
+
+  it('marks what is said under a name, and keeps the whole path on the row', () => {
+    const screen = drawWith(offer)
+    const path = screen.get('.welcome__row--vault .welcome__aside')
+
+    expect(path.text()).toBe('/vaults/physics')
+    expect(path.attributes('title')).toBe('/vaults/physics')
+  })
+})

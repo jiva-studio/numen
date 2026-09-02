@@ -46,6 +46,7 @@ import type {
   Entry,
   Faced,
   Fault,
+  Configured,
   Hanging,
   Known,
   Made,
@@ -269,6 +270,29 @@ export const core: Core & Asking & Commanding = {
     refusalIn(
       await vault.chooseHanging({ hangPartsUnderANode: hangs, partsUnderANode: parts }),
     ),
+  settings: async () => {
+    const answer = await vault.settings({})
+    return {
+      written: answer.written,
+      path: answer.path,
+      models: answer.models.map((one) => ({
+        namedAt: one.namedAt,
+        name: one.name,
+        title: one.title,
+        shelf: one.shelf,
+        byDefault: one.byDefault,
+        writes: one.writes.map((write) => ({ at: write.at, value: write.value })),
+      })),
+    } satisfies Configured
+  },
+  choosesSetting: async (written) => {
+    await vault.chooseSettings({
+      settings: written.map((one) => ({ at: [...one.at], value: one.value })),
+    })
+  },
+  reviewing: async () => (await vault.reviewing({})).dayStarts,
+  choosesReviewing: async (starts) =>
+    refusalIn(await vault.chooseReviewing({ dayStarts: starts })),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {

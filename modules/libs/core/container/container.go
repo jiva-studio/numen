@@ -7,6 +7,8 @@
 package container
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -241,6 +243,50 @@ func (c Config) TurnsReviewing() func(starts string) error {
 		return settings.Save(path, settings.Setting{
 			At: []string{"review", "day_starts"}, Value: written,
 		})
+	}
+}
+
+// Configured reads, as the window asks, every setting as JSON and the file it
+// stands in.
+func (c Config) Configured() func() (string, string, error) {
+	return func() (string, string, error) {
+		path, err := c.settingsFile()
+		if err != nil {
+			return "", "", err
+		}
+		held, err := settings.At(path)
+		if err != nil {
+			return "", path, err
+		}
+		written, err := settings.Written(held)
+		return written, path, err
+	}
+}
+
+// Models reads, as the window asks, the models each setting that names one can
+// be set to, and the programs the agent setting can name.
+func (c Config) Models() func() []port.Model {
+	return func() []port.Model { return append(settings.Models(), settings.Agents()...) }
+}
+
+// TurnsSetting writes settings into the file. The file is patched as an object,
+// so every key a person typed stays where it was, and a value the settings
+// could not be read out of again is refused before anything is written.
+func (c Config) TurnsSetting() func(written []port.Setting) error {
+	return func(written []port.Setting) error {
+		held := make([]settings.Setting, 0, len(written))
+		for _, one := range written {
+			var value json.RawMessage
+			if err := json.Unmarshal([]byte(one.Value), &value); err != nil {
+				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
+			}
+			held = append(held, settings.Setting{At: one.At, Value: value})
+		}
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, held...)
 	}
 }
 

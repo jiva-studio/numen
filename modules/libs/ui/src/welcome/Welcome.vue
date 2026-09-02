@@ -55,7 +55,7 @@ defineEmits<{
           <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
             <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
             <span class="welcome__what">{{ one.text }}</span>
-            <KeyCap v-if="one.keys" :keys="one.keys" />
+            <KeyCap v-if="one.keys" class="welcome__keys" :keys="one.keys" />
           </button>
         </li>
       </ul>
@@ -91,6 +91,7 @@ defineEmits<{
                    drawn without the letter it will be opened by. -->
               <KeyCap
                 v-if="vaultLetter(at) && !one.waiting"
+                class="welcome__keys"
                 :keys="{ marks: [], letter: vaultLetter(at) }"
               />
             </button>
@@ -102,7 +103,7 @@ defineEmits<{
             <span class="welcome__what">{{ offer.text }}</span>
             <span v-if="offer.detail" class="welcome__aside">{{ offer.detail }}</span>
           </span>
-          <KeyCap v-if="offer.keys" :keys="offer.keys" />
+          <KeyCap v-if="offer.keys" class="welcome__keys" :keys="offer.keys" />
         </button>
       </section>
     </div>
@@ -120,10 +121,9 @@ defineEmits<{
 
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   block-size: 100%;
   overflow: auto;
+  container-type: inline-size;
   padding: var(--numen-gutter);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
@@ -139,10 +139,14 @@ defineEmits<{
   font-size: var(--numen-text-1);
 }
 
+/* The column sits in the middle of whatever room there is. It is centred by its
+   own margins, so a column taller than the room keeps its head inside it and
+   the whole of it is scrolled to. */
 .welcome__column {
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
+  margin: auto;
   inline-size: 100%;
   max-inline-size: 22rem;
 }
@@ -269,6 +273,21 @@ defineEmits<{
   align-items: center;
   justify-content: center;
   min-block-size: 4rem;
+}
+
+/* Narrow, the row keeps its name and gives up the keystroke drawn on it: the
+   row is pressed by hand, and the key still works. Narrower, it gives up what
+   is said under the name; a path is on the row itself, for pointing at. */
+@container (max-width: 24rem) {
+  .welcome__keys {
+    display: none;
+  }
+}
+
+@container (max-width: 18rem) {
+  .welcome__aside {
+    display: none;
+  }
 }
 
 .welcome__heading {

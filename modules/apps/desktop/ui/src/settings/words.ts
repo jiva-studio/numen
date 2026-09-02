@@ -1,14 +1,17 @@
 /** What the settings tab says: the groups it draws, and what each setting is. */
 export const WORDS = {
   settings: 'Settings',
-  /** Where the settings stand, said once at the head of the page. */
+  /**
+   * Where the settings stand, said once at the head of the page. The file
+   * itself is named where the vault has said where it is.
+   */
   file: 'One file, numen.json, in this machine’s configuration folder.',
   /** The groups, in the order they are drawn. */
   window: 'The window',
   naming: 'What a note is called',
   review: 'A day of review',
   indexing: 'Reading the vault',
-  agent: 'Which agent answers',
+  agent: 'The agent',
   /** The window's own settings. */
   theme: 'Theme',
   themeDetail: 'The stylesheet the window wears.',
@@ -21,7 +24,8 @@ export const WORDS = {
   light: 'Light',
   dark: 'Dark',
   interfaceScale: 'Interface size',
-  interfaceScaleDetail: 'How large the chrome, the controls and the type in them are drawn. 1 is as designed.',
+  interfaceScaleDetail:
+    'How large the chrome, the controls and the type in them are drawn. 1 is as designed.',
   textScale: 'Reading size',
   textScaleDetail: 'How large the text a person reads is set. 1 is as designed.',
   hanging: 'Parts under a node',
@@ -32,18 +36,48 @@ export const WORDS = {
   syncingDetail: 'Whether renaming either of the two brings the other into line.',
   dayStarts: 'A day begins at',
   dayStartsDetail:
-    'The hour a day of review begins at, on the clock on the wall. An answer given before it is written into the day before.',
-  embedding: 'What a vector is, and where it is made',
-  embeddingDetail: 'The model the vault is indexed by, and the two stations that make its vectors.',
-  proofreading: 'Putting a reading right',
-  proofreadingDetail: 'What corrects a reading of a scanned page. Naming nothing here proofreads nothing.',
-  recognition: 'Reading a scanned document',
-  recognitionDetail: 'How a scanned page is read.',
-  agentUse: 'The agent',
-  agentUseDetail: 'Which agent answers in the panel, what it may reach, and whether the tools go on a port.',
-  /**
-   * A setting this window neither reads nor writes. It stands in the file, and
-   * the file is where it is changed.
-   */
-  inTheFile: 'Set in numen.json',
+    'An answer given before this hour is written into the day before. Noon at the latest.',
+  /** Reading the vault: the three steps, and what each runs against. */
+  indexingModel: 'Indexing',
+  indexingModelDetail: 'The model the text of the vault is turned into vectors by.',
+  indexingSection: 'Indexing, in full',
+  indexingSectionDetail: 'The model, the two stations that make its vectors, and the floor.',
+  ocr: 'OCR',
+  ocrDetail: 'The model a scanned page is read by.',
+  ocrSection: 'OCR, in full',
+  ocrSectionDetail: 'The three models a page goes through, and how it is cut into regions.',
+  proofreading: 'Proofreading',
+  proofreadingDetail: 'The profile a reading is put right at. Naming none proofreads nothing.',
+  proofreadingNone: 'Nothing',
+  proofreadingSection: 'Proofreading profiles',
+  proofreadingSectionDetail: 'Each profile: what it is reached through, its model, and its key.',
+  transcribing: 'Transcribe recordings',
+  transcribingDetail: 'Whether a recording the vault holds no transcript for is listened to unasked.',
+  transcribeUnder: 'Only under',
+  transcribeUnderDetail: 'How large such a recording may be, in megabytes.',
+  transcriptionSection: 'Transcription, in full',
+  transcriptionSectionDetail: 'The models that listen, where they came from, and how speech is found.',
+  /** The agent. */
+  agentUse: 'Which agent answers',
+  agentUseDetail: 'The program the panel asks. Nothing answers where none is named.',
+  agentModel: 'Model',
+  agentModelDetail: 'Which of that program’s models answers.',
+  agentSteps: 'Steps in a turn',
+  agentStepsDetail: 'How many times it may act before it has to answer.',
+  agentTools: 'Tools on a port',
+  agentToolsDetail: 'Whether the vault’s tools are served over HTTP for another program to reach.',
+  agentHooks: 'Read hooks and skills',
+  agentHooksDetail: 'Whether it reads the hooks and skills this machine is set up with.',
+  agentCommand: 'The command',
+  agentCommandDetail: 'What is run, and the arguments before the ones numen adds.',
+  /** The pencil, and the editor it opens. */
+  edit: 'Edit',
+  editing: 'Written as JSON5: comments and a comma after the last member are read.',
+  keep: 'Keep',
+  cancel: 'Cancel',
+  unreadable: 'That is not JSON5:',
+  /** What is said on the row an installation nobody has configured runs on. */
+  byDefault: 'the default',
+  /** A model or a program the file names and this build does not offer. */
+  notFound: 'not found',
 }

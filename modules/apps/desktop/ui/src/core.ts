@@ -149,6 +149,37 @@ export interface Hanging {
   readonly parts: number
 }
 
+/** One setting of the file, and what to put there. */
+export interface Written {
+  /** The setting, as a path through the file. */
+  readonly at: readonly string[]
+  /** What stands there, as JSON. */
+  readonly value: string
+}
+
+/** One model a setting that names a model can be set to. */
+export interface Model {
+  /** The setting it is read from. The one in force names this model there. */
+  readonly namedAt: readonly string[]
+  readonly name: string
+  /** What is drawn on the row, and the shelf the rows around it stand under. */
+  readonly title: string
+  readonly shelf: string
+  /** Set on the model an installation nobody has configured runs on. */
+  readonly byDefault: boolean
+  /** What choosing it writes. */
+  readonly writes: readonly Written[]
+}
+
+/** Every setting as it stands, where they stand, and the models offered. */
+export interface Configured {
+  /** Every setting as JSON, the defaults under everything the file leaves out. */
+  readonly written: string
+  /** The file itself, absolute on this machine. */
+  readonly path: string
+  readonly models: readonly Model[]
+}
+
 /**
  * One tab of the window, as whoever answers on the person's behalf is told
  * about it: what kind it is, and what it holds.
@@ -308,6 +339,24 @@ export interface Core {
    * and nothing where it was. A count left out stands as it is.
    */
   choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
+  /**
+   * The hour a day of review begins at, on the clock on the wall, written as
+   * `04:00`.
+   */
+  reviewing(): Promise<string>
+  /**
+   * That hour written into the settings file. What could not be written, and
+   * nothing where it was.
+   */
+  choosesReviewing(starts: string): Promise<Refused | null>
+  /** Every setting as it stands, and the models the settings offer. */
+  settings(): Promise<Configured>
+  /**
+   * Settings written into the settings file, together or not at all. A value
+   * the settings could not be read out of again is refused, and what the file
+   * holds is unchanged.
+   */
+  choosesSetting(written: readonly Written[]): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

@@ -97,6 +97,11 @@ const (
 	// VaultServiceChooseReviewingProcedure is the fully-qualified name of the VaultService's
 	// ChooseReviewing RPC.
 	VaultServiceChooseReviewingProcedure = "/numen.v1.VaultService/ChooseReviewing"
+	// VaultServiceSettingsProcedure is the fully-qualified name of the VaultService's Settings RPC.
+	VaultServiceSettingsProcedure = "/numen.v1.VaultService/Settings"
+	// VaultServiceChooseSettingsProcedure is the fully-qualified name of the VaultService's
+	// ChooseSettings RPC.
+	VaultServiceChooseSettingsProcedure = "/numen.v1.VaultService/ChooseSettings"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
@@ -214,6 +219,13 @@ type VaultServiceClient interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
+	// Settings is every setting of the file a person configures this
+	// installation in, and the models the settings that name one can be set to.
+	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
+	// ChooseSettings writes settings into that file. The file is patched as an
+	// object, so every key a person typed stays where it was, and a file the
+	// settings could not be read out of again is not written at all.
+	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -397,6 +409,18 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
 			connect.WithClientOptions(opts...),
 		),
+		settings: connect.NewClient[v1.SettingsRequest, v1.SettingsResponse](
+			httpClient,
+			baseURL+VaultServiceSettingsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Settings")),
+			connect.WithClientOptions(opts...),
+		),
+		chooseSettings: connect.NewClient[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse](
+			httpClient,
+			baseURL+VaultServiceChooseSettingsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("ChooseSettings")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
@@ -452,6 +476,8 @@ type vaultServiceClient struct {
 	chooseHanging   *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
 	reviewing       *connect.Client[v1.ReviewingRequest, v1.ReviewingResponse]
 	chooseReviewing *connect.Client[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse]
+	settings        *connect.Client[v1.SettingsRequest, v1.SettingsResponse]
+	chooseSettings  *connect.Client[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse]
 	remove          *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 	makeFolder      *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
 	quitting        *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
@@ -588,6 +614,16 @@ func (c *vaultServiceClient) ChooseReviewing(ctx context.Context, req *connect.R
 	return c.chooseReviewing.CallUnary(ctx, req)
 }
 
+// Settings calls numen.v1.VaultService.Settings.
+func (c *vaultServiceClient) Settings(ctx context.Context, req *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
+	return c.settings.CallUnary(ctx, req)
+}
+
+// ChooseSettings calls numen.v1.VaultService.ChooseSettings.
+func (c *vaultServiceClient) ChooseSettings(ctx context.Context, req *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
+	return c.chooseSettings.CallUnary(ctx, req)
+}
+
 // Remove calls numen.v1.VaultService.Remove.
 func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return c.remove.CallUnary(ctx, req)
@@ -715,6 +751,13 @@ type VaultServiceHandler interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
+	// Settings is every setting of the file a person configures this
+	// installation in, and the models the settings that name one can be set to.
+	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
+	// ChooseSettings writes settings into that file. The file is patched as an
+	// object, so every key a person typed stays where it was, and a file the
+	// settings could not be read out of again is not written at all.
+	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -894,6 +937,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceSettingsHandler := connect.NewUnaryHandler(
+		VaultServiceSettingsProcedure,
+		svc.Settings,
+		connect.WithSchema(vaultServiceMethods.ByName("Settings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceChooseSettingsHandler := connect.NewUnaryHandler(
+		VaultServiceChooseSettingsProcedure,
+		svc.ChooseSettings,
+		connect.WithSchema(vaultServiceMethods.ByName("ChooseSettings")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
@@ -972,6 +1027,10 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceReviewingHandler.ServeHTTP(w, r)
 		case VaultServiceChooseReviewingProcedure:
 			vaultServiceChooseReviewingHandler.ServeHTTP(w, r)
+		case VaultServiceSettingsProcedure:
+			vaultServiceSettingsHandler.ServeHTTP(w, r)
+		case VaultServiceChooseSettingsProcedure:
+			vaultServiceChooseSettingsHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
@@ -1091,6 +1150,14 @@ func (UnimplementedVaultServiceHandler) Reviewing(context.Context, *connect.Requ
 
 func (UnimplementedVaultServiceHandler) ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseReviewing is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Settings is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseSettings is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
