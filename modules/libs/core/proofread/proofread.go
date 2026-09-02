@@ -67,6 +67,7 @@ Answer with the lines you would put right, one to a line:
   or broken apart, marks that are not words.
 - Every word stays in the line it is in. Nothing moves from one line to
   another, and nothing is added that the page does not print.
+- A line is answered for once.
 - Do not write ` + Opens + ` or ` + Closes + ` in your answer.
 - Do not translate, rephrase, repunctuate or improve a line that was read
   correctly.
@@ -94,6 +95,10 @@ as the first and the last of them:
   missing or wrong, numbers and names.
 - Put a sentence broken across lines back together as one line. The run is
   every line it covers, from first to last, with none left out.
+- A line where one sentence ends and the next begins stands in the run of
+  both, and that run is answered with every sentence it covers.
+- A line is answered for once: two runs never share a line, and a run says
+  everything its lines say.
 - Nothing is added that was not said, and no word moves to a line outside the
   run it is answered in.
 - Do not write ` + Opens + ` or ` + Closes + ` in your answer.

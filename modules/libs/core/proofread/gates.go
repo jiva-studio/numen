@@ -21,7 +21,8 @@ const MaxEditDistance = 0.30
 // A mark of ours coming back refuses the batch, as does a reply row that is not
 // a number the batch carries and, after it, the line, and as does an answer
 // with no letters over a line that had them. A run of lines answered for as one
-// refuses a batch that does not put lines together.
+// refuses a batch that does not put lines together, and a line two rows both
+// answer for refuses the batch.
 //
 // A correction saying what the line already says is dropped, as is one that
 // only puts something wordless in front of it, and as is one standing further
@@ -38,6 +39,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 	}
 
 	var out []Line
+	answered := make(map[int]bool, len(batch.Lines))
 	for _, row := range strings.Split(unfenced(reply), "\n") {
 		row = strings.TrimSpace(row)
 		if row == "" {
@@ -73,6 +75,13 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 		if reaches {
 			past = true
 			continue
+		}
+		// A line is answered for once, by one row of the reply.
+		for line := at; line <= through; line++ {
+			if answered[line] {
+				return nil, false, false
+			}
+			answered[line] = true
 		}
 		was = joined
 		// A line opening with the digits the row opens with, and no bar to tell
