@@ -51,15 +51,24 @@ func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 		if through > at && !batch.Joining {
 			return nil, false
 		}
-		// Every line a run puts together has to be one the batch carries: a run
-		// reaching past them is a run answering about lines nobody asked about.
-		joined := was
+		// A sentence runs on past the last line a batch was given, and a model
+		// reading it names the whole of it. Such a run is dropped and the rest
+		// of the batch stands; a run skipping a line in the middle is an answer
+		// against the wrong numbers, and refuses the batch.
+		joined, reaches := was, false
 		for line := at + 1; line <= through; line++ {
 			next, held := read[line]
 			if !held {
+				if line > batch.Last() {
+					reaches = true
+					break
+				}
 				return nil, false
 			}
 			joined += " " + next
+		}
+		if reaches {
+			continue
 		}
 		was = joined
 		// A line opening with the digits the row opens with, and no bar to tell

@@ -36,6 +36,15 @@ type Batch struct {
 	Joining bool
 }
 
+// Last is the number of the final line a batch carries, and nothing below the
+// first line number for a batch carrying none.
+func (b Batch) Last() int {
+	if len(b.Lines) == 0 {
+		return -1
+	}
+	return b.Lines[len(b.Lines)-1].At
+}
+
 // A line's number is written between marks no recogniser can produce, so a mark
 // in a reply is a mark of ours coming back.
 const (

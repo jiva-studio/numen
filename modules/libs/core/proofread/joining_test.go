@@ -44,10 +44,24 @@ func TestARunSayingWhatItsLinesSayStillJoinsThem(t *testing.T) {
 	}
 }
 
-// A run reaching past the lines the batch carries is a run answering about
-// lines nobody asked about.
-func TestARunReachingPastTheBatchRefusesIt(t *testing.T) {
-	if _, ok := proofread.Fixed(broken(), "5-9 | whatever it says", 0); ok {
+// A sentence running on past the last line a batch was given is named whole by
+// a model reading it. That run is dropped and the rest of the batch stands.
+func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
+	put, ok := proofread.Fixed(broken(), "5-9 | whatever it says\n6 | Sure of it.", 0)
+	if !ok {
+		t.Fatal("the batch was refused")
+	}
+	if len(put) != 1 || put[0].At != 6 || put[0].Text != "Sure of it." {
+		t.Errorf("%v put right", put)
+	}
+}
+
+// A run skipping a line the batch carries is an answer against the wrong
+// numbers.
+func TestARunSkippingALineRefusesTheBatch(t *testing.T) {
+	batch := broken()
+	batch.Lines = append(batch.Lines[:1], batch.Lines[2:]...)
+	if _, ok := proofread.Fixed(batch, "4-6 | whatever it says", 0); ok {
 		t.Error("the batch was taken")
 	}
 }
