@@ -1,9 +1,7 @@
 /**
  * Every size text is set at in this window, against the ladder the tokens name.
  *
- * A component names a size; it never writes one. A length written into a rule
- * is a step nothing else stands on, and arithmetic over a token is another
- * step under a token's name.
+ * A component names a size; it never writes one.
  */
 import { describe, expect, it } from 'vitest'
 

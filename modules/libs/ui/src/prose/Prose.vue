@@ -49,7 +49,8 @@ const pressed = (press: MouseEvent) => {
 </template>
 
 <style scoped>
-/* An answer is marked-up text, and is set at the size that is read at. */
+/* An answer is marked-up text, and is set at the size that is read at, with
+   every size in the scale above it in `em`. */
 .prose {
   font-size: var(--numen-prose-size);
   user-select: text;
