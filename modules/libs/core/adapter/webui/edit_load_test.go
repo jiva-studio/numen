@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // TestEditLoad is what a person waits for between a save and the vault being
@@ -59,22 +58,10 @@ func TestEditLoad(t *testing.T) {
 		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
 	}
 	api.show(v)
-	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
-	held := &holding{NoteRepository: db.Notes()}
-	follow := usecase.Follow{
-		Watcher: cfg.VaultWatcher(),
-		Refresh: usecase.Refresh{Readers: filesystem.Readers{}, Notes: held},
-		Scan:    scan,
-	}
+	opened := cfg.Opening(db)
 
 	reading := time.Now()
-	wait := begin(t.Context(), v, cfg, db, api, scan, follow, held, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
+	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.failure() == "" {
 		time.Sleep(50 * time.Millisecond)
