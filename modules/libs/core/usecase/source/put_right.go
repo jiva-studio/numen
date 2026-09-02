@@ -83,6 +83,9 @@ type putting struct {
 	// At is the millisecond past which nothing has been asked about. It counts
 	// in time, which putting a broken sentence back together does not move.
 	At int `json:"at"`
+	// Seam is the millisecond past which no seam has been asked about. It
+	// stands still until At stands at the end of the transcript.
+	Seam int `json:"seam"`
 }
 
 // Execute puts one recording's transcript right.
@@ -147,7 +150,13 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		stood = putting{}
 	}
 
-	batches := proofread.Spoken(cues, u.batchSize(), u.overlap())
+	// The transcript is asked about batch by batch, and then once more around
+	// the cuts a sentence was answered for past the end of.
+	spoken := proofread.Spoken(cues, u.batchSize(), u.overlap())
+	batches := spoken
+	// The seams are cut from the transcript as this run found it, so the batch
+	// a line falls in does not move as sentences are put back together.
+	asHeard := slices.Clone(cues)
 	// A batch reaches back over the lines it shares with the one before it, so
 	// what this run counts as read begins where the run before it stopped.
 	from := unasked(cues, stood.At)
@@ -156,7 +165,14 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	res.Read, res.Left = res.Resumed, 0
 	u.progress(res)
 
-	at := after(batches, cues, stood.At)
+	at := after(spoken, cues, stood.At)
+	if at >= len(spoken) {
+		// A run taking up after the first pass holds no reply saying which cuts
+		// a sentence was answered for past the end of, and asks about every
+		// seam standing past the count.
+		batches = slices.Concat(spoken, proofread.Seams(asHeard, u.batchSize(), u.overlap(), everyCut(len(spoken))))
+		at = len(spoken) + after(batches[len(spoken):], cues, stood.Seam)
+	}
 	if at >= len(batches) {
 		return res, nil
 	}
@@ -170,6 +186,8 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 	// together is every cue a run of lines has been put together into, and every
 	// cue such a run swallowed.
 	asked, fixed, together := map[int]bool{}, map[int]bool{}, map[int]bool{}
+	// cuts is every cut a sentence was answered for past the end of.
+	var cuts []int
 	for ; at < len(batches); at += u.inFlight() {
 		if err := ctx.Err(); err != nil {
 			// What came back is on disk already, and the next run begins at the
@@ -193,7 +211,14 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		}
 
 		wrote := false
-		put := proofread.Gathered(group, replies, unbounded)
+		put, past := proofread.Gathered(group, replies, unbounded)
+		// A seam is asked about once, so a run past the end of one names no
+		// further cut.
+		for _, batch := range past {
+			if batch < len(spoken) {
+				cuts = append(cuts, batch)
+			}
+		}
 		// The corrections go in by the line, so what a transcript ends as does
 		// not turn on the order a map hands them back in.
 		for _, line := range slices.Sorted(maps.Keys(put)) {
@@ -203,9 +228,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 			}
 			cues[line].Text = said.Text
 			wrote = true
-			if line >= from {
-				fixed[line] = true
-			}
+			fixed[line] = true
 			if !said.Joins() {
 				continue
 			}
@@ -217,12 +240,10 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 				cues[line].To = max(cues[line].To, cues[gone].To)
 				cues[gone].Text = ""
 				together[gone] = true
-				if gone >= from {
-					fixed[gone] = true
-				}
+				fixed[gone] = true
 			}
 		}
-		res.Fixed, res.Left = len(fixed), len(asked)-len(fixed)
+		res.Fixed, res.Left = len(fixed), left(asked, fixed)
 
 		// The words are written, the source is cut, and the count stands after
 		// both: a batch no count claims is one the next run asks about again.
@@ -235,7 +256,10 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		if err := u.cut(ctx, v, path); err != nil {
 			return res, err
 		}
-		if err := u.counted(ctx, store, far, putting{At: beyond(group, cues)}); err != nil {
+		if end == len(spoken) {
+			batches = slices.Concat(spoken, proofread.Seams(asHeard, u.batchSize(), u.overlap(), cuts))
+		}
+		if err := u.counted(ctx, store, far, reached(batches, len(spoken), end, cues)); err != nil {
 			return res, err
 		}
 		u.progress(res)
@@ -306,7 +330,7 @@ func refused(asked []proofread.Batch, replies map[int]string, apart float64) int
 		if !answered {
 			continue
 		}
-		if _, ok := proofread.Fixed(batch, reply, apart); !ok {
+		if _, _, ok := proofread.Fixed(batch, reply, apart); !ok {
 			out++
 		}
 	}
@@ -345,10 +369,45 @@ func joined(together map[int]bool, said proofread.Line) bool {
 	return false
 }
 
-// beyond is the moment a run of batches reaches to. Each batch reaches further
-// into the transcript than the one before it.
-func beyond(group []proofread.Batch, cues []transcript.Cue) int {
-	return cues[last(group[len(group)-1])].To
+// reached is where a run stands once the first end batches have been answered.
+// The first spoken of them are the pass over the whole transcript and the rest
+// the pass over its seams, and each batch of a pass reaches further into the
+// transcript than the one before it.
+func reached(batches []proofread.Batch, spoken, end int, cues []transcript.Cue) putting {
+	var stood putting
+	if done := min(end, spoken); done > 0 {
+		stood.At = cues[last(batches[done-1])].To
+	}
+	// Every batch is answered and no seam is left, so both counts stand at the
+	// end of the transcript.
+	if end == len(batches) {
+		stood.Seam = stood.At
+		return stood
+	}
+	if end > spoken {
+		stood.Seam = cues[last(batches[end-1])].To
+	}
+	return stood
+}
+
+// everyCut is the cut after each of a run of batches but the last.
+func everyCut(batches int) []int {
+	out := make([]int, max(batches-1, 0))
+	for at := range out {
+		out[at] = at
+	}
+	return out
+}
+
+// left is how many of the lines a run asked about stand as they were heard.
+func left(asked, fixed map[int]bool) int {
+	out := 0
+	for line := range asked {
+		if !fixed[line] {
+			out++
+		}
+	}
+	return out
 }
 
 // last is the number of the final line a batch holds.

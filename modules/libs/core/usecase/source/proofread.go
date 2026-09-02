@@ -216,7 +216,7 @@ func (u Proofread) gathered(
 		if !answered {
 			continue
 		}
-		lines, ok := proofread.Fixed(page, reply, u.distance())
+		lines, _, ok := proofread.Fixed(page, reply, u.distance())
 		if !ok {
 			refused++
 			continue
