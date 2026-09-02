@@ -12,6 +12,15 @@
 !ifndef BINARY
   !error "BINARY is the numen.exe to install"
 !endif
+; The two windows ship together, one version, one installer.
+!ifndef FLASHCARDS
+  !error "FLASHCARDS is the numen-flashcards.exe to install"
+!endif
+; The flashcards window wears a mark of its own. The drawing is installed
+; beside the program, and the Start Menu shortcut points at it there.
+!ifndef FLASHCARDS_ICON
+  !error "FLASHCARDS_ICON is the numen-flashcards.ico to install"
+!endif
 !ifndef WEBVIEW2
   !error "WEBVIEW2 is the Microsoft bootstrapper to carry"
 !endif
@@ -70,11 +79,15 @@ SectionEnd
 Section "Numen"
   SetOutPath "$INSTDIR"
   File "/oname=numen.exe" "${BINARY}"
+  File "/oname=numen-flashcards.exe" "${FLASHCARDS}"
+  File "/oname=numen-flashcards.ico" "${FLASHCARDS_ICON}"
 
   WriteRegStr HKLM "Software\Numen" "InstallDir" "$INSTDIR"
   WriteUninstaller "$INSTDIR\uninstall.exe"
 
   CreateShortcut "$SMPROGRAMS\Numen.lnk" "$INSTDIR\numen.exe"
+  CreateShortcut "$SMPROGRAMS\Numen Flashcards.lnk" "$INSTDIR\numen-flashcards.exe" \
+    "" "$INSTDIR\numen-flashcards.ico"
 
   !define UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\Numen"
   WriteRegStr HKLM "${UNINSTALL_KEY}" "DisplayName" "Numen"
@@ -89,9 +102,12 @@ SectionEnd
 ; A vault is a folder of the person's own and is left where it is.
 Section "Uninstall"
   Delete "$INSTDIR\numen.exe"
+  Delete "$INSTDIR\numen-flashcards.exe"
+  Delete "$INSTDIR\numen-flashcards.ico"
   Delete "$INSTDIR\uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\Numen.lnk"
+  Delete "$SMPROGRAMS\Numen Flashcards.lnk"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Numen"
   DeleteRegKey HKLM "Software\Numen"
 SectionEnd

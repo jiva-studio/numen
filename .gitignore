@@ -16,6 +16,8 @@ node_modules/
 /numen-cli
 /numen-flashcards
 /numen-desktop
+/Numen.app/
+/Numen Flashcards.app/
 
 # A spike-only workspace pointing outside the tree.
 go.work
