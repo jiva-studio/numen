@@ -56,7 +56,7 @@ type batchResult struct {
 
 // Leave hands the pages to the queue and answers with the id they are collected
 // under.
-func (c *Client) Leave(ctx context.Context, pages []proofread.Page) (string, error) {
+func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, error) {
 	if c.service.BatchURL == "" {
 		return "", errors.New("no batch queue for the proofreading service")
 	}
@@ -69,7 +69,7 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Page) (string, err
 				Model:       c.service.Name,
 				Temperature: 0,
 				Messages: []message{
-					{Role: "system", Content: proofread.Instruction},
+					{Role: "system", Content: c.instruction},
 					{Role: "user", Content: proofread.Ask(page)},
 				},
 			},

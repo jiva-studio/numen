@@ -31,10 +31,10 @@ func server(t *testing.T, handler http.HandlerFunc) *httptest.Server {
 func client(t *testing.T, baseURL string) *openai.Client {
 	t.Helper()
 	t.Setenv(proofreading.KeyEnvVar, theKey)
-	cfg := proofreading.Defaults()
-	cfg.Service.BaseURL = baseURL
-	cfg.Service.Name = "test-model"
-	c, err := openai.New(cfg.Service)
+	cfg := proofreading.ServiceDefaults()
+	cfg.BaseURL = baseURL
+	cfg.Name = "test-model"
+	c, err := openai.New(cfg, proofread.ScanInstruction)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,8 +67,8 @@ func reply(w http.ResponseWriter, text string) {
 	})
 }
 
-func page(at int, lines ...string) proofread.Page {
-	p := proofread.Page{At: at}
+func page(at int, lines ...string) proofread.Batch {
+	p := proofread.Batch{At: at}
 	for i, text := range lines {
 		p.Lines = append(p.Lines, proofread.Line{At: at*100 + i, Text: text})
 	}
@@ -90,7 +90,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 		reply(w, "700|the first line")
 	})
 
-	if _, err := client(t, s.URL).Read(context.Background(), []proofread.Page{one}); err != nil {
+	if _, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{one}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,7 +108,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 	if len(got.Messages) != 2 {
 		t.Fatalf("got %d messages", len(got.Messages))
 	}
-	if got.Messages[0].Role != "system" || got.Messages[0].Content != proofread.Instruction {
+	if got.Messages[0].Role != "system" || got.Messages[0].Content != proofread.ScanInstruction {
 		t.Errorf("system message %q: %q", got.Messages[0].Role, got.Messages[0].Content)
 	}
 	if got.Messages[1].Role != "user" || got.Messages[1].Content != proofread.Ask(one) {
@@ -117,7 +117,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 }
 
 func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
-	var pages []proofread.Page
+	var pages []proofread.Batch
 	for at := 1; at <= 6; at++ {
 		pages = append(pages, page(at, fmt.Sprintf("page %d as read", at)))
 	}
@@ -161,7 +161,7 @@ func TestARefusedRunNamesTheStatusAndNotTheKey(t *testing.T) {
 				fmt.Fprintf(w, "the service says no, and quotes %s back", r.Header.Get("Authorization"))
 			})
 
-			got, err := client(t, s.URL).Read(context.Background(), []proofread.Page{page(1, "a line")})
+			got, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{page(1, "a line")})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -198,7 +198,7 @@ func TestACancelledContextStopsTheRun(t *testing.T) {
 		cancel()
 	}()
 
-	_, err := client(t, s.URL).Read(ctx, []proofread.Page{page(1, "a line"), page(2, "another")})
+	_, err := client(t, s.URL).Read(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("want a cancelled context, got %v", err)
 	}
@@ -206,9 +206,9 @@ func TestACancelledContextStopsTheRun(t *testing.T) {
 
 func TestAServiceWithoutAModelNameIsRefused(t *testing.T) {
 	t.Setenv(proofreading.KeyEnvVar, theKey)
-	cfg := proofreading.Defaults()
+	cfg := proofreading.ServiceDefaults()
 
-	_, err := openai.New(cfg.Service)
+	_, err := openai.New(cfg, proofread.ScanInstruction)
 	if err == nil {
 		t.Fatal("no error")
 	}
@@ -222,10 +222,10 @@ func TestAServiceWithoutAModelNameIsRefused(t *testing.T) {
 
 func TestAServiceWithoutAKeyIsRefused(t *testing.T) {
 	t.Setenv(proofreading.KeyEnvVar, "")
-	cfg := proofreading.Defaults()
-	cfg.Service.Name = "test-model"
+	cfg := proofreading.ServiceDefaults()
+	cfg.Name = "test-model"
 
-	_, err := openai.New(cfg.Service)
+	_, err := openai.New(cfg, proofread.ScanInstruction)
 	if !errors.Is(err, openai.ErrNoKey) {
 		t.Fatalf("want a missing key, got %v", err)
 	}

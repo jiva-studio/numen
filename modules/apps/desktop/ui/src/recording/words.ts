@@ -2,6 +2,8 @@
 export const WORDS = {
   player: 'The recording',
   transcript: 'What was heard',
+  /** The view keeps the line being said in sight. */
+  follow: 'Follow',
   /** Nothing has listened to this recording. */
   silence: 'No transcript yet.',
   /** A run is going, and more words arrive as they are written down. */

@@ -367,8 +367,15 @@ export const recordings: Recordings = {
   },
   cues: async (path) => {
     const answer = await served(`${asset(path)}/cues`)
-    const said = (await answer.json()) as { cues?: readonly Cue[] }
-    return said.cues ?? []
+    const said = (await answer.json()) as { cues?: readonly Cue[]; editable?: boolean }
+    return { cues: said.cues ?? [], editable: said.editable ?? true }
+  },
+  writes: async (path, cues) => {
+    await served(`${asset(path)}/cues`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, cues }),
+    })
   },
   plays: async (path, run) => {
     const where = `start=${run.start}&length=${run.length}`
@@ -392,9 +399,9 @@ const PATIENCE = 3
  * What the application answered. A document held by whoever is drawing from it
  * is asked for again, after the wait it names.
  */
-const served = async (address: string): Promise<Response> => {
+const served = async (address: string, asking?: RequestInit): Promise<Response> => {
   for (let asked = 0; ; asked++) {
-    const answer = await fetch(address)
+    const answer = await fetch(address, asking)
     if (answer.ok) return answer
     if (answer.status !== 503 || asked >= PATIENCE) {
       throw new Error((await answer.text()).trim() || `${answer.status}`)

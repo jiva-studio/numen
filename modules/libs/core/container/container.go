@@ -75,8 +75,19 @@ type Config struct {
 	Embedding embed.Config
 
 	// Proofreading is what puts a reading right. It arrives the way Embedding
-	// does, and naming nothing here is naming no proofreader.
+	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
+
+	// ScanProofreading and SpeechProofreading name the profile each kind of
+	// reading is put right at, and say whether that happens without anybody
+	// asking.
+	ScanProofreading   proofreading.Proofread
+	SpeechProofreading proofreading.Proofread
+
+	// AgentProofreader opens a profile that reaches the command line a person
+	// already has. The platform supplies it, since core starts no process; an
+	// installation that supplies none names no such profile.
+	AgentProofreader func(AgentProofreading) (port.Proofreader, error)
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
@@ -98,9 +109,11 @@ type Config struct {
 // off.
 func (c Config) Indexing(said settings.Indexing) Config {
 	c.Embedding = said.Embedding
-	c.Recognition = said.Recognition
+	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
-	c.Transcription = said.Transcription
+	c.ScanProofreading = said.Recognition.Proofread
+	c.SpeechProofreading = said.Transcription.Proofread
+	c.Transcription = said.Transcription.Config
 	c.Transcribes = said.Transcribes()
 	c.TranscribesUnder = said.TranscribesUnder()
 	return c

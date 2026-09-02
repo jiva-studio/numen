@@ -24,6 +24,7 @@
 package transcript
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -133,6 +134,16 @@ func Stamp(ms int) string {
 	return fmt.Sprintf("%02d:%02d:%02d.%03d", ms/3600000, ms/60000%60, ms/1000%60, ms%1000)
 }
 
+// Clock is a moment of a recording as a person reads one: the way a player
+// writes where it stands. An hour that is not there is not written.
+func Clock(ms int) string {
+	whole := max(ms, 0) / 1000
+	if hours := whole / 3600; hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, whole/60%60, whole%60)
+	}
+	return fmt.Sprintf("%d:%02d", whole/60, whole%60)
+}
+
 // parseStamp is a timing the format writes. The hours are optional, which is
 // what the format says and what other tools write.
 func parseStamp(raw string) (int, bool) {
@@ -203,6 +214,31 @@ func Heard(ms int) []byte {
 	return []byte(fmt.Sprintf("\nNOTE heard %d\n", ms))
 }
 
+// ByHand is the note a transcript a person wrote carries.
+const ByHand = "NOTE by hand"
+
+// Hand marks a transcript as the words a person put there. A transcript
+// carrying it is left as they left it.
+func Hand() []byte {
+	return []byte("\n" + ByHand + "\n")
+}
+
+// Written says whether a person wrote these words. The mark is a note of its
+// own, and the same words spoken in a cue are speech.
+func Written(raw []byte) bool {
+	for at := 0; at <= len(raw)-len(ByHand); {
+		found := bytes.Index(raw[at:], []byte(ByHand))
+		if found < 0 {
+			return false
+		}
+		if found += at; begins(raw, found) {
+			return true
+		}
+		at = found + 1
+	}
+	return false
+}
+
 // Reached is how far a run before this one got, and where the last note about
 // it ends. A file carrying none is a recording nothing has listened to.
 func Reached(raw []byte) (ms, end int) {
@@ -213,7 +249,7 @@ func Reached(raw []byte) (ms, end int) {
 	}
 	line := string(raw[at+len(note):])
 	stop := strings.IndexByte(line, '\n')
-	if stop < 0 {
+	if stop < 0 || !begins(raw, at) {
 		return Reached(raw[:at])
 	}
 	ms, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
@@ -221,4 +257,20 @@ func Reached(raw []byte) (ms, end int) {
 		return Reached(raw[:at])
 	}
 	return ms, at + len(note) + stop + 1
+}
+
+// begins says whether a byte is where a block of the file starts: the top of
+// it, or the line after a blank one. A note stands at the top of its own block.
+func begins(raw []byte, at int) bool {
+	if at == 0 {
+		return true
+	}
+	if raw[at-1] != '\n' {
+		return false
+	}
+	blank := at - 1
+	if blank > 0 && raw[blank-1] == '\r' {
+		blank--
+	}
+	return blank > 0 && raw[blank-1] == '\n'
 }

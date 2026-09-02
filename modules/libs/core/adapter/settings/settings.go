@@ -181,15 +181,15 @@ type Indexing struct {
 
 	// Recognition is how a scanned document is read when a person asks for it.
 	// Nothing here runs on its own.
-	Recognition recognition.Config `json:"recognition"`
+	Recognition Recognition `json:"recognition"`
 
-	// Proofreading is what puts a reading right. Naming nothing here is naming
-	// no proofreader, and a reading is used as it was read.
+	// Proofreading is what puts a reading right. Naming no profile here is
+	// naming no proofreader, and a reading is used as it was read.
 	Proofreading proofreading.Config `json:"proofreading"`
 
 	// Transcription is how a recording is listened to: which models hear it,
 	// where they came from, and how the speech in it is found.
-	Transcription transcription.Config `json:"transcription"`
+	Transcription Transcription `json:"transcription"`
 
 	// TranscribeRecordings is whether a recording the vault holds no transcript
 	// for is listened to without anybody asking. A file leaving it out listens
@@ -205,6 +205,29 @@ type Indexing struct {
 	//
 	// Zero takes the default. A negative number is no limit at all.
 	TranscribeUnderMB int `json:"transcribe_under_mb"`
+}
+
+// Recognition is how a scanned document is read, and which profile puts that
+// reading right afterwards.
+type Recognition struct {
+	recognition.Config
+
+	// Proofread names the profile a reading is put right at. Automatically
+	// there says whether a reading just made is put right without anybody
+	// asking.
+	Proofread proofreading.Proofread `json:"proofread"`
+}
+
+// Transcription is how a recording is listened to, and which profile puts what
+// was heard right afterwards.
+type Transcription struct {
+	transcription.Config
+
+	// Proofread names the profile a transcript is put right at. Automatically
+	// there says whether a transcript already written down is put right
+	// without anybody asking; whether a recording nobody asked about is
+	// listened to at all is TranscribeRecordings.
+	Proofread proofreading.Proofread `json:"proofread"`
 }
 
 // DefaultTranscribeUnderMB is how large a recording listened to unasked may be.
@@ -328,9 +351,9 @@ func Defaults() Config {
 		},
 		Indexing: Indexing{
 			Embedding:            embed.Defaults(),
-			Recognition:          recognition.Defaults(),
+			Recognition:          Recognition{Config: recognition.Defaults()},
 			Proofreading:         proofreading.Defaults(),
-			Transcription:        transcription.Defaults(),
+			Transcription:        Transcription{Config: transcription.Defaults()},
 			TranscribeRecordings: on(),
 		},
 		Agent:  agent.Defaults(),

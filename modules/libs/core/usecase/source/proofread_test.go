@@ -32,7 +32,7 @@ func (c *corrector) Name() string {
 	return c.name
 }
 
-func (c *corrector) Read(ctx context.Context, pages []proofread.Page) (map[int]string, error) {
+func (c *corrector) Read(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.At)
@@ -365,7 +365,7 @@ func leaving(says map[int]string) *queue {
 	}
 }
 
-func (q *queue) Leave(_ context.Context, pages []proofread.Page) (string, error) {
+func (q *queue) Leave(_ context.Context, pages []proofread.Batch) (string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.At)

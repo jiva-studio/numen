@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -24,14 +25,18 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	if err != nil {
 		return err
 	}
-	by, err := cfg.Proofreader()
+	if domain.MediaType(args[1]) != "" {
+		return putRightCommand(ctx, out, cfg, v, args[1])
+	}
+	named := cfg.ScanProofreading.With
+	by, err := cfg.Proofreader(named, proofread.ScanInstruction)
 	if err != nil {
 		return fmt.Errorf("nothing to proofread with: %w", err)
 	}
 	if by == nil {
 		return errors.New("nothing to proofread with: none is configured")
 	}
-	queue, err := cfg.ProofreadQueue()
+	queue, err := cfg.ProofreadQueue(named, proofread.ScanInstruction)
 	if err != nil {
 		return fmt.Errorf("nothing to leave the pages with: %w", err)
 	}
@@ -59,8 +64,8 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		Derived: cfg.DerivedStores(),
 		By:      by,
 		Queue:   queue,
-		Pages:   cfg.Proofreading.Service.PagesAtOnce,
-		Apart:   cfg.Proofreading.Service.LettersApart,
+		Pages:   cfg.Proofreading.Profiles[named].BatchSize,
+		Apart:   cfg.Proofreading.Apart(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err

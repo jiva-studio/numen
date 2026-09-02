@@ -8,7 +8,7 @@
  * marks come back.
  */
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
-import { EditorState } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from './change'
 import { drawing, editable, editing, preview, setup, showing, shown } from './setup'
@@ -25,8 +25,10 @@ const props = withDefaults(
     change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
     resolve?: (address: string) => string
+    /** More the caller draws into this editor. Read once, as it is built. */
+    extensions?: Extension
   }>(),
-  { live: true, readonly: false, placeholder: 'Write', change: null },
+  { live: true, readonly: false, placeholder: 'Write', change: null, extensions: () => [] },
 )
 
 const emit = defineEmits<{
@@ -54,6 +56,7 @@ onMounted(() => {
           placeholder: props.placeholder,
           change: props.change,
         }),
+        props.extensions,
         resolving.of((address) => props.resolve?.(address) ?? address),
         opening.of((address) => emit('open', address)),
         saving.of(() => emit('save')),

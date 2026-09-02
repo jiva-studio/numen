@@ -70,63 +70,30 @@ The boundary the line detector draws falls inside the letters, so a found line i
 
 ## Proofreading
 
-Nothing is proofread unless `indexing.proofreading` names a model. Naming none means a reading is used exactly as it was read, and nothing asks for a key or a network. The model's name is recorded in `.proofread`, beside what it corrected.
+A page was printed before it was scanned, so there is something to put the reading right against: what the paper says. The proofreader is asked for the letters, diacritics, and words run together or broken apart that the recogniser got wrong, and for nothing else — a line read correctly is not translated, rephrased, repunctuated or improved.
 
-The recogniser's artifact is never rewritten. It stays on disk under its own name, and the corrections go beside it, in `.fixes`, with `.proofread` saying who put the reading right and how far they got.
+How a proofreader is asked, what its reply must look like, what refuses one and which profiles are available is [Proofreading](proofreading.md). Nothing is proofread unless `indexing.recognition.proofread` names one, and naming none means a reading is used exactly as it was read.
 
 The unit of correction is one printed line. A record in `.boxes` is one run of words the recogniser read in one go, and it carries a rectangle; putting a line's letters right leaves its words within that line, so the rectangles hold unchanged. A line is known by where its box stands in the reading, so the number a correction is keyed by counts through the whole book.
 
-A page is sent as prose with the lines marked inside it:
-
-```
-⟦864⟧Kenduvilva is situated about twenty miles ⟦865⟧south of Siuri on the banks
-of the Ajay River. ⟦866⟧In the Gaudiya Vaişnava Abhidhāna, it is …
-```
-
-`⟦n⟧` opens the line numbered `n`, and that line runs to the next mark. The lines are run together as prose, so a line ending mid-word is finished by the next one.
-
-The reply is only the lines that changed. A page the proofreader would leave alone is an empty reply. A reply row is the line's number and, after it, the line, with a bar, spaces, or both standing between them:
-
-```
-866|In the Gauḍīya Vaiṣṇava Abhidhāna, it is
-```
-
-A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the page is refused.
-
-## The three gates
-
-None of them asks whether a correction is right.
-
-- **A mark of ours coming back refuses the page.** No recogniser produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole page.
-- **A line number the page did not name refuses the page.**
-- **Letters that moved further than the threshold drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the edit distance between what is left is taken as a share of the longer.
-
-The threshold is `indexing.proofreading.service.letters_apart`, and it is 0.30 where the file names nothing. See [Settings](settings.md).
-
-Two more corrections are dropped without refusing the page: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
-
-A refused page is left as it was read. So is a page nothing came back about. That is the ordinary outcome and not a failure.
+The recogniser's artifact is never rewritten. It stays on disk under its own name, the corrections go beside it in `.fixes`, and `.proofread` says who put the reading right, how far they got, and which batch is out.
 
 ## Applying corrections
 
 Composing the corrected prose and moving the boxes, the page marks and the parts is one pass over the same lines. The prose is spliced where each corrected line stands, and the growth carried along that walk is what the rest is read off. A correction naming a line no box answers to is dropped, a line named twice keeps what came last, and a box reaching back into the one before it is left as it was.
 
-One model proofreads, and no chain of them.
+A run stopped part way is taken up at the page it stopped on. A reading whose `.proofread` names another model is taken up from the first page, with what that model wrote taken away.
 
 The recipe names the layout model, the recogniser, the resolution and the producer. It does not name the proofreader: a recipe names a procedure, and proofreading calls the cut itself, the way recognition does.
 
 ## A run
 
-A run claims the reading for as long as the proofreading takes, and a second run against the same reading reports that somebody else has it.
+Recognition resumes the way proofreading does: pages are appended to the partial in batches — sixteen at a time — and the count is appended after them, on a line beginning with a byte no recogniser can write, which the artifact's own reader passes over. The count is what makes the batch before it count, so a batch no count claims is one the next run reads again.
 
-A run asks about pages in batches — `indexing.proofreading.service.pages_at_once` pages, forty where the file names nothing — and after each batch it writes the corrections, cuts the source, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up at the page it stopped on. A reading whose `.proofread` names another model is taken up from the first page, with what that model wrote taken away.
-
-Recognition itself resumes the same way: pages are appended to the partial in batches — sixteen at a time — and the count is appended after them, on a line beginning with a byte no recogniser can write, which the artifact's own reader passes over.
+A run claims the reading for as long as it takes, and a second run against the same reading reports that somebody else has it.
 
 A chunk whose text did not change keeps the vector already made for it.
 
-Where the service has a queue, one run collects the batch that is out and leaves the next, and the batch's name stands in `.proofread` beside the count. A batch outlives the run that left it, so one left before the application closed is collected when it opens. A batch that cannot be collected is forgotten, and the pages it covered are left again by the next run. `indexing.proofreading.service.batch_url` empty asks a page at a time and waits.
-
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.recognition.detect.expand`, `indexing.proofreading.use`, `indexing.proofreading.service.name`, `.base_url`, `.batch_url`, `.key`, `.key_env`, `.pages_at_once` and `.letters_apart`.
+Every key named above lives in [Settings](settings.md): `indexing.recognition.detect.expand`, and `indexing.recognition.proofread.with` and `.automatically`. The profile that `with` names, and the threshold above the profiles, are in [Proofreading](proofreading.md).

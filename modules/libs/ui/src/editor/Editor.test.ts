@@ -7,7 +7,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { undo } from '@codemirror/commands'
-import { EditorSelection } from '@codemirror/state'
+import { EditorSelection, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
 import { marked, type EditorChange } from './change'
@@ -322,5 +322,21 @@ describe('the chord that keeps the text', () => {
     const { wrapper } = editor({ modelValue: 'one' })
     chord(document.body)
     expect(wrapper.emitted('save')).toBeUndefined()
+  })
+})
+
+describe('what the caller draws into the editor', () => {
+  it('stands there beside everything the editor is', () => {
+    const counted = StateField.define({
+      create: () => 0,
+      update: (was) => was + 1,
+    })
+
+    const { view } = editor({ modelValue: 'one', extensions: counted })
+
+    expect(view.state.field(counted)).toBe(0)
+    view.dispatch({ changes: { from: 3, insert: ' two' } })
+    expect(view.state.field(counted)).toBe(1)
+    expect(view.state.doc.toString()).toBe('one two')
   })
 })

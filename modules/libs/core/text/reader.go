@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
@@ -77,8 +76,8 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 // chunks are places in.
 //
 // The corrections are read before the coordinates, and a reading nothing
-// proofread is composed from its own bytes alone. A transcript is its own bytes
-// and nothing else: a transcription keeps nothing beside what it heard.
+// proofread is composed from its own bytes alone. A transcript is composed from
+// what it was put right to, and from its own bytes where nothing put it right.
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
@@ -86,6 +85,15 @@ func Composed(
 	raw []byte,
 ) (*Document, error) {
 	if from == ASR {
+		put, err := beside(ctx, store, Corrected(from, hash))
+		if err != nil {
+			return nil, err
+		}
+		// A file beside the artifact holding no words is nothing put right, and
+		// the recording says what was heard in it.
+		if doc := Transcribed(put); doc.Text != "" {
+			return doc, nil
+		}
 		return Transcribed(raw), nil
 	}
 	parts, err := beside(ctx, store, Parts(from, hash))
@@ -153,16 +161,9 @@ func Transcribed(raw []byte) *Document {
 	prose, cues := transcript.Parse(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
-		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: clock(cue.From)})
+		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: transcript.Clock(cue.From)})
 	}
 	return doc
-}
-
-// clock is a moment of a recording as a person reads a position in one: the
-// stamp the transcript is written in, without its thousandths.
-func clock(ms int) string {
-	at, _, _ := strings.Cut(transcript.Stamp(ms), ".")
-	return at
 }
 
 // divided is the parts a sidecar names, as parts of the prose. A part is named
@@ -211,6 +212,15 @@ func Partial(from, hash string) string {
 	return from + "/" + hash + ".partial"
 }
 
+// Corrected is the name a transcript put right is kept under: the words as they
+// now stand, WebVTT under the extension that format is opened by.
+//
+// The artifact stays what was heard, so deleting this file gives that back. A
+// transcript nothing put right has no such file.
+func Corrected(from, hash string) string {
+	return from + "/" + hash + ".corrected.vtt"
+}
+
 // Parts is the name the parts of a reading are kept under. A reading whose
 // layout model named none has no such file.
 func Parts(from, hash string) string {
@@ -255,12 +265,14 @@ func Beside(from, hash string) string {
 // made them and none of them means anything without the others.
 //
 // Each producer's own files are named: a sweep works through this list, and a
-// transcription writes no coordinates, parts or corrections.
+// transcription writes no coordinates or parts.
 func Names(from, hash string) []string {
 	if from == ASR {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),
+			Corrected(from, hash),
+			Proofread(from, hash),
 			Answer(from, hash),
 			Beside(from, hash),
 		}

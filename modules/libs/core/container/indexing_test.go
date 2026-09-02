@@ -18,14 +18,20 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Embedding, said.Embedding) {
 		t.Error("the embedding section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Recognition, said.Recognition) {
+	if !reflect.DeepEqual(cfg.Recognition, said.Recognition.Config) {
 		t.Error("the recognition section did not arrive")
 	}
 	if !reflect.DeepEqual(cfg.Proofreading, said.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.Transcription, said.Transcription) {
+	if !reflect.DeepEqual(cfg.Transcription, said.Transcription.Config) {
 		t.Error("the transcription section did not arrive")
+	}
+	if !reflect.DeepEqual(cfg.ScanProofreading, said.Recognition.Proofread) {
+		t.Error("what puts a reading right did not arrive")
+	}
+	if !reflect.DeepEqual(cfg.SpeechProofreading, said.Transcription.Proofread) {
+		t.Error("what puts a transcript right did not arrive")
 	}
 	if cfg.Transcribes != said.Transcribes() {
 		t.Error("whether a recording is heard without being asked did not arrive")

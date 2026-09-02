@@ -2,6 +2,7 @@ package text_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -27,9 +28,9 @@ func heard() []byte {
 func TestATranscriptLocatesAPassageByWhenItWasSaid(t *testing.T) {
 	doc := text.Transcribed(heard())
 
-	located(t, doc, opening, "00:00:01")
-	located(t, doc, middle, "01:23:45")
-	located(t, doc, closing, "01:30:00")
+	located(t, doc, opening, "0:01")
+	located(t, doc, middle, "1:23:45")
+	located(t, doc, closing, "1:30:00")
 }
 
 // A transcription names no parts: the cues are where the speech was.
@@ -44,14 +45,15 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 	}
 }
 
-// Nothing is kept beside a transcript, so composing one asks no store for
-// anything.
+// A transcript nothing put right is composed from its own bytes.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	doc, err := text.Composed(t.Context(), nil, text.ASR, "abc123", heard())
+	store := beside{text.Artifact(text.ASR, "abc123"): heard()}
+
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
 	if err != nil {
 		t.Fatal(err)
 	}
-	located(t, doc, middle, "01:23:45")
+	located(t, doc, middle, "1:23:45")
 }
 
 func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
@@ -69,6 +71,8 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 	want := []string{
 		"asr/abc123.vtt",
 		"asr/abc123.partial.vtt",
+		"asr/abc123.corrected.vtt",
+		"asr/abc123.proofread",
 		"asr/abc123.answer",
 		"asr/abc123.json",
 	}
@@ -91,5 +95,76 @@ func TestAReadingIsKeptUnderTheNamesItAlwaysWas(t *testing.T) {
 	}
 	if got := text.Names("ocr", "abc123"); !slices.Equal(got, want) {
 		t.Errorf("a reading is kept under %v, want %v", got, want)
+	}
+}
+
+// A transcript is composed from what it was put right to, and what was heard
+// stands under its own name.
+func TestATranscriptIsComposedFromWhatItWasPutRightTo(t *testing.T) {
+	put := transcript.Marshal([]transcript.Cue{
+		{Text: opening, From: 1500, To: 4200},
+		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
+		{Text: closing, From: 5400000, To: 5403500},
+	})
+	store := beside{
+		text.Artifact(text.ASR, "abc123"):  heard(),
+		text.Corrected(text.ASR, "abc123"): append(put, transcript.Hand()...),
+	}
+
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
+	if err != nil {
+		t.Fatal(err)
+	}
+	located(t, doc, "The name and the Named are not two.", "1:23:45")
+	if strings.Contains(doc.Text, middle) {
+		t.Errorf("what was heard is still the text:\n%s", doc.Text)
+	}
+	if strings.Contains(doc.Text, transcript.ByHand) {
+		t.Errorf("the mark of a person's own words is in the text:\n%s", doc.Text)
+	}
+}
+
+// A file beside the artifact holding nothing is nothing put right, and what was
+// heard is what the source says.
+func TestATranscriptPutRightToNothingIsWhatWasHeard(t *testing.T) {
+	for _, one := range []struct {
+		what string
+		put  []byte
+	}{
+		{"a file holding no bytes", nil},
+		{"a file holding no cues", []byte(transcript.Head + "\n")},
+	} {
+		t.Run(one.what, func(t *testing.T) {
+			store := beside{
+				text.Artifact(text.ASR, "abc123"):  heard(),
+				text.Corrected(text.ASR, "abc123"): one.put,
+			}
+			doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(doc.Text, middle) {
+				t.Errorf("the source says %q", doc.Text)
+			}
+		})
+	}
+}
+
+// A run stopped part way through a cue leaves a block that is not one. It is
+// passed over, and the cues before it stand where they were said.
+func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
+	torn := append(heard(), "\n00:1"...)
+	store := beside{
+		text.Artifact(text.ASR, "abc123"):  heard(),
+		text.Corrected(text.ASR, "abc123"): torn,
+	}
+
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
+	if err != nil {
+		t.Fatal(err)
+	}
+	located(t, doc, closing, "1:30:00")
+	if strings.Contains(doc.Text, "00:1") {
+		t.Errorf("the torn block was read as speech:\n%s", doc.Text)
 	}
 }

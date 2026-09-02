@@ -13,6 +13,7 @@ node_modules/
 
 # what a build leaves at the root
 /numen
+/numen-cli
 /numen-flashcards
 /numen-desktop
 

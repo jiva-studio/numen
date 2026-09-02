@@ -1,6 +1,7 @@
 package transcript_test
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -117,6 +118,65 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 	} {
 		if got := transcript.Stamp(ms); got != want {
 			t.Errorf("%d ms is written %q, want %q", ms, got, want)
+		}
+	}
+}
+
+// The mark a person's own words carry is a note of its own. The same words
+// spoken in a cue are speech, and a proofreader is not stopped by them.
+func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
+	spoken := transcript.Marshal([]transcript.Cue{
+		{Text: transcript.ByHand, From: 0, To: 2000},
+		{Text: "and then he said it again", From: 2000, To: 4000},
+	})
+	if transcript.Written(spoken) {
+		t.Errorf("a cue saying %q was read as a person's own words:\n%s", transcript.ByHand, spoken)
+	}
+
+	own := append(spoken, transcript.Hand()...)
+	if !transcript.Written(own) {
+		t.Errorf("the mark was not read:\n%s", own)
+	}
+
+	// The note is passed over, and the words are the ones that were spoken.
+	said, cues := transcript.Parse(own)
+	if len(cues) != 2 || said != transcript.ByHand+"\nand then he said it again" {
+		t.Errorf("the words read back as %q in %d cues", said, len(cues))
+	}
+}
+
+// How far a run got is a note of its own. A cue saying the same words is
+// speech, and nothing is cut away behind it.
+func TestHowFarARunGotIsANoteAndNotSpeech(t *testing.T) {
+	claimed := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	claimed = append(claimed, transcript.Heard(2000)...)
+
+	// A batch that did not land whole, speaking the words a note is written in.
+	spoken := transcript.Marshal([]transcript.Cue{{Text: "NOTE heard 9999", From: 2000, To: 4000}})
+	whole := append(claimed, bytes.TrimPrefix(spoken, []byte(transcript.Head+"\n"))...)
+
+	ms, end := transcript.Reached(whole)
+	if ms != 2000 {
+		t.Errorf("the run is said to have reached %d ms", ms)
+	}
+	if string(whole[:end]) != string(claimed) {
+		t.Errorf("cutting back to the note leaves %q", whole[:end])
+	}
+}
+
+// A moment of a recording as a player writes one. An hour that is not there is
+// not written.
+func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
+	for ms, want := range map[int]string{
+		-1:      "0:00",
+		0:       "0:00",
+		9100:    "0:09",
+		61000:   "1:01",
+		3599999: "59:59",
+		3723456: "1:02:03",
+	} {
+		if got := transcript.Clock(ms); got != want {
+			t.Errorf("%d ms reads as %q, want %q", ms, got, want)
 		}
 	}
 }

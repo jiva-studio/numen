@@ -107,6 +107,13 @@ export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
 export type { EditorChange } from './editor/change'
+/** A time against every line of an editor, and the line being said now. */
+export { timing } from './editor/timing'
+
+/** The controls a recording is played by. What plays is somewhere else. */
+export { default as Player } from './player/Player.vue'
+export { clock } from './player/clock'
+export type { Timed, Timing } from './editor/timing'
 
 export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
