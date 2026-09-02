@@ -38,7 +38,12 @@ func (i *Index) Close() error { return i.db.Close() }
 // writes a note calls it with the paths it touched, so what it wrote is
 // findable by the time the write returns.
 func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
-	refresh := vault.Refresh{Readers: c.VaultReaders(), Notes: db.NotesCutAt(c.Cutting())}
+	refresh := vault.Refresh{
+		Readers: c.VaultReaders(),
+		Notes:   db.NotesCutAt(c.Cutting()),
+		Known:   db.SourcesKnown(),
+		Sources: db.Sources(),
+	}
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

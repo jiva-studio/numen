@@ -466,7 +466,12 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// it. Whatever a change turns out to mean is decided in one place, so a
 	// second way of showing a vault does not decide it again.
 	held := &holding{NoteRepository: o.Index.NotesCutAt(o.cfg.Cutting())}
-	refresh := usecase.Refresh{Readers: o.cfg.VaultReaders(), Notes: held}
+	refresh := usecase.Refresh{
+		Readers: o.cfg.VaultReaders(),
+		Notes:   held,
+		Known:   o.Index.SourcesKnown(),
+		Sources: o.Index.Sources(),
+	}
 	follow := usecase.Follow{
 		Watcher: o.cfg.VaultWatcher(),
 		Refresh: refresh,
@@ -614,6 +619,8 @@ func (o *Opened) Refresh() usecase.Refresh {
 	return usecase.Refresh{
 		Readers: o.cfg.VaultReaders(),
 		Notes:   o.Index.NotesCutAt(o.cfg.Cutting()),
+		Known:   o.Index.SourcesKnown(),
+		Sources: o.Index.Sources(),
 	}
 }
 

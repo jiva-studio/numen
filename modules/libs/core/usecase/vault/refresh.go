@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
+	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -20,6 +22,11 @@ import (
 type Refresh struct {
 	Readers port.VaultReaders
 	Notes   port.NoteRepository
+	// Known says which kind of source the index holds at a path, and Sources
+	// takes those rows out. Left nil, a book and a recording keep their rows
+	// until a scan.
+	Known   port.SourceQueries
+	Sources port.SourceRepository
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -118,5 +125,37 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
+	if err := u.swept(ctx, v, gone); err != nil {
+		return res, fmt.Errorf("remove: %w", err)
+	}
 	return res, nil
+}
+
+// swept takes out the rows of every source at a path the vault no longer holds.
+// A note leaves through the note repository; a book and a recording are filed
+// by kind and leave through their own, with their chunks and their vectors.
+func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) error {
+	if u.Known == nil || u.Sources == nil || len(paths) == 0 {
+		return nil
+	}
+	// A path names one file, and a folder names everything under it.
+	held := make(map[domain.SourceKind][]string)
+	for _, path := range paths {
+		under, err := u.Known.Under(ctx, v.ID, path)
+		if err != nil {
+			return err
+		}
+		for _, ref := range under {
+			if ref.Kind == domain.KindNote {
+				continue
+			}
+			held[ref.Kind] = append(held[ref.Kind], ref.Path)
+		}
+	}
+	for _, kind := range slices.Sorted(maps.Keys(held)) {
+		if err := u.Sources.RemoveSources(ctx, v.ID, kind, held[kind]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

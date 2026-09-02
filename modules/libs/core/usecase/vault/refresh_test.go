@@ -26,7 +26,25 @@ func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *contai
 	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()}, db, v
+	return usecase.Refresh{
+		Readers: filesystem.Readers{},
+		Notes:   db.Notes(),
+		Known:   db.SourcesKnown(),
+		Sources: db.Sources(),
+	}, db, v
+}
+
+// passages is what the index itself answers with, before anything opens the
+// file a passage names.
+func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
+	t.Helper()
+	found, err := db.Passages().Lexical(
+		t.Context(), v.ID, query, []domain.SourceKind{domain.KindBook}, 10, false,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return found
 }
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
@@ -116,6 +134,48 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 	}
 	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
+	}
+}
+
+// TestABookThatWentLeavesTheIndex. A book is filed by kind and carries chunks
+// of its own, and a row left behind goes on answering searches with a passage
+// that opens nothing.
+func TestABookThatWentLeavesTheIndex(t *testing.T) {
+	refresh, db, v := refreshing(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
+	})
+	const book = "library/A Book.epub"
+	testsupport.WriteBook(t, v.Path, book)
+	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.Extraction{
+		Source: port.Source{
+			Ref:    domain.FileRef{Path: book, Kind: domain.KindBook, Size: 1, MTime: 1},
+			Hash:   "a-hash",
+			Recipe: "epub",
+		},
+		Chunks: []port.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(passages(t, db, v, "reversible")) == 0 {
+		t.Fatal("the book was not in the index to begin with")
+	}
+
+	if err := os.Remove(filepath.Join(v.Path, filepath.FromSlash(book))); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := refresh.Execute(t.Context(), v, []string{book}); err != nil {
+		t.Fatal(err)
+	}
+
+	if found := passages(t, db, v, "reversible"); len(found) != 0 {
+		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
+	}
+	held, err := db.SourcesKnown().Under(t.Context(), v.ID, "library")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(held) != 0 {
+		t.Errorf("the index still holds %v", held)
 	}
 }
 
