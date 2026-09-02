@@ -306,10 +306,9 @@ export const PutOneAway: Story = {
  * Words far past the room there is, in a script that is not Latin and in one
  * with nothing to break at, beside one short word.
  *
- * A card with a count keeps to the short one's height: the numbers beside it
- * are what the room is for. A card carrying only words is carrying a path or a
- * reason, and gives them three rows. Neither pushes the window wider than
- * itself.
+ * A card with a count keeps to two rows: what is happening, and what it is
+ * happening to. A card carrying only words is carrying a path or a reason, and
+ * gives them three rows. Neither pushes the window wider than itself.
  *
  * A row is the type and the clearance around it, both of which the interface
  * multiplier moves, so the short card is what every size measures against.
@@ -329,7 +328,7 @@ export const TooMuchToSay: Story = {
     const height = (card: HTMLElement) => card.getBoundingClientRect().height
     const row = height(cards()[3]!)
 
-    await expect(height(cards()[0]!)).toBeLessThanOrEqual(row + 1)
+    await expect(height(cards()[0]!)).toBeLessThanOrEqual(row * 2 + 1)
     for (const card of cards()) {
       await expect(height(card)).toBeLessThanOrEqual(row * 3 + 1)
       await expect(card.scrollWidth).toBeLessThanOrEqual(card.clientWidth + 1)
