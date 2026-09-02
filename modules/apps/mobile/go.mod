@@ -21,10 +21,15 @@ require (
 	github.com/gomlx/gomlx v0.28.4 // indirect
 	github.com/gomlx/onnx-gomlx v0.5.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
+	github.com/icza/bitio v1.1.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0 // indirect
 	github.com/jolestar/go-commons-pool/v2 v2.1.2 // indirect
 	github.com/klippa-app/go-pdfium v1.19.8 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
+	github.com/mewkiz/flac v1.0.14 // indirect
+	github.com/mewkiz/pkg v0.0.0-20250417130911-3f050ff8c56d // indirect
+	github.com/mewpkg/term v0.0.0-20241026122259-37a80af23985 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/open-spaced-repetition/go-fsrs/v3 v3.3.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
