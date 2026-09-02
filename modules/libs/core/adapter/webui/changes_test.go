@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -166,5 +167,47 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 	if title := shown.Msg.GetFocus().GetTitle(); title != "Renamed" {
 		t.Errorf("the index still says %q", title)
+	}
+}
+
+// TestABookDroppedInReachesAListener. A client draws every file the vault
+// holds, and a book is one of them.
+func TestABookDroppedInReachesAListener(t *testing.T) {
+	client, root := opened(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
+	})
+
+	listening, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+
+	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer changes.Close()
+
+	if !changes.Receive() {
+		t.Fatalf("the stream never opened: %v", changes.Err())
+	}
+
+	reported := make(chan []string, 1)
+	go func() {
+		for changes.Receive() {
+			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
+				reported <- paths
+				return
+			}
+		}
+	}()
+
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+
+	select {
+	case paths := <-reported:
+		if !slices.Contains(paths, "library/A Book.epub") {
+			t.Errorf("reported %v", paths)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the book never reached the listener")
 	}
 }

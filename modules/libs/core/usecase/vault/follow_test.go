@@ -138,9 +138,9 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 		t.Errorf("reported %+v", got)
 	}
 	// A book is not a note that moved, and it is not nothing either: reading one
-	// is its own work, and whoever listens is told there is some.
-	if !got.Sources {
-		t.Error("a book changed and nothing was told to read it")
+	// is its own work, and whoever listens is told which book owes it.
+	if !slices.Equal(got.Sources, []string{"library/A Book.epub"}) {
+		t.Errorf("the book was reported as %v", got.Sources)
 	}
 	if got := titles(t, f.index, f.vault, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
@@ -154,7 +154,7 @@ func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 
 	watcher.lost <- struct{}{}
 
-	if got := next(t, f.moved); !got.Reload || !got.Sources {
+	if got := next(t, f.moved); !got.Reload || !got.Reading() {
 		t.Errorf("reported %+v", got)
 	}
 }
@@ -178,8 +178,8 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	if !got.Reload {
 		t.Fatalf("reported %+v, want the whole picture asked for again", got)
 	}
-	if len(got.Paths) != 0 {
-		t.Errorf("reported paths %v, which cannot be known", got.Paths)
+	if len(got.Paths) != 0 || len(got.Sources) != 0 {
+		t.Errorf("reported %+v, and what changed cannot be known", got)
 	}
 	// The scan ran, so a note nobody named is in the index anyway.
 	if got := titles(t, f.index, f.vault, "entropy"); !slices.Contains(got, "Later") {
