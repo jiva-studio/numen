@@ -64,8 +64,7 @@ type Opened struct {
 // showing is the half of the window that belongs to one vault: the passes
 // running behind it and what ends them.
 type showing struct {
-	scan         usecase.Scan
-	refresh      usecase.Refresh
+	opening      *container.Opening
 	recognising  *container.Recognising
 	transcribing *container.Transcribing
 	// stop ends every pass this vault started, and ended waits for them.
@@ -453,32 +452,16 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
 
-	scan := usecase.Scan{
-		Readers:      o.cfg.VaultReaders(),
-		Vaults:       o.Index.Vaults(),
-		Notes:        o.Index.NotesCutAt(o.cfg.Cutting()),
-		Known:        o.Index.Queries(),
-		Maintenance:  o.Index.Maintenance(),
-		RebuildIndex: rebuild,
-	}
+	// Opening a vault is the same act in both windows, so it is one thing in the
+	// container. What this window says about it while it runs is below.
+	opening := o.cfg.Opening(o.Index)
+	opening.Rebuild = rebuild
 
-	// Following the vault is a use case; this adapter only says who hears about
-	// it. Whatever a change turns out to mean is decided in one place, so a
-	// second way of showing a vault does not decide it again.
-	held := &holding{NoteRepository: o.Index.NotesCutAt(o.cfg.Cutting())}
-	refresh := usecase.Refresh{Readers: o.cfg.VaultReaders(), Notes: held}
-	follow := usecase.Follow{
-		Watcher: o.cfg.VaultWatcher(),
-		Refresh: refresh,
-		Scan:    scan,
-	}
-
-	ended := begin(watching, v, o.cfg, o.Index, o.API, scan, follow,
-		held, o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
+	ended := begin(watching, v, o.cfg, o.Index, o.API, opening,
+		o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
 	return &showing{
-		scan:         scan,
-		refresh:      refresh,
+		opening:      opening,
 		recognising:  recognising,
 		transcribing: transcribing,
 		stop:         stop,
@@ -609,11 +592,13 @@ func (o *Opened) Showing() domain.Vault { return o.API.Showing() }
 // that what changed is findable before the change is reported done.
 func (o *Opened) Refresh() usecase.Refresh {
 	if on := o.on.Load(); on != nil {
-		return on.refresh
+		return on.opening.Refreshing()
 	}
 	return usecase.Refresh{
 		Readers: o.cfg.VaultReaders(),
 		Notes:   o.Index.NotesCutAt(o.cfg.Cutting()),
+		Known:   o.Index.SourcesKnown(),
+		Sources: o.Index.Sources(),
 	}
 }
 
@@ -652,7 +637,7 @@ func (o *Opened) scanning(ctx context.Context, v domain.Vault) (usecase.ScanResu
 	if on == nil {
 		return usecase.ScanResult{}, errNoVault
 	}
-	return on.scan.Execute(ctx, v)
+	return on.opening.Scanning().Execute(ctx, v)
 }
 
 // readable is the vault being one this window can show: the folder reads as a
@@ -850,9 +835,7 @@ func begin(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
-	scan usecase.Scan,
-	follow usecase.Follow,
-	held *holding,
+	opening *container.Opening,
 	readers port.VaultReaders,
 	embedder port.Embedder,
 	wake nudges,
@@ -866,8 +849,8 @@ func begin(
 		}
 		api.Failed.Store(err.Error())
 	}
-	follow.Trouble = trouble
-	follow.Changed = func(m usecase.Moved) {
+	opening.Trouble = trouble
+	opening.Told = func(m usecase.Moved) {
 		api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
 		if m.Sources {
 			// A book dropped into an open vault is read without anybody asking.
@@ -886,43 +869,33 @@ func begin(
 
 	var running sync.WaitGroup
 
-	watch, err := follow.Begin(ctx, v)
-	if err != nil {
-		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, err)
-		api.Unwatched.Store(err.Error())
+	open := opening.Begin(ctx, v)
+	if why := open.Unwatched(); why != nil {
+		fmt.Fprintf(out, "not watching %s: %v\n", v.Name, why)
+		api.Unwatched.Store(why.Error())
 	}
-	if watch != nil {
-		running.Add(1)
-		go func() {
-			defer running.Done()
+	running.Add(1)
+	go func() {
+		defer running.Done()
 
-			watch.Run(ctx)
-			// Nothing reaches the window once the watch stops, so from here on
-			// the vault is one that is not being followed.
-			if ctx.Err() == nil {
-				api.Unwatched.Store("the watch stopped")
-			}
-		}()
-	}
+		open.Run(ctx)
+		// Nothing reaches the window once the watch stops, so from here on the
+		// vault is one that is not being followed.
+		if open.Unwatched() == nil && ctx.Err() == nil {
+			api.Unwatched.Store("the watch stopped")
+		}
+	}()
 
-	// first is the vault's first reading: the scan, and the notes written while
+	// first is the vault's first reading: the walk, and the notes written while
 	// it ran read once more. It answers whether the vault was read.
 	first := func() bool {
 		defer api.finished(walkingNotes)
 
 		// The walk a person watches is this one. A later one is the index being
 		// brought level with a vault that moved under it.
-		walk := scan
-		walk.OnProgress = func(res usecase.ScanResult) {
+		result, err := open.Read(ctx, func(res usecase.ScanResult) {
 			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Done: int64(res.Indexed)})
-		}
-		result, err := walk.Execute(ctx, v)
-
-		// The scan writes in groups from what it read, so its copy of a note
-		// lands last however early the note was read. Every note brought up to
-		// date underneath it is read once more, and the newest copy of each
-		// lands last.
-		under := held.taken()
+		})
 
 		switch {
 		case err == nil:
@@ -933,12 +906,6 @@ func begin(
 		default:
 			api.Failed.Store(err.Error())
 			return false
-		}
-
-		if len(under) > 0 {
-			if _, err := follow.Refresh.Execute(ctx, v, under); err != nil {
-				trouble(err)
-			}
 		}
 
 		fmt.Fprintf(out, "%s: %d notes\n", v.Name, result.Seen)
@@ -991,59 +958,6 @@ func begin(
 	}()
 
 	return running.Wait
-}
-
-// holding is the index, keeping the paths of the notes written through it while
-// the first scan is still reading the vault.
-type holding struct {
-	port.NoteRepository
-
-	mu    sync.Mutex
-	paths []string
-	kept  map[string]bool
-	over  bool
-}
-
-func (h *holding) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
-	for _, n := range notes {
-		h.hold(n.Ref.Path)
-	}
-	return h.NoteRepository.Save(ctx, vaultID, notes)
-}
-
-func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) error {
-	for _, path := range paths {
-		h.hold(path)
-	}
-	return h.NoteRepository.Remove(ctx, vaultID, paths)
-}
-
-// hold takes the path before the write it belongs to, so a note whose write
-// lands while the scan is still running is one of the paths taken after it.
-func (h *holding) hold(path string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if h.over || h.kept[path] {
-		return
-	}
-	if h.kept == nil {
-		h.kept = map[string]bool{}
-	}
-	h.kept[path] = true
-	h.paths = append(h.paths, path)
-}
-
-// taken is every path held, and the end of the holding: the scan is over, so a
-// write that lands from now on is already the last one.
-func (h *holding) taken() []string {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	h.over = true
-	paths := h.paths
-	h.paths, h.kept = nil, nil
-	return paths
 }
 
 // readSources takes the text out of every book in the vault and then embeds what

@@ -46,6 +46,7 @@ const drawn = async (open: readonly string[] = []) => {
     writes: async (folder) => `${folder}Untitled note.md`,
     cuts: async (folder, name) => `${folder}${name}`,
     stencils: async (folder, name) => `${folder}${name}`,
+    presets: async (folder, name) => `${folder}${name}`,
     says: (text) => void done.push(`says ${text}`),
   })
   await list.opens(ROOT)
@@ -209,6 +210,7 @@ describe('the menu on a row', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -231,6 +233,7 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
+      'file',
       'plex',
       'plex',
       'plex',
@@ -245,6 +248,7 @@ describe('the menu on a row', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -257,7 +261,13 @@ describe('the menu on a row', () => {
   })
 
   it('offers what can be made at the root, asked off every row', async () => {
-    expect(await itemsOn(null)).toStrictEqual(['newNote', 'newDeck', 'newStencil', 'newFolder'])
+    expect(await itemsOn(null)).toStrictEqual([
+      'newNote',
+      'newDeck',
+      'newStencil',
+      'newPreset',
+      'newFolder',
+    ])
   })
 
   it('offers removal alone over a selection of several', async () => {
@@ -281,6 +291,7 @@ describe('a folder that could not be read', () => {
       writes: async () => '',
       cuts: async () => '',
       stencils: async () => '',
+      presets: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)

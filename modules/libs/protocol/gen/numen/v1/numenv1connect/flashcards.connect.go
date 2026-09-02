@@ -70,6 +70,8 @@ const (
 	FlashcardsServiceSchedulingProcedure = "/numen.v1.FlashcardsService/Scheduling"
 	// FlashcardsServiceCurveProcedure is the fully-qualified name of the FlashcardsService's Curve RPC.
 	FlashcardsServiceCurveProcedure = "/numen.v1.FlashcardsService/Curve"
+	// FlashcardsServiceTasksProcedure is the fully-qualified name of the FlashcardsService's Tasks RPC.
+	FlashcardsServiceTasksProcedure = "/numen.v1.FlashcardsService/Tasks"
 )
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
@@ -83,9 +85,8 @@ type FlashcardsServiceClient interface {
 	// Counting a vault reads every deck in it and replays its whole answer log,
 	// so the list stands while that runs.
 	//
-	// A vault the index does not carry yet arrives with nothing counted and says
-	// so: the list of its decks is the index's answer, and this application
-	// builds none.
+	// A vault the index does not carry is read into it here, and its counts
+	// follow when the reading is done. What that reading is doing is Tasks.
 	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error)
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
@@ -128,6 +129,11 @@ type FlashcardsServiceClient interface {
 	// name. Nothing is written: a curve is asked for the value a person is
 	// moving and has not settled.
 	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
+	// Tasks is everything this window is doing behind itself, for as long as the
+	// caller listens. Reading a vault is the work it reports, and a vault is read
+	// without anyone asking, so the whole list arrives at once and again whenever
+	// any of it changes.
+	Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest]) (*connect.ServerStreamForClient[v1.FlashcardsServiceTasksResponse], error)
 }
 
 // NewFlashcardsServiceClient constructs a client for the numen.v1.FlashcardsService service. By
@@ -201,6 +207,12 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
 			connect.WithClientOptions(opts...),
 		),
+		tasks: connect.NewClient[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse](
+			httpClient,
+			baseURL+FlashcardsServiceTasksProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Tasks")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -216,6 +228,7 @@ type flashcardsServiceClient struct {
 	around     *connect.Client[v1.AroundRequest, v1.AroundResponse]
 	scheduling *connect.Client[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse]
 	curve      *connect.Client[v1.FlashcardsServiceCurveRequest, v1.FlashcardsServiceCurveResponse]
+	tasks      *connect.Client[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse]
 }
 
 // Owing calls numen.v1.FlashcardsService.Owing.
@@ -268,6 +281,11 @@ func (c *flashcardsServiceClient) Curve(ctx context.Context, req *connect.Reques
 	return c.curve.CallUnary(ctx, req)
 }
 
+// Tasks calls numen.v1.FlashcardsService.Tasks.
+func (c *flashcardsServiceClient) Tasks(ctx context.Context, req *connect.Request[v1.FlashcardsServiceTasksRequest]) (*connect.ServerStreamForClient[v1.FlashcardsServiceTasksResponse], error) {
+	return c.tasks.CallServerStream(ctx, req)
+}
+
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
 	// Owing is what every vault the installation knows comes to today: how much
@@ -279,9 +297,8 @@ type FlashcardsServiceHandler interface {
 	// Counting a vault reads every deck in it and replays its whole answer log,
 	// so the list stands while that runs.
 	//
-	// A vault the index does not carry yet arrives with nothing counted and says
-	// so: the list of its decks is the index's answer, and this application
-	// builds none.
+	// A vault the index does not carry is read into it here, and its counts
+	// follow when the reading is done. What that reading is doing is Tasks.
 	Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
@@ -324,6 +341,11 @@ type FlashcardsServiceHandler interface {
 	// name. Nothing is written: a curve is asked for the value a person is
 	// moving and has not settled.
 	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
+	// Tasks is everything this window is doing behind itself, for as long as the
+	// caller listens. Reading a vault is the work it reports, and a vault is read
+	// without anyone asking, so the whole list arrives at once and again whenever
+	// any of it changes.
+	Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest], *connect.ServerStream[v1.FlashcardsServiceTasksResponse]) error
 }
 
 // NewFlashcardsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -393,6 +415,12 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
 		connect.WithHandlerOptions(opts...),
 	)
+	flashcardsServiceTasksHandler := connect.NewServerStreamHandler(
+		FlashcardsServiceTasksProcedure,
+		svc.Tasks,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Tasks")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FlashcardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FlashcardsServiceOwingProcedure:
@@ -415,6 +443,8 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceSchedulingHandler.ServeHTTP(w, r)
 		case FlashcardsServiceCurveProcedure:
 			flashcardsServiceCurveHandler.ServeHTTP(w, r)
+		case FlashcardsServiceTasksProcedure:
+			flashcardsServiceTasksHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -462,4 +492,8 @@ func (UnimplementedFlashcardsServiceHandler) Scheduling(context.Context, *connec
 
 func (UnimplementedFlashcardsServiceHandler) Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Curve is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest], *connect.ServerStream[v1.FlashcardsServiceTasksResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Tasks is not implemented"))
 }

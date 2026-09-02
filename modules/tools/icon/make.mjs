@@ -1,11 +1,12 @@
 /**
- * Every icon the product ships, cut from the drawing.
+ * Every icon the product ships, cut from the drawings.
  *
- * `icon.svg` is the drawing: one letter as an outline on a rounded plate, so
- * nothing here needs the face it was set in. Each family wears it with the
- * plate in its own colour. What comes out is what each platform asks for, and
- * the formats are written by hand because they are three headers and a list of
- * PNGs between them.
+ * A drawing is one letter as an outline on a rounded plate, so nothing here
+ * needs the face it was set in. `icon.svg` carries the product's n and
+ * `flashcards.svg` a c, and the two are held to differing in the letter and the
+ * plate's colour alone. What comes out is what each platform asks for, and the
+ * formats are written by hand because they are three headers and a list of PNGs
+ * between them.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -15,6 +16,7 @@ import sharp from 'sharp'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(HERE, '..', '..', '..')
 const MASTER = join(HERE, 'icon.svg')
+const FLASHCARDS = join(HERE, 'flashcards.svg')
 
 const LANDING = join(ROOT, 'modules', 'apps', 'landing', 'public')
 const BUILD = join(ROOT, 'modules', 'apps', 'desktop', 'build')
@@ -26,17 +28,19 @@ const BUILD = join(ROOT, 'modules', 'apps', 'desktop', 'build')
  */
 const MAC_PLATE = 0.82
 
-/** The colour the plate is drawn in, and the colour flashcards wears it in. */
-const PLATE = '#191b1e'
-const FLASHCARDS_PLATE = '#1b1a3a'
-
 const drawing = readFileSync(MASTER)
+const flashcards = readFileSync(FLASHCARDS)
 
-/** The drawing with the plate in another colour. */
-const repaint = (art, colour) => {
-  const text = art.toString('utf8')
-  if (!text.includes(PLATE)) throw new Error(`the drawing has no plate in ${PLATE}`)
-  return Buffer.from(text.replaceAll(PLATE, colour), 'utf8')
+/** A drawing with the plate's colour and the letter taken out of it. */
+const shape = (art) =>
+  art
+    .toString('utf8')
+    .replace(/(<rect[^>]*fill=")#[0-9a-f]{6}(")/, '$1$2')
+    .replace(/ transform="[^"]*"/, '')
+    .replace(/ d="[^"]*"/, '')
+
+if (shape(drawing) !== shape(flashcards)) {
+  throw new Error('the drawings differ in more than the plate and the letter')
 }
 
 /**
@@ -188,8 +192,4 @@ write(join(LANDING, 'favicon.svg'), drawing)
 write(join(LANDING, 'apple-touch-icon.png'), await flat(drawing, 180))
 
 await cut(drawing, 'numen', join(BUILD, 'linux', 'icons'))
-await cut(
-  repaint(drawing, FLASHCARDS_PLATE),
-  'numen-flashcards',
-  join(BUILD, 'linux', 'icons', 'flashcards'),
-)
+await cut(flashcards, 'numen-flashcards', join(BUILD, 'linux', 'icons', 'flashcards'))

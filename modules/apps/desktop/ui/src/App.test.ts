@@ -29,6 +29,7 @@ import { linkOf } from './agent/places'
 import DeckTab from './cards/DeckTab.vue'
 import DocumentTab from './document/DocumentTab.vue'
 import FilesTab from './files/FilesTab.vue'
+import { NEW_DECK, NEW_STENCIL } from './files/menu'
 import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 import { Welcome } from '@numen/ui'
@@ -1425,10 +1426,12 @@ describe('a deck or a stencil the file tree asked the vault for', () => {
   const asksFor = async (stencil: boolean) => {
     const window = await drawn()
     const tree = window.findComponent(FilesTab).props('held') as {
-      cuts(path: string | null, stencil: boolean): Promise<void>
+      asks(asked: { path: string | null; at: { x: number; y: number } }): void
+      chose(id: string): void
     }
     cuts.breaks()
-    await tree.cuts(null, stencil)
+    tree.asks({ path: null, at: { x: 0, y: 0 } })
+    tree.chose(stencil ? NEW_STENCIL : NEW_DECK)
     await settles()
     return window
   }

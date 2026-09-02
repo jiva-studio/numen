@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -379,6 +380,61 @@ func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 	}
 	if !gone(t, f.root, "Entropy.md") || !gone(t, f.root, ".trash/Entropy.md") {
 		t.Error("the file is still on the disk")
+	}
+}
+
+// TestARemovedFileIsReportedTheFirstTimeItIsAskedFor. The watcher reports only
+// the paths the vault holds a source for, and a picture is not one of them.
+func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
+	client, root := opened(t, map[string]string{
+		"Note.md":            "---\ntitle: Note\n---\n\n# Note\n",
+		"assets/diagram.png": "a picture, near enough\n",
+	})
+
+	// Its own context, closed before the server is: a stream is an open request,
+	// and a test server waits for those.
+	listening, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+
+	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer changes.Close()
+	if !changes.Receive() {
+		t.Fatalf("the stream never opened: %v", changes.Err())
+	}
+
+	reported := make(chan []string, 1)
+	go func() {
+		for changes.Receive() {
+			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
+				reported <- paths
+				return
+			}
+		}
+	}()
+
+	answer, err := client.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{
+		Path: "assets/diagram.png",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := answer.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the file was refused: %v", refusal)
+	}
+	if !gone(t, root, "assets/diagram.png") {
+		t.Fatal("the file is still where it was")
+	}
+
+	select {
+	case paths := <-reported:
+		if !slices.Contains(paths, "assets/diagram.png") {
+			t.Errorf("the removal was reported as %v", paths)
+		}
+	case <-time.After(5 * time.Second):
+		t.Error("the removal reached nobody, and the tree still draws the row")
 	}
 }
 

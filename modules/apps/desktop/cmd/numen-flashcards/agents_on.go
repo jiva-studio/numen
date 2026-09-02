@@ -69,6 +69,7 @@ func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
+	vaults *opened,
 	api *flashcardsui.API,
 	off bool,
 	out io.Writer,
@@ -100,7 +101,7 @@ func serveAgents(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, v, root, out),
+				Core:    reviewing(cfg, db, vaults, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -138,6 +139,7 @@ func serveAgents(
 func reviewing(
 	cfg container.Config,
 	db *container.Index,
+	vaults *opened,
 	v domain.Vault,
 	root string,
 	out io.Writer,
@@ -145,7 +147,7 @@ func reviewing(
 	queries := db.Queries()
 	links := db.Links()
 
-	cutting := cfg.Cards(queries, links, cfg.Level(db))
+	cutting := cfg.Cards(queries, links, vaults.level)
 
 	return mcp.Core{
 		Showing:       mcp.One(v, root),

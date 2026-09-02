@@ -138,6 +138,10 @@ const window = (
       done.push(`stencils ${folder || '—'} ${name}`)
       return folder ? `${folder}/${name}` : name
     },
+    presets: async (folder, name) => {
+      done.push(`presets ${folder || '—'} ${name}`)
+      return folder ? `${folder}/${name}` : name
+    },
     reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
@@ -236,7 +240,7 @@ describe('a note put in front of the person', () => {
   })
 })
 
-describe('a deck or a stencil made', () => {
+describe('a deck, a stencil or a preset made', () => {
   it('is made at the top of the vault, under the name as it was typed', async () => {
     const one = window()
 
@@ -262,10 +266,19 @@ describe('a deck or a stencil made', () => {
     expect(one.done).toStrictEqual(['stencils — Animal'])
   })
 
+  it('is a preset where that is what was asked for', async () => {
+    const one = window()
+
+    await carry(deedOf('newPreset', front(), 'Sanskrit'), one.on)
+
+    expect(one.done).toStrictEqual(['presets — Sanskrit'])
+  })
+
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
     await carry(deedOf('deck', front(), ''), one.on)
+    await carry(deedOf('newPreset', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })

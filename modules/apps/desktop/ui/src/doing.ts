@@ -122,6 +122,8 @@ export interface Doing {
   cuts(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
   stencils(folder: string, name: string): Promise<string>
+  /** A preset made the same way, naming none of its settings. */
+  presets(folder: string, name: string): Promise<string>
   /** The files of the vault put in front of the person, opened down to a path. */
   reveals(path: string): void
   readonly notes: Notes
@@ -222,6 +224,9 @@ const carried: Record<string, Carries> = {
   },
   stencil: async (deed, on) => {
     if (deed.name) await on.stencils('', deed.name)
+  },
+  newPreset: async (deed, on) => {
+    if (deed.name) await on.presets('', deed.name)
   },
   title: (deed, on, words) => renames(deed, on, words),
   remove: (deed, on, words) => removes(deed, false, on, words),

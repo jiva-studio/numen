@@ -261,6 +261,33 @@ const opensCards = async (folder: string, name: string, stencil: boolean): Promi
   return path
 }
 
+/**
+ * A preset made in a folder under the name it is given, naming none of its
+ * settings. Every key it does not carry stands at the default, so the decks
+ * pointed at it are scheduled by the defaults until the person moves one.
+ */
+const makesPreset = async (folder: string, name: string): Promise<string> => {
+  try {
+    const answer = await presets.makes(name, folder)
+    if (answer.refusal) {
+      told(words.refused[answer.refusal], 'refusal')
+      return ''
+    }
+    return answer.path
+  } catch (error) {
+    told(String(error), 'refusal')
+    return ''
+  }
+}
+
+/** The same, put in front of the person in a tab of its own. */
+const opensMadePreset = async (folder: string, name: string): Promise<string> => {
+  const path = await makesPreset(folder, name)
+  if (!path) return ''
+  puts.made(path, '', 'preset')
+  return path
+}
+
 /** The tree of the vault, and what a gesture on a row of it comes to. */
 const files = filesKind(held.host, () => folders(core), {
   lands: (landing) => void lands(landing, places),
@@ -276,6 +303,7 @@ const files = filesKind(held.host, () => folders(core), {
   writes: async (folder) => (await making.named(folder, []))?.path ?? '',
   cuts: (folder, name) => makesCards(folder, name, false),
   stencils: (folder, name) => makesCards(folder, name, true),
+  presets: (folder, name) => makesPreset(folder, name),
   says: (text) => told(text, 'refusal'),
 })
 
@@ -531,6 +559,7 @@ const doing: Doing = {
   recognises: (path) => running.recognises(path),
   cuts: (folder, name) => opensCards(folder, name, false),
   stencils: (folder, name) => opensCards(folder, name, true),
+  presets: (folder, name) => opensMadePreset(folder, name),
   reveals: (path) => void files.reveals(path),
   notes: reached,
   vaults,

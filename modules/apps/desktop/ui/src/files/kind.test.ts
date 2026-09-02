@@ -10,7 +10,7 @@ import { describe, expect, it } from 'vitest'
 import type { Entry } from '../core'
 import { filing, landingOf, renamedTo } from './kind'
 import { folderOf, listing, ROOT } from './listing'
-import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_STENCIL, RENAME } from './menu'
+import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from './menu'
 import { WORDS as words } from './words'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
@@ -79,6 +79,13 @@ const tab = (refuses = false) => {
       if (refuses) return ''
       const made = folder === ROOT ? `${name}.note` : `${folder}/${name}.note`
       vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'stencil' })]
+      return made
+    },
+    presets: async (folder, name) => {
+      done.push(`presets ${folder === ROOT ? '/' : folder} ${name}`)
+      if (refuses) return ''
+      const made = folder === ROOT ? `${name}.note` : `${folder}/${name}.note`
+      vault[folder] = [...(vault[folder] ?? []), file(made, { type: 'preset' })]
       return made
     },
     says: (text) => void done.push(`says ${text}`),
@@ -376,6 +383,7 @@ describe('rows let go of', () => {
       writes: async () => '',
       cuts: async () => '',
       stencils: async () => '',
+      presets: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)
@@ -566,6 +574,43 @@ describe('an item chosen in the menu on a row', () => {
     await settles()
 
     expect(done).toStrictEqual([`stencils / ${words.newStencil}`])
+  })
+
+  it('makes a preset the same way, under a name of its own', async () => {
+    const { done, one } = await asked()
+
+    one.chose(NEW_PRESET)
+    await settles()
+
+    expect(done).toStrictEqual([`presets / ${words.newPreset}`])
+    expect(one.renaming.value).toBe(`${words.newPreset}.note`)
+  })
+
+  it('stands the preset in the tree as a preset', async () => {
+    const { one } = await asked()
+
+    one.chose(NEW_PRESET)
+    await settles()
+
+    expect(one.list.entryAt(`${words.newPreset}.note`)?.type).toBe('preset')
+  })
+
+  it('makes a preset inside the row where the row is a folder', async () => {
+    const { done, one } = await asked('physics')
+
+    one.chose(NEW_PRESET)
+    await settles()
+
+    expect(done).toStrictEqual([`presets physics ${words.newPreset}`])
+  })
+
+  it('names nothing where the vault made no preset', async () => {
+    const { one } = await asked(undefined, true)
+
+    one.chose(NEW_PRESET)
+    await settles()
+
+    expect(one.renaming.value).toBeNull()
   })
 
   it('makes a deck inside the row where the row is a folder', async () => {

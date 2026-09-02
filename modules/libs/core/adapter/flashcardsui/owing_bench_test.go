@@ -47,6 +47,14 @@ func BenchmarkFrontDoor(b *testing.B) {
 		}
 	}
 
+	// A vault is read when the window opens it, and that is done before the
+	// clock starts: what is measured here is what counting one costs.
+	for _, v := range all {
+		for api.counted(ctx, v).GetReading() {
+			time.Sleep(time.Millisecond)
+		}
+	}
+
 	b.Run("TheListOnScreen", func(b *testing.B) {
 		for b.Loop() {
 			stream, err := client.Owing(ctx, connect.NewRequest(&v1.OwingRequest{}))

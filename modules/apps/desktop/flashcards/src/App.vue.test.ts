@@ -27,6 +27,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
         decks: [{ deck: 'decks/Heat.md', faces: 2, due: 0, new: 0 }],
         presets: [],
         unread: '',
+        reading: false,
       },
       {
         vaultId: 'words',
@@ -41,6 +42,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
         ],
         presets: [],
         unread: '',
+        reading: false,
       },
     ],
   },
@@ -61,6 +63,7 @@ vi.mock('./core', async (original) => ({
       for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
     },
     moving: () => waits(),
+    tasks: () => waits(),
     asking: async () => ({ unreachable: '' }),
     reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
     scheduling: async () => ({ preset: undefined }),
