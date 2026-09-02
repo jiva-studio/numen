@@ -6,7 +6,7 @@
  * the cards this stencil cuts. Each face is a strip it is carried by, holding
  * its name and one row of the fields, and under that one window divided into
  * four parts. What the stencil stands for is the caller's, and so is what is
- * wrong with it: a face's mark stands under that face's name, a field's under
+ * wrong with it: a face's mark stands beside that face's name, a field's under
  * that field's row.
  */
 import { computed, useId } from 'vue'
@@ -41,7 +41,7 @@ import { sampled } from './fill'
 
 /**
  * What the caller found wrong with the stencil it handed in. A face's stands
- * under that face's name and a field's under that field's row, so nothing is
+ * beside that face's name and a field's under that field's row, so nothing is
  * said in a place that leaves a person guessing what it is about.
  */
 const props = withDefaults(

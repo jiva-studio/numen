@@ -79,8 +79,8 @@ export const STENCIL_WORDS: StencilWords = {
 }
 
 /**
- * What the caller found wrong with a stencil. A face's stands under its name and
- * a field's stands under that field's row.
+ * What the caller found wrong with a stencil. A face's stands beside its name
+ * and a field's stands under that field's row.
  */
 export interface StencilWrong {
   /** What is wrong with each face, under the identity it was drawn by. */

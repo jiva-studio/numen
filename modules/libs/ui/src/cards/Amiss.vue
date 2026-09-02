@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * What is wrong with something, said under it: one thing in a paragraph, and
+ * What is wrong with something, said beside it: one thing in a paragraph, and
  * several in a list.
  *
  * Whatever it is said in is the one element, so an `id` handed to this lands on
