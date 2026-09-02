@@ -196,3 +196,51 @@ func (spelling) Name() string { return "a test" }
 func (spelling) Read(_ context.Context, _ []proofread.Batch) (map[int]string, error) {
 	return nil, errors.New("nothing here asks")
 }
+
+// A profile reached through neither a service nor the command line is said to
+// be, and the profile is named. A person who wrote a word this application does
+// not know is owed the news.
+func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
+	for _, use := range []string{"", "telepathy"} {
+		profile := proofreading.Profile{Use: use, Name: "some-model", Model: "haiku"}
+		held := carrying("mine", profile)
+		held.AgentProofreader = func(container.AgentProofreading) (port.Proofreader, error) {
+			return spelling{}, nil
+		}
+
+		proofreader, why := held.Proofreader("mine", proofread.ScanInstruction)
+		if why == nil {
+			t.Fatalf("a profile used through %q was opened", use)
+		}
+		for _, word := range []string{"mine", proofreading.UseService, proofreading.UseAgent} {
+			if !strings.Contains(why.Error(), word) {
+				t.Errorf("the reason does not name %q: %v", word, why)
+			}
+		}
+		if proofreader != nil {
+			t.Errorf("got a proofreader: %v", proofreader.Name())
+		}
+	}
+}
+
+// How much of a person's own model a run may take is the profile's to say, and
+// it reaches the platform that starts the command line.
+func TestHowManyRunsStandAtOnceReachesThePlatform(t *testing.T) {
+	profile := proofreading.AgentDefaults()
+	profile.Model = "haiku"
+	profile.InFlight = 3
+
+	var asked container.AgentProofreading
+	held := carrying("agent", profile)
+	held.AgentProofreader = func(said container.AgentProofreading) (port.Proofreader, error) {
+		asked = said
+		return spelling{}, nil
+	}
+
+	if _, why := held.Proofreader("agent", proofread.SpeechInstruction); why != nil {
+		t.Fatal(why)
+	}
+	if asked.InFlight != 3 {
+		t.Errorf("the platform was told %d runs may stand at once", asked.InFlight)
+	}
+}
