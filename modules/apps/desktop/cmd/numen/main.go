@@ -107,11 +107,15 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
+	pages, err := webui.Pages()
+	if err != nil {
+		return err
+	}
+
 	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
 	}
-	defer opened.Close()
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
@@ -128,18 +132,22 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
 		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
-	defer reachable.Off()
 
-	pages, err := webui.Pages()
-	if err != nil {
-		return err
-	}
-
-	// Registered last so that it runs first: what the page owes lands, then the
-	// agents are let go of, then the scan and the follower stop and the
-	// database closes.
 	going := &going{settle: opened.Settle}
-	defer func() { going.wait() }()
+
+	// What the window holds is let go of in one order: what the page owes lands,
+	// the agents are let go of, the scan and the follower stop, and the database
+	// closes. It happens once.
+	var once sync.Once
+	ending := func() {
+		once.Do(func() {
+			going.wait()
+			reachable.Off()
+			opened.Close()
+			stop()
+		})
+	}
+	defer ending()
 
 	// The window is taken out of sight before the settling begins, and put back
 	// where a page calls the close off: the question is asked on the screen the
@@ -159,6 +167,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
+		OnShutdown: ending,
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
 		// quit is asked for again once it is over. A settling that ended with a

@@ -37,10 +37,12 @@ func refuse(cfg container.Config, why error) {
 				_, _ = w.Write(page)
 			}),
 		},
-		// The application ends when its last window closes.
+		// The application ends when its last window closes, and a refusal ends it
+		// with the status the failure it draws has.
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
+		OnShutdown: func() { os.Exit(1) },
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen",
