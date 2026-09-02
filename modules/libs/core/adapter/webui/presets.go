@@ -8,9 +8,11 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -70,6 +72,20 @@ func (a *API) ListPresets(
 		out.Presets = append(out.Presets, &v1.Listed{Path: one.Path, Title: one.Title})
 	}
 	return connect.NewResponse(out), nil
+}
+
+// MakePreset puts a preset naming none of its settings in the vault. A key the
+// file does not carry stands at the default.
+func (a *API) MakePreset(
+	ctx context.Context, r *connect.Request[v1.MakePresetRequest],
+) (*connect.Response[v1.MakePresetResponse], error) {
+	made, refused, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.Made, error) {
+		return a.MakesCards.Preset(ctx, showing, in)
+	}, r.Msg.GetTitle(), r.Msg.GetFolder())
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&v1.MakePresetResponse{Path: made.Path, Refusal: refused}), nil
 }
 
 // Schedule puts a deck on a preset. A deck still holding what the client read

@@ -19,6 +19,7 @@ import { WORDS as own } from './words'
 export const NEW_NOTE = 'newNote'
 export const NEW_DECK = 'newDeck'
 export const NEW_STENCIL = 'newStencil'
+export const NEW_PRESET = 'newPreset'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
@@ -48,6 +49,7 @@ const MADE: readonly MenuItem[] = [
   { id: NEW_NOTE, text: own.newNote, band: BAND.file },
   { id: NEW_DECK, text: own.newDeck, band: BAND.file },
   { id: NEW_STENCIL, text: own.newStencil, band: BAND.file },
+  { id: NEW_PRESET, text: own.newPreset, band: BAND.file },
   { id: NEW_FOLDER, text: own.newFolder, band: BAND.file },
 ]
 
