@@ -18,10 +18,9 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// The runtime is published as one archive per platform rather than as a library
-// on its own, so fetching it is fetching the archive and taking the one file out
-// of it. What is inside is the same everywhere but its folder is named after the
-// release, which is why the file is found by its name rather than by its path.
+// The runtime is published as one archive per platform, so fetching it is
+// fetching the archive and taking the one file out of it. What is inside is the same everywhere but its folder is named after the
+// release, The file is found by its name at any depth.
 // The version is the one the binding asks the library for: it requests API 23,
 // and a release older than 1.23 answers that it does not have it.
 const runtimeVersion = "1.23.0"
@@ -62,8 +61,7 @@ func runtimeAddress() (string, error) {
 // library is the ONNX Runtime this machine listens through, opened.
 //
 // A path in the settings is used as given. Otherwise what the machine already
-// holds is tried, and only a machine holding none fetches one — a library that
-// is here is a hundred and thirty megabytes nobody waits for.
+// holds is tried,, and only a machine holding none fetches one.
 func library(ctx context.Context, cfg Config) (*ort.Engine, string, error) {
 	held.Lock()
 	defer held.Unlock()

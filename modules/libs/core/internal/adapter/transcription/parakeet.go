@@ -168,9 +168,7 @@ func (t *Transcriber) Hear(ctx context.Context, audio port.Audio) (string, error
 
 	out, err := t.encoder.Run(map[string]*ort.Value{inputSignal: signal, inputLength: length})
 	// The library keeps a pointer into these and nothing else does, so they are
-	// held until the run is over. A slice a tensor alone refers to is a slice
-	// the collector may take back, and what the model then reads is whatever is
-	// there instead.
+	// held until the run is over.
 	runtime.KeepAlive(feature)
 	runtime.KeepAlive(span)
 	if err != nil {

@@ -348,9 +348,7 @@ const sincWidth = 16
 // resampled is one signal at another rate.
 //
 // Each output sample is what the input says at that moment, band-limited to
-// whichever of the two rates is the lower: a signal brought down to 16 kHz
-// carries nothing above eight thousand hertz, and what a plain interpolation
-// would fold back into the words is not there.
+// whichever of the two rates is the lower.
 func resampled(in []float32, from, to int) []float32 {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in

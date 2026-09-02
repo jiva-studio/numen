@@ -72,7 +72,7 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 	heard, _ := transcript.Reached(raw)
-	_, cues := transcript.Read(raw)
+	_, cues := transcript.Parse(raw)
 	told := listened{
 		Path:   ref.Path,
 		Length: heard,
@@ -111,7 +111,7 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		refuse(w, err)
 		return
 	}
-	_, cues := transcript.Read(raw)
+	_, cues := transcript.Parse(raw)
 	cues, err = narrowed(r.URL.Query(), cues)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

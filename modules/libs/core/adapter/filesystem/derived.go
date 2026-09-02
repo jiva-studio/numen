@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
 // OCRDir is where the text of a source that has none of its own is kept.
@@ -25,7 +26,7 @@ import (
 const OCRDir = "ocr"
 
 // SpeechDir is where the words a model heard in a recording are kept.
-const SpeechDir = "asr"
+const SpeechDir = text.ASR
 
 // FlashcardsDir is where the answers a person gave their cards are kept. They
 // are the one thing here nobody can produce a second time: the notes are the

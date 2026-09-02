@@ -46,11 +46,11 @@ type Cue struct {
 	At   int
 }
 
-// Write is the artifact for a run of cues.
+// Marshal is the artifact for a run of cues.
 //
 // A cue carrying no words is not written: silence is not something a person
 // scrolls past, and a timing over nothing is a moment the recording never had.
-func Write(cues []Cue) []byte {
+func Marshal(cues []Cue) []byte {
 	var out strings.Builder
 	out.WriteString(Head)
 	out.WriteString("\n")
@@ -64,11 +64,11 @@ func Write(cues []Cue) []byte {
 	return []byte(out.String())
 }
 
-// Read is an artifact, as the words it holds and the cues they came from.
+// Parse is an artifact, as the words it holds and the cues they came from.
 //
 // The words of a cue stand one to a line, which is what a person reading the
 // transcript sees and what a chunk is cut out of.
-func Read(raw []byte) (string, []Cue) {
+func Parse(raw []byte) (string, []Cue) {
 	var out strings.Builder
 	var cues []Cue
 	for _, block := range strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n\n") {

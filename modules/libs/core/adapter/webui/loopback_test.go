@@ -31,7 +31,7 @@ func (heldVaults) Opened(string) error { return nil }
 // played is the socket a player reaches this API over, closed with the test.
 func played(t *testing.T, api *API) (*Loopback, http.Handler) {
 	t.Helper()
-	back, err := Reachable(api)
+	back, err := Listen(api)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 // way in is what is asked here.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := listeningTo(t, nil)
-	back, err := Reachable(api)
+	back, err := Listen(api)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := listeningTo(t, nil)
-	back, err := Reachable(api)
+	back, err := Listen(api)
 	if err != nil {
 		t.Fatal(err)
 	}

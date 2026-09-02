@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// Speech is the producer that writes down what a model heard in a recording.
-// What it writes is WebVTT, and the names it keeps its files under say so.
-const Speech = "asr"
+// ASR is the producer that writes down what a model heard in a recording. What
+// it writes is WebVTT, and the names it keeps its files under say so.
+const ASR = "asr"
 
 // A Reader is where a source's text comes from: the file itself, or the file a
 // recognition wrote.
@@ -85,7 +85,7 @@ func Composed(
 	from, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if from == Speech {
+	if from == ASR {
 		return Transcribed(raw), nil
 	}
 	parts, err := beside(ctx, store, Parts(from, hash))
@@ -150,7 +150,7 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 // A transcript names no parts: the cues are where the speech was, and a chunk
 // is located by when what it holds was said.
 func Transcribed(raw []byte) *Document {
-	prose, cues := transcript.Read(raw)
+	prose, cues := transcript.Parse(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
 		doc.paged = append(doc.paged, mark{Offset: cue.At, Name: clock(cue.From)})
@@ -196,7 +196,7 @@ func divided(prose string, parts []ocr.Part) []cutting.Part {
 // The extension is the producer's: a transcript is WebVTT and opens in a player
 // under the name a player knows it by.
 func Artifact(from, hash string) string {
-	if from == Speech {
+	if from == ASR {
 		return from + "/" + hash + ".vtt"
 	}
 	return from + "/" + hash + ".txt"
@@ -205,7 +205,7 @@ func Artifact(from, hash string) string {
 // Partial is the name a producer's recognition still running is kept under. It
 // is not an artifact until it is complete, and nothing reads it back as one.
 func Partial(from, hash string) string {
-	if from == Speech {
+	if from == ASR {
 		return from + "/" + hash + ".partial.vtt"
 	}
 	return from + "/" + hash + ".partial"
@@ -257,7 +257,7 @@ func Beside(from, hash string) string {
 // Each producer's own files are named: a sweep works through this list, and a
 // transcription writes no coordinates, parts or corrections.
 func Names(from, hash string) []string {
-	if from == Speech {
+	if from == ASR {
 		return []string{
 			Artifact(from, hash),
 			Partial(from, hash),

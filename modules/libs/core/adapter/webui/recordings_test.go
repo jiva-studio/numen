@@ -75,12 +75,12 @@ func listeningTo(t *testing.T, held stored) (*API, http.Handler) {
 // whole is the store holding a finished transcript of the recording, and partly
 // is one a run is still writing.
 func whole(cues []transcript.Cue) stored {
-	return stored{derived.Artifact(listener, hashed): transcript.Write(cues)}
+	return stored{derived.Artifact(listener, hashed): transcript.Marshal(cues)}
 }
 
 func partly(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(listener, hashed): append(transcript.Write(cues), transcript.Heard(reached)...),
+		derived.Partial(listener, hashed): append(transcript.Marshal(cues), transcript.Heard(reached)...),
 	}
 }
 
@@ -275,7 +275,7 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},
 	}
-	_, cues := transcript.Read(transcript.Write(said))
+	_, cues := transcript.Parse(transcript.Marshal(said))
 
 	// "second" begins after "first\n".
 	got, err := narrowed(url.Values{"start": {"6"}, "length": {"6"}}, cues)

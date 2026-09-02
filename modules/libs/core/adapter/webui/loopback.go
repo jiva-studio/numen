@@ -36,9 +36,9 @@ type Loopback struct {
 	word string
 }
 
-// Reachable opens the socket. A machine that refuses one leaves whatever cannot
+// Listen opens the socket. A machine that refuses one leaves whatever cannot
 // reach the window's own scheme with nothing.
-func Reachable(api *API) (*Loopback, error) {
+func Listen(api *API) (*Loopback, error) {
 	held, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err

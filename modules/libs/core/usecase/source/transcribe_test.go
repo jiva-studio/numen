@@ -112,7 +112,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 // spoken is the words of an artifact, in the order they were said.
 func spoken(t *testing.T, raw []byte) []string {
 	t.Helper()
-	_, cues := transcript.Read(raw)
+	_, cues := transcript.Parse(raw)
 	out := make([]string, 0, len(cues))
 	for _, cue := range cues {
 		out = append(out, cue.Text)
@@ -207,9 +207,9 @@ func TestABatchThatDidNotLandWholeIsCutBack(t *testing.T) {
 	// note are a batch nothing claims.
 	u, v, _, shelf, model, hash := listener(t, "one", "two", "three")
 
-	torn := transcript.Write([]transcript.Cue{{Text: "one", From: 0, To: 800}})
+	torn := transcript.Marshal([]transcript.Cue{{Text: "one", From: 0, To: 800}})
 	torn = append(torn, transcript.Heard(800)...)
-	loose := transcript.Write([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
+	loose := transcript.Marshal([]transcript.Cue{{Text: "half a thought", From: 1000, To: 1800}})
 	torn = append(torn, bytes.TrimPrefix(loose, []byte(transcript.Head+"\n"))...)
 	if err := shelf.Write(t.Context(), text.Partial("asr", hash), torn); err != nil {
 		t.Fatal(err)

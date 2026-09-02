@@ -17,7 +17,7 @@ const (
 
 // heard is the artifact a transcription of the talk leaves.
 func heard() []byte {
-	return transcript.Write([]transcript.Cue{
+	return transcript.Marshal([]transcript.Cue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: middle, From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
@@ -47,7 +47,7 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 // Nothing is kept beside a transcript, so composing one asks no store for
 // anything.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	doc, err := text.Composed(t.Context(), nil, text.Speech, "abc123", heard())
+	doc, err := text.Composed(t.Context(), nil, text.ASR, "abc123", heard())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,10 +55,10 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 }
 
 func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
-	if name := text.Artifact(text.Speech, "abc123"); name != "asr/abc123.vtt" {
+	if name := text.Artifact(text.ASR, "abc123"); name != "asr/abc123.vtt" {
 		t.Errorf("a transcript is kept under %q", name)
 	}
-	if name := text.Partial(text.Speech, "abc123"); name != "asr/abc123.partial.vtt" {
+	if name := text.Partial(text.ASR, "abc123"); name != "asr/abc123.partial.vtt" {
 		t.Errorf("a transcription still running is kept under %q", name)
 	}
 }
@@ -72,7 +72,7 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 		"asr/abc123.answer",
 		"asr/abc123.json",
 	}
-	if got := text.Names(text.Speech, "abc123"); !slices.Equal(got, want) {
+	if got := text.Names(text.ASR, "abc123"); !slices.Equal(got, want) {
 		t.Errorf("a sweep takes %v, want %v", got, want)
 	}
 }

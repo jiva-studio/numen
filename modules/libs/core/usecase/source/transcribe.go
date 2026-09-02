@@ -62,9 +62,9 @@ type TranscribeResult struct {
 	Busy     bool   // somebody else is listening to these bytes, and nothing was done
 }
 
-// DefaultSpeech is how many stretches of speech are heard before they are
+// DefaultHeard is how many stretches of speech are heard before they are
 // written down.
-const DefaultSpeech = 16
+const DefaultHeard = 16
 
 // Execute listens to one recording.
 func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (TranscribeResult, error) {
@@ -120,7 +120,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// hash of what was heard, so this holds however the file was renamed or
 	// moved since.
 	if held, err := store.Read(ctx, final); err == nil {
-		if _, cues := transcript.Read(held); len(cues) > 0 {
+		if _, cues := transcript.Parse(held); len(cues) > 0 {
 			res.Heard = cues[len(cues)-1].To
 			res.Length = res.Heard
 		}
@@ -157,7 +157,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	// again.
 	opened := size > 0
 	write := func(cues []transcript.Cue, heard int) error {
-		body := appended(transcript.Write(cues), opened)
+		body := appended(transcript.Marshal(cues), opened)
 		if err := store.Append(ctx, partial, append(body, transcript.Heard(heard)...)); err != nil {
 			return err
 		}
@@ -209,7 +209,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return res, err
 	}
-	if words, _ := transcript.Read(whole); strings.TrimSpace(words) == "" {
+	if words, _ := transcript.Parse(whole); strings.TrimSpace(words) == "" {
 		// A recording carrying no speech says so, and nothing stands as its
 		// text. An artifact with no cues in it is a transcription that worked.
 		res.Silent = true
@@ -338,14 +338,14 @@ func listened(ctx context.Context, store port.DerivedStore, partial string) (hea
 
 func (u Transcribe) area() string {
 	if u.Area == "" {
-		return "asr"
+		return text.ASR
 	}
 	return u.Area
 }
 
 func (u Transcribe) batch() int {
 	if u.Batch <= 0 {
-		return DefaultSpeech
+		return DefaultHeard
 	}
 	return u.Batch
 }

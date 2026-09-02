@@ -165,8 +165,7 @@ func (t *Transcribing) Running() bool {
 // Start begins listening to one recording behind whoever asked, and says
 // whether it began.
 //
-// One at a time: the models hold a worker each, and a second recording would
-// take twice as long and say so half as clearly.
+// One at a time: the models hold a worker each.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the listening carries on.

@@ -568,7 +568,7 @@ func (u Extract) area() string {
 // listened to, and everything else is read.
 func (u Extract) producer(ref domain.FileRef) string {
 	if ref.Kind == domain.KindRecording {
-		return text.Speech
+		return text.ASR
 	}
 	return u.area()
 }

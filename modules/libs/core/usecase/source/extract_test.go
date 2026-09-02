@@ -540,7 +540,7 @@ const talkPath = "talks/a lecture.mp3"
 
 // transcribed is the transcript a model leaves of one talk.
 func transcribed() []byte {
-	return transcript.Write([]transcript.Cue{
+	return transcript.Marshal([]transcript.Cue{
 		{Text: words(sanskrit, 200), From: 1500, To: 5025000},
 		{Text: words(latin, 200), From: 5025000, To: 5400000},
 	})
@@ -577,7 +577,7 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	if err := made.Write(ctx, text.Artifact(text.Speech, fingerprint(raw)), transcribed()); err != nil {
+	if err := made.Write(ctx, text.Artifact(text.ASR, fingerprint(raw)), transcribed()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -591,8 +591,8 @@ func TestARecordingIsCutFromWhatWasHeardInIt(t *testing.T) {
 	}
 
 	src := index.sources[first.ID][talkPath]
-	if src.TextFrom != text.Speech {
-		t.Errorf("the source names %q as the producer of its text, want %q", src.TextFrom, text.Speech)
+	if src.TextFrom != text.ASR {
+		t.Errorf("the source names %q as the producer of its text, want %q", src.TextFrom, text.ASR)
 	}
 	if want := recipe(text.ReaderRecording, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
@@ -617,10 +617,10 @@ func TestARecordingTakenOutTakesTheFilesOfItsTranscription(t *testing.T) {
 	raw := []byte("ID3 and then the samples")
 	shelf.hold(talkPath, domain.KindRecording, raw, 1)
 	hash := fingerprint(raw)
-	if err := made.Write(ctx, text.Artifact(text.Speech, hash), transcribed()); err != nil {
+	if err := made.Write(ctx, text.Artifact(text.ASR, hash), transcribed()); err != nil {
 		t.Fatal(err)
 	}
-	if err := made.Write(ctx, text.Beside(text.Speech, hash), []byte(`{"model":"parakeet"}`)); err != nil {
+	if err := made.Write(ctx, text.Beside(text.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
 		t.Fatal(err)
 	}
 

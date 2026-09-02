@@ -10,7 +10,7 @@ import (
 // What is written is read back as the same cues, and the words come back
 // without a timing in them.
 func TestWhatIsWrittenIsReadBack(t *testing.T) {
-	written := transcript.Write([]transcript.Cue{
+	written := transcript.Marshal([]transcript.Cue{
 		{Text: "первая реплика", From: 1500, To: 4200},
 		{Text: "вторая реплика", From: 4200, To: 9100},
 	})
@@ -19,7 +19,7 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 		t.Fatalf("the file does not begin with %s:\n%s", transcript.Head, written)
 	}
 
-	said, cues := transcript.Read(written)
+	said, cues := transcript.Parse(written)
 	if said != "первая реплика\nвторая реплика" {
 		t.Errorf("the words read back as %q", said)
 	}
@@ -36,11 +36,11 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 
 // A cue carrying no words is not a moment the recording had.
 func TestSilenceIsNotWritten(t *testing.T) {
-	written := transcript.Write([]transcript.Cue{
+	written := transcript.Marshal([]transcript.Cue{
 		{Text: "  ", From: 0, To: 1000},
 		{Text: "said", From: 1000, To: 2000},
 	})
-	said, cues := transcript.Read(written)
+	said, cues := transcript.Parse(written)
 	if said != "said" || len(cues) != 1 {
 		t.Errorf("silence was written down: %q, %d cues", said, len(cues))
 	}
@@ -48,10 +48,10 @@ func TestSilenceIsNotWritten(t *testing.T) {
 
 // A note says how far a run got, and is not part of what was said.
 func TestANoteIsNotSpeech(t *testing.T) {
-	written := transcript.Write([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	written := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
 	written = append(written, transcript.Heard(2000)...)
 
-	said, cues := transcript.Read(written)
+	said, cues := transcript.Parse(written)
 	if said != "said" || len(cues) != 1 {
 		t.Errorf("the note was read as speech: %q", said)
 	}
@@ -63,7 +63,7 @@ func TestANoteIsNotSpeech(t *testing.T) {
 // A batch that did not land whole is one no note claims, and the run before it
 // is what the next run takes up.
 func TestABatchNoNoteClaims(t *testing.T) {
-	whole := transcript.Write([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
+	whole := transcript.Marshal([]transcript.Cue{{Text: "said", From: 0, To: 2000}})
 	whole = append(whole, transcript.Heard(2000)...)
 	torn := append(whole, []byte("\n00:00:02.000 --> 00:00:0")...)
 
@@ -78,7 +78,7 @@ func TestABatchNoNoteClaims(t *testing.T) {
 
 // The hours are optional in the format, and other tools write them out.
 func TestTimingsOtherToolsWrite(t *testing.T) {
-	said, cues := transcript.Read([]byte("WEBVTT\n\n01:02.500 --> 00:01:03.000\nsaid\n"))
+	said, cues := transcript.Parse([]byte("WEBVTT\n\n01:02.500 --> 00:01:03.000\nsaid\n"))
 	if said != "said" || len(cues) != 1 {
 		t.Fatalf("read %q and %d cues", said, len(cues))
 	}
@@ -89,7 +89,7 @@ func TestTimingsOtherToolsWrite(t *testing.T) {
 
 // A run of the words is played from the cue it begins in.
 func TestARunIsPlayedFromItsCue(t *testing.T) {
-	_, cues := transcript.Read(transcript.Write([]transcript.Cue{
+	_, cues := transcript.Parse(transcript.Marshal([]transcript.Cue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},

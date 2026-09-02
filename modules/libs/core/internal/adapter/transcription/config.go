@@ -102,9 +102,8 @@ const (
 	tokensFile  = "tokens.txt"
 )
 
-// Defaults listen with the transducer measured to be the best of its size on
-// this vault's languages, and cut it into stretches with the model everything
-// else cuts with.
+// Defaults listen with parakeet-tdt-0.6b-v3 and find the speech with
+// silero-vad.
 func Defaults() Config {
 	return Config{
 		Model: ParakeetModel{
@@ -203,9 +202,7 @@ type paths struct {
 //
 // Three places are tried in order and each is a setting: a path written down,
 // the folder the application was installed into, and what was downloaded. A
-// path that is written down is used as given, and its absence is an error
-// rather than a reason to look elsewhere — a person who said where a model is
-// meant it.
+// A path that is written down is used as given, and its absence is an error.
 func locate(ctx context.Context, cfg Config) (paths, error) {
 	found := paths{from: "settings"}
 

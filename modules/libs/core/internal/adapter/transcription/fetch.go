@@ -14,17 +14,14 @@ import (
 	"time"
 )
 
-// Models are fetched by their address rather than through a library that knows
-// one place to look, and a person may point any of them at another place.
+// A model is fetched by its address, and a person may point any of them at another place.
 //
 // A downloaded file is kept under the platform's cache directory, beside what a
 // reading fetches. Deleting it costs a download and no knowledge.
 const cacheDir = "numen/models"
 
 // opening is how long a host has to answer at all, and slowest is the rate a
-// download has to keep up once it is answering. Together they are how long one
-// file has: an encoder is six hundred megabytes, and a deadline that fits it
-// would let a small file stall for an hour.
+// download has to keep up once it is answering. Together they are how long one file has.
 const (
 	opening = 2 * time.Minute
 	slowest = 192 << 10
@@ -114,9 +111,7 @@ func download(ctx context.Context, cfg Config, address, at string) error {
 	counted := &counting{
 		to:    file,
 		total: answer.ContentLength,
-		// Six hundred megabytes is many minutes, and a person watching a number
-		// that never moves is a person watching a program that hung.
-		say: func(done, total int64) { cfg.say(path.Base(address), done, total) },
+		say:   func(done, total int64) { cfg.say(path.Base(address), done, total) },
 	}
 	if _, err := io.Copy(counted, answer.Body); err != nil {
 		file.Close()
