@@ -155,7 +155,7 @@ const chose = (path: string) => {
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  padding: 0.4rem 1rem;
+  padding: 0.75rem 1rem 0.6rem;
   font-family: var(--numen-font-sans);
   font-size: calc(var(--numen-font-size) * 12.8 / 13);
 }
