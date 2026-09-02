@@ -193,6 +193,7 @@ const VAULT: Vault = {
   new: 29,
   decks: DECKS,
   presets: [],
+  reading: false,
   unread: '',
 }
 

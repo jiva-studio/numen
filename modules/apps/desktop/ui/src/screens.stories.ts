@@ -559,6 +559,7 @@ const files = (open: readonly string[]) => {
     writes: async () => '',
     cuts: async () => '',
     stencils: async () => '',
+    presets: async () => '',
     says: () => {},
   })
   const read = (async () => {
