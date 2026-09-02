@@ -141,10 +141,11 @@ const failed = () => props.held.failed(player.value?.error?.code)
   background: var(--numen-field-bg);
 }
 
-/* The line being said is lit in the ink a selection is drawn in, so it is told
-   apart from the line under the pointer. */
-.recording__cue--now {
-  background: var(--numen-selection);
+/* The line being said is drawn in the accent, and carries no fill of its own:
+   the pointer is what fills a line. */
+.recording__cue--now,
+.recording__cue--now .recording__at {
+  color: var(--numen-focus-border);
 }
 
 .recording__at {
