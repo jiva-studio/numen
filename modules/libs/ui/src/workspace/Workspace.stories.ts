@@ -144,6 +144,85 @@ const paneBox = (canvas: HTMLElement, pane: string) => {
   return boxOf(found)
 }
 
+interface Point {
+  readonly x: number
+  readonly y: number
+}
+
+/**
+ * A point of the story told to the window that drives the pointer, and where
+ * that whole pixel of the window falls back in the story. The story is drawn
+ * at a scale, and the pointer goes to whole pixels of the window.
+ */
+const framedIn = (point: Point): { window: Point; story: Point } => {
+  const frame = window.frameElement as HTMLElement | null
+  if (!frame) {
+    const whole = { x: Math.round(point.x), y: Math.round(point.y) }
+    return { window: whole, story: whole }
+  }
+
+  const box = frame.getBoundingClientRect()
+  const across = box.width / window.innerWidth
+  const down = box.height / window.innerHeight
+  const driven = {
+    x: Math.round(box.x + point.x * across),
+    y: Math.round(box.y + point.y * down),
+  }
+  return {
+    window: driven,
+    story: { x: (driven.x - box.x) / across, y: (driven.y - box.y) / down },
+  }
+}
+
+/**
+ * A drag the browser makes itself, from one point to another. The splitter
+ * catches the pointer by where it is, which is something only a browser says.
+ */
+const swept = async (from: Point, to: Point): Promise<void> => {
+  const context = await import('@vitest/browser/context')
+  await context.commands.sweep(framedIn(from).window, framedIn(to).window)
+  await new Promise((done) => setTimeout(done, 16))
+}
+
+/** The cursor the splitter puts over the whole page while it has the pointer. */
+function heldCursor(): string | null {
+  const put = '*{cursor:'
+
+  for (const style of document.head.querySelectorAll('style')) {
+    const text = (style.textContent ?? '').trim()
+    if (text.startsWith(put)) return text.slice(put.length, text.indexOf('!')).trim()
+  }
+  return null
+}
+
+/** A place the pointer was at, and the cursor the splitter drew there. */
+interface Caught {
+  readonly at: Point
+  readonly cursor: string
+}
+
+/**
+ * Every place along a line across a handle where the splitter has the pointer,
+ * and the cursor it draws there. The line is taken a quarter of the way along
+ * the handle, clear of the handles a branch further in lays across this one.
+ */
+async function caughtAcross(handle: HTMLElement, along: 'x' | 'y'): Promise<readonly Caught[]> {
+  const box = boxOf(handle)
+  const found: Caught[] = []
+
+  for (let away = -10; away <= 10; away += 1) {
+    const at =
+      along === 'x'
+        ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
+        : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
+
+    await swept(at, at)
+    const cursor = heldCursor()
+    if (cursor) found.push({ at, cursor })
+  }
+  return found
+}
+
 /** A tab picked up and let go somewhere, in as many steps as a hand takes. */
 async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
   const start = boxOf(from)
@@ -426,5 +505,63 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
       const x = at.x + at.width / 2 + away
       await expect(document.elementFromPoint(x, middle)).toBe(handle)
     }
+  },
+}
+
+/**
+ * The splitter has the pointer over the whole reach the handle draws, one
+ * cursor throughout, and a press out at the far edge of that reach carries the
+ * split with it.
+ *
+ * Only a browser can answer it: the splitter takes the pointer by where it is,
+ * which a made-up event does not say.
+ */
+export const DragsFromItsWholeReach: Story = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
+    const caught = await caughtAcross(handle, 'x')
+
+    // The line and the reach either side of it, less a pixel for where the
+    // window rounds the pointer to.
+    await expect(caught.length).toBeGreaterThanOrEqual(14)
+    await expect(caught.map((place) => place.cursor)).toStrictEqual(caught.map(() => 'ew-resize'))
+    await expect(getComputedStyle(handle).cursor).toBe('ew-resize')
+
+    const edge = caught[caught.length - 1]?.at
+    if (!edge) throw new Error('the handle caught nothing')
+    const before = paneBox(canvasElement, 'main').width
+
+    await swept(edge, { x: edge.x + 40, y: edge.y })
+
+    // The pointer goes to whole pixels of the window, which the story counts in
+    // its own.
+    const moved = paneBox(canvasElement, 'main').width - before
+    await expect(Math.abs(moved - 40)).toBeLessThan(2)
+  },
+}
+
+/** A handle lying across a branch is caught over its whole reach as well. */
+export const DragsFromItsWholeReachDownwards: Story = {
+  tags: ['!dev'],
+  args: { arrangement: 'nested' },
+  play: async ({ canvasElement }) => {
+    const handle = canvasElement.querySelector(
+      '.branch__handle[data-direction="vertical"]',
+    ) as HTMLElement
+    const caught = await caughtAcross(handle, 'y')
+
+    await expect(caught.length).toBeGreaterThanOrEqual(14)
+    await expect(caught.map((place) => place.cursor)).toStrictEqual(caught.map(() => 'ns-resize'))
+    await expect(getComputedStyle(handle).cursor).toBe('ns-resize')
+
+    const edge = caught[caught.length - 1]?.at
+    if (!edge) throw new Error('the handle caught nothing')
+    const before = paneBox(canvasElement, 'b').height
+
+    await swept(edge, { x: edge.x, y: edge.y + 30 })
+
+    const moved = paneBox(canvasElement, 'b').height - before
+    await expect(Math.abs(moved - 30)).toBeLessThan(2)
   },
 }

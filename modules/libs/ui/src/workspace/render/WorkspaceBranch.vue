@@ -96,6 +96,12 @@ onBeforeUnmount(() => {
 const shape = computed(() => props.node.children.map((child) => child.id).join(' '))
 
 /**
+ * How far from the line a pointer is caught, in pixels, by a mouse and by a
+ * finger. The splitter is told this reach and the handle draws it.
+ */
+const reach = { fine: 7, coarse: 15 }
+
+/**
  * Whether a handle is under the pointer, and where it has reached. The splitter
  * moves the panels itself while it is held, and the model is told where it came
  * to rest.
@@ -164,6 +170,7 @@ function handling(now: boolean): void {
         v-if="index > 0"
         class="branch__handle"
         :data-direction="direction"
+        :hit-area-margins="reach"
         @dragging="handling"
       />
 
@@ -222,7 +229,7 @@ function handling(now: boolean): void {
    side of the line is a press on the handle. */
 .branch__handle {
   --line: var(--numen-stroke);
-  --reach: 7px;
+  --reach: v-bind('`${reach.fine}px`');
 
   position: relative;
   z-index: 1;
@@ -230,14 +237,16 @@ function handling(now: boolean): void {
   background: var(--numen-node-border);
 }
 
+/* The splitter draws the pointer as a double arrow everywhere its reach is
+   caught, and the line under it carries that same arrow. */
 .branch__handle[data-direction='horizontal'] {
   inline-size: var(--line);
-  cursor: col-resize;
+  cursor: ew-resize;
 }
 
 .branch__handle[data-direction='vertical'] {
   block-size: var(--line);
-  cursor: row-resize;
+  cursor: ns-resize;
 }
 
 .branch__handle::after {
@@ -256,11 +265,10 @@ function handling(now: boolean): void {
   background: var(--numen-ring);
 }
 
-/* A finger is caught from further out than a pointer, at the reach the splitter
-   answers a touch from. */
+/* A finger is caught from further out than a pointer. */
 @media (pointer: coarse) {
   .branch__handle {
-    --reach: 15px;
+    --reach: v-bind('`${reach.coarse}px`');
   }
 }
 
