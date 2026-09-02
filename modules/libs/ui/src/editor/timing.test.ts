@@ -9,11 +9,6 @@ import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { timing, type Timed } from './timing'
 
-// Nothing here has a size, and the editor measures anyway.
-Range.prototype.getClientRects = () =>
-  Object.assign([], { item: () => null }) as unknown as DOMRectList
-Range.prototype.getBoundingClientRect = () => new DOMRect()
-
 const drawn: EditorView[] = []
 
 const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting change.'
