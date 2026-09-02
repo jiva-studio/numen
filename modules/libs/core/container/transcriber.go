@@ -155,13 +155,6 @@ func (t *Transcribing) Ready() bool { return t.ready() }
 // index the application still holds open.
 func (t *Transcribing) Wait() { t.going.Wait() }
 
-// Running says whether a recording is being listened to.
-func (t *Transcribing) Running() bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.running
-}
-
 // Start begins listening to one recording behind whoever asked, and says
 // whether it began.
 //

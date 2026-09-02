@@ -230,16 +230,13 @@ type Recognising interface {
 }
 
 // Transcribing is what the tools need in order to hear a recording: a way to
-// begin, a way to say how far it has got, and whether it could begin at once.
+// begin, and whether beginning would wait for anything to arrive.
 //
-// It is an interface so that a server can be built without one, and so that the
-// tools can say "it has started" rather than "there is nothing to listen with".
+// A server built without one serves no tool that would listen.
 type Transcribing interface {
 	// Ready says whether listening could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
-	// Running says whether a recording is being listened to.
-	Running() bool
 	// Start begins listening to one recording behind whoever asked, and says
 	// whether it began. It does not begin a second while one runs, and it runs
 	// under the application rather than under the call that asked for it.
