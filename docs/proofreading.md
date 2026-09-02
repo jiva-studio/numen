@@ -68,7 +68,7 @@ None of them asks whether a correction is right.
 
 - **A mark of ours coming back refuses the batch.** No recogniser and no transcriber produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole batch.
 - **A line number the batch did not name refuses the batch.**
-- **Letters that moved further than `letters_apart` drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the Levenshtein distance between what is left is taken as a share of the longer. 0.30 where the file names nothing.
+- **Letters that moved further than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the Levenshtein distance between what is left is taken as a share of the longer. 0.30 where the file names nothing.
 
 Two more corrections are dropped without refusing the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
 
@@ -99,7 +99,7 @@ A profile carries `batch_size` — how many lines one request carries — and `o
 
 It also carries `in_flight`: how many batches are being asked about at any moment. What a batch costs is what the model writes back rather than what it took to ask, so a run is as long as its batches are asked one after another. At the command line this is a person's own model, and it is left most of itself while they are using it.
 
-`indexing.proofreading.letters_apart` stands above the profiles. It is one threshold for the installation, not a property of a transport: how far a correction may move a line's letters says nothing about what the correction was asked for through. It is 0.30 because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
+`indexing.proofreading.max_edit_distance` stands above the profiles. It is the Levenshtein distance between two lines' letters as a share of the longer of them, and a correction standing further than that from the line as read is dropped. It is one threshold for the installation: how far a correction may move a line's letters says nothing about what the correction was asked for through. It is 0.30 because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
 Every key is in [Settings](settings.md).
 
@@ -142,4 +142,4 @@ A **follow** toggle says whether the view moves with the recording. On, the line
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.letters_apart`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.
+Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `use`, `batch_size`, `overlap`, `in_flight`, `base_url`, `batch_url`, `name`, `key`, `key_env`, `command` and `model`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.

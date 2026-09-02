@@ -38,9 +38,9 @@ type Proofread struct {
 	// Pages is how many pages are asked about at once. Zero takes the default.
 	Pages int
 
-	// Apart is how far a correction may move a line's letters and still be a
-	// correction. Zero takes what was measured.
-	Apart float64
+	// MaxEditDistance is how far a correction may stand from the line as read
+	// and still be a correction. Zero takes what was measured.
+	MaxEditDistance float64
 
 	// Cut makes a source's chunks. It is called as corrections are written
 	// down, so a book answers about the pages already put right while the rest
@@ -216,7 +216,7 @@ func (u Proofread) gathered(
 		if !answered {
 			continue
 		}
-		lines, ok := proofread.Fixed(page, reply, u.apart())
+		lines, ok := proofread.Fixed(page, reply, u.distance())
 		if !ok {
 			refused++
 			continue
@@ -396,11 +396,11 @@ func (u Proofread) batch() int {
 	return u.Pages
 }
 
-func (u Proofread) apart() float64 {
-	if u.Apart <= 0 {
-		return proofread.LettersApart
+func (u Proofread) distance() float64 {
+	if u.MaxEditDistance <= 0 {
+		return proofread.MaxEditDistance
 	}
-	return u.Apart
+	return u.MaxEditDistance
 }
 
 func (u Proofread) progress(res ProofreadResult) {

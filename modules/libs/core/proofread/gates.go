@@ -8,9 +8,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// LettersApart is how far a correction's letters may stand from the line as
-// read, as a share of the longer of the two.
-const LettersApart = 0.30
+// MaxEditDistance is how far a correction may stand from the line as read.
+const MaxEditDistance = 0.30
 
 // Fixed is the lines a reply puts right, and whether the reply answers the
 // question that was asked.
@@ -21,10 +20,10 @@ const LettersApart = 0.30
 // refuses a batch that does not put lines together.
 //
 // A correction saying what the line already says is dropped, as is one that
-// only puts something wordless in front of it, and as is one whose letters
-// stand further than apart from the line as read. An apart at or below zero
-// sets no limit.
-func Fixed(batch Batch, reply string, apart float64) ([]Line, bool) {
+// only puts something wordless in front of it, and as is one standing further
+// than maxDistance from the line as read. A maxDistance at or below zero sets
+// no limit.
+func Fixed(batch Batch, reply string, maxDistance float64) ([]Line, bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false
 	}
@@ -93,7 +92,7 @@ func Fixed(batch Batch, reply string, apart float64) ([]Line, bool) {
 			if fronted(was, text) {
 				continue
 			}
-			if apart > 0 && Apart(was, text) > apart {
+			if maxDistance > 0 && EditDistance(was, text) > maxDistance {
 				continue
 			}
 		}
@@ -110,7 +109,7 @@ func Fixed(batch Batch, reply string, apart float64) ([]Line, bool) {
 // batch in which the line stands further from the end; where they stand equally
 // far, it is the one from the later batch. A reply the gates refuse puts
 // nothing right, and a line no accepted reply covers is not in the result.
-func Gathered(asked []Batch, replies map[int]string, apart float64) map[int]Line {
+func Gathered(asked []Batch, replies map[int]string, maxDistance float64) map[int]Line {
 	put := make(map[int]Line)
 	standing := make(map[int]int)
 	for _, batch := range asked {
@@ -118,7 +117,7 @@ func Gathered(asked []Batch, replies map[int]string, apart float64) map[int]Line
 		if !answered {
 			continue
 		}
-		lines, ok := Fixed(batch, reply, apart)
+		lines, ok := Fixed(batch, reply, maxDistance)
 		if !ok {
 			continue
 		}
@@ -223,9 +222,9 @@ func unfenced(reply string) string {
 	return body
 }
 
-// Apart is how far two lines' letters stand from one another, as a share of the
-// longer of them. Two lines of no letters stand nowhere apart.
-func Apart(a, b string) float64 {
+// EditDistance is the Levenshtein distance between two lines' letters, as a
+// share of the longer of them. Two lines of no letters stand nowhere apart.
+func EditDistance(a, b string) float64 {
 	x, y := letters(a), letters(b)
 	long := len(x)
 	if len(y) > long {

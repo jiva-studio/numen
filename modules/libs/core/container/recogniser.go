@@ -295,13 +295,13 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	_, err = source.Proofread{
-		Readers: r.cfg.VaultReaders(),
-		Derived: r.cfg.DerivedStores(),
-		By:      by,
-		Queue:   queue,
-		Pages:   profile.BatchSize,
-		Apart:   r.cfg.Proofreading.Apart(),
-		Cut:     r.Cut,
+		Readers:         r.cfg.VaultReaders(),
+		Derived:         r.cfg.DerivedStores(),
+		By:              by,
+		Queue:           queue,
+		Pages:           profile.BatchSize,
+		MaxEditDistance: r.cfg.Proofreading.Distance(),
+		Cut:             r.Cut,
 		OnProgress: func(res source.ProofreadResult) {
 			r.say(task.Task{
 				ID:    id,
@@ -383,13 +383,13 @@ func (r *Recognising) collect(
 		}
 		id := correcting(said.Path)
 		res, err := source.Proofread{
-			Readers: r.cfg.VaultReaders(),
-			Derived: r.cfg.DerivedStores(),
-			By:      queue,
-			Queue:   queue,
-			Pages:   profile.BatchSize,
-			Apart:   r.cfg.Proofreading.Apart(),
-			Cut:     r.Cut,
+			Readers:         r.cfg.VaultReaders(),
+			Derived:         r.cfg.DerivedStores(),
+			By:              queue,
+			Queue:           queue,
+			Pages:           profile.BatchSize,
+			MaxEditDistance: r.cfg.Proofreading.Distance(),
+			Cut:             r.Cut,
 		}.Execute(ctx, v, said.Path)
 
 		switch {

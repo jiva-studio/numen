@@ -60,12 +60,12 @@ func proofreadCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 	// The line of pages rewrites itself, and is closed once it stops.
 	shown := false
 	res, err := source.Proofread{
-		Readers: cfg.VaultReaders(),
-		Derived: cfg.DerivedStores(),
-		By:      by,
-		Queue:   queue,
-		Pages:   cfg.Proofreading.Profiles[named].BatchSize,
-		Apart:   cfg.Proofreading.Apart(),
+		Readers:         cfg.VaultReaders(),
+		Derived:         cfg.DerivedStores(),
+		By:              by,
+		Queue:           queue,
+		Pages:           cfg.Proofreading.Profiles[named].BatchSize,
+		MaxEditDistance: cfg.Proofreading.Distance(),
 		Cut: func(ctx context.Context, v domain.Vault, path string) error {
 			_, err := cut.One(ctx, v, path)
 			return err
