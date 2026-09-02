@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -389,6 +390,44 @@ func TestAFolderIsNotMovedInsideItself(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "physics", "Entropy.md")); err != nil {
 		t.Errorf("the folder did not stay where it was: %v", err)
+	}
+}
+
+// A file handed to the window is any kind of file, and it lands under the name
+// it was handed over with.
+func TestAFileIsBroughtInFromOutside(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Bring(ctx, "scans/Cover.png", strings.NewReader("PNG")); err != nil {
+		t.Fatalf("the file was refused: %v", err)
+	}
+	held, err := os.ReadFile(filepath.Join(root, "scans", "Cover.png"))
+	if err != nil {
+		t.Fatalf("the file did not arrive: %v", err)
+	}
+	if string(held) != "PNG" {
+		t.Errorf("the file arrived as %q", held)
+	}
+
+	if err := w.Bring(ctx, "scans/Cover.png", strings.NewReader("OTHER")); !errors.Is(err, port.ErrOccupied) {
+		t.Errorf("a file over a file: want ErrOccupied, got %v", err)
+	}
+	if err := w.Bring(ctx, "../outside.png", strings.NewReader("PNG")); !errors.Is(err, filesystem.ErrOutside) {
+		t.Errorf("a file outside the vault: want ErrOutside, got %v", err)
+	}
+	if err := w.Bring(ctx, ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh")); err == nil {
+		t.Error("a file was brought into a folder another tool acts on")
+	}
+
+	// The bytes cross under a name the watcher passes over, and nothing is left
+	// beside the file.
+	beside, err := os.ReadDir(filepath.Join(root, "scans"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(beside) != 1 {
+		t.Errorf("the folder holds %d files", len(beside))
 	}
 }
 

@@ -165,8 +165,9 @@ export function filing(list: Listing, deps: Filing) {
     list.chosen.value.includes(path) ? list.chosen.value : [path]
 
   /**
-   * The folder something made on a row lands in: the folder the row stands for,
-   * or the folder the row sits in. A gesture off every row lands at the root.
+   * The folder something made on a row lands in, and the folder a file carried
+   * in from outside the window is filed in: the folder the row stands for, or
+   * the folder the row sits in. A gesture off every row lands at the root.
    */
   const folderFor = (path: string | null): string => {
     if (path === null) return ROOT
@@ -336,6 +337,7 @@ export function filing(list: Listing, deps: Filing) {
     menu,
     renaming,
     over,
+    folderFor,
     activate,
     open,
     close,

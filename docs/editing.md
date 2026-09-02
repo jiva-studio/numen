@@ -148,6 +148,16 @@ Destroying the file outright is available and is asked for explicitly. Nothing b
 
 The notes whose links pointed at the removed note are reported and not repaired: the link is not wrong, its target is gone, and only the person knows what they meant.
 
+## Bringing files in
+
+A file dragged off the machine and let go over the tree is copied into the vault. The row under the pointer names where it lands: a folder takes it inside, and any other row puts it beside itself. Let go over the tree and over no row it lands at the top level. The row a drop would land on is ringed while the pointer is over it, and a drop anywhere else in the window does nothing.
+
+The file is copied, so what was let go of stays where it was. A folder arrives with everything under it. A file of any kind arrives — a picture, a recording, an archive — and the bytes are streamed, so the size of what arrives is the size of the disk and not of the machine's memory. Each file lands beside its destination and is renamed over it, so what is watching the vault reads it once and reads it whole.
+
+**A name the folder already carries is refused, and that file stays outside.** What a person meant by a second file of that name is theirs to say. The rest of the drop arrives, and what did not stands in the corner under what stopped it. A folder that the vault itself sits inside is refused whole.
+
+A picture or an archive is reported to nobody by the watcher, so what arrived is named to everyone drawing the vault and the tree draws it at once.
+
 ## Quitting with work in hand
 
 The window is asked for everything it still holds, and it answers once every tab has written what it owes.

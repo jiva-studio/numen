@@ -131,6 +131,10 @@ type API struct {
 	Moves   *usecase.Move
 	Removes *note.Remove
 
+	// Bringing copies files a person handed the window into a folder of the
+	// vault. A build without it takes none.
+	Bringing *usecase.Bring
+
 	// Sync reads whether a note's title and its filename are kept as one name,
 	// and Chooses writes it. A build with no Chooses answers that it configures
 	// nothing; one with no Sync reads what an installation nobody has
