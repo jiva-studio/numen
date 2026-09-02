@@ -145,7 +145,9 @@ export function timing(goes: (line: number) => void): Timing {
     if (last) {
       const shown = last
       queueMicrotask(() => {
-        if (view === got) show(shown)
+        // An editor drawn again is shown what the one before it was shown and
+        // is left where it stands: nothing was said while it was drawn.
+        if (view === got) put(shown, false)
       })
     }
     return {
@@ -155,21 +157,24 @@ export function timing(goes: (line: number) => void): Timing {
     }
   })
 
-  const show = (timed: Timed) => {
+  // put shows what is given. It moves the view only where it may: the line to
+  // keep in sight has to be one the document has, following has to be on, and
+  // one of the two has to have changed.
+  const put = (timed: Timed, may: boolean) => {
     last = timed
     if (!view) return
     const was = view.state.field(held)
     if (same(was, timed)) return
     const effects: StateEffect<unknown>[] = [told.of(timed)]
-    // The view is moved only where following is on and the line to keep in
-    // sight is one the document has.
     const moved = timed.current !== was.current || timed.following !== was.following
-    if (timed.following && moved && timed.current >= 0 && timed.current < view.state.doc.lines) {
+    if (may && timed.following && moved && timed.current >= 0 && timed.current < view.state.doc.lines) {
       const { from } = view.state.doc.line(timed.current + 1)
       effects.push(EditorView.scrollIntoView(from, { y: 'nearest' }))
     }
     view.dispatch({ effects })
   }
+
+  const show = (timed: Timed) => put(timed, true)
 
   return { extension: [held, marked, times(goes), painted, holding], show }
 }

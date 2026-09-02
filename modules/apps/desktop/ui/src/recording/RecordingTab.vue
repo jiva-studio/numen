@@ -8,6 +8,7 @@
  * is worked out here.
  */
 import { computed, watchPostEffect } from 'vue'
+import { LocateFixed } from '@lucide/vue'
 import { Editor, Player, timing } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { Held } from './kind'
@@ -50,10 +51,12 @@ const follows = computed(() => props.held.following.value)
       <button
         type="button"
         class="recording__follow"
+        :aria-label="words.follow"
+        :title="words.follow"
         :aria-pressed="follows ? 'true' : 'false'"
         @click="props.held.follows(!follows)"
       >
-        {{ words.follow }}
+        <LocateFixed class="recording__icon" />
       </button>
     </div>
     <!-- What went wrong stands above the words, where it is read whether or
@@ -128,18 +131,30 @@ const follows = computed(() => props.held.following.value)
 }
 
 .recording__follow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2rem;
+  block-size: 2rem;
   padding: 0;
   border: 0;
+  border-radius: var(--numen-radius-field);
   background: none;
   color: var(--numen-hushed);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
   cursor: pointer;
+}
+
+.recording__follow:hover {
+  background: var(--numen-field-bg);
 }
 
 .recording__follow[aria-pressed='true'] {
   color: var(--numen-focus-border);
+}
+
+.recording__icon {
+  inline-size: 1rem;
+  block-size: 1rem;
 }
 
 /* The editor scrolls, so the bar stands at the edge of the pane and only the
