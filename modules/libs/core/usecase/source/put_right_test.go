@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -305,5 +306,30 @@ func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
 	// Two lines, one to a request.
 	if cuts != 2 {
 		t.Errorf("cut %d times", cuts)
+	}
+}
+
+// Every batch of a transcript carries what the whole recording holds: how its
+// speech opens, and the words that recur through it.
+func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
+	words := []string{
+		"The assembly at Mithila heard Ganaka.",
+		"The teacher listened. Then Ganaka spoke of Mithila",
+		"as a city nobody had named before him.",
+	}
+	u, v, _, by, _ := hearing(t, nil, words...)
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(by.about) != len(words) {
+		t.Fatalf("it was asked about %d batches", len(by.about))
+	}
+	for _, about := range by.about {
+		for _, want := range []string{"The speech opens: The assembly at Mithila", "Mithila, Ganaka"} {
+			if !strings.Contains(about, want) {
+				t.Errorf("a batch says the recording holds %q, and it does not carry %q", about, want)
+			}
+		}
 	}
 }

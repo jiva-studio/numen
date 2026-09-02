@@ -34,6 +34,10 @@ type Batch struct {
 	// Joining is whether a reply may answer for a run of these lines as one.
 	// Where it does not, a run refuses the batch.
 	Joining bool
+
+	// About is what the whole text holds, said in its own words. It stands
+	// before the lines in the question and is answered for by nothing.
+	About string
 }
 
 // Last is the number of the final line a batch carries, and nothing below the
@@ -81,6 +85,10 @@ const SpeechInstruction = `You are proofreading text a machine heard in a record
 The text is speech as prose, with every stretch of it numbered: ` + Opens + `12` + Closes + ` opens the
 line numbered 12, and that line runs to the next mark.
 
+What the recording holds stands before the first mark: how the speech opens,
+and the words that recur through it as the machine heard them. It is there to
+be read and is answered for by nothing.
+
 Answer with the lines you would put right, one to a line:
 
 12|the line, put right
@@ -99,6 +107,8 @@ as the first and the last of them:
   both, and that run is answered with every sentence it covers.
 - A line is answered for once: two runs never share a line, and a run says
   everything its lines say.
+- A word listed as recurring is one the recording keeps coming back to. Put it
+  right or leave it as it is, and do the same with it every time it is said.
 - Nothing is added that was not said, and no word moves to a line outside the
   run it is answered in.
 - Do not write ` + Opens + ` or ` + Closes + ` in your answer.
@@ -112,9 +122,13 @@ as the first and the last of them:
 // opened by its number.
 //
 // The lines are run together as prose: a line ending mid-word is finished by
-// the next one.
+// the next one. What the text is about stands before the first of them.
 func Ask(batch Batch) string {
 	var out strings.Builder
+	if batch.About != "" {
+		out.WriteString(batch.About)
+		out.WriteString("\n\n")
+	}
 	for i, line := range batch.Lines {
 		if i > 0 {
 			out.WriteString(" ")

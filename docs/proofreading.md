@@ -1,6 +1,6 @@
 # Putting a text right
 
-What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines and nothing else, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
+What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
 
 ## One mechanism, two texts
 
@@ -61,6 +61,22 @@ The reply is only the lines that changed. A batch the proofreader would leave al
 ```
 
 A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the batch is refused.
+
+## What a transcript says it holds
+
+A batch is forty lines of an hour, and a name or a term the rest of the recording establishes is, inside those forty lines, a word with no support. It reads as a mishearing and comes back an ordinary word, differently in each batch.
+
+So a transcript's batches carry a digest of the whole of it, standing before the first mark:
+
+```
+The speech opens: welcome everyone today we will read a verse that the teacher …
+
+Words recurring through it, as the machine heard them: Kenduvilva, Gaudiya, Ajay
+```
+
+It is drawn from the transcript and from nothing else — the opening words as they were heard, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
+
+A reading carries no digest: a page of a book is proofread against the page.
 
 ## The gates
 

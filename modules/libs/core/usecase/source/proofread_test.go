@@ -20,6 +20,8 @@ type corrector struct {
 	name  string
 	says  map[int]string
 	asked [][]int
+	// about is what each batch it was given said the text holds.
+	about []string
 	fail  error
 	// stop is called with the number of requests made so far.
 	stop func(int)
@@ -36,6 +38,7 @@ func (c *corrector) Read(ctx context.Context, pages []proofread.Batch) (map[int]
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.At)
+		c.about = append(c.about, page.About)
 	}
 	c.asked = append(c.asked, at)
 	if c.stop != nil {
