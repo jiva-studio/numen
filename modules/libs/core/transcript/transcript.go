@@ -24,6 +24,7 @@
 package transcript
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -133,6 +134,16 @@ func Stamp(ms int) string {
 	return fmt.Sprintf("%02d:%02d:%02d.%03d", ms/3600000, ms/60000%60, ms/1000%60, ms%1000)
 }
 
+// Clock is a moment of a recording as a person reads one: the way a player
+// writes where it stands. An hour that is not there is not written.
+func Clock(ms int) string {
+	whole := max(ms, 0) / 1000
+	if hours := whole / 3600; hours > 0 {
+		return fmt.Sprintf("%d:%02d:%02d", hours, whole/60%60, whole%60)
+	}
+	return fmt.Sprintf("%d:%02d", whole/60, whole%60)
+}
+
 // parseStamp is a timing the format writes. The hours are optional, which is
 // what the format says and what other tools write.
 func parseStamp(raw string) (int, bool) {
@@ -201,6 +212,20 @@ func Plays(cues []Cue, start, length int) (int, bool) {
 // batch that did not land whole is one no note claims.
 func Heard(ms int) []byte {
 	return []byte(fmt.Sprintf("\nNOTE heard %d\n", ms))
+}
+
+// ByHand is the note a transcript a person wrote carries.
+const ByHand = "NOTE by hand"
+
+// Hand marks a transcript as the words a person put there. A transcript
+// carrying it is left as they left it.
+func Hand() []byte {
+	return []byte("\n" + ByHand + "\n")
+}
+
+// Written says whether a person wrote these words.
+func Written(raw []byte) bool {
+	return bytes.Contains(raw, []byte(ByHand))
 }
 
 // Reached is how far a run before this one got, and where the last note about

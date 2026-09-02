@@ -7,6 +7,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // A Tab is one tab of the person's window, as an agent is told about it.
@@ -113,18 +114,9 @@ func stands(t domain.Tab) string {
 		case t.At <= 0:
 			return "none of it written down yet"
 		case t.Of <= 0:
-			return fmt.Sprintf("%s of it written down", clock(t.At))
+			return fmt.Sprintf("%s of it written down", transcript.Clock(t.At))
 		}
-		return fmt.Sprintf("%s of its %s written down", clock(t.At), clock(t.Of))
+		return fmt.Sprintf("%s of its %s written down", transcript.Clock(t.At), transcript.Clock(t.Of))
 	}
 	return ""
-}
-
-// clock is a millisecond written the way a person reads a player.
-func clock(ms int) string {
-	whole := max(ms, 0) / 1000
-	if hours := whole / 3600; hours > 0 {
-		return fmt.Sprintf("%d:%02d:%02d", hours, whole/60%60, whole%60)
-	}
-	return fmt.Sprintf("%d:%02d", whole/60, whole%60)
 }

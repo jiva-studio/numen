@@ -95,6 +95,11 @@ type API struct {
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
+	// Cut asks for a source to be cut again from whatever its text now says. A
+	// window that put a transcript right calls it, so search answers with the
+	// words as they now read. Nil for a build with nothing cutting behind it,
+	// and then a correction is seen in the tab alone.
+	Cut func(context.Context, domain.Vault, string) error
 
 	// Makes is how the window makes a note, and Joins how it writes a
 	// relationship into one. A build without them answers that a note cannot be

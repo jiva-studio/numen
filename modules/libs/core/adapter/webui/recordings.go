@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -25,6 +27,13 @@ var errNotARecording = errors.New("not a recording this vault holds")
 
 // errNoHearing is what a build with nothing to read a transcript with answers.
 var errNoHearing = errors.New("this build cannot read what a recording says")
+
+// errNotHeard is what an edit to a recording nothing has listened to gets.
+var errNotHeard = errors.New("nothing has listened to this recording")
+
+// errBeingHeard is what an edit to a recording a run holds gets. A run appends
+// to the transcript, and what is being appended to is not edited underneath.
+var errBeingHeard = errors.New("this recording is being listened to")
 
 // listened is what the window is told a recording is: how far the words reach,
 // and how much of it a run has written down, both in milliseconds.
@@ -42,8 +51,20 @@ type listened struct {
 	Type  string `json:"type"`
 }
 
-// spoken is what was heard in a recording, in the order it was said.
+// spoken is the transcript of a recording, in the order it was said.
+//
+// Editable says whether the words may be put right now. A run listening to the
+// recording holds it, and the window draws what it reads and leaves it alone.
 type spoken struct {
+	Path     string `json:"path"`
+	Cues     []cue  `json:"cues"`
+	Editable bool   `json:"editable"`
+}
+
+// putRight is a transcript as a person left it in the window: the recording it
+// belongs to, and the words against the milliseconds they were said in. The
+// window does the arithmetic for lines it merged and split.
+type putRight struct {
 	Path string `json:"path"`
 	Cues []cue  `json:"cues"`
 }
@@ -86,10 +107,16 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 	answer(w, told)
 }
 
-// Cues answers with the words heard in a recording, each against the
-// milliseconds it was spoken in. A recording nothing has listened to holds no
-// words, which is an answer.
+// Cues answers with the transcript of a recording, each stretch of speech
+// against the milliseconds it was spoken in. A recording nothing has listened to
+// holds no words, which is an answer.
+//
+// A PUT puts the transcript right.
 func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
+	if r.Method == http.MethodPut {
+		a.PutRight(w, r, path)
+		return
+	}
 	if _, _, ok := a.hearing(); !ok {
 		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
 		return
@@ -106,10 +133,19 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
 		return
 	}
-	raw, err := a.transcript(ctx, ref.Path)
+	said, store, listened, err := a.heard(ctx, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
+	}
+	told := spoken{Path: ref.Path}
+	var raw []byte
+	if listened {
+		told.Editable = free(ctx, store, derived.Partial(said.From, said.Hash))
+		if raw, err = a.transcribed(ctx, store, said); err != nil {
+			refuse(w, err)
+			return
+		}
 	}
 	_, cues := transcript.Parse(raw)
 	cues, err = narrowed(r.URL.Query(), cues)
@@ -118,11 +154,122 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 
-	told := spoken{Path: ref.Path, Cues: make([]cue, 0, len(cues))}
+	told.Cues = make([]cue, 0, len(cues))
 	for _, one := range cues {
 		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
 	}
 	answer(w, told)
+}
+
+// PutRight writes the transcript of a recording as a person left it in the
+// window.
+//
+// What the model heard stays under its own name and the words as they now stand
+// go beside it, so a transcript edited into nonsense is a file that can be
+// deleted and what was heard comes back.
+func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
+	if _, _, ok := a.hearing(); !ok {
+		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), patience)
+	defer cancel()
+
+	var put putRight
+	if err := json.NewDecoder(r.Body).Decode(&put); err != nil {
+		http.Error(w, "this is not a transcript: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if put.Path != path {
+		http.Error(w, "the transcript names "+put.Path+", which is not the recording it was sent to", http.StatusBadRequest)
+		return
+	}
+	cues, err := ordered(put.Cues)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, ref, err := a.held(ctx, put.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if ref.Kind != domain.KindRecording {
+		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
+		return
+	}
+	said, store, listened, err := a.heard(ctx, ref.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if !listened {
+		http.Error(w, errNotHeard.Error(), http.StatusNotFound)
+		return
+	}
+
+	// A run holds the recording it is listening to for as long as it takes, by
+	// the name it appends to.
+	release, err := store.Claim(ctx, derived.Partial(said.From, said.Hash))
+	if errors.Is(err, port.ErrClaimed) {
+		http.Error(w, errBeingHeard.Error(), http.StatusConflict)
+		return
+	}
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	defer release()
+
+	// The words are a person's, and a proofreader leaves them alone.
+	written := append(transcript.Marshal(cues), transcript.Hand()...)
+	if err := store.Write(ctx, derived.Said(said.From, said.Hash), written); err != nil {
+		refuse(w, err)
+		return
+	}
+
+	// The chunks in the index hold the words as they were heard, so the source
+	// is cut again from what it now says. A write that landed is not refused
+	// for a cut that could not be asked for.
+	if a.Cut != nil {
+		if err := a.Cut(ctx, a.Showing(), ref.Path); err != nil {
+			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Failed: err.Error()})
+		}
+	}
+
+	told := spoken{Path: ref.Path, Cues: make([]cue, 0, len(cues)), Editable: true}
+	for _, one := range cues {
+		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
+	}
+	answer(w, told)
+}
+
+// ordered is a transcript from the window as the cues it is written down as,
+// and why it is not one where it cannot be.
+//
+// Speech runs forward: a cue ends no earlier than it begins, and begins after
+// the one before it ends. A cue whose words trim away is dropped, and its
+// timings still bound the cue after it.
+func ordered(cues []cue) ([]transcript.Cue, error) {
+	out := make([]transcript.Cue, 0, len(cues))
+	last := cue{From: -1, To: -1}
+	for at, one := range cues {
+		switch {
+		case one.From < 0 || one.To < one.From:
+			return nil, fmt.Errorf("cue %d: %d to %d is not a stretch of a recording", at, one.From, one.To)
+		case one.From < last.From:
+			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", at, one.From, last.From)
+		case one.From < last.To:
+			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, one.From, last.To)
+		}
+		last = one
+		if strings.TrimSpace(one.Text) == "" {
+			continue
+		}
+		out = append(out, transcript.Cue{Text: one.Text, From: one.From, To: one.To})
+	}
+	return out, nil
 }
 
 // narrowed cuts the cues down to a run of the words, where the question named one.
@@ -176,26 +323,53 @@ func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
 	return a.Marking.Sources, a.Marking.Derived, true
 }
 
+// heard is what listened to the recording at a path and the store holding what
+// it wrote. It answers false for a recording nothing has listened to.
+func (a *API) heard(ctx context.Context, path string) (port.Recognised, port.DerivedStore, bool, error) {
+	sources, stores, ok := a.hearing()
+	if !ok {
+		return port.Recognised{}, nil, false, nil
+	}
+	said, held, err := sources.Reading(ctx, a.Showing().ID, path)
+	if err != nil || !held || said.From == "" {
+		return port.Recognised{}, nil, false, err
+	}
+	store, err := stores.Open(a.Showing())
+	if err != nil {
+		return port.Recognised{}, nil, false, err
+	}
+	return said, store, true, nil
+}
+
 // transcript is what a model wrote down of the recording at a path, and nothing
 // where nothing has listened to it. A run still going is read as far as it has
 // got.
 func (a *API) transcript(ctx context.Context, path string) ([]byte, error) {
-	sources, stores, ok := a.hearing()
-	if !ok {
-		return nil, nil
-	}
-	said, held, err := sources.Reading(ctx, a.Showing().ID, path)
-	if err != nil || !held || said.From == "" {
+	said, store, listened, err := a.heard(ctx, path)
+	if err != nil || !listened {
 		return nil, err
 	}
-	store, err := stores.Open(a.Showing())
-	if err != nil {
-		return nil, err
-	}
-	for _, name := range []string{
+	return written(ctx, store,
 		derived.Artifact(said.From, said.Hash),
 		derived.Partial(said.From, said.Hash),
-	} {
+	)
+}
+
+// transcribed is the transcript of a recording as it now stands: what it was put
+// right to, and what was heard where nothing put it right.
+func (a *API) transcribed(ctx context.Context, store port.DerivedStore, said port.Recognised) ([]byte, error) {
+	return written(ctx, store,
+		derived.Said(said.From, said.Hash),
+		derived.Artifact(said.From, said.Hash),
+		derived.Partial(said.From, said.Hash),
+	)
+}
+
+// written is what the store holds under the first of these names, and nothing
+// where it holds none of them. The store is a folder on the person's disk and
+// they may empty it.
+func written(ctx context.Context, store port.DerivedStore, names ...string) ([]byte, error) {
+	for _, name := range names {
 		raw, err := store.Read(ctx, name)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
@@ -205,8 +379,18 @@ func (a *API) transcript(ctx context.Context, path string) ([]byte, error) {
 		}
 		return raw, nil
 	}
-	// The store is a folder on the person's disk and they may empty it.
 	return nil, nil
+}
+
+// free says whether a name is one nobody holds. It is taken and let go, so what
+// it answers is what stood a moment ago.
+func free(ctx context.Context, store port.DerivedStore, name string) bool {
+	release, err := store.Claim(ctx, name)
+	if err != nil {
+		return false
+	}
+	release()
+	return true
 }
 
 // answer writes what the window is told, as the window reads it.

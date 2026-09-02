@@ -27,9 +27,9 @@ func heard() []byte {
 func TestATranscriptLocatesAPassageByWhenItWasSaid(t *testing.T) {
 	doc := text.Transcribed(heard())
 
-	located(t, doc, opening, "00:00:01")
-	located(t, doc, middle, "01:23:45")
-	located(t, doc, closing, "01:30:00")
+	located(t, doc, opening, "0:01")
+	located(t, doc, middle, "1:23:45")
+	located(t, doc, closing, "1:30:00")
 }
 
 // A transcription names no parts: the cues are where the speech was.
@@ -44,14 +44,15 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 	}
 }
 
-// Nothing is kept beside a transcript, so composing one asks no store for
-// anything.
+// A transcript nothing put right is composed from its own bytes.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	doc, err := text.Composed(t.Context(), nil, text.ASR, "abc123", heard())
+	store := beside{text.Artifact(text.ASR, "abc123"): heard()}
+
+	doc, err := text.Composed(t.Context(), store, text.ASR, "abc123", heard())
 	if err != nil {
 		t.Fatal(err)
 	}
-	located(t, doc, middle, "01:23:45")
+	located(t, doc, middle, "1:23:45")
 }
 
 func TestATranscriptIsKeptUnderTheNameAPlayerKnowsItBy(t *testing.T) {
@@ -69,6 +70,8 @@ func TestASweepOfATranscriptNamesWhatItWrote(t *testing.T) {
 	want := []string{
 		"asr/abc123.vtt",
 		"asr/abc123.partial.vtt",
+		"asr/abc123.said",
+		"asr/abc123.proofread",
 		"asr/abc123.answer",
 		"asr/abc123.json",
 	}

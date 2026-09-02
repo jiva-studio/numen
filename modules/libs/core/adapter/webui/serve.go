@@ -430,6 +430,9 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		return nil
 	}
 
+	// A transcript the window put right is cut there too.
+	o.API.Cut = recognising.Cut
+
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
