@@ -156,8 +156,19 @@ export function listing(core: Folders) {
   }
 
   /**
-   * The vault changed. Every open folder a named path sits in is read again,
-   * and a change naming nothing is the whole tree. A chosen row that moved is
+   * The folder a change to a path is read in, and none where the tree draws
+   * nothing for it. A path under a folder the tree has no row for is that
+   * folder arriving, and it appears in the open folder above it.
+   */
+  const drawnIn = (path: string): string | null => {
+    let folder = folderOf(path)
+    while (folder !== ROOT && !opened(folder) && !entryAt(folder)) folder = folderOf(folder)
+    return opened(folder) ? folder : null
+  }
+
+  /**
+   * The vault changed. Every folder a named path is read in is read again, and
+   * a change naming nothing is the whole tree. A chosen row that moved is
    * chosen at where it went.
    */
   const changed = async (paths: readonly string[] = [], renamed: readonly Went[] = []) => {
@@ -166,7 +177,7 @@ export function listing(core: Folders) {
     }
     const named = [...paths, ...renamed.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await again())
-    const folders = new Set(named.map(folderOf).filter(opened))
+    const folders = new Set(named.map(drawnIn).filter((one) => one !== null))
     await Promise.all([...folders].map(lists))
   }
 

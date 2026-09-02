@@ -360,8 +360,8 @@ export const ChangesRequestSchema: GenMessage<ChangesRequest> = /*@__PURE__*/
  */
 export type ChangesResponse = Message<"numen.v1.ChangesResponse"> & {
   /**
-   * Paths of the notes that changed. A note that was removed is named here
-   * too: what changed about it is that it is gone.
+   * Paths of the files that changed, notes and assets alike. One that was
+   * removed is named here too: what changed about it is that it is gone.
    *
    * @generated from field: repeated string paths = 1;
    */

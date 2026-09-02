@@ -347,8 +347,8 @@ message OpeningResponse {
 message ChangesRequest {}
 
 message ChangesResponse {
-  // Paths of the notes that changed. A note that was removed is named here
-  // too: what changed about it is that it is gone.
+  // Paths of the files that changed, notes and assets alike. One that was
+  // removed is named here too: what changed about it is that it is gone.
   repeated string paths = 1;
 
   // Set when the vault has to be read again rather than followed — more

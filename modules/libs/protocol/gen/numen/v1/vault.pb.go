@@ -1216,8 +1216,8 @@ func (*ChangesRequest) Descriptor() ([]byte, []int) {
 
 type ChangesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Paths of the notes that changed. A note that was removed is named here
-	// too: what changed about it is that it is gone.
+	// Paths of the files that changed, notes and assets alike. One that was
+	// removed is named here too: what changed about it is that it is gone.
 	Paths []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	// Set when the vault has to be read again rather than followed — more
 	// changed at once than could be reported.

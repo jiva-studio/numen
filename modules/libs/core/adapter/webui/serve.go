@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -851,8 +852,10 @@ func begin(
 	}
 	opening.Trouble = trouble
 	opening.Told = func(m usecase.Moved) {
-		api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
-		if m.Sources {
+		// A client draws every file the vault holds, so an asset is named to it
+		// the way a note is.
+		api.Listeners.tell(changed{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
+		if m.Reading() {
 			// A book dropped into an open vault is read without anybody asking.
 			raise(wake.sources)
 		}
