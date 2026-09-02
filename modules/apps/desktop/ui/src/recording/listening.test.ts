@@ -26,7 +26,8 @@ const CUES: readonly Cue[] = [
 const LISTENED: Listened = {
   length: 9_000,
   heard: 9_000,
-  media: 'http://127.0.0.1:1/media/talk?word=w',
+  media: 'http://127.0.0.1:1/files/w/v/talk.mp3',
+  type: 'audio/mpeg',
 }
 
 /**
@@ -95,7 +96,7 @@ describe('a recording opened', () => {
 
 describe('a recording nothing has listened to', () => {
   it('holds no words and says nothing went wrong', async () => {
-    const { recordings } = talk([], { length: 0, heard: 0, media: '' })
+    const { recordings } = talk([], { length: 0, heard: 0, media: '', type: '' })
     const heard = listening(recordings, 'talks/Ants.mp3')
 
     await settled()
@@ -287,24 +288,23 @@ describe('what this window can play', () => {
       return type === 'audio/mpeg'
     })
 
-    expect(playable('a/talk.mp3')).toBe(true)
-    expect(playable('b/other.mp3')).toBe(true)
-    expect(playable('c/third.mp3')).toBe(true)
+    expect(playable('audio/mpeg')).toBe(true)
+    expect(playable('audio/mpeg')).toBe(true)
+    expect(playable('audio/mpeg')).toBe(true)
     expect(asks).toBe(1)
 
-    expect(playable('d/lecture.wav')).toBe(false)
+    expect(playable('audio/wav')).toBe(false)
     expect(asks).toBe(2)
   })
 
-  it('plays nothing it has no name for', () => {
+  it('plays nothing where the application named no type', () => {
     asking(() => true)
-    expect(playable('talk.m4a')).toBe(false)
-    expect(playable('talk')).toBe(false)
+    expect(playable('')).toBe(false)
   })
 
   it('plays nothing where the window answers for nothing', () => {
     asking(() => false)
-    expect(playable('talk.mp3')).toBe(false)
+    expect(playable('audio/mpeg')).toBe(false)
   })
 })
 

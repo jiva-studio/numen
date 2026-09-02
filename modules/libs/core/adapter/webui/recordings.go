@@ -35,10 +35,11 @@ type listened struct {
 	Path   string `json:"path"`
 	Length int    `json:"length"`
 	Heard  int    `json:"heard"`
-	// Media is where the recording is played from. It is answered here and not
-	// worked out by the window, because the socket it stands on is opened afresh
-	// for every run.
+	// Media is where the recording is played from, and Type is what it is
+	// played as. Both are answered here: the socket is opened afresh for every
+	// run, and what counts as a recording is this application's to say.
 	Media string `json:"media"`
+	Type  string `json:"type"`
 }
 
 // spoken is what was heard in a recording, in the order it was said.
@@ -77,6 +78,7 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 		Length: heard,
 		Heard:  heard,
 		Media:  a.Playing.Address(a.Showing(), ref.Path),
+		Type:   servedAs(ref.Path),
 	}
 	if len(cues) > 0 {
 		told.Length = max(told.Length, cues[len(cues)-1].To)

@@ -356,8 +356,14 @@ export const recordings: Recordings = {
       length?: number
       heard?: number
       media?: string
+      type?: string
     }
-    return { length: said.length ?? 0, heard: said.heard ?? 0, media: said.media ?? '' }
+    return {
+      length: said.length ?? 0,
+      heard: said.heard ?? 0,
+      media: said.media ?? '',
+      type: said.type ?? '',
+    }
   },
   cues: async (path) => {
     const answer = await served(`${asset(path)}/cues`)

@@ -29,6 +29,9 @@ export interface Listened {
   readonly heard: number
   /** Where the recording is played from, as the application answers it. */
   readonly media: string
+  /** What it is played as. The application says: what counts as a recording is
+   * its to decide. */
+  readonly type: string
 }
 
 /** Everything a recording tab asks of the application. */
@@ -65,13 +68,6 @@ const FAILED: Record<number, string> = {
   [MEDIA_ERR_SRC_NOT_SUPPORTED]: WORDS.unwanted,
 }
 
-/** The media type each container is played as. */
-const TYPES: Record<string, string> = {
-  mp3: 'audio/mpeg',
-  wav: 'audio/wav',
-  flac: 'audio/flac',
-}
-
 // Whether this window can play a kind of sound. The answer is the window's and
 // is asked once, however many recordings are open.
 const asked = new Map<string, boolean>()
@@ -93,9 +89,8 @@ export function asking(said: Answers) {
   asked.clear()
 }
 
-/** Playable is whether a recording at a path can be played in this window. */
-export function playable(path: string): boolean {
-  const type = TYPES[path.split('.').pop()?.toLowerCase() ?? '']
+/** Playable is whether this window can play a recording of a media type. */
+export function playable(type: string): boolean {
   if (!type) return false
   const held = asked.get(type)
   if (held !== undefined) return held
@@ -181,6 +176,7 @@ export function listening(recordings: Recordings, path: string) {
       length.value = said.length
       heard.value = said.heard
       address.value = said.media
+      type.value = said.type
 
       const cued = await recordings.cues(path)
       if (!open || count < answered) return
@@ -273,8 +269,11 @@ export function listening(recordings: Recordings, path: string) {
     })),
   )
 
+  /** What the recording is played as, as the application answers it. */
+  const type = ref('')
+
   /** Whether a player stands in the tab at all. */
-  const playing = computed(() => playable(path) && address.value !== '')
+  const playing = computed(() => address.value !== '' && playable(type.value))
 
   /** What the tab says where the words would stand, and nothing where they do. */
   const note = computed(() => {
