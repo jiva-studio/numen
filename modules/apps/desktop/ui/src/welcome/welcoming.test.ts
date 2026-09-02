@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { Known, Listed } from '../core'
 import { keyOf } from '../keying'
-import { COMMANDS, vaultsOn, waysIn, type Standing, type Words } from './welcoming'
+import { COMMANDS, SETTINGS, vaultsOn, waysIn, type Standing, type Words } from './welcoming'
 import { WORDS as own } from './words'
 
 const APPLE = 'MacIntel'
@@ -26,6 +26,7 @@ const words: Words = {
   vaults: 'vaults',
   current: 'current',
   gone: 'gone',
+  settings: 'settings',
   newVault: 'new vault',
   newVaultDetail: 'choose a folder',
 }
@@ -50,17 +51,26 @@ const listed = (vaults: readonly Known[], showing: string): Listed => ({ vaults,
 const two = listed([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 
 describe('the ways into the vault', () => {
-  it('are none at all where the window is showing no vault', () => {
-    expect(waysIn(at({ vault: '', ready: false }), words, APPLE)).toStrictEqual([])
+  it('are the settings alone where the window is showing no vault', () => {
+    expect(waysIn(at({ vault: '', ready: false }), words, APPLE).map((one) => one.id)).toStrictEqual(
+      [SETTINGS],
+    )
   })
 
-  it('are none where a window showing no vault says it is ready', () => {
-    expect(waysIn(at({ vault: '' }), words, APPLE)).toStrictEqual([])
+  it('are the settings alone where a window showing no vault says it is ready', () => {
+    expect(waysIn(at({ vault: '' }), words, APPLE).map((one) => one.id)).toStrictEqual([SETTINGS])
   })
 
-  it('are the five of a vault that has been read, in the order they are drawn', () => {
+  it('are the six of a vault that has been read, in the order they are drawn', () => {
     const ways = waysIn(at(), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'note', 'plex', 'agent'])
+    expect(ways.map((one) => one.id)).toStrictEqual([
+      'find',
+      COMMANDS,
+      'note',
+      'plex',
+      'agent',
+      SETTINGS,
+    ])
   })
 
   it('are each called what the window calls them, and the plex what the screen does', () => {
@@ -71,13 +81,20 @@ describe('the ways into the vault', () => {
       words.newNote,
       own.plex,
       words.newAgent,
+      words.settings,
     ])
   })
 
   /** A note cannot be made in a vault the core has not read. The rest stand. */
   it('leave out the new note while the vault is still being read', () => {
     const ways = waysIn(at({ ready: false }), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent'])
+    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
+  })
+
+  /** The settings are the installation's, so they are offered last of all. */
+  it('offer the settings last, on a vault and off one', () => {
+    expect(waysIn(at(), words, APPLE).at(-1)?.id).toBe(SETTINGS)
+    expect(waysIn(at({ vault: '' }), words, APPLE).at(-1)?.id).toBe(SETTINGS)
   })
 })
 
