@@ -16,6 +16,7 @@ import {
   BookOpen,
   Bot,
   Captions,
+  CaptionsOff,
   Command,
   Compass,
   Contrast,
@@ -79,9 +80,10 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
-  // Over the file in front: the transcript of a recording, and the text
-  // recognised off a scan.
+  // Over the file in front: the transcript of a recording, the same taken
+  // away, and the text recognised off a scan.
   ['transcribe', Captions],
+  ['dropTranscript', CaptionsOff],
   ['recognise', ScanText],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],

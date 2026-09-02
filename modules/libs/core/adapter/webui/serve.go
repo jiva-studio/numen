@@ -265,6 +265,12 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Known:   db.SourcesKnown(),
 		Index:   opened.level,
 	}
+	api.Drops = &source.DropTranscript{
+		Readers: cfg.VaultReaders(),
+		Sources: db.Sources(),
+		Owing:   db.SourcesKnown(),
+		Derived: cfg.DerivedStores(),
+	}
 
 	// The vaults this installation holds, beside the one the window is showing.
 	// Erase is Forget and a folder that goes, so the two hold one Forget.

@@ -106,6 +106,10 @@ type API struct {
 	// words as they now read. Nil for a build with nothing cutting behind it,
 	// and then a correction is seen in the tab alone.
 	Cut func(context.Context, domain.Vault, string) error
+	// Drops takes a recording's transcript away, with everything listening to
+	// it produced. A build without one answers that a transcript cannot be
+	// dropped here.
+	Drops *source.DropTranscript
 
 	// Makes is how the window makes a note, and Joins how it writes a
 	// relationship into one. A build without them answers that a note cannot be

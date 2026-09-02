@@ -72,6 +72,8 @@ const empty = computed(() => props.held.times.value.length === 0)
       <p v-if="empty && !props.held.transcribable.value" class="recording__note">
         {{ props.held.note.value }}
       </p>
+      <!-- One button, and which it is the words decide: writing them down where
+           there are none, taking them away where there are. -->
       <button
         v-if="props.held.transcribable.value"
         type="button"
@@ -79,6 +81,14 @@ const empty = computed(() => props.held.times.value.length === 0)
         @click="props.held.transcribes()"
       >
         {{ words.transcribe }}
+      </button>
+      <button
+        v-else-if="props.held.droppable.value"
+        type="button"
+        class="recording__ask"
+        @click="props.held.drops()"
+      >
+        {{ words.drop }}
       </button>
     </div>
     <!-- What went wrong stands above the words, where it is read whether or
@@ -137,6 +147,7 @@ const empty = computed(() => props.held.times.value.length === 0)
   inset-inline: var(--numen-gutter);
   z-index: 1;
   align-items: center;
+  gap: var(--recording-apart);
   padding: var(--numen-panel-padding);
   border: var(--numen-stroke) solid var(--numen-panel-border);
   border-radius: var(--numen-radius-panel);

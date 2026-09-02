@@ -395,6 +395,12 @@ export const recordings: Recordings = {
 export const running: Runs = {
   transcribes: (path) => begins(`${asset(path)}/transcribe`),
   recognises: (path) => begins(`${asset(path)}/recognise`),
+  drops: async (path) => {
+    const answer = await fetch(`${asset(path)}/cues`, { method: 'DELETE' })
+    if (answer.status === 501) return false
+    if (!answer.ok) throw new Error((await answer.text()).trim() || `${answer.status}`)
+    return true
+  },
 }
 
 /**

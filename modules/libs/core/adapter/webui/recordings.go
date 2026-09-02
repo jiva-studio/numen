@@ -111,10 +111,14 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 // against the milliseconds it was spoken in. A recording nothing has listened to
 // holds no words, which is an answer.
 //
-// A PUT puts the transcript right.
+// A PUT puts the transcript right, and a DELETE takes it away.
 func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Method == http.MethodPut {
+	switch r.Method {
+	case http.MethodPut:
 		a.PutRight(w, r, path)
+		return
+	case http.MethodDelete:
+		a.Drop(w, r, path)
 		return
 	}
 	if _, _, ok := a.hearing(); !ok {
@@ -245,6 +249,46 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
 	}
 	answer(w, told)
+}
+
+// Drop takes the transcript of a recording away, with everything listening to
+// it produced: the words a model heard, the words a person put right, and the
+// chunks cut from them.
+//
+// The recording is left saying nothing, and it is offered to be listened to
+// again.
+func (a *API) Drop(w http.ResponseWriter, r *http.Request, path string) {
+	if a.Drops == nil {
+		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), patience)
+	defer cancel()
+
+	showing, ref, err := a.held(ctx, path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if ref.Kind != domain.KindRecording {
+		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
+		return
+	}
+
+	res, err := a.Drops.Execute(ctx, showing, ref.Path)
+	if err != nil {
+		refuse(w, err)
+		return
+	}
+	if res.Busy {
+		http.Error(w, errBeingHeard.Error(), http.StatusConflict)
+		return
+	}
+	if res.None {
+		http.Error(w, errNotHeard.Error(), http.StatusNotFound)
+		return
+	}
+	answer(w, spoken{Path: ref.Path, Cues: []cue{}, Editable: true})
 }
 
 // ordered is a transcript from the window as the cues it is written down as,

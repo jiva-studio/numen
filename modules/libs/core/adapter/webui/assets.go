@@ -15,6 +15,7 @@ import (
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
 //	GET /assets/<id>/media                    its own bytes, where it is sound
 //	GET /assets/<id>/cues                     the words heard in it
+//	DELETE /assets/<id>/cues                  take the transcript away
 //	POST /assets/<id>/recognise               read the scan
 //	POST /assets/<id>/transcribe              hear the recording
 //

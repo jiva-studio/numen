@@ -136,6 +136,11 @@ export interface Runs {
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>
+  /**
+   * The transcript of a recording taken away, with everything cut from it, and
+   * whether this build can do it at all.
+   */
+  drops(path: string): Promise<boolean>
 }
 
 /** Whether a node hangs the parts of its note, and how many stand at once. */

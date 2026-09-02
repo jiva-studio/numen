@@ -512,7 +512,9 @@ describe('a note that moves under an open step', () => {
 const heard: Partial<Where> = {
   kind: 'recording',
   path: '',
-  title: '',
+  // A recording tab is filed at no note, and what it is called is the name of
+  // the file it plays.
+  title: 'Ants.mp3',
   file: 'talks/Ants.mp3',
   source: 'recording',
 }
@@ -525,10 +527,10 @@ const scanned: Partial<Where> = {
 }
 
 describe('the runs over the file in front', () => {
-  it('offers a recording to be transcribed, and nothing to recognise', () => {
+  it('offers a recording to be transcribed and its transcript dropped, and nothing to recognise', () => {
     const { commands } = asking(heard)
 
-    expect(drawn(commands.bands).file).toStrictEqual(['transcribe'])
+    expect(drawn(commands.bands).file).toStrictEqual(['transcribe', 'dropTranscript'])
   })
 
   it('offers a scan to be recognised, and nothing to transcribe', () => {
@@ -559,12 +561,48 @@ describe('the runs over the file in front', () => {
 
   it('is offered nowhere once this build has said it cannot do it at all', () => {
     cannotRun('transcribe')
+    cannotRun('dropTranscript')
     try {
       expect(drawn(asking(heard).commands.bands).file).toBeUndefined()
       expect(drawn(asking(scanned).commands.bands).file).toStrictEqual(['recognise'])
     } finally {
       runsAgain()
     }
+  })
+})
+
+describe('dropping the transcript of a recording', () => {
+  it('asks before the words go, and is nothing until the answer is given', () => {
+    const { commands } = asking(heard)
+
+    expect(commands.asks('dropTranscript', front(heard))).toBeNull()
+    expect(commands.bands.value[0]?.id).toBe('asking')
+    expect(commands.bands.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
+  })
+
+  // The answer that changes nothing is the one the keyboard opens on.
+  it('names the recording in the answer that takes the words away', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
+    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.drops} “${heard.title}”`)
+    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.dropped)
+  })
+
+  it('carries the recording the tab in front holds once the answer is given', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.chose('yes', 'yes')?.file).toBe('talks/Ants.mp3')
+  })
+
+  it('does nothing and puts the step away where the answer keeps the words', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.chose('no', 'no')).toBeNull()
+    expect(commands.bands.value[0]?.id).not.toBe('asking')
   })
 })
 

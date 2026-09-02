@@ -48,7 +48,11 @@ func (s stored) Write(_ context.Context, name string, content []byte) error {
 }
 
 func (s stored) Append(context.Context, string, []byte) error { return nil }
-func (s stored) Remove(context.Context, string) error         { return nil }
+
+func (s stored) Remove(_ context.Context, name string) error {
+	delete(s, name)
+	return nil
+}
 
 func (s stored) List(context.Context, string) ([]port.Stored, error) { return nil, nil }
 

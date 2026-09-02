@@ -14,31 +14,42 @@ import type { Host, Kind } from '../windowing'
 import { RECORDING } from '../workspace'
 import RecordingTab from './RecordingTab.vue'
 
-/** The run a recording tab asks for, under the identity the commands give it. */
+/**
+ * What a recording tab asks for, under the identities the commands give them:
+ * the words written down, and the words taken away.
+ */
 export const TRANSCRIBE = 'transcribe'
+export const DROP = 'dropTranscript'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface Hearing {
-  /** A run asked for over the recording the tab holds, carried out where the commands are. */
-  runs(id: string, path: string): void
+  /**
+   * A command asked for over the recording the tab holds, carried out where the
+   * commands are. `called` is what the tab calls the recording, which is what a
+   * step asking for an answer names.
+   */
+  runs(id: string, path: string, called: string): void
 }
 
 /** What one recording tab holds. */
 export type Held = ReturnType<typeof transcribed>
 
 /**
- * One recording, with the run that writes its words down. The run is offered
- * where the tab holds no words and none is going, and nowhere this build cannot
- * do it at all.
+ * One recording, with what can be asked about its words: writing them down
+ * where there are none, and taking them away where there are. Neither is
+ * offered while a run is going, or where this build cannot do it at all.
  */
 export function transcribed(listen: Listening, asks: Hearing) {
-  const transcribable = computed(
-    () => listen.times.value.length === 0 && !listen.working.value && canRun(TRANSCRIBE),
-  )
+  const heard = computed(() => listen.times.value.length > 0)
 
-  const transcribes = () => asks.runs(TRANSCRIBE, listen.path)
+  const transcribable = computed(() => !heard.value && !listen.working.value && canRun(TRANSCRIBE))
+  const droppable = computed(() => heard.value && !listen.working.value && canRun(DROP))
 
-  return { ...listen, transcribable, transcribes }
+  const called = listen.path.split('/').pop() ?? listen.path
+  const transcribes = () => asks.runs(TRANSCRIBE, listen.path, called)
+  const drops = () => asks.runs(DROP, listen.path, called)
+
+  return { ...listen, called, transcribable, transcribes, droppable, drops }
 }
 
 /**
@@ -54,7 +65,7 @@ export function recordingKind(
   const kind: Kind<Held> = {
     kind: RECORDING,
     opens: (path) => transcribed(opens(path), asks),
-    called: (held) => held.path.split('/').pop() ?? held.path,
+    called: (held) => held.called,
     draws: RecordingTab,
     identity: (path) => path,
     shuts: (held) => {
@@ -80,5 +91,15 @@ export function recordingKind(
     }
   }
 
-  return { kind, ticked }
+  /**
+   * The transcript of a recording went. Every tab standing on it reads the
+   * words again, and finds there are none.
+   */
+  const dropped = (path: string) => {
+    for (const one of host.each<Held>(RECORDING)) {
+      if (one.held.path === path) one.held.again()
+    }
+  }
+
+  return { kind, ticked, dropped }
 }
