@@ -217,6 +217,36 @@ describe('counting what every vault owes', () => {
     expect(asked).toBe(2)
   })
 
+  // A vault read while a count was running lands after that count worked its
+  // row out, so the asking it wakes is answered by a count of its own.
+  it('counts again when asked after it has worked a row out', async () => {
+    let asked = 0
+    const front = feeding()
+    const cards: Counts = {
+      owing(said, how) {
+        asked += 1
+        return front.cards.owing(said, how)
+      },
+    }
+    const one = counting({ cards, failed: () => {} })
+
+    const first = one.count()
+    front.says(listing(vault('01A')))
+    front.says(count(vault('01A', { reading: true })))
+    await settles()
+
+    // The reading finished and woke the counting while the first was still on.
+    void one.count()
+    front.ends()
+    await settles()
+
+    // Which is a count of its own, and it is the one that ends the asking.
+    front.ends()
+    await first
+
+    expect(asked).toBe(2)
+  })
+
   // A count that has already been worked out is what the window keeps showing
   // while the next one runs.
   it('leaves a vault at its last count while it is being counted again', async () => {

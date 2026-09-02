@@ -44,6 +44,26 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 	waitFor(t, func() bool { return len(api.Tasking.List()) == 0 })
 }
 
+// A vault the index already carries is drawn from what it holds, so reading it
+// again is work drawn only once it has lasted. An instant walk says nothing.
+func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
+	api, held := windowed(t, deck)
+
+	holding := make(chan struct{})
+	api.Reading(t.Context(), func(context.Context, domain.Vault, func(int64)) error {
+		<-holding
+		return nil
+	})
+
+	api.counted(t.Context(), held[0])
+	waitFor(t, func() bool { return len(api.Tasking.List()) == 1 })
+
+	if at := api.Tasking.List()[0]; at.Asked {
+		t.Errorf("reading a vault the index carries came back as work asked for: %+v", at)
+	}
+	close(holding)
+}
+
 // A reading that failed says why in the vault's own row, and is not begun over
 // and over by the counts that follow.
 func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {

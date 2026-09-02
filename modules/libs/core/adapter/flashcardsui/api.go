@@ -85,11 +85,13 @@ type API struct {
 	// runs is the sitting open on each vault, by the vault's identity.
 	runs map[string]*flashcards.Run
 
-	// reads is how a vault the index does not carry is read into it, and behind
-	// is the life those readings run for. underway is the vaults being read now,
-	// and unreadable is why the last reading of one failed.
+	// reads is how a vault is brought up to date in the index, and behind is the
+	// life those readings run for. walked is the vaults read since the window
+	// opened, underway the ones being read now, and unreadable why the last
+	// reading of one failed.
 	reads      Read
 	behind     context.Context
+	walked     map[string]bool
 	underway   map[string]bool
 	unreadable map[string]string
 

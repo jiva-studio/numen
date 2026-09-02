@@ -111,16 +111,17 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	one := &v1.VaultOwing{VaultId: v.ID, Name: v.Name, Path: v.Path}
+
+	// The vault is brought up to date before it is counted. Nothing is counted
+	// from a walk half done, and the numbers arrive with the count that the
+	// finished walk wakes.
+	if underway, failed := a.reading(ctx, v); underway || failed != "" {
+		one.Reading, one.Unread = underway, failed
+		return one
+	}
+
 	owing, err := a.Owed.Execute(ctx, v)
 	if err != nil {
-		// A vault the index does not carry is read into it here, and its numbers
-		// arrive with the count that reading wakes.
-		if errors.Is(err, flashcards.ErrUnread) {
-			if underway, failed := a.reading(v); underway || failed != "" {
-				one.Reading, one.Unread = underway, failed
-				return one
-			}
-		}
 		one.Unread = err.Error()
 		return one
 	}
