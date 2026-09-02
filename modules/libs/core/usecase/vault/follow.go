@@ -32,15 +32,15 @@ type Follow struct {
 type Moved struct {
 	Paths  []string
 	Reload bool
-	// Sources is the paths of what changed that is not a note. Reading one is
-	// its own work and takes minutes, so it is reported and not done here. A
-	// reload carries none, and stands for every source in the vault.
-	Sources []string
+	// Assets is the paths of the files that changed and are not notes. Reading
+	// one is its own work and takes minutes. A reload carries none, and stands
+	// for every asset in the vault.
+	Assets []string
 }
 
-// Reading says whether something that is not a note owes a read: one changed,
-// or the whole vault is being looked at again and every source with it.
-func (m Moved) Reading() bool { return m.Reload || len(m.Sources) > 0 }
+// Reading says whether an asset owes a read: one changed, or the whole vault is
+// being looked at again and every asset with it.
+func (m Moved) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
 // separate because they belong at different moments.
@@ -83,7 +83,7 @@ func (f *Following) Run(ctx context.Context) {
 				continue
 			}
 			f.trouble(nil)
-			f.changed(Moved{Paths: res.Changed(), Sources: res.Assets})
+			f.changed(Moved{Paths: res.Changed(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went

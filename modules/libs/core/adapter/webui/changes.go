@@ -2,8 +2,8 @@ package webui
 
 import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
-// changed is what a client is told: the notes that are different now, or that
-// the vault has to be read again.
+// changed is what a client is told: the files that are different now, notes
+// and assets alike, or that the vault has to be read again.
 type changed struct {
 	paths  []string
 	reload bool
