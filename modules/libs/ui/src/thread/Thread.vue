@@ -79,7 +79,7 @@ defineExpose({ toFoot })
         class="thread__body min-w-0"
         :class="
           entry.voice.bubble
-            ? 'max-w-(--numen-bubble-measure) rounded-bubble bg-bubble px-3 py-2 text-bubble-ink'
+            ? 'max-w-(--measure) rounded-bubble bg-bubble px-3 py-2 text-bubble-ink'
             : 'text-answer-ink'
         "
       >
@@ -88,7 +88,7 @@ defineExpose({ toFoot })
             <button
               v-if="entry.turn.opens"
               type="button"
-              class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+              class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none ring-numen"
               @click="emit('open', entry.turn)"
             >
               <Tool v-bind="toolOf(entry)" />
@@ -123,6 +123,9 @@ defineExpose({ toFoot })
 
 /* Nothing is drawn to scroll with. */
 .thread {
+  /* How much of the width one bubble may take before it wraps. */
+  --measure: 80%;
+
   scrollbar-width: none;
 }
 

@@ -1,13 +1,9 @@
 /**
- * The icon drawn beside a command wherever it is offered.
- *
- * A command has one icon, so the menu on a row of the tree and the menu on a
- * node of the plex draw the same thing for the same thing. The icons are
- * Lucide's, which is the set the palette's key caps are drawn from.
+ * The icon drawn beside a command wherever it is offered. A command has one
+ * icon, from Lucide, so both menus draw the same thing for the same thing.
  *
  * A command is named here by the identity it carries in `commanding.ts` and in
- * what each tab does itself. `icons.test.ts` asks that every item either menu
- * offers has one.
+ * what each tab does itself.
  */
 import {
   ALargeSmall,

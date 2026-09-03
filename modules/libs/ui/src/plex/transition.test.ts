@@ -3,7 +3,7 @@ import { effectScope, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { usePlexTransition } from './transition'
 import { neighbourhoods } from './fixtures/neighbourhoods'
-import { stubEnvironment } from './fixtures/clock'
+import { stubEnvironment } from '../fixtures/clock'
 import type { PlacedNode, PlexNeighbourhood } from './model'
 
 /** Run a composable inside a scope, as a component would. */

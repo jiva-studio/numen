@@ -342,21 +342,11 @@ describe('Deck', () => {
     expect(held.emitted('add')).toBeUndefined()
   })
 
-  it('asks for a card with a value standing empty under every field of its stencil', async () => {
+  it('asks for a card cut by the stencil chosen, before the first section', async () => {
     const held = mountDeck()
     await held.get('[data-plus] button').trigger('click')
     await held.get('[data-cut="Animal"]').trigger('click')
-    expect(held.emitted('add')).toEqual([
-      [
-        'Animal',
-        [
-          { field: 'Name', text: '' },
-          { field: 'Height', text: '' },
-          { field: 'Life span', text: '' },
-        ],
-        null,
-      ],
-    ])
+    expect(held.emitted('add')).toEqual([['Animal', null]])
   })
 
   it('stops asking once a stencil is chosen', async () => {
@@ -558,7 +548,7 @@ describe('Deck', () => {
       const held = mountSectioned()
       await held.get('[data-plus-of="roots"] button').trigger('click')
       await held.get('[data-plus-of="roots"] [data-cut="Animal"]').trigger('click')
-      expect(held.emitted('add')?.map((call) => call[2])).toEqual(['roots'])
+      expect(held.emitted('add')?.map((call) => call[1])).toEqual(['roots'])
     })
 
     it('asks from one plus at a time, the others standing shut', async () => {

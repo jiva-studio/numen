@@ -1,6 +1,6 @@
 /** The side a point asks for, and the slot in a strip of tabs. */
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_DROP, overlayFor, sideAt, slotAt } from './drop'
+import { caretAt, edgeOf, overlayFor, sideAt, slotAt, DEFAULT_DROP } from './drop'
 
 const BOX = { x: 0, y: 0, width: 800, height: 400 }
 
@@ -76,5 +76,56 @@ describe('slotAt', () => {
 
   it('has one place in an empty strip', () => {
     expect(slotAt(0, [])).toBe(0)
+  })
+})
+
+describe('caretAt', () => {
+  const strip = { x: 0, y: 0, width: 300, height: 30 }
+  const tabs = [
+    { x: 0, y: 0, width: 100, height: 30 },
+    { x: 100, y: 0, width: 100, height: 30 },
+    { x: 200, y: 0, width: 100, height: 30 },
+  ]
+
+  it('stands at the leading edge of the tab it comes before', () => {
+    expect(caretAt(1, tabs, strip)).toStrictEqual({ x: 100, y: 0, width: 0, height: 30 })
+  })
+
+  it('stands past the last tab for the place after it', () => {
+    expect(caretAt(3, tabs, strip)).toStrictEqual({ x: 300, y: 0, width: 0, height: 30 })
+  })
+
+  it('takes the whole strip where there is no tab to stand beside', () => {
+    expect(caretAt(0, [], strip)).toStrictEqual(strip)
+  })
+})
+
+describe('edgeOf', () => {
+  it.each([
+    ['left', { x: 4, y: 200 }],
+    ['right', { x: 796, y: 200 }],
+    ['top', { x: 400, y: 4 }],
+    ['bottom', { x: 400, y: 396 }],
+  ])('reaches the %s edge', (side, point) => {
+    expect(edgeOf(point, BOX, 22)).toBe(side)
+  })
+
+  it('reaches no edge from the middle', () => {
+    expect(edgeOf({ x: 400, y: 200 }, BOX, 22)).toBeNull()
+  })
+
+  it('gives a corner to the edge it stands nearer', () => {
+    expect(edgeOf({ x: 3, y: 10 }, BOX, 22)).toBe('left')
+    expect(edgeOf({ x: 10, y: 3 }, BOX, 22)).toBe('top')
+  })
+
+  it('reads a box that does not start at the origin', () => {
+    const box = { x: 100, y: 50, width: 200, height: 100 }
+    expect(edgeOf({ x: 104, y: 100 }, box, 22)).toBe('left')
+    expect(edgeOf({ x: 200, y: 100 }, box, 22)).toBeNull()
+  })
+
+  it('reaches nothing at no reach at all', () => {
+    expect(edgeOf({ x: 0, y: 200 }, BOX, 0)).toBeNull()
   })
 })

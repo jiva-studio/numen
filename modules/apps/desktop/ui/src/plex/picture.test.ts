@@ -54,7 +54,7 @@ describe('what the plex is handed', () => {
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
-    // A word the application chose would be read as one they had written.
+    // A line carries only the word the person put on it.
     const [line] = drawing(around('Here', [['Below', Seat.CHILD, '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })

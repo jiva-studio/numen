@@ -52,14 +52,18 @@ const tab = (
 }
 
 /** A window of agent tabs, with a talk of its own for each. */
-const tabs = () => {
+const tabs = (about = { path: '', title: '' }) => {
   const talks: ReturnType<typeof tab>[] = []
   const held = windowing()
-  const agents = agentKind(held.host, () => {
-    const one = tab()
-    talks.push(one)
-    return one.held
-  })
+  const agents = agentKind(
+    held.host,
+    () => {
+      const one = tab()
+      talks.push(one)
+      return one.held
+    },
+    () => about,
+  )
   held.declares([agents.kind])
 
   /** An agent tab of this window, and what it holds. */
@@ -252,5 +256,17 @@ describe('what an agent tab is called', () => {
     const one = await window.holds()
 
     expect(window.kind.called(one.held)).toBe('Agent')
+  })
+})
+
+describe('what a command asked over an agent tab is over', () => {
+  it('is the note the talk is about, which is no note of the tab itself', async () => {
+    const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
+    const one = await window.holds()
+
+    expect(window.kind.at!(one.held)).toStrictEqual({
+      path: 'physics/Ontology.md',
+      title: 'Ontology',
+    })
   })
 })

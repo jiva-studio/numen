@@ -78,11 +78,11 @@ const keyboard = async () => {
   const keying = await read(UI, 'keying.ts')
   const words = await read(UI, 'words.ts')
 
-  // The two the window keeps for itself are not in that table: they put a
-  // panel up rather than carry a command out.
-  const app = await read(UI, 'App.vue')
+  // The two the window keeps for itself are not in that table: they put the
+  // field up, and the field answers them.
+  const field = await read(UI, 'Field.vue')
   for (const letter of ['k', 'p']) {
-    if (!app.includes(`key === '${letter}'`)) die(`the window no longer answers '${letter}' itself`)
+    if (!field.includes(`key === '${letter}'`)) die(`the field no longer answers '${letter}' itself`)
   }
 
   const rows = [

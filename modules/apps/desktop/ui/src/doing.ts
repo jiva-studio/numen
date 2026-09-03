@@ -6,7 +6,7 @@
  * list. Nothing here draws anything.
  */
 import type { PlexRelatedSeat } from '@numen/ui'
-import { cannotRun, type Deed, type Shown } from './commanding'
+import type { Deed, Runnable, Shown } from './commanding'
 import type { Opened } from './putting'
 import type {
   Answer,
@@ -96,8 +96,8 @@ export const reaching = (
   }
 }
 
-/** What the window offers a command being carried out. */
-export interface Doing {
+/** The vault as a command changes what it holds. */
+export interface Filing {
   /** A note made under the name it is given, in a seat of another one. */
   makes(title: string, from: string, seat: PlexRelatedSeat | null): Promise<Made | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
@@ -111,6 +111,10 @@ export interface Doing {
   moves(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   makesFolder(path: string): Promise<Refused | null>
+}
+
+/** The runs a command asks for over a file. */
+export interface Running {
   /** A recording transcribed, and the words of it written down. */
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
@@ -123,20 +127,23 @@ export interface Doing {
    * and it is offered to be heard again.
    */
   drops(path: string): Promise<boolean>
+}
+
+/** The files a command makes from nothing, each put in front of the person. */
+export interface Cutting {
   /**
-   * A deck made in a folder under the name it is given, and put in front of the
-   * person. The path it landed at, and nothing where none was made.
+   * A deck made in a folder under the name it is given. The path it landed at,
+   * and nothing where none was made.
    */
   cuts(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
   stencils(folder: string, name: string): Promise<string>
   /** A preset made the same way, naming none of its settings. */
   presets(folder: string, name: string): Promise<string>
-  /** The files of the vault put in front of the person, opened down to a path. */
-  reveals(path: string): void
-  readonly notes: Notes
-  /** The vaults this installation holds, and what changes them. */
-  readonly vaults: Vaults
+}
+
+/** The vaults this installation holds, as a command changes which one shows. */
+export interface Vaulting extends Vaults {
   /** The vault the window is showing, under the name it has now. */
   calls(vault: Shown): void
   /**
@@ -144,6 +151,12 @@ export interface Doing {
    * every plex belonged to the vault that has gone.
    */
   reloads(): void
+}
+
+/** Where a command takes the window. */
+export interface Going {
+  /** The files of the vault put in front of the person, opened down to a path. */
+  reveals(path: string): void
   /** A note put in front of the person, in the plex they are looking at. */
   travel(path: string): Promise<void>
   /** Every plex standing on a note travels to another one. */
@@ -161,31 +174,40 @@ export interface Doing {
   closes(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
   asks(text: string): void
-  /** A path put on the clipboard. */
-  copies(path: string): void
   /** The search, in place of the commands. */
   searches(): void
+}
+
+/** The settings a command writes, each under the identity the window gives it. */
+export interface Setting {
   /**
    * The window drawn another way: a theme worn from now on, which half of a
    * colour pair the tokens are read as, or how large one of the two kinds of
-   * text is set. The identity is the window's own.
+   * text is set.
    */
   appearance(chosen: string): Promise<void>
-  /**
-   * Whether a note's title and the name of its file are kept as one name,
-   * written into the settings. The identity is the window's own.
-   */
+  /** Whether a note's title and the name of its file are kept as one name. */
   syncing(chosen: string): Promise<void>
-  /**
-   * Whether a node hangs the parts of its note under it, written into the
-   * settings. The identity is the window's own.
-   */
+  /** Whether a node hangs the parts of its note under it. */
   hanging(chosen: string): Promise<void>
-  /**
-   * How many parts a node hangs at once, written into the settings. The
-   * identity is the window's own.
-   */
+  /** How many parts a node hangs at once. */
   parts(chosen: string): Promise<void>
+}
+
+/** What the window offers a command being carried out, one port to a job. */
+export interface Doing {
+  readonly files: Filing
+  readonly runs: Running
+  readonly cards: Cutting
+  readonly vaults: Vaulting
+  readonly goes: Going
+  readonly settings: Setting
+  /** The open files a command reaches, whichever store holds each. */
+  readonly notes: Notes
+  /** The runs this window has been told this build cannot do. */
+  readonly runnable: Runnable
+  /** A path put on the clipboard. */
+  copies(path: string): void
   /**
    * What was done, or could not be, in words a person reads. One command's
    * word replaces the last, and nothing said clears it.
@@ -222,51 +244,54 @@ type Carries = (deed: Deed, on: Doing, words: Words) => Promise<void> | void
 const carried: Record<string, Carries> = {
   read: (deed, on) => on.notes.opens(deed.path, deed.title, 'here'),
   beside: (deed, on) => on.notes.opens(deed.path, deed.title, 'beside'),
-  travel: (deed, on) => on.travel(deed.path),
+  travel: (deed, on) => on.goes.travel(deed.path),
   child: (deed, on, words) => makes(deed, 'child', on, words),
   parent: (deed, on, words) => makes(deed, 'parent', on, words),
   jump: (deed, on, words) => makes(deed, 'jump', on, words),
   note: (deed, on, words) => makes(deed, null, on, words),
   deck: async (deed, on) => {
-    if (deed.name) await on.cuts('', deed.name)
+    if (deed.name) await on.cards.cuts('', deed.name)
   },
   stencil: async (deed, on) => {
-    if (deed.name) await on.stencils('', deed.name)
+    if (deed.name) await on.cards.stencils('', deed.name)
   },
   newPreset: async (deed, on) => {
-    if (deed.name) await on.presets('', deed.name)
+    if (deed.name) await on.cards.presets('', deed.name)
   },
   title: (deed, on, words) => renames(deed, on, words),
   remove: (deed, on, words) => removes(deed, false, on, words),
   destroy: (deed, on, words) => removes(deed, true, on, words),
-  transcribe: async (deed, on, words) => began(deed, await on.transcribes(deed.file), on, words),
-  recognise: async (deed, on, words) => began(deed, await on.recognises(deed.file), on, words),
-  proofread: async (deed, on, words) => began(deed, await on.proofreads(deed.file), on, words),
+  transcribe: async (deed, on, words) =>
+    began(deed, await on.runs.transcribes(deed.file), on, words),
+  recognise: async (deed, on, words) =>
+    began(deed, await on.runs.recognises(deed.file), on, words),
+  proofread: async (deed, on, words) =>
+    began(deed, await on.runs.proofreads(deed.file), on, words),
   dropTranscript: async (deed, on, words) => {
-    if (await on.drops(deed.file)) return
-    cannotRun(deed.id)
+    if (await on.runs.drops(deed.file)) return
+    on.runnable.cannotRun(deed.id)
     on.says(words.unrunnable, 'refusal')
   },
-  ask: (deed, on) => on.asks(`${deed.path} — `),
+  ask: (deed, on) => on.goes.asks(`${deed.path} — `),
   copy: (deed, on) => on.copies(deed.path),
-  reveal: (deed, on) => on.reveals(deed.path),
-  preset: (deed, on) => on.preset(deed.path),
-  settings: (_, on) => on.opens(SETTINGS),
+  reveal: (deed, on) => on.goes.reveals(deed.path),
+  preset: (deed, on) => on.goes.preset(deed.path),
+  settings: (_, on) => on.goes.opens(SETTINGS),
   move: (deed, on, words) => moves(deed, on, words),
   makeFolder: (deed, on, words) => makesFolder(deed, on, words),
-  plex: (_, on) => on.opens(PLEX),
-  files: (_, on) => on.opens(FILES),
-  agent: (_, on) => on.opens(AGENT),
-  close: (deed, on) => on.closes(deed.tab),
-  find: (_, on) => on.searches(),
-  appearance: (deed, on) => on.appearance(deed.name),
-  mode: (deed, on) => on.appearance(deed.name),
-  interfaceScale: (deed, on) => on.appearance(deed.name),
-  textScale: (deed, on) => on.appearance(deed.name),
-  syncing: (deed, on) => on.syncing(deed.name),
-  hanging: (deed, on) => on.hanging(deed.name),
-  parts: (deed, on) => on.parts(deed.name),
-  first: (_, on, words) => travels(on.opening(), on, words),
+  plex: (_, on) => on.goes.opens(PLEX),
+  files: (_, on) => on.goes.opens(FILES),
+  agent: (_, on) => on.goes.opens(AGENT),
+  close: (deed, on) => on.goes.closes(deed.tab),
+  find: (_, on) => on.goes.searches(),
+  appearance: (deed, on) => on.settings.appearance(deed.name),
+  mode: (deed, on) => on.settings.appearance(deed.name),
+  interfaceScale: (deed, on) => on.settings.appearance(deed.name),
+  textScale: (deed, on) => on.settings.appearance(deed.name),
+  syncing: (deed, on) => on.settings.syncing(deed.name),
+  hanging: (deed, on) => on.settings.hanging(deed.name),
+  parts: (deed, on) => on.settings.parts(deed.name),
+  first: (_, on, words) => travels(on.goes.opening(), on, words),
   goto: (deed, on, words) => travels(deed.path, on, words),
   openVault: (deed, on, words) => shows(deed.vault.id, on, words),
   newVault: (_, on, words) => adds(on, words),
@@ -324,7 +349,7 @@ const makes = async (
   words: Words,
 ): Promise<void> => {
   if (!deed.name) return
-  const made = await on.makes(deed.name, seat ? deed.path : '', seat)
+  const made = await on.files.makes(deed.name, seat ? deed.path : '', seat)
   if (!made) return
   if (deed.kind === NOTE) return on.notes.made(made.path, made.title, 'note', 'beside')
   await travels(made.path, on, words)
@@ -338,7 +363,7 @@ const renames = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.title) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.renames(deed.path, deed.name)
+  const answer = await on.files.renames(deed.path, deed.name)
   if (answer.changed) return on.says(words.overtaken, 'caution')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
@@ -351,7 +376,7 @@ const moves = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.path) return
   const tab = await settles(deed.path, on)
   if (tab.waiting) return on.says(words.unanswered, 'caution')
-  const answer = await on.moves(deed.path, deed.name)
+  const answer = await on.files.moves(deed.path, deed.name)
   if (answer.refusal === 'occupied') return on.says(words.occupied, 'refusal')
   if (answer.refusal) on.says(words.refused[answer.refusal], 'refusal')
 }
@@ -367,7 +392,7 @@ const UNDER_WAY: readonly Answer[] = ['started', 'queued']
  */
 const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
   if (!outcome.able) {
-    cannotRun(deed.id)
+    on.runnable.cannotRun(deed.id)
     return on.says(words.unrunnable, 'refusal')
   }
   on.says(outcome.why, UNDER_WAY.includes(outcome.answer) ? 'report' : 'refusal')
@@ -376,7 +401,7 @@ const began = (deed: Deed, outcome: Outcome, on: Doing, words: Words): void => {
 /** An empty folder, made under the path that was typed. */
 const makesFolder = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name) return
-  const refusal = await on.makesFolder(deed.name)
+  const refusal = await on.files.makesFolder(deed.name)
   if (refusal === 'occupied') return on.says(words.occupied, 'refusal')
   if (refusal) on.says(words.refused[refusal], 'refusal')
 }
@@ -397,7 +422,7 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
   const dangling: string[] = []
   const refused: string[] = []
   let waiting = false
-  const opening = on.opening()
+  const opening = on.goes.opening()
 
   for (const path of over(deed)) {
     const tab = await settles(path, on)
@@ -405,14 +430,14 @@ const removes = async (deed: Deed, destroy: boolean, on: Doing, words: Words): P
       waiting = true
       continue
     }
-    const answer = await on.removes(path, destroy)
+    const answer = await on.files.removes(path, destroy)
     if (answer.refusal) {
       refused.push(words.refused[answer.refusal])
       continue
     }
     if (tab.held) on.notes.shuts(tab.held)
     dangling.push(...answer.dangling)
-    if (opening) await on.leaves(path, opening)
+    if (opening) await on.goes.leaves(path, opening)
   }
 
   if (refused.length > 0) return on.says(all(...refused), 'refusal')
@@ -428,7 +453,7 @@ const shows = async (id: string, on: Doing, words: Words): Promise<void> => {
   if (!id) return
   const refusal = await on.vaults.open(id)
   if (refusal) return on.says(words.unvaulted[refusal], 'refusal')
-  on.reloads()
+  on.vaults.reloads()
 }
 
 /**
@@ -449,7 +474,7 @@ const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
   if (!deed.name || deed.name === deed.vault.name) return
   const answer = await on.vaults.rename(deed.vault.id, deed.name)
   if (answer.refusal) return on.says(words.unvaulted[answer.refusal], 'refusal')
-  if (answer.vault) on.calls({ id: answer.vault.id, name: answer.vault.name })
+  if (answer.vault) on.vaults.calls({ id: answer.vault.id, name: answer.vault.name })
 }
 
 /**
@@ -465,7 +490,7 @@ const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Pro
 /** A note travelled to, and a vault with none to travel to said. */
 const travels = async (path: string, on: Doing, words: Words): Promise<void> => {
   if (!path) return on.says(words.nowhere, 'caution')
-  await on.travel(path)
+  await on.goes.travel(path)
 }
 
 /** What a command did to other notes, named once each under what it did. */

@@ -6,10 +6,11 @@
  * model holds, and a handle that moves reports shares back; the model is the
  * only place they are kept.
  */
-import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import WorkspacePane from './WorkspacePane.vue'
-import { orientationAt, type Branch, type NodeId, type Orientation, type TabId } from '../model'
+import { WORKSPACING, type Workspacing } from './context'
+import { orientationAt, type Branch, type Orientation, type TabId } from '../model'
 import { atLeast, fit } from '../model/shares'
 
 defineOptions({ name: 'WorkspaceBranch' })
@@ -18,36 +19,23 @@ const props = defineProps<{
   node: Branch
   axis: Orientation
   depth: number
-  titles: Readonly<Record<TabId, string>>
-  marks: Readonly<Record<TabId, string>>
-  focus: NodeId
-  /** The least room a pane is worth drawing in. */
-  minimum: number
 }>()
 
-const emit = defineEmits<{
-  (event: 'choose', tab: TabId): void
-  (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'claim', pane: NodeId): void
-  (event: 'resize', branch: NodeId, sizes: readonly number[]): void
-  (event: 'show', tab: TabId): void
-}>()
+/** What every branch and pane of one workspace is told once, at the top. */
+const workspace = inject(WORKSPACING) as Ref<Workspacing>
 
-/** What a child says, said again unchanged. */
-const passed = {
-  onChoose: (tab: TabId) => emit('choose', tab),
-  onClose: (tab: TabId) => emit('close', tab),
-  onLift: (tab: TabId, at: PointerEvent) => emit('lift', tab, at),
-  onShow: (tab: TabId) => emit('show', tab),
-}
-
-defineSlots<{
+const slots = defineSlots<{
   tab(props: { id: TabId }): unknown
   icon(props: { id: TabId }): unknown
   mark(props: { id: TabId; mark: string }): unknown
   silence(): unknown
 }>()
+
+/** Every slot handed down, under the name it arrived under. */
+const passed = computed(() => Object.keys(slots) as (keyof typeof slots)[])
+
+/** What a slot was given, handed on as it came. */
+const handedOn = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const direction = computed(() => orientationAt(props.axis, props.depth))
 
@@ -62,7 +50,7 @@ const frame = useTemplateRef<InstanceType<typeof SplitterGroup>>('frame')
 const length = ref(0)
 
 const floor = computed(
-  () => atLeast(props.minimum, length.value, props.node.children.length) * 100,
+  () => atLeast(workspace.value.minimum, length.value, props.node.children.length) * 100,
 )
 
 let watching: ResizeObserver | undefined
@@ -122,7 +110,7 @@ function settled(reported: number[]): void {
 
   if (same) return
   if (holding) reached = shares
-  else emit('resize', props.node.id, shares)
+  else workspace.value.resize(props.node.id, shares)
 }
 
 /**
@@ -142,7 +130,7 @@ const putDown = () => {
 
   const settled = reached
   reached = null
-  if (settled) emit('resize', props.node.id, settled)
+  if (settled) workspace.value.resize(props.node.id, settled)
 }
 
 /** A handle taken up, and put down where it stopped. */
@@ -183,36 +171,28 @@ function handling(now: boolean): void {
       >
         <WorkspaceBranch
           v-if="child.kind === 'branch'"
-          v-bind="passed"
           :node="child"
           :axis="axis"
           :depth="depth + 1"
-          :titles="titles"
-          :marks="marks"
-          :focus="focus"
-          :minimum="minimum"
-          @claim="emit('claim', $event)"
-          @resize="(branch, next) => emit('resize', branch, next)"
         >
-          <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
-          <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
-          <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
-          <template #silence><slot name="silence" /></template>
+          <template v-for="name in passed" #[name]="bound">
+            <slot :name="name" v-bind="handedOn(bound)" />
+          </template>
         </WorkspaceBranch>
 
         <WorkspacePane
           v-else
-          v-bind="passed"
           :pane="child"
-          :titles="titles"
-          :marks="marks"
-          :focused="child.id === focus"
-          @claim="emit('claim', child.id)"
+          :focused="child.id === workspace.focus"
+          @choose="workspace.choose"
+          @close="workspace.close"
+          @lift="workspace.lift"
+          @show="workspace.show"
+          @claim="workspace.claim(child.id)"
         >
-          <template #tab="bound"><slot name="tab" v-bind="bound" /></template>
-          <template v-if="$slots.icon" #icon="bound"><slot name="icon" v-bind="bound" /></template>
-          <template v-if="$slots.mark" #mark="bound"><slot name="mark" v-bind="bound" /></template>
-          <template #silence><slot name="silence" /></template>
+          <template v-for="name in passed" #[name]="bound">
+            <slot :name="name" v-bind="handedOn(bound)" />
+          </template>
         </WorkspacePane>
       </SplitterPanel>
     </template>
@@ -273,14 +253,9 @@ function handling(now: boolean): void {
 }
 
 /* While a handle is held, the drag moves the handle and the text under the
-   pointer is left alone. The branch hands this down, and the editor's typing
-   area, which the browser makes selectable, is told on its own. */
+   pointer is left alone. Anything that makes itself selectable reads the mark
+   and says so itself. */
 .branch[data-resizing] {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.branch[data-resizing] :deep(.cm-content) {
   user-select: none;
   -webkit-user-select: none;
 }

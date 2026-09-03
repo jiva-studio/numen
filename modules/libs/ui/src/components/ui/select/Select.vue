@@ -1,10 +1,7 @@
 <script setup lang="ts">
 /**
- * One choice out of a list, taken from the menu this product draws.
- *
- * The line says what is in force and opens the choices under itself. It stands
- * as tall as every other control on a row, and choices naming a shelf are drawn
- * under its name.
+ * One choice out of a list, taken from the menu this product draws. Choices
+ * naming a shelf are drawn under its name.
  *
  * A value in force that is none of the choices is written on the line as it
  * stands, and the caller is told nothing until a choice is made.

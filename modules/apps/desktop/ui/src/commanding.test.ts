@@ -10,17 +10,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   asksCommands,
-  cannotRun,
   commanding,
   commandsOf,
   creates,
-  runsAgain,
+  runnable,
   MAKING,
   offering,
   overNote,
   type Holds,
   type Knows,
   type Offering,
+  type Runnable,
   type Where,
 } from './commanding'
 import type { Known, Listed } from './core'
@@ -108,6 +108,7 @@ const asking = (
   found: readonly Named[] = [],
   offers: Record<string, readonly Offering[]> = {},
   listed: Listed = installation(vault('physics', 'Physics')),
+  runs: Runnable = runnable(),
 ) => {
   const at = ref(front(over))
   const asked: string[] = []
@@ -126,6 +127,7 @@ const asking = (
     () => at.value,
     window.knows,
     kept.holds,
+    runs,
     async () => {},
   )
   commands.shows(true)
@@ -565,15 +567,29 @@ describe('the runs over the file in front', () => {
   })
 
   it('is offered nowhere once this build has said it cannot do it at all', () => {
-    cannotRun('transcribe')
-    cannotRun('proofread')
-    cannotRun('dropTranscript')
-    try {
-      expect(drawn(asking(heard).commands.bands).file).toBeUndefined()
-      expect(drawn(asking(scanned).commands.bands).file).toStrictEqual(['recognise'])
-    } finally {
-      runsAgain()
-    }
+    const runs = runnable()
+    runs.cannotRun('transcribe')
+    runs.cannotRun('proofread')
+    runs.cannotRun('dropTranscript')
+
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
+    expect(drawn(asking(scanned, [], {}, undefined, runs).commands.bands).file).toStrictEqual([
+      'recognise',
+    ])
+  })
+
+  it('is still offered in a window that has not been told it', () => {
+    const runs = runnable()
+    runs.cannotRun('transcribe')
+    runs.cannotRun('proofread')
+    runs.cannotRun('dropTranscript')
+
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
+    expect(drawn(asking(heard).commands.bands).file).toStrictEqual([
+      'transcribe',
+      'proofread',
+      'dropTranscript',
+    ])
   })
 })
 
@@ -684,6 +700,7 @@ describe('a command that asks for a note', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
+      runnable(),
       async () => {},
     )
     commands.shows(true)
@@ -1093,6 +1110,7 @@ describe('a command that asks for a vault', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
+      runnable(),
       async () => {},
     )
     commands.shows(true)

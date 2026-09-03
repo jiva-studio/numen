@@ -1,11 +1,22 @@
 /**
  * What letting go of a dragged tab comes to, as geometry alone.
  *
- * Pure: a point and a box in, a side out. Which pane that box belongs to and
- * what the side then does to the tree are settled elsewhere.
+ * A point and a box in, a side out. Which pane that box belongs to and what
+ * the side then does to the tree are settled elsewhere; `boxOf` is the one
+ * thing here that measures anything.
  */
-import type { Point, Rect, Side } from './model'
+import type { NodeId, Point, Rect, Side } from './model'
 import { within } from './model'
+
+/**
+ * Where a tab would go if it were let go now, and the part of the screen that
+ * stands for it.
+ */
+export type Landing = { readonly box: Rect } & (
+  | { readonly kind: 'edge'; readonly side: Side }
+  | { readonly kind: 'pane'; readonly pane: NodeId; readonly side: Side }
+  | { readonly kind: 'strip'; readonly pane: NodeId; readonly slot: number }
+)
 
 export interface DropOptions {
   /** How much of a box each edge zone takes, along its own axis. */
@@ -81,4 +92,42 @@ export function slotAt(x: number, tabs: readonly Rect[]): number {
     if (x < tab.x + tab.width / 2) return i
   }
   return tabs.length
+}
+
+/**
+ * The gap a tab would take in a strip, as a box of no width. A strip holding
+ * no tabs takes the whole of itself.
+ */
+export function caretAt(slot: number, tabs: readonly Rect[], strip: Rect): Rect {
+  const beside = tabs[slot] ?? tabs[tabs.length - 1]
+  if (!beside) return strip
+
+  const at = slot < tabs.length ? beside.x : beside.x + beside.width
+  return { x: at, y: beside.y, width: 0, height: beside.height }
+}
+
+/** The outer edge a point is within reach of, and nothing away from every edge. */
+export function edgeOf(point: Point, box: Rect, reach: number): Side | null {
+  const near: readonly (readonly [Side, number])[] = [
+    ['left', point.x - box.x],
+    ['right', box.x + box.width - point.x],
+    ['top', point.y - box.y],
+    ['bottom', box.y + box.height - point.y],
+  ]
+
+  let side: Side | null = null
+  let nearest = reach
+  for (const [each, distance] of near) {
+    if (distance < nearest) {
+      side = each
+      nearest = distance
+    }
+  }
+  return side
+}
+
+/** What an element takes up on screen, in the window's own coordinates. */
+export const boxOf = (element: Element): Rect => {
+  const box = element.getBoundingClientRect()
+  return { x: box.left, y: box.top, width: box.width, height: box.height }
 }

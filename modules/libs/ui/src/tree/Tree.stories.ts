@@ -159,7 +159,7 @@ interface Knobs {
   rows?: never
   open?: never
   counted?: never
-  frame?: never
+  environment?: never
 }
 
 const meta: Meta<Knobs> = {
@@ -179,7 +179,7 @@ const meta: Meta<Knobs> = {
     rows: { table: { disable: true } },
     open: { table: { disable: true } },
     counted: { table: { disable: true } },
-    frame: { table: { disable: true } },
+    environment: { table: { disable: true } },
   },
   args: { corpus: 'a few', threshold: 4, name: 'Tree', renaming: null, selected: [] },
   render: (args) => ({

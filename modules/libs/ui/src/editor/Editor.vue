@@ -11,7 +11,19 @@ import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from './change'
-import { code, drawing, editable, editing, preview, prose, setup, showing, shown, written } from './setup'
+import {
+  adding,
+  code,
+  drawing,
+  editable,
+  editing,
+  preview,
+  prose,
+  setup,
+  showing,
+  shown,
+  written,
+} from './setup'
 import { wholly } from './languages'
 import { opening, resolving, saving } from './outside'
 import { replacing } from './replacing'
@@ -32,7 +44,7 @@ const props = withDefaults(
     change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
     resolve?: (address: string) => string
-    /** More the caller draws into this editor. Read once, as it is built. */
+    /** More the caller draws into this editor. */
     extensions?: Extension
   }>(),
   {
@@ -69,8 +81,8 @@ onMounted(() => {
           readonly: props.readonly,
           placeholder: props.placeholder,
           change: props.change,
+          extensions: props.extensions,
         }),
-        props.extensions,
         resolving.of((address) => props.resolve?.(address) ?? address),
         opening.of((address) => emit('open', address)),
         saving.of(() => emit('save')),
@@ -124,6 +136,11 @@ watch(
   (change) => view?.dispatch({ effects: showing.reconfigure(shown(change)) }),
 )
 
+watch(
+  () => props.extensions,
+  (more) => view?.dispatch({ effects: adding.reconfigure(more) }),
+)
+
 defineExpose({
   /** Take the keyboard. False while there is no editor yet to take it. */
   focus: () => {
@@ -141,9 +158,9 @@ defineExpose({
    * counted from the first line of the prose, and one past the end lands on the
    * last line there is.
    *
-   * An editor holding no text holds no lines, and says so. The prose of a note
-   * arrives after the tab it is drawn in, and a caret asked for a line stands
-   * on that line and not at the top.
+   * An editor holding no text holds no lines, and says so. Text can arrive
+   * after the editor is drawn, and a caret asked for a line then stands on
+   * that line.
    */
   reveal: (line: number) => {
     if (!view || view.state.doc.length === 0) return false
@@ -169,5 +186,12 @@ defineExpose({
 .editor {
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* A splitter above is being dragged, and the text under the pointer is left
+   alone for as long as it is. */
+[data-resizing] .editor :deep(.cm-content) {
+  user-select: none;
+  -webkit-user-select: none;
 }
 </style>

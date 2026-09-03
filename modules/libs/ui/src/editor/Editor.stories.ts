@@ -226,6 +226,155 @@ export const Steady: Story = {
  */
 export const Table: Story = { render: framed(TABLE) }
 
+/** The editor with what it holds beside it, so a change to the text is read back. */
+const edited =
+  (text: string): Render =>
+  () => ({
+    components: { Editor },
+    setup: () => ({ held: ref(text) }),
+    template: `
+      <div class="h-screen bg-surface">
+        <Editor v-model="held" class="h-2/3" />
+        <pre data-source class="h-1/3 overflow-auto text-ink">{{ held }}</pre>
+      </div>
+    `,
+  })
+
+/** What the note now holds. */
+const source = (canvas: HTMLElement) =>
+  canvas.querySelector<HTMLElement>('[data-source]')?.textContent ?? ''
+
+/** The cells of the one table drawn, head row first. */
+const cells = (canvas: HTMLElement) =>
+  [...canvas.querySelectorAll<HTMLElement>('.cm-table .cm-cell')]
+
+/** A table with somewhere to put the caret that is not in it. */
+const TABLED = `${TABLE}\nSomething well away from the table.\n`
+
+/**
+ * The table as a table. It is shown as it is written while the caret is in it,
+ * so the caret is taken to the end of the note first.
+ */
+const asATable = async (canvas: HTMLElement) => {
+  canvas.querySelector<HTMLElement>('.cm-content')?.focus()
+  await userEvent.keyboard('{Control>}{End}{/Control}')
+  await waitFor(() => expect(cells(canvas).length).toBeGreaterThan(0))
+}
+
+/**
+ * A table typed into. The cells are the table, so what happens to one of them
+ * is what happens to the markdown behind it.
+ */
+export const TableTypedInto: Story = {
+  render: edited(TABLED),
+  play: async ({ canvasElement }) => {
+    await asATable(canvasElement)
+
+    // The shape the markdown says, drawn as a table and not as three lines.
+    const head = canvasElement.querySelectorAll('.cm-table thead .cm-cell')
+    const body = canvasElement.querySelectorAll('.cm-table tbody tr')
+    await expect(head).toHaveLength(3)
+    await expect(body).toHaveLength(2)
+
+    // A cell that is written somewhere is a cell that can be typed into.
+    const first = cells(canvasElement)[0] as HTMLElement
+    await expect(first.getAttribute('contenteditable')).toBe('plaintext-only')
+
+    // Tab walks from one cell to the next rather than leaving the table.
+    first.focus()
+    await userEvent.tab()
+    await expect(document.activeElement).toBe(cells(canvasElement)[1])
+
+    // What is typed is written back over that cell alone. The browser does the
+    // typing: the cell takes plain text, and only a real keystroke reaches it.
+    const context = await import('@vitest/browser/context')
+    await context.userEvent.fill(cells(canvasElement)[3] as HTMLElement, 'Enthalpy')
+
+    await waitFor(() => expect(source(canvasElement)).toContain('| Enthalpy | parent | 1865 |'))
+    await expect(source(canvasElement)).toContain('| Temperature | child | 1848 |')
+  },
+}
+
+/** A table grown by the buttons along the two edges it can grow along. */
+export const TableGrown: Story = {
+  render: edited(TABLED),
+  play: async ({ canvasElement }) => {
+    await asATable(canvasElement)
+    const was = source(canvasElement)
+
+    await userEvent.click(canvasElement.querySelector('.cm-add-column') as HTMLElement)
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('.cm-table thead .cm-cell')).toHaveLength(4),
+    )
+
+    await userEvent.click(canvasElement.querySelector('.cm-add-row') as HTMLElement)
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('.cm-table tbody tr')).toHaveLength(3),
+    )
+
+    // The markdown behind it grew with it, and what was in it is still there.
+    await expect(source(canvasElement)).not.toBe(was)
+    await expect(source(canvasElement)).toContain('Temperature')
+  },
+}
+
+/* Three fenced blocks: two written in something the editor knows and one in a
+   word no pack answers to. The word after the fence is the whole of what
+   chooses a pack. */
+const FENCED = [
+  '```javascript',
+  'const answered = 42',
+  '```',
+  '',
+  '```python',
+  'answered_here = 7',
+  '```',
+  '',
+  '```notalanguage',
+  'unpainted = 99',
+  '```',
+  '',
+  'Something well away from all of it.',
+  '',
+].join('\n')
+
+/** The line of a fenced block holding a run of text. */
+const codeLine = (canvas: HTMLElement, holding: string) =>
+  [...canvas.querySelectorAll<HTMLElement>('.cm-line')].find((line) =>
+    line.textContent?.includes(holding),
+  )
+
+/** Everything on that line painted in something other than the line's own ink. */
+const painted = (line: HTMLElement) => {
+  const ink = getComputedStyle(line).color
+  return [...line.querySelectorAll('span')].filter((span) => getComputedStyle(span).color !== ink)
+}
+
+/**
+ * Fenced blocks in three words: two the editor has a pack for and one it has
+ * none for. A pack is fetched after the block is drawn, so what it paints
+ * arrives on a later frame.
+ */
+export const FencedInEveryLanguage: Story = {
+  render: edited(FENCED),
+  play: async ({ canvasElement }) => {
+    const found = (holding: string) => {
+      const line = codeLine(canvasElement, holding)
+      expect(line, holding).toBeDefined()
+      return line as HTMLElement
+    }
+
+    // The pack lands and paints the block it was fetched for.
+    await waitFor(() => expect(painted(found('const answered')).length).toBeGreaterThan(0))
+    await waitFor(() => expect(painted(found('answered_here')).length).toBeGreaterThan(0))
+
+    // A word no pack answers to leaves the block plain, and leaves the text
+    // itself alone.
+    await expect(painted(found('unpainted'))).toHaveLength(0)
+    await expect(source(canvasElement)).toContain('```notalanguage')
+  },
+}
+
 /** Nothing written yet, and something to say so. */
 export const Empty: Story = { render: framed('', { placeholder: 'Write' }) }
 

@@ -9,7 +9,15 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Offering } from './commanding'
 import type { Catalogue, Themes } from './theme'
-import { INTERFACE_SCALE, TEXT_SCALE, wearing } from './wearing'
+import {
+  INTERFACE_SCALE,
+  IS_MODE,
+  IS_SIZES,
+  IS_THEME,
+  MARKER,
+  TEXT_SCALE,
+  wearing,
+} from './wearing'
 import { WORDS as words } from './words'
 
 /** What the page was served wearing. */
@@ -21,20 +29,21 @@ const PAIR = ':root { color-scheme: light dark; }'
 /** What the sizes' element holds while the window is drawn as designed. */
 const SIZED = ':root { --numen-interface-scale: 1; --numen-text-scale: 1; }'
 
-const styled = (sheet: Document, css: string): HTMLStyleElement => {
+const styled = (sheet: Document, is: string, css: string): HTMLStyleElement => {
   const one = sheet.createElement('style')
+  one.setAttribute(MARKER, is)
   one.textContent = css
   return one
 }
 
 /** A page as the window's handler serves one: the link, then the three elements. */
-const page = (): Document => {
+const page = (served = SERVED): Document => {
   const sheet = document.implementation.createHTMLDocument('numen')
   sheet.head.append(
     sheet.createElement('link'),
-    styled(sheet, PAIR),
-    styled(sheet, SERVED),
-    styled(sheet, SIZED),
+    styled(sheet, IS_MODE, PAIR),
+    styled(sheet, IS_THEME, served),
+    styled(sheet, IS_SIZES, SIZED),
   )
   return sheet
 }
@@ -103,8 +112,8 @@ const folder = () => {
 }
 
 /** The window wearing a theme, over a page a test can read the head of. */
-const window = (over: Partial<Catalogue> = {}) => {
-  const sheet = page()
+const window = (over: Partial<Catalogue> = {}, served = SERVED) => {
+  const sheet = page(served)
   const said = folder()
   const asked: string[] = []
   const chosen: string[] = []
@@ -147,8 +156,8 @@ const window = (over: Partial<Catalogue> = {}) => {
 }
 
 /** The window listing what it can wear, over a page it was served dressed. */
-const dressed = async (over: Partial<Catalogue> = {}) => {
-  const one = window(over)
+const dressed = async (over: Partial<Catalogue> = {}, served = SERVED) => {
+  const one = window(over, served)
   await one.worn.start()
   await settles()
   return one
@@ -171,6 +180,21 @@ describe('the page as it was served', () => {
 
     expect([...one.sheet.head.querySelectorAll('style')]).toStrictEqual(before)
     expect(one.sheet.head.lastElementChild).toBe(before[2])
+    expect(dressing(one.sheet)).toStrictEqual([
+      PAIR,
+      ':root { --numen-surface: mine:sea }',
+      SIZED,
+    ])
+  })
+
+  it('tells the three apart by the mark each carries', async () => {
+    // A theme's file is a person's own CSS: it may pin the scheme the mode's
+    // element holds and name a multiplier the sizes' element holds.
+    const one = await dressed({}, ':root { color-scheme: dark; --numen-text-scale: 1.3 }')
+
+    one.worn.shows('mine:sea')
+    await settles()
+
     expect(dressing(one.sheet)).toStrictEqual([
       PAIR,
       ':root { --numen-surface: mine:sea }',

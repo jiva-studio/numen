@@ -3,13 +3,9 @@
  * The shape a figure will take, standing in the room it will take, while it is
  * still being worked out.
  *
- * It is drawn where the thing coming has a size that is known before its
- * value — a count, a name, a line of a list — so that nothing moves when the
- * value lands. It says that something is coming and never that there is
- * nothing: whoever draws it draws the value itself the moment there is one.
- *
- * The fill is taken from the text of whatever holds it, so it reads on any
- * ground and under any theme.
+ * It says that something is coming and never that there is nothing: whoever
+ * draws it draws the value itself the moment there is one. The fill is taken
+ * from the text of whatever holds it.
  */
 withDefaults(
   defineProps<{

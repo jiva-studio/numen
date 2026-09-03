@@ -1,16 +1,14 @@
 /**
- * What the words typed turn up, and the rules for asking.
- *
- * The palette draws bands of items and knows nothing of vaults. This is what
- * turns a question about a vault into those bands, and an item chosen back into
- * a place in the window.
+ * What the words typed turn up, and the rules for asking: a question about a
+ * vault turned into the palette's bands, and an item chosen back into a place
+ * in the window.
  *
  * Three questions go out on every keystroke and come back in whatever order
- * they take. Each fills its own band as it lands, so the fast ones are readable
- * while the slow one is still out.
+ * they take, each filling its own band as it lands.
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteBand } from '@numen/ui'
+import { asking, type Question } from './asking'
 import type { NoteType, Source } from './core'
 import { wordsOnly, type Meaning } from './meaning'
 
@@ -154,13 +152,16 @@ interface Drawn {
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-export function finding(
-  core: Asking,
-  words: Words,
-  wait: (ms: number) => Promise<unknown> = sleep,
+/** What the window hands the palette, beside the vault and its own words. */
+export interface Finding {
+  wait?(ms: number): Promise<unknown>
   /** How far the vault has been read for meaning, where the window knows. */
-  reading?: () => Meaning,
-) {
+  reading?(): Meaning
+}
+
+export function finding(core: Asking, words: Words, how: Finding = {}) {
+  const wait = how.wait ?? sleep
+  const reading = how.reading
   /** Whether the palette is drawn at all. */
   const open = ref(false)
   const typed = ref('')
@@ -174,12 +175,8 @@ export function finding(
   /** What a band could not be filled with, in words a person reads. */
   const said = ref<Record<Band, string>>({ names: '', text: '', meaning: '' })
 
-  /**
-   * Which question is the current one. A keystroke, and every answer to what
-   * was asked before it, is measured against this: three questions are in the
-   * air at once, and only the newest is drawn.
-   */
-  let asked = 0
+  /** Three questions are in the air at once, and only the newest is drawn. */
+  const asks = asking()
 
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
@@ -192,29 +189,29 @@ export function finding(
 
   /** One band's question, filled in when it lands and only while it is wanted. */
   const fill = async <T>(
-    mine: number,
+    mine: Question,
     band: Band,
     question: () => Promise<readonly T[]>,
     into: (found: readonly T[]) => void,
   ) => {
     try {
       const found = await question()
-      if (mine !== asked) return
+      if (!mine.current) return
       into(found)
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       into([])
       // What went wrong is said in the window's own voice. The reason belongs
       // where a person reading it can do something about it.
       console.error(error)
       said.value = { ...said.value, [band]: words.notAsked }
     } finally {
-      if (mine === asked) waiting.value = { ...waiting.value, [band]: false }
+      if (mine.current) waiting.value = { ...waiting.value, [band]: false }
     }
   }
 
   /** Everything the palette wants to know about one query, asked at once. */
-  const ask = async (mine: number, query: string) => {
+  const ask = async (mine: Question, query: string) => {
     waiting.value = { names: true, text: true, meaning: true }
     said.value = { names: '', text: '', meaning: '' }
     await Promise.all([
@@ -235,14 +232,14 @@ export function finding(
    */
   const typing = async (text: string) => {
     typed.value = text
-    const mine = ++asked
+    const mine = asks.ask()
     const query = text.trim()
     if (!query) {
       drop()
       return
     }
     await wait(HOLD)
-    if (mine !== asked) return
+    if (!mine.current) return
     await ask(mine, query)
   }
 
@@ -250,7 +247,7 @@ export function finding(
   const shows = (now: boolean) => {
     open.value = now
     if (now) return
-    asked += 1
+    asks.drop()
     typed.value = ''
     drop()
   }
@@ -422,3 +419,6 @@ export function finding(
 
   return { open, typed, bands, typing, shows, chose, typeOf, kindOf }
 }
+
+/** The search of one window: what the words typed turn up, and where each goes. */
+export type Searching = ReturnType<typeof finding>

@@ -1,9 +1,7 @@
 /**
- * How a node offers to be reached out of.
- *
- * A hand finds a handle by moving over the node and presses it. A finger has no
- * hover, so there is no handle under it to find; it rests on the node instead,
- * and the gesture carries on from where it rested.
+ * How a node offers to be reached out of. A hand finds a handle by moving over
+ * the node and presses it; a finger has no hover, so it rests on the node and
+ * the gesture carries on from where it rested.
  *
  * Which of the two a plex offers is the caller's, so neither is written into
  * the node.

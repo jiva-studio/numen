@@ -1,17 +1,15 @@
 /**
  * Writing out what the window still owes, when the window goes.
  *
- * A tab saves once the typing stops, so at any moment the last seconds of work
- * are in a buffer here and nowhere else. The application asks for them over a
- * stream this page listens on for as long as it is drawn, and waits for the
- * answer.
+ * A tab saves once the typing stops, so the last seconds of work are in a
+ * buffer here and nowhere else. The application asks for them over a stream
+ * this page listens on for as long as it is drawn, and waits for the answer.
  *
- * Some of that work cannot be written: the file changed under it, and only the
- * person can say what the note ends up holding. Whatever holds such text raises
- * a question, the application is told there are questions outstanding, and the
- * window stays until they are answered.
+ * Text that cannot be written raises a question, and the window stays until
+ * every question is answered.
  */
 import { ref, type Ref } from 'vue'
+import { following } from '@numen/ui'
 
 /** What this page has left when it answers. */
 export type Owed = 'written' | 'asking'
@@ -136,28 +134,27 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
     },
   })
 
-  /**
-   * Listen for the quit, taken up again the way following is. A window that
-   * had stopped listening would look exactly like one with nothing to write.
-   */
-  async function start() {
-    while (open) {
-      try {
-        for await (const said of core.quitting(listening.signal)) {
-          if (!open) return
-          if (said.flush) await answer(said.token)
-        }
-      } catch {
-        if (!open) return
-      }
-      // The stream went with whatever was standing still standing, and under a
-      // token nothing answers to any more. It is asked for again.
+  const follows = following({
+    open: () => open,
+    lost: () => {},
+    wait,
+    // The stream went with whatever was standing still standing, and under a
+    // token nothing answers to any more. It is asked for again.
+    reset: () => {
       under = null
       told = null
       writing = null
-      await wait(1000)
-    }
-  }
+    },
+  })
+
+  /** Listen for the quit, for as long as the window is drawn. */
+  const start = () =>
+    follows(
+      () => core.quitting(listening.signal),
+      async (said) => {
+        if (said.flush) await answer(said.token)
+      },
+    )
 
   return {
     holds,

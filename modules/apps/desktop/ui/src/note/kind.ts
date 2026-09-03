@@ -3,12 +3,12 @@
  *
  * The notes are read and written by one store for the whole window: what is
  * unsaved is answered to the quit as one question, and a change to the vault
- * reaches all of them at once. What one tab of one note holds is made here
- * from that store. What a note is called is in `naming.ts`, and the keyboard
- * it is owed is in `entering.ts`.
+ * reaches all of them at once. What one tab of one note holds is made here from
+ * that store.
  */
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import { pointsAtNote, type PlexShowing } from '@numen/ui'
+import type { Store } from '../doing'
 import type { Host, Kind } from '../windowing'
 import { NOTE } from '../workspace'
 import type { Change } from './drawing'
@@ -42,11 +42,11 @@ export interface Held {
   /** The identity this note opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The note as the window draws it: the body, and the state it is in. */
-  shown(): Editing
+  readonly shown: ComputedRef<Editing>
   /** What could not be read or written, in words a person reads. */
-  saying(): string
+  readonly saying: ComputedRef<string>
   /** What arrived from elsewhere, for the editor to take into what is typed. */
-  change(): Change | null
+  readonly change: ComputedRef<Change | null>
   typed(body: string): void
   save(): void
   /** The person keeps what they have written, over whatever the file holds. */
@@ -151,9 +151,9 @@ export function noting(
    */
   const held = (id: string): Held => ({
     id,
-    shown: () => notes.shown(id),
-    saying: () => notes.saying(id),
-    change: () => drawings.shown(notes.where(id)),
+    shown: computed(() => notes.shown(id)),
+    saying: computed(() => notes.saying(id)),
+    change: computed(() => drawings.shown(notes.where(id))),
     typed: (body: string) => notes.typed(id, body),
     save: () => notes.save(id),
     keep: () => notes.keep(id),
@@ -184,14 +184,22 @@ export function noting(
    * A note tab as the window keeps it. A note is its own tab, filed under the
    * identity it opened under.
    */
+  /** The file this note stands at now, and nothing while the store has let it go. */
+  const standsAt = (held: Held): string => (notes.has(held.id) ? notes.where(held.id) : '')
+
   const kind: Kind<Held> = {
     kind: NOTE,
     opens: (id) => opens(id),
     called: (held) => names.called(held.id),
-    marked: (held) => markOf(notes.shown(held.id).state),
+    marked: (held) => markOf(held.shown.value.state),
     draws: NoteTab,
     identity: (id) => id,
     shown: (held) => held.measure(),
+    at: (held) => {
+      const path = standsAt(held)
+      return { path, title: path ? names.called(held.id) : '' }
+    },
+    attends: (held) => ({ path: standsAt(held) }),
     shuts: (held, id) => {
       held.shuts(id)
       return false
@@ -201,8 +209,20 @@ export function noting(
     gone: () => {},
   }
 
+  /** The notes, as a command reaches the ones the window has open. */
+  const kept: Store = {
+    has: (id) => notes.has(id),
+    where: (id) => notes.where(id),
+    called: (id) => names.called(id),
+    asking: (id) => notes.overtaken(id) !== null,
+    settles: (id) => notes.settles(id),
+    shuts,
+    holding: (path) => tabbed.value.get(path) ?? null,
+  }
+
   return {
     kind,
+    kept,
     held,
     opens,
     titles: names.titles,
@@ -210,14 +230,7 @@ export function noting(
     measures: keyboard.measures,
     calls: (path: string, title: string) => names.calls(mints(path), title),
     called: (path: string) => names.called(opened(path)),
-    /** What the note that opened under an identity is called. */
-    titled: (id: string) => names.called(id),
     entersAt,
     shuts,
-    /**
-     * The identity the note standing at a file opened under, and nothing where
-     * none stands there. It is what the store answers to.
-     */
-    holding: (path: string): string | null => tabbed.value.get(path) ?? null,
   }
 }

@@ -5,7 +5,7 @@
  * against is its fields and its faces written out. A field renamed here is
  * renamed in every card the vault knows it cuts, which is the write's doing.
  */
-import { computed } from 'vue'
+import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
 import type { Cards, Problem, Refused, Went } from '../core'
 import type { Store } from '../doing'
@@ -61,13 +61,13 @@ export interface Held {
   /** The identity this stencil opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The stencil as the window draws it: the state it is in, and what it stands at. */
-  shown(): Editing
+  readonly shown: ComputedRef<Editing>
   /** The fields and the faces, as the editor draws them. */
   sheet(): Sheet
   /** What is wrong with the file, against the face or the field it stands on. */
   marks(): Marks
   /** What the whole file was refused for, in words a person reads. */
-  saying(): string
+  readonly saying: ComputedRef<string>
   addsField(name: string): void
   namesField(field: string, name: string): void
   removesField(field: string): void
@@ -224,10 +224,10 @@ export function stencilling(
 
   const held = (id: string): Held => ({
     id,
-    shown: () => store.shown(id),
+    shown: computed(() => store.shown(id)),
     sheet: () => sheetAt(id),
     marks: () => marksAt(id),
-    saying: () => sayingOf(id),
+    saying: computed(() => sayingOf(id)),
     addsField: (name) => turns(id, fieldAdded(sheetAt(id), name)),
     namesField: (field, name) => void renames(id, field, name),
     removesField: (field) => turns(id, fieldGone(sheetAt(id), field)),
@@ -323,7 +323,7 @@ export function stencilling(
       return held(id)
     },
     called: (one) => called(store.where(one.id)),
-    marked: (one) => markOf(store.shown(one.id).state),
+    marked: (one) => markOf(one.shown.value.state),
     draws: StencilTab,
     identity: (id) => id,
     shuts: (one, id) => {

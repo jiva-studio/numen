@@ -11,7 +11,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { Stopped } from '@numen/protocol'
 import { Workspace, branch, pane } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
-import { nextTick, onMounted, ref, type Component } from 'vue'
+import { computed, nextTick, onMounted, ref, type Component } from 'vue'
 
 import SettingsTab from './settings/SettingsTab.vue'
 import type { Installation } from './settings/kind'
@@ -298,13 +298,13 @@ const BANDS = [
 
 const DECK_HELD: DeckHeld = {
   id: 'Sanskrit/Roots.md',
-  shown: () => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null }),
+  shown: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', refusal: null })),
   deck: () => ({ preamble: '', cards: [], sections: [], tail: '' }),
   drawn: () => CARDS,
   bands: () => BANDS,
   cuts: () => [ROOT_CUT, WORD],
   marks: () => NO_MARKS,
-  saying: () => '',
+  saying: computed(() => ''),
   scheduled: () => ({ path: 'Sanskrit.md', name: 'Sanskrit', saying: '' }),
   choices: () => [
     { path: '', name: 'The defaults' },
@@ -331,7 +331,7 @@ export const Deck: Story = {
 
 const STENCIL_HELD: StencilHeld = {
   id: 'Sanskrit/Word.md',
-  shown: () => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null }),
+  shown: computed(() => ({ path: 'Sanskrit/Word.md', body: '', state: 'clean', refusal: null })),
   sheet: () => ({
     fields: WORD.fields,
     preamble: '',
@@ -361,7 +361,7 @@ const STENCIL_HELD: StencilHeld = {
     tail: '',
   }),
   marks: () => NO_MARKS,
-  saying: () => '',
+  saying: computed(() => ''),
   addsField: () => {},
   namesField: () => {},
   removesField: () => {},
@@ -483,7 +483,7 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', PLAYER), { runs: () => {} }),
+      transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -493,7 +493,7 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', PLAYER), { runs: () => {} }),
+      transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -503,7 +503,7 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const held = transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', PLAYER), {
+    const held = transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
       runs: () => {},
     })
     held.ticks(true)
@@ -743,7 +743,7 @@ export const Transcribed: Story = {
     asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
-      held: transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', PLAYER), {
+      held: transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
     }),

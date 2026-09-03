@@ -1,17 +1,22 @@
 /**
  * What one files tab holds: the tree of the vault, and what a gesture in it
- * does.
- *
- * The tree reports the shape of a gesture and nothing else. Where a row
- * activated takes the person, what the menu on a row offers, and what a name
- * typed over a row comes to are decided here, so a test can ask them without a
- * screen.
+ * does. The tree reports the shape of a gesture, and what it comes to is
+ * decided here.
  */
 import { ref } from 'vue'
 import type { Entry, Source, Went } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
-import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, OFFERED, RENAME } from './menu'
+import {
+  NEW_DECK,
+  NEW_FOLDER,
+  NEW_NOTE,
+  NEW_PRESET,
+  NEW_STENCIL,
+  OFFERED,
+  RENAME,
+  type CanRun,
+} from './menu'
 import type { Host, Kind } from '../windowing'
 import { FILES } from '../workspace'
 import FilesTab from './FilesTab.vue'
@@ -62,6 +67,11 @@ export interface Filing {
   presets(folder: string, name: string): Promise<string>
   /** What could not be done, in words a person reads. */
   says(text: string): void
+  /**
+   * Whether this build can do a run at all, which decides whether the menu on
+   * a row offers it. A window that says nothing offers every run.
+   */
+  canRun?: CanRun
 }
 
 /** One of the three files the vault names itself, made in a folder. */
@@ -342,6 +352,9 @@ export function filing(list: Listing, deps: Filing) {
   /** What the vault holds at a row, and none of the three where it holds none. */
   const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'
 
+  /** Whether this build can do a run at all, as the menu on a row asks it. */
+  const canRun: CanRun = (run) => deps.canRun?.(run) ?? true
+
   return {
     list,
     menu,
@@ -364,5 +377,6 @@ export function filing(list: Listing, deps: Filing) {
     dismiss,
     chose,
     nameOf,
+    canRun,
   }
 }

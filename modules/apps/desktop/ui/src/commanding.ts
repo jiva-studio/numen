@@ -1,9 +1,6 @@
 /**
- * What a person can ask for, and the steps a command asks them for first.
- *
- * The palette draws bands of items and knows nothing of vaults or windows.
- * This is the vocabulary: what each command is called, where it is offered,
- * and what it wants typed before it can happen. Carrying one out is `doing.ts`.
+ * What a person can ask for, and the steps a command asks them for first: what
+ * each command is called, where it is offered, and what it wants typed.
  *
  * A command that needs nothing is a deed the moment it is chosen. One that
  * needs a name, a note, a vault or an answer puts the palette on a step of its
@@ -11,6 +8,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
+import { asking as latest } from './asking'
 import { wentTo, type Known, type Listed, type NoteType, type Source, type Went } from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
@@ -155,8 +153,8 @@ export interface Command {
   readonly next?: Needed
   /** The band it is offered in. */
   readonly band: Band
-  /** Whether it is offered at all over what is in front. */
-  where(at: Where): boolean
+  /** Whether it is offered at all over what is in front, in this window. */
+  where(at: Where, runs: Runnable): boolean
   /** What stands in the field when its step opens, for the person to replace. */
   filled?(at: Where): string
   /** What its step says, where that step confirms or asks for the name back. */
@@ -348,19 +346,25 @@ const onNote = (at: Where): boolean => at.ready && at.path !== ''
 const onVault = (at: Where): boolean => at.vault.id !== ''
 
 /**
- * The runs this build cannot do at all. The application says so the first time
- * one is asked for, and it is offered nowhere after that.
+ * The runs this build cannot do at all, as one window has been told them. The
+ * application says so the first time one is asked for, and that window offers
+ * it nowhere after that.
  */
-const beyond = ref<ReadonlySet<string>>(new Set())
+export interface Runnable {
+  /** Whether this build can do a run at all. A view drawing it follows the answer. */
+  canRun(run: string): boolean
+  /** A run the application answered it cannot do at all. */
+  cannotRun(run: string): void
+}
 
-/** Whether this build can do a run at all. A view drawing it follows the answer. */
-export const canRun = (run: string): boolean => !beyond.value.has(run)
-
-/** A run the application answered it cannot do at all. */
-export const cannotRun = (run: string): void => void (beyond.value = new Set(beyond.value).add(run))
-
-/** Every run offerable again, which a test asks for. */
-export const runsAgain = (): void => void (beyond.value = new Set())
+/** The runs one window holds, which is every one of them until it is told otherwise. */
+export const runnable = (): Runnable => {
+  const beyond = ref<ReadonlySet<string>>(new Set())
+  return {
+    canRun: (run) => !beyond.value.has(run),
+    cannotRun: (run) => void (beyond.value = new Set(beyond.value).add(run)),
+  }
+}
 
 /**
  * A run over the file in front, which the vault has to hold that kind of and
@@ -368,8 +372,8 @@ export const runsAgain = (): void => void (beyond.value = new Set())
  */
 const onSource =
   (run: string, source: Source) =>
-  (at: Where): boolean =>
-    at.ready && at.file !== '' && at.source === source && canRun(run)
+  (at: Where, runs: Runnable): boolean =>
+    at.ready && at.file !== '' && at.source === source && runs.canRun(run)
 
 const always = (): boolean => true
 
@@ -649,6 +653,7 @@ export function commanding(
   at: () => Where,
   knows: Knows,
   holds: Holds,
+  runs: Runnable,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the commands are drawn at all. */
@@ -675,11 +680,8 @@ export function commanding(
   /** What the vault could not be asked, in words a person reads. */
   const said = ref('')
 
-  /**
-   * Which question is the current one. A keystroke and every answer to what was
-   * asked before it are measured against this, and only the newest is drawn.
-   */
-  let asked = 0
+  /** A keystroke takes the question over, and only the newest is drawn. */
+  const asked = latest()
 
   /** What the commands are over, as the window stands now. */
   const on = computed<Where>(() => at())
@@ -752,7 +754,7 @@ export function commanding(
 
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
-    asked += 1
+    asked.drop()
     found.value = []
     known.value = []
     showing.value = ''
@@ -765,7 +767,7 @@ export function commanding(
    * the vault for every letter of a word.
    */
   const looks = async (query: string) => {
-    const mine = ++asked
+    const mine = asked.ask()
     if (!query) {
       found.value = []
       waiting.value = false
@@ -775,42 +777,42 @@ export function commanding(
     waiting.value = true
     said.value = ''
     await wait(HOLD)
-    if (mine !== asked) return
+    if (!mine.current) return
     try {
       const names = await core.names(query, EACH)
-      if (mine !== asked) return
+      if (!mine.current) return
       found.value = names
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       found.value = []
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine === asked) waiting.value = false
+      if (mine.current) waiting.value = false
     }
   }
 
   /** Every vault the installation holds, asked for as the step that lists them opens. */
   const lists = async () => {
-    const mine = ++asked
+    const mine = asked.ask()
     waiting.value = true
     said.value = ''
     try {
       const listed = await core.vaults()
-      if (mine !== asked) return
+      if (!mine.current) return
       known.value = listed.vaults
       showing.value = listed.showing
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       known.value = []
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine === asked) waiting.value = false
+      if (mine.current) waiting.value = false
     }
   }
 
@@ -832,7 +834,7 @@ export function commanding(
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also && also.where(over) ? [{ id: also.id, text: also.text }] : []),
+        ...(also && also.where(over, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }
@@ -846,17 +848,17 @@ export function commanding(
     const word = text.trim().toLowerCase()
     const items = (band: Band): readonly PaletteItem[] =>
       commands
-        .filter((one) => one.band === band && !second.has(one.id) && one.where(over))
+        .filter((one) => one.band === band && !second.has(one.id) && one.where(over, runs))
         .map((one) => drawn(one, over, word))
         .filter((item) => item !== null)
 
     // The runs are offered over a book and over a recording, and their band
     // stands where one of them is in front.
-    const runs = items('file')
+    const overFile = items('file')
 
     return [
       { id: 'note', title: words.overNote, items: items('note'), silence: why(over) },
-      ...(runs.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: runs }]),
+      ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
       { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
       { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },
     ]
@@ -1077,7 +1079,7 @@ export function commanding(
    */
   const asks = (id: string, over: Where): Deed | null => {
     const command = byId.get(id)
-    if (!command || !command.where(over)) return null
+    if (!command || !command.where(over, runs)) return null
     if (!command.needs) return deed(command.id, over)
     if (!open.value) {
       steps.value = []
@@ -1093,7 +1095,7 @@ export function commanding(
    */
   const refused = (id: string, over: Where): string => {
     const command = byId.get(id)
-    if (!command || command.where(over)) return ''
+    if (!command || command.where(over, runs)) return ''
     return over.ready ? words.noNote : words.indexing
   }
 
@@ -1200,3 +1202,6 @@ export function commanding(
     typeOf,
   }
 }
+
+/** The commands of one window, over whatever is in front of the person. */
+export type Commands = ReturnType<typeof commanding>

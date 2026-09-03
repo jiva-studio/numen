@@ -72,11 +72,12 @@ const settle = async () => {
   await nextTick()
 }
 
-const drawn = () => document.body.querySelector<HTMLElement>('.palette')
-const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
-const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]'))
+const drawn = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
+const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+const options = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
-const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__key'))
+const keys = () => Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="key"]'))
 
 /** What a line says, with the runs it is written in run together. */
 const said = (of: Element | null | undefined): string =>
@@ -91,10 +92,12 @@ const marksOf = (cap: Element | null | undefined): readonly string[] =>
     (mark) => /lucide-([a-z-]+)-icon/.exec(mark.getAttribute('class') ?? '')?.[1] ?? '',
   )
 
-const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
-const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
-const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
-const litDeed = () => document.body.querySelector<HTMLElement>('.palette__deed[data-here]')
+const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
+const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const deeds = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
+const litDeed = () =>
+  document.body.querySelector<HTMLElement>('[data-actions="list"] [role="option"][data-here]')
 
 const pressOn = async (on: Element | null, key: string, more: KeyboardEventInit = {}) => {
   const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...more })
@@ -163,7 +166,7 @@ describe('being open and being closed', () => {
     await settle()
 
     document.body
-      .querySelector('.palette__panel')
+      .querySelector('[data-palette="panel"]')
       ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await nextTick()
 
@@ -429,7 +432,7 @@ describe('a band arriving while it is being read', () => {
 })
 
 describe('what a band says about itself', () => {
-  const bands = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__band'))
+  const bands = () => Array.from(document.body.querySelectorAll<HTMLElement>('[role="group"]'))
 
   it('draws a line under a band that is still filling, and marks the band busy', async () => {
     mountPalette({
@@ -465,7 +468,7 @@ describe('what a band says about itself', () => {
       bands: [{ id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' }],
     })
     await settle()
-    expect(document.body.querySelector('.palette__silence')?.textContent).toContain(
+    expect(document.body.querySelector('[data-palette="silence"]')?.textContent).toContain(
       'No model is set',
     )
   })
@@ -477,7 +480,7 @@ describe('what a band says about itself', () => {
     await settle()
 
     expect(bands()).toHaveLength(1)
-    expect(document.body.querySelector('.palette__silence')).toBeNull()
+    expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
   })
 
   it('draws a band holding nothing while it is still working', async () => {
@@ -487,7 +490,7 @@ describe('what a band says about itself', () => {
     await settle()
 
     expect(bands()).toHaveLength(1)
-    expect(document.body.querySelector('.palette__silence')).toBeNull()
+    expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
   })
 })
 
@@ -505,16 +508,16 @@ describe('marking why an item is here', () => {
     mountPalette()
     await settle()
 
-    expect(options()[3]?.querySelector('.palette__detail')?.textContent).toBe(
+    expect(options()[3]?.querySelector('[data-palette="detail"]')?.textContent).toBe(
       'a reversible engine',
     )
-    expect(options()[0]?.querySelector('.palette__detail')).toBeNull()
+    expect(options()[0]?.querySelector('[data-palette="detail"]')).toBeNull()
   })
 })
 
 describe('which band stands where', () => {
   const bands = () =>
-    Array.from(document.body.querySelectorAll<HTMLElement>('.palette__title')).map((band) =>
+    Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="title"]')).map((band) =>
       band.textContent?.trim(),
     )
 
@@ -601,7 +604,7 @@ describe('an item offering more than two actions', () => {
     await settle()
 
     expect(keys().map(said)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
-    expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
+    expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
   })
 
   it('reaches the first two by key, and nothing past them', async () => {
@@ -620,10 +623,10 @@ describe('an item offering more than two actions', () => {
     mountPalette({ bands: OFFERING })
     await settle()
 
-    const hint = options()[0]?.querySelector('.palette__hint')
+    const hint = options()[0]?.querySelector('[data-palette="hint"]')
     expect(marksOf(hint)).toEqual(['option'])
     expect(spoken(hint)).toBe('Option 1')
-    expect(options()[1]?.querySelector('.palette__hint')).toBeNull()
+    expect(options()[1]?.querySelector('[data-palette="hint"]')).toBeNull()
   })
 })
 
@@ -639,14 +642,14 @@ describe('the action panel', () => {
   it('opens on the chord and lists everything the lit item offers', async () => {
     await open()
 
-    expect(deeds().map((deed) => said(deed.querySelector('.palette__deed-name')))).toEqual([
+    expect(deeds().map((deed) => said(deed.querySelector('[data-actions="name"]')))).toEqual([
       'Show in plex',
       'Open the note',
       'Open beside',
       'Rename',
       'Move to trash',
     ])
-    expect(deeds().map((deed) => spoken(deed.querySelector('.palette__hint')))).toEqual([
+    expect(deeds().map((deed) => spoken(deed.querySelector('[data-actions="hint"]')))).toEqual([
       'Return',
       'Shift Return',
       '',
@@ -684,7 +687,7 @@ describe('the action panel', () => {
     expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
     expect(hunt()?.getAttribute('aria-activedescendant')).toBe(deeds()[0]?.id)
     expect(hunt()?.getAttribute('aria-controls')).toBe(
-      document.body.querySelector('.palette__deeds')?.id,
+      document.body.querySelector('[data-actions="list"]')?.id,
     )
     expect(deeds()[0]?.getAttribute('aria-selected')).toBe('true')
     expect(deeds()[1]?.getAttribute('aria-selected')).toBe('false')
@@ -706,7 +709,7 @@ describe('the action panel', () => {
     await open()
 
     await typeIn(hunt(), 'open')
-    expect(deeds().map((deed) => said(deed.querySelector('.palette__deed-name')))).toEqual([
+    expect(deeds().map((deed) => said(deed.querySelector('[data-actions="name"]')))).toEqual([
       'Open the note',
       'Open beside',
     ])
@@ -714,7 +717,7 @@ describe('the action panel', () => {
 
     await typeIn(hunt(), 'nowhere')
     expect(deeds()).toHaveLength(0)
-    expect(document.body.querySelector('.palette__deed-silence')).not.toBeNull()
+    expect(document.body.querySelector('[data-actions="silence"]')).not.toBeNull()
   })
 
   it('runs the action it is on and puts itself away', async () => {
@@ -774,7 +777,7 @@ describe('the action panel', () => {
     await open()
 
     document.body
-      .querySelector('.palette__list')
+      .querySelector('[data-palette="list"]')
       ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     await settle()
 
@@ -918,9 +921,11 @@ describe('what the action panel is called', () => {
   it('is said by whoever offers it', async () => {
     mountPalette({
       bands: OFFERING,
-      actionsName: 'Deeds',
-      actionsPlaceholder: 'Look for a deed',
-      actionsSilence: 'No deed by that name',
+      actionWords: {
+        name: 'Deeds',
+        placeholder: 'Look for a deed',
+        silence: 'No deed by that name',
+      },
     })
     await settle()
     await press('k', { ctrlKey: true })
@@ -929,10 +934,10 @@ describe('what the action panel is called', () => {
     expect(sheet()?.getAttribute('aria-label')).toBe('Deeds')
     expect(hunt()?.getAttribute('aria-label')).toBe('Look for a deed')
     expect(hunt()?.placeholder).toBe('Look for a deed')
-    expect(document.body.querySelector('.palette__more')?.textContent).toContain('Deeds')
+    expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Deeds')
 
     await typeIn(hunt(), 'zzz')
-    expect(document.body.querySelector('.palette__deed-silence')?.textContent?.trim()).toBe(
+    expect(document.body.querySelector('[data-actions="silence"]')?.textContent?.trim()).toBe(
       'No deed by that name',
     )
   })
@@ -943,7 +948,7 @@ describe('one step of several', () => {
     mountPalette({ bands: OFFERING, crumb: 'New name for «Entropy»' })
     await settle()
 
-    const crumb = document.body.querySelector('.palette__crumb')
+    const crumb = document.body.querySelector('[data-palette="crumb"]')
     expect(crumb?.textContent).toBe('New name for «Entropy»')
     expect(field()?.getAttribute('aria-describedby')).toBe(crumb?.id)
   })
@@ -952,7 +957,7 @@ describe('one step of several', () => {
     mountPalette({ bands: OFFERING })
     await settle()
 
-    expect(document.body.querySelector('.palette__crumb')).toBeNull()
+    expect(document.body.querySelector('[data-palette="crumb"]')).toBeNull()
     expect(field()?.getAttribute('aria-describedby')).toBeNull()
   })
 

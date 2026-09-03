@@ -5,7 +5,6 @@
  * both halves are generated from it.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   CardsService,
   Counting,
@@ -69,8 +68,7 @@ import type {
   VaultRefused,
   Vaults,
 } from './core'
-
-const transport = createConnectTransport({ baseUrl: window.location.origin })
+import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
 

@@ -2,8 +2,7 @@
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
 import { beside } from '../placing/place'
-import type { Point } from '../plex/model'
-import type { Size } from '../plex/arrange'
+import type { Point, Size } from '../lib/geometry'
 
 /**
  * One thing that can be chosen. The identifier is opaque: the menu has no way

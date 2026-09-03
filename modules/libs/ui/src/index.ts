@@ -70,8 +70,9 @@ export type { Held, Offer, Way } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
-export { commandKeyChord, keyChord, overlayMark } from './palette/model'
+export { commandKeyChord, keyChord, overlayMark, ACTION_WORDS } from './palette/model'
 export type {
+  ActionWords,
   PaletteAction,
   PaletteItem,
   PaletteKeys,
@@ -239,6 +240,7 @@ export {
 export type {
   Carried,
   Landing,
+  Marking,
   Press,
   Pressed,
   Row,
@@ -275,7 +277,8 @@ export type { Half, Landing as CardLanding } from './cards/order'
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.
  */
-export { ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
+export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
+export { declared as cardFields } from './cards/order'
 export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Cut } from './cards/stencil'
 

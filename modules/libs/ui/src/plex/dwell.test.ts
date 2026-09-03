@@ -2,7 +2,7 @@
 import { effectScope, nextTick, ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { OPENING, useDwell, widenedFor } from './dwell'
-import { stubEnvironment } from './fixtures/clock'
+import { stubEnvironment } from '../fixtures/clock'
 import type { PlacedNode } from './model'
 
 const WINDOW = { width: 1200, height: 800 }

@@ -5,13 +5,15 @@
  * What the face hands back is applied here, which is the stencil's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import Block from './Block.vue'
 import type { Filled } from './deck'
 import { declared, type Half } from './order'
 import { faceBlocks, type FaceBlock, type Shown } from './stencil'
 import { sampled } from './fill'
+import { hovered, lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 interface Corpus {
   readonly face: Shown
@@ -143,14 +145,12 @@ const meta: Meta<Knobs> = {
         const fields = declared(held.value.fields)
         const laid = faceBlocks([face.value], fields, held.value.sample ?? sampled(fields))[0]
         if (!laid) throw new Error('a corpus holding no face')
-        return laid
+        return { ...laid, taken: held.value.taken ?? [] }
       })
 
       return {
         args,
         block,
-        fields: () => held.value.fields,
-        taken: () => held.value.taken ?? [],
         wrong: () => held.value.wrong ?? [],
         onRename: (name: string) => {
           face.value = { ...face.value, name }
@@ -164,8 +164,6 @@ const meta: Meta<Knobs> = {
       <div :style="{ width: args.width }">
         <Block
           :block="block"
-          :fields="fields()"
-          :taken="taken()"
           :wrong="wrong()"
           @rename="onRename"
           @write="onWrite"
@@ -192,6 +190,7 @@ const boxFor = (canvas: HTMLElement, half: Half): HTMLTextAreaElement => {
 
 const paneOf = (canvas: HTMLElement, pane: string): HTMLElement =>
   found(canvas, `[data-pane="${pane}"]`)
+
 
 /** The four parts of a face, in the order they are drawn. */
 const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview'] as const
@@ -465,5 +464,35 @@ export const WhatIsWrongWithIt: Story = {
       expect(objects.textContent?.trim()).toBe('That name is taken')
       expect(name.getAttribute('aria-describedby')).toBe(objects.id)
     })
+  },
+}
+
+/**
+ * On the dark set of tokens, where a field's chip takes its hover from the
+ * block's own ink mixed into the chip's ground.
+ *
+ * The mix is one expression for both sets, so on the dark set it has to move
+ * the chip towards the ink, which is lighter there than the ground under it.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const chip = within(canvasElement).getByRole('button', { name: 'Insert: Height' })
+
+    // The ink the chip is read by stands above the ground it stands on, which
+    // is the way round the dark set is written.
+    const ink = lightness(getComputedStyle(chip).color)
+    const resting = lightness(getComputedStyle(chip).backgroundColor)
+    expect(ink).toBeGreaterThan(resting)
+
+    await hovered(chip)
+    await waitFor(() =>
+      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(resting + 2),
+    )
+
+    // The chip is still a chip under the hand: lighter than it was, and still
+    // darker than what is written on it.
+    expect(lightness(getComputedStyle(chip).backgroundColor)).toBeLessThan(ink)
   },
 }

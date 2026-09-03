@@ -2,14 +2,12 @@
  * The menu on a node, and the menu off every node: what each offers, and what
  * choosing an item comes to.
  *
- * What a node offers is every command over a note that has a row of its own. A
- * command another one reaches on its row is left out, and the palette is where
- * it is reached. Apart from the template. The items stand in bands: what opens
- * the note, what is done to its file, what is made off it in the plex, what is
- * asked of the agent, and what takes it out of the vault.
+ * A node offers every command over a note that has a row of its own, in bands:
+ * what opens the note, what is done to its file, what is made off it in the
+ * plex, what is asked of the agent, and what takes it out of the vault.
  *
- * A picture standing on no note draws no node, and the menu asked for over it
- * offers the one thing there is to do: make a note.
+ * A picture standing on no note offers the one thing there is to do: make a
+ * note.
  */
 import type { MenuItem } from '@numen/ui'
 import { commandsOf, overNote } from '../commanding'

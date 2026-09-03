@@ -173,9 +173,11 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		t.Fatal("the page has no head")
 	}
 
-	const drawn = "<style>:root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
+	const drawn = `<style data-appearance="sizes">` +
+		":root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
 	link := strings.LastIndex(head, "<link")
-	mode := strings.Index(head, "<style>:root { color-scheme: dark; }</style>")
+	mode := strings.Index(head,
+		`<style data-appearance="mode">`+":root { color-scheme: dark; }</style>")
 	worn := strings.Index(head, mine)
 	sizes := strings.Index(head, drawn)
 	if link < 0 || mode < 0 || worn < 0 || sizes < 0 {

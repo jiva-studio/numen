@@ -6,6 +6,7 @@
  * product is taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect, waitFor, within } from 'storybook/test'
 import {
   ArrowRightLeft,
   Book,
@@ -46,6 +47,7 @@ import { RELATED_SEATS } from '@/plex/model'
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@/plex/model'
 import type { Row } from '@/tree/model'
 import type { Turn } from '@/thread/model'
+import { hovered } from '@/fixtures/colour'
 
 const PLEX = 'plex'
 const NOTE = 'note'
@@ -589,6 +591,8 @@ interface Screen {
   readonly creatable?: readonly PlexRelatedSeat[]
   /** Where the menu on a node stands, and none where it stands nowhere. */
   readonly menu?: { x: number; y: number } | null
+  /** The rows of the vault the selection stands on. */
+  readonly selected?: readonly string[]
 }
 
 /** One arrangement of the window, drawn from the pieces above. */
@@ -600,6 +604,7 @@ const screen = ({
   parts = () => [],
   creatable = [],
   menu = null,
+  selected = [],
 }: Screen) => ({
   components: { Workspace, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
   setup() {
@@ -622,6 +627,7 @@ const screen = ({
       parts,
       creatable,
       menu,
+      selected,
       MENU,
       menuIcon,
       bands: panel === 'commands' ? COMMANDS : BANDS,
@@ -689,6 +695,7 @@ const screen = ({
             v-else-if="id === FILES"
             :rows="ROWS"
             :open="OPEN"
+            :selected="selected"
             name="The folders and files of the vault"
           >
             <template #icon="{ id, open }">
@@ -726,6 +733,17 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
+/** One pane of the window, by the name it was divided under. */
+const paneOf = (canvas: HTMLElement, id: string): HTMLElement => {
+  const held = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
+  if (!held) throw new Error(`no pane ${id}`)
+  return held
+}
+
+/** Whether one pane stands entirely past another's trailing edge. */
+const past = (later: HTMLElement, earlier: HTMLElement): boolean =>
+  later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
+
 /** The map with the room, and the agent along the trailing edge. */
 export const Map: Story = {
   render: () =>
@@ -737,6 +755,22 @@ export const Map: Story = {
       }),
       neighbourhood: WIDE,
     }),
+  play: async ({ canvasElement }) => {
+    const map = paneOf(canvasElement, 'main')
+    const aside = paneOf(canvasElement, 'aside')
+
+    // The map is drawn around the note the window is focused on, and it has the
+    // room: most of the width, and the whole neighbourhood in it.
+    await waitFor(() => expect(within(map).getAllByLabelText(/, focus$/)).toHaveLength(1))
+    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(3)
+    expect(map.getBoundingClientRect().width).toBeGreaterThan(
+      aside.getBoundingClientRect().width,
+    )
+
+    // The agent is along the trailing edge, and is something to ask with.
+    within(aside).getByPlaceholderText('Ask about the vault')
+    expect(past(aside, map)).toBe(true)
+  },
 }
 
 /** The map with the whole window to itself. */
@@ -755,6 +789,26 @@ export const Mapping: Story = {
       // the map and of what a node is hanging.
       menu: { x: 902, y: 396 },
     }),
+  play: async ({ canvasElement }) => {
+    // The map has the window: one pane, and no second one beside it.
+    expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
+    await waitFor(() =>
+      expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1),
+    )
+
+    // The menu was asked for on a node, and every item of it is in the window
+    // rather than off the edge it was asked near.
+    const menu = within(document.body).getByRole('menu', {
+      name: 'What can be done to this note',
+    })
+    const box = menu.getBoundingClientRect()
+    expect(box.width).toBeGreaterThan(0)
+    expect(box.left).toBeGreaterThanOrEqual(0)
+    expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
+    expect(box.top).toBeGreaterThanOrEqual(0)
+    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
+    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
+  },
 }
 
 /**
@@ -773,6 +827,29 @@ export const Hanging: Story = {
       parts: (id: string) => PARTS[id] ?? [],
       creatable: RELATED_SEATS,
     }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
+
+    // A hand left on the node hangs the headings of its note under the box.
+    // They come in one after another, so the picture is let settle first.
+    const HEADINGS = (PARTS['focus'] ?? []).map((part) => part.text)
+    const hung = () => HEADINGS.filter((words) => canvas.queryByText(words))
+    await hovered(focus)
+    await waitFor(() => expect(hung().length).toBeGreaterThan(4), { timeout: 5000 })
+
+    // As many as the panel has room for, taken from the top of the note: what
+    // does not fit is wound to, not dropped from the middle.
+    const shown = hung()
+    expect(shown).toEqual(HEADINGS.slice(0, shown.length))
+
+    // They hang under the box, in the order the note sets them out. The box is
+    // the node's own rectangle: the group around it has grown to hold them.
+    const box = focus.querySelector('rect')!.getBoundingClientRect()
+    const tops = shown.map((words) => canvas.getByText(words).getBoundingClientRect().top)
+    expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
+    expect([...tops].sort((one, other) => one - other)).toEqual(tops)
+  },
 }
 
 /** A note being written, with the map it stands in beside it. */
@@ -799,6 +876,15 @@ export const Writing: Story = {
       }),
       neighbourhood: WIDE,
     }),
+  play: async ({ canvasElement }) => {
+    // Writing means somewhere to type: the note in the pane is drawn as text a
+    // person may put a caret in.
+    await waitFor(() => {
+      const written = canvasElement.querySelector('.cm-content')
+      expect(written).not.toBeNull()
+      expect(written?.getAttribute('contenteditable')).toBe('true')
+    })
+  },
 }
 
 /** The palette, over everything the window holds. */
@@ -816,6 +902,17 @@ export const Searching: Story = {
       }),
       panel: 'search',
     }),
+  play: async () => {
+    // Searching means something to search with: the field carries what was
+    // typed, and what it found is on offer under it.
+    await waitFor(() => {
+      const field = document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+      expect(field?.value).toBe('entrop')
+      expect(
+        document.body.querySelectorAll('[data-palette="list"] [role="option"]').length,
+      ).toBeGreaterThan(0)
+    })
+  },
 }
 
 /** The commands, in the three bands they are drawn in. */
@@ -833,6 +930,18 @@ export const Commanding: Story = {
       }),
       panel: 'commands',
     }),
+  play: async () => {
+    // Commanding means the commands are there to be run, in the three bands
+    // the window sorts them into.
+    await waitFor(() => {
+      const bands = [...document.body.querySelectorAll('[data-palette="title"]')]
+      expect(bands.map((band) => band.textContent?.trim())).toEqual([
+        'This note',
+        'This window',
+        'This vault',
+      ])
+    })
+  },
 }
 
 /** The agent beside the note it is being asked about. */
@@ -853,6 +962,20 @@ export const Asking: Story = {
         focus: 'aside',
       }),
     }),
+  play: async ({ canvasElement }) => {
+    const source = paneOf(canvasElement, 'source')
+    const note = paneOf(canvasElement, 'middle')
+    const aside = paneOf(canvasElement, 'aside')
+
+    // The three stand in the order they were divided in, the agent last.
+    expect(past(note, source)).toBe(true)
+    expect(past(aside, note)).toBe(true)
+
+    // The agent is something to ask with, and it is already carrying the
+    // asking it is beside the note about.
+    within(aside).getByPlaceholderText('Ask about the vault')
+    expect(within(aside).getAllByText(/entropy/i).length).toBeGreaterThan(0)
+  },
 }
 
 /** A document open where a search found something, and the note beside it. */
@@ -869,6 +992,15 @@ export const Reading: Story = {
         focus: 'main',
       }),
     }),
+  play: async ({ canvasElement }) => {
+    // Reading means the document is open at the page the search landed on,
+    // with the passage it found lit on it.
+    await waitFor(() => {
+      const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
+      expect(page).not.toBeNull()
+      expect(page?.querySelectorAll('.reader__lit').length).toBeGreaterThan(0)
+    })
+  },
 }
 
 /** The folders of the vault, with rows chosen across two of them. */
@@ -891,7 +1023,27 @@ export const Filing: Story = {
         focus: 'map',
       }),
       neighbourhood: CLOSE,
+      selected: ['entropy', 'landauer'],
     }),
+  play: async ({ canvasElement }) => {
+    const tree = within(canvasElement).getByRole('tree', {
+      name: 'The folders and files of the vault',
+    })
+    const rows = within(tree).getAllByRole('treeitem')
+    const chosen = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
+
+    // The selection stands on two rows, and they are held in different
+    // folders, which is the case a single run of rows would not cover.
+    expect(chosen.map((row) => row.textContent?.trim())).toEqual([
+      'Entropy.md',
+      "Landauer's principle.md",
+    ])
+    const folders = rows.filter((row) => within(row).queryByText(/^(Physics|Computation)$/))
+    expect(folders).toHaveLength(2)
+    for (const [at, folder] of folders.entries()) {
+      expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(chosen[at]!))
+    }
+  },
 }
 
 /** A note holding a table, which is typed in as a table. */
@@ -909,4 +1061,20 @@ export const Tabling: Story = {
       }),
       markdown: TABLED,
     }),
+  play: async ({ canvasElement }) => {
+    // The table in the note is drawn as a table, not as the pipes it is
+    // written with, and every cell of it is a cell to type in.
+    const table = await waitFor(() => within(canvasElement).getByRole('table'))
+    const heads = within(table).getAllByRole('columnheader')
+    expect(heads.map((head) => head.textContent?.trim())).toEqual([
+      'Where',
+      'What is counted',
+      'Written',
+    ])
+
+    const cells = within(table).getAllByRole('cell')
+    expect(cells).toHaveLength(9)
+    for (const cell of cells) expect(cell).toHaveAttribute('contenteditable', 'plaintext-only')
+    expect(within(canvasElement).queryByText(/\| --- \|/)).toBeNull()
+  },
 }

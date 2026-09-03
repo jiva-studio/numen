@@ -8,6 +8,7 @@ on:
       - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
+      - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
       - ".github/workflows/interface.yml"
   push:
@@ -18,6 +19,7 @@ on:
       - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
+      - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
       - ".github/workflows/interface.yml"
 
@@ -47,7 +49,7 @@ jobs:
         run: npm run build --prefix modules/libs/ui
 
       - name: Test
-        run: npm run test:unit --prefix modules/libs/ui
+        run: npm run test:unit --prefix modules/libs/ui -- --coverage
 
   # A story runs in a real browser, and several of them are the only test of a
   # thing a browser decides: what is clipped by an overflow, where a scroll
@@ -109,6 +111,16 @@ jobs:
           npm install --prefix modules/apps/desktop/flashcards
           npm install --prefix modules/apps/mobile
 
+      # The window draws stories of its own, in the same two engines.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          restore-keys: playwright-
+
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
 
@@ -120,5 +132,7 @@ jobs:
 
       - name: Test
         run: |
-          npm test --prefix modules/apps/desktop/ui
+          npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/ui
           npm test --prefix modules/apps/desktop/flashcards
+          npm test --prefix modules/apps/mobile

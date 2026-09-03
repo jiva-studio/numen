@@ -8,15 +8,26 @@ import { describe, expect, it } from 'vitest'
 
 import { NOWHERE, type Curve, type Point } from './core'
 import {
+  against,
+  againstBox,
+  AXIS_HIGH,
+  AXIS_WIDE,
+  BAND,
   bandOf,
   FOOT,
+  HIGH,
+  LABEL,
   LEFT,
+  LIFT,
   lineOf,
+  naming,
+  namingBox,
   placeUnder,
   RIGHT,
   shortOf,
   spotsOf,
   TOP,
+  walked,
   WIDE,
   xOf,
   yOfBand,
@@ -163,5 +174,97 @@ describe('the place a pointer stands over', () => {
 
   it('is the first place of a grid holding one', () => {
     expect(placeUnder(WIDE / 2, 1)).toBe(0)
+  })
+})
+
+describe('where a name over a mark is set', () => {
+  it('stands over the mark, and above it by the lift', () => {
+    const at = naming({ x: WIDE / 2, y: 100 })
+
+    expect(at.insetInlineStart).toBe('50%')
+    expect(at.insetBlockStart).toBe(`${((100 - LIFT) / HIGH) * 100}%`)
+    expect(at.translate).toBe('-50% -100%')
+  })
+
+  it('is pulled back inside the picture at either end', () => {
+    expect(naming({ x: LEFT, y: 100 }).translate).toBe('0 -100%')
+    expect(naming({ x: RIGHT, y: 100 }).translate).toBe('-100% -100%')
+  })
+
+  it('is held inside the top of the picture, so no word is set over the edge', () => {
+    expect(naming({ x: WIDE / 2, y: TOP }).insetBlockStart).toBe(`${(TOP / HIGH) * 100}%`)
+  })
+})
+
+describe('the room a name over a mark takes', () => {
+  it('stands where the name does, and is as wide as a label either side', () => {
+    const box = namingBox({ x: WIDE / 2, y: 100 })
+
+    expect(box).toStrictEqual({
+      x: WIDE / 2 - LABEL,
+      y: 100 - LIFT - AXIS_HIGH,
+      wide: LABEL * 2,
+      high: AXIS_HIGH,
+    })
+  })
+
+  it('is drawn from the mark at the near end, and back from it at the far one', () => {
+    expect(namingBox({ x: LEFT, y: 100 }).x).toBe(LEFT)
+    expect(namingBox({ x: RIGHT, y: 100 }).x).toBe(RIGHT - LABEL * 2)
+  })
+})
+
+describe('where a number against a line is set', () => {
+  it('stands at the left of the picture, at the height it is read off', () => {
+    const at = against(FOOT, '0')
+
+    expect(at.insetInlineStart).toBe(`${(LEFT / WIDE) * 100}%`)
+    expect(at.insetBlockStart).toBe(`${(FOOT / HIGH) * 100}%`)
+    expect(at.translate).toBe('0 0')
+  })
+
+  it('is read against the room it is given, which the band under the picture has its own of', () => {
+    expect(against(BAND.foot, '0', BAND.high).insetBlockStart).toBe(
+      `${(BAND.foot / BAND.high) * 100}%`,
+    )
+  })
+})
+
+describe('the room a number against a line takes', () => {
+  it('hangs below the height where it is set on it', () => {
+    expect(againstBox(FOOT, '0')).toStrictEqual({
+      x: LEFT,
+      y: FOOT,
+      wide: AXIS_WIDE,
+      high: AXIS_HIGH,
+    })
+  })
+
+  it('stands above the height where it is lifted off it', () => {
+    expect(againstBox(TOP, '-100%').y).toBe(TOP - AXIS_HIGH)
+  })
+})
+
+describe('where a keystroke takes the knob', () => {
+  it('is one place either way, and stops at either end', () => {
+    expect(walked('ArrowRight', 2, 5)).toBe(3)
+    expect(walked('ArrowLeft', 2, 5)).toBe(1)
+    expect(walked('ArrowLeft', 0, 5)).toBe(0)
+    expect(walked('ArrowRight', 4, 5)).toBe(4)
+  })
+
+  it('is the same either way for the two axes, so a knob answers both', () => {
+    expect(walked('ArrowDown', 2, 5)).toBe(walked('ArrowLeft', 2, 5))
+    expect(walked('ArrowUp', 2, 5)).toBe(walked('ArrowRight', 2, 5))
+  })
+
+  it('is either end of the range', () => {
+    expect(walked('Home', 2, 5)).toBe(0)
+    expect(walked('End', 2, 5)).toBe(4)
+  })
+
+  it('is nothing for a keystroke of somebody else’s', () => {
+    expect(walked('a', 2, 5)).toBeNull()
+    expect(walked('Enter', 2, 5)).toBeNull()
   })
 })

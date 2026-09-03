@@ -33,6 +33,12 @@ export interface Talking {
 /** What one agent tab holds. */
 export type Held = ReturnType<typeof talking>
 
+/** The note a talk is about, under the name the window calls it by. */
+export interface About {
+  readonly path: string
+  readonly title: string
+}
+
 export function talking(talk: Conversation, deps: Talking) {
   /** The question being written, until it is sent. */
   const asked = ref('')
@@ -127,8 +133,11 @@ export function talking(talk: Conversation, deps: Talking) {
  *
  * A question about a note goes where the person was last talking, and a window
  * with no agent open opens one to carry it.
+ *
+ * A talk is about no note of its own, so a command asked from one is asked over
+ * the note the plex the person was last in is standing on.
  */
-export function agentKind(host: Host, opens: () => Held) {
+export function agentKind(host: Host, opens: () => Held, about: () => About) {
   const kind: Kind<Held> = {
     kind: AGENT,
     opens,
@@ -139,6 +148,7 @@ export function agentKind(host: Host, opens: () => Held) {
       held.finish()
       return true
     },
+    at: () => about(),
   }
 
   /** Something to ask, put in the agent the person was last in and put in front. */

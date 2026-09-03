@@ -2,13 +2,9 @@
  * The change each open note is being shown, and when it stops being shown.
  *
  * A change is reported before the note holds it and ended once the write is
- * over, which is not the moment the text arrives: the file has still to be
- * noticed and read. So a change that has ended is held until the note changes
- * under it, and dropped a moment later; one whose text never arrives is dropped
- * on the longer bound.
- *
- * Nothing happens here. What is decided is the change each note is drawn with,
- * and the interval a caller arms.
+ * over, which is not the moment the text arrives. A change that has ended is
+ * held until the note changes under it and dropped a moment later; one whose
+ * text never arrives is dropped on the longer bound.
  */
 import type { Said } from '../core'
 

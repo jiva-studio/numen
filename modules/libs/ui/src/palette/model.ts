@@ -318,6 +318,22 @@ export const placePalette = (bands: readonly PaletteBand[]): readonly PlacedBand
   }))
 }
 
+/** The words the action panel is drawn with. */
+export interface ActionWords {
+  /** What the panel is announced as, and what the key to it is called. */
+  readonly name: string
+  /** The words standing in for what has not been typed in its field. */
+  readonly placeholder: string
+  /** What it says when the words in its field leave no action. */
+  readonly silence: string
+}
+
+export const ACTION_WORDS: ActionWords = {
+  name: 'Actions',
+  placeholder: 'Search actions',
+  silence: 'Nothing by that name',
+}
+
 /** One action as it is drawn in the action panel. */
 export interface PlacedAction {
   readonly action: PaletteAction

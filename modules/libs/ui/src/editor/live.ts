@@ -285,8 +285,8 @@ export const live = ViewPlugin.fromClass(
 
     update(update: ViewUpdate) {
       // A parse finishes in chunks, and the transaction that announces one
-      // changes neither the document nor the selection. Past the first chunk a
-      // note is drawn as it is written until this is asked.
+      // changes neither the document nor the selection. Past the first chunk
+      // the document is drawn as it is written until this is asked.
       const afresh =
         update.docChanged ||
         update.selectionSet ||
