@@ -72,13 +72,20 @@ func (a *API) SettingsFile(
 
 // WriteSettingsFile replaces that file whole. A file the settings could not be
 // read out of is the client's to correct, and the file is left as it was.
+//
+// The client presents the file it last read. A file holding bytes it has not
+// read is left alone and answered `changed`: this one is a question, and the
+// person answers it.
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
 	if a.WritesFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.WritesFile(r.Msg.GetWritten()); err != nil {
+	if err := a.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
+		if errors.Is(err, port.ErrChanged) {
+			return connect.NewResponse(&v1.WriteSettingsFileResponse{Changed: true}), nil
+		}
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}

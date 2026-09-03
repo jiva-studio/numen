@@ -159,7 +159,9 @@ service VaultService {
 
   // WriteSettingsFile replaces that file whole, with the bytes as they were
   // typed. A file the settings cannot be read out of is refused and the file is
-  // left as it was; what is said names where in the file the trouble is.
+  // left as it was; what is said names where in the file the trouble is. A file
+  // standing at anything other than what the caller presents is left alone and
+  // answered `changed`.
   rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
 
   // Remove takes a file or a folder out of the vault, into the trash it can be
@@ -1081,9 +1083,17 @@ message SettingsFileResponse {
 message WriteSettingsFileRequest {
   // What is to stand in the file, written as it was typed.
   string written = 1;
+
+  // The file as this caller last read it. Absent for a write that lands on
+  // whatever the file now holds.
+  optional string seen = 2;
 }
 
-message WriteSettingsFileResponse {}
+message WriteSettingsFileResponse {
+  // Set when the file holds bytes this caller has not read. Nothing was
+  // written, and the person chooses what happens to their text.
+  bool changed = 1;
+}
 
 message MoveRequest {
   // The file or folder to move, as the vault calls it.

@@ -50,7 +50,7 @@ func TestWriteKeepsTheBytesAsTheyWereTyped(t *testing.T) {
 	// number written to two places.
 	written := "{\n  \"indexing\": {\n    \"proofreading\": { \"max_edit_distance\": 0.30 }\n  }\n}\n"
 
-	if err := settings.Write(path, []byte(written)); err != nil {
+	if err := settings.Write(path, []byte(written), nil); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 
@@ -67,7 +67,7 @@ func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
 	held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 	path := beside(t, held)
 
-	err := settings.Write(path, []byte("{ \"agent\": { \"use\": \"claude\" } // a comment\n}"))
+	err := settings.Write(path, []byte("{ \"agent\": { \"use\": \"claude\" } // a comment\n}"), nil)
 	if !errors.Is(err, port.ErrNotASetting) {
 		t.Fatalf("refused with %v, wanted a refusal", err)
 	}
@@ -84,7 +84,7 @@ func TestWriteRefusesWhatIsNotJSONAndLeavesTheFileAsItWas(t *testing.T) {
 func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
 	path := beside(t, "{}\n")
 
-	err := settings.Write(path, []byte(`{"appearance": {"interface_scale": "large"}}`))
+	err := settings.Write(path, []byte(`{"appearance": {"interface_scale": "large"}}`), nil)
 	if !errors.Is(err, port.ErrNotASetting) {
 		t.Fatalf("refused with %v, wanted a refusal", err)
 	}
@@ -100,7 +100,7 @@ func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
 		held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 		path := beside(t, held)
 
-		err := settings.Write(path, []byte(written))
+		err := settings.Write(path, []byte(written), nil)
 		if !errors.Is(err, port.ErrNotASetting) {
 			t.Errorf("%s: refused with %v, wanted a refusal", written, err)
 		}
@@ -124,7 +124,7 @@ func TestWriteRefusesANameASectionHoldsTwice(t *testing.T) {
 		held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
 		path := beside(t, held)
 
-		err := settings.Write(path, []byte(written))
+		err := settings.Write(path, []byte(written), nil)
 		if !errors.Is(err, port.ErrNotASetting) {
 			t.Errorf("%s: refused with %v, wanted a refusal", what, err)
 		} else if !strings.Contains(err.Error(), "one of a name") {
@@ -143,7 +143,7 @@ func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	// A key is the one thing in a settings file worth keeping to itself.
 	secret := "sk-not-a-real-key-0000"
 
-	err := settings.Write(path, []byte(`{"appearance": {"interface_scale": "`+secret+`"}}`))
+	err := settings.Write(path, []byte(`{"appearance": {"interface_scale": "`+secret+`"}}`), nil)
 	if err == nil {
 		t.Fatal("wanted a refusal")
 	}
@@ -155,10 +155,60 @@ func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 func TestWriteMakesTheFileWhereThereIsNone(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "held", "numen.json")
 
-	if err := settings.Write(path, []byte("{}\n")); err != nil {
+	if err := settings.Write(path, []byte("{}\n"), nil); err != nil {
 		t.Fatalf("writing: %v", err)
 	}
 	if _, err := os.Stat(path); err != nil {
 		t.Errorf("the file is not there: %v", err)
+	}
+}
+
+// seen is the file a caller presents as the one it last read.
+func seen(written string) *string { return &written }
+
+func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
+	read := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
+	held := "{\n  \"agent\": { \"use\": \"codex\" }\n}\n"
+	path := beside(t, held)
+
+	err := settings.Write(path, []byte(`{"agent": {"use": "gemini"}}`), seen(read))
+	if !errors.Is(err, port.ErrChanged) {
+		t.Fatalf("refused with %v, wanted the file to have moved past what was read", err)
+	}
+
+	raw, _ := os.ReadFile(path)
+	if string(raw) != held {
+		t.Errorf("the file holds %q, wanted it left as it was", raw)
+	}
+}
+
+func TestWriteOverTheFileThatWasReadLands(t *testing.T) {
+	held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
+	path := beside(t, held)
+	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
+
+	if err := settings.Write(path, []byte(written), seen(held)); err != nil {
+		t.Fatalf("writing: %v", err)
+	}
+
+	raw, _ := os.ReadFile(path)
+	if string(raw) != written {
+		t.Errorf("the file holds %q, wanted %q", raw, written)
+	}
+}
+
+// A file that is not there reads as an empty object, and that is what a caller
+// who read it presents.
+func TestWriteOverAFileThatIsNotThereLands(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "numen.json")
+	written := "{\n  \"agent\": { \"use\": \"gemini\" }\n}\n"
+
+	if err := settings.Write(path, []byte(written), seen("{}\n")); err != nil {
+		t.Fatalf("writing: %v", err)
+	}
+
+	raw, _ := os.ReadFile(path)
+	if string(raw) != written {
+		t.Errorf("the file holds %q, wanted %q", raw, written)
 	}
 }

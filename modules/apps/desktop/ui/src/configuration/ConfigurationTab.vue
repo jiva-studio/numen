@@ -4,9 +4,11 @@
  *
  * It is written as JSON, so it is read as JSON and set in the face code is set
  * in. What is typed is kept the way a note is kept, and a file the settings
- * cannot be read out of is refused with what is wrong with it.
+ * cannot be read out of is refused with what is wrong with it. A file that
+ * moved past what was read puts the person the two answers a note puts.
  */
 import { Editor } from '@numen/ui'
+import Caution from '../Caution.vue'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -18,6 +20,12 @@ const props = defineProps<{ held: Held }>()
     <p v-if="props.held.saying()" role="alert" class="configuration__wrong">
       {{ props.held.saying() }}
     </p>
+
+    <Caution v-if="props.held.overtaken()" role="status" answering>
+      {{ words.overtaken }}
+      <button type="button" class="answer" @click="props.held.keep()">{{ words.keep }}</button>
+      <button type="button" class="answer" @click="props.held.take()">{{ words.take }}</button>
+    </Caution>
 
     <Editor
       v-if="props.held.read()"

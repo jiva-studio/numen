@@ -279,13 +279,16 @@ func (c Config) ConfiguredFile() func() (string, string, error) {
 // WritesConfiguredFile replaces the settings file whole, with the bytes as they
 // were typed. A file the settings could not be read out of is refused and the
 // file is left as it was.
-func (c Config) WritesConfiguredFile() func(written string) error {
-	return func(written string) error {
+//
+// Seen is the file as the window last read it. A file standing at anything else
+// is left alone with port.ErrChanged.
+func (c Config) WritesConfiguredFile() func(written string, seen *string) error {
+	return func(written string, seen *string) error {
 		path, err := c.settingsFile()
 		if err != nil {
 			return err
 		}
-		return settings.Write(path, []byte(written))
+		return settings.Write(path, []byte(written), seen)
 	}
 }
 

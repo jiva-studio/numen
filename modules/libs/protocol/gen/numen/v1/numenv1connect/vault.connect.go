@@ -236,7 +236,9 @@ type VaultServiceClient interface {
 	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
 	// typed. A file the settings cannot be read out of is refused and the file is
-	// left as it was; what is said names where in the file the trouble is.
+	// left as it was; what is said names where in the file the trouble is. A file
+	// standing at anything other than what the caller presents is left alone and
+	// answered `changed`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
@@ -798,7 +800,9 @@ type VaultServiceHandler interface {
 	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
 	// typed. A file the settings cannot be read out of is refused and the file is
-	// left as it was; what is said names where in the file the trouble is.
+	// left as it was; what is said names where in the file the trouble is. A file
+	// standing at anything other than what the caller presents is left alone and
+	// answered `changed`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were

@@ -15,8 +15,15 @@ import { WORDS as words } from './words'
 export interface Called {
   /** The settings file as its person wrote it, and where it stands. */
   settingsFile(): Promise<{ readonly written: string; readonly path: string }>
-  /** The settings file written whole. A file it cannot read is refused. */
-  writesSettingsFile(written: string): Promise<void>
+  /**
+   * The settings file written whole, presenting the file it was last read as. A
+   * file it cannot read is refused, and a file standing at anything else is
+   * answered `changed` with nothing written.
+   */
+  writesSettingsFile(
+    written: string,
+    seen: string | null,
+  ): Promise<{ readonly changed: boolean }>
 }
 
 /** What one tab of the settings file holds. */
@@ -28,8 +35,9 @@ const reason = (thrown: unknown): string =>
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
- * typed. It is kept the way a note is kept, and keeping it reads the file
- * again, so what the tab holds is what the file holds.
+ * typed. It is kept the way a note is kept: a keep presents the file the tab
+ * last read, and a file that moved past it stands overtaken until the person
+ * keeps theirs or takes the file's.
  */
 export function holding(core: Called, reads: () => void) {
   /** The bytes the file held when it was last read. */
@@ -43,6 +51,9 @@ export function holding(core: Called, reads: () => void) {
   /** Whether the file has been read at all. */
   const read = ref(false)
 
+  /** Whether the file moved past what was last read, so keeping it stopped. */
+  const overtaken = ref(false)
+
   const again = async (): Promise<void> => {
     let answer: Awaited<ReturnType<Called['settingsFile']>>
     try {
@@ -55,24 +66,42 @@ export function holding(core: Called, reads: () => void) {
     typed.value = answer.written
     wrong.value = ''
     read.value = true
+    overtaken.value = false
   }
 
   /**
-   * What was typed written into the file. A file the settings cannot be read
-   * out of is refused, and every row of the settings page is read again once
-   * one has been written.
+   * What was typed written into the file, presenting what it is given. A file
+   * the settings cannot be read out of is refused, and every row of the settings
+   * page is read again once one has been written.
    */
-  const keeps = async (): Promise<void> => {
+  const writes = async (seen: string | null): Promise<void> => {
     if (!read.value) return
+    let answer: Awaited<ReturnType<Called['writesSettingsFile']>>
     try {
-      await core.writesSettingsFile(typed.value)
+      answer = await core.writesSettingsFile(typed.value, seen)
     } catch (thrown) {
       wrong.value = `${words.unwritten} ${reason(thrown)}`
       return
     }
+    // Nothing was written, and the tab stands overtaken until the person says
+    // which of the two is theirs.
+    if (answer.changed) {
+      overtaken.value = true
+      return
+    }
     held.value = typed.value
     wrong.value = ''
+    overtaken.value = false
     reads()
+  }
+
+  /** What was typed written into the file the tab read. */
+  const keeps = (): Promise<void> => writes(held.value)
+
+  /** Keep: what is typed goes to the file, whatever the file now holds. */
+  const keep = async (): Promise<void> => {
+    if (!overtaken.value) return
+    await writes(null)
   }
 
   return {
@@ -84,9 +113,20 @@ export function holding(core: Called, reads: () => void) {
     changed: () => changed.value,
     /** Whether the file has been read at all. */
     read: () => read.value,
+    /** Whether the file moved past what was read. */
+    overtaken: () => overtaken.value,
     again,
     keeps,
+    keep,
+    /** Take: the file is read again, and that read replaces what is typed. */
+    take: again,
   }
+}
+
+/** What the tab carries beside its name, and nothing where there is nothing to say. */
+const mark = (held: Held): string | undefined => {
+  if (held.overtaken()) return 'overtaken'
+  return held.changed() ? '•' : undefined
 }
 
 /**
@@ -102,7 +142,7 @@ export function configuring(host: Host, core: Called, reads: () => void) {
       return held
     },
     called: () => words.called,
-    marked: (held) => (held.changed() ? '•' : undefined),
+    marked: mark,
     draws: ConfigurationTab,
     identity: () => CONFIGURATION,
   }

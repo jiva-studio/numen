@@ -295,8 +295,12 @@ export const core: Core & Asking & Commanding = {
     const answer = await vault.settingsFile({})
     return { written: answer.written, path: answer.path }
   },
-  writesSettingsFile: async (written) => {
-    await vault.writeSettingsFile({ written })
+  writesSettingsFile: async (written, seen) => {
+    const answer = await vault.writeSettingsFile({
+      written,
+      ...(seen === null ? {} : { seen }),
+    })
+    return { changed: answer.changed }
   },
   reviewing: async () => (await vault.reviewing({})).dayStarts,
   choosesReviewing: async (starts) =>

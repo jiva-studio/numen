@@ -18,7 +18,7 @@ const standing = async (answers: Partial<Called> = {}) => {
     settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
     writesSettingsFile: (written) => {
       wrote.push(written)
-      return Promise.resolve()
+      return Promise.resolve({ changed: false })
     },
     ...answers,
   }
@@ -67,5 +67,29 @@ describe('the file drawn', () => {
     const said = tab.get('[role="alert"]').text()
     expect(said).toContain(words.unwritten)
     expect(said).toContain('at byte 12')
+  })
+
+  it('puts the two answers where the file moved past what was read', async () => {
+    const wrote: string[] = []
+    const { tab, held } = await standing({
+      writesSettingsFile: (written, seen) => {
+        if (seen !== null) return Promise.resolve({ changed: true })
+        wrote.push(written)
+        return Promise.resolve({ changed: false })
+      },
+    })
+    held.types('{}\n')
+    await held.keeps()
+    await tab.vm.$nextTick()
+
+    expect(tab.get('[role="status"]').text()).toContain(words.overtaken)
+    const answers = tab.findAll('button')
+    expect(answers.map((one) => one.text())).toStrictEqual([words.keep, words.take])
+
+    await answers[0]!.trigger('click')
+    await tab.vm.$nextTick()
+
+    expect(wrote).toStrictEqual(['{}\n'])
+    expect(tab.findAll('button')).toHaveLength(0)
   })
 })
