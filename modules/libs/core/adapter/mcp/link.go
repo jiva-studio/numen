@@ -81,7 +81,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
 			link := writes(add.NewLink)
 			if err := note.Writable(link); err != nil {
-				res.Added[i].Refused = err.Error()
+				res.Added[i].Refused = refusing(err)
 				continue
 			}
 			if _, seen := batches[add.From]; !seen {
@@ -103,7 +103,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 				continue
 			}
 			for _, i := range at[from] {
-				res.Added[i].Refused = err.Error()
+				res.Added[i].Refused = refusing(err)
 			}
 		}
 		return nil, res, nil

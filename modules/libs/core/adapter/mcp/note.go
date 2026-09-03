@@ -271,7 +271,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		outcome := CreateOutcome{Created: created}
 		if err != nil {
 			outcome.Created.Title = in.Title
-			outcome.Refused = err.Error()
+			outcome.Refused = refusing(err)
 		}
 		return nil, outcome, nil
 	})
@@ -401,7 +401,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			outcome := MoveOutcome{Moved: moved}
 			if err != nil {
 				outcome.Moved = note.Moved{From: path}
-				outcome.Refused = err.Error()
+				outcome.Refused = refusing(err)
 			}
 			res.Moved = append(res.Moved, outcome)
 		}
@@ -441,7 +441,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			outcome := RemoveOutcome{Removed: removed}
 			if err != nil {
 				outcome.Removed = note.Removed{Path: path}
-				outcome.Refused = err.Error()
+				outcome.Refused = refusing(err)
 			}
 			res.Removed = append(res.Removed, outcome)
 		}
@@ -464,22 +464,6 @@ type Contents struct {
 type Refusal struct {
 	Path string `json:"path"`
 	Why  string `json:"why" jsonschema:"why this one was not read"`
-}
-
-// why is a read's outcome in words an agent can act on.
-func why(c note.Contents) string {
-	switch c.Outcome {
-	case note.NotANote:
-		return "this is not a note the vault holds"
-	case note.NotText:
-		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case note.TooLarge:
-		return fmt.Sprintf("it is %d bytes, larger than the %d this reads; open the file instead",
-			c.Ref.Size, note.MaxBytes)
-	case note.Unreadable:
-		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	}
-	return string(c.Outcome)
 }
 
 // Seated is a note in the picture around another one.
