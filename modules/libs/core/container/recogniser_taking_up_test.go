@@ -74,7 +74,7 @@ func halted(
 		"by hand": {Use: proofreading.UseAgent, Model: "a-model", BatchSize: 1},
 	}
 	w.Recognising.cfg.ScanProofreading = proofreading.Proofread{With: "by hand", Automatically: true}
-	w.Recognising.cfg.AgentProofreader = func(AgentProofreading) (port.Proofreader, error) { return by, nil }
+	w.Recognising.cfg.AgentProofreader = func(AgentProofreader) (port.Proofreader, error) { return by, nil }
 
 	hash := text.Fingerprint(raw)
 	store, err := w.Recognising.cfg.DerivedStores().Open(v)

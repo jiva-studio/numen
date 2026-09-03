@@ -108,9 +108,9 @@ func TestAnAgentProfileIsOpenedByThePlatform(t *testing.T) {
 	profile.Model = "haiku"
 	profile.Command = []string{"/somewhere/claude"}
 
-	var asked container.AgentProofreading
+	var asked container.AgentProofreader
 	held := carrying("agent", profile)
-	held.AgentProofreader = func(said container.AgentProofreading) (port.Proofreader, error) {
+	held.AgentProofreader = func(said container.AgentProofreader) (port.Proofreader, error) {
 		asked = said
 		return spelling{}, nil
 	}
@@ -204,7 +204,7 @@ func TestAProfileReachedThroughNeitherIsRefused(t *testing.T) {
 	for _, use := range []string{"", "telepathy"} {
 		profile := proofreading.Profile{Use: use, Name: "some-model", Model: "haiku"}
 		held := carrying("mine", profile)
-		held.AgentProofreader = func(container.AgentProofreading) (port.Proofreader, error) {
+		held.AgentProofreader = func(container.AgentProofreader) (port.Proofreader, error) {
 			return spelling{}, nil
 		}
 
@@ -230,9 +230,9 @@ func TestHowManyRunsStandAtOnceReachesThePlatform(t *testing.T) {
 	profile.Model = "haiku"
 	profile.InFlight = 3
 
-	var asked container.AgentProofreading
+	var asked container.AgentProofreader
 	held := carrying("agent", profile)
-	held.AgentProofreader = func(said container.AgentProofreading) (port.Proofreader, error) {
+	held.AgentProofreader = func(said container.AgentProofreader) (port.Proofreader, error) {
 		asked = said
 		return spelling{}, nil
 	}
