@@ -44,10 +44,17 @@ const standing = (presence: Presence, words: Words): string => {
 /** The second line under a model's name: what it is, then where it is. */
 const under = (parts: readonly string[]): string => parts.filter(Boolean).join(' · ')
 
+/**
+ * What a model is called on the row. A model the build names in words is called
+ * that; one carrying an address where its name would be is called by the last
+ * segment of it, which is the part that says which model it is.
+ */
+const calledBy = (model: Model): string =>
+  model.title && !addressed(model.title) ? model.title : nameOf(model.name)
+
 /** One preset, as the list offers it. */
 const offered = (model: Model, words: Words): SelectChoice => {
-  const name = nameOf(model.name)
-  const title = model.byDefault ? `${model.title} — ${words.byDefault}` : model.title
+  const name = calledBy(model)
   // A model addressed by a path, a repository or an address is named by its
   // own words and addressed under them.
   const detail = under([
@@ -56,7 +63,7 @@ const offered = (model: Model, words: Words): SelectChoice => {
   ])
   return {
     id: model.name,
-    text: title || name,
+    text: model.byDefault ? `${name} — ${words.byDefault}` : name,
     ...(detail ? { detail } : {}),
     ...(model.shelf ? { group: model.shelf } : {}),
   }

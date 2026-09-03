@@ -53,15 +53,21 @@ const reading = computed(() => chosen.value?.text || model.value || props.placeh
 
 const element = useTemplateRef<HTMLButtonElement>('element')
 
-/** Where the choices are drawn, and nothing while they are not drawn at all. */
-const asking = ref<Point | null>(null)
+/**
+ * Where the choices are drawn and how wide the line asking for them is, and
+ * nothing while they are not drawn at all.
+ */
+const asking = ref<{ at: Point; wide: number } | null>(null)
 
-/** The line opens the choices under itself, along its own leading edge. */
+/**
+ * The line opens the choices under itself, along its own leading edge and no
+ * narrower than itself.
+ */
 const opens = () => {
   const line = element.value
   if (!line || props.disabled) return
   const box = line.getBoundingClientRect()
-  asking.value = { x: box.left, y: box.bottom }
+  asking.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 
 const chose = (id: string) => {
@@ -115,7 +121,8 @@ defineExpose({
   <Menu
     v-if="asking"
     :items="items"
-    :at="asking"
+    :at="asking.at"
+    :asking="asking.wide"
     :from="element"
     :current="model"
     :name="name"

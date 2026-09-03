@@ -53,7 +53,7 @@ func embedding(held Config) []port.Model {
 		Title:     offered.Model.Name,
 		Shelf:     shelfMachine,
 		ByDefault: true,
-		Presence:  fetching(embed.Fetched(under(station, offered.Model.Name))),
+		Presence:  embedded(station, offered.Model.Name),
 		Writes: []port.Setting{
 			setting([]string{"indexing", "embedding", "model"}, offered.Model),
 			setting([]string{"indexing", "embedding", "indexing", "use"}, embed.UseLocal),
@@ -85,9 +85,10 @@ func embedding(held Config) []port.Model {
 }
 
 // embedded is what the model named is on this machine, at the station the
-// settings run it at. A station that reaches a service fetches nothing.
+// settings run it at. Which of the two a station is is `use`, and a station
+// reaching a service fetches nothing whatever the model is called.
 func embedded(station embed.Station, name string) port.Presence {
-	if station.Use == embed.UseService {
+	if station.Use != embed.UseLocal {
 		return port.NothingToFetch
 	}
 	return fetching(embed.Fetched(under(station, name)))
@@ -112,7 +113,7 @@ func recognising(held Config) []port.Model {
 		Title:     "PP-OCRv6, small",
 		Shelf:     shelfMachine,
 		ByDefault: true,
-		Presence:  fetching(recognition.Fetched(cfg, called(cfg, offered.Recognise.Name))),
+		Presence:  fetching(recognition.Fetched(cfg, offered.Recognise)),
 		Writes:    []port.Setting{setting(RecognitionModelAt, offered.Recognise.Name)},
 	}}
 	name := cfg.Recognise.Name
@@ -127,14 +128,6 @@ func recognising(held Config) []port.Model {
 		Presence: fetching(recognition.Fetched(cfg, cfg.Recognise)),
 		Writes:   []port.Setting{setting(RecognitionModelAt, name)},
 	})
-}
-
-// called is the recogniser the settings hold, under the name given. A path
-// written down is the file that is read whichever name stands beside it.
-func called(cfg recognition.Config, name string) recognition.RecogniserModel {
-	held := cfg.Recognise
-	held.Name = name
-	return held
 }
 
 // answering is the model the agent answers with. The command line takes a size
