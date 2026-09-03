@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -23,7 +24,7 @@ func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
 	})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe")
+		"A hedgehog", "An axe", domain.FileRef{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +50,7 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four")
+	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four", domain.FileRef{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +67,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasPrefix(body, front) {
@@ -82,7 +83,7 @@ func TestAStretchStandingTwiceIsRefused(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"foe advances", "foe retreats")
+		"foe advances", "foe retreats", domain.FileRef{})
 	var twice note.Twice
 	if !errors.As(err, &twice) {
 		t.Fatalf("want Twice, got %v", err)
@@ -102,7 +103,7 @@ func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"the wrath of the retreating foe", "nothing")
+		"the wrath of the retreating foe", "nothing", domain.FileRef{})
 	var nowhere note.Nowhere
 	if !errors.As(err, &nowhere) {
 		t.Fatalf("want Nowhere, got %v", err)
@@ -122,7 +123,7 @@ func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe")
+		"A hedgehog", "An axe", domain.FileRef{})
 	if !errors.Is(err, note.ErrAlreadyWritten) {
 		t.Fatalf("want ErrAlreadyWritten, got %v", err)
 	}
@@ -137,7 +138,7 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"сказал \"да\" - и ушёл", "промолчал")
+		"сказал \"да\" - и ушёл", "промолчал", domain.FileRef{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +161,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 	})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
 	body := c.read(t, "Aggressor.md")
@@ -179,7 +180,7 @@ func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
-		"A hedgehog", "An axe"); err != nil {
+		"A hedgehog", "An axe", domain.FileRef{}); err != nil {
 		t.Fatal(err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasPrefix(body, "---\nid: ") {
@@ -194,10 +195,12 @@ func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
-	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE"); err != nil {
+	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.FileRef{})
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREE"); err != nil {
+	if _, err := replacing.Execute(
+		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.At); err != nil {
 		t.Fatalf("the second replacement was refused: %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.Contains(body, "ONE two THREE") {

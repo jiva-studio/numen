@@ -3,6 +3,8 @@ package claudecode_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -231,11 +233,34 @@ func recorded(t *testing.T) []string {
 // recordedWith is recorded with the agent changed before it is started.
 func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
 	t.Helper()
+	return given(t, change).argv
+}
+
+// run is what the child was given: the arguments on its command line, and the
+// configuration file they name, copied while the child was still running.
+type run struct {
+	argv   []string
+	config string
+}
+
+// given runs the agent against a script standing in for the command, and
+// answers with what that script was given.
+func given(t *testing.T, change func(*claudecode.Agent)) run {
+	t.Helper()
 
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	written := filepath.Join(dir, "argv")
-	body := "#!/bin/sh\nfor a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n"
+	config := filepath.Join(dir, "config")
+	// The configuration is copied while the child is running: the run removes
+	// the file when the process is done with it.
+	body := "#!/bin/sh\n" +
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n" +
+		"prev=\n" +
+		"for a in \"$@\"; do\n" +
+		"  if [ \"$prev\" = \"--mcp-config\" ]; then cp \"$a\" " + config + "; fi\n" +
+		"  prev=\"$a\"\n" +
+		"done\n"
 	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +283,11 @@ func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+	out := run{argv: strings.Split(strings.TrimRight(string(raw), "\n"), "\n")}
+	if held, err := os.ReadFile(config); err == nil {
+		out.config = string(held)
+	}
+	return out
 }
 
 // The agent may look something up and may not touch this machine, so the run
@@ -296,19 +325,74 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 // One server, named in full, and no chance of another being read from the
 // machine's own configuration.
 func TestTheAgentReachesThisVaultAndNothingElse(t *testing.T) {
-	argv := recorded(t)
+	out := given(t, func(*claudecode.Agent) {})
 
-	if !slices.Contains(argv, "--strict-mcp-config") {
-		t.Errorf("another server's configuration may still be read: %q", argv)
+	if !slices.Contains(out.argv, "--strict-mcp-config") {
+		t.Errorf("another server's configuration may still be read: %q", out.argv)
 	}
-	config := ""
-	for i, arg := range argv {
-		if arg == "--mcp-config" && i+1 < len(argv) {
-			config = argv[i+1]
+	if !strings.Contains(out.config, "127.0.0.1:7717") {
+		t.Errorf("the vault is not the server it was given: %q", out.config)
+	}
+}
+
+// The token grants read and write over the whole vault, and a command line is
+// readable by every user on the machine. It travels in a file the child is
+// given the path of, and the file goes when the run does.
+func TestTheTokenIsNotOnTheChildsCommandLine(t *testing.T) {
+	out := given(t, func(*claudecode.Agent) {})
+
+	for _, arg := range out.argv {
+		if strings.Contains(arg, "let-me-in") {
+			t.Errorf("the token is on the command line: %q", arg)
 		}
 	}
-	if !strings.Contains(config, "127.0.0.1:7717") {
-		t.Errorf("the vault is not the server it was given: %q", config)
+	if !strings.Contains(out.config, "Bearer let-me-in") {
+		t.Errorf("the child was not given the token at all: %q", out.config)
+	}
+
+	at := ""
+	for i, arg := range out.argv {
+		if arg == "--mcp-config" && i+1 < len(out.argv) {
+			at = out.argv[i+1]
+		}
+	}
+	if at == "" {
+		t.Fatal("no configuration was named")
+	}
+	if _, err := os.Stat(at); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the configuration is still on disk after the run: %v", err)
+	}
+}
+
+// The file carries a token, so it is this user's to read and nobody else's.
+func TestTheConfigurationIsReadableByThisUserAlone(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "claude")
+	written := filepath.Join(dir, "mode")
+	body := "#!/bin/sh\nprev=\nfor a in \"$@\"; do\n" +
+		"  if [ \"$prev\" = \"--mcp-config\" ]; then ls -l \"$a\" > " + written + "; fi\n" +
+		"  prev=\"$a\"\ndone\n"
+	if err := os.WriteFile(script, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	claude := claudecode.Agent{
+		Command: []string{script},
+		Root:    dir,
+		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
+	}
+	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	heard(t, work)
+
+	held, err := os.ReadFile(written)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(held), "-rw-------") {
+		t.Errorf("the configuration stands as %q", strings.TrimSpace(string(held)))
 	}
 }
 

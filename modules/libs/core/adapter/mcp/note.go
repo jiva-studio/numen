@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
@@ -280,8 +282,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Name:  "note_write",
 		Title: "Write a note",
 		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
-			"the link tools to change what a note is joined to. Pass the fingerprint from " +
-			"`note_read` so a write cannot land on top of an edit you did not see. This " +
+			"the link tools to change what a note is joined to. The fingerprint from " +
+			"`note_read` is required, and a write lands only on the note that fingerprint " +
+			"names. This " +
 			"answers with the fingerprint it produced: pass that one to write the same " +
 			"note again without reading it back. To change part of a note, `note_edit` " +
 			"replaces one stretch and leaves the rest untouched; this is for a note being " +
@@ -290,7 +293,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the note to write"`
 		Body        string `json:"body" jsonschema:"the markdown to put in it"`
-		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what note_read said the note was, to refuse a write over somebody else's edit"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
@@ -327,11 +330,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			"still found; the answer says so, and says what the note held. Reach for this " +
 			"before `note_write` for anything short of rewriting a note — it costs you the " +
 			"stretch instead of the whole note, and it cannot change a word you did not " +
-			"name. It answers with the fingerprint it produced.",
+			"name. The fingerprint from `note_read` is required, and an edit lands only on " +
+			"the note that fingerprint names. It answers with the fingerprint it produced.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path    string `json:"path" jsonschema:"the note to edit"`
-		Stood   string `json:"stood" jsonschema:"the text to replace, as the note has it"`
-		Becomes string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+		Path        string `json:"path" jsonschema:"the note to edit"`
+		Stood       string `json:"stood" jsonschema:"the text to replace, as the note has it"`
+		Becomes     string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses an edit over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
@@ -344,7 +349,11 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			Stood       string `json:"stood"`
 			Plainly     bool   `json:"plainly,omitempty"`
 		}
-		done, err := core.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Stood, in.Becomes)
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return nil, out{}, err
+		}
+		done, err := core.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Stood, in.Becomes, seen)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -413,7 +422,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Title: "Remove a note",
 		Description: "Take notes out of the vault. They go to the vault's trash folder " +
 			"and can be put back. Links that pointed at them are left as they are and " +
-			"come back under `dangling`: a link is not wrong because its note is gone.",
+			"come back under `dangling`: a link is not wrong because its note is gone. " +
+			"This removes notes: a path naming a folder is refused, and the notes under " +
+			"one are removed by naming each of them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths   []string `json:"paths" jsonschema:"the notes to remove"`
 		Destroy bool     `json:"destroy,omitempty" jsonschema:"delete outright instead of moving to the trash; nothing brings these back"`
@@ -426,10 +437,21 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
 		}
+		reader, err := core.Readers.Open(core.shown().Vault)
+		if err != nil {
+			return nil, out{}, err
+		}
 		res := out{Removed: make([]RemoveOutcome, 0, len(in.Paths))}
 		for _, path := range in.Paths {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
+			}
+			if isFolder(ctx, reader, path) {
+				res.Removed = append(res.Removed, RemoveOutcome{
+					Removed: note.Removed{Path: path},
+					Refused: "this is a folder, and this removes notes: name the notes to remove",
+				})
+				continue
 			}
 			var removed note.Removed
 			var err error
@@ -447,6 +469,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 		return nil, res, nil
 	})
+}
+
+// isFolder reports whether the vault holds a folder at the path. A folder is
+// listed; a path holding a file is not.
+func isFolder(ctx context.Context, reader port.VaultReader, path string) bool {
+	_, err := reader.List(ctx, path)
+	return err == nil
 }
 
 // Contents is a note as note_write takes it back: the prose, without the
@@ -497,9 +526,12 @@ func fingerprintOf(ref domain.FileRef) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(ref.MTime, 10)
 }
 
+// parseFingerprint is the fingerprint a caller presents. Every tool that writes
+// takes one, and a call carrying none is refused.
 func parseFingerprint(s string) (domain.FileRef, error) {
 	if s == "" {
-		return domain.FileRef{}, nil
+		return domain.FileRef{}, errors.New(
+			"present the fingerprint the read gave you: note_read for a note, card_read for a deck")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {

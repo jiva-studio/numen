@@ -191,13 +191,14 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			"written by hand without the wikilink under its heading is a card with no " +
 			"stencil, and nothing says so until somebody opens the deck. The card's " +
 			"heading is written from its first field, and the mark it is addressed by " +
-			"comes back under `mark`.",
+			"comes back under `mark`. The fingerprint from `card_read` is required, and a " +
+			"write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck to write into"`
 		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
 		Values      []Value `json:"values" jsonschema:"what the card holds, in the order to write it"`
 		Section     *int    `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
-		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
+		Fingerprint string  `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
 			return nil, Written{}, fmt.Errorf(
@@ -237,13 +238,14 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			"mark `card_read` gives it, which is what the card is for as long as it " +
 			"exists: a card rewritten from end to end is still that card, and what is " +
 			"attached to it stays attached. The first field is written like every " +
-			"other, and the card's heading follows it.",
+			"other, and the card's heading follows it. The fingerprint from `card_read` is " +
+			"required, and a write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string  `json:"path" jsonschema:"the deck the card is in"`
 		Card        string  `json:"card" jsonschema:"the card's mark, as card_read gives it"`
 		Values      []Value `json:"values" jsonschema:"the fields to write, and what to put under each"`
 		Stencil     string  `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencils gave under name; left out, the card keeps the one it names"`
-		Fingerprint string  `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
+		Fingerprint string  `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
 			return nil, Written{}, fmt.Errorf(
@@ -272,11 +274,13 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Title: "Take a card out of a deck",
 		Description: "Remove one card from a deck: its heading, the stencil it named and " +
 			"every value under it. The rest of the file is left the bytes it was. " +
-			"Nothing brings it back, so read the deck before removing from it.",
+			"Nothing brings it back, so read the deck before removing from it. The " +
+			"fingerprint from `card_read` is required, and a write lands only on the deck " +
+			"that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the deck the card is in"`
 		Card        string `json:"card" jsonschema:"the card's mark, as card_read gives it"`
-		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
@@ -297,11 +301,13 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Description: "Write a section at the end of a deck. A section is a name a person " +
 			"gives one run of a deck, and it is a name and nothing else: it carries no " +
 			"field, no stencil and no schedule. `card_add` writes a card at the end of " +
-			"one, and `card_read` says which section each card stands under.",
+			"one, and `card_read` says which section each card stands under. The " +
+			"fingerprint from `card_read` is required, and a write lands only on the deck " +
+			"that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the deck to divide"`
 		Name        string `json:"name" jsonschema:"what the section is called"`
-		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what card_read said the deck was, to refuse a write over somebody else's edit"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.Deck) (format.Deck, error) {
@@ -450,11 +456,6 @@ func changing(
 	body, err := core.DeckBody(held)
 	if err != nil {
 		return Written{}, nil, err
-	}
-	// The deck this read came out of is what the write lands on where the
-	// caller presented nothing of its own.
-	if seen == (domain.FileRef{}) {
-		seen = read.Ref
 	}
 	wrote, err := core.Cuts.Deck(ctx, v, path, body, seen)
 	// A write that reached the vault is a write that happened, so the caller is

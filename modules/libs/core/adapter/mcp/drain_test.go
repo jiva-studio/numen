@@ -125,11 +125,14 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	// before the session it is answered over is closed under it.
 	defer release()
 
+	was := fingerprint(t, session, "Note.md")
 	wrote := make(chan error, 1)
 	go func() {
 		res, err := session.CallTool(context.Background(), &sdk.CallToolParams{
-			Name:      "note_write",
-			Arguments: map[string]any{"path": "Note.md", "body": "# What the agent wrote\n"},
+			Name: "note_write",
+			Arguments: map[string]any{
+				"path": "Note.md", "body": "# What the agent wrote\n", "fingerprint": was,
+			},
 		})
 		switch {
 		case err != nil:

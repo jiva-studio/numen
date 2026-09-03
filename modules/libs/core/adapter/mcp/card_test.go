@@ -265,6 +265,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 			{"field": "Name", "text": "Vicuña"},
 			{"field": "Height", "text": "about 34\""},
 		},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	written := held(t, v, "Animals.md")
@@ -295,7 +296,8 @@ func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
 		Mark string `json:"mark"`
 	}](t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal",
-		"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 	if made.Mark == "" {
 		t.Fatal("the card that was written came back with nothing to address it by")
@@ -304,7 +306,8 @@ func TestACardAddedComesBackUnderTheMarkItIsAddressedBy(t *testing.T) {
 	// The mark reaches that card and no other.
 	call[map[string]any](t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "card": made.Mark,
-		"values": []map[string]string{{"field": "Height", "text": "about 34\""}},
+		"values":      []map[string]string{{"field": "Height", "text": "about 34\""}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 	read := dealt(t, session, map[string]any{"path": "Animals.md"})
 	if read.Held != 3 || read.Cards[2].Mark != made.Mark {
@@ -327,12 +330,14 @@ func TestACardOfAMarkTwoCardsCarryIsNotWrittenTo(t *testing.T) {
 
 	if said := failing(t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "card": llama,
-		"values": []map[string]string{{"field": "Height", "text": "about 47\""}},
+		"values":      []map[string]string{{"field": "Height", "text": "about 47\""}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
 		t.Errorf("editing one of two cards of a mark was answered %q", said)
 	}
 	if said := failing(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "card": llama,
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "two cards") {
 		t.Errorf("removing one of two cards of a mark was answered %q", said)
 	}
@@ -353,7 +358,8 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 
 	call[map[string]any](t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal", "section": 0,
-		"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	written := held(t, v, "Animals.md")
@@ -370,7 +376,8 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 	}
 	if said := failing(t, session, "card_add", map[string]any{
 		"path": "Animals.md", "stencil": "Animal", "section": 7,
-		"values": []map[string]string{{"field": "Name", "text": "Guanaco"}},
+		"values":      []map[string]string{{"field": "Name", "text": "Guanaco"}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "section") {
 		t.Errorf("a card asked into a section the deck has not got was answered %q", said)
 	}
@@ -383,6 +390,7 @@ func TestASectionIsMadeThroughTheTools(t *testing.T) {
 
 	call[map[string]any](t, session, "card_section_add", map[string]any{
 		"path": "Animals.md", "name": "Others",
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	if written := held(t, v, "Animals.md"); !strings.HasSuffix(written, "\n# Others\n") {
@@ -408,6 +416,7 @@ func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
 			{"field": "Height", "text": "about 46\""},
 			{"field": "Life span", "text": "about 20 years"},
 		},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	written := held(t, v, "Animals.md")
@@ -428,6 +437,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 
 	call[map[string]any](t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "card": llama,
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	written := held(t, v, "Animals.md")
@@ -440,6 +450,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	}
 	if said := failing(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "card": llama,
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	}); !strings.Contains(said, "no card") {
 		t.Errorf("removing a card twice was answered %q", said)
 	}
@@ -581,7 +592,8 @@ func TestADeckIsMadeThroughTheTools(t *testing.T) {
 
 	call[map[string]any](t, session, "card_add", map[string]any{
 		"path": made.Path, "stencil": "Animal",
-		"values": []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"values":      []map[string]string{{"field": "Name", "text": "Vicuña"}},
+		"fingerprint": deckprint(t, session, made.Path),
 	})
 	if read := dealt(t, session, map[string]any{"path": made.Path}); read.Held != 1 {
 		t.Errorf("the deck made through the tools holds %d cards", read.Held)
@@ -618,7 +630,8 @@ func TestAStencilIsListedByTheNameACardsWikilinkReaches(t *testing.T) {
 
 	call[map[string]any](t, session, "card_add", map[string]any{
 		"path": "Deck.md", "stencil": name,
-		"values": []map[string]string{{"field": "Height", "text": "about 45\""}},
+		"values":      []map[string]string{{"field": "Height", "text": "about 45\""}},
+		"fingerprint": deckprint(t, session, "Deck.md"),
 	})
 	// A rename reaches the cards that stencil cuts, and a card whose wikilink
 	// lands nowhere is cut by none.
@@ -672,7 +685,8 @@ func TestEditingTheFirstFieldWritesTheHeadingAgain(t *testing.T) {
 
 	call[map[string]any](t, session, "card_edit", map[string]any{
 		"path": "Animals.md", "card": llama,
-		"values": []map[string]string{{"field": "Name", "text": "Llama (Lama glama)"}},
+		"values":      []map[string]string{{"field": "Name", "text": "Llama (Lama glama)"}},
+		"fingerprint": deckprint(t, session, "Animals.md"),
 	})
 
 	written := held(t, v, "Animals.md")

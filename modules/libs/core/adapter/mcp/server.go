@@ -7,7 +7,6 @@
 package mcp
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -49,19 +48,13 @@ type Core struct {
 	// Vaults is the list of vaults this installation holds. Without it an agent
 	// is told of the vault it is working and of no other.
 	Vaults port.VaultRegistry
-	// Choosing puts this machine's own folder picker in front of the person, for
-	// a vault added without a path. Without it a folder is named or nothing is
-	// added.
-	Choosing port.Folders
-	// Adding turns a folder into a vault, Renaming is what a person calls one,
-	// and Forgetting takes one off the list. Each tool is served where what it
-	// works through is here.
-	Adding     *usecase.Add
+	// Renaming is what a person calls a vault, and Forgetting takes one off the
+	// list. Each tool is served where what it works through is here.
+	//
+	// Which folders are vaults, and which of them the window shows, a person
+	// settles through the picker the application puts in front of them.
 	Renaming   *usecase.Rename
 	Forgetting *usecase.Forget
-	// Opens puts another vault in the window. The tools are served for the vault
-	// that is going, so the session asking for the swap ends with it.
-	Opens func(context.Context, domain.Vault) error
 
 	// Sources and Recognise are the documents a vault holds beside its notes.
 	// Without them the tools for those documents are not added.
