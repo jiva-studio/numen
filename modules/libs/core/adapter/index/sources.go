@@ -139,26 +139,26 @@ func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[stri
 
 // Reading is what one source's text came from, and false where the index holds
 // no source at that path.
-func (s known) Reading(ctx context.Context, vaultID, path string) (port.Recognised, bool, error) {
+func (s known) Reading(ctx context.Context, vaultID, path string) (port.SourceText, bool, error) {
 	found, held, err := s.read.Reading(ctx, vaultID, path)
 	if err != nil || !held {
-		return port.Recognised{}, false, err
+		return port.SourceText{}, false, err
 	}
-	return port.Recognised{
-		Path: found.Path, From: found.From, Hash: found.Hash,
+	return port.SourceText{
+		Path: found.Path, Producer: found.Producer, Hash: found.Hash,
 		Size: found.Size, MTime: found.MTime,
 	}, true, nil
 }
 
 // Recognised is the sources of one kind whose text a producer made.
-func (s known) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
+func (s known) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.SourceText, error) {
 	found, err := s.read.Recognised(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Recognised, 0, len(found))
+	out := make([]port.SourceText, 0, len(found))
 	for _, r := range found {
-		out = append(out, port.Recognised{Path: r.Path, From: r.From, Hash: r.Hash})
+		out = append(out, port.SourceText{Path: r.Path, Producer: r.Producer, Hash: r.Hash})
 	}
 	return out, nil
 }

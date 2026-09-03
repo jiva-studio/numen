@@ -64,7 +64,7 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		}
 		stands := make(map[string]bool, len(read))
 		for _, one := range read {
-			stands[one.Path] = one.From != ""
+			stands[one.Path] = one.Producer != ""
 		}
 		documents := make([]Document, 0, len(known))
 		for path := range known {

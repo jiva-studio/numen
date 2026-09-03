@@ -80,7 +80,7 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 	api := &API{
 		Readers: filesystem.Readers{},
 		Highlight: &source.Highlight{
-			Sources: indexed{talk: {Path: talk, From: listener, Hash: hashed}},
+			Sources: indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
 			Derived: held,
 		},
 	}

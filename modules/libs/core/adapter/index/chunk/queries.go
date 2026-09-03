@@ -455,33 +455,33 @@ func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[str
 	return out, rows.Err()
 }
 
-// Recognised is one source whose text a producer made: where the file is, what
+// SourceText is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that reading are kept under.
-type Recognised struct {
-	Path  string
-	From  string
-	Hash  string
-	Size  int64
-	MTime int64
+type SourceText struct {
+	Path     string
+	Producer string
+	Hash     string
+	Size     int64
+	MTime    int64
 }
 
 // Reading is what one source's text came from, and false where the index holds
 // no source at that path.
-func (q *Queries) Reading(ctx context.Context, vaultID, path string) (Recognised, bool, error) {
+func (q *Queries) Reading(ctx context.Context, vaultID, path string) (SourceText, bool, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return Recognised{}, false, nil
+		return SourceText{}, false, nil
 	}
 	if err != nil {
-		return Recognised{}, false, err
+		return SourceText{}, false, err
 	}
-	found := Recognised{Path: path}
-	err = q.db.QueryRowContext(ctx, stmt.Get("reading"), vault, path).Scan(&found.From, &found.Hash, &found.Size, &found.MTime)
+	found := SourceText{Path: path}
+	err = q.db.QueryRowContext(ctx, stmt.Get("reading"), vault, path).Scan(&found.Producer, &found.Hash, &found.Size, &found.MTime)
 	if errors.Is(err, sql.ErrNoRows) {
-		return Recognised{}, false, nil
+		return SourceText{}, false, nil
 	}
 	if err != nil {
-		return Recognised{}, false, fmt.Errorf("reading %s: %w", path, err)
+		return SourceText{}, false, fmt.Errorf("reading %s: %w", path, err)
 	}
 	return found, true, nil
 }
@@ -492,7 +492,7 @@ func (q *Queries) Reading(ctx context.Context, vaultID, path string) (Recognised
 // A scan asks it in order to find the ones whose files are gone: the store is a
 // folder on the person's disk and they may empty it, and a source standing on
 // files that are not there answers a search with nothing.
-func (q *Queries) Recognised(ctx context.Context, vaultID, kind string) ([]Recognised, error) {
+func (q *Queries) Recognised(ctx context.Context, vaultID, kind string) ([]SourceText, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -506,10 +506,10 @@ func (q *Queries) Recognised(ctx context.Context, vaultID, kind string) ([]Recog
 	}
 	defer rows.Close()
 
-	var out []Recognised
+	var out []SourceText
 	for rows.Next() {
-		var r Recognised
-		if err := rows.Scan(&r.Path, &r.From, &r.Hash); err != nil {
+		var r SourceText
+		if err := rows.Scan(&r.Path, &r.Producer, &r.Hash); err != nil {
 			return nil, err
 		}
 		out = append(out, r)

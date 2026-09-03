@@ -241,7 +241,7 @@ func (a *API) far(
 		return reached{}, err
 	}
 	if produced {
-		return farUnder(ctx, store, said.From, said.Hash)
+		return farUnder(ctx, store, said.Producer, said.Hash)
 	}
 	return a.byBytes(ctx, v, path, unnamed(kind))
 }

@@ -151,7 +151,7 @@ func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
 		}
 		// Taken after the words, so a run that began while they were being read
 		// is one the window is told about.
-		told.Editable = free(ctx, store, derived.Partial(said.From, said.Hash))
+		told.Editable = free(ctx, store, derived.Partial(said.Producer, said.Hash))
 	}
 	_, cues := transcript.Parse(raw)
 	cues, err = narrowed(r.URL.Query(), cues)
@@ -217,7 +217,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to.
-	release, err := store.Claim(ctx, derived.Partial(said.From, said.Hash))
+	release, err := store.Claim(ctx, derived.Partial(said.Producer, said.Hash))
 	if errors.Is(err, port.ErrClaimed) {
 		http.Error(w, errBeingHeard.Error(), http.StatusConflict)
 		return
@@ -230,7 +230,7 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 
 	// The words are a person's, and a proofreader leaves them alone.
 	written := append(transcript.Marshal(cues), transcript.Hand()...)
-	if err := store.Write(ctx, derived.Corrected(said.From, said.Hash), written); err != nil {
+	if err := store.Write(ctx, derived.Corrected(said.Producer, said.Hash), written); err != nil {
 		refuse(w, err)
 		return
 	}
@@ -394,18 +394,18 @@ func (a *API) heard(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-) (port.Recognised, port.DerivedStore, bool, error) {
+) (port.SourceText, port.DerivedStore, bool, error) {
 	sources, stores, ok := a.hearing()
 	if !ok {
-		return port.Recognised{}, nil, false, nil
+		return port.SourceText{}, nil, false, nil
 	}
 	said, held, err := sources.Reading(ctx, v.ID, path)
-	if err != nil || !held || said.From == "" {
-		return port.Recognised{}, nil, false, err
+	if err != nil || !held || said.Producer == "" {
+		return port.SourceText{}, nil, false, err
 	}
 	store, err := stores.Open(v)
 	if err != nil {
-		return port.Recognised{}, nil, false, err
+		return port.SourceText{}, nil, false, err
 	}
 	return said, store, true, nil
 }
@@ -419,18 +419,18 @@ func (a *API) transcript(ctx context.Context, v domain.Vault, path string) ([]by
 		return nil, err
 	}
 	return written(ctx, store,
-		derived.Artifact(said.From, said.Hash),
-		derived.Partial(said.From, said.Hash),
+		derived.Artifact(said.Producer, said.Hash),
+		derived.Partial(said.Producer, said.Hash),
 	)
 }
 
 // transcribed is the transcript of a recording as it now stands: what it was put
 // right to, and what was heard where nothing put it right.
-func (a *API) transcribed(ctx context.Context, store port.DerivedStore, said port.Recognised) ([]byte, error) {
+func (a *API) transcribed(ctx context.Context, store port.DerivedStore, said port.SourceText) ([]byte, error) {
 	return written(ctx, store,
-		derived.Corrected(said.From, said.Hash),
-		derived.Artifact(said.From, said.Hash),
-		derived.Partial(said.From, said.Hash),
+		derived.Corrected(said.Producer, said.Hash),
+		derived.Artifact(said.Producer, said.Hash),
+		derived.Partial(said.Producer, said.Hash),
 	)
 }
 

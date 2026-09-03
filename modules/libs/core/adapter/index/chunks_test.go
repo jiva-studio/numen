@@ -1205,10 +1205,10 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 
 	for _, c := range []struct {
 		vault domain.Vault
-		want  chunk.Recognised
+		want  chunk.SourceText
 	}{
-		{first, chunk.Recognised{Path: "library/first.pdf", From: "ocr", Hash: "hash-first"}},
-		{second, chunk.Recognised{Path: "library/second.pdf", From: "ocr", Hash: "hash-second"}},
+		{first, chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", Hash: "hash-first"}},
+		{second, chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", Hash: "hash-second"}},
 	} {
 		found, err := db.ChunkQueries().Recognised(t.Context(), c.vault.ID, "book")
 		if err != nil {

@@ -236,7 +236,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 			scans, hears := willRun(), willRun()
 			_, handler := running(t,
 				stored{derived.Artifact(one.from, one.hash): []byte("what the model wrote")},
-				indexed{one.path: {Path: one.path, From: one.from, Hash: one.hash}},
+				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
 
@@ -276,7 +276,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 					stored: stored{derived.Partial(one.from, one.hash): []byte("as far as it has got")},
 					name:   derived.Partial(one.from, one.hash),
 				},
-				indexed{one.path: {Path: one.path, From: one.from, Hash: one.hash}},
+				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
 				scans, hears,
 			)
 
@@ -311,7 +311,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			_, handler := running(t,
 				stored{derived.Partial(one.from, one.hash): []byte("as far as it got")},
-				indexed{one.path: {Path: one.path, From: one.from, Hash: one.hash}},
+				indexed{one.path: {Path: one.path, Producer: one.from, Hash: one.hash}},
 				willQueue(), willQueue(),
 			)
 
@@ -335,7 +335,7 @@ func TestASourceDoneIsDoneEvenWhereAPartialStands(t *testing.T) {
 			derived.Artifact(reader, scanned): []byte("what the model wrote"),
 			derived.Partial(reader, scanned):  []byte("what it wrote on the way"),
 		},
-		indexed{book: {Path: book, From: reader, Hash: scanned}},
+		indexed{book: {Path: book, Producer: reader, Hash: scanned}},
 		scans, willRun(),
 	)
 

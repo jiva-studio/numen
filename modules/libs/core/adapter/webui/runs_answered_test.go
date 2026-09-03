@@ -25,7 +25,7 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	talks := willRun()
 	_, handler := running(t,
 		stored{derived.Answer(listener, hashed): []byte(derived.Unopened + ": " + said + "\n")},
-		indexed{talk: {Path: talk, From: listener, Hash: hashed}},
+		indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
 		willRun(), talks,
 	)
 
@@ -102,7 +102,7 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 			derived.Artifact(listener, hashed): []byte("what the model heard"),
 			derived.Answer(listener, hashed):   []byte(derived.Silent + "\n"),
 		},
-		indexed{talk: {Path: talk, From: listener, Hash: hashed}},
+		indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
 		willRun(), talks,
 	)
 

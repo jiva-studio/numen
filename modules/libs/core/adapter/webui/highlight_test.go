@@ -19,9 +19,9 @@ import (
 // indexed is what the index holds about the sources of the vault under test.
 // Where a passage sits turns on one of its answers, and nothing here asks it
 // the others.
-type indexed map[string]port.Recognised
+type indexed map[string]port.SourceText
 
-func (i indexed) Reading(_ context.Context, _, path string) (port.Recognised, bool, error) {
+func (i indexed) Reading(_ context.Context, _, path string) (port.SourceText, bool, error) {
 	found, held := i[path]
 	return found, held, nil
 }
@@ -38,7 +38,7 @@ func (i indexed) ByOtherRecipe(context.Context, string, domain.SourceKind, []str
 	return nil, nil
 }
 
-func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.Recognised, error) {
+func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.SourceText, error) {
 	return nil, nil
 }
 
