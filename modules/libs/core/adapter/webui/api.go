@@ -154,7 +154,7 @@ type API struct {
 	// nothing; one with no Sync reads what an installation nobody has
 	// configured does.
 	Sync    note.Syncing
-	Chooses func(kept note.Sync) error
+	Chooses func(kept note.SyncTitleAndFilename) error
 
 	// Hangs reads whether a node hangs the headings of its note under it, Parts
 	// how many of them stand there at once, and ChoosesHanging and ChoosesParts

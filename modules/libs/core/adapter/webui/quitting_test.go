@@ -66,7 +66,7 @@ func quitting(t *testing.T, hold *held, notes map[string]string) *going {
 
 // naming writes the settings file a rename reads, beside the vault list, which
 // is where an installation pointed somewhere of its own keeps one.
-func naming(t *testing.T, registry string, sync note.Sync) {
+func naming(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
 	t.Helper()
 	body := fmt.Sprintf(`{"naming":{"sync_title_and_filename":%v}}`, bool(sync))
 	if err := os.WriteFile(
@@ -78,7 +78,7 @@ func naming(t *testing.T, registry string, sync note.Sync) {
 
 // opening is quitting with a title and a filename told apart or kept as one
 // name, which is the one setting a rename reads.
-func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) *going {
+func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTitleAndFilename) *going {
 	t.Helper()
 
 	root := t.TempDir()

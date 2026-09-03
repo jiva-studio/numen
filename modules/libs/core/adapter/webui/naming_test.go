@@ -77,7 +77,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 // carries the one setting to all three.
 func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync note.Sync
+		sync note.SyncTitleAndFilename
 		// at is where the renamed note is filed, and called what the moved one
 		// is called.
 		at     string

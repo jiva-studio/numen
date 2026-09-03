@@ -133,7 +133,7 @@ func (c Config) Indexing(said settings.Indexing) Config {
 // filename are kept as one name. A file that cannot be read keeps them one
 // name, which is what an installation nobody has configured does.
 func (c Config) Syncing() note.Syncing {
-	return func() note.Sync {
+	return func() note.SyncTitleAndFilename {
 		path, err := c.settingsFile()
 		if err != nil {
 			return true
@@ -142,15 +142,15 @@ func (c Config) Syncing() note.Syncing {
 		if err != nil {
 			return true
 		}
-		return note.Sync(held.Sync())
+		return note.SyncTitleAndFilename(held.Sync())
 	}
 }
 
 // Turns writes into the settings whether a note's title and its filename are
 // kept as one name. The file is patched as an object, so every key a person
 // typed stays where it was.
-func (c Config) Turns() func(kept note.Sync) error {
-	return func(kept note.Sync) error {
+func (c Config) Turns() func(kept note.SyncTitleAndFilename) error {
+	return func(kept note.SyncTitleAndFilename) error {
 		path, err := c.settingsFile()
 		if err != nil {
 			return err

@@ -25,7 +25,7 @@ func (c changing) rename() note.Rename {
 // apart is the rename an installation that has turned the two apart does.
 func (c changing) apart() note.Rename {
 	moving := c.move()
-	moving.Sync = func() note.Sync { return false }
+	moving.Sync = func() note.SyncTitleAndFilename { return false }
 	return note.Rename{Move: moving}
 }
 

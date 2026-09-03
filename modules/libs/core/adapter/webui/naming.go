@@ -68,7 +68,7 @@ func (a *API) ChooseSyncing(
 	if a.Chooses == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.Chooses(note.Sync(r.Msg.GetSyncTitleAndFilename())); err != nil {
+	if err := a.Chooses(note.SyncTitleAndFilename(r.Msg.GetSyncTitleAndFilename())); err != nil {
 		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
