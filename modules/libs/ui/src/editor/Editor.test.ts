@@ -6,6 +6,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { undo } from '@codemirror/commands'
 import { EditorSelection, StateField } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
@@ -338,5 +339,31 @@ describe('what the caller draws into the editor', () => {
     view.dispatch({ changes: { from: 3, insert: ' two' } })
     expect(view.state.field(counted)).toBe(1)
     expect(view.state.doc.toString()).toBe('one two')
+  })
+})
+
+describe('a document written in one language', () => {
+  it('is read as that language, and set in the face code is set in', async () => {
+    const editor = mount(Editor, {
+      props: { modelValue: '{ "agent": { "use": "claude" } }', live: false, language: 'json' },
+      attachTo: document.body,
+    })
+    // The language is loaded when it is first wanted.
+    await new Promise((settle) => setTimeout(settle, 0))
+    await nextTick()
+
+    // The face is the token the editor's theme names, not a family named here.
+    const drawn = editor.get('.cm-editor').element
+    expect(getComputedStyle(drawn).fontFamily).toBe('var(--editor-mono)')
+
+    editor.unmount()
+  })
+
+  it('is markdown, set in the face prose is set in, where none is named', () => {
+    const editor = mount(Editor, { props: { modelValue: '# A heading' }, attachTo: document.body })
+    expect(getComputedStyle(editor.get('.cm-editor').element).fontFamily).toBe(
+      'var(--numen-font-sans)',
+    )
+    editor.unmount()
   })
 })

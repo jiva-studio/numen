@@ -2,7 +2,6 @@
 export const WORDS = {
   /** What the tab is called, which is the file it holds. */
   called: 'numen.json',
-  keep: 'Keep',
   /** The file could not be read. */
   unread: 'The file could not be read:',
   /** What was typed is not settings this build can read. */

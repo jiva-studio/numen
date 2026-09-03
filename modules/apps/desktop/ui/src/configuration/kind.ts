@@ -28,12 +28,11 @@ const reason = (thrown: unknown): string =>
 
 /**
  * The file as it stands, what is typed over it, and what is wrong with what was
- * typed. Keeping it reads the file again, so what the tab holds is what the
- * file holds.
+ * typed. It is kept the way a note is kept, and keeping it reads the file
+ * again, so what the tab holds is what the file holds.
  */
 export function holding(core: Called, reads: () => void) {
-  /** Where the file stands, and the bytes it held when it was last read. */
-  const path = ref('')
+  /** The bytes the file held when it was last read. */
   const held = ref('')
   const typed = ref('')
   const wrong = ref('')
@@ -52,7 +51,6 @@ export function holding(core: Called, reads: () => void) {
       wrong.value = `${words.unread} ${reason(thrown)}`
       return
     }
-    path.value = answer.path
     held.value = answer.written
     typed.value = answer.written
     wrong.value = ''
@@ -78,8 +76,6 @@ export function holding(core: Called, reads: () => void) {
   }
 
   return {
-    /** Where the file stands, absolute on this machine. */
-    path: () => path.value,
     /** What stands in the editor, and what is typed into it. */
     text: () => typed.value,
     types: (said: string) => void (typed.value = said),

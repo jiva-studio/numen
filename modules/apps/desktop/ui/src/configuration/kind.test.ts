@@ -26,12 +26,11 @@ const standing = (answers: Partial<Called> = {}) => {
 }
 
 describe('the file as it stands', () => {
-  it('is read whole, with where it stands', async () => {
+  it('is read whole, byte for byte', async () => {
     const { held } = standing()
     await held.again()
 
     expect(held.text()).toBe(HELD)
-    expect(held.path()).toBe('/numen.json')
     expect(held.read()).toBe(true)
     expect(held.changed()).toBe(false)
   })
