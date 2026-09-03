@@ -114,6 +114,7 @@ modules/libs/core/
     flashcardsui/          driving: the handler the review window asks
   internal/
     adapter/               driven: what nothing outside composes
+    onnxruntime/           the runtime two driven adapters run models through
     ulid/  mark/           identifiers, and the marks a card is known by
     wire/                  what two driving adapters both put on the wire
     testsupport/           fixtures and generated vaults, for tests only
@@ -131,6 +132,14 @@ A repository is a collection of aggregates: put one in, take one out, remove one
 ### `internal/` marks what nothing outside composes
 
 An application reaches the core's own language, the driving adapters it serves, and `container`. A driven adapter it does not name sits under `internal/`, where the compiler holds it, so binding an adapter to a port stays one package's work.
+
+### Infrastructure two adapters share sits beside them
+
+What two adapters both run on and neither owns — the ONNX Runtime a recognition and a transcription both load their models through — is its own package under `internal/`, outside `adapter/`. An adapter is given what it needs and reaches no other adapter, and that rule is what keeps the shared thing a package of its own.
+
+### The core has no logger
+
+The core writes to no stream of its own. What went wrong in work it carries on past — a watcher that lost the folder it was following, a queue that could not read a file — is said through `port.Trouble`, and an installation that binds none is told nothing. What a call could not answer is that call's error, and goes back to whoever asked.
 
 ### SQL lives in files
 
