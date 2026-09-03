@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Goal } from '@numen/protocol'
 
 import Decks from './Decks.vue'
 import { learned } from './scheduling'
@@ -9,7 +8,7 @@ import type { DeckOwing, Owing } from './core'
 import type { Closes, Preset, Settings } from './scheduling'
 
 const settings: Settings = {
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 20,
   newADay: 10,

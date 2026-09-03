@@ -6,7 +6,7 @@
  * taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { Goal, Stopped } from '@numen/protocol'
+import { Stopped } from '@numen/protocol'
 import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
 import Decks from './Decks.vue'
@@ -81,7 +81,7 @@ const BY_MINUTES: Closes = { new: '', reviews: '', minutes: 'minutes_a_day' }
 const BY_CARDS: Closes = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
 const settings = (over: Partial<Settings> = {}): Settings => ({
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 25,
   newADay: 12,
@@ -135,7 +135,7 @@ const SANSKRIT = preset({
 const ANATOMY = preset({
   path: 'Anatomy.md',
   name: 'Anatomy',
-  settings: settings({ goal: Goal.BY_DATE, byDate: dayBefore(TODAY, -76) }),
+  settings: settings({ goal: 'date', byDate: dayBefore(TODAY, -76) }),
   decks: [
     'Anatomy/Bones.md',
     'Anatomy/Muscles.md',

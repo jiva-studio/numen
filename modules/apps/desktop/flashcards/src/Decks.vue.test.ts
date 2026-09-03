@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Goal, Stopped } from '@numen/protocol'
+import { Stopped } from '@numen/protocol'
 
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'
@@ -9,7 +9,7 @@ import type { Owing } from './core'
 import type { Closes, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 20,
   newADay: 10,

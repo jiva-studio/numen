@@ -14,11 +14,11 @@ import {
   stoppedWords,
   through,
 } from './scheduling'
-import type { Asks, Budget, Closes, Preset, Settings } from './scheduling'
-import type { Owing, PresetOwing } from './core'
+import type { Asks, Budget, Closes, Preset, Settings, SettingsMessage } from './scheduling'
+import type { Goal as Held, Owing, PresetOwing } from './core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 20,
   newADay: 10,
@@ -28,6 +28,16 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
   evenLoad: true,
   ...said,
 })
+
+/** The goal as the schema names it, for an answer the application writes. */
+const ASKED: Record<Held, Goal> = {
+  minutes: Goal.MINUTES_A_DAY,
+  retention: Goal.RETENTION,
+  date: Goal.BY_DATE,
+}
+
+/** The same settings, as the schema carries them. */
+const carried = (held: Settings): SettingsMessage => ({ ...held, goal: ASKED[held.goal] })
 
 const budget = (said: Partial<Budget> = {}): Budget => ({
   new: 10,
@@ -115,7 +125,7 @@ const answering = (
       preset: {
         path: one.path,
         title: one.title,
-        settings: one.settings,
+        settings: carried(one.settings),
         problems: [],
         stopsOn: one.stopsOn ?? Stopped.NOTHING,
       },
@@ -149,7 +159,7 @@ describe('why a preset schedules nothing, in words', () => {
   })
 
   it('names the day a goal aimed at, where the settings carry one', () => {
-    const by = settings({ goal: Goal.BY_DATE, byDate: '2026-08-31' })
+    const by = settings({ goal: 'date', byDate: '2026-08-31' })
 
     expect(stoppedWords(Stopped.PAST_DAY, by, on)).toMatch(/has passed$/)
     // A preset counted with no settings on hand still says what stopped it.
@@ -176,17 +186,17 @@ describe('what a goal comes to in words', () => {
   })
 
   it('says the share asked of memory in hundredths', () => {
-    expect(goalWords(settings({ goal: Goal.RETENTION, retention: 0.9 }), '2026-09-05')).toBe(
+    expect(goalWords(settings({ goal: 'retention', retention: 0.9 }), '2026-09-05')).toBe(
       '90% remembered',
     )
-    expect(goalWords(settings({ goal: Goal.RETENTION, retention: 0.85 }), '2026-09-05')).toBe(
+    expect(goalWords(settings({ goal: 'retention', retention: 0.85 }), '2026-09-05')).toBe(
       '85% remembered',
     )
   })
 
   it('says the day, and how far off it is', () => {
     const said = goalWords(
-      settings({ goal: Goal.BY_DATE, byDate: '2026-09-30' }),
+      settings({ goal: 'date', byDate: '2026-09-30' }),
       '2026-09-12',
     )
     expect(said).toMatch(/^18 days to /)
@@ -441,7 +451,7 @@ describe('which preset schedules each deck', () => {
         'decks/Words.md': {
           path: 'Stopped.md',
           title: 'Stopped',
-          settings: settings({ goal: Goal.RETENTION, newADay: 0, reviewsADay: 0 }),
+          settings: settings({ goal: 'retention', newADay: 0, reviewsADay: 0 }),
           stopsOn: Stopped.NO_CARDS,
         },
       }),
@@ -649,7 +659,7 @@ describe('which preset schedules each deck', () => {
             preset: {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
-              settings: settings(),
+              settings: carried(settings()),
               problems: ['`new_a_day` is not a number'],
               stopsOn: Stopped.NOTHING,
             },
@@ -702,7 +712,7 @@ describe('which preset schedules each deck', () => {
             preset: {
               path: 'Sanskrit.md',
               title: 'Sanskrit',
-              settings: settings(),
+              settings: carried(settings()),
               problems: [],
               stopsOn: Stopped.NOTHING,
             },
