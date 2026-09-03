@@ -483,6 +483,25 @@ func TestAFencedHeadingOpensNothing(t *testing.T) {
 	}
 }
 
+// A block opened with tildes is closed by tildes, so the backticks inside it
+// are part of the example and a heading standing among them opens nothing.
+func TestATildeFencedExampleHoldsBackticks(t *testing.T) {
+	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+
+		"## Llama\n\n[[Animal]]\n\n### Height\n\n"+
+		"~~~markdown\n```\n## Alpaca\n```\n### Weight\n~~~\n\n"+
+		"## Vicuña\n\n[[Animal]]\n\n### Height\n\nabout 36\"\n"))
+
+	if got := names(deck); !slices.Equal(got, []string{"Llama", "Vicuña"}) {
+		t.Errorf("cards = %v", got)
+	}
+	if got := fieldsOf(deck.Cards[0]); !slices.Equal(got, []string{"Height"}) {
+		t.Errorf("fields = %v", got)
+	}
+	if !strings.Contains(deck.Cards[0].Values[0].Text, "## Alpaca") {
+		t.Errorf("the example was cut out of the value: %q", deck.Cards[0].Values[0].Text)
+	}
+}
+
 func TestAnEmptyDeck(t *testing.T) {
 	n := note(t, "---\ntype: deck\n---\n\nNothing here yet.\n")
 	if n.Type != domain.TypeDeck {

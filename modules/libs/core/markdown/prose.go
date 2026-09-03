@@ -20,7 +20,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) int {
 		return 0
 	}
 	var out strings.Builder
-	var f fence
+	var f Fence
 	body := string(d.body)
 	last, moved := 0, 0
 
@@ -30,7 +30,7 @@ func (d *Document) PointProseAt(from domain.Address, to string) int {
 			end = at + next
 		}
 		line := strings.TrimRight(body[at:end], "\r")
-		if f.crosses(line) || f.inside() {
+		if f.Crosses(line) || f.Inside() {
 			at = end + 1
 			continue
 		}
