@@ -1,3 +1,11 @@
+/**
+ * What a recording tab asks for, under the identities the commands give them:
+ * the words written down, the words put right, and the words taken away.
+ */
+export const TRANSCRIBE = 'transcribe'
+export const PROOFREAD = 'proofread'
+export const DROP = 'dropTranscript'
+
 /** What a recording tab says: the player, and the transcript of the recording. */
 export const WORDS = {
   player: 'The recording',

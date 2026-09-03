@@ -11,15 +11,8 @@ import type { Task } from '../core'
 import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
 import { RECORDING } from '../workspace'
+import { DROP, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
-
-/**
- * What a recording tab asks for, under the identities the commands give them:
- * the words written down, the words put right, and the words taken away.
- */
-export const TRANSCRIBE = 'transcribe'
-export const PROOFREAD = 'proofread'
-export const DROP = 'dropTranscript'
 
 /** What a recording tab asks of the window it is drawn in. */
 export interface Hearing {
