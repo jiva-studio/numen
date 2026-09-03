@@ -111,7 +111,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
       if (from) void held.view.go(from)
       return held
     },
-    called: (held) => plexCalled(words.plex, held.view.neighbourhood.value?.focus?.title ?? ''),
+    called: (held) => plexCalled(words.plex, held.view.neighbourhood.value?.focus.title ?? ''),
     draws: PlexTab,
     shuts: (held) => {
       held.view.close()
@@ -239,8 +239,8 @@ export function plexing(view: Standing, deps: Plexing) {
   const drawn = computed<readonly string[]>(() => {
     const around = view.neighbourhood.value
     if (!around) return []
-    const paths = [around.focus?.path ?? '']
-    for (const related of around.related) if (related.note) paths.push(related.note.path)
+    const paths = [around.focus.path]
+    for (const related of around.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
@@ -403,9 +403,9 @@ export function plexing(view: Standing, deps: Plexing) {
    */
   const nameOf = (path: string): string => {
     const around = view.neighbourhood.value
-    if (around?.focus?.path === path && around.focus.title) return around.focus.title
-    const near = around?.related?.find((one) => one.note?.path === path)
-    return near?.note?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
+    if (around?.focus.path === path && around.focus.title) return around.focus.title
+    const near = around?.related.find((one) => one.path === path)
+    return near?.title || (path.split('/').pop() ?? path).replace(/\.md$/, '')
   }
 
   return {

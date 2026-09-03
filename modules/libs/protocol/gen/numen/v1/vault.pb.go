@@ -186,13 +186,16 @@ func (Seat) EnumDescriptor() ([]byte, []int) {
 }
 
 // Counting is what a piece of work counts. Bytes are read out in the sizes a
-// person reads them in, and everything else is counted one by one.
+// person reads them in, seconds as a length of time, and everything else is
+// counted one by one.
 type Counting int32
 
 const (
 	Counting_COUNTING_UNSPECIFIED Counting = 0
 	Counting_COUNTING_THINGS      Counting = 1
 	Counting_COUNTING_BYTES       Counting = 2
+	// A stretch of a recording, read out as a length of time.
+	Counting_COUNTING_SECONDS Counting = 3
 )
 
 // Enum value maps for Counting.
@@ -201,11 +204,13 @@ var (
 		0: "COUNTING_UNSPECIFIED",
 		1: "COUNTING_THINGS",
 		2: "COUNTING_BYTES",
+		3: "COUNTING_SECONDS",
 	}
 	Counting_value = map[string]int32{
 		"COUNTING_UNSPECIFIED": 0,
 		"COUNTING_THINGS":      1,
 		"COUNTING_BYTES":       2,
+		"COUNTING_SECONDS":     3,
 	}
 )
 
@@ -5953,11 +5958,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
 	"SEAT_CHILD\x10\x02\x12\r\n" +
 	"\tSEAT_JUMP\x10\x03\x12\x10\n" +
-	"\fSEAT_SIBLING\x10\x04*M\n" +
+	"\fSEAT_SIBLING\x10\x04*c\n" +
 	"\bCounting\x12\x18\n" +
 	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fCOUNTING_THINGS\x10\x01\x12\x12\n" +
-	"\x0eCOUNTING_BYTES\x10\x02*I\n" +
+	"\x0eCOUNTING_BYTES\x10\x02\x12\x14\n" +
+	"\x10COUNTING_SECONDS\x10\x03*I\n" +
 	"\x03Way\x12\x13\n" +
 	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tWAY_WORDS\x10\x01\x12\x0f\n" +

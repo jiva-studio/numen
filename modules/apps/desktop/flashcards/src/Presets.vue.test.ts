@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Goal } from '@numen/protocol'
 
 import Presets from './Presets.vue'
 import type { Closes, Preset, Settings } from './scheduling'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
-  goal: Goal.MINUTES_A_DAY,
+  goal: 'minutes',
   byDate: '',
   minutesADay: 20,
   newADay: 10,
@@ -107,7 +106,7 @@ describe('what the goals come to today', () => {
   it('stands on the cards alone where the preset keeps no budget in time', () => {
     const one = shown([
       preset({
-        settings: settings({ goal: Goal.RETENTION, minutesADay: 0 }),
+        settings: settings({ goal: 'retention', minutesADay: 0 }),
         budget: { new: 10, reviews: 45, minutes: 0 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
         answered: 11,
@@ -130,7 +129,7 @@ describe('what the goals come to today', () => {
   it('says a day answered past its budget is over it, and never a percentage', () => {
     const one = shown([
       preset({
-        settings: settings({ goal: Goal.RETENTION }),
+        settings: settings({ goal: 'retention' }),
         budget: { new: 3, reviews: 10, minutes: 20 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
         answered: 66,
@@ -174,7 +173,7 @@ describe('what the goals come to today', () => {
   it('weighs it against the counts where the counts are what close the day', () => {
     const one = shown([
       preset({
-        settings: settings({ goal: Goal.RETENTION }),
+        settings: settings({ goal: 'retention' }),
         budget: { new: 10, reviews: 45, minutes: 5 },
         closes: { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' },
         answered: 11,

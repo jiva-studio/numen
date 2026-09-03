@@ -11,7 +11,7 @@ import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/lib/utils'
 import Menu from '../../../menu/Menu.vue'
 import type { MenuItem } from '../../../menu/model'
-import type { Point } from '../../../plex/model'
+import type { Point } from '../../../lib/geometry'
 import type { SelectChoice } from '.'
 
 const props = withDefaults(

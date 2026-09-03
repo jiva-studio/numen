@@ -442,8 +442,9 @@ const ASKED: Record<Goal, Goals> = {
   date: Goals.BY_DATE,
 }
 
-/** The goal in the window's own words. */
-const WORDED: Partial<Record<Goals, Goal>> = {
+/** The goal in the window's own words. A preset naming none takes the default. */
+const WORDED: Record<Goals, Goal> = {
+  [Goals.UNSPECIFIED]: DEFAULTS.goal,
   [Goals.MINUTES_A_DAY]: 'minutes',
   [Goals.RETENTION]: 'retention',
   [Goals.BY_DATE]: 'date',
@@ -455,8 +456,9 @@ const RULING: Record<Rule, Rules> = {
   retention: Rules.RETENTION,
 }
 
-/** What counts as learned, in the window's own words. */
-const LEARNED: Partial<Record<Rules, Rule>> = {
+/** What counts as learned, in the window's own words. A preset naming none takes the default. */
+const LEARNED: Record<Rules, Rule> = {
+  [Rules.UNSPECIFIED]: DEFAULTS.learned,
   [Rules.INTERVAL]: 'interval',
   [Rules.RETENTION]: 'retention',
 }
@@ -467,8 +469,9 @@ const COUNTING: Record<Counts, Countings> = {
   shows: Countings.SHOWS,
 }
 
-/** What a budget counts, in the window's own words. */
-const COUNTED: Partial<Record<Countings, Counts>> = {
+/** What a budget counts, in the window's own words. A preset naming nothing takes the default. */
+const COUNTED: Record<Countings, Counts> = {
+  [Countings.UNSPECIFIED]: DEFAULTS.counts,
   [Countings.CARDS]: 'cards',
   [Countings.SHOWS]: 'shows',
 }

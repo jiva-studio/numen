@@ -10,9 +10,35 @@ import (
 	"testing"
 )
 
-// outward is what the core may not be compiled from: an adapter, and the place
-// adapters are assembled.
-var outward = []string{module + "adapter", module + "internal/adapter", module + "container"}
+// wire is the module the schema is generated into.
+const wire = "github.com/jiva-studio/numen/modules/libs/protocol"
+
+// outward is what the core may not be compiled from: an adapter, the place
+// adapters are assembled, and the schema an adapter speaks.
+var outward = []string{
+	module + "adapter", module + "internal/adapter", module + "container", wire,
+}
+
+// owedWire are the edges to the schema the core still has. Each is a package
+// naming the wire in the core's own language, and the list only shrinks.
+var owedWire = map[string][]string{
+	// A refusal is one value of an enum the schema declares.
+	"refusal": {wire},
+	// The appearance a window is served is a message.
+	"appearance": {wire},
+	// What two adapters both put on the schema is built here.
+	"internal/wire": {wire},
+}
+
+// owing says whether a package is allowed the edge it has.
+func owing(from, dep string) bool {
+	for _, held := range owedWire[from] {
+		if strings.HasPrefix(dep, held) {
+			return true
+		}
+	}
+	return false
+}
 
 // inward says whether a package of this module is the core. An adapter, the
 // composition root and what only a test builds are the rest of it.
@@ -65,11 +91,14 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 			continue
 		}
 		packages++
+		held := strings.TrimPrefix(pkg.ImportPath, module)
 		for _, dep := range pkg.Deps {
+			if owing(held, dep) {
+				continue
+			}
 			for _, refused := range outward {
 				if strings.HasPrefix(dep, refused) {
-					t.Errorf("%s reaches %s", strings.TrimPrefix(pkg.ImportPath, module),
-						strings.TrimPrefix(dep, module))
+					t.Errorf("%s reaches %s", held, strings.TrimPrefix(dep, module))
 				}
 			}
 		}

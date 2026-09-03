@@ -37,7 +37,7 @@ export function standing(core: Neighbours) {
     try {
       const answer = await core.neighbourhood(path)
       if (!mine.current) return
-      if (!answer.focus?.path) {
+      if (!answer.focus.path) {
         // The vault no longer holds it. What is on screen stays, and following
         // goes on, so putting the file back brings it straight back.
         trouble.value = `${path} is not in the vault`

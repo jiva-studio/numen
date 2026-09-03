@@ -5,7 +5,6 @@
  * and this is what every one of them starts from.
  */
 import type { Counting } from '@numen/ui'
-import type { NeighbourhoodResponse } from '@numen/protocol'
 
 /** A note that is no longer where it was, and where it now is. */
 export interface Went {
@@ -36,8 +35,41 @@ export interface Said {
   readonly done: boolean
 }
 
-/** A neighbourhood of a note, as the vault answers one. */
-export type Neighbourhood = NeighbourhoodResponse
+/** Where a note joined to the note in focus sits around it. */
+export type Seat = 'parent' | 'child' | 'jump' | 'sibling'
+
+/** The note a neighbourhood is drawn around. */
+export interface Focus {
+  /** Where it stands in the vault. Empty for a note the vault no longer holds. */
+  readonly path: string
+  readonly title: string
+}
+
+/** One note joined to the note in focus, and what the line between them says. */
+export interface Neighbour {
+  readonly path: string
+  readonly title: string
+  /** Which of four it is. */
+  readonly type: NoteType
+  readonly seat: Seat
+  /** What the person wrote on the link, and nothing where they wrote nothing. */
+  readonly label: string
+  /** The parent a sibling shares with the note in focus. */
+  readonly through: string
+  /** Whether both notes named the relationship. */
+  readonly mutual: boolean
+}
+
+/**
+ * A neighbourhood of a note, as the vault answers one: the note in focus, and
+ * the notes joined to it. A note the window has no seat for is not one of them.
+ */
+export interface Neighbourhood {
+  readonly focus: Focus
+  /** Which of four the note in focus is. */
+  readonly focusType: NoteType
+  readonly related: readonly Neighbour[]
+}
 
 /** One heading inside a note, which is one of the parts the note divides into. */
 export interface Heading {
@@ -149,7 +181,8 @@ export interface Runs {
   proofreads(path: string): Promise<Outcome>
   /**
    * The transcript of a recording taken away, with everything cut from it, and
-   * whether this build can do it at all.
+   * whether this build can do it at all. The recording is left saying nothing,
+   * and it is offered to be heard again.
    */
   drops(path: string): Promise<boolean>
 }

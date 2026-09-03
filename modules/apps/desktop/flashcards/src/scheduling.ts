@@ -6,11 +6,11 @@
  * and the decks of one preset are counted together however many there are.
  */
 import { computed, ref } from 'vue'
-import { Goal, Stopped } from '@numen/protocol'
-import type { Refusal } from '@numen/protocol'
+import { Stopped } from '@numen/protocol'
+import type { Goal as Goals, Refusal } from '@numen/protocol'
 
-import { deckName } from './core'
-import type { DeckOwing } from './core'
+import { deckName, goaled } from './core'
+import type { DeckOwing, Goal } from './core'
 import { said } from './reading/core'
 import type { Closes, Owing } from './core'
 
@@ -30,6 +30,11 @@ export interface Settings {
   /** What each day of the week carries, in per cent, under the day's own name. */
   load: Record<string, number>
   evenLoad: boolean
+}
+
+/** The same, as the schema carries them. */
+export interface SettingsMessage extends Omit<Settings, 'goal'> {
+  goal: Goals
 }
 
 /**
@@ -53,7 +58,7 @@ export interface Asks {
       | {
           path: string
           title: string
-          settings?: Settings | undefined
+          settings?: SettingsMessage | undefined
           problems: readonly string[]
           /** Why it schedules nothing on the day it was read in. */
           stopsOn: Stopped
@@ -191,7 +196,7 @@ const scheduled = async (presets: Asks, vaultId: string, deck: string): Promise<
       held: {
         path: answer.preset.path,
         name: answer.preset.title,
-        settings,
+        settings: { ...settings, goal: goaled[settings.goal] ?? 'minutes' },
         problems: answer.preset.problems,
         stopsOn: answer.preset.stopsOn,
       },
@@ -452,15 +457,15 @@ export const stoppedWords = (why: Stopped, settings: Settings | null, today: str
  */
 export const goalWords = (settings: Settings, today: string): string => {
   switch (settings.goal) {
-    case Goal.RETENTION:
+    case 'retention':
       return `${Math.round(settings.retention * 100)}% remembered`
-    case Goal.BY_DATE: {
+    case 'date': {
       if (!settings.byDate) return 'by no day'
       const left = daysBetween(today, settings.byDate)
       if (left <= 0) return `by ${dayWords(settings.byDate)}`
       return `${many(left, 'day')} to ${dayWords(settings.byDate)}`
     }
-    default:
+    case 'minutes':
       if (settings.minutesADay === 0) return STOPPED.noMinutes
       return `${many(settings.minutesADay, 'minute')} a day`
   }

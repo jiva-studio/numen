@@ -10,10 +10,10 @@ import { Goal, Stopped } from '@numen/protocol'
 import { counting } from './counting'
 import type { Counts } from './counting'
 import { named, scheduling } from './scheduling'
-import type { Asks, Settings } from './scheduling'
+import type { Asks, SettingsMessage } from './scheduling'
 import type { Owing } from './core'
 
-const dated = (day: string): Settings => ({
+const dated = (day: string): SettingsMessage => ({
   goal: Goal.BY_DATE,
   byDate: day,
   minutesADay: 20,
@@ -38,7 +38,7 @@ const vault: Owing = {
   reading: false,
 }
 
-const answering = (settings: Settings): Asks => ({
+const answering = (settings: SettingsMessage): Asks => ({
   async scheduling() {
     return {
       preset: {

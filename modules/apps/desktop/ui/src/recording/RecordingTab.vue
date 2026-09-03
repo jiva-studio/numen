@@ -12,8 +12,8 @@ import { Ellipsis, LocateFixed } from '@lucide/vue'
 import { Editor, Menu, Player, timing } from '@numen/ui'
 import type { Point } from '@numen/ui'
 import { iconFor } from '../icons'
-import { WORDS as words } from './words'
-import { DROP, PROOFREAD, type Held } from './kind'
+import { DROP, PROOFREAD, WORDS as words } from './words'
+import type { Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
 

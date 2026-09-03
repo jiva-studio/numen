@@ -5,18 +5,22 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { create } from '@bufbuild/protobuf'
 import { showing } from './showing'
 import type { Core, Run, Task } from './core'
 import type { Neighbourhood } from './core'
-import { NeighbourhoodSchema } from './plex/picture'
 
-const answer = (path: string): Neighbourhood =>
-  create(NeighbourhoodSchema, { focus: { path, title: path, identifier: '' }, related: [] })
+const answer = (path: string): Neighbourhood => ({
+  focus: { path, title: path },
+  focusType: 'note',
+  related: [],
+})
 
 /** A neighbourhood of a note the index does not hold: a focus with no path. */
-const nothing = (): Neighbourhood =>
-  create(NeighbourhoodSchema, { focus: { path: '', title: '', identifier: '' }, related: [] })
+const nothing = (): Neighbourhood => ({
+  focus: { path: '', title: '' },
+  focusType: 'note',
+  related: [],
+})
 
 /** A stream that stays open, so a loop waiting on it is not the one under test. */
 const held = () => new Promise<never>(() => {})

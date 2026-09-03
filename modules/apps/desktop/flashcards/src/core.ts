@@ -5,7 +5,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { Rating, FlashcardsService } from '@numen/protocol'
+import { Goal as Goals, Rating, FlashcardsService } from '@numen/protocol'
 import type { Stopped } from '@numen/protocol'
 
 const transport = createConnectTransport({ baseUrl: window.location.origin })
@@ -36,6 +36,17 @@ export const rated: Readonly<Record<Said, Rating>> = {
   hard: Rating.HARD,
   good: Rating.GOOD,
   easy: Rating.EASY,
+}
+
+/** Which value the one control of a preset steers. */
+export type Goal = 'minutes' | 'retention' | 'date'
+
+/** The goal in this window's own words. A preset naming none aims at minutes. */
+export const goaled: Readonly<Record<Goals, Goal>> = {
+  [Goals.UNSPECIFIED]: 'minutes',
+  [Goals.MINUTES_A_DAY]: 'minutes',
+  [Goals.RETENTION]: 'retention',
+  [Goals.BY_DATE]: 'date',
 }
 
 /** One deck's share of what a vault owes. */

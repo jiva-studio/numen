@@ -59,8 +59,11 @@ export interface Passage {
   at: readonly Span[]
 }
 
-/** How a search over the text is asked. */
-export type Way = 'words' | 'meaning'
+/**
+ * How a search over the text is asked. Each way is an order of its own, and
+ * `fused` is every way in one ranking.
+ */
+export type Way = 'fused' | 'words' | 'meaning' | 'names'
 
 /** The two questions the palette asks of the vault. */
 export interface Asking {
