@@ -86,6 +86,7 @@ func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 // Adding a deck does not add to the day's work; it spreads the same work over
 // more decks.
 func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, counts, 40, 40, 40)
 	got := s.rows(t, when)
 	for at := range 3 {
@@ -98,6 +99,7 @@ func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 
 // A deck owing nine times another's takes nine times the share.
 func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, counts, 90, 10)
 	got := s.rows(t, when)
 	if got[deckAt(0)] != 27 || got[deckAt(1)] != 3 {
@@ -113,6 +115,7 @@ func TestADeckOwingMoreTakesTheLargerShare(t *testing.T) {
 // too small a share to buy even that card, and what the shares leave over buys
 // the cards the other two could not afford out of their own.
 func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 1)
 	got := s.rows(t, when)
@@ -132,6 +135,7 @@ func TestADeckThatCannotUseItsShareLeavesItToTheOthers(t *testing.T) {
 
 // A deck holding nothing takes no share of the day.
 func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, counts, 0, 40, 40)
 	got := s.rows(t, when)
 	if got[deckAt(0)] != 0 {
@@ -146,6 +150,7 @@ func TestADeckHoldingNothingTakesNoShare(t *testing.T) {
 // One deck takes the whole day, which is what it did before any of it was
 // divided.
 func TestOneDeckTakesTheWholeDay(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, counts, 40)
 	if got := s.rows(t, when)[deckAt(0)]; got != 30 {
 		t.Errorf("the one deck of the vault holds %d of a day of 30", got)
@@ -154,6 +159,7 @@ func TestOneDeckTakesTheWholeDay(t *testing.T) {
 
 // The minutes are divided the same way the counts are.
 func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
+	t.Parallel()
 	s := dividing(t, "goal: minutes_a_day\nminutes_a_day: 20\n"+
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
 	got := s.rows(t, when)
@@ -168,6 +174,7 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 
 // What the front door says of a deck is what pressing that deck hands over.
 func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
+	t.Parallel()
 	for _, shape := range []struct {
 		front string
 		decks []int
@@ -199,6 +206,7 @@ func TestTheDeckRowIsWhatPressingTheDeckHandsOver(t *testing.T) {
 // Sitting deck by deck spends the same day whichever deck is sat first, and no
 // deck's own share grows because another was sat before it.
 func TestSittingTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
+	t.Parallel()
 	for _, order := range [][]int{{0, 1, 2}, {2, 1, 0}, {1, 0, 2}} {
 		t.Run(fmt.Sprint(order), func(t *testing.T) {
 			s := dividing(t, counts, 40, 40, 40)
@@ -225,6 +233,7 @@ func TestSittingTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 // so the same vault divides the same day whatever order its files are walked
 // in.
 func TestTheDivisionDoesNotTurnOnWhereADeckStands(t *testing.T) {
+	t.Parallel()
 	first := dividing(t, counts, 90, 10).rows(t, when)
 	second := dividing(t, counts, 10, 90).rows(t, when)
 	if first[deckAt(0)] != second[deckAt(1)] || first[deckAt(1)] != second[deckAt(0)] {

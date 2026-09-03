@@ -1,13 +1,10 @@
 <script setup lang="ts">
 /**
- * The field a message is written in, and the disc that sends it.
+ * The field a message is written in, and the disc that sends it. It grows with
+ * what is typed until it reaches the height the tokens allow, then scrolls.
  *
- * Grows with what is typed until it reaches the height the tokens allow, then
- * scrolls. It says what was written and leaves clearing it to whoever
- * answers, so a message that failed to go is still there to try again.
- *
- * It stands on a panel's ground, and what it is written over shows through it.
- * While an answer is on its way the disc stops it.
+ * It says what was written and leaves clearing it to whoever answers. While an
+ * answer is on its way the disc stops it.
  */
 import { computed, useTemplateRef } from 'vue'
 import { Textarea } from '@/components/ui/textarea'
@@ -132,6 +129,9 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 /* One row tall at rest, with the trailing end kept clear for the disc that
    stands there. */
 .composer {
+  /* Lines of typing it grows to before it scrolls. */
+  --lines: 10;
+
   position: relative;
   display: flex;
   min-block-size: var(--numen-field-min);
@@ -163,7 +163,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
   visibility: hidden;
   overflow: hidden;
   max-block-size: calc(
-    (var(--numen-field-lines) - 1) * var(--numen-line-height) * 1em + var(--numen-action-size)
+    (var(--lines) - 1) * var(--numen-line-height) * 1em + var(--numen-action-size)
   );
 }
 

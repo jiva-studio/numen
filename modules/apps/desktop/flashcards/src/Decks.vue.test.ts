@@ -73,6 +73,7 @@ const vault: Owing = {
     },
   ],
   unread: '',
+  reading: false,
 }
 
 const shown = (presets: readonly Preset[], over: Owing = vault) =>

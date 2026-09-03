@@ -22,7 +22,7 @@ const (
 	fieldsKey = "fields"
 )
 
-// Create makes a deck or a stencil.
+// Create makes a deck, a stencil or a preset.
 //
 // One key says what a note is, and the file carries it from the moment it
 // exists: a deck made here is a deck to everything that reads the vault, before
@@ -73,6 +73,14 @@ func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (Made, erro
 		return Made{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
 	return u.make(ctx, v, domain.TypeStencil, in)
+}
+
+// Preset makes a preset naming none of its settings. A key the file does not
+// carry stands at the default, so the decks pointing here are scheduled by
+// them until the person moves one.
+func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (Made, error) {
+	in.Fields = nil
+	return u.make(ctx, v, domain.TypePreset, in)
 }
 
 func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, in New) (Made, error) {

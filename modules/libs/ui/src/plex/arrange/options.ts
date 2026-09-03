@@ -1,12 +1,10 @@
 import type { PlexRelatedSeat } from '../model'
 import { SEATS } from '../model'
+import type { Size } from '../../lib/geometry'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
-export interface Size {
-  readonly width: number
-  readonly height: number
-}
+export type { Size }
 
 export interface BoxOptions {
   /** The focus box. Its width is the widest that box is drawn. */

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -305,5 +306,84 @@ func TestASourceIsCutAgainAsItsLinesArePutRight(t *testing.T) {
 	// Two lines, one to a request.
 	if cuts != 2 {
 		t.Errorf("cut %d times", cuts)
+	}
+}
+
+// Every batch of a transcript carries what the whole recording holds: how its
+// speech opens, and the words that recur through it.
+func TestEveryBatchCarriesWhatTheRecordingHolds(t *testing.T) {
+	words := []string{
+		"The assembly at Mithila heard Ganaka.",
+		"The teacher listened. Then Ganaka spoke of Mithila",
+		"as a city nobody had named before him.",
+	}
+	u, v, _, by, _ := hearing(t, nil, words...)
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(by.about) != len(words) {
+		t.Fatalf("it was asked about %d batches", len(by.about))
+	}
+	for _, about := range by.about {
+		for _, want := range []string{"The speech opens: The assembly at Mithila", "Mithila, Ganaka"} {
+			if !strings.Contains(about, want) {
+				t.Errorf("a batch says the recording holds %q, and it does not carry %q", about, want)
+			}
+		}
+	}
+}
+
+// A transcript nothing is left to be asked about is not work, and nothing is
+// told about it.
+func TestATranscriptAtItsLastLineReportsNoProgress(t *testing.T) {
+	words := []string{"first thing", "secnd thing"}
+	u, v, _, _, _ := hearing(t, map[int]string{1: corrects(1, "second thing")}, words...)
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	told := 0
+	u.By = &corrector{}
+	u.OnProgress = func(PutRightResult) { told++ }
+	res, err := u.Execute(t.Context(), v, recordingPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Read != res.Lines {
+		t.Fatalf("got %+v", res)
+	}
+	if told != 0 {
+		t.Errorf("a transcript with nothing left to put right was told about %d times", told)
+	}
+}
+
+// The seams are asked about after the whole transcript is, and a run taking up
+// among them is work a person is told about.
+func TestARunTakingUpAmongTheSeamsIsToldAbout(t *testing.T) {
+	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}
+	u, v, shelved, _, hash := hearing(t, nil, words...)
+	u.BatchSize, u.Overlap, u.InFlight = 2, 1, 1
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	// The shelf as a run that ended between the two passes left it: every line
+	// asked about, and no seam.
+	stood, err := json.Marshal(putting{By: u.By.Name(), At: stretch(len(words) - 1).To})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := shelved.Write(t.Context(), text.Proofread(text.ASR, hash), stood); err != nil {
+		t.Fatal(err)
+	}
+
+	told := 0
+	u.OnProgress = func(PutRightResult) { told++ }
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if told == 0 {
+		t.Error("a run over the seams was told about no times")
 	}
 }

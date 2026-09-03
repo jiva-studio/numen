@@ -148,17 +148,17 @@ describe('how close a page is drawn', () => {
   it('goes no further out than a whole page in the room', () => {
     // Further than that is a page smaller than the room it stands in, which is
     // room going to waste.
-    expect(drawn(FURTHEST, 1 / NEARER)).toBe(FURTHEST)
-    expect(drawn(FURTHEST * NEARER, 1 / NEARER)).toBeCloseTo(FURTHEST, 5)
+    expect(drawn(FURTHEST / NEARER)).toBe(FURTHEST)
+    expect(drawn(FURTHEST)).toBeCloseTo(FURTHEST, 5)
   })
 
   it('goes no closer in than the closest', () => {
-    expect(drawn(CLOSEST, NEARER)).toBe(CLOSEST)
+    expect(drawn(CLOSEST * NEARER)).toBe(CLOSEST)
   })
 
-  it('draws closer and further by one step', () => {
-    expect(drawn(2, NEARER)).toBeCloseTo(2 * NEARER, 5)
-    expect(drawn(2, 1 / NEARER)).toBeCloseTo(2 / NEARER, 5)
+  it('leaves alone what stands between the two', () => {
+    expect(drawn(2 * NEARER)).toBeCloseTo(2 * NEARER, 5)
+    expect(drawn(2 / NEARER)).toBeCloseTo(2 / NEARER, 5)
   })
 })
 

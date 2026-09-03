@@ -1,13 +1,10 @@
 /**
- * What a tab holds, and what each event makes of it.
+ * What a tab holds, and what each event makes of it: the text on screen, the
+ * file it came from, and the write on its way there.
  *
- * A tab is the text on screen, the file it came from, and the write on its way
- * there. The rules that keep the three in step are here, so that a test can ask
- * them without a browser.
- *
- * Nothing happens here: an event is answered with the next tab and what should
- * be done — a read to issue, a write to begin, the interval to arm — and the
- * caller does it. The interval is a port, and the model is told that it fired.
+ * An event is answered with the next tab and what should be done — a read to
+ * issue, a write to begin, the interval to arm — and the caller does it. The
+ * interval is a port, and the model is told that it fired.
  */
 
 /** Why writing or reading is impossible. */

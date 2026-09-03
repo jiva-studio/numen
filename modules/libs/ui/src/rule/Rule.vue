@@ -1,15 +1,11 @@
 <script setup lang="ts">
 /**
- * A rule with something standing on it.
+ * A rule with something standing on it, in the middle or leading the rule where
+ * it is given `at="start"`.
  *
- * What it holds stands in the middle, or leads the rule where it is given
- * `at="start"`, the line before it coming down to a stub the width of the air
- * it keeps.
- *
- * The line is drawn either side of what it holds and never under it: it is the
- * rule's own decoration, so nothing is announced around what stands there, and
- * what stands there keeps its own name. The line gives way as the room runs
- * out, and the rule stays one line however narrow it is drawn.
+ * The line is the rule's own decoration: nothing is announced around what stands
+ * there, and what stands there keeps its own name. The line gives way as the
+ * room runs out, and the rule stays one line however narrow it is drawn.
  */
 withDefaults(defineProps<{ at?: 'middle' | 'start' }>(), { at: 'middle' })
 </script>

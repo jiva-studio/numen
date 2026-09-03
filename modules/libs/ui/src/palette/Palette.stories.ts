@@ -7,7 +7,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, type Component } from 'vue'
+import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
 import { keyChord, type PaletteBand, type PaletteSpan } from './model'
 import {
@@ -220,13 +221,15 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const palette = () => document.body.querySelector<HTMLElement>('.palette')
+const palette = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
-const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__item'))
-const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
-const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
-const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
-const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
+const options = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
+const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
+const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const deeds = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
 /** What a line says, with the runs it is written in run together. */
 const said = (of: Element | null | undefined): string =>
@@ -323,7 +326,7 @@ export const LitAlone: Story = {
 /** Every band came back with nothing, so there is nowhere to stand. */
 export const LitNothing: Story = {
   args: {
-    bands: [{ id: 'names', title: 'Names', items: [], silence: 'No name holds those words' }],
+    bands: [{ id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(palette()).not.toBeNull())
@@ -440,14 +443,49 @@ export const Filling: Story = {
   },
 }
 
-/** Every band came back with nothing, each saying so in its own words. */
+/**
+ * Every band was asked and answered with nothing. A band that has answered and
+ * has nothing to say is worth no heading of its own, so none of them is drawn
+ * and what stands there is what the caller says in place of a list.
+ */
 export const Nothing: Story = {
   args: {
     bands: [
-      { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
-      { id: 'text', title: 'Text', items: [], silence: 'Nothing is written with them' },
+      { id: 'names', title: 'Names', items: [] },
+      { id: 'text', title: 'Text', items: [] },
+      { id: 'meaning', title: 'Meaning', items: [] },
+    ],
+  },
+  play: async () => {
+    await waitFor(() =>
+      expect(document.body.querySelectorAll('[data-palette="title"]')).toHaveLength(0),
+    )
+    await expect(said(document.body.querySelector('[data-palette="nothing"]'))).toBe(
+      'Type to look for something',
+    )
+  },
+}
+
+/**
+ * One band answered with nothing and another could not be asked at all. The
+ * first is drawn nowhere; the second says why in its own words, which is
+ * something a person needs to be told.
+ */
+export const CouldNotBeAsked: Story = {
+  args: {
+    bands: [
+      { id: 'names', title: 'Names', items: [] },
+      { id: 'text', title: 'Text', items: [] },
       { id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' },
     ],
+  },
+  play: async () => {
+    const drawn = () =>
+      Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
+        band.textContent?.trim(),
+      )
+    await waitFor(() => expect(drawn()).toEqual(['Meaning']))
+    await expect(said(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
   },
 }
 
@@ -460,6 +498,129 @@ export const Unasked: Story = {
 export const Alone: Story = {
   args: {
     bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+  },
+}
+
+/** What each row of the marks story is drawn as. The map is the caller's. */
+const MARKS: Record<string, Component> = {
+  note: FileText,
+  deck: Layers,
+  stencil: LayoutTemplate,
+  preset: Gauge,
+  book: BookOpen,
+  recording: AudioLines,
+}
+
+/** A palette whose rows are marked, which is the caller filling the icon slot. */
+const marked = (args: Knobs) => ({
+  components: { Palette },
+  setup() {
+    const open = ref(true)
+    const typed = ref('ent')
+    return { args, open, typed, marks: MARKS }
+  },
+  template: `
+    <div class="numen" style="height:100vh;background:var(--numen-surface)">
+      <Palette
+        v-model="typed"
+        :bands="args.bands"
+        :open="open"
+        @choose="args.onChoose"
+        @dismiss="args.onDismiss"
+      >
+        <template #icon="{ id }">
+          <component :is="marks[id]" v-if="marks[id]" style="inline-size:100%;block-size:100%" />
+        </template>
+      </Palette>
+    </div>
+  `,
+})
+
+/** What a mark stands in, and what it draws, as the drawn rows report it. */
+const markOf = (row: Element | null | undefined): string =>
+  /lucide-([a-z-]+)-icon/.exec(row?.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ?? ''
+
+/**
+ * A mark before every row, drawn by whoever offered the row: here a note, a
+ * deck, a stencil, a preset, a book and a recording, each drawn as itself. A
+ * row the caller has no mark for keeps the room, so the names line up down the
+ * list.
+ */
+export const Marks: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          named('note', 'Entropy', 'ent'),
+          named('deck', 'Words to learn', ''),
+          named('stencil', 'Animal', ''),
+          named('preset', 'Every day', ''),
+        ],
+      },
+      {
+        id: 'text',
+        title: 'Text',
+        items: [
+          passage('book', 'The Mahabharata', 'the war of the two houses', 'war'),
+          passage('recording', '730709BG.LON.mp3', 'what was said that morning', 'said'),
+          named('nothing', 'A file of no kind', ''),
+        ],
+      },
+    ],
+  },
+  render: marked,
+  play: async () => {
+    await waitFor(() => expect(options()).toHaveLength(7))
+
+    await expect(options().map(markOf)).toEqual([
+      'file-text',
+      'layers',
+      'layout-template',
+      'gauge',
+      'book-open',
+      'audio-lines',
+      '',
+    ])
+    // The row with no mark keeps the room for one, so the names line up.
+    await expect(options()[6]?.querySelector('[data-palette="icon"]')).not.toBeNull()
+  },
+}
+
+/**
+ * Where a mark stands on a row carrying two lines: on the name, not between the
+ * two lines, so the marks read down the list beside the names.
+ */
+export const MarksOnTheName: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          named('note', 'Entropy', 'ent'),
+          passage('deck', 'Words to learn', LONG, 'the'),
+        ],
+      },
+    ],
+  },
+  render: marked,
+  play: async () => {
+    await waitFor(() => expect(options()).toHaveLength(2))
+
+    for (const row of options()) {
+      const mark = row.querySelector('[data-palette="icon"]')!.getBoundingClientRect()
+      const name = row.querySelector('[data-palette="name"]')!.getBoundingClientRect()
+      const middle = (box: DOMRect) => box.top + box.height / 2
+      // Centred on the name's own line, within the rounding a layout leaves.
+      await expect(Math.abs(middle(mark) - middle(name))).toBeLessThan(1.5)
+    }
+
+    // The second row is the tall one, so a mark centred on the row would sit
+    // well below the name.
+    const rows = options().map((row) => row.getBoundingClientRect().height)
+    await expect(rows[1]).toBeGreaterThan(rows[0]! + 8)
   },
 }
 
@@ -491,7 +652,7 @@ export const FarTooMany: Story = {
 
     // A row is as tall as the type it is set in, so it lands on a fraction of
     // a pixel and is brought into sight to within one.
-    const list = document.body.querySelector<HTMLElement>('.palette__list')!
+    const list = document.body.querySelector<HTMLElement>('[data-palette="list"]')!
     const inside = last.getBoundingClientRect()
     const room = list.getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(room.bottom + 1)
@@ -541,8 +702,8 @@ export const TooLong: Story = {
   play: async () => {
     await waitFor(() => expect(palette()).not.toBeNull())
 
-    const panel = document.body.querySelector<HTMLElement>('.palette__panel')!
-    const over = document.body.querySelector<HTMLElement>('.palette')!
+    const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
+    const over = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
     const clear = parseFloat(getComputedStyle(over).paddingInlineStart)
     const drawn = panel.getBoundingClientRect()
     const room = over.getBoundingClientRect()
@@ -601,15 +762,15 @@ export const NotToBeChosen: Story = {
 }
 
 /**
- * One band answered and another came back with nothing.
+ * One band answered, another is still filling, and a third could not be asked.
  *
- * The empty one is still drawn — it says the question was asked — and it stands
- * at the foot, out of the way of what a person is actually reading.
+ * The one with something to say is still drawn, and it stands at the foot, out
+ * of the way of what a person is actually reading.
  */
 export const SomeCameBackEmpty: Story = {
   args: {
     bands: [
-      { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
+      { id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' },
       TEXT,
       { ...MEANING, working: true },
     ],
@@ -617,7 +778,7 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('.palette__title')).map((band) =>
+    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
       band.textContent?.trim(),
     )
     await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
@@ -642,9 +803,9 @@ export const FiveActions: Story = {
   play: async ({ args }) => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const reach = Array.from(document.body.querySelectorAll('.palette__key')).map(said)
+    const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(said)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
-    await expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
+    await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
 
     await userEvent.keyboard('{Enter}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
@@ -686,7 +847,7 @@ export const ActionPanel: Story = {
     await userEvent.keyboard('{ArrowUp}')
     const last = deeds().at(-1)!
     const inside = last.getBoundingClientRect()
-    const room = document.body.querySelector<HTMLElement>('.palette__deeds')!.getBoundingClientRect()
+    const room = document.body.querySelector<HTMLElement>('[data-actions="list"]')!.getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
     await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
 
@@ -768,7 +929,7 @@ export const Steps: Story = {
     await userEvent.keyboard('{Enter}')
 
     await waitFor(() =>
-      expect(document.body.querySelector('.palette__crumb')?.textContent).toBe(
+      expect(document.body.querySelector('[data-palette="crumb"]')?.textContent).toBe(
         'New name for «Entropy»',
       ),
     )
@@ -812,7 +973,7 @@ export const KeyHints: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const hints = Array.from(document.body.querySelectorAll('.palette__hint'))
+    const hints = Array.from(document.body.querySelectorAll('[data-palette="hint"]'))
     await expect(hints.map(spoken)).toEqual([
       'Command N',
       'Command Shift P',

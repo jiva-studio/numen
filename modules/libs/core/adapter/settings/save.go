@@ -8,6 +8,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // Setting is one field of the file and where in it that field sits:
@@ -29,6 +31,10 @@ type Setting struct {
 // more than the setting being saved. A file that is not there is written
 // holding the named fields alone, and every field a settings file leaves out
 // keeps its default.
+//
+// A file the settings could not be read out of again is not written either: a
+// value of the wrong shape, and a number past what its setting goes to, are
+// refused where they are handed in.
 func Save(path string, settings ...Setting) error {
 	raw, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -52,10 +58,24 @@ func Save(path string, settings ...Setting) error {
 		raw = patched
 	}
 
+	if err := holds(raw); err != nil {
+		return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
+	}
+
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
 	return replace(path, raw)
+}
+
+// holds says what is wrong with the settings these bytes make, and nothing
+// where they read out as settings this build can work with.
+func holds(raw []byte) error {
+	held := Defaults()
+	if err := json.Unmarshal(raw, &held); err != nil {
+		return err
+	}
+	return held.Appearance.Check()
 }
 
 // rename gives one field of the file another name. Its value, its place among

@@ -4,8 +4,7 @@
  *
  * The components take names and text and hand them back under identities they
  * were given. Minting those identities, and turning what a person did into the
- * cards and the fields a file is written from, is here, so a test can ask it
- * without a screen.
+ * cards and the fields a file is written from, is here.
  */
 import {
   CARD_HEAD,

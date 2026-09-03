@@ -6,6 +6,7 @@ import "testing"
 // the notes the deck is joined to. A preset is how the cards come round and not
 // what they were written from.
 func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"presets/Steady.md": "---\ntype: preset\ngoal: retention\nretention: 0.95\n---\n" +
 			"\n# Steady\n\nA slower climb through the same cards.\n",
@@ -24,6 +25,7 @@ func TestThePresetADeckIsScheduledByIsNotSomethingToRead(t *testing.T) {
 // A preset written into a note that points back at the deck is read like any
 // other note: what the deck is scheduled by is what the deck's own link says.
 func TestAPresetIsLeftOutOfEveryCardsPanel(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"presets/Steady.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
 			"\n# Steady\n",

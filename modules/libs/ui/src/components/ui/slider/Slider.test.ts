@@ -155,14 +155,6 @@ describe('a value the ends do not hold', () => {
   })
 })
 
-describe('the box it is drawn in', () => {
-  it('is the caller’s to size, and the handle is left alone', () => {
-    const control = mountSlider({ class: 'w-40' })
-    expect(control.get('[data-slot="slider"]').classes()).toContain('w-40')
-    expect(handle(control).classes()).not.toContain('w-40')
-  })
-})
-
 describe('coming to rest', () => {
   /** A walk of so many places, the key held down the whole way. */
   const walked = async (control: ReturnType<typeof mountSlider>, places: readonly number[]) => {

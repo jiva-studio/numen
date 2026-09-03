@@ -50,6 +50,10 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	api, held := windowed(t, deck, other)
 
+	// The vaults are read when the window opens them, and what a count comes to
+	// is what is under test here.
+	front(t, api)
+
 	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
 	if err != nil {
 		t.Fatal(err)

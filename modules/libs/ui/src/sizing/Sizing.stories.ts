@@ -22,10 +22,6 @@ const CHROME = [
   '--numen-inset',
   '--numen-inset-wide',
   '--numen-radius',
-  '--numen-plex-radius',
-  '--numen-plex-radius-focus',
-  '--numen-handle-radius',
-  '--numen-handle-arm',
   '--numen-edge-label-halo',
   '--numen-radius-panel',
   '--numen-panel-padding',
@@ -37,13 +33,12 @@ const CHROME = [
 ] as const
 
 /** What the text multiplier reaches, over whatever the interface is drawing. */
-const READING = ['--numen-reading-size'] as const
+const READING = ['--numen-reading-size', '--numen-prose-size'] as const
 
 /** What follows neither: one line, whatever it separates. */
 const NEITHER = [
   '--numen-stroke',
   '--numen-ring-width',
-  '--numen-handle-stroke',
   '--numen-edge-width',
 ] as const
 
@@ -67,13 +62,9 @@ const AS_DESIGNED: Record<Token, number> = {
   '--numen-field-text-inset': 14,
   '--numen-turn-gap': 16,
   '--numen-reading-size': 13,
+  '--numen-prose-size': 14,
   '--numen-stroke': 1,
   '--numen-ring-width': 2,
-  '--numen-plex-radius': 6,
-  '--numen-plex-radius-focus': 8,
-  '--numen-handle-radius': 9,
-  '--numen-handle-arm': 4,
-  '--numen-handle-stroke': 1.5,
   '--numen-edge-width': 1.25,
   '--numen-edge-label-halo': 3,
 }

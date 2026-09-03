@@ -11,6 +11,8 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { awkwardLabels } from '../fixtures/neighbourhoods'
+import { hovered, lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 import {
   RELATED_SEATS,
   type NodeStanding,
@@ -307,6 +309,31 @@ export const AwkwardLabels: Story = {
 }
 
 /**
+ * The two corners a node is drawn with: its own, and the wider one the node in
+ * front wears.
+ *
+ * Both are lengths in rem inside the node itself, and what a rem comes to is
+ * the browser's answer and no test's.
+ */
+export const TheCornersAreAsDesigned: Story = {
+  render: on(
+    (args) => [
+      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: -130 }),
+      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: 130, width: 176 }),
+    ],
+    { width: 560, height: 200 },
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const boxOf = (title: string): SVGRectElement =>
+      canvas.getByLabelText(new RegExp(`^${title},`)).querySelector('rect')!
+
+    await expect(getComputedStyle(boxOf('Below it')).rx).toBe('6px')
+    await expect(getComputedStyle(boxOf('Where you are')).rx).toBe('8px')
+  },
+}
+
+/**
  * On its way in or out, beside one that has arrived — because faintness only
  * means anything against something that is fully there.
  *
@@ -319,4 +346,53 @@ export const PartWayThere: Story = {
     nodeFrom(args, { id: 'staying', title: 'Staying', x: -84 }),
     nodeFrom(args, { id: 'going', title: 'On its way out', x: 84, opacity: 0.35 }),
   ]),
+}
+
+/**
+ * On the dark set of tokens, with the pointer put on a plain node and on the
+ * focused one.
+ *
+ * Hover mixes a little of a node's own title into the ground under it, and the
+ * focused node is painted from a different pair. Both have to move towards
+ * their own title on a dark ground as they do on a light one.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  render: on(
+    (args) => [
+      nodeFrom(args, { id: 'focus', title: 'Where you are', seat: 'focus', x: -130, width: 176 }),
+      nodeFrom(args, { id: 'child', title: 'Below it', seat: 'child', x: 130 }),
+    ],
+    { width: 560, height: 200 },
+  ),
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const canvas = within(canvasElement)
+
+    const fills: number[] = []
+    for (const title of ['Where you are', 'Below it']) {
+      const node = canvas.getByLabelText(new RegExp(`^${title},`))
+      const box = node.querySelector('rect')!
+      const ink = lightness(getComputedStyle(canvas.getByText(title)).color)
+      const resting = lightness(getComputedStyle(box).fill)
+      fills.push(resting)
+
+      // The title is read off the ground the box is painted, which is what the
+      // hover then moves a little way towards. On the dark set a plain node is
+      // light on dark and the focused one is dark on light.
+      await expect(Math.abs(ink - resting)).toBeGreaterThan(40)
+      await expect(Math.sign(ink - resting)).toBe(title === 'Where you are' ? -1 : 1)
+
+      await hovered(node)
+      await waitFor(async () => {
+        const moved = lightness(getComputedStyle(box).fill) - resting
+        await expect(Math.abs(moved)).toBeGreaterThan(2)
+        await expect(Math.sign(moved)).toBe(Math.sign(ink - resting))
+      })
+    }
+
+    // The focused node is painted from its own pair, so it is not the same
+    // ground as the node beside it.
+    await expect(Math.abs(fills[0]! - fills[1]!)).toBeGreaterThan(2)
+  },
 }

@@ -6,17 +6,28 @@
  */
 import { describe, expect, it } from 'vitest'
 import { banded } from '@numen/ui'
-import { cannotRun, runsAgain } from '../commanding'
 import type { Source } from '../core'
-import { itemsFor, OFFERED } from './menu'
+import {
+  itemsFor,
+  type CanRun,
+  NEW_DECK,
+  NEW_FOLDER,
+  NEW_NOTE,
+  NEW_PRESET,
+  NEW_STENCIL,
+  OFFERED,
+} from './menu'
+
+/** A window that has been told nothing, which can do every run. */
+const anything: CanRun = () => true
 
 /** What a row of that kind offers, by the identity of each item. */
-const on = (source: Source, folder = false): readonly string[] =>
-  itemsFor({ source, folder }, false).map((one) => one.id)
+const on = (source: Source, folder = false, canRun: CanRun = anything): readonly string[] =>
+  itemsFor({ source, folder }, false, canRun).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
 const drawn = (source: Source): readonly string[] =>
-  banded(itemsFor({ source, folder: false }, false)).map(
+  banded(itemsFor({ source, folder: false }, false, anything)).map(
     (one) => `${one.rule ? '— ' : ''}${one.id}`,
   )
 
@@ -58,7 +69,7 @@ describe('the menu on a row standing for anything else', () => {
   })
 
   it('offers neither off every row, where there is nothing to run it over', () => {
-    const made = itemsFor(null, false).map((one) => one.id)
+    const made = itemsFor(null, false, anything).map((one) => one.id)
     expect(made).not.toContain('transcribe')
     expect(made).not.toContain('recognise')
   })
@@ -70,6 +81,7 @@ describe('where a run stands in the menu', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -83,6 +95,7 @@ describe('where a run stands in the menu', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -93,13 +106,33 @@ describe('where a run stands in the menu', () => {
 
 describe('the menu where this build cannot do a run at all', () => {
   it('offers the recording nothing, and leaves the scan its own run', () => {
-    cannotRun('transcribe')
-    try {
-      expect(on('recording')).not.toContain('transcribe')
-      expect(on('book')).toContain('recognise')
-    } finally {
-      runsAgain()
+    const but: CanRun = (run) => run !== 'transcribe'
+
+    expect(on('recording', false, but)).not.toContain('transcribe')
+    expect(on('book', false, but)).toContain('recognise')
+  })
+})
+
+describe('the four files the menu makes', () => {
+  it('offers a preset off every row, beside the note, the deck and the stencil', () => {
+    expect(itemsFor(null, false, anything).map((one) => one.id)).toStrictEqual([
+      NEW_NOTE,
+      NEW_DECK,
+      NEW_STENCIL,
+      NEW_PRESET,
+      NEW_FOLDER,
+    ])
+  })
+
+  it('offers a preset on a row of every kind', () => {
+    for (const source of ['note', 'book', 'recording', 'other'] as Source[]) {
+      expect(on(source), source).toContain(NEW_PRESET)
+      expect(on(source, true), source).toContain(NEW_PRESET)
     }
+  })
+
+  it('offers a preset in the band the files stand in', () => {
+    expect(drawn('note')).toContain(NEW_PRESET)
   })
 })
 
@@ -107,5 +140,9 @@ describe('what the menu offers anywhere', () => {
   it('holds both runs, so choosing one is the menu’s own', () => {
     expect(OFFERED.has('transcribe')).toBe(true)
     expect(OFFERED.has('recognise')).toBe(true)
+  })
+
+  it('holds the preset, so choosing it is the menu’s own', () => {
+    expect(OFFERED.has(NEW_PRESET)).toBe(true)
   })
 })

@@ -3,16 +3,8 @@
  * The days of the week as seven chips, each standing at a level. Pressing a day
  * offers the levels, and the day it was chosen for is handed back with it.
  *
- * A chip is a button that offers a menu: it says the day, the level it stands
- * at and whether its levels are open. It holds nothing down.
- *
- * A row nobody may turn is still read: its chips keep the keyboard, say they
- * are disabled, and offer nothing when they are pressed.
- *
- * The row is one stop on the way round the screen; the arrow keys move along
- * it and the space bar offers the levels. A day is filled in step with the
- * level it stands at, so the week is read at a glance without opening anything:
- * a full day is full colour, and a day at nothing has none.
+ * A chip is filled in step with the level it stands at. A row nobody may turn
+ * keeps the keyboard, says so, and offers nothing.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
@@ -109,8 +101,8 @@ const filling = (level: number) => {
           cn(
             'inline-flex size-7 shrink-0 items-center justify-center rounded-pill',
             'border border-rule font-sans text-base font-medium',
-            'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
-            'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+            'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
+            'outline-none ring-numen',
             'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "

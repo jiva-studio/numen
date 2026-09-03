@@ -9,6 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref } from 'vue'
 import Switch from './Switch.vue'
+import { lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
@@ -76,6 +78,32 @@ export const Unbroken: Story = { args: { said: UNBROKEN } }
 
 /** No name at all. */
 export const NoTextAtAll: Story = { args: { said: '' } }
+
+/**
+ * The switch on the dark set of tokens. Which way it stands is told by the
+ * colour of the track, so the two are held apart there as well.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: { on: false },
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const control = switched(canvasElement)
+    const off = getComputedStyle(control).backgroundColor
+
+    await userEvent.click(control)
+    await waitFor(() => expect(control.getAttribute('aria-checked')).toBe('true'))
+    await waitFor(() => expect(getComputedStyle(control).backgroundColor).not.toBe(off))
+
+    // The accent the track comes to rest in stands above the quiet colour it
+    // was, which is the way round the dark set is written.
+    await waitFor(() =>
+      expect(lightness(getComputedStyle(control).backgroundColor)).toBeGreaterThan(
+        lightness(off) + 8,
+      ),
+    )
+  },
+}
 
 /** It is announced as a switch, and says which way it is. */
 export const AnnouncedAsASwitch: Story = {

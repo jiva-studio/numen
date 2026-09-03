@@ -1,22 +1,30 @@
 <script setup lang="ts">
 /**
- * One node: its box, its title, and the handle to reach out from.
- *
- * Every number it draws with is already on the node it was handed. Where the
- * hand and the keyboard are is its own affair — the handle appears under
- * either — and the one thing it cannot work out is what it is to a gesture,
- * which arrives as its standing.
+ * One node: its box, its title, and the handle to reach out from. Every number
+ * it draws with is already on the node it was handed, but for what it is to a
+ * gesture, which arrives as its standing.
  *
  * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
  */
-import { Comment, computed, Fragment, ref, Text, useSlots, watch, type VNode } from 'vue'
+import {
+  Comment,
+  computed,
+  Fragment,
+  ref,
+  Text,
+  useSlots,
+  useTemplateRef,
+  watch,
+  type VNode,
+} from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
+import PlexNodeParts from './PlexNodeParts.vue'
 import { isMenuKey, isPress, isShowKey } from './keys'
 import { DWELL, useDwell, type Widened } from '../dwell'
 import { byHandle, type Reaching } from '../reaching'
 import { byDoubleClick, joined, type Showing } from '../showing'
-import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
+import type { HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
 import type { MenuOpening } from '../../menu/model'
@@ -82,11 +90,11 @@ const emit = defineEmits<{
   /** The handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask'): void
   /**
-   * A menu was asked for on this node: where it was asked, the element it was
-   * asked from, and what asked for it. A keypress carries no point, so it
-   * carries both.
+   * A menu was asked for on this node: where it was asked, and what asked for
+   * it. A keypress carries no point of its own, so the middle of the box is
+   * where it is asked.
    */
-  (event: 'menu', at: Point, from: SVGGElement, opening: MenuOpening): void
+  (event: 'menu', at: Point, opening: MenuOpening): void
   /**
    * The attention has settled on this node, or has left it. A widened box is
    * drawn last of all, and which box that is only the whole picture knows.
@@ -95,6 +103,11 @@ const emit = defineEmits<{
   /** A part of this node was chosen. The identifier is the caller's. */
   (event: 'enter', part: string): void
 }>()
+
+const group = useTemplateRef<SVGGElement>('group')
+
+/** The keyboard put back on this node by whoever took it away. */
+defineExpose({ focus: () => group.value?.focus() })
 
 const over = ref(false)
 const attended = ref(false)
@@ -168,20 +181,15 @@ const middleOf = (element: SVGGElement): Point => {
 const onContextMenu = (event: MouseEvent) => {
   if (ghost.value) return
   event.preventDefault()
-  emit(
-    'menu',
-    { x: event.clientX, y: event.clientY },
-    event.currentTarget as SVGGElement,
-    'pointer',
-  )
+  emit('menu', { x: event.clientX, y: event.clientY }, 'pointer')
 }
 
 const onKey = (event: KeyboardEvent) => {
-  const group = event.currentTarget as SVGGElement
   if (isMenuKey(event)) {
     if (ghost.value) return
     event.preventDefault()
-    emit('menu', middleOf(group), group, 'keyboard')
+    const box = group.value
+    if (box) emit('menu', middleOf(box), 'keyboard')
     return
   }
   if (isShowKey(event)) {
@@ -269,61 +277,6 @@ const box = computed<Widened>(() => {
 /** Where the box begins, which everything drawn in it is placed from. */
 const startsAt = computed(() => box.value.offset - box.value.width / 2)
 
-/** How far the window on the parts has been wound down, counted in parts. */
-const wound = ref(0)
-
-/** The parts, as far out from under the box as they have come. */
-const opened = computed(() =>
-  props.hung ? openedTo(props.hung, open.value, wound.value) : null,
-)
-
-/** What a wheel moved that came to no whole part, held for the next one. */
-let carried = 0
-
-// The window opens at the top each time the attention settles afresh, and is
-// left where it stands while the attention leaves.
-watch(under, (now) => {
-  if (now === null) return
-  wound.value = 0
-  carried = 0
-})
-
-/**
- * Winding the window over the parts. A wheel with nowhere to go is left to
- * whatever else wants it, and what it moved that came to no whole part is
- * carried into the next one.
- */
-const wind = (event: WheelEvent) => {
-  const hung = props.hung
-  const shown = opened.value
-  if (!hung || !shown) return
-
-  const wheel = { delta: event.deltaY, mode: event.deltaMode }
-  const { by, left } = woundBy(hung, wheel, carried)
-  if (by === 0) {
-    carried = left
-    return
-  }
-  if (by < 0 ? !shown.above : !shown.below) {
-    carried = 0
-    return
-  }
-
-  carried = left
-  event.preventDefault()
-  event.stopPropagation()
-  // Stepped from where the window really stands, which is the picture's own
-  // reckoning of it.
-  wound.value = shown.first + by
-}
-
-/** The line a mark at an edge is drawn along. */
-const markLine = (mark: Mark) =>
-  mark.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
-
-/** A part chosen. */
-const enter = (part: string) => emit('enter', part)
-
 // A box that has begun to open is already over its neighbours.
 watch(
   () => open.value > 0,
@@ -350,6 +303,7 @@ const hue = computed(() => ({
 
 <template>
   <g
+    ref="group"
     class="plex__node"
     :style="hue"
     :transform="`translate(${node.x} ${node.y})`"
@@ -392,52 +346,12 @@ const hue = computed(() => ({
       </div>
     </foreignObject>
 
-    <!-- The parts, come out from under the box. They are for the hand; the
-         same parts are reached by name in the palette. -->
-    <g v-if="hung && opened" class="plex__inside" aria-hidden="true" @wheel="wind">
-      <!-- One ground under all of them, as deep as they have come. -->
-      <rect
-        class="plex__ground"
-        :x="hung.offset - hung.width / 2"
-        :y="hung.top"
-        :width="hung.width"
-        :height="opened.height"
-        :opacity="opened.opacity"
-      />
-      <g
-        v-for="part in opened.parts"
-        :key="part.id"
-        :opacity="part.opacity"
-        :transform="`translate(0 ${hung.top + hung.pad + part.y})`"
-      >
-        <foreignObject
-          :x="hung.offset - hung.width / 2 + hung.pad"
-          y="0"
-          :width="hung.width - 2 * hung.pad"
-          :height="hung.partHeight"
-        >
-          <div
-            class="plex__part"
-            :style="{
-              paddingInlineStart: `calc(var(--numen-node-padding) + ${part.indent}px)`,
-            }"
-            @click.stop="enter(part.id)"
-            @dblclick.stop
-          >
-            <span class="plex__part-text">{{ part.text }}</span>
-          </div>
-        </foreignObject>
-      </g>
-
-      <!-- More of them than the window holds, the way they are wound to. -->
-      <path
-        v-for="mark in opened.marks"
-        :key="mark.at"
-        class="plex__more"
-        :d="markLine(mark)"
-        :opacity="opened.opacity"
-      />
-    </g>
+    <PlexNodeParts
+      v-if="hung"
+      :hung="hung"
+      :open="open"
+      @enter="emit('enter', $event)"
+    />
 
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
@@ -451,9 +365,15 @@ const hue = computed(() => ({
 </template>
 
 <style scoped>
-/* No transition on the position — it comes from the frame, and a CSS one here
-   would race it. */
+/* The position comes from the frame, and carries no transition of its own. */
 .plex__node {
+  /* The corner of a node's box, and the corner of the box around the one in
+     front. */
+  --radius: 0.375rem;
+  --radius-focus: 0.5rem;
+  /* The dash the outline of a node that is not there yet is drawn in. */
+  --ghost-dash: 6 4;
+
   cursor: pointer;
 }
 
@@ -476,27 +396,25 @@ const hue = computed(() => ({
    nothing here. The outline changes over the length of the move that changes
    the seat; the fill answers the pointer at the speed a pointer is answered. */
 .plex__box {
-  rx: var(--numen-plex-radius);
+  rx: var(--radius);
   fill: var(--numen-node-bg);
   stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
   transition:
     fill var(--numen-motion-hover) var(--numen-easing),
-    stroke var(--numen-plex-move) var(--numen-easing);
+    stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
 }
 
 /* While the plex is moving, the fill is a seat's colour too: the focused node
    is painted from its own pair, and follows the move as the outline does. */
 [data-moving] .plex__box {
   transition:
-    fill var(--numen-plex-move) var(--numen-easing),
-    stroke var(--numen-plex-move) var(--numen-easing);
+    fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
+    stroke var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
 }
 
-/* Icon then title, centred together in a box of a size the arrangement chose.
-
-   Not selectable: a title is something to look at and press, and a drag that
-   paints it blue is a drag that was meant to reach somewhere. */
+/* Icon then title, centred together in a box of a size the arrangement chose. A
+   title is something to look at and press, and takes no selection. */
 .plex__title {
   block-size: 100%;
   display: flex;
@@ -512,7 +430,7 @@ const hue = computed(() => ({
   pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
-  transition: color var(--numen-plex-move) var(--numen-easing);
+  transition: color var(--numen-plex-move, var(--numen-motion)) var(--numen-easing);
 }
 
 .plex__icon {
@@ -522,67 +440,13 @@ const hue = computed(() => ({
   color: var(--numen-seat-hue, var(--numen-node-fg));
 }
 
-/* One line, then an ellipsis. Two lines cost as much height again for a title
-   that is a sentence, and a box that grows is a box the arrangement did not
-   plan for. */
+/* One line, then an ellipsis. A box stands at the height the arrangement gave
+   it, whatever its title runs to. */
 .plex__title-text {
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* The ground the parts stand on: enough of it to hold them together, and thin
-   enough to read the picture through. */
-.plex__ground {
-  rx: 0.25rem;
-  fill: color-mix(in oklab, var(--numen-node-bg), transparent 25%);
-  stroke: color-mix(in oklab, var(--numen-node-border), transparent 55%);
-  stroke-width: var(--numen-stroke);
-}
-
-/* Each part is drawn in a box of its own, and where that box goes and how far
-   it has faded up are SVG attributes on the group holding it. HTML inside a
-   `foreignObject` that takes a layer of its own — under `opacity`, under
-   `transform` — is drawn at the page's origin in WebKit, which is the engine
-   the window is drawn in. */
-.plex__part {
-  block-size: 100%;
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-edge-label-size);
-  color: var(--numen-node-fg);
-  user-select: none;
-  -webkit-user-select: none;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  padding-inline-end: var(--numen-node-padding);
-  border-radius: 0.1875rem;
-  cursor: pointer;
-  transition: background var(--numen-motion-hover) var(--numen-easing);
-}
-
-/* A ground under the one the hand is on, which is what says it can be pressed. */
-.plex__part:hover {
-  background: color-mix(in oklab, var(--numen-node-bg), var(--numen-node-fg) 12%);
-}
-
-/* One line, then an ellipsis, as a title is. */
-.plex__part-text {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* There is more to wind to this way. */
-.plex__more {
-  fill: none;
-  stroke: var(--numen-edge-label);
-  stroke-width: var(--numen-stroke);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  pointer-events: none;
 }
 
 /* The node a link would be made to, while the pointer is still on it. */
@@ -602,7 +466,7 @@ const hue = computed(() => ({
 .plex__node--ghost .plex__box {
   fill: none;
   stroke: var(--numen-seat-hue, var(--numen-ring));
-  stroke-dasharray: var(--numen-ghost-dash);
+  stroke-dasharray: var(--ghost-dash);
   transition: none;
 }
 
@@ -621,7 +485,7 @@ const hue = computed(() => ({
 }
 
 .plex__node--focus .plex__box {
-  rx: var(--numen-plex-radius-focus);
+  rx: var(--radius-focus);
   fill: var(--numen-focus-bg);
   stroke: var(--numen-focus-border);
 }

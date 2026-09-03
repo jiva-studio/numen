@@ -50,3 +50,12 @@ export const LANGUAGES: readonly LanguageDescription[] = [
   LanguageDescription.of({ name: 'toml', load: async () => streamed(toml) }),
   LanguageDescription.of({ name: 'diff', load: async () => streamed(diff) }),
 ]
+
+/**
+ * The language one whole document is written in, by the name a fence would use.
+ * A name no language here answers to leaves the document plain.
+ */
+export const wholly = async (name: string): Promise<LanguageSupport | null> => {
+  const found = LanguageDescription.matchLanguageName(LANGUAGES, name, true)
+  return found ? found.load() : null
+}

@@ -10,6 +10,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | --- | --- | --- |
 | vault | A folder the person added, carrying its own identity. | |
 | note | A markdown file in a vault. Its shape is [Note format](note-format.md). | |
+| file | A path in a vault and the bytes at it, whichever kind the vault holds it as. A note and an asset are both files. | |
 | asset | A file in a vault that is not a note. | |
 | entry | One file or folder, as a listing of a folder reports it. | item |
 | title | The name a note is shown by, and one of the keys the application owns — [Note format](note-format.md). A title names a note; a label names a relationship. | label |
@@ -65,6 +66,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | kept | Held past the run that made it, and claimed again by what it was made from. | stored |
 | recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |
 | station | Where a vector is made: on this machine, or by a service. | placement |
+| presence | What a model's files are on this machine: `present` where a fetch put them, `not fetched` for a model this machine runs whose files are not here, and `nothing to fetch` for a model reached over the network. It says where files stand and nothing else, and a model is never preferred for it. | installed, missing, available, downloaded |
 | arriving | A model that is not on this machine yet. What it is is known from the settings, so the index is fitted and vectors are claimed under its recipe while the weights come down. | |
 | landed | The model turning up, or the reason it never will. The first of the two counts, and one turning up after the wait is over is let go of. | |
 | disown | The model turning out not to be the one whose vectors are kept: it is let go of, and nothing is asked of it again. | |
@@ -79,6 +81,8 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | watch | Following a vault for changes the application did not make. | |
 | hold | How long events are kept before they are acted on. | window |
 | trash | Where a removed note is kept: `.trash/` inside the vault. | |
+| proofread | Asking a second model to put right the text a first one produced, and writing its corrections beside the artifact — [Proofreading](proofreading.md). It is the word for the run wherever it is named: the `proofread` facet of an asset, the command, and **Proofread transcript** on screen. Writing a transcript back as a person edited it in the window is not one. | put right, correct |
+| drop (a transcript) | Taking away everything listening to a recording produced: what a model heard, what a person put right, the record of what listened, the answer and the chunks cut from any of them — [Transcribing](transcribing.md). The word is for the code: on screen it is **Delete transcript**. | forget, clear |
 | spaced | A card face the scheduler sends days away. One it is still putting into memory comes round in minutes. Retention is measured over the answers given to spaced card faces and no others. It is the scheduler's own reckoning, and no setting reaches it. The word is for the code: on screen these are **cards you are reviewing**, which is how the review history says what a day's share of recall is a share of. | learned, mature, in review |
 
 ## What reaches a vault from outside
@@ -87,6 +91,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | --- | --- | --- |
 | agent | A program acting on a vault on a person's behalf, through tools. | |
 | tool | One operation an agent can call. | a use case |
+| MCP | The protocol this vault's tools are served over, so another program can reach them — [The agent](agents.md), [Settings](settings.md). The setting is `agent.serve_tools`, and the address is `-mcp-addr`. | tools on a port |
 | client | A consumer of the schema that draws a vault. | an agent |
 | conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. | thread |
 | session | What the agent's own program calls a conversation it is keeping, named by that program. It never leaves the adapter that started it. | |
@@ -143,3 +148,6 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | interface_scale | How large the interface is drawn — [Settings](settings.md). A multiplier, 1 being as designed. | zoom |
 | text_scale | How large the text a person reads is set — [Settings](settings.md). A multiplier, 1 being as designed. | zoom |
 | current | The row a list opens on, which is the one in force: the theme shelf, light and dark, the two size ladders, the vaults. | worn now, the size now |
+| setting | One field of `numen.json` and what stands there: a path through the file, and a value written as JSON — [Settings](settings.md). | option, preference |
+| model | What a setting that runs against a model names: the model the vault is indexed by, the one a scanned page is read by, and the one the agent answers with — [Settings](settings.md). | engine |
+| shelf | The heading a run of rows stands under in a list: the two a theme comes off, and the ones the agent's models stand on. | group, category |

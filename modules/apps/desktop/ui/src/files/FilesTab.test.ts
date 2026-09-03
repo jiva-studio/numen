@@ -46,6 +46,7 @@ const drawn = async (open: readonly string[] = []) => {
     writes: async (folder) => `${folder}Untitled note.md`,
     cuts: async (folder, name) => `${folder}${name}`,
     stencils: async (folder, name) => `${folder}${name}`,
+    presets: async (folder, name) => `${folder}${name}`,
     says: (text) => void done.push(`says ${text}`),
   })
   await list.opens(ROOT)
@@ -94,12 +95,17 @@ describe('the tree the tab draws', () => {
 
   it('names the folder a file carried in from outside is filed in', async () => {
     const { window } = await drawn(['physics'])
-    const lands = window.findComponent(Tree).props('lands') as (row: string | null) => string
+    const marking = window.findComponent(Tree).props('marking') as {
+      attribute: string
+      valueFor: (row: string | null) => string
+    }
 
-    expect(lands('physics')).toBe('physics')
-    expect(lands('physics/Kelvin.md')).toBe('physics')
-    expect(lands('Entropy.md')).toBe(ROOT)
-    expect(lands(null)).toBe(ROOT)
+    // The attribute the window's own drag and drop looks a target up by.
+    expect(marking.attribute).toBe('data-file-drop-target')
+    expect(marking.valueFor('physics')).toBe('physics')
+    expect(marking.valueFor('physics/Kelvin.md')).toBe('physics')
+    expect(marking.valueFor('Entropy.md')).toBe(ROOT)
+    expect(marking.valueFor(null)).toBe(ROOT)
   })
 })
 
@@ -209,6 +215,7 @@ describe('the menu on a row', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -231,6 +238,7 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
+      'file',
       'plex',
       'plex',
       'plex',
@@ -245,6 +253,7 @@ describe('the menu on a row', () => {
       'newNote',
       'newDeck',
       'newStencil',
+      'newPreset',
       'newFolder',
       'rename',
       'copy',
@@ -257,7 +266,13 @@ describe('the menu on a row', () => {
   })
 
   it('offers what can be made at the root, asked off every row', async () => {
-    expect(await itemsOn(null)).toStrictEqual(['newNote', 'newDeck', 'newStencil', 'newFolder'])
+    expect(await itemsOn(null)).toStrictEqual([
+      'newNote',
+      'newDeck',
+      'newStencil',
+      'newPreset',
+      'newFolder',
+    ])
   })
 
   it('offers removal alone over a selection of several', async () => {
@@ -281,6 +296,7 @@ describe('a folder that could not be read', () => {
       writes: async () => '',
       cuts: async () => '',
       stencils: async () => '',
+      presets: async () => '',
       says: () => {},
     })
     await list.opens(ROOT)

@@ -1,19 +1,11 @@
 <script setup lang="ts">
 /**
- * One value along a track, moved by a handle. The track fills with the accent
- * behind the handle.
+ * One value along a track, moved by a handle, with the track filled behind it.
+ * It draws no number of its own.
  *
- * The handle is the stop on the way round the screen: the arrow keys move it a
- * step, the page keys ten, and home and end take it to the ends. A step out and
- * a step back come to where they began, at either end as anywhere else. It
- * draws no number of its own, so what it stands at is read out beside it.
- *
- * It stands inside the ends: a value past one of them, and a value the ends
- * move under, are brought in and handed on.
- *
- * Moving it and letting it go are two things said, so a caller can follow the
- * handle while it moves and act once it has come to rest. A walk with the keys
- * is over when the key is let go of, however many places it covered.
+ * It stands inside the ends: a value past one of them, or one the ends move
+ * under, is brought in and handed on. Moving the handle and letting it go are
+ * two things said, and a walk with the keys is over when the key is.
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
@@ -139,8 +131,8 @@ const settled = (value: number[]) => {
       :class="
         cn(
           'block size-4 shrink-0 rounded-pill border border-rule bg-raised',
-          'cursor-pointer transition-colors duration-100 ease-numen',
-          'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+          'cursor-pointer transition-colors duration-hover ease-numen',
+          'outline-none ring-numen',
           'data-[disabled]:cursor-not-allowed',
         )
       "

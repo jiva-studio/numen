@@ -73,7 +73,10 @@ export interface PaletteBand {
   readonly items: readonly PaletteItem[]
   /** More is on its way, so what stands here is not all of it. */
   readonly working?: boolean
-  /** What is said in place of items when the band holds none. */
+  /**
+   * What is said in place of items when the band holds none. A band with
+   * nothing to say here and nothing on its way is drawn nowhere.
+   */
   readonly silence?: string
 }
 
@@ -94,13 +97,14 @@ export interface PalettePlace {
  * The bands in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
  *
- * A band that came back with nothing is still drawn: it says the question was
- * asked and answered. It stands at the foot, and holds no item, so what the
- * keyboard counts is untouched.
+ * A band holding nothing is drawn while it is still working, and where it has
+ * something to say in place of items. One that is neither is worth no heading
+ * of its own and is drawn nowhere. Such a band holds no item either way, so
+ * what the keyboard counts is untouched.
  */
 export const ordered = (bands: readonly PaletteBand[]): readonly PaletteBand[] => [
   ...bands.filter((one) => one.items.length > 0),
-  ...bands.filter((one) => one.items.length === 0),
+  ...bands.filter((one) => one.items.length === 0 && (one.working || Boolean(one.silence))),
 ]
 
 /**
@@ -312,6 +316,22 @@ export const placePalette = (bands: readonly PaletteBand[]): readonly PlacedBand
       detail: partsOf(item.detail ?? '', item.detailAt),
     })),
   }))
+}
+
+/** The words the action panel is drawn with. */
+export interface ActionWords {
+  /** What the panel is announced as, and what the key to it is called. */
+  readonly name: string
+  /** The words standing in for what has not been typed in its field. */
+  readonly placeholder: string
+  /** What it says when the words in its field leave no action. */
+  readonly silence: string
+}
+
+export const ACTION_WORDS: ActionWords = {
+  name: 'Actions',
+  placeholder: 'Search actions',
+  silence: 'Nothing by that name',
 }
 
 /** One action as it is drawn in the action panel. */

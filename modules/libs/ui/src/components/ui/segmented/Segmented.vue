@@ -51,7 +51,8 @@ const onKey = (event: KeyboardEvent) => {
     :loop="true"
     :class="
       cn(
-        'inline-flex items-center gap-px rounded-tight border border-rule bg-raised p-px',
+        // One row tall, which every control standing on a row is drawn at.
+        'inline-flex h-action items-stretch gap-px rounded-tight border border-rule bg-raised p-px',
         props.class,
       )
     "
@@ -65,16 +66,15 @@ const onKey = (event: KeyboardEvent) => {
       :class="
         cn(
           'inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-tight',
-          // The gaps are measured to the ink the screen paints, and the ink
-          // stands clear of the box its line is set in. The two paddings are
-          // the same and what is left over is the font's own bearings.
-          'p-1.5',
+          // A segment fills the height of the row and keeps its own clearance
+          // at the ends, which is measured to the ink the screen paints.
+          'px-1.5',
           'font-sans text-base font-medium leading-none text-ink',
-          'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
+          'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
           'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
           'data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink',
           'data-[state=checked]:hover:bg-[color-mix(in_oklab,var(--numen-focus-bg),var(--numen-focus-fg)_8%)]',
-          'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+          'outline-none ring-numen',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )
       "

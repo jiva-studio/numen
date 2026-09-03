@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // hand is a watch a test drives itself, so what a window is told while a vault
@@ -187,19 +186,7 @@ func openingWith(
 		api.Model.Store(embedder.Model().String())
 		api.Progress = db.Progress()
 	}
-	scan := usecase.Scan{
-		Readers:     readers,
-		Vaults:      db.Vaults(),
-		Notes:       db.Notes(),
-		Known:       db.Queries(),
-		Maintenance: db.Maintenance(),
-	}
-	held := &holding{NoteRepository: db.Notes()}
-	follow := usecase.Follow{
-		Watcher: watcher,
-		Refresh: usecase.Refresh{Readers: filesystem.Readers{}, Notes: held},
-		Scan:    scan,
-	}
+	opened := cfg.OpeningWith(db, readers, watcher)
 
 	line, done := api.Listeners.listen()
 	t.Cleanup(done)
@@ -208,7 +195,7 @@ func openingWith(
 	api.Wrote = func() { raise(wake.notes) }
 
 	ctx, stop := context.WithCancel(t.Context())
-	wait := begin(ctx, v, cfg, db, api, scan, follow, held, readers, embedder, wake, &pending{}, io.Discard)
+	wait := begin(ctx, v, cfg, db, api, opened, readers, embedder, wake, &pending{}, io.Discard)
 	t.Cleanup(func() {
 		stop()
 		wait()

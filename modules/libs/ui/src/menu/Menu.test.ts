@@ -310,3 +310,99 @@ describe('when there is nothing to choose', () => {
     expect(drawn()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('ничего')
   })
 })
+
+describe('the bands the items stand in', () => {
+  const SHELVED: MenuItem[] = [
+    { id: 'numen', text: 'Numen', band: 'Ships with numen' },
+    { id: 'sea', text: 'Sea', band: 'Yours' },
+    { id: 'sand', text: 'Sand', band: 'Yours' },
+  ]
+
+  const shelves = () =>
+    Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map((one) =>
+      one.textContent?.trim(),
+    )
+
+  it('are named where the menu is told to name them', async () => {
+    mountMenu({ items: SHELVED, bands: true })
+    await settle()
+    expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
+    expect(document.body.querySelectorAll('.menu__rule')).toHaveLength(0)
+  })
+
+  it('are parted by a rule where the menu names none', async () => {
+    mountMenu({ items: SHELVED })
+    await settle()
+    expect(shelves()).toStrictEqual([])
+    expect(document.body.querySelectorAll('.menu__rule')).toHaveLength(1)
+  })
+})
+
+describe('what an item says beside its words', () => {
+  it('is drawn under them where the item carries one', async () => {
+    mountMenu({ items: [{ id: 'small', text: 'Small', detail: 'somewhere/small.onnx' }] })
+    await settle()
+    expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
+      'somewhere/small.onnx',
+    )
+  })
+
+  it('is drawn nowhere where the item carries none', async () => {
+    mountMenu()
+    await settle()
+    expect(document.body.querySelector('.menu__detail')).toBeNull()
+  })
+})
+
+describe('typing to jump', () => {
+  const types = (letter: string) =>
+    drawn()?.dispatchEvent(new KeyboardEvent('keydown', { key: letter, bubbles: true }))
+
+  it('lands on the first item the letter begins', async () => {
+    mountMenu()
+    await settle()
+    types('c')
+    await nextTick()
+    expect(document.activeElement).toBe(choices()[2])
+  })
+
+  it('walks the items one letter begins', async () => {
+    mountMenu({ items: [...ITEMS, { id: 'cut', text: 'Cut' }] })
+    await settle()
+    types('c')
+    await nextTick()
+    types('c')
+    await nextTick()
+    expect(document.activeElement).toBe(choices()[3])
+  })
+
+  it('lands on nothing where no item begins with it', async () => {
+    mountMenu()
+    await settle()
+    types('z')
+    await nextTick()
+    expect(document.activeElement).toBe(drawn())
+  })
+
+  it('leaves the space bar to the item it is on', async () => {
+    mountMenu()
+    await settle()
+    types(' ')
+    await nextTick()
+    expect(document.activeElement).toBe(drawn())
+  })
+})
+
+describe('how wide it is drawn', () => {
+  it('is never narrower than what asked for it', async () => {
+    mountMenu({ asking: 420 })
+    await settle()
+    expect(drawn()?.style.getPropertyValue('--asking')).toBe('420px')
+  })
+
+  it('is bounded by its own two widths where nothing said how wide it asked', async () => {
+    mountMenu()
+    await settle()
+    expect(drawn()?.style.getPropertyValue('--asking')).toBe('0px')
+  })
+})

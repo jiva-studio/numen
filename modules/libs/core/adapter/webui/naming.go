@@ -104,6 +104,9 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 		}
 		return connect.NewResponse(&v1.RemoveResponse{Refusal: &reason}), nil
 	}
+	// The watcher reports only the paths the vault holds a source for. What
+	// went is said here, so the tree drops the row whatever stood on it.
+	a.Listeners.tell(changed{paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveResponse{
 		Trashed:  removed.Trashed,
 		Dangling: removed.Dangling,

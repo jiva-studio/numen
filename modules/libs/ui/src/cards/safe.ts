@@ -42,7 +42,7 @@ const OWN: Readonly<Record<string, readonly string[]>> = {
   colgroup: ['span'],
 }
 
-/** The schemes a link may point at. A name carrying none points inside the vault. */
+/** The schemes a link may point at. An address naming none is the caller's to resolve. */
 const SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
 /** The declarations a tag may be styled with. */

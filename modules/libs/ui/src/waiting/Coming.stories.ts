@@ -5,7 +5,10 @@
  * lives: a shape the size of what replaces it leaves the rows where they are.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { expect } from 'storybook/test'
 import Coming from './Coming.vue'
+import { lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
   title: 'Generic/Coming',
@@ -102,6 +105,49 @@ export const OnAFilledGround: Story = {
       </div>
     `,
   }),
+}
+
+/**
+ * On the dark set of tokens, on the surface and on a filled ground. The fill is
+ * taken from the text of whatever holds it, so it has to be told from the
+ * ground under it in both places.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: { wide: '4rem', high: '1em', pill: true },
+  render: (args) => ({
+    components: { Coming },
+    setup: () => ({ args }),
+    template: `
+      <div class="numen" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--numen-surface);color:var(--numen-node-fg);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
+        <span data-ground style="padding:8px;background:var(--numen-surface)"><Coming v-bind="args" /></span>
+        <span data-ground style="padding:8px;background:var(--numen-focus-bg);color:var(--numen-focus-fg)"><Coming v-bind="args" /></span>
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+
+    const grounds = canvasElement.querySelectorAll<HTMLElement>('[data-ground]')
+    await expect(grounds).toHaveLength(2)
+    for (const ground of grounds) {
+      const shape = ground.querySelector<HTMLElement>('.coming')!
+      const fill = getComputedStyle(shape).backgroundColor
+      // Something is there, and it is not the colour of what it stands on.
+      await expect(fill).not.toBe('rgba(0, 0, 0, 0)')
+      await expect(fill).not.toBe(getComputedStyle(ground).backgroundColor)
+    }
+
+    // The shape is drawn from the ink of whatever it stands on. On the dark set
+    // that is a light shape on the surface and a dark one on the accent.
+    const laidOn = (ground: HTMLElement) => {
+      const behind = getComputedStyle(ground).backgroundColor
+      const shape = ground.querySelector<HTMLElement>('.coming')!
+      return lightness(getComputedStyle(shape).backgroundColor, behind) - lightness(behind)
+    }
+    await expect(laidOn(grounds[0]!)).toBeGreaterThan(2)
+    await expect(laidOn(grounds[1]!)).toBeLessThan(-2)
+  },
 }
 
 /** Far too many of them at once, which is a list nothing has answered for yet. */

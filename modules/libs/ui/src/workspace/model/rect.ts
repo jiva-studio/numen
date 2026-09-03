@@ -1,9 +1,7 @@
 /** Boxes and points, in whatever coordinates the caller measures in. */
+import type { Point } from '../../lib/geometry'
 
-export interface Point {
-  readonly x: number
-  readonly y: number
-}
+export type { Point }
 
 export interface Rect {
   readonly x: number

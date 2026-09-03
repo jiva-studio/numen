@@ -1,12 +1,10 @@
 /**
- * The one sound the window makes.
+ * The one sound the window makes, through a single element that belongs to no
+ * tab and stands in no page, so a tab moved between panes plays on without a
+ * gap.
  *
- * A recording is played through a single element that belongs to no tab and
- * stands in no page. A tab moved between panes is drawn again; the sound is
- * not, and goes on through the move without a gap.
- *
- * One sound plays at a time. A recording asked to play takes it from whatever
- * held it, which is what a person means by pressing play on a second one.
+ * One sound plays at a time: a recording asked to play takes it from whatever
+ * held it.
  */
 import { readonly, ref, type Ref } from 'vue'
 import { WORDS } from './words'
@@ -134,3 +132,34 @@ export function audio(makes: Makes = made): Player {
 
 /** The one player this window has. Every recording is played through it. */
 export const player: Player = audio()
+
+/** Answers is what says whether a kind of sound can be played. */
+export type Answers = (type: string) => boolean
+
+/** Plays is whether this window can play a recording of a media type. */
+export type Plays = (type: string) => boolean
+
+/** What the window itself says about a kind of sound. */
+const itself: Answers = (type) => {
+  try {
+    return document.createElement('audio').canPlayType(type) !== ''
+  } catch {
+    return false
+  }
+}
+
+/**
+ * What this window can play. The answer is the window's own, and it is asked
+ * once for each kind of sound however many recordings are open.
+ */
+export function playable(answers: Answers = itself): Plays {
+  const asked = new Map<string, boolean>()
+  return (type) => {
+    if (!type) return false
+    const held = asked.get(type)
+    if (held !== undefined) return held
+    const can = answers(type)
+    asked.set(type, can)
+    return can
+  }
+}

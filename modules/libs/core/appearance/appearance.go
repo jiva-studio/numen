@@ -18,6 +18,15 @@ import (
 // head, so what a person chose is the last word on it.
 const HeadEnd = "</head>"
 
+// Marker is the attribute every one of those elements carries, and Mode, Theme
+// and Sizes are what each says it is. A window reads them by it.
+const (
+	Marker  = "data-appearance"
+	IsMode  = "mode"
+	IsTheme = "theme"
+	IsSizes = "sizes"
+)
+
 // Mode is which half of every colour pair the tokens are read as.
 type Mode int
 
@@ -50,9 +59,9 @@ func Styles(c Chosen) string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
-	out := styled(":root { color-scheme: " + scheme(c.Mode) + "; }")
+	out := styled(IsMode, ":root { color-scheme: "+scheme(c.Mode)+"; }")
 	if c.Theme != "" {
-		out += styled(c.Theme)
+		out += styled(IsTheme, c.Theme)
 	}
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
@@ -84,7 +93,7 @@ func sized(drawn, set float64) string {
 	if len(held) == 0 {
 		return ""
 	}
-	return styled(":root { " + strings.Join(held, "; ") + "; }")
+	return styled(IsSizes, ":root { "+strings.Join(held, "; ")+"; }")
 }
 
 // number is a multiplier as CSS takes it, at the shortest that reads back as
@@ -102,14 +111,14 @@ func scheme(mode Mode) string {
 	return "light dark"
 }
 
-// styled is one stylesheet as the page carries it. A `</style>` in a theme's
-// file is written as the CSS escape for it, which is the same declaration and
-// ends no element.
-func styled(css string) string {
+// styled is one stylesheet as the page carries it, marked as the one of the
+// three it is. A `</style>` in a theme's file is written as the CSS escape for
+// it, which is the same declaration and ends no element.
+func styled(is, css string) string {
 	escaped := ending.ReplaceAllStringFunc(css, func(found string) string {
 		return `<\` + found[len("<"):]
 	})
-	return "<style>" + escaped + "</style>\n"
+	return `<style ` + Marker + `="` + is + `">` + escaped + "</style>\n"
 }
 
 var ending = regexp.MustCompile(`(?i)</style`)

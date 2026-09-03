@@ -11,7 +11,20 @@ import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from './change'
-import { drawing, editable, editing, preview, setup, showing, shown } from './setup'
+import {
+  adding,
+  code,
+  drawing,
+  editable,
+  editing,
+  preview,
+  prose,
+  setup,
+  showing,
+  shown,
+  written,
+} from './setup'
+import { wholly } from './languages'
 import { opening, resolving, saving } from './outside'
 import { replacing } from './replacing'
 
@@ -19,16 +32,29 @@ const props = withDefaults(
   defineProps<{
     /** Marks are drawn as what they mean. Off, the text is shown as written. */
     live?: boolean
+    /**
+     * What the whole document is written in, by the name a fence would use. A
+     * document naming none is markdown, and one naming a language is set in the
+     * face code is set in.
+     */
+    language?: string
     readonly?: boolean
     placeholder?: string
     /** A change being made to this text by something other than the reader. */
     change?: EditorChange | null
     /** What an address in the text becomes before the window loads it. */
     resolve?: (address: string) => string
-    /** More the caller draws into this editor. Read once, as it is built. */
+    /** More the caller draws into this editor. */
     extensions?: Extension
   }>(),
-  { live: true, readonly: false, placeholder: 'Write', change: null, extensions: () => [] },
+  {
+    live: true,
+    language: '',
+    readonly: false,
+    placeholder: 'Write',
+    change: null,
+    extensions: () => [],
+  },
 )
 
 const emit = defineEmits<{
@@ -55,8 +81,8 @@ onMounted(() => {
           readonly: props.readonly,
           placeholder: props.placeholder,
           change: props.change,
+          extensions: props.extensions,
         }),
-        props.extensions,
         resolving.of((address) => props.resolve?.(address) ?? address),
         opening.of((address) => emit('open', address)),
         saving.of(() => emit('save')),
@@ -66,6 +92,7 @@ onMounted(() => {
       ],
     }),
   })
+  if (props.language) void writes(props.language)
 })
 
 onBeforeUnmount(() => {
@@ -86,6 +113,19 @@ watch(
   (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
 )
 
+/**
+ * The language is loaded when it is first wanted, so the editor is drawn before
+ * it arrives and is reconfigured once it is here. A document whose language
+ * changed while one was loading keeps the one it asked for last.
+ */
+const writes = async (name: string) => {
+  const support = name ? await wholly(name) : null
+  if (!view || name !== props.language) return
+  view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
+}
+
+watch(() => props.language, writes)
+
 watch(
   () => props.readonly,
   (off) => view?.dispatch({ effects: editing.reconfigure(editable(!off)) }),
@@ -94,6 +134,11 @@ watch(
 watch(
   () => props.change,
   (change) => view?.dispatch({ effects: showing.reconfigure(shown(change)) }),
+)
+
+watch(
+  () => props.extensions,
+  (more) => view?.dispatch({ effects: adding.reconfigure(more) }),
 )
 
 defineExpose({
@@ -113,9 +158,9 @@ defineExpose({
    * counted from the first line of the prose, and one past the end lands on the
    * last line there is.
    *
-   * An editor holding no text holds no lines, and says so. The prose of a note
-   * arrives after the tab it is drawn in, and a caret asked for a line stands
-   * on that line and not at the top.
+   * An editor holding no text holds no lines, and says so. Text can arrive
+   * after the editor is drawn, and a caret asked for a line then stands on
+   * that line.
    */
   reveal: (line: number) => {
     if (!view || view.state.doc.length === 0) return false
@@ -141,5 +186,12 @@ defineExpose({
 .editor {
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* A splitter above is being dragged, and the text under the pointer is left
+   alone for as long as it is. */
+[data-resizing] .editor :deep(.cm-content) {
+  user-select: none;
+  -webkit-user-select: none;
 }
 </style>

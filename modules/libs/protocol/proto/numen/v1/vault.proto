@@ -24,6 +24,9 @@ service VaultService {
   // Neighbourhood is one note and everything joined to it.
   rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
 
+  // Resolve answers where addresses written in one note land.
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
   // Names is the names in a vault that match what was typed: a note's own
   // title, and the headings inside notes. It is asked as a person types, and
   // the last word matches on its prefix.
@@ -141,6 +144,23 @@ service VaultService {
   // installation in. The file is patched as an object, so every key a person
   // typed stays where it was.
   rpc ChooseReviewing(ChooseReviewingRequest) returns (ChooseReviewingResponse);
+
+  // Settings is every setting of the file a person configures this
+  // installation in, and the models the settings that name one can be set to.
+  rpc Settings(SettingsRequest) returns (SettingsResponse);
+
+  // ChooseSettings writes settings into that file. The file is patched as an
+  // object, so every key a person typed stays where it was, and a file the
+  // settings could not be read out of again is not written at all.
+  rpc ChooseSettings(ChooseSettingsRequest) returns (ChooseSettingsResponse);
+
+  // SettingsFile is that file as its person wrote it, byte for byte.
+  rpc SettingsFile(SettingsFileRequest) returns (SettingsFileResponse);
+
+  // WriteSettingsFile replaces that file whole, with the bytes as they were
+  // typed. A file the settings cannot be read out of is refused and the file is
+  // left as it was; what is said names where in the file the trouble is.
+  rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
 
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
@@ -347,8 +367,8 @@ message OpeningResponse {
 message ChangesRequest {}
 
 message ChangesResponse {
-  // Paths of the notes that changed. A note that was removed is named here
-  // too: what changed about it is that it is gone.
+  // Paths of the files that changed, notes and assets alike. One that was
+  // removed is named here too: what changed about it is that it is gone.
   repeated string paths = 1;
 
   // Set when the vault has to be read again rather than followed — more
@@ -466,6 +486,43 @@ message NeighbourhoodResponse {
   NoteType focus_type = 3;
 }
 
+message ResolveRequest {
+  // The note the addresses are written in. A name resolves by a path relative
+  // to it, so a caller with no note to name gets the priority that is left.
+  string from = 1;
+
+  // The addresses to answer about. A scheme written before `://` is read as
+  // one — `name://Entropy`, `note://<identifier>` — and everything else is a
+  // name, so what a file carries between its brackets is taken as it stands.
+  repeated string written = 2;
+}
+
+message ResolveResponse {
+  // Where each address lands, in the order they were asked about. One that
+  // reaches nothing is absent, and so is one asked about twice.
+  repeated Reached reached = 1;
+}
+
+// Reached is one address and the note it reaches now.
+message Reached {
+  // The address as it was asked about, which is how the caller finds its answer.
+  string written = 1;
+
+  // Where the note it reaches is filed.
+  string path = 2;
+
+  // The vault holding that note. An identifier names one note in the world, so
+  // an address may land outside the vault it was written in.
+  string vault = 3;
+
+  // Set where that vault is not the one this call was answered about.
+  bool crossed = 4;
+
+  // Set where several notes answer to the name. It reaches the nearest of them,
+  // which is a fact about where the notes currently sit.
+  bool ambiguous = 5;
+}
+
 message NamesRequest {
   // What was typed, as it was typed. Words are matched together, and the last
   // of them on its prefix.
@@ -494,6 +551,10 @@ message Named {
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
   repeated Span at = 3;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. A heading carries the type of the note it stands in.
+  NoteType type = 4;
 }
 
 // Heading is one line of a note that names what stands below it.
@@ -616,6 +677,14 @@ message Passage {
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
   int32 line = 8;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. It says nothing about a source that is not a note.
+  NoteType type = 9;
+
+  // What the vault holds at that path, so a client draws a book and a
+  // recording as what they are.
+  SourceKind kind = 10;
 }
 
 message ListRequest {
@@ -925,6 +994,96 @@ message ChooseReviewingResponse {
   // Set when nothing was written, and why. What the settings hold is unchanged.
   optional Refusal refusal = 1;
 }
+
+message SettingsRequest {}
+
+message SettingsResponse {
+  // Every setting as it stands, as JSON: what the file says, and what an
+  // installation nobody has configured does under everything it does not.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+
+  // The models the settings that name one can be set to.
+  repeated Model models = 3;
+}
+
+// Model is one model a setting that names a model can be set to.
+message Model {
+  // The setting the model is read from, as a path through the file. The model
+  // in force is the one whose name stands there.
+  repeated string named_at = 1;
+
+  // What stands there while this model is the one in force.
+  string name = 2;
+
+  // What is drawn on the row, and the shelf the rows around it stand under.
+  string title = 3;
+  string shelf = 4;
+
+  // Set on the model an installation nobody has configured runs on.
+  bool by_default = 5;
+
+  // What choosing it writes. One model is several keys where the model decides
+  // more than its own name.
+  repeated Setting writes = 6;
+
+  // What this model's files are on this machine.
+  Presence presence = 7;
+}
+
+// Presence is what a model's files are on this machine. It says where files
+// stand and nothing else: it is no reason to prefer one model to another.
+enum Presence {
+  // Nothing was said about this model's files.
+  PRESENCE_UNSPECIFIED = 0;
+
+  // The files stand where a fetch puts them.
+  PRESENCE_PRESENT = 1;
+
+  // The files are not on this machine. They are fetched when the model is next
+  // needed.
+  PRESENCE_NOT_FETCHED = 2;
+
+  // The model is reached over the network, and nothing of it is fetched.
+  PRESENCE_NOTHING_TO_FETCH = 3;
+}
+
+// Setting is one setting of the file and what to put there.
+message Setting {
+  // The setting, as a path through the file.
+  repeated string at = 1;
+
+  // What to write there, as JSON. A value the settings cannot be read out of
+  // again is refused, and the file is left as it was.
+  string value = 2;
+}
+
+message ChooseSettingsRequest {
+  // The settings to write. They are written together, or none of them is.
+  repeated Setting settings = 1;
+}
+
+message ChooseSettingsResponse {}
+
+message SettingsFileRequest {}
+
+message SettingsFileResponse {
+  // The file as its person wrote it. A file that is not there is an empty
+  // object, which is what an installation nobody has configured runs on.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+}
+
+message WriteSettingsFileRequest {
+  // What is to stand in the file, written as it was typed.
+  string written = 1;
+}
+
+message WriteSettingsFileResponse {}
 
 message MoveRequest {
   // The file or folder to move, as the vault calls it.

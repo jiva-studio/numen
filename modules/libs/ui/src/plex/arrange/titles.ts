@@ -1,14 +1,11 @@
 /**
- * Where along its line each title sits, and how much of it stands there.
+ * Where along its line each title sits, and how much of it stands there, in the
+ * plex's own coordinates.
  *
  * A title stays on its own line, clear of every box and of every other title:
- * at the middle of the line while the middle is clear, and slid along the same
- * curve to the nearest clear place while it is not. Where the whole of the
- * words stand nowhere they are cut to the longest clear stretch, and a stretch
- * holding less than half of them carries no title at all.
- *
- * Pure, and worked out in the plex's own coordinates — two titles far apart
- * along their curves can still be one on top of the other in the picture.
+ * at the middle while that is clear, slid along the curve to the nearest clear
+ * place while it is not, cut to the longest clear stretch where the whole of the
+ * words stand nowhere, and dropped where that stretch holds less than half.
  */
 import {
   headingOf,

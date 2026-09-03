@@ -1,9 +1,7 @@
 import type { PlexSeat } from './seat'
+import type { Point, Size } from '../../lib/geometry'
 
-export interface Point {
-  readonly x: number
-  readonly y: number
-}
+export type { Point }
 
 /**
  * A node as the caller describes it. The id is opaque: the plex has no way to
@@ -27,6 +25,29 @@ export interface PlacedNode extends PlexNode {
   /** Always 1 except partway through a movement. */
   readonly opacity: number
 }
+
+/**
+ * The shape of a node that is not one yet, drawn where letting go would leave
+ * it. A box like any other: it is only that it has no title of its own, and
+ * says the seat it would take instead.
+ */
+export const ghostNode = (
+  id: string,
+  title: string,
+  seat: PlexSeat,
+  at: Point,
+  size: Size,
+): PlacedNode => ({
+  id,
+  title,
+  seat,
+  x: at.x,
+  y: at.y,
+  width: size.width,
+  height: size.height,
+  order: 0,
+  opacity: 1,
+})
 
 /**
  * Whether a node can be chosen. One predicate, because the rule decides three

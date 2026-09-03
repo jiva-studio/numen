@@ -184,6 +184,24 @@ describe('grid', () => {
     expect(tile?.known).toBe(false)
   })
 
+  it('stands every value of a card cut by nothing, marked as named by nothing', () => {
+    const bare: readonly Drawn[] = [
+      {
+        id: 'x',
+        section: null,
+        stencil: null,
+        filled: [
+          { field: 'Question', text: 'what' },
+          { field: 'Answer', text: 'this' },
+        ],
+      },
+    ]
+    const filled = tilesOf(grid(bare, [], CUTS, null))[0]?.filled ?? []
+    expect(filled.map((each) => each.field)).toEqual(['Question', 'Answer'])
+    expect(filled.map((each) => each.text)).toEqual(['what', 'this'])
+    expect(filled.every((each) => !each.declared)).toBe(true)
+  })
+
   it('stands a field the card leaves out empty', () => {
     expect(tilesOf(grid(CARDS, [], CUTS, null))[1]?.filled[0]?.text).toBe('')
   })

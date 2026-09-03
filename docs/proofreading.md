@@ -1,6 +1,6 @@
 # Putting a text right
 
-What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines and nothing else, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
+What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
 
 ## One mechanism, two texts
 
@@ -62,12 +62,29 @@ The reply is only the lines that changed. A batch the proofreader would leave al
 
 A row whose number runs into a word is not a row. Where no bar tells the two apart and the line as read opens with the digits the row opens with, the row's number was left out and the batch is refused.
 
+## What a transcript says it holds
+
+A batch is forty lines of an hour, and a name or a term the rest of the recording establishes is, inside those forty lines, a word with no support. It reads as a mishearing and comes back an ordinary word, differently in each batch.
+
+So a transcript's batches carry a digest of the whole of it, standing before the first mark:
+
+```
+The speech opens: welcome everyone today we will read a verse that the teacher …
+
+Words recurring through it, as the machine heard them: Kenduvilva, Gaudiya, Ajay
+```
+
+It is drawn from the transcript and from nothing else — the opening words as they were heard, and the words standing capitalised somewhere other than where a sentence opens, said more than once. A recording of any subject is described in the terms it uses itself, and no coordinate, path or name from the vault is in it. The model is told the digest is read and answered for by nothing, and that a word listed there is put right the same way every time it is said.
+
+A reading carries no digest: a page of a book is proofread against the page.
+
 ## The gates
 
 None of them asks whether a correction is right.
 
 - **A mark of ours coming back refuses the batch.** No recogniser and no transcriber produces `⟦` or `⟧`, and either of them anywhere in a reply refuses the whole batch.
 - **A line number the batch did not name refuses the batch.**
+- **A line two rows both answer for refuses the batch.** A line stands in one answer, so the words of a line are in that answer and in no other.
 - **Letters that moved further than `max_edit_distance` drop that one correction.** Spaces, punctuation, symbols, diacritics and case come off both sides, and the Levenshtein distance between what is left is taken as a share of the longer. 0.30 where the file names nothing.
 
 Two more corrections are dropped without refusing the batch: one saying what the line already says, and one that only puts something wordless in front of what the line already says.
@@ -82,7 +99,9 @@ A scan is corrected for what a machine misread off paper: letters, diacritics, w
 
 A transcript is corrected for what a machine misheard: a word for its homophone, a name spelled as it sounded, a sentence ended in the wrong place, the punctuation a model that hears has no way to place. The words a person actually said are not rewritten into better ones, and a stretch heard correctly is left alone.
 
-Both instructions carry the same rules about the answer: every word stays in the line it is in, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
+Both instructions carry the same rules about the answer: a line is answered for once, nothing is added that the page does not print or the recording does not say, the marks are never written back, and a line to leave alone is a line not answered with.
+
+A printed line holds its words: on a page they stay where they were printed. Speech runs on past the stretch it was cut into, so a transcript is also answered for in runs, written as the first line of the run and the last: `12-14|the whole sentence, put right`. The lines of a run become one cue, spanning the moments they were spoken between. A line where one sentence ends and the next begins stands in the run of both, and that run is answered with every sentence it covers.
 
 ## Profiles
 
@@ -116,7 +135,7 @@ Each consumer names its profile and says whether it runs on its own:
 }
 ```
 
-`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them.
+`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them. A transcript asked for either way is put right by the profile `indexing.transcription.proofread.with` names; `indexing.recognition.proofread.with` is the profile a scanned reading is put right by, and is not read for a transcript.
 
 `indexing.transcribe_recordings` is a different flag, and the two are easily taken for one another. It says whether a recording nobody asked about is listened to at all; `transcription.proofread.automatically` says whether a transcript that already exists is put right by itself.
 
@@ -128,6 +147,8 @@ A run claims the text for as long as the proofreading takes, and a second run ag
 
 After each batch a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
 
+What takes a run up is a vault opening. Where `automatically` is on, every reading and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole. Where the profile has a queue, the batch out is collected instead, and one run collects one batch and leaves the next.
+
 One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
 
 Neither artifact is rewritten: what the model read or heard stays on disk under its own name, and the corrections go beside it. What a reading's corrections are kept in and how a corrected reading is composed is [Reading](reading.md); what a transcript's are kept in is [Transcribing](transcribing.md).
@@ -137,6 +158,10 @@ Neither artifact is rewritten: what the model read or heard stays on disk under 
 In the recording tab the transcript is text, in the same editor a note is written in. One line a cue, the cue's timestamp in the gutter beside it. A person puts a name right the way they would put a word right in a note.
 
 It is read-only while the recording is still being listened to and while proofreading is running. The words are moving underneath, and what a person typed into a line a run is about to rewrite would be lost. When both are done, the text is editable and a save writes `.corrected.vtt`.
+
+**Proofread transcript** stands in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
+
+Asking always answers in a sentence, because a person who pressed it is owed one. The run begins, or it says what it found instead: the transcript has already been put right, the words were written by hand, another run holds the recording, or nothing has been transcribed. The answer comes back before the work is over — what a run settles before it puts its first question to the proofreader is a few reads off the disk, and that is all the asking waits for. Where `automatically` is on, every transcript has already been put right, so this is the answer a person will usually get.
 
 A **follow** toggle says whether the view moves with the recording. On, the line being said is scrolled to as the player reaches it. Off, the view stays where the person put it and they read one part of a talk while another plays. The line being said is highlighted either way, so the position is visible without the page moving.
 

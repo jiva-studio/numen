@@ -1,4 +1,4 @@
-/** A millisecond written the way a person reads a player. */
+/** A length of time in milliseconds, written as a clock. */
 export const clock = (ms: number): string => {
   const whole = Math.max(0, Math.floor(ms / 1000))
   const hours = Math.floor(whole / 3600)

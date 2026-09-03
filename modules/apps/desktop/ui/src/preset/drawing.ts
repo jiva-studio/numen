@@ -5,6 +5,7 @@
  * room the tab has. The curve is the control, so the same arithmetic that puts
  * a point on the line reads a place off a pointer.
  */
+import type { CSSProperties } from 'vue'
 import { costOf } from './curve'
 import type { Curve } from './core'
 
@@ -193,6 +194,70 @@ export const shortOf = (curve: Curve, spots: readonly Spot[]): string => {
   })
   if (run.length > 1) runs.push(lineOf(run))
   return runs.join(' ')
+}
+
+/**
+ * The days one place of the curve is drawn over. A goal of a date schedules
+ * nothing past the day it names, so what the run says after that day is the
+ * arithmetic of doing nothing and is no part of the choice being made.
+ */
+const daysAt = (curve: Curve, place: number): number =>
+  curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
+
+/** What stands overdue day by day at one place, cut at that place's own day. */
+export const runAt = (curve: Curve, place: number): readonly number[] => {
+  const run = curve.at[place]?.backlog ?? []
+  const days = daysAt(curve, place)
+  return days < 0 ? run : run.slice(0, days)
+}
+
+/**
+ * Where a name over a mark is set: above it, pulled back inside the picture at
+ * either end so the whole word stands over it.
+ */
+export const naming = (spot: Spot): CSSProperties => {
+  const back = spot.x < LEFT + LABEL ? '0' : spot.x > RIGHT - LABEL ? '-100%' : '-50%'
+  return {
+    insetInlineStart: `${(spot.x / WIDE) * 100}%`,
+    insetBlockStart: `${(Math.max(spot.y - LIFT, TOP) / HIGH) * 100}%`,
+    translate: `${back} -100%`,
+  }
+}
+
+/** The room that name takes, which the knob's own figures stand clear of. */
+export const namingBox = (spot: Spot): Box => {
+  const back = spot.x < LEFT + LABEL ? 0 : spot.x > RIGHT - LABEL ? LABEL * 2 : LABEL
+  return {
+    x: spot.x - back,
+    y: Math.max(spot.y - LIFT, TOP) - AXIS_HIGH,
+    wide: LABEL * 2,
+    high: AXIS_HIGH,
+  }
+}
+
+/** Where a number against one of a plot's own lines is set, in the plot's room. */
+export const against = (y: number, lift: string, high = HIGH): CSSProperties => ({
+  insetInlineStart: `${(LEFT / WIDE) * 100}%`,
+  insetBlockStart: `${(y / high) * 100}%`,
+  translate: `0 ${lift}`,
+})
+
+/** The room that number takes, which the knob's own figures stand clear of. */
+export const againstBox = (y: number, lift: string): Box => ({
+  x: LEFT,
+  y: lift === '0' ? y : y - AXIS_HIGH,
+  wide: AXIS_WIDE,
+  high: AXIS_HIGH,
+})
+
+/** Where a keystroke takes the knob, and nothing for a keystroke of somebody else's. */
+export const walked = (key: string, place: number, places: number): number | null => {
+  const last = places - 1
+  if (key === 'ArrowLeft' || key === 'ArrowDown') return Math.max(place - 1, 0)
+  if (key === 'ArrowRight' || key === 'ArrowUp') return Math.min(place + 1, last)
+  if (key === 'Home') return 0
+  if (key === 'End') return last
+  return null
 }
 
 /**

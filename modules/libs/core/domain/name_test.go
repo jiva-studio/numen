@@ -36,6 +36,25 @@ func TestALeadingDotIsPartOfTheName(t *testing.T) {
 	}
 }
 
+// Only a note's extension comes off a written name, and every other dot in it
+// is part of the name. It is what the scan stores beside each link.
+func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
+	for written, want := range map[string]string{
+		"Entropy":                    "Entropy",
+		"notes/Entropy":              "Entropy",
+		"notes/Entropy.md":           "Entropy",
+		"Seminar 1.2–1.3 — Lisbon":   "Seminar 1.2–1.3 — Lisbon",
+		"notes/Seminar 1.2 — Lisbon": "Seminar 1.2 — Lisbon",
+		".hidden":                    ".hidden",
+		".md":                        ".md",
+		"":                           "",
+	} {
+		if got := domain.LinkName(written); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		}
+	}
+}
+
 // A note can answer to two seats and is shown in one place, so it takes the
 // first it qualifies for.
 func TestASeatIsTakenInOneOrder(t *testing.T) {

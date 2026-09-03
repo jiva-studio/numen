@@ -106,6 +106,10 @@ func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
 	if _, _, ok := proofread.Fixed(page, "0-1|one two", 0.30); ok {
 		t.Error("the batch was taken")
 	}
+	// A printed line is answered for once, as a stretch of speech is.
+	if _, _, ok := proofread.Fixed(page, "0|won\n0|wan", 0.30); ok {
+		t.Error("the batch was taken with a line answered for twice")
+	}
 	// The lines of the page are still answered for one at a time.
 	if _, _, ok := proofread.Fixed(page, "0|won", 0.30); !ok {
 		t.Error("the batch was refused")
@@ -150,5 +154,37 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 	}
 	if !reflect.DeepEqual(past, []int{1}) {
 		t.Errorf("the batches a run went past are %v, want the first alone", past)
+	}
+}
+
+// A line where one sentence ends and the next begins stands in the run of
+// both, and the run is answered with every sentence it covers.
+func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
+	batch := proofread.Batch{At: 1, Joining: true, Lines: []proofread.Line{
+		{At: 4, Through: 4, Text: "we should go. And then"},
+		{At: 5, Through: 5, Text: "the next day he left."},
+	}}
+	said := "We should go. And then the next day he left."
+
+	put, _, ok := proofread.Fixed(batch, "4-5 | "+said, 0)
+	if !ok {
+		t.Fatal("the batch was refused")
+	}
+	if len(put) != 1 || put[0].At != 4 || put[0].Through != 5 || put[0].Text != said {
+		t.Errorf("%v put right", put)
+	}
+}
+
+// Two runs sharing a line leave the words of that line in one answer or the
+// other, and the batch is refused.
+func TestTwoRunsSharingALineRefuseTheBatch(t *testing.T) {
+	for _, reply := range []string{
+		"4-5 | Krishna is Radha.\n5-6 | Connected with Radhika, sure.",
+		"4-5 | Krishna is Radha.\n5 | Connected with Radhika.",
+		"4 | Krishna is Radha.\n4 | Krishna is Radhika.",
+	} {
+		if _, _, ok := proofread.Fixed(broken(), reply, 0); ok {
+			t.Errorf("the batch was taken with %q", reply)
+		}
 	}
 }

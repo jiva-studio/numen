@@ -7,7 +7,8 @@
 // It writes into the vault it is sitting to — a mark for a card that carries
 // none — and the answers, which go to the vault's own folder. Each write is
 // levelled in the index before it returns, so what the window draws next is
-// what it just wrote.
+// what it just wrote. A vault the index does not carry at all is read into it
+// here.
 package main
 
 import (
@@ -19,9 +20,12 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -69,10 +73,13 @@ func run(cfg container.Config, noAgent bool) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
-	level := cfg.Level(db)
 
-	running := cfg.Flashcards(db.Queries(), db.Links(), level)
+	// Every vault this window shows is opened the way the editor opens the one
+	// it shows: watched from the moment it is opened, walked into the index, and
+	// levelled by the paths a write touches.
+	vaults := &opened{cfg: cfg, db: db, under: ctx, out: os.Stderr}
+
+	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
 		Registry:  registry,
 		Owed:      running.Owed,
@@ -88,41 +95,52 @@ func run(cfg container.Config, noAgent bool) error {
 		Presets: running.Presets,
 		Curves:  running.Curves,
 		Notes:   db.Queries(),
+		Tasking: task.New(),
 		Day:     running.Day,
 		Now:     time.Now,
 	}
 
+	// A vault is walked into the index before it is counted. The walk outlives
+	// the count that asked for it, so it runs for the life of the window.
+	//
+	// A vault that moved is counted again, and is one whose walk is worth trying
+	// again where the last one failed.
+	vaults.told = func(v domain.Vault) {
+		api.Forget(v.ID)
+		api.Moved()
+	}
+	api.Reading(ctx, vaults.reads)
+
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is
 	// started and stopped around a sitting.
-	away := serveAgents(ctx, cfg, db, api, noAgent, os.Stderr)
-	defer func() {
-		if err := away(); err != nil {
-			fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
-		}
-	}()
+	away := serveAgents(ctx, cfg, db, vaults, api, noAgent, os.Stderr)
 
-	// What the window draws from is followed while it is open, so a card
-	// changed or a deck written is counted again without a person asking.
+	// What the window holds, in the order each part needs the next: the agents
+	// are let go of, then the walk and the watch, which write to the index, and
+	// then the index itself.
+	held := letgo.InOrder(
+		func() {
+			if err := away(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
+			}
+		},
+		stop,
+		vaults.wait,
+		func() {
+			if err := db.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
+			}
+		},
+	)
+	defer held.Go()
+
+	// What the window draws from is followed while it is open, so a card changed
+	// or a deck written is counted again without a person asking. The vaults are
+	// followed by the openings they were opened through.
 	//
-	// The vaults, for the cards themselves, which are read from their files.
-	held, err := registry.All()
-	if err != nil {
-		return err
-	}
-	watcher := cfg.VaultWatcher()
-	for _, v := range held {
-		changes, lost, err := watcher.Watch(ctx, v)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "numen-flashcards: %s is not being followed: %v\n", v.Name, err)
-			continue
-		}
-		api.Follows(ctx, drop(changes))
-		api.Follows(ctx, lost)
-	}
-
-	// And the index, for which files are decks. That answer is the index's, and
-	// another window writing it changes it.
+	// The index is followed here, for which files are decks. That answer is the
+	// index's, and another window writing it changes it.
 	moves, err := cfg.Moves(ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
@@ -148,6 +166,14 @@ func run(cfg container.Config, noAgent bool) error {
 		Assets: application.AssetOptions{
 			Handler: api.Serving(pages),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		// Run on the thread the window is drawn on, once the application has
+		// stopped dispatching. The walk and the watch are waited for with no
+		// bound, and a window not yet destroyed holds until they are done.
+		PostShutdown: held.Go,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",
@@ -156,20 +182,4 @@ func run(cfg container.Config, noAgent bool) error {
 		URL:    "/",
 	})
 	return app.Run()
-}
-
-// drop is a channel of paths as a channel of nothing: what moved is not carried
-// past here, because the page asks what the vaults come to whatever it was.
-func drop(paths <-chan []string) <-chan struct{} {
-	out := make(chan struct{}, 1)
-	go func() {
-		defer close(out)
-		for range paths {
-			select {
-			case out <- struct{}{}:
-			default:
-			}
-		}
-	}()
-	return out
 }

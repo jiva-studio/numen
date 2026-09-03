@@ -30,7 +30,7 @@ defineExpose({
       cn(
         'w-full rounded-node border border-field-rule bg-field px-3 py-2',
         'font-sans text-base text-ink placeholder:text-hushed',
-        'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'outline-none ring-numen',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )

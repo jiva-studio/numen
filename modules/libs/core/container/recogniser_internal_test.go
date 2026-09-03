@@ -37,6 +37,8 @@ type watched struct {
 
 	mu   sync.Mutex
 	open int
+	// while is the list as it stood when the models were asked for.
+	while []task.Task
 }
 
 func recognising(t *testing.T, why error) *watched {
@@ -51,6 +53,7 @@ func recognising(t *testing.T, why error) *watched {
 		open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 			w.mu.Lock()
 			w.open++
+			w.while = tasks.List()
 			w.mu.Unlock()
 			if why != nil {
 				return nil, nil, why
@@ -66,6 +69,17 @@ func (w *watched) opened() int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.open
+}
+
+// opening is the one piece of work in the list while the models were asked for.
+func (w *watched) opening(t *testing.T) task.Task {
+	t.Helper()
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if len(w.while) != 1 {
+		t.Fatalf("the list holds %d pieces of work while the models arrive: %+v", len(w.while), w.while)
+	}
+	return w.while[0]
 }
 
 // settled waits for the reading to be over.
@@ -152,6 +166,27 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	}
 	if at.Failed == "" || at.About != "a.pdf" {
 		t.Errorf("got %+v", at)
+	}
+}
+
+// Getting the models is a step of its own, and it is named for what it is. A
+// row that calls it by the name of the work that follows leaves a person
+// watching a reading that has not begun.
+func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
+	w := recognising(t, errors.New("no models on this machine"))
+
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
+	}
+	w.settled(t)
+
+	at := w.opening(t)
+	if at.Doing != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", at.Doing)
+	}
+	// Nothing has come down, so there is no share of it to draw.
+	if at.Total != 0 {
+		t.Errorf("a step that has counted nothing is drawn against %d", at.Total)
 	}
 }
 

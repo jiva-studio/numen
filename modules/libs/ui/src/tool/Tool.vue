@@ -25,7 +25,7 @@ withDefaults(
 </script>
 
 <template>
-  <p class="tool numen flex items-baseline gap-2 font-sans text-small text-hushed">
+  <p class="tool numen flex items-baseline gap-2 font-sans text-base text-hushed">
     <span class="tool__mark" :data-working="working || undefined" />
     <span class="tool__name min-w-0 truncate">{{ tool }}</span>
     <span v-if="about" class="tool__about min-w-0 flex-1 truncate opacity-70">{{ about }}</span>

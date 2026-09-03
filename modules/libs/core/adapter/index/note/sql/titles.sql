@@ -18,6 +18,7 @@ SELECT * FROM (
     SELECT 0                                AS kind,
            s.path                           AS path,
            n.title                          AS title,
+           n.type                           AS type,
            -1                               AS line,
            highlight(titles_fts, 0, ?, ?)   AS at,
            bm25(titles_fts)                 AS score
@@ -29,13 +30,14 @@ SELECT * FROM (
     LIMIT ?
 )
 UNION ALL
-SELECT kind, path, title, line, at, score FROM (
-    SELECT kind, path, title, line, at, score,
+SELECT kind, path, title, type, line, at, score FROM (
+    SELECT kind, path, title, type, line, at, score,
            ROW_NUMBER() OVER (PARTITION BY note ORDER BY score) AS carried
     FROM (
         SELECT 1                                AS kind,
                s.path                           AS path,
                n.title                          AS title,
+               n.type                           AS type,
                h.line                           AS line,
                h.note_id                        AS note,
                highlight(headings_fts, 0, ?, ?) AS at,

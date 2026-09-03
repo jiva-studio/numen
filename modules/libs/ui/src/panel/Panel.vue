@@ -11,7 +11,7 @@
 
 <template>
   <div
-    class="numen flex min-h-0 flex-col gap-gap overflow-hidden rounded-panel border border-panel-rule bg-panel p-panel shadow-panel backdrop-blur-panel font-sans text-base text-ink"
+    class="numen panel-numen flex min-h-0 flex-col gap-gap overflow-hidden p-panel font-sans text-base text-ink"
   >
     <slot />
   </div>

@@ -118,9 +118,9 @@ onMounted(async () => {
 
 <style scoped>
 /* The picture is the page: it fills what the content leaves and scrolls
-   nothing, because panning it is the gesture. */
+   nothing. */
 .plex {
-  width: 100%;
-  height: 100%;
+  inline-size: 100%;
+  block-size: 100%;
 }
 </style>

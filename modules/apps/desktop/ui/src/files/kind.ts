@@ -1,17 +1,22 @@
 /**
  * What one files tab holds: the tree of the vault, and what a gesture in it
- * does.
- *
- * The tree reports the shape of a gesture and nothing else. Where a row
- * activated takes the person, what the menu on a row offers, and what a name
- * typed over a row comes to are decided here, so a test can ask them without a
- * screen.
+ * does. The tree reports the shape of a gesture, and what it comes to is
+ * decided here.
  */
 import { ref } from 'vue'
 import type { Entry, Source, Went } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
-import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_STENCIL, OFFERED, RENAME } from './menu'
+import {
+  NEW_DECK,
+  NEW_FOLDER,
+  NEW_NOTE,
+  NEW_PRESET,
+  NEW_STENCIL,
+  OFFERED,
+  RENAME,
+  type CanRun,
+} from './menu'
 import type { Host, Kind } from '../windowing'
 import { FILES } from '../workspace'
 import FilesTab from './FilesTab.vue'
@@ -58,9 +63,19 @@ export interface Filing {
   cuts(folder: string, name: string): Promise<string>
   /** A stencil made the same way. */
   stencils(folder: string, name: string): Promise<string>
+  /** A preset made the same way, naming none of its settings. */
+  presets(folder: string, name: string): Promise<string>
   /** What could not be done, in words a person reads. */
   says(text: string): void
+  /**
+   * Whether this build can do a run at all, which decides whether the menu on
+   * a row offers it. A window that says nothing offers every run.
+   */
+  canRun?: CanRun
 }
+
+/** One of the three files the vault names itself, made in a folder. */
+type Cut = (folder: string, name: string) => Promise<string>
 
 /**
  * Where a row activated takes the person: the file the row stands for, under
@@ -289,14 +304,14 @@ export function filing(list: Listing, deps: Filing) {
   }
 
   /**
-   * A deck or a stencil made where the row stands, and its name put in a field
-   * for the person to type over. The vault names the file and answers where it
-   * stands, so a name already taken there comes back as a refusal.
+   * A deck, a stencil or a preset made where the row stands, and its name put
+   * in a field for the person to type over. The vault names the file and
+   * answers where it stands, so a name already taken there comes back as a
+   * refusal.
    */
-  const cuts = async (path: string | null, stencil: boolean) => {
+  const cuts = async (path: string | null, cut: Cut, name: string) => {
     const into = folderFor(path)
-    const name = stencil ? words.newStencil : words.newDeck
-    const made = stencil ? await deps.stencils(into, name) : await deps.cuts(into, name)
+    const made = await cut(into, name)
     if (!made) return
     await list.opens(into)
     renaming.value = made
@@ -316,8 +331,9 @@ export function filing(list: Listing, deps: Filing) {
     menu.value = null
     if (!asking || !OFFERED.has(id)) return
     if (id === NEW_NOTE) return void writes(asking.path)
-    if (id === NEW_DECK) return void cuts(asking.path, false)
-    if (id === NEW_STENCIL) return void cuts(asking.path, true)
+    if (id === NEW_DECK) return void cuts(asking.path, deps.cuts, words.newDeck)
+    if (id === NEW_STENCIL) return void cuts(asking.path, deps.stencils, words.newStencil)
+    if (id === NEW_PRESET) return void cuts(asking.path, deps.presets, words.newPreset)
     if (id === NEW_FOLDER) return void makes(asking.path)
 
     const path = asking.path
@@ -335,6 +351,9 @@ export function filing(list: Listing, deps: Filing) {
 
   /** What the vault holds at a row, and none of the three where it holds none. */
   const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'
+
+  /** Whether this build can do a run at all, as the menu on a row asks it. */
+  const canRun: CanRun = (run) => deps.canRun?.(run) ?? true
 
   return {
     list,
@@ -358,5 +377,6 @@ export function filing(list: Listing, deps: Filing) {
     dismiss,
     chose,
     nameOf,
+    canRun,
   }
 }

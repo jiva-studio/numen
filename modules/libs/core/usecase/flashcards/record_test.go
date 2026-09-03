@@ -13,6 +13,7 @@ import (
 // for nothing a schedule could be worked out from, so it is refused before it
 // is written rather than left in the log for every later reading to skip.
 func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	record := s.run(t, time.Now())
 
@@ -38,6 +39,7 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 // Taking back an answer names the one it takes back. Nothing here guesses which
 // of a sitting's answers a person meant.
 func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	if _, err := s.run(t, time.Now()).TakeBack(t.Context(), ""); err == nil {
@@ -48,6 +50,7 @@ func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 // A run is known by the file it writes, which is what the counting is kept
 // against: a run of the same name and length holds the same answers.
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 

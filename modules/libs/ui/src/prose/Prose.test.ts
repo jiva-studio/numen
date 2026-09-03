@@ -31,6 +31,47 @@ describe('a link that was pressed', () => {
   })
 })
 
+describe('a wikilink in the prose', () => {
+  it('is a link, pointing at the address the brackets hold', async () => {
+    const wrapper = prose('It sits under [[Thermodynamics]].')
+
+    await wrapper.find('a').trigger('click')
+
+    expect(wrapper.find('a').text()).toBe('Thermodynamics')
+    expect(wrapper.emitted('follow')?.[0]?.[0]).toBe('name://Thermodynamics')
+  })
+
+  it('is read in the sentence by its alias', () => {
+    const wrapper = prose('It argues [[Entropy as disorder|the other way]].')
+
+    expect(wrapper.find('a').text()).toBe('the other way')
+    expect(wrapper.find('a').attributes('href')).toBe('name://Entropy as disorder')
+  })
+
+  it('is not followed by the browser, which has nowhere to take a note', async () => {
+    const wrapper = prose('It sits under [[Thermodynamics]].')
+
+    await wrapper.find('a').trigger('click')
+
+    const press = wrapper.emitted('follow')?.[0]?.[1] as MouseEvent
+    expect(press.defaultPrevented).toBe(true)
+  })
+
+  it('is drawn as reaching nothing where nothing answers to it', () => {
+    const wrapper = mount(Prose, {
+      props: { text: 'Under [[Nowhere]] and [[Thermodynamics]].', unresolved: ['name://Nowhere'] },
+    })
+
+    const [nowhere, somewhere] = wrapper.findAll('a')
+    expect(nowhere?.attributes('data-reaches')).toBe('nothing')
+    expect(somewhere?.attributes('data-reaches')).toBeUndefined()
+  })
+
+  it('is an example of a link inside a code fence, and not one', () => {
+    expect(prose('```\n[[Thermodynamics]]\n```').findAll('a')).toHaveLength(0)
+  })
+})
+
 describe('prose pressed anywhere else', () => {
   it('says nothing about a link', async () => {
     const wrapper = prose('Nothing here points anywhere.')

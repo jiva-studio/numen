@@ -15,7 +15,6 @@ import Rule from '../rule/Rule.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
 import {
-  blanks,
   DECK_WORDS,
   endOf,
   grid,
@@ -26,11 +25,10 @@ import {
   type Banded,
   type DeckWords,
   type Drawn,
-  type Filled,
   type Run,
   type Wrong,
 } from './deck'
-import { declared, numbered, type Landing } from './order'
+import { numbered, type Landing } from './order'
 import type { Cut } from './stencil'
 
 /** A card nothing is wrong with any value of. */
@@ -56,11 +54,11 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /**
-   * A card asked for, cut by a stencil, with a value standing empty under every
-   * field that stencil declares. It is made at the end of the section its plus
-   * stands in, and nothing names the cards before the first section.
+   * A card asked for, cut by the stencil of that name. It is made at the end of
+   * the section its plus stands in, and nothing names the cards before the
+   * first section. What a new card holds is the caller's.
    */
-  (event: 'add', stencil: string, filled: readonly Filled[], section: string | null): void
+  (event: 'add', stencil: string, section: string | null): void
   (event: 'remove', card: string): void
   /**
    * A card let go somewhere in the deck: before the card of that identity, at
@@ -107,7 +105,7 @@ const after = (run: Run): Landing => endOf(run.id)
 
 const add = (cut: Cut, run: Run): void => {
   asking.value = null
-  emit('add', cut.name, blanks(declared(cut.fields)), run.band?.id ?? null)
+  emit('add', cut.name, run.band?.id ?? null)
 }
 
 const addSection = (): void => {
@@ -128,7 +126,7 @@ const addSection = (): void => {
            section, which is the one place a section holding none takes one. -->
       <div
         v-if="run.band"
-        class="deck__band"
+        class="deck__band caret-below"
         :data-band="run.band.id"
         :data-before="run.band.id === at || undefined"
         @dragover.stop="over(run.band.id, $event)"
@@ -146,7 +144,7 @@ const addSection = (): void => {
            under no section at all. -->
       <div
         v-else-if="run.landing"
-        class="deck__head"
+        class="deck__head caret-below"
         data-head
         :data-before="run.id === at || undefined"
         @dragover.stop="over(run.id, $event)"
@@ -157,7 +155,7 @@ const addSection = (): void => {
         <div
           v-for="tile in run.tiles"
           :key="tile.id"
-          class="deck__tile"
+          class="deck__tile caret-beside"
           :data-before="tile.id === at || undefined"
           @dragover.stop="over(tile.id, $event)"
           @drop.stop="drop"
@@ -181,7 +179,7 @@ const addSection = (): void => {
              such run. -->
         <article
           v-if="run.plusAt !== null"
-          class="deck__tile deck__plus rounded-node"
+          class="deck__tile deck__plus caret-beside rounded-node"
           :aria-posinset="run.plusAt"
           :aria-setsize="shown.of"
           :aria-label="words.add"
@@ -233,6 +231,8 @@ const addSection = (): void => {
 </template>
 
 <style scoped>
+@import './carrying.css';
+
 /* The deck is what scrolls. The grid inside it is as tall as its rows, which is
    what lets every row take the height of the tallest tile of the whole deck.
    The room the bar takes is kept whether it is drawn or not: how many columns
@@ -240,6 +240,8 @@ const addSection = (): void => {
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;
+  /* The caret stands in the middle of the room between two tiles. */
+  --caret-out: calc(-1 * var(--gap) / 2);
 
   display: flex;
   flex-direction: column;
@@ -260,19 +262,6 @@ const addSection = (): void => {
 .deck__head {
   position: relative;
   block-size: var(--gap);
-}
-
-/* The caret stands where the card is going: a card let go on a heading lands
-   at the head of what stands under it, so the caret stands under the heading
-   and never reads as a place before it. */
-.deck__head[data-before]::before,
-.deck__band[data-before]::before {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: calc(-1 * var(--gap) / 2);
-  block-size: var(--numen-caret);
-  background: var(--numen-ring);
 }
 
 /* A run drawing neither a card nor a plus takes no room of its own, which is
@@ -299,15 +288,6 @@ const addSection = (): void => {
   position: relative;
   display: grid;
   min-inline-size: 0;
-}
-
-.deck__tile[data-before]::before {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  inset-inline-start: calc(-1 * var(--gap) / 2);
-  inline-size: var(--numen-caret);
-  background: var(--numen-ring);
 }
 
 /* The plus is an outline until it is pressed: it holds nothing yet. What it

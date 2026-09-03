@@ -1,13 +1,8 @@
 /**
- * A hand left on a box.
+ * A hand left on a box opens it where it stands, until the whole of a title too
+ * long for it is there. Every other box keeps its place.
  *
- * A title longer than its box is cut short in it. A hand that stays on the box
- * opens it where it stands, until the whole title is there. Every other box
- * keeps its place, so the picture is the one the reader was already looking at.
- *
- * The opening is drawn frame by frame, off the same clock the plex moves on:
- * the width is a geometry a browser is free to leave alone, and this one is
- * followed exactly.
+ * The opening is drawn frame by frame, off the same clock the plex moves on.
  */
 import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { easeOut, lerp, type Size } from './arrange'

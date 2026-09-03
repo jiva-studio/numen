@@ -148,7 +148,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 		defer insert.Close()
 		for i, l := range n.Links {
 			if _, err := insert.ExecContext(ctx, row, i,
-				l.Target.Scheme, l.Target.Value, domain.Basename(l.Target.Value),
+				l.Target.Scheme, l.Target.Value, domain.LinkName(l.Target.Value),
 				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
 			); err != nil {
 				return fmt.Errorf("insert_link: %w", err)

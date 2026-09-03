@@ -74,10 +74,8 @@ const props = withDefaults(
      */
     parts?: (id: string) => readonly PlexPart[]
     /**
-     * What to call a seat. The plex has to write one into the picture — the
-     * outline a gesture draws says which seat it would take — and the words
-     * for it belong to whoever renders the plex, as they do for the overflow
-     * line. English by default, because something has to be drawn.
+     * What to call a seat, for the outline a gesture draws and for the
+     * overflow line. English by default.
      */
     seatName?: (seat: PlexRelatedSeat) => string
     /**
@@ -88,7 +86,7 @@ const props = withDefaults(
     carried?: readonly string[]
     /**
      * What to call what letting go with something carried in would do. English
-     * by default, because something has to be drawn.
+     * by default.
      */
     carriedName?: (seat: PlexRelatedSeat) => string
   }>(),
@@ -127,14 +125,14 @@ const emit = defineEmits<{
    */
   (event: 'bring', carried: readonly string[], seat: PlexRelatedSeat): void
   /**
-   * A menu was asked for on a node. The point is in the coordinates of the
-   * screen; the element is what it was asked from, which is the only thing a
-   * keypress hands over; the opening is what asked for it.
+   * A menu was asked for on a node: which node, where on the screen, and what
+   * asked for it. A keypress carries no point, so the middle of the box is
+   * where it is asked.
    *
    * Every node answers this, the focus included. What the menu holds and what
    * choosing an item does are the caller's.
    */
-  (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
+  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
   /** A menu asked for on a node has nothing left to stand on. */
   (event: 'dismiss'): void
   /**
@@ -290,7 +288,11 @@ const overflow = computed(
     ),
 )
 
-defineExpose({ moving: toRef(moving) })
+defineExpose({
+  moving: toRef(moving),
+  /** The keyboard put back on a node by whoever took it away. */
+  focusNode: (id: string) => view.value?.focusNode(id),
+})
 </script>
 
 <template>
@@ -324,7 +326,7 @@ defineExpose({ moving: toRef(moving) })
       @show="(id, showing) => emit('show', id, showing)"
       @reach="gesture.begin"
       @ask="gesture.ask"
-      @menu="(id, at, from, opening) => emit('menu', id, at, from, opening)"
+      @menu="(id, at, opening) => emit('menu', id, at, opening)"
       @enter="(id, part) => emit('enter', id, part)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

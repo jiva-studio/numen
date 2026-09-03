@@ -22,6 +22,7 @@ func busy(context.Context, domain.Vault, []string) error {
 // may be holding it, and a person is told which deck their cards are missing
 // from rather than left to wonder.
 func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 
 	// The folder is closed to writing, so the deck cannot be replaced. What a
@@ -50,6 +51,7 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 // Its cards carry the marks that were minted, so they stand in this sitting and
 // nothing has to mint them a second time.
 func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 	marking := s.marking
 	marking.Index = busy
@@ -77,6 +79,7 @@ func TestADeckWrittenWithNoLevellingIsNotNamed(t *testing.T) {
 // A vault whose decks are all written has nothing to report, which is what says
 // the naming above is the refusal and not the ordinary case.
 func TestAVaultWhoseDecksAreWrittenNamesNone(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)

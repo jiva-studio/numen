@@ -2,8 +2,7 @@
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
 import { beside } from '../placing/place'
-import type { Point } from '../plex/model'
-import type { Size } from '../plex/arrange'
+import type { Point, Size } from '../lib/geometry'
 
 /**
  * One thing that can be chosen. The identifier is opaque: the menu has no way
@@ -13,6 +12,8 @@ export interface MenuItem {
   readonly id: string
   /** What is written on it. */
   readonly text: string
+  /** A second line under the words, in the small print. */
+  readonly detail?: string
   /** Drawn and announced, and not choosable. */
   readonly disabled?: boolean
   /**

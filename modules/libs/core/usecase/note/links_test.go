@@ -116,6 +116,30 @@ func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
 	}
 }
 
+// A dot in a name is part of the name, and the whole of it is what the note is
+// filed under. Both directions are asked here: the link and the backlink are
+// answered through the same stored name.
+func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
+	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
+	db, v := indexed(t, map[string]string{
+		"source.md":                "Points at [[" + lecture + "]].\n",
+		"notes/" + lecture + ".md": "# " + lecture + "\n",
+	})
+
+	c := links(t, db, v, "source.md")
+	if len(c.Links) != 1 {
+		t.Fatalf("got %+v", c.Links)
+	}
+	if c.Links[0].To != "notes/"+lecture+".md" {
+		t.Errorf("resolved to %q", c.Links[0].To)
+	}
+
+	back := links(t, db, v, "notes/"+lecture+".md")
+	if len(back.Backlinks) != 1 || back.Backlinks[0].From != "source.md" {
+		t.Errorf("backlinks = %+v", back.Backlinks)
+	}
+}
+
 func TestALinkToNothingIsDanglingRatherThanAnError(t *testing.T) {
 	db, v := indexed(t, map[string]string{
 		"source.md": "Points at [[Nothing At All]].\n",

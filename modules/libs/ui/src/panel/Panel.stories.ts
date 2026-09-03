@@ -47,6 +47,38 @@ export const Playground: Story = {
   },
 }
 
+/**
+ * More on it than it has room for. The panel keeps the things on it in a
+ * column and clips what is past its edge; nothing here scrolls itself.
+ */
+export const Crowded: Story = {
+  render: () => ({
+    components: { Panel },
+    setup: () => ({ LONG }),
+    template: `
+      <Panel data-panel class="h-40">
+        <p>{{ LONG }}</p>
+        <p>{{ LONG }}</p>
+      </Panel>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const panel = canvasElement.querySelector<HTMLElement>('[data-panel]')!
+    const [first, second] = [...panel.children] as HTMLElement[]
+
+    // One under the other, clear of each other and of the panel's own edge.
+    const above = first!.getBoundingClientRect()
+    const below = second!.getBoundingClientRect()
+    await expect(below.top).toBeGreaterThan(above.bottom)
+    await expect(above.left).toBe(below.left)
+    await expect(above.top).toBeGreaterThan(panel.getBoundingClientRect().top)
+
+    // Past the edge, and no bar offered to reach it.
+    await expect(panel.scrollHeight).toBeGreaterThan(panel.clientHeight)
+    await expect(getComputedStyle(panel).overflowY).toBe('hidden')
+  },
+}
+
 /** Nothing on it. */
 export const Empty: Story = {
   render: () => ({

@@ -100,6 +100,7 @@ func scheduling(t *testing.T, s vaulted, path string) (decks []string, faces int
 // the one it is read against holds only the decks the preset schedules. Both
 // hold one history, so what the two answers differ by is the reading.
 func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
+	t.Parallel()
 	shapes := []struct {
 		name string
 		path string

@@ -9,6 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Segmented from './Segmented.vue'
+import { lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 const UNBROKEN = 'supercalifragilisticexpialidocious'
 
@@ -184,6 +186,39 @@ export const NoTextAtAll: Story = {
 
 /** A control nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }
+
+/**
+ * The same control on the dark set of tokens, where the segment in force is
+ * told from the two beside it by a blend.
+ *
+ * The accent carries its own ink, and on the dark set it stands above the
+ * ground the quiet segments keep while that ink stands below theirs.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: { chosen: 'medium' },
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const [small, medium, large] = segments(canvasElement)
+    expect(segments(canvasElement)).toHaveLength(3)
+    expect(chosenOf(canvasElement)).toBe('Medium')
+
+    // A quiet segment keeps no ground of its own, so both are read over the
+    // ground the control itself lays down.
+    const behind = getComputedStyle(
+      canvasElement.querySelector('[data-slot="segmented"]') as HTMLElement,
+    ).backgroundColor
+    const chosen = getComputedStyle(medium as HTMLElement)
+    const ground = lightness(chosen.backgroundColor, behind)
+    const ink = lightness(chosen.color, chosen.backgroundColor)
+
+    for (const beside of [small, large]) {
+      const quiet = getComputedStyle(beside as HTMLElement)
+      expect(ground).toBeGreaterThan(lightness(quiet.backgroundColor, behind) + 24)
+      expect(ink).toBeLessThan(lightness(quiet.color, behind) - 24)
+    }
+  },
+}
 
 /** It is announced as a set of choices, one of them in force. */
 export const AnnouncedAsChoices: Story = {

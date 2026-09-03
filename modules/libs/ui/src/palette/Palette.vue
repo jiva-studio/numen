@@ -2,16 +2,13 @@
 /**
  * The palette: a field, and everything the words in it turned up, in bands.
  *
- * It stands over the whole window and is opened by a keystroke, so it is drawn
- * at the end of the document and belongs to nothing on screen. It takes bands
- * of items and says which item was chosen and what was asked of it; what the
- * bands are, what an item addresses and what choosing one does are the
- * caller's.
+ * It takes bands of items and says which item was chosen and what was asked of
+ * it. The keyboard stays in the field the whole time, and what is lit is named
+ * to a screen reader rather than focused.
  *
- * The keyboard stays in the field the whole time, because a person is still
- * typing. What is lit is named to a screen reader rather than focused. The one
- * place the keyboard leaves the field is the action panel, which is a field of
- * its own over a list of its own.
+ * `data-palette` names each part: `ground`, `panel`, `crumb`, `field`, `list`,
+ * `title`, `icon`, `name`, `detail`, `hint`, `silence`, `nothing`, `key` and
+ * `more`. A band is a group and an item is an option.
  */
 import {
   computed,
@@ -25,21 +22,22 @@ import {
 } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
 import KeyCap from './KeyCap.vue'
+import PaletteActions from './PaletteActions.vue'
 import {
   actionAt,
   choosable,
   commandKeyChord,
   flatten,
   keptAt,
-  keptOn,
   keyed,
   opensActions,
   ordered,
-  placeActions,
   placePalette,
-  stepIn,
   stepTo,
+  ACTION_WORDS,
+  type ActionWords,
   type PaletteBand,
+  type PaletteKeys,
   type PaletteLit,
 } from './model'
 
@@ -47,7 +45,8 @@ const props = withDefaults(
   defineProps<{
     /**
      * The bands, in the order they are offered. A band holding nothing is
-     * drawn at the foot, whatever order it was offered in.
+     * drawn at the foot, whatever order it was offered in, and only while it
+     * is working or has something to say in place of items.
      */
     bands?: readonly PaletteBand[]
     /** Whether it is drawn at all. */
@@ -76,12 +75,13 @@ const props = withDefaults(
     to?: string | HTMLElement
     /** What it is announced as. */
     name?: string
-    /** What the action panel is announced as, and what the key to it is called. */
-    actionsName?: string
-    /** The words standing in for what has not been typed in the panel's field. */
-    actionsPlaceholder?: string
-    /** What the panel says when the words in its field leave no action. */
-    actionsSilence?: string
+    /** The words the action panel is drawn with. */
+    actionWords?: ActionWords
+    /**
+     * The keystroke that opens the action panel. The one this machine's browser
+     * reports by default; a test hands in its own.
+     */
+    actionKey?: PaletteKeys
   }>(),
   {
     bands: () => [],
@@ -93,9 +93,8 @@ const props = withDefaults(
     from: null,
     to: 'body',
     name: 'Palette',
-    actionsName: 'Actions',
-    actionsPlaceholder: 'Search actions',
-    actionsSilence: 'Nothing by that name',
+    actionWords: () => ACTION_WORDS,
+    actionKey: () => commandKeyChord(navigator.userAgent),
   },
 )
 
@@ -132,17 +131,18 @@ defineSlots<{
 
 const typed = defineModel<string>({ default: '' })
 
-/** The keystroke that opens the action panel on this keyboard. */
-const command = commandKeyChord(navigator.userAgent)
-
 const uid = useId()
 const optionName = (at: number): string => `${uid}-option-${at}`
-const actionName = (at: number): string => `${uid}-action-${at}`
 
 const field = useTemplateRef<HTMLInputElement>('field')
-const list = useTemplateRef<HTMLElement>('list')
-const sheet = useTemplateRef<HTMLElement>('sheet')
-const hunt = useTemplateRef<HTMLInputElement>('hunt')
+
+/** The rows as they are drawn, each under the item it stands for. */
+const drawn = new Map<string, HTMLElement>()
+
+const holdItem = (item: string, row: unknown): void => {
+  if (row) drawn.set(item, row as HTMLElement)
+  else drawn.delete(item)
+}
 
 /** What is drawn, and in what order: a band holding nothing stands at the foot. */
 const shown = computed(() => ordered(props.bands))
@@ -169,7 +169,7 @@ const goTo = (at: number) => {
 /** What is lit is brought into sight. Only a key does this. */
 const reveal = async () => {
   await nextTick()
-  list.value?.querySelector<HTMLElement>('[data-here]')?.scrollIntoView?.({ block: 'nearest' })
+  drawn.get(held.value)?.scrollIntoView?.({ block: 'nearest' })
 }
 
 /**
@@ -227,69 +227,26 @@ const choose = (at: number, second: boolean) => {
   emit('choose', item.id, action)
 }
 
-/**
- * The action panel: everything the lit item offers, by name, in a list of its
- * own with a field of its own. Every action is a keystroke and a name away.
- */
+/** Whether the action panel stands over the palette. */
 const panel = ref(false)
 
-/** What is typed in the panel's field, which narrows the actions and nothing else. */
-const hunted = ref('')
-
-/** The action the panel is on, by its identity rather than by where it sits. */
-const chosen = ref('')
-
-const actions = computed(() => placeActions(offered.value, hunted.value))
-
-/** Which row that action stands on, counted over the actions the words left. */
-const actionHere = computed(() => actions.value.findIndex((one) => one.action.id === chosen.value))
-
-const goToAction = (to: number) => {
-  chosen.value = actions.value[to]?.action.id ?? ''
-}
-
-const overAction = (to: number, event: PointerEvent) => {
-  if (moved(event)) goToAction(to)
-}
-
-const revealAction = async () => {
-  await nextTick()
-  sheet.value?.querySelector<HTMLElement>('[data-here]')?.scrollIntoView?.({ block: 'nearest' })
-}
-
-const raise = async () => {
-  if (!offered.value.length) return
-  panel.value = true
-  hunted.value = ''
-  goToAction(keptOn(actions.value, ''))
-  await nextTick()
-  hunt.value?.focus()
-}
-
-const shut = async () => {
-  if (!panel.value) return
-  panel.value = false
-  chosen.value = ''
-  await nextTick()
-  field.value?.focus()
-}
-
-const run = (to: number) => {
-  const chosen = actions.value[to]
+/** An action chosen in the panel, on the item it was opened about. */
+const ran = (action: string) => {
   const item = lit.value
-  if (!chosen || !item) return
-  emit('choose', item.id, chosen.action.id)
-  void shut()
+  if (item) emit('choose', item.id, action)
 }
-
-/** A fresh list keeps the action the panel was on, wherever the words put it. */
-watch(actions, (now) => {
-  if (panel.value) goToAction(keptOn(now, chosen.value))
-})
 
 /** An item that stops offering anything leaves the panel about nothing. */
 watch(offered, (now) => {
-  if (!now.length) void shut()
+  if (!now.length) panel.value = false
+})
+
+// The keyboard comes back to the field when the panel over it goes, and a
+// palette that is going takes it somewhere else itself.
+watch(panel, async (now) => {
+  if (now || !props.open) return
+  await nextTick()
+  field.value?.focus()
 })
 
 /**
@@ -306,7 +263,7 @@ const onKey = (event: KeyboardEvent) => {
   if (opensActions(event)) {
     if (!offered.value.length) return
     event.preventDefault()
-    void raise()
+    panel.value = true
   } else if (event.key === 'ArrowDown') step(1)
   else if (event.key === 'ArrowUp') step(-1)
   else if (event.key === 'Home') step(1, -1)
@@ -325,41 +282,14 @@ const onKey = (event: KeyboardEvent) => {
   else if (event.key === 'Tab') event.preventDefault()
 }
 
-/**
- * The keyboard, while the action panel is open. Nothing of it reaches the
- * palette underneath: the panel is where a person is now typing.
- */
-const onActionKey = (event: KeyboardEvent) => {
-  const step = (by: number, from = actionHere.value) => {
-    event.preventDefault()
-    goToAction(stepIn(actions.value.length, from, by))
-    void revealAction()
-  }
-  if (opensActions(event) || event.key === 'Escape') {
-    event.preventDefault()
-    void shut()
-  } else if (event.key === 'ArrowDown') step(1)
-  else if (event.key === 'ArrowUp') step(-1)
-  else if (event.key === 'Home') step(1, -1)
-  else if (event.key === 'End') step(-1, 0)
-  else if (event.key === 'Enter') {
-    event.preventDefault()
-    run(actionHere.value)
-  }
-  // The keyboard stays in the panel's field for as long as the panel stands.
-  else if (event.key === 'Tab') event.preventDefault()
-}
-
 /** A press anywhere but on the action panel puts the action panel away. */
-const onPress = (event: PointerEvent) => {
-  const target = event.target
-  if (target instanceof Node && sheet.value?.contains(target)) return
-  void shut()
+const onPress = () => {
+  panel.value = false
 }
 
 /** A press on the ground: the action panel goes, and the palette under it. */
 const onGround = () => {
-  if (panel.value) return void shut()
+  if (panel.value) return void (panel.value = false)
   emit('dismiss')
 }
 
@@ -370,7 +300,6 @@ const onGround = () => {
  */
 const enter = async () => {
   panel.value = false
-  chosen.value = ''
   goTo(keptAt(places.value, props.opensOn || held.value))
   await nextTick()
   field.value?.focus()
@@ -380,7 +309,6 @@ const enter = async () => {
 
 const leave = () => {
   panel.value = false
-  chosen.value = ''
   held.value = ''
   const back = props.from
   if (back?.isConnected) back.focus()
@@ -419,10 +347,12 @@ onBeforeUnmount(() => {
     <div
       v-if="open"
       class="palette numen font-sans text-base text-ink"
+      data-palette="ground"
       @pointerdown.self="onGround"
     >
       <div
-        class="palette__panel relative flex min-h-0 flex-col rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel"
+        class="palette__panel panel-numen relative flex min-h-0 flex-col"
+        data-palette="panel"
         role="dialog"
         :aria-label="name"
         @keydown="onKey"
@@ -435,12 +365,14 @@ onBeforeUnmount(() => {
             v-if="crumb"
             :id="`${uid}-crumb`"
             class="palette__crumb rounded-pill bg-bubble px-2 py-0.5 text-small"
+            data-palette="crumb"
             >{{ crumb }}</span
           >
           <input
             ref="field"
             v-model="typed"
             class="palette__field w-full bg-transparent"
+            data-palette="field"
             type="text"
             role="combobox"
             autocomplete="off"
@@ -459,6 +391,7 @@ onBeforeUnmount(() => {
           :id="`${uid}-list`"
           ref="list"
           class="palette__list min-h-0 flex-1"
+          data-palette="list"
           role="listbox"
           :aria-label="name"
         >
@@ -473,33 +406,39 @@ onBeforeUnmount(() => {
             <p
               :id="`${uid}-band-${one.band.id}`"
               class="palette__title caps-numen flex items-center gap-1.5 text-small text-hushed"
+              data-palette="title"
             >
               <span>{{ one.band.title }}</span>
               <!-- More of this band is on its way. -->
               <Waiting v-if="one.band.working" />
             </p>
             <div
-              v-for="drawn in one.items"
-              :id="optionName(drawn.at)"
-              :key="drawn.item.id"
+              v-for="row in one.items"
+              :id="optionName(row.at)"
+              :ref="(element) => holdItem(row.item.id, element)"
+              :key="row.item.id"
               class="palette__item flex items-center gap-2 rounded-node px-2 py-1.5"
               role="option"
-              :aria-selected="drawn.at === here"
-              :aria-disabled="drawn.item.disabled || undefined"
-              :data-here="drawn.at === here || undefined"
-              :data-off="drawn.item.disabled || undefined"
-              @pointermove="over(drawn.at, $event)"
+              :aria-selected="row.at === here"
+              :aria-disabled="row.item.disabled || undefined"
+              :data-here="row.at === here || undefined"
+              :data-off="row.item.disabled || undefined"
+              @pointermove="over(row.at, $event)"
               @pointerdown.prevent
-              @click="choose(drawn.at, $event.shiftKey)"
+              @click="choose(row.at, $event.shiftKey)"
             >
-              <span v-if="$slots.icon" class="palette__icon flex shrink-0 items-center">
-                <slot name="icon" :id="drawn.item.id" />
+              <span
+                v-if="$slots.icon"
+                class="palette__icon flex shrink-0 items-center"
+                data-palette="icon"
+              >
+                <slot name="icon" :id="row.item.id" />
               </span>
 
               <span class="palette__lines flex min-w-0 flex-1 flex-col">
-                <span class="palette__name min-w-0">
+                <span class="palette__name min-w-0" data-palette="name">
                   <span
-                    v-for="(part, piece) in drawn.name"
+                    v-for="(part, piece) in row.name"
                     :key="piece"
                     :data-hit="part.hit || undefined"
                     >{{ part.text }}</span
@@ -507,11 +446,12 @@ onBeforeUnmount(() => {
                 </span>
 
                 <span
-                  v-if="drawn.detail.length"
+                  v-if="row.detail.length"
                   class="palette__detail min-w-0 text-small text-hushed"
+                  data-palette="detail"
                 >
                   <span
-                    v-for="(part, piece) in drawn.detail"
+                    v-for="(part, piece) in row.detail"
                     :key="piece"
                     :data-hit="part.hit || undefined"
                     >{{ part.text }}</span
@@ -520,78 +460,41 @@ onBeforeUnmount(() => {
               </span>
 
               <!-- What reaches this item away from the palette. -->
-              <KeyCap v-if="drawn.item.keys" class="palette__hint" :keys="drawn.item.keys" />
+              <KeyCap
+                v-if="row.item.keys"
+                class="palette__hint"
+                data-palette="hint"
+                :keys="row.item.keys"
+              />
             </div>
 
-            <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
-              {{ one.band.silence ?? 'Nothing' }}
+            <p
+              v-if="!one.items.length && one.band.silence"
+              class="palette__silence px-2 py-1.5 text-hushed"
+              data-palette="silence"
+            >
+              {{ one.band.silence }}
             </p>
           </section>
         </div>
 
-        <p v-else-if="$slots.silence" class="palette__nothing px-2 py-1.5 text-hushed">
+        <p
+          v-else-if="$slots.silence"
+          class="palette__nothing px-2 py-1.5 text-hushed"
+          data-palette="nothing"
+        >
           <slot name="silence" />
         </p>
 
         <!-- Everything the lit item offers, by name. It stands over the foot of
              the palette, and the list underneath stays where it was. -->
-        <div
+        <PaletteActions
           v-if="panel"
-          ref="sheet"
-          class="palette__actions flex flex-col rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel"
-          role="dialog"
-          :aria-label="actionsName"
-          @keydown.stop="onActionKey"
-        >
-          <div
-            :id="`${uid}-actions`"
-            class="palette__deeds min-h-0 flex-1"
-            role="listbox"
-            :aria-label="actionsName"
-          >
-            <div
-              v-for="deed in actions"
-              :id="actionName(deed.at)"
-              :key="deed.action.id"
-              class="palette__deed flex items-center gap-3 rounded-node px-2 py-1.5"
-              role="option"
-              :aria-selected="deed.at === actionHere"
-              :data-here="deed.at === actionHere || undefined"
-              @pointermove="overAction(deed.at, $event)"
-              @pointerdown.prevent
-              @click="run(deed.at)"
-            >
-              <span class="palette__deed-name min-w-0 flex-1">
-                <span
-                  v-for="(part, piece) in deed.name"
-                  :key="piece"
-                  :data-hit="part.hit || undefined"
-                  >{{ part.text }}</span
-                >
-              </span>
-              <KeyCap v-if="deed.key" class="palette__hint" :keys="deed.key" />
-            </div>
-          </div>
-
-          <p v-if="!actions.length" class="palette__deed-silence px-2 py-1.5 text-hushed">
-            {{ actionsSilence }}
-          </p>
-
-          <input
-            ref="hunt"
-            v-model="hunted"
-            class="palette__hunt w-full bg-transparent"
-            type="text"
-            role="combobox"
-            autocomplete="off"
-            spellcheck="false"
-            :placeholder="actionsPlaceholder"
-            :aria-label="actionsPlaceholder"
-            :aria-expanded="actions.length !== 0"
-            :aria-controls="`${uid}-actions`"
-            :aria-activedescendant="actionHere >= 0 ? actionName(actionHere) : undefined"
-          />
-        </div>
+          v-model:open="panel"
+          :offered="offered"
+          :words="actionWords"
+          @choose="ran"
+        />
 
         <!-- What the item now lit can be asked. An item offering one action
              says one key, and the last word opens the rest. -->
@@ -599,13 +502,13 @@ onBeforeUnmount(() => {
           v-if="offered.length"
           class="palette__keys flex items-center gap-3 text-small text-hushed"
         >
-          <span v-for="one in hinted" :key="one.action.id" class="palette__key">
+          <span v-for="one in hinted" :key="one.action.id" class="palette__key" data-palette="key">
             <KeyCap v-if="one.key" :keys="one.key" />
             {{ one.action.text }}
           </span>
-          <span class="palette__more ml-auto">
-            <KeyCap :keys="command" />
-            {{ actionsName }}
+          <span class="palette__more ml-auto" data-palette="more">
+            <KeyCap :keys="actionKey" />
+            {{ actionWords.name }}
           </span>
         </footer>
       </div>
@@ -656,8 +559,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.palette__field,
-.palette__hunt {
+.palette__field {
   block-size: var(--numen-field-min);
   padding-inline-end: var(--numen-field-text-inset);
   border: 0;
@@ -666,13 +568,7 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-.palette__hunt {
-  padding-inline-start: var(--numen-field-text-inset);
-  border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
-}
-
-.palette__field::placeholder,
-.palette__hunt::placeholder {
+.palette__field::placeholder {
   color: var(--numen-edge-label);
 }
 
@@ -710,8 +606,13 @@ onBeforeUnmount(() => {
 }
 
 /* The room an icon takes, kept whether or not the row draws one, so the words
-   line up down the list. What is drawn in it is the caller's. */
+   line up down the list. What is drawn in it is the caller's.
+
+   It stands on the name, centred against that one line, so the marks read down
+   the list beside the names on a row carrying a second line. */
 .palette__icon {
+  align-self: start;
+  margin-block-start: calc((1lh - var(--icon)) / 2);
   inline-size: var(--icon);
   block-size: var(--icon);
 }
@@ -724,9 +625,8 @@ onBeforeUnmount(() => {
   color: var(--numen-edge-label);
 }
 
-/* One line each, then an ellipsis. A list is read down its leading edge. */
-.palette__name,
-.palette__deed-name {
+/* One line, then an ellipsis. A list is read down its leading edge. */
+.palette__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -745,16 +645,14 @@ onBeforeUnmount(() => {
 /* Why the item is here. It sits under words that are being read, so it is a
    tint and not a colour. */
 .palette__name [data-hit],
-.palette__detail [data-hit],
-.palette__deed-name [data-hit] {
+.palette__detail [data-hit] {
   border-radius: 2px;
   background: var(--numen-highlight);
   font-weight: 600;
 }
 
 .palette__silence,
-.palette__nothing,
-.palette__deed-silence {
+.palette__nothing {
   margin: 0;
 }
 
@@ -776,36 +674,4 @@ onBeforeUnmount(() => {
   flex: none;
 }
 
-/* The actions stand over the foot of the palette, at the corner the keys are
-   read from. */
-.palette__actions {
-  /* How wide the panel is and how much of the palette its list takes. */
-  --panel-width: 280px;
-  --panel-tallest: 240px;
-
-  position: absolute;
-  inset-block-end: var(--numen-inset);
-  inset-inline-end: var(--numen-inset);
-  inline-size: var(--panel-width);
-  /* Never past the corners of the palette it stands over. */
-  max-inline-size: calc(100% - 2 * var(--numen-inset));
-  max-block-size: calc(100% - 2 * var(--numen-inset));
-}
-
-.palette__deeds {
-  max-block-size: var(--panel-tallest);
-  padding: var(--numen-field-padding);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-.palette__deed {
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.palette__deed[data-here] {
-  background: var(--numen-bubble-bg);
-}
 </style>
