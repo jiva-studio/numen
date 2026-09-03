@@ -37,7 +37,7 @@ inside. Nothing has to be configured for that.
 | `beta/` | The newest beta, under names that carry no version |
 | `builds/<stamp>/` | That beta under names that carry the stamp, kept |
 
-Six files in each, and one name each in `latest/` and `beta/`:
+Six builds in each and what they hold beside them, one name each in `latest/` and `beta/`:
 
 | File | What it is |
 | --- | --- |
@@ -47,6 +47,7 @@ Six files in each, and one name each in `latest/` and `beta/`:
 | `numen-linux-amd64.deb` | Debian and Ubuntu |
 | `numen-linux-amd64.rpm` | Fedora and RHEL |
 | `numen-linux-amd64.tar.gz` | The window on its own |
+| `notes.md` | What this release holds that the last one did not |
 
 A name in `latest/` or `beta/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. Every file is put up a second time under a name carrying the stamp — `numen-2026.9.1-beta.884-884-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
 
@@ -118,7 +119,9 @@ files the keyboard page is written from.
 
 **The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
 
-Then it tags the commit it built, works out what has landed since the last stable release, and makes a release on GitHub carrying those notes and the same files. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
+What has landed since the last stable release is worked out before anything is uploaded, and goes up beside the builds as `notes.md`, which is the address `latest.json` carries. The repository is closed, so that copy is the one a reader of the page can reach.
+
+Then it tags the commit it built and makes a release on GitHub carrying the same notes and the same files, which is where the tag and the history live for us. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
 
 `latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 
