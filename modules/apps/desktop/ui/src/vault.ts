@@ -14,6 +14,7 @@ import {
   Owed,
   Presence as Presences,
   Role as Roles,
+  Seat as Seats,
   SourceKind,
   VaultService,
   VaultsRefusal,
@@ -26,6 +27,7 @@ import type {
   Entry as EntryMessage,
   Known as KnownMessage,
   Moved as MovedMessage,
+  NeighbourhoodResponse as NeighbourhoodMessage,
   Problem as ProblemMessage,
   Refusal,
   Stencil as StencilMessage,
@@ -53,6 +55,7 @@ import type {
   Made,
   Moved,
   Movement,
+  Neighbourhood,
   NewLink,
   NoteType,
   Offer,
@@ -64,6 +67,7 @@ import type {
   Renamed,
   Role,
   Runs,
+  Seat,
   Source,
   Stencilled,
   VaultRefused,
@@ -185,7 +189,7 @@ export const cards: Cards = {
 /** The same questions, in the shape the window asks them. */
 export const core: Core & Asking & Commanding = {
   vaults: () => vaults.list(),
-  neighbourhood: (path) => vault.neighbourhood({ path }),
+  neighbourhood: async (path) => around(await vault.neighbourhood({ path })),
   opening: async () => (await vault.opening({})).note ?? null,
   state: () => vault.state({}),
   changes: async function* (signal) {
@@ -589,6 +593,39 @@ const standing: Record<Presences, Presence> = {
   [Presences.NOT_FETCHED]: 'not fetched',
   [Presences.NOTHING_TO_FETCH]: 'nothing to fetch',
 }
+
+/** Where a note sits around the note in focus, in the words the window uses. */
+const seated: Record<Seats, Seat | null> = {
+  [Seats.UNSPECIFIED]: null,
+  [Seats.PARENT]: 'parent',
+  [Seats.CHILD]: 'child',
+  [Seats.JUMP]: 'jump',
+  [Seats.SIBLING]: 'sibling',
+}
+
+/**
+ * A neighbourhood in the words the window uses. A note the window has no seat
+ * for, and one the answer names no note at, is not one of them.
+ */
+const around = (said: NeighbourhoodMessage): Neighbourhood => ({
+  focus: { path: said.focus?.path ?? '', title: said.focus?.title ?? '' },
+  focusType: noteType(said.focusType),
+  related: said.related.flatMap((one) => {
+    const seat = seated[one.seat] ?? null
+    if (seat === null || one.note === undefined) return []
+    return [
+      {
+        path: one.note.path,
+        title: one.note.title,
+        type: noteType(one.type),
+        seat,
+        label: one.label,
+        through: one.through,
+        mutual: one.mutual,
+      },
+    ]
+  }),
+})
 
 /** Which of four a note is, in the words the window uses. */
 const typed: Record<NoteTypes, NoteType> = {

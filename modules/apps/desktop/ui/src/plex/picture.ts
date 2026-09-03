@@ -5,31 +5,8 @@
  * seat and edges between them; it is not told what a note is, and the schema
  * says nothing about drawing.
  */
-import { NeighbourhoodResponseSchema, NoteType as NoteTypes, Seat } from '@numen/protocol'
-import type { Heading, Neighbourhood, NoteType } from '../core'
-import type {
-  EdgeArrow,
-  PlexEdge,
-  PlexNeighbourhood,
-  PlexNode,
-  PlexPart,
-  PlexRelatedSeat,
-} from '@numen/ui'
-
-/**
- * The schema that builds a neighbourhood. The type is a generated message
- * branded with its own name, so one that did not come off the wire is made
- * with `create(NeighbourhoodSchema, …)`.
- */
-export const NeighbourhoodSchema = NeighbourhoodResponseSchema
-
-/** Which of four a note is, in the word this window uses for it. */
-const types: Record<NoteTypes, NoteType> = {
-  [NoteTypes.UNSPECIFIED]: 'note',
-  [NoteTypes.DECK]: 'deck',
-  [NoteTypes.STENCIL]: 'stencil',
-  [NoteTypes.PRESET]: 'preset',
-}
+import type { Heading, Neighbourhood, NoteType, Seat } from '../core'
+import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexPart } from '@numen/ui'
 
 /**
  * Which of three each note on a neighbourhood is, by the path it stands at. A
@@ -37,20 +14,10 @@ const types: Record<NoteTypes, NoteType> = {
  */
 export function typesIn(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()
-  const focus = neighbourhood.focus?.path
-  if (focus) found.set(focus, types[neighbourhood.focusType])
-  for (const related of neighbourhood.related) {
-    if (related.note) found.set(related.note.path, types[related.type])
-  }
+  const focus = neighbourhood.focus.path
+  if (focus) found.set(focus, neighbourhood.focusType)
+  for (const related of neighbourhood.related) found.set(related.path, related.type)
   return found
-}
-
-const seats: Record<Seat, PlexRelatedSeat | null> = {
-  [Seat.UNSPECIFIED]: null,
-  [Seat.PARENT]: 'parent',
-  [Seat.CHILD]: 'child',
-  [Seat.JUMP]: 'jump',
-  [Seat.SIBLING]: 'sibling',
 }
 
 /**
@@ -69,30 +36,28 @@ export function asPlex(
   ticket: (path: string) => string,
 ): PlexNeighbourhood {
   const focus: PlexNode = {
-    id: ticket(neighbourhood.focus?.path ?? ''),
-    title: neighbourhood.focus?.title ?? '',
+    id: ticket(neighbourhood.focus.path),
+    title: neighbourhood.focus.title,
     seat: 'focus',
   }
 
   const nodes: PlexNode[] = [focus]
   const seated: {
     id: string
-    seat: PlexRelatedSeat
+    seat: Seat
     label: string
     through: string
     mutual: boolean
   }[] = []
   /** The path of every note this picture draws, the note in focus included. */
-  const shown = new Set<string>([neighbourhood.focus?.path ?? ''])
+  const shown = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
-    const seat = seats[related.seat]
-    if (!seat || !related.note) continue
-    const id = ticket(related.note.path)
-    shown.add(related.note.path)
-    nodes.push({ id, title: related.note.title, seat })
+    const id = ticket(related.path)
+    shown.add(related.path)
+    nodes.push({ id, title: related.title, seat: related.seat })
     seated.push({
       id,
-      seat,
+      seat: related.seat,
       // What the person wrote on the link. A line with nothing written on it
       // carries nothing: a word put there by the application would be read as
       // one they had written themselves.
@@ -145,8 +110,8 @@ export function asParts(headings: readonly Heading[]): PlexPart[] {
  */
 export function alike(one: Neighbourhood | null, other: Neighbourhood | null): boolean {
   if (one === null || other === null) return one === other
-  if (one.focus?.path !== other.focus?.path) return false
-  if (one.focus?.title !== other.focus?.title) return false
+  if (one.focus.path !== other.focus.path) return false
+  if (one.focus.title !== other.focus.title) return false
   if (one.focusType !== other.focusType) return false
   if (one.related.length !== other.related.length) return false
 
@@ -154,8 +119,8 @@ export function alike(one: Neighbourhood | null, other: Neighbourhood | null): b
     const against = other.related[at]
     return (
       against !== undefined &&
-      related.note?.path === against.note?.path &&
-      related.note?.title === against.note?.title &&
+      related.path === against.path &&
+      related.title === against.title &&
       related.type === against.type &&
       related.seat === against.seat &&
       related.label === against.label &&

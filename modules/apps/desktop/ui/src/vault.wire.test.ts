@@ -106,3 +106,53 @@ describe('a passage the vault answers with', () => {
     ])
   })
 })
+
+describe('a neighbourhood the vault answers with', () => {
+  it('is drawn around the note in focus, with each note seated where it sits', async () => {
+    answers({
+      focus: { path: 'Rota.md', title: 'The rota' },
+      focusType: 'NOTE_TYPE_DECK',
+      related: [
+        {
+          note: { path: 'Allotments.md', title: 'Allotments' },
+          seat: 'SEAT_PARENT',
+          label: 'part of',
+          mutual: true,
+        },
+      ],
+    })
+
+    const around = await core.neighbourhood('Rota.md')
+    expect(around.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
+    expect(around.focusType).toBe('deck')
+    expect(around.related).toEqual([
+      {
+        path: 'Allotments.md',
+        title: 'Allotments',
+        type: 'note',
+        seat: 'parent',
+        label: 'part of',
+        through: '',
+        mutual: true,
+      },
+    ])
+  })
+
+  it('leaves out a note it has no seat for, and one the answer names no note at', async () => {
+    answers({
+      focus: { path: 'Rota.md', title: 'The rota' },
+      related: [
+        { note: { path: 'Odd.md', title: 'Odd' }, seat: 'SEAT_UNSPECIFIED' },
+        { seat: 'SEAT_CHILD' },
+      ],
+    })
+
+    expect((await core.neighbourhood('Rota.md')).related).toEqual([])
+  })
+
+  it('stands on nothing where the vault no longer holds the note', async () => {
+    answers({ related: [] })
+
+    expect((await core.neighbourhood('Gone.md')).focus.path).toBe('')
+  })
+})

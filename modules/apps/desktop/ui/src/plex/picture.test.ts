@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { create } from '@bufbuild/protobuf'
-import { NeighbourhoodResponseSchema, Seat } from '@numen/protocol'
+import type { Neighbourhood, Seat } from '../core'
 import { asPlex } from './picture'
 import { ticketing } from './tickets'
 
@@ -8,17 +7,19 @@ import { ticketing } from './tickets'
  *  whether the other note names the relationship too. */
 type Related = [string, Seat, string, string, boolean?]
 
-const around = (focus: string, related: Related[]) =>
-  create(NeighbourhoodResponseSchema, {
-    focus: { path: focus, title: focus, identifier: '' },
-    related: related.map(([path, seat, label, through, mutual]) => ({
-      note: { path, title: path, identifier: '' },
-      seat,
-      label,
-      through,
-      mutual: mutual ?? false,
-    })),
-  })
+const around = (focus: string, related: Related[]): Neighbourhood => ({
+  focus: { path: focus, title: focus },
+  focusType: 'note',
+  related: related.map(([path, seat, label, through, mutual]) => ({
+    path,
+    title: path,
+    type: 'note',
+    seat,
+    label,
+    through,
+    mutual: mutual ?? false,
+  })),
+})
 
 /**
  * The picture, and the note each ticket in it stands for. Every note here is
@@ -45,9 +46,9 @@ describe('what the plex is handed', () => {
     expect(
       drawn(
         around('Here', [
-          ['Above', Seat.PARENT, 'part of', ''],
-          ['Below', Seat.CHILD, '', ''],
-          ['Across', Seat.JUMP, 'see also', ''],
+          ['Above', 'parent', 'part of', ''],
+          ['Below', 'child', '', ''],
+          ['Across', 'jump', 'see also', ''],
         ]),
       ),
     ).toEqual(['Above -> Here (part of)', 'Here -> Below', 'Across -> Here (see also)'])
@@ -55,7 +56,7 @@ describe('what the plex is handed', () => {
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the word the person put on it.
-    const [line] = drawing(around('Here', [['Below', Seat.CHILD, '', '']])).plex.edges
+    const [line] = drawing(around('Here', [['Below', 'child', '', '']])).plex.edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -63,8 +64,8 @@ describe('what the plex is handed', () => {
     expect(
       drawn(
         around('Here', [
-          ['Above', Seat.PARENT, 'part of', ''],
-          ['Beside', Seat.SIBLING, '', 'Above'],
+          ['Above', 'parent', 'part of', ''],
+          ['Beside', 'sibling', '', 'Above'],
         ]),
       ),
     ).toEqual(['Above -> Here (part of)', 'Above -> Beside'])
@@ -77,10 +78,10 @@ describe('what the plex is handed', () => {
     expect(
       drawn(
         around('Here', [
-          ['Machine learning', Seat.PARENT, '', ''],
-          ['Eigenvector', Seat.PARENT, 'needs', ''],
-          ['Clustering', Seat.SIBLING, '', 'Machine learning'],
-          ['SVD', Seat.SIBLING, '', 'Eigenvector'],
+          ['Machine learning', 'parent', '', ''],
+          ['Eigenvector', 'parent', 'needs', ''],
+          ['Clustering', 'sibling', '', 'Machine learning'],
+          ['SVD', 'sibling', '', 'Eigenvector'],
         ]),
       ),
     ).toEqual([
@@ -94,15 +95,15 @@ describe('what the plex is handed', () => {
   it('draws no sibling edge when no parent is shown', () => {
     // It would otherwise fall back to the focus, which says the wrong thing:
     // a sibling is not a child.
-    expect(drawn(around('Here', [['Beside', Seat.SIBLING, '', 'Missing']]))).toEqual([])
+    expect(drawn(around('Here', [['Beside', 'sibling', '', 'Missing']]))).toEqual([])
   })
 
   it('seats every note it was given', () => {
     const { plex, note } = drawing(
       around('Here', [
-        ['Above', Seat.PARENT, 'part of', ''],
-        ['Below', Seat.CHILD, '', ''],
-        ['Beside', Seat.SIBLING, '', 'Above'],
+        ['Above', 'parent', 'part of', ''],
+        ['Below', 'child', '', ''],
+        ['Beside', 'sibling', '', 'Above'],
       ]),
     )
     expect(plex.nodes.map((node) => `${node.seat} ${note(node.id)}`)).toEqual([
@@ -112,17 +113,13 @@ describe('what the plex is handed', () => {
       'sibling Beside',
     ])
   })
-
-  it('leaves out a seat it does not understand', () => {
-    expect(drawing(around('Here', [['Odd', Seat.UNSPECIFIED, '', '']])).plex.nodes).toHaveLength(1)
-  })
 })
 
 describe('what a note is drawn under', () => {
   const held = around('Here', [
-    ['Above', Seat.PARENT, '', ''],
-    ['Below', Seat.CHILD, '', ''],
-    ['Beside', Seat.SIBLING, '', 'Above'],
+    ['Above', 'parent', '', ''],
+    ['Below', 'child', '', ''],
+    ['Beside', 'sibling', '', 'Above'],
   ])
 
   it('is the ticket the note holds, and never the file it is filed under', () => {
@@ -153,7 +150,7 @@ describe('what a note is drawn under', () => {
     // A sibling whose parent is off the screen hangs off nothing, and the note
     // it named is one this picture never drew.
     const asked: string[] = []
-    asPlex(around('Here', [['Beside', Seat.SIBLING, '', 'Missing']]), (path) => {
+    asPlex(around('Here', [['Beside', 'sibling', '', 'Missing']]), (path) => {
       asked.push(path)
       return `#${path}`
     })
@@ -177,7 +174,7 @@ describe('whose wording is on the line', () => {
     expect(
       arrows(
         around('Marrowfield allotments', [
-          ['Alice Fenn, The Chair', Seat.CHILD, 'the chair since May', '', true],
+          ['Alice Fenn, The Chair', 'child', 'the chair since May', '', true],
         ]),
       ),
     ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: to'])
@@ -189,7 +186,7 @@ describe('whose wording is on the line', () => {
     expect(
       arrows(
         around('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', Seat.PARENT, '', '', true],
+          ['Marrowfield allotments', 'parent', '', '', true],
         ]),
       ),
     ).toEqual(['Marrowfield allotments -> Alice Fenn, The Chair: from'])
@@ -199,7 +196,7 @@ describe('whose wording is on the line', () => {
     expect(
       arrows(
         around('Alice Fenn, The Chair', [
-          ['Bram Doyle', Seat.JUMP, 'the oldest tenant', '', true],
+          ['Bram Doyle', 'jump', 'the oldest tenant', '', true],
         ]),
       ),
     ).toEqual(['Bram Doyle -> Alice Fenn, The Chair: from'])
@@ -211,7 +208,7 @@ describe('whose wording is on the line', () => {
     expect(
       arrows(
         around('Alice Fenn, The Chair', [
-          ['Cora Hale', Seat.JUMP, 'keys, hoses, the gate', '', false],
+          ['Cora Hale', 'jump', 'keys, hoses, the gate', '', false],
         ]),
       ),
     ).toEqual(['Cora Hale -> Alice Fenn, The Chair: no arrow'])
@@ -223,8 +220,8 @@ describe('whose wording is on the line', () => {
     expect(
       arrows(
         around('Alice Fenn, The Chair', [
-          ['Marrowfield allotments', Seat.PARENT, '', '', true],
-          ['The question of the rota', Seat.SIBLING, '', 'Marrowfield allotments', true],
+          ['Marrowfield allotments', 'parent', '', '', true],
+          ['The question of the rota', 'sibling', '', 'Marrowfield allotments', true],
         ]),
       ),
     ).toEqual([

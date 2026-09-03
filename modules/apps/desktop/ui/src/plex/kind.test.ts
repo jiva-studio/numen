@@ -7,15 +7,19 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import { create } from '@bufbuild/protobuf'
 import { paneById, panesOf } from '@numen/ui'
-import { NoteType as NoteTypes, Seat, type NeighbourhoodResponse } from '@numen/protocol'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
-import { NeighbourhoodSchema } from './picture'
 import { standing as stands, type Standing } from './standing'
 import { WORDS as words } from './words'
-import { wentTo, type Heading, type Went } from '../core'
+import {
+  wentTo,
+  type Heading,
+  type Neighbourhood,
+  type NoteType,
+  type Seat,
+  type Went,
+} from '../core'
 import { windowing, type Kept } from '../windowing'
 import { PLEX } from '../workspace'
 
@@ -23,25 +27,26 @@ import { PLEX } from '../workspace'
 const settles = () => new Promise((done) => setTimeout(done, 0))
 
 /** Which of three each note of a neighbourhood is, by the path it stands at. */
-type Types = Record<string, NoteTypes>
+type Types = Record<string, NoteType>
 
 /** A neighbourhood as the vault answers one: a focus, and what is around it. */
 const around = (
   focus: string,
   related: readonly string[] = [],
   types: Types = {},
-): NeighbourhoodResponse =>
-  ({
-    focus: { path: focus, title: focus.replace(/\.md$/, '') },
-    focusType: types[focus] ?? NoteTypes.UNSPECIFIED,
-    related: related.map((path) => ({
-      seat: 2,
-      through: '',
-      label: '',
-      note: { path, title: path.replace(/\.md$/, '') },
-      type: types[path] ?? NoteTypes.UNSPECIFIED,
-    })),
-  }) as unknown as NeighbourhoodResponse
+): Neighbourhood => ({
+  focus: { path: focus, title: focus.replace(/\.md$/, '') },
+  focusType: types[focus] ?? 'note',
+  related: related.map((path) => ({
+    seat: 'child',
+    through: '',
+    label: '',
+    mutual: false,
+    path,
+    title: path.replace(/\.md$/, ''),
+    type: types[path] ?? 'note',
+  })),
+})
 
 /** A plex standing on a note, which records every note it was sent to. */
 const standing = (at: string, related: readonly string[] = [], types: Types = {}) => {
@@ -583,7 +588,7 @@ describe('the parts a node hangs', () => {
   })
 
   it('are none for a deck, whose cards stand on no line of prose', async () => {
-    const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': NoteTypes.DECK })
+    const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': 'deck' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.insides.length = 0
 
@@ -594,7 +599,7 @@ describe('the parts a node hangs', () => {
   })
 
   it('are none for a stencil, whose faces stand on no line of prose', async () => {
-    const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': NoteTypes.STENCIL })
+    const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': 'stencil' })
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
     one.insides.length = 0
 
@@ -606,7 +611,7 @@ describe('the parts a node hangs', () => {
 
   it('are the headings of an ordinary note beside them', async () => {
     const one = tab('Root.md', ['Animals.md', 'Child.md'], true, {
-      'Animals.md': NoteTypes.DECK,
+      'Animals.md': 'deck',
     })
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
@@ -618,7 +623,7 @@ describe('the parts a node hangs', () => {
   })
 
   it('are none for a deck in focus, which is where the plex is standing', async () => {
-    const one = tab('Animals.md', [], true, { 'Animals.md': NoteTypes.DECK })
+    const one = tab('Animals.md', [], true, { 'Animals.md': 'deck' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.insides.length = 0
 
@@ -713,16 +718,19 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
     neighbourhood: async (path) => {
       asked.push(path)
       if (holding) await holding
-      return create(NeighbourhoodSchema, {
-        focus: { path, title: titleOf(path), identifier: '' },
+      return {
+        focus: { path, title: titleOf(path) },
+        focusType: 'note' as const,
         related: around.map((one) => ({
-          note: { path: one.path, title: titleOf(one.path), identifier: '' },
+          path: one.path,
+          title: titleOf(one.path),
+          type: 'note' as const,
           seat: one.seat,
           label: '',
-          through: one.through,
+          through: one.through ?? '',
           mutual: false,
         })),
-      })
+      }
     },
   })
   const held = plexing(view, {
@@ -805,10 +813,8 @@ describe('a note whose file moved', () => {
     expect(one.nodes()).toStrictEqual(before)
   })
 
-  it('keeps it while carrying no identifier at all', async () => {
-    const one = await inVault('Entropy.md', [['Heat.md', Seat.CHILD]])
-    expect(one.view.neighbourhood.value?.focus?.identifier).toBe('')
-    expect(one.view.neighbourhood.value?.related[0]?.note?.identifier).toBe('')
+  it('keeps it where the note that moved is one around the note in focus', async () => {
+    const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.node('Heat')
 
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
@@ -818,7 +824,7 @@ describe('a note whose file moved', () => {
   })
 
   it('keeps it where the note that moved is the one in focus', async () => {
-    const one = await inVault('Entropy.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.node('Entropy')
 
     await one.moves({ from: 'Entropy.md', to: 'physics/Entropy.md' })
@@ -829,8 +835,8 @@ describe('a note whose file moved', () => {
 
   it('keeps it for every note of a folder that moved at once', async () => {
     const one = await inVault('physics/Entropy.md', [
-      ['physics/Heat.md', Seat.CHILD],
-      ['physics/Cold.md', Seat.CHILD],
+      ['physics/Heat.md', 'child'],
+      ['physics/Cold.md', 'child'],
     ])
     const before = one.nodes()
 
@@ -846,8 +852,8 @@ describe('a note whose file moved', () => {
 
   it('keeps it where two notes traded paths in one change', async () => {
     const one = await inVault('Root.md', [
-      ['One.md', Seat.CHILD],
-      ['Two.md', Seat.CHILD],
+      ['One.md', 'child'],
+      ['Two.md', 'child'],
     ])
     const [, first, second] = one.picture()?.nodes ?? []
 
@@ -860,7 +866,7 @@ describe('a note whose file moved', () => {
   })
 
   it('keeps it through a second move', async () => {
-    const one = await inVault('Entropy.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Entropy.md', [['Heat.md', 'child']])
     const before = one.nodes()
 
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
@@ -871,8 +877,8 @@ describe('a note whose file moved', () => {
 
   it('runs the same edge between the same two nodes', async () => {
     const one = await inVault('Entropy.md', [
-      ['Physics.md', Seat.PARENT],
-      ['Heat.md', Seat.SIBLING, 'Physics.md'],
+      ['Physics.md', 'parent'],
+      ['Heat.md', 'sibling', 'Physics.md'],
     ])
     const before = one.edges()
     expect(before).toHaveLength(2)
@@ -887,9 +893,9 @@ describe('a note whose file moved', () => {
 
   it('is called something different from every other note of the picture', async () => {
     const one = await inVault('Entropy.md', [
-      ['Heat.md', Seat.CHILD],
-      ['Physics.md', Seat.PARENT],
-      ['Cold.md', Seat.SIBLING, 'Physics.md'],
+      ['Heat.md', 'child'],
+      ['Physics.md', 'parent'],
+      ['Cold.md', 'sibling', 'Physics.md'],
     ])
 
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
@@ -901,7 +907,7 @@ describe('a note whose file moved', () => {
 
 describe('a gesture the plex reports', () => {
   it('travels to the note the node stands for', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.held.activate(one.node('Heat'))
@@ -910,7 +916,7 @@ describe('a gesture the plex reports', () => {
   })
 
   it('opens the note the node stands for, called what the picture calls it', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.held.opens(one.node('Heat'), 'beside')
@@ -919,7 +925,7 @@ describe('a gesture the plex reports', () => {
   })
 
   it('runs a command on the note the menu stood on', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     one.held.asks({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
@@ -929,7 +935,7 @@ describe('a gesture the plex reports', () => {
   })
 
   it('makes a note in a seat of the note the node stands for', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     await one.held.made(one.node('Heat'), 'child')
@@ -938,7 +944,7 @@ describe('a gesture the plex reports', () => {
   })
 
   it('joins the two notes a line was drawn between', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
     await one.held.joined(one.node('Heat'), one.node('Root'), 'jump')
@@ -947,7 +953,7 @@ describe('a gesture the plex reports', () => {
   })
 
   it('is let go of where the picture never drew that node', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     expect(one.node('Heat')).not.toBe('')
     const asked = one.asked.length
 
@@ -970,10 +976,10 @@ describe('a gesture the plex reports', () => {
 
 describe('a plex that travelled', () => {
   it('calls the notes it arrives at nothing it called the ones it left', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     const left = one.picture()?.nodes.map((node) => node.id) ?? []
 
-    await one.travels('Cold.md', ['Ice.md', Seat.CHILD])
+    await one.travels('Cold.md', ['Ice.md', 'child'])
 
     const arrived = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(arrived).toHaveLength(2)
@@ -985,20 +991,20 @@ describe('a plex that travelled', () => {
   })
 
   it('calls a note that came back something other than what it called it', async () => {
-    const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('Root.md', [['Heat.md', 'child']])
     const root = one.node('Root')
     const before = one.node('Heat')
 
     await one.travels('Root.md')
     expect(one.node('Heat')).toBe('')
-    await one.travels('Root.md', ['Heat.md', Seat.CHILD])
+    await one.travels('Root.md', ['Heat.md', 'child'])
 
     expect(one.node('Heat')).not.toBe(before)
     expect(one.node('Root')).toBe(root)
   })
 
   it('does not cross a note that moved with an answer already on its way', async () => {
-    const one = await inVault('One.md', [['Heat.md', Seat.CHILD]])
+    const one = await inVault('One.md', [['Heat.md', 'child']])
     const before = one.nodes()
 
     // The vault is asked about the note where it was, and the file moves while
@@ -1311,8 +1317,8 @@ describe('every plex asked for its picture again', () => {
 describe('which of three a node stands for', () => {
   it('is what the vault says of the note the node draws', () => {
     const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
-      'Deck.md': NoteTypes.DECK,
-      'Stencil.md': NoteTypes.STENCIL,
+      'Deck.md': 'deck',
+      'Stencil.md': 'stencil',
     })
 
     expect(one.held.typeOf(one.node('Deck.md'))).toBe('deck')
