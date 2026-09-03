@@ -1,21 +1,40 @@
 /** What a pane does with a keyboard, and what it tells a screen reader. */
 import { mount } from '@vue/test-utils'
+import { computed } from 'vue'
 import { describe, expect, it } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
-import { pane } from '../model'
+import { WORKSPACING, type Workspacing } from './context'
+import { pane, type Tab } from '../model'
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 
-const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
-  mount(WorkspacePane, {
+const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
+
+/** The workspace a pane stands in, as far as a pane on its own asks about it. */
+const workspacing = (marks: Readonly<Record<string, string>> = {}): Workspacing => ({
+  tabOf: (id): Tab | undefined =>
+    TITLES[id] === undefined
+      ? undefined
+      : { id, title: TITLES[id], ...(marks[id] === undefined ? {} : { mark: marks[id] }) },
+  focus: 'main',
+  minimum: 220,
+  choose: () => {},
+  close: () => {},
+  lift: () => {},
+  claim: () => {},
+  resize: () => {},
+  show: () => {},
+})
+
+const mountPane = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) => {
+  const { marks, ...rest } = props as { marks?: Readonly<Record<string, string>> }
+  return mount(WorkspacePane, {
     attachTo: document.body,
-    props: {
-      pane: three(),
-      titles: { plex: 'Plex', chat: 'Chat', notes: 'Notes' },
-      ...props,
-    },
+    global: { provide: { [WORKSPACING as symbol]: computed(() => workspacing(marks)) } },
+    props: { pane: three(), ...rest },
     slots,
   })
+}
 
 const strip = (held: ReturnType<typeof mountPane>) => held.findAll('[data-workspace-tab]')
 
@@ -127,6 +146,19 @@ describe('the way out of a panel', () => {
     const held = mountPane({}, { tab: inside })
     const first = held.findAll<HTMLButtonElement>('.inside')[1]
 
+    first?.element.focus()
+    await first?.trigger('keydown', { key: 'Escape' })
+
+    expect(named()).toBe('chat')
+  })
+
+  // A tab closed ahead of the one showing hands it a place in the strip it did
+  // not have, and the way out lands on the tab and not on the place.
+  it('lands on the tab the panel is held under after a tab before it closed', async () => {
+    const held = mountPane({}, { tab: inside })
+    await held.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
+
+    const first = held.findAll<HTMLButtonElement>('.inside')[0]
     first?.element.focus()
     await first?.trigger('keydown', { key: 'Escape' })
 

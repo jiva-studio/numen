@@ -118,7 +118,9 @@ const fadesAt = (thread: HTMLElement): readonly number[] => {
 const fadesUnderTheComposer = async (canvasElement: HTMLElement) => {
   const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
   const composer = canvasElement.querySelector('.composer') as HTMLElement
-  const fade = parseFloat(getComputedStyle(thread).getPropertyValue('--fade'))
+  // The thread keeps the fade clear at its head, which is where it is read in
+  // the page's own units.
+  const fade = parseFloat(getComputedStyle(thread).paddingBlockStart)
 
   await waitFor(async () => {
     const [opaque, clear] = fadesAt(thread)
@@ -169,6 +171,10 @@ export const LongConversation: Story = {
     // What it is written over shows through it.
     await expect(ground.backgroundColor).toMatch(/^rgba\(/)
     await expect(ground.backdropFilter).toContain('blur')
+
+    // Read halfway up, where the conversation runs on under the composer.
+    const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
+    thread.scrollTop = thread.scrollHeight / 2
 
     // A turn is drawn under the composer's own top edge.
     const over = composer.getBoundingClientRect()

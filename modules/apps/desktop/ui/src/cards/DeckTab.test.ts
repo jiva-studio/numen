@@ -7,13 +7,18 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { Cards, Carded, Problem } from '../core'
+import { Stopped } from '@numen/protocol'
+import type { Cards, Carded, Problem, Refused } from '../core'
+import { DEFAULTS, NOWHERE, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
 import DeckTab from './DeckTab.vue'
 import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
+
+/** A preset that schedules, which is what every preset here is. */
+const SCHEDULING = { stops: Stopped.NOTHING, stopsOn: Stopped.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => putting({ standing: async () => new Map() })
@@ -24,6 +29,12 @@ const settles = () => new Promise((done) => setTimeout(done, 0))
 // Each tab is drawn into the page, so the one before it goes before the next
 // stands: a mark is teleported to the tile a selector finds in the whole page.
 enableAutoUnmount(afterEach)
+
+afterEach(() => {
+  // A menu is drawn at the end of the document, so one left open would stand
+  // there while the next test looks for its own.
+  document.body.innerHTML = ''
+})
 
 const CARDS: readonly Carded[] = [
   {
@@ -53,7 +64,19 @@ const CARDS: readonly Carded[] = [
 const SECTIONS = [{ name: 'Roots', lead: '' }]
 
 /** A window with one deck open, drawn. */
-const drawn = async (problems: readonly Problem[] = []) => {
+const drawn = async (
+  problems: readonly Problem[] = [],
+  scheduling: {
+    /** The presets the vault holds. */
+    presets?: readonly Listed[]
+    /** The preset the deck names, and nothing for a deck naming none. */
+    by?: string
+    /** What is said against what the deck names. */
+    saying?: string
+    /** What putting the deck on a preset is refused for. */
+    notScheduled?: Refused
+  } = {},
+) => {
   const core: Cards = {
     stencils: async () => ({
       stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
@@ -88,8 +111,60 @@ const drawn = async (problems: readonly Problem[] = []) => {
     writeStencil: async () => ({ refusal: null, changed: false, at: '' }),
   }
 
+  /** Which preset the deck names, as the vault answers it. */
+  let by = scheduling.by ?? ''
+  /** Every deck put on a preset, as the tab asked for it. */
+  const put: string[] = []
+
+  const presets: Presets = {
+    read: async (path) => ({
+      preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
+      refusal: null,
+      at: '',
+    }),
+    list: async () =>
+      scheduling.presets ?? [
+        { path: 'Sanskrit.md', title: 'Sanskrit' },
+        { path: 'presets/Slow.md', title: '' },
+      ],
+    makes: async () => ({ path: '', refusal: null }),
+    scheduling: async () => ({
+      preset: {
+        path: by,
+        title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+        settings: DEFAULTS,
+        problems: scheduling.saying ? [scheduling.saying] : [],
+        ...SCHEDULING,
+      },
+      refusal: null,
+      at: '',
+    }),
+    schedules: async (_deck, preset) => {
+      put.push(preset)
+      if (scheduling.notScheduled) {
+        return { refusal: scheduling.notScheduled, changed: false, at: '' }
+      }
+      by = preset
+      return { refusal: null, changed: false, at: 'scheduled' }
+    },
+    write: async () => ({ refusal: null, changed: false, at: '' }),
+    curve: async () => ({
+      goal: 'minutes',
+      grid: [],
+      days: [],
+      at: [],
+      now: NOWHERE,
+      suggested: NOWHERE,
+      decks: 0,
+      cards: 0,
+      overdue: 0,
+      unbegun: 0,
+      honest: true,
+    }),
+  }
+
   const held = windowing()
-  const decks = decking(core, held.host, puts())
+  const decks = decking(core, presets, held.host, puts())
   held.declares([decks.kind])
   const id = await held.opens(DECK, 'Animals.md')
   await settles()
@@ -98,7 +173,7 @@ const drawn = async (problems: readonly Problem[] = []) => {
   // the document for the tile to be found.
   const window = mount(DeckTab, { props: { held: tab }, attachTo: document.body })
   await settles()
-  return { window, tab, decks }
+  return { window, tab, decks, put }
 }
 
 /** The tile one card is drawn as, by the identity the window gave that card. */
@@ -269,5 +344,98 @@ describe('the question a file that changed on disk puts', () => {
     const { window } = await drawn()
 
     expect(window.text()).not.toContain(words.overtaken)
+  })
+})
+
+describe('the preset a deck is scheduled by', () => {
+  it('stands on a line at the top of the deck, saying which one is in force', async () => {
+    const { window } = await drawn([], { by: 'Sanskrit.md' })
+
+    const line = window.get('.deck-tab__scheduled')
+    expect(line.text()).toContain(words.scheduledBy)
+    expect(line.get('.deck-tab__choice').text()).toContain('Sanskrit')
+  })
+
+  it('says the defaults for a deck naming no preset', async () => {
+    const { window } = await drawn()
+
+    expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
+  })
+
+  it('offers the defaults and every preset the vault holds', async () => {
+    const { window } = await drawn([], { by: 'Sanskrit.md' })
+    const line = window.get('.deck-tab__choice')
+    expect(line.attributes('aria-haspopup')).toBe('menu')
+    expect(document.body.querySelectorAll('.menu__item')).toHaveLength(0)
+
+    await line.trigger('click')
+
+    const offered = [...document.body.querySelectorAll('.menu__item')].map(
+      (one) => one.textContent?.trim() ?? '',
+    )
+    expect(offered).toStrictEqual([words.defaults, 'Sanskrit', 'Slow.md'])
+  })
+
+  it('marks the preset in force among the ones offered', async () => {
+    const { window } = await drawn([], { by: 'Sanskrit.md' })
+    await window.get('.deck-tab__choice').trigger('click')
+
+    const checked = [...document.body.querySelectorAll('.menu__item')].filter(
+      (one) => one.getAttribute('aria-checked') === 'true',
+    )
+    expect(checked.map((one) => one.textContent?.trim())).toStrictEqual(['Sanskrit'])
+  })
+
+  it('puts the deck on the preset that was chosen, and says it afterwards', async () => {
+    const { window, put } = await drawn()
+    await window.get('.deck-tab__choice').trigger('click')
+    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+      (one) => one.textContent?.trim() === 'Sanskrit',
+    )
+
+    chosen?.click()
+    await settles()
+    await window.vm.$nextTick()
+
+    expect(put).toStrictEqual(['Sanskrit.md'])
+    expect(window.get('.deck-tab__choice').text()).toContain('Sanskrit')
+  })
+
+  it('takes the deck back to the defaults', async () => {
+    const { window, put } = await drawn([], { by: 'Sanskrit.md' })
+    await window.get('.deck-tab__choice').trigger('click')
+    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+      (one) => one.textContent?.trim() === words.defaults,
+    )
+
+    chosen?.click()
+    await settles()
+    await window.vm.$nextTick()
+
+    expect(put).toStrictEqual([''])
+    expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
+  })
+
+  it('says on the line what the deck names and the vault does not hold', async () => {
+    const { window } = await drawn([], {
+      saying: 'Sanskrit reaches no note, and the defaults stand',
+    })
+
+    expect(window.get('.deck-tab__scheduled').text()).toContain('reaches no note')
+    expect(window.get('.deck-tab__choice').text()).toContain(words.defaults)
+  })
+
+  it('says on the line that a choice was not written', async () => {
+    const { window } = await drawn([], { notScheduled: 'notAPreset' })
+    await window.get('.deck-tab__choice').trigger('click')
+    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+      (one) => one.textContent?.trim() === 'Sanskrit',
+    )
+
+    chosen?.click()
+    await settles()
+    await window.vm.$nextTick()
+
+    expect(window.get('.deck-tab__scheduled').text()).toContain(words.notScheduled)
   })
 })

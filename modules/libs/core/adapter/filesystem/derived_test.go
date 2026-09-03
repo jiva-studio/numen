@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -19,6 +20,9 @@ import (
 func store(t *testing.T) (*filesystem.Derived, string) {
 	t.Helper()
 	root := t.TempDir()
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
 	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
 	if err != nil {
 		t.Fatal(err)
@@ -32,8 +36,100 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 	derived, root := store(t)
 	_ = derived
 
-	if _, err := os.Stat(filepath.Join(root, filesystem.DefaultServiceDir)); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("opening the store made %s: %v", filesystem.DefaultServiceDir, err)
+	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)
+	if _, err := os.Stat(at); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("opening the store made %s: %v", filesystem.OCRDir, err)
+	}
+}
+
+// A vault folder taken away under a store that is writing is not a vault to go
+// on writing into: creating the parents of a name would put a stub where the
+// vault was, and what is written there is shadowed the moment the real one is
+// back.
+func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
+	derived, root := store(t)
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into a vault that is gone gave %v", err)
+	}
+	if err := derived.Write(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("writing into a vault that is gone gave %v", err)
+	}
+	if _, err := derived.List(ctx, filesystem.OCRDir); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("listing a vault that is gone gave %v", err)
+	}
+	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the vault folder was made again to write into: %v", err)
+	}
+
+	// A folder put back at the path, carrying an identity of its own, is
+	// another vault and not this one.
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into another vault at the same path gave %v", err)
+	}
+}
+
+// A store opened on a folder carrying no identity has none to lose, so the
+// folder itself is what says it is still there.
+func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsGone(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "vault")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("appending into a folder that is gone gave %v", err)
+	}
+	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the folder was made again to write into: %v", err)
+	}
+}
+
+// The identity is read out of a file, and a store that has read it once goes on
+// answering from that reading. A file written again is another reading.
+func TestAStoreNoticesTheIdentityChangingUnderIt(t *testing.T) {
+	derived, root := store(t)
+	ctx := t.Context()
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	// A synchroniser bringing another machine's vault down over this path
+	// leaves the folder where it was and the identity in it another.
+	at := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
+	other := `{"v":1,"id":"01J0000000000000000000000A"}` + "\n"
+	if err := os.WriteFile(at, []byte(other), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	when := time.Now().Add(time.Second)
+	if err := os.Chtimes(at, when, when); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, filesystem.ErrNotThisVault) {
+		t.Errorf("appending into another vault at the same path gave %v", err)
 	}
 }
 
@@ -100,10 +196,8 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 	// climbing out of the area to reach it.
 	derived, root := store(t)
 	identity := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
-	if err := os.MkdirAll(filepath.Dir(identity), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(identity, []byte(`{"v":1}`), 0o644); err != nil {
+	was, err := os.ReadFile(identity)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -117,7 +211,7 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 		}
 	}
 
-	if got, err := os.ReadFile(identity); err != nil || string(got) != `{"v":1}` {
+	if got, err := os.ReadFile(identity); err != nil || string(got) != string(was) {
 		t.Errorf("the vault's identity is now %q, %v", got, err)
 	}
 }
@@ -344,5 +438,39 @@ func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 	derived, _ := store(t)
 	if _, err := derived.List(t.Context(), "ocr/../.."); err == nil {
 		t.Error("the store listed a folder outside itself")
+	}
+}
+
+// A use case reading what two producers wrote opens one store on both areas.
+func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
+	root := t.TempDir()
+	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	derived, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, filesystem.SpeechDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+
+	for _, name := range []string{"ocr/abc.txt", "asr/abc.vtt"} {
+		if err := derived.Write(ctx, name, []byte("said")); err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+	}
+	if err := derived.Write(ctx, "flashcards/abc.jsonl", []byte("answered")); err == nil {
+		t.Error("the store wrote into an area it was not opened on")
+	}
+	if area := derived.Area(); area != filesystem.OCRDir {
+		t.Errorf("the store is called %q, want the first area it was opened on", area)
+	}
+}
+
+// The areas of a store are each one folder, and one that is not is refused with
+// the rest of it.
+func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
+	root := t.TempDir()
+	if _, err := filesystem.OpenDerived(root, filesystem.Options{}, filesystem.OCRDir, "a/b"); err == nil {
+		t.Error("opened a store on a name that is not one folder")
 	}
 }

@@ -1,18 +1,128 @@
 /**
  * How the window's tests are run.
  *
- * A test runs in a document, so a component can be mounted and asked what it
- * drew. The build in `vite.config.ts` writes into the Go package's assets and
- * has nothing to say about that.
+ * A unit test runs in a document, so a component can be mounted and asked what
+ * it drew. A story runs in a real browser, which is the only thing that can
+ * answer what a browser decides: what is clipped, where a drag lands, what a
+ * blend came to. The build in `vite.config.ts` writes into the Go package's
+ * assets and has nothing to say about either.
  */
-import { defineConfig } from 'vitest/config'
+/// <reference types="@vitest/browser/providers/playwright" />
+import { accessSync, constants } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath, URL } from 'node:url'
+import { configDefaults, coverageConfigDefaults, defineConfig } from 'vitest/config'
+import type { BrowserCommand } from 'vitest/node'
 import vue from '@vitejs/plugin-vue'
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
+
+/** A place on the page the browser drives the pointer to. */
+interface Point {
+  readonly x: number
+  readonly y: number
+}
+
+/**
+ * The pointer put down at one place, carried to another and lifted, by the
+ * browser itself. What a drag leaves behind — a selection, a capture — is then
+ * the browser's own.
+ */
+const sweep: BrowserCommand<[from: Point, to: Point]> = async ({ page }, from, to) => {
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move(to.x, to.y)
+  await page.mouse.up()
+}
+
+declare module '@vitest/browser/context' {
+  interface BrowserCommands {
+    sweep: (from: Point, to: Point) => Promise<void>
+  }
+}
+
+const CANDIDATES = ['google-chrome-stable', 'google-chrome', 'chromium', 'chromium-browser']
+
+/**
+ * A browser already on the machine; undefined uses Playwright's own.
+ *
+ * A run under `CI` takes the pinned build unless it was pointed at one, so the
+ * version the stories are drawn in is the version the workflow fetched.
+ */
+function systemChrome(): string | undefined {
+  const explicit = process.env['CHROME_PATH']
+  if (explicit) return explicit
+  if (process.env['CI']) return undefined
+
+  for (const directory of (process.env['PATH'] ?? '').split(':')) {
+    if (!directory) continue
+    for (const name of CANDIDATES) {
+      const candidate = join(directory, name)
+      try {
+        accessSync(candidate, constants.X_OK)
+        return candidate
+      } catch {
+        continue
+      }
+    }
+  }
+  return undefined
+}
+
+const chrome = systemChrome()
 
 export default defineConfig({
-  plugins: [vue()],
   test: {
-    name: 'unit',
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    // The floor the tests stand on. Each number is where the suite is today,
+    // so a change may only raise it.
+    coverage: {
+      include: ['src/**'],
+      // A story is the corpus a test run draws, not code under test.
+      exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
+      reporter: ['text-summary'],
+      thresholds: { statements: 92, branches: 92, functions: 79, lines: 92 },
+    },
+    projects: [
+      {
+        plugins: [vue()],
+        test: {
+          name: 'unit',
+          environment: 'jsdom',
+          include: ['src/**/*.test.ts'],
+          testTimeout: 30_000,
+        },
+      },
+      {
+        plugins: [
+          vue(),
+          storybookTest({
+            configDir: fileURLToPath(new URL('./.storybook', import.meta.url)),
+          }),
+        ],
+        test: {
+          name: 'stories',
+          // Every story is drawn twice, and the frames of all of them come off
+          // one machine.
+          testTimeout: 30_000,
+          // The screens of the whole window are staged for a picture beside the
+          // components they arrange, and are drawn in the library.
+          exclude: [...configDefaults.exclude, 'src/screens.stories.ts'],
+          browser: {
+            enabled: true,
+            headless: true,
+            provider: 'playwright',
+            // The window is WebKit on a mac and on Linux, and Chromium on
+            // Windows. Every story is rendered in both.
+            instances: [
+              {
+                browser: 'chromium',
+                ...(chrome ? { launch: { executablePath: chrome } } : {}),
+              },
+              { browser: 'webkit' },
+            ],
+            commands: { sweep },
+          },
+        },
+      },
+    ],
   },
 })

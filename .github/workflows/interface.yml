@@ -8,6 +8,7 @@ on:
       - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
+      - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
       - ".github/workflows/interface.yml"
   push:
@@ -18,24 +19,90 @@ on:
       - "modules/apps/desktop/flashcards/**"
       - "modules/apps/mobile/src/**"
       - "modules/apps/mobile/package.json"
+      - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
       - ".github/workflows/interface.yml"
 
+# One run at a time per branch, and the newest is the one that matters.
+concurrency:
+  group: interface-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  # The shared components, and the screens that arrange them. All are typed
-  # against the schema, so a change to it fails here rather than on screen.
+  # The shared components on their own: built into the shape a consumer sees,
+  # and asked what they draw in a document.
   components:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/ui/package-lock.json
 
-      # A window is typed against the schema and against the components, so
-      # both have to be there before anything is checked: the schema's own
-      # dependencies, and the components built into the shape a consumer sees.
+      - name: Install
+        run: npm ci --prefix modules/libs/ui
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Test
+        run: npm run test:unit --prefix modules/libs/ui -- --coverage
+
+  # A story runs in a real browser, and several of them are the only test of a
+  # thing a browser decides: what is clipped by an overflow, where a scroll
+  # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
+  # on Linux and Chromium on Windows, so both are fetched.
+  stories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/ui/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules/libs/ui
+
+      # The engines are a download of their own and answer to the version in
+      # the lockfile. Whatever the cache does not hold is fetched below.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          restore-keys: playwright-
+
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+
+      - name: Test
+        run: npm run test:stories --prefix modules/libs/ui
+
+  # The screens that arrange the components. All are typed against the schema,
+  # so a change to it fails here rather than on screen.
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/mobile/package-lock.json
+
+      # A window is typed against the schema and against the components, and
+      # reaches the components through their build.
       - name: Install
         run: |
           npm install --prefix modules/libs/protocol
@@ -44,10 +111,13 @@ jobs:
           npm install --prefix modules/apps/desktop/flashcards
           npm install --prefix modules/apps/mobile
 
-      # A story runs in a real browser, and several of them are the only test of
-      # a thing a browser decides: what is clipped by an overflow, where a
-      # scroll lands, whether a key reaches an SVG group. The window is WebKit
-      # on a mac and on Linux and Chromium on Windows, so both are fetched.
+      # The window draws stories of its own, in the same two engines.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          restore-keys: playwright-
+
       - name: The browsers the stories run in
         run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
 
@@ -62,7 +132,7 @@ jobs:
 
       - name: Test
         run: |
-          npm run test:unit --prefix modules/libs/ui
-          npm run test:stories --prefix modules/libs/ui
-          npm test --prefix modules/apps/desktop/ui
+          npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/ui
           npm test --prefix modules/apps/desktop/flashcards
+          npm test --prefix modules/apps/mobile

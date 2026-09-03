@@ -2,8 +2,6 @@ package source
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -42,6 +40,10 @@ type Extract struct {
 	// Area is the producer a recognition is kept under. Empty means the default.
 	Area string
 
+	// Kinds are the sorts of source this cuts. Empty means the books and the
+	// recordings a vault holds.
+	Kinds []domain.SourceKind
+
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
 	Sizes cutting.Sizes
@@ -63,11 +65,11 @@ type Extract struct {
 
 // ExtractResult reports what extraction did.
 //
-// `Seen` counts books and nothing else. `Recorded` and `Extracted` are separate
-// numbers because they are separate passes: a book is recorded when the vault is
-// walked and extracted when its text is read.
+// `Seen` counts the sources of the kinds this cuts and nothing else. `Recorded`
+// and `Extracted` are separate numbers because they are separate passes: a book
+// is recorded when the vault is walked and extracted when its text is read.
 type ExtractResult struct {
-	Seen       int    // books found in the vault
+	Seen       int    // sources found in the vault
 	Recorded   int    // new or changed, so owing their text
 	Unchanged  int    // skipped on size and modification time alone
 	Extracted  int    // read, cut and written
@@ -111,19 +113,24 @@ func (u Extract) discover(
 	res *ExtractResult,
 	swept *[]port.Recognised,
 ) error {
-	known, err := u.Owing.Fingerprints(ctx, v.ID, domain.KindBook)
-	if err != nil {
-		return fmt.Errorf("read index: %w", err)
+	known := make(map[domain.SourceKind]map[string]domain.FileRef, len(u.kinds()))
+	for _, kind := range u.kinds() {
+		held, err := u.Owing.Fingerprints(ctx, v.ID, kind)
+		if err != nil {
+			return fmt.Errorf("read index: %w", err)
+		}
+		known[kind] = held
 	}
 
-	found := make(map[string]bool, len(known))
+	found := make(map[string]bool)
 	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
-		if ref.Kind != domain.KindBook {
+		held, ours := known[ref.Kind]
+		if !ours {
 			return nil
 		}
 		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
+		if previous, ok := held[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -140,38 +147,45 @@ func (u Extract) discover(
 	// is taken out here rather than left: the text of a passage is read from the
 	// file, so a source that is not there answers a search with nothing and the
 	// row only wastes the coarse pass.
-	gone := make([]string, 0)
-	for path := range known {
-		if !found[path] {
-			gone = append(gone, path)
+	for _, kind := range u.kinds() {
+		gone := make([]string, 0)
+		for path := range known[kind] {
+			if !found[path] {
+				gone = append(gone, path)
+			}
 		}
+		if len(gone) == 0 {
+			continue
+		}
+		slices.Sort(gone)
+		// What those paths stood on, before the rows saying so are taken out.
+		// Which of those readings nothing stands on any more is a question for
+		// once every source has been cut.
+		went, err := u.standing(ctx, v, kind, gone)
+		if err != nil {
+			return err
+		}
+		*swept = append(*swept, went...)
+		if err := u.Sources.RemoveSources(ctx, v.ID, kind, gone); err != nil {
+			return fmt.Errorf("remove: %w", err)
+		}
+		res.Removed += len(gone)
 	}
-	if len(gone) == 0 {
-		return nil
-	}
-	slices.Sort(gone)
-	// What those paths stood on, before the rows saying so are taken out. Which
-	// of those readings nothing stands on any more is a question for once every
-	// source has been cut.
-	went, err := u.standing(ctx, v, gone)
-	if err != nil {
-		return err
-	}
-	*swept = went
-	if err := u.Sources.RemoveSources(ctx, v.ID, domain.KindBook, gone); err != nil {
-		return fmt.Errorf("remove: %w", err)
-	}
-	res.Removed = len(gone)
 	return nil
 }
 
 // standing is the reading each of these paths stood on, for the ones that stood
 // on any.
-func (u Extract) standing(ctx context.Context, v domain.Vault, paths []string) ([]port.Recognised, error) {
+func (u Extract) standing(
+	ctx context.Context,
+	v domain.Vault,
+	kind domain.SourceKind,
+	paths []string,
+) ([]port.Recognised, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
+	held, err := u.Owing.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -201,13 +215,15 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognis
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	held, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
-	if err != nil {
-		return fmt.Errorf("read index: %w", err)
-	}
-	stood := make(map[port.Recognised]bool, len(held))
-	for _, r := range held {
-		stood[port.Recognised{From: r.From, Hash: r.Hash}] = true
+	stood := make(map[port.Recognised]bool)
+	for _, kind := range u.kinds() {
+		held, err := u.Owing.Recognised(ctx, v.ID, kind)
+		if err != nil {
+			return fmt.Errorf("read index: %w", err)
+		}
+		for _, r := range held {
+			stood[port.Recognised{From: r.From, Hash: r.Hash}] = true
+		}
 	}
 	for _, r := range went {
 		if stood[port.Recognised{From: r.From, Hash: r.Hash}] {
@@ -233,28 +249,30 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 	if u.Derived == nil {
 		return nil
 	}
-	standing, err := u.Owing.Recognised(ctx, v.ID, domain.KindBook)
-	if err != nil {
-		return fmt.Errorf("read index: %w", err)
-	}
-	for _, r := range standing {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if u.holds(ctx, text.Artifact(r.From, r.Hash), text.Partial(r.From, r.Hash)) {
-			continue
-		}
-		ref, err := reader.Stat(ctx, r.Path)
-		if port.NoNote(err) {
-			continue
-		}
+	for _, kind := range u.kinds() {
+		standing, err := u.Owing.Recognised(ctx, v.ID, kind)
 		if err != nil {
-			return fmt.Errorf("stat %s: %w", r.Path, err)
+			return fmt.Errorf("read index: %w", err)
 		}
-		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
-			return fmt.Errorf("record %s: %w", r.Path, err)
+		for _, r := range standing {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			if u.holds(ctx, text.Artifact(r.From, r.Hash), text.Partial(r.From, r.Hash)) {
+				continue
+			}
+			ref, err := reader.Stat(ctx, r.Path)
+			if port.NoNote(err) {
+				continue
+			}
+			if err != nil {
+				return fmt.Errorf("stat %s: %w", r.Path, err)
+			}
+			if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref}); err != nil {
+				return fmt.Errorf("record %s: %w", r.Path, err)
+			}
+			res.Forgotten++
 		}
-		res.Forgotten++
 	}
 	return nil
 }
@@ -282,13 +300,16 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	known := recipes(sizes)
 	tried := map[string]bool{}
 
-	questions := []func(context.Context) ([]string, error){
-		func(ctx context.Context) ([]string, error) {
-			return u.Owing.Unchunked(ctx, v.ID, domain.KindBook, sourcesPerQuery)
-		},
-		func(ctx context.Context) ([]string, error) {
-			return u.Owing.ByOtherRecipe(ctx, v.ID, domain.KindBook, known, sourcesPerQuery)
-		},
+	var questions []func(context.Context) ([]string, error)
+	for _, kind := range u.kinds() {
+		questions = append(questions,
+			func(ctx context.Context) ([]string, error) {
+				return u.Owing.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
+			},
+			func(ctx context.Context) ([]string, error) {
+				return u.Owing.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
+			},
+		)
 	}
 	for _, ask := range questions {
 		for {
@@ -382,7 +403,7 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
-	hash := fingerprint(raw)
+	hash := text.Fingerprint(raw)
 
 	// A document read by a recogniser has a text of its own, and the chunks are
 	// places in that. It is found by the hash of the bytes it was read from, so a
@@ -462,7 +483,7 @@ func recipe(reader string, s cutting.Sizes) string {
 // recipes are what every reader would produce at these sizes. A source carrying
 // none of them owes its text: its own reader has changed, or the sizes have.
 func recipes(s cutting.Sizes) []string {
-	named := []string{text.ReaderEPUB, text.ReaderPDF}
+	named := []string{text.ReaderEPUB, text.ReaderPDF, text.ReaderRecording}
 	out := make([]string, 0, len(named))
 	for _, reader := range named {
 		out = append(out, recipe(reader, s))
@@ -492,12 +513,6 @@ func (u Extract) sizes() cutting.Sizes {
 	return s
 }
 
-// fingerprint addresses the content of a file the index has read.
-func fingerprint(raw []byte) string {
-	sum := sha256.Sum256(raw)
-	return hex.EncodeToString(sum[:])
-}
-
 func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
@@ -512,7 +527,7 @@ func (u Extract) progress(res ExtractResult) {
 // Where there is none, the file speaks for itself and no producer is named.
 func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash string) (*text.Document, string, error) {
 	if u.Derived != nil {
-		from := u.area()
+		from := u.producer(ref)
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
 			switch found, err := u.Derived.Read(ctx, name); {
 			case err == nil:
@@ -539,4 +554,21 @@ func (u Extract) area() string {
 		return "ocr"
 	}
 	return u.Area
+}
+
+// producer is who would have written this file's text down: a recording is
+// listened to, and everything else is read.
+func (u Extract) producer(ref domain.FileRef) string {
+	if ref.Kind == domain.KindRecording {
+		return text.ASR
+	}
+	return u.area()
+}
+
+// kinds are the sorts of source this run works through.
+func (u Extract) kinds() []domain.SourceKind {
+	if len(u.Kinds) == 0 {
+		return []domain.SourceKind{domain.KindBook, domain.KindRecording}
+	}
+	return u.Kinds
 }

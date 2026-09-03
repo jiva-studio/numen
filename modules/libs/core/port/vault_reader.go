@@ -3,6 +3,7 @@ package port
 import (
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -52,6 +53,12 @@ type VaultReader interface {
 	List(ctx context.Context, folder string) ([]domain.Entry, error)
 	// Read returns the bytes of one file, addressed by a path a walk reported.
 	Read(ctx context.Context, path string) ([]byte, error)
+	// Open is one file to read a part of. A recording is played from the middle
+	// and is hours long, and holding all of it to answer for a second of it is
+	// the whole file in memory for every listener.
+	//
+	// The same errors as Read. Whoever opens it closes it.
+	Open(ctx context.Context, path string) (io.ReadSeekCloser, error)
 	// Stat answers what a walk reports about one path: its kind, its size and
 	// when it changed. It reads no bytes, so it is what a caller asks about a
 	// file it does not want to open.

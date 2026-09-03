@@ -417,6 +417,49 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 	}
 }
 
+func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
+	c := changeable(t, map[string]string{
+		"Sanskrit.md": "# Sanskrit\n",
+		"Slow.md":     "# Slow going\n",
+		"Roots.md": "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n" +
+			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
+	})
+
+	at, err := c.linking().PointAt(t.Context(), c.vault, "Roots.md", "preset",
+		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileRef{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if at == (domain.FileRef{}) {
+		t.Error("the write says nothing about the file it made")
+	}
+
+	body := c.read(t, "Roots.md")
+	if strings.Contains(body, "to: Sanskrit") || !strings.Contains(body, "to: Slow") {
+		t.Errorf("the entry did not move:\n%s", body)
+	}
+	if !strings.Contains(body, "  - to: Grammar\n    role: parent\n") {
+		t.Errorf("the other entry was rewritten:\n%s", body)
+	}
+	if !strings.Contains(body, "id: ") {
+		t.Errorf("editing a note is when it gets an identifier:\n%s", body)
+	}
+
+	named := 0
+	for _, link := range links(t, c.db, c.vault, "Roots.md").Links {
+		if link.Type != "preset" {
+			continue
+		}
+		named++
+		if link.To != "Slow.md" {
+			t.Errorf("the entry reaches %q", link.To)
+		}
+	}
+	if named != 1 {
+		t.Errorf("the note names %d places under the type", named)
+	}
+}
+
 func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n",

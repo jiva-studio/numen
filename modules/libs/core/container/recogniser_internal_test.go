@@ -37,6 +37,8 @@ type watched struct {
 
 	mu   sync.Mutex
 	open int
+	// while is the list as it stood when the models were asked for.
+	while []task.Task
 }
 
 func recognising(t *testing.T, why error) *watched {
@@ -51,6 +53,7 @@ func recognising(t *testing.T, why error) *watched {
 		open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 			w.mu.Lock()
 			w.open++
+			w.while = tasks.List()
 			w.mu.Unlock()
 			if why != nil {
 				return nil, nil, why
@@ -66,6 +69,17 @@ func (w *watched) opened() int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.open
+}
+
+// opening is the one piece of work in the list while the models were asked for.
+func (w *watched) opening(t *testing.T) task.Task {
+	t.Helper()
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if len(w.while) != 1 {
+		t.Fatalf("the list holds %d pieces of work while the models arrive: %+v", len(w.while), w.while)
+	}
+	return w.while[0]
 }
 
 // settled waits for the reading to be over.
@@ -95,37 +109,54 @@ func (w *watched) said(t *testing.T) (task.Task, bool) {
 
 var somewhere = domain.Vault{ID: "v", Path: "/nowhere"}
 
-// One at a time: the models hold a worker each.
-func TestASecondDocumentIsNotTakenWhileOneIsBeingRead(t *testing.T) {
+// One at a time: the models hold a worker each. A document named while one is
+// being read waits its turn, and a document named twice waits once.
+func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := recognising(t, errors.New("nothing to read with"))
 
-	held := make(chan struct{})
+	reading, held := make(chan struct{}, 2), make(chan struct{})
 	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+		w.mu.Lock()
+		w.open++
+		w.mu.Unlock()
+		reading <- struct{}{}
 		<-held
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the first document was not taken")
+	if got := w.Start(somewhere, "a.pdf"); got != port.Began {
+		t.Fatalf("the first document was not read: %v", got)
 	}
-	if w.Start(somewhere, "b.pdf") {
-		t.Error("a second document was taken while one was being read")
+	// The first document is out of the line and being read.
+	<-reading
+
+	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
+		t.Errorf("a second document was read while one was being read: %v", got)
 	}
+	if got := w.Start(somewhere, "b.pdf"); got != port.Queued {
+		t.Errorf("the same document named again: %v", got)
+	}
+	if w.Waiting() != 1 {
+		t.Errorf("%d documents are in line", w.Waiting())
+	}
+
 	close(held)
 	w.settled(t)
 
-	if w.Start(somewhere, "b.pdf") {
-		return
+	if w.opened() != 2 {
+		t.Errorf("a recogniser was opened %d times", w.opened())
 	}
-	t.Error("nothing was taken once the first reading was over")
+	if w.Waiting() != 0 {
+		t.Errorf("%d documents were left in line", w.Waiting())
+	}
 }
 
 // A failure nobody was shown is a failure nobody can act on.
 func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	w := recognising(t, errors.New("no models on this machine"))
 
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the document was not taken")
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
 	}
 	w.settled(t)
 
@@ -138,21 +169,42 @@ func TestAReadingThatFailedStaysInTheList(t *testing.T) {
 	}
 }
 
+// Getting the models is a step of its own, and it is named for what it is. A
+// row that calls it by the name of the work that follows leaves a person
+// watching a reading that has not begun.
+func TestTheModelsAreGotUnderTheirOwnName(t *testing.T) {
+	w := recognising(t, errors.New("no models on this machine"))
+
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
+	}
+	w.settled(t)
+
+	at := w.opening(t)
+	if at.Doing != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", at.Doing)
+	}
+	// Nothing has come down, so there is no share of it to draw.
+	if at.Total != 0 {
+		t.Errorf("a step that has counted nothing is drawn against %d", at.Total)
+	}
+}
+
 // The next reading takes the one before it out of the list: one reading is one
 // line, however many have failed.
 func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
 	w := recognising(t, errors.New("no models on this machine"))
 
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the document was not taken")
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
 	}
 	w.settled(t)
 	if _, held := w.said(t); !held {
 		t.Fatal("the first failure was not said")
 	}
 
-	if !w.Start(somewhere, "b.pdf") {
-		t.Fatal("the second document was not taken")
+	if w.Start(somewhere, "b.pdf") != port.Began {
+		t.Fatal("the second document was not read")
 	}
 	w.settled(t)
 
@@ -179,8 +231,8 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 		return nil, nil, context.Canceled
 	}
 
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the document was not taken")
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
 	}
 	w.settled(t)
 
@@ -207,13 +259,13 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 		return nil, nil, errors.New("nothing to read with")
 	}
 
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the document was not taken")
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
 	}
 	w.settled(t)
 
-	if !w.Start(somewhere, "b.pdf") {
-		t.Fatal("nothing was taken after a reading that ended where nothing expected it to")
+	if w.Start(somewhere, "b.pdf") != port.Began {
+		t.Fatal("nothing was read after a reading that ended where nothing expected it to")
 	}
 	w.settled(t)
 }
@@ -247,8 +299,8 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 		<-holding
 		return nil, nil, errors.New("nothing to read with")
 	}
-	if !w.Start(somewhere, "a.pdf") {
-		t.Fatal("the document was not taken")
+	if w.Start(somewhere, "a.pdf") != port.Began {
+		t.Fatal("the document was not read")
 	}
 
 	waited := make(chan struct{})
@@ -274,10 +326,13 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	t.Setenv(proofreading.KeyEnvVar, "sk-test")
 	w := recognising(t, nil)
 
+	service := proofreading.ServiceDefaults()
+	service.Name = "a-model"
+
 	cfg := Config{ServiceDir: ".numen"}
 	cfg.Proofreading = proofreading.Defaults()
-	cfg.Proofreading.Use = proofreading.UseService
-	cfg.Proofreading.Service.Name = "a-model"
+	cfg.Proofreading.Profiles = map[string]proofreading.Profile{"a-service": service}
+	cfg.ScanProofreading = proofreading.Proofread{With: "a-service", Automatically: true}
 	w.Recognising.cfg = cfg
 	w.Recognising.queue = func() (port.ProofreadQueue, error) {
 		return nil, errors.New("no queue for the proofreading service")

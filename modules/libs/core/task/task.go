@@ -53,6 +53,8 @@ type Counting int
 const (
 	Things Counting = iota
 	Bytes
+	// Seconds are a stretch of a recording, read out as a length of time.
+	Seconds
 )
 
 // Tasks is what the application is doing now.

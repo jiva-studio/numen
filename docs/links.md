@@ -48,7 +48,7 @@ The list is closed. Navigation and rendering read it, so a role nobody decided o
 | `ref` | a plain mention. It is the body `[[wikilink]]`, produced by the parser, and is never hand-authored in the block. A wikilink inside a code fence is an example of a link and not one. |
 | `attachment` | something that is not a note. It takes no part in the hierarchy. |
 
-`type` is an open vocabulary, and a value is introduced together with the code that reads it: one feature, one type.
+`type` is an open vocabulary, and a value is introduced together with the code that reads it: one feature, one type. `preset` is one of them: written on a deck's link, it says which note schedules that deck — [Cards](cards.md).
 
 ## The hierarchy
 
@@ -73,6 +73,8 @@ A name in brackets is the primary written form: `[[Thermodynamics]]`. `note://<i
 `name://` is the stored form and never appears in a file: the parser sees `[[Thermodynamics]]` and stores `name://Thermodynamics`, so every stored address carries a scheme and reading one is a split on `://`. A scheme is letters, digits, `+`, `-` and `.` written before the `://`, so the colon in a title like `Lecture 3: entropy` begins no scheme.
 
 A name is stored exactly as written and compared without regard to case: `[[entropy]]` finds `Entropy.md`, and a rename puts back the form the person chose.
+
+A note's extension may be written or left off, and every other dot belongs to the name: `[[Lecture 1.2]]` finds `Lecture 1.2.md`.
 
 Inside the brackets, an alias after `|` is how the link is read in the sentence and a fragment after `#` names a place inside the note. Neither is part of the address, and both survive whatever happens to the target.
 

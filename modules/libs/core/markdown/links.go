@@ -44,6 +44,10 @@ func bodyLinks(body []byte) []domain.Link {
 	return out
 }
 
+// NoRole closes what is said of a `links:` entry written with no role. A role
+// is what a link is for, and an entry carrying none is not read at all.
+const NoRole = " has no role"
+
 // frontmatterLinks reads the `links:` block, which is where a link that carries
 // a role, a type or an argument is written.
 //
@@ -70,7 +74,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 		}
 		role := domain.LinkRole(str(fields["role"]))
 		if role == "" {
-			problems = append(problems, "links: "+to+" has no role")
+			problems = append(problems, "links: "+to+NoRole)
 			continue
 		}
 		if !domain.KnownRole(role) {

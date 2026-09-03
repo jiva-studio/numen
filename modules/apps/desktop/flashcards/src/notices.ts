@@ -5,20 +5,36 @@
  * stands are rules, and a name that repeats is a notice that puts another away
  * with it.
  */
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { ConnectError } from '@connectrpc/connect'
 
 import type { Notice, Tone } from '@numen/ui'
 
+/** One piece of work the window is doing behind itself, as the answer holds it. */
+export interface Task {
+  readonly id: string
+  readonly doing: string
+  readonly about: string
+  readonly failed: string
+  readonly asked: boolean
+}
+
 export function raising() {
-  const notices = ref<readonly Notice[]>([])
+  /** What the window is doing behind itself, which stands above what it said. */
+  const working = ref<readonly Notice[]>([])
+
+  /** What it has told the person, newest last. */
+  const told = ref<readonly Notice[]>([])
+
+  const notices = computed<readonly Notice[]>(() => [...working.value, ...told.value])
 
   /** How many have been raised, which is what names the next one. */
   let raised = 0
 
   const says = (said: string, tone: Tone) => {
     raised += 1
-    notices.value = [
-      ...notices.value,
+    told.value = [
+      ...told.value,
       {
         id: String(raised),
         says: said,
@@ -32,12 +48,36 @@ export function raising() {
     ]
   }
 
-  /** Trouble, in the person's own words. */
-  const failed = (why: unknown) => says(String(why), 'alarm')
+  /** Trouble, in the person's own words: what the application said, as a sentence. */
+  const failed = (why: unknown) => says(sentence(ConnectError.from(why).rawMessage), 'alarm')
 
-  const putAway = (id: string) => {
-    notices.value = notices.value.filter((one) => one.id !== id)
+  /**
+   * What is being done behind the window, as cards to draw. The whole list
+   * arrives at once, so the whole list is what stands.
+   */
+  const doing = (tasks: readonly Task[]) => {
+    working.value = tasks.map((at) => ({
+      id: at.id,
+      says: at.failed || at.doing,
+      about: at.about,
+      working: at.failed === '',
+      asked: at.asked || at.failed !== '',
+      ...(at.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
+    }))
   }
 
-  return { notices, says, failed, putAway }
+  /** One card let go of. Work put away is the corner's own to keep away. */
+  const putAway = (id: string) => {
+    told.value = told.value.filter((one) => one.id !== id)
+  }
+
+  return { notices, says, failed, doing, putAway }
+}
+
+/** One thing said, as a sentence: it opens with a capital and it ends. */
+const sentence = (said: string): string => {
+  const words = said.trim()
+  if (!words) return ''
+  const ended = /[.!?]$/.test(words) ? words : `${words}.`
+  return (ended[0]?.toUpperCase() ?? '') + ended.slice(1)
 }

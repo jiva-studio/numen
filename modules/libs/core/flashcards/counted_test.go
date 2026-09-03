@@ -1,6 +1,7 @@
 package flashcards_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -95,6 +96,148 @@ func answeredOn(days map[string]int) map[string]flashcards.Tally {
 		out[day] = flashcards.Tally{Answered: answered, Good: answered}
 	}
 	return out
+}
+
+// What a day came to is counted under the preset each card face is grouped
+// under: the answers given, and the time they took.
+func TestWhatADayCameToUnderEachPreset(t *testing.T) {
+	root := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	mantra := flashcards.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
+	loose := flashcards.CardFace{Card: "3f4g5h6j7k", Face: "Say it"}
+	under := map[flashcards.CardFace]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
+
+	said := func(id string, face flashcards.CardFace, at string, took time.Duration) flashcards.Answer {
+		return flashcards.Answer{
+			ID: id, CardFace: face, At: moment(t, at), Rating: flashcards.Good, Took: took,
+		}
+	}
+	answers := []flashcards.Answer{
+		said("01A", root, "2026-08-29T09:00:00", 6*time.Second),
+		said("01B", mantra, "2026-08-29T21:00:00", 9*time.Second),
+		// The night belongs to the evening it began in.
+		said("01C", root, "2026-08-30T02:00:00", 5*time.Second),
+		// A card face nothing groups, an answer taken back, and another day.
+		said("01D", loose, "2026-08-29T09:30:00", 8*time.Second),
+		said("01E", root, "2026-08-29T10:00:00", 7*time.Second),
+		{ID: "01F", At: moment(t, "2026-08-29T10:01:00"), Undoes: "01E"},
+		said("01G", root, "2026-08-31T09:00:00", 4*time.Second),
+	}
+
+	got := flashcards.Sat(counting, "2026-08-29", answers, under, nil)
+
+	// Each card face is new the first time it is answered, and counts once for
+	// the day however many answers it took.
+	want := flashcards.Spent{Answered: 2, New: 2, Took: 20 * time.Second}
+	if got["Sanskrit.md"] != want {
+		t.Errorf("the day came to %+v, want %+v", got["Sanskrit.md"], want)
+	}
+	if len(got) != 1 {
+		t.Errorf("a card face nothing groups was counted: %+v", got)
+	}
+}
+
+// A preset counting in cards counts a card rated again as the one card, and a
+// preset counting in shows counts each time it was put to the person. The time
+// spent is the same time either way.
+func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
+	on := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	under := map[flashcards.CardFace]string{on: "Steady.md"}
+
+	answers := make([]flashcards.Answer, 0, 9)
+	for i := range 9 {
+		answers = append(answers, flashcards.Answer{
+			ID:       fmt.Sprintf("01%d", i),
+			CardFace: on,
+			At:       moment(t, "2026-08-29T09:00:00").Add(time.Duration(i) * time.Minute),
+			Rating:   flashcards.Again,
+			Took:     4 * time.Second,
+		})
+	}
+
+	cards := flashcards.Sat(counting, "2026-08-29", answers, under,
+		map[string]flashcards.Counts{"Steady.md": flashcards.CountsCards})
+	want := flashcards.Spent{Answered: 1, New: 1, Took: 36 * time.Second}
+	if cards["Steady.md"] != want {
+		t.Errorf("counting in cards the day came to %+v, want %+v", cards["Steady.md"], want)
+	}
+
+	shows := flashcards.Sat(counting, "2026-08-29", answers, under,
+		map[string]flashcards.Counts{"Steady.md": flashcards.CountsShows})
+	want = flashcards.Spent{Answered: 9, New: 1, Reviews: 8, Took: 36 * time.Second}
+	if shows["Steady.md"] != want {
+		t.Errorf("counting in shows the day came to %+v, want %+v", shows["Steady.md"], want)
+	}
+}
+
+// A card face is new on the day of its earliest answer.
+//
+// The files arrive in whatever order they were synchronised, and a run from
+// another machine sorting last by name can carry the answer that came first.
+func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
+	on := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	under := map[flashcards.CardFace]string{on: "Steady.md"}
+
+	answers := []flashcards.Answer{
+		{ID: "01A", CardFace: on, At: moment(t, "2026-08-31T09:00:00"),
+			Rating: flashcards.Good, Took: 5 * time.Second},
+		{ID: "01Z", CardFace: on, At: moment(t, "2026-08-24T09:00:00"),
+			Rating: flashcards.Good, Took: 7 * time.Second},
+	}
+
+	got := flashcards.Sat(counting, "2026-08-31", answers, under, nil)
+
+	want := flashcards.Spent{Answered: 1, Reviews: 1, Took: 5 * time.Second}
+	if got["Steady.md"] != want {
+		t.Errorf("the day came to %+v, want %+v", got["Steady.md"], want)
+	}
+}
+
+// One answer counts an hour of it at most, whatever the card stood on the
+// screen for.
+func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
+	on := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	under := map[flashcards.CardFace]string{on: ""}
+
+	got := flashcards.Sat(counting, "2026-08-29", []flashcards.Answer{
+		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
+			Rating: flashcards.Good, Took: time.Hour},
+	}, under, nil)
+
+	want := flashcards.Spent{Answered: 1, New: 1, Took: flashcards.LongestAnswer}
+	if got[""] != want {
+		t.Errorf("the day came to %+v, want %+v", got[""], want)
+	}
+}
+
+// The card faces a day has answered are the day's however late it ran. A card
+// answered at one in the morning was answered that evening, and a budget
+// counting in cards has already charged it.
+func TestTheFacesADayAnsweredAreCountedByTheDayTheyFallIn(t *testing.T) {
+	evening := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	night := flashcards.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
+	morning := flashcards.CardFace{Card: "3f4g5h6j7k", Face: "Recognise"}
+	back := flashcards.CardFace{Card: "m9n8b7v6c5", Face: "Recognise"}
+
+	got := flashcards.Faced(counting, "2026-08-29", []flashcards.Answer{
+		{ID: "01A", CardFace: evening, At: moment(t, "2026-08-29T21:00:00"), Rating: flashcards.Good},
+		{ID: "01B", CardFace: night, At: moment(t, "2026-08-30T02:00:00"), Rating: flashcards.Good},
+		{ID: "01C", CardFace: morning, At: moment(t, "2026-08-30T09:00:00"), Rating: flashcards.Good},
+		{ID: "01D", CardFace: back, At: moment(t, "2026-08-29T22:00:00"), Rating: flashcards.Good},
+		{ID: "01E", At: moment(t, "2026-08-29T22:01:00"), Undoes: "01D"},
+	})
+
+	if !got[evening] {
+		t.Error("a card answered in the evening is not one the day answered")
+	}
+	if !got[night] {
+		t.Error("a card answered at two in the morning is not that evening's")
+	}
+	if got[morning] {
+		t.Error("a card answered the next morning is counted in the day before")
+	}
+	if got[back] {
+		t.Error("an answer taken back left the card among the day's")
+	}
 }
 
 // A streak is the days up to now with no gap in them.

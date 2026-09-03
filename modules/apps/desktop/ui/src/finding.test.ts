@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { finding, type Asking, type Way, type Named, type Passage, type Words } from './finding'
+import { later, type Later } from './testing/later'
 
 const WORDS: Words = {
   names: 'Names',
@@ -21,23 +22,6 @@ const WORDS: Words = {
   notAsked: 'The vault could not answer',
   wordsOnly: 'Searching by words only — no model set',
   notEmbedded: 'This vault has not been read for meaning yet',
-}
-
-/** An answer the test hands over when it chooses to. */
-interface Later<T> {
-  promise: Promise<T>
-  answers: (value: T) => void
-  fails: (why: string) => void
-}
-
-function later<T>(): Later<T> {
-  let answers!: (value: T) => void
-  let fails!: (why: unknown) => void
-  const promise = new Promise<T>((resolve, reject) => {
-    answers = resolve
-    fails = reject
-  })
-  return { promise, answers, fails: (why: string) => fails(new Error(why)) }
 }
 
 /** A vault that answers when the test says so, and remembers what it was asked. */
@@ -79,6 +63,7 @@ const named = (over: Partial<Named> = {}): Named => ({
   heading: '',
   line: -1,
   at: [{ from: 0, to: 3 }],
+  type: 'note',
   ...over,
 })
 
@@ -87,6 +72,8 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
   isNote: true,
+  type: 'note',
+  kind: 'note',
   start: 0,
   length: 0,
   line: 0,
@@ -103,7 +90,7 @@ const bandOf = (bands: readonly { id: string }[], id: string) =>
 describe('asking', () => {
   it('draws no band at all until something is typed', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     expect(palette.bands.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
@@ -111,7 +98,7 @@ describe('asking', () => {
 
   it('asks all three questions at once, about what was typed', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -123,7 +110,7 @@ describe('asking', () => {
 
   it('asks about the words and not about the spaces around them', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('  ent  ')
     await settled()
@@ -133,7 +120,7 @@ describe('asking', () => {
 
   it('asks nothing at all once what was typed is taken back', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -148,7 +135,7 @@ describe('asking', () => {
 describe('answers arriving', () => {
   it('fills each band on its own, while the others are still out', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -164,7 +151,7 @@ describe('answers arriving', () => {
 
   it('drops an answer to a question nobody is asking any more', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -183,7 +170,7 @@ describe('answers arriving', () => {
 
   it('says a band could not be asked in the window’s own words, and fills the others', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
@@ -197,22 +184,24 @@ describe('answers arriving', () => {
     expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
   })
 
-  it('says a band came back with nothing in the window’s own words', async () => {
+  it('says nothing of a band that was asked and came back with nothing', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     void palette.typing('ent')
     await settled()
     vault.names[0]?.answers([])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('Nothing')
+    const band = bandOf(palette.bands.value, 'names')
+    expect(band?.silence).toBe('')
+    expect(band?.working).toBe(false)
   })
 
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: true }
-    const palette = finding(vault.core, WORDS, now, () => read)
+    const palette = finding(vault.core, WORDS, { wait: now, reading: () => read })
 
     void palette.typing('ent')
     await settled()
@@ -222,14 +211,14 @@ describe('answers arriving', () => {
 
     expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
     // The other bands are asked of the words, which a vault holding no vector
-    // still answers.
-    expect(bandOf(palette.bands.value, 'names')?.silence).toBe(WORDS.noneFound)
+    // still answers, and one of those that came back with nothing says nothing.
+    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('')
   })
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
     const vault = asking()
     const read = { chunks: 4, embedded: 0, embedding: false }
-    const palette = finding(vault.core, WORDS, now, () => read)
+    const palette = finding(vault.core, WORDS, { wait: now, reading: () => read })
 
     void palette.typing('ent')
     await settled()
@@ -241,7 +230,7 @@ describe('answers arriving', () => {
 
   it('lets go of everything when the palette is put away', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
 
     palette.shows(true)
     void palette.typing('ent')
@@ -260,7 +249,7 @@ describe('answers arriving', () => {
 describe('where a thing found takes the person', () => {
   const filled = async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -309,7 +298,7 @@ describe('where a thing found takes the person', () => {
 
   it('opens a passage as the note it was read out of, on the line it stands on', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -335,7 +324,7 @@ describe('where a thing found takes the person', () => {
 describe('what a key reaches, per kind of thing found', () => {
   it('offers the plex first for a name and the note first for a place', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
     void palette.typing('ent')
     await settled()
 
@@ -357,7 +346,7 @@ describe('what a key reaches, per kind of thing found', () => {
 describe('a passage from something that is not a note', () => {
   it('offers the document, opened where the words were found', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
     void palette.typing('war')
     await settled()
 
@@ -395,10 +384,109 @@ describe('a passage from something that is not a note', () => {
   })
 })
 
+describe('what a row is drawn as', () => {
+  it('says which of four each name found is', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([
+      named(),
+      named({ path: 'decks/words.md', title: 'Words to learn', type: 'deck' }),
+      named({ path: 'stencils/animal.md', title: 'Animal', type: 'stencil' }),
+      named({ path: 'presets/daily.md', title: 'Every day', type: 'preset' }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'names')!.items
+    expect(items.map((one) => palette.typeOf(one.id))).toEqual([
+      'note',
+      'deck',
+      'stencil',
+      'preset',
+    ])
+  })
+
+  it('draws a heading as the note it stands in', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([
+      named({ path: 'decks/words.md', title: 'Words to learn', heading: 'Entropy', line: 12, type: 'deck' }),
+    ])
+    await settled()
+
+    const item = bandOf(palette.bands.value, 'names')!.items[0]!
+    expect(palette.typeOf(item.id)).toBe('deck')
+  })
+
+  it('draws a passage as the note it was read out of', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    void palette.typing('ent')
+    await settled()
+
+    vault.way('words')?.answers([
+      passage({ path: 'presets/daily.md', type: 'preset' }),
+      passage({
+        path: 'library/mahabharata.epub',
+        title: '',
+        isNote: false,
+        kind: 'book',
+        start: 40_512,
+      }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'text')!.items
+    expect(items.map((one) => palette.typeOf(one.id))).toEqual(['preset', null])
+  })
+
+  it('says what the vault holds where a passage was read out of', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    void palette.typing('ent')
+    await settled()
+
+    vault.way('words')?.answers([
+      passage({ path: 'notes/heat.md' }),
+      passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
+      passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'text')!.items
+    expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'book', 'recording'])
+  })
+
+  it('says a name stands in a note, whatever kind of note it is', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([named(), named({ path: 'decks/words.md', type: 'deck' })])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'names')!.items
+    expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'note'])
+  })
+
+  it('says nothing about an item it is not drawing', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, { wait: now })
+    expect(palette.typeOf('notes/entropy.md')).toBeNull()
+    expect(palette.kindOf('notes/entropy.md')).toBeNull()
+  })
+})
+
 describe('a band landing under the keyboard', () => {
   it('names a passage by where it stands in the vault, not by where it stands in the list', async () => {
     const vault = asking()
-    const palette = finding(vault.core, WORDS, now)
+    const palette = finding(vault.core, WORDS, { wait: now })
     void palette.typing('war')
     await settled()
 

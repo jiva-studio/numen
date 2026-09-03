@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
@@ -51,8 +52,8 @@ var errLateRuntime = errors.New("what reads a scan arrived just now; open numen 
 // reading dismissed is one reading dismissed.
 func reading() string { return fmt.Sprintf("reading-%d", time.Now().UnixNano()) }
 
-// correcting is what one reading's proofreading is called, wherever it is
-// shown. One reading is one line, and it replaces itself as pages are put right.
+// correcting is what putting one file's text right is called, wherever it is
+// shown. One file is one line, and it replaces itself as the text is put right.
 func correcting(path string) string { return "proofreading-" + path }
 
 // Recognising reads scanned documents behind whoever asked.
@@ -92,6 +93,8 @@ type Recognising struct {
 
 	mu      sync.Mutex
 	running bool
+	// asked is the documents a person named that have not been read yet.
+	asked asked
 	// last is what the reading before this one was called. A reading that
 	// failed is left in the list under that name, and the next reading takes it
 	// out.
@@ -114,7 +117,9 @@ func (c Config) Recognising(ctx context.Context, sources port.SourceRepository, 
 		},
 		ready:    c.RecogniserReady,
 		standing: recognition.Prepared,
-		queue:    c.ProofreadQueue,
+		queue: func() (port.ProofreadQueue, error) {
+			return c.ProofreadQueue(c.ScanProofreading.With, proofread.ScanInstruction)
+		},
 	}
 }
 
@@ -137,25 +142,59 @@ func (r *Recognising) Running() bool {
 	return r.running
 }
 
-// Start begins reading one document behind whoever asked, and says whether it
-// began.
+// Start reads one document a person named, and says whether it began now or
+// waits its turn.
 //
 // One at a time: the models hold a worker each, and a second reading would take
-// twice as long and say so half as clearly.
+// twice as long and say so half as clearly. A document named while one is being
+// read goes to the back of the line and is read as soon as the turn is free.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the reading carries on.
-func (r *Recognising) Start(v domain.Vault, path string) bool {
-	ctx := r.under
-	if ctx == nil {
-		ctx = context.Background()
-	}
+func (r *Recognising) Start(v domain.Vault, path string) port.Taking {
 	r.mu.Lock()
+	r.asked.want(v, path)
 	if r.running {
 		r.mu.Unlock()
-		return false
+		return port.Queued
 	}
 	r.running = true
+	r.mu.Unlock()
+
+	r.going.Add(1)
+	go func() {
+		defer r.going.Done()
+		defer r.stopped()
+		r.drain(r.context())
+	}()
+	return port.Began
+}
+
+// Waiting is how many documents a person named are still in line.
+func (r *Recognising) Waiting() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.asked.waiting()
+}
+
+// drain reads every document a person named, in the order they named them. A
+// document is out of the line before it is read, so one whose reading ends
+// where nothing expected it to holds nothing afterwards.
+func (r *Recognising) drain(ctx context.Context) {
+	for {
+		r.mu.Lock()
+		one, waiting := r.asked.take()
+		r.mu.Unlock()
+		if !waiting || ctx.Err() != nil {
+			return
+		}
+		r.one(ctx, one.vault, one.path)
+	}
+}
+
+// one is a single document read, put right, and reported.
+func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
+	r.mu.Lock()
 	before := r.last
 	id := reading()
 	r.last = id
@@ -164,40 +203,52 @@ func (r *Recognising) Start(v domain.Vault, path string) bool {
 	r.done(before)
 	r.say(task.Task{ID: id, Doing: "Reading a scan", About: path})
 
-	r.going.Add(1)
-	go func() {
-		defer r.going.Done()
-		// The task is finished before the run is, so that a reading begun the
-		// moment this one ends has the list to itself. It is finished however
-		// this reading ends.
-		defer func() {
-			r.mu.Lock()
-			r.running = false
-			r.mu.Unlock()
-		}()
+	err := r.read(ctx, v, id, path)
+	if err == nil {
+		r.correct(ctx, v, path)
+	}
 
-		err := r.read(ctx, v, id, path)
-		if err == nil {
-			r.correct(ctx, v, path)
-		}
+	switch {
+	case err == nil, errors.Is(err, context.Canceled):
+		// A reading somebody stopped is a reading that is over.
+		r.done(id)
+	default:
+		// A failure nobody was shown is a failure nobody can act on, so it
+		// stays in the list until it is dismissed or the next reading begins.
+		r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
+	}
+}
 
-		switch {
-		case err == nil, errors.Is(err, context.Canceled):
-			// A reading somebody stopped is a reading that is over.
-			r.done(id)
-		default:
-			// A failure nobody was shown is a failure nobody can act on, so it
-			// stays in the list until it is dismissed or the next reading
-			// begins.
-			r.say(task.Task{ID: id, Doing: "Reading a scan", About: path, Failed: err.Error()})
-		}
-	}()
-	return true
+func (r *Recognising) stopped() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.running = false
+}
+
+func (r *Recognising) context() context.Context {
+	if r.under == nil {
+		return context.Background()
+	}
+	return r.under
 }
 
 // read is the work itself: what is missing arrives, and then the document is
 // read.
 func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string) error {
+	// One heavy run on a machine: a recording being heard holds the turn, and
+	// this waits for it.
+	// A scan is read only where somebody asked for it.
+	turn, err := heavy.take(ctx, true, func() {
+		r.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path})
+	})
+	if err != nil {
+		return err
+	}
+	defer turn()
+
+	// Getting the models is a step of its own and stands under its own name.
+	// Which file is coming down, and how much of it, is known once one is.
+	r.say(task.Task{ID: id, Doing: "Fetching models"})
 	models, close, err := r.open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
@@ -248,12 +299,18 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 }
 
 // correct puts a reading right, where a person configured something to
-// proofread it with. An installation that named none does nothing here.
+// proofread it with. An installation that named no profile, or asked for a
+// reading to be put right by hand, does nothing here.
 //
 // It reports itself under its own name, and a reading whose proofreading failed
 // is the reading as it was read.
 func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) {
-	by, err := r.cfg.Proofreader()
+	said := r.cfg.ScanProofreading
+	if !said.Automatically {
+		return
+	}
+
+	by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
 	if err != nil {
 		r.say(task.Task{ID: correcting(path), Doing: "Proofreading a reading", About: path, Failed: err.Error()})
 		return
@@ -271,17 +328,17 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 	}
 
 	id := correcting(path)
-	service := r.cfg.Proofreading.Service
+	profile := r.cfg.Proofreading.Profiles[said.With]
 	r.say(task.Task{ID: id, Doing: "Proofreading a reading", About: path})
 
 	_, err = source.Proofread{
-		Readers: r.cfg.VaultReaders(),
-		Derived: r.cfg.DerivedStores(),
-		By:      by,
-		Queue:   queue,
-		Pages:   service.PagesAtOnce,
-		Apart:   service.LettersApart,
-		Cut:     r.Cut,
+		Readers:         r.cfg.VaultReaders(),
+		Derived:         r.cfg.DerivedStores(),
+		By:              by,
+		Queue:           queue,
+		Pages:           profile.BatchSize,
+		MaxEditDistance: r.cfg.Proofreading.Distance(),
+		Cut:             r.Cut,
 		OnProgress: func(res source.ProofreadResult) {
 			r.say(task.Task{
 				ID:    id,
@@ -303,8 +360,12 @@ func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) 
 
 // say puts this reading in the list of what is being done. A person asked for
 // it and is waiting to be told it began.
-func (r *Recognising) say(at task.Task) {
-	at.Asked = true
+func (r *Recognising) say(at task.Task) { r.says(at, true) }
+
+// says puts one piece of work in the list. Work a person started is shown at
+// once, and work nobody asked for is shown once it has lasted.
+func (r *Recognising) says(at task.Task, asked bool) {
+	at.Asked = asked
 	if r.tasks != nil {
 		r.tasks.Set(at)
 	}
@@ -335,7 +396,7 @@ func (r *Recognising) Collecting(
 	defer r.going.Done()
 	for {
 		for _, v := range vaults {
-			r.collect(ctx, known, queue, v)
+			r.collect(ctx, known, queue, queue, v)
 		}
 		select {
 		case <-ctx.Done():
@@ -345,10 +406,45 @@ func (r *Recognising) Collecting(
 	}
 }
 
-// collect takes up every reading of one vault that has a batch out.
+// TakingUp puts right the readings of these vaults that stand short of their
+// last page, once, behind the caller.
+//
+// A proofreading stands at the page it reached, so a run that ended among the
+// batches is taken up at that page. A reading no proofreader has been over
+// stands at its first page and is put right whole. A proofreader with a queue
+// leaves a batch behind it and is taken up by Collecting.
+func (r *Recognising) TakingUp(
+	ctx context.Context,
+	known port.SourceQueries,
+	vaults ...domain.Vault,
+) {
+	said := r.cfg.ScanProofreading
+	if !said.Automatically {
+		return
+	}
+	r.going.Add(1)
+	go func() {
+		defer r.going.Done()
+		queue, err := r.queue()
+		if err != nil || queue != nil {
+			return
+		}
+		by, err := r.cfg.Proofreader(said.With, proofread.ScanInstruction)
+		if err != nil || by == nil {
+			return
+		}
+		for _, v := range vaults {
+			r.collect(ctx, known, by, nil, v)
+		}
+	}()
+}
+
+// collect takes up every reading of one vault that stands short of its last
+// page.
 func (r *Recognising) collect(
 	ctx context.Context,
 	known port.SourceQueries,
+	by port.Proofreader,
 	queue port.ProofreadQueue,
 	v domain.Vault,
 ) {
@@ -356,37 +452,46 @@ func (r *Recognising) collect(
 	if err != nil {
 		return
 	}
-	service := r.cfg.Proofreading.Service
+	profile := r.cfg.Proofreading.Profiles[r.cfg.ScanProofreading.With]
 	for _, said := range read {
 		if ctx.Err() != nil {
 			return
 		}
 		id := correcting(said.Path)
 		res, err := source.Proofread{
-			Readers: r.cfg.VaultReaders(),
-			Derived: r.cfg.DerivedStores(),
-			By:      queue,
-			Queue:   queue,
-			Pages:   service.PagesAtOnce,
-			Apart:   service.LettersApart,
-			Cut:     r.Cut,
+			Readers:         r.cfg.VaultReaders(),
+			Derived:         r.cfg.DerivedStores(),
+			By:              by,
+			Queue:           queue,
+			Pages:           profile.BatchSize,
+			MaxEditDistance: r.cfg.Proofreading.Distance(),
+			Cut:             r.Cut,
+			OnProgress: func(res source.ProofreadResult) {
+				r.says(task.Task{
+					ID: id, Doing: "Proofreading a reading", About: said.Path,
+					Done: int64(res.Read), Total: int64(res.Pages),
+				}, false)
+			},
 		}.Execute(ctx, v, said.Path)
 
 		switch {
 		case err != nil:
-			r.say(task.Task{
+			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading",
 				About: said.Path, Failed: err.Error(),
-			})
-		case res.None, res.Busy, res.Read >= res.Pages:
+			}, false)
+		case res.Busy:
+			// The reading is held by another run, and that run is the one whose
+			// progress the list carries.
+		case res.None, res.Read >= res.Pages:
 			// A reading with nothing left to put right is a reading nobody is
 			// waiting on.
 			r.done(id)
 		default:
-			r.say(task.Task{
+			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: said.Path,
 				Done: int64(res.Read), Total: int64(res.Pages),
-			})
+			}, false)
 		}
 	}
 }

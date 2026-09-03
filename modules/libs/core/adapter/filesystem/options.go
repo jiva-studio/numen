@@ -20,6 +20,9 @@ type Options struct {
 	// BookExtensions are the file extensions treated as books, with the leading
 	// dot. Empty means the default, which is EPUB and PDF.
 	BookExtensions []string
+	// RecordingExtensions are the file extensions treated as recordings, with
+	// the leading dot. Empty means the default.
+	RecordingExtensions []string
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.
 	Ignore []string
@@ -57,6 +60,11 @@ var DefaultExtensions = []string{".md"}
 // text out of. A book is any source with text that a person did not type here.
 var DefaultBookExtensions = []string{".epub", ".pdf"}
 
+// DefaultRecordingExtensions is what counts as a recording: the containers a
+// model is given speech out of. A recording is a source whose words nobody has
+// written down yet.
+var DefaultRecordingExtensions = domain.RecordingExtensions()
+
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's
 // bookkeeping.
@@ -84,15 +92,24 @@ func (o Options) bookExtensions() []string {
 }
 
 // kind says which sort of source a file's name makes it, and whether it is one
-// at all. A name that answers to both lists is a note.
+// at all. A name that answers to more than one list is a note.
 func (o Options) kind(name string) (domain.SourceKind, bool) {
 	switch {
 	case named(name, o.extensions()):
 		return domain.KindNote, true
 	case named(name, o.bookExtensions()):
 		return domain.KindBook, true
+	case named(name, o.recordingExtensions()):
+		return domain.KindRecording, true
 	}
 	return "", false
+}
+
+func (o Options) recordingExtensions() []string {
+	if len(o.RecordingExtensions) == 0 {
+		return DefaultRecordingExtensions
+	}
+	return o.RecordingExtensions
 }
 
 func (o Options) isNote(name string) bool {

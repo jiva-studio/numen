@@ -30,12 +30,14 @@ function fake(over: Partial<Faked> = {}) {
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     standing: async () => new Map(),
+    resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield
     changes: async function* () {},
     // eslint-disable-next-line require-yield
     focus: async function* () {},
+    attending: async () => {},
     // eslint-disable-next-line require-yield
     editing: async function* () {},
     tasks: async function* () {},
@@ -75,6 +77,12 @@ function fake(over: Partial<Faked> = {}) {
     hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
+    reviewing: async () => '04:00',
+    choosesReviewing: async () => null,
+    settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
+    choosesSetting: async () => {},
+    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    writesSettingsFile: async () => {},
     ...over,
   }
   return { core, files, wrote }
@@ -91,7 +99,7 @@ describe('opening a note', () => {
   it('reads it, and shows what came back', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'entropy grows')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
 
     notes.open('Heat.md')
     await settle()
@@ -103,7 +111,7 @@ describe('opening a note', () => {
   it('is done once for a note already open', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'first')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
 
     notes.open('Heat.md')
     await settle()
@@ -117,7 +125,7 @@ describe('opening a note', () => {
 
   it('leaves a note that is not there empty, and the next write makes it', async () => {
     const { core, wrote } = fake()
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
 
     notes.open('New.md')
     await settle()
@@ -130,7 +138,7 @@ describe('opening a note', () => {
 
   it('sticks on a refusal, and says why in words a person reads', async () => {
     const { core } = fake({ read: async () => ({ body: '', refusal: 'notText' }) })
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
 
     notes.open('photo.md')
     await settle()
@@ -144,7 +152,7 @@ describe('typing', () => {
   it('writes once the text has been still', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -158,7 +166,7 @@ describe('typing', () => {
   it('writes nothing for a buffer that did not move', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -176,7 +184,7 @@ describe('a change in the vault', () => {
     files.set('Heat.md', 'unchanged')
     const notes = editing(
       { ...core, read: async (path) => (asked.push(path), core.read(path)) },
-      quick,
+      { limits: quick },
     )
     notes.open('Heat.md')
     await settle()
@@ -191,7 +199,7 @@ describe('a change in the vault', () => {
   it('reaches a note with nothing unsaved, and passes one with something', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'on disk')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -206,7 +214,7 @@ describe('a change in the vault', () => {
   it('naming no paths at all reaches every note with nothing unsaved', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'before')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -223,7 +231,7 @@ describe('a change in the vault', () => {
     files.set('Heat.md', 'x')
     const notes = editing(
       { ...core, read: async (path) => (asked.push(path), core.read(path)) },
-      quick,
+      { limits: quick },
     )
     notes.open('Heat.md')
     await settle()
@@ -239,7 +247,7 @@ describe('closing', () => {
   it('writes what is owed before the note goes', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -253,7 +261,7 @@ describe('closing', () => {
   it('takes a note with nothing unsaved straight away', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -267,7 +275,7 @@ describe('closing', () => {
     const { core, files, wrote } = fake()
     files.set('a.md', 'a')
     files.set('b.md', 'b')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('a.md')
     notes.open('b.md')
     await settle()
@@ -285,7 +293,7 @@ describe('a note whose file is about to be renamed or removed', () => {
   it('writes what is unsaved before it answers', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    const notes = editing(core, { limits: { quiet: 10_000, bound: 10_000 } })
     notes.open('Heat.md')
     await settle()
 
@@ -299,7 +307,7 @@ describe('a note whose file is about to be renamed or removed', () => {
   it('answers what a write in the air still owes before it says it has settled', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    const notes = editing(core, { limits: { quiet: 10_000, bound: 10_000 } })
     notes.open('Heat.md')
     await settle()
 
@@ -323,7 +331,7 @@ describe('a note whose file is about to be renamed or removed', () => {
         return core.write(path, body, seen)
       },
     }
-    const notes = editing(slow, quick)
+    const notes = editing(slow, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -337,7 +345,7 @@ describe('a note whose file is about to be renamed or removed', () => {
   it('answers at once for a note with nothing unsaved, and for one it never held', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -352,7 +360,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
     files.set('Warmth.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -369,7 +377,7 @@ describe('where a note stands', () => {
   it('is the file its tab opened with while nothing has moved it', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -380,7 +388,7 @@ describe('where a note stands', () => {
   it('follows each rename, so a note moved twice stands at the last of them', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -399,7 +407,7 @@ describe('where a note stands', () => {
   it('is answered for only while the window holds the note', async () => {
     const { core, files } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('held', 'Heat.md')
     await settle()
 
@@ -416,7 +424,7 @@ describe('a save asked for now', () => {
   it('writes what is unsaved without waiting for the text to be still', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, { quiet: 10_000, bound: 10_000 })
+    const notes = editing(core, { limits: { quiet: 10_000, bound: 10_000 } })
     notes.open('Heat.md')
     await settle()
 
@@ -430,7 +438,7 @@ describe('a save asked for now', () => {
   it('writes nothing for a note nothing was typed into', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -446,7 +454,7 @@ describe('a note that changed on disk under a save', () => {
   const caught = async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -496,7 +504,7 @@ describe('a note that changed on disk under a save', () => {
   it('does not stop a note whose own two saves follow each other', async () => {
     const { core, files, wrote } = fake()
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -517,7 +525,7 @@ describe('a core that cannot be reached', () => {
         throw new Error('no transport')
       },
     })
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
 
     notes.open('Heat.md')
     await settle()
@@ -532,7 +540,7 @@ describe('a save that was refused', () => {
       write: async () => ({ body: '', refusal: 'bodyRefused' }),
     })
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -551,7 +559,7 @@ describe('a save that was refused', () => {
       },
     })
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -572,7 +580,7 @@ describe('closing a note that could not be written', () => {
       },
     })
     files.set('Heat.md', 'one')
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('Heat.md')
     await settle()
 
@@ -591,7 +599,7 @@ describe('closing a note that could not be written', () => {
 
   it('lets a note it could never read go the first time', async () => {
     const { core } = fake({ read: async () => ({ body: '', refusal: 'notText' }) })
-    const notes = editing(core, quick)
+    const notes = editing(core, { limits: quick })
     notes.open('photo.md')
     await settle()
 

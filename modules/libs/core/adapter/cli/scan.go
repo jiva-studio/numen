@@ -100,10 +100,11 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	return v, nil
 }
 
-// describeSources puts the reading of books into words. Nothing is said about a
-// vault holding none.
+// describeSources puts the reading of what nobody typed here into words: the
+// books of a vault and the recordings in it. Nothing is said about a vault
+// holding none.
 func describeSources(r source.ExtractResult) string {
-	s := fmt.Sprintf("%d books: %d read, %d unchanged, %d chunks",
+	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
 	if r.Unreadable > 0 {
 		s += fmt.Sprintf(", %d could not be read", r.Unreadable)

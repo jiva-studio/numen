@@ -1,9 +1,6 @@
 /**
  * What one plex tab holds: where it is standing, and what a gesture in it does.
- *
- * The plex reports the shape of a gesture and nothing else. What making a note
- * from a node comes to, what the menu on a node offers, and which note a click
- * opens are decided here, so a test can ask them without a screen.
+ * The plex reports the shape of a gesture, and what it comes to is decided here.
  *
  * A gesture names a node by its ticket. This is the edge where a ticket becomes
  * the path the vault is asked about, and past it every note is a path.
@@ -16,6 +13,7 @@ import type {
   PlexRelatedSeat,
   PlexShowing,
 } from '@numen/ui'
+import { asking } from '../asking'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
 import type { Standing } from './standing'
@@ -31,7 +29,6 @@ export interface Asked {
   /** The node it was asked for on, and nothing where it was asked off every node. */
   readonly node: string | null
   readonly at: { x: number; y: number }
-  readonly from: HTMLElement | SVGElement | null
   readonly opening: MenuOpening
 }
 
@@ -120,6 +117,11 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
       held.view.close()
       return true
     },
+    at: (held) => {
+      const path = held.view.here.value
+      return { path, title: (path && held.nameOf(path)) || path }
+    },
+    attends: (held) => ({ path: held.view.here.value }),
   }
 
   /** The note the person is looking at, which is what a question is about. */
@@ -242,35 +244,29 @@ export function plexing(view: Standing, deps: Plexing) {
     return paths.filter(Boolean)
   })
 
+  /** Two answers can be in flight — a change followed while a travel is still out. */
+  const reading = asking()
+
   /**
    * What the notes on the picture are divided into, asked for all of them at
-   * once and kept until the next question.
-   *
-   * A vault that cannot answer leaves every node hanging nothing, which is
-   * what a node with nothing inside it hangs.
+   * once and kept until the next question. A vault that cannot answer leaves
+   * every node hanging nothing.
    */
-  /**
-   * Which question about what the notes hold is the current one. Two answers
-   * can be in flight — a change followed while a travel is still out — and
-   * without this the slower one settles whatever was asked last.
-   */
-  let asking = 0
-
   const reads = async () => {
     // A deck divides into its cards and a stencil into its faces, and neither
     // is a part of prose. Only an ordinary note is asked about.
     const paths = drawn.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
-    const mine = ++asking
+    const mine = reading.ask()
     if (!deps.hangs() || paths.length === 0) {
       parts.value = new Map()
       return
     }
     try {
       const found = await deps.inside(paths)
-      if (mine !== asking) return
+      if (!mine.current) return
       parts.value = new Map([...found].map(([path, held]) => [path, asParts(held)]))
     } catch {
-      if (mine === asking) parts.value = new Map()
+      if (mine.current) parts.value = new Map()
     }
   }
 
@@ -380,15 +376,15 @@ export function plexing(view: Standing, deps: Plexing) {
 
   /** An item chosen in the menu, on the note it was asked for on. */
   const chose = (id: string) => {
-    const asking = menu.value
+    const on = menu.value
     menu.value = null
-    if (!asking) return
-    if (asking.node === null) {
+    if (!on) return
+    if (on.node === null) {
       if (id === NEW_NOTE) void writes()
       return
     }
     if (!OFFERED.has(id)) return
-    const path = tickets.note(asking.node)
+    const path = tickets.note(on.node)
     if (path) deps.runs(id, path, nameOf(path))
   }
 

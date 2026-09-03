@@ -27,6 +27,7 @@ import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
 import { reviewed } from './reviewed'
+import { opens, scheduling } from './scheduling'
 import { session } from './session'
 import { asking } from './asking'
 import { reading } from './reading'
@@ -41,10 +42,11 @@ const on = ref<'vaults' | 'decks' | 'session'>('vaults')
 /** The vault whose decks are open, and whose cards are being asked. */
 const vault = ref('')
 
-const { notices, says, failed, putAway } = raising()
-const { vaults, counting: busy, count } = counting({ cards, failed })
+const { notices, says, failed, doing, putAway } = raising()
+const { vaults, counting: busy, day: today, count, stop } = counting({ cards, failed })
 const sat = session({ cards, failed })
 const done = reviewed({ cards, failed })
+const schedules = scheduling({ presets: cards })
 
 /** Why nothing can be asked here, empty while something can. */
 const unreachable = ref('')
@@ -120,10 +122,16 @@ const page = useTemplateRef<InstanceType<typeof Reading>>('page')
 
 const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
 
+/**
+ * Into a vault. A vault is opened once it has been counted, so what the rest of
+ * them come to is nobody's question any more and the counting is let go of.
+ */
 const choose = (id: string) => {
+  stop()
   vault.value = id
   on.value = 'decks'
   void done.read(id)
+  void schedules.read(chosen.value, today.value)
 }
 
 /**
@@ -151,6 +159,14 @@ const start = async (deck: string) => {
   reported(said)
 }
 
+/** Sit down to every deck one preset schedules, held to the budget it keeps. */
+const startPreset = async (preset: string) => {
+  const said = await sat.start(vault.value, '', preset)
+  if (!said) return
+  on.value = 'session'
+  reported(said)
+}
+
 /**
  * Out of a sitting and back to the decks, with the counts as they now stand and
  * the days too: what a person just answered is part of what they have done.
@@ -162,6 +178,7 @@ const leave = async () => {
   on.value = 'decks'
   void done.read(vault.value)
   await count()
+  void schedules.read(chosen.value, today.value)
 }
 
 /** Back to the vaults, which is where a person picks another collection. */
@@ -170,6 +187,7 @@ const vaultsAgain = async () => {
   read.ends()
   sat.forget()
   done.forget()
+  schedules.forget()
   on.value = 'vaults'
   vault.value = ''
   await count()
@@ -228,14 +246,13 @@ const keyed = (press: KeyboardEvent) => {
 
 /**
  * The keys a person picks a vault with: a letter opens the vault standing at
- * it, which is the letter drawn on that row. While the vaults are being counted
- * the list is empty and no letter stands anywhere.
+ * it, which is the letter drawn on that row. A vault whose count has not
+ * arrived carries no letter, and the letter standing at it opens nothing.
  */
 const picking = (press: KeyboardEvent) => {
-  if (busy.value) return
   const at = opensVault(press, vaults.value.length)
   const one = at === null ? undefined : vaults.value[at]
-  if (!one) return
+  if (!one || !one.counted) return
   press.preventDefault()
   choose(one.vaultId)
 }
@@ -248,11 +265,11 @@ const choosing = (press: KeyboardEvent, vault: Owing) => {
 
   switch (asked.does) {
     case 'all':
-      void start('')
+      if (vault.due + vault.new > 0) void start('')
       break
     case 'deck': {
       const deck = vault.decks[asked.at]
-      if (deck) void start(deck.deck)
+      if (deck && opens(deck, schedules.byDeck.value)) void start(deck.deck)
       break
     }
     case 'back':
@@ -291,12 +308,31 @@ onMounted(() => {
     async () => {
       if (on.value === 'session') return
       await count()
-      if (vault.value) await done.read(vault.value)
+      if (!vault.value) return
+      await done.read(vault.value)
+      await schedules.read(chosen.value, today.value)
+    },
+  )
+  // What is being done behind the window, which is a vault read into the index.
+  // It is a stream because a reading begins without the page asking for one.
+  void follows(
+    () => cards.tasks({}),
+    (said) => {
+      doing(
+        said.tasks.map((at) => ({
+          id: at.id,
+          doing: at.doing,
+          about: at.about,
+          failed: at.failed,
+          asked: at.asked,
+        })),
+      )
     },
   )
 })
 onUnmounted(() => {
   open = false
+  stop()
   window.removeEventListener('keydown', keyed)
 })
 </script>
@@ -316,7 +352,12 @@ onUnmounted(() => {
       :vault="chosen"
       :days="done.days.value"
       :due="done.due.value"
+      :presets="schedules.presets.value"
+      :by-deck="schedules.byDeck.value"
+      :scheduled="schedules.known.value"
+      :today="today"
       @start="start"
+      @start-preset="startPreset"
       @back="vaultsAgain"
     />
 

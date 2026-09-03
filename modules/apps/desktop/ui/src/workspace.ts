@@ -12,12 +12,20 @@ export const AGENT = 'agent'
 export const NOTE = 'note'
 /** A document read in the window, under the path the vault files it at. */
 export const DOCUMENT = 'document'
+/** A recording played in the window, under the path the vault files it at. */
+export const RECORDING = 'recording'
 /** The folders and files of the vault, one tab of them to a window. */
 export const FILES = 'files'
 /** A deck edited in the window, under the path the vault files it at. */
 export const DECK = 'deck'
 /** A stencil edited in the window, under the path the vault files it at. */
 export const STENCIL = 'stencil'
+/** A preset edited in the window, under the path the vault files it at. */
+export const PRESET = 'preset'
+/** What this installation is configured as, one tab of it to a window. */
+export const SETTINGS = 'settings'
+/** The settings file itself, opened whole, one tab of it to a window. */
+export const CONFIGURATION = 'configuration'
 
 /** One thread of talk, under the name the agent hears it by. */
 export const CONVERSATION = 'conversation'

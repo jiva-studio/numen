@@ -3,18 +3,16 @@
  * What a person did on each day and what is still coming to them, as a grid of
  * weeks.
  *
- * A column is a week. The weeks behind run up to the one they are in, and a few
- * weeks of what is still to come stand after it. How many weeks are drawn is
- * how many fit the room there is: a wide window shows more of the year rather
- * than the same weeks drawn larger, and a narrow one shows fewer rather than a
- * grid marooned in the middle of empty room.
+ * A column is a week: the weeks behind run up to the one they are in, and a few
+ * of what is still to come stand after it. How many weeks are drawn is how many
+ * fit the room there is.
  *
- * How the grid is laid out is `heatmap` and what one day comes to is `Summary`.
- * This puts the two on the screen.
+ * Each cell carries `data-heatmap-day`, the day it stands for.
  */
 import { computed, ref } from 'vue'
 
 import Tooltip from '../tooltip/Tooltip.vue'
+import type { Box } from '../placing/place'
 import Summary from './Summary.vue'
 import { days, fits, ROWS } from './heatmap'
 import type { Day, Tally } from './heatmap'
@@ -54,12 +52,15 @@ const height = computed(() => ROWS * step.value - laid.value.gap)
 const xOf = (at: number) => Math.floor(at / ROWS) * step.value
 const yOf = (at: number) => (at % ROWS) * step.value
 
-/** The day a person is pointing at, and where on the page they are pointing. */
-const pointed = ref<{ day: Day; at: { x: number; y: number } } | null>(null)
+/** The day a person is pointing at, and the cell on the page it is drawn in. */
+const pointed = ref<{ day: Day; at: Box } | null>(null)
 
 const reaches = (day: Day, press: MouseEvent) => {
   const cell = (press.target as SVGRectElement).getBoundingClientRect()
-  pointed.value = { day, at: { x: cell.right + 8, y: cell.top } }
+  pointed.value = {
+    day,
+    at: { x: cell.x, y: cell.y, width: cell.width, height: cell.height },
+  }
 }
 </script>
 
@@ -84,6 +85,7 @@ const reaches = (day: Day, press: MouseEvent) => {
         :rx="2"
         :ry="2"
         class="heatmap__day"
+        :data-heatmap-day="day.day"
         :data-weight="day.weight"
         :data-ahead="day.ahead ? 'yes' : undefined"
         :data-today="day.today ? 'yes' : undefined"
@@ -138,21 +140,27 @@ const reaches = (day: Day, press: MouseEvent) => {
   stroke: none;
 }
 
-/* A day still to come is drawn in outline: what is done is filled in, and what
-   is coming is not done. It is the same weight, so a heavy week ahead reads as
-   a heavy week. */
-.heatmap__day[data-ahead][data-weight='1'],
-.heatmap__day[data-ahead][data-weight='2'],
-.heatmap__day[data-ahead][data-weight='3'],
-.heatmap__day[data-ahead][data-weight='4'] {
-  fill: color-mix(in oklab, var(--numen-focus-bg) 12%, var(--numen-node-bg));
-  stroke: var(--numen-focus-bg);
-  stroke-width: 1;
+/* A day still to come is said quietly: what is done stands at full strength,
+   and what is coming is the same weight drawn dim. It carries its weight, so a
+   heavy week ahead reads as a heavy week. */
+.heatmap__day[data-ahead][data-weight='1'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 8%, var(--numen-node-bg));
+  stroke: none;
 }
 
-.heatmap__day[data-ahead][data-weight='3'],
+.heatmap__day[data-ahead][data-weight='2'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 15%, var(--numen-node-bg));
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='3'] {
+  fill: color-mix(in oklab, var(--numen-focus-bg) 23%, var(--numen-node-bg));
+  stroke: none;
+}
+
 .heatmap__day[data-ahead][data-weight='4'] {
-  stroke-width: 1.5;
+  fill: color-mix(in oklab, var(--numen-focus-bg) 32%, var(--numen-node-bg));
+  stroke: none;
 }
 
 /* Today is where a person's eye goes first, so it is ringed whatever it holds. */

@@ -45,28 +45,36 @@ defineEmits<{
 <template>
   <div class="welcome">
     <div class="welcome__column">
-      <div class="welcome__head">
-        <Mark class="welcome__mark" />
-        <h1 class="welcome__name">{{ name }}</h1>
-      </div>
+      <div class="welcome__lead">
+        <div class="welcome__head">
+          <Mark class="welcome__mark" />
+          <h1 class="welcome__name">{{ name }}</h1>
+        </div>
 
-      <ul v-if="ways.length" class="welcome__ways">
-        <li v-for="one in ways" :key="one.id">
-          <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
-            <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
-            <span class="welcome__what">{{ one.text }}</span>
-            <KeyCap v-if="one.keys" :keys="one.keys" />
-          </button>
-        </li>
-      </ul>
+        <ul v-if="ways.length" class="welcome__ways">
+          <li v-for="one in ways" :key="one.id">
+            <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
+              <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
+              <span class="welcome__what">{{ one.text }}</span>
+              <KeyCap v-if="one.keys" class="welcome__keys" :keys="one.keys" />
+            </button>
+          </li>
+        </ul>
+      </div>
 
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ heading }}</h2>
-        <ul class="welcome__list">
+        <!-- The room the list will fill, while the window has no rows to give
+             it and something to say about that. -->
+        <div v-if="!vaults.length && $slots.waiting" class="welcome__waiting">
+          <slot name="waiting" />
+        </div>
+        <ul v-else class="welcome__list">
           <li v-for="(one, at) in vaults" :key="one.id">
             <button
               type="button"
               class="welcome__row welcome__row--vault"
+              :disabled="one.waiting"
               @click="$emit('opens', one.id)"
             >
               <FolderRoot class="welcome__icon" />
@@ -81,8 +89,13 @@ defineEmits<{
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
               <!-- The letter it is opened by, at the end of the row the ways in
                    carry their keystrokes at. Past the alphabet a vault is opened
-                   with the hand and carries none. -->
-              <KeyCap v-if="vaultLetter(at)" :keys="{ marks: [], letter: vaultLetter(at) }" />
+                   with the hand and carries none, and a row still waiting is
+                   drawn without the letter it will be opened by. -->
+              <KeyCap
+                v-if="vaultLetter(at) && !one.waiting"
+                class="welcome__keys"
+                :keys="{ marks: [], letter: vaultLetter(at) }"
+              />
             </button>
           </li>
         </ul>
@@ -92,7 +105,7 @@ defineEmits<{
             <span class="welcome__what">{{ offer.text }}</span>
             <span v-if="offer.detail" class="welcome__aside">{{ offer.detail }}</span>
           </span>
-          <KeyCap v-if="offer.keys" :keys="offer.keys" />
+          <KeyCap v-if="offer.keys" class="welcome__keys" :keys="offer.keys" />
         </button>
       </section>
     </div>
@@ -103,17 +116,17 @@ defineEmits<{
 
 <style scoped>
 /* One column in the middle of the window, held to the width of a short line so
-   the rows read as a list and not as a page. */
+   the rows read as a list and not as a page. Short of the height that column
+   needs, it stands as two. */
 .welcome {
   /* How tall the glyph stands over the name. */
   --mark: 5.4rem;
 
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
   block-size: 100%;
   overflow: auto;
+  container-type: size;
   padding: var(--numen-gutter);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
@@ -126,15 +139,27 @@ defineEmits<{
   inset-block-end: var(--numen-inset);
   inset-inline-end: var(--numen-inset);
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 
+/* The column sits in the middle of whatever room there is. It is centred by its
+   own margins, so a column taller than the room keeps its head inside it and
+   the whole of it is scrolled to. */
 .welcome__column {
   display: flex;
   flex-direction: column;
   gap: 1.4rem;
+  margin: auto;
   inline-size: 100%;
   max-inline-size: 22rem;
+}
+
+/* The mark, the name and the ways in stand together, and take a column of their
+   own where the screen has two. */
+.welcome__lead {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
 }
 
 .welcome__head {
@@ -144,7 +169,10 @@ defineEmits<{
   gap: 0.5rem;
 }
 
+/* The glyph carries no size of its own, so it stands at the height it is given
+   and is never squeezed to fit the room. */
 .welcome__mark {
+  flex: none;
   inline-size: auto;
   block-size: var(--mark);
 }
@@ -205,8 +233,14 @@ defineEmits<{
   min-inline-size: 0;
 }
 
-.welcome__row:hover {
+.welcome__row:hover:not(:disabled) {
   background: var(--numen-bubble-bg);
+}
+
+/* A row whose answer is still on its way stands as it will stand, and does not
+   answer to a hand. */
+.welcome__row:disabled {
+  cursor: default;
 }
 
 .welcome__row:focus-visible {
@@ -232,7 +266,7 @@ defineEmits<{
 .welcome__aside {
   overflow: hidden;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -243,14 +277,98 @@ defineEmits<{
 .welcome__state {
   flex: none;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
+}
+
+/* Where the rows will stand, so what is said while they are on their way is
+   said in the middle of the room they will take. */
+.welcome__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 4rem;
+}
+
+/* Narrow, the row keeps its name and gives up the keystroke drawn on it: the
+   row is pressed by hand, and the key still works. Narrower, it gives up what
+   is said under the name; a path is on the row itself, for pointing at. */
+@container (max-width: 24rem) {
+  .welcome__keys {
+    display: none;
+  }
+}
+
+@container (max-width: 18rem) {
+  .welcome__aside {
+    display: none;
+  }
+}
+
+/* Short of the height the one column takes — the mark over the name, six ways
+   in, the heading and two vaults — the ways in and the vaults stand side by
+   side, each column the width of a short line. The list is the one thing here
+   with no end to it, and the one thing that scrolls. */
+@container (max-height: 27.55rem) and (min-width: 45.4rem) {
+  .welcome__column {
+    flex-direction: row;
+    margin-block: 0;
+    block-size: 100%;
+    max-inline-size: 45.4rem;
+  }
+
+  .welcome__lead,
+  .welcome__vaults {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  /* The ways in stand at their own height, whole, from the top of the screen
+     down. */
+  .welcome__lead {
+    align-self: start;
+  }
+
+  /* The heading holds its place at the head of the column and the offer holds
+     its place at the foot; the rows between them are scrolled. */
+  .welcome__vaults {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+
+  .welcome__list {
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Shorter than the mark, the name and the six ways in take together, the screen
+   gives up the emblem a step at a time: the mark at half its height, then the
+   mark, then the name after it. A way in is never given up. */
+@container (max-height: 19.85rem) {
+  .welcome__head {
+    --mark: 2.7rem;
+  }
+}
+
+@container (max-height: 17.15rem) {
+  .welcome__mark {
+    display: none;
+  }
+}
+
+@container (max-height: 13.95rem) {
+  .welcome__head {
+    display: none;
+  }
 }
 
 .welcome__heading {
   margin: 0 0 0.25rem;
   padding-inline: 0.6rem;
   color: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-weight: inherit;
   letter-spacing: var(--numen-caps-tracking);
   text-transform: uppercase;

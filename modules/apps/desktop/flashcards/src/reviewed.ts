@@ -27,7 +27,7 @@ export interface Day {
   hard: number
   good: number
   easy: number
-  /** The answers given to cards already learned, and how many came back. */
+  /** The answers given to cards already being reviewed, and how many came back. */
   asked: number
   recalled: number
 }

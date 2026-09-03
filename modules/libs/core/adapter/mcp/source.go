@@ -7,6 +7,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
@@ -141,15 +142,17 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 			"read answers nothing until it is. This is slow — an hour for a book — and " +
 			"it is never done on its own, because whether a document's own text is any " +
 			"good cannot be told from the text. Ask for it when a document is a scan, " +
-			"or when what a search returns from one is nonsense.",
+			"or when what a search returns from one is nonsense. A document asked for " +
+			"while another is being read waits its turn and is never refused, so this " +
+			"is asked once and no more.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the document, as source_list gives it"`
 	}) (*sdk.CallToolResult, struct {
-		Started bool   `json:"started"`
+		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
 		Says    string `json:"says"`
 	}, error) {
 		type out = struct {
-			Started bool   `json:"started"`
+			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
 			Says    string `json:"says"`
 		}
 		if core.Recognise == nil {
@@ -159,15 +162,59 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		// Nothing here happens inside this question. Fetching the models is
 		// minutes and reading a book is an hour, and how far either has got is
 		// among everything else the window shows being done.
-		if !core.Recognise.Start(core.shown().Vault, in.Path) {
-			// Nothing here remembers a request that was not taken.
-			return nil, out{Says: "another document is being read and this one was not taken; " +
-				"nothing is reading it — ask again once source_list says none is being read"}, nil
-		}
 		says := "started; it runs in the background, the pages it has read are searchable " +
 			"as it goes, and the window shows how far it has got"
-		if !core.Recognise.Ready() {
-			says = "started; what is needed to read scans is being fetched first, about 160 MB"
+		switch core.Recognise.Start(core.shown().Vault, in.Path) {
+		case port.Queued:
+			says = "queued; another document is being read and this one is in line behind " +
+				"it — nothing more is needed, it begins when that reading is over"
+		default:
+			if !core.Recognise.Ready() {
+				says = "started; what is needed to read scans is being fetched first, about 160 MB"
+			}
+		}
+		return nil, out{Started: true, Says: says}, nil
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "source_transcribe",
+		Title: "Write down what a recording says",
+		Description: "Have a model listen to one recording and write down the words it " +
+			"carries. What has been heard is searchable as it goes, so a search finds " +
+			"the first minutes of a talk long before the last of them are heard. This " +
+			"is slow — about as long as the recording itself. A vault's recordings are " +
+			"listened to on their own where the installation is set to; ask for this " +
+			"when one is wanted now, or when the installation leaves it to the hand. A " +
+			"recording asked for by name is heard whatever the installation listens to " +
+			"on its own, and waits behind nothing but the recordings asked for before " +
+			"it, so this is asked once and no more.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path string `json:"path" jsonschema:"the recording, as source_list gives it"`
+	}) (*sdk.CallToolResult, struct {
+		Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+		Says    string `json:"says"`
+	}, error) {
+		type out = struct {
+			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
+			Says    string `json:"says"`
+		}
+		if core.Transcribe == nil {
+			return nil, out{}, fmt.Errorf("this installation cannot hear recordings")
+		}
+
+		// Nothing here happens inside this question. Fetching the models is
+		// minutes and transcribing a talk is an hour, and how far either has got
+		// is among everything else the window shows being done.
+		says := "started; it runs in the background, and what has been transcribed is " +
+			"searchable as it goes"
+		switch core.Transcribe.Start(core.shown().Vault, in.Path) {
+		case port.Queued:
+			says = "queued; another recording is being transcribed and this one is in line " +
+				"behind it — nothing more is needed, it begins when that one is over"
+		default:
+			if !core.Transcribe.Ready() {
+				says = "started; what is needed to transcribe recordings is being fetched first"
+			}
 		}
 		return nil, out{Started: true, Says: says}, nil
 	})
@@ -184,8 +231,24 @@ type Recognising interface {
 	Ready() bool
 	// Running says whether a document is being read.
 	Running() bool
-	// Start begins reading one document behind whoever asked, and says whether
-	// it began. It does not begin a second while one runs, and it runs under
-	// the application rather than under the call that asked for it.
-	Start(v domain.Vault, path string) bool
+	// Start reads one document behind whoever asked, and says whether it began
+	// now or waits behind the reading already going. A document is never
+	// refused, and it runs under the application rather than under the call
+	// that asked for it.
+	Start(v domain.Vault, path string) port.Taking
+}
+
+// Transcribing is what the tools need in order to hear a recording: a way to
+// begin, and whether beginning would wait for anything to arrive.
+//
+// A server built without one serves no tool that would listen.
+type Transcribing interface {
+	// Ready says whether listening could begin now without waiting for anything
+	// to arrive.
+	Ready() bool
+	// Start listens to one recording behind whoever asked, and says whether it
+	// began now or waits behind the listening already going. A recording is
+	// never refused, and it runs under the application rather than under the
+	// call that asked for it.
+	Start(v domain.Vault, path string) port.Taking
 }

@@ -1,19 +1,19 @@
 /**
- * The icon drawn beside a command wherever it is offered.
- *
- * A command has one icon, so the menu on a row of the tree and the menu on a
- * node of the plex draw the same thing for the same thing. The icons are
- * Lucide's, which is the set the palette's key caps are drawn from.
+ * The icon drawn beside a command wherever it is offered. A command has one
+ * icon, from Lucide, so both menus draw the same thing for the same thing.
  *
  * A command is named here by the identity it carries in `commanding.ts` and in
- * what each tab does itself. `icons.test.ts` asks that every item either menu
- * offers has one.
+ * what each tab does itself.
  */
 import {
   ALargeSmall,
   ArrowRightLeft,
+  AudioLines,
   BookOpen,
   Bot,
+  Braces,
+  Captions,
+  CaptionsOff,
   Command,
   Compass,
   Contrast,
@@ -26,6 +26,7 @@ import {
   FolderPlus,
   FolderRoot,
   FolderTree,
+  Gauge,
   Layers,
   LayoutTemplate,
   ListTree,
@@ -36,7 +37,10 @@ import {
   RefreshCw,
   Rows3,
   Ruler,
+  ScanText,
   Search,
+  SlidersHorizontal,
+  SpellCheck,
   SquareX,
   Trash2,
   Type,
@@ -44,7 +48,20 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import { AGENT, DECK, DOCUMENT, FILES, NOTE, PLEX, STENCIL } from './workspace'
+import type { NoteType, Source } from './core'
+import {
+  AGENT,
+  CONFIGURATION,
+  DECK,
+  DOCUMENT,
+  FILES,
+  NOTE,
+  PLEX,
+  PRESET,
+  RECORDING,
+  SETTINGS,
+  STENCIL,
+} from './workspace'
 
 /** What each command is drawn as. A map, so an identity answers for itself. */
 const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
@@ -59,12 +76,20 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['ask', Bot],
   ['copy', Copy],
   ['reveal', FolderOpen],
+  ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
+  // Over the file in front: the transcript of a recording, the same put right,
+  // the same taken away, and the text recognised off a scan.
+  ['transcribe', Captions],
+  ['proofread', SpellCheck],
+  ['dropTranscript', CaptionsOff],
+  ['recognise', ScanText],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],
   ['newDeck', Layers],
   ['newStencil', LayoutTemplate],
+  ['newPreset', Gauge],
   ['newFolder', FolderPlus],
   ['rename', PenLine],
   // Over the window.
@@ -84,6 +109,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['syncing', RefreshCw],
   ['hanging', ListTree],
   ['parts', Rows3],
+  ['settings', SlidersHorizontal],
   // Over the vault.
   ['first', Compass],
   ['goto', Navigation],
@@ -104,9 +130,41 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [FILES, FolderTree],
   [NOTE, FileText],
   [DOCUMENT, BookOpen],
+  [RECORDING, AudioLines],
   [DECK, Layers],
   [STENCIL, LayoutTemplate],
+  [PRESET, Gauge],
+  [SETTINGS, SlidersHorizontal],
+  [CONFIGURATION, Braces],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */
 export const iconOfKind = (kind: string): LucideIcon | null => KINDS.get(kind) ?? null
+
+/**
+ * What each kind of note is drawn as, wherever a note's kind is drawn: the
+ * files list, the plex, and the tab it opens in. One mark to a kind, so a
+ * preset is the same thing in the tree that it is in the tab.
+ */
+const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
+  ['note', FileText],
+  ['deck', Layers],
+  ['stencil', LayoutTemplate],
+  ['preset', Gauge],
+])
+
+/** The icon for a kind of note. Every kind has one. */
+export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
+
+/**
+ * What each kind of source that is not a note is drawn as: the mark of the tab
+ * it opens in, so a recording is the same thing in a list that it is once it is
+ * open. A note is drawn by which of four it is.
+ */
+const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
+  ['book', BookOpen],
+  ['recording', AudioLines],
+])
+
+/** The icon for a source, and nothing for a file the vault holds no source for. */
+export const iconOfSource = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null

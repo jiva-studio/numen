@@ -96,6 +96,30 @@ export const EveryHue: Story = {
 }
 
 /**
+ * The disc, the arms of the cross on it and the bar they are drawn with, in the
+ * pixels they come to.
+ *
+ * Every one of them is a length in rem inside the handle itself, and what a rem
+ * comes to is the browser's answer and no test's.
+ */
+export const EverySizeIsAsDesigned: Story = {
+  args: { zoom: 1 },
+  play: async ({ canvasElement }) => {
+    const disc = canvasElement.querySelector('.plex__handle')!
+    const across = canvasElement.querySelector('.plex__handle-mark--across')!
+    const down = canvasElement.querySelector('.plex__handle-mark--down')!
+
+    // Nine pixels of radius, arms four out from the middle either way, on a bar
+    // of one and a half.
+    await expect(getComputedStyle(disc).r).toBe('9px')
+    await expect(getComputedStyle(across).width).toBe('8px')
+    await expect(getComputedStyle(across).height).toBe('1.5px')
+    await expect(getComputedStyle(down).width).toBe('1.5px')
+    await expect(getComputedStyle(down).height).toBe('8px')
+  },
+}
+
+/**
  * Pressed by hand and by keyboard, which are two different things: a pointer
  * has somewhere to be dragged to and the keyboard has not.
  *

@@ -29,8 +29,10 @@ var deck = map[string]string{
 }
 
 // window is this window as the binary builds it: an installation of its own, an
-// index opened for asking alone, and two vaults to sit down to.
-func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui.API, []domain.Vault) {
+// index it may write, and two vaults to sit down to.
+func window(
+	t *testing.T,
+) (container.Config, *container.Index, *opened, *flashcardsui.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -38,7 +40,7 @@ func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
 	}
-	db, err := cfg.OpenIndexToRead(t.Context())
+	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +50,9 @@ func window(t *testing.T) (container.Config, *container.ReadIndex, *flashcardsui
 		{ID: "one", Name: "One", Path: vaultOf(t)},
 		{ID: "two", Name: "Two", Path: vaultOf(t)},
 	}
-	return cfg, db, &flashcardsui.API{}, held
+	vaults := &opened{cfg: cfg, db: db, under: t.Context(), told: func(domain.Vault) {}, out: io.Discard}
+	t.Cleanup(vaults.wait)
+	return cfg, db, vaults, &flashcardsui.API{}, held
 }
 
 // vaultOf is a folder holding one stencil and one deck, as a vault.
@@ -92,10 +96,10 @@ func kept(t *testing.T, cfg container.Config) (token bool, announcement bool) {
 
 // An installation that names no agent lets nothing be asked, and says so.
 func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
-	cfg, db, api, _ := window(t)
+	cfg, db, opening, api, _ := window(t)
 	cfg.Agent = agent.Config{}
 
-	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {
@@ -108,10 +112,10 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 
 // The flag shuts it for one launch, whatever the settings name.
 func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
-	cfg, db, api, _ := window(t)
+	cfg, db, opening, api, _ := window(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, api, true, io.Discard)
+	away := serveAgents(t.Context(), cfg, db, opening, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {
@@ -123,10 +127,10 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, api, vaults := window(t)
+	cfg, db, opening, api, vaults := window(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Sat(t.Context(), vaults[0])
@@ -143,10 +147,10 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person sat down to. Sitting to another vault
 // starts it again there; sitting to the same one leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
-	cfg, db, api, vaults := window(t)
+	cfg, db, opening, api, vaults := window(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {

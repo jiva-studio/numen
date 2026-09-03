@@ -1,0 +1,122 @@
+package mcp
+
+import (
+	"context"
+	"fmt"
+
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/transcript"
+)
+
+// A Tab is one tab of the person's window, as an agent is told about it.
+type Tab struct {
+	Kind  string `json:"kind" jsonschema:"what sort of tab it is, in the window's own word for it"`
+	Path  string `json:"path,omitempty" jsonschema:"the file it holds, by the path the vault files it under"`
+	Title string `json:"title,omitempty" jsonschema:"what the tab is called, as the person reads it"`
+	Where string `json:"where,omitempty" jsonschema:"where in that file the person stands"`
+	Front bool   `json:"front,omitempty" jsonschema:"set on the one tab the person is looking at"`
+}
+
+// addWindowTools tells an agent what the person has open.
+//
+// They are added only where a window says. A binary nobody is sitting at
+// answers about a vault and about nothing in front of anybody.
+func addWindowTools(server *sdk.Server, core Core) {
+	if core.Attending == nil {
+		return
+	}
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "window_tabs",
+		Title: "What the person has open",
+		Description: "Every tab of the person's window, and which of them they are looking " +
+			"at. Ask it before saying anything about what is open or in front of them: a " +
+			"person moves between tabs while you work, so what they are looking at now is " +
+			"not what they were looking at when the conversation began. A tab holding a " +
+			"file names it by the path the vault files it under, and a tab whose kind you " +
+			"do not know is a tab of that kind and nothing more. What a recording says is " +
+			"read with source_read, as a document is.",
+	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
+		Tabs []Tab  `json:"tabs"`
+		Says string `json:"says" jsonschema:"the tab the person is looking at, in words to say back to them"`
+	}, error) {
+		type out = struct {
+			Tabs []Tab  `json:"tabs"`
+			Says string `json:"says" jsonschema:"the tab the person is looking at, in words to say back to them"`
+		}
+		open := core.Attending()
+		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Says: "the window has nothing open"}
+		for _, one := range open.Tabs {
+			front := one.ID != "" && one.ID == open.Front
+			res.Tabs = append(res.Tabs, Tab{
+				Kind:  one.Kind,
+				Path:  one.Path,
+				Title: one.Title,
+				Where: stands(one),
+				Front: front,
+			})
+			if front {
+				res.Says = inFront(one)
+			}
+		}
+		return nil, res, nil
+	})
+}
+
+// inFront is the tab the person is looking at, said back to them. A kind this
+// application has no words for is named by its own word and nothing more.
+func inFront(t domain.Tab) string {
+	name, where := called(t), stands(t)
+	switch t.Kind {
+	case domain.TabNote:
+		return fmt.Sprintf("the note %s is in front of them", name)
+	case domain.TabPlex:
+		if t.Path == "" {
+			return "they are looking at a plex standing on no note"
+		}
+		return fmt.Sprintf("they are looking at the plex around the note %s", name)
+	case domain.TabDocument:
+		if where == "" {
+			return fmt.Sprintf("the document %s is in front of them", name)
+		}
+		return fmt.Sprintf("the document %s is in front of them, open at %s", name, where)
+	case domain.TabRecording:
+		return fmt.Sprintf("the recording %s is in front of them, with %s", name, where)
+	}
+	return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
+}
+
+// called is how a tab is named in a sentence: what the person calls it, and
+// the file it holds so that a tool can be asked about it.
+func called(t domain.Tab) string {
+	switch {
+	case t.Title != "" && t.Path != "":
+		return fmt.Sprintf("%q at %s", t.Title, t.Path)
+	case t.Path != "":
+		return t.Path
+	}
+	return fmt.Sprintf("%q", t.Title)
+}
+
+// stands is where in what a tab holds the person stands, in the terms that tab
+// measures in. A tab that measures nothing says nothing.
+func stands(t domain.Tab) string {
+	switch t.Kind {
+	case domain.TabDocument:
+		if t.Of <= 0 {
+			return ""
+		}
+		return fmt.Sprintf("page %d of %d", t.At, t.Of)
+	case domain.TabRecording:
+		switch {
+		case t.At <= 0:
+			return "none of it written down yet"
+		case t.Of <= 0:
+			return fmt.Sprintf("%s of it written down", transcript.Clock(t.At))
+		}
+		return fmt.Sprintf("%s of its %s written down", transcript.Clock(t.At), transcript.Clock(t.Of))
+	}
+	return ""
+}

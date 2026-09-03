@@ -19,6 +19,12 @@ on:
       - "tests/**"
       - ".github/workflows/go.yml"
 
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters. A run on main is left to finish: it fills the cache the branches read.
+concurrency:
+  group: go-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # Three Go modules, checked the same way. The desktop module holds its Go
   # under cmd and internal, the phone's under bind; the core module is Go
@@ -33,24 +39,50 @@ jobs:
             sources: "."
           - module: modules/apps/desktop
             sources: "./cmd ./internal"
+            webview: true
           - module: modules/apps/mobile
             sources: "./bind"
     defaults:
       run:
         working-directory: ${{ matrix.module }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      # The two caches are keyed apart: the modules answer to go.sum, the build
+      # answers to the commit.
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
-          cache-dependency-path: ${{ matrix.module }}/go.sum
+          cache: false
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-${{ matrix.module }}-${{ hashFiles(format('{0}/go.sum', matrix.module)) }}
+          restore-keys: go-mod-${{ matrix.module }}-
+
+      # What the last compile and test run left behind: a run compiles what
+      # changed and re-runs the tests that changed. The key carries the commit,
+      # so the newest cache the branch can see is the one restored.
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-${{ matrix.module }}-${{ github.sha }}
+          restore-keys: go-build-${{ matrix.module }}-
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
       # none of this, which is why it is a separate binary.
       - name: Webview
-        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+        if: matrix.webview
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::=--force-unsafe-io \
+            libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Formatting
         run: |
@@ -63,7 +95,19 @@ jobs:
 
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does.
+      #
+      # A test builds its vault in a temporary folder, and there is memory here
+      # to hold every one of them.
       - run: go test -race ./...
+        env:
+          TMPDIR: /dev/shm
+
+      # Every run writes what it built. A branch reads its own back on the next
+      # push to it and main's before that.
+      - uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-${{ matrix.module }}-${{ github.sha }}
 
   # The other half of the promise the two binaries make: this one is built for
   # a machine it is not being built on.
@@ -73,8 +117,8 @@ jobs:
       run:
         working-directory: modules/apps/desktop
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
           cache-dependency-path: |

@@ -1,0 +1,97 @@
+/**
+ * The settings the window reads out of the file whole: what stands at a path
+ * through it, the models a setting that names one can be set to, and one
+ * setting written where it stands.
+ *
+ * What the vault answers with holds the defaults under everything the file
+ * leaves out.
+ */
+import { ref, shallowRef } from 'vue'
+import type { Model, Written } from '../core'
+import type { Says } from '../telling'
+import { write } from './json5'
+
+/** Everything this says in the window's voice. */
+export interface Words {
+  /** The setting could not be written. */
+  readonly unturned: string
+}
+
+/** What this asks of the vault. */
+export interface Called {
+  /** Every setting as it stands, and the models the settings offer. */
+  settings(): Promise<{
+    readonly written: string
+    readonly path: string
+    readonly models: readonly Model[]
+  }>
+  /** Settings written. A value the settings cannot hold is refused. */
+  choosesSetting(written: readonly Written[]): Promise<void>
+}
+
+/** What stands at a path through a tree of settings, and nothing where none does. */
+export const standing = (held: unknown, at: readonly string[]): unknown => {
+  let value = held
+  for (const step of at) {
+    if (typeof value !== 'object' || value === null) return undefined
+    value = (value as Record<string, unknown>)[step]
+  }
+  return value
+}
+
+export function configuring(core: Called, words: Words, said: Says) {
+  /** Every setting as it stands. It holds nothing until the vault has answered. */
+  const held = shallowRef<unknown>({})
+
+  /** The file the settings stand in, and the models the settings offer. */
+  const path = ref('')
+  const models = shallowRef<readonly Model[]>([])
+
+  /** What the settings hold, asked once the window is up. */
+  const start = async (): Promise<void> => {
+    let answer: Awaited<ReturnType<Called['settings']>>
+    try {
+      answer = await core.settings()
+    } catch {
+      return
+    }
+    try {
+      held.value = JSON.parse(answer.written)
+    } catch {
+      return
+    }
+    path.value = answer.path
+    models.value = answer.models
+  }
+
+  /** What stands at a setting, and nothing where the file names none. */
+  const at = (setting: readonly string[]): unknown => standing(held.value, setting)
+
+  /** The models one setting can be set to, in the order they are offered. */
+  const offers = (setting: readonly string[]): readonly Model[] =>
+    models.value.filter((one) => one.namedAt.join('.') === setting.join('.'))
+
+  /**
+   * Settings written into the file, together or not at all. A write that was
+   * refused is said, and the window reads the file again either way, so what is
+   * drawn is what the settings hold.
+   */
+  const chooses = async (written: readonly Written[]): Promise<void> => {
+    if (written.length === 0) return
+    said('')
+
+    try {
+      await core.choosesSetting(written)
+    } catch (thrown) {
+      const failed = thrown instanceof Error ? thrown.message : `${thrown}`
+      said(`${words.unturned} ${failed}`, 'refusal')
+    }
+    await start()
+  }
+
+  /** One setting written, by what is to stand there. */
+  const puts = (setting: readonly string[], value: unknown): Promise<void> =>
+    chooses([{ at: setting, value: write(value) }])
+
+  return { held, path, models, start, at, offers, chooses, puts }
+}

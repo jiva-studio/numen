@@ -4,6 +4,14 @@ Running the cards a vault holds. This is a specification, not a decision record:
 
 Flashcards is an application of its own, beside the editor and over the same core ([ADR-0030](adr/0030-review-is-an-application-of-its-own.md)). Writing cards is occasional and running them is daily, so the daily one is not reached through the other.
 
+## The front door
+
+The window opens on the vaults this installation holds and what is due in each ([ADR-0030](adr/0030-review-is-an-application-of-its-own.md)). The list is names and where the vaults are, which the registry answers before any vault is opened, so the whole of it is on screen at once.
+
+Each vault's count arrives on its own and fills in the row it belongs to. A vault whose count has not landed shows the shape the number will take, and is not opened until it has one, by hand or by its letter. A vault counted a moment ago keeps that count while the next count runs, so a list already drawn is never emptied to be filled again. A vault that could not be read says why, in the place its number would stand.
+
+Choosing a vault ends the counting where it stands, and so does closing the window: what has not arrived is not waited for.
+
 ## What is asked
 
 A card is shown once through each face its stencil declares ([cards](cards.md)), and each face asks a different thing. **What is scheduled is a card face** — one card, and one face of the stencil that cuts it — and not a card. A stencil of two faces gives each of its cards two paths, and one may be due while the other is a week away.
@@ -22,9 +30,11 @@ A card whose first field is empty is asked like any other. Its heading is empty,
 
 A card is owed when the day holding now reaches the day its schedule falls on. **A card owed today is owed for the whole of it**, whatever hour it falls at, because a person sits down when they sit down.
 
-A day begins four hours past midnight, and that is a setting. A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
+A day begins four hours past midnight, and that is `review.day_starts` in [Settings](settings.md). A person answering cards at one in the morning is finishing the day before, not starting the next, and a boundary at midnight would split one sitting in two. The hour is an hour on the clock on the wall, so the day an hour is put into or taken out of begins and ends where a person reads it.
 
 A card nobody has answered is owed the first time it is asked about.
+
+How much of what is owed a day holds — how many new cards, how many returning ones, and how long the day runs — is the preset the card's deck points at, and a deck pointing at none is held to the defaults — [Cards](cards.md).
 
 ## The order
 

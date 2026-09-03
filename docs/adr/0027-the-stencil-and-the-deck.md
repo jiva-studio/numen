@@ -15,6 +15,8 @@ Every plain-text system that has tried this has had to choose where the shape is
 
 ### One key says what a note is
 
+**Amended by [ADR-0034](0034-the-preset.md).** The list has a fourth value, `preset`, and is closed at four.
+
 The frontmatter key `type` says which of three a note is: `note`, `deck` or `stencil`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault.
 
 One key rather than one per kind is what makes the three exclusive: a file is one of them by the shape of the record, and no rule is needed to say it cannot be two. A value outside the list is a problem against the note, and the note is read as an ordinary note.

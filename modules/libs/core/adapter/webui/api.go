@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -30,6 +31,10 @@ type API struct {
 	// vault is the vault the window has open. It is replaced while requests are
 	// being served, so every reader takes it through Showing.
 	vault atomic.Pointer[domain.Vault]
+
+	// shut is the door on every question. It is closed before the index and the
+	// embedder an answer reaches into are taken away.
+	shut atomic.Bool
 
 	Notes port.NoteQueries
 	Links port.LinkQueries
@@ -86,10 +91,33 @@ type API struct {
 	// Marking says where a run of a source's text sits on the pages it was read
 	// from. A build without one answers that it cannot say where a passage is.
 	Marking *source.Marks
+	// Playing is the socket a recording is played from. A build without one
+	// answers with no address, and the window says the recording cannot be
+	// played here.
+	Playing *Loopback
 	// Wrote is what a save raises: the reading behind the window asks the index
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
+	// Recognises reads a scanned document and Transcribes hears a recording,
+	// each for whoever asks. They are the jobs an agent asks through too, so
+	// what a person started in the window is shown to both. A build without one
+	// answers that it cannot do that run.
+	Recognises  Run
+	Transcribes Run
+	// Proofreads puts a recording's transcript right, for whoever asks. An
+	// installation naming nothing to put one right with answers that it cannot
+	// do that run.
+	Proofreads Proofreading
+	// Cut asks for a source to be cut again from whatever its text now says. A
+	// window that put a transcript right calls it, so search answers with the
+	// words as they now read. Nil for a build with nothing cutting behind it,
+	// and then a correction is seen in the tab alone.
+	Cut func(context.Context, domain.Vault, string) error
+	// Drops takes a recording's transcript away, with everything listening to
+	// it produced. A build without one answers that a transcript cannot be
+	// dropped here.
+	Drops *source.DropTranscript
 
 	// Makes is how the window makes a note, and Joins how it writes a
 	// relationship into one. A build without them answers that a note cannot be
@@ -98,14 +126,22 @@ type API struct {
 	Joins *note.Linking
 
 	// Cards reads a deck or a stencil, Offered lists the stencils the vault
-	// holds, and Cuts puts either back. MakesCards makes a deck or a stencil, and
-	// RenamesField gives one of a stencil's fields a different name everywhere it
-	// is written. A build without them answers that cards cannot be worked here.
+	// holds, and Cuts puts either back. MakesCards makes a deck, a stencil or a
+	// preset, and RenamesField gives one of a stencil's fields a different name
+	// everywhere it is written. A build without them answers that cards cannot
+	// be worked here.
 	Cards        *cards.Read
 	Offered      *cards.List
 	Cuts         *cards.Write
 	MakesCards   *cards.Create
 	RenamesField *cards.RenameField
+
+	// Presets is the preset a deck is scheduled by, and how one is read,
+	// written and made. Curves is what the one control of a preset comes to
+	// over the whole range of its goal. A build without them answers that
+	// presets cannot be worked here.
+	Presets *flashcards.Presets
+	Curves  *flashcards.Curves
 
 	// Renames gives a note a different name, Moves puts a file or a folder
 	// somewhere else in the vault, and Removes takes one out of it. A build
@@ -113,6 +149,10 @@ type API struct {
 	Renames *note.Rename
 	Moves   *usecase.Move
 	Removes *note.Remove
+
+	// Bringing copies files a person handed the window into a folder of the
+	// vault. A build without it takes none.
+	Bringing *usecase.Bring
 
 	// Sync reads whether a note's title and its filename are kept as one name,
 	// and Chooses writes it. A build with no Chooses answers that it configures
@@ -130,6 +170,26 @@ type API struct {
 	Parts          func() int
 	ChoosesParts   func(parts int) error
 
+	// Reviews reads the hour a day of review begins at, and ChoosesReviewing
+	// writes it. A build with no writer answers that it configures nothing; one
+	// with no reader reads what an installation nobody has configured does.
+	Reviews          func() string
+	ChoosesReviewing func(starts string) error
+
+	// Configured reads every setting as JSON and the file it stands in, Models
+	// the models the settings that name one can be set to, and ChoosesSetting
+	// writes settings into that file. A build without them answers that it
+	// configures nothing.
+	Configured     func() (string, string, error)
+	Models         func() []port.Model
+	ChoosesSetting func(written []port.Setting) error
+
+	// ConfiguredFile reads that file as its person wrote it, and WritesFile
+	// replaces it whole. A build without them answers that it configures
+	// nothing.
+	ConfiguredFile func() (string, string, error)
+	WritesFile     func(written string) error
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.
@@ -142,6 +202,16 @@ type API struct {
 	// Watching is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.
 	Watching audience[domain.Place]
+
+	// attending is what the person has open, as the window last said. It is
+	// replaced while requests are being served, so every reader takes it
+	// through Attended.
+	attending atomic.Pointer[domain.Attention]
+
+	// Attends hears what the person has open each time the window says it,
+	// once what it said stands. A build without one takes the report and tells
+	// nobody.
+	Attends func(domain.Attention)
 
 	// Leaving is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.
@@ -193,6 +263,12 @@ func (a *API) Showing() domain.Vault {
 
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
+
+// Shut refuses every question from now on, and there is no opening it again.
+// It is closed while everything an answer reaches into is still there.
+func (a *API) Shut() { a.shut.Store(true) }
+
+func (a *API) closed() bool { return a.shut.Load() }
 
 // shown is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
@@ -305,6 +381,40 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 			Through: related.Through,
 			Mutual:  related.Mutual,
 			Type:    typeOf(types[related.Path]),
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// Resolve answers where addresses written in one note land. An address that
+// reaches nothing is left out of the answer.
+func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, and an address asked about twice is
+	// one answer.
+	out := &v1.ResolveResponse{}
+	said := make(map[string]bool, len(found))
+	for _, written := range r.Msg.GetWritten() {
+		one, reached := found[written]
+		if !reached || said[written] {
+			continue
+		}
+		said[written] = true
+		vault, crossed := one.InVault(showing.ID)
+		out.Reached = append(out.Reached, &v1.Reached{
+			Written:   written,
+			Path:      one.To,
+			Vault:     vault,
+			Crossed:   crossed,
+			Ambiguous: one.Ambiguous,
 		})
 	}
 	return connect.NewResponse(out), nil

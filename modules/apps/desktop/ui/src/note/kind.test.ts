@@ -6,22 +6,29 @@
  * before it can take anything.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 import type { PlexShowing } from '@numen/ui'
-import { noting, type Called } from './kind'
+import { noting, type Asked, type Held } from './kind'
 import { putting } from '../putting'
 import type { Drawn } from './entering'
 import type { drawn } from './drawn'
 import type { editing } from './editing'
 import type { State } from './tab'
 import { windowing } from '../windowing'
+import { NOTE } from '../workspace'
 
 /** A vault that answers with the heading written into each note. */
-const vault = (titles: Record<string, string> = {}): Called => ({
+const vault = (
+  titles: Record<string, string> = {},
+  notes: Record<string, string> = {},
+): Asked => ({
   neighbourhood: async (path) => {
     if (titles[path] === undefined) throw new Error('not reached')
     return { focus: { title: titles[path] } }
   },
+  resolve: async (_from, written) =>
+    new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
 })
 
 /**
@@ -50,6 +57,7 @@ const notes = (states: Record<string, State> = {}) => {
       return true
     },
     all: () => open.value,
+    has: (id: string) => open.value.includes(id),
     shown: (id: string) => ({
       path: where(id),
       body: '',
@@ -105,12 +113,19 @@ const editor = (takes = true) => {
 }
 
 /** A window holding notes, and what it draws while it holds them. */
-const window = (titles: Record<string, string> = {}, states: Record<string, State> = {}) => {
+const window = (
+  titles: Record<string, string> = {},
+  states: Record<string, State> = {},
+  reaches: Record<string, string> = {},
+) => {
   const store = notes(states)
   const drawing = drawings()
   const held = windowing()
-  const puts = putting({ standing: async () => new Map() })
-  const noted = noting(vault(titles), store.store, drawing.store, held.host, puts)
+  const puts = putting({
+    standing: async (paths) =>
+      new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
+  })
+  const noted = noting(vault(titles, reaches), store.store, drawing.store, held.host, puts)
   held.declares([noted.kind])
   /** Every note tab the window holds now. */
   const open = () => held.tabs.value.map((tab) => tab.id)
@@ -122,6 +137,44 @@ const window = (titles: Record<string, string> = {}, states: Record<string, Stat
     puts.made(path, title, 'note', showing)
   return { noted, held, open, shows, ...store, drawings: drawing }
 }
+
+describe('a link in the prose followed', () => {
+  /** A window holding one note, and the tab that note stands in. */
+  const written = async (reaches: Record<string, string> = {}) => {
+    const one = window({}, {}, reaches)
+    one.shows('Note.md')
+    await flushPromises()
+    return { ...one, held: one.noted.opens(one.noted.kept.holding('Note.md') ?? 'Note.md') }
+  }
+
+  it('opens the note it names, in a tab beside the one it was written in', async () => {
+    const one = await written({ 'name://Entropy': 'physics/Entropy.md' })
+
+    one.held.follows('name://Entropy')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(2)
+    expect(one.noted.kept.holding('physics/Entropy.md')).not.toBeNull()
+  })
+
+  it('opens nothing where no note answers to it', async () => {
+    const one = await written()
+
+    one.held.follows('name://Nowhere')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(1)
+  })
+
+  it('opens nothing for an address that names no note at all', async () => {
+    const one = await written({ 'https://example.com': 'physics/Entropy.md' })
+
+    one.held.follows('https://example.com')
+    await flushPromises()
+
+    expect(one.open()).toHaveLength(1)
+  })
+})
 
 describe('a note opened', () => {
   it('is owed the keyboard until there is an editor to take it', async () => {
@@ -254,13 +307,13 @@ describe('a note that was renamed', () => {
     const one = window()
     one.shows('Note.md')
     await nextTick()
-    const id = one.noted.holding('Note.md')
+    const id = one.noted.kept.holding('Note.md')
     one.moves('Note.md', 'Renamed.md')
     await nextTick()
 
-    expect(one.noted.holding('Renamed.md')).toBe(id)
-    expect(one.noted.holding('Note.md')).toBeNull()
-    expect(one.noted.held(id ?? '').shown().path).toBe('Renamed.md')
+    expect(one.noted.kept.holding('Renamed.md')).toBe(id)
+    expect(one.noted.kept.holding('Note.md')).toBeNull()
+    expect(one.noted.held(id ?? '').shown.value.path).toBe('Renamed.md')
   })
 
   it('is called by the file it now stands at while nothing has named it', async () => {
@@ -428,7 +481,7 @@ describe('what a note is called under the identity it opened under', () => {
     one.moves('Note.md', 'Moved.md')
     await nextTick()
 
-    expect(one.noted.titled(id)).toBe('A note')
+    expect(one.noted.kept.called(id)).toBe('A note')
   })
 
   it('is the file it stands at while nothing has named it', async () => {
@@ -436,6 +489,43 @@ describe('what a note is called under the identity it opened under', () => {
     one.shows('Note.md')
     await nextTick()
 
-    expect(one.noted.titled(one.idOf('Note.md'))).toBe('Note.md')
+    expect(one.noted.kept.called(one.idOf('Note.md'))).toBe('Note.md')
+  })
+})
+
+/** What the one note tab of a window holds. */
+const holds = (one: ReturnType<typeof window>): Held =>
+  one.held.holdsIn<Held>(one.held.tabs.value[0]?.id ?? '', NOTE)!
+
+describe('what a command asked over a note tab is over', () => {
+  it('is the note it holds, at the file it stands at and under the name it carries', async () => {
+    const one = window()
+    one.shows('Note.md', 'A note')
+    await nextTick()
+
+    expect(one.noted.kind.at!(holds(one))).toStrictEqual({
+      path: 'Note.md',
+      title: 'A note',
+    })
+  })
+
+  it('is the file it went to, where the note moved under it', async () => {
+    const one = window()
+    one.shows('Note.md', 'A note')
+    await nextTick()
+    one.moves('Note.md', 'Moved.md')
+    await nextTick()
+
+    expect(one.noted.kind.at!(holds(one)).path).toBe('Moved.md')
+  })
+})
+
+describe('what a note tab holds, as whoever answers for the person is told it', () => {
+  it('is the file it stands at', async () => {
+    const one = window()
+    one.shows('Note.md', 'A note')
+    await nextTick()
+
+    expect(one.noted.kind.attends!(holds(one))).toStrictEqual({ path: 'Note.md' })
   })
 })

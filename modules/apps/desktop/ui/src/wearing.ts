@@ -2,17 +2,16 @@
  * How the window is drawn: the theme it wears, which half of a colour pair its
  * tokens are read as, and how large it is drawn and its reading text set.
  *
- * The page is served already drawn that way, as the three style elements the
- * head ends with: the mode, the theme's own file, and the two multipliers.
- * What is written here is what those three hold. None of them moves, because
- * the theme's has to stand after the mode's and the sizes after both.
+ * The page is served with three style elements at the end of the head, each
+ * marked as the one of the three it is: the mode, the theme's own file, and the
+ * two multipliers. The theme's stands after the mode's and the sizes after both.
  *
  * A theme and a mode are worn the moment the keyboard lands on them. A size is
- * held: the keyboard has to have stood on the row for HELD before the window
- * is drawn at it, because a size relays out every document that is open. What
- * the settings name is put back the moment the keyboard leaves the list.
+ * held until the keyboard has stood on the row for HELD, and what the settings
+ * name is put back the moment the keyboard leaves the list.
  */
 import { computed, ref, shallowRef, watch } from 'vue'
+import { asking } from './asking'
 import type { Offered, Offering } from './commanding'
 import { following } from '@numen/ui'
 import type { Says } from './telling'
@@ -126,34 +125,39 @@ interface Dressed {
   sizes: HTMLStyleElement | undefined
 }
 
-/** The declaration that says which half of a pair every token is read as. */
-const SCHEME = /^\s*:root\s*\{\s*color-scheme:/
+/**
+ * The attribute each of the three carries, and what each of them says it is.
+ * The application writes these where it dresses the page.
+ */
+export const MARKER = 'data-appearance'
+export const IS_MODE = 'mode'
+export const IS_THEME = 'theme'
+export const IS_SIZES = 'sizes'
 
-/** The declaration the two multipliers stand in. */
-const SIZED = /--numen-(?:interface|text)-scale\s*:/
+/** The element the page was served marked as one of the three, and nothing where it carries none. */
+const marked = (sheet: Document, is: string): HTMLStyleElement | null =>
+  sheet.head.querySelector<HTMLStyleElement>(`style[${MARKER}="${is}"]`)
 
 /**
  * The elements the head ends with. A page served by something that dresses it
  * in nothing is given a mode's and a theme's of its own, in that order.
  */
 const dressing = (sheet: Document): Dressed => {
-  const styles = [...sheet.head.querySelectorAll('style')]
-  const at = styles.reduce(
-    (last, one, index) => (SCHEME.test(one.textContent ?? '') ? index : last),
-    -1,
-  )
-  const mode = styles[at] ?? sheet.head.appendChild(sheet.createElement('style'))
-  const theme = (at < 0 ? undefined : styles[at + 1]) ?? after(mode, sheet)
-  // Looked for after the theme's, which is the one place it stands. A theme's
-  // own file may declare either multiplier.
-  const sizes =
-    at < 0 ? undefined : styles.slice(at + 2).find((one) => SIZED.test(one.textContent ?? ''))
-  return { mode, theme, sizes }
+  const mode = marked(sheet, IS_MODE) ?? sheet.head.appendChild(styling(IS_MODE, sheet))
+  const theme = marked(sheet, IS_THEME) ?? after(mode, IS_THEME, sheet)
+  return { mode, theme, sizes: marked(sheet, IS_SIZES) ?? undefined }
+}
+
+/** One of the three, marked as which of them it is. */
+const styling = (is: string, sheet: Document): HTMLStyleElement => {
+  const one = sheet.createElement('style')
+  one.setAttribute(MARKER, is)
+  return one
 }
 
 /** An element straight after another, which is where the next of the three goes. */
-const after = (before: HTMLStyleElement, sheet: Document): HTMLStyleElement => {
-  const next = sheet.createElement('style')
+const after = (before: HTMLStyleElement, is: string, sheet: Document): HTMLStyleElement => {
+  const next = styling(is, sheet)
   before.after(next)
   return next
 }
@@ -281,11 +285,8 @@ export function wearing(
     () => list.value.find((one) => one.name === worn.value)?.pinned ?? false,
   )
 
-  /**
-   * Which dressing is the current one. A file arriving for a row the keyboard
-   * has already left is dropped.
-   */
-  let asked = 0
+  /** A file arriving for a row the keyboard has already left is dropped. */
+  const asks = asking()
 
   let open = true
   /** Let go of the stream the window is listening to. */
@@ -310,16 +311,16 @@ export function wearing(
     // The page arrived dressed, and nothing is written over that until the
     // window has been told what it is dressed in.
     if (!applied.value) return
-    const mine = ++asked
+    const mine = asks.ask()
     dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half.value]}; }`
     try {
       const css = await fileOf(worn.value)
-      if (mine === asked) dressed.theme.textContent = css
+      if (mine.current) dressed.theme.textContent = css
     } catch (error) {
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
-      if (mine === asked) said(words.unworn, 'refusal')
+      if (mine.current) said(words.unworn, 'refusal')
     }
   }
 
@@ -331,7 +332,7 @@ export function wearing(
     const css = declared(sized.value)
     if (css === written) return
     written = css
-    dressed.sizes ??= after(dressed.theme, sheet)
+    dressed.sizes ??= after(dressed.theme, IS_SIZES, sheet)
     dressed.sizes.textContent = css
   }
 
@@ -545,6 +546,8 @@ export function wearing(
     applied,
     mode,
     sized,
+    bounds,
+    pinned,
     lost,
     offers,
     modes,

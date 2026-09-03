@@ -12,6 +12,7 @@ syntax = "proto3";
 // values, and nothing above this has the two halves to fill it with.
 package numen.v1;
 
+import "numen/v1/presets.proto";
 import "numen/v1/vault.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
@@ -22,16 +23,25 @@ service FlashcardsService {
   // it holds, how much is due, and how much has never been asked. It is what
   // the application opens on.
   //
-  // A vault the index does not carry yet is listed with nothing counted and
-  // says so: the list of its decks is the index's answer, and this application
-  // builds none.
-  rpc Owing(OwingRequest) returns (OwingResponse);
+  // The first message is every vault as the registry holds it, with nothing
+  // counted, and one message follows for each vault as it is worked out.
+  // Counting a vault reads every deck in it and replays its whole answer log,
+  // so the list stands while that runs.
+  //
+  // A vault the index does not carry is read into it here, and its counts
+  // follow when the reading is done. What that reading is doing is Tasks.
+  rpc Owing(OwingRequest) returns (stream OwingResponse);
 
   // Start opens a run and hands over what to ask, in order. A run writes one
   // file of its own in the vault and nothing else ever appends to it.
   //
-  // Naming a deck asks that deck alone. Naming none asks the whole vault, which
-  // is the ordinary way to sit down to this.
+  // Naming a deck asks that deck alone. Naming a preset asks the cards of every
+  // deck pointing at it, held to that preset's own budget. Naming neither asks
+  // the whole vault, which is the ordinary way to sit down to this.
+  //
+  // Naming both is refused. A preset with nothing to ask today is refused with
+  // the reason, so a person pressing it is told why and not shown an empty
+  // sitting.
   rpc Start(StartRequest) returns (StartResponse);
 
   // Answer writes down how a card came back. What comes back is the identifier
@@ -60,6 +70,32 @@ service FlashcardsService {
   // a line out of something longer, and what it was cut from is what a person
   // reaches for when it will not come back to them.
   rpc Around(AroundRequest) returns (AroundResponse);
+
+  // Scheduling is the preset a deck of the named vault is scheduled by. A deck
+  // naming none is answered with the defaults under no path, and a deck whose
+  // link reaches something that is not a preset is answered with the defaults
+  // and told so.
+  rpc Scheduling(FlashcardsServiceSchedulingRequest) returns (FlashcardsServiceSchedulingResponse);
+
+  // Curve is what the settings come to over the whole range of the goal they
+  // name. Nothing is written: a curve is asked for the value a person is
+  // moving and has not settled.
+  rpc Curve(FlashcardsServiceCurveRequest) returns (FlashcardsServiceCurveResponse);
+
+  // Tasks is everything this window is doing behind itself, for as long as the
+  // caller listens. Reading a vault is the work it reports, and a vault is read
+  // without anyone asking, so the whole list arrives at once and again whenever
+  // any of it changes.
+  rpc Tasks(FlashcardsServiceTasksRequest) returns (stream FlashcardsServiceTasksResponse);
+}
+
+message FlashcardsServiceTasksRequest {}
+
+message FlashcardsServiceTasksResponse {
+  // Everything being done now, in the order the work began. The list arrives
+  // whole, because what is being done is a list and not a set of differences to
+  // apply.
+  repeated Task tasks = 1;
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -92,10 +128,18 @@ message VaultOwing {
   // Decks is the same three numbers for each deck, by the path of its file.
   repeated DeckOwing decks = 7;
 
-  // Set when the vault could not be counted: it has never been read by the
-  // editor, or its files could not be reached. The three numbers are then zero
-  // and this says why, in the person's own words.
+  // Presets is what the day comes to under each preset the vault's decks are
+  // scheduled by.
+  repeated PresetOwing presets = 9;
+
+  // Set when the vault could not be counted: its files could not be reached, or
+  // reading it into the index failed. The three numbers are then zero and this
+  // says why, in the person's own words.
   string unread = 8;
+
+  // Set while the vault is being read into the index. The three numbers are not
+  // in yet, and a further count follows when the reading is done.
+  bool reading = 10;
 }
 
 message DeckOwing {
@@ -103,6 +147,78 @@ message DeckOwing {
   int32 faces = 2;
   int32 due = 3;
   int32 new = 4;
+
+  // How many of this deck's cards were answered since the day opened, counted
+  // the way its preset counts. A deck holding nothing more today and answered
+  // nothing today was not studied.
+  int32 answered = 5;
+
+  // How many of the deck's card faces stand learned now, under the rule the
+  // preset scheduling the deck counts by. It is a count of faces, and says
+  // nothing about what a preset has got through of its day.
+  int32 learned = 6;
+
+  // How many of the deck's card faces nobody has answered at all. A deck every
+  // face of which is one of these has nothing that can come round until
+  // something begins them.
+  int32 unbegun = 7;
+}
+
+// PresetOwing is one preset of a vault, and what the day comes to under it.
+message PresetOwing {
+  // The note the settings were read from, and empty for the decks naming no
+  // preset.
+  string preset = 1;
+
+  // What the preset is called. Empty where nothing names the note.
+  string title = 7;
+
+  // How many decks point at it. Nothing points at a preset of no decks, and
+  // the day stands at nothing under it.
+  int32 decks = 8;
+
+  // How many card faces stand in those decks. A deck holding none points at
+  // its preset all the same, so a preset of decks and no cards is its own
+  // state.
+  int32 cards = 9;
+
+  // What the day leaves under it: the card faces owed and the ones nobody has
+  // answered, held to its budget. Their sum is what a sitting over this preset
+  // asks, because a preset is the whole scope of its own budget.
+  int32 owed_due = 10;
+  int32 owed_new = 11;
+
+  // How many of its cards were answered since the day opened, and how long
+  // those answers took. The two beside the total divide it the way a budget
+  // does, so each is weighed against the budget of its own kind.
+  int32 answered = 2;
+  int64 took_ms = 3;
+  int32 answered_new = 17;
+  int32 answered_reviews = 18;
+
+  // What the preset keeps for this day of the week: how many cards of each
+  // kind, and how long the day runs, at the share of the load that day of the
+  // week carries.
+  //
+  // A budget the preset's goal does not name stands here as the person left it
+  // and closes nothing. `owed_due` and `owed_new` are already held to the ones
+  // that do, so holding them to these again is capping a number twice.
+  int32 new = 4;
+  int32 reviews = 5;
+  double minutes = 6;
+
+  // Which of the three closes the day, each written as the preset writes the
+  // key — minutes_a_day, new_a_day, reviews_a_day, by_date — and empty where
+  // that budget takes no part.
+  string closes_new = 12;
+  string closes_reviews = 13;
+  string closes_minutes = 14;
+  string closes_backlog = 15;
+
+  // Why the preset schedules nothing on this day: whatever stops it at all, and
+  // a day of the week carrying none of the load. It is the core's own verdict,
+  // so a window says of a preset what the sitting hands its cards out by.
+  Stopped stops_on = 16;
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -149,13 +265,33 @@ message Asked {
 message OwingRequest {}
 
 message OwingResponse {
+  // Vaults is every vault the installation holds, by name and by where it is,
+  // with nothing counted. It stands in the first message and in no other, and
+  // it is what the list is drawn from.
   repeated VaultOwing vaults = 1;
+
+  // Day is the review day these counts stand in, written as the year, the month
+  // and the day. A day of review begins at the hour the settings name, so an
+  // hour past midnight is still the day before. It stands in the first message
+  // beside the vaults.
+  string day = 2;
+
+  // Counted is one vault worked out, and stands in every message after the
+  // first. Until one arrives for a vault, nothing is known about what that
+  // vault owes.
+  VaultOwing counted = 3;
 }
 
 message StartRequest {
   string vault_id = 1;
   // Deck is the path of one deck, or empty for every deck the vault holds.
   string deck = 2;
+
+  // Preset is the note one preset stands in, and the empty path is the preset
+  // that schedules the decks naming none. Set it to sit to the cards of every
+  // deck pointing at that preset, held to its budget. Naming a deck and a
+  // preset at once is refused.
+  optional string preset = 3;
 }
 
 message StartResponse {
@@ -236,11 +372,11 @@ message Reviewing {
   int32 good = 5;
   int32 easy = 6;
 
-  // How much of what the person had already learned came back to them:
-  // `asked` is the answers given to learned cards, `recalled` the ones among
-  // them that were not Again. A card still being learned is in neither — what
-  // is asked of one is whether it comes back after ten minutes, which says
-  // nothing about how well anything is remembered.
+  // How much of what came round in days came back: `asked` is the answers
+  // given to card faces the scheduler sends days away, `recalled` the ones
+  // among them that were not Again. A card face still coming round in minutes
+  // is in neither — what is asked of one is whether it comes back after ten
+  // minutes, which says nothing about memory.
   int32 asked = 7;
   int32 recalled = 8;
 }
@@ -307,4 +443,39 @@ message MovingResponse {
   // Reload says the vaults are to be counted again. It is false in the first
   // message, which says the window is listening and nothing has moved yet.
   bool reload = 1;
+}
+
+// The presets a window over many vaults asks about. Each request names the
+// vault it is about, the same way an answer names the vault it is written to.
+// The settings themselves, the curve and the refusals are presets.proto, which
+// the editor asks over the one vault its window shows.
+
+message FlashcardsServiceSchedulingRequest {
+  string vault_id = 1;
+
+  // The deck whose preset this is, by the path it is filed under.
+  string deck = 2;
+}
+
+message FlashcardsServiceSchedulingResponse {
+  // Absent when the preset was refused.
+  optional Preset preset = 1;
+
+  // Set when the preset was not read, and why.
+  optional Refusal refusal = 2;
+}
+
+message FlashcardsServiceCurveRequest {
+  string vault_id = 1;
+
+  // The note the preset stands in, which names the decks it schedules. Empty
+  // is the preset that schedules the decks naming none.
+  string path = 2;
+
+  // The settings a curve is wanted for. They need not be what the file holds.
+  Settings settings = 3;
+}
+
+message FlashcardsServiceCurveResponse {
+  Curve curve = 1;
 }

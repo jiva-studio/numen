@@ -24,6 +24,32 @@ export type {
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
 
+/** One line of digits, typed by hand and held inside its bounds. */
+export { NumberField } from './components/ui/number-field'
+export { clamped, numberOf, stepped, DEFAULT_BOUNDS } from './components/ui/number-field'
+export type { Bounds } from './components/ui/number-field'
+
+export { Switch } from './components/ui/switch'
+
+/** An hour and a minute of the day, typed on the clock the machine draws. */
+export { TimeField, onTheClock } from './components/ui/time-field'
+
+/** One value along a track, moved by a handle. */
+export { Slider } from './components/ui/slider'
+
+/** Two to four choices side by side, one of them chosen. */
+export { Segmented } from './components/ui/segmented'
+export type { SegmentedChoice } from './components/ui/segmented'
+
+/** One choice out of a list, taken from a menu the machine draws. */
+export { Select } from './components/ui/select'
+export type { SelectChoice } from './components/ui/select'
+
+/** The days of the week, each drawn at the level it stands at. */
+export { Days } from './components/ui/days'
+export { weekFrom, WEEK } from './components/ui/days'
+export type { Day, Named } from './components/ui/days'
+
 export { default as Owed } from './cards/Owed.vue'
 /** What a person did on each day, as a grid of weeks. */
 export { default as Heatmap } from './heatmap/Heatmap.vue'
@@ -31,6 +57,9 @@ export { dayName as heatmapDayName } from './heatmap/dates'
 export type { Words as HeatmapWords } from './heatmap/words'
 /** What a thing is, said beside it while a person points at it. */
 export { default as Tooltip } from './tooltip/Tooltip.vue'
+/** Where a thing standing over the page goes, which the menu and tooltip share. */
+export { beside } from './placing/place'
+export type { Beside, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'
@@ -41,8 +70,9 @@ export type { Held, Offer, Way } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
-export { commandKeyChord, keyChord, overlayMark } from './palette/model'
+export { commandKeyChord, keyChord, overlayMark, ACTION_WORDS } from './palette/model'
 export type {
+  ActionWords,
   PaletteAction,
   PaletteItem,
   PaletteKeys,
@@ -85,6 +115,13 @@ export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
 export type { EditorChange } from './editor/change'
+/** A time against every line of an editor, and the line being said now. */
+export { timing } from './editor/timing'
+
+/** The controls a recording is played by. What plays is somewhere else. */
+export { default as Player } from './player/Player.vue'
+export { clock } from './player/clock'
+export type { Timed, Timing } from './editor/timing'
 
 export { default as Composer } from './composer/Composer.vue'
 export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
@@ -96,6 +133,7 @@ export type { Follows } from './following/following'
 
 export { default as Dots } from './dots/Dots.vue'
 export { default as Waiting } from './waiting/Waiting.vue'
+export { default as Coming } from './waiting/Coming.vue'
 
 export { default as Thread } from './thread/Thread.vue'
 export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'
@@ -103,6 +141,18 @@ export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
 export { conversation } from './thread/conversation'
 export type { Conversation, Wording } from './thread/conversation'
 export type { AgentPort, AgentStep, Place } from './thread/agent'
+
+/** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
+export {
+  addressOf,
+  pointsAtNote,
+  stated,
+  wikilinkAt,
+  wikilinksIn,
+  NAME,
+  NOTE,
+} from './linking/address'
+export type { Address, Wikilink } from './linking/address'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'
@@ -190,6 +240,7 @@ export {
 export type {
   Carried,
   Landing,
+  Marking,
   Press,
   Pressed,
   Row,
@@ -226,7 +277,8 @@ export type { Half, Landing as CardLanding } from './cards/order'
  * Where a card let go at the head of a deck lands, before its first section,
  * and where one let go past the last card standing under a heading lands.
  */
-export { ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
+export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
+export { declared as cardFields } from './cards/order'
 export type { Banded, Drawn, Filled } from './cards/deck'
 export type { Cut } from './cards/stencil'
 

@@ -76,6 +76,10 @@ The buffer holds the body. The save reads the file under the vault's write lock,
 
 The read is the check. A name is called gone when a read of it finds nothing, and a read that finds the note again — at that name or the one it moved to — clears the mark. A note renamed by something other than this application is a note gone from one name and arrived at another, with nothing to connect the two. The tab says the note is gone, which is what is known.
 
+## Following a link
+
+A link in the prose is followed with the platform's modifier held down. `[[Entropy]]` and `[[note://<identifier>]]` are read as an address, resolved the way every link in the vault is, and the note that answers opens in a tab beside this one. An address no note answers to opens nothing.
+
 ## Limits
 
 **A megabyte is the most a note may be and still be read here.** The size is asked of the file before it is opened, so a file over the bound is refused with none of its bytes read, and the tab says which file and what the bound is. A body handed back over the same number is refused by it too. The bound is the core's, so what is refused to the window is refused to an agent.
@@ -147,6 +151,16 @@ Anything under a dot-folder is not a note, so the note leaves the index, the sea
 Destroying the file outright is available and is asked for explicitly. Nothing brings it back.
 
 The notes whose links pointed at the removed note are reported and not repaired: the link is not wrong, its target is gone, and only the person knows what they meant.
+
+## Bringing files in
+
+A file dragged off the machine and let go over the tree is copied into the vault. The row under the pointer names where it lands: a folder takes it inside, and any other row puts it beside itself. Let go over the tree and over no row it lands at the top level. The row a drop would land on is ringed while the pointer is over it, and a drop anywhere else in the window does nothing.
+
+The file is copied, so what was let go of stays where it was. A folder arrives with everything under it. A file of any kind arrives — a picture, a recording, an archive — and the bytes are streamed, so the size of what arrives is the size of the disk and not of the machine's memory. Each file lands beside its destination and is renamed over it, so what is watching the vault reads it once and reads it whole.
+
+**A name the folder already carries is refused, and that file stays outside.** What a person meant by a second file of that name is theirs to say. The rest of the drop arrives, and what did not stands in the corner under what stopped it. A folder that the vault itself sits inside is refused whole.
+
+A picture or an archive is reported to nobody by the watcher, so what arrived is named to everyone drawing the vault and the tree draws it at once.
 
 ## Quitting with work in hand
 

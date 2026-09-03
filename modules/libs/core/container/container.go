@@ -7,16 +7,20 @@
 package container
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -53,6 +57,19 @@ type Config struct {
 	// Recognition is how a scanned document is read when a person asks for it.
 	Recognition recognition.Config
 
+	// Transcription is how a recording is listened to.
+	Transcription transcription.Config
+
+	// Transcribes is whether a recording the vault holds no transcript for is
+	// listened to without anybody asking. A configuration naming nothing leaves
+	// it to the hand.
+	Transcribes bool
+
+	// TranscribesUnder is how many bytes a recording may run to and still be
+	// listened to unasked. A larger one is left for somebody to ask for by
+	// name. Zero is no limit.
+	TranscribesUnder int64
+
 	// Embedding is the model this run turns text into vectors with. An entry
 	// point reads the settings and says what it found, so nothing below one
 	// reaches the machine's own file. A zero value names no embedder, and nothing
@@ -60,8 +77,19 @@ type Config struct {
 	Embedding embed.Config
 
 	// Proofreading is what puts a reading right. It arrives the way Embedding
-	// does, and naming nothing here is naming no proofreader.
+	// does, and naming no profile here is naming no proofreader.
 	Proofreading proofreading.Config
+
+	// ScanProofreading and SpeechProofreading name the profile each kind of
+	// reading is put right at, and say whether that happens without anybody
+	// asking.
+	ScanProofreading   proofreading.Proofread
+	SpeechProofreading proofreading.Proofread
+
+	// AgentProofreader opens a profile that reaches the command line a person
+	// already has. The platform supplies it, since core starts no process; an
+	// installation that supplies none names no such profile.
+	AgentProofreader func(AgentProofreading) (port.Proofreader, error)
 
 	// Agent is which agent answers in the panel. It arrives the way Embedding
 	// does.
@@ -83,8 +111,13 @@ type Config struct {
 // off.
 func (c Config) Indexing(said settings.Indexing) Config {
 	c.Embedding = said.Embedding
-	c.Recognition = said.Recognition
+	c.Recognition = said.Recognition.Config
 	c.Proofreading = said.Proofreading
+	c.ScanProofreading = said.Recognition.Proofread
+	c.SpeechProofreading = said.Transcription.Proofread
+	c.Transcription = said.Transcription.Config
+	c.Transcribes = said.Transcribes()
+	c.TranscribesUnder = said.TranscribesUnder()
 	return c
 }
 
@@ -188,6 +221,114 @@ func (c Config) TurnsParts() func(parts int) error {
 	}
 }
 
+// Reviewing reads, as the window asks, the hour a day of review begins at. A
+// file that cannot be read begins the day where an installation nobody has
+// configured begins it.
+func (c Config) Reviewing() func() string {
+	return func() string { return flashcards.Clock(c.DayStarts()) }
+}
+
+// TurnsReviewing writes into the settings the hour a day of review begins at.
+// An hour the setting does not take is refused and the file is left as it is.
+func (c Config) TurnsReviewing() func(starts string) error {
+	return func(starts string) error {
+		written, err := settings.Starting(starts)
+		if err != nil {
+			return err
+		}
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, settings.Setting{
+			At: []string{"review", "day_starts"}, Value: written,
+		})
+	}
+}
+
+// Configured reads, as the window asks, every setting as JSON and the file it
+// stands in.
+func (c Config) Configured() func() (string, string, error) {
+	return func() (string, string, error) {
+		path, err := c.settingsFile()
+		if err != nil {
+			return "", "", err
+		}
+		held, err := settings.At(path)
+		if err != nil {
+			return "", path, err
+		}
+		written, err := settings.Written(held)
+		return written, path, err
+	}
+}
+
+// ConfiguredFile reads, as the window asks, the settings file as its person
+// wrote it, and the file it stands in.
+func (c Config) ConfiguredFile() func() (string, string, error) {
+	return func() (string, string, error) {
+		path, err := c.settingsFile()
+		if err != nil {
+			return "", "", err
+		}
+		raw, err := settings.Read(path)
+		if err != nil {
+			return "", path, err
+		}
+		return string(raw), path, nil
+	}
+}
+
+// WritesConfiguredFile replaces the settings file whole, with the bytes as they
+// were typed. A file the settings could not be read out of is refused and the
+// file is left as it was.
+func (c Config) WritesConfiguredFile() func(written string) error {
+	return func(written string) error {
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Write(path, []byte(written))
+	}
+}
+
+// Models reads, as the window asks, the models each setting that names one can
+// be set to, and the programs the agent setting can name. The settings are read
+// with them, so every row is answered against what is in force; a file that
+// cannot be read is answered against the defaults.
+func (c Config) Models() func() []port.Model {
+	return func() []port.Model {
+		held := settings.Defaults()
+		if path, err := c.settingsFile(); err == nil {
+			if read, err := settings.At(path); err == nil {
+				held = read
+			}
+		}
+		return append(settings.Models(held), settings.Agents()...)
+	}
+}
+
+// TurnsSetting writes settings into the file. The file is patched as an object,
+// so every key a person typed stays where it was, and a value the settings
+// could not be read out of again is refused before anything is written.
+func (c Config) TurnsSetting() func(written []port.Setting) error {
+	return func(written []port.Setting) error {
+		held := make([]settings.Setting, 0, len(written))
+		for _, one := range written {
+			var value json.RawMessage
+			if err := json.Unmarshal([]byte(one.Value), &value); err != nil {
+				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
+			}
+			held = append(held, settings.Setting{At: one.At, Value: value})
+		}
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Save(path, held...)
+	}
+}
+
 // Settings are what a person has configured this installation to do. An
 // installation nobody has configured is written down as what it is doing.
 func (c Config) Settings() (settings.Config, error) {
@@ -266,8 +407,15 @@ func (c Config) VaultOptions() filesystem.Options {
 // files on, inside a vault. It is a third opener beside the readers and the
 // writers because it is a third right: reading a person's vault, changing it,
 // and keeping something of our own in it are not the same permission.
+//
+// It answers for what a reading wrote and for what a transcription wrote, since
+// a use case that places a passage reads both.
 func (c Config) DerivedStores() port.DerivedStores {
-	return filesystem.DerivedStores{Options: c.VaultOptions(), Area: filesystem.OCRDir}
+	return filesystem.DerivedStores{
+		Options: c.VaultOptions(),
+		Area:    filesystem.OCRDir,
+		Areas:   []string{filesystem.SpeechDir},
+	}
 }
 
 // indexPath defaults to the platform cache directory. The index is a cache in

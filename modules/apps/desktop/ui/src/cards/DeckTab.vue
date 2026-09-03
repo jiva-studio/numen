@@ -7,9 +7,11 @@
  * with each of them under the same identities, so a card under no stencil and
  * two cards of one mark are each marked where they were read from.
  */
-import { computed } from 'vue'
-import { Deck as DeckView } from '@numen/ui'
-import type { CardLanding, Filled } from '@numen/ui'
+import { computed, ref } from 'vue'
+import { cardBlanks, cardFields, Deck as DeckView, Menu } from '@numen/ui'
+import type { CardLanding, Point } from '@numen/ui'
+import { ChevronDown } from '@lucide/vue'
+import Answering from '../Answering.vue'
 import type { Held } from './deck'
 import { WORDS as words } from './words'
 
@@ -20,31 +22,75 @@ const marks = computed(() => props.held.marks())
 
 /** What the grid draws against the cards it was handed. */
 const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
+
+/** The untyped values a card cut by that stencil is made with. */
+const empty = (stencil: string) =>
+  cardBlanks(cardFields(props.held.cuts().find((cut) => cut.name === stencil)?.fields ?? []))
+
+/** Which preset schedules this deck. */
+const scheduled = computed(() => props.held.scheduled())
+
+/**
+ * The presets on offer. The defaults stand in a band of their own, so the line
+ * between them and the notes says which is which.
+ */
+const offered = computed(() =>
+  props.held.choices().map((one) => ({
+    id: one.path,
+    text: one.name,
+    band: one.path === '' ? 'defaults' : 'presets',
+  })),
+)
+
+/** Where the presets were asked for, and nothing while they are not. */
+const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
+
+/** The line saying which preset schedules this deck opens the presets under it. */
+const asks = (event: Event) => {
+  const line = event.currentTarget
+  if (!(line instanceof HTMLElement)) return
+  const box = line.getBoundingClientRect()
+  asking.value = { at: { x: box.left, y: box.bottom }, from: line }
+}
+
+const chose = (path: string) => {
+  asking.value = null
+  props.held.schedules(path)
+}
 </script>
 
 <template>
   <div class="deck-tab">
-    <p v-if="props.held.saying()" role="alert" class="warning">{{ props.held.saying() }}</p>
-
-    <p v-if="props.held.shown().state === 'gone'" role="status" class="warning answering">
-      {{ words.gone }}
-      <button type="button" class="answering__answer" @click="props.held.keep()">
-        {{ words.makeAgain }}
-      </button>
-    </p>
-    <p v-if="props.held.shown().state === 'overtaken'" role="status" class="warning answering">
-      {{ words.overtaken }}
-      <button type="button" class="answering__answer" @click="props.held.keep()">
-        {{ words.keep }}
-      </button>
-      <button type="button" class="answering__answer" @click="props.held.take()">
-        {{ words.take }}
-      </button>
-    </p>
+    <Answering
+      :saying="props.held.saying.value"
+      :state="props.held.shown.value.state"
+      :words="words"
+      @keep="props.held.keep()"
+      @take="props.held.take()"
+    />
 
     <ul v-if="marks.whole.length" class="warning wrong" :aria-label="words.problems">
       <li v-for="(text, at) in marks.whole" :key="at">{{ text }}</li>
     </ul>
+
+    <!-- Which preset schedules this deck, and the presets under it when it is
+         asked. What the deck names and the vault does not hold is said here. -->
+    <p class="deck-tab__scheduled">
+      <span id="deck-scheduled" class="deck-tab__by">{{ words.scheduledBy }}</span>
+      <button
+        type="button"
+        class="deck-tab__choice"
+        aria-haspopup="menu"
+        aria-labelledby="deck-scheduled"
+        @click="asks"
+      >
+        {{ scheduled.name }}
+        <ChevronDown class="deck-tab__icon" aria-hidden="true" />
+      </button>
+      <span v-if="scheduled.saying" role="status" class="deck-tab__wrong">
+        {{ scheduled.saying }}
+      </span>
+    </p>
 
     <DeckView
       class="deck-tab__grid"
@@ -53,10 +99,7 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
       :cuts="props.held.cuts()"
       :name="words.deck"
       :wrong="wrong"
-      @add="
-        (stencil: string, filled: readonly Filled[], section: string | null) =>
-          props.held.adds(stencil, filled, section)
-      "
+      @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"
       @remove="(id: string) => props.held.removes(id)"
       @move="(id: string, at: CardLanding) => props.held.moves(id, at)"
       @write="
@@ -68,6 +111,18 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
       @remove-section="(id: string) => props.held.removesSection(id)"
     />
 
+    <Menu
+      v-if="asking"
+      :items="offered"
+      :at="asking.at"
+      :from="asking.from"
+      :current="scheduled.path"
+      open
+      opening="keyboard"
+      :name="words.scheduledBy"
+      @choose="chose"
+      @dismiss="asking = null"
+    />
   </div>
 </template>
 
@@ -85,39 +140,50 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
   min-block-size: 0;
 }
 
-/* A warning carries a filesystem path, and a long one breaks where it stands. */
-.warning {
-  margin: 0;
-  padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans);
-  font-size: calc(var(--numen-font-size) * 12.8 / 13);
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-  overflow-wrap: break-word;
-}
-
-/* The question the file holds: the two answers on the line the sentence is on. */
-.answering {
+/* The line above the grid, which takes the height it needs and no more. */
+.deck-tab__scheduled {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.9rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem 0.6rem;
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-2);
 }
 
-.answering__answer {
-  padding: 0;
-  border: 0;
-  background: none;
+.deck-tab__by {
+  color: var(--numen-hushed);
+}
+
+/* A line of text carrying the mark that says it opens. */
+.deck-tab__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--numen-node-gap);
+  padding: 0.15rem 0.4rem;
+  border: var(--numen-stroke) solid var(--numen-field-border);
+  border-radius: var(--numen-radius-tight);
+  background: var(--numen-field-bg);
   color: inherit;
   font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+  line-height: 1.2;
   cursor: pointer;
 }
 
-.answering__answer:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
+.deck-tab__choice:focus-visible {
+  outline: var(--numen-ring-width) solid var(--numen-ring);
+  outline-offset: var(--numen-stroke);
+}
+
+.deck-tab__icon {
+  inline-size: 1em;
+  block-size: 1em;
+}
+
+.deck-tab__wrong {
+  color: var(--numen-alarm);
+  overflow-wrap: anywhere;
 }
 
 .wrong {
@@ -130,7 +196,7 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 .wrong--tile {
   padding-block: 0;
   color: var(--numen-alarm);
-  font-size: calc(var(--numen-font-size) * 12 / 13);
+  font-size: var(--numen-text-1);
   overflow-wrap: anywhere;
 }
 </style>

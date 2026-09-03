@@ -27,13 +27,31 @@ var OpenedAt = []string{"", "/", "/" + OpensAt}
 // the machine.
 //
 // Inline style is allowed because a page positions what it draws through the
-// style attribute. Pictures names what a window may draw a picture from besides
-// itself: a card carries its own bytes, and a `data:` URI is no request.
-func Policy(pictures ...string) string {
-	from := strings.Join(append([]string{"'self'"}, pictures...), " ")
-	return "default-src 'self'; img-src " + from + "; style-src 'self' 'unsafe-inline'; " +
+// style attribute.
+func Policy(from Sources) string {
+	return "default-src 'self'; img-src " + named(from.Images) +
+		"; media-src " + named(from.Media) +
+		"; style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
+}
+
+// Sources are the places a window may load from besides what its own handler
+// serves. One field to a directive of the policy: widening where a picture
+// comes from must not widen where sound does.
+type Sources struct {
+	// Images fills img-src. A card carries its own bytes, and a `data:` URI is
+	// no request.
+	Images []string
+	// Media fills media-src, which is where sound and video are loaded from. A
+	// browser fetches those down a path of its own, which speaks the protocols
+	// of the world and not the scheme a window is drawn from.
+	Media []string
+}
+
+// named is a window's own handler and whatever else is allowed beside it.
+func named(also []string) string {
+	return strings.Join(append([]string{"'self'"}, also...), " ")
 }
 
 // Built is the interface as it sits inside a binary. A binary built without one

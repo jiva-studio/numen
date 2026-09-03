@@ -10,6 +10,7 @@
 import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
 import Deed from './Deed.vue'
+import NameBox from './NameBox.vue'
 import Rule from '../rule/Rule.vue'
 import { useNaming } from './naming'
 import { DECK_WORDS, type Band, type DeckWords } from './deck'
@@ -66,20 +67,14 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
            and nothing of the line either side. -->
       <span class="band__held">
         <span class="band__name" :data-typed="text || stem">
-          <!-- A box asked for one character is as wide as the cell behind it
-               comes to, and the cell is set to the text. -->
-          <input
+          <!-- The box is as wide as the cell behind it comes to, and the cell
+               is set to the text. -->
+          <NameBox
             class="band__title min-w-0 rounded-node"
-            type="text"
-            size="1"
-            :value="text"
-            :placeholder="stem"
-            :aria-label="stem"
-            :aria-invalid="objects !== null || undefined"
-            :aria-describedby="says ? objectsId : undefined"
-            @input="naming.typing(band.id, ($event.target as HTMLInputElement).value)"
-            @change="naming.commit(band.id)"
-            @keydown="naming.onKey($event, band.id)"
+            :naming="naming"
+            :over="band.id"
+            :stem="stem"
+            :described-by="says ? objectsId : null"
           />
         </span>
 
@@ -123,37 +118,27 @@ const stem = computed(() => `${props.words.sectionStem} ${props.band.at}`)
 .band__name::after,
 .band__title {
   grid-area: 1 / 1;
-  padding: 0.125rem 0.375rem;
   font: inherit;
   font-weight: 500;
 }
 
+/* The cell behind the box is the box's own size, so the two hold the same air. */
 .band__name::after {
   content: attr(data-typed);
+  padding: var(--slab-pad-block, 0.125rem) var(--slab-pad-inline, 0.375rem);
   visibility: hidden;
   white-space: pre;
 }
 
-/* The name is typed on the rule and carries neither a line nor a ground of its
-   own. It is the heading of everything below it, and reads as one. */
+/* The name is the heading of everything below it, and stands in the middle of
+   the rule it is typed on. */
 .band__title {
-  min-inline-size: 0;
-  border: none;
-  background: none;
-  color: inherit;
   text-align: center;
-  cursor: auto;
-}
-
-.band__title:focus-visible {
-  outline: none;
 }
 
 /* What the section is pressed to be rid of is not drawn until its name is
    reached for, by the pointer or by the keyboard. Until then it takes no room
-   at all, so the line runs unbroken up to the name and there is nothing
-   standing on it to press: the line either side is not the section, and
-   crossing it reaches for nothing. */
+   at all, and the line runs unbroken up to the name. */
 .band__deeds {
   display: flex;
   flex: none;

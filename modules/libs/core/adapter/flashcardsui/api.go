@@ -3,8 +3,9 @@
 // It is a second adapter beside webui and not a part of it: what it answers is
 // a different service over a different page, and what it holds is a slice of
 // the installation — the registry and the four scenarios flashcards is made of.
-// No scan runs behind it and nothing is embedded. An agent is reached, and
-// every tool it may call reads.
+// Nothing is embedded here. A vault the index does not carry is read into it,
+// and what this window writes into a vault is levelled in the index by the paths
+// it touched.
 package flashcardsui
 
 import (
@@ -18,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -48,9 +50,23 @@ type API struct {
 	Log       flashcards.Log
 	Counted   flashcards.Counted
 	Joined    flashcards.Around
+	// Presets is which preset each deck of a vault is scheduled by. Curves is
+	// what the one control of a preset comes to over the whole range of its
+	// goal.
+	Presets flashcards.Presets
+	Curves  flashcards.Curves
+	// Notes is what a vault calls the note a preset stands in. A build with none
+	// names a preset by nothing.
+	Notes port.NoteQueries
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
+	// Tasking is everything being done behind the window. A build holding none
+	// says there is nothing.
+	Tasking *task.Tasks
+	// Day is where one day of review gives way to the next. A build holding none
+	// counts the day from midnight.
+	Day history.Day
 	// Now is when this is happening.
 	Now func() time.Time
 
@@ -68,6 +84,16 @@ type API struct {
 	mu sync.Mutex
 	// runs is the sitting open on each vault, by the vault's identity.
 	runs map[string]*flashcards.Run
+
+	// reads is how a vault is brought up to date in the index, and behind is the
+	// life those readings run for. walked is the vaults read since the window
+	// opened, underway the ones being read now, and unreadable why the last
+	// reading of one failed.
+	reads      Read
+	behind     context.Context
+	walked     map[string]bool
+	underway   map[string]bool
+	unreadable map[string]string
 
 	// following is everyone waiting to hear that a vault moved.
 	following following

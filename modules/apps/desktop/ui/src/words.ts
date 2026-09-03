@@ -11,6 +11,7 @@ import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
+import { WORDS as preset } from './preset/words'
 
 /** What the vault refused a command, in words a person reads. */
 export const REFUSED: Record<Refused, string> = {
@@ -25,6 +26,7 @@ export const REFUSED: Record<Refused, string> = {
   notAStencil: 'that note is not a stencil',
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
+  notAPreset: 'that note is not a preset',
 }
 
 /** What the list of vaults refused a command, in words a person reads. */
@@ -60,8 +62,9 @@ export const WORDS = {
   noneFound: 'Nothing',
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
-  /** The commands, and the three bands they are drawn in. */
+  /** The commands, and the bands they are drawn in. */
   overNote: 'This note',
+  overFile: 'This file',
   overWindow: 'This window',
   overVault: 'This vault',
   beside: 'Open beside',
@@ -73,10 +76,26 @@ export const WORDS = {
   destroy: 'Destroy note',
   ask: 'Ask the agent about this note',
   copy: 'Copy path',
+  /** The two runs over the file in front: a recording transcribed, a scan recognised. */
+  transcribe: 'Transcribe this recording',
+  recognise: 'Recognise the text of this document',
+  /** The transcript of the recording in front, put right by a proofreader. */
+  proofread: 'Proofread the transcript of this recording',
+  /** The transcript of the recording in front, taken away, and the two answers. */
+  dropTranscript: 'Delete the transcript of this recording',
+  keepsTranscript: 'Keep the transcript',
+  drops: 'Delete',
+  dropped: 'The words go, and the recording can be transcribed again',
   reveal: 'Show this note in the files',
+  /** The preset this note is: the note itself, or the one a deck is scheduled by. */
+  preset: 'Open the preset',
+  /** The deck in front names no preset, so the defaults schedule it. */
+  noPreset: 'This deck names no preset, so it is scheduled by the defaults.',
   newNote: note.newNote,
   newDeck: cards.newDeck,
   newStencil: cards.newStencil,
+  /** The note that says how the decks pointing at it are scheduled. */
+  newPreset: preset.made,
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   files: 'Show the files of the vault',
@@ -88,6 +107,7 @@ export const WORDS = {
   syncing: 'Sync title and filename',
   hanging: 'Hang the parts of a note under its node',
   parts: 'How many parts a node hangs',
+  settings: 'Settings',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show the commands',
@@ -178,6 +198,8 @@ export const WORDS = {
   overtaken: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
+  /** This build cannot do the run at all, and stops offering it. */
+  unrunnable: 'this installation of numen cannot do that at all',
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

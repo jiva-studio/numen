@@ -97,3 +97,114 @@ describe('what the caller decides', () => {
     expect(wrapper.text()).not.toContain('Nothing said yet')
   })
 })
+
+/** How tall the area that scrolls is, and how tall one turn in it is. */
+const SCREEN = 100
+
+/**
+ * A thread over an area that scrolls, since the document a test runs in lays
+ * nothing out. One turn is one screenful.
+ */
+const scrolling = (turns: readonly Turn[]) => {
+  const wrapper = thread(turns)
+  const area = wrapper.element as HTMLElement
+  let top = 0
+  Object.defineProperty(area, 'clientHeight', { get: () => SCREEN })
+  Object.defineProperty(area, 'scrollHeight', {
+    get: () => wrapper.props('turns').length * SCREEN,
+  })
+  Object.defineProperty(area, 'scrollTop', {
+    get: () => top,
+    set: (to: number) => {
+      top = to
+    },
+  })
+
+  return {
+    wrapper,
+    /** How far down it stands. */
+    at: () => top,
+    /** Read at a place of the person's own choosing. */
+    reads: async (from: number) => {
+      top = from
+      await wrapper.trigger('scroll')
+    },
+    /** One more turn, as an answer would arrive. */
+    arrives: (turn: Turn) => wrapper.setProps({ turns: [...wrapper.props('turns'), turn] }),
+  }
+}
+
+describe('following the foot', () => {
+  it('brings a turn that arrives into view', async () => {
+    const one = scrolling([said('1'), back('2')])
+
+    await one.arrives(said('3'))
+
+    expect(one.at()).toBe(2 * SCREEN)
+  })
+
+  it('follows an answer as it is written', async () => {
+    const one = scrolling([said('1'), back('2', '')])
+
+    await one.wrapper.setProps({ turns: [said('1'), back('2', 'a first word')] })
+
+    expect(one.at()).toBe(SCREEN)
+  })
+
+  it('leaves a reader who scrolled up where they are reading', async () => {
+    const one = scrolling([said('1'), back('2'), said('3')])
+    await one.reads(0)
+
+    await one.arrives(back('4'))
+
+    expect(one.at()).toBe(0)
+  })
+
+  it('takes the foot up again once it is read back down to', async () => {
+    const one = scrolling([said('1'), back('2'), said('3')])
+    await one.reads(0)
+    await one.reads(2 * SCREEN)
+
+    await one.arrives(back('4'))
+
+    expect(one.at()).toBe(3 * SCREEN)
+  })
+
+  it('is asked back to the foot, wherever it was left', async () => {
+    const one = scrolling([said('1'), back('2'), said('3')])
+    await one.reads(0)
+
+    ;(one.wrapper.vm as unknown as { toFoot: (again?: boolean) => void }).toFoot(true)
+
+    expect(one.at()).toBe(2 * SCREEN)
+  })
+})
+
+/**
+ * The step each part of a turn is set at.
+ *
+ * What was said and the line about work are set in the interface's own text,
+ * and an answer is marked-up text a shade above it. The quiet step is for what
+ * is said about a turn beside it.
+ */
+describe('the step each part is set at', () => {
+  const doing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
+
+  it("sets the thread in the interface's own text", () => {
+    expect(thread([]).classes()).toContain('text-base')
+  })
+
+  it('leaves what was said at the step the thread is set in', () => {
+    expect(thread([said('1')]).find('.thread__body').classes()).not.toContain('text-small')
+  })
+
+  it('sets a line about work at that step as well', () => {
+    expect(thread([doing('1')]).find('.tool').classes()).toContain('text-base')
+  })
+
+  it('says a turn did not send in the quiet step', () => {
+    expect(thread([said('1', 'gone', 'failed')]).find('.thread__failure').classes()).toContain(
+      'text-small',
+    )
+  })
+})

@@ -52,6 +52,35 @@ func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
 	return out
 }
 
+// padded lays a batch out as the model takes it: one row per text, each row the
+// same length, and the rows a full batch would carry.
+//
+// A pass is one shape, and a shape is compiled the first time it appears. The
+// rows a batch does not fill carry the padding token, and each is marked at one
+// token so that what pools a row divides by something.
+func padded(batch [][]int, rows, seq, pad int) (ids, mask, types [][]int64) {
+	ids = make([][]int64, rows)
+	mask = make([][]int64, rows)
+	types = make([][]int64, rows)
+	for row := range rows {
+		ids[row] = make([]int64, seq)
+		mask[row] = make([]int64, seq)
+		types[row] = make([]int64, seq)
+		for i := range ids[row] {
+			ids[row][i] = int64(pad)
+		}
+		if row >= len(batch) {
+			mask[row][0] = 1
+			continue
+		}
+		for i, id := range batch[row][:min(len(batch[row]), seq)] {
+			ids[row][i] = int64(id)
+			mask[row][i] = 1
+		}
+	}
+	return ids, mask, types
+}
+
 // bucket rounds a sequence length up to the next step. Every distinct shape
 // costs a compilation, so the lengths are held to a few.
 func bucket(tokens, step, limit int) int {

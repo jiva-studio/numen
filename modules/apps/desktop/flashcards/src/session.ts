@@ -14,7 +14,11 @@ import type { Ahead, Asked, Said } from './core'
 
 /** What a sitting asks of the application, and no more of it than that. */
 export interface Asking {
-  start(said: { vaultId: string; deck: string }): Promise<Opened>
+  /**
+   * Deck is one deck, or empty for every deck the vault holds. Preset holds it
+   * to the decks one preset schedules, and to the budget that preset keeps.
+   */
+  start(said: { vaultId: string; deck: string; preset?: string }): Promise<Opened>
   answer(said: {
     vaultId: string
     run: string
@@ -105,9 +109,19 @@ export function session(deps: Sits) {
    * Sit down to a vault, or to one deck of it. What comes back is what the
    * sitting could not act on, and nothing when it could not be opened at all.
    */
-  const start = async (vaultId: string, deck: string): Promise<Report | null> => {
+  /**
+   * Preset is the note one preset stands in, and the empty path is the preset
+   * that schedules the decks naming none. Naming none at all sits to the deck.
+   */
+  const start = async (
+    vaultId: string,
+    deck: string,
+    preset?: string,
+  ): Promise<Report | null> => {
     try {
-      const opened = await deps.cards.start({ vaultId, deck })
+      const opened = await deps.cards.start(
+        preset === undefined ? { vaultId, deck } : { vaultId, deck, preset },
+      )
       vault.value = vaultId
       run.value = opened.run
       asked.value = opened.asked.map(asking)

@@ -21,6 +21,6 @@ export interface Words {
   readonly hard: string
   readonly good: string
   readonly easy: string
-  /** "recalled", after a share: how much of what was learned came back. */
+  /** What follows a share: what the cards it is a share of are. */
   readonly recalled: string
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -29,6 +30,17 @@ import (
 // stream, in the shape the schema describes. What a change means is asked of
 // the use case, where no server is needed to ask it.
 func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
+	t.Helper()
+	client, root, _ := serving(t, notes)
+	return client, root
+}
+
+// serving is that same vault, with the window's half of it as well, for a test
+// asking what something the window does reaches the client as.
+func serving(
+	t *testing.T,
+	notes map[string]string,
+) (numenv1connect.VaultServiceClient, string, *webui.Opened) {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range notes {
@@ -85,7 +97,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 			t.Fatal(err)
 		}
 		if state.Msg.GetReady() {
-			return client, root
+			return client, root, opened
 		}
 		if reason := state.Msg.GetFailed(); reason != "" {
 			t.Fatalf("the first scan failed: %s", reason)
@@ -93,7 +105,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal("the first scan did not finish")
-	return nil, ""
+	return nil, "", nil
 }
 
 // TestAnEditReachesAListener is the whole path: a file on disk, the watcher,
@@ -155,5 +167,47 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 	if title := shown.Msg.GetFocus().GetTitle(); title != "Renamed" {
 		t.Errorf("the index still says %q", title)
+	}
+}
+
+// TestABookDroppedInReachesAListener. A client draws every file the vault
+// holds, and a book is one of them.
+func TestABookDroppedInReachesAListener(t *testing.T) {
+	client, root := opened(t, map[string]string{
+		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
+	})
+
+	listening, hangUp := context.WithCancel(t.Context())
+	defer hangUp()
+
+	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer changes.Close()
+
+	if !changes.Receive() {
+		t.Fatalf("the stream never opened: %v", changes.Err())
+	}
+
+	reported := make(chan []string, 1)
+	go func() {
+		for changes.Receive() {
+			if paths := changes.Msg().GetPaths(); len(paths) > 0 {
+				reported <- paths
+				return
+			}
+		}
+	}()
+
+	testsupport.WriteBook(t, root, "library/A Book.epub")
+
+	select {
+	case paths := <-reported:
+		if !slices.Contains(paths, "library/A Book.epub") {
+			t.Errorf("reported %v", paths)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the book never reached the listener")
 	}
 }

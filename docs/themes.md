@@ -45,7 +45,7 @@ Such a theme is listed as pinned, and the mode has nothing left to choose. What 
 
 `index.html` is not served by the file server. A handler reads it and splices three elements into the end of the head — which half of a colour pair the tokens are read as, the theme's own file, and the two sizes — then writes the page. No frame is drawn in the default colours.
 
-They stand after everything the build put in the head, the built stylesheet's link last among them, and they are read for every request: a theme chosen, a size chosen, or a file in the person's folder saved over is worn by the next reload. A build carrying no interface, and a page with no head, are served as the file server has them.
+Each carries `data-appearance`, which is `mode`, `theme` or `sizes`, and that is what the window finds each of them by. They stand after everything the build put in the head, the built stylesheet's link last among them, and they are read for every request: a theme chosen, a size chosen, or a file in the person's folder saved over is worn by the next reload. A build carrying no interface, and a page with no head, are served as the file server has them.
 
 ## Where a theme lives
 

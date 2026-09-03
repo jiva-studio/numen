@@ -42,11 +42,10 @@ describe('a right-click on a node', () => {
     rightClick(focus.element)
     await plex.vm.$nextTick()
 
-    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, Element, string][]
+    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
     expect(asked?.[0]).toBe('focus')
     expect(asked?.[1]).toStrictEqual({ x: 320, y: 240 })
-    expect(asked?.[2]).toBe(focus.element)
-    expect(asked?.[3]).toBe('pointer')
+    expect(asked?.[2]).toBe('pointer')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
@@ -149,21 +148,35 @@ describe('asking for a menu from the keyboard', () => {
     expect(asked[0]?.[0]).toBe('focus')
   })
 
-  it('carries the element, because a keypress has nowhere to point', async () => {
+  // A keypress has nowhere of its own to point, so it points at the middle of
+  // the box it was pressed on.
+  it('points at the middle of the box it was asked from', async () => {
+    const plex = mountPlex()
+    const node = plex.get('[aria-label^="A node"]')
+    node.element.getBoundingClientRect = () => new DOMRect(120, 40, 200, 80)
+
+    await node.trigger('keydown', press('ContextMenu'))
+
+    const [asked] = plex.emitted('menu') as [string, { x: number; y: number }, string][]
+    expect(asked?.[1]).toStrictEqual({ x: 220, y: 80 })
+  })
+
+  it('puts the keyboard back on the node it was asked from', async () => {
     const plex = mountPlex()
     const focus = plex.get('[aria-label^="A node"]')
     await focus.trigger('keydown', press('ContextMenu'))
 
-    const [asked] = plex.emitted('menu') as [string, unknown, Element, string][]
-    expect(asked?.[2]).toBe(focus.element)
+    const [asked] = plex.emitted('menu') as [string, unknown, string][]
+    plex.vm.focusNode(asked![0])
+    expect(document.activeElement).toBe(focus.element)
   })
 
   it('says the keyboard opened it, which is what a menu starts on an item for', async () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
 
-    const [asked] = plex.emitted('menu') as [string, unknown, unknown, string][]
-    expect(asked?.[3]).toBe('keyboard')
+    const [asked] = plex.emitted('menu') as [string, unknown, string][]
+    expect(asked?.[2]).toBe('keyboard')
   })
 
   it('leaves F10 on its own, and Enter and the space bar to choosing', async () => {

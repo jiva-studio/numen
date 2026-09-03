@@ -7,7 +7,7 @@ type Note struct {
 	Ref   FileRef
 	Title string
 
-	// Type is which of three the note is. A note carrying no `type` is a note,
+	// Type is which of four the note is. A note carrying no `type` is a note,
 	// which is nearly every file in a vault.
 	Type NoteType
 
@@ -33,7 +33,7 @@ type Note struct {
 	FrontmatterErr string
 }
 
-// NoteType is which of three a note is. The list is closed: a value outside it
+// NoteType is which of four a note is. The list is closed: a value outside it
 // is shown as a problem and the file is read as an ordinary note.
 type NoteType string
 
@@ -41,12 +41,14 @@ const (
 	TypeNote    NoteType = "note"
 	TypeDeck    NoteType = "deck"
 	TypeStencil NoteType = "stencil"
+	// TypePreset is a note saying how the decks pointing at it are scheduled.
+	TypePreset NoteType = "preset"
 )
 
-// KnownNoteType reports whether a type is one of the three.
+// KnownNoteType reports whether a type is one of the four.
 func KnownNoteType(t NoteType) bool {
 	switch t {
-	case TypeNote, TypeDeck, TypeStencil:
+	case TypeNote, TypeDeck, TypeStencil, TypePreset:
 		return true
 	}
 	return false

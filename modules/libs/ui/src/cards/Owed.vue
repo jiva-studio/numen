@@ -1,17 +1,18 @@
 <script setup lang="ts">
 /**
- * How many cards a collection has waiting today, wherever one is named: a vault
- * on the screen a window opens on, a deck in the list under it, or the whole of
- * a vault on the button that runs it.
+ * How much is waiting, as one figure and the word for what it counts.
  *
- * One number, and the word for what it counts. What is owed and what has never
- * been asked are both cards to sit down to, and a person choosing where to
- * start is not choosing between them.
+ * A figure not worked out yet is drawn as the shape it will be, in the same
+ * box, so the row it stands in does not move when it lands.
  */
-withDefaults(
+import { computed } from 'vue'
+import Coming from '../waiting/Coming.vue'
+import { OWED_WORDS, type OwedWords } from './owed'
+
+const props = withDefaults(
   defineProps<{
-    /** Cards waiting today: owed, and never asked. */
-    waiting: number
+    /** Cards waiting today: owed, and never asked. Nothing until it is counted. */
+    waiting: number | null
     /**
      * The number alone. Where a list is long and the room is short, the word is
      * said once above the list and not on every row of it.
@@ -19,14 +20,33 @@ withDefaults(
     bare?: boolean
     /** Drawn on a ground of its own, where it stands on a filled button. */
     over?: boolean
+    /** The words it is drawn with. */
+    words?: OwedWords
   }>(),
-  { bare: false, over: false },
+  { bare: false, over: false, words: () => OWED_WORDS },
 )
+
+/** What it is read out as, where that is not what it draws. */
+const label = computed(() => {
+  if (props.waiting === null) return props.words.counting
+  return props.bare ? props.words.counted(props.waiting) : undefined
+})
 </script>
 
 <template>
-  <span class="owed" :class="{ 'owed--over': over }">
-    {{ waiting }}<template v-if="!bare"> to review</template>
+  <!-- A generic element carries no name, so the pill takes a role and is read
+       out while the figure is still coming. -->
+  <span
+    class="owed"
+    role="status"
+    :class="{ 'owed--over': over }"
+    :aria-label="label"
+  >
+    <!-- Narrower than the pill's own least width, so the box is the same width
+         whether the figure has landed or not. -->
+    <Coming v-if="waiting === null" wide="0.8rem" high="0.7em" pill />
+    <template v-else-if="bare">{{ waiting }}</template>
+    <template v-else>{{ words.counted(waiting) }}</template>
   </span>
 </template>
 
@@ -39,7 +59,7 @@ withDefaults(
   border-radius: var(--numen-radius-pill);
   background: var(--numen-highlight);
   color: var(--numen-caution-fg);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

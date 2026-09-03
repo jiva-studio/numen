@@ -41,6 +41,11 @@ type Core struct {
 	// served the vault and nothing that puts a note in front of anybody.
 	View port.View
 
+	// Attending is what the person has open, asked at every call so that an
+	// agent reads the window as it stands. Without it an agent is told nothing
+	// of what is in front of anybody.
+	Attending func() domain.Attention
+
 	// Vaults is the list of vaults this installation holds. Without it an agent
 	// is told of the vault it is working and of no other.
 	Vaults port.VaultRegistry
@@ -62,6 +67,9 @@ type Core struct {
 	// Without them the tools for those documents are not added.
 	Sources   port.SourceQueries
 	Recognise Recognising
+	// Transcribe hears a recording. Without it the tool that asks for one is
+	// served and answers that this installation cannot.
+	Transcribe Transcribing
 	// Derived is where a reading of a document is kept. Without it a document
 	// stands on its own bytes, which for a scan is nothing.
 	Derived port.DerivedStores
@@ -132,11 +140,13 @@ func New(core Core) *sdk.Server {
 	)
 
 	addNoteTools(server, core)
+	addFileReadingTools(server, core)
 	addCardTools(server, core)
 	addLinkTools(server, core)
 	addVaultTools(server, core)
 	addVaultsTools(server, core)
 	addViewTools(server, core)
+	addWindowTools(server, core)
 	addSourceTools(server, core)
 	return server
 }
@@ -199,6 +209,12 @@ func instructions(core Core) string {
 	b.WriteString("What is worth knowing before changing anything:\n")
 	b.WriteString("- " + namingOrder + " `note_rename` brings whichever of the three names it ")
 	b.WriteString("into line and files the note under the new name.\n")
+	b.WriteString("- Name a note you speak about as a link, so the person can go to it: ")
+	b.WriteString("`[[Harmonic oscillator]]`, the title they know it by. It reaches the note ")
+	b.WriteString("the way every link in this vault does, and a name no note answers to is ")
+	b.WriteString("drawn as reaching nothing. Write it where you speak about the note, not ")
+	b.WriteString("in a list at the end. A title several notes share is written as ")
+	b.WriteString("`[[note://<identifier>]]`, which names one of them.\n")
 	b.WriteString("- A link written as a name finds its note wherever it moves to, so moving ")
 	b.WriteString("notes between folders is safe and does not need links rewritten.\n")
 	b.WriteString("- Two notes filed under one name make every link written by that name ")
@@ -207,7 +223,10 @@ func instructions(core Core) string {
 	b.WriteString("draws is the parent and child links, not the folder tree.\n")
 	b.WriteString("- Prose is yours to write; the frontmatter is the person's. Change it with ")
 	b.WriteString("the link and rename tools rather than by writing the file yourself.\n")
-	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n\n")
+	b.WriteString("- A removed note goes to the vault's trash rather than being destroyed.\n")
+	b.WriteString("- Any file the vault holds is read by its path with `file_read`, a run at ")
+	b.WriteString("a time. The tools here write notes, so a file of another kind is read and ")
+	b.WriteString("not written.\n\n")
 
 	b.WriteString("A vault holds books and papers beside its notes, and asking them is not ")
 	b.WriteString("like asking a note:\n")
@@ -244,6 +263,13 @@ func opening(b *strings.Builder, core Core) {
 	b.WriteString("slashes — `notes/entropy.md`. That path is what every tool takes and returns. ")
 	b.WriteString("To open a note as a file, join it to the folder above; if you cannot read ")
 	b.WriteString("files, `note_read` gives you the same text.\n\n")
+
+	if core.Attending != nil {
+		b.WriteString("What the person has open is `window_tabs`: every tab of their window, ")
+		b.WriteString("and which of them they are looking at. Ask it before saying anything ")
+		b.WriteString("about what is in front of them, and ask again when it matters — they ")
+		b.WriteString("move between tabs while you work.\n\n")
+	}
 }
 
 // readingInstructions is what an agent served the reading tools is told once,

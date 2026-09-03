@@ -54,13 +54,34 @@ interface: ## build each window's page into the binary's assets
 	cd $(DESKTOP)/ui && npm run build
 	cd $(DESKTOP)/flashcards && npm run build
 
+# On macOS the window is built into a bundle, ad-hoc signed. A bare executable
+# there starts with no Dock tile and no menu bar.
+ifeq ($(shell uname -s),Darwin)
+# bundle <application> <binary> <plist> <icon>
+define bundle
+	rm -rf "$(1).app"
+	mkdir -p "$(1).app/Contents/MacOS" "$(1).app/Contents/Resources"
+	mv $(2) "$(1).app/Contents/MacOS/$(2)"
+	cp $(DESKTOP)/build/darwin/$(3) "$(1).app/Contents/Info.plist"
+	cp $(DESKTOP)/build/darwin/$(4) "$(1).app/Contents/Resources/$(4)"
+	printf 'APPL????' > "$(1).app/Contents/PkgInfo"
+	plutil -lint "$(1).app/Contents/Info.plist"
+	codesign --force -s - "$(1).app"
+endef
+else
+define bundle
+endef
+endif
+
 .PHONY: desktop
 desktop: interface ## build the window
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen ./cmd/numen
+	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: flashcards
 flashcards: interface ## build the window a person runs their cards in
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen-flashcards ./cmd/numen-flashcards
+	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns)
 
 .PHONY: landing
 landing: ## build the page the product is read about on

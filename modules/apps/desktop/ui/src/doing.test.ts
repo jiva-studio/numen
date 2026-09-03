@@ -5,9 +5,19 @@
  * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
-import { commandsOf, deedOf, type Deed, type Where } from './commanding'
+import { commandsOf, deedOf, runnable, type Deed, type Where } from './commanding'
 import { does, reaching, type Doing, type Store } from './doing'
-import type { Added, Known, Movement, Refused, Removed, Renamed, VaultRefused } from './core'
+import type {
+  Added,
+  Answer,
+  Known,
+  Movement,
+  Outcome,
+  Refused,
+  Removed,
+  Renamed,
+  VaultRefused,
+} from './core'
 import { WORDS as words } from './words'
 
 /** What is in front, which every deed is carried out over. */
@@ -16,6 +26,8 @@ const front = (over: Partial<Where> = {}): Where => ({
   kind: 'plex',
   path: 'physics/Ontology.md',
   title: 'Ontology',
+  file: '',
+  source: null,
   vault: { id: 'physics', name: 'Physics' },
   ready: true,
   ...over,
@@ -37,6 +49,14 @@ const renamed = (over: Partial<Renamed> = {}): Renamed => ({
   refusal: null,
   changed: false,
   ...over,
+})
+
+/** How a run came out, as the application answers it: a word and a sentence. */
+const outcome = (answer: Answer, why: string): Outcome => ({
+  able: true,
+  path: 'talks/Ants.mp3',
+  answer,
+  why,
 })
 
 const removed = (over: Partial<Removed> = {}): Removed => ({
@@ -71,42 +91,78 @@ const window = (
     movement?: Movement
     /** What making a folder was refused with. */
     folderRefused?: Refused
+    /** How a run asked for over a file came out. */
+    outcome?: Outcome
+    /** What dropping a transcript was refused with. */
+    dropRefused?: string
+    /** Whether this build cannot drop a transcript at all. */
+    undroppable?: boolean
   } = {},
 ) => {
   const done: string[] = []
   const said: string[] = []
+  /** The voice each sentence was said in, one to a sentence. */
+  const tones: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
   const refusal = answers.turnedDown ?? null
+  /** The runs this one window has been told this build cannot do. */
+  const runs = runnable()
   const on: Doing = {
-    makes: async (title, from, seat) => {
-      done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
-      return answers.made === false ? null : { path: `${title}.md`, title }
+    files: {
+      makes: async (title, from, seat) => {
+        done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
+        return answers.made === false ? null : { path: `${title}.md`, title }
+      },
+      renames: async (path, title) => {
+        done.push(`renames ${path} ${title}`)
+        return answers.renamed ?? renamed()
+      },
+      removes: async (path, destroy) => {
+        done.push(`removes ${path} ${destroy}`)
+        return answers.removed ?? removed()
+      },
+      moves: async (from, to) => {
+        done.push(`moves ${from} ${to}`)
+        return answers.movement ?? { moved: null, refusal: null }
+      },
+      makesFolder: async (path) => {
+        done.push(`makes folder ${path}`)
+        return answers.folderRefused ?? null
+      },
     },
-    renames: async (path, title) => {
-      done.push(`renames ${path} ${title}`)
-      return answers.renamed ?? renamed()
+    runs: {
+      transcribes: async (path) => {
+        done.push(`transcribes ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      recognises: async (path) => {
+        done.push(`recognises ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      proofreads: async (path) => {
+        done.push(`proofreads ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      drops: async (path) => {
+        done.push(`drops ${path}`)
+        if (answers.dropRefused) throw new Error(answers.dropRefused)
+        return answers.undroppable !== true
+      },
     },
-    removes: async (path, destroy) => {
-      done.push(`removes ${path} ${destroy}`)
-      return answers.removed ?? removed()
+    cards: {
+      cuts: async (folder, name) => {
+        done.push(`cuts ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
+      stencils: async (folder, name) => {
+        done.push(`stencils ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
+      presets: async (folder, name) => {
+        done.push(`presets ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
     },
-    moves: async (from, to) => {
-      done.push(`moves ${from} ${to}`)
-      return answers.movement ?? { moved: null, refusal: null }
-    },
-    makesFolder: async (path) => {
-      done.push(`makes folder ${path}`)
-      return answers.folderRefused ?? null
-    },
-    cuts: async (folder, name) => {
-      done.push(`cuts ${folder || '—'} ${name}`)
-      return folder ? `${folder}/${name}` : name
-    },
-    stencils: async (folder, name) => {
-      done.push(`stencils ${folder || '—'} ${name}`)
-      return folder ? `${folder}/${name}` : name
-    },
-    reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
       where: (id) => (id === 'held' ? at : id),
@@ -143,24 +199,35 @@ const window = (
         done.push(`opens vault ${id}`)
         return refusal
       },
+      calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+      reloads: () => void done.push('reloads'),
     },
-    calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
-    reloads: () => void done.push('reloads'),
-    travel: async (path) => void done.push(`travel ${path}`),
-    leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
-    opening: () => 'Root.md',
-    opens: (kind) => void done.push(`opens ${kind}`),
-    closes: (tab) => void done.push(`closes ${tab}`),
-    asks: (text) => void done.push(`asks ${text}`),
+    goes: {
+      reveals: (path) => void done.push(`reveals ${path}`),
+      travel: async (path) => void done.push(`travel ${path}`),
+      leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
+      opening: () => 'Root.md',
+      opens: (kind) => void done.push(`opens ${kind}`),
+      preset: async (path) => void done.push(`preset ${path}`),
+      closes: (tab) => void done.push(`closes ${tab}`),
+      asks: (text) => void done.push(`asks ${text}`),
+      searches: () => void done.push('searches'),
+    },
+    settings: {
+      appearance: async (chosen) => void done.push(`appearance ${chosen}`),
+      syncing: async (chosen) => void done.push(`syncing ${chosen}`),
+      hanging: async (chosen) => void done.push(`hanging ${chosen}`),
+      parts: async (chosen) => void done.push(`parts ${chosen}`),
+    },
+    runnable: runs,
     copies: (path) => void done.push(`copies ${path}`),
-    searches: () => void done.push('searches'),
-    appearance: async (chosen) => void done.push(`appearance ${chosen}`),
-    syncing: async (chosen) => void done.push(`syncing ${chosen}`),
-    hanging: async (chosen) => void done.push(`hanging ${chosen}`),
-    parts: async (chosen) => void done.push(`parts ${chosen}`),
-    says: (text) => void (text ? said.push(text) : undefined),
+    says: (text, kind) => {
+      if (!text) return
+      said.push(text)
+      tones.push(kind ?? '')
+    },
   }
-  return { on, done, said }
+  return { on, done, said, tones, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -199,7 +266,7 @@ describe('a note put in front of the person', () => {
   })
 })
 
-describe('a deck or a stencil made', () => {
+describe('a deck, a stencil or a preset made', () => {
   it('is made at the top of the vault, under the name as it was typed', async () => {
     const one = window()
 
@@ -225,10 +292,19 @@ describe('a deck or a stencil made', () => {
     expect(one.done).toStrictEqual(['stencils — Animal'])
   })
 
+  it('is a preset where that is what was asked for', async () => {
+    const one = window()
+
+    await carry(deedOf('newPreset', front(), 'Sanskrit'), one.on)
+
+    expect(one.done).toStrictEqual(['presets — Sanskrit'])
+  })
+
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
     await carry(deedOf('deck', front(), ''), one.on)
+    await carry(deedOf('newPreset', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
   })
@@ -281,6 +357,144 @@ describe('a note made', () => {
     await carry(deedOf('child', front(), ''), one.on)
 
     expect(one.done).toStrictEqual([])
+  })
+})
+
+/**
+ * The sentences the application answers a run with, one to an outcome. They are
+ * its own words, and the window shows what it is given.
+ */
+const WHY: Record<Answer, string> = {
+  started: 'Transcribing this recording has begun.',
+  queued: 'This recording is in line, behind the one being transcribed now.',
+  running: 'This recording is being transcribed now.',
+  done: 'This recording has already been transcribed.',
+  unfit: 'Only a recording is transcribed, and this file is not one.',
+  unheard: 'Nothing has been transcribed here, so there is nothing to proofread.',
+  byHand: 'These words were written by hand, and a model does not correct them.',
+  answered:
+    'Nothing came of transcribing this recording: unopened: the mp3 recording: mp3: MPEG version 2.5 is not supported',
+}
+
+/** The outcomes the window says as a report, which are the runs under way. */
+const REPORTED: readonly Answer[] = ['started', 'queued']
+
+/** A run asked for over the recording in front, as it came out. */
+const asked = (answer: Answer) => {
+  const one = window({ outcome: outcome(answer, WHY[answer]) })
+  return { one, deed: deedOf('transcribe', front({ file: 'talks/Ants.mp3' })) }
+}
+
+describe('a run asked for over a file', () => {
+  it('asks the application over that file', async () => {
+    const { one, deed } = asked('started')
+
+    await carry(deed, one.on)
+
+    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
+  })
+
+  // Every outcome carries a sentence, so the person is told one whatever
+  // happened.
+  it('says how it came out, in the words the application sent', async () => {
+    for (const answer of Object.keys(WHY) as Answer[]) {
+      const { one, deed } = asked(answer)
+
+      await carry(deed, one.on)
+
+      expect(one.said, answer).toStrictEqual([WHY[answer]])
+    }
+  })
+
+  // Only a run under way is a report. Everything else is a refusal: the person
+  // asked for work, and none is being done.
+  it('says a run under way as a report and the rest as refusals', async () => {
+    for (const answer of Object.keys(WHY) as Answer[]) {
+      const { one, deed } = asked(answer)
+
+      await carry(deed, one.on)
+
+      expect(one.tones, answer).toStrictEqual([REPORTED.includes(answer) ? 'report' : 'refusal'])
+    }
+  })
+
+  // The person asked for this one by name, and a recording already transcribed
+  // would otherwise look like a command that did nothing.
+  it('says a recording already transcribed has been transcribed', async () => {
+    const { one, deed } = asked('done')
+
+    await carry(deed, one.on)
+
+    expect(one.said).toStrictEqual([WHY.done])
+  })
+
+  // A run that got no words out of the recording wrote down what it got, and
+  // asking again gets the same until that record is taken away.
+  it('says what a run answered about a recording it got no words out of', async () => {
+    const { one, deed } = asked('answered')
+
+    await carry(deed, one.on)
+
+    expect(one.done).toStrictEqual(['transcribes talks/Ants.mp3'])
+    expect(one.said).toStrictEqual([WHY.answered])
+  })
+
+  it('says the same of a scan already recognised', async () => {
+    const why = 'This scan has already been recognised.'
+    const one = window({ outcome: { able: true, path: 'books/Ants.pdf', answer: 'done', why } })
+
+    await carry(deedOf('recognise', front({ file: 'books/Ants.pdf' })), one.on)
+
+    expect(one.done).toStrictEqual(['recognises books/Ants.pdf'])
+    expect(one.said).toStrictEqual([why])
+  })
+
+  it('says this build cannot do it, and offers it nowhere after that', async () => {
+    const one = window({ outcome: { able: false } })
+
+    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.runs.canRun('transcribe')).toBe(false)
+    expect(one.runs.canRun('recognise')).toBe(true)
+  })
+
+  it('is said only in the window it was asked in', async () => {
+    const one = window({ outcome: { able: false } })
+
+    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(window().runs.canRun('transcribe')).toBe(true)
+  })
+})
+
+describe('the transcript of a recording dropped', () => {
+  it('asks the application over the file the tab in front holds', async () => {
+    const one = window()
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.done).toStrictEqual(['drops talks/Ants.mp3'])
+    expect(one.said).toStrictEqual([])
+  })
+
+  it('says what the application refused, in the words it sent', async () => {
+    const why = 'this recording is being listened to'
+    const one = window({ dropRefused: why })
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.said).toStrictEqual([`Error: ${why}`])
+    expect(one.tones).toStrictEqual(['refusal'])
+  })
+
+  it('says this build cannot do it, and offers it nowhere after that', async () => {
+    const one = window({ undroppable: true })
+
+    await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.runs.canRun('dropTranscript')).toBe(false)
   })
 })
 
@@ -419,7 +633,7 @@ describe('a note removed', () => {
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
     const one = window()
-    const nowhere: Doing = { ...one.on, opening: () => '' }
+    const nowhere: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await carry(deedOf('remove', front()), nowhere)
 
@@ -498,9 +712,12 @@ describe('several files removed at once', () => {
     const one = window()
     const picky: Doing = {
       ...one.on,
-      removes: async (path, destroy) => {
-        one.done.push(`removes ${path} ${destroy}`)
-        return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+      files: {
+        ...one.on.files,
+        removes: async (path, destroy) => {
+          one.done.push(`removes ${path} ${destroy}`)
+          return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+        },
       },
     }
 
@@ -666,7 +883,7 @@ describe('a command over the vault', () => {
 
   it('says a vault that opens with no note at all', async () => {
     const one = window()
-    const empty: Doing = { ...one.on, opening: () => '' }
+    const empty: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await does(deedOf('first', front()), empty, words)
 
@@ -835,7 +1052,10 @@ describe('nothing to carry out', () => {
 
   it('says what the vault could not be asked, and asks no further', async () => {
     const one = window()
-    const broken: Doing = { ...one.on, removes: async () => Promise.reject(new Error('gone')) }
+    const broken: Doing = {
+      ...one.on,
+      files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
+    }
 
     await does(deedOf('remove', front()), broken, words)
 

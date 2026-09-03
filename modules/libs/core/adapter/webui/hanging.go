@@ -6,6 +6,8 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // partsUnderANode is how many headings stand under a node in a build that reads
@@ -53,9 +55,9 @@ func (a *API) ChooseHanging(
 // refusedHanging is what a write of one of the two settings comes back as when
 // it did not happen.
 func refusedHanging(err error) (*connect.Response[v1.ChooseHangingResponse], error) {
-	refusal, refused := refusedBy(err)
+	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.ChooseHangingResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.ChooseHangingResponse{Refusal: &reason}), nil
 }

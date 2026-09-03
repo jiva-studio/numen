@@ -6,6 +6,34 @@
  * asks them without a browser.
  */
 
+/** Where something sits on a page, in fractions of it. */
+export interface Lit {
+  readonly minX: number
+  readonly minY: number
+  readonly maxX: number
+  readonly maxY: number
+}
+
+/** The words a document is read with, declared once. */
+export interface ReaderWords {
+  /** What turning back a page is called, and turning on. */
+  readonly back: string
+  readonly next: string
+  /** What the field the page is typed in is called. */
+  readonly page: string
+  /** What drawing the page larger is called, and smaller. */
+  readonly closer: string
+  readonly further: string
+}
+
+export const READER_WORDS: ReaderWords = {
+  back: 'Previous page',
+  next: 'Next page',
+  page: 'Page',
+  closer: 'Closer',
+  further: 'Further',
+}
+
 /** One page's size, in the page's own units. */
 export interface Sheet {
   readonly wide: number
@@ -107,10 +135,8 @@ export function within(row: Row, room: Room, along: number): number[] {
 }
 
 /**
- * The page in front: the one under the middle of the room.
- *
- * The middle rather than the left edge, because a page scrolled halfway off is
- * not the page a person is reading.
+ * The page in front: the one under the middle of the room. A page scrolled
+ * halfway off is not the page a person is reading.
  */
 export function inFront(row: Row, room: Room, along: number): number {
   const at = along + room.wide / 2
@@ -139,7 +165,21 @@ export const CLOSEST = 6
 /** How much closer one press draws the page. */
 export const NEARER = 1.25
 
-/** How close a page is drawn after one press, and never past either end. */
-export function drawn(zoom: number, how: number): number {
-  return Math.min(Math.max(zoom * how, FURTHEST), CLOSEST)
+/**
+ * The widths a page is asked for, in device pixels. Dragging the edge of a pane
+ * crosses a few of them, and a page drawn wider than its box is drawn down into
+ * it.
+ */
+export const STAGE = 128
+
+/**
+ * How long a width has to have stood still before a page is asked for at it, in
+ * milliseconds. A pane edge dragged across a screen crosses a dozen widths, and
+ * each one is a page drawn and thrown away.
+ */
+export const SETTLED = 150
+
+/** How close a page is drawn, never past either end. */
+export function drawn(zoom: number): number {
+  return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }

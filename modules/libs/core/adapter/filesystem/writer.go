@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	pathpkg "path"
@@ -396,4 +397,59 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 		return err
 	}
 	return settle(filepath.Dir(target))
+}
+
+// Bring copies a file from this machine into the vault.
+//
+// The bytes are streamed, so a recording or an archive crosses in whatever room
+// the machine has. They land beside the destination and are renamed over it, so
+// the watcher reports the file once and reports it whole.
+func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	target, err := w.reach(path)
+	if err != nil {
+		return err
+	}
+	switch _, err := os.Lstat(target); {
+	case err == nil:
+		return fmt.Errorf("bring %s: %w", path, port.ErrOccupied)
+	case !errors.Is(err, fs.ErrNotExist):
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	return arrive(target, content)
+}
+
+// arrive streams content beside the target and renames it over the top, by the
+// same rules replace writes bytes it already holds.
+func arrive(target string, content io.Reader) error {
+	dir, name := filepath.Split(target)
+	tmp, err := os.CreateTemp(dir, "."+name+".*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+
+	if _, err := io.Copy(tmp, content); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmp.Name(), newFileMode); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp.Name(), target); err != nil {
+		return err
+	}
+	return settle(dir)
 }

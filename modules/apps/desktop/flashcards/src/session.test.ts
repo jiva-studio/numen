@@ -55,6 +55,53 @@ function held(said?: { answering?: Promise<{ answer: string }>; refuses?: unknow
   return { one, asks, trouble }
 }
 
+// A sitting is opened over a deck, over the whole vault, or over one preset.
+// The empty path is a preset of its own — the one scheduling the decks that
+// name none — so it is told apart from naming no preset at all.
+describe('what a sitting is opened over', () => {
+  it('names no preset where it is opened over decks', async () => {
+    const { one, asks } = held()
+
+    await one.start('01VAULT', 'decks/Words.md')
+
+    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: 'decks/Words.md' })
+  })
+
+  it('names the preset where it is opened over one', async () => {
+    const { one, asks } = held()
+
+    await one.start('01VAULT', '', 'Sanskrit.md')
+
+    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: '', preset: 'Sanskrit.md' })
+  })
+
+  it('names the defaults by the empty path, and not by naming nothing', async () => {
+    const { one, asks } = held()
+
+    await one.start('01VAULT', '', '')
+
+    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: '', preset: '' })
+  })
+
+  // A preset with nothing to ask is refused, and a tile standing for one is not
+  // pressed. A count read a moment ago can still be overtaken, and what comes
+  // back is said and nothing is opened.
+  it('opens nothing where the preset is refused, and says why', async () => {
+    const cards: Asking = {
+      start: () => Promise.reject(new Error('this preset schedules nothing today: it is paused')),
+      answer: () => Promise.reject(new Error('no')),
+      takeBack: () => Promise.reject(new Error('no')),
+    }
+    const trouble: unknown[] = []
+    const one = session({ cards, failed: (why) => trouble.push(why) })
+
+    expect(await one.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
+    expect(String(trouble[0])).toContain('this preset schedules nothing today')
+    expect(one.run.value).toBe('')
+    expect(one.card.value).toBeNull()
+  })
+})
+
 describe('a sitting', () => {
   it('opens on the cards it was handed, at the first of them', async () => {
     const { one } = held()
@@ -179,7 +226,7 @@ describe('a sitting', () => {
 
   it('says nothing was opened when the vault could not be sat down to', async () => {
     const cards: Asking = {
-      start: () => Promise.reject(new Error('this vault has not been read yet')),
+      start: () => Promise.reject(new Error('this folder cannot be read as a vault')),
       answer: () => Promise.reject(new Error('no')),
       takeBack: () => Promise.reject(new Error('no')),
     }

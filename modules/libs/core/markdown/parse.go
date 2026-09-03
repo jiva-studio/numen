@@ -56,7 +56,7 @@ func Parse(ref domain.FileRef, raw []byte) domain.Note {
 			problems = append(problems, "id "+id+" is not a ULID")
 		}
 	}
-	// One key says what a note is, out of a closed list of three. A key with
+	// One key says what a note is, out of a closed list of four. A key with
 	// nothing in it says nothing, and the note is a note.
 	n.Type = domain.TypeNote
 	if raw, present := n.Frontmatter["type"]; present && raw != nil {
@@ -68,7 +68,7 @@ func Parse(ref domain.FileRef, raw []byte) domain.Note {
 		case domain.KnownNoteType(domain.NoteType(name)):
 			n.Type = domain.NoteType(name)
 		default:
-			problems = append(problems, "type "+name+" is not a note, a deck or a stencil")
+			problems = append(problems, "type "+name+" is not a note, a deck, a stencil or a preset")
 		}
 	}
 

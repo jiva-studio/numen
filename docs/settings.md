@@ -4,6 +4,8 @@ One file, JSON, named `numen.json` in the folder this desktop keeps a person's c
 
 Every field left out keeps its default. A file naming one setting is a valid file.
 
+A setting the window draws a control for is turned by that control, which patches the file as an object and leaves every other byte of it where it was. The window also opens the file whole, in a tab of its own, from the settings page: what is typed there is written as it stands, and a file the settings cannot be read out of is refused with where in it the trouble is.
+
 This document is every section of the file, and it is the one place a key is written down. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
 
 ## Appearance
@@ -55,6 +57,26 @@ Choosing a theme, light or dark, or either size writes the field it names back h
 On, a node in the plex hangs the parts of the note it stands for under its box — the note's headings, each at the line it stands on — and choosing one puts that note in front of the person with the keyboard on that line. Off, a node is its box alone, and nothing is asked of the vault about what a note is divided into.
 
 `Hang the parts of a note under its node` is a command of its own in the palette, over the window. Choosing `On` or `Off` writes this field back here, and every plex the window holds is drawn again from what was written.
+
+## A day of review
+
+`review` is what a day of review is, on this person's clock. How a deck is scheduled is not here: it is in the vault, in the preset the deck points at — [Cards](cards.md).
+
+```json
+{
+  "review": {
+    "day_starts": "04:00"
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `day_starts` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
+
+An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one sitting in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
+
+Anything that is not an hour of the day is said, and `04:00` stands. The file is left as the person wrote it.
 
 ## What a note is called
 
@@ -287,7 +309,8 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 {
   "indexing": {
     "recognition": {
-      "detect": { "expand": 18 }
+      "detect": { "expand": 18 },
+      "proofread": { "with": "", "automatically": false }
     }
   }
 }
@@ -296,25 +319,88 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 | | |
 | --- | --- |
 | `detect.expand` | how many pixels a found line is widened by, in the image the detector reads: the part of the page scaled to the longest side it is read at. One number serves a heading and a paragraph, because that scaling brings the two to nearly one size. |
+| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a reading right. Empty proofreads nothing, and a reading is used exactly as it was read. A name no profile carries is an error at startup. |
+| `proofread.automatically` | whether a reading is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
 
 The boundary the detector answers with is the text's own outline drawn inside the letters, short by a share of the line's height, and the widening is a flat number of pixels. At 10 the top of every capital and the last letter of every line were cut away. 18 is the middle of where it stops mattering, and it is a setting because it was measured on one book at one resolution — the sweep is in [Performance](performance.md).
 
-## Putting a reading right
+## Listening to a recording
 
-`indexing.proofreading` is what corrects a reading. Naming nothing here names no proofreader: a reading is used exactly as it was read, and nothing asks for a key or a network. What a correction may change, and what refuses one, is in [Reading](reading.md).
+`indexing.transcription` is how a recording is listened to. A recording carries no text of its own, so what a model heard is the only text there is: a recording the vault holds no transcript for is listened to without anybody asking, and `indexing.transcribe_recordings` is what stops that. What a transcript is and where it is kept is in [Transcribing](transcribing.md).
+
+```json
+{
+  "indexing": {
+    "transcribe_recordings": true,
+    "transcribe_under_mb": 300,
+    "transcription": {
+      "download": true,
+      "threads": 4,
+      "model": { "name": "parakeet-tdt-0.6b-v3-int8" },
+      "speech": { "name": "silero-vad", "threshold": 0.5, "silence": 500, "pad": 200, "longest": 30000, "shortest": 100, "least": 2500 },
+      "proofread": { "with": "", "automatically": false }
+    }
+  }
+}
+```
+
+| | |
+| --- | --- |
+| `transcribe_recordings` | whether a recording the vault holds no transcript for is listened to on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
+| `transcribe_under_mb` | how large a recording may be and still be listened to unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
+| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, and then the one the platform holds. |
+| `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
+| `download` | whether what is not on this machine may be fetched. |
+| `threads` | how many threads one model may use. 4. |
+| `model.name` | what the transducer is called in the record kept beside a transcript. |
+| `model.from` | the folder its four files are fetched from. The encoder, the decoder, the joiner and the tokens are one model: three graphs from two exports write nothing anybody can read. |
+| `model.encoder`, `model.decoder`, `model.joiner`, `model.tokens` | the files on this machine. A path is used as given; an empty one is the file of that name under `model.from`. |
+| `speech.name` | what the segmenter is called in that same record. Where a stretch of speech is cut is part of what the words are, so it is named beside the model that heard them. |
+| `speech.from`, `speech.path` | where the segmenter is fetched from, and a file on this machine. A path is used as given; `from` is looked for in `dir` first. |
+| `speech.threshold` | how sure the model has to be that a window carries speech. 0.5. |
+| `speech.silence` | how much quiet, in milliseconds, closes a stretch of speech. 500. |
+| `speech.pad` | how many milliseconds are kept on each side of a stretch. 200, because the model answers on the window a sound begins in, and the sound before that window is what the first letter of the word is made of. |
+| `speech.longest` | how many milliseconds one stretch may run to. 30000. One stretch is one run of the encoder, and its cost grows with its length; speech going on longer is cut at the quietest window this side of the limit. |
+| `speech.shortest` | how many milliseconds a stretch carries to be a stretch at all. 100. |
+| `speech.least` | how many milliseconds a stretch runs to before it stands as a line of its own. 2500. A shorter one is put together with the stretch after it, up to `longest`. A line of a transcript is read, so it holds a phrase; and the model hears a sentence better than it hears a word out of one. |
+| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was heard. A name no profile carries is an error at startup. |
+| `proofread.automatically` | whether a transcript is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the recording in front of them. |
+
+`transcribe_recordings` and `transcription.proofread.automatically` are two flags about two things. The first decides whether a recording nobody asked about is listened to at all. The second decides whether a transcript that already exists is put right by itself. An installation can hear every recording unasked and proofread none of them, and it can proofread every transcript it has while listening to nothing new.
+
+Reading a scan and listening to a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is heard, and the one waiting says so in the list of what is being done.
+
+Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
+
+## Putting a text right
+
+`indexing.proofreading` is what corrects a text a model produced — a reading of a scan, a transcript of a recording. It stands beside `recognition` and `transcription` because a text put right is a text searched, and it holds the profiles both of them name. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
+
+An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
 ```json
 {
   "indexing": {
     "proofreading": {
-      "use": "service",
-      "service": {
-        "base_url": "https://openrouter.ai/api/v1",
-        "batch_url": "https://openrouter.ai/api/beta/batches",
-        "name": "google/gemini-2.5-flash",
-        "key_env": "NUMEN_PROOFREADING_KEY",
-        "pages_at_once": 40,
-        "letters_apart": 0.30
+      "max_edit_distance": 0.30,
+      "profiles": {
+        "openrouter": {
+          "use": "service",
+          "base_url": "https://openrouter.ai/api/v1",
+          "batch_url": "https://openrouter.ai/api/beta/batches",
+          "name": "anthropic/claude-haiku-4.5",
+          "key_env": "NUMEN_PROOFREADING_KEY",
+          "batch_size": 40,
+          "overlap": 0,
+          "in_flight": 4
+        },
+        "agent": {
+          "use": "agent",
+          "model": "haiku",
+          "batch_size": 60,
+          "overlap": 2,
+          "in_flight": 3
+        }
       }
     }
   }
@@ -323,16 +409,72 @@ The boundary the detector answers with is the text's own outline drawn inside th
 
 | | |
 | --- | --- |
-| `use` | `service`, or nothing at all. A section naming no model proofreads nothing. |
-| `service.base_url` | anything speaking the `/v1/chat/completions` request shape. |
-| `service.batch_url` | the queue pages are left in and collected later, at half the price. Empty asks a page at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
-| `service.name` | which model answers. The name of the model that corrected a line stands beside what it corrected. |
-| `service.pages_at_once` | how many pages one request carries. |
-| `service.letters_apart` | how far a correction may move a line's letters and still be a correction, as a share of the longer of the two. A correction standing further apart is dropped and that line is left as it was read. |
-| `service.key_env` | the environment variable holding the key. |
-| `service.key` | the key, where a person writes it into the file. It is never written back: rewriting this file is not how a key is set. |
+| `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
+| `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
 
-`letters_apart` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
+A profile is flat: every key sits at the profile's own level, and `use` says which of them apply. A key `use` does not apply to is ignored, so a profile keeps a station it is not on and the other is a word away.
+
+| | |
+| --- | --- |
+| `use` | `service` or `agent`. |
+| `batch_size` | how many lines one request carries. 40 at a service, 60 at the command line, where starting it costs the same whatever it is asked. |
+| `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
+| `in_flight` | how many batches are being asked about at any moment. 4 at a service, 2 at the command line, which is the person's own model and is left most of itself while they are using it. A batch costs what the model writes back rather than what it took to ask, so this is what a run's length answers to. |
+| `base_url` | `service`: anything speaking the `/v1/chat/completions` request shape. |
+| `batch_url` | `service`: the queue batches are left in and collected later, at half the price. Empty asks a batch at a time and waits. A batch outlives the run that left it, so one left before the application closed is collected when it opens. |
+| `name` | `service`: which model answers. The name of the model that corrected a line stands beside what it corrected. |
+| `key_env` | `service`: the environment variable holding the key. |
+| `key` | `service`: the key, where a person writes it into the file. It is never written back: rewriting this file is not how a key is set. |
+| `command` | `agent`: what starts the command line, and anything it is started through. Empty runs `claude` from the path. Worth naming for a machine that keeps it elsewhere, or carries several. |
+| `model` | `agent`: which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. |
+
+An `agent` profile is the command line the person already has installed, run as a plain one-shot process: no MCP servers, no tools, nothing it can write. It is given the batch and answers with text. There is no queue, so a batch is asked and waited for, and `batch_url` is one of the keys such a profile ignores.
+
+`max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
+
+`pages_at_once` is gone. `batch_size` is what one request carries, counted in lines rather than pages, so a transcript with no pages in it is asked about the same way. `letters_apart` is gone. `max_edit_distance` is the same threshold under the name of the quantity it holds, the Levenshtein distance between two lines' letters as a share of the longer of them, and it has moved out of the service and above the profiles, where it is one threshold for the installation.
+
+## Worked example, proofreading
+
+Scans through OpenRouter, transcripts through the `claude` command line on this machine. Both run on their own: a book read is a book proofread, and a recording heard is a recording proofread, with nobody asked.
+
+The key is in the environment, under the name `key_env` gives. Nothing in this file carries it.
+
+```json
+{
+  "indexing": {
+    "proofreading": {
+      "max_edit_distance": 0.30,
+      "profiles": {
+        "openrouter": {
+          "use": "service",
+          "base_url": "https://openrouter.ai/api/v1",
+          "batch_url": "https://openrouter.ai/api/beta/batches",
+          "name": "anthropic/claude-haiku-4.5",
+          "key_env": "NUMEN_PROOFREADING_KEY",
+          "batch_size": 40,
+          "overlap": 0,
+          "in_flight": 4
+        },
+        "agent": {
+          "use": "agent",
+          "model": "haiku",
+          "batch_size": 60,
+          "overlap": 2,
+          "in_flight": 3
+        }
+      }
+    },
+
+    "recognition":   { "proofread": { "with": "openrouter", "automatically": true } },
+    "transcription": { "proofread": { "with": "agent",      "automatically": true } }
+  }
+}
+```
+
+A scan goes forty printed lines to a request, on a queue at half the price that survives a restart. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes twenty cues to a request, answered by a subscription already paid for, one batch at a time and no key at all; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+
+A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
 
 ## Which agent answers
 

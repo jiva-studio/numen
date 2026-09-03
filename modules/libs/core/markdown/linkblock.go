@@ -11,8 +11,8 @@ import (
 )
 
 // ErrNotOurs is what changing an entry says when the entry carries something
-// the application does not own. A collision is the person's win: their key is
-// reported, and their link is left as they wrote it.
+// the application does not own. A collision is the person's win: the link is
+// named in the error and left as they wrote it.
 var ErrNotOurs = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
@@ -24,10 +24,10 @@ var owned = map[string]bool{
 // entry is one record of the `links:` block: what it says, and the bytes it
 // occupies.
 //
-// The bytes are why this exists. An entry is changed by replacing its own span
-// and nothing else, so the entries around it — including ones the parser could
-// not act on, keys the application has never heard of, and comments somebody
-// wrote to themselves — come out of a write as they went in.
+// An entry is changed by replacing its own span and nothing else, so the
+// entries around it — including ones the parser could not act on, keys the
+// application has never heard of, and comments somebody wrote to themselves —
+// come out of a write as they went in.
 type entry struct {
 	link       domain.Link
 	start, end int
@@ -37,8 +37,7 @@ type entry struct {
 	// ours is whether every key in it is one the application owns.
 	ours bool
 	// address is the node holding where the link goes, so changing it is a
-	// change to that scalar. A key called `proto`, or the word `to:` inside
-	// somebody's sentence, both look the same to a search and are not this.
+	// change to that scalar.
 	address *yaml.Node
 }
 
@@ -69,8 +68,14 @@ func (d *Document) block() (block, error) {
 			break
 		}
 	}
-	if items == nil || items.Kind != yaml.SequenceNode {
+	// An entry is replaced on its own, which is a line at a time all the way
+	// down. Anything under `links:` but a block sequence, or a key holding
+	// nothing, is refused and the note is left as it stands.
+	switch {
+	case items == nil || empty(items):
 		return b, nil
+	case items.Kind != yaml.SequenceNode || flowing(items):
+		return block{}, ErrInline
 	}
 
 	lines := lineOffsets(d.front)
@@ -165,6 +170,70 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 	return removed, nil
 }
 
+// SetLinkOfType makes the block name one note under a `type`.
+//
+// The first entry carrying that type is pointed at the address and keeps the
+// role and the words the person wrote on it; any further entry carrying it is
+// taken out, so a note names one place under one type. An empty address takes
+// them all out, and an empty block goes with them.
+//
+// An entry carrying a key the application does not own is refused, and one it
+// cannot read is left as it was written.
+func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkRole) error {
+	b, err := d.block()
+	if err != nil {
+		return err
+	}
+
+	var carrying []int
+	kept := 0
+	for i, e := range b.entries {
+		if e.link.Type != of || !e.readable {
+			kept++
+			continue
+		}
+		if !e.ours {
+			return fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
+		}
+		carrying = append(carrying, i)
+	}
+
+	for at := len(carrying) - 1; at >= 0; at-- {
+		e := b.entries[carrying[at]]
+		if at > 0 || to.Value == "" {
+			d.splice(e.start, e.end, nil)
+			continue
+		}
+		next := e.link
+		next.Target, next.Type = to, of
+		rendered, err := renderEntry(next, b.indent, d.eol)
+		if err != nil {
+			return err
+		}
+		d.splice(e.start, e.end, rendered)
+	}
+
+	switch {
+	case to.Value == "":
+		if len(carrying) > 0 && kept == 0 {
+			return d.set("links", nil)
+		}
+		return nil
+	case len(carrying) > 0:
+		return nil
+	}
+
+	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: of}, b.indent, d.eol)
+	if err != nil {
+		return err
+	}
+	if !b.found {
+		return d.set("links", append([]byte("links:"+d.eol), rendered...))
+	}
+	d.splice(b.end, b.end, rendered)
+	return nil
+}
+
 // UpdateLink changes what an entry says about itself without moving where it
 // goes. An entry carrying anything the application does not own is refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
@@ -182,9 +251,7 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if !e.ours {
 			return 0, fmt.Errorf("%w: %s", ErrNotOurs, e.link.Target)
 		}
-		// What was not sent is kept. A caller changing a label has not asked
-		// for the person's own words about why the link exists to be dropped.
-		// Every field here behaves the same way, so there is one rule to hold.
+		// What was not sent is kept, and every field here behaves the same way.
 		next := e.link
 		if change.Role != "" {
 			next.Role = change.Role
@@ -431,7 +498,6 @@ func valueOf(item *yaml.Node, key string) *yaml.Node {
 
 // scalar is a value as YAML has to spell it, so that a name carrying `[`, `#`,
 // `&` or a word YAML reads as a number goes into a file as the text it is.
-// Writing it raw is how a rename makes somebody else's note unparseable.
 func scalar(value string) (string, error) {
 	var out bytes.Buffer
 	enc := yaml.NewEncoder(&out)

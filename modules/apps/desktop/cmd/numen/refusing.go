@@ -1,16 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
@@ -33,6 +37,12 @@ func refuse(cfg container.Config, why error) {
 				_, _ = w.Write(page)
 			}),
 		},
+		// The application ends when its last window closes, and a refusal ends it
+		// with the status the failure it draws has.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		PostShutdown: func() { os.Exit(1) },
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen",
@@ -43,9 +53,10 @@ func refuse(cfg container.Config, why error) {
 	_ = app.Run()
 }
 
-// refusal is what the page says: the sentence, the facts behind it, and what to
-// do about it.
+// refusal is what the page says: what could not be opened, the sentence, the
+// facts behind it, and what to do about it.
 type refusal struct {
+	Head  string
 	Says  string
 	Facts []fact
 	Do    string
@@ -53,25 +64,20 @@ type refusal struct {
 
 type fact struct{ Name, Value string }
 
+// The headings a refusal is drawn under. Each names the thing that could not be
+// opened, which is the index or the person's own settings file.
+const (
+	openingTheIndex    = "numen cannot open its index"
+	readingTheSettings = "numen cannot read its settings"
+	startingAtAll      = "numen cannot start"
+)
+
 // page is the refusal as one document. Everything it needs is inside it: a
 // build that could not open its own index cannot serve its own interface
 // either.
 func (refusal) page(cfg container.Config, why error) ([]byte, error) {
-	said := refusal{Says: why.Error()}
+	said := stopped(cfg, why)
 
-	var ahead *index.Ahead
-	if errors.As(why, &ahead) {
-		said.Says = "This index was written by a later version of numen."
-		said.Facts = append(said.Facts,
-			fact{"schema the index holds", fmt.Sprint(ahead.Held)},
-			fact{"schema this build knows", fmt.Sprint(ahead.Known)},
-		)
-		said.Do = "Update numen to the version that wrote it."
-	}
-
-	if path, err := cfg.IndexPathOrDefault(); err == nil {
-		said.Facts = append(said.Facts, fact{"index", path})
-	}
 	if built, ok := debug.ReadBuildInfo(); ok {
 		if version := built.Main.Version; version != "" && version != "(devel)" {
 			said.Facts = append(said.Facts, fact{"this build", version})
@@ -88,6 +94,150 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 		return nil, err
 	}
 	return []byte(out.String()), nil
+}
+
+// stopped is the state the application is in, said in its own words: what it
+// could not open, what it found, and what a person can do about it.
+func stopped(cfg container.Config, why error) refusal {
+	var ahead *index.Ahead
+	if errors.As(why, &ahead) {
+		return refusal{
+			Head: openingTheIndex,
+			Says: "This index was written by a later version of numen.",
+			Facts: []fact{
+				{"schema the index holds", fmt.Sprint(ahead.Held)},
+				{"schema this build knows", fmt.Sprint(ahead.Known)},
+				{"index", indexAt(cfg)},
+			},
+			Do: "Update numen to the version that wrote it.",
+		}
+	}
+
+	var outside *settings.Outside
+	if errors.As(why, &outside) {
+		return sized(cfg, outside)
+	}
+
+	// sqlite says what it could not do as a result code, and the sentence it
+	// carries beside it is the library's own.
+	var coded interface{ Code() int }
+	if errors.As(why, &coded) {
+		return indexing(cfg, coded.Code(), why)
+	}
+
+	var syntax *json.SyntaxError
+	var typed *json.UnmarshalTypeError
+	if errors.As(why, &syntax) || errors.As(why, &typed) {
+		return refusal{
+			Head:  readingTheSettings,
+			Says:  "This settings file is not JSON, so numen cannot tell what it was asked for.",
+			Facts: []fact{{"settings", settingsAt(cfg)}, {"what was read", why.Error()}},
+			Do: "Put the file right, or move it aside: " +
+				"numen writes a new one holding what it is doing.",
+		}
+	}
+
+	return refusal{
+		Head:  startingAtAll,
+		Says:  why.Error(),
+		Facts: []fact{{"index", indexAt(cfg)}, {"settings", settingsAt(cfg)}},
+		Do:    "Start numen again, and report what this window says if it stops here every time.",
+	}
+}
+
+// sized is a number a size does not take, from the file or from the command
+// line.
+func sized(cfg container.Config, outside *settings.Outside) refusal {
+	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
+	written := fmt.Sprint(outside.Value)
+
+	if strings.HasPrefix(outside.At, "-") {
+		return refusal{
+			Head: startingAtAll,
+			Says: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
+			Facts: []fact{
+				{"on the command line", outside.At},
+				{"given", written},
+				{"as far as the size goes", far},
+			},
+			Do: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
+		}
+	}
+	return refusal{
+		Head: readingTheSettings,
+		Says: fmt.Sprintf("%s is a number the size does not take.", outside.At),
+		Facts: []fact{
+			{"settings", settingsAt(cfg)},
+			{"field", outside.At},
+			{"written", written},
+			{"as far as the size goes", far},
+		},
+		Do: fmt.Sprintf("Write a number from %s in %s, or take the field out to run at 1.",
+			far, outside.At),
+	}
+}
+
+// The result codes sqlite answers with: a file that is not a database, and a
+// file it could neither open nor make.
+const (
+	notADatabase = 26
+	cannotOpen   = 14
+)
+
+// indexing is the index refusing to open, which is one fault for each way a
+// path can fail to be an index.
+func indexing(cfg container.Config, code int, why error) refusal {
+	at := indexAt(cfg)
+	said := refusal{Head: openingTheIndex, Facts: []fact{{"index", at}}}
+
+	folder := false
+	if info, err := os.Stat(at); err == nil {
+		folder = info.IsDir()
+	}
+
+	switch {
+	case code == notADatabase:
+		said.Says = "This file is not a numen index."
+		said.Do = "Move it aside. The index is a cache: numen makes a new one " +
+			"and fills it from your vaults."
+	case code == cannotOpen && folder:
+		said.Says = "An index is a file, and this path is a folder."
+		said.Do = "Point -index at a file, or move the folder out of the way."
+	case code == cannotOpen:
+		said.Says = "numen could neither open an index here nor make one."
+		said.Facts = append(said.Facts, fact{"folder", filepath.Dir(at)})
+		said.Do = "Give yourself permission to write in the folder, " +
+			"or point -index somewhere you can write."
+	default:
+		said.Says = why.Error()
+		said.Do = "Point -index at another path, and report what this window says."
+	}
+	return said
+}
+
+// indexAt is the file the index is kept in, whether or not one was named.
+func indexAt(cfg container.Config) string {
+	path, err := cfg.IndexPathOrDefault()
+	if err != nil {
+		return cfg.IndexPath
+	}
+	return path
+}
+
+// settingsAt is the file a person configures this installation in. A registry
+// pointed somewhere chosen takes the settings with it.
+func settingsAt(cfg container.Config) string {
+	if cfg.SettingsPath != "" {
+		return cfg.SettingsPath
+	}
+	if cfg.RegistryPath != "" {
+		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
+	}
+	path, err := settings.Path()
+	if err != nil {
+		return ""
+	}
+	return path
 }
 
 var refusalPage = template.Must(template.New("refusal").Parse(`<!doctype html>
@@ -112,7 +262,7 @@ var refusalPage = template.Must(template.New("refusal").Parse(`<!doctype html>
 </style>
 </head>
 <body>
-  <h1>numen cannot open this vault</h1>
+  <h1>{{ .Head }}</h1>
   <p>{{ .Says }}</p>
   <dl>
   {{- range .Facts }}

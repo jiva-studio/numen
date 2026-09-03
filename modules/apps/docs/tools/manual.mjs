@@ -78,11 +78,11 @@ const keyboard = async () => {
   const keying = await read(UI, 'keying.ts')
   const words = await read(UI, 'words.ts')
 
-  // The two the window keeps for itself are not in that table: they put a
-  // panel up rather than carry a command out.
-  const app = await read(UI, 'App.vue')
+  // The two the window keeps for itself are not in that table: they put the
+  // field up, and the field answers them.
+  const field = await read(UI, 'Field.vue')
   for (const letter of ['k', 'p']) {
-    if (!app.includes(`key === '${letter}'`)) die(`the window no longer answers '${letter}' itself`)
+    if (!field.includes(`key === '${letter}'`)) die(`the field no longer answers '${letter}' itself`)
   }
 
   const rows = [
@@ -412,18 +412,26 @@ const pictured = async () => {
   const { SHOTS } = await import('./shoot.mjs')
   const { readdir } = await import('node:fs/promises')
 
-  const files = (await readdir(new URL('../../../libs/ui/src/', import.meta.url), {
-    recursive: true,
-  })).filter((name) => name.endsWith('.stories.ts'))
+  /** Everywhere a story is written, which is the same list Storybook is given. */
+  const roots = [
+    new URL('../../../libs/ui/src/', import.meta.url),
+    new URL('../../desktop/ui/src/', import.meta.url),
+    new URL('../../desktop/flashcards/src/', import.meta.url),
+  ]
 
   const told = new Set()
-  for (const file of files) {
-    const source = await read(new URL('../../../libs/ui/src/', import.meta.url), file)
-    const meta = source.match(/const meta[^=]*=\s*\{[\s\S]{0,200}?title:\s*'([^']+)'/)
-    if (!meta) continue
-    const under = meta[1].toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    for (const [, name] of source.matchAll(/^export const ([A-Z][A-Za-z0-9]*)\s*:/gm)) {
-      told.add(`${under}--${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`)
+  for (const root of roots) {
+    const files = (await readdir(root, { recursive: true })).filter((name) =>
+      name.endsWith('.stories.ts'),
+    )
+    for (const file of files) {
+      const source = await read(root, file)
+      const meta = source.match(/const meta[^=]*=\s*\{[\s\S]{0,200}?title:\s*'([^']+)'/)
+      if (!meta) continue
+      const under = meta[1].toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      for (const [, name] of source.matchAll(/^export const ([A-Z][A-Za-z0-9]*)\s*:/gm)) {
+        told.add(`${under}--${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`)
+      }
     }
   }
 

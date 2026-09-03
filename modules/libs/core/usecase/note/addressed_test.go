@@ -82,3 +82,25 @@ func TestAVaultThatCannotBeAskedWritesNoLink(t *testing.T) {
 			"by a name nobody checked may mean another note")
 	}
 }
+
+// A note whose name a link is read up to is reached by no link.
+//
+// A link runs to the first `#` or `|`, and what stands after it names a heading
+// or the words to show. So a link written to such a name reads back as the name
+// in front of it, which is another note or none, and rewriting the entry from
+// what was read moves the link there for good.
+func TestANoteNoLinkReachesIsRefused(t *testing.T) {
+	for _, path := range []string{
+		"study/Study #1.md",
+		"study/Verbs | strong.md",
+		"study/#1.md",
+	} {
+		held := named{domain.Basename(path): {path}}
+
+		to, err := note.Addressed(context.Background(), held, "v", path)
+		if !errors.Is(err, note.ErrUnaddressable) {
+			t.Errorf("%s is addressed as %v %q, and answered %v",
+				path, to.Scheme, to.Value, err)
+		}
+	}
+}

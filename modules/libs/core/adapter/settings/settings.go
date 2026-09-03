@@ -20,11 +20,15 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -46,6 +50,10 @@ type Config struct {
 
 	// Naming is how a note's title and the name of its file are held together.
 	Naming Naming `json:"naming"`
+
+	// Review is what a day of review is, on this person's clock. How a deck is
+	// scheduled is in the vault, in the preset it points at.
+	Review Review `json:"review"`
 
 	// Said is what reading the file leaves a person something to do about: a
 	// number written where a setting does not go that far. Each is one line of
@@ -173,11 +181,76 @@ type Indexing struct {
 
 	// Recognition is how a scanned document is read when a person asks for it.
 	// Nothing here runs on its own.
-	Recognition recognition.Config `json:"recognition"`
+	Recognition Recognition `json:"recognition"`
 
-	// Proofreading is what puts a reading right. Naming nothing here is naming
-	// no proofreader, and a reading is used as it was read.
+	// Proofreading is what puts a reading right. Naming no profile here is
+	// naming no proofreader, and a reading is used as it was read.
 	Proofreading proofreading.Config `json:"proofreading"`
+
+	// Transcription is how a recording is listened to: which models hear it,
+	// where they came from, and how the speech in it is found.
+	Transcription Transcription `json:"transcription"`
+
+	// TranscribeRecordings is whether a recording the vault holds no transcript
+	// for is listened to without anybody asking. A file leaving it out listens
+	// to them, and a file naming false leaves it to the hand. A vault of a
+	// hundred hours is a day of a machine, and how much of it to spend is the
+	// person's.
+	TranscribeRecordings *bool `json:"transcribe_recordings"`
+
+	// TranscribeUnderMB is how large a recording may be and still be listened
+	// to without anybody asking, in megabytes. A larger one waits to be asked
+	// for by name, because a folder of albums is days of a machine and nobody
+	// put them there to be read.
+	//
+	// Zero takes the default. A negative number is no limit at all.
+	TranscribeUnderMB int `json:"transcribe_under_mb"`
+}
+
+// Recognition is how a scanned document is read, and which profile puts that
+// reading right afterwards.
+type Recognition struct {
+	recognition.Config
+
+	// Proofread names the profile a reading is put right at. Automatically
+	// there says whether a reading just made is put right without anybody
+	// asking.
+	Proofread proofreading.Proofread `json:"proofread"`
+}
+
+// Transcription is how a recording is listened to, and which profile puts what
+// was heard right afterwards.
+type Transcription struct {
+	transcription.Config
+
+	// Proofread names the profile a transcript is put right at. Automatically
+	// there says whether a transcript already written down is put right
+	// without anybody asking; whether a recording nobody asked about is
+	// listened to at all is TranscribeRecordings.
+	Proofread proofreading.Proofread `json:"proofread"`
+}
+
+// DefaultTranscribeUnderMB is how large a recording listened to unasked may be.
+// It is a talk of a few hours at the bitrates a recorder writes, and larger than
+// anything a person speaks into a phone.
+const DefaultTranscribeUnderMB = 300
+
+// Transcribes is whether a recording is listened to without being asked. A
+// section naming nothing listens to them.
+func (i Indexing) Transcribes() bool {
+	return i.TranscribeRecordings == nil || *i.TranscribeRecordings
+}
+
+// TranscribesUnder is how many bytes a recording may run to and still be
+// listened to unasked. A negative setting is no limit.
+func (i Indexing) TranscribesUnder() int64 {
+	switch {
+	case i.TranscribeUnderMB < 0:
+		return 0
+	case i.TranscribeUnderMB == 0:
+		return DefaultTranscribeUnderMB << 20
+	}
+	return int64(i.TranscribeUnderMB) << 20
 }
 
 // Naming is how a note's title and the name of its file are held together.
@@ -194,8 +267,63 @@ func (n Naming) Sync() bool {
 	return n.SyncTitleAndFilename == nil || *n.SyncTitleAndFilename
 }
 
+// Review is what a day of review is, on this person's clock.
+type Review struct {
+	// DayStarts is the hour a day of review begins at, on the clock on the
+	// wall, written as hours and minutes. An answer given before it is written
+	// into the day before.
+	DayStarts string `json:"day_starts"`
+}
+
+// LatestDayStarts is how far past midnight a day may be made to begin.
+const LatestDayStarts = 12 * time.Hour
+
+// ClockFormat is how an hour of the day is written.
+const ClockFormat = "15:04"
+
+// Starts is how long past midnight a day of review begins, and whether the file
+// said something that is not an hour of the day.
+func (r Review) Starts() (time.Duration, bool) {
+	written := strings.TrimSpace(r.DayStarts)
+	if written == "" {
+		return DefaultStarts(), true
+	}
+	at, err := time.Parse(ClockFormat, written)
+	if err != nil {
+		return DefaultStarts(), false
+	}
+	starts := time.Duration(at.Hour())*time.Hour + time.Duration(at.Minute())*time.Minute
+	if starts > LatestDayStarts {
+		return DefaultStarts(), false
+	}
+	return starts, true
+}
+
+// DefaultStarts is when a day of review begins where the file says nothing. An
+// answer given before it finishes the evening it belongs to.
+func DefaultStarts() time.Duration { return flashcards.DayStarts }
+
+// Starting is the hour a day of review is to begin at, as it goes into the
+// file. An hour past LatestDayStarts, anything that is not an hour of the
+// clock, and no hour at all, are flashcards.ErrNotAnHour. It reads and writes
+// no file.
+func Starting(written string) (string, error) {
+	starts, hour := Review{DayStarts: written}.Starts()
+	if !hour || strings.TrimSpace(written) == "" {
+		return "", fmt.Errorf("%w, 00:00 to %s: %q",
+			flashcards.ErrNotAnHour, flashcards.Clock(LatestDayStarts), written)
+	}
+	return flashcards.Clock(starts), nil
+}
+
 // Sync is whether a note's title and its filename are kept as one name.
 func (c Config) Sync() bool { return c.Naming.Sync() }
+
+// DayStarts is how long past midnight a day of review begins.
+func (c Config) DayStarts() time.Duration {
+	starts, _ := c.Review.Starts()
+	return starts
+}
 
 // Hangs is whether a node hangs the headings of its note under it.
 func (c Config) Hangs() bool { return c.Appearance.Hangs() }
@@ -222,12 +350,15 @@ func Defaults() Config {
 			PartsUnderANode:     DefaultParts,
 		},
 		Indexing: Indexing{
-			Embedding:    embed.Defaults(),
-			Recognition:  recognition.Defaults(),
-			Proofreading: proofreading.Defaults(),
+			Embedding:            embed.Defaults(),
+			Recognition:          Recognition{Config: recognition.Defaults()},
+			Proofreading:         proofreading.Defaults(),
+			Transcription:        Transcription{Config: transcription.Defaults()},
+			TranscribeRecordings: on(),
 		},
 		Agent:  agent.Defaults(),
 		Naming: Naming{SyncTitleAndFilename: on()},
+		Review: Review{DayStarts: flashcards.Clock(DefaultStarts())},
 	}
 }
 
@@ -273,6 +404,10 @@ func At(path string) (Config, error) {
 	cfg.carrying(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {
 		return Config{}, err
+	}
+	if _, hour := cfg.Review.Starts(); !hour {
+		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
+			flashcards.Clock(LatestDayStarts), flashcards.Clock(DefaultStarts()))
 	}
 	return cfg, nil
 }

@@ -1,9 +1,6 @@
 /**
- * What a person can ask for, and the steps a command asks them for first.
- *
- * The palette draws bands of items and knows nothing of vaults or windows.
- * This is the vocabulary: what each command is called, where it is offered,
- * and what it wants typed before it can happen. Carrying one out is `doing.ts`.
+ * What a person can ask for, and the steps a command asks them for first: what
+ * each command is called, where it is offered, and what it wants typed.
  *
  * A command that needs nothing is a deed the moment it is chosen. One that
  * needs a name, a note, a vault or an answer puts the palette on a step of its
@@ -11,7 +8,8 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
-import { wentTo, type Known, type Listed, type Went } from './core'
+import { asking as latest } from './asking'
+import { wentTo, type Known, type Listed, type NoteType, type Source, type Went } from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
@@ -72,7 +70,7 @@ export interface Knows {
 }
 
 /** Which band a command is offered in. */
-export type Band = 'note' | 'window' | 'vault'
+export type Band = 'note' | 'file' | 'window' | 'vault'
 
 /**
  * Which step the palette is on: one being asked for, or the list of commands.
@@ -109,6 +107,13 @@ export interface Where {
   /** The note it means, and nothing where it means none. */
   readonly path: string
   readonly title: string
+  /**
+   * The file a run is over, and what the vault holds there. A tab holding a
+   * book or a recording names the file it holds; a row of the tree names the
+   * file the row stands for.
+   */
+  readonly file: string
+  readonly source: Source | null
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   /** The vault the window is showing, and nothing where it shows none. */
@@ -148,8 +153,8 @@ export interface Command {
   readonly next?: Needed
   /** The band it is offered in. */
   readonly band: Band
-  /** Whether it is offered at all over what is in front. */
-  where(at: Where): boolean
+  /** Whether it is offered at all over what is in front, in this window. */
+  where(at: Where, runs: Runnable): boolean
   /** What stands in the field when its step opens, for the person to replace. */
   filled?(at: Where): string
   /** What its step says, where that step confirms or asks for the name back. */
@@ -172,6 +177,8 @@ export interface Deed {
    */
   readonly note: string | null
   readonly title: string
+  /** The file a run is over, which is the one `Where` named. */
+  readonly file: string
   /** The other files it is over, beside the one at `path`. */
   readonly others: readonly string[]
   /**
@@ -199,12 +206,26 @@ export interface Words extends Silences {
   readonly destroy: string
   readonly ask: string
   readonly copy: string
+  /** The two runs a person asks for over the file in front. */
+  readonly transcribe: string
+  readonly recognise: string
+  /** The transcript of the recording in front, put right by a proofreader. */
+  readonly proofread: string
+  /** The transcript of the recording in front, taken away, and the two answers. */
+  readonly dropTranscript: string
+  readonly keepsTranscript: string
+  readonly drops: string
+  readonly dropped: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
+  /** The preset the note in front is, or the one the deck in front is scheduled by. */
+  readonly preset: string
   readonly newNote: string
   /** The two files a card is written in: the deck it is one of, and what cuts it. */
   readonly newDeck: string
   readonly newStencil: string
+  /** The note that says how the decks pointing at it are scheduled. */
+  readonly newPreset: string
   readonly newPlex: string
   /** The folders and files of the vault, put in front of the person. */
   readonly files: string
@@ -224,6 +245,8 @@ export interface Words extends Silences {
   readonly hanging: string
   /** The command over how many of them stand under a node at once. */
   readonly parts: string
+  /** Everything this installation is configured as, in a tab of its own. */
+  readonly settings: string
   readonly find: string
   /** The keystroke the search answers to away from the palette. */
   readonly findKeys: PaletteKeys
@@ -235,8 +258,9 @@ export interface Words extends Silences {
   readonly renameVault: string
   readonly forgetVault: string
   readonly eraseVault: string
-  /** The three bands the commands are drawn in. */
+  /** The bands the commands are drawn in. */
   readonly overNote: string
+  readonly overFile: string
   readonly overWindow: string
   readonly overVault: string
   /** Why nothing can be done to a note: the vault is unread, or none is in front. */
@@ -321,6 +345,36 @@ const onNote = (at: Where): boolean => at.ready && at.path !== ''
 /** A command over the vault in front, which there has to be one of. */
 const onVault = (at: Where): boolean => at.vault.id !== ''
 
+/**
+ * The runs this build cannot do at all, as one window has been told them. The
+ * application says so the first time one is asked for, and that window offers
+ * it nowhere after that.
+ */
+export interface Runnable {
+  /** Whether this build can do a run at all. A view drawing it follows the answer. */
+  canRun(run: string): boolean
+  /** A run the application answered it cannot do at all. */
+  cannotRun(run: string): void
+}
+
+/** The runs one window holds, which is every one of them until it is told otherwise. */
+export const runnable = (): Runnable => {
+  const beyond = ref<ReadonlySet<string>>(new Set())
+  return {
+    canRun: (run) => !beyond.value.has(run),
+    cannotRun: (run) => void (beyond.value = new Set(beyond.value).add(run)),
+  }
+}
+
+/**
+ * A run over the file in front, which the vault has to hold that kind of and
+ * this build has to be able to do.
+ */
+const onSource =
+  (run: string, source: Source) =>
+  (at: Where, runs: Runnable): boolean =>
+    at.ready && at.file !== '' && at.source === source && runs.canRun(run)
+
 const always = (): boolean => true
 
 /**
@@ -369,6 +423,33 @@ export const commandsOf = (
   { id: 'ask', text: words.ask, band: 'note', where: onNote },
   { id: 'copy', text: words.copy, band: 'note', where: onNote },
   { id: 'reveal', text: words.reveal, band: 'note', where: onNote },
+  { id: 'preset', text: words.preset, band: 'note', where: onNote },
+  {
+    id: 'transcribe',
+    text: words.transcribe,
+    band: 'file',
+    where: onSource('transcribe', 'recording'),
+  },
+  {
+    id: 'proofread',
+    text: words.proofread,
+    band: 'file',
+    where: onSource('proofread', 'recording'),
+  },
+  {
+    id: 'dropTranscript',
+    text: words.dropTranscript,
+    band: 'file',
+    needs: 'asking',
+    where: onSource('dropTranscript', 'recording'),
+    answers: {
+      keeps: words.keepsTranscript,
+      kept: words.kept,
+      does: words.drops,
+      then: words.dropped,
+    },
+  },
+  { id: 'recognise', text: words.recognise, band: 'file', where: onSource('recognise', 'book') },
   {
     id: 'note',
     text: words.newNote,
@@ -387,6 +468,13 @@ export const commandsOf = (
   {
     id: 'stencil',
     text: words.newStencil,
+    band: 'window',
+    needs: 'naming',
+    where: (at) => at.ready,
+  },
+  {
+    id: 'newPreset',
+    text: words.newPreset,
     band: 'window',
     needs: 'naming',
     where: (at) => at.ready,
@@ -415,6 +503,7 @@ export const commandsOf = (
   { id: 'syncing', text: words.syncing, band: 'window', needs: 'choosing', where: always },
   { id: 'hanging', text: words.hanging, band: 'window', needs: 'choosing', where: always },
   { id: 'parts', text: words.parts, band: 'window', needs: 'choosing', where: always },
+  { id: 'settings', text: words.settings, band: 'window', where: always },
   { id: 'first', text: words.first, band: 'vault', where: (at) => at.ready },
   {
     id: 'goto',
@@ -491,6 +580,7 @@ export const deedOf = (id: string, at: Where, name = '', note: string | null = n
   vault: at.vault,
   note,
   title: at.title,
+  file: at.file,
   others: at.others ?? [],
   name,
   kind: at.kind,
@@ -563,6 +653,7 @@ export function commanding(
   at: () => Where,
   knows: Knows,
   holds: Holds,
+  runs: Runnable,
   wait: (ms: number) => Promise<unknown> = sleep,
 ) {
   /** Whether the commands are drawn at all. */
@@ -589,11 +680,8 @@ export function commanding(
   /** What the vault could not be asked, in words a person reads. */
   const said = ref('')
 
-  /**
-   * Which question is the current one. A keystroke and every answer to what was
-   * asked before it are measured against this, and only the newest is drawn.
-   */
-  let asked = 0
+  /** A keystroke takes the question over, and only the newest is drawn. */
+  const asked = latest()
 
   /** What the commands are over, as the window stands now. */
   const on = computed<Where>(() => at())
@@ -666,7 +754,7 @@ export function commanding(
 
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
-    asked += 1
+    asked.drop()
     found.value = []
     known.value = []
     showing.value = ''
@@ -679,7 +767,7 @@ export function commanding(
    * the vault for every letter of a word.
    */
   const looks = async (query: string) => {
-    const mine = ++asked
+    const mine = asked.ask()
     if (!query) {
       found.value = []
       waiting.value = false
@@ -689,42 +777,42 @@ export function commanding(
     waiting.value = true
     said.value = ''
     await wait(HOLD)
-    if (mine !== asked) return
+    if (!mine.current) return
     try {
       const names = await core.names(query, EACH)
-      if (mine !== asked) return
+      if (!mine.current) return
       found.value = names
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       found.value = []
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine === asked) waiting.value = false
+      if (mine.current) waiting.value = false
     }
   }
 
   /** Every vault the installation holds, asked for as the step that lists them opens. */
   const lists = async () => {
-    const mine = ++asked
+    const mine = asked.ask()
     waiting.value = true
     said.value = ''
     try {
       const listed = await core.vaults()
-      if (mine !== asked) return
+      if (!mine.current) return
       known.value = listed.vaults
       showing.value = listed.showing
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       known.value = []
       // The reason goes to the console; the person is told in the window's
       // own voice.
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine === asked) waiting.value = false
+      if (mine.current) waiting.value = false
     }
   }
 
@@ -746,7 +834,7 @@ export function commanding(
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also && also.where(over) ? [{ id: also.id, text: also.text }] : []),
+        ...(also && also.where(over, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }
@@ -755,17 +843,22 @@ export function commanding(
   const why = (over: Where): string =>
     !over.ready ? words.indexing : over.path ? words.noneFound : words.noNote
 
-  /** Every command offered over what is in front, in the three bands. */
+  /** Every command offered over what is in front, in the bands it holds. */
   const listed = (over: Where, text: string): readonly PaletteBand[] => {
     const word = text.trim().toLowerCase()
     const items = (band: Band): readonly PaletteItem[] =>
       commands
-        .filter((one) => one.band === band && !second.has(one.id) && one.where(over))
+        .filter((one) => one.band === band && !second.has(one.id) && one.where(over, runs))
         .map((one) => drawn(one, over, word))
         .filter((item) => item !== null)
 
+    // The runs are offered over a book and over a recording, and their band
+    // stands where one of them is in front.
+    const overFile = items('file')
+
     return [
       { id: 'note', title: words.overNote, items: items('note'), silence: why(over) },
+      ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
       { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
       { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },
     ]
@@ -794,6 +887,10 @@ export function commanding(
    * The notes the vault turned up. A note found by a heading is that note, and
    * a note found twice is one row.
    */
+  /** Which of four the note a row of the picking step stands for is. */
+  const typeOf = (id: string): NoteType | null =>
+    found.value.find((one) => one.path === id)?.type ?? null
+
   const picking = (text: string): PaletteBand => {
     const seen = new Set<string>()
     const items: PaletteItem[] = []
@@ -982,7 +1079,7 @@ export function commanding(
    */
   const asks = (id: string, over: Where): Deed | null => {
     const command = byId.get(id)
-    if (!command || !command.where(over)) return null
+    if (!command || !command.where(over, runs)) return null
     if (!command.needs) return deed(command.id, over)
     if (!open.value) {
       steps.value = []
@@ -998,7 +1095,7 @@ export function commanding(
    */
   const refused = (id: string, over: Where): string => {
     const command = byId.get(id)
-    if (!command || command.where(over)) return ''
+    if (!command || command.where(over, runs)) return ''
     return over.ready ? words.noNote : words.indexing
   }
 
@@ -1102,5 +1199,9 @@ export function commanding(
     chose,
     leaves,
     backs,
+    typeOf,
   }
 }
+
+/** The commands of one window, over whatever is in front of the person. */
+export type Commands = ReturnType<typeof commanding>

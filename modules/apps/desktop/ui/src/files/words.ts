@@ -10,7 +10,11 @@ export const WORDS = {
   newNote: 'New note',
   newDeck: 'New deck',
   newStencil: 'New stencil',
+  newPreset: 'New preset',
   newFolder: 'New folder',
+  /** The runs a row can be put through: a recording transcribed, a scan recognised. */
+  transcribe: 'Transcribe',
+  recognise: 'Recognise',
   remove: 'Remove',
   /** The name a folder is made under, which renaming it is what changes. */
   folder: 'New folder',

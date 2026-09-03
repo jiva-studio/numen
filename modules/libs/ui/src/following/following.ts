@@ -17,6 +17,11 @@ export interface Follows {
   /** What the window lost touch with, said until it has it back. */
   lost(said: string): void
   wait(ms: number): Promise<unknown>
+  /**
+   * What the follower lets go of when a stream ends: whatever it holds answers
+   * to that reading of the stream alone.
+   */
+  reset?(): void
 }
 
 export function following(deps: Follows) {
@@ -40,6 +45,7 @@ export function following(deps: Follows) {
         if (!deps.open()) return
         deps.lost(String(error))
       }
+      deps.reset?.()
       await deps.wait(again)
       // Taken up again, so what was said about losing it no longer holds.
       if (deps.open()) deps.lost('')

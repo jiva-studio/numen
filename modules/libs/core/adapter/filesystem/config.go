@@ -33,12 +33,17 @@ type Config struct {
 // never been added to the application.
 var ErrNotAVault = errors.New("no vault configuration in this folder")
 
-// ReadConfig returns the identity the vault carries.
-func ReadConfig(root, serviceDir string) (Config, error) {
+// configAt is where a folder's identity is written.
+func configAt(root, serviceDir string) string {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir
 	}
-	raw, err := os.ReadFile(filepath.Join(root, serviceDir, configName))
+	return filepath.Join(root, serviceDir, configName)
+}
+
+// ReadConfig returns the identity the vault carries.
+func ReadConfig(root, serviceDir string) (Config, error) {
+	raw, err := os.ReadFile(configAt(root, serviceDir))
 	if errors.Is(err, fs.ErrNotExist) {
 		return Config{}, ErrNotAVault
 	}

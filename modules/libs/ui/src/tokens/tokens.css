@@ -22,10 +22,10 @@
  * as well, it says so where it stands.
  */
 :where(:root) {
-  --numen-surface: light-dark(#faf4e8, #161311);
-  --numen-node-bg: light-dark(#fffbf2, #1f1c18);
+  --numen-surface: light-dark(#faf4e8, #1e1916);
+  --numen-node-bg: light-dark(#fffbf2, #27221d);
   --numen-node-fg: light-dark(#3a322a, #ece0cd);
-  --numen-node-border: light-dark(#e0d6c4, #2f2a24);
+  --numen-node-border: light-dark(#e0d6c4, #373029);
 
   /* The node in focus is filled with the accent, which is what the ring and
      the selection are drawn in as well. */
@@ -40,7 +40,7 @@
   --numen-seat-jump: light-dark(#b5522f, #e8836b);
   --numen-seat-sibling: light-dark(#8a5a86, #c99bd4);
 
-  --numen-edge: light-dark(#d8ccb8, #3a342c);
+  --numen-edge: light-dark(#d8ccb8, #423a31);
 
   /* Text said quietly beside what it is about: a caption, a count, a month over
      a grid. It is read second, after the thing it belongs to. */
@@ -55,10 +55,10 @@
   --numen-selection-match: light-dark(#b45f161a, #e9a23b1f);
   --numen-alarm: light-dark(#a8382c, #e5776a);
   /* The ground a card carrying an alarm stands on. */
-  --numen-alarm-bg: light-dark(#f9e6e0, #3a221c);
+  --numen-alarm-bg: light-dark(#f9e6e0, #422821);
   /* The band something is said in that a person should read but need not act
      on at once. */
-  --numen-caution-bg: light-dark(#f7e9c8, #3a2c17);
+  --numen-caution-bg: light-dark(#f7e9c8, #42321c);
   --numen-caution-fg: light-dark(#8a5410, #eec26a);
   /* The ground under a stretch of text something is about to change. It sits
      under words that are still being read, so it is a tint and not a colour. */
@@ -67,8 +67,8 @@
   /* Text with marks in it: the marks themselves, the ground under code, and
      the ground under the head row of a table. */
   --numen-syntax-mark: light-dark(#b0a496, #7d7266);
-  --numen-code-bg: light-dark(#f2e9d8, #1a1714);
-  --numen-table-head-bg: light-dark(#f2e9d8, #231f1b);
+  --numen-code-bg: light-dark(#f2e9d8, #221d19);
+  --numen-table-head-bg: light-dark(#f2e9d8, #2b2520);
   /* One hue per kind of word in a highlighted language. */
   --numen-syntax-keyword: light-dark(#a83b2a, #e8836b);
   --numen-syntax-name: light-dark(#2f6a94, #7ab4d8);
@@ -81,7 +81,7 @@
   /* What a panel is tinted with, and what shows through it. The blur goes with
      the alpha the tint carries: an opaque tint leaves nothing to blur, so a
      theme setting one sets the other. */
-  --numen-panel-bg: light-dark(#fffbf2cc, #1f1c18cc);
+  --numen-panel-bg: light-dark(#fffbf2cc, #27221dcc);
   --numen-panel-border: light-dark(#00000014, #ffffff1f);
   --numen-panel-blur: 24px;
   /* What a card is lifted off the window by, and what a panel is lifted by.
@@ -94,11 +94,13 @@
   /* The wash a panel lays over what it covers. */
   --numen-scrim: light-dark(#00000014, #0000005c);
 
-  --numen-field-bg: light-dark(#fffbf2, #1a1714);
-  --numen-field-border: light-dark(#e0d6c4, #2f2a23);
+  --numen-field-bg: light-dark(#fffbf2, #221d19);
+  /* A field is ruled in the line a node's box is ruled in. A theme wanting the
+     two apart names this one as well. */
+  --numen-field-border: var(--numen-node-border);
 
   /* What was said is a bubble; what came back is text on the surface. */
-  --numen-bubble-bg: light-dark(#f0e6d4, #26221d);
+  --numen-bubble-bg: light-dark(#f0e6d4, #2e2822);
   --numen-bubble-fg: light-dark(#3a322a, #ece0cd);
   --numen-answer-fg: light-dark(#3a322a, #ece0cd);
 }
@@ -162,15 +164,9 @@
   /* The corner of a box drawn in the page: a button, an item in a list, a
      block of code, the tab a gesture would drop where it is held. */
   --numen-radius: 0.375rem;
+  /* The corner of a control a row is filled with: half the curve of a box. */
+  --numen-radius-tight: calc(var(--numen-radius) / 2);
 
-  /* The corner of a node's box, and the corner of the box around the one in
-     front. */
-  --numen-plex-radius: 0.375rem;
-  --numen-plex-radius-focus: 0.5rem;
-  /* The handle a gesture is reached out from: the disc, and the cross on it.
-     The arms read as a plus sign at about half the radius. */
-  --numen-handle-radius: 0.5625rem;
-  --numen-handle-arm: 0.25rem;
   /* The halo that keeps an edge label legible where it crosses its own line. */
   --numen-edge-label-halo: 0.1875rem;
 
@@ -182,9 +178,13 @@
 
   /* What floats over the window, in the order it stands. Everything that
      floats takes one of these, and nothing takes a number of its own. */
+  /* A sheet fills the window and is worked in; everything below speaks over it. */
+  --numen-lift-sheet: 20;
   --numen-lift-notice: 40;
   --numen-lift-menu: 60;
   --numen-lift-palette: 70;
+  /* Said beside the pointer, so it stands over whatever the pointer is over. */
+  --numen-lift-tooltip: 75;
   --numen-lift-going: 80;
 
   /* Wider than any box it rounds. */
@@ -200,18 +200,13 @@
   --numen-radius-field: calc(var(--numen-field-min) / 2);
   /* The clearance the typing keeps from the ends, which is around the curve. */
   --numen-field-text-inset: 0.875rem;
-  /* Lines of typing the field grows to before it scrolls. */
-  --numen-field-lines: 10;
 
-  /* Three dots saying something is being written. */
-  --numen-dot-size: 0.25rem;
+  /* The gap between three dots saying something is being written, and between
+     the rows a small reading is stacked in. */
   --numen-dot-gap: 0.1875rem;
-  --numen-dot-rise: 0.1875rem;
 
   --numen-radius-bubble: 0.75rem;
   --numen-turn-gap: 1rem;
-  /* How much of the width one bubble may take before it wraps. */
-  --numen-bubble-measure: 80%;
 }
 
 /*
@@ -223,6 +218,9 @@
 /* A page carrying no multiplier sets it as it is designed. */
 :where(:root) {
   --numen-reading-size: calc(0.8125rem * var(--numen-text-scale, 1));
+  /* Marked-up text is set a shade above a plain line of it. An answer and a
+     card are read at this. */
+  --numen-prose-size: calc(0.875rem * var(--numen-text-scale, 1));
 }
 
 /*
@@ -234,23 +232,12 @@
   --numen-ring-width: 2px;
   /* The line a carried thing lands on. */
   --numen-caret: 2px;
-  /* The bar the cross on a handle is drawn with. */
-  --numen-handle-stroke: 1.5px;
   --numen-edge-width: 1.25px;
-  /* Two dashed things, told apart by their stroke: the thread a gesture drags
-     behind it, and the outline of the node letting go would make. */
+  /* The dash the thread a gesture drags behind it is drawn in. */
   --numen-thread-dash: 4 4;
-  --numen-ghost-dash: 6 4;
-
-  /* Each dot rises a third of a cycle behind the one before it, so they read
-     left to right. */
-  --numen-dot-cycle: 1200ms;
 
   --numen-motion: 220ms;
   /* A pointer answers now; it is not waiting on a navigation. */
   --numen-motion-hover: 110ms;
   --numen-easing: cubic-bezier(0.32, 0.72, 0, 1);
-  /* Overridden by the plex from its own `duration`, so colour that follows a
-     seat changes over the time the seat takes to change. */
-  --numen-plex-move: var(--numen-motion);
 }

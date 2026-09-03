@@ -25,8 +25,8 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 	third := answered("01C", "k7m2xq9fzp", "Recognise", "2026-08-25T09:00:00Z", flashcards.Good)
 
 	by := flashcards.NewFSRS()
-	want := flashcards.Replay(by, []flashcards.Answer{first, second, third})
-	got := flashcards.Replay(by, []flashcards.Answer{third, first, second})
+	want := flashcards.Replay(ahead, by, []flashcards.Answer{first, second, third})
+	got := flashcards.Replay(ahead, by, []flashcards.Answer{third, first, second})
 
 	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if got[shown] != want[shown] {
@@ -42,8 +42,8 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 
 	by := flashcards.NewFSRS()
 	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := flashcards.Replay(by, []flashcards.Answer{early, late})[shown]
-	other := flashcards.Replay(by, []flashcards.Answer{late, early})[shown]
+	one := flashcards.Replay(ahead, by, []flashcards.Answer{early, late})[shown]
+	other := flashcards.Replay(ahead, by, []flashcards.Answer{late, early})[shown]
 	if one != other {
 		t.Errorf("one history read two ways gave %+v and %+v", one, other)
 	}
@@ -55,7 +55,7 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	given := answered("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", flashcards.Again)
 	back := flashcards.Answer{ID: "01B", At: at("2026-08-20T09:00:04Z"), Undoes: "01A"}
 
-	left := flashcards.Replay(flashcards.NewFSRS(), []flashcards.Answer{given, back})
+	left := flashcards.Replay(ahead, flashcards.NewFSRS(), []flashcards.Answer{given, back})
 	if len(left) != 0 {
 		t.Errorf("a card face whose only answer was taken back has no schedule, got %+v", left)
 	}
@@ -66,7 +66,7 @@ func TestEachFaceOfACardIsScheduledOnItsOwn(t *testing.T) {
 	recognise := answered("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", flashcards.Easy)
 	name := answered("01B", "k7m2xq9fzp", "Name it", "2026-08-20T09:00:10Z", flashcards.Again)
 
-	left := flashcards.Replay(flashcards.NewFSRS(), []flashcards.Answer{recognise, name})
+	left := flashcards.Replay(ahead, flashcards.NewFSRS(), []flashcards.Answer{recognise, name})
 	if len(left) != 2 {
 		t.Fatalf("two faces answered left %d schedules", len(left))
 	}
@@ -93,7 +93,7 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 
 	by := flashcards.NewFSRS()
 	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if one, other := flashcards.Replay(by, history)[shown], flashcards.Replay(by, history)[shown]; one != other {
+	if one, other := flashcards.Replay(ahead, by, history)[shown], flashcards.Replay(ahead, by, history)[shown]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
@@ -108,9 +108,9 @@ func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
 	two := answered("01B", shown.Card, shown.Face, "2026-08-21T09:00:00Z", flashcards.Good)
 
 	by := flashcards.NewFSRS()
-	once := flashcards.Replay(by, []flashcards.Answer{one, two})
+	once := flashcards.Replay(ahead, by, []flashcards.Answer{one, two})
 	// The whole run again, as a conflicted copy of the file lands beside it.
-	twice := flashcards.Replay(by, []flashcards.Answer{one, two, one, two})
+	twice := flashcards.Replay(ahead, by, []flashcards.Answer{one, two, one, two})
 
 	if once[shown] != twice[shown] {
 		t.Errorf("the same run twice left the card at %+v, once leaves it at %+v",
@@ -128,7 +128,7 @@ func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
 	given := answered("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", flashcards.Good)
 	back := flashcards.Answer{ID: "01B", At: at("2026-08-20T09:01:00Z"), Undoes: given.ID}
 
-	left := flashcards.Replay(flashcards.NewFSRS(), []flashcards.Answer{given, back, given, back})
+	left := flashcards.Replay(ahead, flashcards.NewFSRS(), []flashcards.Answer{given, back, given, back})
 	if _, held := left[shown]; held {
 		t.Errorf("the answer was taken back and the card stands at %+v", left[shown])
 	}
@@ -137,7 +137,7 @@ func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
 // A card face nobody has answered has no schedule, and that is what a person
 // means by a new card.
 func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
-	left := flashcards.Replay(flashcards.NewFSRS(), nil)
+	left := flashcards.Replay(ahead, flashcards.NewFSRS(), nil)
 	if len(left) != 0 {
 		t.Errorf("no answers left %d schedules", len(left))
 	}

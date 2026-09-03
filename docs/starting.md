@@ -17,15 +17,27 @@ A settings file that is not there is not a refusal. It is written, holding exact
 
 The application opens one and puts in it what stopped it, the facts it holds about the state it found, and what to do about it. It writes one line to standard error as well, for a terminal and for a log, and leaves with a failing status.
 
-The facts are the path of the index, the version of this build, the revision it was built from, and — where a schema is what stopped it — the number the index holds beside the number this build knows. See [ADR-0007](adr/0007-a-schema-change-is-a-numbered-migration.md) for what a build does about a schema it cannot account for.
+The heading names what could not be opened: the index, or the person's own settings file. No vault is named, because no vault is what stopped it.
+
+Five states are drawn, each in the application's own words and each carrying a remedy:
+
+- **an index a later build wrote** — the schema the index holds beside the schema this build knows, and update numen to the version that wrote it. See [ADR-0007](adr/0007-a-schema-change-is-a-numbered-migration.md) for what a build does about a schema it cannot account for;
+- **an index that is not a database** — move the file aside, and numen makes a new one and fills it from the vaults;
+- **an index path that is a folder** — point `-index` at a file, or move the folder out of the way;
+- **an index folder nobody may write in** — the folder, and permission to write in it or a path somewhere the person can write;
+- **settings that cannot be read** — the file, and either putting it right or moving it aside for a new one. A number a size does not take names the field, what was written and how far the setting goes; one named on the command line is answered by the flag it was given under. The number is left as it was written — see [Settings](settings.md).
+
+sqlite answers for a folder that is a path and a folder nobody may write in with one sentence and one code. They are two things to put right, so they are two states here, told apart by what the path on this machine is.
+
+Every state carries the version of this build and the revision it was built from, and the path of whichever file it is about.
 
 The refusal window is a second interface, small and separate from the one the application serves. It has to keep working when the first one cannot be built, so it carries its own markup and its own styling, and reaches nothing shared.
-
-An out-of-range `appearance.interface_scale` or `appearance.text_scale` is answered by this same window, naming the field, what was written and how far the setting goes. The number is left as it was written — see [Settings](settings.md).
 
 ## A refusal names no remedy that costs the person something
 
 "Update numen" is a remedy. "Delete your index" is a bill, and it is not this application's to write. An index is never spent to recover from a state nobody diagnosed.
+
+A file that is not a database is diagnosed. It is not an index, it holds nothing a scan does not make again, and moving it aside is named as the way out.
 
 ## A first run is given somewhere to write
 

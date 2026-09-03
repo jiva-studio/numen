@@ -49,25 +49,25 @@
   --sl-color-gray-2: #cfc2ab;
   --sl-color-gray-3: #a1968a;
   --sl-color-gray-4: #7d7266;
-  --sl-color-gray-5: #3a342c;
-  --sl-color-gray-6: #231f1b;
-  --sl-color-gray-7: #1a1714;
-  --sl-color-black: #131110;
+  --sl-color-gray-5: #423a31;
+  --sl-color-gray-6: #2b2520;
+  --sl-color-gray-7: #221d19;
+  --sl-color-black: #1a1613;
 
   --sl-color-accent-low: #33260f;
   --sl-color-accent: #e9a23b;
   --sl-color-accent-high: #f3ce93;
 
-  --sl-color-bg: #131110;
-  --sl-color-bg-nav: #161311;
-  --sl-color-bg-sidebar: #161311;
-  --sl-color-bg-inline-code: #231f1b;
-  --sl-color-hairline: #241f1a;
-  --sl-color-hairline-light: #2e2822;
-  --sl-color-hairline-shade: #0e0c0b;
+  --sl-color-bg: #1a1613;
+  --sl-color-bg-nav: #1e1916;
+  --sl-color-bg-sidebar: #1e1916;
+  --sl-color-bg-inline-code: #2b2520;
+  --sl-color-hairline: #2c2620;
+  --sl-color-hairline-light: #373029;
+  --sl-color-hairline-shade: #141110;
 
-  --numen-hover: #1e1b17;
-  --numen-current: #2b2113;
+  --numen-hover: #262019;
+  --numen-current: #33281a;
   --numen-up: #7ab4d8;
   --numen-down: #a6c46b;
   --numen-across: #e8836b;
@@ -92,9 +92,9 @@
   --sl-color-bg-nav: #fffbf2;
   --sl-color-bg-sidebar: #f5eddf;
   --sl-color-bg-inline-code: #f0e6d4;
-  --sl-color-hairline: #e5dbc9;
+  --sl-color-hairline: #e0d6c4;
   --sl-color-hairline-light: #ece3d2;
-  --sl-color-hairline-shade: #e5dbc9;
+  --sl-color-hairline-shade: #e0d6c4;
 
   --numen-hover: #f2e9d8;
   --numen-current: #f7e4c6;

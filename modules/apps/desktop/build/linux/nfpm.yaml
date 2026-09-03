@@ -18,14 +18,14 @@ contents:
   - src: ./numen.desktop
     dst: /usr/share/applications/numen.desktop
   # The two windows ship together, one version, one package: flashcards with no
-  # editor has nothing to run. They wear one icon, because they are one
-  # application to the person using them.
+  # editor has nothing to run.
   - src: ./numen-flashcards
     dst: /usr/bin/numen-flashcards
   - src: ./numen-flashcards.desktop
     dst: /usr/share/applications/numen-flashcards.desktop
-  # The drawing itself, which a desktop scales to whatever it needs, and the
-  # rasters for the ones that will not scale it.
+  # Each window wears its own mark, under the name its desktop entry asks for.
+  # The drawing itself is what a desktop scales to whatever it needs; the
+  # rasters are for the ones that will not scale it.
   - src: ./numen.svg
     dst: /usr/share/icons/hicolor/scalable/apps/numen.svg
   - src: ./icons/16.png
@@ -44,6 +44,24 @@ contents:
     dst: /usr/share/icons/hicolor/256x256/apps/numen.png
   - src: ./icons/512.png
     dst: /usr/share/icons/hicolor/512x512/apps/numen.png
+  - src: ./numen-flashcards.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/numen-flashcards.svg
+  - src: ./icons/flashcards/16.png
+    dst: /usr/share/icons/hicolor/16x16/apps/numen-flashcards.png
+  - src: ./icons/flashcards/24.png
+    dst: /usr/share/icons/hicolor/24x24/apps/numen-flashcards.png
+  - src: ./icons/flashcards/32.png
+    dst: /usr/share/icons/hicolor/32x32/apps/numen-flashcards.png
+  - src: ./icons/flashcards/48.png
+    dst: /usr/share/icons/hicolor/48x48/apps/numen-flashcards.png
+  - src: ./icons/flashcards/64.png
+    dst: /usr/share/icons/hicolor/64x64/apps/numen-flashcards.png
+  - src: ./icons/flashcards/128.png
+    dst: /usr/share/icons/hicolor/128x128/apps/numen-flashcards.png
+  - src: ./icons/flashcards/256.png
+    dst: /usr/share/icons/hicolor/256x256/apps/numen-flashcards.png
+  - src: ./icons/flashcards/512.png
+    dst: /usr/share/icons/hicolor/512x512/apps/numen-flashcards.png
 
 # The window draws through the system's own browser, and the machine has to
 # carry it.

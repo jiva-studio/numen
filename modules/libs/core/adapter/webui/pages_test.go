@@ -85,17 +85,39 @@ func handed(handler http.Handler, path string) *httptest.ResponseRecorder {
 // refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	const held = "default-src 'self'; img-src 'self'; style-src 'self' 'unsafe-inline'; " +
+	const held = "default-src 'self'; img-src 'self'; media-src 'self'; " +
+		"style-src 'self' 'unsafe-inline'; " +
 		"font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; " +
 		"form-action 'none'; frame-ancestors 'none'"
-	if policy != held {
-		t.Errorf("the policy reads %q", policy)
-	}
 
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetOf("a.pdf")} {
 		if said := handed(handler, path).Header().Get("Content-Security-Policy"); said != held {
 			t.Errorf("%q is held to %q", path, said)
+		}
+	}
+}
+
+// A search, a note and a link are read straight from the index, and the index
+// closes behind the door. Every question is refused at it, whatever it would
+// have reached into.
+func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
+	api := &API{}
+	handler := api.Serving(http.NotFoundHandler())
+	questions, _ := numenv1connect.NewVaultServiceHandler(api)
+	asked := []string{"", "/", "/index.html", assetOf("a.pdf"), questions + "Find"}
+
+	for _, path := range asked {
+		if code := handed(handler, path).Code; code == http.StatusServiceUnavailable {
+			t.Errorf("%q was refused at %d with the window still open", path, code)
+		}
+	}
+
+	api.Shut()
+
+	for _, path := range asked {
+		if code := handed(handler, path).Code; code != http.StatusServiceUnavailable {
+			t.Errorf("%q was answered %d by a window being taken away", path, code)
 		}
 	}
 }
@@ -151,9 +173,11 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 		t.Fatal("the page has no head")
 	}
 
-	const drawn = "<style>:root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
+	const drawn = `<style data-appearance="sizes">` +
+		":root { --numen-interface-scale: 1.25; --numen-text-scale: 1.5; }</style>"
 	link := strings.LastIndex(head, "<link")
-	mode := strings.Index(head, "<style>:root { color-scheme: dark; }</style>")
+	mode := strings.Index(head,
+		`<style data-appearance="mode">`+":root { color-scheme: dark; }</style>")
 	worn := strings.Index(head, mine)
 	sizes := strings.Index(head, drawn)
 	if link < 0 || mode < 0 || worn < 0 || sizes < 0 {

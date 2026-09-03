@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * What one day of the grid came to.
- *
- * It holds nothing and decides nothing: the day is handed to it, and where it
+ * What one day of the grid came to. The day is handed to it, and where it
  * stands is the tooltip's business.
+ *
+ * `data-summary` names each part of the account: `account` is the whole of it,
+ * and `day`, `count`, `four`, `said`, `how-many` and `came` are its lines.
  */
 import { computed } from 'vue'
 
@@ -27,9 +28,9 @@ const four = computed(() =>
 )
 
 /**
- * How much of what the person had learned came back to them, where anything
- * learned was asked at all. A day of nothing but new cards has no share to
- * give, and says none.
+ * How much of what the person is already reviewing came back to them, where any
+ * of it was asked at all. A day of nothing but new cards has no share to give,
+ * and says none.
  */
 const came = computed(() => {
   if (props.day.asked <= 0) return ''
@@ -38,23 +39,23 @@ const came = computed(() => {
 </script>
 
 <template>
-  <div class="summary">
-    <p class="summary__day">{{ words.names(day.day) }}</p>
+  <div class="summary" data-summary="account">
+    <p class="summary__day" data-summary="day">{{ words.names(day.day) }}</p>
 
-    <p v-if="day.ahead" class="summary__count">
+    <p v-if="day.ahead" class="summary__count" data-summary="count">
       {{ day.did > 0 ? `${day.did} ${words.toCome}` : words.nothing }}
     </p>
     <template v-else>
-      <p class="summary__count">
+      <p class="summary__count" data-summary="count">
         {{ day.did > 0 ? `${day.did} ${words.answered}` : words.nothing }}
       </p>
-      <ul v-if="four.length" class="summary__four">
+      <ul v-if="four.length" class="summary__four" data-summary="four">
         <li v-for="one in four" :key="one.tone" :data-tone="one.tone">
-          <span class="summary__said">{{ one.says }}</span>
-          <span class="summary__how-many">{{ one.count }}</span>
+          <span class="summary__said" data-summary="said">{{ one.says }}</span>
+          <span class="summary__how-many" data-summary="how-many">{{ one.count }}</span>
         </li>
       </ul>
-      <p v-if="came" class="summary__came">{{ came }} {{ words.recalled }}</p>
+      <p v-if="came" class="summary__came" data-summary="came">{{ came }} {{ words.recalled }}</p>
     </template>
   </div>
 </template>
@@ -89,10 +90,9 @@ const came = computed(() => {
   gap: var(--numen-inset);
 }
 
-/* The word for each answer is drawn in what that answer means: a card that did
-   not come back is not the same news as one that came back easily. */
+/* The word for each answer is drawn in what that answer means. */
 .summary__four li[data-tone='again'] .summary__said {
-  color: var(--numen-alarm-fg);
+  color: var(--numen-alarm);
 }
 
 .summary__four li[data-tone='hard'] .summary__said {

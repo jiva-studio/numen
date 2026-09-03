@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -375,28 +376,53 @@ func TestOnlyTheAddressKeyIsRewritten(t *testing.T) {
 // One line holding several keys means the span of any of them is the span of
 // all of them, so a write meant for one would take the rest with it.
 func TestFrontmatterOnOneLineIsRefusedRatherThanMangled(t *testing.T) {
-	for name, raw := range map[string]string{
-		"a flow mapping":  "---\n{title: T, id: b}\n---\nbody\n",
-		"a flow sequence": "---\nlinks: [{to: A, role: jump}]\n---\nbody\n",
-	} {
-		t.Run(name, func(t *testing.T) {
-			// Reading it is fine; only changing it is refused.
-			d, err := Open([]byte(raw))
-			if err != nil {
-				t.Fatalf("open: %v", err)
-			}
-			if err := d.SetIdentifier("01J8"); !errors.Is(err, ErrInline) {
-				t.Errorf("want ErrInline, got %v", err)
-			}
-			if err := d.AddLink(domain.Link{
-				Target: domain.ParseAddress("B"), Role: domain.RoleJump,
-			}); !errors.Is(err, ErrInline) {
-				t.Errorf("want ErrInline from AddLink, got %v", err)
-			}
-			if got := string(d.Bytes()); got != raw {
-				t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
-			}
-		})
+	raw := "---\n{title: T, id: b}\n---\nbody\n"
+
+	// Reading it is fine; only changing it is refused.
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J8"); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline, got %v", err)
+	}
+	if err := d.AddLink(domain.Link{
+		Target: domain.ParseAddress("B"), Role: domain.RoleJump,
+	}); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline from AddLink, got %v", err)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("a refused write changed the note\n want %q\n  got %q", raw, got)
+	}
+}
+
+// A value written on one line occupies its key's own lines, so a key beside it
+// is written as usual. An entry of that value is what cannot be replaced on its
+// own.
+func TestAValueOnOneLineLeavesTheKeysAroundItWritable(t *testing.T) {
+	raw := "---\nlinks: [{to: A, role: jump}]\nlight_days: [sat]\n---\nbody\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J8"); err != nil {
+		t.Errorf("write: %v", err)
+	}
+	if err := d.AddLink(domain.Link{
+		Target: domain.ParseAddress("B"), Role: domain.RoleJump,
+	}); !errors.Is(err, ErrInline) {
+		t.Errorf("want ErrInline from AddLink, got %v", err)
+	}
+
+	got := string(d.Bytes())
+	for _, kept := range []string{"links: [{to: A, role: jump}]", "light_days: [sat]", "id: 01J8"} {
+		if !strings.Contains(got, kept) {
+			t.Errorf("%q is not in the note:\n%s", kept, got)
+		}
+	}
+	if _, err := Open([]byte(got)); err != nil {
+		t.Errorf("the note stopped being readable: %v", err)
 	}
 }
 
@@ -621,5 +647,264 @@ func TestALinkWrittenAgainInAnotherRoleIsReseated(t *testing.T) {
 	}
 	if !strings.Contains(out, "role: parent") || strings.Contains(out, "role: child") {
 		t.Errorf("it did not take the new role:\n%s", out)
+	}
+}
+
+// A frontmatter written in from the margin is spliced where its own keys stand.
+// A line written flush ends the mapping, and every key below it becomes text
+// the YAML decoder drops without saying so — the person's own keys among them.
+func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
+	raw := "---\n" +
+		"  type: preset\n" +
+		"  id: 01J8\n" +
+		"  minutes_a_day: 20\n" +
+		"  colour: green\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetValue("minutes_a_day", 35); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	if err := d.SetValue("new_a_day", 8); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	back := reopen(t, got)
+	if id, ok := back.Identifier(); !ok || id != "01J8" {
+		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
+	}
+	front := Parse(domain.FileRef{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
+	want := map[string]any{
+		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
+		"colour": "green",
+	}
+	if !reflect.DeepEqual(front, want) {
+		t.Errorf("frontmatter = %v, want %v\n%s", front, want, got)
+	}
+}
+
+// A frontmatter carrying an anchor is left alone. Replacing the value the anchor
+// stands on leaves the alias pointing at nothing, and the note stops opening at
+// all — not the one key, the whole of it.
+func TestAnAnchoredFrontmatterIsRefused(t *testing.T) {
+	raw := "---\n" +
+		"id: 01J8\n" +
+		"retention: &target 0.87\n" +
+		"mine: *target\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	added := domain.Link{
+		Target: domain.Address{Scheme: domain.SchemeName, Value: "New"}, Role: domain.RoleChild,
+	}
+	for name, write := range map[string]func() error{
+		"a value":         func() error { return d.SetValue("retention", 0.9) },
+		"the identifier":  func() error { return d.SetIdentifier("01J9") },
+		"the title":       func() error { return d.SetTitle("Sanskrit") },
+		"a mapping":       func() error { return d.SetMapping("load", []Entry{{Key: "sat", Value: 50}}) },
+		"a list":          func() error { return d.SetList("tags", []string{"study"}) },
+		"a link":          func() error { return d.AddLink(added) },
+		"a key not there": func() error { return d.SetValue("new_a_day", 8) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			if err := write(); !errors.Is(err, ErrAnchored) {
+				t.Fatalf("want ErrAnchored, got %v", err)
+			}
+		})
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the note was written\n want %q\n  got %q", raw, got)
+	}
+	if _, err := Open(d.Bytes()); err != nil {
+		t.Errorf("the note no longer opens: %v", err)
+	}
+}
+
+// A comment beside a key is the person's, on a key the application owns as much
+// as on any other. Every writer here keeps it.
+func TestAWriteKeepsTheCommentBesideTheKey(t *testing.T) {
+	raw := "---\n" +
+		"id: 01J8 # the one it was made with\n" +
+		"title: Old # what I called it\n" +
+		"minutes_a_day: 20 # twenty is plenty\n" +
+		"load: # the week\n" +
+		"  sat: 50 # half a Saturday\n" +
+		"tags: # what it is about\n" +
+		"  - study\n" +
+		"---\n" +
+		"body\n"
+
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetIdentifier("01J9"); err != nil {
+		t.Fatalf("set identifier: %v", err)
+	}
+	if err := d.SetTitle("New"); err != nil {
+		t.Fatalf("set title: %v", err)
+	}
+	if err := d.SetValue("minutes_a_day", 35); err != nil {
+		t.Fatalf("set value: %v", err)
+	}
+	if err := d.SetMapping("load", []Entry{{Key: "sat", Value: 20}}); err != nil {
+		t.Fatalf("set mapping: %v", err)
+	}
+	if err := d.SetList("tags", []string{"study", "grammar"}); err != nil {
+		t.Fatalf("set list: %v", err)
+	}
+
+	got := string(d.Bytes())
+	for _, kept := range []string{
+		"id: 01J9 # the one it was made with\n",
+		"title: New # what I called it\n",
+		"minutes_a_day: 35 # twenty is plenty\n",
+		"load: # the week\n",
+		"sat: 20 # half a Saturday\n",
+		"tags: # what it is about\n",
+	} {
+		if !strings.Contains(got, kept) {
+			t.Errorf("want %q in\n%s", kept, got)
+		}
+	}
+}
+
+// A note names one place under a link type. The entry carrying the type is the
+// one that moves, and every other entry comes out as the bytes it went in as.
+func TestOneTypeNamesOnePlace(t *testing.T) {
+	raw := "---\n" +
+		"links:\n" +
+		"  - to: Thermodynamics\n" +
+		"    role: parent\n" +
+		"  - to: Sanskrit   # twenty minutes\n" +
+		"    role: ref\n" +
+		"    type: preset\n" +
+		"    note: as much as I have\n" +
+		"---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+
+	if err := d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef,
+	); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	if !strings.Contains(got, "  - to: Thermodynamics\n    role: parent\n") {
+		t.Errorf("the other entry was rewritten in\n%s", got)
+	}
+	if strings.Contains(got, "to: Sanskrit") {
+		t.Errorf("the entry still names where it went in\n%s", got)
+	}
+	if !strings.Contains(got, "to: Slow going") || !strings.Contains(got, "note: as much as I have") {
+		t.Errorf("the entry did not move whole in\n%s", got)
+	}
+	if strings.Count(got, "type: preset") != 1 {
+		t.Errorf("the note names more than one place under the type in\n%s", got)
+	}
+}
+
+// A note naming no place under the type grows an entry for it, and one written
+// with no block grows the block too.
+func TestATypeNobodyNamedIsWrittenIn(t *testing.T) {
+	for name, raw := range map[string]string{
+		"no block":       "---\ntype: deck\n---\nbody\n",
+		"a block":        "---\nlinks:\n  - to: Thermodynamics\n    role: parent\n---\nbody\n",
+		"no frontmatter": "body\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			d, err := Open([]byte(raw))
+			if err != nil {
+				t.Fatalf("open: %v", err)
+			}
+			if err := d.SetLinkOfType(
+				"preset", domain.Address{Scheme: domain.SchemeName, Value: "Sanskrit"}, domain.RoleRef,
+			); err != nil {
+				t.Fatalf("set: %v", err)
+			}
+
+			n := Parse(domain.FileRef{Path: "decks/Roots.md"}, d.Bytes())
+			var named []domain.Link
+			for _, link := range n.Links {
+				if link.Type == "preset" {
+					named = append(named, link)
+				}
+			}
+			if len(named) != 1 {
+				t.Fatalf("the note names %d presets:\n%s", len(named), d.Bytes())
+			}
+			if named[0].Target.Value != "Sanskrit" || named[0].Role != domain.RoleRef {
+				t.Errorf("the entry says %+v", named[0])
+			}
+		})
+	}
+}
+
+// An empty address takes the entry out, and the block goes with it when it held
+// nothing else.
+func TestNamingNoPlaceUnderATypeTakesTheEntryOut(t *testing.T) {
+	d, err := Open([]byte(
+		"---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\nbody\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetLinkOfType("preset", domain.Address{}, domain.RoleRef); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	if got := string(d.Bytes()); got != "---\ntype: deck\n---\nbody\n" {
+		t.Errorf("got %q", got)
+	}
+}
+
+// An entry carrying a key the application does not own is left as the person
+// wrote it, and nothing is written.
+func TestAnEntryOfTheTypeCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
+	raw := "---\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n    mine: keep me\n---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	err = d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef)
+	if !errors.Is(err, ErrNotOurs) {
+		t.Fatalf("want ErrNotOurs, got %v", err)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("the refused change was made anyway\n%s", got)
+	}
+}
+
+// An entry written with no role is not a link, so it names nothing under the
+// type and is left exactly as it stands.
+func TestAnEntryWithNoRoleIsLeftWhereItStands(t *testing.T) {
+	d, err := Open([]byte(
+		"---\nlinks:\n  - to: Sanskrit\n    type: preset\n---\nbody\n"))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := d.SetLinkOfType(
+		"preset", domain.Address{Scheme: domain.SchemeName, Value: "Slow going"}, domain.RoleRef,
+	); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+
+	got := string(d.Bytes())
+	if !strings.Contains(got, "  - to: Sanskrit\n    type: preset\n") {
+		t.Errorf("the entry the parser could not read was rewritten in\n%s", got)
+	}
+	if !strings.Contains(got, "to: Slow going") {
+		t.Errorf("the entry was not written in\n%s", got)
 	}
 }

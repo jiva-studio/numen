@@ -464,8 +464,8 @@ describe('marking why an item is here', () => {
 
 describe('which band stands where', () => {
   const holding = band('names', [item('one')])
-  const empty = band('text', [])
-  const alsoEmpty = band('meaning', [])
+  const empty = band('text', [], { silence: 'nothing to search with' })
+  const alsoEmpty = band('meaning', [], { working: true })
 
   it('keeps the bands holding something in the order they were offered', () => {
     const also = band('text', [item('two')])
@@ -483,6 +483,23 @@ describe('which band stands where', () => {
       'text',
       'meaning',
     ])
+  })
+
+  it('draws a band that answered with nothing nowhere', () => {
+    const answered = band('text', [])
+    expect(ordered([holding, answered]).map((one) => one.id)).toEqual(['names'])
+    expect(ordered([answered]).map((one) => one.id)).toEqual([])
+  })
+
+  it('draws a band holding nothing while it is still working', () => {
+    expect(ordered([band('meaning', [], { working: true })]).map((one) => one.id)).toEqual([
+      'meaning',
+    ])
+  })
+
+  it('draws a band that could not be asked, with what it has to say', () => {
+    const notAsked = band('meaning', [], { silence: 'the vault could not answer' })
+    expect(ordered([notAsked]).map((one) => one.id)).toEqual(['meaning'])
   })
 
   it('leaves what the keyboard counts exactly where it was', () => {

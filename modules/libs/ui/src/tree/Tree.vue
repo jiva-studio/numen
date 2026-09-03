@@ -7,7 +7,7 @@
  * and which are selected are the caller's to hold: the tree works out what a
  * press with a modifier means and says the selection it came to.
  */
-import { computed, nextTick, onBeforeUnmount, shallowRef, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, shallowRef, useTemplateRef, watch } from 'vue'
 import {
   carried,
   carries,
@@ -23,13 +23,17 @@ import {
   PLAIN,
   type Carried,
   type Landing,
+  type Marking,
   type Press,
   type Pressed,
   type Row,
   type RowId,
   type ShownRow,
 } from './model'
-import type { Point } from '../plex/model'
+import type { Point } from '../lib/geometry'
+import { browserEnvironment, type Environment } from '../lib/environment'
+import CarriedLabel from '../press/CarriedLabel.vue'
+import { usePressDrag } from '../press/press'
 
 const props = withDefaults(
   defineProps<{
@@ -45,8 +49,15 @@ const props = withDefaults(
     name?: string
     /** How many rows are being carried, said at the pointer. */
     counted?: (rows: number) => string
-    /** When the next frame comes. */
-    frame?: (run: () => void) => void
+    /**
+     * An attribute written onto the rows and onto the tree, for something
+     * outside to find them by. Both the name and the values are the caller's,
+     * and a row answered with nothing is left unmarked; the tree itself is
+     * asked about as no row at all.
+     */
+    marking?: Marking | undefined
+    /** The clock. Browser by default; a test hands in its own. */
+    environment?: Environment
   }>(),
   {
     open: () => [],
@@ -54,9 +65,8 @@ const props = withDefaults(
     threshold: 4,
     name: 'Tree',
     counted: (rows: number) => `${rows} rows`,
-    frame: (run: () => void) => {
-      requestAnimationFrame(run)
-    },
+    marking: undefined,
+    environment: () => browserEnvironment,
   },
 )
 
@@ -99,6 +109,9 @@ const list = useTemplateRef<HTMLElement>('list')
 /** What the tree takes up on screen: a drop lands only over it. */
 const box = useTemplateRef<HTMLElement>('box')
 
+/** The field a name is typed in. One row is renamed at a time. */
+const field = useTemplateRef<HTMLInputElement[]>('field')
+
 const shown = computed(() => flatten(props.rows, new Set(props.open)))
 
 /** The rows selected, for asking one row at a time. */
@@ -120,39 +133,52 @@ const tabbed = computed<RowId | null>(() => {
   return drawn(here.value) ?? drawn(props.selected[0]) ?? shown.value[0]?.id ?? null
 })
 
-/** The rows under the pointer, once the pointer has gone far enough to mean it. */
-interface Dragging {
-  readonly rows: readonly RowId[]
-  readonly startX: number
-  readonly startY: number
-  readonly moved: boolean
-}
-
-const dragging = shallowRef<Dragging | null>(null)
 /** Whether the press being made has said what the selection is already. */
 const said = shallowRef(false)
-const at = shallowRef<Landing | null>(null)
-/** Where the pointer is, for as long as a drag is live. */
-const point = shallowRef<Point | null>(null)
+
+const { dragging, at, point, lift } = usePressDrag<readonly RowId[], Landing>({
+  threshold: () => props.threshold,
+  environment: () => props.environment,
+  landingAt,
+  settle: (rows, found) => {
+    if (found) emit('move', rows, found)
+    emit('drop')
+  },
+  // The rows are clear of the tree the moment the press turns into a drag,
+  // and said once for the whole of it.
+  began: (rows) => emit('carry', rows),
+})
 
 const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
 const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
 
 /** The rows a live drag is carrying, for asking one row at a time. */
-const lifted = computed(() => new Set(point.value ? (dragging.value?.rows ?? []) : []))
+const lifted = computed(() => new Set(point.value ? (dragging.value?.held ?? []) : []))
 
 /** What follows the pointer, and nothing until a press has become a drag. */
 const carrying = computed<Carried | null>(() => {
   const held = dragging.value
   const where = point.value
   if (!held?.moved || !where) return null
-  return carried(shown.value, held.rows, where, props.counted)
+  return carried(shown.value, held.held, where, props.counted)
 })
 
-const rowFor = (row: RowId): HTMLElement | null =>
-  [...(list.value?.querySelectorAll<HTMLElement>('[data-tree-row]') ?? [])].find(
-    (each) => each.getAttribute('data-tree-row') === row,
-  ) ?? null
+/** What a row is marked with, and nothing where it is marked with nothing. */
+const markOf = (row: RowId | null): Record<string, string> => {
+  const mark = props.marking
+  const value = mark?.valueFor(row)
+  return mark && value !== null && value !== undefined ? { [mark.attribute]: value } : {}
+}
+
+/** The rows as they are drawn, each under the row it stands for. */
+const drawnRows = new Map<RowId, HTMLElement>()
+
+const holdRow = (row: RowId, element: unknown): void => {
+  if (element) drawnRows.set(row, element as HTMLElement)
+  else drawnRows.delete(row)
+}
+
+const rowFor = (row: RowId): HTMLElement | null => drawnRows.get(row) ?? null
 
 /** The keyboard onto a row, once the rows it moved among are drawn. */
 const goTo = async (row: RowId | null): Promise<void> => {
@@ -255,63 +281,18 @@ const onKey = (event: KeyboardEvent): void => {
  * a plain press collapses the selection onto it once the pointer has let go
  * without travelling.
  */
-function lift(row: RowId, event: PointerEvent): void {
+function press(row: RowId, event: PointerEvent): void {
   if (event.button !== 0) return
   event.preventDefault()
   ;(event.currentTarget as HTMLElement).focus()
 
-  const press: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
-  said.value = press.joining || press.reaching || !picked.value.has(row)
+  const how: Press = { joining: event.ctrlKey || event.metaKey, reaching: event.shiftKey }
+  said.value = how.joining || how.reaching || !picked.value.has(row)
   const taken = said.value
-    ? takes(selects(shown.value, props.selected, anchor.value, row, press))
+    ? takes(selects(shown.value, props.selected, anchor.value, row, how))
     : props.selected
 
-  dragging.value = {
-    rows: carries(taken, row),
-    startX: event.clientX,
-    startY: event.clientY,
-    moved: false,
-  }
-  window.addEventListener('pointermove', drag)
-  window.addEventListener('pointerup', drop)
-  window.addEventListener('pointercancel', drop)
-}
-
-function drag(event: PointerEvent): void {
-  const held = dragging.value
-  if (!held) return
-
-  const moved =
-    held.moved ||
-    Math.abs(event.clientX - held.startX) > props.threshold ||
-    Math.abs(event.clientY - held.startY) > props.threshold
-
-  dragging.value = { ...held, moved }
-  point.value = moved ? { x: event.clientX, y: event.clientY } : null
-  at.value = moved ? landingAt(held.rows, { x: event.clientX, y: event.clientY }) : null
-
-  // The rows are clear of the tree the moment the press turns into a drag,
-  // and said once for the whole of it.
-  if (moved && !held.moved) emit('carry', held.rows)
-}
-
-function drop(): void {
-  const held = dragging.value
-  const found = at.value
-
-  window.removeEventListener('pointermove', drag)
-  window.removeEventListener('pointerup', drop)
-  window.removeEventListener('pointercancel', drop)
-
-  if (held?.moved && found) emit('move', held.rows, found)
-  if (held?.moved) emit('drop')
-  at.value = null
-  point.value = null
-  // Held one frame longer: the click that follows the release reads it and
-  // stands down.
-  props.frame(() => {
-    dragging.value = null
-  })
+  lift(carries(taken, row), event)
 }
 
 /**
@@ -328,7 +309,9 @@ function landingAt(rows: readonly RowId[], at: Point): Landing | null {
     at.x >= over.left && at.x <= over.right && at.y >= over.top && at.y <= over.bottom
   if (!inside) return null
 
-  const height = drawn.querySelector('[data-tree-row]')?.getBoundingClientRect().height ?? 0
+  const first = shown.value[0]
+  const height =
+    (first && rowFor(first.id)?.getBoundingClientRect().height) ?? 0
   const found = landing(shown.value, rows, at.y - drawn.getBoundingClientRect().top, height)
   if (!found) return null
 
@@ -339,9 +322,9 @@ function landingAt(rows: readonly RowId[], at: Point): Landing | null {
 watch(renaming, (row) => {
   if (row === null) return
   void nextTick(() => {
-    const field = list.value?.querySelector<HTMLInputElement>('.tree__field')
-    field?.focus()
-    field?.select()
+    const typing = field.value?.[0]
+    typing?.focus()
+    typing?.select()
   })
 })
 
@@ -365,15 +348,6 @@ function onFieldKey(event: KeyboardEvent): void {
     void goTo(row)
   }
 }
-
-onBeforeUnmount(() => {
-  window.removeEventListener('pointermove', drag)
-  window.removeEventListener('pointerup', drop)
-  window.removeEventListener('pointercancel', drop)
-  at.value = null
-  point.value = null
-  dragging.value = null
-})
 </script>
 
 <template>
@@ -381,6 +355,7 @@ onBeforeUnmount(() => {
     ref="box"
     class="tree numen min-h-0 bg-surface font-sans text-base text-ink"
     :data-into="at && 'into' in at && at.into === null ? '' : undefined"
+    v-bind="markOf(null)"
     @contextmenu.prevent="askMenu(null, { x: $event.clientX, y: $event.clientY })"
   >
     <div
@@ -393,6 +368,7 @@ onBeforeUnmount(() => {
     >
       <div
         v-for="row in shown"
+        :ref="(element) => holdRow(row.id, element)"
         :key="row.id"
         class="tree__row flex min-w-0 items-center"
         role="treeitem"
@@ -406,9 +382,10 @@ onBeforeUnmount(() => {
         :data-last="row.last || undefined"
         :data-into="row.id === into || undefined"
         :data-before="row.id === before || undefined"
+        v-bind="markOf(row.id)"
         :style="{ '--level': row.level }"
         @focus="here = row.id"
-        @pointerdown="lift(row.id, $event)"
+        @pointerdown="press(row.id, $event)"
         @click="choose(row)"
         @dblclick="act(row)"
         @contextmenu.prevent.stop="askMenu(row, { x: $event.clientX, y: $event.clientY })"
@@ -419,6 +396,7 @@ onBeforeUnmount(() => {
 
         <input
           v-if="renaming === row.id"
+          ref="field"
           class="tree__field min-w-0 grow rounded-node"
           type="text"
           :value="row.name"
@@ -438,13 +416,12 @@ onBeforeUnmount(() => {
       <slot name="silence">Nothing here</slot>
     </p>
 
-    <p
+    <CarriedLabel
       v-if="carrying"
-      class="tree__carried font-sans text-small"
-      :style="{ left: `${carrying.at.x}px`, top: `${carrying.at.y}px` }"
-    >
-      {{ carrying.says }}
-    </p>
+      class="tree__carried"
+      :at="carrying.at"
+      :says="carrying.says"
+    />
   </div>
 </template>
 
@@ -456,12 +433,7 @@ onBeforeUnmount(() => {
   --row: 1.5rem;
   --pad: 0.25rem;
   --gap: 0.25rem;
-  /* What is carried: how far it stands clear of the pointer, how far it
-     reaches before the name is cut, the room the name is given, and how
-     plainly a row on its way is drawn. */
-  --carried-gap: 0.75rem;
-  --carried-widest: 15rem;
-  --carried-pad: 0.15rem 0.5rem;
+  /* How plainly a row on its way somewhere is drawn. */
   --carried-fade: 0.5;
 
   display: flex;
@@ -497,8 +469,9 @@ onBeforeUnmount(() => {
   opacity: var(--carried-fade);
 }
 
-/* Where the keyboard stands. */
-.tree__row:focus-visible {
+/* Where the keyboard stands, in a row and in the field a name is typed in. */
+.tree__row:focus-visible,
+.tree__field:focus-visible {
   outline: var(--numen-ring-width) solid var(--numen-ring);
   outline-offset: calc(-1 * var(--numen-ring-width));
 }
@@ -508,12 +481,8 @@ onBeforeUnmount(() => {
   outline: none;
 }
 
-/* The row a drag would land inside, and the line a drag would land on. */
-.tree__row[data-into] {
-  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
-}
-
-/* The whole of it, for what would land at the top level. */
+/* What a drop would land inside: the row, or the whole tree for the top level. */
+.tree__row[data-into],
 .tree[data-into] {
   box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
 }
@@ -539,13 +508,7 @@ onBeforeUnmount(() => {
   font: inherit;
 }
 
-.tree__field:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: calc(-1 * var(--numen-ring-width));
-}
-
-/* What is said in place of the rows stands in the middle of the room they
-   would have taken. */
+/* What is said in place of the rows stands in the middle of the tree. */
 .tree__silence {
   display: flex;
   flex: 1;
@@ -555,21 +518,8 @@ onBeforeUnmount(() => {
   text-align: center;
 }
 
-/* What is being carried, said beside the pointer and catching nothing. One
-   line, then an ellipsis. */
+/* The rows being carried stand over the tree. */
 .tree__carried {
-  position: fixed;
   z-index: 3;
-  max-inline-size: var(--carried-widest);
-  margin: 0;
-  padding: var(--carried-pad);
-  translate: var(--carried-gap) var(--carried-gap);
-  pointer-events: none;
-  overflow: hidden;
-  border-radius: var(--numen-radius);
-  background: var(--numen-focus-bg);
-  color: var(--numen-focus-fg);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 </style>

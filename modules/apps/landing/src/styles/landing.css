@@ -14,10 +14,10 @@
   color-scheme: light dark;
 
   --paper: light-dark(#faf4e8, #161311);
-  --raised: light-dark(#fffbf2, #1f1c18);
-  --ink: light-dark(#2e261e, #ece0cd);
-  --muted: light-dark(#867a6b, #a1968a);
-  --rule: light-dark(#e5dbc9, #2f2a24);
+  --raised: light-dark(#fffbf2, #27221d);
+  --ink: light-dark(#3a322a, #ece0cd);
+  --muted: light-dark(#8a7f70, #a1968a);
+  --rule: light-dark(#e0d6c4, #373029);
   --ring: light-dark(#b45f16, #e9a23b);
 
   --parent: light-dark(#2f6a94, #7ab4d8);
@@ -246,6 +246,28 @@ svg {
   opacity: 0.55;
 }
 
+/* A carousel at the foot of a band, under the reasons for it. The wash behind
+   the hero's picture belongs to the hero. */
+.stage--band {
+  margin-block-start: 3.5rem;
+  /* Room for the row of dots, which hangs past the picture's own edge. */
+  margin-block-end: 3.25rem;
+}
+
+.stage--band::before {
+  content: none;
+}
+
+.stage--band .shot {
+  box-shadow: 0 18px 44px light-dark(rgb(25 27 30 / 0.1), rgb(0 0 0 / 0.38));
+}
+
+/* A window that is not a wide one is drawn no wider than it stands. */
+.stage--narrow {
+  max-inline-size: 34rem;
+  margin-inline: auto;
+}
+
 /* Every shot stands in the same place; the chosen one is the one lit. */
 .shots {
   display: grid;
@@ -284,6 +306,12 @@ svg {
     object-fit: cover;
     object-position: left top;
   }
+
+  /* A narrow window is already narrow, and stands whole at any width. */
+  .stage--narrow .shot img {
+    aspect-ratio: auto;
+    object-fit: fill;
+  }
 }
 
 /* The row that changes which shot is on screen: under the picture's trailing
@@ -294,10 +322,48 @@ svg {
   inset-block-start: 100%;
   inset-inline-end: 0;
   display: flex;
-  gap: 0.45rem;
+  align-items: center;
+  gap: 0.35rem;
   /* Less the room a pick keeps around its bar, so the bars sit where they
      would without it. */
   margin-block-start: calc(1.4rem - 12px);
+}
+
+.switch__picks {
+  display: flex;
+  gap: 0.45rem;
+}
+
+/* One step back and one step on. A radio moves nowhere by itself, so these do
+   nothing until the script is running and stands them up. */
+.switch__step {
+  display: none;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  inline-size: 1.6rem;
+  block-size: 1.6rem;
+}
+
+.stage[data-stepping] .switch__step {
+  display: grid;
+}
+
+.switch__step:hover {
+  color: var(--ink);
+}
+
+.switch__step svg {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* One long dot per shot. What is drawn is three pixels tall; what can be

@@ -35,6 +35,8 @@ A surface is a claim about what is absent, and a test that lists what is present
 
 ### The reviewer opens the index for reading, and the reading half of it is a type of its own
 
+**Superseded by [ADR-0035](0035-the-review-window-writes-the-index.md).** The index is opened for writing here, and the reading half is gone. What follows in this section is the decision as it stood.
+
 The index answers three more questions here than it did: the passages a search runs over, and the sources a book's text is read from. It is still opened for reading alone, and the handle that answers them cannot write: the read-only sources type is built on the query half and satisfies no repository port. Writing a card goes through the vault's files, not through the index.
 
 A vault whose index has never been built answers these as it answers everything else — as a vault nothing has read yet.

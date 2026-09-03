@@ -47,6 +47,7 @@ var doing = map[string]Words{
 	"note_move":           {Kind: port.StepMove},
 	"note_remove":         {Kind: port.StepRemove},
 	"note_focus":          {Kind: port.StepRead},
+	"file_read":           {Kind: port.StepRead},
 	"card_stencils":       {Kind: port.StepRead},
 	"card_read":           {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},
@@ -74,8 +75,10 @@ var doing = map[string]Words{
 	"source_read":       {Kind: port.StepRead},
 	"source_show":       {Kind: port.StepRead},
 	// Reading a document changes what the vault holds — it writes down what a
-	// model saw — so it is shown as a change and not as a look.
-	"source_recognise": {Kind: port.StepEdit},
+	// model saw — so it is shown as a change and not as a look. Listening to a
+	// recording writes down what a model heard, and is shown the same way.
+	"source_recognise":  {Kind: port.StepEdit},
+	"source_transcribe": {Kind: port.StepEdit},
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.

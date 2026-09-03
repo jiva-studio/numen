@@ -50,15 +50,15 @@ export interface Heading {
 
 /**
  * What the vault holds at a path. A file it holds no source for — a picture,
- * an archive — is neither of the two.
+ * an archive — is none of the three.
  */
-export type Source = 'note' | 'book' | 'other'
+export type Source = 'note' | 'book' | 'recording' | 'other'
 
 /**
- * Which of three a note is, as the `type` key of its frontmatter says. It says
+ * Which of four a note is, as the `type` key of its frontmatter says. It says
  * nothing about a file that is not a note.
  */
-export type NoteType = 'note' | 'deck' | 'stencil'
+export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
 /** What stands at a path: which source it is, and which of three a note is. */
 export interface Standing {
@@ -87,8 +87,8 @@ export interface Movement {
 /**
  * One piece of work the application is doing behind the window.
  *
- * Every kind of work is one of these, which is what keeps the window from
- * growing a branch per kind: it draws the list it is given.
+ * Every kind of work is one of these, and the window draws the list it is
+ * given.
  */
 export interface Task {
   /** What the work is called, so that the same work reported again replaces it. */
@@ -107,10 +107,123 @@ export interface Task {
   readonly asked: boolean
 }
 
+/**
+ * How a run asked for over a file came out: it began now, it waits its turn
+ * behind another, this file is being worked on already, it has been done, the
+ * file is not of that kind, nothing has listened to it, the words are a
+ * person's own, or a run got no words out of it and wrote down what it got.
+ * Asking again over that last one gets the same until the record of it is taken
+ * away.
+ */
+export type Answer =
+  | 'started'
+  | 'queued'
+  | 'running'
+  | 'done'
+  | 'unfit'
+  | 'unheard'
+  | 'byHand'
+  | 'answered'
+
+/**
+ * What asking for a run answered: how it came out, and one sentence beside it
+ * in the application's own words. A build that cannot do the run at all answers
+ * nothing else, and the run is offered nowhere after that.
+ */
+export type Outcome =
+  | { readonly able: false }
+  | {
+      readonly able: true
+      readonly path: string
+      readonly answer: Answer
+      readonly why: string
+    }
+
+/** The runs a person asks for over one file of the vault. */
+export interface Runs {
+  /** A recording transcribed, and the words of it written down. */
+  transcribes(path: string): Promise<Outcome>
+  /** A scanned document read, and the text of it written down. */
+  recognises(path: string): Promise<Outcome>
+  /** The transcript of a recording put right by a proofreader. */
+  proofreads(path: string): Promise<Outcome>
+  /**
+   * The transcript of a recording taken away, with everything cut from it, and
+   * whether this build can do it at all.
+   */
+  drops(path: string): Promise<boolean>
+}
+
 /** Whether a node hangs the parts of its note, and how many stand at once. */
 export interface Hanging {
   readonly hangs: boolean
   readonly parts: number
+}
+
+/** One setting of the file, and what to put there. */
+export interface Written {
+  /** The setting, as a path through the file. */
+  readonly at: readonly string[]
+  /** What stands there, as JSON. */
+  readonly value: string
+}
+
+/**
+ * What a model's files are on this machine. A model reached over the network
+ * has nothing to fetch, and where files stand says nothing about it.
+ */
+export type Presence = 'present' | 'not fetched' | 'nothing to fetch'
+
+/** One model a setting that names a model can be set to. */
+export interface Model {
+  /** The setting it is read from. The one in force names this model there. */
+  readonly namedAt: readonly string[]
+  readonly name: string
+  /** What is drawn on the row, and the shelf the rows around it stand under. */
+  readonly title: string
+  readonly shelf: string
+  /** Set on the model an installation nobody has configured runs on. */
+  readonly byDefault: boolean
+  /** What choosing it writes. */
+  readonly writes: readonly Written[]
+  /** What this model's files are on this machine. */
+  readonly presence: Presence
+}
+
+/** Every setting as it stands, where they stand, and the models offered. */
+export interface Configured {
+  /** Every setting as JSON, the defaults under everything the file leaves out. */
+  readonly written: string
+  /** The file itself, absolute on this machine. */
+  readonly path: string
+  readonly models: readonly Model[]
+}
+
+/**
+ * One tab of the window, as whoever answers on the person's behalf is told
+ * about it: what kind it is, and what it holds.
+ */
+export interface Tab {
+  readonly id: string
+  readonly kind: string
+  /** The file it holds, empty for a tab holding none. A plex holds its note. */
+  readonly path: string
+  /** What the tab is called, as the person reads it. */
+  readonly title: string
+  /**
+   * Where in what it holds the person stands, and how much there is of it,
+   * both in whatever that thing is measured in: a document in pages, counted
+   * from one, and a recording in milliseconds, where `at` is how much of it
+   * has been written down.
+   */
+  readonly at: number
+  readonly of: number
+}
+
+/** What the person has open: every tab, and which of them is in front. */
+export interface Attention {
+  readonly tabs: readonly Tab[]
+  readonly front: string
 }
 
 export interface Core {
@@ -126,6 +239,12 @@ export interface Core {
    * with what stands there; a path with nothing at it is absent.
    */
   standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
+  /**
+   * Where each of those addresses lands, by the address it was asked about. A
+   * name resolves by a path relative to the note it is written in, which is
+   * `from`; an address that reaches nothing is absent.
+   */
+  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string
@@ -169,6 +288,12 @@ export interface Core {
     length?: number
     also?: readonly { start?: number; length?: number }[]
   }>
+  /**
+   * What the person has open, said again whenever any of it changes. It is the
+   * other direction to `focus`: a place is put in front of the person there,
+   * and here the window says what is in front of them now.
+   */
+  attending(open: Attention): Promise<void>
   /** The prose of a note, below its frontmatter, and the file it came out of. */
   read(path: string): Promise<Answered & { at?: string }>
   /**
@@ -233,6 +358,32 @@ export interface Core {
    * and nothing where it was. A count left out stands as it is.
    */
   choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
+  /**
+   * The hour a day of review begins at, on the clock on the wall, written as
+   * `04:00`.
+   */
+  reviewing(): Promise<string>
+  /**
+   * That hour written into the settings file. What could not be written, and
+   * nothing where it was.
+   */
+  choosesReviewing(starts: string): Promise<Refused | null>
+  /** Every setting as it stands, and the models the settings offer. */
+  settings(): Promise<Configured>
+  /**
+   * Settings written into the settings file, together or not at all. A value
+   * the settings could not be read out of again is refused, and what the file
+   * holds is unchanged.
+   */
+  choosesSetting(written: readonly Written[]): Promise<void>
+  /** The settings file as its person wrote it, and where it stands. */
+  settingsFile(): Promise<{ readonly written: string; readonly path: string }>
+  /**
+   * The settings file replaced whole, with the bytes as they were typed. A file
+   * the settings could not be read out of is refused, and what the file holds
+   * is unchanged.
+   */
+  writesSettingsFile(written: string): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**
@@ -265,6 +416,7 @@ export type Refused =
   | 'notAStencil'
   | 'notADeck'
   | 'deckTooLarge'
+  | 'notAPreset'
 
 /** A note to make: what it is called, where it goes, and what it arrives joined to. */
 export interface NewNote {

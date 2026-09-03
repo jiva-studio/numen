@@ -65,6 +65,13 @@ const (
 	// FlashcardsServiceAroundProcedure is the fully-qualified name of the FlashcardsService's Around
 	// RPC.
 	FlashcardsServiceAroundProcedure = "/numen.v1.FlashcardsService/Around"
+	// FlashcardsServiceSchedulingProcedure is the fully-qualified name of the FlashcardsService's
+	// Scheduling RPC.
+	FlashcardsServiceSchedulingProcedure = "/numen.v1.FlashcardsService/Scheduling"
+	// FlashcardsServiceCurveProcedure is the fully-qualified name of the FlashcardsService's Curve RPC.
+	FlashcardsServiceCurveProcedure = "/numen.v1.FlashcardsService/Curve"
+	// FlashcardsServiceTasksProcedure is the fully-qualified name of the FlashcardsService's Tasks RPC.
+	FlashcardsServiceTasksProcedure = "/numen.v1.FlashcardsService/Tasks"
 )
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
@@ -73,15 +80,24 @@ type FlashcardsServiceClient interface {
 	// it holds, how much is due, and how much has never been asked. It is what
 	// the application opens on.
 	//
-	// A vault the index does not carry yet is listed with nothing counted and
-	// says so: the list of its decks is the index's answer, and this application
-	// builds none.
-	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error)
+	// The first message is every vault as the registry holds it, with nothing
+	// counted, and one message follows for each vault as it is worked out.
+	// Counting a vault reads every deck in it and replays its whole answer log,
+	// so the list stands while that runs.
+	//
+	// A vault the index does not carry is read into it here, and its counts
+	// follow when the reading is done. What that reading is doing is Tasks.
+	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error)
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
-	// Naming a deck asks that deck alone. Naming none asks the whole vault, which
-	// is the ordinary way to sit down to this.
+	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
+	// deck pointing at it, held to that preset's own budget. Naming neither asks
+	// the whole vault, which is the ordinary way to sit down to this.
+	//
+	// Naming both is refused. A preset with nothing to ask today is refused with
+	// the reason, so a person pressing it is told why and not shown an empty
+	// sitting.
 	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
 	// Answer writes down how a card came back. What comes back is the identifier
 	// of the line, which is what taking that answer back names.
@@ -104,6 +120,20 @@ type FlashcardsServiceClient interface {
 	// a line out of something longer, and what it was cut from is what a person
 	// reaches for when it will not come back to them.
 	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
+	// Scheduling is the preset a deck of the named vault is scheduled by. A deck
+	// naming none is answered with the defaults under no path, and a deck whose
+	// link reaches something that is not a preset is answered with the defaults
+	// and told so.
+	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
+	// Curve is what the settings come to over the whole range of the goal they
+	// name. Nothing is written: a curve is asked for the value a person is
+	// moving and has not settled.
+	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
+	// Tasks is everything this window is doing behind itself, for as long as the
+	// caller listens. Reading a vault is the work it reports, and a vault is read
+	// without anyone asking, so the whole list arrives at once and again whenever
+	// any of it changes.
+	Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest]) (*connect.ServerStreamForClient[v1.FlashcardsServiceTasksResponse], error)
 }
 
 // NewFlashcardsServiceClient constructs a client for the numen.v1.FlashcardsService service. By
@@ -165,24 +195,45 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
 			connect.WithClientOptions(opts...),
 		),
+		scheduling: connect.NewClient[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse](
+			httpClient,
+			baseURL+FlashcardsServiceSchedulingProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
+			connect.WithClientOptions(opts...),
+		),
+		curve: connect.NewClient[v1.FlashcardsServiceCurveRequest, v1.FlashcardsServiceCurveResponse](
+			httpClient,
+			baseURL+FlashcardsServiceCurveProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
+			connect.WithClientOptions(opts...),
+		),
+		tasks: connect.NewClient[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse](
+			httpClient,
+			baseURL+FlashcardsServiceTasksProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("Tasks")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // flashcardsServiceClient implements FlashcardsServiceClient.
 type flashcardsServiceClient struct {
-	owing    *connect.Client[v1.OwingRequest, v1.OwingResponse]
-	start    *connect.Client[v1.StartRequest, v1.StartResponse]
-	answer   *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
-	takeBack *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
-	moving   *connect.Client[v1.MovingRequest, v1.MovingResponse]
-	reviewed *connect.Client[v1.ReviewedRequest, v1.ReviewedResponse]
-	asking   *connect.Client[v1.AskingRequest, v1.AskingResponse]
-	around   *connect.Client[v1.AroundRequest, v1.AroundResponse]
+	owing      *connect.Client[v1.OwingRequest, v1.OwingResponse]
+	start      *connect.Client[v1.StartRequest, v1.StartResponse]
+	answer     *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
+	takeBack   *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
+	moving     *connect.Client[v1.MovingRequest, v1.MovingResponse]
+	reviewed   *connect.Client[v1.ReviewedRequest, v1.ReviewedResponse]
+	asking     *connect.Client[v1.AskingRequest, v1.AskingResponse]
+	around     *connect.Client[v1.AroundRequest, v1.AroundResponse]
+	scheduling *connect.Client[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse]
+	curve      *connect.Client[v1.FlashcardsServiceCurveRequest, v1.FlashcardsServiceCurveResponse]
+	tasks      *connect.Client[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse]
 }
 
 // Owing calls numen.v1.FlashcardsService.Owing.
-func (c *flashcardsServiceClient) Owing(ctx context.Context, req *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error) {
-	return c.owing.CallUnary(ctx, req)
+func (c *flashcardsServiceClient) Owing(ctx context.Context, req *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error) {
+	return c.owing.CallServerStream(ctx, req)
 }
 
 // Start calls numen.v1.FlashcardsService.Start.
@@ -220,21 +271,45 @@ func (c *flashcardsServiceClient) Around(ctx context.Context, req *connect.Reque
 	return c.around.CallUnary(ctx, req)
 }
 
+// Scheduling calls numen.v1.FlashcardsService.Scheduling.
+func (c *flashcardsServiceClient) Scheduling(ctx context.Context, req *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
+	return c.scheduling.CallUnary(ctx, req)
+}
+
+// Curve calls numen.v1.FlashcardsService.Curve.
+func (c *flashcardsServiceClient) Curve(ctx context.Context, req *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
+	return c.curve.CallUnary(ctx, req)
+}
+
+// Tasks calls numen.v1.FlashcardsService.Tasks.
+func (c *flashcardsServiceClient) Tasks(ctx context.Context, req *connect.Request[v1.FlashcardsServiceTasksRequest]) (*connect.ServerStreamForClient[v1.FlashcardsServiceTasksResponse], error) {
+	return c.tasks.CallServerStream(ctx, req)
+}
+
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
 	// Owing is what every vault the installation knows comes to today: how much
 	// it holds, how much is due, and how much has never been asked. It is what
 	// the application opens on.
 	//
-	// A vault the index does not carry yet is listed with nothing counted and
-	// says so: the list of its decks is the index's answer, and this application
-	// builds none.
-	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error)
+	// The first message is every vault as the registry holds it, with nothing
+	// counted, and one message follows for each vault as it is worked out.
+	// Counting a vault reads every deck in it and replays its whole answer log,
+	// so the list stands while that runs.
+	//
+	// A vault the index does not carry is read into it here, and its counts
+	// follow when the reading is done. What that reading is doing is Tasks.
+	Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error
 	// Start opens a run and hands over what to ask, in order. A run writes one
 	// file of its own in the vault and nothing else ever appends to it.
 	//
-	// Naming a deck asks that deck alone. Naming none asks the whole vault, which
-	// is the ordinary way to sit down to this.
+	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
+	// deck pointing at it, held to that preset's own budget. Naming neither asks
+	// the whole vault, which is the ordinary way to sit down to this.
+	//
+	// Naming both is refused. A preset with nothing to ask today is refused with
+	// the reason, so a person pressing it is told why and not shown an empty
+	// sitting.
 	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
 	// Answer writes down how a card came back. What comes back is the identifier
 	// of the line, which is what taking that answer back names.
@@ -257,6 +332,20 @@ type FlashcardsServiceHandler interface {
 	// a line out of something longer, and what it was cut from is what a person
 	// reaches for when it will not come back to them.
 	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
+	// Scheduling is the preset a deck of the named vault is scheduled by. A deck
+	// naming none is answered with the defaults under no path, and a deck whose
+	// link reaches something that is not a preset is answered with the defaults
+	// and told so.
+	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
+	// Curve is what the settings come to over the whole range of the goal they
+	// name. Nothing is written: a curve is asked for the value a person is
+	// moving and has not settled.
+	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
+	// Tasks is everything this window is doing behind itself, for as long as the
+	// caller listens. Reading a vault is the work it reports, and a vault is read
+	// without anyone asking, so the whole list arrives at once and again whenever
+	// any of it changes.
+	Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest], *connect.ServerStream[v1.FlashcardsServiceTasksResponse]) error
 }
 
 // NewFlashcardsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -266,7 +355,7 @@ type FlashcardsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	flashcardsServiceMethods := v1.File_numen_v1_flashcards_proto.Services().ByName("FlashcardsService").Methods()
-	flashcardsServiceOwingHandler := connect.NewUnaryHandler(
+	flashcardsServiceOwingHandler := connect.NewServerStreamHandler(
 		FlashcardsServiceOwingProcedure,
 		svc.Owing,
 		connect.WithSchema(flashcardsServiceMethods.ByName("Owing")),
@@ -314,6 +403,24 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
 		connect.WithHandlerOptions(opts...),
 	)
+	flashcardsServiceSchedulingHandler := connect.NewUnaryHandler(
+		FlashcardsServiceSchedulingProcedure,
+		svc.Scheduling,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
+		connect.WithHandlerOptions(opts...),
+	)
+	flashcardsServiceCurveHandler := connect.NewUnaryHandler(
+		FlashcardsServiceCurveProcedure,
+		svc.Curve,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
+		connect.WithHandlerOptions(opts...),
+	)
+	flashcardsServiceTasksHandler := connect.NewServerStreamHandler(
+		FlashcardsServiceTasksProcedure,
+		svc.Tasks,
+		connect.WithSchema(flashcardsServiceMethods.ByName("Tasks")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.FlashcardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FlashcardsServiceOwingProcedure:
@@ -332,6 +439,12 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceAskingHandler.ServeHTTP(w, r)
 		case FlashcardsServiceAroundProcedure:
 			flashcardsServiceAroundHandler.ServeHTTP(w, r)
+		case FlashcardsServiceSchedulingProcedure:
+			flashcardsServiceSchedulingHandler.ServeHTTP(w, r)
+		case FlashcardsServiceCurveProcedure:
+			flashcardsServiceCurveHandler.ServeHTTP(w, r)
+		case FlashcardsServiceTasksProcedure:
+			flashcardsServiceTasksHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -341,8 +454,8 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 // UnimplementedFlashcardsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedFlashcardsServiceHandler struct{}
 
-func (UnimplementedFlashcardsServiceHandler) Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.Response[v1.OwingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Owing is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Owing is not implemented"))
 }
 
 func (UnimplementedFlashcardsServiceHandler) Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error) {
@@ -371,4 +484,16 @@ func (UnimplementedFlashcardsServiceHandler) Asking(context.Context, *connect.Re
 
 func (UnimplementedFlashcardsServiceHandler) Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Around is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Scheduling is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Curve is not implemented"))
+}
+
+func (UnimplementedFlashcardsServiceHandler) Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest], *connect.ServerStream[v1.FlashcardsServiceTasksResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Tasks is not implemented"))
 }

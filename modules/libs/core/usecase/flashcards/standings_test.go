@@ -14,6 +14,7 @@ import (
 // difference matters at the front door: one owes nothing, the other is not
 // known yet, and a person is told which.
 func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	unread := domain.Vault{ID: "nobody-scanned-this", Name: "Unread", Path: s.vault.Path}
 
@@ -26,6 +27,7 @@ func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 // One deck that cannot be read is not a reason to refuse a person the rest of
 // their cards. What was wrong with it is settled in the editor.
 func TestADeckThatCannotBeReadLeavesTheOthersStanding(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	whole, err := s.standings.Execute(t.Context(), s.vault)

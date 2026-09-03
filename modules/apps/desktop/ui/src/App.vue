@@ -2,18 +2,17 @@
 /**
  * The window: one vault, and tabs to divide the screen between.
  *
- * What a tab of each kind holds is that kind's own, in `plex/`, `agent/`,
- * `document/`, `note/` and `files/`; keeping tabs of any kind at all is in
- * `windowing.ts`; when to ask the vault again is in `showing.ts`. What is left
- * here is the vault this window reads, the kinds it draws, and the few things
- * one kind asks of another.
+ * What is here is the vault this window reads, the kinds it declares, and the
+ * few things one kind asks of another. What a tab of a kind holds is that
+ * kind's own.
  */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { closeTab, conversation, Notices, Palette, Workspace } from '@numen/ui'
+import { conversation, Notices, Workspace } from '@numen/ui'
 import type { Notice } from '@numen/ui'
 import '@numen/ui/styles.css'
-import { cards, core, documents, vaults } from './vault'
-import type { Listed } from './core'
+import './app.css'
+import { cards, core, documents, recordings, running, vaults } from './vault'
+import type { Attention, Listed } from './core'
 import { showing } from './showing'
 import { standing } from './plex/standing'
 import { reading } from './document/reading'
@@ -23,73 +22,77 @@ import { editing } from './note/editing'
 import { drawn } from './note/drawn'
 import { CREATABLE, creating } from './note/creating'
 import {
-  asksCommands,
   commanding,
-  creates,
   deedOf,
-  MAKING,
-  offering,
+  runnable,
   type Holds,
   type Knows,
   type Shown,
   type Where,
 } from './commanding'
-import { chorded, commandFor, keysOf } from './keying'
-import { iconFor, iconOfKind } from './icons'
+import { chorded, commandFor } from './keying'
+import { iconOfKind } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
-import { SYNCING, syncing } from './syncing'
+import { reviewing } from './reviewing'
+import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type Doing, type Store } from './doing'
 import { finding } from './finding'
 import { lands, type Places } from './landing'
-import { putting } from './putting'
+import { cutting, putting } from './putting'
 import { leaving } from './leaving'
 import { raising } from './raising'
 import { windowing } from './windowing'
 import Leaving from './Leaving.vue'
 import Failure from './Failure.vue'
-import { Welcome, opensVault } from '@numen/ui'
-import { COMMANDS, vaultsOn, waysIn } from './welcome/welcoming'
+import Field from './Field.vue'
+import Welcoming from './Welcoming.vue'
 import { telling } from './telling'
 import { agentKind, talking } from './agent/kind'
 import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
+import { presets } from './preset/core'
+import { presetting } from './preset/kind'
+import { configuring } from './settings/configuring'
+import { settling } from './settings/kind'
+import { configuring as holdingFile } from './configuration/kind'
 import { documentKind, documenting } from './document/kind'
+import { recordingKind } from './recording/kind'
+import { listening } from './recording/listening'
+import { playable } from './recording/playing'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
-import { noting, type Held as NoteHeld } from './note/kind'
-import { plexKind, plexing, type Held as PlexHeld } from './plex/kind'
+import { noting } from './note/kind'
+import { plexKind } from './plex/kind'
 import { core as agent } from './agent/core'
 import { WORDS as talk } from './agent/words'
 import { WORDS as cut } from './cards/words'
 import { WORDS as words } from './words'
-import { VERSION } from './version'
-import { AGENT, CONVERSATION, FILES, NOTE, PLEX, named, opening } from './workspace'
+import { AGENT, CONVERSATION, FILES, PLEX, named, opening } from './workspace'
 
 const drawings = drawn()
-const notes = editing(core, undefined, drawings.arrived)
+const notes = editing(core, { replaced: drawings.arrived })
 /** Everything the window has said, each part of it under a name of its own. */
 const tell = telling()
 const making = creating(core, tell.under('made'))
 /** The page drawn again, which is a clean window on the vault that arrived. */
 const reloads = () => globalThis.location.reload()
-const window = showing(
-  core,
-  undefined,
-  async (paths, renamed) => {
+const window = showing(core, {
+  told: async (paths, renamed) => {
     notes.changed(paths, renamed)
     decks.changed(paths, renamed)
     stencils.changed(paths, renamed)
+    schedules.changed(paths, renamed)
     commands.follows(renamed)
     await files.changed(paths, renamed)
     await plexes.again(renamed)
   },
-  drawings.told,
-  (path) => plexes.travel(path),
-  (path, runs) => void puts.opensAt(path, runs),
+  drawing: drawings.told,
+  wanted: (path) => plexes.travel(path),
+  reads: (path, runs) => void puts.opensAt(path, runs),
   reloads,
-)
+})
 /** What the window answers when the application says it is going. */
 const going = leaving(core)
 going.holds(notes.flush)
@@ -136,15 +139,26 @@ const { layout } = held
  */
 const puts = putting(core)
 
+/**
+ * The runs this build cannot do at all, as this window has been told them. The
+ * application answers a run it cannot do once, and this window stops offering
+ * it wherever it is offered.
+ */
+const runs = runnable()
+
 /** The notes the window has open: what each is called, and what each tab of one holds. */
 const noted = noting(core, notes, drawings, held.host, puts)
 
 /** The decks and the stencils the window has open, each saved the way a note is. */
-const decks = decking(cards, held.host, puts)
+const decks = decking(cards, presets, held.host, puts)
 const stencils = stencilling(cards, held.host, puts, tell.under('stencil'))
+
+/** The presets the window has open, each written as one group of settings. */
+const schedules = presetting(presets, held.host, puts, tell.under('preset'))
 
 going.holds(decks.flush)
 going.holds(stencils.flush)
+going.holds(schedules.flush)
 raising(decks, going)
 raising(stencils, going)
 
@@ -177,16 +191,42 @@ const plexes = plexKind(held.host, () => standing(core), {
 })
 
 /** The agent tabs, and the one a question about a note is put in. */
-const agents = agentKind(held.host, () =>
-  talking(conversation(agent, talk, named(CONVERSATION)), {
-    looking: () => plexes.looking(),
-    opens: (path, ...runs) => void puts.opensAt(path, runs),
-    unreachable: () => unreachable.value,
-  }),
+const agents = agentKind(
+  held.host,
+  () =>
+    talking(conversation(agent, talk, named(CONVERSATION)), {
+      opens: (path, ...runs) => void puts.opensAt(path, runs),
+      beside: (path) => void puts.opens(path, '', 'beside'),
+      resolve: (written) => core.resolve('', written),
+      unreachable: () => unreachable.value,
+    }),
+  () => {
+    const path = plexes.looking()
+    return { path, title: plexes.names(path) || path }
+  },
 )
 
 /** The document tabs, each reading the document it is filed at. */
 const read = documentKind(held.host, (path) => documenting(reading(documents, path)), puts)
+
+/** What this window can play, asked once for each kind of sound. */
+const plays = playable()
+
+/** The recording tabs, each playing the recording it is filed at. */
+const heard = recordingKind(
+  held.host,
+  (path) => listening(recordings, path, { plays }),
+  {
+    runs: (id, path, called) =>
+      carries(id, { ...where(), path: '', title: called, file: path, source: 'recording' }),
+    canRun: (run) => runs.canRun(run),
+  },
+  puts,
+)
+
+// A transcript grows while a run goes, and the list of work is the only word of
+// it the window gets.
+watch(tasks, () => heard.ticked(tasks.value))
 
 /** Where the window is taken when something is chosen, wherever it was chosen. */
 const places: Places = {
@@ -196,50 +236,39 @@ const places: Places = {
 }
 
 /**
- * A deck or a stencil made in a folder under the name it is given. The vault
- * names the file after it and answers where it stands, and a stencil is made
- * carrying the field its cards are named by. A vault that answers nothing at
- * all is said here, because the roads that ask for one carry no word of their
- * own.
+ * A deck, a stencil or a preset made under the name it is given. A preset names
+ * none of its settings, so the decks pointed at it are scheduled by the
+ * defaults until the person moves one.
  */
-const makesCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
-  try {
-    const answer = stencil
-      ? await cards.makeStencil(name, folder, [cut.newField])
-      : await cards.makeDeck(name, folder)
-    if (answer.refusal) {
-      told(words.refused[answer.refusal], 'refusal')
-      return ''
-    }
-    return answer.path
-  } catch (error) {
-    told(String(error), 'refusal')
-    return ''
-  }
-}
-
-/** The same, put in front of the person in a tab of its own. */
-const opensCards = async (folder: string, name: string, stencil: boolean): Promise<string> => {
-  const path = await makesCards(folder, name, stencil)
-  if (!path) return ''
-  puts.made(path, '', stencil ? 'stencil' : 'deck')
-  return path
-}
+const made = cutting(
+  {
+    makeDeck: (title, folder) => cards.makeDeck(title, folder),
+    makeStencil: (title, folder, fields) => cards.makeStencil(title, folder, fields),
+    makesPreset: (title, folder) => presets.makes(title, folder),
+  },
+  puts,
+  { refused: words.refused, field: cut.newField },
+  told,
+)
 
 /** The tree of the vault, and what a gesture on a row of it comes to. */
 const files = filesKind(held.host, () => folders(core), {
   lands: (landing) => void lands(landing, places),
-  runs: (id, paths, name) =>
-    carries(id, { ...where(), path: paths[0] ?? '', title: name, others: paths.slice(1) }),
+  runs: (id, paths, name, source) => {
+    const path = paths[0] ?? ''
+    carries(id, { ...where(), path, title: name, file: path, source, others: paths.slice(1) })
+  },
   moves: (from, to) => does(deedOf('move', { ...where(), path: from }, to), doing, words),
   carries: (paths) => {
     carried.value = paths
   },
   makes: (path) => does(deedOf('makeFolder', where(), path), doing, words),
   writes: async (folder) => (await making.named(folder, []))?.path ?? '',
-  cuts: (folder, name) => makesCards(folder, name, false),
-  stencils: (folder, name) => makesCards(folder, name, true),
+  cuts: (folder, name) => made.makes('deck', folder, name),
+  stencils: (folder, name) => made.makes('stencil', folder, name),
+  presets: (folder, name) => made.makes('preset', folder, name),
   says: (text) => told(text, 'refusal'),
+  canRun: (run) => runs.canRun(run),
 })
 
 /** The kinds this window draws. */
@@ -248,13 +277,15 @@ held.declares([
   plexes.kind,
   agents.kind,
   read.kind,
+  heard.kind,
   files.kind,
   decks.kind,
   stencils.kind,
+  schedules.kind,
 ])
 
 /** The palette: one keystroke, and everything the words typed turn up. */
-const palette = finding(core, words, undefined, meaning)
+const palette = finding(core, words, { reading: meaning })
 
 /** The vault this window is showing, as the list of vaults has it. */
 const shown = ref<Shown>({ id: '', name: '' })
@@ -279,33 +310,74 @@ const listing = async () => {
 }
 
 /**
- * What a command is over: the tab in front, and the note it means. A note tab
- * means the note it holds and a plex tab the note it is standing on; an agent
- * means the note the plex the person was last in is standing on; anything else
- * means none.
+ * What a command is over: the tab in front, the note it means, and the file a
+ * run is over. Each kind says that of one of its own tabs, and a kind that says
+ * nothing is over neither.
  */
 const where = (): Where => {
-  const ready = !failure.value && !indexing.value
-  const vault = shown.value
   const front = held.host.front()
   const tab = front?.id ?? ''
-  const kind = front?.kind ?? null
-  if (kind === NOTE) {
-    const note = held.host.holds<NoteHeld>(NOTE, tab)
-    const path = note && notes.has(note.id) ? notes.where(note.id) : ''
-    return { tab, kind, path, title: note && path ? noted.titled(note.id) : '', vault, ready }
+  const on = front && held.heldIn(tab)?.kind.at?.(front.held)
+  return {
+    tab,
+    kind: front?.kind ?? null,
+    path: on?.path ?? '',
+    title: on?.title ?? '',
+    file: on?.file ?? '',
+    source: on?.source ?? null,
+    vault: shown.value,
+    ready: !failure.value && !indexing.value,
   }
-  if (kind === PLEX) {
-    const plex = held.host.holds<PlexHeld>(PLEX, tab)
-    const path = plex?.view.here.value ?? ''
-    return { tab, kind, path, title: (path && plex?.nameOf(path)) || path, vault, ready }
-  }
-  if (kind === AGENT) {
-    const path = plexes.looking()
-    return { tab, kind, path, title: plexes.names(path) || path, vault, ready }
-  }
-  return { tab, kind, path: '', title: '', vault, ready }
 }
+
+/**
+ * The tab the person is looking at. A question is written into an agent tab, so
+ * the tab in front of one is the one they were last in beside it.
+ */
+const looked = (): string => {
+  const at = held.host.front()
+  if (at && at.kind !== AGENT) return at.id
+  const beside = [...held.tabs.value]
+    .reverse()
+    .find((one) => held.heldIn(one.id)?.kind.kind !== AGENT)
+  return beside?.id ?? at?.id ?? ''
+}
+
+/**
+ * What the person has open, as whoever answers on their behalf is told it:
+ * every tab, what it holds, and which of them is in front.
+ *
+ * A kind that says what one of its tabs holds says it here; any other says what
+ * kind it is and no more.
+ */
+const attends = (): Attention => ({
+  front: looked(),
+  tabs: held.tabs.value.map(({ id, title }) => {
+    const one = held.heldIn(id)
+    const said = one?.kind.attends?.(one.held)
+    return {
+      id,
+      kind: one?.kind.kind ?? '',
+      title,
+      path: said?.path ?? '',
+      at: said?.at ?? 0,
+      of: said?.of ?? 0,
+    }
+  }),
+})
+
+/** The same, told to the application as the window opens and whenever it changes. */
+const attention = computed<Attention>(() => attends())
+watch(
+  attention,
+  (open) => {
+    void core.attending(open).catch((why) => {
+      // An agent asking what is open is answered from what last arrived.
+      console.error('what the window has open was not told:', why)
+    })
+  },
+  { immediate: true },
+)
 
 /** What kind of tab this is drawn as, before the name it carries. */
 const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')
@@ -315,19 +387,7 @@ const tabIcon = (id: string) => iconOfKind(held.heldIn(id)?.kind.kind ?? '')
  * whichever of them holds it, so a deck and a stencil answer a removal the way
  * a note does.
  */
-const stores: readonly Store[] = [
-  {
-    has: (id) => notes.has(id),
-    where: (id) => notes.where(id),
-    called: (id) => noted.titled(id),
-    asking: (id) => notes.overtaken(id) !== null,
-    settles: (id) => notes.settles(id),
-    shuts: (id) => noted.shuts(id),
-    holding: (path) => noted.holding(path),
-  },
-  decks.kept,
-  stencils.kept,
-]
+const stores: readonly Store[] = [noted.kept, decks.kept, stencils.kept]
 
 /** The open files a command reaches, whichever of the stores holds each. */
 const reached = reaching(stores, puts)
@@ -349,6 +409,44 @@ const dressed = wearing(themes, words, tell.under('worn'))
 
 /** Whether a note's title and the name of its file are kept as one name. */
 const oneName = syncing(core, words, tell.under('named'))
+
+/** The hour a day of review begins at, on the clock on the wall. */
+const dayBegins = reviewing(core, words, tell.under('reviewed'))
+
+/** The rest of the settings file, which no command of the window turns. */
+const rest = configuring(core, words, tell.under('configured'))
+
+/** The settings file itself, opened whole in a tab of its own. */
+const file = holdingFile(held.host, core, () => void rest.start())
+
+/**
+ * Everything this installation is configured as, in a tab of its own. It holds
+ * nothing: each row reaches the same value the command of that name reaches.
+ */
+const configured = settling(held.host, {
+  themes: () => dressed.list.value,
+  applied: () => dressed.applied.value,
+  mode: () => dressed.mode.value,
+  pinned: () => dressed.pinned.value,
+  sizes: () => dressed.sized.value,
+  bounds: () => dressed.bounds.value,
+  chooses: (item) => void dressed.chooses(item),
+  syncing: () => oneName.kept.value,
+  choosesSyncing: (on) => void oneName.chooses(on ? ON : OFF),
+  hangs: () => hungParts.hangs.value,
+  parts: () => hungParts.parts.value,
+  choosesHanging: (on) => void hungParts.chooses(on ? ON : OFF),
+  choosesParts: (count) => void hungParts.choosesCount(`${count}`),
+  dayStarts: () => dayBegins.starts.value,
+  choosesDayStarts: (hour) => void dayBegins.chooses(hour),
+  setting: (at) => rest.at(at),
+  models: (at) => rest.offers(at),
+  writes: (written) => void rest.chooses(written),
+  file: () => rest.path.value,
+  opensFile: () => file.shows(),
+})
+
+held.declares([configured.kind, file.kind])
 
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box
@@ -373,41 +471,70 @@ const kept: Holds = {
   },
 }
 
-/** The commands, over whatever is in front. */
-const commands = commanding(core, words, where, knows, kept)
+/**
+ * The preset of a note, put in front of the person. A deck is scheduled by the
+ * preset its links name, and every other note is asked about as a preset itself.
+ */
+const opensPreset = async (path: string): Promise<void> => {
+  const stands = (await core.standing([path])).get(path)
+  if (stands?.type !== 'deck') return schedules.shows(path)
+  const answer = await presets.scheduling(path)
+  if (answer.refusal) return told(words.refused[answer.refusal], 'refusal')
+  if (!answer.preset?.path) return told(words.noPreset, 'caution')
+  schedules.shows(answer.preset.path, answer.preset.title)
+}
 
-/** What the window offers a command being carried out. */
+/** The commands, over whatever is in front. */
+const commands = commanding(core, words, where, knows, kept, runs)
+
+/** What the window offers a command being carried out, one port to a job. */
 const doing: Doing = {
-  makes: (title, from, seat) => making.calls(title, from, seat),
-  renames: (path, title) => core.rename(path, title),
-  removes: (path, destroy) => core.remove(path, destroy),
-  moves: (from, to) => core.move(from, to),
-  makesFolder: (path) => core.makeFolder(path),
-  cuts: (folder, name) => opensCards(folder, name, false),
-  stencils: (folder, name) => opensCards(folder, name, true),
-  reveals: (path) => void files.reveals(path),
+  files: {
+    makes: (title, from, seat) => making.calls(title, from, seat),
+    renames: (path, title) => core.rename(path, title),
+    removes: (path, destroy) => core.remove(path, destroy),
+    moves: (from, to) => core.move(from, to),
+    makesFolder: (path) => core.makeFolder(path),
+  },
+  runs: {
+    transcribes: (path) => running.transcribes(path),
+    recognises: (path) => running.recognises(path),
+    proofreads: (path) => running.proofreads(path),
+    drops: async (path) => {
+      const able = await running.drops(path)
+      if (able) heard.dropped(path)
+      return able
+    },
+  },
+  cards: made,
+  vaults: {
+    ...vaults,
+    calls: (vault) => (shown.value = vault),
+    reloads,
+  },
+  goes: {
+    reveals: (path) => void files.reveals(path),
+    travel: (path) => plexes.travel(path),
+    leaves: (from, to) => plexes.leaves(from, to),
+    opening: () => window.opening.value,
+    opens: (kind) => void held.opens(kind),
+    preset: (path) => opensPreset(path),
+    closes: (tab) => held.drops(tab),
+    asks: (text) => void agents.asks(text),
+    searches: () => {
+      commands.shows(false)
+      palette.shows(true)
+    },
+  },
+  settings: {
+    appearance: (chosen) => dressed.chooses(chosen),
+    syncing: (chosen) => oneName.chooses(chosen),
+    hanging: (chosen) => hungParts.chooses(chosen),
+    parts: (chosen) => hungParts.choosesCount(chosen),
+  },
   notes: reached,
-  vaults,
-  calls: (vault) => (shown.value = vault),
-  reloads,
-  travel: (path) => plexes.travel(path),
-  leaves: (from, to) => plexes.leaves(from, to),
-  opening: () => window.opening.value,
-  opens: (kind) => void held.opens(kind),
-  // A kind with something to finish keeps its tab and closes it itself.
-  closes: (tab) => {
-    if (held.shut(tab)) layout.value = closeTab(layout.value, tab)
-  },
-  asks: (text) => void agents.asks(text),
+  runnable: runs,
   copies: (path) => void navigator.clipboard?.writeText(path),
-  searches: () => {
-    commands.shows(false)
-    palette.shows(true)
-  },
-  appearance: (chosen) => dressed.chooses(chosen),
-  syncing: (chosen) => oneName.chooses(chosen),
-  hanging: (chosen) => hungParts.chooses(chosen),
-  parts: (chosen) => hungParts.choosesCount(chosen),
   says: told,
 }
 
@@ -423,153 +550,17 @@ const carries = (id: string, at: Where) => {
   told(commands.refused(id, at), 'refusal')
 }
 
-// What the welcome screen offers below the list of vaults.
-const adding = computed(() => {
-  const icon = iconFor('newVault')
-  return {
-    text: words.newVault,
-    detail: words.newVaultDetail,
-    ...(icon ? { icon } : {}),
-    ...keysOf('newVault', navigator.userAgent),
-  }
-})
-
-// The screen draws what it is given, so what stands in front of each way is
-// chosen here, where the window's own icons are.
-const ways = computed(() =>
-  waysIn({ vault: shown.value.id, ready: where().ready }, words, navigator.userAgent).map(
-    (one) => {
-      const icon = iconFor(one.id)
-      return { ...one, ...(icon ? { icon } : {}) }
-    },
-  ),
-)
-const onList = computed(() => vaultsOn(listed.value, words))
-
 /**
- * A way in taken on the welcome screen. The commands are the window's own; the
- * rest are commands, and one that is refused says why.
- */
-const runs = (id: string) => {
-  if (id !== COMMANDS) return carries(id, where())
-  palette.shows(false)
-  commands.shows(true)
-}
-
-/** Whether the welcome screen is what the person is looking at and typing into. */
-const welcoming = computed(
-  () => held.tabs.value.length === 0 && !palette.open.value && !commands.open.value,
-)
-
-/** A vault chosen on the welcome screen, shown in this window in place of none. */
-const opens = (id: string) => {
-  const one = listed.value.vaults.find((vault) => vault.id === id)
-  if (!one) return
-  const vault: Shown = { id: one.id, name: one.name }
-  void does(deedOf('openVault', { ...where(), vault }), doing, words)
-}
-
-/**
- * The keystrokes taken on the window: they belong to no pane. Two put the
- * palette up and take it down again, and the rest carry out the command the
- * chords name, which is the one written on that command's row.
+ * The keystrokes taken on the window: they belong to no pane. Each carries out
+ * the command its chord names, which is the one written on that command's row.
  */
 const asked = (event: KeyboardEvent) => {
   // A pane that has answered this keystroke keeps it.
-  if (event.defaultPrevented) return
-  // On the welcome screen a letter alone opens the vault standing at it, which
-  // is the letter drawn on that row.
-  if (welcoming.value) {
-    const at = opensVault(event, onList.value.length)
-    const one = at === null ? undefined : onList.value[at]
-    if (one) {
-      event.preventDefault()
-      opens(one.id)
-      return
-    }
-  }
-  if (!chorded(event)) return
-  const key = event.key.toLowerCase()
-  // The two the window puts up are that letter alone. The same letter with
-  // Shift is a chord of its own, and goes to whoever the table gives it to.
-  if (!event.shiftKey && key === 'k') {
-    event.preventDefault()
-    commands.shows(false)
-    palette.shows(!palette.open.value)
-    return
-  }
-  if (!event.shiftKey && key === 'p') {
-    event.preventDefault()
-    palette.shows(false)
-    commands.shows(!commands.open.value)
-    return
-  }
-  const command = commandFor(key, event.shiftKey)
+  if (event.defaultPrevented || !chorded(event)) return
+  const command = commandFor(event.key.toLowerCase(), event.shiftKey)
   if (!command) return
   event.preventDefault()
   carries(command, where())
-}
-
-/** What the palette draws: the commands while they are open, the search under. */
-const field = computed(() =>
-  commands.open.value
-    ? {
-        open: true,
-        typed: commands.typed.value,
-        bands: commands.bands.value,
-        crumb: commands.crumb.value,
-        step: commands.step.value,
-        opensOn: commands.opensOn.value,
-        placeholder: commands.placeholder.value,
-      }
-    : {
-        open: palette.open.value,
-        typed: palette.typed.value,
-        bands: offering(palette.bands.value, palette.typed.value, words, where()),
-        crumb: '',
-        step: '',
-        opensOn: '',
-        placeholder: words.find,
-      },
-)
-
-/**
- * Something typed in the field. The one character that means the commands is
- * the one typed into a field holding nothing.
- */
-const typing = (text: string) => {
-  if (commands.open.value) return void commands.typing(text)
-  if (!asksCommands(palette.typed.value, text)) return void palette.typing(text)
-  palette.shows(false)
-  commands.shows(true)
-}
-
-/** Something chosen, and the window taken there or the command carried out. */
-const went = async (item: string, action: string) => {
-  if (commands.open.value) {
-    const deed = commands.chose(item, action)
-    if (!deed) return
-    commands.shows(false)
-    await does(deed, doing, words)
-    return
-  }
-  if (item === MAKING) {
-    const name = palette.typed.value.trim()
-    palette.shows(false)
-    await does(creates(action, name, where()), doing, words)
-    return
-  }
-  const landing = palette.chose(item, action)
-  palette.shows(false)
-  await lands(landing, places)
-}
-
-/** Escape: a step of a command goes, and the palette itself at the last of them. */
-const dismissed = () => (commands.open.value ? commands.leaves() : palette.shows(false))
-
-/** Backspace in an empty field: the step goes, and the first hands back the search. */
-const back = () => {
-  if (commands.open.value && commands.backs()) palette.shows(true)
 }
 
 /** A tab lets go of what it held. A kind with something to finish keeps it. */
@@ -600,6 +591,8 @@ onMounted(async () => {
   void dressed.start()
   void oneName.start()
   void hungParts.start()
+  void dayBegins.start()
+  void rest.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)
@@ -637,15 +630,14 @@ onUnmounted(() => {
       </template>
 
       <template #silence>
-        <Welcome
-          :ways="ways"
-          :vaults="onList"
-          :heading="words.vaults"
-          :offer="adding"
-          :version="VERSION"
-          @runs="runs"
-          @opens="opens"
-          @offers="carries('newVault', where())"
+        <Welcoming
+          :listed="listed"
+          :tabs="held.tabs.value"
+          :commands="commands"
+          :search="palette"
+          :doing="doing"
+          :where="where"
+          :carries="carries"
         />
       </template>
     </Workspace>
@@ -660,30 +652,13 @@ onUnmounted(() => {
 
     <Leaving :questions="going.questions.value" :called="titled" />
 
-    <Palette
-      :model-value="field.typed"
-      :bands="field.bands"
-      :open="field.open"
-      :placeholder="field.placeholder"
-      :crumb="field.crumb"
-      :step="field.step"
-      :opens-on="field.opensOn"
-      :name="words.find"
-      :actions-name="words.actions"
-      :actions-placeholder="words.findAction"
-      :actions-silence="words.noAction"
-      @update:model-value="typing"
-      @choose="went"
-      @lit="commands.lights"
-      @back="back"
-      @dismiss="dismissed"
-    >
-      <!-- A command is drawn with its icon. What a search turns up is a note, a
-           heading or a passage, and none of those is a command. -->
-      <template v-if="commands.open.value" #icon="{ id }">
-        <component :is="iconFor(id)" v-if="iconFor(id)" class="command-icon" />
-      </template>
-    </Palette>
+    <Field
+      :commands="commands"
+      :search="palette"
+      :doing="doing"
+      :where="where"
+      :places="places"
+    />
   </main>
 </template>
 
@@ -700,7 +675,6 @@ main {
 }
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.command-icon,
 .tab-icon {
   inline-size: 100%;
   block-size: 100%;

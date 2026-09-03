@@ -3,13 +3,13 @@
  * A files tab: the tree of the vault, the menu on a row of it, and what this
  * tab could not read.
  *
- * The tree takes names and hands identities back, and a row's identity here is
- * the path the vault files it under. Every gesture is handed to what the tab
- * holds. What is drawn beside a name is what the vault holds there.
+ * A row's identity is the path the vault files it under, and what is drawn
+ * beside a name is what the vault holds there. A row also names the folder a
+ * file dropped on it from outside the window is filed in.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
 import { Menu, Tree } from '@numen/ui'
-import type { Point, Row as TreeRow } from '@numen/ui'
+import type { Marking, Point, Row as TreeRow } from '@numen/ui'
 import {
   Book,
   File,
@@ -20,14 +20,25 @@ import {
   LayoutTemplate,
   type LucideIcon,
 } from '@lucide/vue'
+import Caution from '../Caution.vue'
 import type { NoteType, Source } from '../core'
-import { iconFor } from '../icons'
+import { iconFor, iconOfNote } from '../icons'
 import type { Dropped, Held } from './kind'
 import type { Row } from './listing'
 import { itemsFor } from './menu'
 import { WORDS as words } from './words'
 
 const props = defineProps<{ held: Held }>()
+
+/**
+ * The mark the window's drag and drop reads: the attribute it looks a target
+ * up by, carrying the folder a file let go there is filed in. The window puts
+ * `file-drop-target-active` on whichever it is over.
+ */
+const dropTarget = computed<Marking>(() => ({
+  attribute: 'data-file-drop-target',
+  valueFor: (row: string | null) => props.held.folderFor(row),
+}))
 
 /** The tree as the component takes it, a path standing for each row. */
 const drawn = (rows: readonly Row[]): TreeRow[] =>
@@ -64,19 +75,20 @@ const entryIcon = (id: string, open: boolean): LucideIcon => {
   const kind = kindOf(id)
   if (kind === 'folder') return open ? FolderOpen : Folder
   if (kind === 'book') return Book
-  if (kind === 'deck') return Layers
-  if (kind === 'stencil') return LayoutTemplate
-  return kind === 'note' ? FileText : File
+  if (kind === 'note' || kind === 'deck' || kind === 'stencil' || kind === 'preset') {
+    return iconOfNote(kind)
+  }
+  return File
 }
 
 /** What the menu offers: on the row it was asked for on, or off every row. */
 const items = computed(() => {
   const asked = props.held.menu.value
-  if (!asked || asked.path === null) return itemsFor(null, false)
+  if (!asked || asked.path === null) return itemsFor(null, false, props.held.canRun)
 
   const entry = props.held.list.entryAt(asked.path)
   const on = { source: entry?.kind ?? 'other', folder: entry?.folder ?? false }
-  return itemsFor(on, props.held.over(asked.path).length > 1)
+  return itemsFor(on, props.held.over(asked.path).length > 1, props.held.canRun)
 })
 
 /**
@@ -89,9 +101,9 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
 
 <template>
   <div class="files">
-    <p v-if="props.held.list.trouble.value" class="warning">
+    <Caution v-if="props.held.list.trouble.value">
       {{ props.held.list.trouble.value }}
-    </p>
+    </Caution>
 
     <Tree
       v-model:renaming="renaming"
@@ -101,6 +113,7 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
       :selected="props.held.list.chosen.value"
       :name="words.tree"
       :counted="words.carrying"
+      :marking="dropTarget"
       @open="(row: string) => props.held.open(row)"
       @close="(row: string) => props.held.close(row)"
       @select="(rows: readonly string[]) => props.held.select(rows)"
@@ -147,22 +160,18 @@ onUnmounted(() => globalThis.removeEventListener('focus', props.held.list.again)
   min-block-size: 0;
 }
 
+/* Where a file carried in from outside would land. The window puts this class
+   on the element under the pointer for as long as the drag is over it. */
+.files__tree :deep(.file-drop-target-active),
+.files__tree.file-drop-target-active {
+  box-shadow: inset 0 0 0 var(--numen-ring-width) var(--numen-ring);
+}
+
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .files__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;
   stroke-width: 1.875;
   opacity: 0.75;
-}
-
-/* A warning carries a filesystem path, and a long one breaks where it stands. */
-.warning {
-  margin: 0;
-  padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans);
-  font-size: 0.8rem;
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-  overflow-wrap: break-word;
 }
 </style>

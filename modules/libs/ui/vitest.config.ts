@@ -2,7 +2,7 @@
 import { accessSync, constants } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import type { BrowserCommand } from 'vitest/node'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
@@ -41,10 +41,16 @@ const CANDIDATES = [
   'chromium-browser',
 ]
 
-/** A browser already on the machine; undefined uses Playwright's own. */
+/**
+ * A browser already on the machine; undefined uses Playwright's own.
+ *
+ * A run under `CI` takes the pinned build unless it was pointed at one, so the
+ * version the stories are drawn in is the version the workflow fetched.
+ */
 function systemChrome(): string | undefined {
   const explicit = process.env['CHROME_PATH']
   if (explicit) return explicit
+  if (process.env['CI']) return undefined
 
   for (const directory of (process.env['PATH'] ?? '').split(':')) {
     if (!directory) continue
@@ -65,6 +71,15 @@ const chrome = systemChrome()
 
 export default defineConfig({
   test: {
+    // The floor the unit tests stand on. Each number is where the suite is
+    // today, so a change may only raise it.
+    coverage: {
+      include: ['src/**'],
+      // A story is the corpus a test run draws, not code under test.
+      exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
+      reporter: ['text-summary'],
+      thresholds: { statements: 90, branches: 90, functions: 88, lines: 90 },
+    },
     projects: [
       {
         plugins: [vue()],
@@ -73,6 +88,7 @@ export default defineConfig({
           name: 'unit',
           environment: 'jsdom',
           include: ['src/**/*.test.ts'],
+          testTimeout: 30_000,
         },
       },
       {

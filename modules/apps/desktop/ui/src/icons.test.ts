@@ -6,22 +6,26 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { iconFor } from './icons'
+import { iconFor, iconOfKind, iconOfNote } from './icons'
+import { PRESET } from './workspace'
 import { commandsOf } from './commanding'
 import { itemsFor } from './files/menu'
 import { ITEMS, NONE } from './plex/menu'
 import { waysIn } from './welcome/welcoming'
 import { WORDS as words } from './words'
-import type { Source } from './core'
+import type { NoteType, Source } from './core'
+
+/** A window that has been told nothing, which can do every run. */
+const anything = () => true
 
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  itemsFor(null, false),
-  ...(['note', 'book', 'other'] as Source[]).flatMap((source) => [
-    itemsFor({ source, folder: false }, false),
-    itemsFor({ source, folder: true }, false),
+  itemsFor(null, false, anything),
+  ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
+    itemsFor({ source, folder: false }, false, anything),
+    itemsFor({ source, folder: true }, false, anything),
   ]),
-  itemsFor({ source: 'note', folder: false }, true),
+  itemsFor({ source: 'note', folder: false }, true, anything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {
@@ -53,5 +57,23 @@ describe('the icon a command is drawn with', () => {
   it('is nothing for an identity no list carries', () => {
     expect(iconFor('constructor')).toBeNull()
     expect(iconFor('nothing of the sort')).toBeNull()
+  })
+})
+
+// One mark to a kind: a preset is the same thing in the tree, in the plex and
+// in the tab it opens in.
+describe('the icon of a kind of note', () => {
+  const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
+
+  it('is there for every kind a note may be', () => {
+    for (const kind of kinds) expect(iconOfNote(kind), kind).toBeTruthy()
+  })
+
+  it('tells the four kinds apart', () => {
+    expect(new Set(kinds.map(iconOfNote)).size).toBe(kinds.length)
+  })
+
+  it('draws a preset as the tab that opens it does', () => {
+    expect(iconOfNote('preset')).toBe(iconOfKind(PRESET))
   })
 })

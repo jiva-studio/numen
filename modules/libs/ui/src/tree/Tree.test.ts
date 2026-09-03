@@ -9,6 +9,8 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
 import type { Row } from './model'
+import { stubEnvironment } from '../fixtures/clock'
+import type { Environment } from '../lib/environment'
 
 const ROWS: readonly Row[] = [
   {
@@ -32,10 +34,20 @@ const ROWS: readonly Row[] = [
 /** One row every 24 down the page: work, plans, notes, empty, loose. */
 const HEIGHT = 24
 
+/** A clock whose next frame is now. */
+const atOnce: Environment = {
+  now: () => 0,
+  schedule: (run) => {
+    run(0)
+    return 0
+  },
+  cancel: () => {},
+}
+
 const mountTree = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
   mount(Tree, {
     attachTo: document.body,
-    props: { rows: ROWS, open: ['work'], frame: (run: () => void) => run(), ...props },
+    props: { rows: ROWS, open: ['work'], environment: atOnce, ...props },
     slots,
   })
 
@@ -448,18 +460,15 @@ describe('a drag', () => {
   })
 
   it('leaves the press that follows it standing down', async () => {
-    const frames: (() => void)[] = []
-    const held = mountTree({
-      selected: ['loose'],
-      frame: (run: () => void) => frames.push(run),
-    })
+    const clock = stubEnvironment()
+    const held = mountTree({ selected: ['loose'], environment: clock.environment })
 
     await dragTo(held, 'loose', 12)
     await rowIn(held, 'notes').trigger('click')
 
     expect(held.emitted('select')).toBeUndefined()
 
-    frames.forEach((run) => run())
+    clock.run()
     await rowIn(held, 'notes').trigger('click')
     expect(held.emitted('select')).toStrictEqual([[['notes']]])
   })
@@ -613,5 +622,51 @@ describe('a name being typed', () => {
     await fieldIn(held).trigger('keydown', { key: 'ArrowDown' })
 
     expect(held.emitted('select')).toBeUndefined()
+  })
+})
+
+describe('the attribute rows are marked with', () => {
+  const ATTRIBUTE = 'data-somewhere'
+
+  const markIn = (held: Tree, row: string) => rowIn(held, row).attributes(ATTRIBUTE)
+
+  /** The place a row stands for, or the place it sits in. */
+  const valueFor = (row: string | null): string => {
+    if (row === null) return ''
+    if (row === 'work' || row === 'plans' || row === 'empty') return row
+    return row === 'friday' ? 'plans' : 'work'
+  }
+
+  it('is written on each row, and on the tree for the top level', () => {
+    const held = mountTree({ marking: { attribute: ATTRIBUTE, valueFor } })
+
+    expect(markIn(held, 'plans')).toBe('plans')
+    expect(markIn(held, 'notes')).toBe('work')
+    expect(held.get('.tree').attributes(ATTRIBUTE)).toBe('')
+  })
+
+  it('is written nowhere while the tree is given no marking', () => {
+    const held = mountTree()
+
+    expect(markIn(held, 'plans')).toBeUndefined()
+    expect(held.get('.tree').attributes(ATTRIBUTE)).toBeUndefined()
+  })
+
+  it('is written under the name it was given', () => {
+    const held = mountTree({ marking: { attribute: 'data-elsewhere', valueFor } })
+
+    expect(rowIn(held, 'plans').attributes('data-elsewhere')).toBe('plans')
+    expect(markIn(held, 'plans')).toBeUndefined()
+  })
+
+  it('is written on the rows answered for and on no other', () => {
+    const marking = {
+      attribute: ATTRIBUTE,
+      valueFor: (row: string | null) => (row === 'empty' ? 'empty' : null),
+    }
+    const held = mountTree({ marking })
+
+    expect(markIn(held, 'empty')).toBe('empty')
+    expect(markIn(held, 'plans')).toBeUndefined()
   })
 })

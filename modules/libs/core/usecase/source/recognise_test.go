@@ -68,10 +68,13 @@ func (s *shelf) List(_ context.Context, name string) ([]port.Stored, error) {
 	return out, nil
 }
 
+// Remove takes a name out of the store, along with the claim on it: a claim is
+// held on a file, and taking that file away frees the name.
 func (s *shelf) Remove(_ context.Context, name string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
+	delete(s.held, name)
 	return nil
 }
 
@@ -95,6 +98,13 @@ func (s *shelf) hold(name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.held[name] = true
+}
+
+// claims says whether a name is held by anybody.
+func (s *shelf) claims(name string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.held[name]
 }
 
 func (s *shelf) names() []string {
@@ -373,7 +383,7 @@ func document(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return fingerprint(raw)
+	return text.Fingerprint(raw)
 }
 
 // reads checks that every coordinate names the words it was read from, in the

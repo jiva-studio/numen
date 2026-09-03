@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -83,6 +84,7 @@ func paths(j flashcards.Joined) []string {
 }
 
 func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSwift\n" +
@@ -111,6 +113,7 @@ func TestALinkWrittenInsideACardArrivesWithItsText(t *testing.T) {
 // Every card names the stencil it is cut by, so a deck points at its stencils.
 // A stencil is how a card is laid out and not what it was written from.
 func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"stencils/Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
@@ -125,7 +128,45 @@ func TestTheStencilACardIsCutByIsNotSomethingToRead(t *testing.T) {
 	}
 }
 
+// What a deck is joined to is the notes it was written from. A deck names the
+// preset that schedules it and may name another deck, and neither is a note
+// somebody wrote about the material. It holds on both sides: a deck pointing
+// at this one is a deck all the same.
+func TestOnlyTheNotesADeckWasWrittenFromAreRead(t *testing.T) {
+	t.Parallel()
+	j := around(t, map[string]string{
+		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n---\n" +
+			"\n# Sanskrit\n\nTwenty minutes a day.\n",
+		"decks/Roots.md": "---\ntype: deck\n---\n\n# Roots\n\nThe verbs.\n",
+		"decks/Songs.md": "---\ntype: deck\n---\n\n# Songs\n\nSung over [[decks/Birds]].\n",
+		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
+			"  - to: Sanskrit\n    role: ref\n    type: preset\n" +
+			"  - to: decks/Roots\n    role: ref\n---\n" +
+			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSwift\n" +
+			"\n### Meaning\n\nSee [[Migration]] and [[Feathers]].\n",
+		"Migration.md": "# Migration\n\nBirds go south when the days shorten.\n",
+		"Feathers.md":  "# Feathers\n\nWhat a wing is made of.\n",
+	}, "decks/Birds.md")
+
+	want := []string{"Migration.md", "Feathers.md"}
+	got := paths(j)
+	if len(got) != len(want) {
+		t.Fatalf("joined to %v, want %v", got, want)
+	}
+	for _, path := range want {
+		if !slices.Contains(got, path) {
+			t.Errorf("joined to %v, want %v", got, want)
+		}
+	}
+	// What was left out was never on its way to being read, so nothing is
+	// reported as text a person did not get.
+	if j.Unread != 0 {
+		t.Errorf("%d of them are said to have come without their text", j.Unread)
+	}
+}
+
 func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 		"Migration.md":   "# Migration\n\nWorked at with [[decks/Birds]].\n",
@@ -146,6 +187,7 @@ func TestANotePointingAtTheDeckIsNotOneTheDeckPointsAt(t *testing.T) {
 }
 
 func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"Migration.md":   "# Migration\n\nDrilled in [[decks/Birds]].\n",
@@ -160,6 +202,7 @@ func TestANoteOnBothSidesIsNamedOnce(t *testing.T) {
 }
 
 func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\nGathered in [[decks/Birds]] itself.\n" +
@@ -174,6 +217,7 @@ func TestTheDeckDoesNotStandInItsOwnList(t *testing.T) {
 }
 
 func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Nowhere At All]].\n",
 	}, "decks/Birds.md")
@@ -191,6 +235,7 @@ func TestADanglingLinkKeepsTheNameItWasWrittenBy(t *testing.T) {
 }
 
 func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n## Swift ^k7m2xq9fzp\n\n### Word\n\nSee [[Nowhere At All]].\n" +
@@ -205,6 +250,7 @@ func TestOneNameThatCameLooseIsNamedOnce(t *testing.T) {
 // A name several notes answer to resolves to the nearest, and a person reading
 // the wrong note has no other way to find out.
 func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md":     "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
 		"north/Migration.md": "# Migration\n\nOne of the two.\n",
@@ -223,6 +269,7 @@ func TestANameSeveralNotesAnswerToIsSaidToBeAmbiguous(t *testing.T) {
 // A panel of titles with nothing under any of them says nothing about why, so
 // the vault being out of reach is an error and not thirty silent entries.
 func TestAVaultOutOfReachIsAnError(t *testing.T) {
+	t.Parallel()
 	u, add := reading(t)
 	v := add(map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nCut from [[Migration]].\n",
@@ -238,6 +285,7 @@ func TestAVaultOutOfReachIsAnError(t *testing.T) {
 }
 
 func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
 			"\n![[asset://diagram.png]]\n\nSee [[Migration]].\n",
@@ -255,6 +303,7 @@ func TestAnAttachmentIsNotSomethingToRead(t *testing.T) {
 // drawing one as a note that is missing says the vault has a question in it
 // where it has none.
 func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\nlinks:\n" +
 			"  - to: \"https://example.org/birds\"\n    role: ref\n---\n" +
@@ -273,6 +322,7 @@ func TestAnAddressThatNamesNoNoteIsNotADanglingNote(t *testing.T) {
 }
 
 func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
+	t.Parallel()
 	// An identifier finds its note wherever it is, and where it is may be a
 	// vault this reading has no reader for. Both vaults file a note at the same
 	// path, so a reading that ignores which vault the link landed in shows the
@@ -295,6 +345,7 @@ func TestALinkIntoAnotherVaultIsNotSomethingToRead(t *testing.T) {
 }
 
 func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
+	t.Parallel()
 	u, add := reading(t)
 	v := add(map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\nSee [[Migration]] and [[Feathers]].\n",
@@ -323,6 +374,7 @@ func TestANoteDeletedAfterTheScanDoesNotSinkTheOthers(t *testing.T) {
 }
 
 func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
+	t.Parallel()
 	const pointing = flashcards.MostRead + 5
 	notes := map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
@@ -351,6 +403,7 @@ func TestPastTheThirtiethNoteTheTextIsLeftUnread(t *testing.T) {
 }
 
 func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
+	t.Parallel()
 	j := around(t, map[string]string{
 		"decks/Birds.md": "---\ntype: deck\n---\n\n# The ones with feathers\n",
 	}, "decks/Birds.md")
@@ -361,6 +414,7 @@ func TestADeckJoinedToNothingIsAnEmptyAnswer(t *testing.T) {
 }
 
 func TestOneVaultsDeckIsNotJoinedToAnothersNotes(t *testing.T) {
+	t.Parallel()
 	// Both vaults file their deck at the same path, so a query that forgets its
 	// vault answers with the other one's notes rather than with nothing.
 	u, add := reading(t)

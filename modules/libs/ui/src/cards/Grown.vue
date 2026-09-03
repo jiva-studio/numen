@@ -1,14 +1,11 @@
 <script setup lang="ts">
 /**
- * A box as tall as what it holds.
+ * A box as tall as what it holds. The ground behind it carries the box's own
+ * text in the same type at the same measure, and the cell is sized by the
+ * ground, so the box never scrolls.
  *
- * The ground behind the box is set to the box's own text, in the same type at
- * the same measure, and the two share one cell. The ground is what the cell is
- * sized by, so the box is exactly as tall as its text and never scrolls.
- *
- * Everything a caller hands it that is not named here lands on the box: what
- * the box is called, what it is identified by, and every key it is listened to
- * for. A class and a style stand on the cell, which is what a caller lays out.
+ * Everything a caller hands it lands on the box, but for a class and a style,
+ * which stand on the cell.
  */
 import { computed, useAttrs, useTemplateRef } from 'vue'
 

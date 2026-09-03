@@ -5,24 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 // ErrUnreadable is what opening a note says when its frontmatter is not YAML.
-// Such a note is never written: repairing the block means guessing at what the
-// person wrote, and rewriting around it means dropping what could not be read.
+// Such a note is never written.
 var ErrUnreadable = errors.New("the frontmatter of this note cannot be read")
 
 // Document is a note held open so that one part of it can be changed and every
 // other part left as the bytes it arrived as.
 //
-// This is why it is not a struct marshalled back out. The frontmatter is shared
-// with the person: their key order, their comments, their quoting
-// and their line endings are theirs, and a writer that rebuilds the block from
-// what it understands returns a file full of changes nobody asked for. So a
-// change here is a splice — the span of one key is replaced, and the rest of
-// the file is never rewritten at all.
+// The frontmatter is shared with the person: their key order, their comments,
+// their quoting and their line endings are theirs. A change here is a splice —
+// the span of one key is replaced, and the rest of the file is never rewritten.
 type Document struct {
 	bom   []byte
 	open  []byte // the opening `---` line, with its ending
@@ -68,11 +65,9 @@ func Open(raw []byte) (*Document, error) {
 		at = next
 	}
 
-	// Unterminated: not a frontmatter block, and the whole file is body — but a
-	// file that opens with the delimiter and never closes it is somebody's
-	// frontmatter with a line missing, not prose that happens to start that way.
-	// Writing would put a second block above the first and turn their keys into
-	// text, so it is refused instead.
+	// A file that opens with the delimiter and never closes it is somebody's
+	// frontmatter with a line missing. The whole of it stands as body here, and
+	// every write to it is refused.
 	d.body = rest
 	d.unterminated = true
 	return d, nil
@@ -157,7 +152,7 @@ func (d *Document) Identifier() (string, bool) {
 
 // SetIdentifier writes the identifier the note is to carry from now on.
 func (d *Document) SetIdentifier(identifier string) error {
-	return d.set("id", []byte("id: "+identifier+d.eol))
+	return d.put("id", &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: identifier})
 }
 
 // Title is what the frontmatter says the note is called, and whether it says.
@@ -179,11 +174,11 @@ func (d *Document) Title() (string, bool) {
 
 // SetTitle writes the title the note is shown by from now on.
 func (d *Document) SetTitle(title string) error {
-	written, err := scalar(title)
-	if err != nil {
+	var held yaml.Node
+	if err := held.Encode(title); err != nil {
 		return err
 	}
-	return d.set("title", []byte("title: "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+	return d.put("title", &held)
 }
 
 // List is the names one top-level frontmatter key holds, in the order they
@@ -210,8 +205,7 @@ func (d *Document) List(key string) ([]string, bool) {
 // SetList writes the names one top-level frontmatter key holds from now on,
 // one to a line. No names removes the key.
 //
-// A name already in the list is written the way it was written, because how
-// somebody spells their own frontmatter is theirs.
+// A name already in the list is written the way it was written.
 func (d *Document) SetList(key string, names []string) error {
 	if len(names) == 0 {
 		return d.set(key, nil)
@@ -224,13 +218,93 @@ func (d *Document) SetList(key string, names []string) error {
 			Kind: yaml.ScalarNode, Style: spelled[name], Value: name,
 		})
 	}
-	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{
-		{Kind: yaml.ScalarNode, Value: key}, seq,
-	}})
+	return d.put(key, seq)
+}
+
+// Entry is one line of a mapping written under a top-level frontmatter key.
+type Entry struct {
+	Key   string
+	Value any
+	// Standing keeps what the entry holds as it was written, which is what an
+	// entry the application could not read gets. An entry standing under a key
+	// that is not there is written nowhere.
+	Standing bool
+}
+
+// EntryNames is the keys of the mapping under one top-level frontmatter key, in
+// the order it holds them. A key that is not there holds none.
+//
+// False is a key holding something other than a mapping. Such a value is the
+// person's whole, and the entries of a mapping are what this writes.
+func (d *Document) EntryNames(key string) ([]string, bool) {
+	node, err := d.mapping()
+	if err != nil {
+		return nil, false
+	}
+	held := d.entries(node, key)
+	if held == nil {
+		return nil, false
+	}
+	out := make([]string, 0, len(held.Content)/2)
+	for i := 0; i+1 < len(held.Content); i += 2 {
+		out = append(out, held.Content[i].Value)
+	}
+	return out, true
+}
+
+// entries is the mapping one top-level key holds, an empty one where the key
+// holds nothing at all or is not there, and nil where it holds something else.
+func (d *Document) entries(node *yaml.Node, key string) *yaml.Node {
+	if node == nil {
+		return &yaml.Node{Kind: yaml.MappingNode}
+	}
+	held := valueOf(node, key)
+	switch {
+	case held == nil || empty(held):
+		return &yaml.Node{Kind: yaml.MappingNode}
+	case held.Kind != yaml.MappingNode:
+		return nil
+	}
+	return held
+}
+
+// SetMapping writes the entries one top-level frontmatter key holds from now
+// on, one to a line and in the order they are given. No entries removes the
+// key.
+func (d *Document) SetMapping(key string, entries []Entry) error {
+	if len(entries) == 0 {
+		return d.set(key, nil)
+	}
+
+	node, err := d.mapping()
 	if err != nil {
 		return err
 	}
-	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+	standing := d.entries(node, key)
+	if standing == nil {
+		standing = &yaml.Node{Kind: yaml.MappingNode}
+	}
+	mapping := &yaml.Node{Kind: yaml.MappingNode}
+	for _, one := range entries {
+		was := pair(standing, one.Key)
+		held := was.value
+		if !one.Standing {
+			held = &yaml.Node{}
+			if err := held.Encode(one.Value); err != nil {
+				return err
+			}
+		}
+		if held == nil {
+			continue
+		}
+		name := &yaml.Node{Kind: yaml.ScalarNode, Value: one.Key}
+		was.carry(name, held)
+		mapping.Content = append(mapping.Content, name, held)
+	}
+	if len(mapping.Content) == 0 {
+		return d.set(key, nil)
+	}
+	return d.put(key, mapping)
 }
 
 // SetScalar writes what one top-level frontmatter key holds from now on. An
@@ -239,11 +313,26 @@ func (d *Document) SetScalar(key, value string) error {
 	if value == "" {
 		return d.set(key, nil)
 	}
-	written, err := scalar(value)
-	if err != nil {
+	return d.SetValue(key, value)
+}
+
+// SetValue writes what one top-level frontmatter key holds from now on, in the
+// spelling its own type is written in: a number stands as a number, and true
+// and false stand as themselves.
+func (d *Document) SetValue(key string, value any) error {
+	var held yaml.Node
+	if err := held.Encode(value); err != nil {
 		return err
 	}
-	return d.set(key, []byte(key+": "+strings.ReplaceAll(written, "\n", d.eol)+d.eol))
+	return d.put(key, &held)
+}
+
+// SetDay writes the day one top-level frontmatter key stands for from now on,
+// as a day with no hour on it.
+func (d *Document) SetDay(key string, day time.Time) error {
+	return d.put(key, &yaml.Node{
+		Kind: yaml.ScalarNode, Tag: "!!timestamp", Value: day.Format("2006-01-02"),
+	})
 }
 
 // spelling is how each name of one key's list is quoted, so that a name coming
@@ -281,6 +370,53 @@ func render(node *yaml.Node) (string, error) {
 	return out.String(), nil
 }
 
+// put writes one top-level key and what it holds, keeping the comment written
+// on the key's own line. That comment is the person's, on a key the application
+// owns as much as on any other.
+func (d *Document) put(key string, value *yaml.Node) error {
+	node, err := d.writable()
+	if err != nil {
+		return err
+	}
+	name := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
+	pair(node, key).carry(name, value)
+	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{name, value}})
+	if err != nil {
+		return err
+	}
+	return d.set(key, []byte(strings.ReplaceAll(rendered, "\n", d.eol)))
+}
+
+// held is the two nodes one key of a mapping stands as, and is empty where the
+// mapping has no such key.
+type held struct{ name, value *yaml.Node }
+
+// pair is the two nodes one key of a mapping stands as.
+func pair(node *yaml.Node, key string) held {
+	if node == nil || node.Kind != yaml.MappingNode {
+		return held{}
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Value == key {
+			return held{name: node.Content[i], value: node.Content[i+1]}
+		}
+	}
+	return held{}
+}
+
+// carry puts the comment written on a key's own line onto the nodes replacing
+// it. A mapping or a list carries it on the key and a scalar on the value, so
+// both are read off both.
+func (h held) carry(name, value *yaml.Node) {
+	if h.name == nil {
+		return
+	}
+	name.LineComment = h.name.LineComment
+	if value != h.value {
+		value.LineComment = h.value.LineComment
+	}
+}
+
 // set replaces the lines one top-level key occupies, or appends them when the
 // key is not there yet. Empty replacement removes the key.
 func (d *Document) set(key string, rendered []byte) error {
@@ -288,6 +424,7 @@ func (d *Document) set(key string, rendered []byte) error {
 	if err != nil {
 		return err
 	}
+	rendered = indented(rendered, d.indent(node))
 
 	start, end, found := d.span(node, key)
 	if !found {
@@ -313,13 +450,47 @@ func (d *Document) set(key string, rendered []byte) error {
 	return nil
 }
 
+// indent is the whitespace the frontmatter's own keys stand at. A block written
+// in from the margin is a mapping that ends at the first line written flush,
+// and the keys below it become text.
+func (d *Document) indent(node *yaml.Node) string {
+	if node == nil || len(node.Content) == 0 {
+		return ""
+	}
+	lines := lineOffsets(d.front)
+	at := node.Content[0].Line
+	if at < 1 || at >= len(lines) {
+		return ""
+	}
+	return leading(string(d.front[lines[at-1]:lines[at]]))
+}
+
+// indented is rendered lines written at the indentation the block's keys stand
+// at. A line with nothing on it takes none.
+func indented(rendered []byte, indent string) []byte {
+	if indent == "" || len(rendered) == 0 {
+		return rendered
+	}
+	out := make([]byte, 0, len(rendered)+4*len(indent))
+	for at := 0; at < len(rendered); {
+		end := len(rendered)
+		if next := bytes.IndexByte(rendered[at:], '\n'); next >= 0 {
+			end = at + next + 1
+		}
+		if len(bytes.TrimSpace(rendered[at:end])) > 0 {
+			out = append(out, indent...)
+		}
+		out = append(out, rendered[at:end]...)
+		at = end
+	}
+	return out
+}
+
 // span is the byte range one top-level key occupies in the frontmatter,
 // including the lines its value continues onto.
 //
-// The end is walked back over blank lines and comments, because a comment
-// written above the next key belongs to that key and not to this one. Taking
-// it with the entry being replaced would delete somebody's note to themselves
-// on the way past.
+// The end is walked back over blank lines and comments: a comment written
+// above the next key belongs to that key.
 func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
@@ -385,40 +556,82 @@ func (d *Document) writable() (*yaml.Node, error) {
 	if err != nil || node == nil {
 		return node, err
 	}
-	if err := inline(node); err != nil {
-		return nil, err
+	if anchored(node) {
+		return nil, ErrAnchored
+	}
+	if flow(node) {
+		return nil, ErrInline
 	}
 	return node, nil
 }
 
-// ErrInline is what a frontmatter block written on one line gets. Nothing is
+// ErrInline is what a block whose keys share their lines gets. Nothing is
 // changed in it.
 //
-// Everything here works by replacing the lines a key occupies, and that is only
-// a key's own span while one line holds one key. `{title: T, id: b}` puts them
-// all on one, so the span of any of them is the span of all of them, and a
-// write meant for one would take the rest with it. Refusing is the only honest
-// answer: the alternative is to reformat somebody's file to suit the writer.
+// Everything here works by replacing the lines a key occupies, and that is a
+// key's own span while one line holds one key. `{title: T, id: b}` puts them
+// all on one, so the span of any of them is the span of all of them. A value
+// written on one line — `load: {sat: 50}` — still occupies its key's own
+// lines and is replaced as it stands.
 var ErrInline = errors.New("this frontmatter is written on one line, and cannot be changed a key at a time")
 
-// ErrUnterminated is a note that opens a frontmatter block and never closes it.
-// What the person meant is not knowable from here, and writing would decide it
-// for them.
-var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
+// ErrAnchored is a frontmatter carrying a YAML anchor. Nothing is changed in it.
+//
+// An anchor is read by an alias somewhere else in the block, and a splice puts
+// down a value carrying no anchor. The alias then points at nothing, and the
+// note stops opening at all.
+var ErrAnchored = errors.New("this frontmatter carries a YAML anchor, and cannot be changed a key at a time")
 
-// inline refuses a block whose layout the splice cannot reason about. It looks
-// through the whole tree, because a flow sequence for `links:` breaks the same
-// arithmetic one level down.
-func inline(node *yaml.Node) error {
-	if node.Style&yaml.FlowStyle != 0 && (node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode) {
-		return ErrInline
+// anchored reports whether anything in a subtree carries an anchor.
+func anchored(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	if node.Anchor != "" || node.Kind == yaml.AliasNode {
+		return true
 	}
 	for _, child := range node.Content {
-		if err := inline(child); err != nil {
-			return err
+		if anchored(child) {
+			return true
 		}
 	}
-	return nil
+	return false
+}
+
+// ErrUnterminated is a note that opens a frontmatter block and never closes it.
+// Nothing is changed in it.
+var ErrUnterminated = errors.New("this note opens a frontmatter block that is never closed")
+
+// flow reports whether a collection is written on one line, which is what puts
+// two keys in one span.
+func flow(node *yaml.Node) bool {
+	if node == nil {
+		return false
+	}
+	return node.Style&yaml.FlowStyle != 0 &&
+		(node.Kind == yaml.MappingNode || node.Kind == yaml.SequenceNode)
+}
+
+// empty reports whether a key holds nothing at all, which is a key a first
+// entry is written under. A null somebody wrote out stands on the line and is
+// not one.
+func empty(node *yaml.Node) bool {
+	return node.Kind == yaml.ScalarNode && node.Tag == "!!null" && node.Value == ""
+}
+
+// flowing reports whether anything in a subtree is written on one line. An
+// entry of the `links:` block is replaced on its own, and that is a line at a
+// time all the way down.
+func flowing(node *yaml.Node) bool {
+	if flow(node) {
+		return true
+	}
+	for _, child := range node.Content {
+		if flowing(child) {
+			return true
+		}
+	}
+	return false
 }
 
 // lineOffsets is where each line of a block begins, with the end of the block

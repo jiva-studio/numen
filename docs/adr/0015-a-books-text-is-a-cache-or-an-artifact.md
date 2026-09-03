@@ -87,7 +87,7 @@ The source is cut after every batch, so a book answers about the pages already r
 
 **Neither run rewrites what the other wrote.** What the recogniser produced stays on disk under its own name, and corrections go beside it keyed by the printed line. Putting a line's letters right leaves its words where they were, so the rectangles hold, and composing the corrected prose moves the boxes, the page marks and the parts in one pass.
 
-Where the proofreading service has a queue, one run collects the batch that is out and leaves the next, and the batch's name stands beside the reading, so a batch left before the application closed is collected when it opens. The gates a reply passes and the grammar of that reply are in [`../reading.md`](../reading.md).
+Where the proofreading service has a queue, one run collects the batch that is out and leaves the next, and the batch's name stands beside the reading, so a batch left before the application closed is collected when it opens. The gates a reply passes and the grammar of that reply are in [`../proofreading.md`](../proofreading.md).
 
 ## Consequences
 
