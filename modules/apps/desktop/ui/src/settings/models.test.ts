@@ -64,6 +64,16 @@ describe('the choices a setting offers', () => {
     expect(one?.detail).toBe(PRESET.name)
   })
 
+  it('name a model by its last segment where the build gives it an address for a name', () => {
+    const own = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
+    // What the vault answers with for a value standing in the settings: the
+    // address in the place a name would be.
+    const [one] = choicesFor([model({ name: own, title: own })], own, WORDS)
+
+    expect(one?.text).toBe('eslav_rec_mobile.onnx')
+    expect(one?.detail).toContain(own)
+  })
+
   it('leave a preset named by one word without an address under it', () => {
     const [one] = choicesFor([model({ name: 'opus', title: 'Opus' })], 'opus', WORDS)
     expect(one?.text).toBe('Opus')

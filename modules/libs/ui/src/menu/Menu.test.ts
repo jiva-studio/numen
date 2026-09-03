@@ -392,3 +392,17 @@ describe('typing to jump', () => {
     expect(document.activeElement).toBe(drawn())
   })
 })
+
+describe('how wide it is drawn', () => {
+  it('is never narrower than what asked for it', async () => {
+    mountMenu({ asking: 420 })
+    await settle()
+    expect(drawn()?.style.getPropertyValue('--asking')).toBe('420px')
+  })
+
+  it('is bounded by its own two widths where nothing said how wide it asked', async () => {
+    mountMenu()
+    await settle()
+    expect(drawn()?.style.getPropertyValue('--asking')).toBe('0px')
+  })
+})

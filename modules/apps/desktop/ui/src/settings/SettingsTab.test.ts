@@ -17,6 +17,9 @@ import SettingsTab from './SettingsTab.vue'
 import type { Installation } from './kind'
 import { WORDS as words } from './words'
 
+/** A model somebody typed into the file themselves, addressed and not named. */
+const OWN = 'https://models.example/held/v3/rec/eslav_rec_mobile.onnx'
+
 /** The models the vault offers, which is what the settings are grounded in. */
 const MODELS: readonly Model[] = [
   {
@@ -47,6 +50,17 @@ const MODELS: readonly Model[] = [
       { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
     ],
     presence: 'present',
+  },
+  // What the vault answers with for a value standing in the settings: the
+  // address in the place a name would be, which is all it has for one.
+  {
+    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
+    name: OWN,
+    title: OWN,
+    shelf: 'Named in the settings',
+    byDefault: false,
+    writes: [{ at: ['indexing', 'recognition', 'recognise', 'name'], value: `"${OWN}"` }],
+    presence: 'not fetched',
   },
 ]
 
@@ -250,10 +264,23 @@ describe('the settings tab', () => {
   it('names a model by its own words, and addresses it underneath', async () => {
     const { tab } = standing()
     await opens(tab, 'settings-ocr')
-    expect(offered()).toStrictEqual([`Tiny, small — ${words.byDefault}`])
+    expect(offered()).toStrictEqual([
+      `Tiny, small — ${words.byDefault}`,
+      'eslav_rec_mobile.onnx',
+    ])
     expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
       `${words.present} · https://models.example/held/Tiny_rec.onnx`,
     )
+  })
+
+  it('writes the readable name on the line, never the address it is fetched from', () => {
+    const { tab } = standing(false, {
+      indexing: { recognition: { recognise: { name: OWN } } },
+    })
+    const line = tab.get('#settings-ocr')
+
+    expect(line.text()).toContain('eslav_rec_mobile.onnx')
+    expect(line.text()).not.toContain('https://')
   })
 
   it('draws a value the presets do not name as the person’s own, and says nothing else', async () => {

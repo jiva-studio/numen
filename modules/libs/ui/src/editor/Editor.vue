@@ -11,7 +11,8 @@ import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { EditorChange } from './change'
-import { drawing, editable, editing, preview, setup, showing, shown } from './setup'
+import { code, drawing, editable, editing, preview, prose, setup, showing, shown, written } from './setup'
+import { wholly } from './languages'
 import { opening, resolving, saving } from './outside'
 import { replacing } from './replacing'
 
@@ -19,6 +20,12 @@ const props = withDefaults(
   defineProps<{
     /** Marks are drawn as what they mean. Off, the text is shown as written. */
     live?: boolean
+    /**
+     * What the whole document is written in, by the name a fence would use. A
+     * document naming none is markdown, and one naming a language is set in the
+     * face code is set in.
+     */
+    language?: string
     readonly?: boolean
     placeholder?: string
     /** A change being made to this text by something other than the reader. */
@@ -28,7 +35,14 @@ const props = withDefaults(
     /** More the caller draws into this editor. Read once, as it is built. */
     extensions?: Extension
   }>(),
-  { live: true, readonly: false, placeholder: 'Write', change: null, extensions: () => [] },
+  {
+    live: true,
+    language: '',
+    readonly: false,
+    placeholder: 'Write',
+    change: null,
+    extensions: () => [],
+  },
 )
 
 const emit = defineEmits<{
@@ -66,6 +80,7 @@ onMounted(() => {
       ],
     }),
   })
+  if (props.language) void writes(props.language)
 })
 
 onBeforeUnmount(() => {
@@ -85,6 +100,19 @@ watch(
   () => props.live,
   (on) => view?.dispatch({ effects: drawing.reconfigure(preview(on)) }),
 )
+
+/**
+ * The language is loaded when it is first wanted, so the editor is drawn before
+ * it arrives and is reconfigured once it is here. A document whose language
+ * changed while one was loading keeps the one it asked for last.
+ */
+const writes = async (name: string) => {
+  const support = name ? await wholly(name) : null
+  if (!view || name !== props.language) return
+  view.dispatch({ effects: written.reconfigure(support ? code(support) : prose()) })
+}
+
+watch(() => props.language, writes)
 
 watch(
   () => props.readonly,

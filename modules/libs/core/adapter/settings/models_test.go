@@ -218,3 +218,59 @@ func models(t *testing.T, held Config, setting []string) []port.Model {
 
 // at is a path through the file, as one word.
 func at(path []string) string { return strings.Join(path, ".") }
+
+// A station reaching a service fetches nothing, whichever model a row names.
+// The files of a model this machine once ran stay in the cache, and they say
+// nothing about a vault indexed over the network.
+func TestEveryRowOfAStationReachingAServiceHasNothingToFetch(t *testing.T) {
+	held := alone(t)
+	held.Indexing.Embedding.Indexing.Use = embed.UseService
+	held.Indexing.Embedding.Model.Name = "baai/bge-m3"
+
+	// The model the preset offers, fetched, and left where a fetch put it.
+	dir := held.Indexing.Embedding.Indexing.Local.Dir
+	written(t, filepath.Join(dir, embed.ModelFile))
+	written(t, filepath.Join(dir, embed.TokenizerFile))
+
+	for _, one := range models(t, held, EmbeddingModelAt) {
+		if one.Presence != port.NothingToFetch {
+			t.Errorf("%q stands at %v", one.Name, one.Presence)
+		}
+	}
+}
+
+// Which of the two a station is is `use`. A station running a model here says
+// where its files are, whatever the model is called.
+func TestAStationRunningAModelHereSaysWhereItsFilesAre(t *testing.T) {
+	held := alone(t)
+	held.Indexing.Embedding.Indexing.Use = embed.UseLocal
+	held.Indexing.Embedding.Model.Name = "somewhere/of-my-own"
+
+	got := models(t, held, EmbeddingModelAt)
+	if got[len(got)-1].Presence != port.NotFetched {
+		t.Errorf("a model nothing has fetched stands at %v", got[len(got)-1].Presence)
+	}
+}
+
+// Each row is asked about its own files. A path written down is the file the
+// settings read, and it is not the file the row beside it names.
+func TestARowIsAskedAboutItsOwnFilesAndNotItsNeighbours(t *testing.T) {
+	held := alone(t)
+	mine := filepath.Join(t.TempDir(), "of-my-own.onnx")
+	written(t, mine)
+	held.Indexing.Recognition.Recognise.Name = "https://models.example/of-my-own.onnx"
+	held.Indexing.Recognition.Recognise.Path = mine
+
+	got := models(t, held, RecognitionModelAt)
+	if len(got) != 2 {
+		t.Fatalf("the setting offers %d rows", len(got))
+	}
+	// The file written down is the one the settings name, and the preset is a
+	// different model that nothing has fetched.
+	if got[len(got)-1].Presence != port.Present {
+		t.Errorf("the file at %s stands at %v", mine, got[len(got)-1].Presence)
+	}
+	if got[0].Presence != port.NotFetched {
+		t.Errorf("the model the preset offers stands at %v", got[0].Presence)
+	}
+}

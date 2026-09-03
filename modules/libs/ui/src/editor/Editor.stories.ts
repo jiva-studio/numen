@@ -644,3 +644,28 @@ const SCRIPTS = `# ${RUSSIAN}\n\n${ARABIC}\n\n${DEVANAGARI}\n`
 export const ChangedInAnotherScript: Story = {
   render: making(SCRIPTS, { id: 'script', ...spanning(SCRIPTS, ARABIC), text: DEVANAGARI }),
 }
+
+const SETTINGS = `{
+  // The window
+  "appearance": { "theme": "preset:numen", "text_scale": 1 },
+  "indexing": {
+    "embedding": { "model": { "name": "held/tiny-e5-small" } },
+    "transcribe_recordings": true,
+    "transcribe_under_mb": 200
+  },
+  "agent": { "use": "claude", "serve_tools": false }
+}
+`
+
+/**
+ * A whole document written in one language: read as that language, and set in
+ * the face code is set in. This is what a settings file is opened in.
+ */
+export const AWholeDocumentOfCode: Story = {
+  render: framed(SETTINGS, { live: false, language: 'json' }),
+}
+
+/** A language no fence answers to leaves the document plain. */
+export const ALanguageNothingAnswersTo: Story = {
+  render: framed(SETTINGS, { live: false, language: 'not-a-language' }),
+}

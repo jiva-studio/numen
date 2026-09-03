@@ -37,6 +37,11 @@ const props = withDefaults(
      * named by identifiers draws none.
      */
     bands?: boolean
+    /**
+     * How wide what asked for it is. The menu is never narrower than that, and
+     * grows past it for what it holds.
+     */
+    asking?: number
     /** Kept clear of that area's edges. */
     margin?: number
     /** Where it is drawn. The end of the document by default. */
@@ -51,6 +56,7 @@ const props = withDefaults(
     from: null,
     viewport: null,
     bands: false,
+    asking: 0,
     margin: 8,
     to: 'body',
     name: 'Menu',
@@ -264,7 +270,11 @@ onBeforeUnmount(leave)
       role="menu"
       tabindex="-1"
       :aria-label="name"
-      :style="{ left: `${placed.x}px`, top: `${placed.y}px` }"
+      :style="{
+        left: `${placed.x}px`,
+        top: `${placed.y}px`,
+        '--asking': `${asking}px`,
+      }"
       @keydown="onKey"
     >
       <template v-for="(item, index) in rows" :key="item.id">
@@ -309,9 +319,12 @@ onBeforeUnmount(leave)
    page it was asked for from. */
 .menu {
   /* How wide it may be, how much of the screen it takes before its list
-     scrolls, and how far above the page it stands. */
-  --narrowest: 180px;
-  --widest: 320px;
+     scrolls, and how far above the page it stands. The two widths are set in
+     the interface's own units, so they grow with everything drawn beside them. */
+  --narrowest: 11.25rem;
+  --widest: 20rem;
+  /* What asked for it, which it is never narrower than. */
+  --asking: 0px;
   --tallest: 60vh;
   --lift: var(--numen-lift-menu);
   /* The room a rule keeps on each side of itself. */
@@ -327,8 +340,8 @@ onBeforeUnmount(leave)
      wide as the room left beside the point it was asked for and would cut its
      own words short there. */
   inline-size: max-content;
-  min-inline-size: var(--narrowest);
-  max-inline-size: var(--widest);
+  min-inline-size: max(var(--narrowest), var(--asking));
+  max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
   overscroll-behavior: contain;

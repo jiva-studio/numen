@@ -23,12 +23,13 @@ import { LANGUAGES } from './languages'
 import { following, live, wholeLines } from './live'
 import { GFM } from '@lezer/markdown'
 import { saving } from './outside'
-import { theme } from './theme'
+import { monospaced, theme } from './theme'
 
 /** What can be changed without the editor being built again. */
 export const drawing = new Compartment()
 export const editing = new Compartment()
 export const showing = new Compartment()
+export const written = new Compartment()
 
 export interface Settings {
   /** Marks are drawn as what they mean, away from the caret. */
@@ -61,6 +62,12 @@ export const keeping: KeyBinding = {
   },
 }
 
+/** Markdown, which is what a document naming no language is written in. */
+export const prose = (): Extension => markdown({ extensions: GFM, codeLanguages: LANGUAGES })
+
+/** One whole document of code: how it reads, and the face it is set in. */
+export const code = (support: Extension): Extension => [support, monospaced]
+
 export const setup = (settings: Settings = {}): Extension => [
   history(),
   drawSelection(),
@@ -68,7 +75,7 @@ export const setup = (settings: Settings = {}): Extension => [
   bracketMatching(),
   EditorView.lineWrapping,
   keymap.of([keeping, ...defaultKeymap, ...historyKeymap, indentWithTab]),
-  markdown({ extensions: GFM, codeLanguages: LANGUAGES }),
+  written.of(prose()),
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),

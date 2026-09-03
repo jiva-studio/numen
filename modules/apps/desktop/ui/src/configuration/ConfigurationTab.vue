@@ -2,10 +2,11 @@
 /**
  * The settings file, whole, in the editor this window edits everything in.
  *
- * What is typed is written as it stands. A file the settings cannot be read out
- * of is refused, and what is wrong with it is said over the editor.
+ * It is written as JSON, so it is read as JSON and set in the face code is set
+ * in. What is typed is kept the way a note is kept, and a file the settings
+ * cannot be read out of is refused with what is wrong with it.
  */
-import { Button, Editor } from '@numen/ui'
+import { Editor } from '@numen/ui'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
 
@@ -14,13 +15,6 @@ const props = defineProps<{ held: Held }>()
 
 <template>
   <div class="configuration">
-    <div class="configuration__head">
-      <p class="configuration__where">{{ props.held.path() }}</p>
-      <Button size="small" :disabled="!props.held.changed()" @click="props.held.keeps()">
-        {{ words.keep }}
-      </Button>
-    </div>
-
     <p v-if="props.held.saying()" role="alert" class="configuration__wrong">
       {{ props.held.saying() }}
     </p>
@@ -29,6 +23,7 @@ const props = defineProps<{ held: Held }>()
       v-if="props.held.read()"
       :model-value="props.held.text()"
       :live="false"
+      language="json"
       class="configuration__editor"
       :aria-label="words.called"
       @update:model-value="(said: string) => props.held.types(said)"
@@ -39,6 +34,8 @@ const props = defineProps<{ held: Held }>()
 </template>
 
 <style scoped>
+/* The file fills the pane it is in: the editor scrolls, and the line saying
+   something is wrong stays where it is. */
 .configuration {
   display: flex;
   flex-direction: column;
@@ -47,24 +44,6 @@ const props = defineProps<{ held: Held }>()
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   color: var(--numen-node-fg);
-}
-
-/* Where the file stands, with what keeps it at the end of the line. */
-.configuration__head {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
-  padding: var(--numen-inset) var(--numen-gutter);
-  border-block-end: var(--numen-stroke) solid var(--numen-node-border);
-}
-
-.configuration__where {
-  min-inline-size: 0;
-  margin: 0;
-  color: var(--numen-hushed);
-  overflow-wrap: anywhere;
 }
 
 /* What is wrong with what was typed, which is the one thing to catch the eye. */

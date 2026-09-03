@@ -189,3 +189,16 @@ describe('the keyboard', () => {
     expect(document.activeElement).toBe(line(control).element)
   })
 })
+
+describe('how wide the choices are drawn', () => {
+  it('are told how wide the line asking for them is', async () => {
+    const control = mountSelect()
+    // jsdom measures nothing, so the width is the one the box reports.
+    line(control).element.getBoundingClientRect = () =>
+      ({ left: 0, bottom: 32, width: 288 }) as DOMRect
+    await opens(control)
+
+    expect(document.body.querySelector<HTMLElement>('.menu')?.style.getPropertyValue('--asking'))
+      .toBe('288px')
+  })
+})
