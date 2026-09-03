@@ -1,0 +1,15 @@
+{
+  "name": "@numen/wire",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "What the windows' ports are answered with over the wire.",
+  "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "@numen/protocol": "file:../protocol",
+    "@numen/ui": "file:../ui"
+  }
+}

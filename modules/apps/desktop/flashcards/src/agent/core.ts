@@ -1,57 +1,17 @@
 /**
  * Asking about the card in front of a person.
  *
- * Nothing here draws: it is the client, and the words a question is put in.
+ * Nothing here draws: the port is `AgentPort`, `@numen/wire` says what the
+ * steps mean, and this says what the question is about.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import { AgentService } from '@numen/protocol'
-import type { AgentPort } from '@numen/ui'
+import { agentPort } from '@numen/wire'
 
+import { transport } from '../transport'
 import type { Asked } from '../core'
 
-const agent = createClient(
-  AgentService,
-  createConnectTransport({ baseUrl: window.location.origin }),
-)
-
-export const core: AgentPort = {
-  async *ask(asked, focus, conversation, signal) {
-    for await (const step of agent.ask({ asked, focus, conversation }, { signal })) {
-      switch (step.step.case) {
-        case 'said':
-          yield { kind: 'said', text: step.step.value }
-          break
-        case 'toolCall': {
-          const said = step.step.value
-          yield {
-            kind: 'toolCall',
-            tool: said.tool,
-            about: said.about,
-            written: said.written,
-            ...(said.path
-              ? { place: { path: said.path, start: said.start, length: said.length } }
-              : {}),
-          }
-          break
-        }
-        case 'answered':
-          yield { kind: 'answered' }
-          break
-        case 'thinking':
-          yield { kind: 'thinking' }
-          break
-        case 'stopped':
-          yield { kind: 'stopped', failed: step.step.value }
-          break
-      }
-    }
-  },
-
-  async finish(conversation) {
-    await agent.finish({ conversation })
-  },
-}
+export const core = agentPort(createClient(AgentService, transport))
 
 /**
  * The card a question is about, written where the agent will read it.
