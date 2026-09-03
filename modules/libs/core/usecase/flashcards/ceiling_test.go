@@ -9,6 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
+// theCeiling is the minutes_a_day the presets below ask for.
+const theCeiling = 20 * time.Minute
+
 // A goal is a ceiling over every deck the preset schedules.
 //
 // Decks are added and taken away; the goal stands. A person who asked for
@@ -34,8 +37,9 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 
 		s := opened(t, files)
 		now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-		took := s.minutes(t, today, now)
-		t.Logf("%d decks: the day ran %v", decks, took)
+		if took := s.minutes(t, today, now); took != theCeiling {
+			t.Errorf("%d decks: the day ran %v, and the goal asks for %v", decks, took, theCeiling)
+		}
 	}
 }
 
@@ -107,7 +111,13 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 				answer(t, record, one.CardFace.Card, cost)
 			}
 		}
-		t.Logf("after deck %d the day has run %v", d, out)
+		if out > theCeiling {
+			t.Fatalf("after deck %d the day has run %v, and the goal asks for %v",
+				d, out, theCeiling)
+		}
+	}
+	if out != theCeiling {
+		t.Errorf("deck by deck the day ran %v, and the goal asks for %v", out, theCeiling)
 	}
 }
 
