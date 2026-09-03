@@ -743,7 +743,10 @@ const field = computed(() =>
  * in no note and is drawn with nothing.
  */
 const rowIcon = (id: string) => {
-  if (commands.open.value) return iconFor(id)
+  if (commands.open.value) {
+    const picked = commands.typeOf(id)
+    return picked ? iconOfNote(picked) : iconFor(id)
+  }
   if (id === MAKING) return iconFor('note')
   const type = palette.typeOf(id)
   return type ? iconOfNote(type) : null

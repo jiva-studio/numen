@@ -11,7 +11,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
-import { wentTo, type Known, type Listed, type Source, type Went } from './core'
+import { wentTo, type Known, type Listed, type NoteType, type Source, type Went } from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
@@ -885,6 +885,10 @@ export function commanding(
    * The notes the vault turned up. A note found by a heading is that note, and
    * a note found twice is one row.
    */
+  /** Which of four the note a row of the picking step stands for is. */
+  const typeOf = (id: string): NoteType | null =>
+    found.value.find((one) => one.path === id)?.type ?? null
+
   const picking = (text: string): PaletteBand => {
     const seen = new Set<string>()
     const items: PaletteItem[] = []
@@ -1193,5 +1197,6 @@ export function commanding(
     chose,
     leaves,
     backs,
+    typeOf,
   }
 }
