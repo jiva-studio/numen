@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 
 	"github.com/getcharzp/go-ocr/paddle"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // standing says whether the runtime a page is read through was made.
@@ -22,7 +24,7 @@ func Prepared() bool { return standing.Load() }
 // what fetches one.
 func Prepare(ctx context.Context, cfg Config) error {
 	cfg.Download = false
-	_, at, err := library(ctx, cfg)
+	_, at, err := onnxruntime.Open(ctx, cfg.settings())
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // Config is what a person may change about listening to a recording: which
@@ -41,10 +43,14 @@ type Config struct {
 	Fetching func(what string, done, total int64) `json:"-"`
 }
 
-// say reports how far a download has got, and does nothing when nobody asked.
-func (c Config) say(what string, done, total int64) {
-	if c.Fetching != nil {
-		c.Fetching(what, done, total)
+// settings are what the runtime and the models are found by.
+func (c Config) settings() onnxruntime.Settings {
+	return onnxruntime.Settings{
+		Section:  "transcription",
+		Runtime:  c.Runtime,
+		Dir:      c.Dir,
+		Download: c.Download,
+		Fetching: c.Fetching,
 	}
 }
 
@@ -207,7 +213,7 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 	found := paths{from: "settings"}
 
 	var err error
-	if found.engine, found.runtime, err = library(ctx, cfg); err != nil {
+	if found.engine, found.runtime, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
 		return paths{}, err
 	}
 	for _, one := range wanted(cfg, &found) {
@@ -262,35 +268,19 @@ func model(ctx context.Context, cfg Config, path, name, what string) (string, er
 	if name == "" {
 		return "", fmt.Errorf("no %s: name one, or say where it is", what)
 	}
-	for _, at := range beside(cfg.Dir, filepath.Base(name)) {
+	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err == nil {
 			return at, nil
 		}
 	}
-	if !address(name) {
+	if !onnxruntime.Address(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", what, name)
 	}
-	found, err := fetched(ctx, cfg, name, cfg.Download)
+	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)
 	if err != nil {
 		return "", fmt.Errorf("the %s: %w", what, err)
 	}
 	return found, nil
-}
-
-// beside is where a file may be: in the folder the settings name, and in the
-// folder the application was installed into.
-func beside(dir string, names ...string) []string {
-	var out []string
-	for _, name := range names {
-		if dir != "" {
-			out = append(out, filepath.Join(dir, name))
-		}
-		if self, err := os.Executable(); err == nil {
-			out = append(out, filepath.Join(filepath.Dir(self), name))
-			out = append(out, filepath.Join(filepath.Dir(self), "models", name))
-		}
-	}
-	return out
 }
 
 // named is what a model is called, for the record kept beside what it produced.
