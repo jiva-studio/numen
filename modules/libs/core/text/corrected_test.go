@@ -41,7 +41,7 @@ func (b beside) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-func (b beside) List(context.Context, string) ([]port.Stored, error) { return nil, nil }
+func (b beside) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
 
 func (b beside) Claim(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil

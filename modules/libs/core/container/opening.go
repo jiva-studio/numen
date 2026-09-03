@@ -108,7 +108,7 @@ type Opened struct {
 	vault     domain.Vault
 	scan      vault.Scan
 	follow    vault.Follow
-	watching  *vault.Following
+	watching  *vault.Watch
 	unwatched error
 }
 
@@ -122,7 +122,7 @@ func (o *Opened) Unwatched() error { return o.unwatched }
 // The walk writes in groups from what it read, so its copy of a note lands last
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
-func (o *Opened) Read(ctx context.Context, got func(vault.Scanned)) (vault.Scanned, error) {
+func (o *Opened) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
 	o.opening.held.begin()
 
 	walk := o.scan

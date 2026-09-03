@@ -27,7 +27,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ran, err := flashcards.Log{Stores: s.logs}.Run(t.Context(), store, port.Stored{
+	ran, err := flashcards.Log{Stores: s.logs}.Run(t.Context(), store, port.Entry{
 		Name: "flashcards/01ARZ3NDEKTSV4RRFFQ69G5FAV.jsonl",
 	})
 	if err != nil {
@@ -100,12 +100,12 @@ type listing struct {
 	name string
 }
 
-func (l listing) List(ctx context.Context, name string) ([]port.Stored, error) {
+func (l listing) List(ctx context.Context, name string) ([]port.Entry, error) {
 	held, err := l.DerivedStore.List(ctx, name)
 	if err != nil {
 		return nil, err
 	}
-	return append(held, port.Stored{Name: l.name, Size: 120}), nil
+	return append(held, port.Entry{Name: l.name, Size: 120}), nil
 }
 
 // A run taken away between the listing and the reading is left out, and the

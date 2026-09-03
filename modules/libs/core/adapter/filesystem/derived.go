@@ -230,7 +230,7 @@ func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
 // List reports the files directly under a name, as names of this store, sorted.
 // A folder among them is not one: what is kept here is files, and a caller
 // after them would have to be told which entries it may read.
-func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
+func (d *Derived) List(_ context.Context, name string) ([]port.Entry, error) {
 	target, err := d.at(name)
 	if err != nil {
 		return nil, err
@@ -246,7 +246,7 @@ func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Stored, 0, len(entries))
+	out := make([]port.Entry, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
@@ -258,9 +258,9 @@ func (d *Derived) List(_ context.Context, name string) ([]port.Stored, error) {
 		if err != nil {
 			continue
 		}
-		out = append(out, port.Stored{Name: clean + "/" + e.Name(), Size: int(info.Size())})
+		out = append(out, port.Entry{Name: clean + "/" + e.Name(), Size: int(info.Size())})
 	}
-	slices.SortFunc(out, func(a, b port.Stored) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 

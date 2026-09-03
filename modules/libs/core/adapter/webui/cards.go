@@ -61,7 +61,7 @@ func offering(limit int32) int {
 func (a *API) MakeStencil(
 	ctx context.Context, r *connect.Request[v1.MakeStencilRequest],
 ) (*connect.Response[v1.MakeStencilResponse], error) {
-	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.Made, error) {
+	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.MakesCards.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
@@ -75,7 +75,7 @@ func (a *API) MakeStencil(
 func (a *API) MakeDeck(
 	ctx context.Context, r *connect.Request[v1.MakeDeckRequest],
 ) (*connect.Response[v1.MakeDeckResponse], error) {
-	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.Made, error) {
+	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.MakesCards.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
@@ -88,17 +88,17 @@ func (a *API) MakeDeck(
 // being shown, the window's hold on writing, and the refusals a file that could
 // not be made comes back as.
 func (a *API) makes(
-	ctx context.Context, cut func(domain.Vault, cards.New) (cards.Made, error), title, folder string,
-) (cards.Made, *v1.Refusal, error) {
+	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
+) (cards.CreateNoteResult, *v1.Refusal, error) {
 	if a.MakesCards == nil {
-		return cards.Made{}, nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
+		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
 	if err != nil {
-		return cards.Made{}, nil, err
+		return cards.CreateNoteResult{}, nil, err
 	}
 	if !a.Writing.begin() {
-		return cards.Made{}, nil, connect.NewError(connect.CodeUnavailable, errClosing)
+		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
 
@@ -110,13 +110,13 @@ func (a *API) makes(
 		return made, nil, nil
 	}
 	if errors.Is(err, cards.ErrNoFields) {
-		return cards.Made{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
+		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	reason, refused := refusal.By(err)
 	if !refused {
-		return cards.Made{}, nil, connect.NewError(refusal.Coded(err), err)
+		return cards.CreateNoteResult{}, nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return cards.Made{}, &reason, nil
+	return cards.CreateNoteResult{}, &reason, nil
 }
 
 // RenameField gives one of a stencil's fields a different name, in the stencil

@@ -48,7 +48,7 @@ type DerivedStore interface {
 	// and grows: what tells a reader that a file it has already read has
 	// changed is how long it now is, and asking that of a listing costs the
 	// listing and not the reading.
-	List(ctx context.Context, name string) ([]Stored, error)
+	List(ctx context.Context, name string) ([]Entry, error)
 
 	// Remove takes a name out of the store. A name already gone is the outcome
 	// that was asked for.
@@ -60,9 +60,9 @@ type DerivedStore interface {
 	Claim(ctx context.Context, name string) (release func() error, err error)
 }
 
-// Stored is one thing a store holds: its name in that store, and how many
+// Entry is one thing a store holds: its name in that store, and how many
 // bytes are under it.
-type Stored struct {
+type Entry struct {
 	Name string
 	Size int
 }

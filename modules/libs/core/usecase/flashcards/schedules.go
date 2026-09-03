@@ -277,7 +277,7 @@ func projected(
 // remembered is what was worked out last time, when it was worked out from the
 // runs the vault now holds and under the targets now in force.
 func (u Schedules) remembered(
-	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
+	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
 ) (map[history.CardFace]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
@@ -314,7 +314,7 @@ func (u Schedules) remembered(
 
 // read reports whether a cache was worked out from exactly the log that now
 // stands: the same files, each the length it was read at.
-func read(was []keptFile, files []port.Stored) bool {
+func read(was []keptFile, files []port.Entry) bool {
 	if len(was) != len(files) {
 		return false
 	}
@@ -330,7 +330,7 @@ func read(was []keptFile, files []port.Stored) bool {
 // that could not be written is a launch that works it out again, so nothing
 // here is reported.
 func (u Schedules) remember(
-	ctx context.Context, v domain.Vault, files []port.Stored, mark string,
+	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
 	out map[history.CardFace]history.Schedule,
 ) {
 	if u.Kept == nil {

@@ -32,8 +32,8 @@ type Marking struct {
 	Now   func() time.Time
 }
 
-// Marked is what the marking came to: the decks it could not write.
-type Marked struct {
+// MarkingResult is what the marking came to: the decks it could not write.
+type MarkingResult struct {
 	// Unwritten are the paths of the decks holding a card with no mark that
 	// could not be given one. Their cards are left out of this sitting.
 	Unwritten []string
@@ -45,17 +45,17 @@ type Marked struct {
 // editor may be saving it, and the vault's write lock lives in one process. Its
 // cards are left out of this sitting and marked at the next, and it is named in
 // what comes back so that a person is told which deck that was.
-func (u Marking) Execute(ctx context.Context, v domain.Vault) (Marked, error) {
+func (u Marking) Execute(ctx context.Context, v domain.Vault) (MarkingResult, error) {
 	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
-		return Marked{}, err
+		return MarkingResult{}, err
 	}
 
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	write := cards.Write{
 		Readers: u.Readers, Writers: u.Writers, Links: u.Links, Index: u.Index, Now: u.Now,
 	}
-	var out Marked
+	var out MarkingResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
 		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Deck) {

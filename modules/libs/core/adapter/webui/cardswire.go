@@ -37,7 +37,7 @@ func offeredOf(s cards.Listed) *v1.Offered {
 // renamedOf is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func renamedOf(r cards.Renamed) *v1.RenameFieldResponse {
+func renamedOf(r cards.RenameResult) *v1.RenameFieldResponse {
 	out := &v1.RenameFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),

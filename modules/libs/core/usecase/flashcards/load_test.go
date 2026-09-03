@@ -56,7 +56,7 @@ func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	return s.inner.Read(ctx, name)
 }
 
-func (s countingStore) List(ctx context.Context, name string) ([]port.Stored, error) {
+func (s countingStore) List(ctx context.Context, name string) ([]port.Entry, error) {
 	s.on.Listed++
 	return s.inner.List(ctx, name)
 }

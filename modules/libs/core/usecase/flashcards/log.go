@@ -36,7 +36,7 @@ type Held struct {
 	// A run is appended to and never rewritten, so its length is what says
 	// whether it has changed. A name alone says nothing: the file a sitting is
 	// writing to keeps its name and grows all evening.
-	Files []port.Stored
+	Files []port.Entry
 	// Skipped is how many lines could not be acted on: a run that stopped
 	// partway, or a line of a version this build does not know.
 	Skipped int
@@ -61,7 +61,7 @@ func ordered(answers []history.Answer) func() history.Given {
 
 // Files is what the vault's log is made of, without reading any of it. It is
 // what a cache is measured against, and measuring it costs one listing.
-func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Stored, error) {
+func (u Log) Files(ctx context.Context, v domain.Vault) ([]port.Entry, error) {
 	store, err := u.Stores.Open(v)
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
-		out.Files = append(out.Files, port.Stored{Name: file.Name, Size: ran.Size})
+		out.Files = append(out.Files, port.Entry{Name: file.Name, Size: ran.Size})
 	}
 	out.order = ordered(out.Answers)
 	return out, nil
@@ -119,7 +119,7 @@ type Ran struct {
 }
 
 // Run is one file of a vault's log, read.
-func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored) (Ran, error) {
+func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Entry) (Ran, error) {
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return Ran{Gone: true}, nil
@@ -135,12 +135,12 @@ func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Stored)
 }
 
 // runs is the files of the log, sorted by name.
-func runs(ctx context.Context, store port.DerivedStore) ([]port.Stored, error) {
+func runs(ctx context.Context, store port.DerivedStore) ([]port.Entry, error) {
 	held, err := store.List(ctx, Area)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.Stored, 0, len(held))
+	out := make([]port.Entry, 0, len(held))
 	for _, one := range held {
 		if strings.HasSuffix(one.Name, Suffix) {
 			out = append(out, one)

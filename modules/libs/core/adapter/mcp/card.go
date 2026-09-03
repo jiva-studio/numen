@@ -334,7 +334,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Title  string `json:"title" jsonschema:"what the deck is called"`
 		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	}) (*sdk.CallToolResult, cards.Made, error) {
+	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
 		made, err := core.Cutting.Deck(ctx, core.shown().Vault, cards.New{
 			Title: in.Title, Folder: in.Folder,
 		})
@@ -357,13 +357,13 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Fields []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
-	}) (*sdk.CallToolResult, cards.Made, error) {
+	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
 		body, err := core.StencilBody("", faced(in.Faces), "")
 		if err != nil {
-			return nil, cards.Made{}, err
+			return nil, cards.CreateNoteResult{}, err
 		}
 		if len(body) > maxBytes {
-			return nil, cards.Made{}, fmt.Errorf(
+			return nil, cards.CreateNoteResult{}, fmt.Errorf(
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
 		}
 		made, err := core.Cutting.Stencil(ctx, core.shown().Vault, cards.New{

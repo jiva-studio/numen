@@ -54,7 +54,7 @@ func (s stored) Remove(_ context.Context, name string) error {
 	return nil
 }
 
-func (s stored) List(context.Context, string) ([]port.Stored, error) { return nil, nil }
+func (s stored) List(context.Context, string) ([]port.Entry, error) { return nil, nil }
 
 func (s stored) Claim(context.Context, string) (func() error, error) {
 	return func() error { return nil }, nil

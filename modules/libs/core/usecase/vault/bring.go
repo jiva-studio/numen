@@ -19,9 +19,9 @@ type Refusal struct {
 	Why  error
 }
 
-// Brought is what a drop came to: what the vault now holds, and what it does
+// BringResult is what a drop came to: what the vault now holds, and what it does
 // not.
-type Brought struct {
+type BringResult struct {
 	// Landed is each file and folder that arrived, by the path the vault files
 	// it under.
 	Landed []string
@@ -50,8 +50,8 @@ func (u Bring) Execute(
 	v domain.Vault,
 	into string,
 	paths []string,
-) (Brought, error) {
-	var brought Brought
+) (BringResult, error) {
+	var brought BringResult
 	if len(paths) == 0 {
 		return brought, nil
 	}
@@ -78,7 +78,7 @@ func (u Bring) bring(
 	writer port.VaultWriter,
 	v domain.Vault,
 	from, to string,
-	brought *Brought,
+	brought *BringResult,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err

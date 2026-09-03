@@ -119,7 +119,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 		now.Runs = append(now.Runs, one)
 		if opened && !ran.Gone && !ran.Shut {
 			held.Answers = append(held.Answers, ran.Answers...)
-			held.Files = append(held.Files, port.Stored{Name: file.Name, Size: ran.Size})
+			held.Files = append(held.Files, port.Entry{Name: file.Name, Size: ran.Size})
 		}
 
 		// What a run came to on its own is what is kept, and what the run adds

@@ -29,8 +29,8 @@ type NotWritten struct {
 	Problem format.Problem
 }
 
-// Renamed says what a rename reached and what it did not.
-type Renamed struct {
+// RenameResult says what a rename reached and what it did not.
+type RenameResult struct {
 	// Stencil is the fingerprint the stencil now stands at, which is what the
 	// caller presents at its next write.
 	Stencil domain.Fingerprint
@@ -80,9 +80,9 @@ func (u RenameField) stamp() (string, error) {
 // The stencil leads: a rename the stencil refused reaches no deck. A deck it
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
-func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Renamed, error) {
+func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
 	if in.From == in.To {
-		return Renamed{Stencil: in.At}, nil
+		return RenameResult{Stencil: in.At}, nil
 	}
 
 	out, err := u.rename(ctx, v, in)
@@ -94,26 +94,26 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 
 // rename is the whole of the writing, under this vault's write lock from before
 // the stencil is read until after the last deck is replaced.
-func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Renamed, error) {
+func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 	defer release()
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
-	var out Renamed
+	var out RenameResult
 	out.Stencil, err = u.stencil(ctx, reader, writer, in)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
 	paths, err := u.decks(ctx, v)
