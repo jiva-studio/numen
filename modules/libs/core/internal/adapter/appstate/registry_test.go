@@ -358,9 +358,8 @@ func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
 	}
 }
 
-// Two processes hold the registry at one path, so one temporary name shared
-// between them is one process renaming the other's half-written bytes over the
-// list. Each write takes a name of its own.
+// Two processes hold the registry at one path. Each write takes a temporary
+// name of its own, so each of them renames a file it wrote whole.
 func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "vaults.json")
