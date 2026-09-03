@@ -16,7 +16,7 @@ var locks sync.Map
 //
 // The lock is a channel, so a context that ends while it is waited for is
 // answered with its error and nothing is held.
-func (w Writers) Hold(ctx context.Context, v domain.Vault) (func(), error) {
+func (w VaultWriters) Hold(ctx context.Context, v domain.Vault) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

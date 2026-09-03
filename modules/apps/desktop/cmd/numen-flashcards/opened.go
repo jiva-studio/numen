@@ -89,7 +89,7 @@ func (o *opened) of(v domain.Vault) *vaulted {
 // opens starts one vault's watch and leaves it running.
 func (o *opened) opens(v domain.Vault, one *vaulted) {
 	opening := o.cfg.Opening(o.db)
-	opening.Told = func(vault.Moved) { o.told(v) }
+	opening.Told = func(vault.VaultChanges) { o.told(v) }
 	opening.Trouble = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)

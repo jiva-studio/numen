@@ -21,7 +21,7 @@ import (
 func writing(t *testing.T) (port.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
-	w, err := filesystem.Writers{}.Open(domain.Vault{Path: root})
+	w, err := filesystem.VaultWriters{}.Open(domain.Vault{Path: root})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	writer, err := (filesystem.Writers{}).Open(v)
+	writer, err := (filesystem.VaultWriters{}).Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -300,7 +300,7 @@ func TestAskingAboutAFileTheVaultLeavesAloneOpensNothing(t *testing.T) {
 // One vault is held by one writer at a time, and holding one says nothing
 // about the next.
 func TestOneVaultIsHeldByOneWriterAtATime(t *testing.T) {
-	writers := filesystem.Writers{}
+	writers := filesystem.VaultWriters{}
 	here := testsupport.NewVault(t, nil)
 	elsewhere := testsupport.NewVault(t, nil)
 
@@ -352,7 +352,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			w, err := filesystem.Writers{}.Open(domain.Vault{Path: root})
+			w, err := filesystem.VaultWriters{}.Open(domain.Vault{Path: root})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -461,7 +461,7 @@ func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w, err := filesystem.Writers{}.Open(domain.Vault{Path: link})
+	w, err := filesystem.VaultWriters{}.Open(domain.Vault{Path: link})
 	if err != nil {
 		t.Fatal(err)
 	}
