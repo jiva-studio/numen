@@ -1,50 +1,35 @@
-name: go
+name: Numen Desktop
 
 on:
   pull_request:
     paths:
-      - "modules/libs/core/**"
       - "modules/apps/desktop/**"
-      - "modules/apps/mobile/**"
+      - "modules/libs/core/**"
+      - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
-      - "tests/**"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/numen-desktop.yml"
   push:
     branches: [main]
     paths:
-      - "modules/libs/core/**"
       - "modules/apps/desktop/**"
-      - "modules/apps/mobile/**"
+      - "modules/libs/core/**"
+      - "modules/libs/ui/**"
       - "modules/libs/protocol/**"
-      - "tests/**"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/numen-desktop.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters. A run on main is left to finish: it fills the cache the branches read.
 concurrency:
-  group: go-${{ github.ref }}
+  group: numen-desktop-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Three Go modules, checked the same way. The desktop module holds its Go
-  # under cmd and internal, the phone's under bind; the core module is Go
-  # throughout.
   go:
+    name: "Test :: Go"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - module: modules/libs/core
-            sources: "."
-          - module: modules/apps/desktop
-            sources: "./cmd ./internal"
-            webview: true
-          - module: modules/apps/mobile
-            sources: "./bind"
     defaults:
       run:
-        working-directory: ${{ matrix.module }}
+        working-directory: modules/apps/desktop
     steps:
       - uses: actions/checkout@v7
 
@@ -58,8 +43,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/go/pkg/mod
-          key: go-mod-${{ matrix.module }}-${{ hashFiles(format('{0}/go.sum', matrix.module)) }}
-          restore-keys: go-mod-${{ matrix.module }}-
+          key: go-mod-modules/apps/desktop-${{ hashFiles('modules/apps/desktop/go.sum') }}
+          restore-keys: go-mod-modules/apps/desktop-
 
       # What the last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The key carries the commit,
@@ -67,14 +52,13 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: ~/.cache/go-build
-          key: go-build-${{ matrix.module }}-${{ github.sha }}
-          restore-keys: go-build-${{ matrix.module }}-
+          key: go-build-modules/apps/desktop-${{ github.sha }}
+          restore-keys: go-build-modules/apps/desktop-
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
       # none of this, which is why it is a separate binary.
       - name: Webview
-        if: matrix.webview
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
@@ -86,16 +70,13 @@ jobs:
 
       - name: Formatting
         run: |
-          unformatted=$(gofmt -l ${{ matrix.sources }})
+          unformatted=$(gofmt -l ./cmd ./internal)
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
 
       - run: go vet ./...
 
-      # -race because a scan will grow concurrent, and the cheapest time to find
-      # that out is before it does.
-      #
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
       - run: go test -race ./...
@@ -107,11 +88,12 @@ jobs:
       - uses: actions/cache/save@v4
         with:
           path: ~/.cache/go-build
-          key: go-build-${{ matrix.module }}-${{ github.sha }}
+          key: go-build-modules/apps/desktop-${{ github.sha }}
 
   # The other half of the promise the two binaries make: this one is built for
   # a machine it is not being built on.
-  portable:
+  cli:
+    name: "Cross-compile :: Command line tool"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -129,3 +111,55 @@ jobs:
           for target in darwin/arm64 windows/amd64 linux/arm64; do
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
           done
+
+  # The two screens the desktop draws. Both are typed against the schema and
+  # against the components, so a change to either fails here rather than on
+  # screen.
+  windows:
+    name: "Test :: Windows"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+
+      # A window reaches the components through their build.
+      - name: Install
+        run: |
+          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/ui
+          npm install --prefix modules/apps/desktop/ui
+          npm install --prefix modules/apps/desktop/flashcards
+
+      # The engines are a download of their own and answer to the version in
+      # the lockfile. Whatever the cache does not hold is fetched below.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          restore-keys: playwright-
+
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Typecheck
+        run: |
+          npm run typecheck --prefix modules/apps/desktop/ui
+          npm run typecheck --prefix modules/apps/desktop/flashcards
+
+      - name: Test
+        run: |
+          npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
+          npm run test:stories --prefix modules/apps/desktop/ui
+          npm test --prefix modules/apps/desktop/flashcards

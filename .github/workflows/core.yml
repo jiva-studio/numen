@@ -1,0 +1,79 @@
+name: Core
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/core/**"
+      - "modules/libs/protocol/**"
+      - "tests/**"
+      - ".github/workflows/core.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/core/**"
+      - "modules/libs/protocol/**"
+      - "tests/**"
+      - ".github/workflows/core.yml"
+
+# One run at a time per branch, and on a pull request the newest is the one that
+# matters. A run on main is left to finish: it fills the cache the branches read.
+concurrency:
+  group: core-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  go:
+    name: "Test :: Go"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: modules/libs/core
+    steps:
+      - uses: actions/checkout@v7
+
+      # The two caches are keyed apart: the modules answer to go.sum, the build
+      # answers to the commit.
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26"
+          cache: false
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-modules/libs/core-${{ hashFiles('modules/libs/core/go.sum') }}
+          restore-keys: go-mod-modules/libs/core-
+
+      # What the last compile and test run left behind: a run compiles what
+      # changed and re-runs the tests that changed. The key carries the commit,
+      # so the newest cache the branch can see is the one restored.
+      - uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-modules/libs/core-${{ github.sha }}
+          restore-keys: go-build-modules/libs/core-
+
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "not gofmt-ed:"; echo "$unformatted"; exit 1
+          fi
+
+      - run: go vet ./...
+
+      # -race because a scan will grow concurrent, and the cheapest time to find
+      # that out is before it does.
+      #
+      # A test builds its vault in a temporary folder, and there is memory here
+      # to hold every one of them.
+      - run: go test -race ./...
+        env:
+          TMPDIR: /dev/shm
+
+      # Every run writes what it built. A branch reads its own back on the next
+      # push to it and main's before that.
+      - uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-modules/libs/core-${{ github.sha }}

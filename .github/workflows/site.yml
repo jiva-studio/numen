@@ -1,4 +1,4 @@
-name: landing
+name: Site
 
 # A run answers for the page and for nothing else, so what starts it is a change
 # to the page, on a branch and on main alike. The two lists are written out
@@ -7,12 +7,12 @@ on:
   pull_request:
     paths:
       - "modules/apps/landing/**"
-      - ".github/workflows/landing.yml"
+      - ".github/workflows/site.yml"
   push:
     branches: [main]
     paths:
       - "modules/apps/landing/**"
-      - ".github/workflows/landing.yml"
+      - ".github/workflows/site.yml"
 
 # One run at a time per branch, and the newest is the one that matters. Two
 # deploys share one storage zone, and the second takes down what the first has
@@ -27,7 +27,8 @@ jobs:
   # The page is static and carries no framework, so what there is to check is
   # that its markup typechecks and that the site builds — pictures included,
   # which is where a missing asset turns up.
-  page:
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,8 +58,9 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the page, and the page has a storage zone of its own.
   deploy:
+    name: Deploy
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: page
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: What this needs
