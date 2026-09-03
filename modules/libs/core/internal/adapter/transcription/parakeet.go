@@ -144,8 +144,8 @@ func (t *Transcriber) Close() error {
 	return nil
 }
 
-// Hear is one stretch of speech, as the words it carries.
-func (t *Transcriber) Hear(ctx context.Context, audio port.Audio) (string, error) {
+// Transcribe is one stretch of speech, as the words it carries.
+func (t *Transcriber) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

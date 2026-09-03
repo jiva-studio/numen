@@ -183,7 +183,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		reached := from
 		cues := make([]transcript.Cue, 0, len(speech))
 		for _, audio := range speech {
-			words, err := u.By.Hear(ctx, audio)
+			words, err := u.By.Transcribe(ctx, audio)
 			if err != nil {
 				return res, fmt.Errorf("hear %s at %s: %w", path, transcript.Stamp(audio.From), err)
 			}
