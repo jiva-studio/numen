@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-// unpacked takes the library out of an archive, once, and says where it now is.
+// unpack takes the library out of an archive, once, and says where it now is.
 //
 // The archive carries the sum this release publishes before anything is taken
 // out of it, and the library carries its own before it is left in the cache. A
@@ -24,12 +24,12 @@ import (
 // archive is named after the release. The plain name inside is a link to the
 // file carrying the version, so what is taken out is the file: a link copied out
 // of an archive points at nothing.
-func unpacked(archive, name string, found published) (string, error) {
+func unpack(archive, name string, found release) (string, error) {
 	at := filepath.Join(filepath.Dir(archive), name)
-	if matches(at, found.library) == nil {
+	if verify(at, found.library) == nil {
 		return at, nil
 	}
-	if err := matches(archive, found.sum); err != nil {
+	if err := verify(archive, found.sum); err != nil {
 		return "", err
 	}
 	var err error
@@ -41,15 +41,15 @@ func unpacked(archive, name string, found published) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := matches(at, found.library); err != nil {
+	if err := verify(at, found.library); err != nil {
 		os.Remove(at)
 		return "", err
 	}
 	return at, nil
 }
 
-// matches says whether one file carries the sum published for it.
-func matches(at, sum string) error {
+// verify says whether one file carries the sum published for it.
+func verify(at, sum string) error {
 	info, err := os.Stat(at)
 	if err != nil {
 		return err

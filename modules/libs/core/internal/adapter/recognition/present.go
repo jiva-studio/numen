@@ -25,10 +25,10 @@ func Fetched(cfg Config, held RecogniserModel) bool {
 			return true
 		}
 	}
-	if !onnxruntime.Address(held.Name) {
+	if !onnxruntime.IsAddress(held.Name) {
 		return false
 	}
-	dir, err := onnxruntime.Kept(cfg.settings())
+	dir, err := onnxruntime.CacheDir(cfg.settings())
 	if err != nil {
 		return false
 	}

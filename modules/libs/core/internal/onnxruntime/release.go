@@ -14,19 +14,19 @@ const runtimeVersion = "1.23.0"
 // from is where the archives are published.
 const from = "https://github.com/microsoft/onnxruntime/releases/download/v" + runtimeVersion + "/"
 
-// published is how one platform's runtime is released: the archive it comes in,
-// the sum that archive carries, and the sum of the library inside it.
-type published struct {
+// release is one platform's runtime as it is published: the archive it comes
+// in, the sum that archive carries, and the sum of the library inside it.
+type release struct {
 	archive string
 	sum     string
 	library string
 }
 
 // address is where this archive is published.
-func (p published) address() string { return from + p.archive }
+func (r release) address() string { return from + r.archive }
 
 // releases is every platform the runtime is published for.
-var releases = map[string]published{
+var releases = map[string]release{
 	"linux/amd64": {
 		archive: "onnxruntime-linux-x64-" + runtimeVersion + ".tgz",
 		sum:     "b6deea7f2e22c10c043019f294a0ea4d2a6c0ae52a009c34847640db75ec5580",
@@ -54,12 +54,12 @@ var releases = map[string]published{
 	},
 }
 
-// release is what this platform's runtime is published as.
-func release(s Settings) (published, error) {
+// findRelease is the release published for this platform.
+func findRelease(s Settings) (release, error) {
 	if found, ok := releases[runtime.GOOS+"/"+runtime.GOARCH]; ok {
 		return found, nil
 	}
-	return published{}, fmt.Errorf("no onnx runtime is published for %s/%s: name one in %s.runtime",
+	return release{}, fmt.Errorf("no onnx runtime is published for %s/%s: name one in %s.runtime",
 		runtime.GOOS, runtime.GOARCH, s.Section)
 }
 

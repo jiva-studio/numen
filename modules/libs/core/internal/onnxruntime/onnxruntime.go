@@ -56,12 +56,12 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	}
 
 	support()
-	engine, at, refused := opened(present(s))
+	engine, at, refused := load(candidates(s))
 	if engine != nil {
 		return keep(engine, at)
 	}
 
-	found, err := release(s)
+	found, err := findRelease(s)
 	if err != nil {
 		return nil, "", err
 	}
@@ -69,7 +69,7 @@ func Open(ctx context.Context, s Settings) (*ort.Engine, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("the onnx runtime: %w", err)
 	}
-	at, err = unpacked(archive, runtimeName(), found)
+	at, err = unpack(archive, runtimeName(), found)
 	if err != nil {
 		return nil, "", err
 	}
@@ -114,7 +114,7 @@ func Here(s Settings) bool {
 		_, err := os.Stat(s.Runtime)
 		return err == nil
 	}
-	for _, at := range present(s) {
+	for _, at := range candidates(s) {
 		if filepath.IsAbs(at) {
 			return true
 		}

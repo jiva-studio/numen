@@ -273,7 +273,7 @@ func model(ctx context.Context, cfg Config, path, name, what string) (string, er
 			return at, nil
 		}
 	}
-	if !onnxruntime.Address(name) {
+	if !onnxruntime.IsAddress(name) {
 		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", what, name)
 	}
 	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)

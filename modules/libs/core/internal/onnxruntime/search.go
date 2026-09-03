@@ -9,14 +9,15 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// present is every ONNX Runtime this machine holds without fetching one: beside
-// the application, where a fetched one was unpacked, wherever this platform
-// keeps its packages, and by the name the loader searches for on its own.
+// candidates is every ONNX Runtime this machine holds without fetching one:
+// beside the application, where a fetched one was unpacked, wherever this
+// platform keeps its packages, and by the name the loader searches for on its
+// own.
 //
 // A library in the fetch directory is offered only where it carries the sum
 // pinned for this platform.
-func present(s Settings) []string {
-	dir, err := Kept(s)
+func candidates(s Settings) []string {
+	dir, err := CacheDir(s)
 	if err != nil {
 		dir = ""
 	}
@@ -49,12 +50,12 @@ func stands(dir, at string) bool {
 		return true
 	}
 	found, ok := releases[runtime.GOOS+"/"+runtime.GOARCH]
-	return ok && matches(at, found.library) == nil
+	return ok && verify(at, found.library) == nil
 }
 
-// opened is the first library that loads, the one that did, and why each of the
+// load is the first library that loads, the one that did, and why each of the
 // others would not. A file that is there is not a library that loads.
-func opened(candidates []string) (*ort.Engine, string, []string) {
+func load(candidates []string) (*ort.Engine, string, []string) {
 	var refused []string
 	for _, at := range candidates {
 		engine, err := ort.NewEngine(at)

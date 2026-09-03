@@ -15,7 +15,7 @@ func asked() Settings { return Settings{Section: "recognition"} }
 // A file that is there is not a library that loads, and every way of getting one
 // ends in the same question: does it open.
 func TestTheRuntimeThisMachineHoldsOpens(t *testing.T) {
-	engine, at, refused := opened(present(asked()))
+	engine, at, refused := load(candidates(asked()))
 	if engine == nil {
 		t.Skip("this machine holds none:", refused)
 	}
@@ -24,7 +24,7 @@ func TestTheRuntimeThisMachineHoldsOpens(t *testing.T) {
 }
 
 func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
-	found, err := release(asked())
+	found, err := findRelease(asked())
 	if err != nil {
 		t.Skip(err)
 	}
@@ -32,7 +32,7 @@ func TestTheRuntimeFetchedForThisPlatformOpens(t *testing.T) {
 	if err != nil {
 		t.Skip("nothing fetched on this machine:", err)
 	}
-	at, err := unpacked(archive, runtimeName(), found)
+	at, err := unpack(archive, runtimeName(), found)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,8 +104,8 @@ func TestOnlyAnHttpsAddressIsFetchedFrom(t *testing.T) {
 		{"file:///tmp/model.onnx", false},
 		{"/tmp/model.onnx", false},
 	} {
-		if Address(one.name) != one.is {
-			t.Errorf("%s is fetched from: %v", one.name, Address(one.name))
+		if IsAddress(one.name) != one.is {
+			t.Errorf("%s is fetched from: %v", one.name, IsAddress(one.name))
 		}
 	}
 }

@@ -52,9 +52,9 @@ var fetching = &http.Client{
 	},
 }
 
-// Kept is where a downloaded file is put: the folder the settings name, or this
-// platform's cache directory.
-func Kept(s Settings) (string, error) {
+// CacheDir is where a downloaded file is put: the folder the settings name, or
+// this platform's cache directory.
+func CacheDir(s Settings) (string, error) {
 	if s.Dir != "" {
 		return s.Dir, nil
 	}
@@ -67,7 +67,7 @@ func Kept(s Settings) (string, error) {
 
 // Fetched is the file one address names, downloaded if it is not already here.
 func Fetched(ctx context.Context, s Settings, address string) (string, error) {
-	dir, err := Kept(s)
+	dir, err := CacheDir(s)
 	if err != nil {
 		return "", err
 	}
@@ -99,9 +99,9 @@ func Cached(address string) string {
 	return hex.EncodeToString(sum[:6]) + "-" + base
 }
 
-// Address says whether what the settings named is somewhere to fetch from
+// IsAddress says whether what the settings named is somewhere to fetch from
 // rather than a file on this machine. What is fetched is fetched over https.
-func Address(name string) bool {
+func IsAddress(name string) bool {
 	return strings.HasPrefix(name, "https://")
 }
 
@@ -111,7 +111,7 @@ func Address(name string) bool {
 // The deadline is set twice: once for the host to answer, and once for the body
 // when its length is known.
 func download(ctx context.Context, s Settings, address, at string) error {
-	if !Address(address) {
+	if !IsAddress(address) {
 		return fmt.Errorf("%s is not an https address", address)
 	}
 	ctx, stop := context.WithCancel(ctx)
