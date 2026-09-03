@@ -11,6 +11,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"slices"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -19,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/note"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/vault"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testonly"
 )
 
 // DB owns the connections.
@@ -52,11 +54,27 @@ var pragmas = []string{
 	// Wait for a writer, up to five seconds, before SQLITE_BUSY. The writer
 	// waited for may be in another process.
 	"busy_timeout(5000)",
-	// The index is a cache: a crash costs a rescan, never data. Paying an fsync
-	// per commit to protect it buys nothing and dominates a rebuild.
-	"synchronous(NORMAL)",
 	"cache_size(-65536)",
 }
+
+const (
+	shipped        = "synchronous(NORMAL)"
+	unsynchronised = "synchronous(OFF)"
+)
+
+// synchronous is what a commit waits for. The index is a cache: a crash costs a
+// rescan, never data, and NORMAL under WAL is what that is worth.
+var synchronous = shipped
+
+// Unsynchronised stops every index this process opens from here on waiting for
+// the disk. WAL, the single writer and the busy timeout stay as they are; only
+// the moment of the flush moves. The grant is obtainable only inside this
+// module.
+func Unsynchronised(testonly.Grant) { synchronous = unsynchronised }
+
+// AsShipped puts back the setting a person's index runs with, for a measurement
+// that has to pay what the application pays.
+func AsShipped(testonly.Grant) { synchronous = shipped }
 
 func Open(ctx context.Context, path string) (*DB, error) {
 	if folding != nil {
@@ -110,7 +128,7 @@ func (d *DB) Sources() sources {
 	return sources{known: known{read: d.ChunkQueries()}, write: d.Chunks()}
 }
 
-func dsn(path string) string { return dsnOf(path, pragmas) }
+func dsn(path string) string { return dsnOf(path, append(slices.Clone(pragmas), synchronous)) }
 
 // writeDSN is what the write pool opens with. Every transaction on it takes the
 // write lock at BEGIN, so one that reads before it writes waits its turn under
