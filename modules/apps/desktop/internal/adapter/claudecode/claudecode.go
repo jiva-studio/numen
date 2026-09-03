@@ -244,9 +244,9 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
 	started = true
-	w.reading.Add(1)
+	w.reader.Add(1)
 	go func() {
-		defer w.reading.Done()
+		defer w.reader.Done()
 		defer a.letGo(w)
 		defer close(w.steps)
 		defer os.Remove(configuration)
@@ -539,14 +539,14 @@ func Tool(name string) string { return prefix + name }
 type ToolDeclaration struct {
 	Title string
 	About string
-	// Inside names the field of one element that says which element it is, for
+	// Element names the field of one element that says which element it is, for
 	// a call that takes a collection.
-	Inside string
-	// Stood and Becomes name the arguments carrying the text a call replaces
+	Element string
+	// Match and Text name the arguments carrying the text a call replaces
 	// and what it puts in that text's place. Both are empty for a call that
 	// replaces no stretch.
-	Stood   string
-	Becomes string
+	Match string
+	Text  string
 	// Kind is what a call of this tool does to the vault. A tool that declares
 	// nothing about it is port.StepToolCall.
 	Kind port.StepKind
@@ -560,7 +560,7 @@ type work struct {
 	// question asked in none. Finishing that conversation stops this work.
 	conversation string
 	steps        chan port.Step
-	reading      sync.WaitGroup
+	reader       sync.WaitGroup
 	once         sync.Once
 }
 
@@ -573,7 +573,7 @@ func (w *work) Steps() <-chan port.Step { return w.steps }
 // this work was taken with is cancelled.
 func (w *work) Stop() error {
 	w.once.Do(w.stop)
-	w.reading.Wait()
+	w.reader.Wait()
 	return nil
 }
 
@@ -604,17 +604,17 @@ func lastLine(said string) string {
 // written. Nothing here is a write: the vault is what changes a note, and this
 // only says what is on its way.
 type Drafting struct {
-	// Tell is told each time more of the change has arrived.
-	Tell func(ctx context.Context, said domain.Edit)
-	// Where says where a stretch stands in a note, and whether it stands in
+	// Report is told each time more of the change has arrived.
+	Report func(ctx context.Context, said domain.Edit)
+	// Location says where a stretch stands in a note, and whether it stands in
 	// exactly one place. A stretch that stands nowhere or twice is not drawn.
-	Where func(ctx context.Context, path, stood string) (from, to int, one bool)
+	Location func(ctx context.Context, path, stood string) (from, to int, unique bool)
 	// Now is the clock the pace is kept by.
 	Now func() time.Time
 }
 
 // drawing reports whether anything can be drawn at all.
-func (d Drafting) drawing() bool { return d.Tell != nil && d.Where != nil }
+func (d Drafting) drawing() bool { return d.Report != nil && d.Location != nil }
 
 func (d Drafting) now() time.Time {
 	if d.Now == nil {

@@ -44,9 +44,9 @@ func held(t *testing.T, dir, name string) string {
 	return string(raw)
 }
 
-var aBatch = proofread.Batch{At: 7, Lines: []proofread.Line{
-	{At: 0, Text: "the qulck brown fox"},
-	{At: 1, Text: "jumped ovcr the lazy dog"},
+var aBatch = proofread.Batch{Number: 7, Lines: []proofread.Line{
+	{Number: 0, Text: "the qulck brown fox"},
+	{Number: 1, Text: "jumped ovcr the lazy dog"},
 }}
 
 // The batch goes on the input and the flags on the command line: the tool list

@@ -37,7 +37,7 @@ func started(t *testing.T, prints string) port.Work {
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		Words: map[string]claudecode.ToolDeclaration{
 			claudecode.Tool("note_search"): {Title: "Search notes", About: "query"},
-			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Inside: "title"},
+			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Element: "title"},
 			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: port.StepEdit},
 		},
 	}

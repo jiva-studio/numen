@@ -23,8 +23,8 @@ type drawn struct {
 
 func (d *drawn) drafting() claudecode.Drafting {
 	return claudecode.Drafting{
-		Tell: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
-		Where: func(_ context.Context, path, stood string) (int, int, bool) {
+		Report: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
+		Location: func(_ context.Context, path, stood string) (int, int, bool) {
 			d.asked = append(d.asked, stood)
 			return 3, 9, d.found
 		},
@@ -50,7 +50,7 @@ func drafting(t *testing.T, window *drawn, prints string) port.Work {
 		Words: map[string]claudecode.ToolDeclaration{
 			claudecode.Tool("note_edit"): {
 				Title: "Edit a note", About: "path", Kind: port.StepEdit,
-				Stood: "stood", Becomes: "becomes",
+				Match: "stood", Text: "becomes",
 			},
 		},
 		Drafting: window.drafting(),

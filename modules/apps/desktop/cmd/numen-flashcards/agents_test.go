@@ -50,7 +50,7 @@ func window(
 		{ID: "one", Name: "One", Path: vaultOf(t)},
 		{ID: "two", Name: "Two", Path: vaultOf(t)},
 	}
-	vaults := &openVaults{cfg: cfg, db: db, under: t.Context(), told: func(domain.Vault) {}, out: io.Discard}
+	vaults := &openVaults{cfg: cfg, db: db, ctx: t.Context(), record: func(domain.Vault) {}, out: io.Discard}
 	t.Cleanup(vaults.wait)
 	return cfg, db, vaults, &flashcardsui.API{}, held
 }
@@ -133,7 +133,7 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
-	api.Sat(t.Context(), vaults[0])
+	api.Opened(t.Context(), vaults[0])
 
 	token, announcement := kept(t, cfg)
 	if token {
@@ -157,18 +157,18 @@ func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
 		t.Error("a card can be asked about before anybody has sat down")
 	}
 
-	api.Sat(t.Context(), vaults[0])
+	api.Opened(t.Context(), vaults[0])
 	first := api.Answering()
 	if first == nil {
 		t.Fatal("nothing answers about a card once a sitting is open")
 	}
 
-	api.Sat(t.Context(), vaults[0])
+	api.Opened(t.Context(), vaults[0])
 	if api.Answering() != first {
 		t.Error("sitting to the same vault again started the agent over")
 	}
 
-	api.Sat(t.Context(), vaults[1])
+	api.Opened(t.Context(), vaults[1])
 	if api.Answering() == first {
 		t.Error("the agent stayed on the vault the person left")
 	}

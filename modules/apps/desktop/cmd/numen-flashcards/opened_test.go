@@ -24,8 +24,8 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 	walks.Wait()
 
 	// The opening is one, so the watch behind it is one.
-	if len(vaults.held) != 1 {
-		t.Errorf("the window opened the vault %d times", len(vaults.held))
+	if len(vaults.openings) != 1 {
+		t.Errorf("the window opened the vault %d times", len(vaults.openings))
 	}
 }
 
@@ -53,7 +53,7 @@ func TestLevellingGoesThroughTheVaultsOwnOpening(t *testing.T) {
 	if err := vaults.level(t.Context(), v, []string{"decks/Words.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if len(vaults.held) != 1 {
-		t.Errorf("levelling and walking opened the vault %d times", len(vaults.held))
+	if len(vaults.openings) != 1 {
+		t.Errorf("levelling and walking opened the vault %d times", len(vaults.openings))
 	}
 }

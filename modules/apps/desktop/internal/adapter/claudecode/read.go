@@ -26,10 +26,10 @@ func read(
 	r io.Reader,
 	steps chan<- port.Step,
 	words map[string]ToolDeclaration,
-	kept func(string),
+	record func(string),
 	draft Drafting,
 ) string {
-	reading := parser{steps: steps, words: words, kept: kept, draft: draft}
+	reading := parser{steps: steps, words: words, record: record, draft: draft}
 	lines := bufio.NewReader(r)
 
 	for {
@@ -38,7 +38,7 @@ func read(
 			reading.line(ctx, trimmed)
 		}
 		if err != nil {
-			return reading.failed
+			return reading.reason
 		}
 	}
 }
@@ -57,22 +57,22 @@ type parser struct {
 	// words are what each tool this vault serves calls itself, and which
 	// argument says what a call was about.
 	words map[string]ToolDeclaration
-	// kept is told which session this run is on, so that the next question of
+	// record is told which session this run is on, so that the next question of
 	// the same conversation is asked in it.
-	kept func(string)
-	// pieces is set once words have arrived a piece at a time. The whole
+	record func(string)
+	// streaming is set once words have arrived a piece at a time. The whole
 	// message follows every piece of it.
-	pieces bool
-	// call is what the agent named the call being written. Every step of that
+	streaming bool
+	// callID is what the agent named the call being written. Every step of that
 	// call carries it.
-	call string
-	// calling is the tool being written out, and the arguments as far as they
+	callID string
+	// tool is the tool being written out, and the arguments as far as they
 	// have arrived. A call is reported once it is whole, so that what it is
 	// about is known when it is shown.
-	calling string
-	written strings.Builder
-	// told is how much of the call had been reported the last time it was.
-	told int
+	tool      string
+	arguments strings.Builder
+	// offset is how much of the call had been reported the last time it was.
+	offset int
 	// draft is how a change being written is drawn before it lands.
 	draft Drafting
 	// path is the note the change being written goes into, and from and to are
@@ -80,11 +80,11 @@ type parser struct {
 	path     string
 	from, to int
 	drawn    bool
-	// at is when a frame was last sent. A long call is drawn at a pace a screen
-	// can keep.
-	at time.Time
-	// failed is why the work stopped. The first reason is the one that holds.
-	failed string
+	// last is when a frame was last sent. A long call is drawn at a pace a
+	// screen can keep.
+	last time.Time
+	// reason is why the work stopped. The first reason is the one that holds.
+	reason string
 }
 
 func (rd *parser) line(ctx context.Context, line string) {
@@ -107,8 +107,8 @@ func (rd *parser) line(ctx context.Context, line string) {
 	case "system":
 		switch said.Subtype {
 		case "init":
-			if said.Session != "" && rd.kept != nil {
-				rd.kept(said.Session)
+			if said.Session != "" && rd.record != nil {
+				rd.record(said.Session)
 			}
 			rd.stop(unreachable(said))
 		case "status":
@@ -132,14 +132,14 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 	switch event.Type {
 	case "content_block_start":
 		if event.Block.Type == "tool_use" {
-			rd.pieces = true
-			rd.call = event.Block.ID
-			rd.calling = event.Block.Name
-			rd.written.Reset()
-			rd.told = 0
+			rd.streaming = true
+			rd.callID = event.Block.ID
+			rd.tool = event.Block.Name
+			rd.arguments.Reset()
+			rd.offset = 0
 			rd.path, rd.from, rd.to, rd.drawn = "", 0, 0, false
-			rd.at = time.Time{}
-			rd.tell(ctx, rd.calls(rd.call, rd.calling, ""))
+			rd.last = time.Time{}
+			rd.tell(ctx, rd.calls(rd.callID, rd.tool, ""))
 		}
 	case "content_block_delta":
 		switch event.Delta.Type {
@@ -147,26 +147,26 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 			if event.Delta.Text == "" {
 				return
 			}
-			rd.pieces = true
+			rd.streaming = true
 			rd.tell(ctx, port.Step{Kind: port.StepSaying, Text: event.Delta.Text})
 		case "input_json_delta":
-			rd.written.WriteString(event.Delta.Partial)
+			rd.arguments.WriteString(event.Delta.Partial)
 			// Reported as it is written, one writtenStep of characters at a
 			// time. A call carrying the body of a note is written for minutes.
-			if rd.written.Len()-rd.told >= writtenStep {
-				rd.told = rd.written.Len()
-				rd.tell(ctx, rd.calls(rd.call, rd.calling, rd.written.String()))
+			if rd.arguments.Len()-rd.offset >= writtenStep {
+				rd.offset = rd.arguments.Len()
+				rd.tell(ctx, rd.calls(rd.callID, rd.tool, rd.arguments.String()))
 			}
 			rd.draw(ctx)
 		}
 	case "content_block_stop":
-		if rd.calling == "" {
+		if rd.tool == "" {
 			return
 		}
-		rd.tell(ctx, rd.calls(rd.call, rd.calling, rd.written.String()))
-		rd.call = ""
-		rd.calling = ""
-		rd.written.Reset()
+		rd.tell(ctx, rd.calls(rd.callID, rd.tool, rd.arguments.String()))
+		rd.callID = ""
+		rd.tool = ""
+		rd.arguments.Reset()
 		rd.drawn = false
 	}
 }
@@ -174,7 +174,7 @@ func (rd *parser) piece(ctx context.Context, event streamEvent) {
 // whole reports a message that arrived in one piece, for a version that does
 // not write them as they are made.
 func (rd *parser) whole(ctx context.Context, said event) {
-	if rd.pieces {
+	if rd.streaming {
 		return
 	}
 	for _, block := range said.blocks() {
@@ -191,8 +191,8 @@ func (rd *parser) whole(ctx context.Context, said event) {
 
 // stop keeps the first reason the work ended.
 func (rd *parser) stop(why string) {
-	if rd.failed == "" {
-		rd.failed = why
+	if rd.reason == "" {
+		rd.reason = why
 	}
 }
 
@@ -306,13 +306,13 @@ const (
 // its title, and what the call is about is the argument it declared it cannot be
 // called without. A tool this vault does not serve is named as it named itself
 // and is about nothing: nothing was declared here to read it by.
-func (rd *parser) calls(call, tool, arguments string) port.Step {
+func (rd *parser) calls(callID, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
-		return port.Step{Kind: port.StepToolCall, Call: call, Tool: tool}
+		return port.Step{Kind: port.StepToolCall, Call: callID, Tool: tool}
 	}
 
-	step := port.Step{Kind: words.Kind, Call: call, Tool: words.Title}
+	step := port.Step{Kind: words.Kind, Call: callID, Tool: words.Title}
 	if words.About == "" {
 		return step
 	}
@@ -351,7 +351,7 @@ func placed(path, arguments string) domain.Place {
 func about(words ToolDeclaration, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		if seen := glimpsed(arguments, words.Inside); seen != "" {
+		if seen := glimpsed(arguments, words.Element); seen != "" {
 			return seen
 		}
 		return glimpsed(arguments, words.About)
@@ -360,7 +360,7 @@ func about(words ToolDeclaration, arguments string) string {
 	case string:
 		return value
 	case []any:
-		return named(value, words.Inside)
+		return named(value, words.Element)
 	}
 	return ""
 }
@@ -495,21 +495,21 @@ func (e event) blocks() []block {
 // reads as having been deleted. Once the replacement has begun the stretch it
 // replaces is whole, and where it stands can be found.
 func (rd *parser) draw(ctx context.Context) {
-	words, served := rd.words[rd.calling]
-	if !served || words.Becomes == "" || !rd.draft.drawing() {
+	words, served := rd.words[rd.tool]
+	if !served || words.Text == "" || !rd.draft.drawing() {
 		return
 	}
 
-	arguments := rd.written.String()
-	if !strings.Contains(arguments, `"`+words.Becomes+`"`) {
+	arguments := rd.arguments.String()
+	if !strings.Contains(arguments, `"`+words.Text+`"`) {
 		return
 	}
 	if !rd.drawn {
-		path, stood := glimpsed(arguments, words.About), glimpsed(arguments, words.Stood)
+		path, stood := glimpsed(arguments, words.About), glimpsed(arguments, words.Match)
 		if path == "" || stood == "" {
 			return
 		}
-		from, to, one := rd.draft.Where(ctx, path, stood)
+		from, to, one := rd.draft.Location(ctx, path, stood)
 		if !one {
 			return
 		}
@@ -517,15 +517,15 @@ func (rd *parser) draw(ctx context.Context) {
 	}
 
 	now := rd.draft.now()
-	if now.Sub(rd.at) < framePace {
+	if now.Sub(rd.last) < framePace {
 		return
 	}
-	rd.at = now
-	rd.draft.Tell(ctx, domain.Edit{
-		Change: rd.call,
+	rd.last = now
+	rd.draft.Report(ctx, domain.Edit{
+		Change: rd.callID,
 		Path:   rd.path,
 		From:   rd.from,
 		To:     rd.to,
-		Text:   glimpsed(arguments, words.Becomes),
+		Text:   glimpsed(arguments, words.Text),
 	})
 }

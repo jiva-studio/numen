@@ -43,9 +43,9 @@ func main() {
 	flag.StringVar(&letting.addr, "mcp-addr", defaultAgentAddr,
 		"where agents reach this vault; anything but a loopback address opens it to the network")
 	flag.BoolVar(&letting.off, "no-mcp", false, "do not let agents reach this vault")
-	flag.Float64Var(&said.drawn, "interface-scale", 0,
+	flag.Float64Var(&said.interfaceScale, "interface-scale", 0,
 		"how large the interface is drawn, 1 being as designed; this launch alone")
-	flag.Float64Var(&said.set, "text-scale", 0,
+	flag.Float64Var(&said.textScale, "text-scale", 0,
 		"how large the text a person reads is set, 1 being as designed; this launch alone")
 	flag.BoolVar(&cfg.RebuildIndex, "rebuild-index", false,
 		"read every file and put it in the index again, whatever the index remembers")
@@ -67,23 +67,23 @@ func main() {
 // sizes are what the command line said about size: how large the interface is
 // drawn, and how large the text a person reads is set. Zero is not said, and
 // the settings file stands.
-type sizes struct{ drawn, set float64 }
+type sizes struct{ interfaceScale, textScale float64 }
 
 // check is what is wrong with a number the setting it says does not take.
 func (s sizes) check() error {
-	if s.drawn > 0 {
-		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.drawn); err != nil {
+	if s.interfaceScale > 0 {
+		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
 			return err
 		}
 	}
-	if s.set > 0 {
-		return settings.TextScaleBounds.Check("-text-scale", s.set)
+	if s.textScale > 0 {
+		return settings.TextScaleBounds.Check("-text-scale", s.textScale)
 	}
 	return nil
 }
 
-func run(cfg container.Config, letting agentOptions, vault string, said sizes) error {
-	if err := said.check(); err != nil {
+func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) error {
+	if err := sizes.check(); err != nil {
 		return err
 	}
 
@@ -100,7 +100,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	}
 	cfg = cfg.Indexing(chosen.Indexing)
 	cfg.Agent = chosen.Agent
-	cfg.InterfaceScale, cfg.TextScale = said.drawn, said.set
+	cfg.InterfaceScale, cfg.TextScale = sizes.interfaceScale, sizes.textScale
 
 	// Before the window: every page this process reads is read through the
 	// runtime made here, and one made after the window reads a page as nothing.
@@ -126,10 +126,10 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// built.
 	reachable := &agents.Endpoint{
 		Serve: func() (func() error, error) {
-			return serveAgents(ctx, cfg, opened, letting, os.Stdout)
+			return serveAgents(ctx, cfg, opened, mcp, os.Stdout)
 		},
-		Standing:    opened.Showing,
-		Answers:     opened.API.Answers,
+		Showing:     opened.Showing,
+		Handler:     opened.API.Answers,
 		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
 		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
@@ -199,7 +199,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	})
 
 	// Picking a folder is the machine's own, and it opens over this window.
-	opened.API.Choosing = &picker{window: window}
+	opened.API.Picker = &picker{window: window}
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
@@ -287,7 +287,7 @@ func closing(
 	g *going,
 	s visibility,
 	answered func(context.Context) bool,
-	again func(),
+	retry func(),
 ) bool {
 	s.hide()
 	if g.wait() {
@@ -296,7 +296,7 @@ func closing(
 	s.show()
 	go func() {
 		if answered(ctx) {
-			again()
+			retry()
 		}
 	}()
 	return false
@@ -343,7 +343,7 @@ type going struct {
 
 // turn is one settling, and what it answered.
 type turn struct {
-	over    chan struct{}
+	done    chan struct{}
 	settled bool
 }
 
@@ -357,13 +357,13 @@ func (g *going) wait() bool {
 	}
 	this := g.turn
 	if this == nil {
-		this = &turn{over: make(chan struct{})}
+		this = &turn{done: make(chan struct{})}
 		g.turn = this
 		go g.begin(this)
 	}
 	g.mu.Unlock()
 
-	<-this.over
+	<-this.done
 	return this.settled
 }
 
@@ -375,7 +375,7 @@ func (g *going) settled() bool {
 }
 
 func (g *going) begin(this *turn) {
-	defer close(this.over)
+	defer close(this.done)
 
 	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
 	defer cancel()

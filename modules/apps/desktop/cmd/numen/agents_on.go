@@ -82,10 +82,10 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
 	reading := note.Read{Readers: cfg.VaultReaders()}
 	return claudecode.Drafting{
-		Tell: func(ctx context.Context, said domain.Edit) {
+		Report: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.Viewing().Editing(ctx, said)
 		},
-		Where: func(ctx context.Context, path, stood string) (int, int, bool) {
+		Location: func(ctx context.Context, path, stood string) (int, int, bool) {
 			contents, err := reading.Execute(ctx, opened.Showing(), path)
 			if err != nil || contents.Outcome != note.Ok {
 				return 0, 0, false

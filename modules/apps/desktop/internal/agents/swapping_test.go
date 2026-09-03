@@ -13,15 +13,15 @@ import (
 func (s *Endpoint) serving() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.shut != nil
+	return s.close != nil
 }
 
 // standing is a window on a vault, serving tools that do nothing.
 func standing() *Endpoint {
 	return &Endpoint{
 		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
-		Standing:    func() domain.Vault { return domain.Vault{ID: "one"} },
-		Answers:     func(port.Agent) {},
+		Showing:     func() domain.Vault { return domain.Vault{ID: "one"} },
+		Handler:     func(port.Agent) {},
 		Unreachable: func(string) {},
 		Trouble:     func(error) {},
 	}

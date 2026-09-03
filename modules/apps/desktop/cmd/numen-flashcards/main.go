@@ -77,7 +77,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
-	vaults := &openVaults{cfg: cfg, db: db, under: ctx, out: os.Stderr}
+	vaults := &openVaults{cfg: cfg, db: db, ctx: ctx, out: os.Stderr}
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
@@ -87,7 +87,7 @@ func run(cfg container.Config, noAgent bool) error {
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Joined: flashcards.Around{
+		Neighbourhood: flashcards.Around{
 			Linked: note.ShowLinks{Links: db.Links()},
 			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: cfg.VaultReaders()},
@@ -105,7 +105,7 @@ func run(cfg container.Config, noAgent bool) error {
 	//
 	// A vault that moved is counted again, and is one whose walk is worth trying
 	// again where the last one failed.
-	vaults.told = func(v domain.Vault) {
+	vaults.record = func(v domain.Vault) {
 		api.Forget(string(v.ID))
 		api.Moved()
 	}

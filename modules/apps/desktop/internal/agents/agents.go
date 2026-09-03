@@ -22,12 +22,12 @@ type Endpoint struct {
 	// Serve puts the tools in front of the agents, and answers with what takes
 	// them away again.
 	Serve func() (func() error, error)
-	// Standing is the vault the window is on. A window standing on none serves
+	// Showing is the vault the window is on. A window standing on none serves
 	// no tools.
-	Standing func() domain.Vault
-	// Answers is who the panel's tasks go to, and nothing while the tools are
+	Showing func() domain.Vault
+	// Handler is who the panel's tasks go to, and nothing while the tools are
 	// away.
-	Answers func(port.Agent)
+	Handler func(port.Agent)
 	// Unreachable is told why an agent cannot be reached, and an empty string
 	// while one can be.
 	Unreachable func(string)
@@ -38,8 +38,8 @@ type Endpoint struct {
 	// being served again, so a second swap waits for the first.
 	turn sync.Mutex
 
-	mu   sync.Mutex
-	shut func() error
+	mu    sync.Mutex
+	close func() error
 }
 
 // Around runs one swap with the tools taken away, and serves them again on the
@@ -62,7 +62,7 @@ func (s *Endpoint) On() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.shut != nil || s.Standing().ID == "" {
+	if s.close != nil || s.Showing().ID == "" {
 		return
 	}
 	s.Unreachable("")
@@ -72,7 +72,7 @@ func (s *Endpoint) On() {
 		s.Trouble(fmt.Errorf("no agent: %w", err))
 		return
 	}
-	s.shut = shut
+	s.close = shut
 }
 
 // Off stops the endpoint and the agents this window started.
@@ -80,12 +80,12 @@ func (s *Endpoint) Off() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.shut == nil {
+	if s.close == nil {
 		return
 	}
-	if err := s.shut(); err != nil {
+	if err := s.close(); err != nil {
 		s.Trouble(fmt.Errorf("agents: %w", err))
 	}
-	s.shut = nil
-	s.Answers(nil)
+	s.close = nil
+	s.Handler(nil)
 }

@@ -23,20 +23,20 @@ var errGoing = errors.New("the window is closing")
 type openVaults struct {
 	cfg container.Config
 	db  *container.Index
-	// under is the life a vault stays open for. It outlives the question that
+	// ctx is the life a vault stays open for. It outlives the question that
 	// first asked after the vault.
-	under context.Context
-	// told is called with the vault the index has just been brought level with.
-	told func(domain.Vault)
-	out  io.Writer
+	ctx context.Context
+	// record is called with the vault the index has just been brought level with.
+	record func(domain.Vault)
+	out    io.Writer
 
 	// running is every walk and every watch this window has over a vault. They
 	// write to the index, so they are waited for before it closes.
 	running sync.WaitGroup
 
-	mu    sync.Mutex
-	going bool
-	held  map[domain.VaultID]*vaultOpening
+	mu       sync.Mutex
+	going    bool
+	openings map[domain.VaultID]*vaultOpening
 }
 
 // vaultOpening is one vault's opening, made once however many ask for it.
@@ -72,13 +72,13 @@ func (o *openVaults) starts() bool {
 // one registers a watch over its whole tree, which is done outside the lock.
 func (o *openVaults) of(v domain.Vault) *vaultOpening {
 	o.mu.Lock()
-	one, there := o.held[v.ID]
+	one, there := o.openings[v.ID]
 	if !there {
 		one = &vaultOpening{}
-		if o.held == nil {
-			o.held = map[domain.VaultID]*vaultOpening{}
+		if o.openings == nil {
+			o.openings = map[domain.VaultID]*vaultOpening{}
 		}
-		o.held[v.ID] = one
+		o.openings[v.ID] = one
 	}
 	o.mu.Unlock()
 
@@ -89,14 +89,14 @@ func (o *openVaults) of(v domain.Vault) *vaultOpening {
 // opens starts one vault's watch and leaves it running.
 func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	opening := o.cfg.Opening(o.db)
-	opening.Told = func(vault.VaultChanges) { o.told(v) }
+	opening.Told = func(vault.VaultChanges) { o.record(v) }
 	opening.Trouble = func(err error) {
 		if err != nil {
 			fmt.Fprintf(o.out, "numen-flashcards: %s: %v\n", v.Name, err)
 		}
 	}
 
-	open := opening.Begin(o.under, v)
+	open := opening.Begin(o.ctx, v)
 	if why := open.Unwatched(); why != nil {
 		fmt.Fprintf(o.out, "numen-flashcards: %s is not being followed: %v\n", v.Name, why)
 	}
@@ -105,20 +105,20 @@ func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	if o.starts() {
 		go func() {
 			defer o.running.Done()
-			open.Run(o.under)
+			open.Run(o.ctx)
 		}()
 	}
 }
 
 // reads walks a vault into the index, saying how far it has got in the notes
 // written.
-func (o *openVaults) reads(ctx context.Context, v domain.Vault, got func(int64)) error {
+func (o *openVaults) reads(ctx context.Context, v domain.Vault, progress func(int64)) error {
 	if !o.starts() {
 		return errGoing
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { got(int64(res.Indexed)) })
+	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { progress(int64(res.Indexed)) })
 	return err
 }
 

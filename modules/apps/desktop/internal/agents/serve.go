@@ -63,15 +63,15 @@ type Server struct {
 	// URL is where an agent reaches the tools, naming the port that was bound.
 	URL string
 
-	shut func() error
+	close func() error
 }
 
 // Close takes the agents away and then the endpoint.
 func (s *Server) Close() error {
-	if s == nil || s.shut == nil {
+	if s == nil || s.close == nil {
 		return nil
 	}
-	return s.shut()
+	return s.close()
 }
 
 // Serve puts the tools on a port and starts the agent the settings name
@@ -136,7 +136,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 	}
 
 	started := served.Agent
-	served.shut = func() error {
+	served.close = func() error {
 		forget()
 		// The agents this window started go first: each is in a process group
 		// of its own, so nothing else reaches them, and one still answering
@@ -163,19 +163,19 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 func Claude(
 	cfg container.Config,
 	root, url, secret string,
-	served map[string]mcp.Words,
+	vocabulary map[string]mcp.Words,
 	drafting claudecode.Drafting,
 	out io.Writer,
 ) *claudecode.Agent {
-	words := make(map[string]claudecode.ToolDeclaration, len(served))
-	for name, said := range served {
+	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
+	for name, said := range vocabulary {
 		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
 			Title:   said.Title,
 			About:   said.About,
-			Inside:  said.Inside,
+			Element: said.Inside,
 			Kind:    said.Kind,
-			Stood:   said.Stood,
-			Becomes: said.Becomes,
+			Match:   said.Stood,
+			Text:    said.Becomes,
 		}
 	}
 	return &claudecode.Agent{

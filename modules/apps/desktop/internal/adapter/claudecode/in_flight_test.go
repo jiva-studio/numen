@@ -46,7 +46,7 @@ func counting(t *testing.T) (command []string, most func() int) {
 func batches(n int) []proofread.Batch {
 	out := make([]proofread.Batch, n)
 	for i := range out {
-		out[i] = proofread.Batch{At: i, Lines: []proofread.Line{{At: i, Text: "a line"}}}
+		out[i] = proofread.Batch{Number: i, Lines: []proofread.Line{{Number: i, Text: "a line"}}}
 	}
 	return out
 }

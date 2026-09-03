@@ -34,16 +34,16 @@ const unnamed = "no agent is named in the settings"
 type reaching struct {
 	swapping *agents.Endpoint
 
-	mu sync.Mutex
-	on domain.Vault
+	mu    sync.Mutex
+	vault domain.Vault
 }
 
 // Sat is a sitting opening on a vault. Sitting down to the same vault again
 // leaves the agent where it is.
 func (r *reaching) Sat(_ context.Context, v domain.Vault) {
 	r.mu.Lock()
-	again := r.on.ID == v.ID
-	r.on = v
+	again := r.vault.ID == v.ID
+	r.vault = v
 	r.mu.Unlock()
 
 	if again {
@@ -55,7 +55,7 @@ func (r *reaching) Sat(_ context.Context, v domain.Vault) {
 func (r *reaching) standing() domain.Vault {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.on
+	return r.vault
 }
 
 // serveAgents lets a card be asked about, and answers with what takes that
@@ -113,13 +113,13 @@ func serveAgents(
 			api.Answers(served.Agent)
 			return served.Close, nil
 		},
-		Standing:    held.standing,
-		Answers:     api.Answers,
+		Showing:     held.standing,
+		Handler:     api.Answers,
 		Unreachable: func(why string) { api.Unreachable.Store(why) },
 		Trouble:     func(err error) { fmt.Fprintln(out, "numen-flashcards: agents:", err) },
 	}
 
-	api.Sat = held.Sat
+	api.Opened = held.Sat
 	return func() error {
 		held.swapping.Off()
 		return nil

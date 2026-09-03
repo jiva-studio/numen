@@ -116,7 +116,7 @@ func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) 
 					stop()
 				}
 			case reply != "":
-				out[batch.At] = reply
+				out[batch.Number] = reply
 			}
 		}()
 	}
@@ -149,7 +149,7 @@ func (p *Proofreader) ask(ctx context.Context, dir string, batch proofread.Batch
 	cmd.Stderr = &trouble
 
 	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("batch %d: %w: %s", batch.At, err, lastLine(trouble.String()))
+		return "", fmt.Errorf("batch %d: %w: %s", batch.Number, err, lastLine(trouble.String()))
 	}
 	return strings.TrimSpace(said.String()), nil
 }
