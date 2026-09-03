@@ -199,7 +199,7 @@ func ownedLines(note, key string) (start, end int, found bool) {
 	last := owner
 	for i := owner + 1; i < shut; i++ {
 		text := strings.TrimSpace(lines[i])
-		if text == "" {
+		if text == "" || strings.HasPrefix(text, "#") {
 			continue
 		}
 		if len(leading(lines[i])) <= len(margin) && !strings.HasPrefix(text, "-") {
