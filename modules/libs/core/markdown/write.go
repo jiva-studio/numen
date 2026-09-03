@@ -583,6 +583,16 @@ func (d *Document) mapping() (*yaml.Node, error) {
 	if node.Kind != yaml.MappingNode {
 		return nil, fmt.Errorf("%w: it is not a mapping", ErrUnreadable)
 	}
+	// A key written twice names two values, and which of them the note holds is
+	// not a question the block answers.
+	written := make(map[string]bool, len(node.Content)/2)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key := node.Content[i].Value
+		if written[key] {
+			return nil, fmt.Errorf("%w: %s is written twice", ErrUnreadable, key)
+		}
+		written[key] = true
+	}
 	return node, nil
 }
 
