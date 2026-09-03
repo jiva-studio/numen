@@ -159,6 +159,21 @@ jobs:
         if: matrix.runner == 'ubuntu-latest'
         run: echo "TMPDIR=/dev/shm" >> "$GITHUB_ENV"
 
+      # A Windows runner hands out a temporary folder on the system drive and
+      # checks the repository out on another. The folder a test builds its vault
+      # in moves to the drive the runner keeps for its own work, and what this
+      # machine offers is written into the log beside the timings it produces.
+      - name: Temporary folder
+        if: matrix.runner == 'windows-latest'
+        run: |
+          powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem |
+            Select-Object Name,Used,Free,DisplayRoot | Format-Table -AutoSize" || true
+          powershell -NoProfile -Command "Get-MpComputerStatus |
+            Select-Object RealTimeProtectionEnabled,AntivirusEnabled" || true
+          echo "RUNNER_TEMP=$RUNNER_TEMP  TEMP=${TEMP:-unset}  TMP=${TMP:-unset}"
+          echo "TMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          echo "TEMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does.
       #
