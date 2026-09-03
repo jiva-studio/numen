@@ -29,7 +29,7 @@ func TestCut(t *testing.T) {
 	tests := []struct {
 		name      string
 		text      string
-		parts     []Part
+		parts     []PartStart
 		sizes     Sizes
 		wantLarge int
 		wantSmall int
@@ -52,7 +52,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "a part at offset zero",
 			text:      "Beginning\n" + line(60),
-			parts:     []Part{{Title: "Beginning", Offset: 0}},
+			parts:     []PartStart{{Title: "Beginning", Offset: 0}},
 			wantLarge: 1,
 			wantSmall: 2,
 			locations: []string{"Beginning"},
@@ -60,7 +60,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "text before the first part",
 			text:      line(20) + "\nSecond\n" + line(20),
-			parts:     []Part{{Title: "Second", Offset: len(line(20)) + 1}},
+			parts:     []PartStart{{Title: "Second", Offset: len(line(20)) + 1}},
 			wantLarge: 2,
 			wantSmall: 2,
 			locations: []string{"", "Second"},
@@ -68,7 +68,7 @@ func TestCut(t *testing.T) {
 		{
 			name: "parts out of order",
 			text: line(20) + "\n" + line(20) + "\n" + line(20),
-			parts: []Part{
+			parts: []PartStart{
 				{Title: "Third", Offset: 2*len(line(20)) + 2},
 				{Title: "Second", Offset: len(line(20)) + 1},
 			},
@@ -87,7 +87,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "the whole text is the large chunk",
 			text:      "Note\n" + line(30) + "\nHeading\n" + line(30),
-			parts:     []Part{{Title: "Note", Offset: 0}, {Title: "Heading", Offset: len("Note\n") + len(line(30)) + 1}},
+			parts:     []PartStart{{Title: "Note", Offset: 0}, {Title: "Heading", Offset: len("Note\n") + len(line(30)) + 1}},
 			sizes:     Sizes{Large: Whole},
 			wantLarge: 1,
 			wantSmall: 2,
@@ -96,7 +96,7 @@ func TestCut(t *testing.T) {
 		{
 			name:      "a division of noise is not produced",
 			text:      latin + "\n" + noise,
-			parts:     []Part{{Title: "Prose", Offset: 0}, {Title: "Epigraph", Offset: len(latin) + 1}},
+			parts:     []PartStart{{Title: "Prose", Offset: 0}, {Title: "Epigraph", Offset: len(latin) + 1}},
 			wantLarge: 1,
 			wantSmall: 1,
 			locations: []string{"Prose"},
@@ -149,7 +149,7 @@ func TestCutOneLongLine(t *testing.T) {
 // both of them slice back to the words they share.
 func TestCutOverlaps(t *testing.T) {
 	text := "Opening\n" + line(70) + "\nSecond part\n" + latin + " " + sanskrit + "\n" + line(90)
-	parts := []Part{
+	parts := []PartStart{
 		{Title: "Opening", Offset: 0},
 		{Title: "Second part", Offset: len("Opening\n") + len(line(70)) + 1},
 	}
@@ -218,11 +218,11 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 // found them.
 func TestCutIsPure(t *testing.T) {
 	text := line(40) + "\nSecond\n" + line(40) + "\nThird\n" + line(40)
-	parts := []Part{
+	parts := []PartStart{
 		{Title: "Third", Offset: 2*len(line(40)) + len("\nSecond\n") + 1},
 		{Title: "Second", Offset: len(line(40)) + 1},
 	}
-	given := append([]Part(nil), parts...)
+	given := append([]PartStart(nil), parts...)
 	sizes := Sizes{Large: 12, Small: 5}
 
 	first := Cut(text, given, sizes)
@@ -253,7 +253,7 @@ func TestCutNothing(t *testing.T) {
 // obeyed asserts what holds of every cut, whatever the sizes: a chunk names its
 // own words, sits under the chunk enclosing it, carries the name of the part it
 // is in, and never crosses one.
-func obeyed(t *testing.T, text string, parts []Part, sizes Sizes, out []Chunk) {
+func obeyed(t *testing.T, text string, parts []PartStart, sizes Sizes, out []Chunk) {
 	t.Helper()
 	s := sizes.resolve()
 	bounds := boundaries(text, parts)
@@ -311,9 +311,9 @@ func inside(t *testing.T, bounds []int, c Chunk) {
 }
 
 // named asserts a chunk carries the name of the last part at or before it.
-func named(t *testing.T, parts []Part, c Chunk) {
+func named(t *testing.T, parts []PartStart, c Chunk) {
 	t.Helper()
-	ordered := append([]Part(nil), parts...)
+	ordered := append([]PartStart(nil), parts...)
 	sort.SliceStable(ordered, func(i, j int) bool { return ordered[i].Offset < ordered[j].Offset })
 	want := ""
 	for _, p := range ordered {
@@ -327,7 +327,7 @@ func named(t *testing.T, parts []Part, c Chunk) {
 }
 
 // boundaries are the offsets that separate one division from the next.
-func boundaries(text string, parts []Part) []int {
+func boundaries(text string, parts []PartStart) []int {
 	var out []int
 	for _, p := range parts {
 		if p.Offset > 0 && p.Offset < len(text) {
