@@ -96,12 +96,17 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 		if !ok || ignored.MatchesPath(rel) {
 			return nil
 		}
-		info, err := d.Info()
+		info, err := stated(p, d)
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
 		if err != nil {
 			return err
+		}
+		// A source is a regular file. A device, a socket or a FIFO carries no
+		// bytes to read whatever it is named.
+		if !info.Mode().IsRegular() {
+			return nil
 		}
 		return fn(domain.FileRef{
 			Path:  rel,
@@ -156,7 +161,9 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			if s.ignored.MatchesPath(rel) {
 				continue
 			}
-			kind, _ = s.opts.kind(d.Name())
+			if info, err := stated(filepath.Join(target, d.Name()), d); err == nil && info.Mode().IsRegular() {
+				kind, _ = s.opts.kind(d.Name())
+			}
 		}
 		entries = append(entries, domain.Entry{
 			Path:   rel,
@@ -167,6 +174,20 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	}
 	slices.SortFunc(entries, inOrder)
 	return entries, nil
+}
+
+// stated is what a walk knows about one entry, with a link followed: a note
+// kept as a link to a file elsewhere in the vault is that file. A link nothing
+// is at the end of, or one that leads round in a circle, is nothing to read.
+func stated(path string, d fs.DirEntry) (fs.FileInfo, error) {
+	if d.Type()&fs.ModeSymlink == 0 {
+		return d.Info()
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fs.ErrNotExist
+	}
+	return info, nil
 }
 
 // inOrder is folders before files, and names compared without regard to case.
@@ -192,6 +213,13 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	info, err := os.Stat(target)
+	if err != nil {
+		return nil, err
+	}
+	if err := readable(path, info); err != nil {
+		return nil, err
+	}
 	return os.ReadFile(target)
 }
 
@@ -205,7 +233,24 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	if err != nil {
 		return nil, err
 	}
+	info, err := os.Stat(target)
+	if err != nil {
+		return nil, err
+	}
+	if err := readable(path, info); err != nil {
+		return nil, err
+	}
 	return os.Open(target)
+}
+
+// readable holds a path to something the operating system hands bytes over for
+// without waiting: a device, a socket or a FIFO is not a note. A folder is
+// answered by whichever call was going to open it.
+func readable(path string, info fs.FileInfo) error {
+	if info.Mode().IsRegular() || info.IsDir() {
+		return nil
+	}
+	return fmt.Errorf("%s: %w", path, ErrNotANote)
 }
 
 // Stat answers the same question about one path that Walk answers about all of
@@ -224,7 +269,7 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, er
 	if err != nil {
 		return domain.FileRef{}, err
 	}
-	if info.IsDir() {
+	if !info.Mode().IsRegular() {
 		return domain.FileRef{}, s.leftAlone(path)
 	}
 	return domain.FileRef{
