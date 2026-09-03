@@ -111,17 +111,14 @@ func splitFrontmatter(raw []byte) (frontmatter, body []byte, ok bool) {
 // bytes as they are, and a carriage return is dropped from the text alone.
 func headings(body []byte) []domain.Heading {
 	var out []domain.Heading
-	fenced := false
+	var f fence
 	for line, at := 0, 0; at <= len(body); line++ {
 		end := len(body)
 		if next := bytes.IndexByte(body[at:], '\n'); next >= 0 {
 			end = at + next
 		}
 		text := strings.TrimRight(string(body[at:end]), "\r")
-		switch {
-		case isFence(text):
-			fenced = !fenced
-		case !fenced:
+		if !f.crosses(text) && !f.inside() {
 			if m := headingRe.FindStringSubmatch(text); m != nil {
 				out = append(out, domain.Heading{Level: len(m[1]), Text: m[2], Line: line, Offset: at})
 			}
@@ -140,7 +137,34 @@ func title(n domain.Note, notePath string) string {
 	return strings.TrimSuffix(path.Base(notePath), path.Ext(notePath))
 }
 
-func isFence(line string) bool {
+// fence is where a walk down the body stands: within a code fence, or outside
+// one. A block opened with backticks is closed by backticks and one opened with
+// tildes by tildes, so the other mark stands inside it as text.
+type fence struct{ mark byte }
+
+// crosses follows one line, and reports whether that line opens or closes the
+// fence.
+func (f *fence) crosses(line string) bool {
 	t := strings.TrimSpace(line)
-	return strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~")
+	var mark byte
+	switch {
+	case strings.HasPrefix(t, "```"):
+		mark = '`'
+	case strings.HasPrefix(t, "~~~"):
+		mark = '~'
+	default:
+		return false
+	}
+	switch f.mark {
+	case 0:
+		f.mark = mark
+	case mark:
+		f.mark = 0
+	default:
+		return false
+	}
+	return true
 }
+
+// inside reports whether the walk stands within a fence.
+func (f *fence) inside() bool { return f.mark != 0 }
