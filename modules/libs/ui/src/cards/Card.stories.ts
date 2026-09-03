@@ -103,6 +103,21 @@ const CORPORA = {
       filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
     },
   },
+  /* A card whose first paragraph is not a lone wikilink. Nothing cuts it, so
+     nothing lays it out, and everything it wrote stands as it was written. */
+  'cut by nothing': {
+    cut: null,
+    card: {
+      id: 'w4h7p2ctm9',
+      section: null,
+      stencil: null,
+      filled: [
+        { field: 'Question', text: 'What did I mean to put here?' },
+        { field: 'Answer', text: 'A note about compost,\nand no card at all.' },
+      ],
+    },
+    wrong: ['the first paragraph of this card is not a lone wikilink, so it names no stencil'],
+  },
   /* A card writing one field twice. Both values are kept where a person can see
      them and take one out. */
   'a field written twice': {
@@ -365,16 +380,58 @@ export const NoStencil: Story = {
     expect(tile.textContent).toContain('No stencil called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
-    // What is wrong with it and what it says of holding nothing stand over one
-    // edge.
-    const edge = (selector: string): number => {
-      const each = found(canvasElement, selector)
-      return Math.round(
-        each.getBoundingClientRect().left +
-          Number.parseFloat(getComputedStyle(each).paddingInlineStart),
-      )
+    // What is wrong with it stands over the edge a value would, and what it
+    // says of holding nothing stands in the middle of the room left over.
+    const objects = found(canvasElement, '.card__objects').getBoundingClientRect()
+    expect(Math.round(objects.left)).toBe(Math.round(tile.getBoundingClientRect().left))
+
+    const body = found(canvasElement, '.card__body').getBoundingClientRect()
+    const silence = found(canvasElement, '.card__silence').getBoundingClientRect()
+    const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
+    expect(middle(silence)).toBe(middle(body))
+  },
+}
+
+/**
+ * A card whose first paragraph is not a lone wikilink.
+ *
+ * That nothing cut it is a plain fact and stands quietly on the strip, where
+ * the name of a stencil stands on every other card. What the vault holds
+ * against the card is said once, and what the card holds is read where it
+ * would be typed.
+ */
+export const CutByNothing: Story = {
+  args: { corpus: 'cut by nothing' },
+  play: async ({ canvasElement }) => {
+    const tile = found(canvasElement, '[data-card="w4h7p2ctm9"]')
+
+    // The strip carries it, in the voice it names a stencil in.
+    const cut = found(canvasElement, '[data-cut-of]')
+    expect(cut.textContent?.trim()).toBe('Cut by no stencil')
+    const label = found(canvasElement, '.card__field')
+    expect(getComputedStyle(cut).color).toBe(getComputedStyle(label).color)
+
+    // It is said once: the body carries what the vault found and nothing else.
+    const said = [...tile.querySelectorAll('.card__objects')]
+    expect(said).toHaveLength(1)
+    expect(said[0]?.textContent).toContain('not a lone wikilink')
+    expect(getComputedStyle(cut).color).not.toBe(getComputedStyle(said[0] as Element).color)
+
+    // No heading stands over a body that holds something.
+    expect(tile.querySelector('.card__silence')).toBeNull()
+
+    // What the card wrote is read, breaks and all, and typed into nothing.
+    expect(tile.querySelectorAll('textarea')).toHaveLength(0)
+    const wrote = [...tile.querySelectorAll<HTMLElement>('[data-wrote]')]
+    expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual(['Question', 'Answer'])
+    expect(wrote[1]?.textContent).toContain('\n')
+
+    // A value stands over the edge the name it is written under stands on.
+    const edge = (each: Element): number => {
+      const box = each.getBoundingClientRect()
+      return Math.round(box.left + Number.parseFloat(getComputedStyle(each).paddingInlineStart))
     }
-    expect(edge('.card__silence')).toBe(edge('.card__objects'))
+    expect(edge(wrote[0] as Element)).toBe(edge(label))
   },
 }
 
