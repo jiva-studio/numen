@@ -37,36 +37,34 @@ type Setting struct {
 // value of the wrong shape, and a number past what its setting goes to, are
 // refused where they are handed in.
 func Save(path string, settings ...Setting) error {
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		raw = []byte("{}\n")
-	} else if err != nil {
-		return err
-	}
+	return reaching(path, func(path string) error {
+		raw, err := os.ReadFile(path)
+		if errors.Is(err, fs.ErrNotExist) {
+			raw = []byte("{}\n")
+		} else if err != nil {
+			return err
+		}
 
-	// The whole file has to parse before any of it is written, since what is
-	// written is the file itself with one span of it replaced.
-	var whole json.RawMessage
-	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
-	}
-
-	for _, setting := range settings {
-		patched, err := set(raw, setting)
-		if err != nil {
+		// The whole file has to parse before any of it is written, since what is
+		// written is the file itself with one span of it replaced.
+		var whole json.RawMessage
+		if err := json.Unmarshal(raw, &whole); err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
-		raw = patched
-	}
 
-	if err := takes(raw, settings); err != nil {
-		return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
-	}
+		for _, setting := range settings {
+			patched, err := set(raw, setting)
+			if err != nil {
+				return fmt.Errorf("%s: %w", path, err)
+			}
+			raw = patched
+		}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return replace(path, raw)
+		if err := takes(raw, settings); err != nil {
+			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
+		}
+		return replace(path, raw)
+	})
 }
 
 // holds says what is wrong with the settings these bytes make, and nothing
@@ -106,23 +104,25 @@ func takes(raw []byte, wrote []Setting) error {
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
 func rename(path string, at []string, to string) error {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
+	return reaching(path, func(path string) error {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
 
-	// The whole file has to parse before any of it is written, since what is
-	// written is the file itself with one span of it replaced.
-	var whole json.RawMessage
-	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
-	}
+		// The whole file has to parse before any of it is written, since what is
+		// written is the file itself with one span of it replaced.
+		var whole json.RawMessage
+		if err := json.Unmarshal(raw, &whole); err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
 
-	renamed, done := named(raw, at, to)
-	if !done {
-		return nil
-	}
-	return replace(path, renamed)
+		renamed, done := named(raw, at, to)
+		if !done {
+			return nil
+		}
+		return replace(path, renamed)
+	})
 }
 
 // named hands back the object's bytes with one member's name changed, and
@@ -347,21 +347,44 @@ func indentOf(object []byte, first int) string {
 }
 
 // resolved is where the bytes of the settings are, with every link on the way
-// followed. A path that leads nowhere yet is resolved as far as its folder, and
-// one that cannot be resolved at all is its own answer.
+// followed. A link is followed to its end whether or not anything is written
+// there yet, and a path that resolves to nothing is its own answer.
 func resolved(path string) string {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return path
 	}
-	if real, err := filepath.EvalSymlinks(abs); err == nil {
-		return real
+	// links is as many hops as a settings file is ever kept behind.
+	const links = 32
+	for range links {
+		if real, err := filepath.EvalSymlinks(abs); err == nil {
+			return real
+		}
+		target, err := os.Readlink(abs)
+		if err != nil {
+			break
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(abs), target)
+		}
+		abs = filepath.Clean(target)
 	}
 	dir, err := filepath.EvalSymlinks(filepath.Dir(abs))
 	if err != nil {
 		return abs
 	}
 	return filepath.Join(dir, filepath.Base(abs))
+}
+
+// reaching hands the work the file the path leads to, with the folder that file
+// sits in made. Everything that writes the settings goes through it, so a link
+// is followed once and the rest of the way is the file itself.
+func reaching(path string, work func(path string) error) error {
+	real := resolved(path)
+	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+		return err
+	}
+	return work(real)
 }
 
 func spliced(raw []byte, from, to int, with []byte) []byte {
@@ -375,10 +398,9 @@ func spliced(raw []byte, from, to int, with []byte) []byte {
 // machine that dies mid-write leaves the settings whole. The mode is the
 // person's alone: they type their service keys into this file.
 //
-// The rename lands on the file the path leads to, so a settings file kept in a
-// dotfiles repository and linked into place is written where it is kept.
+// The path is the one reaching hands its work: the file itself, with every link
+// on the way to it already followed.
 func replace(path string, content []byte) error {
-	path = resolved(path)
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err

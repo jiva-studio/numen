@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -45,10 +44,7 @@ func Write(path string, raw []byte) error {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return replace(path, raw)
+	return reaching(path, func(path string) error { return replace(path, raw) })
 }
 
 // where says what is wrong with a settings file by the place it goes wrong at,

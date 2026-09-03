@@ -358,15 +358,54 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 }
 
 // Keeping the settings in a dotfiles repository and linking them into place is
-// an ordinary arrangement, and a save that replaced the link with a file of its
-// own would leave every later edit in the repository unread.
+// an ordinary arrangement. The link is where the settings are reached, and the
+// file it leads to is where they are written.
 func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
+	for what, standing := range map[string]bool{
+		"a link to a file that is there":   true,
+		"a link to a file that is not yet": false,
+	} {
+		dir := t.TempDir()
+		kept := filepath.Join(dir, "dotfiles", "numen.json")
+		if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if standing {
+			held := []byte(`{"appearance":{"theme":"preset:numen"}}`)
+			if err := os.WriteFile(kept, held, 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		link := filepath.Join(dir, "numen.json")
+		if err := os.Symlink(kept, link); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := settings.Save(link, theme("preset:nord")); err != nil {
+			t.Fatalf("%s: %v", what, err)
+		}
+
+		if info, err := os.Lstat(link); err != nil {
+			t.Fatal(err)
+		} else if info.Mode()&os.ModeSymlink == 0 {
+			t.Errorf("%s: the link is now a file of its own", what)
+		}
+		raw, err := os.ReadFile(kept)
+		if err != nil {
+			t.Fatalf("%s: %v", what, err)
+		}
+		if !strings.Contains(string(raw), "preset:nord") {
+			t.Errorf("%s: the file the link leads to holds:\n%s", what, raw)
+		}
+	}
+}
+
+// The settings a launch writes down follow the same link a save does, so the
+// bytes land in the file the link leads to and the link stays a link.
+func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
 	dir := t.TempDir()
 	kept := filepath.Join(dir, "dotfiles", "numen.json")
 	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(kept, []byte(`{"appearance":{"theme":"preset:numen"}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	link := filepath.Join(dir, "numen.json")
@@ -374,7 +413,7 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := settings.Save(link, theme("preset:nord")); err != nil {
+	if _, err := settings.At(link); err != nil {
 		t.Fatal(err)
 	}
 
@@ -383,12 +422,8 @@ func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
 	} else if info.Mode()&os.ModeSymlink == 0 {
 		t.Error("the link is now a file of its own")
 	}
-	raw, err := os.ReadFile(kept)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(raw), "preset:nord") {
-		t.Errorf("the file the link leads to holds:\n%s", raw)
+	if _, err := os.Stat(kept); err != nil {
+		t.Errorf("the file the link leads to is not there: %v", err)
 	}
 }
 

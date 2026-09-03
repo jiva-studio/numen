@@ -494,8 +494,7 @@ func write(path string, cfg Config) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return replace(path, append(raw, '\n'))
+	return reaching(path, func(path string) error {
+		return replace(path, append(raw, '\n'))
+	})
 }
