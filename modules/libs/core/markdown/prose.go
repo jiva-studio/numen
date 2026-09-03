@@ -12,23 +12,39 @@ import (
 // Only the target inside the brackets changes. An alias after `|` is how the
 // link is read in the sentence and a fragment after `#` names a place inside
 // the note; both survive.
+//
+// What stands inside a code fence is an example of a link, not one, and is left
+// as it was written.
 func (d *Document) PointProseAt(from domain.Address, to string) int {
 	if !domain.Nameable(to) {
 		return 0
 	}
 	var out strings.Builder
+	var f fence
 	body := string(d.body)
 	last, moved := 0, 0
 
-	for _, at := range wikilinkRe.FindAllStringSubmatchIndex(body, -1) {
-		inside := body[at[2]:at[3]]
-		if domain.ParseAddress(inside) != from {
+	for at := 0; at <= len(body); {
+		end := len(body)
+		if next := strings.IndexByte(body[at:], '\n'); next >= 0 {
+			end = at + next
+		}
+		line := strings.TrimRight(body[at:end], "\r")
+		if f.crosses(line) || f.inside() {
+			at = end + 1
 			continue
 		}
-		out.WriteString(body[last:at[2]])
-		out.WriteString(to + keptAfterTarget(inside))
-		last = at[3]
-		moved++
+		for _, found := range wikilinkRe.FindAllStringSubmatchIndex(line, -1) {
+			inside := line[found[2]:found[3]]
+			if domain.ParseAddress(inside) != from {
+				continue
+			}
+			out.WriteString(body[last : at+found[2]])
+			out.WriteString(to + keptAfterTarget(inside))
+			last = at + found[3]
+			moved++
+		}
+		at = end + 1
 	}
 	if moved == 0 {
 		return 0

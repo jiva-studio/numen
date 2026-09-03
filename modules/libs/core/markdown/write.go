@@ -431,22 +431,37 @@ func (d *Document) set(key string, rendered []byte) error {
 		if len(rendered) == 0 {
 			return nil
 		}
+		front := append([]byte(nil), d.front...)
+		if len(front) > 0 && !bytes.HasSuffix(front, []byte("\n")) {
+			front = append(front, d.eol...)
+		}
+		if err := d.commit(append(front, rendered...)); err != nil {
+			return err
+		}
 		if node == nil && len(d.open) == 0 {
 			// A note with no frontmatter grows one.
 			d.open = []byte("---" + d.eol)
 			d.shut = []byte("---" + d.eol)
 		}
-		if len(d.front) > 0 && !bytes.HasSuffix(d.front, []byte("\n")) {
-			d.front = append(d.front, []byte(d.eol)...)
-		}
-		d.front = append(append([]byte(nil), d.front...), rendered...)
 		return nil
 	}
 
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
-	d.front = append(front, d.front[end:]...)
+	return d.commit(append(front, d.front[end:]...))
+}
+
+// commit puts a frontmatter block in place of the one standing. A block that
+// comes out of a splice unreadable is not written, and the note keeps the bytes
+// it arrived as.
+func (d *Document) commit(front []byte) error {
+	was := d.front
+	d.front = front
+	if _, err := d.mapping(); err != nil {
+		d.front = was
+		return err
+	}
 	return nil
 }
 
@@ -489,8 +504,9 @@ func indented(rendered []byte, indent string) []byte {
 // span is the byte range one top-level key occupies in the frontmatter,
 // including the lines its value continues onto.
 //
-// The end is walked back over blank lines and comments: a comment written
-// above the next key belongs to that key.
+// It ends at the last line of the key's own value, so a comment, a blank line,
+// or bytes standing inside the delimiters under no key at all are left where
+// they are.
 func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
@@ -512,18 +528,57 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 		return 0, 0, false
 	}
 
-	last := len(lines) - 1
-	if at+2 < len(node.Content) {
+	last := d.endLine(lines, node.Content[at+1], node.Content[at].Column)
+	if last < keyLine {
+		last = keyLine
+	}
+	if at+2 < len(node.Content) && last > node.Content[at+2].Line-1 {
 		last = node.Content[at+2].Line - 1
 	}
-	for last > keyLine {
-		text := strings.TrimSpace(string(d.front[lines[last-1]:lines[last]]))
-		if text != "" && !strings.HasPrefix(text, "#") {
-			break
-		}
-		last--
+	if last > len(lines)-1 {
+		last = len(lines) - 1
 	}
 	return lines[keyLine-1], lines[last], true
+}
+
+// endLine is the last line of the frontmatter one node stands on. A value
+// continuing past its first line stands indented past the column of the key or
+// the dash it hangs from, which is the column given here.
+func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
+	if node == nil || node.Line < 1 {
+		return 0
+	}
+	switch node.Kind {
+	case yaml.MappingNode:
+		last := node.Line
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
+				last = end
+			}
+		}
+		return last
+	case yaml.SequenceNode:
+		last := node.Line
+		for _, item := range node.Content {
+			if end := d.endLine(lines, item, node.Column); end > last {
+				last = end
+			}
+		}
+		return last
+	}
+
+	last := node.Line
+	for at := node.Line + 1; at < len(lines); at++ {
+		text := string(d.front[lines[at-1]:lines[at]])
+		if strings.TrimSpace(text) == "" {
+			continue
+		}
+		if len(leading(text)) < column {
+			break
+		}
+		last = at
+	}
+	return last
 }
 
 // mapping is the frontmatter as YAML, or nil when there is none to read.
@@ -541,6 +596,16 @@ func (d *Document) mapping() (*yaml.Node, error) {
 	node := doc.Content[0]
 	if node.Kind != yaml.MappingNode {
 		return nil, fmt.Errorf("%w: it is not a mapping", ErrUnreadable)
+	}
+	// A key written twice names two values, and which of them the note holds is
+	// not a question the block answers.
+	written := make(map[string]bool, len(node.Content)/2)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key := node.Content[i].Value
+		if written[key] {
+			return nil, fmt.Errorf("%w: %s is written twice", ErrUnreadable, key)
+		}
+		written[key] = true
 	}
 	return node, nil
 }

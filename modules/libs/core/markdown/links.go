@@ -21,14 +21,10 @@ func bodyLinks(body []byte) []domain.Link {
 
 	sc := bufio.NewScanner(bytes.NewReader(body))
 	sc.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
-	fenced := false
+	var f fence
 	for sc.Scan() {
 		line := strings.TrimRight(sc.Text(), "\r")
-		if isFence(line) {
-			fenced = !fenced
-			continue
-		}
-		if fenced {
+		if f.crosses(line) || f.inside() {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}

@@ -84,18 +84,20 @@ func (d *Document) block() (block, error) {
 		if at < 1 || at >= len(lines) {
 			continue
 		}
-		last := len(lines) - 1
+		// An entry ends at the last line of its own value. A comment or a blank
+		// line below that belongs to the entry following it.
+		bound := len(lines) - 1
 		if i+1 < len(items.Content) {
-			last = items.Content[i+1].Line - 1
-		} else if offsetLine(lines, end) > 0 {
-			last = offsetLine(lines, end) - 1
+			bound = items.Content[i+1].Line - 1
+		} else if to := offsetLine(lines, end); to > 0 {
+			bound = to - 1
 		}
-		for last > at {
-			text := strings.TrimSpace(string(d.front[lines[last-1]:lines[last]]))
-			if text != "" && !strings.HasPrefix(text, "#") {
-				break
-			}
-			last--
+		last := d.endLine(lines, item, items.Column)
+		if last > bound {
+			last = bound
+		}
+		if last < at {
+			last = at
 		}
 		b.entries = append(b.entries, entry{
 			link:     linkOf(item),
