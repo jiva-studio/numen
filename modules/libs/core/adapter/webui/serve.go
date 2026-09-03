@@ -1095,22 +1095,30 @@ func embedSources(
 		return
 	}
 
+	// What this pass owes, asked once before it starts: the chunks that can
+	// carry a vector and do not. The pass finds them a few hundred at a time,
+	// and a total that grows as it goes is a count that never settles.
+	//
+	// It is asked before the model is waited for. Every path into this pass runs
+	// on the one goroutine that also reads the books and cuts what a recognition
+	// wrote, and a vault owing no vector holds that goroutine for nothing.
+	owing := int64(0)
+	if api.Progress != nil {
+		held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe))
+		if err == nil {
+			owing = max(0, held-embedded)
+			if owing == 0 {
+				return
+			}
+		}
+	}
+
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
 	if arrival, ok := embedder.(embedding.Arrival); ok {
 		if err := arrival.Wait(ctx); err != nil {
 			return
-		}
-	}
-
-	// What this pass owes, asked once before it starts: the chunks that can
-	// carry a vector and do not. The pass finds them a few hundred at a time,
-	// and a total that grows as it goes is a count that never settles.
-	owing := int64(0)
-	if api.Progress != nil {
-		if held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe)); err == nil {
-			owing = max(0, held-embedded)
 		}
 	}
 

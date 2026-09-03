@@ -106,6 +106,40 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 }
 
+// TestAVaultOwingNoVectorWaitsForNoModel. Every path into this pass runs on the
+// one goroutine that also reads the books and cuts what a recognition wrote, and
+// a model is fetched and compiled in minutes. A vault that owes nothing holds
+// that goroutine for nothing.
+func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
+	model := &asked{dims: 64}
+	cfg, db := reading(t)
+
+	// The notes are on disk and nothing has cut them, so the index holds no
+	// chunk and owes no vector.
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{
+		Tasking:  task.New(),
+		Progress: db.Progress(),
+	}
+	api.show(v)
+	api.Recipe.Store(model.Model().Recipe())
+
+	// The weights are still coming down, and in this test they never land.
+	arriving := embedding.Arriving(model.Model())
+
+	over := make(chan struct{})
+	go func() {
+		defer close(over)
+		embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, arriving.Filling())
+	}()
+
+	select {
+	case <-over:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the pass is waiting for a model to embed nothing with")
+	}
+}
+
 // TestNothingIsIndexedWhileTheModelIsOnItsWay. Fetching a model is not
 // indexing. A row that calls it by the name of the work that follows sits at no
 // share of nothing while the weights come down.
