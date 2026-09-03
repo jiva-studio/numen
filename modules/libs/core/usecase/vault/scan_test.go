@@ -492,6 +492,55 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	}
 }
 
+type refusingReader struct {
+	port.VaultReader
+	refused string
+}
+
+func (r refusingReader) Read(ctx context.Context, path string) ([]byte, error) {
+	if path == r.refused {
+		return nil, fs.ErrPermission
+	}
+	return r.VaultReader.Read(ctx, path)
+}
+
+type refusingReaders struct {
+	port.VaultReaders
+	refused string
+}
+
+func (r refusingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
+	reader, err := r.VaultReaders.Open(vault)
+	if err != nil {
+		return nil, err
+	}
+	return refusingReader{VaultReader: reader, refused: r.refused}, nil
+}
+
+// A permission bit, a broken ACL, a device that went away. A refresh counts
+// such a file and carries on, and the two ways the index changes agree.
+func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	v, readers := vaultAt(t, testsupport.VaultDir(t))
+	db := openIndex(t)
+
+	scan := scanner(refusingReaders{VaultReaders: readers, refused: "notes/Entropy.md"}, db)
+	res, err := scan.Execute(ctx, v)
+	if err != nil {
+		t.Fatalf("one unreadable file ended the scan: %v", err)
+	}
+	if res.Unreadable != 1 {
+		t.Errorf("unreadable = %d, want 1", res.Unreadable)
+	}
+	if res.Indexed != res.Seen-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	}
+	if res.Removed != 0 {
+		t.Errorf("removed %d notes: a file nobody can read is not a deletion", res.Removed)
+	}
+}
+
 func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	t.Parallel()
 	// Saving through a temporary file and a rename makes a note briefly absent.
