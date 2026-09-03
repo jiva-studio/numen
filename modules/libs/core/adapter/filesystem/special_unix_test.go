@@ -43,7 +43,7 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 	done := make(chan error, 1)
 	go func() {
 		var walked []string
-		err := src.Walk(t.Context(), func(r domain.FileRef) error {
+		err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
 			walked = append(walked, r.Path)
 			return nil
 		})

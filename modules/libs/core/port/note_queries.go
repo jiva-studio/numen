@@ -10,7 +10,7 @@ import (
 type NoteQueries interface {
 	// Fingerprints is what the index believes about each file, keyed by path, so
 	// a scan can decide what to reparse without reading anything.
-	Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error)
+	Fingerprints(ctx context.Context, vaultID string) (map[string]domain.Fingerprint, error)
 
 	// Search is the notes whose text matches the words typed. A search over
 	// everything the vault holds is PassageQueries and the use case above it.

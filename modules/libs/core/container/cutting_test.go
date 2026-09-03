@@ -74,7 +74,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 100))
 	n := domain.Note{
-		Ref:   domain.FileRef{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
 		Title: "Cut",
 		Body:  body,
 	}

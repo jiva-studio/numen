@@ -25,7 +25,7 @@ func walkPaths(t *testing.T, root string) []string {
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -70,7 +70,7 @@ func walkedKinds(t *testing.T, root string, opts filesystem.Options) map[string]
 		t.Fatal(err)
 	}
 	got := map[string]domain.SourceKind{}
-	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
 		got[r.Path] = r.Kind
 		return nil
 	}); err != nil {
@@ -201,7 +201,7 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
 		if r.Size <= 0 {
 			t.Errorf("%s has size %d", r.Path, r.Size)
 		}
@@ -539,7 +539,7 @@ func walked(t *testing.T, root string, opts filesystem.Options) []string {
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.Walk(t.Context(), func(r domain.FileRef) error {
+	if err := src.Walk(t.Context(), func(r domain.Fingerprint) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -598,7 +598,7 @@ func TestOnlyANoteIsWrittenTo(t *testing.T) {
 	}
 
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
-		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrNotANote) {
+		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.Fingerprint{}); !errors.Is(err, filesystem.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
 		if kept, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(kept) != "theirs" {
@@ -606,7 +606,7 @@ func TestOnlyANoteIsWrittenTo(t *testing.T) {
 		}
 	}
 
-	if _, err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.FileRef{}); err != nil {
+	if _, err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.Fingerprint{}); err != nil {
 		t.Errorf("a note is still writable: %v", err)
 	}
 }
@@ -627,7 +627,7 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileRef{}); !errors.Is(err, filesystem.ErrOutside) {
+	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.Fingerprint{}); !errors.Is(err, filesystem.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
 	if kept, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(kept) != "not yours" {

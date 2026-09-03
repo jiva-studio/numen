@@ -17,10 +17,10 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error) {
+func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return map[string]domain.FileRef{}, nil
+		return map[string]domain.Fingerprint{}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -32,9 +32,9 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID string) (map[string]
 	}
 	defer rows.Close()
 
-	out := map[string]domain.FileRef{}
+	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
-		var ref domain.FileRef
+		var ref domain.Fingerprint
 		if err := rows.Scan(&ref.Path, &ref.Size, &ref.MTime); err != nil {
 			return nil, err
 		}

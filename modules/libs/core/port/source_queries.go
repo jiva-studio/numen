@@ -14,12 +14,12 @@ import (
 type SourceQueries interface {
 	// Fingerprints is what the index believes about each file of one kind, keyed
 	// by path, so a walk can decide what to read without opening anything.
-	Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error)
+	Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error)
 
 	// Under is every source the vault holds at a path and beneath it: the one
 	// file, or everything a folder holds, by path. The index holds a row per
 	// file with the path it is filed under, and one query reads them.
-	Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error)
+	Under(ctx context.Context, vaultID, path string) ([]domain.Fingerprint, error)
 
 	// Unchunked is the sources of one kind with no small chunk: the file
 	// changed, or nothing has cut it yet.

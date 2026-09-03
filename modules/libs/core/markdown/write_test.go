@@ -186,7 +186,7 @@ func TestCreateIsReadBackByTheParser(t *testing.T) {
 		t.Fatalf("new identifier: %v", err)
 	}
 	raw := Create(identifier, "# Entropy\n")
-	n := Parse(domain.FileRef{Path: "entropy.md"}, raw)
+	n := Parse(domain.Fingerprint{Path: "entropy.md"}, raw)
 	if n.ID != identifier {
 		t.Errorf("identifier not read back: %q", n.ID)
 	}
@@ -705,7 +705,7 @@ func TestAKeyIsWrittenWhereTheBlocksOwnKeysStand(t *testing.T) {
 	if id, ok := back.Identifier(); !ok || id != "01J8" {
 		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
 	}
-	front := Parse(domain.FileRef{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
+	front := Parse(domain.Fingerprint{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
 	want := map[string]any{
 		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
 		"colour": "green",
@@ -862,7 +862,7 @@ func TestATypeNobodyNamedIsWrittenIn(t *testing.T) {
 				t.Fatalf("set: %v", err)
 			}
 
-			n := Parse(domain.FileRef{Path: "decks/Roots.md"}, d.Bytes())
+			n := Parse(domain.Fingerprint{Path: "decks/Roots.md"}, d.Bytes())
 			var named []domain.Link
 			for _, link := range n.Links {
 				if link.Type == "preset" {

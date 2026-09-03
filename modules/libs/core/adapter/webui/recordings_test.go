@@ -615,7 +615,7 @@ type stating struct {
 	then func()
 }
 
-func (s stating) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (s stating) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	ref, err := s.VaultReader.Stat(ctx, path)
 	s.then()
 	return ref, err

@@ -528,10 +528,10 @@ type refusingWriter struct {
 }
 
 func (w refusingWriter) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if path == w.path {
-		return domain.FileRef{}, errRefused
+		return domain.Fingerprint{}, errRefused
 	}
 	return w.VaultWriter.Write(ctx, path, content, fingerprint)
 }

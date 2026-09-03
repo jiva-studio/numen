@@ -362,18 +362,18 @@ func narrowed(query url.Values, cues []transcript.Cue) ([]transcript.Cue, error)
 //
 // Everything from outside reaches the vault through a reader, so a path leaving
 // it is refused there.
-func (a *API) held(ctx context.Context, path string) (domain.Vault, domain.FileRef, error) {
+func (a *API) held(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
 	showing := a.Showing()
 	if showing.ID == "" || a.Readers == nil {
-		return domain.Vault{}, domain.FileRef{}, errNoVault
+		return domain.Vault{}, domain.Fingerprint{}, errNoVault
 	}
 	reader, err := a.Readers.Open(showing)
 	if err != nil {
-		return domain.Vault{}, domain.FileRef{}, err
+		return domain.Vault{}, domain.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.Vault{}, domain.FileRef{}, err
+		return domain.Vault{}, domain.Fingerprint{}, err
 	}
 	return showing, ref, nil
 }

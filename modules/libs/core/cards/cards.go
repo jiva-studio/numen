@@ -28,7 +28,7 @@ const (
 
 // Stencil is a note declaring what a card has and how it is shown.
 type Stencil struct {
-	Ref    domain.FileRef
+	Ref    domain.Fingerprint
 	Fields []string
 	// Preamble is every byte above the first face, down to the one its heading
 	// opens on, and Tail is what the file ends with once the last side has been
@@ -54,7 +54,7 @@ type Face struct {
 
 // Deck is a note whose body is cards.
 type Deck struct {
-	Ref domain.FileRef
+	Ref domain.Fingerprint
 	// Preamble is every byte above the first section or card, down to the one
 	// its heading opens on, and Tail is what the file ends with once the last
 	// value has been read. Both are kept as they were written and neither is

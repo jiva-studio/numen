@@ -240,7 +240,7 @@ func TestWritingThroughALinkLeavesTheLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.FileRef{}); err != nil {
+	if _, err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -356,7 +356,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.FileRef{})
+			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.Fingerprint{})
 			if !errors.Is(err, port.ErrNotANote) {
 				t.Errorf("writing through the link gave %v, want ErrNotANote", err)
 			}
@@ -467,7 +467,7 @@ func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.FileRef{}); err != nil {
+	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.Fingerprint{}); err != nil {
 		t.Fatalf("the note could not be written: %v", err)
 	}
 	if err := w.Move(ctx, "Note.md", "Renamed.md"); err != nil {
@@ -501,7 +501,7 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	held := domain.FileRef{Size: info.Size(), MTime: info.ModTime().UnixNano()}
+	held := domain.Fingerprint{Size: info.Size(), MTime: info.ModTime().UnixNano()}
 	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}

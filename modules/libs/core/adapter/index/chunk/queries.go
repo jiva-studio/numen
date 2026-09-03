@@ -42,10 +42,10 @@ type Passage struct {
 
 // Fingerprints is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
-func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[string]domain.FileRef, error) {
+func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return map[string]domain.FileRef{}, nil
+		return map[string]domain.Fingerprint{}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -57,9 +57,9 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 	}
 	defer rows.Close()
 
-	out := map[string]domain.FileRef{}
+	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
-		var ref domain.FileRef
+		var ref domain.Fingerprint
 		if err := rows.Scan(&ref.Path, &ref.Size, &ref.MTime); err != nil {
 			return nil, err
 		}
@@ -70,7 +70,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 
 // Under is every source the vault holds at a path and beneath it, by path: the
 // one file, or everything a folder holds.
-func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
+func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -86,9 +86,9 @@ func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.Fil
 	}
 	defer rows.Close()
 
-	var out []domain.FileRef
+	var out []domain.Fingerprint
 	for rows.Next() {
-		var ref domain.FileRef
+		var ref domain.Fingerprint
 		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &ref.MTime); err != nil {
 			return nil, err
 		}

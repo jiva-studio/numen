@@ -4,7 +4,7 @@ package domain
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognise.
 type Note struct {
-	Ref   FileRef
+	Ref   Fingerprint
 	Title string
 
 	// Type is which of four the note is. A note carrying no `type` is a note,

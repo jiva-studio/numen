@@ -283,7 +283,7 @@ type byType struct {
 	t *testing.T
 }
 
-func (q byType) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.FileRef, error) {
+func (q byType) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.Fingerprint, error) {
 	q.t.Error("a rename asked the index about every file of the vault")
 	return q.NoteQueries.Fingerprints(ctx, vaultID)
 }

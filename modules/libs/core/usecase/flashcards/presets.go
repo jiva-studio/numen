@@ -42,7 +42,7 @@ type Preset struct {
 	// Problems are what was wrong in the file and was not guessed at. They are
 	// shown against the preset, and the editor is where they are settled.
 	Problems []string
-	Ref      domain.FileRef
+	Ref      domain.Fingerprint
 }
 
 // Presets is how each deck of a vault is scheduled.

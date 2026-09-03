@@ -146,7 +146,7 @@ type beatenReader struct {
 	after func(path string)
 }
 
-func (b beatenReader) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (b beatenReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	ref, err := b.VaultReader.Stat(ctx, path)
 	b.after(path)
 	return ref, err

@@ -13,7 +13,7 @@ import (
 // produced the source's chunks. Both are empty on a source nothing has taken
 // text out of yet.
 type Source struct {
-	Ref    domain.FileRef
+	Ref    domain.Fingerprint
 	Hash   string
 	Recipe string
 

@@ -464,11 +464,11 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 	})
 
 	at, err := c.linking().PointAt(t.Context(), c.vault, "Roots.md", "preset",
-		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileRef{})
+		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at == (domain.Fingerprint{}) {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -542,7 +542,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 
 	// Somebody else gets there first.
-	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileRef{}); err != nil {
+	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -578,7 +578,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at == (domain.Fingerprint{}) {
 		t.Fatal("the write answered with no fingerprint")
 	}
 

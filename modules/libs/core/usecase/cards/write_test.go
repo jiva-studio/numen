@@ -35,8 +35,8 @@ type countedWriter struct {
 }
 
 func (w *countedWriter) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	w.on.writes++
 	return w.VaultWriter.Write(ctx, path, content, fingerprint)
 }
@@ -52,7 +52,7 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	at, err := u.Stencil(
 		t.Context(), vs.first, "Animal.md", body,
-		[]string{"Name", "Wingspan"}, domain.FileRef{})
+		[]string{"Name", "Wingspan"}, domain.Fingerprint{})
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 	if _, err := u.Stencil(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
-		[]string{"Name", "Height"}, domain.FileRef{},
+		[]string{"Name", "Height"}, domain.Fingerprint{},
 	); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestWritingADeckLargerThanANote(t *testing.T) {
 	}
 	w := laid(t, vs, "decks/Long.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if deck := held(t, vs, "decks/Long.md"); len(deck.Cards) != 1 {
@@ -154,7 +154,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	w := laid(t, vs, "decks/Hand.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -175,7 +175,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 	// leaves it where it stands.
 	after := read(t, vs.first, "decks/Hand.md")
 	if _, err := w.Deck(
-		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.FileRef{},
+		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.Fingerprint{},
 	); err != nil {
 		t.Fatalf("write again: %v", err)
 	}
@@ -197,7 +197,7 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 	w := cards.Write{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Links: vs.db.NoteQueries(),
 	}
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -219,7 +219,7 @@ func TestWritingADeckPutsAStaleHeadingBackInStep(t *testing.T) {
 		"\n### Height\n\nthe first field is a box to fill\n"
 	w := laid(t, vs, "decks/Stale.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -249,7 +249,7 @@ func TestACardWritingNothingUnderTheFirstFieldKeepsItsHeading(t *testing.T) {
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Was called something else\n\nLlama\n"
 	w := laid(t, vs, "decks/Behind.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -267,7 +267,7 @@ func TestAWriteSaysWhichMarksItMinted(t *testing.T) {
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	w := laid(t, vs, "decks/Minted.md", body)
 
-	wrote, err := w.Deck(t.Context(), vs.first, "decks/Minted.md", body, domain.FileRef{})
+	wrote, err := w.Deck(t.Context(), vs.first, "decks/Minted.md", body, domain.Fingerprint{})
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -286,7 +286,7 @@ func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
 	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"
 	w := laid(t, vs, "decks/Loose.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.FileRef{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -320,7 +320,7 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 				Links: vs.db.NoteQueries(),
 			}
 			if _, err := w.Deck(
-				t.Context(), vs.first, "decks/Whole.md", body, domain.FileRef{},
+				t.Context(), vs.first, "decks/Whole.md", body, domain.Fingerprint{},
 			); err != nil {
 				t.Fatalf("write: %v", err)
 			}

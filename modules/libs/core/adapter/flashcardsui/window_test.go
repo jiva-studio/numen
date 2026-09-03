@@ -175,7 +175,7 @@ func asWritten(t *testing.T, api *API, v domain.Vault, path string) history.Pres
 // does when a person lets go of the control.
 func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p history.Preset) {
 	t.Helper()
-	if _, err := api.Presets.Save(t.Context(), v, path, p, domain.FileRef{}); err != nil {
+	if _, err := api.Presets.Save(t.Context(), v, path, p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 }

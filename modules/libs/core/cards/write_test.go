@@ -88,7 +88,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			if got := names(f.Deck(domain.FileRef{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
+			if got := names(f.Deck(domain.Fingerprint{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
 				t.Errorf("cards = %v, want %v", got, one.cards)
 			}
 			if err := os.WriteFile(path, f.Bytes(), 0o600); err != nil {
@@ -144,7 +144,7 @@ func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	card := f.Deck(domain.FileRef{}).Cards[0]
+	card := f.Deck(domain.Fingerprint{}).Cards[0]
 	if got := fieldsOf(card); !slices.Equal(got, []string{"Life span", "Height"}) {
 		t.Errorf("fields = %v, want the order they were written in", got)
 	}
@@ -251,7 +251,7 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if got := string(f.Bytes()); got != removed {
 		t.Errorf("section removed wrong\n want %q\n  got %q", removed, got)
 	}
-	read := f.Deck(domain.FileRef{})
+	read := f.Deck(domain.Fingerprint{})
 	if len(read.Cards) != 2 {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
@@ -304,7 +304,7 @@ func TestAddCard(t *testing.T) {
 		t.Errorf("card added wrong\n want %q\n  got %q", want, got)
 	}
 
-	card, err := f.Deck(domain.FileRef{}).Card("m9n8b7v6c5")
+	card, err := f.Deck(domain.Fingerprint{}).Card("m9n8b7v6c5")
 	if err != nil {
 		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
@@ -352,7 +352,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 		t.Errorf("renamed = %d, want the one card cut by that stencil", renamed)
 	}
 
-	deck := f.Deck(domain.FileRef{})
+	deck := f.Deck(domain.Fingerprint{})
 	llama := deck.Cards[0]
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Life span", "Shoulder height"}) {
 		t.Errorf("fields = %v", got)
@@ -424,7 +424,7 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 	// A field's name is written where the stencil declares it and in the braces
 	// of every face that places it, so the stencil that comes out declares what
 	// its faces place.
-	n := markdown.Parse(domain.FileRef{Path: "Animal.md"}, f.Bytes())
+	n := markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes())
 	read := f.Stencil(n)
 	if !slices.Equal(read.Fields, []string{"Name", "Shoulder height", "Life span", "Weight"}) {
 		t.Errorf("read fields = %v", read.Fields)
@@ -483,7 +483,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 		t.Errorf("face written wrong\n want %q\n  got %q", want, got)
 	}
 
-	read := f.Stencil(markdown.Parse(domain.FileRef{Path: "Animal.md"}, f.Bytes()))
+	read := f.Stencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
 	var missing int
 	for _, p := range read.Problems {
 		if p.Check == cards.CheckFaceSide {
@@ -512,7 +512,7 @@ func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got := f.Deck(domain.FileRef{}).Cards[0]; got.Stencil != "Animal|the beast" {
+	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.Stencil != "Animal|the beast" {
 		t.Errorf("the link was rewritten: %q", got.Stencil)
 	}
 }
@@ -534,7 +534,7 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 	if string(f.Bytes()) != raw {
 		t.Error("a card was written anyway")
 	}
-	if _, err := f.Deck(domain.FileRef{}).Card("k7m2xq9fzp"); !errors.Is(err, cards.ErrTwoCards) {
+	if _, err := f.Deck(domain.Fingerprint{}).Card("k7m2xq9fzp"); !errors.Is(err, cards.ErrTwoCards) {
 		t.Errorf("card = %v, want ErrTwoCards", err)
 	}
 }
@@ -557,7 +557,7 @@ func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.FileRef{})
+	read := f.Deck(domain.Fingerprint{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}
@@ -587,7 +587,7 @@ func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.FileRef{})
+	read := f.Deck(domain.Fingerprint{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}

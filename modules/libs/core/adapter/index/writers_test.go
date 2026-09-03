@@ -15,7 +15,7 @@ import (
 func writing(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
 	return db.Notes().Cut(cutting.Sizes{}).Save(t.Context(), v.ID, []domain.Note{{
-		Ref:   domain.FileRef{Path: path, Kind: domain.KindNote, Size: int64(len(title)), MTime: 1},
+		Ref:   domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), MTime: 1},
 		Title: title,
 		Type:  domain.TypeNote,
 	}})

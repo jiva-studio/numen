@@ -579,9 +579,9 @@ func (o overtaking) Open(v domain.Vault) (port.VaultWriter, error) {
 type overtaken struct{ port.VaultWriter }
 
 func (overtaken) Write(
-	context.Context, string, []byte, domain.FileRef,
-) (domain.FileRef, error) {
-	return domain.FileRef{}, port.ErrChanged
+	context.Context, string, []byte, domain.Fingerprint,
+) (domain.Fingerprint, error) {
+	return domain.Fingerprint{}, port.ErrChanged
 }
 
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody

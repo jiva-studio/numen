@@ -323,7 +323,7 @@ type holdsOpen struct {
 	at holdingOpen
 }
 
-func (h holdsOpen) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (h holdsOpen) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	select {
 	case h.at.begun <- struct{}{}:
 	default:

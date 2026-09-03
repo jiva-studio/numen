@@ -16,7 +16,7 @@ func TestFrontmatterWithAKeyWrittenTwiceIsUnreadable(t *testing.T) {
 	if _, err := Open([]byte(raw)); !errors.Is(err, ErrUnreadable) {
 		t.Errorf("open: want ErrUnreadable, got %v", err)
 	}
-	if got := Parse(domain.FileRef{Path: "D.md"}, []byte(raw)); got.FrontmatterErr == "" {
+	if got := Parse(domain.Fingerprint{Path: "D.md"}, []byte(raw)); got.FrontmatterErr == "" {
 		t.Errorf("parse read the note: %v", got.Frontmatter)
 	}
 }

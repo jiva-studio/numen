@@ -506,28 +506,28 @@ type Seated struct {
 
 // fingerprintOf is what a note was when it was read, in a form an agent hands
 // back without having to understand it.
-func fingerprintOf(ref domain.FileRef) string {
+func fingerprintOf(ref domain.Fingerprint) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(ref.MTime, 10)
 }
 
 // parseFingerprint is the fingerprint a caller presents. Every tool that writes
 // takes one, and a call carrying none is refused.
-func parseFingerprint(s string) (domain.FileRef, error) {
+func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
-		return domain.FileRef{}, errors.New(
+		return domain.Fingerprint{}, errors.New(
 			"present the fingerprint the read gave you: note_read for a note, card_read for a deck")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {
-		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
 	}
-	ref := domain.FileRef{}
+	ref := domain.Fingerprint{}
 	var err error
 	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
 	}
 	if ref.MTime, err = strconv.ParseInt(mtime, 10, 64); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
+		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint note_read gave out", s)
 	}
 	return ref, nil
 }

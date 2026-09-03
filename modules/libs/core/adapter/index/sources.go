@@ -52,11 +52,11 @@ func (s sources) MoveSources(ctx context.Context, vaultID, from, to string) erro
 }
 
 // Under is every source the vault holds at a path and beneath it.
-func (s known) Under(ctx context.Context, vaultID, path string) ([]domain.FileRef, error) {
+func (s known) Under(ctx context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
 	return s.read.Under(ctx, vaultID, path)
 }
 
-func (s known) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {
+func (s known) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }
 

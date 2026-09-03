@@ -26,7 +26,7 @@ func (i indexed) Reading(_ context.Context, _, path string) (port.Recognised, bo
 	return found, held, nil
 }
 
-func (i indexed) Fingerprints(context.Context, string, domain.SourceKind) (map[string]domain.FileRef, error) {
+func (i indexed) Fingerprints(context.Context, string, domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return nil, nil
 }
 
@@ -42,7 +42,7 @@ func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.
 	return nil, nil
 }
 
-func (i indexed) Under(context.Context, string, string) ([]domain.FileRef, error) {
+func (i indexed) Under(context.Context, string, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 

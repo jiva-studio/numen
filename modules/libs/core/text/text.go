@@ -111,7 +111,7 @@ const (
 
 // ReaderName names what would read this file. A file nothing reads has no name,
 // and nothing asks for its text.
-func ReaderName(ref domain.FileRef) (string, bool) {
+func ReaderName(ref domain.Fingerprint) (string, bool) {
 	if ref.Kind == domain.KindNote {
 		return ReaderNote, true
 	}
@@ -137,7 +137,7 @@ func ReaderName(ref domain.FileRef) (string, bool) {
 // archive at a text offset returns compressed noise.
 //
 // One format is read by a library, which is given rather than reached for.
-func Read(ctx context.Context, docs port.Documents, ref domain.FileRef, raw []byte) (*Document, error) {
+func Read(ctx context.Context, docs port.Documents, ref domain.Fingerprint, raw []byte) (*Document, error) {
 	reader, ok := ReaderName(ref)
 	if !ok {
 		return nil, ErrUnreadable

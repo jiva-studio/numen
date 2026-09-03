@@ -19,7 +19,7 @@ func parseFile(t *testing.T, rel string) domain.Note {
 	if err != nil {
 		t.Fatalf("read %s: %v", rel, err)
 	}
-	return markdown.Parse(domain.FileRef{Path: rel, Size: int64(len(raw))}, raw)
+	return markdown.Parse(domain.Fingerprint{Path: rel, Size: int64(len(raw))}, raw)
 }
 
 func TestFrontmatterIsKeptAsFound(t *testing.T) {
@@ -53,7 +53,7 @@ func TestTitlePreferenceOrder(t *testing.T) {
 
 func TestTitleFallsBackToTheFilename(t *testing.T) {
 	// What the user sees in a file manager, so it is never empty.
-	n := markdown.Parse(domain.FileRef{Path: "notes/Some Note.md"}, []byte("no heading here\n"))
+	n := markdown.Parse(domain.Fingerprint{Path: "notes/Some Note.md"}, []byte("no heading here\n"))
 	if n.Title != "Some Note" {
 		t.Errorf("title = %q, want the filename", n.Title)
 	}
@@ -82,7 +82,7 @@ func TestAHeadingCarriesTheByteItBeginsAt(t *testing.T) {
 	// heading's line number is not its offset, so both are checked against the
 	// bytes the parser handed over.
 	raw := []byte("---\ntitle: Cut\n---\nprose\n\n## First law\n\nmore prose\n\n### Second law\n")
-	n := markdown.Parse(domain.FileRef{Path: "x.md", Size: int64(len(raw))}, raw)
+	n := markdown.Parse(domain.Fingerprint{Path: "x.md", Size: int64(len(raw))}, raw)
 
 	if len(n.Headings) != 2 {
 		t.Fatalf("headings = %v", n.Headings)
@@ -105,7 +105,7 @@ func TestAHeadingInAFileWrittenWithCRLFBeginsWhereItSays(t *testing.T) {
 	// A carriage return is a byte of the line and not of its text, so a heading
 	// begins past every one of them.
 	raw := []byte("# One\r\n\r\nprose\r\n\r\n## Two\r\n\r\nmore\r\n\r\n### Three\r\n")
-	n := markdown.Parse(domain.FileRef{Path: "x.md", Size: int64(len(raw))}, raw)
+	n := markdown.Parse(domain.Fingerprint{Path: "x.md", Size: int64(len(raw))}, raw)
 
 	if len(n.Headings) != 3 {
 		t.Fatalf("headings = %v", n.Headings)
@@ -173,7 +173,7 @@ func TestNonLatinTextSurvivesParsing(t *testing.T) {
 
 func TestHorizontalRuleIsNotFrontmatter(t *testing.T) {
 	raw := []byte("# Title\n\n---\n\nnot frontmatter\n")
-	n := markdown.Parse(domain.FileRef{Path: "x.md"}, raw)
+	n := markdown.Parse(domain.Fingerprint{Path: "x.md"}, raw)
 	if n.Frontmatter != nil {
 		t.Errorf("a rule mid-document was read as frontmatter: %v", n.Frontmatter)
 	}
@@ -184,7 +184,7 @@ func TestHorizontalRuleIsNotFrontmatter(t *testing.T) {
 
 func TestUnterminatedFrontmatterLeavesTheFileAlone(t *testing.T) {
 	raw := []byte("---\ntitle: x\n\nbody with no closing delimiter\n")
-	n := markdown.Parse(domain.FileRef{Path: "x.md"}, raw)
+	n := markdown.Parse(domain.Fingerprint{Path: "x.md"}, raw)
 	if n.Frontmatter != nil {
 		t.Error("an unterminated block was treated as frontmatter")
 	}
@@ -194,7 +194,7 @@ func TestUnterminatedFrontmatterLeavesTheFileAlone(t *testing.T) {
 }
 
 func TestEmptyFileIsANote(t *testing.T) {
-	n := markdown.Parse(domain.FileRef{Path: "empty.md"}, nil)
+	n := markdown.Parse(domain.Fingerprint{Path: "empty.md"}, nil)
 	if n.Title != "empty" {
 		t.Errorf("title = %q", n.Title)
 	}

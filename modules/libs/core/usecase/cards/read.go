@@ -38,7 +38,7 @@ type Deck struct {
 	Stencils map[string]string
 	// Ref is what the file was when it was asked about, which is before its
 	// bytes were read.
-	Ref domain.FileRef
+	Ref domain.Fingerprint
 }
 
 // Stencil is one stencil as a read hands it over.
@@ -47,7 +47,7 @@ type Stencil struct {
 	Outcome note.Outcome
 	Type    domain.NoteType
 	Stencil format.Stencil
-	Ref     domain.FileRef
+	Ref     domain.Fingerprint
 }
 
 // Read hands over a deck or a stencil, read out of the vault.
@@ -210,10 +210,10 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 // bytes parse to once everything that would refuse them has been asked.
 func (u Read) looked(
 	ctx context.Context, v domain.Vault, path string, bound int64,
-) (domain.Note, domain.FileRef, note.Outcome, error) {
+) (domain.Note, domain.Fingerprint, note.Outcome, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.Note{}, domain.FileRef{}, "", err
+		return domain.Note{}, domain.Fingerprint{}, "", err
 	}
 
 	// The vault says what is at a path without opening it: a note, a file it
@@ -230,9 +230,9 @@ func (u Read) looked(
 			return domain.Note{}, ref, note.TooLarge, nil
 		}
 	case errors.Is(err, port.ErrNotANote):
-		return domain.Note{}, domain.FileRef{}, note.NotANote, nil
+		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return domain.Note{}, domain.FileRef{}, "", fmt.Errorf("look at %s: %w", path, err)
+		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)

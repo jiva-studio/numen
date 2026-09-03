@@ -312,7 +312,7 @@ type cancellingReader struct {
 	parent *cancellingReaders
 }
 
-func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
+func (c *cancellingReader) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	err := c.VaultReader.Walk(ctx, fn)
 	c.parent.cancel()
 	return err

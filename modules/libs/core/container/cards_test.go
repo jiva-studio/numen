@@ -63,7 +63,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			read := format.ReadStencil(markdown.Parse(domain.FileRef{Path: "Animal.md"}, []byte(raw)))
+			read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
 			body, err := container.StencilBody(read.Preamble, read.Faces, read.Tail)
 			if err != nil {
 				t.Fatalf("stencil body: %v", err)
@@ -98,7 +98,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			n := markdown.Parse(domain.FileRef{Path: path}, raw)
+			n := markdown.Parse(domain.Fingerprint{Path: path}, raw)
 
 			var body string
 			switch n.Type {
@@ -129,7 +129,7 @@ func TestWritingOneFaceLeavesTheRestOfTheStencilAlone(t *testing.T) {
 		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
-	read := format.ReadStencil(markdown.Parse(domain.FileRef{Path: "Animal.md"}, []byte(raw)))
+	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
 	held := append([]format.Face(nil), read.Faces...)
 	held[0].Back = "**{{Height}}**"
 

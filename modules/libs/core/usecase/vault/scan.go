@@ -108,14 +108,14 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (Scanned, error) {
 	// chosen. A vault has a working set and an archive, and they are not the
 	// same size: notes touched recently are what the person is looking for while
 	// the scan runs, so they are indexed first.
-	var found []domain.FileRef
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+	var found []domain.Fingerprint
+	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		found = append(found, ref)
 		return nil
 	}); err != nil {
 		return res, err
 	}
-	slices.SortFunc(found, func(a, b domain.FileRef) int { return cmp.Compare(b.MTime, a.MTime) })
+	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.MTime, a.MTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {

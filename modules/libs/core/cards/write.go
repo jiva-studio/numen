@@ -58,7 +58,7 @@ func (f *DeckFile) Bytes() []byte { return f.doc.Bytes() }
 func (f *DeckFile) Stamped(identifier string) (bool, error) { return stamped(f.doc, identifier) }
 
 // Deck is what the file now says.
-func (f *DeckFile) Deck(ref domain.FileRef) Deck {
+func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 	deck, _ := readDeck(ref, []byte(f.doc.Body()))
 	return deck
 }
@@ -85,7 +85,7 @@ func (f *DeckFile) Whole(stencils map[string]Stencil, mint func() (string, error
 // the deck is made whole, not here.
 func (f *DeckFile) SetValue(card, field, value string) error {
 	body := []byte(f.doc.Body())
-	_, spans := readDeck(domain.FileRef{}, body)
+	_, spans := readDeck(domain.Fingerprint{}, body)
 
 	at := -1
 	for i, span := range spans {
@@ -247,7 +247,7 @@ func DeckBody(d Deck) (string, error) {
 // in the brackets.
 func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
-	deck, spans := readDeck(domain.FileRef{}, body)
+	deck, spans := readDeck(domain.Fingerprint{}, body)
 
 	var heads []valueSpan
 	for i, span := range spans {

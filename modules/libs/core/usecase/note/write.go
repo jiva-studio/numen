@@ -78,11 +78,11 @@ type Write struct {
 // What comes back is the fingerprint of the file this write produced, which is
 // what the caller presents at its next write.
 func (u Write) Execute(
-	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	opening := strings.TrimPrefix(body, "\ufeff")
 	if strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n") {
-		return domain.FileRef{}, ErrBodyRefused
+		return domain.Fingerprint{}, ErrBodyRefused
 	}
 
 	e := editing{
@@ -124,12 +124,12 @@ type Seen struct {
 	// Prose is what a read gave this caller, with every line break as one \n.
 	Prose string
 	// At is the file that read came out of.
-	At domain.FileRef
+	At domain.Fingerprint
 }
 
 // stale reports whether the note in front of the writer holds prose this caller
 // has not read.
-func (s *Seen) stale(on domain.FileRef, prose string) bool {
+func (s *Seen) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
@@ -152,12 +152,12 @@ func (s *Seen) stale(on domain.FileRef, prose string) bool {
 // what the caller presents at its next save.
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, seen *Seen,
-) (domain.FileRef, error) {
+) (domain.Fingerprint, error) {
 	// A body opening with the delimiter is read back as a frontmatter block, and
 	// then the prose it was is no longer the note's body.
 	if opening := strings.TrimPrefix(body, "\ufeff"); strings.HasPrefix(opening, "---\n") ||
 		strings.HasPrefix(opening, "---\r\n") {
-		return domain.FileRef{}, ErrBodyRefused
+		return domain.Fingerprint{}, ErrBodyRefused
 	}
 	e := editing{
 		readers: u.Readers, writers: u.Writers, index: u.Index,

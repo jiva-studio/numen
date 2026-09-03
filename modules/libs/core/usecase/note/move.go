@@ -223,7 +223,7 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 	if err != nil {
 		return false, err
 	}
-	_, err = writer.Write(ctx, in, doc.Bytes(), domain.FileRef{})
+	_, err = writer.Write(ctx, in, doc.Bytes(), domain.Fingerprint{})
 	return true, err
 }
 

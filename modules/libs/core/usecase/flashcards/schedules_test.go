@@ -185,7 +185,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 	}
 	moved := settings.Preset
 	moved.Retention = 0.95
-	if _, err := s.presets.Save(t.Context(), s.vault, "Low.md", moved, domain.FileRef{}); err != nil {
+	if _, err := s.presets.Save(t.Context(), s.vault, "Low.md", moved, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 

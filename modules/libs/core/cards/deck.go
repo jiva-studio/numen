@@ -67,7 +67,7 @@ type valueSpan struct {
 	from, to int
 }
 
-func readDeck(ref domain.FileRef, body []byte) (Deck, []cardSpan) {
+func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 	d := Deck{Ref: ref}
 	secs := sections(body, SectionLevel, FieldLevel)
 

@@ -51,7 +51,7 @@ type editing struct {
 	writers     port.VaultWriters
 	index       func(ctx context.Context, v domain.Vault, paths []string) error
 	now         func() time.Time
-	fingerprint domain.FileRef
+	fingerprint domain.Fingerprint
 	// overwrite is a caller writing what is in front of the person: the note
 	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
@@ -64,10 +64,10 @@ type editing struct {
 	seen *Seen
 }
 
-func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.FileRef, error) {
+func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
 	written, err := e.splice(ctx, v, path, change)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	if e.index == nil {
 		return written, nil
@@ -81,23 +81,23 @@ func (e editing) apply(ctx context.Context, v domain.Vault, path string, change 
 // from before the read until after the file is replaced.
 func (e editing) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
-) (domain.FileRef, error) {
+) (domain.Fingerprint, error) {
 	release, err := e.writers.Hold(ctx, v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	defer release()
 
 	reader, err := e.readers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 
 	// What the file is, asked before its bytes are read, which is the order a
 	// read hands its fingerprint over in.
-	var on domain.FileRef
+	var on domain.Fingerprint
 	var looked error
-	if e.seen != nil || (e.fingerprint == (domain.FileRef{}) && !e.overwrite) {
+	if e.seen != nil || (e.fingerprint == (domain.Fingerprint{}) && !e.overwrite) {
 		on, looked = reader.Stat(ctx, path)
 	}
 
@@ -110,7 +110,7 @@ func (e editing) splice(
 		// arrives when the application changes a note's contents.
 		raw = nil
 	default:
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
 
 	// Every edit is a read, a think and a write, and the person may save the
@@ -118,25 +118,25 @@ func (e editing) splice(
 	// the note was is held to that; one that said nothing is held to what was
 	// read just now. A caller writing over what is there is held to neither.
 	against := e.fingerprint
-	if against == (domain.FileRef{}) && !e.overwrite {
+	if against == (domain.Fingerprint{}) && !e.overwrite {
 		if looked != nil {
-			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(looked))
+			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(looked))
 		}
 		against = on
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	// A note that is not there cannot hold anything the caller has not read, so
 	// it is made.
 	if looked == nil && e.seen.stale(on, markdown.Normalised(doc.Body())) {
-		return domain.FileRef{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
+		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 	}
 
 	if err := change(doc); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	// The application is editing this note, so it may write the identifier the
@@ -151,10 +151,10 @@ func (e editing) splice(
 		}
 		identifier, err := ulid.New(at())
 		if err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 		if err := doc.SetIdentifier(identifier); err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 	}
 
@@ -162,12 +162,12 @@ func (e editing) splice(
 	// written within is asked once, of the file the change came to.
 	content := doc.Bytes()
 	if err := bounded(path, content, e.bound); err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 
 	writer, err := e.writers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return writer.Write(ctx, path, content, against)
 }

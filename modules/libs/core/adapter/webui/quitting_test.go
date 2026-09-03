@@ -196,8 +196,8 @@ type records struct {
 }
 
 func (w records) Write(
-	ctx context.Context, path string, content []byte, ref domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, path string, content []byte, ref domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if w.hold != nil {
 		select {
 		case w.hold.begun <- struct{}{}:
@@ -206,7 +206,7 @@ func (w records) Write(
 		select {
 		case <-w.hold.until:
 		case <-ctx.Done():
-			return domain.FileRef{}, ctx.Err()
+			return domain.Fingerprint{}, ctx.Err()
 		}
 	}
 	written, err := w.VaultWriter.Write(ctx, path, content, ref)

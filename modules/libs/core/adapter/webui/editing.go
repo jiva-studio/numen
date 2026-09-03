@@ -229,8 +229,8 @@ func roleOf(role v1.Role) (domain.LinkRole, bool) {
 // fingerprintOf is a file as the schema carries it. Nothing is carried for the
 // zero value: a caller is given a fingerprint only where there is a file behind
 // it.
-func fingerprintOf(ref domain.FileRef) *v1.Fingerprint {
-	if ref == (domain.FileRef{}) {
+func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
+	if ref == (domain.Fingerprint{}) {
 		return nil
 	}
 	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: ref.MTime}
@@ -247,9 +247,9 @@ func seenOf(seen *v1.Seen) *note.Seen {
 
 // refOf is a fingerprint as the core holds one. The kind is left empty: what
 // the file is was decided when it was asked for.
-func refOf(at *v1.Fingerprint) domain.FileRef {
+func refOf(at *v1.Fingerprint) domain.Fingerprint {
 	if at == nil {
-		return domain.FileRef{}
+		return domain.Fingerprint{}
 	}
-	return domain.FileRef{Path: at.GetPath(), Size: at.GetSize(), MTime: at.GetMtime()}
+	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), MTime: at.GetMtime()}
 }

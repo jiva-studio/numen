@@ -40,7 +40,7 @@ type Write struct {
 // which is what the caller presents at its next write, and the mark every card
 // that carried none was given.
 type Wrote struct {
-	At     domain.FileRef
+	At     domain.Fingerprint
 	Minted []format.Minted
 }
 
@@ -50,7 +50,7 @@ type Wrote struct {
 // one, and every stale heading is put back in step. Every caller therefore gets
 // the same file, and none of them has to know the rules.
 func (u Write) Deck(
-	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.FileRef,
+	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (Wrote, error) {
 	if len(body) > MaxBytes {
 		return Wrote{}, fmt.Errorf(
@@ -92,10 +92,10 @@ func (u Write) whole(
 // both are the one file, so one write carries both.
 func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if len(body) > note.MaxBytes {
-		return domain.FileRef{}, fmt.Errorf(
+		return domain.Fingerprint{}, fmt.Errorf(
 			"%w: %d bytes, and %d is the most a stencil is", note.ErrTooLarge, len(body), note.MaxBytes)
 	}
 	at, err := u.stencil(ctx, v, path, body, fields, fingerprint)
@@ -109,43 +109,43 @@ func (u Write) Stencil(
 // from before the read until after the file is replaced.
 func (u Write) stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	// A body opening with the delimiter is read back as a frontmatter block, and
 	// then the prose it was is no longer the note's body. A byte order mark —
 	// "\xef\xbb\xbf" — stands before the delimiter and is no part of the prose.
 	if opening := strings.TrimPrefix(body, "\xef\xbb\xbf"); strings.HasPrefix(opening, "---\n") ||
 		strings.HasPrefix(opening, "---\r\n") {
-		return domain.FileRef{}, note.ErrBodyRefused
+		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	defer release()
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	// A caller that said what it believed the stencil was is held to that; one
 	// that said nothing is held to what stands there now.
 	against := fingerprint
-	if against == (domain.FileRef{}) {
+	if against == (domain.Fingerprint{}) {
 		on, err := reader.Stat(ctx, path)
 		if err != nil {
-			return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(err))
+			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
 		}
 		against = on
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	doc.SetBody(body)
@@ -153,7 +153,7 @@ func (u Write) stencil(
 	// person wrote them as.
 	if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {
 		if err := doc.SetList(fieldsKey, fields); err != nil {
-			return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+			return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 		}
 	}
 	// The application is changing what this note holds, so it writes the
@@ -161,16 +161,16 @@ func (u Write) stencil(
 	if _, carried := doc.Identifier(); !carried {
 		identifier, err := ulid.New(u.now())
 		if err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 		if err := doc.SetIdentifier(identifier); err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return writer.Write(ctx, path, doc.Bytes(), against)
 }

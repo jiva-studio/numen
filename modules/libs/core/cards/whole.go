@@ -39,7 +39,7 @@ func Whole(
 	body string, stencils map[string]Stencil, mint func() (string, error),
 ) (string, []Minted, error) {
 	raw := []byte(body)
-	deck, spans := readDeck(domain.FileRef{}, raw)
+	deck, spans := readDeck(domain.Fingerprint{}, raw)
 
 	var minted []Minted
 	// Backwards, because a splice moves every byte after it.

@@ -68,7 +68,7 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -96,7 +96,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -127,7 +127,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -158,7 +158,7 @@ func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 	})
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "Sanskrit.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -189,7 +189,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 	})
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -209,7 +209,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	s := opened(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
-	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.FileRef{})
+	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Grammar.md", domain.Fingerprint{})
 	if !errors.Is(err, flashcards.ErrNotAPreset) {
 		t.Fatalf("err = %v", err)
 	}
@@ -224,7 +224,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	s := opened(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
-	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.FileRef{})
+	_, err := s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "Pali.md", domain.Fingerprint{})
 	if !errors.Is(err, note.ErrNoNote) {
 		t.Fatalf("err = %v", err)
 	}
@@ -239,7 +239,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	s := opened(t, choosing)
 
 	at, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileRef{})
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	s := opened(t, choosing)
 
 	at, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileRef{})
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,7 +311,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 			})
 
 			if _, err := s.presets.Point(
-				t.Context(), s.vault, "decks/Roots.md", one.preset, domain.FileRef{}); err != nil {
+				t.Context(), s.vault, "decks/Roots.md", one.preset, domain.Fingerprint{}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -331,7 +331,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -342,7 +342,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 	if _, err := markdown.Open([]byte(got)); err != nil {
 		t.Fatalf("the note cannot be read back: %v\n%s", err, got)
 	}
-	n := markdown.Parse(domain.FileRef{Path: "decks/Roots.md"}, []byte(got))
+	n := markdown.Parse(domain.Fingerprint{Path: "decks/Roots.md"}, []byte(got))
 	if n.Type != domain.TypeDeck {
 		t.Errorf("the note reads as a %s", n.Type)
 	}
@@ -359,7 +359,7 @@ func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 	})
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -384,7 +384,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 	})
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -414,7 +414,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 	})
 
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := pointedAt(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Roots.md", "decks/Terms.md"}) {
@@ -424,7 +424,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 	// The deck that named it by identifier is moved, and the entry is written
 	// in the form a link is written in.
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.FileRef{}); err != nil {
+		t.Context(), s.vault, "decks/Roots.md", "presets/Slow.md", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := pointedAt(t, s, "Sanskrit.md"); !slices.Equal(got, []string{"decks/Terms.md"}) {

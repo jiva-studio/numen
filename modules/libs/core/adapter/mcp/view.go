@@ -115,20 +115,20 @@ func addViewTools(server *sdk.Server, core Core) {
 
 // holding is what the vault holds at a path, and says so when it holds nothing
 // there. A file the vault leaves alone is a file it does not hold.
-func holding(ctx context.Context, core Core, path string) (domain.FileRef, error) {
+func holding(ctx context.Context, core Core, path string) (domain.Fingerprint, error) {
 	if core.Readers == nil {
-		return domain.FileRef{}, errors.New("this vault's files are not open")
+		return domain.Fingerprint{}, errors.New("this vault's files are not open")
 	}
 	reader, err := core.Readers.Open(core.shown().Vault)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	ref, err := reader.Stat(ctx, path)
 	if port.NoNote(err) {
-		return domain.FileRef{}, fmt.Errorf("this vault holds nothing at %s", path)
+		return domain.Fingerprint{}, fmt.Errorf("this vault holds nothing at %s", path)
 	}
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return ref, nil
 }

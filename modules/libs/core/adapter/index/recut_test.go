@@ -59,7 +59,7 @@ func spelt(i int) string {
 // noteAt is one note as the index holds it, with the body given.
 func noteAt(path, title, body string) domain.Note {
 	return domain.Note{
-		Ref:   domain.FileRef{Path: path, Size: int64(len(body)), MTime: 1},
+		Ref:   domain.Fingerprint{Path: path, Size: int64(len(body)), MTime: 1},
 		Title: title,
 		Body:  body,
 	}
@@ -68,7 +68,7 @@ func noteAt(path, title, body string) domain.Note {
 // parsedAt is one note as the parser produces it, so the headings a cut is
 // bounded by are the ones the file names and their offsets are the parser's.
 func parsedAt(path, body string) domain.Note {
-	return markdown.Parse(domain.FileRef{Path: path, Size: int64(len(body)), MTime: 1}, []byte(body))
+	return markdown.Parse(domain.Fingerprint{Path: path, Size: int64(len(body)), MTime: 1}, []byte(body))
 }
 
 // noParts is the same note with nothing naming a section in it. A note that

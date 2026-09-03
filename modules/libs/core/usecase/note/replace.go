@@ -30,7 +30,7 @@ type Replace struct {
 // Replaced is what a replacement did.
 type Replaced struct {
 	// At is the fingerprint of the file this write produced.
-	At domain.FileRef
+	At domain.Fingerprint
 	// Span is where the span stood, as byte offsets into the prose a read hands
 	// out.
 	Span markdown.Span
@@ -79,7 +79,7 @@ var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 // Fingerprint is what the caller believes is on disk. A note that has changed
 // since it was read is left alone and port.ErrChanged comes back.
 func (u Replace) Execute(
-	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.FileRef,
+	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
 ) (Replaced, error) {
 	if stood == "" {
 		return Replaced{}, fmt.Errorf("name the text to replace")

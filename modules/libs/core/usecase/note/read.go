@@ -52,7 +52,7 @@ type Contents struct {
 	Body string
 	// Ref is what the file was when it was asked about, which is before its
 	// bytes were read. It is set for a path the vault holds as a note.
-	Ref domain.FileRef
+	Ref domain.Fingerprint
 }
 
 // Read hands over the prose of one note.

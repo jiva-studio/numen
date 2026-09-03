@@ -84,13 +84,13 @@ func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to dom
 // produced.
 func (u Linking) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	to domain.Address, role domain.LinkRole, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if of == "" {
-		return domain.FileRef{}, errors.New("a link is pointed at under a type")
+		return domain.Fingerprint{}, errors.New("a link is pointed at under a type")
 	}
 	if to.Value != "" && !domain.KnownRole(role) {
-		return domain.FileRef{}, fmt.Errorf("%q is not a role a link can carry", role)
+		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", role)
 	}
 	e := u.editing()
 	e.fingerprint = fingerprint

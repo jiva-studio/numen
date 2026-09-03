@@ -20,7 +20,7 @@ func TestOneKeySaysWhatANoteIs(t *testing.T) {
 		"---\ntype: \"\"\n---\n":     domain.TypeNote,
 		"# Entropy\n":                domain.TypeNote,
 	} {
-		n := markdown.Parse(domain.FileRef{Path: "Entropy.md"}, []byte(written))
+		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(written))
 		if n.Type != want {
 			t.Errorf("%q: type = %q, want %q", written, n.Type, want)
 		}
@@ -39,7 +39,7 @@ func TestATypeOutsideTheList(t *testing.T) {
 		"---\ntype: 12\n---\n",
 		"---\ntype:\n  - deck\n---\n",
 	} {
-		n := markdown.Parse(domain.FileRef{Path: "Entropy.md"}, []byte(written))
+		n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(written))
 		if n.Type != domain.TypeNote {
 			t.Errorf("%q: type = %q, want it read as an ordinary note", written, n.Type)
 		}
@@ -52,7 +52,7 @@ func TestATypeOutsideTheList(t *testing.T) {
 // A note's type and a link's type are two keys of one word, told apart by an
 // indent and by nothing else.
 func TestALinksTypeIsNotTheNotesType(t *testing.T) {
-	n := markdown.Parse(domain.FileRef{Path: "Entropy.md"}, []byte(
+	n := markdown.Parse(domain.Fingerprint{Path: "Entropy.md"}, []byte(
 		"---\ntype: deck\nlinks:\n  - to: Thermodynamics\n    role: parent\n    type: source\n---\n"))
 
 	if n.Type != domain.TypeDeck {

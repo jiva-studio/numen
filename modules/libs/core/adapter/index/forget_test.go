@@ -26,7 +26,7 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 
 	body := stem + " heading\n" + stem + " body"
 	n := domain.Note{
-		Ref:      domain.FileRef{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), MTime: 1},
+		Ref:      domain.Fingerprint{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), MTime: 1},
 		Title:    stem + " title",
 		Body:     body,
 		Headings: []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},

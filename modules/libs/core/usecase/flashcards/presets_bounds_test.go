@@ -46,7 +46,7 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 			s := opened(t, settled)
 			was := read(t, s.vault, "Sanskrit.md")
 
-			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.FileRef{})
+			_, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", one.of(minutes()), domain.Fingerprint{})
 			if !errors.Is(err, flashcards.ErrOutOfBounds) {
 				t.Fatalf("saving %s said %v", one.what, err)
 			}

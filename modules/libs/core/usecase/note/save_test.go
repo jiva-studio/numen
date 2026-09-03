@@ -199,7 +199,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at == (domain.FileRef{}) {
+	if at == (domain.Fingerprint{}) {
 		t.Fatal("the save answered with no fingerprint")
 	}
 
@@ -546,7 +546,7 @@ func TestWritingMoreTextThanANoteHolds(t *testing.T) {
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.saving().Execute(
-		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.FileRef{})
+		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.Fingerprint{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -638,7 +638,7 @@ func (w watchedReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-func (w watchedReader) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (w watchedReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	ref, err := w.VaultReader.Stat(ctx, path)
 	if w.stat != nil {
 		w.stat(path)

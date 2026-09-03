@@ -14,7 +14,7 @@ import (
 // file and nothing about how it is parsed.
 func note(t *testing.T, raw string) domain.Note {
 	t.Helper()
-	return markdown.Parse(domain.FileRef{Path: "Animals.md", Size: int64(len(raw))}, []byte(raw))
+	return markdown.Parse(domain.Fingerprint{Path: "Animals.md", Size: int64(len(raw))}, []byte(raw))
 }
 
 // filed is the one problem of a check, and it fails the test where there is

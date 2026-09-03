@@ -160,7 +160,7 @@ type counts struct {
 	at *walking
 }
 
-func (r counts) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
+func (r counts) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	r.at.walks.Add(1)
 	return r.VaultReader.Walk(ctx, fn)
 }

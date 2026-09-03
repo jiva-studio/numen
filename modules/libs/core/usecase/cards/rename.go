@@ -20,7 +20,7 @@ type Field struct {
 	To      string
 	// At is the stencil as the caller read it. A stencil that has changed since
 	// is left alone, and no deck is written.
-	At domain.FileRef
+	At domain.Fingerprint
 }
 
 // NotWritten is one deck a rename did not reach. It keeps the old heading.
@@ -33,7 +33,7 @@ type NotWritten struct {
 type Renamed struct {
 	// Stencil is the fingerprint the stencil now stands at, which is what the
 	// caller presents at its next write.
-	Stencil domain.FileRef
+	Stencil domain.Fingerprint
 	// Decks is every deck a heading was rewritten in, and Cards is how many
 	// headings that was.
 	Decks []string
@@ -149,29 +149,29 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 // stencil writes the new name where the stencil declares the field.
 func (u RenameField) stencil(
 	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Field,
-) (domain.FileRef, error) {
+) (domain.Fingerprint, error) {
 	against := in.At
-	if against == (domain.FileRef{}) {
+	if against == (domain.Fingerprint{}) {
 		on, err := reader.Stat(ctx, in.Stencil)
 		if err != nil {
-			return domain.FileRef{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
+			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
 		}
 		against = on
 	}
 
 	raw, err := reader.Read(ctx, in.Stencil)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", in.Stencil, err)
 	}
 	f, err := format.OpenStencil(raw)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
 	if err := f.RenameField(in.From, in.To); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
 	if err := u.stamped(f.Stamped); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
 	}
 	return writer.Write(ctx, in.Stencil, f.Bytes(), against)
 }

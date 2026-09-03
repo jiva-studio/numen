@@ -114,7 +114,7 @@ func (u unwalkable) Open(v domain.Vault) (port.VaultReader, error) {
 
 type unlisted struct{ port.VaultReader }
 
-func (unlisted) Walk(context.Context, func(domain.FileRef) error) error {
+func (unlisted) Walk(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be listed")
 }
 
@@ -133,7 +133,7 @@ func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
 
 type refuses struct{ port.VaultReader }
 
-func (refuses) Walk(context.Context, func(domain.FileRef) error) error {
+func (refuses) Walk(context.Context, func(domain.Fingerprint) error) error {
 	return errors.New("the vault cannot be read")
 }
 

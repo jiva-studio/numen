@@ -106,7 +106,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 // renaming is whether this move is one note given a different name, in the
 // folder and under the extension it already has. Travelling is everything the
 // index files under from.
-func renaming(travelling []domain.FileRef, from, to string) bool {
+func renaming(travelling []domain.Fingerprint, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}

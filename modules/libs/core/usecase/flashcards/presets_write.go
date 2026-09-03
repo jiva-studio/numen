@@ -56,25 +56,25 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // produced, which is what the caller presents at its next write. An index that
 // could not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Point(
-	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	ctx context.Context, v domain.Vault, deck, preset string, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	var to domain.Address
 	if preset != "" {
 		if u.Notes == nil {
-			return domain.FileRef{}, ErrNoPresets
+			return domain.Fingerprint{}, ErrNoPresets
 		}
 		at, err := u.Read(ctx, v, preset)
 		if err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 		switch {
 		case at.Outcome == note.Missing:
-			return domain.FileRef{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
+			return domain.Fingerprint{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
-			return domain.FileRef{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
+			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
 		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
-			return domain.FileRef{}, err
+			return domain.Fingerprint{}, err
 		}
 	}
 	linking := note.Linking{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
@@ -94,10 +94,10 @@ func (u Presets) Point(
 // could not be brought level is note.ErrUnlevelled beside that fingerprint.
 func (u Presets) Save(
 	ctx context.Context, v domain.Vault, path string, settings history.Preset,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if err := bounded(settings); err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	at, err := u.save(ctx, v, path, settings, fingerprint)
 	if err != nil || u.Index == nil {
@@ -110,40 +110,40 @@ func (u Presets) Save(
 // from before the read until after the file is replaced.
 func (u Presets) save(
 	ctx context.Context, v domain.Vault, path string, settings history.Preset,
-	fingerprint domain.FileRef,
-) (domain.FileRef, error) {
+	fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	defer release()
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	on, err := reader.Stat(ctx, path)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("look at %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
 	}
 	// The bound a note is written under is the bound it is read under.
 	if on.Size > note.MaxBytes {
-		return domain.FileRef{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
+		return domain.Fingerprint{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
 			note.ErrTooLarge, path, on.Size, note.MaxBytes)
 	}
 	// A caller that said what it believed the note was is held to that; one that
 	// said nothing is held to what stands there now.
 	against := fingerprint
-	if against == (domain.FileRef{}) {
+	if against == (domain.Fingerprint{}) {
 		against = on
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("read %s: %w", path, missing(err))
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
 	}
 	n := markdown.Parse(against, raw)
 	if n.Type != domain.TypePreset {
-		return domain.FileRef{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
+		return domain.Fingerprint{}, fmt.Errorf("%w: %s is a %s", ErrNotAPreset, path, n.Type)
 	}
 	// What the note said before this write, so that a setting the read could not
 	// make out is one this write leaves standing.
@@ -151,15 +151,15 @@ func (u Presets) save(
 
 	doc, err := markdown.Open(raw)
 	if err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 	if err := settle(doc, settings, was); err != nil {
-		return domain.FileRef{}, fmt.Errorf("%s: %w", path, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	return writer.Write(ctx, path, doc.Bytes(), against)
 }

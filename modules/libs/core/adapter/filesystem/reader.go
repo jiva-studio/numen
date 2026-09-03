@@ -62,7 +62,7 @@ func (s *VaultReader) Root() string { return s.root }
 // What the vault's ignore rules name is skipped, and so is the service folder.
 // The service folder is named separately because its name is a setting, and a
 // name without a leading dot must still be skipped.
-func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) error {
+func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) error) error {
 	ignored := s.ignored
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -108,7 +108,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 		if !found.Mode().IsRegular() {
 			return nil
 		}
-		return fn(domain.FileRef{
+		return fn(domain.Fingerprint{
 			Path:  rel,
 			Kind:  kind,
 			Size:  found.Size(),
@@ -272,22 +272,22 @@ func readable(path string, info fs.FileInfo) error {
 // them, and by the same rules: a path the vault ignores holds no note. Where
 // something is there all the same, the answer names it as a file the vault
 // leaves alone.
-func (s *VaultReader) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint, error) {
 	if ctx.Err() != nil {
-		return domain.FileRef{}, ctx.Err()
+		return domain.Fingerprint{}, ctx.Err()
 	}
 	kind, held := s.holds(path)
 	if !held {
-		return domain.FileRef{}, s.leftAlone(path)
+		return domain.Fingerprint{}, s.leftAlone(path)
 	}
 	info, err := os.Stat(filepath.Join(s.root, filepath.FromSlash(path)))
 	if err != nil {
-		return domain.FileRef{}, err
+		return domain.Fingerprint{}, err
 	}
 	if !info.Mode().IsRegular() {
-		return domain.FileRef{}, s.leftAlone(path)
+		return domain.Fingerprint{}, s.leftAlone(path)
 	}
-	return domain.FileRef{
+	return domain.Fingerprint{
 		Path:  path,
 		Kind:  kind,
 		Size:  info.Size(),
