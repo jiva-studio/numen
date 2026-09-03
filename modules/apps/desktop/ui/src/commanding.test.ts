@@ -47,6 +47,7 @@ const name = (path: string, title: string, heading = ''): Named => ({
   heading,
   line: heading ? 4 : -1,
   at: [{ from: 0, to: 1 }],
+  type: 'note',
 })
 
 /** One vault as the list answers one. */

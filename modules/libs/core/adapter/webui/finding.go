@@ -43,6 +43,7 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
 			At:   spansOf(m.At),
+			Type: typeOf(m.Type),
 		}
 		if m.Heading != "" {
 			titled.Heading = &v1.Heading{Text: m.Heading, Line: int32(m.Line)}
@@ -110,7 +111,14 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	// The note each passage was read out of, asked once for the whole answer. A
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
-	titles, err := a.Notes.Notes(ctx, showing.ID, sourcesOf(found))
+	sources := sourcesOf(found)
+	titles, err := a.Notes.Notes(ctx, showing.ID, sources)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	// Which of four each of those notes is, so a passage is drawn with the mark
+	// of the note it was read out of.
+	types, err := a.Notes.Types(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -133,6 +141,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 		}
 		if note, held := titles[p.Source]; held {
 			passage.Note = noteOf(note)
+			passage.Type = typeOf(types[p.Source])
 		}
 		out.Found = append(out.Found, passage)
 	}

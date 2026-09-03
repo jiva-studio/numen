@@ -65,6 +65,57 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 	}
 }
 
+// TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
+// what they are, and a heading is drawn as the note it stands in.
+func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
+	})
+
+	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "entropy"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	types := map[string]v1.NoteType{}
+	for _, one := range answer.Msg.GetFound() {
+		types[one.GetNote().GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("the name found in %s is drawn as %v, want %v", path, got, is)
+		}
+	}
+}
+
+// TestAPassageSaysWhichOfFourItsNoteIs. A passage is drawn with the mark of the
+// note it was read out of.
+func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
+	})
+
+	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := answer.Msg.GetFound()
+	if len(found) == 0 {
+		t.Fatal("nothing found")
+	}
+	if is := found[0].GetType(); is != v1.NoteType_NOTE_TYPE_PRESET {
+		t.Errorf("the passage is drawn as %v, want the preset it was read out of", is)
+	}
+}
+
 func TestEachWayIsAskedByItself(t *testing.T) {
 	client, _ := opened(t, map[string]string{
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",

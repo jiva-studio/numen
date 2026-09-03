@@ -34,7 +34,7 @@ import NoteTab from './note/NoteTab.vue'
 import PlexTab from './plex/PlexTab.vue'
 import { Welcome } from '@numen/ui'
 import { WORDS as plexWords } from './plex/words'
-import { REFUSED } from './words'
+import { REFUSED, WORDS } from './words'
 import { plexCalled } from './workspace'
 
 const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted(() => ({
@@ -129,6 +129,8 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
      * it says nothing about is the ordinary note the window reads it as.
      */
     types: {} as Record<string, 'note' | 'deck' | 'stencil'>,
+    /** How many of the spans the index holds carry a vector. */
+    embedded: 0,
     /** Whether the list of vaults answers at all. */
     listable: true,
     /** What the settings refuse a choice, which is a size outside its bounds. */
@@ -279,7 +281,7 @@ vi.mock('./vault', () => ({
       unwatched: '',
       unreachable: '',
       chunks: 0n,
-      embedded: 0n,
+      embedded: BigInt(said.embedded),
       embedding: false,
     }),
     opening: async () => (said.opening ? { path: said.opening } : null),
@@ -416,6 +418,7 @@ afterEach(() => {
   said.names = []
   said.passages = []
   said.types = {}
+  said.embedded = 0
   said.listable = true
   said.refused = ''
   said.applied = 'preset:numen'
@@ -831,6 +834,78 @@ describe('the palette', () => {
     await settles()
     await settles()
   }
+
+  /** The words typed into the search, with the answers back. */
+  const searched = async (window: Awaited<ReturnType<typeof drawnWithPalette>>) => {
+    pressed('k')
+    await settles()
+    window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
+    await new Promise((done) => setTimeout(done, HELD))
+    await settles()
+  }
+
+  /** The mark each row draws, by the name Lucide files it under. */
+  const marks = () =>
+    [...document.body.querySelectorAll('.palette__item')].map(
+      (row) =>
+        /lucide-([a-z-]+)-icon/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
+        '',
+    )
+
+  it('draws every kind of note a name turned up as what it is', async () => {
+    said.names = [
+      nameSaid('Ants.md', 'Ants'),
+      nameSaid('Animals.md', 'Animals', 'deck'),
+      nameSaid('Animal.md', 'Animal', 'stencil'),
+    ]
+    const window = await drawnWithPalette()
+
+    await searched(window)
+
+    expect(marks()).toStrictEqual(['file-text', 'layers', 'layout-template'])
+  })
+
+  it('draws a passage as the note it was read out of, and a book as nothing', async () => {
+    said.names = []
+    said.passages = [
+      passageSaid('Animals.md', 'Animals', 'deck'),
+      { ...passageSaid('Ants.epub', ''), isNote: false },
+    ]
+    const window = await drawnWithPalette()
+
+    await searched(window)
+
+    // Both halves of the search answer with the same two passages here.
+    expect(marks()).toStrictEqual(['layers', '', 'layers', ''])
+    // The row with no mark keeps the room for one, so the names line up.
+    expect(document.body.querySelectorAll('.palette__item .palette__icon')).toHaveLength(4)
+  })
+
+  /** The bands standing, by the name each carries. */
+  const bandTitles = () =>
+    [...document.body.querySelectorAll('.palette__title')].map((one) => one.textContent?.trim())
+
+  it('draws no band for a search that answered with nothing, and says so once', async () => {
+    said.embedded = 4
+    const window = await drawnWithPalette()
+
+    await searched(window)
+
+    expect(bandTitles()).toStrictEqual([WORDS.creating])
+    expect(document.body.querySelector('.palette__silence')).toBeNull()
+  })
+
+  it('keeps the band that could not be asked, with what it has to say', async () => {
+    said.embedded = 0
+    const window = await drawnWithPalette()
+
+    await searched(window)
+
+    expect(bandTitles()).toStrictEqual([WORDS.creating, WORDS.meaning])
+    expect(document.body.querySelector('.palette__silence')?.textContent?.trim()).toBe(
+      WORDS.notEmbedded,
+    )
+  })
 
   it('opens a deck it turned up in the editor of its cards', async () => {
     said.names = [nameSaid('Animals.md', 'Animals', 'deck')]

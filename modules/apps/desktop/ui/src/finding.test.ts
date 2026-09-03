@@ -79,6 +79,7 @@ const named = (over: Partial<Named> = {}): Named => ({
   heading: '',
   line: -1,
   at: [{ from: 0, to: 3 }],
+  type: 'note',
   ...over,
 })
 
@@ -87,6 +88,7 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   title: 'Heat engines',
   text: 'no engine beats a reversible one',
   isNote: true,
+  type: 'note',
   start: 0,
   length: 0,
   line: 0,
@@ -197,7 +199,7 @@ describe('answers arriving', () => {
     expect(bandOf(palette.bands.value, 'names')?.items).toHaveLength(1)
   })
 
-  it('says a band came back with nothing in the window’s own words', async () => {
+  it('says nothing of a band that was asked and came back with nothing', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
 
@@ -206,7 +208,9 @@ describe('answers arriving', () => {
     vault.names[0]?.answers([])
     await settled()
 
-    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('Nothing')
+    const band = bandOf(palette.bands.value, 'names')
+    expect(band?.silence).toBe('')
+    expect(band?.working).toBe(false)
   })
 
   it('says the vault holds no vectors, where meaning came back with nothing', async () => {
@@ -222,8 +226,8 @@ describe('answers arriving', () => {
 
     expect(bandOf(palette.bands.value, 'meaning')?.silence).toBe(WORDS.notEmbedded)
     // The other bands are asked of the words, which a vault holding no vector
-    // still answers.
-    expect(bandOf(palette.bands.value, 'names')?.silence).toBe(WORDS.noneFound)
+    // still answers, and one of those that came back with nothing says nothing.
+    expect(bandOf(palette.bands.value, 'names')?.silence).toBe('')
   })
 
   it('says nothing reads the vault for meaning, where nothing is set to', async () => {
@@ -392,6 +396,68 @@ describe('a passage from something that is not a note', () => {
     // It is neither a note nor a node, and neither is answered for.
     expect(palette.chose(item.id, 'note')).toBeNull()
     expect(palette.chose(item.id, 'plex')).toBeNull()
+  })
+})
+
+describe('what a row is drawn as', () => {
+  it('says which of four each name found is', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([
+      named(),
+      named({ path: 'decks/words.md', title: 'Words to learn', type: 'deck' }),
+      named({ path: 'stencils/animal.md', title: 'Animal', type: 'stencil' }),
+      named({ path: 'presets/daily.md', title: 'Every day', type: 'preset' }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'names')!.items
+    expect(items.map((one) => palette.typeOf(one.id))).toEqual([
+      'note',
+      'deck',
+      'stencil',
+      'preset',
+    ])
+  })
+
+  it('draws a heading as the note it stands in', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([
+      named({ path: 'decks/words.md', title: 'Words to learn', heading: 'Entropy', line: 12, type: 'deck' }),
+    ])
+    await settled()
+
+    const item = bandOf(palette.bands.value, 'names')!.items[0]!
+    expect(palette.typeOf(item.id)).toBe('deck')
+  })
+
+  it('draws a passage as the note it was read out of, and a book as nothing', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.way('words')?.answers([
+      passage({ path: 'presets/daily.md', type: 'preset' }),
+      passage({ path: 'library/mahabharata.epub', title: '', isNote: false, start: 40_512 }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'text')!.items
+    expect(items.map((one) => palette.typeOf(one.id))).toEqual(['preset', null])
+  })
+
+  it('says nothing about an item it is not drawing', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    expect(palette.typeOf('notes/entropy.md')).toBeNull()
   })
 })
 

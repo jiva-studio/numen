@@ -35,7 +35,7 @@ import {
   type Where,
 } from './commanding'
 import { chorded, commandFor, keysOf } from './keying'
-import { iconFor, iconOfKind } from './icons'
+import { iconFor, iconOfKind, iconOfNote } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { reviewing } from './reviewing'
@@ -737,6 +737,19 @@ const field = computed(() =>
 )
 
 /**
+ * What one row of the palette is drawn as: a command by its own mark, a name or
+ * a passage by the kind of note it stands in, and the note a search did not
+ * find by the mark of making one. A passage out of a book or a recording stands
+ * in no note and is drawn with nothing.
+ */
+const rowIcon = (id: string) => {
+  if (commands.open.value) return iconFor(id)
+  if (id === MAKING) return iconFor('note')
+  const type = palette.typeOf(id)
+  return type ? iconOfNote(type) : null
+}
+
+/**
  * Something typed in the field. The one character that means the commands is
  * the one typed into a field holding nothing.
  */
@@ -883,10 +896,8 @@ onUnmounted(() => {
       @back="back"
       @dismiss="dismissed"
     >
-      <!-- A command is drawn with its icon. What a search turns up is a note, a
-           heading or a passage, and none of those is a command. -->
-      <template v-if="commands.open.value" #icon="{ id }">
-        <component :is="iconFor(id)" v-if="iconFor(id)" class="command-icon" />
+      <template #icon="{ id }">
+        <component :is="rowIcon(id)" v-if="rowIcon(id)" class="command-icon" />
       </template>
     </Palette>
   </main>

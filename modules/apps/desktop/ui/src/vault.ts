@@ -350,6 +350,7 @@ export const core: Core & Asking & Commanding = {
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
       at: one.at.map(run),
+      type: typed[one.type],
     }))
   },
   /** The text the vault holds that answers what is typed, asked one way. */
@@ -361,6 +362,7 @@ export const core: Core & Asking & Commanding = {
       // A source that is not a note carries none, and what this window opens
       // one as is the document it is.
       isNote: one.note !== undefined,
+      type: typed[one.type],
       text: one.text,
       start: one.start,
       length: one.length,

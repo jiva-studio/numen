@@ -47,7 +47,8 @@ const props = withDefaults(
   defineProps<{
     /**
      * The bands, in the order they are offered. A band holding nothing is
-     * drawn at the foot, whatever order it was offered in.
+     * drawn at the foot, whatever order it was offered in, and only while it
+     * is working or has something to say in place of items.
      */
     bands?: readonly PaletteBand[]
     /** Whether it is drawn at all. */
@@ -523,8 +524,11 @@ onBeforeUnmount(() => {
               <KeyCap v-if="drawn.item.keys" class="palette__hint" :keys="drawn.item.keys" />
             </div>
 
-            <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
-              {{ one.band.silence ?? 'Nothing' }}
+            <p
+              v-if="!one.items.length && one.band.silence"
+              class="palette__silence px-2 py-1.5 text-hushed"
+            >
+              {{ one.band.silence }}
             </p>
           </section>
         </div>
