@@ -12,8 +12,8 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Known is one vault this installation holds, as an agent is told about it.
-type Known struct {
+// Vault is one vault this installation holds, as an agent is told about it.
+type Vault struct {
 	ID     string `json:"id" jsonschema:"the identity this vault keeps wherever its folder moves to"`
 	Name   string `json:"name" jsonschema:"what the person calls it"`
 	Folder string `json:"folder" jsonschema:"where the vault is on this machine"`
@@ -58,17 +58,17 @@ func addVaultList(server *sdk.Server, core Core) {
 			"other tool works the vault marked `showing`, and no other. A vault whose " +
 			"folder is gone is marked and stays on the list until somebody forgets it.",
 	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
-		Vaults []Known `json:"vaults"`
+		Vaults []Vault `json:"vaults"`
 	}, error) {
 		type out = struct {
-			Vaults []Known `json:"vaults"`
+			Vaults []Vault `json:"vaults"`
 		}
 		held, err := usecase.List{Registry: core.Vaults}.Execute()
 		if err != nil {
 			return nil, out{}, err
 		}
 		showing := core.shown().Vault.ID
-		vaults := make([]Known, 0, len(held))
+		vaults := make([]Vault, 0, len(held))
 		for _, v := range held {
 			vaults = append(vaults, knownOf(v, showing))
 		}
@@ -162,9 +162,9 @@ func (c Core) found(nameOrPath string) (domain.Vault, error) {
 
 // knownOf is one vault as an agent is told about it. A folder that is not there
 // to be found is marked, and the vault stays on the list.
-func knownOf(v domain.Vault, showing string) Known {
+func knownOf(v domain.Vault, showing string) Vault {
 	_, err := os.Stat(v.Path)
-	return Known{
+	return Vault{
 		ID:      v.ID,
 		Name:    v.Name,
 		Folder:  v.Path,
