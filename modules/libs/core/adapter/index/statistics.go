@@ -5,9 +5,9 @@ import (
 	"database/sql"
 )
 
-// Maintenance keeps the database's picture of its own contents current, which is
+// DatabaseMaintenance keeps the database's picture of its own contents current, which is
 // what it chooses between indexes by.
-type Maintenance struct{ db *sql.DB }
+type DatabaseMaintenance struct{ db *sql.DB }
 
 // Every bit is named because naming any turns off the ones left out.
 //
@@ -23,7 +23,7 @@ type Maintenance struct{ db *sql.DB }
 const measure = "PRAGMA optimize = 0x10012"
 
 // Changed says what the database knows about itself is out of date.
-func (s Maintenance) Changed(ctx context.Context) error {
+func (s DatabaseMaintenance) Changed(ctx context.Context) error {
 	_, err := s.db.ExecContext(ctx, measure)
 	return err
 }
