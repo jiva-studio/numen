@@ -160,14 +160,14 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 				Score: line.Score,
 			})
 		}
-		if text, spans := ocr.Assemble(lines); text != "" {
+		if text, stretches := ocr.Assemble(lines); text != "" {
 			depth, head := r.head[region.Label]
 			out = append(out, ocr.Block{
-				Label: region.Label,
-				Text:  text,
-				Head:  head,
-				Depth: depth,
-				Spans: spans,
+				Label:     region.Label,
+				Text:      text,
+				Head:      head,
+				Depth:     depth,
+				Stretches: stretches,
 			})
 		}
 	}

@@ -5,10 +5,11 @@ import (
 	"unicode/utf8"
 )
 
-// Stretch is a run of prose, as byte offsets into the text it was found in.
-// Where a client is told about a run it is told in the units a client counts
-// in, which is domain.Span; nothing crosses that boundary unconverted.
-type Stretch struct {
+// Span is a run of prose, by where it begins and where it ends, as byte offsets
+// into the text it was found in. Where a client is told about a run it is told
+// in the units a client counts in, which is domain.Span; nothing crosses that
+// boundary unconverted.
+type Span struct {
 	From int
 	To   int
 }
@@ -17,15 +18,15 @@ type Stretch struct {
 //
 // Three readings are tried and the first that finds anything answers: the text
 // as it stands, then punctuation and spacing read as the marks they stand for,
-// then a run of spacing inside a line read as one space. A stretch that stands
+// then a run of spacing inside a line read as one space. A span that stands
 // exactly is therefore never reported where it only nearly stands.
 //
 // The offsets are into `text` as it was given, whichever reading found them, so
 // what is replaced is the bytes the person wrote.
 //
-// Plainly says the stretch was found only once punctuation or spacing were
+// Plainly says the span was found only once punctuation or spacing were
 // allowed to differ, which is worth saying out loud to whoever asked.
-func Where(text, wanted string) (at []Stretch, plainly bool) {
+func Where(text, wanted string) (at []Span, plainly bool) {
 	if wanted == "" {
 		return nil, false
 	}
@@ -41,9 +42,9 @@ func Where(text, wanted string) (at []Stretch, plainly bool) {
 		if len(found) == 0 {
 			continue
 		}
-		at = make([]Stretch, 0, len(found))
+		at = make([]Span, 0, len(found))
 		for _, span := range found {
-			at = append(at, Stretch{From: held.at[span.From], To: held.at[span.To]})
+			at = append(at, Span{From: held.at[span.From], To: held.at[span.To]})
 		}
 		return at, true
 	}
@@ -51,15 +52,15 @@ func Where(text, wanted string) (at []Stretch, plainly bool) {
 }
 
 // standing is every place `wanted` stands in `text`. A place found is stepped
-// over, so two reported stretches never overlap.
-func standing(text, wanted string) []Stretch {
-	var at []Stretch
+// over, so two reported spans never overlap.
+func standing(text, wanted string) []Span {
+	var at []Span
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
 		if next < 0 {
 			return at
 		}
-		at = append(at, Stretch{From: from + next, To: from + next + len(wanted)})
+		at = append(at, Span{From: from + next, To: from + next + len(wanted)})
 		from += next + len(wanted)
 	}
 	return at
@@ -67,7 +68,7 @@ func standing(text, wanted string) []Stretch {
 
 // A reading is text as one of the readings has it, and where each of its bytes
 // came from. There is one more offset than there are bytes, so the end of a
-// stretch reads back as well as its beginning.
+// span reads back as well as its beginning.
 type reading struct {
 	text string
 	at   []int
@@ -138,15 +139,15 @@ func plainly(r rune) rune {
 	return r
 }
 
-// Differs is the stretch of `was` that `now` does not have, and the text that
+// Differs is the span of `was` that `now` does not have, and the text that
 // stands there instead.
 //
 // What the two share at either end is left out, so replacing one whole note's
-// prose with another names the sentence that changed. The stretch is widened to
-// whole words, and two texts that are the same name no stretch at all.
-func Differs(was, now string) (Stretch, string) {
+// prose with another names the sentence that changed. The span is widened to
+// whole words, and two texts that are the same name no span at all.
+func Differs(was, now string) (Span, string) {
 	if was == now {
-		return Stretch{From: len(was), To: len(was)}, ""
+		return Span{From: len(was), To: len(was)}, ""
 	}
 
 	head := 0
@@ -166,10 +167,10 @@ func Differs(was, now string) (Stretch, string) {
 		tail--
 	}
 
-	return Stretch{From: head, To: len(was) - tail}, now[head : len(now)-tail]
+	return Span{From: head, To: len(was) - tail}, now[head : len(now)-tail]
 }
 
-// opens reports whether a stretch may begin at `at`: at the start of the text,
+// opens reports whether a span may begin at `at`: at the start of the text,
 // or where a rune begins and spacing stands before it.
 func opens(text string, at int) bool {
 	if at <= 0 {
@@ -181,7 +182,7 @@ func opens(text string, at int) bool {
 	return spacing(text[at-1])
 }
 
-// closes reports whether a stretch may end at `at`: at the end of the text, or
+// closes reports whether a span may end at `at`: at the end of the text, or
 // where spacing stands.
 func closes(text string, at int) bool {
 	if at >= len(text) {
@@ -200,7 +201,7 @@ func spacing(b byte) bool {
 // Counted is `at`, a byte offset into text, as a client counts text: in UTF-16
 // code units.
 //
-// A note is read by something that counts its own way, and a stretch named in
+// A note is read by something that counts its own way, and a span named in
 // bytes lands somewhere else in prose that is not ASCII.
 func Counted(text string, at int) int {
 	if at > len(text) {

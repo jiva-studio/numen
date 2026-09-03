@@ -7,11 +7,11 @@ import (
 
 // The offsets are into the text as it was given, so what a caller replaces is
 // the bytes the person wrote.
-func TestAStretchIsFoundWhereItStands(t *testing.T) {
+func TestASpanIsFoundWhereItStands(t *testing.T) {
 	text := "the aggressor is named"
 	at, plainly := Where(text, "aggressor")
 	if plainly {
-		t.Error("a stretch that stands exactly was read plainly")
+		t.Error("a span that stands exactly was read plainly")
 	}
 	if len(at) != 1 {
 		t.Fatalf("found %d places, wanted one", len(at))
@@ -21,9 +21,9 @@ func TestAStretchIsFoundWhereItStands(t *testing.T) {
 	}
 }
 
-// Two of the same stretch are two answers, so a caller can refuse rather than
+// Two of the same span are two answers, so a caller can refuse rather than
 // pick one.
-func TestAStretchWrittenTwiceIsFoundTwice(t *testing.T) {
+func TestASpanWrittenTwiceIsFoundTwice(t *testing.T) {
 	at, _ := Where("a foe, and another foe", "foe")
 	if len(at) != 2 {
 		t.Fatalf("found %d places, wanted two", len(at))
@@ -33,7 +33,7 @@ func TestAStretchWrittenTwiceIsFoundTwice(t *testing.T) {
 	}
 }
 
-// A stretch inside a stretch is stepped over, so nothing overlaps.
+// A span inside a span is stepped over, so nothing overlaps.
 func TestPlacesFoundDoNotOverlap(t *testing.T) {
 	at, _ := Where("aaaa", "aa")
 	if len(at) != 2 {
@@ -109,12 +109,12 @@ func TestABreakBetweenLinesIsNotReadAsASpace(t *testing.T) {
 	}
 }
 
-// A stretch that stands exactly is never reported where it only nearly stands.
+// A span that stands exactly is never reported where it only nearly stands.
 func TestWhatStandsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 	text := "he said \"yes\" and he said “yes”"
 	at, plainly := Where(text, "\"yes\"")
 	if plainly {
-		t.Error("a stretch standing exactly was read plainly")
+		t.Error("a span standing exactly was read plainly")
 	}
 	if len(at) != 1 {
 		t.Fatalf("found %d places, wanted one", len(at))
@@ -124,15 +124,15 @@ func TestWhatStandsExactlyIsAnsweredBeforeWhatNearlyDoes(t *testing.T) {
 	}
 }
 
-// Nothing is what an empty stretch finds. Every place would be the alternative.
-func TestAnEmptyStretchFindsNothing(t *testing.T) {
+// Nothing is what an empty span finds. Every place would be the alternative.
+func TestAnEmptySpanFindsNothing(t *testing.T) {
 	if at, _ := Where("some prose", ""); at != nil {
 		t.Errorf("found %d places for nothing", len(at))
 	}
 }
 
-// A stretch nobody wrote is not found, however it is read.
-func TestAStretchThatIsNotThereIsNotFound(t *testing.T) {
+// A span nobody wrote is not found, however it is read.
+func TestASpanThatIsNotThereIsNotFound(t *testing.T) {
 	if at, _ := Where("the aggressor is named", "the poisoner"); at != nil {
 		t.Errorf("found %d places", len(at))
 	}
@@ -146,29 +146,29 @@ func TestOnlyWhatDiffersIsAnswered(t *testing.T) {
 
 	at, insert := Differs(was, now)
 	if was[at.From:at.To] != "A hedgehog" {
-		t.Errorf("the stretch is %q", was[at.From:at.To])
+		t.Errorf("the span is %q", was[at.From:at.To])
 	}
 	if insert != "An axe" {
 		t.Errorf("what goes in is %q", insert)
 	}
 }
 
-// Two texts that are the same name no stretch at all.
-func TestTextThatDidNotChangeAnswersAnEmptyStretch(t *testing.T) {
+// Two texts that are the same name no span at all.
+func TestTextThatDidNotChangeAnswersAnEmptySpan(t *testing.T) {
 	at, insert := Differs("the same", "the same")
 	if at.From != at.To || insert != "" {
 		t.Errorf("answered %d..%d with %q", at.From, at.To, insert)
 	}
 }
 
-// A stretch never begins or ends inside a rune, whatever the two texts share.
-func TestAStretchNeverSplitsARune(t *testing.T) {
+// A span never begins or ends inside a rune, whatever the two texts share.
+func TestASpanNeverSplitsARune(t *testing.T) {
 	at, insert := Differs("сказал «да» сразу", "сказал «нет» сразу")
 	if !utf8.ValidString(insert) {
 		t.Errorf("what goes in is not text: %q", insert)
 	}
 	if !utf8.RuneStart("сказал «да» сразу"[at.From]) {
-		t.Errorf("the stretch begins inside a rune, at %d", at.From)
+		t.Errorf("the span begins inside a rune, at %d", at.From)
 	}
 }
 

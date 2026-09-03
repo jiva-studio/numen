@@ -33,13 +33,13 @@ type Replace struct {
 type Replaced struct {
 	// At is the fingerprint of the file this write produced.
 	At domain.FileRef
-	// Stretch is where the stretch stood, as byte offsets into the prose a read
-	// hands out.
-	Stretch markdown.Stretch
-	// Stood is the stretch as the note held it, which is not always the text
-	// the caller asked for.
+	// Span is where the span stood, as byte offsets into the prose a read hands
+	// out.
+	Span markdown.Span
+	// Stood is the span as the note held it, which is not always the text the
+	// caller asked for.
 	Stood string
-	// Plainly says the stretch was found only once punctuation or spacing were
+	// Plainly says the span was found only once punctuation or spacing were
 	// allowed to differ.
 	Plainly bool
 }
@@ -109,7 +109,7 @@ func (u Replace) Execute(
 		span := where[0]
 		written := body[:span.From] + becomes + body[span.To:]
 
-		// A client counts text its own way, and a stretch named in bytes lands
+		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
 		ends = u.Telling.begins(ctx, domain.Editing{
 			Path: path,
@@ -118,7 +118,7 @@ func (u Replace) Execute(
 			Text: becomes,
 		})
 
-		done.Stretch = markdown.Stretch{From: span.From, To: span.From + len(becomes)}
+		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
 		done.Stood = body[span.From:span.To]
 		done.Plainly = plainly
 		doc.SetBody(written)

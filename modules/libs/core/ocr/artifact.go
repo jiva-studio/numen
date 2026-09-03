@@ -67,7 +67,7 @@ func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 	return []byte(out.String()), boxes, parts
 }
 
-// within is where each span of a block sits: at its offset from base in the
+// within is where each stretch of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
 func within(page Page, block Block, base int) []lit.Box {
@@ -75,16 +75,16 @@ func within(page Page, block Block, base int) []lit.Box {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]lit.Box, 0, len(block.Spans))
-	for _, span := range block.Spans {
+	boxes := make([]lit.Box, 0, len(block.Stretches))
+	for _, stretch := range block.Stretches {
 		boxes = append(boxes, lit.Box{
 			Page:   page.At,
-			Start:  base + span.Start,
-			Length: span.Length,
-			MinX:   float32(span.Box.Min.X) / wide,
-			MinY:   float32(span.Box.Min.Y) / high,
-			MaxX:   float32(span.Box.Max.X) / wide,
-			MaxY:   float32(span.Box.Max.Y) / high,
+			Start:  base + stretch.Start,
+			Length: stretch.Length,
+			MinX:   float32(stretch.Box.Min.X) / wide,
+			MinY:   float32(stretch.Box.Min.Y) / high,
+			MaxX:   float32(stretch.Box.Max.X) / wide,
+			MaxY:   float32(stretch.Box.Max.Y) / high,
 		})
 	}
 	return boxes
