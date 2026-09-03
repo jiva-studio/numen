@@ -20,7 +20,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -119,7 +119,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// What the window holds, in the order each part needs the next: the agents
 	// are let go of, then the walk and the watch, which write to the index, and
 	// then the index itself.
-	held := letgo.InOrder(
+	held := shutdown.InOrder(
 		func() {
 			if err := away(); err != nil {
 				fmt.Fprintln(os.Stderr, "numen-flashcards: agents:", err)
