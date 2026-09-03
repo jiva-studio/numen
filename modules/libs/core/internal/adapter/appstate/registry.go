@@ -64,13 +64,58 @@ func (r *VaultRegistry) save(f file) error {
 		return err
 	}
 	raw = append(raw, '\n')
-	// Written through a temporary file: a half-written registry is the one
-	// thing here that costs the user manual work to recover from.
-	tmp := r.path + ".tmp"
-	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
+	return replace(r.path, raw)
+}
+
+// replace writes the registry beside itself and renames it over the top: a
+// half-written registry is the one thing here that costs the user manual work
+// to recover from.
+//
+// Every write gets a temporary file of its own, so two processes writing the
+// list at once each rename a whole one. The bytes are flushed before the
+// rename and the folder after it, so a machine that loses power has either the
+// old list or the new one.
+func replace(path string, content []byte) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".*")
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, r.path)
+	defer os.Remove(tmp.Name())
+
+	if _, err := tmp.Write(content); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Chmod(tmp.Name(), 0o644); err != nil {
+		return err
+	}
+	if err := os.Rename(tmp.Name(), path); err != nil {
+		return err
+	}
+	return settle(dir)
+}
+
+// settle flushes the folder the rename was recorded in. Flushing the file is
+// what keeps its contents; flushing the folder is what keeps the rename.
+//
+// Not every filesystem lets a folder be opened for this, and the ones that
+// refuse are the ones that did not need it.
+func settle(dir string) error {
+	folder, err := os.Open(dir)
+	if err != nil {
+		return nil
+	}
+	defer folder.Close()
+	_ = folder.Sync()
+	return nil
 }
 
 func (r *VaultRegistry) All() ([]domain.Vault, error) {

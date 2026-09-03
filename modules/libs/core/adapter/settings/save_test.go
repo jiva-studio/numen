@@ -357,6 +357,152 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	}
 }
 
+// Keeping the settings in a dotfiles repository and linking them into place is
+// an ordinary arrangement. The link is where the settings are reached, and the
+// file it leads to is where they are written.
+func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
+	for what, standing := range map[string]bool{
+		"a link to a file that is there":   true,
+		"a link to a file that is not yet": false,
+	} {
+		dir := t.TempDir()
+		kept := filepath.Join(dir, "dotfiles", "numen.json")
+		if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if standing {
+			held := []byte(`{"appearance":{"theme":"preset:numen"}}`)
+			if err := os.WriteFile(kept, held, 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		link := filepath.Join(dir, "numen.json")
+		if err := os.Symlink(kept, link); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := settings.Save(link, theme("preset:nord")); err != nil {
+			t.Fatalf("%s: %v", what, err)
+		}
+
+		if info, err := os.Lstat(link); err != nil {
+			t.Fatal(err)
+		} else if info.Mode()&os.ModeSymlink == 0 {
+			t.Errorf("%s: the link is now a file of its own", what)
+		}
+		raw, err := os.ReadFile(kept)
+		if err != nil {
+			t.Fatalf("%s: %v", what, err)
+		}
+		if !strings.Contains(string(raw), "preset:nord") {
+			t.Errorf("%s: the file the link leads to holds:\n%s", what, raw)
+		}
+	}
+}
+
+// The settings a launch writes down follow the same link a save does, so the
+// bytes land in the file the link leads to and the link stays a link.
+func TestAnUntouchedInstallationIsWrittenThroughTheLink(t *testing.T) {
+	dir := t.TempDir()
+	kept := filepath.Join(dir, "dotfiles", "numen.json")
+	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "numen.json")
+	if err := os.Symlink(kept, link); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := settings.At(link); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(link); err != nil {
+		t.Fatal(err)
+	} else if info.Mode()&os.ModeSymlink == 0 {
+		t.Error("the link is now a file of its own")
+	}
+	if _, err := os.Stat(kept); err != nil {
+		t.Errorf("the file the link leads to is not there: %v", err)
+	}
+}
+
+// A number a setting does not take is refused where it is handed in. One the
+// file already held is the person's to put right, and every other setting stays
+// reachable while they do.
+func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
+	const held = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
+	path := write(t, held)
+
+	if err := settings.Save(path, theme("preset:nord")); err != nil {
+		t.Fatalf("a theme could not be saved beside a size out of its band: %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := strings.Replace(held, `"preset:numen"`, `"preset:nord"`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+
+	err = settings.Save(path, settings.Setting{At: []string{"appearance", "text_scale"}, Value: 9})
+	if err == nil {
+		t.Fatal("a size out of its band was written")
+	}
+	if !strings.Contains(err.Error(), "appearance.text_scale") {
+		t.Errorf("said %q, wanted it to name the setting handed in", err)
+	}
+}
+
+// A setting is handed in at whatever name it is written under, and a section
+// written whole carries the numbers inside it.
+func TestASectionHandedInIsCheckedAtTheNumbersItHolds(t *testing.T) {
+	path := write(t, `{"appearance":{"theme":"preset:numen"}}`)
+	err := settings.Save(path, settings.Setting{
+		At:    []string{"appearance"},
+		Value: map[string]any{"theme": "preset:nord", "text_scale": 9},
+	})
+	if err == nil {
+		t.Fatal("a section carrying a size out of its band was written")
+	}
+	if !strings.Contains(err.Error(), "appearance.text_scale") {
+		t.Errorf("said %q, wanted it to name the setting", err)
+	}
+	raw, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(raw) != `{"appearance":{"theme":"preset:numen"}}` {
+		t.Errorf("the file is now:\n%s", raw)
+	}
+}
+
+// A name written twice is read from the last of the two and patched at the
+// first. One section holds one of a name, and a file holding two is refused.
+func TestASectionHoldsOneOfAName(t *testing.T) {
+	for what, body := range map[string]string{
+		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,
+		"a field beside it":       `{"appearance":{"mode":"dark","mode":"light","theme":"preset:numen"}}`,
+		"a section":               `{"appearance":{"theme":"preset:numen"},"appearance":{"mode":"dark"}}`,
+	} {
+		path := write(t, body)
+		err := settings.Save(path, theme("preset:nord"))
+		if err == nil {
+			t.Errorf("%s: a repeated name took a setting", what)
+		} else if !strings.Contains(err.Error(), "one of a name") {
+			t.Errorf("%s: said %q, wanted it to name the trouble", what, err)
+		}
+		raw, readErr := os.ReadFile(path)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if string(raw) != body {
+			t.Errorf("%s: the file is now:\n%s", what, raw)
+		}
+	}
+}
+
 func TestASettingGoesInsideASection(t *testing.T) {
 	path := write(t, `{"appearance":"warm"}`)
 	if err := settings.Save(path, theme("preset:nord")); err == nil {

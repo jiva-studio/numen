@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -36,36 +37,34 @@ type Setting struct {
 // value of the wrong shape, and a number past what its setting goes to, are
 // refused where they are handed in.
 func Save(path string, settings ...Setting) error {
-	raw, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		raw = []byte("{}\n")
-	} else if err != nil {
-		return err
-	}
+	return reaching(path, func(path string) error {
+		raw, err := os.ReadFile(path)
+		if errors.Is(err, fs.ErrNotExist) {
+			raw = []byte("{}\n")
+		} else if err != nil {
+			return err
+		}
 
-	// The whole file has to parse before any of it is written, since what is
-	// written is the file itself with one span of it replaced.
-	var whole json.RawMessage
-	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
-	}
-
-	for _, setting := range settings {
-		patched, err := set(raw, setting)
-		if err != nil {
+		// The whole file has to parse before any of it is written, since what is
+		// written is the file itself with one span of it replaced.
+		var whole json.RawMessage
+		if err := json.Unmarshal(raw, &whole); err != nil {
 			return fmt.Errorf("%s: %w", path, err)
 		}
-		raw = patched
-	}
 
-	if err := holds(raw); err != nil {
-		return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
-	}
+		for _, setting := range settings {
+			patched, err := set(raw, setting)
+			if err != nil {
+				return fmt.Errorf("%s: %w", path, err)
+			}
+			raw = patched
+		}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	return replace(path, raw)
+		if err := takes(raw, settings); err != nil {
+			return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
+		}
+		return replace(path, raw)
+	})
 }
 
 // holds says what is wrong with the settings these bytes make, and nothing
@@ -78,6 +77,33 @@ func holds(raw []byte) error {
 	return held.Appearance.Check()
 }
 
+// takes says what is wrong with the settings this call wrote, and nothing where
+// each is a number its setting takes.
+//
+// A number outside its setting that the file already held is one the person
+// typed and one they can still reach: what is refused is what was handed in.
+func takes(raw []byte, wrote []Setting) error {
+	held := Defaults()
+	if err := json.Unmarshal(raw, &held); err != nil {
+		return err
+	}
+	for _, outside := range held.Appearance.Outsides() {
+		for _, setting := range wrote {
+			if covers(setting.At, outside.At) {
+				return outside
+			}
+		}
+	}
+	return nil
+}
+
+// covers is whether a setting handed in at one name wrote the field at another:
+// the field itself, or a field inside the section named.
+func covers(at []string, field string) bool {
+	name := strings.Join(at, ".")
+	return field == name || strings.HasPrefix(field, name+".")
+}
+
 // rename gives one field of the file another name. Its value, its place among
 // the fields around it and every other byte of the file stay as they are, so a
 // file comes back from a rename the way its person wrote it, under one word.
@@ -85,23 +111,25 @@ func holds(raw []byte) error {
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
 func rename(path string, at []string, to string) error {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
+	return reaching(path, func(path string) error {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
 
-	// The whole file has to parse before any of it is written, since what is
-	// written is the file itself with one span of it replaced.
-	var whole json.RawMessage
-	if err := json.Unmarshal(raw, &whole); err != nil {
-		return fmt.Errorf("%s: %w", path, err)
-	}
+		// The whole file has to parse before any of it is written, since what is
+		// written is the file itself with one span of it replaced.
+		var whole json.RawMessage
+		if err := json.Unmarshal(raw, &whole); err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
 
-	renamed, done := named(raw, at, to)
-	if !done {
-		return nil
-	}
-	return replace(path, renamed)
+		renamed, done := named(raw, at, to)
+		if !done {
+			return nil
+		}
+		return replace(path, renamed)
+	})
 }
 
 // named hands back the object's bytes with one member's name changed, and
@@ -142,6 +170,28 @@ func named(object []byte, at []string, to string) ([]byte, bool) {
 // errNotASection is a name on the way to a setting that the file holds as
 // something other than an object.
 var errNotASection = errors.New("a setting goes inside a section")
+
+// errRepeated is a name written twice in one section. The settings are read
+// from the last of the two, and a span is replaced at the first.
+var errRepeated = errors.New("a section holds one of a name")
+
+// distinct says which name a section of the file holds twice, and nothing where
+// every section holds one of each. A value that is not a section holds no names.
+func distinct(object []byte) error {
+	held, err := members(object)
+	if errors.Is(err, errNotASection) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	for _, one := range held.pairs {
+		if err := distinct(object[one.from:one.to]); err != nil {
+			return fmt.Errorf("%s: %w", one.key, err)
+		}
+	}
+	return nil
+}
 
 func set(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
@@ -230,6 +280,9 @@ func members(object []byte) (shape, error) {
 		// A name is read up to its closing quote, so the quoted name ends where
 		// the decoder now stands. It is the file's own bytes only where they are
 		// the plain quoting of it.
+		if held.holds(key) {
+			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
+		}
 		one := pair{key: key}
 		quoted, err := json.Marshal(key)
 		if err != nil {
@@ -317,6 +370,47 @@ func indentOf(object []byte, first int) string {
 	return string(rest[:len(rest)-len(bytes.TrimLeft(rest, " \t"))])
 }
 
+// resolved is where the bytes of the settings are, with every link on the way
+// followed. A link is followed to its end whether or not anything is written
+// there yet, and a path that resolves to nothing is its own answer.
+func resolved(path string) string {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	// links is as many hops as a settings file is ever kept behind.
+	const links = 32
+	for range links {
+		if real, err := filepath.EvalSymlinks(abs); err == nil {
+			return real
+		}
+		target, err := os.Readlink(abs)
+		if err != nil {
+			break
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.Join(filepath.Dir(abs), target)
+		}
+		abs = filepath.Clean(target)
+	}
+	dir, err := filepath.EvalSymlinks(filepath.Dir(abs))
+	if err != nil {
+		return abs
+	}
+	return filepath.Join(dir, filepath.Base(abs))
+}
+
+// reaching hands the work the file the path leads to, with the folder that file
+// sits in made. Everything that writes the settings goes through it, so a link
+// is followed once and the rest of the way is the file itself.
+func reaching(path string, work func(path string) error) error {
+	real := resolved(path)
+	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+		return err
+	}
+	return work(real)
+}
+
 func spliced(raw []byte, from, to int, with []byte) []byte {
 	patched := make([]byte, 0, len(raw)-(to-from)+len(with))
 	patched = append(patched, raw[:from]...)
@@ -327,6 +421,9 @@ func spliced(raw []byte, from, to int, with []byte) []byte {
 // replace writes the file beside itself and renames it over the top, so a
 // machine that dies mid-write leaves the settings whole. The mode is the
 // person's alone: they type their service keys into this file.
+//
+// The path is the one reaching hands its work: the file itself, with every link
+// on the way to it already followed.
 func replace(path string, content []byte) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
@@ -348,5 +445,23 @@ func replace(path string, content []byte) error {
 	if err := os.Chmod(tmp.Name(), 0o600); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), path)
+	if err := os.Rename(tmp.Name(), path); err != nil {
+		return err
+	}
+	return settle(filepath.Dir(path))
+}
+
+// settle flushes the folder the rename was recorded in. Flushing the file is
+// what keeps its contents; flushing the folder is what keeps the rename.
+//
+// Not every filesystem lets a folder be opened for this, and the ones that
+// refuse are the ones that did not need it.
+func settle(dir string) error {
+	folder, err := os.Open(dir)
+	if err != nil {
+		return nil
+	}
+	defer folder.Close()
+	_ = folder.Sync()
+	return nil
 }
