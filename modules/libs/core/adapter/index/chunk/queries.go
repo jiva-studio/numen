@@ -182,7 +182,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), expression, vault, wanted, limit)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("sections"), expression, vault, wanted, limit)
 	if err != nil {
 		return nil, err
 	}

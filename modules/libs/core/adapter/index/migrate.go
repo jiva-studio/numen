@@ -93,7 +93,7 @@ func (e *Ahead) Error() string {
 // A table carrying a column this build does not write is brought to the shape
 // this build writes, which is the one thing the bookkeeping owes itself.
 func remember(ctx context.Context, db *sql.DB) error {
-	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS applied (
+	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (
 		version INTEGER PRIMARY KEY,
 		name    TEXT NOT NULL
 	)`); err != nil {
@@ -102,7 +102,7 @@ func remember(ctx context.Context, db *sql.DB) error {
 
 	var spare int
 	if err := db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM pragma_table_info('applied') WHERE name NOT IN ('version', 'name')`,
+		`SELECT COUNT(*) FROM pragma_table_info('schema_migrations') WHERE name NOT IN ('version', 'name')`,
 	).Scan(&spare); err != nil {
 		return fmt.Errorf("what this index was migrated by: %w", err)
 	}
@@ -110,10 +110,10 @@ func remember(ctx context.Context, db *sql.DB) error {
 		return nil
 	}
 	for _, statement := range []string{
-		`CREATE TABLE applied_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
-		`INSERT INTO applied_next (version, name) SELECT version, name FROM applied`,
-		`DROP TABLE applied`,
-		`ALTER TABLE applied_next RENAME TO applied`,
+		`CREATE TABLE schema_migrations_next (version INTEGER PRIMARY KEY, name TEXT NOT NULL)`,
+		`INSERT INTO schema_migrations_next (version, name) SELECT version, name FROM schema_migrations`,
+		`DROP TABLE schema_migrations`,
+		`ALTER TABLE schema_migrations_next RENAME TO schema_migrations`,
 	} {
 		if _, err := db.ExecContext(ctx, statement); err != nil {
 			return fmt.Errorf("what this index was migrated by: %w", err)
@@ -144,7 +144,7 @@ func apply(ctx context.Context, db *sql.DB, m migration) error {
 	// What ran is recorded beside the number, so a person can read what state
 	// this index is in.
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO applied (version, name) VALUES (?, ?)
+		`INSERT INTO schema_migrations (version, name) VALUES (?, ?)
 		 ON CONFLICT (version) DO UPDATE SET name = excluded.name`,
 		m.version, m.name); err != nil {
 		return err
