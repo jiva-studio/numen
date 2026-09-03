@@ -21,7 +21,7 @@ func TestAFolderTooLargeToWalkIsTheWholeVault(t *testing.T) {
 	if err := os.MkdirAll(aside, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	for i := range filesystem.Walked + 1 {
+	for i := range filesystem.Entries + 1 {
 		name := filepath.Join(aside, strconv.Itoa(i)+".md")
 		if err := os.WriteFile(name, []byte("# "+strconv.Itoa(i)+"\n"), 0o644); err != nil {
 			t.Fatal(err)

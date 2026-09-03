@@ -30,12 +30,17 @@ func TestABacklogThatStaysFullMeansTheVaultIsReadAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	shape, err := remembered(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	raw := make(chan notify.EventInfo, 4)
 	changes := make(chan []string)
 	lost := make(chan struct{}, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go fold(ctx, remembered(reader), Options{}, raw, changes, lost)
+	go fold(ctx, shape, Options{}, raw, changes, lost)
 
 	one := event{path: filepath.Join(root, "Note.md")}
 	go func() {

@@ -19,9 +19,10 @@ import (
 // missed.
 const Backlog = 4096
 
-// Walked is how many entries a folder that arrives is followed through. Past it
-// the vault is read from scratch, which is cheaper than the rest of the walk.
-const Walked = 4096
+// Entries is how many entries a folder that arrives is followed through. Past
+// it the vault is read from scratch, which is cheaper than the rest of the
+// walk.
+const Entries = 4096
 
 // Watcher follows vaults on disk.
 type Watcher struct {
@@ -280,7 +281,7 @@ func (f *folders) forget(path string) {
 // `whole` is set when the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
 // index. A path outside the vault is that case too, and is what arrives when a
-// watched folder is renamed away. A folder holding more than Walked entries is
+// watched folder is renamed away. A folder holding more entries than Entries is
 // that case as well.
 func (f *folders) concerns(ctx context.Context, absolute string) (paths []string, whole bool) {
 	path, inside := f.reader.relative(absolute)
@@ -308,7 +309,7 @@ func (f *folders) concerns(ctx context.Context, absolute string) (paths []string
 				return nil
 			}
 			seen++
-			if seen > Walked {
+			if seen > Entries {
 				over = true
 				return fs.SkipAll
 			}

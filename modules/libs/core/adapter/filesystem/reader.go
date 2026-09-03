@@ -96,7 +96,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 		if !ok || ignored.MatchesPath(rel) {
 			return nil
 		}
-		info, err := stated(p, d)
+		found, err := info(p, d)
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil
 		}
@@ -105,14 +105,14 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 		}
 		// A source is a regular file. A device, a socket or a FIFO carries no
 		// bytes to read whatever it is named.
-		if !info.Mode().IsRegular() {
+		if !found.Mode().IsRegular() {
 			return nil
 		}
 		return fn(domain.FileRef{
 			Path:  rel,
 			Kind:  kind,
-			Size:  info.Size(),
-			MTime: info.ModTime().UnixNano(),
+			Size:  found.Size(),
+			MTime: found.ModTime().UnixNano(),
 		})
 	})
 }
@@ -161,7 +161,7 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			if s.ignored.MatchesPath(rel) {
 				continue
 			}
-			if info, err := stated(filepath.Join(target, d.Name()), d); err == nil && info.Mode().IsRegular() {
+			if found, err := info(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
 				kind, _ = s.opts.kind(d.Name())
 			}
 		}
@@ -176,18 +176,18 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 	return entries, nil
 }
 
-// stated is what a walk knows about one entry, with a link followed: a note
-// kept as a link to a file elsewhere in the vault is that file. A link nothing
-// is at the end of, or one that leads round in a circle, is nothing to read.
-func stated(path string, d fs.DirEntry) (fs.FileInfo, error) {
+// info is what a walk knows about one entry, with a link followed: a note kept
+// as a link to a file elsewhere in the vault is that file. A link nothing is at
+// the end of, or one that leads round in a circle, is nothing to read.
+func info(path string, d fs.DirEntry) (fs.FileInfo, error) {
 	if d.Type()&fs.ModeSymlink == 0 {
 		return d.Info()
 	}
-	info, err := os.Stat(path)
+	found, err := os.Stat(path)
 	if err != nil {
 		return nil, fs.ErrNotExist
 	}
-	return info, nil
+	return found, nil
 }
 
 // inOrder is folders before files, and names compared without regard to case.
