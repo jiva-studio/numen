@@ -34,6 +34,11 @@ func Open(root string, opts Options) (*VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The vault is where the links lead. The paths the operating system reports
+	// changes at are resolved, and they are named against this.
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = real
+	}
 	info, err := os.Stat(abs)
 	if err != nil {
 		return nil, err
@@ -82,7 +87,7 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.FileRef) error) e
 			if p == s.root {
 				return nil
 			}
-			if d.Name() == s.opts.serviceDir() || ignored.MatchesPath(rel+"/") {
+			if s.skipped(rel, d.Name()) {
 				return fs.SkipDir
 			}
 			return nil
@@ -244,6 +249,13 @@ func (s *VaultReader) leftAlone(path string) error {
 		return fs.ErrNotExist
 	}
 	return fmt.Errorf("%s: %w", path, ErrNotANote)
+}
+
+// skipped says whether a walk stops at a folder and does not descend. The walk
+// and the watcher both ask it, so neither of them looks where the other does
+// not.
+func (s *VaultReader) skipped(path, name string) bool {
+	return name == s.opts.serviceDir() || s.ignored.MatchesPath(path+"/")
 }
 
 // holds reports which kind of source a path inside this vault is, and whether a

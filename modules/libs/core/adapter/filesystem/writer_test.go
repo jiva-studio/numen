@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -444,5 +445,155 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "physics-old", "Entropy.md")); err != nil {
 		t.Errorf("the folder did not arrive: %v", err)
+	}
+}
+
+// A vault may be reached through a link: a home folder on another disk, a
+// synced folder, a temporary folder on a machine that keeps them elsewhere.
+// Every rule the writer applies is applied to the name on the other side of it.
+func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
+	physical := filepath.Join(t.TempDir(), "physical")
+	if err := os.Mkdir(physical, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "vault")
+	if err := os.Symlink(physical, link); err != nil {
+		t.Fatal(err)
+	}
+
+	w, err := filesystem.Writers{}.Open(domain.Vault{Path: link})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+
+	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.FileRef{}); err != nil {
+		t.Fatalf("the note could not be written: %v", err)
+	}
+	if err := w.Move(ctx, "Note.md", "Renamed.md"); err != nil {
+		t.Fatalf("the note could not be renamed: %v", err)
+	}
+	body, err := os.ReadFile(filepath.Join(physical, "Renamed.md"))
+	if err != nil {
+		t.Fatalf("the note did not land in the vault: %v", err)
+	}
+	if string(body) != "# Note\n" {
+		t.Errorf("the note holds %q", body)
+	}
+}
+
+// A person names a note in their own editor, and a name the filesystem accepts
+// is a name this vault saves. The temporary file written beside it carries a
+// leading dot and a suffix of its own, and the whole of that has to fit as well.
+func TestANoteWithALongNameIsSaved(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	// 249 bytes, which is longer than a filesystem takes once twelve more are
+	// put in front of and behind it.
+	stem := strings.Repeat("з", 123)
+	name := stem + ".md"
+
+	if err := w.Create(ctx, name, []byte("# Note\n")); err != nil {
+		t.Fatalf("the note could not be created: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(root, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	held := domain.FileRef{Size: info.Size(), MTime: info.ModTime().UnixNano()}
+	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
+		t.Fatalf("the note could not be saved: %v", err)
+	}
+	if err := w.Bring(ctx, stem+".png", strings.NewReader("PNG")); err != nil {
+		t.Fatalf("the file could not be brought in: %v", err)
+	}
+
+	body, err := os.ReadFile(filepath.Join(root, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "# Note\n\nedited\n" {
+		t.Errorf("the note holds %q", body)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Errorf("the vault holds %d files, want the note and the attachment", len(entries))
+	}
+}
+
+// Correcting a note's capitalisation, or the spelling of an accent in it, is a
+// move onto a name a filesystem that tells neither apart already answers with
+// the note itself. What the writer sees is two names for one file, which is
+// what a filesystem that does tell them apart is given a link to make.
+func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "note.md", []byte("# Note\n")); err != nil {
+		t.Fatal(err)
+	}
+	if !sameFile(t, filepath.Join(root, "note.md"), filepath.Join(root, "Note.md")) {
+		if err := os.Link(filepath.Join(root, "note.md"), filepath.Join(root, "Note.md")); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := w.Move(ctx, "note.md", "Note.md"); err != nil {
+		t.Fatalf("the note could not be renamed onto its own file: %v", err)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "Note.md"))
+	if err != nil {
+		t.Fatalf("the note is not at the name it was given: %v", err)
+	}
+	if string(body) != "# Note\n" {
+		t.Errorf("the note holds %q", body)
+	}
+	// A filesystem that tells the two names apart is asked which of them it
+	// wrote down: opening the note by either name says nothing about that.
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == "Note.md" }) {
+		t.Errorf("the vault holds %v, and the note is filed under none of it", entries)
+	}
+}
+
+// sameFile says whether two names are already one file. A filesystem that tells
+// capitalisation apart answers no for two spellings of a name it has one of.
+func sameFile(t *testing.T, one, other string) bool {
+	t.Helper()
+	first, err := os.Lstat(one)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := os.Lstat(other)
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return os.SameFile(first, second)
+}
+
+// A name another file stands at is taken, whatever the filesystem does with
+// case.
+func TestANameAnotherFileStandsAtIsRefused(t *testing.T) {
+	w, _ := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "Note.md", []byte("# Note\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Create(ctx, "Other.md", []byte("# Other\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, port.ErrOccupied) {
+		t.Errorf("want ErrOccupied, got %v", err)
 	}
 }

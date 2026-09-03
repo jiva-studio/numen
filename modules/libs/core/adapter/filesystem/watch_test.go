@@ -322,3 +322,113 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	case <-time.After(200 * time.Millisecond):
 	}
 }
+
+// TestAFolderTheVaultIgnoresGoingAwayIsNotALoss. `git gc`, a fetch and a
+// checkout each take a folder inside `.git` away, and an editor takes its own
+// scratch folder away on every save. The vault holds nothing under any of them,
+// so nothing about it became unknowable.
+func TestAFolderTheVaultIgnoresGoingAwayIsNotALoss(t *testing.T) {
+	root := vaultOf(t, map[string]string{
+		"Note.md":                "# Note\n",
+		".git/objects/tmp_abc":   "pack\n",
+		"node_modules/left/A.md": "# A\n",
+		"archive/deep/Buried.md": "# Buried\n",
+	}, []string{"node_modules/", "archive/"})
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, gone := range []string{".git", "node_modules", "archive"} {
+		if err := os.RemoveAll(filepath.Join(root, gone)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(t, root, "Note.md", "# Note\n\nedited\n")
+
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case <-lost:
+			t.Fatal("a folder the vault ignores went away and the whole vault was read again")
+		case paths := <-changes:
+			if !slices.Equal(paths, []string{"Note.md"}) {
+				t.Fatalf("reported %v, want only the note the vault admits to", paths)
+			}
+			return
+		case <-deadline:
+			t.Fatal("the note was written and nothing was said")
+		}
+	}
+}
+
+// TestAFolderTheVaultIgnoresArrivingIsNotRemembered. A checkout puts a tree
+// inside `.git` and the next one takes it away again. The watcher stops at the
+// folder the walk stops at, so neither half of that is the vault's.
+func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
+	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Events arrive in the order they happened, so a batch naming the note is
+	// the watcher having already seen the folder arrive.
+	write(t, root, ".git/refs/heads/main.md", "# Not a note\n")
+	write(t, root, "Note.md", "# Note\n\nedited\n")
+	select {
+	case <-changes:
+	case <-lost:
+		t.Fatal("a folder the vault ignores arrived and the whole vault was read again")
+	case <-time.After(5 * time.Second):
+		t.Fatal("the note was written and nothing was said")
+	}
+
+	if err := os.RemoveAll(filepath.Join(root, ".git")); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, "Note.md", "# Note\n\nedited again\n")
+
+	deadline := time.After(5 * time.Second)
+	for {
+		select {
+		case <-lost:
+			t.Fatal("a folder the vault ignores came and went, and the whole vault was read again")
+		case paths := <-changes:
+			if !slices.Equal(paths, []string{"Note.md"}) {
+				t.Fatalf("reported %v, want only the note", paths)
+			}
+			return
+		case <-deadline:
+			t.Fatal("the note was written and nothing was said")
+		}
+	}
+}
+
+// TestAVaultReachedThroughALinkIsFollowedLikeAnyOther. The operating system
+// names the file it saw change, and what it names is the path with every link
+// resolved. A vault in a synced folder is reached through one.
+func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
+	physical := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	link := filepath.Join(t.TempDir(), "vault")
+	if err := os.Symlink(physical, link); err != nil {
+		t.Fatal(err)
+	}
+
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: link})
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, physical, "Note.md", "# Note\n\nedited\n")
+
+	select {
+	case paths := <-changes:
+		if !slices.Equal(paths, []string{"Note.md"}) {
+			t.Errorf("reported %v, want the note it named", paths)
+		}
+	case <-lost:
+		t.Fatal("the whole vault was read again — the path the system named was taken for one outside it")
+	case <-time.After(5 * time.Second):
+		t.Fatal("the note was written and nothing was said")
+	}
+}

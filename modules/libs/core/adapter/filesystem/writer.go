@@ -10,6 +10,7 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	ignore "github.com/sabhiram/go-gitignore"
 
@@ -34,6 +35,11 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 	abs, err := filepath.Abs(root)
 	if err != nil {
 		return nil, err
+	}
+	// The vault is where the links lead. A write lands at the resolved path, and
+	// the rules about what the vault holds are asked of a name relative to it.
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = real
 	}
 	info, err := os.Stat(abs)
 	if err != nil {
@@ -95,6 +101,22 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	return written, nil
 }
 
+// nameMax is how many bytes one component of a path may be. It is 255 on every
+// filesystem a vault is kept on.
+const nameMax = 255
+
+// beside is the pattern a temporary file next to a target is created under. The
+// name is cut on a rune boundary, leaving room for the leading dot and for the
+// digits CreateTemp puts where the star is; the rename lands on the full name.
+func beside(name string) string {
+	const room = len(".") + len(".") + 10
+	for len(name)+room > nameMax {
+		_, size := utf8.DecodeLastRuneInString(name)
+		name = name[:len(name)-size]
+	}
+	return "." + name + ".*"
+}
+
 // replace writes content beside the target and renames it over the top.
 //
 // The temporary file is named with a leading dot so that the watcher never
@@ -111,7 +133,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 // lands, and a caller holding them is holding the file it just wrote.
 func replace(target string, content []byte, mode fs.FileMode) (domain.FileRef, error) {
 	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, "."+name+".*")
+	tmp, err := os.CreateTemp(dir, beside(name))
 	if err != nil {
 		return domain.FileRef{}, err
 	}
@@ -188,9 +210,18 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
 
-	switch _, err := os.Lstat(target); {
+	switch standing, err := os.Lstat(target); {
 	case err == nil:
-		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+		// A file already at the name is the name being taken, unless it is this
+		// file: a filesystem that tells neither capitalisation nor the spelling
+		// of an accent apart answers the new name with the file being renamed.
+		here, err := os.Lstat(source)
+		if err != nil {
+			return err
+		}
+		if !os.SameFile(here, standing) {
+			return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+		}
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
@@ -428,7 +459,7 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 // same rules replace writes bytes it already holds.
 func arrive(target string, content io.Reader) error {
 	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, "."+name+".*")
+	tmp, err := os.CreateTemp(dir, beside(name))
 	if err != nil {
 		return err
 	}
