@@ -63,6 +63,7 @@ var doing = map[string]Words{
 	"link_update":       {Kind: port.StepEdit},
 	"link_remove":       {Kind: port.StepEdit},
 	"link_list":         {Kind: port.StepRead},
+	"window_tabs":       {Kind: port.StepRead},
 	"vault_get":         {Kind: port.StepRead},
 	"vault_named":       {Kind: port.StepRead},
 	"vault_problems":    {Kind: port.StepRead},

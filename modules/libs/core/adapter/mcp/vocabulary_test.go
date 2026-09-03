@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -78,7 +79,13 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 	// tools for the list of vaults only where there is a list, so a vault with
 	// somebody looking at it and an installation holding several are asked as
 	// well.
-	for _, core := range []mcp.Core{{}, {View: &window{}}, onTheList(t).core} {
+	attending := func() domain.Attention { return domain.Attention{} }
+	for _, core := range []mcp.Core{
+		{},
+		{View: &window{}},
+		{Attending: attending},
+		onTheList(t).core,
+	} {
 		words, err := mcp.Vocabulary(t.Context(), core)
 		if err != nil {
 			t.Fatal(err)
