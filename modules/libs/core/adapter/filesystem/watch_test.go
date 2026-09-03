@@ -467,3 +467,40 @@ func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
 		t.Fatal("the note was written and nothing was said")
 	}
 }
+
+// TestAVaultThatIsNeverStillIsStillReported. The hold runs from the first event
+// of a batch. A vault written to without pause — a sync client, a checkout —
+// never stops long enough for a hold that begins again at every event.
+func TestAVaultThatIsNeverStillIsStillReported(t *testing.T) {
+	root := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	changes, _, err := filesystem.Watcher{
+		Options: filesystem.Options{Hold: 200 * time.Millisecond},
+	}.Watch(t.Context(), domain.Vault{Path: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stop := make(chan struct{})
+	writing := make(chan struct{})
+	t.Cleanup(func() { close(stop); <-writing })
+	go func() {
+		defer close(writing)
+		for i := range 100 {
+			name := filepath.Join(root, fmt.Sprintf("Note%d.md", i))
+			if err := os.WriteFile(name, []byte("# Note\n"), 0o644); err != nil {
+				return
+			}
+			select {
+			case <-stop:
+				return
+			case <-time.After(50 * time.Millisecond):
+			}
+		}
+	}()
+
+	select {
+	case <-changes:
+	case <-writing:
+		t.Fatal("a vault written to without pause was never reported")
+	}
+}
