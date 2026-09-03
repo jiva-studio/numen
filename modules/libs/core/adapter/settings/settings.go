@@ -158,16 +158,30 @@ func (o *Outside) Error() string {
 	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Value, o.Least, o.Most)
 }
 
+// Outsides is every number the section holds that its setting does not take,
+// in the order the section names them.
+func (a Appearance) Outsides() []*Outside {
+	var found []*Outside
+	for _, err := range []error{
+		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
+		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
+		PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode)),
+	} {
+		var outside *Outside
+		if errors.As(err, &outside) {
+			found = append(found, outside)
+		}
+	}
+	return found
+}
+
 // Check is what is wrong with the two sizes and the count, and nothing where
 // each is a number its setting takes.
 func (a Appearance) Check() error {
-	if err := InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale); err != nil {
-		return err
+	if found := a.Outsides(); len(found) > 0 {
+		return found[0]
 	}
-	if err := TextScaleBounds.Check("appearance.text_scale", a.TextScale); err != nil {
-		return err
-	}
-	return PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode))
+	return nil
 }
 
 // DefaultTheme is this product's own palette, which is what an installation

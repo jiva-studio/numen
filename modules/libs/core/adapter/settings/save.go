@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -58,7 +59,7 @@ func Save(path string, settings ...Setting) error {
 		raw = patched
 	}
 
-	if err := holds(raw); err != nil {
+	if err := takes(raw, settings); err != nil {
 		return fmt.Errorf("%s: %w: %w", path, port.ErrNotASetting, err)
 	}
 
@@ -76,6 +77,26 @@ func holds(raw []byte) error {
 		return err
 	}
 	return held.Appearance.Check()
+}
+
+// takes says what is wrong with the settings this call wrote, and nothing where
+// each is a number its setting takes.
+//
+// A number outside its setting that the file already held is one the person
+// typed and one they can still reach: what is refused is what was handed in.
+func takes(raw []byte, wrote []Setting) error {
+	held := Defaults()
+	if err := json.Unmarshal(raw, &held); err != nil {
+		return err
+	}
+	for _, outside := range held.Appearance.Outsides() {
+		for _, setting := range wrote {
+			if strings.Join(setting.At, ".") == outside.At {
+				return outside
+			}
+		}
+	}
+	return nil
 }
 
 // rename gives one field of the file another name. Its value, its place among

@@ -357,6 +357,34 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	}
 }
 
+// A number a setting does not take is refused where it is handed in. One the
+// file already held is the person's to put right, and every other setting stays
+// reachable while they do.
+func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
+	const held = `{"appearance":{"text_scale":9,"theme":"preset:numen"}}`
+	path := write(t, held)
+
+	if err := settings.Save(path, theme("preset:nord")); err != nil {
+		t.Fatalf("a theme could not be saved beside a size out of its band: %v", err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := strings.Replace(held, `"preset:numen"`, `"preset:nord"`, 1)
+	if string(raw) != want {
+		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
+	}
+
+	err = settings.Save(path, settings.Setting{At: []string{"appearance", "text_scale"}, Value: 9})
+	if err == nil {
+		t.Fatal("a size out of its band was written")
+	}
+	if !strings.Contains(err.Error(), "appearance.text_scale") {
+		t.Errorf("said %q, wanted it to name the setting handed in", err)
+	}
+}
+
 // A name written twice is read from the last of the two and patched at the
 // first, so a save that landed would be read back as the value it replaced.
 func TestASectionHoldsOneOfAName(t *testing.T) {
