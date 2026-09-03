@@ -27,7 +27,7 @@ type Documents interface {
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
 	// cores.
-	Draw(ctx context.Context, raw []byte) (Drawn, error)
+	Draw(ctx context.Context, raw []byte) (OpenDocument, error)
 }
 
 // A Reading is one document, read.
@@ -41,9 +41,9 @@ type Reading struct {
 	Pages []int
 }
 
-// Drawn is a document held open, drawn a page at a time. Closing it gives back
+// OpenDocument is a document held open, drawn a page at a time. Closing it gives back
 // the worker it holds.
-type Drawn interface {
+type OpenDocument interface {
 	Pages() int
 	Size(index int) (wide, high float64, err error)
 	Image(index, dpi int) (image.Image, error)

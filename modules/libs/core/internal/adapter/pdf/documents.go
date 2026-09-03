@@ -50,7 +50,7 @@ func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int)
 }
 
 // Draw holds a document open for its pages to be drawn.
-func (Documents) Draw(ctx context.Context, raw []byte) (port.Drawn, error) {
+func (Documents) Draw(ctx context.Context, raw []byte) (port.OpenDocument, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
