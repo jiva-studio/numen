@@ -607,7 +607,7 @@ func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.A
 // waits for them, and closes the index.
 func (o *Opened) Close() error {
 	// First: a search, a note and a link are answered straight from the index,
-	// and the index closes here.
+	// and the index closes here. This stands until the last of them is off it.
 	o.API.Shut()
 	o.leave()
 	if o.API.Viewer != nil {

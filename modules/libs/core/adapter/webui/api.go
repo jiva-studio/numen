@@ -36,6 +36,13 @@ type API struct {
 	// embedder an answer reaches into are taken away.
 	shut atomic.Bool
 
+	// answering is the questions taken and not yet answered. A search, a note
+	// and a link are read straight from the index, and Shut stands here until
+	// the last of them is off it.
+	//
+	// A stream is not counted: it lives as long as the page that opened it.
+	answering inflight
+
 	// on is the passes behind the vault the window is showing. It is published
 	// as one after the vault, so a run, a cut and a drop reach the vault the
 	// request was answered over. Nothing while the vault is being changed.
@@ -304,9 +311,13 @@ func (a *API) forgets() func(domain.Vault, string) {
 	return nil
 }
 
-// Shut refuses every question from now on, and there is no opening it again.
-// It is closed while everything an answer reaches into is still there.
-func (a *API) Shut() { a.shut.Store(true) }
+// Shut refuses every question from now on, and there is no opening it again. It
+// answers once the questions already taken have been answered, so everything an
+// answer reaches into is still there for the whole of it.
+func (a *API) Shut() {
+	a.shut.Store(true)
+	<-a.answering.seal()
+}
 
 func (a *API) closed() bool { return a.shut.Load() }
 

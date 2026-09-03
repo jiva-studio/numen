@@ -1,22 +1,29 @@
 package webui
 
 import (
+	"context"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
 // mine is a theme of the person's, carrying a colour nothing else has and
@@ -292,4 +299,78 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	if !strings.Contains(head, `<\/STYLE>`) {
 		t.Error("the theme's own text was not kept")
 	}
+}
+
+// holdingOpen is a set of readers whose every look at a file waits until a test
+// lets it through, which is what a question still inside its answer looks like
+// from here.
+type holdingOpen struct {
+	port.VaultReaders
+	begun chan struct{}
+	until chan struct{}
+}
+
+func (h holdingOpen) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := h.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return holdsOpen{VaultReader: reader, at: h}, nil
+}
+
+type holdsOpen struct {
+	port.VaultReader
+	at holdingOpen
+}
+
+func (h holdsOpen) Stat(ctx context.Context, path string) (domain.FileRef, error) {
+	select {
+	case h.at.begun <- struct{}{}:
+	default:
+	}
+	<-h.at.until
+	return h.VaultReader.Stat(ctx, path)
+}
+
+// TestTheDoorShutsBehindTheQuestionsAlreadyTaken. A search, a note and a link
+// are answered straight from the index, and one that passed the door a moment
+// before it shut is still on the index when everything an answer reaches into
+// is taken away.
+func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
+	readers := holdingOpen{
+		VaultReaders: filesystem.Readers{},
+		begun:        make(chan struct{}, 1),
+		until:        make(chan struct{}),
+	}
+	api := &API{Readers: readers}
+	api.show(testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"}))
+	handler := api.Serving(http.NotFoundHandler())
+
+	answered := make(chan struct{})
+	go func() {
+		defer close(answered)
+		at := assetsRoute + url.PathEscape("Note.md")
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
+	}()
+	<-readers.begun
+
+	shut := make(chan struct{})
+	go func() {
+		defer close(shut)
+		api.Shut()
+	}()
+
+	select {
+	case <-shut:
+		t.Fatal("the door shut while a question was still being answered")
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	close(readers.until)
+	select {
+	case <-shut:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the door never shut")
+	}
+	<-answered
 }
