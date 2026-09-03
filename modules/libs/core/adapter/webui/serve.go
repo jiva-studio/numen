@@ -1123,18 +1123,18 @@ func embedSources(
 		indexing(err)
 		return
 	}
+	// Indexing is always of something, and the source open now is what it is of.
+	// The pass enters the list when it opens the first of them, so the row is
+	// never a word with nothing under it. A share is drawn once a vector has
+	// been made, counted over the work in hand and not the size of the vault.
 	making.Vectors.OnProgress = func(res source.EmbedResult) {
-		// Indexing is always of something, and the source open now is what it is
-		// of. The count is the work in hand and not the size of the vault.
-		api.say(task.Task{
-			ID: makingVectors, Doing: "Indexing", About: res.Reading,
-			Done: int64(res.Embedded), Total: owing,
-		})
+		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
+		if res.Embedded > 0 {
+			at.Done, at.Total = int64(res.Embedded), owing
+		}
+		api.say(at)
 	}
 
-	// This pass says what it owes and what it has made. Which source it is on is
-	// named the moment one is open.
-	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
 	switch _, err := making.MakeVectors(ctx, v); {
 	case err == nil, errors.Is(err, context.Canceled):
 		api.finished(makingVectors)
