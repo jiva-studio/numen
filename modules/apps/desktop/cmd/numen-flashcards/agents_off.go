@@ -20,7 +20,7 @@ func serveAgents(
 	_ context.Context,
 	_ container.Config,
 	_ *container.Index,
-	_ *opened,
+	_ *openVaults,
 	api *flashcardsui.API,
 	_ bool,
 	_ io.Writer,

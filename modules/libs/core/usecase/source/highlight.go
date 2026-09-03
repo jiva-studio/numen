@@ -67,7 +67,7 @@ func (u Highlight) Execute(
 	// describe those. A file rewritten since is read from its own layer, which
 	// is the words that are there now.
 	var boxes []lit.Box
-	if said.From != "" && ref.Unchanged(domain.FileRef{Size: said.Size, MTime: said.MTime}) {
+	if said.Producer != "" && ref.Unchanged(domain.Fingerprint{Size: said.Size, MTime: said.MTime}) {
 		boxes, err = u.read(ctx, v, said)
 	} else {
 		boxes, err = u.layer(ctx, reader, ref, runs)
@@ -94,7 +94,7 @@ func over(boxes []lit.Box, runs []lit.Run) [][]lit.Page {
 func (u Highlight) read(
 	ctx context.Context,
 	v domain.Vault,
-	said port.Recognised,
+	said port.SourceText,
 ) ([]lit.Box, error) {
 	if u.Derived == nil {
 		return nil, nil
@@ -103,7 +103,7 @@ func (u Highlight) read(
 	if err != nil {
 		return nil, err
 	}
-	raw, err := store.Read(ctx, text.Boxes(said.From, said.Hash))
+	raw, err := store.Read(ctx, text.Boxes(said.Producer, said.Hash))
 	if errors.Is(err, fs.ErrNotExist) {
 		// The store is a folder on the person's disk and they may empty it.
 		return nil, nil
@@ -116,7 +116,7 @@ func (u Highlight) read(
 	// A reading that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
 	// those words stand.
-	corrections, err := store.Read(ctx, text.Fixes(said.From, said.Hash))
+	corrections, err := store.Read(ctx, text.Fixes(said.Producer, said.Hash))
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (u Highlight) read(
 func (u Highlight) layer(
 	ctx context.Context,
 	reader port.VaultReader,
-	ref domain.FileRef,
+	ref domain.Fingerprint,
 	runs []lit.Run,
 ) ([]lit.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {

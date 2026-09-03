@@ -112,14 +112,14 @@ func (s *store) Kept(_ context.Context, recipe string, of [][]byte) (map[string]
 	return out, nil
 }
 
-func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.FileRef, error) {
-	out := map[string]domain.FileRef{}
+func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
+	out := map[string]domain.Fingerprint{}
 	for path, src := range s.sources[vaultID] {
 		if src.Ref.Kind != kind {
 			continue
 		}
 		// The kind is what was asked for, so the answer leaves it empty.
-		out[path] = domain.FileRef{Path: path, Size: src.Ref.Size, MTime: src.Ref.MTime}
+		out[path] = domain.Fingerprint{Path: path, Size: src.Ref.Size, MTime: src.Ref.MTime}
 	}
 	return out, nil
 }
@@ -212,14 +212,14 @@ func (s *store) MoveSources(_ context.Context, vaultID, from, to string) error {
 }
 
 // Under is every source the store holds at a path and beneath it.
-func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.FileRef, error) {
-	var out []domain.FileRef
+func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
+	var out []domain.Fingerprint
 	for held, src := range s.sources[vaultID] {
 		if held == path || strings.HasPrefix(held, path+"/") {
 			out = append(out, src.Ref)
 		}
 	}
-	slices.SortFunc(out, func(a, b domain.FileRef) int { return strings.Compare(a.Path, b.Path) })
+	slices.SortFunc(out, func(a, b domain.Fingerprint) int { return strings.Compare(a.Path, b.Path) })
 	return out, nil
 }
 
@@ -235,7 +235,7 @@ func (s *store) clear(vaultID, path string) {
 	s.chunks = kept
 }
 
-func (s *store) insert(vaultID string, ref domain.FileRef, c port.Chunk, parent int64) int64 {
+func (s *store) insert(vaultID string, ref domain.Fingerprint, c port.Chunk, parent int64) int64 {
 	s.next++
 	s.chunks = append(s.chunks, storedChunk{
 		id: s.next, vault: vaultID, path: ref.Path, kind: ref.Kind,
@@ -338,7 +338,7 @@ func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime in
 	l.files[path] = &shelved{kind: kind, raw: raw, mtime: mtime}
 }
 
-func (l *library) Walk(_ context.Context, fn func(domain.FileRef) error) error {
+func (l *library) Walk(_ context.Context, fn func(domain.Fingerprint) error) error {
 	for _, path := range slices.Sorted(maps.Keys(l.files)) {
 		if err := fn(l.ref(path)); err != nil {
 			return err
@@ -356,16 +356,16 @@ func (l *library) Read(_ context.Context, path string) ([]byte, error) {
 	return held.raw, nil
 }
 
-func (l *library) Stat(_ context.Context, path string) (domain.FileRef, error) {
+func (l *library) Stat(_ context.Context, path string) (domain.Fingerprint, error) {
 	if _, ok := l.files[path]; !ok {
-		return domain.FileRef{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
+		return domain.Fingerprint{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
 	}
 	return l.ref(path), nil
 }
 
-func (l *library) ref(path string) domain.FileRef {
+func (l *library) ref(path string) domain.Fingerprint {
 	held := l.files[path]
-	return domain.FileRef{Path: path, Kind: held.kind, Size: int64(len(held.raw)), MTime: held.mtime}
+	return domain.Fingerprint{Path: path, Kind: held.kind, Size: int64(len(held.raw)), MTime: held.mtime}
 }
 
 // vaults opens the reader of each vault a test set up.
@@ -484,25 +484,25 @@ func words(vocabulary []string, n int) string {
 	return strings.Join(out, " ")
 }
 
-func (s *store) Reading(_ context.Context, vaultID, path string) (port.Recognised, bool, error) {
+func (s *store) Reading(_ context.Context, vaultID, path string) (port.SourceText, bool, error) {
 	src, held := s.sources[vaultID][path]
 	if !held {
-		return port.Recognised{}, false, nil
+		return port.SourceText{}, false, nil
 	}
 	// The row says what the file was when it was read, as the query does.
-	return port.Recognised{
-		Path: path, From: src.TextFrom, Hash: src.Hash,
+	return port.SourceText{
+		Path: path, Producer: src.TextFrom, Hash: src.Hash,
 		Size: src.Ref.Size, MTime: src.Ref.MTime,
 	}, true, nil
 }
 
-func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.Recognised, error) {
-	var out []port.Recognised
+func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.SourceText, error) {
+	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
 		if src.Ref.Kind == kind && src.TextFrom != "" {
-			out = append(out, port.Recognised{Path: path, From: src.TextFrom, Hash: src.Hash})
+			out = append(out, port.SourceText{Path: path, Producer: src.TextFrom, Hash: src.Hash})
 		}
 	}
-	slices.SortFunc(out, func(a, b port.Recognised) int { return cmp.Compare(a.Path, b.Path) })
+	slices.SortFunc(out, func(a, b port.SourceText) int { return cmp.Compare(a.Path, b.Path) })
 	return out, nil
 }

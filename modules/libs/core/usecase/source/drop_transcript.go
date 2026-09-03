@@ -32,16 +32,16 @@ type DropTranscript struct {
 	Area string
 }
 
-// Dropped reports what dropping a transcript did.
-type Dropped struct {
+// DropTranscriptResult reports what dropping a transcript did.
+type DropTranscriptResult struct {
 	Path string // the recording whose transcript was dropped
 	None bool   // nothing has listened to it, and nothing was done
 	Busy bool   // somebody is listening to it, and nothing was done
 }
 
 // Execute drops the transcript of one recording.
-func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string) (Dropped, error) {
-	res := Dropped{Path: path}
+func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string) (DropTranscriptResult, error) {
+	res := DropTranscriptResult{Path: path}
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -125,8 +125,8 @@ func (u DropTranscript) produced(
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)
 	}
-	if held && said.From != "" {
-		return said.From, said.Hash, true, nil
+	if held && said.Producer != "" {
+		return said.Producer, said.Hash, true, nil
 	}
 	raw, err := reader.Read(ctx, path)
 	if err != nil {

@@ -77,7 +77,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// Every vault this window shows is opened the way the editor opens the one
 	// it shows: watched from the moment it is opened, walked into the index, and
 	// levelled by the paths a write touches.
-	vaults := &opened{cfg: cfg, db: db, under: ctx, out: os.Stderr}
+	vaults := &openVaults{cfg: cfg, db: db, under: ctx, out: os.Stderr}
 
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{

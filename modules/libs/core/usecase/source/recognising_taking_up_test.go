@@ -108,8 +108,8 @@ type books struct{ port.SourceQueries }
 
 func (books) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
-) ([]port.Recognised, error) {
-	return []port.Recognised{{Path: scan, From: "ocr", Hash: "x"}}, nil
+) ([]port.SourceText, error) {
+	return []port.SourceText{{Path: scan, Producer: "ocr", Hash: "x"}}, nil
 }
 
 // corrected is a line as a proofreader puts it right.

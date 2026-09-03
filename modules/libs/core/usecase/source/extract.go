@@ -60,15 +60,15 @@ type Extract struct {
 	// OnProgress, if set, is called as each source is opened and as each one is
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
-	OnProgress func(Extracted)
+	OnProgress func(ExtractResult)
 }
 
-// Extracted reports what extraction did.
+// ExtractResult reports what extraction did.
 //
 // `Seen` counts the sources of the kinds this cuts and nothing else. `Recorded`
 // and `Extracted` are separate numbers because they are separate passes: a book
 // is recorded when the vault is walked and extracted when its text is read.
-type Extracted struct {
+type ExtractResult struct {
 	Seen       int    // sources found in the vault
 	Recorded   int    // new or changed, so owing their text
 	Unchanged  int    // skipped on size and modification time alone
@@ -83,14 +83,14 @@ type Extracted struct {
 
 // Execute brings the chunks of one vault's books up to date with what is on
 // disk.
-func (u Extract) Execute(ctx context.Context, v domain.Vault) (Extracted, error) {
-	var res Extracted
+func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, error) {
+	var res ExtractResult
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
 	}
-	var swept []port.Recognised
+	var swept []port.SourceText
 	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
 		return res, err
 	}
@@ -110,10 +110,10 @@ func (u Extract) discover(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
-	res *Extracted,
-	swept *[]port.Recognised,
+	res *ExtractResult,
+	swept *[]port.SourceText,
 ) error {
-	known := make(map[domain.SourceKind]map[string]domain.FileRef, len(u.kinds()))
+	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
 		held, err := u.Owing.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
@@ -123,7 +123,7 @@ func (u Extract) discover(
 	}
 
 	found := make(map[string]bool)
-	if err := reader.Walk(ctx, func(ref domain.FileRef) error {
+	if err := reader.Walk(ctx, func(ref domain.Fingerprint) error {
 		held, ours := known[ref.Kind]
 		if !ours {
 			return nil
@@ -181,7 +181,7 @@ func (u Extract) standing(
 	v domain.Vault,
 	kind domain.SourceKind,
 	paths []string,
-) ([]port.Recognised, error) {
+) ([]port.SourceText, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
@@ -189,13 +189,13 @@ func (u Extract) standing(
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	made := make(map[string]port.Recognised, len(held))
+	made := make(map[string]port.SourceText, len(held))
 	for _, r := range held {
 		made[r.Path] = r
 	}
-	out := make([]port.Recognised, 0, len(paths))
+	out := make([]port.SourceText, 0, len(paths))
 	for _, path := range paths {
-		if r, on := made[path]; on && r.From != "" {
+		if r, on := made[path]; on && r.Producer != "" {
 			out = append(out, r)
 		}
 	}
@@ -211,25 +211,25 @@ func (u Extract) standing(
 //
 // A walk that failed returns before any of this, so a folder that could not be
 // read takes nothing with it.
-func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognised) error {
+func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceText) error {
 	if u.Derived == nil || len(went) == 0 {
 		return nil
 	}
-	stood := make(map[port.Recognised]bool)
+	stood := make(map[port.SourceText]bool)
 	for _, kind := range u.kinds() {
 		held, err := u.Owing.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
 		for _, r := range held {
-			stood[port.Recognised{From: r.From, Hash: r.Hash}] = true
+			stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
 		}
 	}
 	for _, r := range went {
-		if stood[port.Recognised{From: r.From, Hash: r.Hash}] {
+		if stood[port.SourceText{Producer: r.Producer, Hash: r.Hash}] {
 			continue
 		}
-		for _, name := range text.Names(r.From, r.Hash) {
+		for _, name := range text.Names(r.Producer, r.Hash) {
 			if err := u.Derived.Remove(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("remove %s: %w", name, err)
 			}
@@ -245,7 +245,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognis
 // so, because its recipe is still the one in use: nothing else asks after it.
 // Recording it afresh with no recipe clears which producer made its text, so the
 // next pass cuts it from the document again.
-func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *Extracted) error {
+func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	if u.Derived == nil {
 		return nil
 	}
@@ -258,7 +258,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if u.holds(ctx, text.Artifact(r.From, r.Hash), text.Partial(r.From, r.Hash)) {
+			if u.holds(ctx, text.Artifact(r.Producer, r.Hash), text.Partial(r.Producer, r.Hash)) {
 				continue
 			}
 			ref, err := reader.Stat(ctx, r.Path)
@@ -295,7 +295,7 @@ func (u Extract) holds(ctx context.Context, names ...string) bool {
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it names nothing that has not been tried, so a run that stopped part way
 // is continued by starting another.
-func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *Extracted) error {
+func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
 	sizes := u.sizes()
 	known := recipes(sizes)
 	tried := map[string]bool{}
@@ -343,8 +343,8 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 //
 // It is what a recognition calls as it writes: the pages already read are cut
 // and can be embedded while the rest of the document is still being read.
-func (u Extract) One(ctx context.Context, v domain.Vault, path string) (Extracted, error) {
-	var res Extracted
+func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
+	var res ExtractResult
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -366,7 +366,7 @@ func (u Extract) source(
 	reader port.VaultReader,
 	path string,
 	sizes cutting.Sizes,
-	res *Extracted,
+	res *ExtractResult,
 ) error {
 	res.Reading = path
 	u.progress(*res)
@@ -513,7 +513,7 @@ func (u Extract) sizes() cutting.Sizes {
 	return s
 }
 
-func (u Extract) progress(res Extracted) {
+func (u Extract) progress(res ExtractResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}
@@ -525,7 +525,7 @@ func (u Extract) progress(res Extracted) {
 // what a person asked for, and a document whose layer is unusable is why they
 // asked. A recognition still running is the text of the pages it has read.
 // Where there is none, the file speaks for itself and no producer is named.
-func (u Extract) text(ctx context.Context, ref domain.FileRef, raw []byte, hash string) (*text.Document, string, error) {
+func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
 	if u.Derived != nil {
 		from := u.producer(ref)
 		for _, name := range []string{text.Artifact(from, hash), text.Partial(from, hash)} {
@@ -558,7 +558,7 @@ func (u Extract) area() string {
 
 // producer is who would have written this file's text down: a recording is
 // listened to, and everything else is read.
-func (u Extract) producer(ref domain.FileRef) string {
+func (u Extract) producer(ref domain.Fingerprint) string {
 	if ref.Kind == domain.KindRecording {
 		return text.ASR
 	}

@@ -664,7 +664,7 @@ func TestABookIsCutTheWayItAlwaysWas(t *testing.T) {
 	if got := index.sources[first.ID][bookPath].Recipe; got != recipe(text.ReaderEPUB, sizes) {
 		t.Errorf("the book was cut by %q", got)
 	}
-	if got := extract.producer(domain.FileRef{Kind: domain.KindBook}); got != "ocr" {
+	if got := extract.producer(domain.Fingerprint{Kind: domain.KindBook}); got != "ocr" {
 		t.Errorf("a book's reading is kept under %q, want ocr", got)
 	}
 	if got := text.Artifact("ocr", "abc123"); got != "ocr/abc123.txt" {

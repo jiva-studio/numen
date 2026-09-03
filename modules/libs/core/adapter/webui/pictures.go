@@ -6,11 +6,11 @@ import (
 	"sync"
 )
 
-// shot is one drawn page: which document it belongs to, which page it is, and
+// pictureID is one drawn page: which document it belongs to, which page it is, and
 // how wide it was drawn. The width is part of the key because the window asks
 // for the width its screen has, and a page drawn for one width is not the page
 // another width asks for.
-type shot struct {
+type pictureID struct {
 	of   fingerprint
 	at   int
 	wide int
@@ -35,7 +35,7 @@ func (p *picture) wait(ctx context.Context) ([]byte, error) {
 
 // kept is one picture in the order it was last asked for.
 type kept struct {
-	key shot
+	key pictureID
 	pic *picture
 }
 
@@ -46,7 +46,7 @@ type kept struct {
 // second, and what is here goes when the window does.
 type pictures struct {
 	mu    sync.Mutex
-	by    map[shot]*list.Element
+	by    map[pictureID]*list.Element
 	order *list.List
 	// bytes is what the drawings held come to, and most is what they may come
 	// to.
@@ -59,12 +59,12 @@ const mostDrawn = 64 << 20
 
 // drawings is a window with nothing drawn yet.
 func drawings() *pictures {
-	return &pictures{by: map[shot]*list.Element{}, order: list.New(), most: mostDrawn}
+	return &pictures{by: map[pictureID]*list.Element{}, order: list.New(), most: mostDrawn}
 }
 
 // draw hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
-func (p *pictures) draw(ctx context.Context, key shot, drawn func() ([]byte, error)) ([]byte, error) {
+func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
 	if el, held := p.by[key]; held {
 		p.order.MoveToFront(el)
@@ -97,7 +97,7 @@ func (p *pictures) draw(ctx context.Context, key shot, drawn func() ([]byte, err
 
 // has says whether a page is drawn already, which is what deciding to draw one
 // ahead turns on.
-func (p *pictures) has(key shot) bool {
+func (p *pictures) has(key pictureID) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	_, held := p.by[key]
@@ -105,7 +105,7 @@ func (p *pictures) has(key shot) bool {
 }
 
 // drop takes one drawing out.
-func (p *pictures) drop(key shot) {
+func (p *pictures) drop(key pictureID) {
 	el, held := p.by[key]
 	if !held {
 		return

@@ -32,7 +32,7 @@ var deck = map[string]string{
 // index it may write, and two vaults to sit down to.
 func window(
 	t *testing.T,
-) (container.Config, *container.Index, *opened, *flashcardsui.API, []domain.Vault) {
+) (container.Config, *container.Index, *openVaults, *flashcardsui.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -50,7 +50,7 @@ func window(
 		{ID: "one", Name: "One", Path: vaultOf(t)},
 		{ID: "two", Name: "Two", Path: vaultOf(t)},
 	}
-	vaults := &opened{cfg: cfg, db: db, under: t.Context(), told: func(domain.Vault) {}, out: io.Discard}
+	vaults := &openVaults{cfg: cfg, db: db, under: t.Context(), told: func(domain.Vault) {}, out: io.Discard}
 	t.Cleanup(vaults.wait)
 	return cfg, db, vaults, &flashcardsui.API{}, held
 }

@@ -79,7 +79,7 @@ func (u Read) Execute(
 			return res, err
 		}
 		if held {
-			from, hash = said.From, said.Hash
+			from, hash = said.Producer, said.Hash
 		}
 	}
 

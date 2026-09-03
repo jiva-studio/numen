@@ -235,7 +235,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 func (u Transcribe) answer(
 	ctx context.Context,
 	v domain.Vault,
-	ref domain.FileRef,
+	ref domain.Fingerprint,
 	hash, area string,
 	store port.DerivedStore,
 	gave string,
@@ -258,7 +258,7 @@ func (u Transcribe) answer(
 // from it, in one statement, and the two are one fact. Where nothing cuts here
 // the source is recorded as owing its text, and the scan that cuts it writes
 // both.
-func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+func (u Transcribe) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}

@@ -13,12 +13,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Swapping is the agents' endpoint on the vault a window is showing.
+// Endpoint is the agents' endpoint on the vault a window is showing.
 //
 // What an agent is told about the vault it is working is said once, when its
 // session opens, so a window that changes vault stops the endpoint and starts
 // it again.
-type Swapping struct {
+type Endpoint struct {
 	// Serve puts the tools in front of the agents, and answers with what takes
 	// them away again.
 	Serve func() (func() error, error)
@@ -47,7 +47,7 @@ type Swapping struct {
 //
 // One swap holds this at a time, so the endpoint is started again by the swap
 // that stopped it and on the vault that swap ended on.
-func (s *Swapping) Around(swap func() error) error {
+func (s *Endpoint) Around(swap func() error) error {
 	s.turn.Lock()
 	defer s.turn.Unlock()
 
@@ -58,7 +58,7 @@ func (s *Swapping) Around(swap func() error) error {
 
 // On serves the tools against the vault in the window. A window standing on no
 // vault serves none.
-func (s *Swapping) On() {
+func (s *Endpoint) On() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (s *Swapping) On() {
 }
 
 // Off stops the endpoint and the agents this window started.
-func (s *Swapping) Off() {
+func (s *Endpoint) Off() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

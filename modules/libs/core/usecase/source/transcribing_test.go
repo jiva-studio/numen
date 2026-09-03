@@ -106,17 +106,17 @@ type unheard struct {
 
 func (h unheard) Fingerprints(
 	_ context.Context, _ string, _ domain.SourceKind,
-) (map[string]domain.FileRef, error) {
-	out := map[string]domain.FileRef{}
+) (map[string]domain.Fingerprint, error) {
+	out := map[string]domain.Fingerprint{}
 	for _, path := range h.recordings {
-		out[path] = domain.FileRef{Path: path}
+		out[path] = domain.Fingerprint{Path: path}
 	}
 	return out, nil
 }
 
 func (h unheard) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
-) ([]port.Recognised, error) {
+) ([]port.SourceText, error) {
 	return nil, nil
 }
 
@@ -198,17 +198,17 @@ type recognised struct{ path string }
 
 func (h recognised) Fingerprints(
 	_ context.Context, _ string, _ domain.SourceKind,
-) (map[string]domain.FileRef, error) {
-	return map[string]domain.FileRef{h.path: {Path: h.path}}, nil
+) (map[string]domain.Fingerprint, error) {
+	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
 }
 
 func (h recognised) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
-) ([]port.Recognised, error) {
-	return []port.Recognised{{Path: h.path, From: "asr", Hash: "x"}}, nil
+) ([]port.SourceText, error) {
+	return []port.SourceText{{Path: h.path, Producer: "asr", Hash: "x"}}, nil
 }
 
-func (h recognised) Under(context.Context, string, string) ([]domain.FileRef, error) { return nil, nil }
+func (h recognised) Under(context.Context, string, string) ([]domain.Fingerprint, error) { return nil, nil }
 
 func (h recognised) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
@@ -220,8 +220,8 @@ func (h recognised) ByOtherRecipe(
 	return nil, nil
 }
 
-func (h recognised) Reading(context.Context, string, string) (port.Recognised, bool, error) {
-	return port.Recognised{}, false, nil
+func (h recognised) Reading(context.Context, string, string) (port.SourceText, bool, error) {
+	return port.SourceText{}, false, nil
 }
 
 // One at a time: the models hold a worker each. A recording named while one is
@@ -375,17 +375,17 @@ type sized struct {
 
 func (s sized) Fingerprints(
 	_ context.Context, _ string, _ domain.SourceKind,
-) (map[string]domain.FileRef, error) {
-	out := map[string]domain.FileRef{}
+) (map[string]domain.Fingerprint, error) {
+	out := map[string]domain.Fingerprint{}
 	for path, size := range s.recordings {
-		out[path] = domain.FileRef{Path: path, Size: size}
+		out[path] = domain.Fingerprint{Path: path, Size: size}
 	}
 	return out, nil
 }
 
 func (sized) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
-) ([]port.Recognised, error) {
+) ([]port.SourceText, error) {
 	return nil, nil
 }
 

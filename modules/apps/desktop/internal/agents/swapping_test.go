@@ -10,15 +10,15 @@ import (
 )
 
 // serving says whether the tools are in front of the agents.
-func (s *Swapping) serving() bool {
+func (s *Endpoint) serving() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.shut != nil
 }
 
 // standing is a window on a vault, serving tools that do nothing.
-func standing() *Swapping {
-	return &Swapping{
+func standing() *Endpoint {
+	return &Endpoint{
 		Serve:       func() (func() error, error) { return func() error { return nil }, nil },
 		Standing:    func() domain.Vault { return domain.Vault{ID: "one"} },
 		Answers:     func(port.Agent) {},

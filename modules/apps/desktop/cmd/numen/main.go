@@ -124,7 +124,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 
 	// The agents' endpoint on the vault in the window, let in once the window is
 	// built.
-	reachable := &agents.Swapping{
+	reachable := &agents.Endpoint{
 		Serve: func() (func() error, error) {
 			return serveAgents(ctx, cfg, opened, letting, os.Stdout)
 		},
@@ -160,7 +160,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// where a page calls the close off: the question is asked on the screen the
 	// person is looking at.
 	var window *application.WebviewWindow
-	seen := sight{
+	seen := visibility{
 		hide: func() { window.Hide() },
 		show: func() { window.Show() },
 	}
@@ -268,10 +268,10 @@ func titled(v domain.Vault, open domain.Attention) string {
 	return "numen — " + v.Name
 }
 
-// sight is the window going out of sight and coming back into it. Hiding
+// visibility is the window going out of sight and coming back into it. Hiding
 // leaves the page drawing and answering, so what only it holds is handed over
 // after the window is gone from the screen.
-type sight struct {
+type visibility struct {
 	hide func()
 	show func()
 }
@@ -285,7 +285,7 @@ type sight struct {
 func closing(
 	ctx context.Context,
 	g *going,
-	s sight,
+	s visibility,
 	answered func(context.Context) bool,
 	again func(),
 ) bool {
@@ -310,7 +310,7 @@ func closing(
 // over. A settling that ended with a question standing puts the window back and
 // asks for nothing: the person is answering it, and that is the whole of what
 // the goroutine left behind may do.
-func asked(g *going, s sight, quit func()) bool {
+func asked(g *going, s visibility, quit func()) bool {
 	if g.settled() {
 		return true
 	}

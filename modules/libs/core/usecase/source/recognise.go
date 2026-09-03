@@ -48,11 +48,11 @@ type Recognise struct {
 	// what has been read is searchable before the rest of it is.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(Recognised)
+	OnProgress func(RecogniseResult)
 }
 
-// Recognised reports what recognition did.
-type Recognised struct {
+// RecogniseResult reports what recognition did.
+type RecogniseResult struct {
 	Path    string // the document being read
 	Pages   int    // how many it has
 	Read    int    // how many have been read, this run and before it
@@ -65,8 +65,8 @@ type Recognised struct {
 const DefaultBatch = 16
 
 // Execute reads one document.
-func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Recognised, error) {
-	res := Recognised{Path: path}
+func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (RecogniseResult, error) {
+	res := RecogniseResult{Path: path}
 	if u.By == nil {
 		return res, errors.New("no recogniser: none is configured")
 	}
@@ -243,7 +243,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 // from it, in one statement, and the two are one fact. Where nothing cuts here
 // the source is recorded as owing its text, and the scan that cuts it writes
 // both.
-func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
 	if u.Cut != nil {
 		return u.Cut(ctx, v, ref.Path)
 	}
@@ -255,7 +255,7 @@ func (u Recognise) stand(ctx context.Context, v domain.Vault, ref domain.FileRef
 func (u Recognise) forget(
 	ctx context.Context,
 	v domain.Vault,
-	ref domain.FileRef,
+	ref domain.Fingerprint,
 	hash string,
 	store port.DerivedStore,
 	names ...string,
@@ -322,7 +322,7 @@ func shortened(ctx context.Context, store port.DerivedStore, name string, prose 
 //
 // No recipe is written, so the source owes its text: what cuts it into chunks
 // is extraction, which knows the sizes and is the one place that does.
-func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.FileRef, hash, from string) error {
+func (u Recognise) claim(ctx context.Context, v domain.Vault, ref domain.Fingerprint, hash, from string) error {
 	return u.Sources.SaveSource(ctx, v.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})
 }
 
@@ -420,7 +420,7 @@ func (u Recognise) batch() int {
 	return u.Batch
 }
 
-func (u Recognise) progress(res Recognised) {
+func (u Recognise) progress(res RecogniseResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

@@ -25,11 +25,11 @@ func read(
 	ctx context.Context,
 	r io.Reader,
 	steps chan<- port.Step,
-	words map[string]Words,
+	words map[string]ToolDeclaration,
 	kept func(string),
 	draft Drafting,
 ) string {
-	reading := reader{steps: steps, words: words, kept: kept, draft: draft}
+	reading := parser{steps: steps, words: words, kept: kept, draft: draft}
 	lines := bufio.NewReader(r)
 
 	for {
@@ -51,12 +51,12 @@ const writtenStep = 200
 // faster than a screen is redrawn.
 const framePace = 50 * time.Millisecond
 
-// reader is what has been made of the stream so far.
-type reader struct {
+// parser is what has been made of the stream so far.
+type parser struct {
 	steps chan<- port.Step
 	// words are what each tool this vault serves calls itself, and which
 	// argument says what a call was about.
-	words map[string]Words
+	words map[string]ToolDeclaration
 	// kept is told which session this run is on, so that the next question of
 	// the same conversation is asked in it.
 	kept func(string)
@@ -87,7 +87,7 @@ type reader struct {
 	failed string
 }
 
-func (rd *reader) line(ctx context.Context, line string) {
+func (rd *parser) line(ctx context.Context, line string) {
 	var said event
 	if err := json.Unmarshal([]byte(line), &said); err != nil {
 		return
@@ -128,7 +128,7 @@ func (rd *reader) line(ctx context.Context, line string) {
 }
 
 // piece reports a word as it is written, and a call once it is whole.
-func (rd *reader) piece(ctx context.Context, event streamed) {
+func (rd *parser) piece(ctx context.Context, event streamEvent) {
 	switch event.Type {
 	case "content_block_start":
 		if event.Block.Type == "tool_use" {
@@ -173,7 +173,7 @@ func (rd *reader) piece(ctx context.Context, event streamed) {
 
 // whole reports a message that arrived in one piece, for a version that does
 // not write them as they are made.
-func (rd *reader) whole(ctx context.Context, said event) {
+func (rd *parser) whole(ctx context.Context, said event) {
 	if rd.pieces {
 		return
 	}
@@ -190,14 +190,14 @@ func (rd *reader) whole(ctx context.Context, said event) {
 }
 
 // stop keeps the first reason the work ended.
-func (rd *reader) stop(why string) {
+func (rd *parser) stop(why string) {
 	if rd.failed == "" {
 		rd.failed = why
 	}
 }
 
 // tell hands a step over, or gives up when nobody is listening any more.
-func (rd *reader) tell(ctx context.Context, s port.Step) {
+func (rd *parser) tell(ctx context.Context, s port.Step) {
 	select {
 	case rd.steps <- s:
 	case <-ctx.Done():
@@ -246,7 +246,7 @@ type event struct {
 	Subtype string          `json:"subtype"`
 	Session string          `json:"session_id"`
 	Message json.RawMessage `json:"message"`
-	Event   streamed        `json:"event"`
+	Event   streamEvent     `json:"event"`
 	Result  string          `json:"result"`
 	IsError bool            `json:"is_error"`
 
@@ -265,8 +265,8 @@ type event struct {
 	} `json:"mcp_server_errors"`
 }
 
-// streamed is a message being written: a block beginning, or a piece of one.
-type streamed struct {
+// streamEvent is a message being written: a block beginning, or a piece of one.
+type streamEvent struct {
 	Type  string `json:"type"`
 	Delta struct {
 		Type string `json:"type"`
@@ -306,7 +306,7 @@ const (
 // its title, and what the call is about is the argument it declared it cannot be
 // called without. A tool this vault does not serve is named as it named itself
 // and is about nothing: nothing was declared here to read it by.
-func (rd *reader) calls(call, tool, arguments string) port.Step {
+func (rd *parser) calls(call, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
 		return port.Step{Kind: port.StepToolCall, Call: call, Tool: tool}
@@ -348,7 +348,7 @@ func placed(path, arguments string) domain.Place {
 // Arguments still arriving is where most of a long wait is spent, and half a
 // document does not parse. What has been written is read for the name, so that
 // the person sees which note is being written while it is being written.
-func about(words Words, arguments string) string {
+func about(words ToolDeclaration, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
 		if seen := glimpsed(arguments, words.Inside); seen != "" {
@@ -494,7 +494,7 @@ func (e event) blocks() []block {
 // until the replacement has begun: a stretch shown with nothing in its place
 // reads as having been deleted. Once the replacement has begun the stretch it
 // replaces is whole, and where it stands can be found.
-func (rd *reader) draw(ctx context.Context) {
+func (rd *parser) draw(ctx context.Context) {
 	words, served := rd.words[rd.calling]
 	if !served || words.Becomes == "" || !rd.draft.drawing() {
 		return

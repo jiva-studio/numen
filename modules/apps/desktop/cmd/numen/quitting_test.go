@@ -16,8 +16,8 @@ type screen struct {
 
 func watching() *screen { return &screen{} }
 
-func (s *screen) sight() sight {
-	return sight{hide: func() { s.mark("hide") }, show: func() { s.mark("show") }}
+func (s *screen) sight() visibility {
+	return visibility{hide: func() { s.mark("hide") }, show: func() { s.mark("show") }}
 }
 
 func (s *screen) mark(what string) {

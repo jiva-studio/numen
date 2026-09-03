@@ -15,12 +15,12 @@ import (
 // errGoing is work asked for once the window has begun closing.
 var errGoing = errors.New("the window is closing")
 
-// opened is every vault this window has open.
+// openVaults is every vault this window has open.
 //
 // A vault is opened once, for the life of the window: its watch is started and
 // left running, its walk is asked for from here, and what this window writes
 // into it is levelled through the same opening.
-type opened struct {
+type openVaults struct {
 	cfg container.Config
 	db  *container.Index
 	// under is the life a vault stays open for. It outlives the question that
@@ -36,18 +36,18 @@ type opened struct {
 
 	mu    sync.Mutex
 	going bool
-	held  map[string]*vaulted
+	held  map[string]*vaultOpening
 }
 
-// vaulted is one vault's opening, made once however many ask for it.
-type vaulted struct {
+// vaultOpening is one vault's opening, made once however many ask for it.
+type vaultOpening struct {
 	once    sync.Once
 	opening *container.Opening
 	open    *container.OpenVault
 }
 
 // wait lets go of every vault and holds until nothing is still writing.
-func (o *opened) wait() {
+func (o *openVaults) wait() {
 	o.mu.Lock()
 	o.going = true
 	o.mu.Unlock()
@@ -57,7 +57,7 @@ func (o *opened) wait() {
 
 // starts takes a piece of work on and says whether it may run. A window that is
 // going takes none, so nothing begins writing after the index is waited for.
-func (o *opened) starts() bool {
+func (o *openVaults) starts() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -70,13 +70,13 @@ func (o *opened) starts() bool {
 
 // of is the vault opened, and opens it the first time it is asked for. Opening
 // one registers a watch over its whole tree, which is done outside the lock.
-func (o *opened) of(v domain.Vault) *vaulted {
+func (o *openVaults) of(v domain.Vault) *vaultOpening {
 	o.mu.Lock()
 	one, there := o.held[v.ID]
 	if !there {
-		one = &vaulted{}
+		one = &vaultOpening{}
 		if o.held == nil {
-			o.held = map[string]*vaulted{}
+			o.held = map[string]*vaultOpening{}
 		}
 		o.held[v.ID] = one
 	}
@@ -87,7 +87,7 @@ func (o *opened) of(v domain.Vault) *vaulted {
 }
 
 // opens starts one vault's watch and leaves it running.
-func (o *opened) opens(v domain.Vault, one *vaulted) {
+func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
 	opening := o.cfg.Opening(o.db)
 	opening.Told = func(vault.VaultChanges) { o.told(v) }
 	opening.Trouble = func(err error) {
@@ -112,18 +112,18 @@ func (o *opened) opens(v domain.Vault, one *vaulted) {
 
 // reads walks a vault into the index, saying how far it has got in the notes
 // written.
-func (o *opened) reads(ctx context.Context, v domain.Vault, got func(int64)) error {
+func (o *openVaults) reads(ctx context.Context, v domain.Vault, got func(int64)) error {
 	if !o.starts() {
 		return errGoing
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, func(res vault.Scanned) { got(int64(res.Indexed)) })
+	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { got(int64(res.Indexed)) })
 	return err
 }
 
 // level brings the paths a write touched up to date, through the opening of the
 // vault they are in.
-func (o *opened) level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *openVaults) level(ctx context.Context, v domain.Vault, paths []string) error {
 	return o.of(v).opening.Level(ctx, v, paths)
 }

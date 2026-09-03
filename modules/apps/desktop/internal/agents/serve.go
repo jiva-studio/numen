@@ -55,8 +55,8 @@ type Options struct {
 	Out io.Writer
 }
 
-// Served is the tools on a port, and the agent the settings name reaching them.
-type Served struct {
+// Server is the tools on a port, and the agent the settings name reaching them.
+type Server struct {
 	// Agent is the agent this window asks on the person's behalf, and nothing
 	// where the settings name none.
 	Agent *claudecode.Agent
@@ -67,7 +67,7 @@ type Served struct {
 }
 
 // Close takes the agents away and then the endpoint.
-func (s *Served) Close() error {
+func (s *Server) Close() error {
 	if s == nil || s.shut == nil {
 		return nil
 	}
@@ -76,7 +76,7 @@ func (s *Served) Close() error {
 
 // Serve puts the tools on a port and starts the agent the settings name
 // against them.
-func Serve(ctx context.Context, opts Options) (*Served, error) {
+func Serve(ctx context.Context, opts Options) (*Server, error) {
 	secret := opts.Token
 	if secret == "" {
 		minted, err := Token(opts.Config)
@@ -117,7 +117,7 @@ func Serve(ctx context.Context, opts Options) (*Served, error) {
 		fmt.Fprintf(opts.Out, "agents: %s is reachable from the network, not only from this machine\n", addr)
 	}
 
-	served := &Served{URL: endpoint.URL}
+	served := &Server{URL: endpoint.URL}
 	if opts.Config.Agent.Use == agent.UseClaude {
 		// What the window says about a call is what the tool declared about
 		// itself, asked for over the protocol an agent is answered by.
@@ -167,9 +167,9 @@ func Claude(
 	drafting claudecode.Drafting,
 	out io.Writer,
 ) *claudecode.Agent {
-	words := make(map[string]claudecode.Words, len(served))
+	words := make(map[string]claudecode.ToolDeclaration, len(served))
 	for name, said := range served {
-		words[claudecode.Tool(name)] = claudecode.Words{
+		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
 			Title:   said.Title,
 			About:   said.About,
 			Inside:  said.Inside,

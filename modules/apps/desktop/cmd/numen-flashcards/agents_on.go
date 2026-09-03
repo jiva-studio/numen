@@ -32,7 +32,7 @@ const unnamed = "no agent is named in the settings"
 // starts, so the endpoint is stopped and served again when a sitting opens on
 // another one.
 type reaching struct {
-	swapping *agents.Swapping
+	swapping *agents.Endpoint
 
 	mu sync.Mutex
 	on domain.Vault
@@ -69,7 +69,7 @@ func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
-	vaults *opened,
+	vaults *openVaults,
 	api *flashcardsui.API,
 	off bool,
 	out io.Writer,
@@ -92,7 +92,7 @@ func serveAgents(
 	api.Unreachable.Store("")
 
 	held := &reaching{}
-	held.swapping = &agents.Swapping{
+	held.swapping = &agents.Endpoint{
 		Serve: func() (func() error, error) {
 			v := held.standing()
 			root, err := filepath.Abs(v.Path)
@@ -139,7 +139,7 @@ func serveAgents(
 func reviewing(
 	cfg container.Config,
 	db *container.Index,
-	vaults *opened,
+	vaults *openVaults,
 	v domain.Vault,
 	root string,
 	out io.Writer,

@@ -45,7 +45,7 @@ type Agent struct {
 	// Words are how the tools this vault serves are spoken about, by the name
 	// the agent calls them. A tool that is not here is named as it named
 	// itself.
-	Words map[string]Words
+	Words map[string]ToolDeclaration
 	// Drafting is how a change this agent is making is drawn before it lands.
 	Drafting Drafting
 	// Model is which model answers, by the name the command line knows it as.
@@ -532,11 +532,11 @@ const prefix = "mcp__" + Name + "__"
 // agent.
 func Tool(name string) string { return prefix + name }
 
-// Words are how one tool is spoken about to a person: what it calls itself,
-// which of its arguments says what a call was about, and what a call of it does
-// to the vault. Each is the tool's own declaration, read from what the server
-// serves.
-type Words struct {
+// ToolDeclaration is how one tool is spoken about to a person: what it calls
+// itself, which of its arguments says what a call was about, and what a call
+// of it does to the vault. Each is the tool's own declaration, read from what
+// the server serves.
+type ToolDeclaration struct {
 	Title string
 	About string
 	// Inside names the field of one element that says which element it is, for
