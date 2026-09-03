@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"slices"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
@@ -51,13 +52,38 @@ type ScanResult struct {
 	Unreadable int // walked, still there, and the read refused
 }
 
+// walks is the vaults being walked, a turn each.
+var walks sync.Map
+
+// oneWalk takes the vault's turn and answers with the release of it. Walks of
+// different vaults do not wait on each other.
+func oneWalk(ctx context.Context, vaultID string) (func(), error) {
+	held, _ := walks.LoadOrStore(vaultID, make(chan struct{}, 1))
+	turn := held.(chan struct{})
+	select {
+	case turn <- struct{}{}:
+		return func() { <-turn }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
 // Execute walks the vault once.
 //
 // Only files whose size or modification time differ from what the index holds
 // are read and parsed; the rest are not opened at all. That is what keeps a scan
 // of an unchanged vault cheap enough to run at startup.
+//
+// One walk of a vault runs at a time. A walk writes in groups from what it
+// read, so its copy of a note lands last however early the note was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
+
+	over, err := oneWalk(ctx, v.ID)
+	if err != nil {
+		return res, err
+	}
+	defer over()
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {

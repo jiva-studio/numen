@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -102,6 +104,122 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Leaf" {
 		t.Errorf("the index says %q", got)
 	}
+}
+
+// A vault is walked once at a time, and what the watch collected is acted on
+// once the first walk is over. The note on disk is what the index says
+// afterwards, however old the copy the first walk was holding.
+func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
+	cfg, db, v := opened(t, note)
+
+	watcher := waved()
+	readers := staging()
+	opening := cfg.OpeningWith(db, readers, watcher)
+
+	told := make(chan usecase.Moved, 8)
+	opening.Told = func(m usecase.Moved) { told <- m }
+
+	open := opening.Begin(t.Context(), v)
+	go open.Run(t.Context())
+
+	walked := make(chan error, 1)
+	go func() {
+		_, err := open.Read(t.Context(), func(usecase.ScanResult) {})
+		walked <- err
+	}()
+
+	// The first walk has the note's old bytes in hand.
+	if path := <-readers.read; path != "Leaf.md" {
+		t.Fatalf("the walk is reading %q", path)
+	}
+	write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
+
+	// More changed at once than the watch could follow, which is answered by
+	// reading the vault again.
+	watcher.lost <- struct{}{}
+	select {
+	case m := <-told:
+		t.Fatalf("the vault was read again beside the first walk: %+v", m)
+	case <-time.After(250 * time.Millisecond):
+	}
+
+	readers.release()
+	if err := <-walked; err != nil {
+		t.Fatal(err)
+	}
+	if m := <-told; !m.Reload {
+		t.Fatalf("reported %+v", m)
+	}
+	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {
+		t.Errorf("the index says %q", got)
+	}
+}
+
+// waved is a watcher whose events a test sends itself, so what happens when a
+// vault changes can be asked without a filesystem or a timer.
+func waved() *waves {
+	return &waves{changes: make(chan []string), lost: make(chan struct{}, 1)}
+}
+
+type waves struct {
+	changes chan []string
+	lost    chan struct{}
+}
+
+func (w *waves) Watch(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
+	return w.changes, w.lost, nil
+}
+
+// staging is readers whose first walk holds every note it has read, and whose
+// later walks read straight through. A second walk of the vault can then be
+// asked for while the first is still holding an older copy.
+func staging() *staged {
+	return &staged{
+		VaultReaders: filesystem.Readers{},
+		read:         make(chan string, 1),
+		first:        make(chan struct{}),
+	}
+}
+
+type staged struct {
+	port.VaultReaders
+	read  chan string
+	first chan struct{}
+	walks atomic.Int64
+}
+
+// release lets the first walk go on.
+func (s *staged) release() { close(s.first) }
+
+func (s *staged) Open(v domain.Vault) (port.VaultReader, error) {
+	reader, err := s.VaultReaders.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return stagedRead{VaultReader: reader, at: s, holds: s.walks.Add(1) == 1}, nil
+}
+
+type stagedRead struct {
+	port.VaultReader
+	at    *staged
+	holds bool
+}
+
+func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
+	raw, err := r.VaultReader.Read(ctx, path)
+	if !r.holds {
+		return raw, err
+	}
+	select {
+	case r.at.read <- path:
+	default:
+	}
+	select {
+	case <-r.at.first:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	return raw, err
 }
 
 // gated is readers that hold each read open once the bytes are in hand, so a
