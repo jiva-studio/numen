@@ -200,6 +200,8 @@ func (u Write) level(ctx context.Context, v domain.Vault, path string) error {
 	return note.Levelled(path, u.Index(ctx, v, []string{path}))
 }
 
+// note is the writer a deck goes to disk through, held to the size a deck is
+// read at.
 func (u Write) note() note.Write {
-	return note.Write{Readers: u.Readers, Writers: u.Writers, Now: u.Now}
+	return note.Write{Readers: u.Readers, Writers: u.Writers, Now: u.Now, Bound: MaxBytes}
 }
