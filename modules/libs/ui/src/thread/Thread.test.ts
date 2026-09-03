@@ -97,3 +97,32 @@ describe('what the caller decides', () => {
     expect(wrapper.text()).not.toContain('Nothing said yet')
   })
 })
+
+/**
+ * The step each part of a turn is set at.
+ *
+ * What was said and the line about work are set in the interface's own text,
+ * and an answer is marked-up text a shade above it. The quiet step is for what
+ * is said about a turn beside it.
+ */
+describe('the step each part is set at', () => {
+  const doing = (id: string): Turn => ({ id, voice: 'doing', text: 'Thinking' })
+
+  it("sets the thread in the interface's own text", () => {
+    expect(thread([]).classes()).toContain('text-base')
+  })
+
+  it('leaves what was said at the step the thread is set in', () => {
+    expect(thread([said('1')]).find('.thread__body').classes()).not.toContain('text-small')
+  })
+
+  it('sets a line about work at that step as well', () => {
+    expect(thread([doing('1')]).find('.tool').classes()).toContain('text-base')
+  })
+
+  it('says a turn did not send in the quiet step', () => {
+    expect(thread([said('1', 'gone', 'failed')]).find('.thread__failure').classes()).toContain(
+      'text-small',
+    )
+  })
+})
