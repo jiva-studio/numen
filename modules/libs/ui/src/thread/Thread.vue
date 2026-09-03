@@ -106,7 +106,7 @@ defineExpose({ toFoot })
         </slot>
       </div>
 
-      <p v-if="entry.state === 'failed'" class="mt-1 text-small text-alarm">
+      <p v-if="entry.state === 'failed'" class="thread__failure mt-1 text-small text-alarm">
         <slot name="failure" :turn="entry.turn">Did not send</slot>
       </p>
     </div>
