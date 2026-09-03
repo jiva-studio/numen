@@ -15,6 +15,7 @@ import type {
   Refused,
   Removed,
   Renamed,
+  Runs,
   VaultRefused,
   Vaults,
 } from './core'
@@ -113,22 +114,6 @@ export interface Filing {
   makesFolder(path: string): Promise<Refused | null>
 }
 
-/** The runs a command asks for over a file. */
-export interface Running {
-  /** A recording transcribed, and the words of it written down. */
-  transcribes(path: string): Promise<Outcome>
-  /** A scanned document read, and the text of it written down. */
-  recognises(path: string): Promise<Outcome>
-  /** The transcript of a recording put right by a proofreader. */
-  proofreads(path: string): Promise<Outcome>
-  /**
-   * The transcript of a recording taken away, with everything cut from it, and
-   * whether this build can do it at all. The recording is left saying nothing,
-   * and it is offered to be heard again.
-   */
-  drops(path: string): Promise<boolean>
-}
-
 /** The files a command makes from nothing, each put in front of the person. */
 export interface Cutting {
   /**
@@ -197,7 +182,7 @@ export interface Setting {
 /** What the window offers a command being carried out, one port to a job. */
 export interface Doing {
   readonly files: Filing
-  readonly runs: Running
+  readonly runs: Runs
   readonly cards: Cutting
   readonly vaults: Vaulting
   readonly goes: Going

@@ -181,7 +181,8 @@ export interface Runs {
   proofreads(path: string): Promise<Outcome>
   /**
    * The transcript of a recording taken away, with everything cut from it, and
-   * whether this build can do it at all.
+   * whether this build can do it at all. The recording is left saying nothing,
+   * and it is offered to be heard again.
    */
   drops(path: string): Promise<boolean>
 }
