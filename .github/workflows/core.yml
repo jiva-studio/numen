@@ -83,14 +83,19 @@ jobs:
           # path a test made it at, and a mac resolves /tmp to /private/tmp;
           # flashcards parts from the library on a card face a day ahead of its
           # own last answer, which the test names as the machine's arithmetic.
-          # On Windows ten packages fail and adapter/flashcardsui does not
-          # finish inside the ten minutes a test is given.
-          entries='{"name":"Linux","runner":"ubuntu-latest","optional":false}'
+          #
+          # race is the detector, and a race is the program's and not the
+          # machine's: Linux runs it on every push, and Windows runs the same
+          # tests without paying for it a second time on the slowest runner.
+          #
+          # minutes is what the suite is given. Every machine runs every test,
+          # so a machine that no longer fits says so instead of passing slowly.
+          entries='{"name":"Linux","runner":"ubuntu-latest","optional":false,"race":true,"minutes":45}'
           if [ "$windows" = true ]; then
-            entries="$entries,"'{"name":"Windows","runner":"windows-latest","optional":true}'
+            entries="$entries,"'{"name":"Windows","runner":"windows-latest","optional":true,"race":false,"minutes":15}'
           fi
           if [ "$macos" = true ]; then
-            entries="$entries,"'{"name":"macOS","runner":"macos-latest","optional":true}'
+            entries="$entries,"'{"name":"macOS","runner":"macos-latest","optional":true,"race":true,"minutes":45}'
           fi
           echo "matrix=[$entries]" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
@@ -106,7 +111,7 @@ jobs:
     continue-on-error: ${{ matrix.optional }}
     # A suite that stops answering is billed for six hours by default, and on
     # these machines at twice and ten times the rate.
-    timeout-minutes: 45
+    timeout-minutes: ${{ matrix.minutes }}
     defaults:
       run:
         # One shell on all three, so a step is read the same wherever it runs.
@@ -159,9 +164,22 @@ jobs:
         if: matrix.runner == 'ubuntu-latest'
         run: echo "TMPDIR=/dev/shm" >> "$GITHUB_ENV"
 
+      # A Windows runner hands out a temporary folder on the system drive and
+      # checks the repository out on another. The folder a test builds its vault
+      # in moves to the drive the runner keeps for its own work, and what this
+      # machine offers is written into the log beside the timings it produces.
+      - name: Temporary folder
+        if: matrix.runner == 'windows-latest'
+        run: |
+          powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Format-Table -AutoSize Name,Used,Free" || true
+          powershell -NoProfile -Command "Get-MpComputerStatus | Format-List RealTimeProtectionEnabled,AntivirusEnabled" || true
+          echo "RUNNER_TEMP=$RUNNER_TEMP  TEMP=${TEMP:-unset}  TMP=${TMP:-unset}"
+          echo "TMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          echo "TEMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+
       # -race because a scan will grow concurrent, and the cheapest time to find
-      # that out is before it does.
-      - run: go test -race ./...
+      # that out is before it does. Every machine runs every test.
+      - run: go test ${{ matrix.race && '-race' || '' }} ./...
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.

@@ -117,6 +117,9 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) 
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Closing joins the passes still running and lets go of the index, and the
+	// folder the index is in is taken away after this.
+	t.Cleanup(func() { _ = opened.Close() })
 
 	recorded := &order{}
 	opened.API.Saves = &note.Write{

@@ -583,11 +583,7 @@ func TestASittingSaysWhichDecksItCouldNotMark(t *testing.T) {
 
 	// A deck nothing may write is a deck that keeps its cards out of the
 	// sitting, and it is named.
-	at := filepath.Join(v.Path, "decks", "Own.md")
-	if err := os.Chmod(filepath.Dir(at), 0o500); err != nil {
-		t.Skipf("this filesystem does not refuse a write: %v", err)
-	}
-	t.Cleanup(func() { os.Chmod(filepath.Dir(at), 0o700) })
+	testsupport.Unwritable(t, filepath.Join(v.Path, "decks", "Own.md"))
 
 	sitting := started(t, api, v)
 	if len(sitting.GetUnwritten()) != 1 || sitting.GetUnwritten()[0] != "decks/Own.md" {

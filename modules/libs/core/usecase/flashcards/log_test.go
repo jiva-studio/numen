@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
@@ -285,9 +286,6 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 // same kind of event: everything else the person answered is returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
-	if os.Geteuid() == 0 {
-		t.Skip("root opens a file whatever its permissions say")
-	}
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -300,10 +298,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	}
 	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,
 		filepath.FromSlash(shut.Run.Name()))
-	if err := os.Chmod(closed, 0); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { os.Chmod(closed, 0o644) })
+	testsupport.Shut(t, closed)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {

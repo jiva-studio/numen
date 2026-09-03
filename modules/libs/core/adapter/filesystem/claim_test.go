@@ -38,6 +38,36 @@ func TestANameRemovedLeavesNoClaimBehindIt(t *testing.T) {
 	}
 }
 
+// A name is taken out of the store while its claim is still held. Transcription
+// holds the claim on a partial answer for as long as it is working and takes
+// the partial away as its last act, so the claim outlives the name it is on.
+func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
+	derived, root := store(t)
+	const name = "ocr/abc.partial.txt"
+
+	release, err := derived.Claim(t.Context(), name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Write(t.Context(), name, []byte("what was heard so far")); err != nil {
+		t.Fatal(err)
+	}
+	if err := derived.Remove(t.Context(), name); err != nil {
+		t.Fatalf("the name was not taken away under its own claim: %v", err)
+	}
+	if err := release(); err != nil {
+		t.Fatal(err)
+	}
+
+	left, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range left {
+		t.Errorf("%s was left behind", one.Name())
+	}
+}
+
 // A name nothing ever claimed is removed as it always was.
 func TestANameNothingClaimedIsRemoved(t *testing.T) {
 	derived, root := store(t)

@@ -73,6 +73,16 @@ func ours(clean, serviceDir string) bool {
 	return clean == serviceDir || strings.HasPrefix(clean, serviceDir+"/")
 }
 
+// rooted says whether a path names where it starts from. A leading separator
+// and a volume are each such a name, and a path a vault holds carries neither:
+// it is read from the vault root and from nowhere else.
+func rooted(path string) bool {
+	if filepath.IsAbs(path) || filepath.VolumeName(path) != "" {
+		return true
+	}
+	return strings.HasPrefix(filepath.ToSlash(path), "/")
+}
+
 // cleaned is a path a vault could hold, in the one form the rules are written
 // against. A path that could not name anything inside a vault is refused here
 // and never reaches the filesystem.
@@ -80,7 +90,7 @@ func cleaned(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
-	if filepath.IsAbs(path) || strings.ContainsRune(path, 0) {
+	if rooted(path) || strings.ContainsRune(path, 0) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	clean := pathpkg.Clean(filepath.ToSlash(path))

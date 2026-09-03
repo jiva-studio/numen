@@ -3,13 +3,13 @@ package flashcards_test
 import (
 	"context"
 	"errors"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 // busy is an index that cannot be brought level, which is what a second writer
@@ -25,18 +25,9 @@ func TestADeckThatCouldNotBeWrittenIsNamed(t *testing.T) {
 	t.Parallel()
 	s := opened(t, handwritten)
 
-	// The folder is closed to writing, so the deck cannot be replaced. What a
-	// person meets is the editor holding the file; this is the same refusal
-	// from the same place.
-	decks := filepath.Join(s.vault.Path, "decks")
-	at, err := os.Stat(decks)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chmod(decks, 0o555); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(decks, at.Mode()) })
+	// The deck cannot be replaced. What a person meets is the editor holding
+	// the file; this is the same refusal from the same place.
+	testsupport.Unwritable(t, filepath.Join(s.vault.Path, "decks", "Own.md"))
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)
 	if err != nil {
