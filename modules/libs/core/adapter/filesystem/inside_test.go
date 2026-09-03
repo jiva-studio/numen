@@ -2,6 +2,7 @@ package filesystem
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -18,6 +19,9 @@ var paths = []string{
 	".numen/ocr/abc.txt",
 	".numen/../notes/a.md",
 	"notes/../.numen/config.json",
+	".NUMEN/config.json",
+	"NUL",
+	"c:notes.md",
 	"notes/../../etc/passwd",
 	"..",
 	".",
@@ -57,6 +61,23 @@ func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	}
 }
 
+// On Windows a name kept for a device and a path relative to a drive name
+// nothing a vault holds. On the other systems they are ordinary names.
+func TestAWindowsDeviceNameIsNotAPathInTheVault(t *testing.T) {
+	root := t.TempDir()
+	real, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, path := range []string{"NUL", "notes/con.md", "c:notes.md"} {
+		_, _, err := within(real, path, DefaultServiceDir)
+		if held := err == nil; held == (runtime.GOOS == "windows") {
+			t.Errorf("within(%q) gave %v on %s", path, err, runtime.GOOS)
+		}
+	}
+}
+
 func TestWhatEachRuleAnswersFor(t *testing.T) {
 	root := t.TempDir()
 	real, err := filepath.EvalSymlinks(root)
@@ -76,6 +97,8 @@ func TestWhatEachRuleAnswersFor(t *testing.T) {
 		{name: "the service folder itself", path: ".numen", ours: true},
 		{name: "the vault's identity", path: ".numen/config.json", ours: true},
 		{name: "a derived file", path: ".numen/ocr/abc.txt", ours: true},
+		{name: "the service folder in capitals", path: ".NUMEN/config.json", ours: true},
+		{name: "the service folder in either case", path: ".Numen/ocr/abc.txt", ours: true},
 		{name: "into the service folder the long way", path: "notes/../.numen/config.json", ours: true},
 		{name: "out of the service folder the long way", path: ".numen/../notes/a.md", vault: true},
 		{name: "out of the vault", path: "notes/../../etc/passwd"},
