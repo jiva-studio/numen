@@ -1,4 +1,4 @@
-name: Landing :: Build and deploy
+name: "Landing :: Build and deploy"
 
 # A run answers for the page and for nothing else, so what starts it is a change
 # to the page, on a branch and on main alike. The two lists are written out
@@ -28,7 +28,7 @@ jobs:
   # that its markup typechecks and that the site builds — pictures included,
   # which is where a missing asset turns up.
   build:
-    name: Page build
+    name: "Page :: Build"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -58,7 +58,7 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the page, and the page has a storage zone of its own.
   deploy:
-    name: Page deploy
+    name: "Page :: Deploy"
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest

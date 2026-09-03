@@ -1,4 +1,4 @@
-name: Interface :: Build and test
+name: "Interface :: Build and test"
 
 on:
   pull_request:
@@ -32,7 +32,7 @@ jobs:
   # The shared components on their own: built into the shape a consumer sees,
   # and asked what they draw in a document.
   components:
-    name: Components
+    name: "Components :: Build and test"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -57,7 +57,7 @@ jobs:
   # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
   # on Linux and Chromium on Windows, so both are fetched.
   stories:
-    name: Stories
+    name: "Stories :: Draw in both engines"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -88,7 +88,7 @@ jobs:
   # The screens that arrange the components. All are typed against the schema,
   # so a change to it fails here rather than on screen.
   windows:
-    name: Windows
+    name: "Windows :: Typecheck and test"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
