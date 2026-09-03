@@ -481,7 +481,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := highlight.Pack([]highlight.Box{{Page: 2, Start: 9000, Length: 7}})
+	stray := highlight.Pack([]highlight.Box{{Page: 2, Run: highlight.Run{Start: 9000, Length: 7}}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", document(t)), stray); err != nil {
 		t.Fatal(err)
 	}

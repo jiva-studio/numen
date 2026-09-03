@@ -38,13 +38,17 @@ func Unpack(raw []byte) []Box {
 	for at := 0; at+record <= len(raw); at += record {
 		one := raw[at : at+record]
 		boxes = append(boxes, Box{
-			Page:   int(int32(binary.LittleEndian.Uint32(one[0:]))),
-			Start:  int(int32(binary.LittleEndian.Uint32(one[4:]))),
-			Length: int(int32(binary.LittleEndian.Uint32(one[8:]))),
-			MinX:   math.Float32frombits(binary.LittleEndian.Uint32(one[12:])),
-			MinY:   math.Float32frombits(binary.LittleEndian.Uint32(one[16:])),
-			MaxX:   math.Float32frombits(binary.LittleEndian.Uint32(one[20:])),
-			MaxY:   math.Float32frombits(binary.LittleEndian.Uint32(one[24:])),
+			Page: int(int32(binary.LittleEndian.Uint32(one[0:]))),
+			Run: Run{
+				Start:  int(int32(binary.LittleEndian.Uint32(one[4:]))),
+				Length: int(int32(binary.LittleEndian.Uint32(one[8:]))),
+			},
+			Rect: Rect{
+				MinX: math.Float32frombits(binary.LittleEndian.Uint32(one[12:])),
+				MinY: math.Float32frombits(binary.LittleEndian.Uint32(one[16:])),
+				MaxX: math.Float32frombits(binary.LittleEndian.Uint32(one[20:])),
+				MaxY: math.Float32frombits(binary.LittleEndian.Uint32(one[24:])),
+			},
 		})
 	}
 	return boxes

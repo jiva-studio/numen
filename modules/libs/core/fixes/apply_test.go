@@ -26,8 +26,11 @@ func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Pa
 			marks = append(marks, ocr.PageStart{Offset: at})
 		}
 		boxes = append(boxes, highlight.Box{
-			Page: i / perPage, Start: at, Length: len(line),
-			MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
+			Page: i / perPage,
+			Run:  highlight.Run{Start: at, Length: len(line)},
+			Rect: highlight.Rect{
+				MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
+			},
 		})
 		at += len(line) + len("\n")
 	}

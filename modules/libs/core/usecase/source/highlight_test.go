@@ -15,6 +15,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
+// boxed is one word of a page: where it stands in the prose, and the fraction
+// of the page it covers.
+func boxed(page, start, length int, over highlight.Rect) highlight.Box {
+	return highlight.Box{
+		Page: page,
+		Run:  highlight.Run{Start: start, Length: length},
+		Rect: over,
+	}
+}
+
 // layered reads a document with the library and answers where its words sit
 // with what the test put in.
 type layered struct {
@@ -108,9 +118,9 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
 	written := []highlight.Box{
-		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
-		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
-		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
+		boxed(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		boxed(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		boxed(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
@@ -311,7 +321,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 
 	// A reading whose words sit at the top of the first page.
 	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
-		{Page: 0, Start: 0, Length: 400, MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2},
+		boxed(0, 0, 400, highlight.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -343,9 +353,9 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	holds(t, index, shelved, "ocr", "abc123")
 
 	written := []highlight.Box{
-		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
-		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
-		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
+		boxed(4, 0, 5, highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
+		boxed(4, 6, 4, highlight.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
+		boxed(5, 11, 5, highlight.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
 	}
 	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)

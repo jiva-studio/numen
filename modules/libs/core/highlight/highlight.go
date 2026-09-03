@@ -15,10 +15,9 @@ import "sort"
 // A Box is one run of prose and where it was read: the page it is on, the run
 // of bytes in the text, and the rectangle it covers.
 type Box struct {
-	Page                   int
-	Start                  int
-	Length                 int
-	MinX, MinY, MaxX, MaxY float32
+	Page int
+	Run
+	Rect
 }
 
 // A Rect is a place on a page, in fractions of it.
@@ -58,12 +57,11 @@ func Marks(boxes []Box, start, length int) []Page {
 	var out []Page
 	for ; at < len(boxes) && boxes[at].Start < end; at++ {
 		box := boxes[at]
-		rect := Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		if n := len(out); n > 0 && out[n-1].Index == box.Page {
-			out[n-1].Rects = append(out[n-1].Rects, rect)
+			out[n-1].Rects = append(out[n-1].Rects, box.Rect)
 			continue
 		}
-		out = append(out, Page{Index: box.Page, Rects: []Rect{rect}})
+		out = append(out, Page{Index: box.Page, Rects: []Rect{box.Rect}})
 	}
 	return out
 }

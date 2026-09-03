@@ -11,8 +11,9 @@ import (
 // looks at closely.
 func word(page, start, length int) highlight.Box {
 	return highlight.Box{
-		Page: page, Start: start, Length: length,
-		MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2,
+		Page: page,
+		Run:  highlight.Run{Start: start, Length: length},
+		Rect: highlight.Rect{MinX: 0.1, MinY: float32(start) / 1000, MaxX: 0.9, MaxY: 0.2},
 	}
 }
 

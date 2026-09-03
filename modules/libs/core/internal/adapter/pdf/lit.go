@@ -172,13 +172,14 @@ func (p sheet) box(page, start, length int, word responses.CharPosition) highlig
 	x0, y0 := p.drawn(word.Left, word.Top)
 	x1, y1 := p.drawn(word.Right, word.Bottom)
 	return highlight.Box{
-		Page:   page,
-		Start:  start,
-		Length: length,
-		MinX:   onPage(min(x0, x1)),
-		MinY:   onPage(min(y0, y1)),
-		MaxX:   onPage(max(x0, x1)),
-		MaxY:   onPage(max(y0, y1)),
+		Page: page,
+		Run:  highlight.Run{Start: start, Length: length},
+		Rect: highlight.Rect{
+			MinX: onPage(min(x0, x1)),
+			MinY: onPage(min(y0, y1)),
+			MaxX: onPage(max(x0, x1)),
+			MaxY: onPage(max(y0, y1)),
+		},
 	}
 }
 
