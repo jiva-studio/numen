@@ -1,18 +1,17 @@
 name: Release
-run-name: Release ${{ inputs.version || github.ref_name }}
+run-name: Release on the ${{ inputs.channel }} channel
 
-# Files to hand to somebody. A tag is a release and is named by the tag; a run
-# asked for by hand is named by what it was asked for. Every job keeps what it
-# built as an artefact; what a release contains is a separate question.
+# Files to hand to somebody, and the tag, the notes and the release that say
+# what they are. A run is asked for by hand and answers for one channel: what
+# the page hands to everybody, or what it hands to somebody who asked.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
-      version:
-        description: Version
-        type: string
-        default: 0.0.0-dev
+      channel:
+        description: Channel
+        type: choice
+        default: beta
+        options: [stable, beta]
       linux:
         description: Linux
         type: boolean
@@ -33,13 +32,17 @@ on:
         type: boolean
         default: true
       publish:
-        description: Put the builds up where nothing points at them
+        description: Put the builds up and make the release
         type: boolean
-        default: false
+        default: true
+
+permissions:
+  contents: write
 
 jobs:
-  # What this run is called and where it goes. A tag is named by the tag and
-  # goes where the page looks; anything else goes where nothing points at it.
+  # What this run is called and where it goes. A stable release is named for
+  # the month it is made in and goes where the page looks; a beta is named for
+  # the stable release it precedes and goes on a shelf of its own.
   naming:
     name: Version
     runs-on: ubuntu-24.04
@@ -65,8 +68,7 @@ jobs:
 
       - id: said
         env:
-          EVENT: ${{ github.event_name }}
-          ASKED_VERSION: ${{ inputs.version }}
+          CHANNEL: ${{ inputs.channel }}
           ASKED_LINUX: ${{ inputs.linux }}
           ASKED_WINDOWS: ${{ inputs.windows }}
           ASKED_MACOS: ${{ inputs.macos }}
@@ -75,26 +77,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "$EVENT" = push ]; then
-            version=${GITHUB_REF_NAME#v}
-            shelf=latest
-            linux=true
-            windows=true
-            macos=true
-            notarize=true
-            publish=true
-          else
-            version=$ASKED_VERSION
-            shelf=dev
-            linux=$ASKED_LINUX
-            windows=$ASKED_WINDOWS
-            macos=$ASKED_MACOS
-            notarize=$ASKED_NOTARIZE
-            publish=$ASKED_PUBLISH
-          fi
+          channel=$CHANNEL
+          linux=$ASKED_LINUX
+          windows=$ASKED_WINDOWS
+          macos=$ASKED_MACOS
+          notarize=$ASKED_NOTARIZE
+          publish=$ASKED_PUBLISH
 
           build=$(git rev-list --count HEAD)
           commit=$(git rev-parse --short=7 HEAD)
+
+          # A release is named for the month it is made in and for how many
+          # stable releases that month already holds, so nobody has a number to
+          # invent. A beta is named for the stable release it precedes, and the
+          # build number is what tells two betas of it apart.
+          year=$(date -u +%Y)
+          month=$(date -u +%-m)
+          made=$(git tag -l "v$year.$month.*" | grep -vc -- '-' || true)
+
+          if [ "$channel" = stable ]; then
+            version="$year.$month.$made"
+            shelf=latest
+          else
+            version="$year.$month.$made-beta.$build"
+            shelf=beta
+          fi
 
           # What every file this run puts up carries in its name, and what the
           # three of them together name is one build and no other.
@@ -104,16 +111,6 @@ jobs:
           # what tells two builds of one version apart.
           IFS=. read -r major minor patch _ <<< "${version%%-*}"
           numeric="${major:-0}.${minor:-0}.${patch:-0}.$build"
-
-          case "$version" in
-            *-alpha*) channel=alpha ;;
-            *-beta*) channel=beta ;;
-            *-*) channel=prerelease ;;
-            *) channel=stable ;;
-          esac
-          if [ "$shelf" != latest ]; then
-            channel=dev
-          fi
 
           for name in version build commit stamp numeric channel shelf linux windows macos notarize publish; do
             echo "$name=${!name}" >> "$GITHUB_OUTPUT"
@@ -605,6 +602,8 @@ jobs:
           CHANNEL: ${{ needs.naming.outputs.channel }}
           SHELF: ${{ needs.naming.outputs.shelf }}
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+          SERVER: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
           shelf="$RUNNER_TEMP/upload/$SHELF"
@@ -615,6 +614,7 @@ jobs:
             printf '  "commit": "%s",\n' "$COMMIT"
             printf '  "stamp": "%s",\n' "$STAMP"
             printf '  "channel": "%s",\n' "$CHANNEL"
+            printf '  "notes": "%s",\n' "$SERVER/$REPOSITORY/releases/tag/v$VERSION"
             printf '  "released": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf '  "files": [\n'
             first=1
@@ -709,3 +709,81 @@ jobs:
               exit 1
             fi
           done
+
+  # What the release is called and what it says it holds. The tag is made when
+  # the builds are up and not before, so nothing names a build that failed.
+  announce:
+    name: Announce
+    if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
+    needs: [naming, publish]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/built
+
+      - name: Git-cliff
+        env:
+          CLIFF: 2.14.1
+          SHA256: dfe9bef0c7a00d05fafe78e6e591a1a280d39dd495b8066764db0a559acde67f
+        run: |
+          set -euo pipefail
+          at="git-cliff-$CLIFF-x86_64-unknown-linux-gnu.tar.gz"
+          curl -sfSL -o "$RUNNER_TEMP/$at" \
+            "https://github.com/orhun/git-cliff/releases/download/v$CLIFF/$at"
+          echo "$SHA256  $RUNNER_TEMP/$at" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
+          sudo install "$RUNNER_TEMP/git-cliff-$CLIFF/git-cliff" /usr/local/bin/
+
+      # What has landed since the last release everybody was handed. A beta is
+      # measured from there too, so it says everything the stable release it
+      # precedes will say.
+      - name: What is in it
+        id: notes
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          since=$(git tag -l 'v*' | grep -v -- '-' | sort -V | tail -1)
+          echo "since ${since:-the first commit}"
+          if [ -n "$since" ]; then
+            git cliff --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
+          else
+            git cliff --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
+          fi
+          cat "$RUNNER_TEMP/notes.md"
+
+      - name: The tag
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin "v$VERSION"
+
+      # The builds are on the release as well as on the shelf: the shelf is what
+      # the page hands out, and this is what the version is kept under.
+      - name: The release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.naming.outputs.version }}
+          CHANNEL: ${{ needs.naming.outputs.channel }}
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find "$RUNNER_TEMP/built" -type f | sort)
+          printf '%s\n' "${files[@]}"
+
+          prerelease=
+          [ "$CHANNEL" = stable ] || prerelease=--prerelease
+
+          gh release create "v$VERSION" \
+            --title "$VERSION" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            $prerelease \
+            "${files[@]}"
