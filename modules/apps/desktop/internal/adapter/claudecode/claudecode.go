@@ -504,7 +504,7 @@ type Words struct {
 	Stood   string
 	Becomes string
 	// Kind is what a call of this tool does to the vault. A tool that declares
-	// nothing about it is port.StepCalling.
+	// nothing about it is port.StepToolCall.
 	Kind port.StepKind
 }
 

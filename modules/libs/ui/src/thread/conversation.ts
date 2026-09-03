@@ -202,7 +202,7 @@ export function conversation(
             show()
             break
 
-          case 'doing':
+          case 'toolCall':
             settleAnswer()
             waiting(false)
             calls.add(`${step.tool}\u0000${step.about}`)

@@ -85,7 +85,7 @@ func TestNamesAToolAsItNamedItself(t *testing.T) {
 		`{"type":"result","subtype":"success","is_error":false}`)
 
 	steps := heard(t, work)
-	if steps[0].Kind != port.StepCalling || steps[0].Tool != "Search notes" || steps[0].About != "entropy" {
+	if steps[0].Kind != port.StepToolCall || steps[0].Tool != "Search notes" || steps[0].About != "entropy" {
 		t.Errorf("expected the tool's own title and what it was asked, got %+v", steps[0])
 	}
 }
@@ -123,7 +123,7 @@ func TestReadsWordsAndCallsAsTheyAreWritten(t *testing.T) {
 		switch step.Kind {
 		case port.StepSaying:
 			said = append(said, step.Text)
-		case port.StepCalling:
+		case port.StepToolCall:
 			calls = append(calls, step)
 		}
 	}
@@ -363,7 +363,7 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 
 	var calls []port.Step
 	for _, s := range steps {
-		if s.Kind == port.StepCalling {
+		if s.Kind == port.StepToolCall {
 			calls = append(calls, s)
 		}
 	}
@@ -440,7 +440,7 @@ func TestSaysWhatACallDoesToTheVault(t *testing.T) {
 		t.Errorf("a call that writes a note is %+v", steps[0])
 	}
 	// A tool that declared nothing about what it does is a call and no more.
-	if steps[1].Kind != port.StepCalling {
+	if steps[1].Kind != port.StepToolCall {
 		t.Errorf("a call that says nothing about itself is %+v", steps[1])
 	}
 }

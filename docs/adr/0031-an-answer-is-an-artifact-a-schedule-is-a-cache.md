@@ -3,8 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-29
 - **Applies to:** the vault format, and `modules/libs/core` — `flashcards`, `usecase/flashcards`
-- **Amends:** ADR-0027 (the stencil and the deck)
-- **Related:** ADR-0001, ADR-0003, ADR-0015, ADR-0020, ADR-0028, ADR-0030
+- **Related:** ADR-0001, ADR-0003, ADR-0015, ADR-0020, ADR-0027, ADR-0030
 
 ## Context
 
@@ -54,7 +53,7 @@ A line that does not parse is skipped and counted, and so is a line whose `v` is
 
 **A card face is what carries a schedule**: one card, and one face of the stencil that cuts it. A card is shown once through each face its stencil declares (ADR-0027), and each face asks a different thing of the person, so each face has a path of its own.
 
-The card half is the mark it is known by (ADR-0028), which travels with it: a card moved to another deck or another vault keeps its schedule and its history, and nothing is recomputed.
+The card half is the mark it is known by (ADR-0027), which travels with it: a card moved to another deck or another vault keeps its schedule and its history, and nothing is recomputed.
 
 The face half is the face's name, which is its heading in the stencil, and a face carries no mark. **Renaming a face starts its schedule again.** That is the cost of this decision, and it is paid where it falls: a stencil is written once and used a thousand times, and a face is renamed about as often as it is written.
 
@@ -92,6 +91,7 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 
 - **A vault carries its own history.** Copied to another machine, its cards are the cards a person has been answering, at the interval they had reached. This is what [ADR-0027](0027-the-stencil-and-the-deck.md) recorded as the cost of keeping the schedule outside the vault, and it is the cost this decision takes back — the deck file still holds no schedule and is still not rewritten when a card is answered.
 - **The order of the history is the order of the clocks that wrote it.** Two machines whose clocks disagree interleave their answers wrongly, and nothing here can tell.
+- **The mark the schedule cache is filed under carries the placement.** A preset's shares, whether its load is evened, the goal that decides whether it is evened at all, and the hour a day begins at all decide which day a card lands on, so all of them stand in the mark.
 - **The log grows, one small file to a run.** Daily review is on the order of a few hundred files a year, each a few kilobytes. Folding old ones together is a rewrite, and a rewrite is the thing that makes merging hard, so it is only ever done to months nothing writes to any more.
 - **A store of derived files has to be able to say what names it holds.** Reading the log means reading every file in one folder, which `DerivedStore` had no way to ask.
 - **A stencil's faces are renamed knowingly.** The editor is where a person is told what a rename costs.
@@ -113,4 +113,4 @@ A mark in the log that no deck holds is not an error and is never removed. The c
 
 **A schedule for the card rather than for each of its faces.** Rejected: the faces exist because they ask different things, and one schedule over all of them either shows a person what they know or hides what they do not.
 
-**Giving each face a mark of its own**, so a rename costs nothing. Rejected for now: it writes a machine's token into the stencil beside every face, which is the shape ADR-0028 turned down for cards until there was a reason. A rename costing a schedule is the reason, when it turns out to be one.
+**Giving each face a mark of its own**, so a rename costs nothing. Rejected for now: it writes a machine's token into the stencil beside every face, which is the shape ADR-0027 turned down for cards until there was a reason. A rename costing a schedule is the reason, when it turns out to be one.

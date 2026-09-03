@@ -22,10 +22,10 @@ export const core: AgentPort = {
         case 'said':
           yield { kind: 'said', text: step.step.value }
           break
-        case 'doing': {
+        case 'toolCall': {
           const said = step.step.value
           yield {
-            kind: 'doing',
+            kind: 'toolCall',
             tool: said.tool,
             about: said.about,
             written: said.written,

@@ -25,7 +25,7 @@ The index's single write connection (ADR-0008) is a different lock over a differ
 
 Every operation that reads a note and puts it back holds it across both: an agent's edit, the save of typed text, and the repair of a link a move left pointing at nothing.
 
-**A create, the rename a move is, and a removal take nothing.** Each is one filesystem call over one name.
+**A create, a removal and the rename a move is take nothing.** Each is one filesystem call over one name. Renaming a note is not one of them: it writes the title inside the file, so it takes the lock like any other write, and so does each backlink a move repairs.
 
 **The lock lives in this process.** Two windows on one vault hold a lock each, and that is the limit of what it serialises. A file synchroniser takes no part in it at all.
 
@@ -73,11 +73,9 @@ A quit that does not arrive through the window is answered on the thread the pag
 
 ### The runtime a page is read through is made before the window
 
-Every model this process runs is run through one ONNX Runtime environment, made once and kept for the life of the process. The one a page is read through is made before the window, and a reading is refused where it was not.
+A model is run through an ONNX Runtime environment made once and kept for the life of the process. **The one a page is read through is made before the window**, and a reading is refused where it was not. **A recording is transcribed through one opened when there is a recording to transcribe**, and nothing is refused and nothing is left for the next opening.
 
 A machine holding no runtime at all is left as it is, and a reading is what fetches one. The reading that fetched it says so, and the document is the next opening's to read.
-
-**A recording is transcribed through a runtime opened when there is a recording to transcribe.** On macOS and on Linux a runtime opened after the window writes down the same words as one opened before, measured on both, so nothing is refused and nothing is left for the next opening. What that measurement says about reading a page is not known: the rule above stands until somebody measures it.
 
 ### An agent does not outlive the window
 
@@ -94,7 +92,7 @@ A grandchild holding the child's error output keeps a wait from returning, so th
 - A close a page calls off is a window that went and came back.
 - A machine that fetched its runtime during a reading reads that document at the next opening, and is told so where the reading was asked for.
 - A note an agent was part of the way through writing is whatever its last complete write left.
-- Four bounds are four constants, and nothing measures what any of them is a bound on.
+- Every bound here is a constant, and nothing measures what any of them is a bound on. A subprocess arriving with a feature of its own brings another, and nothing counts them.
 
 ## Alternatives considered
 

@@ -47,14 +47,14 @@ type Work interface {
 // StepKind is what a step is.
 //
 // A step naming a call says what that call does to the vault. A call whose kind
-// is not known is StepCalling.
+// is not known is StepToolCall.
 type StepKind int
 
 const (
-	// StepCalling names a tool the agent is using. It arrives more than once for
+	// StepToolCall names a tool the agent is using. It arrives more than once for
 	// one call: the tool is named as soon as it is reached for, and again as its
 	// arguments are written, because writing them is most of the wait.
-	StepCalling StepKind = iota
+	StepToolCall StepKind = iota
 	// StepRead names a call that reads the vault and leaves it as it was.
 	StepRead
 	// StepEdit names a call that writes a note.

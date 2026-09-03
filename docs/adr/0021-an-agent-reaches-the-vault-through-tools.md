@@ -87,7 +87,7 @@ An agent is configured once, by a person, in a file of its own. So the token is 
 
 ### The tools ship in the binary a person runs
 
-There are two binaries, split by build profile: the window links against the system's browser through cgo, and the command line is pure Go and cross-compiles. The tools go in the window, because they exist to be watched. `numen` is what a person installs and starts; `numen-cli` is the developer's and automation's tool, and nothing of the tools is linked into it.
+The binaries are split by build profile: a window links against the system's browser through cgo, and the command line is pure Go and cross-compiles. The tools go in a window, because they exist to be watched — `numen` serves them, and so does `numen-flashcards` over the surface ADR-0030 gives it. `numen-cli` is the developer's and automation's tool, and nothing of the tools is linked into it.
 
 ### A change reaches the window the way any other edit does
 

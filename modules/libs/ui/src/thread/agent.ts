@@ -20,7 +20,7 @@ export interface Place {
 export type AgentStep =
   | { readonly kind: 'said'; readonly text: string }
   | {
-      readonly kind: 'doing'
+      readonly kind: 'toolCall'
       readonly tool: string
       readonly about: string
       /** How much of the call has been written. It arrives more than once. */

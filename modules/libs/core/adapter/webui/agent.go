@@ -73,10 +73,10 @@ func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) 
 // vault, and carries where in the vault it is working.
 func stepsOf(step port.Step) []*v1.AskResponse {
 	switch step.Kind {
-	case port.StepCalling, port.StepRead, port.StepEdit,
+	case port.StepToolCall, port.StepRead, port.StepEdit,
 		port.StepRemove, port.StepMove, port.StepSearch:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Doing{
-			Doing: &v1.Doing{
+		return []*v1.AskResponse{{Step: &v1.AskResponse_ToolCall{
+			ToolCall: &v1.ToolCall{
 				Tool:    step.Tool,
 				About:   step.About,
 				Written: int32(step.Written),

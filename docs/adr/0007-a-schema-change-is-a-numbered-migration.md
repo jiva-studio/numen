@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
+- **Applies to:** `modules/libs/core`
 - **Related:** ADR-0002, ADR-0004, ADR-0006, ADR-0008
 
 ## Context
@@ -34,7 +34,7 @@ Each numbered file runs together with the bump that records it, so the database 
 
 ### Only a numbered migration empties anything
 
-A migration may empty the tables it changes, saying so in its own file, and the next scan refills them. It empties its own tables and no others. Nothing outside a migration file empties anything.
+A migration may empty the tables it changes, saying so in its own file, and the next scan refills them. It empties its own tables and no others. Nothing outside a migration file empties anything, save the coarse vector index: its width is a model's, so a model of another width rebuilds that one table from the vectors already bought.
 
 ### The `applied` table says which file brought the index to which version
 
@@ -47,7 +47,7 @@ A schema written by a later build holds what this one cannot read. It is reporte
 ## Consequences
 
 - Migrations are forward-only and accumulate, and each is code that runs on somebody's machine years later.
-- A migrated database and a fresh one can differ, and are checked against each other.
+- A migrated database and a fresh one can differ, and nothing compares them.
 - A half-applied change does not exist; a failure leaves the last whole version.
 - An index a later build wrote stops this build, and the remedy is that build.
 - A migration that empties a table costs the person the next scan over it.

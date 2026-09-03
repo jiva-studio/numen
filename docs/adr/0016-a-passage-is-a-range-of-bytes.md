@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
+- **Applies to:** `modules/libs/core`, `modules/apps/desktop` — the asset routes
 - **Related:** ADR-0004, ADR-0005, ADR-0011, ADR-0014, ADR-0015
 
 ## Context
@@ -34,9 +34,20 @@ The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is 
 ### A vault file is an asset
 
 ```
-GET /assets/<id>                          what it is
-GET /assets/<id>/pages/<n>?wide=W         one page, where the asset has any
-GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
+GET    /assets/<id>                          what it is
+GET    /assets/<id>/pages/<n>?wide=W         one page drawn, where the asset has any
+GET    /assets/<id>/marks?start=N&length=M   where a run of its text sits
+GET    /assets/<id>/cues[?start=N&length=M]  the transcript, as JSON
+PUT    /assets/<id>/cues                     put the transcript right
+DELETE /assets/<id>/cues                     take the transcript away
+POST   /assets/<id>/recognise                read the pages
+POST   /assets/<id>/transcribe               write down what is said
+POST   /assets/<id>/proofread                put a reading or a transcript right
+```
+
+A recording's bytes are not here. They are served ranged, from a loopback port, at an address the answer to `GET /assets/<id>` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+
+```
 ```
 
 `<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. These routes are served by the same adapter that serves the generated handler (ADR-0005).
@@ -68,6 +79,6 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 
 ## Notes
 
-pdfium reports a page's size **as it is drawn** and its characters in the space its text is written in. On a page carrying a quarter turn the two disagree, and dividing one by the other gives rectangles inside `[0,1]` and wrong, with nothing saying so. The turn is asked for and the corners mapped through it. It was settled against ink: a page was drawn, the bounding box of its dark pixels taken, and the boxes checked against it, upright and turned.
+pdfium reports a page's size **as it is drawn** and its characters in the space its text is written in. On a page carrying a quarter turn the two disagree, and dividing one by the other gives rectangles inside `[0,1]` and wrong, with nothing saying so. The turn is asked for and the corners mapped through it.
 
-The offsets of the two producers had to be the same offsets, and that was checked before anything was built: the characters pdfium hands over join into exactly what it returns as the page's text. `TestTheCharactersOfAPageAreItsText` keeps it true.
+The offsets of the two producers are the same offsets: the characters pdfium hands over join into exactly what it returns as the page's text.

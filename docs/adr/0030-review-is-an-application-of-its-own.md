@@ -2,8 +2,8 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`
-- **Related:** ADR-0002, ADR-0003, ADR-0004, ADR-0008, ADR-0020, ADR-0027, ADR-0028, ADR-0029, ADR-0031
+- **Applies to:** `modules/apps/desktop` — the binaries; `modules/libs/core` — `usecase/flashcards`, `adapter/mcp`, `adapter/flashcardsui`, `refusal`
+- **Related:** ADR-0002, ADR-0003, ADR-0004, ADR-0008, ADR-0020, ADR-0021, ADR-0022, ADR-0025, ADR-0027, ADR-0031, ADR-0045
 
 ## Context
 
@@ -27,19 +27,19 @@ Which vaults exist, where they are and which was opened last is what the registr
 
 Every write to it rewrites it whole and nothing locks it between processes, so flashcards recording that it had been started could erase what the editor had just written. It is read here and never written.
 
-### It reads the index and never writes it
+### It opens the index for writing
 
-**Superseded by [ADR-0035](0035-the-review-window-writes-the-index.md).** The window opens the index for writing and brings the paths it touches up to date. What follows in this section is the decision as it stood.
+Both pools, the schema put in place, and the same connection settings the editor opens with. The window mints marks, its agent writes cards, and cards are edited during a sitting; every one of those writes would otherwise leave the index behind, and the window would draw from an index it could not bring up to date. Which preset schedules a deck is among what the index answers (ADR-0034), so the staleness would reach how a day is planned and not only what a heading says.
 
-The index answers one question for this application: **which files in a vault are decks**. It cannot answer another, because a card's heading reaches it without the mark the card is known by (ADR-0029) — the cards themselves are read from the deck files, whatever else is open.
+Every write brings the paths it touched up to date before it returns, through the same refresh the editor uses and over the same cutting sizes, so neither application re-cuts what the other wrote. How a vault is opened and walked is ADR-0045's, and both windows go through it.
 
-The database is opened for reading alone: one pool, no schema put in place, and no pragma that writes the header. Nothing is written, so the single write lock ADR-0002 keeps over all vaults is untouched, and ADR-0008's guarantee that writes queue inside one process is never asked to hold across two. An index that is not on the machine yet is not made here either — it is built by the application that scans, and until it has, every vault reads as one nothing has read.
+Two processes now hold a writer each, and what that costs the write pool is ADR-0008's.
 
-A vault the index does not carry is a vault this application says has not been read yet, and it says which application reads it. That is not the same answer as a vault holding no cards, and the two are never shown as one.
+A card's heading reaches the index without the mark the card is known by (ADR-0006), so the cards themselves are read from the deck files, whatever else is open.
 
 ### It writes marks into decks, and works from what it reads back
 
-A card typed by hand carries no mark until the application next writes its file (ADR-0028). A person who opens only this application never writes that file in the editor, so their deck would hold cards nothing can be recorded against.
+A card typed by hand carries no mark until the application next writes its file (ADR-0027). A person who opens only this application never writes that file in the editor, so their deck would hold cards nothing can be recorded against.
 
 A deck holding a card with no mark is therefore written once, which mints a mark for every card in it, and **the deck is read again afterwards and the session works from that read**.
 
@@ -47,18 +47,46 @@ A deck holding a card with no mark is therefore written once, which mints a mark
 
 The vault's write lock lives in the process (ADR-0020), and two processes on one vault hold a lock each. A mark minted here while the editor is saving the same deck is a write one of the two loses, and the editor's own save mints marks of its own for whatever is missing them. Reading the deck back is what makes that harmless: a card is reviewed under the mark the file holds, so a stamp that did not land is a card left out of this session and stamped again at the next, and no answer is ever recorded against a mark that is not in the file.
 
-### It only reviews
+### It reviews, and it corrects the card in front of the person
 
-A card is read here and answered here, and nothing else is done to it. A card written badly is fixed in the editor, opened the way a person opens it for any other reason. Nothing is handed between the two processes.
+A person who finds mid-sitting that a card is wrong is holding the one piece of knowledge that fixes it, at the one moment they will never have again. So a card can be added, edited, removed, and a section made — and nothing else. A deck and a stencil are what a vault is arranged into, and nothing here makes one; no note, link or document is written from this window either.
+
+### The tools are halved by what they do
+
+Every tool family registers its reading half and its writing half separately, and a surface is a set of those halves: a reading surface with no writer on it at all, and the reviewing surface, which is that one and the four card writers. So a tool gains a behaviour once and every surface has it.
+
+**A surface is a claim about what is absent**, and a test that lists what is present passes with anything extra on it. Every surface is asserted as an exact set (ADR-0025). Which tools stand on each is [`../agents.md`](../agents.md).
+
+### The tools it serves announce no port
+
+The address and token an agent a person configured reads name one vault and one window (ADR-0021). Two windows writing that file would point that agent at whichever started last, so this window listens on an ephemeral loopback port with a token that lives in memory, writes neither file, and takes no address from the command line.
+
+### The agent follows the vault the person sat down to
+
+The front door counts every vault; a sitting is on one. The agent is told which vault it works when it is started, and it is stopped when a sitting opens on another vault or the window closes. A conversation belongs to one card, and answering the card ends it: a thread carried across cards would answer the card in front of the person out of the one behind it.
+
+### Nothing embeds behind this window
+
+A query has no vector and the meaning half of a search does not run. A question whose answer is in a book the person paraphrased may be missed here and found in the editor.
+
+### What the deck is joined to is read from the index
+
+A deck carries every link its cards write, because the markdown parser puts a note's body links on it whatever type the note is. What the panel shows is one query over that, in both directions. Nothing pulls `[[wikilinks]]` out of a card's values and no deck is read again to find them.
+
+The links belong to the deck and not to one card, so the same notes stand behind every card of a deck. Narrowing the list to the card in front of the person would re-resolve what the index already resolved, to shorten a list a person opened on purpose. What the panel leaves out and what it says about a name that resolves to nothing is [`../flashcards.md`](../flashcards.md).
 
 ## Consequences
 
 - **A third binary is built, packaged and released.** Both link against the system's own webview, so both are built on the machine they are built for, and the installer carries two windows.
 - **A person can run their cards without knowing an editor exists.** That is the point of the front door, and it is why marks are minted here.
-- **A vault that was never scanned cannot be reviewed** until the editor has been opened on it once. The list of decks is the index's answer, and nothing here builds it.
 - **Two processes write to one vault.** The write lock does not reach across them. The loss it admits is a mark, never an answer, and a lost mark is minted again at the next session.
-- **The editor's index goes stale when a mark is minted here.** The watcher lives in the editor's process, so the deck is read again the next time that process runs. Nothing in the index is wrong meanwhile — a card's heading does not change when it is given a mark.
 - **Two windows are open on one vault when a person moves between them**, and each holds its own lock and its own read of the same files.
+- **What this window writes, it can see.** A mark it minted and a card its agent corrected answer the next question it asks.
+- **A sitting can change the vault.** It changes cards, which is what the sitting is about, and every other kind of file is as safe here as it was.
+- **Every tool surface has a list that must be edited when a tool is added**, and a build that forgets fails.
+- **This window finds less than the editor would on the same question**, and says nothing about it.
+- **Two agents can be running on one machine**, one to a window. Both read the whole vault; only the editor's writes notes.
+- **The panel's list is the same on every card of a deck**, and long decks have long lists.
 
 ## Alternatives considered
 
@@ -66,8 +94,26 @@ A card is read here and answered here, and nothing else is done to it. A card wr
 
 **A second window of the editor.** Rejected: reaching the daily act through the application built for the occasional one is backwards. Writing cards is occasional; running them is daily.
 
-**Opening the index for writing, so the review keeps it current after minting a mark.** Rejected: it buys a heading that did not change, and it pays with a second writer over the one database ADR-0002 keeps for every vault — an answer queuing behind a scan of a vault it has nothing to do with, and a write coming back busy where the code above it expects to wait.
-
 **Reaching the vault without the index at all**, by walking it for decks at every launch. Rejected: it is the scanner written twice, and the second copy has no watcher, so it is the scanner written twice and worse.
 
 **Refusing to review a card with no mark**, and leaving marks to the editor. Rejected: it makes the editor a prerequisite for the daily act, which is the arrangement this decision exists to avoid.
+
+**Leaving the index to the editor's next scan.** Rejected: what this window writes is what it draws next, and a person would correct a card and watch the old one come round until they opened another application.
+
+**Asking the editor to rescan.** Rejected: it makes the daily act depend on a process that may not be running, and it is a second way to do what a write already knows how to do.
+
+**Keeping the reader-only handle for everything but the writes.** Rejected: two handles over one file, told apart by which questions they answer, is a rule to remember at every call site for no gain once the file is open for writing anyway.
+
+**Giving the reviewer the surface the editor has.** Rejected: an application whose whole decision is that it reviews would be able to rearrange the vault it is reviewing from.
+
+**Letting it read alone.** Rejected: the moment a person knows a card is wrong is the moment they are looking at it, and sending them elsewhere to fix it means it stays wrong.
+
+**Leaving `note_search` and `source_read` off, so the read-only index need not grow.** Rejected: the objection this exists to answer is a confident wrong answer about a book the person owns, and those two tools are how the book is reached.
+
+**Serving the tools on the editor's port and letting the reviewer borrow them.** Rejected: the reviewer would then need the editor running, which is the arrangement this decision exists to avoid.
+
+**Keeping the conversation across the cards of a sitting.** Rejected: the context grows through a sitting and the card behind starts answering for the card in front.
+
+**Narrowing the panel's list to the card in front of the person.** Rejected: it re-resolves what the index resolved, to shorten a list a person opened on purpose.
+
+**Reading every joined note's text.** Rejected: a hub note makes that unbounded, and the bound has to be somewhere a person can see.

@@ -309,7 +309,7 @@ const (
 func (rd *reader) calls(call, tool, arguments string) port.Step {
 	words, served := rd.words[tool]
 	if !served {
-		return port.Step{Kind: port.StepCalling, Call: call, Tool: tool}
+		return port.Step{Kind: port.StepToolCall, Call: call, Tool: tool}
 	}
 
 	step := port.Step{Kind: words.Kind, Call: call, Tool: words.Title}

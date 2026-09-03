@@ -3,16 +3,13 @@
 - **Status:** Accepted
 - **Date:** 2026-09-02
 - **Applies to:** the two desktop applications and the index they share
-- **Supersedes:** ADR-0035 — "Nothing here rescans a vault", and its consequence "What a person is told is unchanged: a vault nothing has scanned still reads as one nothing has read"
 - **Related:** ADR-0008, ADR-0009, ADR-0020, ADR-0030, ADR-0034
 
 ## Context
 
-The index is level with a vault only for as long as nothing has been edited (ADR-0008), and the editor's answer is a walk of the vault on every opening. The review window had no walk. It drew from whatever the index last held and, for a vault the index did not carry, told a person to open the editor once.
+The index is level with a vault only for as long as nothing has been edited (ADR-0008), and the watcher covers a window's own life (ADR-0009). A vault edited on another machine arrives by sync while nothing here is running, and everything that arrived went past the watch: new decks are missing, removed cards are still asked, and an edited card is asked in its old words. Review is the daily act and the editor the occasional one (ADR-0030), so this is the ordinary case and not the corner.
 
-A vault is edited on another machine and arrives by sync. Nothing on this machine has run since. The watcher covers a window's own life (ADR-0009), so everything that arrived while nothing was running went past it: new decks are missing, removed cards are still asked, and an edited card is asked in its old words. Review is the daily act and the editor the occasional one (ADR-0030), so this is the ordinary case and not the corner.
-
-The review window is no longer the lesser of the two. It writes the index (ADR-0035), it mints marks, its agent writes cards, and it schedules a day. Both applications now hold a vault open, and each had grown its own way of doing it: the editor watched a vault through the use case that reindexes what changed, and the review window watched one through the raw watcher and threw the paths away.
+Both applications hold a vault open and both write the index, so how a vault is opened is settled once for both.
 
 ## Decision
 

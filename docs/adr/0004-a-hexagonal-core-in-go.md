@@ -62,13 +62,13 @@ graph TD
 
 The core is compiled into whatever runs it. There is no background daemon.
 
-An application serves the generated handler in-process and the tool endpoint on a loopback port; both are adapters inside the same binary.
+An application serves the generated handler and the tool endpoint itself; both are adapters inside the same binary. The desktop window reaches the handler in-process through a custom scheme, and the phone reaches it over a loopback socket, because a `WebView` there has no other way in.
 
 ### The domain knows nothing that has a lifetime
 
 The domain holds notes, vaults, the index model and the rules over them. It may not know that files exist, that SQLite exists, or what time it is. A filesystem, a database, a clock and an agent are each a port the core declares and an adapter that implements it.
 
-Ports are declared in `port`, because the core is what needs them. Adapters never name the interface they satisfy. Ports are named after the need, adapters after the technology: the core asks for a `VaultReader`, and that the answer is a filesystem is knowledge confined to `adapter/` and `container/`.
+A port an adapter is bound to in `container` is declared in `port`, because that is where the composition root looks for it. A one-method interface a single use case needs is declared beside that use case, where its only consumer can see it whole. Adapters never name the interface they satisfy. Ports are named after the need, adapters after the technology: the core asks for a `VaultReader`, and that the answer is a filesystem is knowledge confined to `adapter/` and `container/`.
 
 Entry points are adapters. The command line, the window and the tool endpoint are three of them, and the core knows about none.
 
@@ -90,8 +90,17 @@ modules/libs/core/
   domain/                  one file per type: vault.go, note.go, link.go
   port/                    one file per port: vault_reader.go, note_queries.go
   usecase/<aggregate>/     one file per scenario: add.go, scan.go, rename.go
-  markdown/                the note format, parsed
   container/               composition root: adapter to port
+
+  markdown/                the note format, parsed
+  cards/  flashcards/      what a card is, and how one is scheduled
+  cutting/  embedding/     text into chunks, chunks into vectors
+  epub/  ocr/  lit/        a book's text, and where it falls on a page
+  transcript/  proofread/  a recording's words, and putting them right
+  text/  task/  check/     read a source, follow a run, report a vault's faults
+  fixes/  refusal/         a correction kept, an outcome named
+  appearance/              the window's own surface
+
   adapter/
     cli/                   driving: arguments in, text out
     webui/                 driving: the handler a client asks
@@ -102,9 +111,11 @@ modules/libs/core/
       migration/           numbered schema changes
     settings/              driven: what a person configured
     agent/                 driven: which agent answers
+    flashcardsui/          driving: the handler the review window asks
   internal/
     adapter/               driven: what nothing outside composes
-    ulid/                  identifiers
+    ulid/  mark/           identifiers, and the marks a card is known by
+    wire/                  what two driving adapters both put on the wire
     testsupport/           fixtures and generated vaults, for tests only
 
 modules/apps/<app>/
@@ -123,7 +134,7 @@ An application reaches the core's own language, the driving adapters it serves, 
 
 ### SQL lives in files
 
-Schema and queries are `.sql` files embedded into the binary, one statement per file, loaded by name.
+Schema and queries are `.sql` files embedded into the binary and loaded by name. A query is one statement to a file. A migration is a sequence, and it is the one file that holds more than one.
 
 ### The SQLite driver is pure Go, behind the index port
 

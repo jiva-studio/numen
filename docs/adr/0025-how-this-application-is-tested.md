@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`, `modules/libs/ui`
+- **Applies to:** `modules/libs/core`, `modules/apps/desktop`, `modules/libs/ui`
 - **Related:** ADR-0004, ADR-0006, ADR-0023
 
 ## Context

@@ -184,7 +184,7 @@ type AskResponse struct {
 	// Types that are valid to be assigned to Step:
 	//
 	//	*AskResponse_Said
-	//	*AskResponse_Doing
+	//	*AskResponse_ToolCall
 	//	*AskResponse_Stopped
 	//	*AskResponse_Answered
 	//	*AskResponse_Thinking
@@ -239,10 +239,10 @@ func (x *AskResponse) GetSaid() string {
 	return ""
 }
 
-func (x *AskResponse) GetDoing() *Doing {
+func (x *AskResponse) GetToolCall() *ToolCall {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_Doing); ok {
-			return x.Doing
+		if x, ok := x.Step.(*AskResponse_ToolCall); ok {
+			return x.ToolCall
 		}
 	}
 	return nil
@@ -284,9 +284,9 @@ type AskResponse_Said struct {
 	Said string `protobuf:"bytes,1,opt,name=said,proto3,oneof"`
 }
 
-type AskResponse_Doing struct {
+type AskResponse_ToolCall struct {
 	// A tool the agent is using.
-	Doing *Doing `protobuf:"bytes,2,opt,name=doing,proto3,oneof"`
+	ToolCall *ToolCall `protobuf:"bytes,2,opt,name=tool_call,json=toolCall,proto3,oneof"`
 }
 
 type AskResponse_Stopped struct {
@@ -309,7 +309,7 @@ type AskResponse_Thinking struct {
 
 func (*AskResponse_Said) isAskResponse_Step() {}
 
-func (*AskResponse_Doing) isAskResponse_Step() {}
+func (*AskResponse_ToolCall) isAskResponse_Step() {}
 
 func (*AskResponse_Stopped) isAskResponse_Step() {}
 
@@ -391,11 +391,11 @@ func (*Thinking) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{5}
 }
 
-// Doing is a tool in the agent's hands.
+// ToolCall is a tool in the agent's hands.
 //
 // It arrives more than once for one call: a call carrying the text of a note is
 // written for minutes, and each report says how much has arrived.
-type Doing struct {
+type ToolCall struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The tool, by the name it is called by whoever serves it.
 	Tool string `protobuf:"bytes,1,opt,name=tool,proto3" json:"tool,omitempty"`
@@ -417,20 +417,20 @@ type Doing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Doing) Reset() {
-	*x = Doing{}
+func (x *ToolCall) Reset() {
+	*x = ToolCall{}
 	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Doing) String() string {
+func (x *ToolCall) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Doing) ProtoMessage() {}
+func (*ToolCall) ProtoMessage() {}
 
-func (x *Doing) ProtoReflect() protoreflect.Message {
+func (x *ToolCall) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -442,47 +442,47 @@ func (x *Doing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Doing.ProtoReflect.Descriptor instead.
-func (*Doing) Descriptor() ([]byte, []int) {
+// Deprecated: Use ToolCall.ProtoReflect.Descriptor instead.
+func (*ToolCall) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *Doing) GetTool() string {
+func (x *ToolCall) GetTool() string {
 	if x != nil {
 		return x.Tool
 	}
 	return ""
 }
 
-func (x *Doing) GetAbout() string {
+func (x *ToolCall) GetAbout() string {
 	if x != nil {
 		return x.About
 	}
 	return ""
 }
 
-func (x *Doing) GetWritten() int32 {
+func (x *ToolCall) GetWritten() int32 {
 	if x != nil {
 		return x.Written
 	}
 	return 0
 }
 
-func (x *Doing) GetPath() string {
+func (x *ToolCall) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Doing) GetStart() int32 {
+func (x *ToolCall) GetStart() int32 {
 	if x != nil {
 		return x.Start
 	}
 	return 0
 }
 
-func (x *Doing) GetLength() int32 {
+func (x *ToolCall) GetLength() int32 {
 	if x != nil {
 		return x.Length
 	}
@@ -501,10 +501,10 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\fconversation\x18\x03 \x01(\tR\fconversation\"3\n" +
 	"\rFinishRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x10\n" +
-	"\x0eFinishResponse\"\xd4\x01\n" +
+	"\x0eFinishResponse\"\xde\x01\n" +
 	"\vAskResponse\x12\x14\n" +
-	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x12'\n" +
-	"\x05doing\x18\x02 \x01(\v2\x0f.numen.v1.DoingH\x00R\x05doing\x12\x1a\n" +
+	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x121\n" +
+	"\ttool_call\x18\x02 \x01(\v2\x12.numen.v1.ToolCallH\x00R\btoolCall\x12\x1a\n" +
 	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x120\n" +
 	"\banswered\x18\x04 \x01(\v2\x12.numen.v1.AnsweredH\x00R\banswered\x120\n" +
 	"\bthinking\x18\x05 \x01(\v2\x12.numen.v1.ThinkingH\x00R\bthinkingB\x06\n" +
@@ -512,8 +512,8 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
 	"\bAnswered\"\n" +
 	"\n" +
-	"\bThinking\"\x8d\x01\n" +
-	"\x05Doing\x12\x12\n" +
+	"\bThinking\"\x90\x01\n" +
+	"\bToolCall\x12\x12\n" +
 	"\x04tool\x18\x01 \x01(\tR\x04tool\x12\x14\n" +
 	"\x05about\x18\x02 \x01(\tR\x05about\x12\x18\n" +
 	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
@@ -544,10 +544,10 @@ var file_numen_v1_agent_proto_goTypes = []any{
 	(*AskResponse)(nil),    // 3: numen.v1.AskResponse
 	(*Answered)(nil),       // 4: numen.v1.Answered
 	(*Thinking)(nil),       // 5: numen.v1.Thinking
-	(*Doing)(nil),          // 6: numen.v1.Doing
+	(*ToolCall)(nil),       // 6: numen.v1.ToolCall
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	6, // 0: numen.v1.AskResponse.doing:type_name -> numen.v1.Doing
+	6, // 0: numen.v1.AskResponse.tool_call:type_name -> numen.v1.ToolCall
 	4, // 1: numen.v1.AskResponse.answered:type_name -> numen.v1.Answered
 	5, // 2: numen.v1.AskResponse.thinking:type_name -> numen.v1.Thinking
 	0, // 3: numen.v1.AgentService.Ask:input_type -> numen.v1.AskRequest
@@ -568,7 +568,7 @@ func file_numen_v1_agent_proto_init() {
 	}
 	file_numen_v1_agent_proto_msgTypes[3].OneofWrappers = []any{
 		(*AskResponse_Said)(nil),
-		(*AskResponse_Doing)(nil),
+		(*AskResponse_ToolCall)(nil),
 		(*AskResponse_Stopped)(nil),
 		(*AskResponse_Answered)(nil),
 		(*AskResponse_Thinking)(nil),

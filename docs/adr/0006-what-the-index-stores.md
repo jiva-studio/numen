@@ -3,8 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`
-- **Related:** ADR-0001, ADR-0002, ADR-0007, ADR-0008, ADR-0011, ADR-0012, ADR-0014, ADR-0017
-- **Amended by:** ADR-0029 — a deck and a stencil contribute no chunk, no vector, and only the headings a person wrote
+- **Related:** ADR-0001, ADR-0002, ADR-0007, ADR-0008, ADR-0011, ADR-0012, ADR-0014, ADR-0017, ADR-0027
 
 ## Context
 
@@ -44,7 +43,7 @@ erDiagram
         INTEGER id PK
         INTEGER vault_id FK
         TEXT path UK "unique with vault_id"
-        TEXT kind "note, book"
+        TEXT kind "note, book, recording"
         INTEGER size "the fingerprint"
         INTEGER modified_at "the fingerprint"
         TEXT hash "null until something computes it"
@@ -56,6 +55,7 @@ erDiagram
         INTEGER vault_id FK
         TEXT basename "NOCASE, what a link written by name matches"
         TEXT title
+        TEXT type "note, deck, stencil, preset"
         TEXT identifier "the ULID in the file, when there is one"
         TEXT frontmatter "JSON, a projection"
         TEXT frontmatter_error
@@ -134,6 +134,16 @@ erDiagram
 
 **A vector is addressed by the text and the recipe**, never by a chunk's row number, and it is kept where a renumbering of chunks cannot reach it (ADR-0012).
 
+### A deck and a stencil are not searched by their text
+
+A note of `type: deck` or `type: stencil` contributes no chunk, and therefore no vector. A card is found by its heading, which is its question; a stencil is found by its title, which is its file name.
+
+A deck keeps its sections and its cards as headings — the first and second levels, and nothing below them. Its third level is the stencil's field names written out under every card, and deeper than that is a heading standing inside a value. A stencil keeps no heading at all. Every other note is unchanged.
+
+A card's heading reaches the index without the mark it carries (ADR-0027): the mark is written for the file, not for a person reading a list.
+
+A deck and a stencil are still notes in every other way: a row of their own, a title, a type, an identifier, their links resolved and their backlinks answered, a node in the plex with their headings hanging under it.
+
 ### Resolution is a query, never a column
 
 A link is kept as it was written, and where it points is worked out when the question is asked. Adding a file mends a link that was dangling, and deleting one breaks a link that worked, with no row touched either way.
@@ -161,8 +171,18 @@ Tests that check query plans name the index each question has to be answered thr
 - Frontmatter is queryable from the index and writable only through the file.
 - Nothing cascades into a virtual table, so a chunk's rows in `chunks_vec`, `chunks_fts` and `parts_fts` are deleted by the code that deletes the chunk.
 - A scan that stored nothing leaves the plans standing on the last measurement.
+- **The words inside a card are not findable.** A person looking for a card looks for its question. This is the one thing given up, and it is given up knowingly.
+- **The name search is not crowded by one deck.** A stencil's four field names would otherwise stand in it once per card.
 
 ## Alternatives considered
+
+**Keeping a deck's chunks and dropping its vectors.** Rejected: the full search over a deck answers with a fragment out of the middle of a card, which is neither the question nor the answer, and the chunk table carries it for that.
+
+**Keeping a deck's headings and dropping only its chunks.** Rejected: the field names are the largest part of what a deck contributes and the least of what it means. They are the stencil's vocabulary, and the stencil is where they are already written once.
+
+**Storing a card as one chunk, so a card is found whole.** Rejected: it is a second way to search cards, beside the review that exists to show them, and nothing has asked for it. Where it turns out to be wanted, a deck's cards are a thing to search on purpose — not the by-product of treating a deck as prose.
+
+**Leaving a stencil searchable, since there are few of them.** Rejected: a stencil holds `{{Field}}` and two words per face. Few of them is a reason it costs little, not a reason it earns anything.
 
 **Store where each link resolves.** Rejected: a file appearing or disappearing changes the answer, so the column is stale as often as the vault is edited.
 

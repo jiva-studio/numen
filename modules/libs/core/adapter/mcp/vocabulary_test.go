@@ -84,7 +84,7 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 			t.Fatal(err)
 		}
 		for name, said := range words {
-			if said.Kind == port.StepCalling {
+			if said.Kind == port.StepToolCall {
 				t.Errorf("%s says nothing about what it does", name)
 			}
 		}

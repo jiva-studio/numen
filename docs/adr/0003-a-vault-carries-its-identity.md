@@ -44,7 +44,7 @@ What the installation knows about itself lives in the platform's configuration d
 
 **`vaults.json` is the application's.** Which vaults exist, where they are, and which was open last. Every write rewrites it whole.
 
-**`numen.json` is the person's.** Everything they may want to change, in sections named for the part of the application each is about — see [settings](../settings.md). The application writes this file too: it patches four of its fields, the chosen theme, the mode, and the two sizes. A patch replaces the bytes of a named field where they sit and carries every other byte through, so the order the person arranged their sections in and the way they wrote their numbers come back as they were. A file that does not parse is not written. A file that is not there is created holding the patched fields alone.
+**`numen.json` is the person's.** Everything they may want to change, in sections named for the part of the application each is about — see [settings](../settings.md). The application writes this file too, a field at a time, each addressed by the path it stands at. A patch replaces the bytes of a named field where they sit and carries every other byte through, so the order the person arranged their sections in and the way they wrote their numbers come back as they were. A file that does not parse is not written. A file that is not there is created holding the patched fields alone.
 
 ### An entry point reads the settings once
 

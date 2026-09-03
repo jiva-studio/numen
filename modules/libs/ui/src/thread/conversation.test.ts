@@ -37,7 +37,7 @@ const now = (draw: () => void) => draw()
 
 const said = (text: string): AgentStep => ({ kind: 'said', text })
 const used = (tool: string, about = '', written = 0, place?: Place): AgentStep => ({
-  kind: 'doing',
+  kind: 'toolCall',
   tool,
   about,
   written,

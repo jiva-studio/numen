@@ -57,7 +57,7 @@ graph TD
 
 ### A vector is kept, and dropped at one moment
 
-A vector lives in SQLite beside the cache and is kept. It is addressed by the text it was made from and the recipe it was made under — where a model runs, its width, where the text was cut off, how its output becomes one vector, how the numbers are stored. It is dropped at one moment: a source is cut again and the text the vector was made from is held by no chunk (ADR-0011, ADR-0012). Nothing else deletes one.
+A vector lives in SQLite beside the cache and is kept. It is addressed by the text it was made from and the recipe it was made under — where a model runs, its width, where the text was cut off, how its output becomes one vector, how the numbers are stored. It is dropped when a source is cut again and the text the vector was made from is held by no chunk (ADR-0011, ADR-0012), and by a numbered migration that empties the table (ADR-0007). Nothing else deletes one.
 
 ### Anything producing artifacts rebuilds its cache from them
 

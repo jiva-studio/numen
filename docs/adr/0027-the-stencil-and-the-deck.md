@@ -1,9 +1,9 @@
-# ADR-0027: The stencil and the deck
+# ADR-0027: The stencil, the deck and the card
 
 - **Status:** Accepted
 - **Date:** 2026-08-27
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0015, ADR-0017, ADR-0018, ADR-0026, ADR-0028
+- **Related:** ADR-0001, ADR-0015, ADR-0017, ADR-0018, ADR-0026, ADR-0031, ADR-0034
 
 ## Context
 
@@ -15,11 +15,9 @@ Every plain-text system that has tried this has had to choose where the shape is
 
 ### One key says what a note is
 
-**Amended by [ADR-0034](0034-the-preset.md).** The list has a fourth value, `preset`, and is closed at four.
+The frontmatter key `type` says which of four a note is: `note`, `deck`, `stencil` or `preset`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault. What a preset is, is ADR-0034.
 
-The frontmatter key `type` says which of three a note is: `note`, `deck` or `stencil`. The list is closed, and a note carrying no `type` is a `note`, which is nearly every note in a vault.
-
-One key rather than one per kind is what makes the three exclusive: a file is one of them by the shape of the record, and no rule is needed to say it cannot be two. A value outside the list is a problem against the note, and the note is read as an ordinary note.
+One key rather than one per kind is what makes the four exclusive: a file is one of them by the shape of the record, and no rule is needed to say it cannot be two. A value outside the list is a problem against the note, and the note is read as an ordinary note.
 
 ### A stencil declares fields and faces
 
@@ -60,43 +58,94 @@ A deck is a note of `type: deck`.
 
 Each card is a second-level heading. The stencil it is cut by is a lone `[[wikilink]]` paragraph directly beneath it. Each field is a third-level heading, and the value is everything under that heading until the next one.
 
-### The first field is the card's name
+### A deck has sections
 
-**Superseded by [ADR-0028](0028-a-card-is-named-by-what-it-holds.md).** A card's heading is the first line of its first field, read back and holding nothing of its own, and the card is addressed by a mark it carries. Every field is written under its own heading. What follows in this section is the decision as it stood.
-
-A stencil's **first field is written in the heading**, and nowhere else. The heading is that field's value, and it is what the card is called and what it is addressed by.
-
-A card therefore carries no name of its own. There is one place a person types the question, and it is the field called the question.
+A first-level heading opens a section. The cards under it are its own until the next one. A section is a name and nothing else: no fields, no stencil, no schedule, no mark.
 
 ```markdown
 ---
 type: deck
 ---
 
-## Llama
+# Roots
 
-[[Animal]]
+## Compost, what is it made of ^k7m2xq9fzp
 
-### Height
+[[Term]]
 
-about 45" (shoulder)
+### Question
 
-### Life span
+Compost, what is it made of
 
-about 20 years
+### Answer
+
+Leaves and peelings, turned and left to rot down
 ```
 
-The stencil above declares `Name`, so `Llama` is the value of `Name`, `{{Name}}` on a face lays it out, and the card has no `### Name` of its own. A stencil declaring `Question` first gives a deck whose headings are questions.
+A deck need not have sections, and cards may stand before the first one. Two sections may carry one name, and an empty section is kept. A section is not carried from place to place; moving one would mean moving its cards, and nothing has asked for that.
 
-The first field is a heading, so it holds one line. A field wanting more than that is not the one to put first.
+**Text between a section's heading and its first card is the section's, and is kept exactly as it stands** — what a card already has between its stencil's wikilink and its first field, one level up. Nothing lays it out and nothing reads it; it is a person writing about their own deck, and a write puts it back where it was.
+
+**A section is made at the end of the deck, and taking one away takes away its heading and nothing else.** Its cards stay where they stand, under whatever heading is above them now, and its own text stays too: a section is a name, so removing it removes a name. Carrying cards out with it would be a second act wearing one name.
+
+**A card is made at the end of the section it was asked for**, and at the end of the cards standing before the first section where it was asked for none. A person asks by pressing the plus that stands in the run they are looking at, so a card lands where they were looking.
+
+### Every field is written under its own heading
+
+A stencil's fields are third-level headings under the card, **all of them, the first included**, and a field holds whatever a person writes under it over as many lines as they like.
+
+The first field is the stencil's first — `fields[0]` — and no other reading of "first" is meant anywhere in this record. It is what a card's heading is read from, so it stays first: a stencil neither moves it nor takes it away.
+
+A card writing one field twice is a problem against the deck, the first field included, and it is reported once.
 
 A value is HTML and holds what HTML holds: paragraphs, lists, a table, a picture. It cannot run — the window serves itself under a policy that allows no script it did not serve, and no handler written in an attribute. One deck carries cards of as many stencils as the person likes, and a card whose stencil declares a field the card leaves out is a card with that field empty.
+
+### The heading is the first field, read back
+
+A card's heading is the first line of its first field, cut to fit one line. It holds nothing of its own: throw it away and the application writes it again from the field.
+
+- The projection is taken over text whose line endings are normalised, and written back in the endings the file keeps.
+- It stops at the first line break, and at a hundred and twenty characters, counted as a person counts them and not as bytes.
+- It never cuts inside a `[[wikilink]]`, an embed or a run of emphasis: the cut falls before whichever of those it lands in.
+- A first field that is empty, or holds only spaces, projects to a heading of nothing, and the card is drawn by its first field's box like any other.
+
+A person editing the file by hand may leave the two disagreeing. The field is what stands; the next write puts the heading back in step, and nothing is reported, because there is nothing for a person to decide.
+
+**A card whose stencil cannot be read is not reprojected.** Nothing can say which field is first, so the heading is left exactly as it stands. This is the one case where a stale heading survives a write.
 
 ### The heading carries the structure
 
 A card's boundary is a heading and a field's name is a heading, so the structure of the file is the structure markdown already has. Headings are parts in the index, which makes a card searchable and addressable by `#` the day it is written, with nothing else built.
 
-The consequence to accept is that a value cannot itself hold a second-level or third-level heading. A value that wants one uses a deeper level. **[ADR-0028](0028-a-card-is-named-by-what-it-holds.md) spends the first level too**, so a value's own heading is of the fourth level or below.
+The format spends three heading levels: the first opens a section, the second opens a card, the third opens a field. A value's own heading is of the fourth level or below.
+
+### A card carries a mark
+
+At the end of a card's heading stands `^` and ten characters of `0123456789abcdefghjkmnpqrstvwxyz`, and that is what the card is for as long as it exists.
+
+```markdown
+## Compost, what is it made of ^k7m2xq9fzp
+```
+
+It is written when the card is made. A card typed into a deck by hand carries none until the application next writes that file, which is when it is given one.
+
+**A mark is separated from the heading's text by one space, stands last on the line, and is read as a mark only at that length and in that alphabet.** Anything else at the end of a heading is heading text. A malformed mark is not a mark and the card is given one.
+
+**The mark does not know which deck it is in.** A card moved to another deck, or to another vault, is the same card: the same mark, the same history. Nothing recomputes and nothing is lost.
+
+**Two cards carrying one mark** — a card copied by hand — is a problem against the deck holding them. **Both are read and both are shown, each marked**: nothing a person wrote goes missing from the screen, and which of the two is meant is a thing only they know. Neither is given a new mark, because a machine choosing would be choosing which card keeps the history. Across two decks it is a question for whatever keeps a history, and this record does not answer it.
+
+Ten characters is 1.1 × 10¹⁵ marks. A vault of a hundred thousand cards meets a collision about once in two hundred thousand vaults, which is why the check exists and why it is not a design constraint.
+
+### The mark is not shown
+
+A card's heading reaches the index as a heading and a part, and that text is what a search answers with and what the plex hangs under a deck. The mark is taken off before the heading is recorded: it is written for the file, not for a person reading a list.
+
+### Where a card is made whole
+
+Two of the rules above are the application's to keep, not the caller's: minting a mark for a card that carries none, and putting a stale heading back in step. Neither can be done where a deck's body is composed — one needs a generator, the other needs the card's stencil.
+
+**A deck is made whole once, in the use case that writes it**, before the bytes reach the vault. Every caller — the window, the tools an agent uses — therefore gets the same file, and neither has to know the rules.
 
 ### A card may point at a note
 
@@ -120,25 +169,21 @@ A note is read up to a ceiling, and a deck is a file holding what would otherwis
 
 A deck over its bound is refused, and the refusal says which file and what the bound is. The size is taken from the file before it is opened, so nothing over the bound is read.
 
-### A card is addressed by its deck and its heading
-
-**Superseded by [ADR-0028](0028-a-card-is-named-by-what-it-holds.md).** A card carries a mark of its own at the end of its heading, and that is what it is addressed by. What follows is the decision as it stood.
-
-A card has no identifier of its own. It is named by the note the deck is and the heading the card is, which is the value of its first field.
-
 ## Consequences
 
 - A deck file grows long, and a person editing one by hand scrolls. The editor is where a deck is meant to be edited.
 - A deck has a size a person can reach by writing, and reaching it means splitting a file the application asked them to keep as one.
 - A field renamed in a stencil is a write to every deck that stencil cuts, so one edit to one file lands as many, and a deck that cannot be written keeps a heading nothing declares.
-- A value cannot hold a heading of the two levels the format spends, and a person who writes one splits their card in half without being told.
+- A value cannot hold a heading of the three levels the format spends, and a person who writes one splits their card in half without being told.
 - `type` and `fields` are ordinary English words taken as owned keys, and a person's own key of either name collides.
 - `type` now means two things: what a note is, and what a link is for. The second is a key inside a link's own record and the first is a key about the whole note, so an indent tells them apart, and nothing else does.
 - A field is a name in a list in a stencil and a heading in a deck. One concept, written two ways, and a reader has to learn both.
-- The first field holds one line, so a stencil whose front is a picture puts the picture second and something short first.
-- Reordering a stencil's fields moves which one names its cards, and every deck it cuts has to be rewritten for it.
-- Two cards whose first field holds the same value are two cards of one name.
-- Renaming a card's heading makes it a different card. Whatever was attached to the old name is attached to nothing, and that includes its schedule. A durable identity for a card is a decision the review makes when it has a reason to; until then a rename costs a card's history.
+- Reordering a stencil's fields moves which one every card's heading is read from, and every deck it cuts has to be rewritten for it. Renaming the first field costs the same as renaming any other.
+- **A card can be reordered, renamed and rewritten, and stays itself.** Nothing in a heading is load-bearing.
+- **Two cards of one mark is a fault; two cards of one heading is not.** Their marks tell them apart, and nothing else needed them to differ.
+- **A deck with no stencil is fully readable.** Every field stands under its own name, so nothing is lost with the stencil.
+- **A first field of many lines makes a short heading.** What an outline shows is its first line, which is what an outline is for.
+- **`[[Deck#^k7m2xq9fzp]]` reaches the deck**, as every fragment does today. Reaching the card itself is work for whoever wants it.
 - Two files must agree for a card to be drawn, and a deck whose stencil was deleted holds cards that cannot be laid out. The values are still there and still readable.
 - A deck copied to another machine arrives with the answers given to its cards, because those are kept beside it in the vault's service folder. What the machine works out from them it works out again ([ADR-0031](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)).
 
@@ -162,11 +207,21 @@ A card has no identifier of its own. It is named by the note the deck is and the
 
 **Leaving a renamed field's values where they are**, orphaned under the old heading. Rejected: nothing tells the person it happened, and the values are gone from every face while still filling the file.
 
-**A name of the card's own, beside its fields.** Rejected: a stencil of a question and an answer would have the question written twice, once in the heading and once in the field, and nothing keeps the two agreeing. Neither Anki nor Mochi gives a card a name outside its fields; Anki's first field is what a duplicate is judged on, and Mochi's template names one field as the card's title.
+**A name of the card's own, typed by a person.** Rejected: five hundred words is five hundred names nobody wants to invent, and what a person would write is `Card 1`, `Card 2` — a column of identifiers wearing the costume of names. Neither Anki nor Mochi gives a card a name outside its fields; Anki's first field is what a duplicate is judged on, and Mochi's template names one field as the card's title.
 
-**A name of the card's own that follows the first field until a person types over it.** Rejected: it is the line above with a rule attached, and the rule is invisible — a person cannot see whether the name is still following or has been detached.
+**The card's place in the deck, written in the heading.** Rejected: a number a reorder rewrites reads as an order, and a number a reorder leaves alone reads as a broken one. The order of the cards is the order of the file.
 
-**The stencil naming any field, not necessarily the first.** Rejected: it is one more thing to declare and one more control to draw, for an ordering a person can already choose by putting that field first.
+**Keeping the heading as the field, and a first field of more than one line written out below it as well.** Rejected: the value stands in two places with nothing keeping them in step, which is the fault the format already reports as a field written twice.
+
+**Refusing a first field of more than one line**, as Anki's sort field and Mochi's title field do, and asking a stencil to put something short first. Rejected: it is a rule about how a person must think of their own cards, made to suit the file.
+
+**A mark written at first review**, so a deck nobody has begun to learn holds nothing machine-written. Rejected: the editor writes the deck in the first place, so there is no untouched file to keep clean, and a card with no mark would need a second way to be addressed and a rule for when each applies.
+
+**A ULID**, as a note carries (ADR-0019). Rejected: twenty-six characters at the end of every heading, to buy uniqueness across every vault that will ever exist, where the question is whether two cards in one vault collide. Creation order goes with it, and nothing here asks for creation order.
+
+**A namespace on the mark, `^card/…`.** Rejected: it was needed where a card was a line in an ordinary note among a person's own anchors. It buys nothing where a card is a heading in a deck.
+
+**The mark on the line below, beside the stencil's wikilink.** Rejected: a card's mark and a person's anchor to that card are the same want, and markdown puts an anchor at the end of the block's own line.
 
 **One file per card.** Rejected: a deck of a thousand cards is a thousand files in a folder a person opens, and every one of them is a note in the index, in search, and in the plex.
 

@@ -64,7 +64,7 @@ Lint on every change, a breaking-change check against the branch being merged in
 
 ### Two names change at this boundary, and they are listed
 
-`calling` in the core is `doing` on the wire. `stretch` in the core, which is bytes, is `span` on the wire, which is UTF-16 `from` and `to`. ADR-0026 holds the rule these two are the exception to.
+`calling` in the core is `doing` on the wire, and ADR-0026 holds the rule that rename is the exception to. A stretch and a span are not that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
 
 ## Consequences
 

@@ -120,8 +120,8 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 		switch step := stream.Msg().GetStep().(type) {
 		case *v1.AskResponse_Thinking:
 			said = append(said, "thinking")
-		case *v1.AskResponse_Doing:
-			said = append(said, "doing "+step.Doing.GetTool()+" "+step.Doing.GetPath())
+		case *v1.AskResponse_ToolCall:
+			said = append(said, "doing "+step.ToolCall.GetTool()+" "+step.ToolCall.GetPath())
 		case *v1.AskResponse_Answered:
 			said = append(said, "answered")
 		case *v1.AskResponse_Said:

@@ -75,7 +75,7 @@ A tool that writes returns only once the index is level again. An agent that cre
 
 ## The reviewer's surface
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0032](adr/0032-the-reviewers-agent-writes-only-cards.md).
+The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_get`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencils`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_remove` and `card_section_add`. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either. The decisions behind it are [ADR-0030](adr/0030-review-is-an-application-of-its-own.md).
 
 The reading half of it is a surface in its own right, with no writer on it at all.
 

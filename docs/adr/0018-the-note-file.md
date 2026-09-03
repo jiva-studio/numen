@@ -3,8 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0004, ADR-0017, ADR-0019, ADR-0026
-- **Amended by:** ADR-0028 — a stencil and a deck carry two additions of their own
+- **Related:** ADR-0001, ADR-0004, ADR-0017, ADR-0019, ADR-0026, ADR-0027
 
 ## Context
 
@@ -18,9 +17,9 @@ A note is a UTF-8 markdown file. An addition is permitted only where it renders 
 
 Every note may carry two: **YAML frontmatter** at the top of the file, and **`[[wikilink]]`** in the body. What a wikilink resolves to is in [links](../links.md).
 
-A note of `type: stencil` or `type: deck` carries two more, and no other kind of note may (ADR-0028): **`{{Field}}`** in a stencil's face, where a card's value is laid out, and **`^` and a card's mark** at the end of a card's heading in a deck.
+A note of `type: stencil` or `type: deck` carries two more, and no other kind of note may: **`{{Field}}`** in a stencil's face, where a card's value is laid out, and **`^` and a card's mark** at the end of a card's heading in a deck. Both render as plain text in an editor that never heard of this application, which is the test above.
 
-Nothing else — no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as those two did, and the count above is what is kept current.
+Nothing else — no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, and the count above is what is kept current.
 
 ### Which files are notes
 

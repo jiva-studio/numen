@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UiqgEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABIgCgVkb2luZxgCIAEoCzIPLm51bWVuLnYxLkRvaW5nSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyJiCgVEb2luZxIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUSDAoEcGF0aBgEIAEoCRINCgVzdGFydBgFIAEoBRIOCgZsZW5ndGgYBiABKAUygQEKDEFnZW50U2VydmljZRI0CgNBc2sSFC5udW1lbi52MS5Bc2tSZXF1ZXN0GhUubnVtZW4udjEuQXNrUmVzcG9uc2UwARI7CgZGaW5pc2gSFy5udW1lbi52MS5GaW5pc2hSZXF1ZXN0GhgubnVtZW4udjEuRmluaXNoUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UisQEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZQoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSDQoFc3RhcnQYBSABKAUSDgoGbGVuZ3RoGAYgASgFMoEBCgxBZ2VudFNlcnZpY2USNAoDQXNrEhQubnVtZW4udjEuQXNrUmVxdWVzdBoVLm51bWVuLnYxLkFza1Jlc3BvbnNlMAESOwoGRmluaXNoEhcubnVtZW4udjEuRmluaXNoUmVxdWVzdBoYLm51bWVuLnYxLkZpbmlzaFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.AskRequest
@@ -111,10 +111,10 @@ export type AskResponse = Message<"numen.v1.AskResponse"> & {
     /**
      * A tool the agent is using.
      *
-     * @generated from field: numen.v1.Doing doing = 2;
+     * @generated from field: numen.v1.ToolCall tool_call = 2;
      */
-    value: Doing;
-    case: "doing";
+    value: ToolCall;
+    case: "toolCall";
   } | {
     /**
      * The agent has finished, and this is why it stopped. Empty when it
@@ -182,14 +182,14 @@ export const ThinkingSchema: GenMessage<Thinking> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 5);
 
 /**
- * Doing is a tool in the agent's hands.
+ * ToolCall is a tool in the agent's hands.
  *
  * It arrives more than once for one call: a call carrying the text of a note is
  * written for minutes, and each report says how much has arrived.
  *
- * @generated from message numen.v1.Doing
+ * @generated from message numen.v1.ToolCall
  */
-export type Doing = Message<"numen.v1.Doing"> & {
+export type ToolCall = Message<"numen.v1.ToolCall"> & {
   /**
    * The tool, by the name it is called by whoever serves it.
    *
@@ -237,10 +237,10 @@ export type Doing = Message<"numen.v1.Doing"> & {
 };
 
 /**
- * Describes the message numen.v1.Doing.
- * Use `create(DoingSchema)` to create a new message.
+ * Describes the message numen.v1.ToolCall.
+ * Use `create(ToolCallSchema)` to create a new message.
  */
-export const DoingSchema: GenMessage<Doing> = /*@__PURE__*/
+export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 6);
 
 /**

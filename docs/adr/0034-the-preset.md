@@ -1,10 +1,9 @@
-# ADR-0034: A preset is a note, and a deck points at one
+# ADR-0034: A preset is a note, and one arithmetic schedules it
 
 - **Status:** Accepted
 - **Date:** 2026-08-30
 - **Applies to:** the vault format — every application that reads or writes one
-- **Amends:** ADR-0027 (a fourth value of `type`)
-- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031, ADR-0036, ADR-0037, ADR-0038, ADR-0039, ADR-0040
+- **Related:** ADR-0017, ADR-0018, ADR-0026, ADR-0027, ADR-0031
 
 ## Context
 
@@ -16,7 +15,7 @@ How much is studied in a day, how long a day runs, how much is asked of memory: 
 
 ### A preset is a note
 
-A preset is a note of `type: preset`. The list of types is closed, and this is its fourth value.
+A preset is a note of `type: preset`, which is the fourth of the closed list ADR-0027 keeps.
 
 Its settings are frontmatter keys. The body is the person's: what the preset is for, written for themselves.
 
@@ -49,17 +48,25 @@ Several decks pointing at one preset is what sharing it looks like. Scheduling a
 
 ### What a preset settles, and what it does not
 
-Everything about how a deck is scheduled is the preset's: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, how much of a day goes to what is overdue, the share of the load each day of the week carries, an even load, and the goal that steers them. Each of them is settled in a record of its own. The order cards arrive in, what is done about a card that will not stick and what is done about two faces of one card belong here too, and each arrives with the code that reads it.
+Everything about how a deck is scheduled is the preset's: how many new cards and how many reviews a day, whether a budget is spent on a card or on a showing, how long a day runs, the retention target, what counts as learned, how much of a day goes to what is overdue, the share of the load each day of the week carries, whether a card is moved off the day it fell on, and the goal that names which one of them closes the day. Each key, its default and what it does is [Cards](../cards.md).
 
 `numen.json` keeps the hour a day begins at. It is a fact about a person's clock rather than about a subject.
 
-### Budgets add up
+### The scope of a budget is the preset, and it is divided before it is spent
 
 A preset's budget is spent on the cards of the decks pointing at it, and a sitting over the whole vault is the union of them. Ten minutes on one preset and twenty on another is thirty minutes.
 
-**Inside one preset, one budget closes the day**, and which of them it is the preset's goal says (ADR-0036).
+**Inside one preset, one budget closes the day**, and the preset's `goal` names which. A day is one day whatever presets fall on it, so how loaded each day is, is one table.
 
-**A day is one day whatever presets fall on it**, so how loaded each of them is, is one table, and the day a card is put on is read off it (ADR-0040).
+**A preset's day is divided over the decks it schedules, once, before any of it is spent.** A sitting over one deck is that deck's slice of the one division, and the deck's row on the front door is the same slice: they are one number because they are one arithmetic. The shares are proportional to what each deck owes, what the proportions leave over goes by the largest fraction, and decks standing equal take it in the order their paths stand, so a vault divides the same day however its files are walked. What no deck can use is offered round again.
+
+### One function places a card's day, and everything that asks goes through it
+
+A scheduler works out an interval and leaves a tolerance around it: several days would do. Which of them a card is asked for on is chosen in one function, by weight, where a day's weight is the share of the load its day of the week carries over what already falls on it.
+
+**The sitting that hands the cards out and the picture drawn beside a control both go through that function.** A day chosen once for the picture and again for the sitting is two arithmetics kept in step by tests, and they drift the moment one is touched: the control draws an even load the scheduler never delivers.
+
+It is pressure and not a promise. No day is forbidden to carry more than its share, nothing is solved over the collection, and a card with nowhere to go stands where it fell.
 
 ## Consequences
 
@@ -69,8 +76,19 @@ A preset's budget is spent on the cards of the decks pointing at it, and a sitti
 - **The application writes to a note it did not create.** Settings written into the vault are ADR-0017's write path, and a preset is the first note the application edits key by key rather than whole.
 - **A card is scheduled at its own preset's target.** The answers are replayed under the scheduler of the preset the card's deck points at, and the schedule cache carries a mark of which cards stood under which target. A mark that does not match is a cache thrown away whole.
 - **The settings a person can change stand in two files.** `numen.json` is the installation's and is written down in [Settings](../settings.md); a preset is the vault's and is written down in [Cards](../cards.md), beside the deck it schedules.
+- **A curve a person reads is a promise the sitting keeps.** Both are the same arithmetic over the same day.
+- **A day is a whole number**, counted from the day the clock is counted from, so the same answers name the same days in every process.
+- **A deck's row is a promise the sitting keeps**, by construction and not by two arithmetics agreeing.
 
 ## Alternatives considered
+
+**Every budget binding at once.** Rejected: a day would end at whichever number ran out first, and which one that was is not what a person is changing.
+
+**A day chosen once for the picture and again for the sitting.** Rejected: the two are kept in step by tests, and drift the moment one of them is touched.
+
+**Equal shares over the decks.** Rejected: a deck of five cards beside one of five hundred would hold half the day and spend a tenth of it.
+
+**A budget of its own for each deck.** Rejected: the preset would stop being the scope of a day, and adding a deck would add to the day's work.
 
 **Scheduling settings in `numen.json`.** Rejected: the file is one installation's, and a person studying two subjects on one machine has one set of limits for both.
 

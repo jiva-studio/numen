@@ -8,13 +8,15 @@ A file here records **one decision**: something that could have been settled ano
 
 **A rule is written once, in the present tense, as it now stands.** No record narrates its own drafting, and git holds the drafts.
 
-**A decision that has been replaced keeps its text, under a banner.** The section that no longer holds opens with a line naming the record that replaced it and saying what holds now, and that record names this one in its `Supersedes:` or `Amends:` header. A decision that moved to a record of its own leaves nothing behind: nothing was settled differently.
+**A decision that was wrong is rewritten where it stands.** The record says what holds now, and git holds what it said before. A rule that turned out to be a mistake is taken out, not left under a banner and worked around by a second record: two records disagreeing is how a reader ends up following the wrong one.
+
+**A decision that has been narrowed by a later one keeps its text, under a banner.** Where a record still holds except in the case another settles differently, the section that no longer holds opens with a line naming that record and saying what holds now, and that record names this one in its `Supersedes:` or `Amends:` header. A decision that moved to a record of its own leaves nothing behind: nothing was settled differently.
 
 **A decision is in the record once it is on the default branch.** Until then it is its pull request's draft, and a draft is edited in place.
 
 ## Reading order
 
-The numbers are identity, not order. This list is the order.
+The numbers are identity, not order. This list is the order. A gap in the numbers is a record merged into another; git holds it.
 
 ### What is kept, and where
 
@@ -64,21 +66,10 @@ The numbers are identity, not order. This list is the order.
 
 ### Cards
 
-- [ADR-0027 — The stencil and the deck](0027-the-stencil-and-the-deck.md)
-- [ADR-0028 — A card is named by what it holds, and known by a mark](0028-a-card-is-named-by-what-it-holds.md)
-- [ADR-0029 — A deck and a stencil are not searched by their text](0029-a-deck-and-a-stencil-are-not-searched-by-their-text.md)
-- [ADR-0030 — Review is an application of its own](0030-review-is-an-application-of-its-own.md)
+- [ADR-0027 — The stencil, the deck and the card](0027-the-stencil-and-the-deck.md)
 - [ADR-0031 — An answer is an artifact, a schedule is a cache](0031-an-answer-is-an-artifact-a-schedule-is-a-cache.md)
-- [ADR-0032 — The reviewer's agent writes only cards](0032-the-reviewers-agent-writes-only-cards.md)
-- [ADR-0033 — What the deck is joined to is read beside the card](0033-what-the-deck-is-joined-to-is-read-beside-the-card.md)
-- [ADR-0034 — A preset is a note, and a deck points at one](0034-the-preset.md)
-- [ADR-0036 — The goal names the budget that closes the day](0036-the-goal-names-the-budget.md)
-- [ADR-0037 — A preset says what counts as learned, and a date aims at it](0037-what-counts-as-learned.md)
-- [ADR-0038 — What a day's budget is spent on, and in what order](0038-what-a-days-budget-is-spent-on.md)
-- [ADR-0039 — A day of the week carries a share of the load](0039-a-day-of-the-week-carries-a-share.md)
-- [ADR-0040 — One rule says which day a card lands on](0040-one-rule-says-which-day-a-card-lands-on.md)
-- [ADR-0041 — A preset's day is divided over the decks it schedules](0041-a-day-is-divided-over-the-decks.md)
-- [ADR-0035 — The review window writes the index](0035-the-review-window-writes-the-index.md)
+- [ADR-0034 — A preset is a note, and one arithmetic schedules it](0034-the-preset.md)
+- [ADR-0030 — Review is an application of its own](0030-review-is-an-application-of-its-own.md)
 - [ADR-0045 — Both windows open a vault through one path](0045-both-windows-open-a-vault-through-one-path.md)
 
 ### Agents
@@ -106,6 +97,7 @@ What the product does, and what its words mean.
 - [transcribing.md](../transcribing.md) — how a recording is heard
 - [proofreading.md](../proofreading.md) — how a reading and a transcript are put right
 - [agents.md](../agents.md) — what the panel's agent can reach
+- [publishing.md](../publishing.md) — how a build reaches a person
 - [starting.md](../starting.md) — what the application says when it cannot start
 - [settings.md](../settings.md) — every setting
 - [themes.md](../themes.md) — what a theme is

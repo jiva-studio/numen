@@ -24,6 +24,15 @@ CREATE TABLE vaults (
 -- is what lets a moved file keep what was derived from it.
 --
 -- `recipe` is what extracted the text, and is null while nothing has.
+--
+-- `text_from` is which producer made the text this source's chunks are places
+-- in. A scanned document holds no text a machine can take out of it: what
+-- reading it produced is a file of its own, and showing a passage reads that
+-- file. Null is the ordinary case, and the only case for a note or a book whose
+-- text is its own.
+--
+-- `hash`, `recipe` and `text_from` are one fact and are cleared by one write:
+-- the file is not the file that was read.
 CREATE TABLE sources (
     id          INTEGER PRIMARY KEY,
     vault_id    INTEGER NOT NULL REFERENCES vaults(id) ON DELETE CASCADE,
@@ -33,6 +42,7 @@ CREATE TABLE sources (
     modified_at INTEGER NOT NULL,
     hash        TEXT,
     recipe      TEXT,
+    text_from   TEXT,
 
     UNIQUE (vault_id, path)
 );
@@ -45,22 +55,32 @@ CREATE UNIQUE INDEX sources_by_vault ON sources (id, vault_id);
 -- changed. This answers it without reading the files themselves.
 CREATE INDEX sources_by_fingerprint ON sources (vault_id, kind, path, size, modified_at);
 
+-- Which sources of a vault stand on a text a producer made. It is asked once a
+-- scan, to find the ones whose file a person deleted by hand, and it is answered
+-- in proportion to the documents that were read rather than to the library.
+CREATE INDEX sources_by_text ON sources (vault_id, kind) WHERE text_from IS NOT NULL;
+
 -- What only a note has: the names a link reaches it by, and the frontmatter
 -- they are written in. A note's row number is its source's, so a question that
 -- needs only the file joins `sources` on it.
 --
 -- `identifier` is the ULID written in the file, when there is one. Most notes
 -- have none, and a copied file carries a copy of it.
+--
+-- `type` is what the note is: a note, a deck of cards, the stencil a card is cut
+-- by, or the preset a deck is scheduled under. The list is closed, and a note
+-- whose file says nothing is a note.
 CREATE TABLE notes (
     source_id         INTEGER PRIMARY KEY,
     vault_id          INTEGER NOT NULL,
 
-    -- The name a note is found by when a link is written by name. NOCASE on the
-    -- column and not on the comparison, so that [[entropy]] finds Entropy.md
-    -- through the index below.
-    basename          TEXT NOT NULL COLLATE NOCASE,
+    -- The name a note is found by when a link is written by name, folded: a
+    -- name is one name whatever case and whatever composition it is written in,
+    -- and the comparison is plain equality on the key `numen_fold` computes.
+    basename          TEXT NOT NULL,
 
     title             TEXT NOT NULL,
+    type              TEXT NOT NULL DEFAULT 'note',
     identifier        TEXT,
     frontmatter       TEXT,
     frontmatter_error TEXT,
@@ -75,6 +95,10 @@ CREATE INDEX notes_by_basename ON notes (vault_id, basename);
 
 -- An identifier names one note in the world, and is looked up without a vault.
 CREATE INDEX notes_by_identifier ON notes (identifier);
+
+-- Which notes of a vault are of one kind. Nearly every note in a vault is a
+-- note, and what this is asked is which of them are the few that are not.
+CREATE INDEX notes_by_type ON notes (vault_id, type);
 
 -- A heading inside a note. It is addressed by a number of its own, because its
 -- full-text row is keyed by one.
@@ -99,10 +123,11 @@ CREATE TABLE links (
     scheme     TEXT NOT NULL,
     value      TEXT NOT NULL,
 
-    -- The last segment of the address, without an extension: what
-    -- [[notes/Entropy]] and [[Entropy]] have in common, and what the backwards
-    -- question is answered through.
-    value_base TEXT NOT NULL COLLATE NOCASE,
+    -- The last segment of the address, without an extension and folded the way
+    -- a note's basename is: what [[notes/Entropy]], [[Entropy]] and
+    -- [[entropy.MD]] have in common, and what the backwards question is
+    -- answered through.
+    value_base TEXT NOT NULL,
 
     role       TEXT NOT NULL,
     type       TEXT,
@@ -191,9 +216,10 @@ CREATE INDEX chunks_by_hash ON chunks (hash);
 -- renumbering of chunks and no rebuilding of the index can reach it.
 --
 -- The recipe names everything that decides what the vector is: where it was
--- made, which model, how wide, where the text was cut off, and how the numbers
--- are stored. Change any of them and the old rows are simply not found, still
--- here, still there if the setting goes back.
+-- made, which model, how wide, where the text was cut off, how the model's
+-- output becomes one vector, and how the numbers are stored. Change any of them
+-- and the old rows are simply not found, still here, still there if the setting
+-- goes back.
 --
 -- A rowid table with the key in an index of its own: the vector is a kilobyte,
 -- and a key that carries it is a key every probe reads a kilobyte to answer.
@@ -232,6 +258,22 @@ CREATE VIRTUAL TABLE chunks_vec USING vec0 (
 --
 -- The rowid is the chunk's own id. It is the only key this kind of table has.
 CREATE VIRTUAL TABLE chunks_fts USING fts5 (
+    text,
+    content='',
+    contentless_delete=1
+);
+
+-- The names of the parts a source divides into: a section is something a person
+-- finds, and not only a label an answer carries.
+--
+-- The rowid is the chunk the part opens, so a hit on a name is a passage
+-- standing at the start of the section, read back the way every passage is. A
+-- chunk that opens a part and a subsection under it carries both names, which is
+-- one row holding two lines.
+--
+-- `content=''` keeps no copy: nothing reads a name back. What an answer shows is
+-- the chunk's own location.
+CREATE VIRTUAL TABLE parts_fts USING fts5 (
     text,
     content='',
     contentless_delete=1

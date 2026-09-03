@@ -35,7 +35,7 @@ Every component splits in two.
 
 **The view is humble.** It receives those values and turns them into elements. It works nothing out. A number appearing in the template that the core did not produce is a broken split.
 
-**Anything with a lifetime is a port**: the clock, `requestAnimationFrame`, the size of the window, the reader's motion preference. Each is a parameter with a browser-shaped default, so the component works with no ceremony in an application and is fully determined in a test.
+**Anything with a lifetime a test must hold still is a port**: the clock, `requestAnimationFrame`, the size of the window. Each is a parameter with a browser-shaped default, so the component works with no ceremony in an application and is fully determined in a test. A reader who asks for less motion is answered in CSS, where the browser already knows the answer and no test wants it as a value.
 
 ```mermaid
 graph TD
@@ -47,13 +47,11 @@ graph TD
     CL["clock"]
     FR["animation frame"]
     VP["viewport"]
-    MO["motion preference"]
 
     PR --> CO
     CL --> CO
     FR --> CO
     VP --> CO
-    MO --> CO
     CO -- values --> VW
     VW --> EV
 ```
@@ -70,7 +68,7 @@ This is taken only where a second implementation is intended. A knob with one se
 
 ### Styling is design tokens, and only design tokens
 
-Every colour, size, radius and duration a component paints with is a CSS custom property in one file. A component never reaches past a token for a value.
+Every colour a component paints with is a CSS custom property in one file, and a component never writes one down. A size, a radius or a duration is a token where more than one component stands on it; a number only one component uses is written in that component, where it can be read beside what it moves.
 
 **The tokens are declared on the root alone.** A custom property declared on an element beats the same property inherited from the root, whatever the selectors weigh. Components inherit from the root, which is what makes a `:root` block a theme.
 

@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-25
-- **Applies to:** `modules/apps/desktop`
+- **Applies to:** `modules/libs/core`
 - **Related:** ADR-0004, ADR-0006, ADR-0009, ADR-0020
 
 ## Context
@@ -31,11 +31,11 @@ Progress is reported per group. A caller that needs to know about one note asks 
 
 The same grouping serves a watcher's refresh (ADR-0009). One event can name a whole folder — a checkout, a restore, a sync client unpacking an archive — so a refresh is handed as many paths as a walk is.
 
-### The index's single write connection
+### The index's write connection
 
-**Amended by [ADR-0035](0035-the-review-window-writes-the-index.md).** Two processes hold a writer, and a write transaction takes its lock at BEGIN so the busy timeout is the thing that covers a collision.
+The write pool is capped at one connection and writes queue in Go. The read pool is unrestricted: under write-ahead logging a reader never waits, which is what lets a search answer while a scan is still running. Every connection opens with those pragmas in its connection string, foreign keys included.
 
-The write pool is capped at one connection, and writes queue in Go. The read pool is unrestricted: under write-ahead logging a reader never waits, which is what lets a search answer while a scan is still running. A busy timeout covers a collision. Every connection opens with those pragmas in its connection string, foreign keys included.
+**A write transaction takes its lock at BEGIN.** Two processes hold a writer each (ADR-0030), and a transaction that reads before it writes is a snapshot upgraded under lock, which SQLite refuses with `SQLITE_BUSY` without calling the busy handler. So the write pool begins every transaction immediately: a writer whose turn has not come waits out the busy timeout and then fails, and a write is never lost quietly.
 
 The per-vault file lock that guards a read-change-write of a note is a different lock, and it is ADR-0020's.
 

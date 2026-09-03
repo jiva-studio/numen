@@ -49,7 +49,7 @@ message AskResponse {
     // A piece of what the agent is saying, appended in the order it arrives.
     string said = 1;
     // A tool the agent is using.
-    Doing doing = 2;
+    ToolCall tool_call = 2;
     // The agent has finished, and this is why it stopped. Empty when it
     // stopped because it was done.
     string stopped = 3;
@@ -69,11 +69,11 @@ message Answered {}
 message Thinking {}
 
 
-// Doing is a tool in the agent's hands.
+// ToolCall is a tool in the agent's hands.
 //
 // It arrives more than once for one call: a call carrying the text of a note is
 // written for minutes, and each report says how much has arrived.
-message Doing {
+message ToolCall {
   // The tool, by the name it is called by whoever serves it.
   string tool = 1;
   // What it was called about — a note, a query — empty when the call says
