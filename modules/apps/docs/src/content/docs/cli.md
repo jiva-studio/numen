@@ -62,13 +62,9 @@ gone is dropped. `--rebuild-index` reads every file whatever the index remembers
 answer when search is returning something stale. Vectors are made here too, and unlike the
 window, which does it in the background, the command waits for them.
 
-**`recognise`** reads a scanned document with the models, page by page, and writes the reading
-into the vault's own folder. This is the long job worth leaving in a terminal overnight, and it
-is the same reading the window would make — do it here and the window finds it done.
+**`recognise`** reads a scanned document with the OCR models, page by page, and writes the text into the vault's own folder. This is the long job worth leaving in a terminal overnight, and it is the same work the window would do — do it here and the window finds it done.
 
-**`proofread`** corrects a reading afterwards with the model named in
-[the settings](/reading/#putting-a-reading-right). With nothing named there, it has nothing to
-correct with and says so.
+**`proofread`** corrects that text afterwards with the model named in [the settings](/reading/#correcting-what-ocr-read). With nothing named there, it has nothing to correct with and says so.
 
 **`search`** is the words half of what the window does: names and text, in one vault.
 

@@ -14,7 +14,7 @@ edge. Everything else you do happens in tabs inside that arrangement.
   caption="Two panes and two tabs: the plex holding the room, the agent along the edge."
 />
 
-## Five things a tab can hold
+## What a tab can hold
 
 | | |
 | --- | --- |
@@ -22,21 +22,26 @@ edge. Everything else you do happens in tabs inside that arrangement.
 | A plex | the map of what a note is connected to. |
 | An agent | a conversation about the vault. |
 | A document | a book or a PDF, [read where it stands](/documents/). |
+| A recording | the player over [the words that were said](/recordings/). |
+| A deck | [the cards](/cards/) of one file, as a grid under their sections. |
+| A stencil | the fields a card has, and [the faces](/cards/#a-stencil) that ask them. |
+| A preset | [how much a day of review holds](/review/#a-preset), and the curve of its goal. |
 | The files | [the folders of the vault](/files/) as they are on disk. |
+| The settings | [what this installation is configured as](/settings/), a control to a setting. |
+| `numen.json` | [the settings file itself](/settings/#the-file), to edit by hand. |
 
-A new tab asks what goes in it and lists those five. Every kind opens as many times as you like:
-two notes side by side, two plexes standing at different notes, a second agent working on
-something else.
+A note, a plex and an agent open as many times as you like: two notes side by side, two plexes standing at different notes, a second agent working on something else. A file that is not a note opens once, in the tab it is already in. The files, the settings and the settings file are one to a window — there is only one of each to look at.
+
+The kinds that hold a file — a note, a document, a recording, a deck, a stencil, a preset — are chosen by opening the file, not by choosing a kind. numen opens each in the editor made for what it is, and a file it has no word for is opened as a note.
 
 ## When nothing is open
 
 Close the last tab and the window does not go blank: it draws the ways in, each with the key
-that reaches it — search the vault, show the commands, a new note, a plex, an agent — and under
-them the vaults this installation holds. The one you are in says so; one whose folder has gone
-says that instead.
+that reaches it — search the vault, show the commands, a new note, a plex, an agent, the
+settings — and under them the vaults this installation holds. The one you are in says so; one
+whose folder has gone says that instead.
 
-A window standing on no vault at all offers only that list, and **New vault**: a plex and an
-agent each need a vault to stand on.
+A window standing on no vault at all offers the settings, that list, and **New vault**: a plex and an agent each need a vault to stand on, and the settings are the installation's and stand outside every vault.
 
 ## Panes
 
@@ -54,13 +59,15 @@ holding an unanswered question is told once, and closes the second time you ask.
 
 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> searches the vault. <kbd>Ctrl</kbd>/<kbd>⌘</kbd>
 <kbd>P</kbd> opens the commands — everything the window can do, over the note you are on, over
-the window, and over the vault. Both are in the same panel and each closes the other.
+the file, over the window, and over the vault. Both are in the same panel and each closes the
+other.
 
 Commands are grouped by what they act on:
 
 - **This note** — show it in the plex, make a child, change the title, ask the agent about it,
   copy its path, remove it.
-- **This window** — a new note, a new agent, close this tab, search, appearance.
+- **This file** — write down a recording, put its transcript right, read the text of a scan.
+- **This window** — a new note, a new agent, close this tab, search, appearance, the settings.
 - **This vault** — go to a note, open or make a vault, rename, forget, erase.
 
 A command that cannot act on what is in front of you says why rather than disappearing: with a

@@ -23,7 +23,7 @@ The time in the gutter beside a line is where that line was said. Press it and t
 
 ## Asking for a transcript
 
-Right-click a recording in the [files](/files/) and choose **Transcribe**. With one open, **Transcribe this recording** is in the [commands](/commands/).
+Right-click a recording in the [files](/files/) and choose **Transcribe**. With one open, **More** at the end of the player strip offers the same run, and so does **Transcribe this recording** in the [commands](/commands/), under **This file**.
 
 <Shot
   name="transcribe"
@@ -58,6 +58,24 @@ A recording that answered "nothing to hear" or "the file will not open" is not o
 ## Editing the words
 
 A transcript is yours to correct. Type into it and it is written back against the recording, the way a note is written back — there is no separate save. A run holding the recording writes over nothing you typed: the words are read-only while it goes.
+
+## Proofreading the transcript
+
+A model that hears misspells a name, takes one word for its homophone, and has no way of knowing where a sentence ends. A proofreader goes over the words afterwards for exactly that, and for nothing else: what was actually said is not rewritten into something better.
+
+**Proofread transcript** is in the **More** menu at the end of the player strip, and **Proofread the transcript of this recording** is in the [commands](/commands/). Pressing it always answers in a sentence — the run has begun, or the transcript has already been put right, or the words were written by hand, or another run holds the recording, or nothing has been transcribed yet.
+
+It is offered only where you have named a profile to proofread speech at: **Proofreading a transcript** on the [settings page](/settings/#proofreading), which is `indexing.transcription.proofread.with` in the file. Naming none — which is what a fresh installation has — means a transcript is used exactly as it was heard, with no key and no network. **Proofread every transcript** does it as each one is made, without being asked.
+
+A profile is written the same way whichever text it corrects, and both settings choose from the same list: see [correcting what OCR read](/reading/#correcting-what-ocr-read).
+
+The corrected words go beside the transcript rather than over it. What the model heard stays on disk under its own name.
+
+## Deleting the transcript
+
+**Delete transcript** is in the same **More** menu, and in the commands. It takes away the words, what you or a proofreader put right, the record of what listened, and the answer saying why there will never be a transcript — leaving a recording nothing has listened to, which is then transcribed again like any other.
+
+It asks first, and a recording a run is listening to is refused until that run ends. This is what you want after changing the model: the old words are worth nothing once something else is doing the hearing.
 
 ## Where it is kept
 

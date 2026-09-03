@@ -29,6 +29,12 @@ guessed at.
   jump.
 - Typing `[[a name]]` in your prose makes a `ref`.
 
+## Following a link
+
+Press a `[[wikilink]]` and the note it names opens in a tab beside the one you were reading. It works in your prose and in what the [agent](/agent/) answers, and a link that reaches nothing is drawn as reaching nothing and opens nothing.
+
+Inside the brackets a note can also be named by its identity rather than by its name: `[[note://<identifier>]]`. numen writes that form where it made the link and already knew the identifier, or where a name matched several notes and picked none of them. It is read and followed the same way, it is left alone by every rename, and it reaches the note in whichever vault you have added holds it.
+
 ## What it looks like in the file
 
 Links that carry a role live in the frontmatter, so your prose stays prose:
