@@ -38,3 +38,18 @@ npm run manual:check  # fail where a page has drifted
 `npm run build` writes them first, and the workflow checks them, so a command,
 a chord, a setting or a flag added to the application without the manual
 catching up is caught in CI.
+
+## Taking the pictures
+
+```
+npm run shoot  # every picture in src/assets/, light and dark
+```
+
+Each is a story of `modules/libs/ui`, drawn at the size it is drawn at.
+A screen of the desktop reaches `@numen/protocol`, so that module needs its
+dependencies installed as well, and a story that will not draw stops the run
+rather than being photographed.
+
+A picture that came back the same picture is left where it is: the encoder
+writes different bytes of one window, so what is compared is the pixels. A run
+over a manual nothing has changed under leaves the folder untouched.
