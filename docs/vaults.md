@@ -104,21 +104,16 @@ Five tools, from [ADR-0021](adr/0021-an-agent-reaches-the-vault-through-tools.md
 | Tool | What it does |
 | --- | --- |
 | `vault_list` | every vault this installation holds, and which one the person is looking at. A vault whose folder is gone is marked and stays on the list. |
-| `vault_add` | put a folder on the list. With no path, this machine's own picker goes up in front of the person and what they choose is added; a person who closes it has chosen nothing, and the answer says so. With a path, the folder at that path becomes a vault. |
 | `vault_rename` | call a vault something else. |
 | `vault_forget` | take a vault off the list and out of the index. |
-| `vault_open` | put another vault in front of the person. The agent's session ends with the vault it was serving. |
 
 Every other tool works the vault marked `showing`, and no other.
 
-**There is no tool that erases a vault from disk.** Taking a person's folder away is asked for in front of them.
-
-`vault_add` with a path followed by `vault_open` lets an agent name the folder it then works inside.
+**There is no tool that puts a folder on the list, opens another vault, or erases one from disk.** Which folders are vaults, and which one is in front of the person, is settled through the picker. A tool that named a folder could name any folder on the machine, and the vault the agent works is the one it was started on.
 
 ## What is not covered
 
 - **On Windows a folder can be deleted outright.** Where the volume has no recycle bin, the shell deletes permanently and reports success, and no flag turns that into a refusal. "It goes to the trash and comes back" is honest on Linux and is not on Windows.
 - **The macOS trash is unverified.** It compiles and has never run: the selectors, the boolean return and the error out-parameter are untested until somebody runs it on a Mac.
-- **`vault_open` answers before the swap happens.** The endpoint the answer travels over is what the swap closes, so the call cannot wait for it. Whether the answer arrives before the transport goes is a race, and the tool says so.
 - **The registry is not locked between processes.** Each write rewrites the whole file, so a window and a command line writing at once lose one of the two entirely. Inside one process it is locked.
 - **A failed reading left in the list of what is being done survives a swap.** A cancelled one takes itself out; one that failed stays until it is dismissed, and it outlives the vault it was about.
