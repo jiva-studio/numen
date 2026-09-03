@@ -81,6 +81,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | watch | Following a vault for changes the application did not make. | |
 | hold | How long events are kept before they are acted on. | window |
 | trash | Where a removed note is kept: `.trash/` inside the vault. | |
+| proofread | Asking a second model to put right the text a first one produced, and writing its corrections beside the artifact — [Proofreading](proofreading.md). It is the word for the run wherever it is named: the `proofread` facet of an asset, the command, and **Proofread transcript** on screen. Writing a transcript back as a person edited it in the window is not one. | put right, correct |
 | drop (a transcript) | Taking away everything listening to a recording produced: what a model heard, what a person put right, the record of what listened, the answer and the chunks cut from any of them — [Transcribing](transcribing.md). The word is for the code: on screen it is **Delete transcript**. | forget, clear |
 | spaced | A card face the scheduler sends days away. One it is still putting into memory comes round in minutes. Retention is measured over the answers given to spaced card faces and no others. It is the scheduler's own reckoning, and no setting reaches it. The word is for the code: on screen these are **cards you are reviewing**, which is how the review history says what a day's share of recall is a share of. | learned, mature, in review |
 

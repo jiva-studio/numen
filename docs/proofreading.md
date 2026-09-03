@@ -135,7 +135,7 @@ Each consumer names its profile and says whether it runs on its own:
 }
 ```
 
-`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them.
+`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them. A transcript asked for either way is put right by the profile `indexing.transcription.proofread.with` names; `indexing.recognition.proofread.with` is the profile a scanned reading is put right by, and is not read for a transcript.
 
 `indexing.transcribe_recordings` is a different flag, and the two are easily taken for one another. It says whether a recording nobody asked about is listened to at all; `transcription.proofread.automatically` says whether a transcript that already exists is put right by itself.
 
@@ -158,6 +158,8 @@ Neither artifact is rewritten: what the model read or heard stays on disk under 
 In the recording tab the transcript is text, in the same editor a note is written in. One line a cue, the cue's timestamp in the gutter beside it. A person puts a name right the way they would put a word right in a note.
 
 It is read-only while the recording is still being listened to and while proofreading is running. The words are moving underneath, and what a person typed into a line a run is about to rewrite would be lost. When both are done, the text is editable and a save writes `.corrected.vtt`.
+
+**Proofread transcript** stands in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
 
 A **follow** toggle says whether the view moves with the recording. On, the line being said is scrolled to as the player reaches it. Off, the view stays where the person put it and they read one part of a talk while another plays. The line being said is highlighted either way, so the position is visible without the page moving.
 

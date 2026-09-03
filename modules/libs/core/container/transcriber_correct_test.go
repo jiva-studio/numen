@@ -249,6 +249,54 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 	}
 }
 
+// A transcript a person asked for is put right with the profile the settings
+// name for speech. The profile named for a scanned reading is another setting
+// and is not read here.
+func TestATranscriptAskedForIsPutRightWithTheProfileNamedForSpeech(t *testing.T) {
+	speech := &puts{says: map[int]string{0: "0|FIRST THING", 1: "1|SECOND THING"}}
+	scans := &puts{says: map[int]string{0: "0|off a page", 1: "1|off a page"}}
+	held, v, store, hash := stopped(t, speech, 0, "first thing", "second thing")
+	held.cfg.SpeechProofreading = proofreading.Proofread{With: "by hand"}
+	held.cfg.ScanProofreading = proofreading.Proofread{With: "off a page", Automatically: true}
+	held.cfg.Proofreading.Profiles["off a page"] = proofreading.Profile{
+		Use: proofreading.UseAgent, Model: "another model", BatchSize: 1, InFlight: 1,
+	}
+	held.cfg.AgentProofreader = func(said AgentProofreading) (port.Proofreader, error) {
+		if said.Model == "another model" {
+			return scans, nil
+		}
+		return speech, nil
+	}
+
+	held.Proofread(v, recording)
+	held.Wait()
+
+	if got := scans.lines(); len(got) != 0 {
+		t.Errorf("the reading's proofreader was asked about lines %v", got)
+	}
+	if got := speech.lines(); len(got) == 0 {
+		t.Error("the speech proofreader was asked about nothing")
+	}
+	want := []string{"FIRST THING", "SECOND THING"}
+	if got := says(t, store, text.Corrected(text.ASR, hash)); !slices.Equal(got, want) {
+		t.Errorf("the transcript says %q", got)
+	}
+}
+
+// An installation that names something to put a transcript right with offers
+// the run, and one that names nothing does not.
+func TestAProofreadingIsOfferedWhereAProfileIsNamed(t *testing.T) {
+	held, _ := listens(t, &deaf{}, recording)
+
+	if held.ProofreaderReady() {
+		t.Error("an installation naming no profile offers the run")
+	}
+	held.cfg.SpeechProofreading = proofreading.Proofread{With: "by hand"}
+	if !held.ProofreaderReady() {
+		t.Error("an installation naming a profile does not offer the run")
+	}
+}
+
 // One run to a transcript. A run that finds it held leaves the list to the run
 // that holds it.
 func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {

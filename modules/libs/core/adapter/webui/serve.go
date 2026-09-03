@@ -464,6 +464,9 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
 	o.API.Transcribes = transcribing
+	// A transcript is put right by the same proofreading that runs on its own,
+	// so a person asking for one is shown the run everything else is shown in.
+	o.API.Proofreads = transcribing
 	// A recording whose answer was dropped is one the queue has had no answer
 	// about.
 	o.API.Drops.Forgets = transcribing.Forget

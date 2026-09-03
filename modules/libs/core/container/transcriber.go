@@ -390,16 +390,35 @@ func (t *Transcribing) hear(ctx context.Context, v domain.Vault, path string, as
 	return err
 }
 
-// correct puts a transcript right, where a person configured something to
-// proofread it with. An installation that named no profile, or asked for a
-// transcript to be put right by hand, does nothing here.
-//
-// A transcript whose proofreading failed is the transcript as it was heard.
+// ProofreaderReady says whether this installation has anything to put a
+// transcript right with. A person is offered the run where it has.
+func (t *Transcribing) ProofreaderReady() bool { return t.cfg.SpeechProofreading.With != "" }
+
+// Proofread puts one transcript right for a person who asked for it, behind the
+// caller. It reports itself into the list of what is being done under the line
+// a proofreading of that recording carries, so a person watching sees one run.
+func (t *Transcribing) Proofread(v domain.Vault, path string) {
+	t.going.Add(1)
+	go func() {
+		defer t.going.Done()
+		t.putRight(t.context(), v, path, true)
+	}()
+}
+
+// correct puts a transcript right, where an installation asked for its
+// transcripts to be put right on their own.
 func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string, asked bool) {
-	said := t.cfg.SpeechProofreading
-	if !said.Automatically {
+	if !t.cfg.SpeechProofreading.Automatically {
 		return
 	}
+	t.putRight(ctx, v, path, asked)
+}
+
+// putRight puts one transcript right with the profile named for speech.
+//
+// A transcript whose proofreading failed is the transcript as it was heard.
+func (t *Transcribing) putRight(ctx context.Context, v domain.Vault, path string, asked bool) {
+	said := t.cfg.SpeechProofreading
 
 	id := correcting(path)
 	fail := func(err error) {

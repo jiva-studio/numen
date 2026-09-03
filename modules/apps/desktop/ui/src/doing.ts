@@ -115,6 +115,8 @@ export interface Doing {
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>
+  /** The transcript of a recording put right by a proofreader. */
+  proofreads(path: string): Promise<Outcome>
   /**
    * The transcript of a recording taken away, with everything cut from it, and
    * whether this build can do it at all. The recording is left saying nothing,
@@ -239,6 +241,7 @@ const carried: Record<string, Carries> = {
   destroy: (deed, on, words) => removes(deed, true, on, words),
   transcribe: async (deed, on, words) => began(deed, await on.transcribes(deed.file), on, words),
   recognise: async (deed, on, words) => began(deed, await on.recognises(deed.file), on, words),
+  proofread: async (deed, on, words) => began(deed, await on.proofreads(deed.file), on, words),
   dropTranscript: async (deed, on, words) => {
     if (await on.drops(deed.file)) return
     cannotRun(deed.id)
