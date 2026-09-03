@@ -21,8 +21,8 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return &theme.Service{
 		Catalogue: catalogue,
 		Say:       say,
-		Dressed:   func() (theme.Dress, error) { return c.dressed(said) },
-		Wear:      func(chosen theme.Dress) error { return c.wear(chosen, said) },
+		Dressed:   func() (theme.Appearance, error) { return c.dressed(said) },
+		Wear:      func(chosen theme.Appearance) error { return c.wear(chosen, said) },
 		InterfaceScaleBounds: theme.Bounds{
 			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
 		},
@@ -40,7 +40,7 @@ type scales struct {
 }
 
 // over puts what was said this launch over what the file holds.
-func (l *scales) over(worn *theme.Dress) {
+func (l *scales) over(worn *theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.drawn > 0 {
@@ -53,7 +53,7 @@ func (l *scales) over(worn *theme.Dress) {
 
 // chose lets go of what was said this launch about a size a person has now
 // chosen for themselves.
-func (l *scales) chose(chosen theme.Dress) {
+func (l *scales) chose(chosen theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if chosen.InterfaceScale > 0 {
@@ -76,16 +76,16 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 
 // dressed and wear are the settings file as the themes need it: one section of
 // it read, and up to four fields of it written.
-func (c Config) dressed(said *scales) (theme.Dress, error) {
+func (c Config) dressed(said *scales) (theme.Appearance, error) {
 	path, err := c.settingsFile()
 	if err != nil {
-		return theme.Dress{}, err
+		return theme.Appearance{}, err
 	}
 	held, err := settings.At(path)
 	if err != nil {
-		return theme.Dress{}, err
+		return theme.Appearance{}, err
 	}
-	worn := theme.Dress{
+	worn := theme.Appearance{
 		Theme:          held.Appearance.Theme,
 		Mode:           mode(held.Appearance.Mode),
 		InterfaceScale: held.Appearance.InterfaceScale,
@@ -98,7 +98,7 @@ func (c Config) dressed(said *scales) (theme.Dress, error) {
 // wear writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
-func (c Config) wear(chosen theme.Dress, said *scales) error {
+func (c Config) wear(chosen theme.Appearance, said *scales) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err

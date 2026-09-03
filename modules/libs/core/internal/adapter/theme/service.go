@@ -10,9 +10,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Dress is what the window wears: which theme, which half of a colour pair its
+// Appearance is what the window wears: which theme, which half of a colour pair its
 // tokens are read as, and how large it is drawn and its reading text set.
-type Dress struct {
+type Appearance struct {
 	Theme string
 	Mode  v1.Mode
 
@@ -39,12 +39,12 @@ type Service struct {
 	Catalogue Catalogue
 
 	// Dressed is what the settings say the window wears.
-	Dressed func() (Dress, error)
+	Dressed func() (Appearance, error)
 
 	// Wear writes a dress into the settings, and leaves the rest of them as
 	// they are. A number outside the bounds of the size it is written into is
 	// refused and nothing is written.
-	Wear func(Dress) error
+	Wear func(Appearance) error
 
 	// InterfaceScaleBounds and TextScaleBounds are how far each of the two sizes
 	// goes.
@@ -133,7 +133,7 @@ func (s *Service) Choose(
 	if s.Wear == nil {
 		return failed("this build writes no settings")
 	}
-	chosen := Dress{
+	chosen := Appearance{
 		Theme:          name,
 		Mode:           req.Msg.GetMode(),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
@@ -174,8 +174,8 @@ func (s *Service) Changed(
 // worn is what the settings say, and this product's own palette at the size it
 // was designed at, under the system's choice, where they say nothing or could
 // not be read.
-func (s *Service) worn() Dress {
-	worn := Dress{
+func (s *Service) worn() Appearance {
+	worn := Appearance{
 		Theme:          Default,
 		Mode:           v1.Mode_MODE_SYSTEM,
 		InterfaceScale: AsDesigned,
