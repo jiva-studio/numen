@@ -59,8 +59,8 @@ func (a *API) Focus(
 	}
 }
 
-func (v viewing) Moved(_ context.Context, went domain.Went) error {
-	v.Listeners.tell(changed{renamed: []domain.Went{went}})
+func (v viewing) Moved(_ context.Context, went domain.Move) error {
+	v.Listeners.tell(changed{renamed: []domain.Move{went}})
 	return nil
 }
 

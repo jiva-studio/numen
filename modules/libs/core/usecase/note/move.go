@@ -96,7 +96,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.
 	if u.Moving != nil {
-		u.Moving(ctx, domain.Went{From: from, To: to})
+		u.Moving(ctx, domain.Move{From: from, To: to})
 	}
 
 	// What a repaired link is pointed at: the name the note is filed under, or

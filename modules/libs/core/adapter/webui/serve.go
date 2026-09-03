@@ -245,7 +245,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Links:   api.Links,
 		Sources: db.Sources(),
 		Index:   opened.level,
-		Moving: func(ctx context.Context, went domain.Went) {
+		Moving: func(ctx context.Context, went domain.Move) {
 			_ = api.Viewing().Moved(ctx, went)
 		},
 		Sync: cfg.Syncing(),

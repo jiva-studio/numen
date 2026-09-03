@@ -16,7 +16,7 @@ import (
 type window struct {
 	asked []domain.Place
 	drawn []domain.Editing
-	went  []domain.Went
+	went  []domain.Move
 	fails error
 }
 
@@ -40,7 +40,7 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	})
 	core.Write.Telling = tells
 	core.Replace.Telling = tells
-	moving := note.TellMove(func(ctx context.Context, went domain.Went) {
+	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
 		_ = looking.Moved(ctx, went)
 	})
 	core.Move.Moving = moving
@@ -175,7 +175,7 @@ func (w *window) Editing(_ context.Context, said domain.Editing) error {
 }
 
 // went is where the window was told each note moved to.
-func (w *window) Moved(_ context.Context, went domain.Went) error {
+func (w *window) Moved(_ context.Context, went domain.Move) error {
 	if w.fails != nil {
 		return w.fails
 	}

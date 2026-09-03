@@ -9,7 +9,7 @@ type changed struct {
 	reload bool
 	// renamed is the notes that are no longer where they were, each by where it
 	// was and where it now is.
-	renamed []domain.Went
+	renamed []domain.Move
 }
 
 // following is everyone listening for what moved.

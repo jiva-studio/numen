@@ -29,7 +29,7 @@ type filing struct {
 	// files whose bytes were read.
 	readers *countingReaders
 	// went is every note whoever is drawing was told about, in order.
-	went *[]domain.Went
+	went *[]domain.Move
 }
 
 func fileable(t *testing.T, notes map[string]string) filing {
@@ -45,7 +45,7 @@ func fileable(t *testing.T, notes map[string]string) filing {
 		db:      db,
 		vault:   v,
 		readers: readers,
-		went:    &[]domain.Went{},
+		went:    &[]domain.Move{},
 		index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			_, err := refresh.Execute(ctx, v, paths)
 			return err
@@ -73,7 +73,7 @@ func (f filing) moving(kept note.SyncTitleAndFilename) usecase.Move {
 			Sources: f.db.Sources(),
 			Index:   f.index,
 			Sync:    func() note.SyncTitleAndFilename { return kept },
-			Moving: func(_ context.Context, went domain.Went) {
+			Moving: func(_ context.Context, went domain.Move) {
 				*f.went = append(*f.went, went)
 			},
 		},
