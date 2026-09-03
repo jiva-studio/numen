@@ -480,3 +480,46 @@ func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
 		t.Errorf("the note holds %q", body)
 	}
 }
+
+// A person names a note in their own editor, and a name the filesystem accepts
+// is a name this vault saves. The temporary file written beside it carries a
+// leading dot and a suffix of its own, and the whole of that has to fit as well.
+func TestANoteWithALongNameIsSaved(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	// 249 bytes, which is longer than a filesystem takes once twelve more are
+	// put in front of and behind it.
+	stem := strings.Repeat("з", 123)
+	name := stem + ".md"
+
+	if err := w.Create(ctx, name, []byte("# Note\n")); err != nil {
+		t.Fatalf("the note could not be created: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(root, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	held := domain.FileRef{Size: info.Size(), MTime: info.ModTime().UnixNano()}
+	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), held); err != nil {
+		t.Fatalf("the note could not be saved: %v", err)
+	}
+	if err := w.Bring(ctx, stem+".png", strings.NewReader("PNG")); err != nil {
+		t.Fatalf("the file could not be brought in: %v", err)
+	}
+
+	body, err := os.ReadFile(filepath.Join(root, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "# Note\n\nedited\n" {
+		t.Errorf("the note holds %q", body)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Errorf("the vault holds %d files, want the note and the attachment", len(entries))
+	}
+}

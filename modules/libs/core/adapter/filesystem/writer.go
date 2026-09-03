@@ -10,6 +10,7 @@ import (
 	pathpkg "path"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 
 	ignore "github.com/sabhiram/go-gitignore"
 
@@ -100,6 +101,23 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	return written, nil
 }
 
+// nameMax is how many bytes one component of a path may be. It is 255 on every
+// filesystem a vault is kept on.
+const nameMax = 255
+
+// beside is the pattern a temporary file is created next to a target under. The
+// note's name is cut on a rune boundary, leaving room for the leading dot and
+// for the digits CreateTemp puts where the star is. The rename lands on the
+// full name.
+func beside(name string) string {
+	const room = len(".") + len(".") + 10
+	for len(name)+room > nameMax {
+		_, size := utf8.DecodeLastRuneInString(name)
+		name = name[:len(name)-size]
+	}
+	return "." + name + ".*"
+}
+
 // replace writes content beside the target and renames it over the top.
 //
 // The temporary file is named with a leading dot so that the watcher never
@@ -116,7 +134,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 // lands, and a caller holding them is holding the file it just wrote.
 func replace(target string, content []byte, mode fs.FileMode) (domain.FileRef, error) {
 	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, "."+name+".*")
+	tmp, err := os.CreateTemp(dir, beside(name))
 	if err != nil {
 		return domain.FileRef{}, err
 	}
@@ -433,7 +451,7 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 // same rules replace writes bytes it already holds.
 func arrive(target string, content io.Reader) error {
 	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, "."+name+".*")
+	tmp, err := os.CreateTemp(dir, beside(name))
 	if err != nil {
 		return err
 	}
