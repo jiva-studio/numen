@@ -7,7 +7,7 @@
 import { createClient } from '@connectrpc/connect'
 import {
   CardsService,
-  Counting,
+  Counting as Countings,
   Fault as Faults,
   Naming,
   NoteType as NoteTypes,
@@ -30,6 +30,7 @@ import type {
   Refusal,
   Stencil as StencilMessage,
 } from '@numen/protocol'
+import type { Counting } from '@numen/ui'
 import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
@@ -209,7 +210,7 @@ export const core: Core & Asking & Commanding = {
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),
-        counting: at.counting === Counting.BYTES ? ('bytes' as const) : ('things' as const),
+        counting: counted[at.counting] ?? 'things',
         failed: at.failed,
         asked: at.asked,
       }))
@@ -498,11 +499,29 @@ const served = async (address: string, asking?: RequestInit): Promise<Response> 
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-/** How a search is asked, as the schema names it. */
-const ways: Record<Way, Ways> = {
-  words: Ways.WORDS,
-  meaning: Ways.MEANING,
+/**
+ * What a piece of work counts, in the words the window uses. One it has no word
+ * for is counted one by one.
+ */
+const counted: Record<Countings, Counting> = {
+  [Countings.UNSPECIFIED]: 'things',
+  [Countings.THINGS]: 'things',
+  [Countings.BYTES]: 'bytes',
+  [Countings.SECONDS]: 'seconds',
 }
+
+/** How a search is asked, in the words the window uses. */
+const asked: Record<Ways, Way> = {
+  [Ways.UNSPECIFIED]: 'fused',
+  [Ways.WORDS]: 'words',
+  [Ways.MEANING]: 'meaning',
+  [Ways.NAMES]: 'names',
+}
+
+/** How a search is asked, as the schema names it. */
+const ways = Object.fromEntries(
+  Object.entries(asked).map(([said, way]) => [way, Number(said)]),
+) as Record<Way, Ways>
 
 /** A run of text, kept as the plain pair the window carries it as. */
 const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
@@ -553,7 +572,7 @@ const listed = (one: EntryMessage): Entry => ({
 })
 
 /** What the vault holds at a path, in the words the window uses. */
-const holding: Partial<Record<SourceKind, Source>> = {
+const holding: Record<SourceKind, Source> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
@@ -572,7 +591,7 @@ const standing: Record<Presences, Presence> = {
 }
 
 /** Which of four a note is, in the words the window uses. */
-const typed: Partial<Record<NoteTypes, NoteType>> = {
+const typed: Record<NoteTypes, NoteType> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',

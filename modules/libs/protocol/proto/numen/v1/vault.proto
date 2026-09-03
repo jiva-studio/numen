@@ -351,11 +351,15 @@ message Task {
 }
 
 // Counting is what a piece of work counts. Bytes are read out in the sizes a
-// person reads them in, and everything else is counted one by one.
+// person reads them in, seconds as a length of time, and everything else is
+// counted one by one.
 enum Counting {
   COUNTING_UNSPECIFIED = 0;
   COUNTING_THINGS = 1;
   COUNTING_BYTES = 2;
+
+  // A stretch of a recording, read out as a length of time.
+  COUNTING_SECONDS = 3;
 }
 
 message OpeningRequest {}

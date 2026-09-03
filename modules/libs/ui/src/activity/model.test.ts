@@ -101,6 +101,14 @@ describe('tallyWord', () => {
   ])('counted in bytes, reads $done of $total as $want', ({ done, total, want }) => {
     expect(tallyWord({ done, total }, 'bytes')).toBe(want)
   })
+
+  it.each([
+    { done: 0, total: 5_400, want: '0:00 of 1:30:00' },
+    { done: 95, total: 5_400, want: '1:35 of 1:30:00' },
+    { done: 5_400, total: 5_400, want: '1:30:00 of 1:30:00' },
+  ])('counted in seconds, reads $done of $total as $want', ({ done, total, want }) => {
+    expect(tallyWord({ done, total }, 'seconds')).toBe(want)
+  })
 })
 
 describe('sizeWord', () => {

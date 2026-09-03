@@ -86,7 +86,7 @@ export const themes: Themes = {
         pinned: one.pinned,
       })),
       applied: answer.applied,
-      mode: worded(answer.mode),
+      mode: WORDED[answer.mode] ?? 'system',
       sizes: { interfaceScale: answer.interfaceScale, textScale: answer.textScale },
       bounds: {
         interfaceScale: ranged(answer.interfaceScaleBounds),
@@ -123,13 +123,9 @@ const ASKED: Record<Mode, Modes> = {
 }
 
 /** The mode in the window's own words. A mode it has no word for is the system's. */
-const worded = (said: Modes): Mode => {
-  switch (said) {
-    case Modes.LIGHT:
-      return 'light'
-    case Modes.DARK:
-      return 'dark'
-    default:
-      return 'system'
-  }
+const WORDED: Record<Modes, Mode> = {
+  [Modes.UNSPECIFIED]: 'system',
+  [Modes.SYSTEM]: 'system',
+  [Modes.LIGHT]: 'light',
+  [Modes.DARK]: 'dark',
 }

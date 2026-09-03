@@ -35,10 +35,10 @@ export interface Tally {
 /**
  * What a count counts.
  *
- * Bytes are read out in the sizes a person reads them in. Everything else is
- * counted one by one.
+ * Bytes are read out in the sizes a person reads them in and seconds on a
+ * clock. Everything else is counted one by one.
  */
-export type Counting = 'things' | 'bytes'
+export type Counting = 'things' | 'bytes' | 'seconds'
 
 /** What a line of activity draws. */
 export interface ActivityDescriptor {
@@ -116,20 +116,33 @@ export const sizeWord = (bytes: number): string => {
  */
 export const tallyWord = (tally: Tally, counting: Counting = 'things'): string => {
   const done = Math.min(tally.done, tally.total)
-  return counting === 'bytes'
-    ? `${sizeWord(done)} of ${sizeWord(tally.total)}`
-    : `${grouped(done)} of ${grouped(tally.total)}`
+  switch (counting) {
+    case 'bytes':
+      return `${sizeWord(done)} of ${sizeWord(tally.total)}`
+    case 'seconds':
+      return `${clock(done * 1000)} of ${clock(tally.total * 1000)}`
+    case 'things':
+      return `${grouped(done)} of ${grouped(tally.total)}`
+  }
 }
 
 /**
  * How fast a count is moving, in words.
  *
  * `perSecond` is measured by whoever is watching the count. A rate of nothing
- * is nothing known, and nothing is said.
+ * is nothing known, and nothing is said. Seconds move against real time, so
+ * they read as a multiple of it.
  */
 export const rateWord = (perSecond: number, counting: Counting = 'things'): string => {
   if (perSecond <= 0) return ''
-  return counting === 'bytes' ? `${sizeWord(perSecond)}/s` : `${grouped(Math.round(perSecond))}/s`
+  switch (counting) {
+    case 'bytes':
+      return `${sizeWord(perSecond)}/s`
+    case 'seconds':
+      return `${Math.round(perSecond)}×`
+    case 'things':
+      return `${grouped(Math.round(perSecond))}/s`
+  }
 }
 
 

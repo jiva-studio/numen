@@ -26,6 +26,11 @@ var owed = map[string][]string{
 		"adapter/agent", "adapter/embed", "adapter/proofreading",
 		"adapter/recognition", "adapter/transcription",
 	},
+	// The two source queues and the deck writer stand here, so the words for a
+	// piece of work, a card, a schedule, a cut and a vector are read in place.
+	"container": {
+		"cards", "cutting", "embedding", "flashcards", "markdown", "proofread", "task",
+	},
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -95,6 +100,9 @@ func refused(from, to string) string {
 			return "an adapter is given what it needs and takes no other adapter"
 		}
 	case from == "container":
+		if !assembling(to) {
+			return "the composition root assembles the core and does none of its work"
+		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
 	case from == "testsupport":
 	default:
@@ -103,6 +111,13 @@ func refused(from, to string) string {
 		}
 	}
 	return ""
+}
+
+// assembling says whether a package is one the composition root puts together:
+// an adapter, a scenario, and the two languages the two are named in.
+func assembling(to string) bool {
+	return to == "container" || to == "domain" || to == "port" ||
+		strings.HasPrefix(to, "adapter/") || strings.HasPrefix(to, "usecase/")
 }
 
 // sibling says whether two packages are one adapter: its own folder and every
