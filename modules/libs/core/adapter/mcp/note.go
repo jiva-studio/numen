@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -280,8 +281,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Name:  "note_write",
 		Title: "Write a note",
 		Description: "Replace the prose of a note. The frontmatter is left alone — use " +
-			"the link tools to change what a note is joined to. Pass the fingerprint from " +
-			"`note_read` so a write cannot land on top of an edit you did not see. This " +
+			"the link tools to change what a note is joined to. The fingerprint from " +
+			"`note_read` is required, and a write lands only on the note that fingerprint " +
+			"names. This " +
 			"answers with the fingerprint it produced: pass that one to write the same " +
 			"note again without reading it back. To change part of a note, `note_edit` " +
 			"replaces one stretch and leaves the rest untouched; this is for a note being " +
@@ -290,7 +292,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path        string `json:"path" jsonschema:"the note to write"`
 		Body        string `json:"body" jsonschema:"the markdown to put in it"`
-		Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what note_read said the note was, to refuse a write over somebody else's edit"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
@@ -327,11 +329,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			"still found; the answer says so, and says what the note held. Reach for this " +
 			"before `note_write` for anything short of rewriting a note — it costs you the " +
 			"stretch instead of the whole note, and it cannot change a word you did not " +
-			"name. It answers with the fingerprint it produced.",
+			"name. The fingerprint from `note_read` is required, and an edit lands only on " +
+			"the note that fingerprint names. It answers with the fingerprint it produced.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path    string `json:"path" jsonschema:"the note to edit"`
-		Stood   string `json:"stood" jsonschema:"the text to replace, as the note has it"`
-		Becomes string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+		Path        string `json:"path" jsonschema:"the note to edit"`
+		Stood       string `json:"stood" jsonschema:"the text to replace, as the note has it"`
+		Becomes     string `json:"becomes" jsonschema:"what to put in its place; empty takes the text out"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses an edit over somebody else's edit"`
 	}) (*sdk.CallToolResult, struct {
 		Path        string `json:"path"`
 		Fingerprint string `json:"fingerprint"`
@@ -344,7 +348,11 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			Stood       string `json:"stood"`
 			Plainly     bool   `json:"plainly,omitempty"`
 		}
-		done, err := core.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Stood, in.Becomes)
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return nil, out{}, err
+		}
+		done, err := core.Replace.Execute(ctx, core.shown().Vault, in.Path, in.Stood, in.Becomes, seen)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -497,9 +505,12 @@ func fingerprintOf(ref domain.FileRef) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(ref.MTime, 10)
 }
 
+// parseFingerprint is the fingerprint a caller presents. Every tool that writes
+// takes one, and a call carrying none is refused.
 func parseFingerprint(s string) (domain.FileRef, error) {
 	if s == "" {
-		return domain.FileRef{}, nil
+		return domain.FileRef{}, errors.New(
+			"present the fingerprint the read gave you: note_read for a note, card_read for a deck")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {

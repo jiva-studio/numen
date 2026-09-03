@@ -136,6 +136,30 @@ func call[T any](t *testing.T, s *sdk.ClientSession, name string, args any) T {
 	return out
 }
 
+// fingerprint is what a note is at this moment, as note_read gives it. Every
+// tool that writes a note takes one.
+func fingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
+	t.Helper()
+	read := call[struct {
+		Notes []struct {
+			Fingerprint string `json:"fingerprint"`
+		} `json:"notes"`
+	}](t, s, "note_read", map[string]any{"paths": []string{path}})
+	if len(read.Notes) != 1 {
+		t.Fatalf("note_read answered with %d notes for %s", len(read.Notes), path)
+	}
+	return read.Notes[0].Fingerprint
+}
+
+// deckprint is what a deck is at this moment, as card_read gives it. Every tool
+// that writes a deck takes one.
+func deckprint(t *testing.T, s *sdk.ClientSession, path string) string {
+	t.Helper()
+	return call[struct {
+		Fingerprint string `json:"fingerprint"`
+	}](t, s, "card_read", map[string]any{"path": path}).Fingerprint
+}
+
 func failing(t *testing.T, s *sdk.ClientSession, name string, args any) string {
 	t.Helper()
 	res, err := s.CallTool(t.Context(), &sdk.CallToolParams{Name: name, Arguments: args})
@@ -564,7 +588,7 @@ func TestAPathOutsideTheVaultIsRefused(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := failing(t, session, "note_write", map[string]any{
-		"path": "../../escaped.md", "body": "no\n",
+		"path": "../../escaped.md", "body": "no\n", "fingerprint": "0-0",
 	})
 	if !strings.Contains(got, "vault") {
 		t.Errorf("want a refusal about the vault, got %q", got)
@@ -685,8 +709,9 @@ func TestReadingGivesBackOnlyTheProse(t *testing.T) {
 	// And a caller that hands back a whole note is told, rather than quietly
 	// given a note with two frontmatter blocks in it.
 	got := failing(t, session, "note_write", map[string]any{
-		"path": "Entropy.md",
-		"body": "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
+		"path":        "Entropy.md",
+		"body":        "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nMore.\n",
+		"fingerprint": fingerprint(t, session, "Entropy.md"),
 	})
 	if !strings.Contains(got, "frontmatter") {
 		t.Errorf("want a refusal naming the frontmatter, got %q", got)

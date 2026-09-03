@@ -15,10 +15,8 @@ import (
 // Replace puts one stretch of a note's prose in place of another, and leaves
 // every byte around it as it was.
 //
-// What is replaced is named by the text standing there rather than by where it
-// stands. Text says both where the stretch is and that the note still holds
-// what the caller was working from, so nothing else has to be presented for a
-// write to be safe.
+// What is replaced is named by the text standing there, not by where it stands,
+// and the caller presents the fingerprint of the note it read.
 type Replace struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
@@ -77,8 +75,11 @@ func (e Twice) Error() string {
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
 // Execute puts `becomes` where `stood` stands in the note at path.
+//
+// Fingerprint is what the caller believes is on disk. A note that has changed
+// since it was read is left alone and port.ErrChanged comes back.
 func (u Replace) Execute(
-	ctx context.Context, v domain.Vault, path, stood, becomes string,
+	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.FileRef,
 ) (Replaced, error) {
 	if stood == "" {
 		return Replaced{}, fmt.Errorf("name the text to replace")
@@ -90,7 +91,7 @@ func (u Replace) Execute(
 
 	e := editing{
 		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
-		bound: MaxBytes,
+		fingerprint: fingerprint, bound: MaxBytes,
 	}
 	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalised(doc.Body())
