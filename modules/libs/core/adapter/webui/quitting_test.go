@@ -142,6 +142,23 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.Sync) 
 	}
 }
 
+// read waits for the walk the window started to have been through the vault, so
+// that what the index says about a note is there to be asked for.
+func (f *going) read(t *testing.T) {
+	t.Helper()
+
+	for range 500 {
+		if f.opened.API.Ready.Load() {
+			return
+		}
+		if reason := f.opened.API.Failed.Load(); reason != nil && reason != "" {
+			t.Fatalf("the vault could not be read: %v", reason)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("the vault in the window was never read")
+}
+
 // held is a writer a test lets through when it says so, which is what a write
 // that is still in the air looks like from here.
 type held struct {

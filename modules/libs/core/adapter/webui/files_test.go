@@ -359,9 +359,7 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 		"Sanskrit.md": "---\ntype: preset\nminutes_a_day: 20\n---\n\n# Sanskrit\n",
 		"Notes.txt":   "a list\n",
 	})
-	if _, err := f.opened.API.Scan(t.Context(), f.opened.API.Showing()); err != nil {
-		t.Fatal(err)
-	}
+	f.read(t)
 
 	held := map[string]*v1.Entry{}
 	for _, entry := range drawn(t, f, "") {
@@ -409,9 +407,7 @@ func TestAPathSaysWhatStandsThere(t *testing.T) {
 		"Physics.epub": "an epub\n",
 		"Notes.txt":    "a list\n",
 	})
-	if _, err := f.opened.API.Scan(t.Context(), f.opened.API.Showing()); err != nil {
-		t.Fatal(err)
-	}
+	f.read(t)
 
 	held := stands(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
 		"Entropy.md", "Physics.epub", "Notes.txt", "Gone.md")

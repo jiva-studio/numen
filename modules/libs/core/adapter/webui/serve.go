@@ -7,7 +7,6 @@ import (
 	"io"
 	"slices"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -53,10 +52,6 @@ type Opened struct {
 	// stopEmbedder gives back the models the installation is holding.
 	stopEmbedder func() error
 
-	// on is the half of the window that belongs to the vault it is showing, and
-	// is nothing while that vault is being changed.
-	on atomic.Pointer[showing]
-
 	// One settling runs at a time, and the second to arrive is refused.
 	mu    sync.Mutex
 	busy  bool
@@ -64,11 +59,24 @@ type Opened struct {
 }
 
 // showing is the half of the window that belongs to one vault: the passes
-// running behind it and what ends them.
+// running behind it, what a request reaches them through, and what ends them.
+//
+// It is published as one, through API.on, and every request reads it there.
 type showing struct {
 	opening      *container.Opening
 	recognising  *container.Recognising
 	transcribing *container.Transcribing
+
+	// recognises reads a scanned document, transcribes hears a recording, and
+	// proofreads puts a transcript right, each for whoever asks.
+	recognises  Run
+	transcribes Run
+	proofreads  Proofreading
+	// cut asks for a source to be cut again from what its text now says, and
+	// forgets takes a recording out of what the queue has had an answer about.
+	cut     func(context.Context, domain.Vault, string) error
+	forgets func(domain.Vault, string)
+
 	// stop ends every pass this vault started, and ended waits for them.
 	stop  context.CancelFunc
 	ended func()
@@ -207,7 +215,6 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		vectors:      why,
 		stopEmbedder: closeEmbedder,
 	}
-	api.Scan = opened.scanning
 
 	api.Makes = &note.Create{
 		Writers: cfg.VaultWriters(),
@@ -416,7 +423,9 @@ func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
 	if err != nil {
 		return err
 	}
-	o.on.Store(on)
+	// Last, so a request that reads a run reads the one belonging to the vault
+	// in front of it.
+	o.API.runs(on)
 	return nil
 }
 
@@ -442,13 +451,6 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 		return nil
 	}
 
-	// A transcript the window put right is cut there too.
-	o.API.Cut = recognising.Cut
-
-	// The window asks for a scan to be read through the same job an agent asks
-	// through.
-	o.API.Recognises = recognising
-
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
@@ -463,13 +465,6 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// What it writes is cut where every other cut happens.
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
-	o.API.Transcribes = transcribing
-	// A transcript is put right by the same proofreading that runs on its own,
-	// so a person asking for one is shown the run everything else is shown in.
-	o.API.Proofreads = transcribing
-	// A recording whose answer was dropped is one the queue has had no answer
-	// about.
-	o.API.Drops.Forgets = transcribing.Forget
 	if o.cfg.Transcribes {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
@@ -479,27 +474,46 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// Every vault this installation holds is asked after.
 	transcribing.TakingUp(watching, o.Index.SourcesKnown(), known...)
 
+	// Reading every file again belongs to the vault this window was opened on,
+	// and to nothing built for a vault that arrives later.
+	cfg := o.cfg
+	cfg.RebuildIndex = rebuild
+
 	// Opening a vault is the same act in both windows, so it is one thing in the
 	// container. What this window says about it while it runs is below.
-	opening := o.cfg.Opening(o.Index)
+	opening := cfg.Opening(o.Index)
 	opening.Rebuild = rebuild
 
-	ended := begin(watching, v, o.cfg, o.Index, o.API, opening,
-		o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
+	ended := begin(watching, v, cfg, o.Index, o.API, opening,
+		cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
 	return &showing{
 		opening:      opening,
 		recognising:  recognising,
 		transcribing: transcribing,
-		stop:         stop,
-		ended:        ended,
+		// The window asks for a scan to be read through the same job an agent
+		// asks through.
+		recognises:  recognising,
+		transcribes: transcribing,
+		// A transcript is put right by the same proofreading that runs on its
+		// own, so a person asking for one is shown the run everything else is
+		// shown in.
+		proofreads: transcribing,
+		// A transcript the window put right is cut where every other cut
+		// happens.
+		cut: recognising.Cut,
+		// A recording whose answer was dropped is one the queue has had no
+		// answer about.
+		forgets: transcribing.Forget,
+		stop:    stop,
+		ended:   ended,
 	}, nil
 }
 
 // leave takes down the half of the window that belongs to the vault it is
 // showing.
 func (o *Opened) leave() {
-	on := o.on.Swap(nil)
+	on := o.API.on.Swap(nil)
 	if on == nil {
 		return
 	}
@@ -597,7 +611,7 @@ func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.A
 // waits for them, and closes the index.
 func (o *Opened) Close() error {
 	// First: a search, a note and a link are answered straight from the index,
-	// and the index closes here.
+	// and the index closes here. This stands until the last of them is off it.
 	o.API.Shut()
 	o.leave()
 	if o.API.Viewer != nil {
@@ -621,7 +635,7 @@ func (o *Opened) Showing() domain.Vault { return o.API.Showing() }
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Opened) Refresh() usecase.Refresh {
-	if on := o.on.Load(); on != nil {
+	if on := o.API.on.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
 	return usecase.Refresh{
@@ -636,7 +650,7 @@ func (o *Opened) Refresh() usecase.Refresh {
 // window and for an agent alike, so that what a person started through one of
 // them is shown by the other. Nothing while the window has no vault.
 func (o *Opened) Recognising() *container.Recognising {
-	if on := o.on.Load(); on != nil {
+	if on := o.API.on.Load(); on != nil {
 		return on.recognising
 	}
 	return nil
@@ -647,7 +661,7 @@ func (o *Opened) Recognising() *container.Recognising {
 // person started through one of them is shown by the other. Nothing while the
 // window has no vault.
 func (o *Opened) Transcribing() *container.Transcribing {
-	if on := o.on.Load(); on != nil {
+	if on := o.API.on.Load(); on != nil {
 		return on.transcribing
 	}
 	return nil
@@ -659,15 +673,6 @@ func (o *Opened) Transcribing() *container.Transcribing {
 func (o *Opened) level(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
-}
-
-// scanning reads the whole vault.
-func (o *Opened) scanning(ctx context.Context, v domain.Vault) (usecase.ScanResult, error) {
-	on := o.on.Load()
-	if on == nil {
-		return usecase.ScanResult{}, errNoVault
-	}
-	return on.opening.Scanning().Execute(ctx, v)
 }
 
 // readable is the vault being one this window can show: the folder reads as a
@@ -936,6 +941,17 @@ func begin(
 		return true
 	}
 
+	// Reading every file again is what this launch was asked for, and one pass
+	// makes it. Every pass after it reads what changed. The ask is spent on the
+	// one goroutine below, so it is read and written in one place.
+	rebuild := cfg.RebuildIndex
+	cfg.RebuildIndex = false
+	reading := func() {
+		asked := cfg
+		asked.RebuildIndex, rebuild = rebuild, false
+		readSources(ctx, asked, db, api, v, readers, embedder, out)
+	}
+
 	running.Add(1)
 	go func() {
 		defer running.Done()
@@ -945,7 +961,7 @@ func begin(
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
 		if first() {
-			readSources(ctx, cfg, db, api, v, readers, embedder, out)
+			reading()
 		}
 
 		// What arrives while the window is open is read where the first reading
@@ -958,7 +974,7 @@ func begin(
 			case <-ctx.Done():
 				return
 			case <-wake.sources:
-				readSources(ctx, cfg, db, api, v, readers, embedder, out)
+				reading()
 			case <-wake.read:
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
@@ -1085,22 +1101,30 @@ func embedSources(
 		return
 	}
 
+	// What this pass owes, asked once before it starts: the chunks that can
+	// carry a vector and do not. The pass finds them a few hundred at a time,
+	// and a total that grows as it goes is a count that never settles.
+	//
+	// It is asked before the model is waited for. Every path into this pass runs
+	// on the one goroutine that also reads the books and cuts what a recognition
+	// wrote, and a vault owing no vector holds that goroutine for nothing.
+	owing := int64(0)
+	if api.Progress != nil {
+		held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe))
+		if err == nil {
+			owing = max(0, held-embedded)
+			if owing == 0 {
+				return
+			}
+		}
+	}
+
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
 	if arrival, ok := embedder.(embedding.Arrival); ok {
 		if err := arrival.Wait(ctx); err != nil {
 			return
-		}
-	}
-
-	// What this pass owes, asked once before it starts: the chunks that can
-	// carry a vector and do not. The pass finds them a few hundred at a time,
-	// and a total that grows as it goes is a count that never settles.
-	owing := int64(0)
-	if api.Progress != nil {
-		if held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe)); err == nil {
-			owing = max(0, held-embedded)
 		}
 	}
 

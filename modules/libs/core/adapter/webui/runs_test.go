@@ -74,12 +74,11 @@ func running(
 		idea: "# an idea\n",
 	})
 	api := &API{
-		Readers:     filesystem.Readers{},
-		Recognises:  scans,
-		Transcribes: hears,
-		Marking:     &source.Marks{Sources: read, Derived: held},
+		Readers: filesystem.Readers{},
+		Marking: &source.Marks{Sources: read, Derived: held},
 	}
 	api.show(vault)
+	runningBehind(api, func(on *showing) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
 }
 

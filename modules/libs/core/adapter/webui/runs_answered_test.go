@@ -182,11 +182,11 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 
 	talks := willRun()
 	api := &API{
-		Readers:     filesystem.Readers{},
-		Transcribes: talks,
-		Marking:     &source.Marks{Sources: nothingRead(), Derived: stores},
+		Readers: filesystem.Readers{},
+		Marking: &source.Marks{Sources: nothingRead(), Derived: stores},
 	}
 	api.show(vault)
+	runningBehind(api, func(on *showing) { on.transcribes = talks })
 
 	back := answered(t, post(api.Serving(http.NotFoundHandler()), transcribeAt(talk)))
 	if back.Answer != outcomeAnswered {

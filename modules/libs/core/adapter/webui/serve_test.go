@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -429,4 +432,115 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	eventually(t, "a vault whose watch stopped is shown as followed", func() bool {
 		return text(&f.api.Unwatched) != ""
 	})
+}
+
+// runningBehind publishes the passes a request is answered through, the way a
+// vault arriving in the window does.
+func runningBehind(api *API, change func(*showing)) {
+	on := showing{}
+	if held := api.on.Load(); held != nil {
+		on = *held
+	}
+	change(&on)
+	api.runs(&on)
+}
+
+// saying is where the reading behind the window writes what it did, kept for a
+// test to read back. It is written from the pass and read from the test.
+type saying struct {
+	mu   sync.Mutex
+	said strings.Builder
+}
+
+func (s *saying) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.said.Write(p)
+}
+
+// books is what each pass said it took apart, one number to a pass.
+func (s *saying) books(t *testing.T) []int {
+	t.Helper()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var out []int
+	for _, line := range strings.Split(s.said.String(), "\n") {
+		_, said, found := strings.Cut(line, ": ")
+		if !found {
+			continue
+		}
+		count, _, found := strings.Cut(said, " books,")
+		if !found {
+			continue
+		}
+		n, err := strconv.Atoi(count)
+		if err != nil {
+			t.Fatalf("a pass said %q", line)
+		}
+		out = append(out, n)
+	}
+	return out
+}
+
+// TestReadingEveryFileAgainIsSpentOnOnePass. A launch asked to read every file
+// again is asked it once. A flag left standing records every book of the vault
+// as owing its text each time the watch nudges the reading, so a library of
+// thousands is taken apart afresh for one file dropped into it.
+func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
+	const (
+		held    = "library/A Book.epub"
+		dropped = "library/Another Book.epub"
+	)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
+	testsupport.WriteBook(t, v.Path, held)
+
+	cfg := container.Config{
+		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+		RebuildIndex: true,
+	}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	readers := filesystem.Readers{}
+	watcher := byHand()
+	api := &API{
+		Notes:     db.Queries(),
+		Links:     db.Links(),
+		Listeners: following(),
+		Watching:  focusing(),
+		Tasking:   task.New(),
+	}
+	api.show(v)
+
+	out := &saying{}
+	ctx, stop := context.WithCancel(t.Context())
+	wait := begin(ctx, v, cfg, db, api, cfg.OpeningWith(db, readers, watcher),
+		readers, nil, waking(settled), &pending{}, out)
+	t.Cleanup(func() {
+		stop()
+		wait()
+	})
+
+	eventually(t, "the book the vault held was never taken apart", func() bool {
+		return len(out.books(t)) == 1
+	})
+
+	// A second book is dropped into the vault and the watch says so, which is
+	// the pass running again over a library it has already read.
+	testsupport.WriteBook(t, v.Path, dropped)
+	tells(t, watcher, dropped)
+
+	eventually(t, "the book dropped into the vault was never taken apart", func() bool {
+		return len(out.books(t)) == 2
+	})
+
+	if took := out.books(t); took[1] != 1 {
+		t.Errorf("the second pass took %d books apart for the one file dropped in", took[1])
+	}
 }

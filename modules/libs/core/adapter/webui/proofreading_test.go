@@ -43,7 +43,7 @@ func proofreading(t *testing.T, held port.DerivedStores, read indexed) (*API, ht
 	t.Helper()
 	api, handler := running(t, held, read, willRun(), willRun())
 	by := &proofreads{ready: true}
-	api.Proofreads = by
+	runningBehind(api, func(on *showing) { on.proofreads = by })
 	return api, handler, by
 }
 
@@ -152,8 +152,12 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 		name  string
 		holds func(*API)
 	}{
-		{"a build with no proofreading at all", func(a *API) { a.Proofreads = nil }},
-		{"an installation naming no profile", func(a *API) { a.Proofreads = &proofreads{} }},
+		{"a build with no proofreading at all", func(a *API) {
+			runningBehind(a, func(on *showing) { on.proofreads = nil })
+		}},
+		{"an installation naming no profile", func(a *API) {
+			runningBehind(a, func(on *showing) { on.proofreads = &proofreads{} })
+		}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, handler, _ := proofreading(t, onTheShelf(), heardBy())

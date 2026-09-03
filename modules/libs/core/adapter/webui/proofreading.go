@@ -41,7 +41,10 @@ const (
 // Proofread begins putting the transcript of the recording at a path right, and
 // says what came of asking.
 func (a *API) Proofread(w http.ResponseWriter, r *http.Request, path string) {
-	if a.Proofreads == nil || !a.Proofreads.ProofreaderReady() {
+	// Taken once, so the whole answer is the work of the vault the window was
+	// showing when it was asked.
+	puts := a.proofreads()
+	if puts == nil || !puts.ProofreaderReady() {
 		http.Error(w, errNoProofreading.Error(), http.StatusNotImplemented)
 		return
 	}
@@ -71,7 +74,7 @@ func (a *API) Proofread(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 
-	res, err := a.Proofreads.Proofread(ctx, showing, ref.Path)
+	res, err := puts.Proofread(ctx, showing, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return

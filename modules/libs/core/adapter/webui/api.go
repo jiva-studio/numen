@@ -36,12 +36,21 @@ type API struct {
 	// embedder an answer reaches into are taken away.
 	shut atomic.Bool
 
+	// answering is the questions taken and not yet answered. A search, a note
+	// and a link are read straight from the index, and Shut stands here until
+	// the last of them is off it.
+	//
+	// A stream is not counted: it lives as long as the page that opened it.
+	answering inflight
+
+	// on is the passes behind the vault the window is showing. It is published
+	// as one after the vault, so a run, a cut and a drop reach the vault the
+	// request was answered over. Nothing while the vault is being changed.
+	on atomic.Pointer[showing]
+
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
-	// Scan reads the whole vault. Keeping it level afterwards is a use case,
-	// and what it produces arrives here through Listeners.
-	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
 	Listeners audience[changed]
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
@@ -99,21 +108,6 @@ type API struct {
 	// what owes a vector, once the vault has been still. Nil for a build with
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
-	// Recognises reads a scanned document and Transcribes hears a recording,
-	// each for whoever asks. They are the jobs an agent asks through too, so
-	// what a person started in the window is shown to both. A build without one
-	// answers that it cannot do that run.
-	Recognises  Run
-	Transcribes Run
-	// Proofreads puts a recording's transcript right, for whoever asks. An
-	// installation naming nothing to put one right with answers that it cannot
-	// do that run.
-	Proofreads Proofreading
-	// Cut asks for a source to be cut again from whatever its text now says. A
-	// window that put a transcript right calls it, so search answers with the
-	// words as they now read. Nil for a build with nothing cutting behind it,
-	// and then a correction is seen in the tab alone.
-	Cut func(context.Context, domain.Vault, string) error
 	// Drops takes a recording's transcript away, with everything listening to
 	// it produced. A build without one answers that a transcript cannot be
 	// dropped here.
@@ -264,9 +258,63 @@ func (a *API) Showing() domain.Vault {
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
-// Shut refuses every question from now on, and there is no opening it again.
-// It is closed while everything an answer reaches into is still there.
-func (a *API) Shut() { a.shut.Store(true) }
+// runs is the passes a run, a cut and a drop are taken through from now on.
+// They arrive together, after the vault they belong to.
+func (a *API) runs(on *showing) { a.on.Store(on) }
+
+// recognises reads a scanned document and transcribes hears a recording, each
+// for whoever asks. They are the jobs an agent asks through too, so what a
+// person started in the window is shown to both. Nothing where the window has
+// no vault, and where this build does no such run.
+func (a *API) recognises() Run {
+	if on := a.on.Load(); on != nil {
+		return on.recognises
+	}
+	return nil
+}
+
+func (a *API) transcribes() Run {
+	if on := a.on.Load(); on != nil {
+		return on.transcribes
+	}
+	return nil
+}
+
+// proofreads puts a recording's transcript right, for whoever asks.
+func (a *API) proofreads() Proofreading {
+	if on := a.on.Load(); on != nil {
+		return on.proofreads
+	}
+	return nil
+}
+
+// cuts asks for a source to be cut again from whatever its text now says. A
+// window that put a transcript right calls it, so search answers with the words
+// as they now read. Nothing while the window has no vault, and then a
+// correction is seen in the tab alone.
+func (a *API) cuts() func(context.Context, domain.Vault, string) error {
+	if on := a.on.Load(); on != nil {
+		return on.cut
+	}
+	return nil
+}
+
+// forgets takes a recording out of what the queue behind the vault has already
+// had an answer about, so one that gave no words is offered again.
+func (a *API) forgets() func(domain.Vault, string) {
+	if on := a.on.Load(); on != nil {
+		return on.forgets
+	}
+	return nil
+}
+
+// Shut refuses every question from now on, and there is no opening it again. It
+// answers once the questions already taken have been answered, so everything an
+// answer reaches into is still there for the whole of it.
+func (a *API) Shut() {
+	a.shut.Store(true)
+	<-a.answering.seal()
+}
 
 func (a *API) closed() bool { return a.shut.Load() }
 
