@@ -35,8 +35,8 @@ func stretch(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
 }
 
-func (s *voice) Transcription() port.Transcription {
-	return port.Transcription{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
+func (s *voice) Transcription() port.TranscriptionModel {
+	return port.TranscriptionModel{Model: "ear", Segmenter: "pauses", Cutting: "0.50/500/200/30000/100/2500", From: "a test"}
 }
 
 func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {

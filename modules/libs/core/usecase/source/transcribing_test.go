@@ -35,8 +35,8 @@ type deaf struct {
 	opened int
 }
 
-func (d *deaf) Transcription() port.Transcription {
-	return port.Transcription{Model: "deaf", Segmenter: "none"}
+func (d *deaf) Transcription() port.TranscriptionModel {
+	return port.TranscriptionModel{Model: "deaf", Segmenter: "none"}
 }
 
 func (d *deaf) Open(context.Context, []byte) (port.Recording, error) {

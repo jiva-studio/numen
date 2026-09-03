@@ -188,7 +188,7 @@ type watching struct {
 	saw func()
 }
 
-func (w watching) SaveExtraction(ctx context.Context, vaultID string, e port.Extraction) error {
+func (w watching) SaveExtraction(ctx context.Context, vaultID string, e port.SourceChunks) error {
 	w.saw()
 	return w.store.SaveExtraction(ctx, vaultID, e)
 }

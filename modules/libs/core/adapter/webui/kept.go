@@ -59,7 +59,7 @@ func shelved() *shelf {
 //
 // The file's time is set to now, so what is dropped when the folder is swept is
 // what has gone longest without being looked at.
-func (s *shelf) get(key shot) []byte {
+func (s *shelf) get(key pictureID) []byte {
 	if s == nil {
 		return nil
 	}
@@ -75,7 +75,7 @@ func (s *shelf) get(key shot) []byte {
 
 // put keeps one drawn page. A page that cannot be written is a page drawn again
 // next time and nothing else, so nothing here is reported.
-func (s *shelf) put(key shot, body []byte) {
+func (s *shelf) put(key pictureID, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
@@ -157,7 +157,7 @@ func (s *shelf) sweep() {
 // The file's own name says nothing about the vault. A folder listing is
 // readable by whatever else runs as this person, and what they are reading is
 // theirs.
-func (s *shelf) named(key shot) string {
+func (s *shelf) named(key pictureID) string {
 	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%d\x00%d\x00%d\x00%d",
 		key.of.path, key.of.size, key.of.mtime, key.at, key.wide))
 	return hex.EncodeToString(sum[:]) + ".jpg"

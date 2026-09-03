@@ -416,7 +416,7 @@ func (u Extract) source(
 	}
 
 	chunks := chunksOf(doc, sizes)
-	extraction := port.Extraction{
+	extraction := port.SourceChunks{
 		Source: port.Source{
 			Ref:      ref,
 			Hash:     hash,

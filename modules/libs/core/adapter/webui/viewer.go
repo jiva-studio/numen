@@ -184,7 +184,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 		return
 	}
 
-	key := shot{of: print, at: at, wide: wide}
+	key := pictureID{of: print, at: at, wide: wide}
 	body, err := a.picture(ctx, reader, key)
 	if err != nil {
 		refuse(w, err)
@@ -243,7 +243,7 @@ func (a *API) opening(
 // memory, or the one on disk, or the page drawn.
 //
 // Several asks for one page draw it once and are answered with the one drawing.
-func (a *API) picture(ctx context.Context, reader port.VaultReader, key shot) ([]byte, error) {
+func (a *API) picture(ctx context.Context, reader port.VaultReader, key pictureID) ([]byte, error) {
 	return a.Viewer.drawn.Load().draw(ctx, key, func() ([]byte, error) {
 		if body := a.Viewer.kept.get(key); body != nil {
 			return body, nil
@@ -258,7 +258,7 @@ func (a *API) picture(ctx context.Context, reader port.VaultReader, key shot) ([
 }
 
 // drawing is one page of a document, drawn and encoded.
-func (a *API) drawing(ctx context.Context, reader port.VaultReader, key shot) ([]byte, error) {
+func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureID) ([]byte, error) {
 	doc, give, err := a.opening(ctx, reader, key.of)
 	if err != nil {
 		return nil, err
@@ -283,8 +283,8 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key shot) ([
 // readAhead draws the page after this one, so that turning to it finds it
 // drawn. One page is drawn ahead at a time, and an ask being answered now comes
 // first.
-func (a *API) readAhead(reader port.VaultReader, key shot) {
-	next := shot{of: key.of, at: key.at + 1, wide: key.wide}
+func (a *API) readAhead(reader port.VaultReader, key pictureID) {
+	next := pictureID{of: key.of, at: key.at + 1, wide: key.wide}
 	if a.Viewer.drawn.Load().has(next) {
 		return
 	}

@@ -55,16 +55,16 @@ func (s *shelf) Append(_ context.Context, name string, content []byte) error {
 	return nil
 }
 
-func (s *shelf) List(_ context.Context, name string) ([]port.Stored, error) {
+func (s *shelf) List(_ context.Context, name string) ([]port.Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	var out []port.Stored
+	var out []port.Entry
 	for held, content := range s.files {
 		if strings.HasPrefix(held, name+"/") && !strings.Contains(held[len(name)+1:], "/") {
-			out = append(out, port.Stored{Name: held, Size: len(content)})
+			out = append(out, port.Entry{Name: held, Size: len(content)})
 		}
 	}
-	slices.SortFunc(out, func(a, b port.Stored) int { return strings.Compare(a.Name, b.Name) })
+	slices.SortFunc(out, func(a, b port.Entry) int { return strings.Compare(a.Name, b.Name) })
 	return out, nil
 }
 
@@ -130,8 +130,8 @@ type speaker struct {
 	stop  func(int)
 }
 
-func (s *speaker) Recognition() port.Recognition {
-	return port.Recognition{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
+func (s *speaker) Recognition() port.RecognitionModel {
+	return port.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
 func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {

@@ -72,7 +72,7 @@ func (s *store) SaveSource(_ context.Context, vaultID string, src port.Source) e
 	return nil
 }
 
-func (s *store) SaveExtraction(_ context.Context, vaultID string, e port.Extraction) error {
+func (s *store) SaveExtraction(_ context.Context, vaultID string, e port.SourceChunks) error {
 	s.written[e.Source.Ref.Path]++
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Ref.Path)

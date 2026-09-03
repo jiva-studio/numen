@@ -128,7 +128,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	}
 
 	// Older than the rest, the way a page nobody has turned back to is.
-	first := filepath.Join(kept.dir, kept.named(shot{of: print(t, api), at: 0, wide: 400}))
+	first := filepath.Join(kept.dir, kept.named(pictureID{of: print(t, api), at: 0, wide: 400}))
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {
 		t.Fatal(err)
