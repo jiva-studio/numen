@@ -27,7 +27,7 @@ func (s vaulted) under(
 	t *testing.T, day history.Day, now time.Time, preset string,
 ) flashcards.Sitting {
 	t.Helper()
-	sat, err := s.over(t, day, now, flashcards.Under(preset))
+	sat, err := s.over(t, day, now, flashcards.ByPreset(preset))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,7 @@ func TestASittingOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.Under("Lonely.md"))
+	_, err := s.over(t, today, saturday, flashcards.ByPreset("Lonely.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a preset nothing points at was answered with %v", err)
 	}
@@ -161,7 +161,7 @@ func TestASittingOverAPausedPresetIsRefused(t *testing.T) {
 		"decks/Paused.md": deckOf("Paused", 6, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.Under("Paused.md"))
+	_, err := s.over(t, today, saturday, flashcards.ByPreset("Paused.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a paused preset was answered with %v", err)
 	}
@@ -190,7 +190,7 @@ func TestASittingOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 		answer(t, morning, mark(i), 6*time.Second)
 	}
 
-	_, err := s.over(t, today, saturday.Add(2*time.Hour), flashcards.Under("Two.md"))
+	_, err := s.over(t, today, saturday.Add(2*time.Hour), flashcards.ByPreset("Two.md"))
 	if !errors.Is(err, flashcards.ErrSchedulesNothing) {
 		t.Fatalf("a spent day was answered with %v", err)
 	}
