@@ -489,8 +489,9 @@ func indented(rendered []byte, indent string) []byte {
 // span is the byte range one top-level key occupies in the frontmatter,
 // including the lines its value continues onto.
 //
-// The end is walked back over blank lines and comments: a comment written
-// above the next key belongs to that key.
+// It ends at the last line of the key's own value, so a comment, a blank line,
+// or bytes standing inside the delimiters under no key at all are left where
+// they are.
 func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
@@ -512,18 +513,58 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 		return 0, 0, false
 	}
 
-	last := len(lines) - 1
-	if at+2 < len(node.Content) {
+	last := d.endLine(node.Content[at+1], node.Content[at].Column)
+	if last < keyLine {
+		last = keyLine
+	}
+	if at+2 < len(node.Content) && last > node.Content[at+2].Line-1 {
 		last = node.Content[at+2].Line - 1
 	}
-	for last > keyLine {
-		text := strings.TrimSpace(string(d.front[lines[last-1]:lines[last]]))
-		if text != "" && !strings.HasPrefix(text, "#") {
-			break
-		}
-		last--
+	if last > len(lines)-1 {
+		last = len(lines) - 1
 	}
 	return lines[keyLine-1], lines[last], true
+}
+
+// endLine is the last line of the frontmatter one node stands on. A value
+// continuing past its first line stands indented past the column of the key or
+// the dash it hangs from, which is the column given here.
+func (d *Document) endLine(node *yaml.Node, column int) int {
+	if node == nil || node.Line < 1 {
+		return 0
+	}
+	switch node.Kind {
+	case yaml.MappingNode:
+		last := node.Line
+		for i := 0; i+1 < len(node.Content); i += 2 {
+			if end := d.endLine(node.Content[i+1], node.Content[i].Column); end > last {
+				last = end
+			}
+		}
+		return last
+	case yaml.SequenceNode:
+		last := node.Line
+		for _, item := range node.Content {
+			if end := d.endLine(item, node.Column); end > last {
+				last = end
+			}
+		}
+		return last
+	}
+
+	lines := lineOffsets(d.front)
+	last := node.Line
+	for at := node.Line + 1; at < len(lines); at++ {
+		text := string(d.front[lines[at-1]:lines[at]])
+		if strings.TrimSpace(text) == "" {
+			continue
+		}
+		if len(leading(text)) < column {
+			break
+		}
+		last = at
+	}
+	return last
 }
 
 // mapping is the frontmatter as YAML, or nil when there is none to read.
