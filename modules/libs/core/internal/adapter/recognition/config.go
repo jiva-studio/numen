@@ -33,7 +33,6 @@ type Config struct {
 	Layout    LayoutModel     `json:"layout"`
 	Detect    DetectModel     `json:"detect"`
 	Recognise RecogniserModel `json:"recognise"`
-	Page      PageReading     `json:"page"`
 	Regions   RegionKinds     `json:"regions"`
 
 	// Progress is told how far a download has got, when anything is listening.
@@ -90,7 +89,8 @@ type DetectModel struct {
 	Minimum float32 `json:"minimum"`
 }
 
-// RecogniserModel reads what a line says.
+// RecogniserModel reads what a line says: which model, at what size a page and
+// a line reach it, and how much of the machine it takes.
 type RecogniserModel struct {
 	// Name is where this model is fetched from.
 	Name string `json:"name"`
@@ -104,17 +104,13 @@ type RecogniserModel struct {
 	// the model. A number that disagrees with the model is refused.
 	Classes int64 `json:"classes"`
 
-	// Height is what a line is scaled to before it is read.
-	Height int `json:"height"`
-	// Sessions is how many lines are read at once.
-	Sessions int `json:"sessions"`
-}
-
-// PageReading is how a page becomes an image, and how much of the machine one
-// page may use.
-type PageReading struct {
 	// DPI is what a page is rendered at.
 	DPI int `json:"dpi"`
+	// Height is what a line is scaled to before it is read.
+	Height int `json:"height"`
+
+	// Sessions is how many lines are read at once.
+	Sessions int `json:"sessions"`
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 }
@@ -144,9 +140,10 @@ func Defaults() Config {
 			Name: "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/main/inference.onnx",
 		},
 		Recognise: RecogniserModel{
-			Name: "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			Name:    "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+			DPI:     300,
+			Threads: 4,
 		},
-		Page: PageReading{DPI: 300, Threads: 4},
 
 		// What a reading needs is fetched when it is wanted.
 		Download: true,
@@ -214,6 +211,13 @@ func (d DetectModel) minimum() float32 {
 	return d.Minimum
 }
 
+func (r RecogniserModel) dpi() int {
+	if r.DPI <= 0 {
+		return 300
+	}
+	return r.DPI
+}
+
 func (r RecogniserModel) height() int {
 	if r.Height <= 0 {
 		return 48
@@ -228,18 +232,11 @@ func (r RecogniserModel) sessions() int {
 	return r.Sessions
 }
 
-func (p PageReading) dpi() int {
-	if p.DPI <= 0 {
-		return 300
-	}
-	return p.DPI
-}
-
-func (p PageReading) threads() int {
-	if p.Threads <= 0 {
+func (r RecogniserModel) threads() int {
+	if r.Threads <= 0 {
 		return 4
 	}
-	return p.Threads
+	return r.Threads
 }
 
 // body are the parts of a page that carry what the document says.

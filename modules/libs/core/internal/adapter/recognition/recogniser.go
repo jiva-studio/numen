@@ -51,7 +51,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := options.SetIntraOpNumThreads(int32(cfg.Page.threads())); err != nil {
+	if err := options.SetIntraOpNumThreads(int32(cfg.Recognise.threads())); err != nil {
 		return nil, err
 	}
 
@@ -76,7 +76,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		DetOutsideExpandPix: cfg.Detect.expand(),
 		HeatmapThreshold:    cfg.Detect.minimum(),
 		RecHeight:           cfg.Recognise.height(),
-		NumThreads:          cfg.Page.threads(),
+		NumThreads:          cfg.Recognise.threads(),
 		ThreadCount:         cfg.Recognise.sessions(),
 	})
 	if err != nil {
@@ -95,7 +95,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		model: port.RecognitionModel{
 			Layout:     name(paths.layout),
 			Recogniser: name(paths.recognise),
-			DPI:        cfg.Page.dpi(),
+			DPI:        cfg.Recognise.dpi(),
 			From:       paths.from,
 		},
 	}, nil

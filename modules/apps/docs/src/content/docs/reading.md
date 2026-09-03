@@ -23,8 +23,8 @@ put them. These are the three that come up.
 
 | | |
 | --- | --- |
-| `page.dpi` | what a page is rendered at before it is read. 300. Raising it reads finer print and costs time. |
-| `page.threads` | how many threads one model may use. 4. |
+| `recognise.dpi` | what a page is rendered at before it is read. 300. Raising it reads finer print and costs time. |
+| `recognise.threads` | how many threads one model may use. 4. |
 | `detect.expand` | how many pixels a found line is widened by before it is read. 18. The line a detector finds is drawn *inside* the letters, so without widening the top of every capital and the last letter of every line are cut away. |
 
 `regions.body` says which parts of a page carry what the document says, and `regions.head`
