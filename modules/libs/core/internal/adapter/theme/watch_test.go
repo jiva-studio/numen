@@ -51,6 +51,33 @@ func TestAThemeWrittenIntoTheFolderIsReported(t *testing.T) {
 	}
 }
 
+// A themes folder reached through a link is watched like any other: the system
+// names a changed file by the path the link leads to.
+func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
+	real := filepath.Join(t.TempDir(), "elsewhere")
+	if err := os.MkdirAll(real, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "themes")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("this machine does not make links: %v", err)
+	}
+
+	catalogue, err := theme.At(link)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changed := watched(t, catalogue, 20*time.Millisecond)
+
+	body := ":root { --numen-surface: #1c1c28 }"
+	if err := os.WriteFile(filepath.Join(real, "midnight.css"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if names := heard(t, changed); len(names) != 1 || names[0] != "mine:midnight" {
+		t.Errorf("reported %v", names)
+	}
+}
+
 // An editor saves through a temporary file and a rename, so the watch is on the
 // folder and the theme is named however the bytes arrive.
 func TestAThemeSavedOverItselfIsReported(t *testing.T) {
