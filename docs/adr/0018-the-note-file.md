@@ -23,7 +23,9 @@ Nothing else — no custom fences, no HTML comments carrying data, no sidecar fi
 
 ### Which files are notes
 
-A note is a file named `.md`. A stencil, a deck and a preset are notes, so one extension answers for all of them.
+A note is an ordinary file named `.md`, read whole up to a bound the core holds every reader to. A device, a socket or a FIFO hands over no bytes whatever it is named, and a file over the bound is a file the vault does not hold as a note; both are answered the same way. What the bound is, and what a person sees when a file passes it, are in [editing](../editing.md).
+
+A stencil, a deck and a preset are notes, so one extension answers for all of them.
 
 Two places are never notes: the application's own folder inside the vault, and any directory whose name begins with a dot. Both are skipped whole, without being descended into.
 
@@ -42,6 +44,7 @@ The owned keys, the extensions a note may carry, and the order a note's displaye
 - `title` is an ordinary English word taken as an owned key, and a person's own key of that name collides.
 - A reported collision stands until the person settles it, and the note carries a field the application will not read.
 - Markdown written under another name — `.markdown`, `.mdown` — is prose to this application, and the person renames it to bring it in.
+- A generated `.md` larger than the bound is outside the vault as far as this application is concerned, and splitting it is what brings it in.
 
 ## Alternatives considered
 
