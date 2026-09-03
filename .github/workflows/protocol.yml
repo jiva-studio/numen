@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   schema:
-    name: "Schema :: Check"
+    name: "Check :: Schema"
     runs-on: ubuntu-latest
     steps:
       # The breaking-change check reads the schema as it stands on the base

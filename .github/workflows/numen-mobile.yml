@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   go:
-    name: "Go :: Test"
+    name: "Test :: Go"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -79,7 +79,7 @@ jobs:
 
   # The screens the phone draws, typed against the schema and the components.
   screens:
-    name: "Screens :: Test"
+    name: "Test :: Screens"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

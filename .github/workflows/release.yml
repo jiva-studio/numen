@@ -41,7 +41,7 @@ jobs:
   # What this run is called and where it goes. A tag is named by the tag and
   # goes where the page looks; anything else goes where nothing points at it.
   naming:
-    name: "Version :: Work out"
+    name: Version
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.said.outputs.version }}
@@ -121,7 +121,7 @@ jobs:
           cat "$GITHUB_OUTPUT"
 
   linux:
-    name: "Linux :: Package"
+    name: "Package :: Linux"
     needs: [naming]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
@@ -231,7 +231,7 @@ jobs:
   # Windows reaches the system's browser through a component written in Go, so
   # this one is built on the same machine as Linux.
   windows:
-    name: "Windows :: Package"
+    name: "Package :: Windows"
     needs: [naming]
     if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
@@ -321,7 +321,7 @@ jobs:
           if-no-files-found: error
 
   macos:
-    name: "macOS :: Package"
+    name: "Package :: macOS"
     needs: [naming]
     if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
@@ -508,7 +508,7 @@ jobs:
   # links to, which carries no version and holds the newest build, and under a
   # name carrying its version, in a folder that is written once and kept.
   publish:
-    name: "Builds :: Publish"
+    name: Publish
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
     needs: [naming, linux, windows, macos]
     runs-on: ubuntu-24.04

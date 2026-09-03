@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   go:
-    name: "Go :: Test"
+    name: "Test :: Go"
     runs-on: ubuntu-latest
     defaults:
       run:

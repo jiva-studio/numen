@@ -20,7 +20,7 @@ jobs:
   # The shared components on their own: built into the shape a consumer sees,
   # and asked what they draw in a document.
   components:
-    name: "Components :: Test"
+    name: "Test :: Components"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,7 +45,7 @@ jobs:
   # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
   # on Linux and Chromium on Windows, so both are fetched.
   stories:
-    name: "Stories :: Test"
+    name: "Test :: Stories"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
