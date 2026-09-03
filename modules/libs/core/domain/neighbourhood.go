@@ -42,8 +42,8 @@ type NoteRef struct {
 	ID string
 }
 
-// Seated is a note, where it sits, and what the link that seated it says.
-type Seated struct {
+// Neighbour is a note, where it sits, and what the link that seated it says.
+type Neighbour struct {
 	NoteRef
 	Seat Relation
 
@@ -63,11 +63,11 @@ type Seated struct {
 // Neighbourhood is one note and everything joined to it, seen from that note.
 type Neighbourhood struct {
 	Focus   NoteRef
-	Related []Seated
+	Related []Neighbour
 }
 
 // Take seats a note. The focus is not related to itself.
-func (n *Neighbourhood) Take(note NoteRef, seated Seated) {
+func (n *Neighbourhood) Take(note NoteRef, seated Neighbour) {
 	if note.Path == n.Focus.Path {
 		return
 	}

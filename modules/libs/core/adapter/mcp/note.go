@@ -212,11 +212,11 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		Path string `json:"path" jsonschema:"the note to look out from"`
 	}) (*sdk.CallToolResult, struct {
 		Focus   Note     `json:"focus"`
-		Related []Seated `json:"related"`
+		Related []Neighbour `json:"related"`
 	}, error) {
 		type out = struct {
 			Focus   Note     `json:"focus"`
-			Related []Seated `json:"related"`
+			Related []Neighbour `json:"related"`
 		}
 		found, err := core.Neighbourhood.Execute(ctx, core.shown().Vault, in.Path)
 		if err != nil {
@@ -224,7 +224,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		}
 		res := out{Focus: noteOf(found.Focus)}
 		for _, related := range found.Related {
-			res.Related = append(res.Related, Seated{
+			res.Related = append(res.Related, Neighbour{
 				Note:    noteOf(related.NoteRef),
 				Seat:    string(related.Seat),
 				Label:   related.Label,
@@ -495,8 +495,8 @@ type Refusal struct {
 	Why  string `json:"why" jsonschema:"why this one was not read"`
 }
 
-// Seated is a note in the picture around another one.
-type Seated struct {
+// Neighbour is a note in the picture around another one.
+type Neighbour struct {
 	Note    Note   `json:"note"`
 	Seat    string `json:"seat" jsonschema:"parent, child, sibling or jump"`
 	Label   string `json:"label,omitempty" jsonschema:"what the person calls this relationship"`

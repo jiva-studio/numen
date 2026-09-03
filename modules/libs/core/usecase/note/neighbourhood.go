@@ -41,7 +41,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 			if sibling.Seat != domain.SeatChild {
 				continue
 			}
-			around.take(domain.Seated{
+			around.take(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: sibling.Path},
 				Seat:    domain.SeatSibling,
 				Label:   sibling.Label,
@@ -98,7 +98,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		}
 		if seat, navigable := seatFor(l.Role); navigable {
 			named[l.To] = true
-			seats.take(domain.Seated{
+			seats.take(domain.Neighbour{
 				NoteRef: domain.NoteRef{Path: l.To},
 				Seat:    seat,
 				Label:   l.Label,
@@ -117,7 +117,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		if !navigable {
 			continue
 		}
-		seated := domain.Seated{
+		seated := domain.Neighbour{
 			NoteRef: domain.NoteRef{Path: l.From},
 			Seat:    seat,
 			Label:   l.Label,
@@ -161,14 +161,14 @@ func mirror(role domain.LinkRole) domain.LinkRole {
 // part of the answer, because it is what the picture is drawn in — and it is
 // total, so the same vault gives the same picture twice.
 type seats struct {
-	order []domain.Seated
+	order []domain.Neighbour
 	at    map[string]int
 }
 
 // take keeps the highest-ranked seat a note qualifies for, replacing a lesser
 // one it was given earlier: a pair who are each other's parent is drawn once,
 // and always the same way round.
-func (s *seats) take(seated domain.Seated) {
+func (s *seats) take(seated domain.Neighbour) {
 	if s.at == nil {
 		s.at = map[string]int{}
 	}
@@ -186,7 +186,7 @@ func (s *seats) take(seated domain.Seated) {
 // mutually seats a note that the one in focus names too. Both ends naming the
 // same seat is one relationship named twice, and the word for it is the
 // focus's own where it wrote one.
-func (s *seats) mutually(seated domain.Seated) {
+func (s *seats) mutually(seated domain.Neighbour) {
 	i, taken := s.at[seated.Path]
 	if !taken {
 		s.take(seated)
@@ -218,4 +218,4 @@ func (s *seats) drop(path string) {
 	}
 }
 
-func (s *seats) all() []domain.Seated { return s.order }
+func (s *seats) all() []domain.Neighbour { return s.order }

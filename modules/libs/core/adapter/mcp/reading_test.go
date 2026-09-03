@@ -157,7 +157,7 @@ func (s side) answers(t *testing.T) {
 	}
 
 	near := call[struct {
-		Related []mcp.Seated `json:"related"`
+		Related []mcp.Neighbour `json:"related"`
 	}](t, s.session, "note_neighbourhood", map[string]any{"path": s.note})
 	if len(near.Related) == 0 {
 		t.Errorf("%s sees nothing joined to its own note", s.what)
