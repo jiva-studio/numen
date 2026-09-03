@@ -585,6 +585,21 @@ func TestTwoNotesOfOneNameAreReported(t *testing.T) {
 	}
 }
 
+// A dot in a name is part of the name, and the note is filed under all of it.
+func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
+	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
+	session, _ := connected(t, map[string]string{
+		"notes/" + lecture + ".md": "# " + lecture + "\n",
+	})
+
+	named := call[struct {
+		Paths []string `json:"paths"`
+	}](t, session, "vault_named", map[string]any{"name": lecture})
+	if len(named.Paths) != 1 || named.Paths[0] != "notes/"+lecture+".md" {
+		t.Errorf("got %v", named.Paths)
+	}
+}
+
 // Whether a link is ambiguous is the resolver's answer and nobody else's: it
 // depends on the whole vault, so it is asked at the moment it is wanted.
 func TestALinkToASharedNameSaysItIsAmbiguous(t *testing.T) {
