@@ -3,12 +3,14 @@
  * One card, as it stands in front of a person: the front, and the back once
  * they have said they are ready for it.
  *
- * A face is HTML and is drawn as the HTML it is, measured first against what a
- * card may be drawn with: a deck may have come from another person, and what
- * they wrote is not this window's to run, style or navigate with.
+ * A face is markdown, with the tags a person writes among the marks, and is
+ * drawn through the one function that reads it. What comes out is measured
+ * against what a card may be drawn with: a deck may have come from another
+ * person, and what they wrote is not this window's to run, style or navigate
+ * with.
  */
 import { computed, ref } from 'vue'
-import { safe, scheme } from '@numen/ui'
+import { drawn, scheme } from '@numen/ui'
 
 const props = defineProps<{
   front: string
@@ -22,8 +24,8 @@ const emit = defineEmits<{
   (event: 'read', named: string): void
 }>()
 
-const front = computed(() => safe(props.front))
-const back = computed(() => safe(props.back))
+const front = computed(() => drawn(props.front))
+const back = computed(() => drawn(props.back))
 
 /** A hand that moved less than this across was pressing and not dragging. */
 const STILL = 4

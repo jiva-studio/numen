@@ -28,6 +28,16 @@ describe('a card', () => {
     expect(over.text()).toContain('Compost')
   })
 
+  // A face is markdown in the vault, and it is one function that reads it, so
+  // a card says the same thing here as it does where it was written.
+  it('reads the marks a card is written with', () => {
+    const face = shows('**bold** and *italic*', { back: '- a list', shown: true })
+    expect(face.find('strong').text()).toBe('bold')
+    expect(face.find('em').text()).toBe('italic')
+    expect(face.find('li').text()).toBe('a list')
+    expect(face.text()).not.toContain('**')
+  })
+
   it('draws what a card is written with', () => {
     const face = shows('<p><strong>bold</strong> and <em>italic</em></p><ul><li>a list</li></ul>')
     expect(face.find('strong').exists()).toBe(true)
