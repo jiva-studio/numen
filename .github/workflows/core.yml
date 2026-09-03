@@ -161,7 +161,19 @@ jobs:
 
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does.
-      - run: go test -race ./...
+      #
+      # An answer to a card is flushed to the disk as it is given, and a flush on
+      # Windows costs enough that the flashcard packages run past the ten minutes
+      # a package is given by default.
+      #
+      # checkptr is off for the watcher library alone: it reads a directory's
+      # events out of a buffer through a pointer that the check refuses, and the
+      # four packages that watch a folder stop at the first event otherwise. The
+      # race detector, and the check over every other package, stay on.
+      - run: >
+          go test -race -timeout 30m
+          -gcflags=github.com/rjeczalik/notify=-d=checkptr=0
+          ./...
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.
