@@ -232,3 +232,78 @@ func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 		t.Errorf("the refusal says %q", err)
 	}
 }
+
+// presented is the file a client says it last read.
+func presented(written string) *string { return &written }
+
+// The settings page and the file's own tab both write this file. A tab
+// presenting a file the settings page has since patched is answered the
+// question, and the patch stands.
+func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	was, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+		Settings: []*v1.Setting{
+			{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
+		},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	patched, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	said, err := f.client.WriteSettingsFile(t.Context(), connect.NewRequest(
+		&v1.WriteSettingsFileRequest{
+			Written: "{\n  \"agent\": { \"use\": \"claude\" }\n}\n",
+			Seen:    presented(was.Msg.GetWritten()),
+		},
+	))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !said.Msg.GetChanged() {
+		t.Error("the write landed, wanted the question put to the person")
+	}
+
+	now, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if now.Msg.GetWritten() != patched.Msg.GetWritten() {
+		t.Errorf("the file reads as %q, wanted %q", now.Msg.GetWritten(), patched.Msg.GetWritten())
+	}
+}
+
+// A client presenting the file it read writes over it.
+func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	was, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	written := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
+
+	said, err := f.client.WriteSettingsFile(t.Context(), connect.NewRequest(
+		&v1.WriteSettingsFileRequest{Written: written, Seen: presented(was.Msg.GetWritten())},
+	))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetChanged() {
+		t.Fatal("the write was answered the question, wanted it to land")
+	}
+
+	now, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if now.Msg.GetWritten() != written {
+		t.Errorf("the file reads as %q, wanted %q", now.Msg.GetWritten(), written)
+	}
+}

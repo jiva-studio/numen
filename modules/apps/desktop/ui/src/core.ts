@@ -382,8 +382,15 @@ export interface Core {
    * The settings file replaced whole, with the bytes as they were typed. A file
    * the settings could not be read out of is refused, and what the file holds
    * is unchanged.
+   *
+   * Seen is the file as it was last read, and a file standing at anything else
+   * is answered `changed` with nothing written. Nothing seen writes over
+   * whatever the file holds.
    */
-  writesSettingsFile(written: string): Promise<void>
+  writesSettingsFile(
+    written: string,
+    seen: string | null,
+  ): Promise<{ readonly changed: boolean }>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

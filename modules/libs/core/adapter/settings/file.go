@@ -29,7 +29,12 @@ func Read(path string) ([]byte, error) {
 // Bytes the settings cannot be read out of are refused and the file is left as
 // it was. What is said names where in the file the trouble is; the file holds a
 // person's keys, and nothing standing in it is repeated back.
-func Write(path string, raw []byte) error {
+//
+// Seen is the file as the caller last read it. A file standing at anything else
+// is left alone and port.ErrChanged comes back: someone turning a setting in
+// their own window outranks a caller that read the file, thought about it, and
+// arrived late. Nil is a caller that compares nothing, and its bytes land.
+func Write(path string, raw []byte, seen *string) error {
 	// The sections are the fields of one object, and the file is read as that
 	// object. A bare `null` unmarshals into anything and leaves it alone, so an
 	// object that came back nought is refused by name.
@@ -47,7 +52,29 @@ func Write(path string, raw []byte) error {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
 
-	return reaching(path, func(path string) error { return replace(path, raw) })
+	return reaching(path, func(path string) error {
+		if err := stands(path, seen); err != nil {
+			return err
+		}
+		return replace(path, raw)
+	})
+}
+
+// stands says whether the file holds what its caller last read, and nothing
+// where the caller presents nothing. It is read the way Read reads it, so a
+// file that is not there stands at the empty object a caller was given.
+func stands(path string, seen *string) error {
+	if seen == nil {
+		return nil
+	}
+	held, err := Read(path)
+	if err != nil {
+		return err
+	}
+	if string(held) != *seen {
+		return port.ErrChanged
+	}
+	return nil
 }
 
 // where says what is wrong with a settings file by the place it goes wrong at,

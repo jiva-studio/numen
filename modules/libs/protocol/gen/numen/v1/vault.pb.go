@@ -5009,7 +5009,10 @@ func (x *SettingsFileResponse) GetPath() string {
 type WriteSettingsFileRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What is to stand in the file, written as it was typed.
-	Written       string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
+	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
+	// The file as this caller last read it. Absent for a write that lands on
+	// whatever the file now holds.
+	Seen          *string `protobuf:"bytes,2,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5051,8 +5054,18 @@ func (x *WriteSettingsFileRequest) GetWritten() string {
 	return ""
 }
 
+func (x *WriteSettingsFileRequest) GetSeen() string {
+	if x != nil && x.Seen != nil {
+		return *x.Seen
+	}
+	return ""
+}
+
 type WriteSettingsFileResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set when the file holds bytes this caller has not read. Nothing was
+	// written, and the person chooses what happens to their text.
+	Changed       bool `protobuf:"varint,1,opt,name=changed,proto3" json:"changed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -5085,6 +5098,13 @@ func (x *WriteSettingsFileResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use WriteSettingsFileResponse.ProtoReflect.Descriptor instead.
 func (*WriteSettingsFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *WriteSettingsFileResponse) GetChanged() bool {
+	if x != nil {
+		return x.Changed
+	}
+	return false
 }
 
 type MoveRequest struct {
@@ -5873,10 +5893,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x13SettingsFileRequest\"D\n" +
 	"\x14SettingsFileResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\"4\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"V\n" +
 	"\x18WriteSettingsFileRequest\x12\x18\n" +
-	"\awritten\x18\x01 \x01(\tR\awritten\"\x1b\n" +
-	"\x19WriteSettingsFileResponse\"1\n" +
+	"\awritten\x18\x01 \x01(\tR\awritten\x12\x17\n" +
+	"\x04seen\x18\x02 \x01(\tH\x00R\x04seen\x88\x01\x01B\a\n" +
+	"\x05_seen\"5\n" +
+	"\x19WriteSettingsFileResponse\x12\x18\n" +
+	"\achanged\x18\x01 \x01(\bR\achanged\"1\n" +
 	"\vMoveRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\x82\x01\n" +
@@ -6276,6 +6299,7 @@ func file_numen_v1_vault_proto_init() {
 	file_numen_v1_vault_proto_msgTypes[62].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[63].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[67].OneofWrappers = []any{}
+	file_numen_v1_vault_proto_msgTypes[76].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[79].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[81].OneofWrappers = []any{}
 	file_numen_v1_vault_proto_msgTypes[83].OneofWrappers = []any{}

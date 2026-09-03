@@ -13,16 +13,19 @@ const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 /** A vault holding that file, and everything it was asked to write. */
 const standing = (answers: Partial<Called> = {}) => {
   const wrote: string[] = []
+  /** What each write presented as the file it last read. */
+  const presented: (string | null)[] = []
   const core: Called = {
     settingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
-    writesSettingsFile: (written) => {
+    writesSettingsFile: (written, seen) => {
       wrote.push(written)
-      return Promise.resolve()
+      presented.push(seen)
+      return Promise.resolve({ changed: false })
     },
     ...answers,
   }
   const reads = vi.fn()
-  return { wrote, reads, held: holding(core, reads) }
+  return { wrote, presented, reads, held: holding(core, reads) }
 }
 
 describe('the file as it stands', () => {
@@ -74,6 +77,16 @@ describe('what is typed over it', () => {
     expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
     expect(held.changed()).toBe(false)
     expect(held.saying()).toBe('')
+  })
+
+  it('presents the file the tab last read', async () => {
+    const { held, presented } = standing()
+    await held.again()
+
+    held.types('{}\n')
+    await held.keeps()
+
+    expect(presented).toStrictEqual([HELD])
   })
 
   it('is written nowhere before the file has been read', async () => {
@@ -128,5 +141,72 @@ describe('a file the settings cannot be read out of', () => {
     await held.keeps()
 
     expect(reads).not.toHaveBeenCalled()
+  })
+})
+
+describe('a file that moved past what the tab read', () => {
+  const MOVED = '{\n  "agent": { "use": "claude" },\n  "review": { "day_starts": "05:00" }\n}\n'
+  const TYPED = '{\n  "agent": { "use": "gemini" }\n}\n'
+
+  /**
+   * The tab reads the file, the settings page patches it, and the tab keeps
+   * what it has. A write presenting anything but the file as it stands is
+   * refused.
+   */
+  const overtaken = async () => {
+    let stands = HELD
+    const wrote: string[] = []
+    const reads = vi.fn()
+    const core: Called = {
+      settingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
+      writesSettingsFile: (written, seen) => {
+        if (seen !== null && seen !== stands) return Promise.resolve({ changed: true })
+        stands = written
+        wrote.push(written)
+        return Promise.resolve({ changed: false })
+      },
+    }
+    const held = holding(core, reads)
+    await held.again()
+    stands = MOVED
+    held.types(TYPED)
+    await held.keeps()
+    return { held, wrote, reads }
+  }
+
+  it('stops keeping, with nothing written', async () => {
+    const { held, wrote, reads } = await overtaken()
+
+    expect(held.overtaken()).toBe(true)
+    expect(wrote).toStrictEqual([])
+    expect(reads).not.toHaveBeenCalled()
+  })
+
+  it('writes what was typed where the person keeps theirs', async () => {
+    const { held, wrote, reads } = await overtaken()
+    await held.keep()
+
+    expect(wrote).toStrictEqual([TYPED])
+    expect(held.overtaken()).toBe(false)
+    expect(held.changed()).toBe(false)
+    expect(reads).toHaveBeenCalledTimes(1)
+  })
+
+  it("reads the file again where the person takes the file's", async () => {
+    const { held, wrote } = await overtaken()
+    await held.take()
+
+    expect(held.text()).toBe(MOVED)
+    expect(held.overtaken()).toBe(false)
+    expect(held.changed()).toBe(false)
+    expect(wrote).toStrictEqual([])
+  })
+
+  it('is written nowhere until the person answers', async () => {
+    const { held, wrote } = await overtaken()
+    await held.keeps()
+
+    expect(held.overtaken()).toBe(true)
+    expect(wrote).toStrictEqual([])
   })
 })
