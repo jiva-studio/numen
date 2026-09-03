@@ -52,12 +52,15 @@ type ScanResult struct {
 	Unreadable int // walked, still there, and the read refused
 }
 
-// walks is the vaults being walked, a turn each.
+// walks is the vaults this process is walking, a turn each.
 var walks sync.Map
 
 // oneWalk takes the vault's turn and answers with the release of it. Walks of
 // different vaults do not wait on each other.
 func oneWalk(ctx context.Context, vaultID string) (func(), error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	held, _ := walks.LoadOrStore(vaultID, make(chan struct{}, 1))
 	turn := held.(chan struct{})
 	select {
@@ -74,8 +77,9 @@ func oneWalk(ctx context.Context, vaultID string) (func(), error) {
 // are read and parsed; the rest are not opened at all. That is what keeps a scan
 // of an unchanged vault cheap enough to run at startup.
 //
-// One walk of a vault runs at a time. A walk writes in groups from what it
-// read, so its copy of a note lands last however early the note was read.
+// One walk of a vault runs at a time in this process. A walk writes in groups
+// from what it read, so its copy of a note lands last however early the note
+// was read.
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
@@ -90,8 +94,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, err
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
-	// called and where it is stay as the list has them, and the walk carries
-	// whatever copy of those it was handed.
+	// called and where it is stay as the list has them.
 	if err := u.Vaults.Register(ctx, v); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}

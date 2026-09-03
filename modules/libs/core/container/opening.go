@@ -83,13 +83,11 @@ func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) err
 //
 // A vault that cannot be watched is opened all the same, and Unwatched says why.
 func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Open {
-	read := make(chan struct{})
 	scan := o.Scanning()
 	follow := vault.Follow{
 		Watcher: o.watcher,
 		Refresh: o.refresh,
 		Scan:    scan,
-		Walked:  read,
 		Changed: o.Told,
 		Trouble: o.Trouble,
 	}
@@ -101,7 +99,6 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Open {
 		follow:    follow,
 		watching:  watching,
 		unwatched: err,
-		read:      read,
 	}
 }
 
@@ -113,11 +110,6 @@ type Open struct {
 	follow    vault.Follow
 	watching  *vault.Following
 	unwatched error
-
-	// read is closed once the first walk is over. It is what says the vault may
-	// be read again.
-	read chan struct{}
-	once sync.Once
 }
 
 // Unwatched is why the vault is not being followed, and nothing while it is. A
@@ -131,8 +123,6 @@ func (o *Open) Unwatched() error { return o.unwatched }
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
 func (o *Open) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
-	defer o.once.Do(func() { close(o.read) })
-
 	o.opening.held.begin()
 
 	walk := o.scan
@@ -155,7 +145,7 @@ func (o *Open) Read(ctx context.Context, got func(vault.ScanResult)) (vault.Scan
 // the watch stops. A vault whose watch could not be started runs nothing.
 //
 // A change named by the watch is acted on while Read is still running; reading
-// the vault again waits for it.
+// the vault again waits its turn behind the walk.
 func (o *Open) Run(ctx context.Context) {
 	if o.watching == nil {
 		return
