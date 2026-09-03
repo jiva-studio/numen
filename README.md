@@ -20,10 +20,11 @@ application closed. Nothing is lost if it never opens again.
 ## Layout
 
 ```
-docs/adr/                    architecture decision records
-modules/apps/desktop/        desktop client
+docs/                        specifications and architecture decision records
+modules/apps/desktop/        desktop client, and the flashcards window beside it
 modules/apps/mobile/         mobile client
 modules/apps/landing/        the page the product is read about on
+modules/apps/docs/           the manual, for the person using the application
 modules/libs/core/           the core every client is built on
 modules/libs/protocol/       wire/vault protocol
 modules/libs/ui/             shared interface components
@@ -35,8 +36,12 @@ build system.
 
 ## Status
 
-Early. The architecture is settled and recorded as ADRs; implementation has not
-started.
+Early, and running. The desktop client writes notes, links them, draws the plex,
+searches by name, word and meaning, reads scanned books with OCR, transcribes
+recordings, and runs the cards a vault holds in a window of its own. Nothing has
+been released yet.
 
+- [The manual](https://docs.numen.md) — how the application is used
+- [Specifications](docs/) — how each part behaves
 - [Architecture decisions](docs/adr/)
 - [Contributing](CONTRIBUTING.md) — layout, labels, commit format

@@ -1,6 +1,6 @@
 ---
 title: Commands
-description: Everything the window can do, as the palette offers it — over the note in front of you, over the window, and over the vault.
+description: Everything the window can do, as the palette offers it — over the note in front of you, over the file, over the window, and over the vault.
 ---
 
 import Shot from '../../components/Shot.astro'
@@ -23,8 +23,12 @@ A command that needs something asks for it in the same panel, one step at a time
 call a note, a note to go to, a vault to open, a value to choose. <kbd>Backspace</kbd> in the
 empty field steps back, <kbd>Escape</kbd> leaves.
 
-Three of them ask you to confirm rather than to type: removing a note says where it goes,
-forgetting a vault says the folder stays, and destroying a note makes you type its name first.
+Some ask you to confirm rather than to type: forgetting a vault says the folder stays, deleting
+the transcript of a recording says the words go and it can be transcribed again. Destroying a
+note and erasing a vault make you type the name first.
+
+The bands say what a command acts on: **this note**, **this file** — the runs a recording or a
+scan carries — **this window**, and **this vault**.
 
 A command that cannot act on what is in front of you stays on the list and says why —
 *nothing in front of you is a note*, *the vault is still being read* — rather than quietly
@@ -51,11 +55,20 @@ disappearing.
 | Show this note in the files |  |
 | Open the preset |  |
 
+### This file
+
+| | |
+| --- | --- |
+| Transcribe this recording |  |
+| Proofread the transcript of this recording |  |
+| Delete the transcript of this recording |  |
+| Recognise the text of this document |  |
+
 ### This window
 
 | | |
 | --- | --- |
-| Recognise the text of this document |  |
+| New note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> |
 | New deck |  |
 | New stencil |  |
 | New preset |  |
