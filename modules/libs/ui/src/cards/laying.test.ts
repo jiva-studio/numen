@@ -12,7 +12,7 @@ import {
   type Banded,
   type Drawn,
 } from './deck'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
 describe('laid', () => {
   const FIELDS = ['Height', 'Weight']
@@ -78,7 +78,7 @@ describe('blanks', () => {
 })
 
 describe('grid', () => {
-  const CUTS: readonly Cut[] = [
+  const CUTS: readonly Stencil[] = [
     { name: 'Animal', fields: ['Name', 'Height', 'Weight'] },
     { name: 'Word', fields: ['Word', 'Meaning'] },
   ]

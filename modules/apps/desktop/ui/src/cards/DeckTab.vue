@@ -25,7 +25,7 @@ const wrong = computed(() => ({ at: marks.value.at, under: marks.value.under }))
 
 /** The untyped values a card cut by that stencil is made with. */
 const empty = (stencil: string) =>
-  cardBlanks(cardFields(props.held.cuts().find((cut) => cut.name === stencil)?.fields ?? []))
+  cardBlanks(cardFields(props.held.stencils().find((one) => one.name === stencil)?.fields ?? []))
 
 /** Which preset schedules this deck. */
 const scheduled = computed(() => props.held.scheduled())
@@ -96,7 +96,7 @@ const chose = (path: string) => {
       class="deck-tab__grid"
       :cards="drawn"
       :sections="props.held.bands()"
-      :cuts="props.held.cuts()"
+      :stencils="props.held.stencils()"
       :name="words.deck"
       :wrong="wrong"
       @add="(stencil: string, section: string | null) => props.held.adds(stencil, empty(stencil), section)"

@@ -7,7 +7,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { ref, watch } from 'vue'
-import Stencil from './Stencil.vue'
+import Stencil from './StencilView.vue'
 import { ordered, reordered, type Half, type Landing } from './order'
 import type { Shown } from './stencil'
 import { renamedIn } from './fill'

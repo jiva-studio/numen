@@ -29,7 +29,7 @@ import {
   type Wrong,
 } from './deck'
 import { numbered, type Landing } from './order'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
 /** A card nothing is wrong with any value of. */
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = sealed()
@@ -39,7 +39,7 @@ const props = withDefaults(
     /** The cards, in the order they are drawn. */
     cards: readonly Drawn[]
     /** The stencils a card may be cut by. */
-    cuts: readonly Cut[]
+    stencils: readonly Stencil[]
     /** The sections, in the order they stand in the deck. */
     sections?: readonly Banded[]
     /** What the grid is announced as. */
@@ -98,14 +98,14 @@ const { carried, at, lift, over, release, drop, step } = useCarry<Landing | unde
   moves: (held, at) => emit('move', held, at),
 })
 
-const shown = computed(() => grid(props.cards, props.sections, props.cuts, carried.value))
+const shown = computed(() => grid(props.cards, props.sections, props.stencils, carried.value))
 
 /** Where the plus of a run stands in the order: past everything under it. */
 const after = (run: Run): Landing => endOf(run.id)
 
-const add = (cut: Cut, run: Run): void => {
+const add = (stencil: Stencil, run: Run): void => {
   asking.value = null
-  emit('add', cut.name, run.band?.id ?? null)
+  emit('add', stencil.name, run.band?.id ?? null)
 }
 
 const addSection = (): void => {
@@ -207,13 +207,13 @@ const addSection = (): void => {
             <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
             <div class="deck__cuts flex flex-wrap justify-center">
               <Button
-                v-for="cut in cuts"
-                :key="cut.name"
+                v-for="stencil in stencils"
+                :key="stencil.name"
                 variant="outline"
                 size="small"
-                :data-cut="cut.name"
-                @click="add(cut, run)"
-                >{{ cut.name }}</Button
+                :data-cut="stencil.name"
+                @click="add(stencil, run)"
+                >{{ stencil.name }}</Button
               >
             </div>
           </div>

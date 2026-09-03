@@ -11,9 +11,9 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Deck from './Deck.vue'
 import { endOf, HEAD, type Banded, type Drawn } from './deck'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
-const CUTS: readonly Cut[] = [
+const CUTS: readonly Stencil[] = [
   { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },
   { name: 'Word', fields: ['Word', 'Meaning'] },
 ]
@@ -34,7 +34,7 @@ const CARDS: readonly Drawn[] = [
 ]
 
 const mountDeck = (props: Record<string, unknown> = {}) =>
-  mount(Deck, { attachTo: document.body, props: { cards: CARDS, cuts: CUTS, ...props } })
+  mount(Deck, { attachTo: document.body, props: { cards: CARDS, stencils: CUTS, ...props } })
 
 type Grid = ReturnType<typeof mountDeck>
 
@@ -190,7 +190,7 @@ describe('Deck', () => {
   it('says on each tile what cut the card it draws', () => {
     // Two stencils, named nothing that any field is named, so what is looked
     // for here can only be the stencil's own name.
-    const cuts: readonly Cut[] = [
+    const stencils: readonly Stencil[] = [
       { name: 'Beast', fields: ['Name', 'Height'] },
       { name: 'Vocabulary', fields: ['Word', 'Meaning'] },
     ]
@@ -198,7 +198,7 @@ describe('Deck', () => {
       { id: 'llama', section: null, stencil: 'Beast', filled: [] },
       { id: 'llano', section: null, stencil: 'Vocabulary', filled: [] },
     ]
-    const held = mountDeck({ cards: mixed, cuts })
+    const held = mountDeck({ cards: mixed, stencils })
 
     expect(held.findAll('[data-card]')).toHaveLength(2)
     expect(tileFor(held, 'llama').get('[data-cut-of]').text()).toBe('Beast')
@@ -478,7 +478,7 @@ describe('Deck', () => {
     box.focus()
     expect(document.activeElement).toBe(box)
 
-    await held.setProps({ cuts: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
+    await held.setProps({ stencils: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
 
     // The stencil no longer names the field, so its box goes and its value
     // stays in the file. The caret goes with the box and lands in no other.

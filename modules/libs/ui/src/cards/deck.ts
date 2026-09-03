@@ -6,7 +6,7 @@
  */
 
 import { declared, type Against, type Landing } from './order'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
 /** One named slot and what stands in it. */
 export interface Filled {
@@ -253,12 +253,12 @@ export interface Grid {
 export function grid(
   cards: readonly Drawn[],
   sections: readonly Banded[],
-  cuts: readonly Cut[],
+  stencils: readonly Stencil[],
   carried: string | null,
 ): Grid {
   const banded = new Set(sections.map((section) => section.id))
   const tiles = cards.map((card) => {
-    const cut = cuts.find((each) => each.name === card.stencil)
+    const cut = stencils.find((each) => each.name === card.stencil)
     const fields = declared(cut?.fields ?? [])
 
     /** How many values the card writes under each field, as they are counted off. */

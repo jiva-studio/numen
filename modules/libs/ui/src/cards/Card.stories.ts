@@ -9,18 +9,18 @@ import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Card from './Card.vue'
 import { grid, type Drawn, type Tile } from './deck'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
 interface Corpus {
   readonly card: Drawn
-  readonly cut: Cut | null
+  readonly cut: Stencil | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
   /** What it found wrong with one of its values, by the field it stands in. */
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
 
-const ANIMAL: Cut = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
+const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'

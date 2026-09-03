@@ -10,7 +10,7 @@ import {
   bodyOf,
   cardsOf,
   carried,
-  cutsOf,
+  stencilsOf,
   deckIn,
   deckOf,
   drawnOf,
@@ -261,7 +261,7 @@ describe('the cards as the grid draws them', () => {
 describe('the stencils a card may be cut by', () => {
   it('are named by what each stencil is called', () => {
     expect(
-      cutsOf([
+      stencilsOf([
         { path: 'stencils/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'Term.md', title: 'Term', fields: ['Meaning'] },
       ]),
@@ -273,7 +273,7 @@ describe('the stencils a card may be cut by', () => {
 
   it('name one stencil where two are called one name, and the first stands', () => {
     expect(
-      cutsOf([
+      stencilsOf([
         { path: 'a/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'b/Animal.md', title: 'Animal', fields: ['Weight'] },
       ]),
@@ -281,7 +281,7 @@ describe('the stencils a card may be cut by', () => {
   })
 
   it('leave out a stencil called nothing', () => {
-    expect(cutsOf([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
+    expect(stencilsOf([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
   })
 
   it('are filed where the list said, and nowhere for a name no stencil carries', () => {

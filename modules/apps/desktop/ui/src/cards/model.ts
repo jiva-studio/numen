@@ -13,7 +13,7 @@ import {
   reordered,
   type Banded,
   type CardLanding,
-  type Cut,
+  type Stencil,
   type Drawn,
 } from '@numen/ui'
 import type {
@@ -210,15 +210,15 @@ export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] 
  * The stencils a card may be cut by, under the word a card names one by. Two
  * stencils of one title name one stencil, and the first stands.
  */
-export const cutsOf = (offers: readonly Offer[]): readonly Cut[] => {
+export const stencilsOf = (offers: readonly Offer[]): readonly Stencil[] => {
   const taken = new Set<string>()
-  const cuts: Cut[] = []
+  const stencils: Stencil[] = []
   for (const offer of offers) {
     if (!offer.title || taken.has(offer.title)) continue
     taken.add(offer.title)
-    cuts.push({ name: offer.title, fields: offer.fields })
+    stencils.push({ name: offer.title, fields: offer.fields })
   }
-  return cuts
+  return stencils
 }
 
 /**

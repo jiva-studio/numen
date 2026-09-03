@@ -258,7 +258,7 @@ describe('a deck opened', () => {
   it('offers every stencil the vault holds as a cut', async () => {
     const { tab } = await open()
 
-    expect(tab.cuts()).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
+    expect(tab.stencils()).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 
   it('draws each card under the stencil its wikilink reached', async () => {
@@ -578,7 +578,7 @@ describe('a deck read again under the window', () => {
   const drawing = (tab: Held) => ({
     deck: tab.deck(),
     drawn: tab.drawn(),
-    cuts: tab.cuts(),
+    stencils: tab.stencils(),
     marks: tab.marks(),
   })
 
@@ -604,7 +604,7 @@ describe('a deck read again under the window', () => {
     expect(drawing(one.tab)).toStrictEqual(was)
     expect(one.tab.deck()).toBe(was.deck)
     expect(one.tab.drawn()).toBe(was.drawn)
-    expect(one.tab.cuts()).toBe(was.cuts)
+    expect(one.tab.stencils()).toBe(was.stencils)
     expect(one.tab.marks()).toBe(was.marks)
   })
 
@@ -849,12 +849,12 @@ describe('a deck the vault could not be reached for', () => {
 describe('the stencils a listing did not answer with', () => {
   it('are asked for again when the deck comes back on screen', async () => {
     const one = await open({ unlisted: 1 })
-    expect(one.tab.cuts()).toStrictEqual([])
+    expect(one.tab.stencils()).toStrictEqual([])
 
     one.decks.kind.shown?.(one.tab, one.id)
     await settles()
 
-    expect(one.tab.cuts()).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
+    expect(one.tab.stencils()).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 })
 

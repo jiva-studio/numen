@@ -251,7 +251,7 @@ export type {
 } from './tree/model'
 
 export { default as Face } from './cards/Face.vue'
-export { default as Stencil } from './cards/Stencil.vue'
+export { default as StencilView } from './cards/StencilView.vue'
 export { default as Deck } from './cards/Deck.vue'
 /** One card of a deck, which is what the deck lays out. */
 export { default as Card } from './cards/Card.vue'
@@ -282,7 +282,7 @@ export type { Half, Landing as CardLanding } from './cards/order'
 export { blanks as cardBlanks, ended as cardEnded, endOf as cardEndOf, HEAD as CARD_HEAD } from './cards/deck'
 export { declared as cardFields } from './cards/order'
 export type { Banded, Drawn, Filled } from './cards/deck'
-export type { Cut } from './cards/stencil'
+export type { Stencil } from './cards/stencil'
 
 export type { Environment, PlexTransition } from './plex/transition'
 export { byHandle, byHolding } from './plex/reaching'

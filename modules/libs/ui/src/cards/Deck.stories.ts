@@ -10,11 +10,11 @@ import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
 import { blanks, HEAD, type Banded, type Drawn, type Wrong } from './deck'
 import { declared, type Landing } from './order'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
 interface Corpus {
   readonly cards: readonly Drawn[]
-  readonly cuts: readonly Cut[]
+  readonly cuts: readonly Stencil[]
   /** The sections the cards stand under, in the order they stand in the deck. */
   readonly sections?: readonly Banded[]
   /** What the vault reading this file found wrong with it, by card and field. */
@@ -35,9 +35,9 @@ const wrongOf = (corpus: Corpus): Wrong => ({
   ),
 })
 
-const ANIMAL: Cut = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
-const WORD: Cut = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
-const ASKED: Cut = { name: 'Basic', fields: ['Question', 'Answer'] }
+const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
+const WORD: Stencil = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
+const ASKED: Stencil = { name: 'Basic', fields: ['Question', 'Answer'] }
 
 const UNBROKEN =
   'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
@@ -316,7 +316,7 @@ const meta: Meta<Knobs> = {
     components: { Deck },
     setup() {
       const cards = ref<readonly Drawn[]>(CORPORA[args.corpus].cards)
-      const cuts = ref<readonly Cut[]>(CORPORA[args.corpus].cuts)
+      const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
       const sections = ref<readonly Banded[]>(sectionsOf(CORPORA[args.corpus]))
       const wrong = ref<Wrong>(wrongOf(CORPORA[args.corpus]))
 
@@ -389,7 +389,7 @@ const meta: Meta<Knobs> = {
       <div :style="{ height: '100vh', width: args.width }">
         <Deck
           :cards="cards"
-          :cuts="cuts"
+          :stencils="cuts"
           :sections="sections"
           :name="args.name"
           :wrong="wrong"

@@ -8,7 +8,7 @@
  * row. What stands against neither is said above the editor.
  */
 import { computed } from 'vue'
-import { Stencil as StencilView } from '@numen/ui'
+import { StencilView } from '@numen/ui'
 import type { CardLanding, Half } from '@numen/ui'
 import Answering from '../Answering.vue'
 import type { Held } from './stencil'

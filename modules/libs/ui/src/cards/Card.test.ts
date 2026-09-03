@@ -6,9 +6,9 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import Card from './Card.vue'
 import { grid, type Banded, type CardWords, type Drawn, type Tile } from './deck'
-import type { Cut } from './stencil'
+import type { Stencil } from './stencil'
 
-const CUTS: readonly Cut[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
+const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 
 const CARDS: readonly Drawn[] = [
   { id: 'llama', section: null, stencil: 'Animal', filled: [] },

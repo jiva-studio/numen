@@ -7,7 +7,7 @@
  * the string the store is dirty against is those cards written out.
  */
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
-import type { Banded, Cut, Drawn, PlexShowing } from '@numen/ui'
+import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
 import type { Cards, Offer, Problem, Refused, Went } from '../core'
 import type { Store } from '../doing'
 import type { Listed, Presets, Read } from '../preset/core'
@@ -23,7 +23,7 @@ import {
   bodyOf,
   cardsOf,
   carried,
-  cutsOf,
+  stencilsOf,
   deckIn,
   deckOf,
   drawnOf,
@@ -98,7 +98,7 @@ export interface Held {
   /** The sections, as the grid draws them. */
   bands(): readonly Banded[]
   /** The stencils a card may be cut by. */
-  cuts(): readonly Cut[]
+  stencils(): readonly Stencil[]
   /** What is wrong with the file, against the card it stands on. */
   marks(): Marks
   /** What the whole file was refused for, in words a person reads. */
@@ -277,7 +277,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   }
 
   /** The stencils a card may be cut by, made again where the list changed. */
-  const cuts = computed(() => cutsOf(offers.value))
+  const stencils = computed(() => stencilsOf(offers.value))
 
   /** A deck as it now stands, written back into the store. */
   const turns = (id: string, deck: Deck): void => {
@@ -430,7 +430,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
     deck: () => deckAt(id),
     drawn: () => drawnAt(id),
     bands: () => bandsAt(id),
-    cuts: () => cuts.value,
+    stencils: () => stencils.value,
     marks: () => marksAt(id),
     saying: computed(() => sayingOf(id)),
     scheduled: () => scheduledAt(id),

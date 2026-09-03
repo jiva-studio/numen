@@ -17,7 +17,7 @@ export interface Shown {
 }
 
 /** One stencil a card may be cut by: the word it is shown as, and its slots. */
-export interface Cut {
+export interface Stencil {
   readonly name: string
   /** The slots it names, in the order a person is asked for them. */
   readonly fields: readonly string[]
