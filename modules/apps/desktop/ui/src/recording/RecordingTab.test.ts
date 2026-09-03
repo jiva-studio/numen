@@ -239,7 +239,11 @@ describe('a transcript still growing', () => {
   })
 })
 
-describe('a recording with a transcript', () => {
+describe('the menu at the end of the player strip', () => {
+  /** What the menu offers, as it is drawn. */
+  const offered = () =>
+    [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
+
   it('offers the words taken away where they already stand', async () => {
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
@@ -248,28 +252,40 @@ describe('a recording with a transcript', () => {
     await drawn.vm.$nextTick()
     await settled()
 
-    expect(drawn.find('.recording__ask').text()).toBe(WORDS.drop)
+    const more = drawn.get('.recording__more')
+    expect(more.attributes('aria-haspopup')).toBe('menu')
+    expect(offered()).toStrictEqual([])
+
+    await more.trigger('click')
+
+    expect(offered()).toStrictEqual([WORDS.drop])
 
     drawn.unmount()
   })
 
-  it('asks the window for the words to be taken away when it is pressed', async () => {
+  it('asks the window for the words to be taken away when that is chosen', async () => {
     const { held, asked } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
 
-    await drawn.find('.recording__ask').trigger('click')
+    await drawn.get('.recording__more').trigger('click')
+    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+      (one) => one.textContent?.trim() === WORDS.drop,
+    )
+    chosen?.click()
+    await drawn.vm.$nextTick()
 
     expect(asked).toStrictEqual(['dropTranscript talks/Ants.mp3 Ants.mp3'])
+    expect(offered()).toStrictEqual([])
 
     drawn.unmount()
   })
 
   // A run appends to the words, and what is being appended to is not taken
   // away underneath it.
-  it('offers none while a run is writing the words down', async () => {
+  it('is not drawn while a run is writing the words down', async () => {
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
@@ -280,13 +296,42 @@ describe('a recording with a transcript', () => {
     await settled()
     await drawn.vm.$nextTick()
 
-    expect(drawn.find('.recording__ask').exists()).toBe(false)
+    expect(drawn.find('.recording__more').exists()).toBe(false)
 
     drawn.unmount()
   })
 
-  it('offers none where this build cannot take them away at all', async () => {
+  it('is not drawn where this build cannot take a transcript away at all', async () => {
     cannotRun('dropTranscript')
+    const { held } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__more').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+
+  // Nothing can be asked over words that are not there.
+  it('is not drawn where the recording has no transcript', async () => {
+    const { held } = tab([])
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    expect(drawn.find('.recording__more').exists()).toBe(false)
+
+    drawn.unmount()
+  })
+})
+
+describe('a recording with a transcript', () => {
+  it('draws nothing above the words but the player strip', async () => {
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
