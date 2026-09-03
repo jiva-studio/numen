@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -113,7 +112,7 @@ const (
 	compost = "zpqrstvwxy"
 )
 
-func setValue(t *testing.T, raw string, card cardid.CardID, field, value string) string {
+func setValue(t *testing.T, raw string, card domain.CardID, field, value string) string {
 	t.Helper()
 	f, err := cards.OpenDeck([]byte(raw))
 	if err != nil {
@@ -621,8 +620,8 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nAlpaca\n" +
 		"\n## Vicuña\n\n[[Animal]]\n\n### Name\n\nVicuña\n"
-	minting := []cardid.CardID{"zpqrstvwxy", "m9n8b7v6c5"}
-	mint := func() (cardid.CardID, error) {
+	minting := []domain.CardID{"zpqrstvwxy", "m9n8b7v6c5"}
+	mint := func() (domain.CardID, error) {
 		out := minting[0]
 		minting = minting[1:]
 		return out, nil
@@ -645,7 +644,7 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 func TestAMarkThatCouldNotBeMintedSaysWhichCard(t *testing.T) {
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
-	broken := func() (cardid.CardID, error) { return "", errors.New("no randomness") }
+	broken := func() (domain.CardID, error) { return "", errors.New("no randomness") }
 
 	_, _, err := cards.Whole(body, nil, broken)
 	if err == nil {

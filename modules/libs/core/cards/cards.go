@@ -11,7 +11,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 )
 
 // The three heading levels a deck spends. A value may hold a heading below
@@ -91,7 +90,7 @@ type Card struct {
 	// Mark is what the card is, for as long as it exists, and it is empty until
 	// the application next writes the deck. It is the ten characters alone: the
 	// caret in front of them is how a heading writes one.
-	Mark cardid.CardID
+	Mark domain.CardID
 	// Stencil is the target of the lone wikilink under the heading, as it is
 	// written and without its brackets. A card whose first paragraph is not one
 	// names no stencil.
@@ -136,7 +135,7 @@ func (c Card) Value(field string) (string, bool) {
 // ErrNoSuchCard, and a deck holding two is ErrTwoCards: both are read and both
 // are shown, and a machine choosing between them would be choosing which of
 // the two a person meant.
-func (d Deck) Card(carried cardid.CardID) (Card, error) {
+func (d Deck) Card(carried domain.CardID) (Card, error) {
 	found := Card{}
 	held := false
 	for _, c := range d.Cards {

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -50,7 +49,7 @@ func opens(level int) bool { return level == SectionLevel || level == CardLevel 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
 	name string
-	mark cardid.CardID
+	mark domain.CardID
 	// head is the byte the heading line begins at and from is the byte after
 	// it, which is the run the first field's value occupies. end is where the
 	// card stops: the next card, or the end of the file.
@@ -168,7 +167,7 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 // know. Neither is given another mark, because choosing would be choosing which
 // of the two keeps its history.
 func twoMarks(cs []Card) []Problem {
-	carried := map[cardid.CardID]int{}
+	carried := map[domain.CardID]int{}
 	for _, c := range cs {
 		if c.Mark != "" {
 			carried[c.Mark]++

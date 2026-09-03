@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // A mark stands last, one space after the heading's text, and is a mark only at
@@ -14,7 +14,7 @@ import (
 func TestReadHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		heading, text string
-		mark          cardid.CardID
+		mark          domain.CardID
 	}{
 		"a text and a mark": {
 			"Compost, what is it made of ^k7m2xq9fzp", "Compost, what is it made of", "k7m2xq9fzp",
@@ -49,7 +49,7 @@ func TestReadHeading(t *testing.T) {
 func TestWriteHeading(t *testing.T) {
 	for name, one := range map[string]struct {
 		text string
-		mark cardid.CardID
+		mark domain.CardID
 		want string
 	}{
 		"both":         {"Compost", "k7m2xq9fzp", "Compost ^k7m2xq9fzp"},

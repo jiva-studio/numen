@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 )
 
@@ -29,7 +30,7 @@ func TestAnIdentifierIsTenCharactersOfTheAlphabet(t *testing.T) {
 
 // An identifier says which card this is, so two of them are two cards.
 func TestTwoIdentifiersDiffer(t *testing.T) {
-	seen := map[cardid.CardID]bool{}
+	seen := map[domain.CardID]bool{}
 	for range 100 {
 		minted, err := cardid.New()
 		if err != nil {
@@ -45,7 +46,7 @@ func TestTwoIdentifiersDiffer(t *testing.T) {
 // An identifier is read as one only at that length and in that alphabet.
 // Anything else is not one, and the card carrying it is given one.
 func TestWhatIsNotAnIdentifier(t *testing.T) {
-	for name, s := range map[string]cardid.CardID{
+	for name, s := range map[string]domain.CardID{
 		"nothing":       "",
 		"too short":     "k7m2xq9fz",
 		"too long":      "k7m2xq9fzpp",
