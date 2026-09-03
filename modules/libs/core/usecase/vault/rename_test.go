@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -74,5 +75,36 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 	}
 	if len(index.saved) != 0 {
 		t.Errorf("the index was written to: %v", index.saved)
+	}
+}
+
+// The window holds the copy of the vault it opened, and goes on walking on it.
+// The name and the path a walk carries are the copy's, and what the index says
+// a vault is called stays what the list says.
+func TestAWalkDoesNotPutBackTheNameAVaultHad(t *testing.T) {
+	t.Parallel()
+	_, showing, registry := twoVaults(t)
+	index := &indexRows{}
+
+	walk := scanner(filesystem.Readers{}, openIndex(t))
+	walk.Vaults = index
+	if _, err := walk.Execute(t.Context(), showing); err != nil {
+		t.Fatal(err)
+	}
+
+	renamed, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), showing, "journal")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A folder that went, or more changed at once than could be followed, sets
+	// a walk going on the copy the window opened.
+	if _, err := walk.Execute(t.Context(), showing); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := index.rows[showing.ID]; got.Name != renamed.Name || got.Path != renamed.Path {
+		t.Errorf("the index holds %q at %s, and the list holds %q at %s",
+			got.Name, got.Path, renamed.Name, renamed.Path)
 	}
 }

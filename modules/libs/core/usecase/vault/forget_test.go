@@ -12,9 +12,12 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// indexRows is the index as a vault is written to and taken out of it.
+// indexRows is the index as a vault is written to and taken out of it. `rows`
+// answers the way the table does: Save writes the row whole, and a vault the
+// index already holds keeps its name and its path through Register.
 type indexRows struct {
 	saved  []domain.Vault
+	rows   map[string]domain.Vault
 	forgot []string
 	fails  error
 	steps  *[]string
@@ -22,7 +25,28 @@ type indexRows struct {
 
 func (r *indexRows) Save(_ context.Context, v domain.Vault) error {
 	r.saved = append(r.saved, v)
-	return r.fails
+	if r.fails != nil {
+		return r.fails
+	}
+	r.put(v)
+	return nil
+}
+
+func (r *indexRows) Register(_ context.Context, v domain.Vault) error {
+	if r.fails != nil {
+		return r.fails
+	}
+	if _, there := r.rows[v.ID]; !there {
+		r.put(v)
+	}
+	return nil
+}
+
+func (r *indexRows) put(v domain.Vault) {
+	if r.rows == nil {
+		r.rows = map[string]domain.Vault{}
+	}
+	r.rows[v.ID] = v
 }
 
 func (r *indexRows) Forget(_ context.Context, vaultID string) error {
@@ -30,7 +54,11 @@ func (r *indexRows) Forget(_ context.Context, vaultID string) error {
 	if r.steps != nil {
 		*r.steps = append(*r.steps, "forget")
 	}
-	return r.fails
+	if r.fails != nil {
+		return r.fails
+	}
+	delete(r.rows, vaultID)
+	return nil
 }
 
 // twoVaults is two folders this installation knows about, and the registry it
