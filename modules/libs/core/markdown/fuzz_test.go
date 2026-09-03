@@ -61,7 +61,8 @@ func FuzzAddLink(f *testing.F) {
 	})
 }
 
-// A refused change to a link leaves the note byte for byte.
+// A change to a link stays inside the `links:` block, and a refused one leaves
+// the note byte for byte.
 func FuzzUpdateLink(f *testing.F) {
 	for _, seed := range spliceSeeds {
 		f.Add(seed, "A", "child")
@@ -70,18 +71,20 @@ func FuzzUpdateLink(f *testing.F) {
 		"  - to: A\n    role: ref\n---\nbody\n", "A", "child")
 	f.Add("---\nlinks:\n  - to: A\n    role: ref\n"+
 		"  - to: A\n    role: ref\n    mine: keep me\n---\nbody\n", "A", "child")
+	f.Add("---\nlinks:\r- to: 0\n0:\n---", "0", "child")
 	f.Fuzz(func(t *testing.T, raw, to, role string) {
 		d, err := Open([]byte(raw))
 		if err != nil {
 			return
 		}
 		was := string(d.Bytes())
-		if _, err := d.UpdateLink(domain.ParseAddress(to), domain.Link{Role: domain.LinkRole(role)}); err == nil {
+		if _, err := d.UpdateLink(domain.ParseAddress(to), domain.Link{Role: domain.LinkRole(role)}); err != nil {
+			if got := string(d.Bytes()); got != was {
+				t.Fatalf("a refused change was written\n was %q\n now %q", was, got)
+			}
 			return
 		}
-		if got := string(d.Bytes()); got != was {
-			t.Fatalf("a refused change was written\n was %q\n now %q", was, got)
-		}
+		keptOutside(t, was, string(d.Bytes()), "links")
 	})
 }
 

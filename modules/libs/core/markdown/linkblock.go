@@ -381,13 +381,14 @@ func quotedEnd(front []byte, start int, quote byte) (int, bool) {
 		return 0, false
 	}
 	for at := start + 1; at < len(front); at++ {
+		if breakWidth(front, at) > 0 {
+			return 0, false
+		}
 		switch front[at] {
 		case '\\':
-			if quote == '"' {
+			if quote == '"' && at+1 < len(front) && breakWidth(front, at+1) == 0 {
 				at++
 			}
-		case '\n':
-			return 0, false
 		case quote:
 			if quote == '\'' && at+1 < len(front) && front[at+1] == '\'' {
 				at++
