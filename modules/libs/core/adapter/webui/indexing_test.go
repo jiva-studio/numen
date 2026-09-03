@@ -1,13 +1,17 @@
 package webui
 
 import (
+	"context"
 	"io"
 	"math"
 	"path/filepath"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
+	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -68,6 +72,112 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	if at := listed(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
 	}
+}
+
+// TestIndexingNamesTheSourceItIsOn. Indexing is always of something, and a row
+// carrying the word alone leaves a person asking which of their notes it is on.
+func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
+	model := &asked{dims: 64}
+	watching := &peeking{asked: model}
+	cfg, db := reading(t)
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+		t.Fatal(err)
+	}
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{
+		Tasking:  task.New(),
+		Progress: db.Progress(),
+	}
+	api.show(v)
+	api.Recipe.Store(model.Model().Recipe())
+	cut(t, db, api)
+	watching.tasks = api.Tasking
+
+	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, watching)
+
+	at, held := watching.opening(makingVectors)
+	if !held {
+		t.Fatal("nothing was being indexed while a vector was asked for")
+	}
+	if at.About != "Note.md" {
+		t.Errorf("the pass says it is indexing %q", at.About)
+	}
+}
+
+// TestNothingIsIndexedWhileTheModelIsOnItsWay. Fetching a model is not
+// indexing. A row that calls it by the name of the work that follows sits at no
+// share of nothing while the weights come down.
+func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
+	model := &asked{dims: 64}
+	cfg, db := reading(t)
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+		t.Fatal(err)
+	}
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{
+		Tasking:  task.New(),
+		Progress: db.Progress(),
+	}
+	api.show(v)
+	api.Recipe.Store(model.Model().Recipe())
+	cut(t, db, api)
+
+	arriving := embedding.Arriving(model.Model())
+	over := make(chan struct{})
+	go func() {
+		defer close(over)
+		embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, arriving.Filling())
+	}()
+
+	for range 20 {
+		if at := listed(t, api, makingVectors); at != nil {
+			t.Fatalf("a model still on its way is shown as indexing: %+v", *at)
+		}
+		time.Sleep(time.Millisecond)
+	}
+
+	arriving.Landed(model, nil)
+	<-over
+
+	if at := listed(t, api, makingVectors); at != nil {
+		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
+	}
+	if model.times() == 0 {
+		t.Error("the model landed and nothing was embedded")
+	}
+}
+
+// peeking is a model that says what was being done when it was asked for a
+// vector, which is what a person watching the corner would have read.
+type peeking struct {
+	*asked
+	tasks *task.Tasks
+
+	mu    sync.Mutex
+	while []task.Task
+}
+
+func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	p.mu.Lock()
+	if p.while == nil {
+		p.while = p.tasks.List()
+	}
+	p.mu.Unlock()
+	return p.asked.Embed(ctx, texts)
+}
+
+// opening is one piece of work as it stood when the first vector was asked for.
+func (p *peeking) opening(id string) (task.Task, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, at := range p.while {
+		if at.ID == id {
+			return at, true
+		}
+	}
+	return task.Task{}, false
 }
 
 // TestBooksThatCouldNotBeReadStayInTheList. A library that would not be read is

@@ -152,6 +152,43 @@ describe('work with nothing to count', () => {
     expect(drawn[0]?.total).toBeUndefined()
     expect(drawn[0]?.working).toBe(true)
   })
+
+  it('draws no share for a model of a size nobody has been told', () => {
+    const drawn = corner([
+      reading({
+        id: 'getting ready',
+        doing: 'Fetching models',
+        about: 'inference.onnx',
+        done: 0,
+        total: 0,
+      }),
+    ])
+
+    expect(drawn[0]?.says).toBe('Fetching models')
+    expect(drawn[0]?.total).toBeUndefined()
+  })
+})
+
+describe('a step of a run', () => {
+  const step = (doing: string, about: string, done = 0, total = 0) =>
+    reading({ id: 'making the vectors', doing, about, done, total, asked: false })
+
+  it('is called by what it is, and names what it is on', () => {
+    const drawn = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
+
+    expect(drawn[0]?.says).toBe('Indexing')
+    expect(drawn[0]?.about).toBe('library/Sabhaparva.epub')
+    expect(drawn[0]).toMatchObject({ done: 300, total: 1200 })
+  })
+
+  it('names what it moved on to, and how much further it got', () => {
+    const one = corner([step('Indexing', 'library/Sabhaparva.epub', 300, 1200)])
+    const next = corner([step('Indexing', 'notes/Vrindavan.md', 900, 1200)])
+
+    expect(one[0]?.about).toBe('library/Sabhaparva.epub')
+    expect(next[0]?.about).toBe('notes/Vrindavan.md')
+    expect(next[0]?.done).toBe(900)
+  })
 })
 
 describe('what is so about the window', () => {
