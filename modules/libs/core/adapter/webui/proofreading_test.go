@@ -1,6 +1,7 @@
 package webui
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,13 +9,17 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // proofreads is the proofreading a test hands the window: whether this
-// installation names anything to put a transcript right with, and what it was
-// asked to put right.
+// installation names anything to put a transcript right with, what it was asked
+// to put right, and what it says came of the ask.
 type proofreads struct {
 	ready bool
+	came  source.PutRightResult
+	why   error
+
 	vault string
 	path  string
 	times int
@@ -22,9 +27,14 @@ type proofreads struct {
 
 func (p *proofreads) ProofreaderReady() bool { return p.ready }
 
-func (p *proofreads) Proofread(v domain.Vault, path string) {
+func (p *proofreads) Proofread(
+	_ context.Context,
+	v domain.Vault,
+	path string,
+) (source.PutRightResult, error) {
 	p.times++
 	p.vault, p.path = v.ID, path
+	return p.came, p.why
 }
 
 // proofreading is a window over the same vault the runs are asked for over,
@@ -45,8 +55,8 @@ func onTheShelf() stored {
 	return stored{derived.Artifact(listener, hashed): []byte("what the model heard")}
 }
 
-// A transcript the window asks for is put right, and the run is told which file
-// of which vault.
+// A transcript the window asks for is put right, the run is told which file of
+// which vault, and the person is told that it began.
 func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	api, handler, by := proofreading(t, onTheShelf(), heardBy())
 
@@ -57,35 +67,48 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Path != talk {
 		t.Errorf("the answer is about %q", back.Path)
 	}
-	if back.Why != "" {
-		t.Errorf("a run begun was told %q, which the list of what is being done says", back.Why)
+	if back.Why != proofreadingBegun {
+		t.Errorf("a run begun was told %q", back.Why)
 	}
 	if by.times != 1 || by.path != talk || by.vault != api.Showing().ID {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }
 
-// One run to a recording. A person asking for a transcript another run holds is
-// told that it is happening, and not that theirs did not start.
-func TestATranscriptARunHoldsIsSaidToBeUnderWay(t *testing.T) {
-	_, handler, by := proofreading(t, claimed{
-		stored: onTheShelf(),
-		name:   derived.Partial(listener, hashed),
-	}, heardBy())
+// Every way a run can come to nothing is a sentence the person reads, so that
+// pressing the item is never silence.
+func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
+	for _, one := range []struct {
+		name   string
+		came   source.PutRightResult
+		answer string
+		why    string
+	}{
+		{"a recording another run holds", source.PutRightResult{Busy: true}, outcomeRunning, proofreadingNow},
+		{"a transcript already put right", source.PutRightResult{Already: true}, outcomeDone, proofreadAlready},
+		{"words a person wrote themselves", source.PutRightResult{Edited: true}, outcomeByHand, proofreadByHand},
+		{"a transcript holding no words", source.PutRightResult{None: true}, outcomeUnheard, nothingHeard},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			_, handler, by := proofreading(t, onTheShelf(), heardBy())
+			by.came = one.came
 
-	back := answered(t, post(handler, proofreadAt(talk)))
-	if back.Answer != outcomeRunning {
-		t.Fatalf("a transcript a run holds was answered %q", back.Answer)
-	}
-	if back.Why != proofreadingNow {
-		t.Errorf("it was told %q", back.Why)
-	}
-	if by.times != 0 {
-		t.Error("a run was given a recording already being worked on")
+			back := answered(t, post(handler, proofreadAt(talk)))
+			if back.Answer != one.answer {
+				t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+			}
+			if back.Why == "" {
+				t.Fatal("it was told nothing at all")
+			}
+			if back.Why != one.why {
+				t.Errorf("it was told %q", back.Why)
+			}
+		})
 	}
 }
 
-// A recording nothing has listened to holds no words to put right.
+// A recording the index says nothing has listened to holds no words to put
+// right, and the run is never asked for.
 func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 	_, handler, by := proofreading(t, stored{}, nothingRead())
 

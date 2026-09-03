@@ -244,6 +244,22 @@ describe('the menu at the end of the player strip', () => {
   const offered = () =>
     [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
+  // The two controls over the words stand together, at their own spacing.
+  it('stands beside the follow control, in one group at the end of the strip', async () => {
+    const { held } = tab()
+    const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
+
+    await settled()
+    await drawn.vm.$nextTick()
+    await settled()
+
+    const deeds = drawn.get('.recording__deeds')
+    expect(deeds.find('.recording__follow').exists()).toBe(true)
+    expect(deeds.find('.recording__more').exists()).toBe(true)
+
+    drawn.unmount()
+  })
+
   // Putting the words right stands above taking them away, so the one that
   // cannot be undone is last.
   it('offers the words put right and taken away where they already stand', async () => {

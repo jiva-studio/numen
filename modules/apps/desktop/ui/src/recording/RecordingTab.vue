@@ -81,28 +81,32 @@ const chose = (id: string) => {
         @seek="props.held.go($event)"
       />
       <p v-else class="recording__note">{{ words.unplayable }}</p>
-      <button
-        v-if="!empty"
-        type="button"
-        class="recording__follow"
-        :aria-label="words.follow"
-        :title="words.follow"
-        :aria-pressed="follows ? 'true' : 'false'"
-        @click="props.held.follows(!follows)"
-      >
-        <LocateFixed class="recording__icon" />
-      </button>
-      <button
-        v-if="offered.length"
-        type="button"
-        class="recording__more"
-        :aria-label="words.more"
-        :title="words.more"
-        aria-haspopup="menu"
-        @click="asks"
-      >
-        <Ellipsis class="recording__icon" />
-      </button>
+
+      <!-- The controls over the words, standing together at the end of the
+           strip. -->
+      <div v-if="!empty" class="recording__deeds">
+        <button
+          type="button"
+          class="recording__follow"
+          :aria-label="words.follow"
+          :title="words.follow"
+          :aria-pressed="follows ? 'true' : 'false'"
+          @click="props.held.follows(!follows)"
+        >
+          <LocateFixed class="recording__icon" />
+        </button>
+        <button
+          v-if="offered.length"
+          type="button"
+          class="recording__more"
+          :aria-label="words.more"
+          :title="words.more"
+          aria-haspopup="menu"
+          @click="asks"
+        >
+          <Ellipsis class="recording__icon" />
+        </button>
+      </div>
     </div>
 
     <div class="recording__below">
@@ -170,8 +174,10 @@ const chose = (id: string) => {
 .recording {
   /* The measure the words are read at. */
   --recording-measure: 46rem;
-  /* Between the player and whatever stands beside it. */
+  /* Between the player and the controls at the end of the strip, and between
+     those controls, which are one group. */
   --recording-apart: 1rem;
+  --recording-close: 0.25rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -235,7 +241,15 @@ const chose = (id: string) => {
   min-inline-size: 0;
 }
 
-/* The two controls at the end of the strip. */
+/* The controls at the end of the strip are one group, and stand at the group's
+   own spacing. */
+.recording__deeds {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--recording-close);
+}
+
 .recording__follow,
 .recording__more {
   display: grid;
