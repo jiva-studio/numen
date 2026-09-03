@@ -17,7 +17,7 @@ import (
 // opened in the other. What each says about it while it runs is its own.
 type Opening struct {
 	// Told, if set, is called each time the index and the vault are level again.
-	Told func(vault.Moved)
+	Told func(vault.VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a later
 	// attempt succeeds.
 	Trouble port.Trouble

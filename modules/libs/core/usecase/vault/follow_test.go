@@ -61,7 +61,7 @@ func (s *sometimes) Open(v domain.Vault) (port.VaultReader, error) {
 type followed struct {
 	vault domain.Vault
 	index *container.Index
-	moved <-chan usecase.Moved
+	moved <-chan usecase.VaultChanges
 }
 
 // following puts one vault, one index and a watcher a test drives together.
@@ -73,12 +73,12 @@ func following(t *testing.T, notes map[string]string, watcher *hand) followed {
 		t.Fatal(err)
 	}
 
-	moved := make(chan usecase.Moved, 8)
+	moved := make(chan usecase.VaultChanges, 8)
 	follow := usecase.Follow{
 		Watcher: watcher,
 		Refresh: usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()},
 		Scan:    scanner(filesystem.Readers{}, db),
-		Changed: func(m usecase.Moved) { moved <- m },
+		Changed: func(m usecase.VaultChanges) { moved <- m },
 	}
 
 	started, err := follow.Begin(t.Context(), v)

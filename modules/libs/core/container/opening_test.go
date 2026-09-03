@@ -116,8 +116,8 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	readers := staging()
 	opening := cfg.OpeningWith(db, readers, watcher)
 
-	told := make(chan usecase.Moved, 8)
-	opening.Told = func(m usecase.Moved) { told <- m }
+	told := make(chan usecase.VaultChanges, 8)
+	opening.Told = func(m usecase.VaultChanges) { told <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())

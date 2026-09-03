@@ -876,7 +876,7 @@ func begin(
 		api.Failed.Store(err.Error())
 	}
 	opening.Trouble = trouble
-	opening.Told = func(m usecase.Moved) {
+	opening.Told = func(m usecase.VaultChanges) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
 		api.Listeners.tell(changed{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})

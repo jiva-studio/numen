@@ -20,16 +20,16 @@ type Follow struct {
 
 	// Changed, if set, is called each time the index and the vault are level
 	// again. What is done with that is the caller's business.
-	Changed func(Moved)
+	Changed func(VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds. Both, so what is reported is the state of things
 	// now.
 	Trouble func(error)
 }
 
-// Moved is what a caller is told: the notes that are different now, or that the
+// VaultChanges is what a caller is told: the notes that are different now, or that the
 // whole vault has to be looked at again.
-type Moved struct {
+type VaultChanges struct {
 	Paths  []string
 	Reload bool
 	// Assets is the paths of the files that changed and are not notes. Reading
@@ -40,7 +40,7 @@ type Moved struct {
 
 // Reading says whether an asset owes a read: one changed, or the whole vault is
 // being looked at again and every asset with it.
-func (m Moved) Reading() bool { return m.Reload || len(m.Assets) > 0 }
+func (m VaultChanges) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 
 // Begin starts watching. Acting on what it collects is Run, and the two are
 // separate because they belong at different moments.
@@ -82,7 +82,7 @@ func (f *Following) Run(ctx context.Context) {
 				continue
 			}
 			f.trouble(nil)
-			f.changed(Moved{Paths: res.Changed(), Assets: res.Assets})
+			f.changed(VaultChanges{Paths: res.Changed(), Assets: res.Assets})
 
 		case <-f.lost:
 			// More changed at once than could be followed, or something went
@@ -95,12 +95,12 @@ func (f *Following) Run(ctx context.Context) {
 			f.trouble(nil)
 			// Read again from the top, so whatever changed is among what the
 			// walk finds.
-			f.changed(Moved{Reload: true})
+			f.changed(VaultChanges{Reload: true})
 		}
 	}
 }
 
-func (f *Following) changed(m Moved) {
+func (f *Following) changed(m VaultChanges) {
 	if f.follow.Changed != nil {
 		f.follow.Changed(m)
 	}
