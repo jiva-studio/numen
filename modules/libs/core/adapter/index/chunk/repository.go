@@ -436,12 +436,12 @@ func Replace(ctx context.Context, tx *sql.Tx, source, vault int64, chunks []Chun
 	return forget(ctx, tx, held.forgotten())
 }
 
-// writer is the statements a cut runs per chunk, prepared once for the whole
+// statements are what a cut runs per chunk, prepared once for the whole
 // source.
-type writer struct{ insert, index, names, move *sql.Stmt }
+type statements struct{ insert, index, names, move *sql.Stmt }
 
-func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
-	var w writer
+func prepare(ctx context.Context, tx *sql.Tx) (statements, error) {
+	var w statements
 	for _, s := range []struct {
 		name string
 		at   **sql.Stmt
@@ -454,14 +454,14 @@ func prepare(ctx context.Context, tx *sql.Tx) (writer, error) {
 		prepared, err := tx.PrepareContext(ctx, stmt.Get(s.name))
 		if err != nil {
 			w.close()
-			return writer{}, fmt.Errorf("%s: %w", s.name, err)
+			return statements{}, fmt.Errorf("%s: %w", s.name, err)
 		}
 		*s.at = prepared
 	}
 	return w, nil
 }
 
-func (w writer) close() {
+func (w statements) close() {
 	for _, s := range []*sql.Stmt{w.insert, w.index, w.names, w.move} {
 		if s != nil {
 			s.Close()
@@ -473,7 +473,7 @@ func (w writer) close() {
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent` becomes.
-func (w writer) put(ctx context.Context, held *held, source, vault int64, c Chunk, parent any) (int64, error) {
+func (w statements) put(ctx context.Context, held *held, source, vault int64, c Chunk, parent any) (int64, error) {
 	key := text{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {
 		if _, err := w.move.ExecContext(ctx, c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
@@ -502,7 +502,7 @@ func (w writer) put(ctx context.Context, held *held, source, vault int64, c Chun
 
 // opens keeps the names of the parts one chunk begins, so a section can be
 // found by its name and answer with the chunk it opens.
-func (w writer) opens(ctx context.Context, row int64, c Chunk) error {
+func (w statements) opens(ctx context.Context, row int64, c Chunk) error {
 	if len(c.Opens) == 0 {
 		return nil
 	}
