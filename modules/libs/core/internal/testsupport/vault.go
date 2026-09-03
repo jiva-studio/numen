@@ -43,7 +43,7 @@ func VaultDir(t *testing.T) string {
 // they scan. The fixture itself must stay exactly as committed.
 func CopyVault(t *testing.T) string {
 	t.Helper()
-	dst := t.TempDir()
+	dst := TempDir(t)
 	if err := os.CopyFS(dst, os.DirFS(VaultDir(t))); err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func CopyVault(t *testing.T) string {
 // tests that need a second vault whose content is nothing like the fixture's.
 func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 	t.Helper()
-	root := t.TempDir()
+	root := TempDir(t)
 	for name, body := range notes {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

@@ -2,8 +2,8 @@ package recognition
 
 import (
 	"context"
-	"os"
-	"path/filepath"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // Ready says whether everything reading a page needs is already on this
@@ -11,7 +11,7 @@ import (
 // reading is fetching what it needs.
 func Ready(cfg Config) bool {
 	cfg.Download = false
-	if !runtimeHere(cfg) {
+	if !onnxruntime.Here(cfg.settings()) {
 		return false
 	}
 	for _, one := range []struct{ path, name, what string }{
@@ -24,23 +24,4 @@ func Ready(cfg Config) bool {
 		}
 	}
 	return true
-}
-
-// runtimeHere says whether this process has its runtime, or this machine holds
-// a file to make one from. A name the loader would search for on its own is not
-// a file anything here can find.
-func runtimeHere(cfg Config) bool {
-	if here.Load() {
-		return true
-	}
-	if cfg.Runtime != "" {
-		_, err := os.Stat(cfg.Runtime)
-		return err == nil
-	}
-	for _, at := range present(cfg) {
-		if filepath.IsAbs(at) {
-			return true
-		}
-	}
-	return false
 }

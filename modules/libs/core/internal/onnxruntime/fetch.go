@@ -1,4 +1,4 @@
-package transcription
+package onnxruntime
 
 import (
 	"context"
@@ -14,14 +14,16 @@ import (
 	"time"
 )
 
-// A model is fetched by its address, and a person may point any of them at another place.
+// A file is fetched by its address, and a person may point any of them at
+// another place.
 //
-// A downloaded file is kept under the platform's cache directory, beside what a
-// reading fetches. Deleting it costs a download and no knowledge.
+// A downloaded file is kept under the platform's cache directory. Deleting it
+// costs a download and no knowledge.
 const cacheDir = "numen/models"
 
 // opening is how long a host has to answer at all, and slowest is the rate a
-// download has to keep up once it is answering. Together they are how long one file has.
+// download has to keep up once it is answering. Together they are how long one
+// file has.
 const (
 	opening = 2 * time.Minute
 	slowest = 192 << 10
@@ -29,7 +31,7 @@ const (
 )
 
 // patience is how long a file of one size has to arrive. A length nobody said
-// is taken to be larger than any of these models.
+// is taken to be larger than any of these files.
 func patience(size int64) time.Duration {
 	if size <= 0 {
 		size = assumed
@@ -37,11 +39,24 @@ func patience(size int64) time.Duration {
 	return opening + time.Duration(size/slowest)*time.Second
 }
 
-// kept is where a downloaded file is put: the folder the settings name, or this
+// fetching follows a redirect only to another https address.
+var fetching = &http.Client{
+	CheckRedirect: func(request *http.Request, via []*http.Request) error {
+		if request.URL.Scheme != "https" {
+			return fmt.Errorf("%s redirects to %s", via[len(via)-1].URL, request.URL)
+		}
+		if len(via) >= 10 {
+			return fmt.Errorf("%s redirects ten times", via[0].URL)
+		}
+		return nil
+	},
+}
+
+// Kept is where a downloaded file is put: the folder the settings name, or this
 // platform's cache directory.
-func kept(cfg Config) (string, error) {
-	if cfg.Dir != "" {
-		return cfg.Dir, nil
+func Kept(s Settings) (string, error) {
+	if s.Dir != "" {
+		return s.Dir, nil
 	}
 	cache, err := os.UserCacheDir()
 	if err != nil {
@@ -50,34 +65,32 @@ func kept(cfg Config) (string, error) {
 	return filepath.Join(cache, filepath.FromSlash(cacheDir)), nil
 }
 
-// fetched is the file one address names, downloaded if it is not already here.
-//
-// The name it is kept under carries the address, so two models with one filename
-// do not collide and a changed address is a different file rather than a stale
-// one wearing the right name.
-func fetched(ctx context.Context, cfg Config, address string, allowed bool) (string, error) {
-	dir, err := kept(cfg)
+// Fetched is the file one address names, downloaded if it is not already here.
+func Fetched(ctx context.Context, s Settings, address string) (string, error) {
+	dir, err := Kept(s)
 	if err != nil {
 		return "", err
 	}
-	at := filepath.Join(dir, cached(address))
+	at := filepath.Join(dir, Cached(address))
 	if _, err := os.Stat(at); err == nil {
 		return at, nil
 	}
-	if !allowed {
-		return "", fmt.Errorf(
-			"%s is not on this machine: set transcription.dir to where it is, or transcription.download to fetch it",
-			address)
+	if !s.Download {
+		return "", fmt.Errorf("%s is not on this machine: set %s.dir to where it is, or %s.download to fetch it",
+			address, s.Section, s.Section)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return "", err
 	}
-	return at, download(ctx, cfg, address, at)
+	return at, download(ctx, s, address, at)
 }
 
-// cached is what one address is kept under: the file it ends in, and enough of
+// Cached is what one address is kept under: the file it ends in, and enough of
 // the address to tell two of them apart.
-func cached(address string) string {
+//
+// The name carries the address, so two files with one filename do not collide
+// and a changed address is a different file.
+func Cached(address string) string {
 	sum := sha256.Sum256([]byte(address))
 	base := path.Base(address)
 	if base == "" || base == "." || base == "/" {
@@ -86,23 +99,32 @@ func cached(address string) string {
 	return hex.EncodeToString(sum[:6]) + "-" + base
 }
 
+// Address says whether what the settings named is somewhere to fetch from
+// rather than a file on this machine. What is fetched is fetched over https.
+func Address(name string) bool {
+	return strings.HasPrefix(name, "https://")
+}
+
 // download writes what one address holds, through a file beside it, so that a
 // download interrupted leaves nothing that looks finished.
 //
 // The deadline is set twice: once for the host to answer, and once for the body
 // when its length is known.
-func download(ctx context.Context, cfg Config, address, at string) error {
+func download(ctx context.Context, s Settings, address, at string) error {
+	if !Address(address) {
+		return fmt.Errorf("%s is not an https address", address)
+	}
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 	waited := time.AfterFunc(opening, stop)
 	defer waited.Stop()
-	cfg.say(path.Base(address), 0, 0)
+	s.say(path.Base(address), 0, 0)
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, address, nil)
 	if err != nil {
 		return err
 	}
-	answer, err := http.DefaultClient.Do(request)
+	answer, err := fetching.Do(request)
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", address, err)
 	}
@@ -120,7 +142,7 @@ func download(ctx context.Context, cfg Config, address, at string) error {
 	counted := &counting{
 		to:    file,
 		total: answer.ContentLength,
-		say:   func(done, total int64) { cfg.say(path.Base(address), done, total) },
+		say:   func(done, total int64) { s.say(path.Base(address), done, total) },
 	}
 	if _, err := io.Copy(counted, answer.Body); err != nil {
 		file.Close()
@@ -137,12 +159,6 @@ func download(ctx context.Context, cfg Config, address, at string) error {
 		return err
 	}
 	return os.Rename(part, at)
-}
-
-// address says whether what the settings named is somewhere to fetch from
-// rather than a file on this machine.
-func address(name string) bool {
-	return strings.HasPrefix(name, "https://") || strings.HasPrefix(name, "http://")
 }
 
 // counting is a writer that says how far it has got.

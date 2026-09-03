@@ -1,6 +1,6 @@
 //go:build darwin || freebsd || linux || netbsd
 
-package transcription
+package onnxruntime
 
 import "github.com/ebitengine/purego"
 

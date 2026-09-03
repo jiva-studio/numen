@@ -82,10 +82,9 @@ func scheduling(retention float64) (flashcards.FSRS, *fsrs.FSRS) {
 //
 // What the library is asked about is the card face as it stood away. A card
 // face answered no later than the answer it already carries stood no time away,
-// and that is the card face the library is asked about instead — the same
-// arithmetic on the days that actually went by. What the library makes of such a
-// card face asked about as it stands is written down in the test below, and is
-// the one thing here the scheduler does not do.
+// and that is the card face the library is asked about — the same arithmetic on
+// the days that actually went by, and what the scheduler makes of such a card
+// face is written down in the test below.
 func libraryAgrees(
 	t *testing.T, retention float64, by flashcards.FSRS, engine *fsrs.FSRS,
 	s flashcards.Schedule,
@@ -114,14 +113,11 @@ func standingAway(s flashcards.Schedule) flashcards.Schedule {
 }
 
 // A card face answered no later than the answer it already carries stood no
-// time away, and the scheduler reads it as standing no time away.
+// time away, however far ahead of the instant it is asked about that answer is.
 //
-// This is the one place the scheduler and the library part. The library counts
-// the days into a whole number carrying no sign, so a card face a day ahead of
-// its own last answer reads as one nobody could recall — and what that count
-// comes to is the machine's, so the same card face reads one way on one
-// architecture and the other way on another. The scheduler counts no days and
-// asks the forgetting curve at none of them.
+// The days a card face stood away do not go below none, so every such card face
+// is answered the same, and answered as the library answers one whose last
+// answer falls at that instant.
 func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
 	by, engine := scheduling(0)
 
@@ -134,44 +130,61 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 		t.Fatalf("the card face this is asked of stands in phase %d, want review", ahead.Phase)
 	}
 
-	for _, r := range libraryRatings {
-		// The days that went by are none, and the answer is the library's own on
-		// a card face that stood no time away.
-		stood := ahead
-		stood.Last = libraryNow
-		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
-		got := by.Next(ahead, libraryNow, flashcards.Rating(r))
-		sameSchedule(t, fmt.Sprintf("%s of a card face a day ahead of its last answer", r), got, want)
+	// The same card face as one that stood no time away.
+	stood := ahead
+	stood.Last = libraryNow
 
-		// What the library makes of that card face as it stands, which is what
-		// the scheduler does not do.
-		refused := asSchedule(engine.Next(asCard(ahead), libraryNow, r).Card)
-		if refused.Stability == got.Stability && refused.Due.Equal(got.Due) {
-			t.Errorf("%s leaves the card face at a stability of %v either way, and this is"+
-				" the case the scheduler and the library part on", r, got.Stability)
+	for _, r := range libraryRatings {
+		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
+		for _, over := range []time.Duration{
+			time.Second, time.Hour, 24 * time.Hour, 400 * 24 * time.Hour,
+		} {
+			face := ahead
+			face.Last = libraryNow.Add(over)
+			got := by.Next(face, libraryNow, flashcards.Rating(r))
+			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, over), got, want)
 		}
 	}
 }
 
 // libraryWalked is every card face a walk of seven answers reaches, each answer
-// given after a gap of its own.
+// given a gap of its own after the answer already on the card face.
+//
+// The walk opens far enough back that its last answer still falls before the
+// instant these card faces are asked about, so every gap the library is handed
+// runs forwards.
 func libraryWalked(engine *fsrs.FSRS) []flashcards.Schedule {
+	type step struct {
+		s  flashcards.Schedule
+		at time.Time
+	}
 	out := []flashcards.Schedule{{}}
-	frontier := []flashcards.Schedule{{}}
+	frontier := []step{{at: libraryNow.Add(-libraryWalkOpens)}}
 	for depth := range 7 {
-		var next []flashcards.Schedule
-		for _, s := range frontier {
+		var next []step
+		for _, f := range frontier {
 			for i, r := range libraryRatings {
-				at := libraryNow.Add(-libraryGaps[(depth+i)%len(libraryGaps)])
-				one := asSchedule(engine.Next(asCard(s), at, r).Card)
+				at := f.at.Add(libraryGaps[(depth+i)%len(libraryGaps)])
+				one := asSchedule(engine.Next(asCard(f.s), at, r).Card)
 				out = append(out, one)
-				next = append(next, one)
+				next = append(next, step{one, at})
 			}
 		}
 		frontier = next
 	}
 	return out
 }
+
+// libraryWalkOpens is how long before the instant a card face is asked about a
+// walk of seven answers opens. Every gap taken together is more than seven of
+// them, so no answer of the walk falls after that instant.
+var libraryWalkOpens = func() time.Duration {
+	var all time.Duration
+	for _, g := range libraryGaps {
+		all += g
+	}
+	return all
+}()
 
 // libraryMade is a grid of card faces standing where a walk does not reach: at
 // the stability a run of lapses wears a card down to and at the stability of a

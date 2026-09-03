@@ -432,7 +432,7 @@ func (d *Document) set(key string, rendered []byte) error {
 			return nil
 		}
 		front := append([]byte(nil), d.front...)
-		if len(front) > 0 && !bytes.HasSuffix(front, []byte("\n")) {
+		if len(front) > 0 && !endsWithBreak(front) {
 			front = append(front, d.eol...)
 		}
 		if err := d.commit(append(front, rendered...)); err != nil {
@@ -699,14 +699,52 @@ func flowing(node *yaml.Node) bool {
 	return false
 }
 
+// breakWidth is the bytes the line break standing at one offset takes, and zero
+// where no break stands there. YAML breaks a line on a carriage return, a line
+// feed, the two together, and the Unicode NEL, LS and PS.
+func breakWidth(block []byte, at int) int {
+	switch block[at] {
+	case '\r':
+		if at+1 < len(block) && block[at+1] == '\n' {
+			return 2
+		}
+		return 1
+	case '\n':
+		return 1
+	case 0xC2:
+		if at+1 < len(block) && block[at+1] == 0x85 {
+			return 2
+		}
+	case 0xE2:
+		if at+2 < len(block) && block[at+1] == 0x80 && (block[at+2] == 0xA8 || block[at+2] == 0xA9) {
+			return 3
+		}
+	}
+	return 0
+}
+
+// endsWithBreak reports whether a block's last line is finished.
+func endsWithBreak(block []byte) bool {
+	for width := 1; width <= 3 && width <= len(block); width++ {
+		if breakWidth(block, len(block)-width) == width {
+			return true
+		}
+	}
+	return false
+}
+
 // lineOffsets is where each line of a block begins, with the end of the block
 // as a final entry, so that line n runs from offsets[n-1] to offsets[n].
 func lineOffsets(block []byte) []int {
 	offsets := []int{0}
-	for i, b := range block {
-		if b == '\n' {
-			offsets = append(offsets, i+1)
+	for at := 0; at < len(block); {
+		width := breakWidth(block, at)
+		if width == 0 {
+			at++
+			continue
 		}
+		at += width
+		offsets = append(offsets, at)
 	}
 	if offsets[len(offsets)-1] != len(block) {
 		offsets = append(offsets, len(block))

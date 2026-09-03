@@ -3,6 +3,8 @@ package recognition
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/onnxruntime"
 )
 
 // Fetched says whether one recogniser's file is on this machine: the path
@@ -18,19 +20,19 @@ func Fetched(cfg Config, held RecogniserModel) bool {
 	if held.Name == "" {
 		return false
 	}
-	for _, at := range beside(cfg.Dir, filepath.Base(held.Name)) {
+	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(held.Name)) {
 		if stands(at) {
 			return true
 		}
 	}
-	if !address(held.Name) {
+	if !onnxruntime.Address(held.Name) {
 		return false
 	}
-	dir, err := kept(cfg)
+	dir, err := onnxruntime.Kept(cfg.settings())
 	if err != nil {
 		return false
 	}
-	return stands(filepath.Join(dir, named(held.Name)))
+	return stands(filepath.Join(dir, onnxruntime.Cached(held.Name)))
 }
 
 func stands(at string) bool {
