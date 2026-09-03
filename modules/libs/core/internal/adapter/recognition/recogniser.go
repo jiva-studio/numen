@@ -37,7 +37,7 @@ type Recogniser struct {
 	body   map[string]bool
 	head   map[string]int
 	margin int
-	named  port.Recognition
+	named  port.RecognitionModel
 }
 
 // Open loads the models and compiles them. It is expensive — the weights are
@@ -92,7 +92,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		body:   set(cfg.Regions.body()),
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
-		named: port.Recognition{
+		named: port.RecognitionModel{
 			Layout:     name(paths.layout),
 			Recogniser: name(paths.recognise),
 			DPI:        cfg.Page.dpi(),
@@ -101,7 +101,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	}, nil
 }
 
-func (r *Recogniser) Recognition() port.Recognition { return r.named }
+func (r *Recogniser) Recognition() port.RecognitionModel { return r.named }
 
 // Close lets go of the models this reading loaded. The runtime they ran on is
 // the process's and stays.

@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
-// Recognition names what read a page. It is recorded beside what it produced,
+// RecognitionModel names what read a page. It is recorded beside what it produced,
 // as an EmbeddingModel is recorded with a vector: a text kept beyond the run
 // that made it is claimed again by what made it, and anything left out of that
 // name is something that can change while the name does not.
-type Recognition struct {
+type RecognitionModel struct {
 	// Layout is the model that divides a page into its parts.
 	Layout string
 	// Recogniser is the model that reads a line.
@@ -26,14 +26,14 @@ type Recognition struct {
 }
 
 // String is the identity as one value, for saying which models are in use.
-func (r Recognition) String() string {
+func (r RecognitionModel) String() string {
 	return fmt.Sprintf("%s+%s@%ddpi", r.Layout, r.Recogniser, r.DPI)
 }
 
 // Recipe is everything about this recognition that decides what a text is, as
 // one value. It is kept beside an artifact so that a person can ask what read
 // the text they are looking at.
-func (r Recognition) Recipe() string {
+func (r RecognitionModel) Recipe() string {
 	return fmt.Sprintf("%s|%s|%s|%d", r.From, r.Layout, r.Recogniser, r.DPI)
 }
 
@@ -42,7 +42,7 @@ func (r Recognition) Recipe() string {
 // answered.
 type Recogniser interface {
 	// Recognition is what every page this recogniser reads was read by.
-	Recognition() Recognition
+	Recognition() RecognitionModel
 
 	// Recognise is one page: its parts, in the order the page is read, and what
 	// each of them says. A page that carries nothing readable is an empty page
