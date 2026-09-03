@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal, Refusal, Stopped } from '@numen/protocol'
+import { Goal as Goals, Refusal, Stopped } from '@numen/protocol'
 
 import {
   CLOSES_NOTHING,
@@ -15,7 +15,7 @@ import {
   through,
 } from './scheduling'
 import type { Asks, Budget, Closes, Preset, Settings, SettingsMessage } from './scheduling'
-import type { Goal as Held, Owing, PresetOwing } from './core'
+import type { Goal, Owing, PresetOwing } from './core'
 
 const settings = (said: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
@@ -30,14 +30,14 @@ const settings = (said: Partial<Settings> = {}): Settings => ({
 })
 
 /** The goal as the schema names it, for an answer the application writes. */
-const ASKED: Record<Held, Goal> = {
-  minutes: Goal.MINUTES_A_DAY,
-  retention: Goal.RETENTION,
-  date: Goal.BY_DATE,
+const carriedGoal: Record<Goal, Goals> = {
+  minutes: Goals.MINUTES_A_DAY,
+  retention: Goals.RETENTION,
+  date: Goals.BY_DATE,
 }
 
 /** The same settings, as the schema carries them. */
-const carried = (held: Settings): SettingsMessage => ({ ...held, goal: ASKED[held.goal] })
+const carried = (held: Settings): SettingsMessage => ({ ...held, goal: carriedGoal[held.goal] })
 
 const budget = (said: Partial<Budget> = {}): Budget => ({
   new: 10,

@@ -42,7 +42,7 @@ export const rated: Readonly<Record<Said, Rating>> = {
 export type Goal = 'minutes' | 'retention' | 'date'
 
 /** The goal in this window's own words. A preset naming none aims at minutes. */
-export const goaled: Readonly<Record<Goals, Goal>> = {
+export const goalOf: Readonly<Record<Goals, Goal>> = {
   [Goals.UNSPECIFIED]: 'minutes',
   [Goals.MINUTES_A_DAY]: 'minutes',
   [Goals.RETENTION]: 'retention',

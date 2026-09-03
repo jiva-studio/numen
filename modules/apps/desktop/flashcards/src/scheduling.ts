@@ -9,7 +9,7 @@ import { computed, ref } from 'vue'
 import { Stopped } from '@numen/protocol'
 import type { Goal as Goals, Refusal } from '@numen/protocol'
 
-import { deckName, goaled } from './core'
+import { deckName, goalOf } from './core'
 import type { DeckOwing, Goal } from './core'
 import { said } from './reading/core'
 import type { Closes, Owing } from './core'
@@ -196,7 +196,7 @@ const scheduled = async (presets: Asks, vaultId: string, deck: string): Promise<
       held: {
         path: answer.preset.path,
         name: answer.preset.title,
-        settings: { ...settings, goal: goaled[settings.goal] ?? 'minutes' },
+        settings: { ...settings, goal: goalOf[settings.goal] ?? 'minutes' },
         problems: answer.preset.problems,
         stopsOn: answer.preset.stopsOn,
       },
