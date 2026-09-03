@@ -350,9 +350,9 @@ func kept(t *testing.T, shelved *shelf, name string) []byte {
 	return raw
 }
 
-// A queue takes a run of pages away and answers about them when it is told it
-// is ready.
-type queue struct {
+// A proofreadQueue takes a run of pages away and answers about them when it is
+// told it is ready.
+type proofreadQueue struct {
 	*corrector
 	left  map[string][]int
 	ready map[string]bool
@@ -360,15 +360,15 @@ type queue struct {
 	gone bool
 }
 
-func leaving(says map[int]string) *queue {
-	return &queue{
+func leaving(says map[int]string) *proofreadQueue {
+	return &proofreadQueue{
 		corrector: &corrector{says: says},
 		left:      map[string][]int{},
 		ready:     map[string]bool{},
 	}
 }
 
-func (q *queue) Leave(_ context.Context, pages []proofread.Batch) (string, error) {
+func (q *proofreadQueue) Leave(_ context.Context, pages []proofread.Batch) (string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.At)
@@ -378,7 +378,7 @@ func (q *queue) Leave(_ context.Context, pages []proofread.Batch) (string, error
 	return name, nil
 }
 
-func (q *queue) Collect(_ context.Context, name string) (map[int]string, bool, error) {
+func (q *proofreadQueue) Collect(_ context.Context, name string) (map[int]string, bool, error) {
 	if q.gone {
 		return nil, false, errors.New("the proofreader has forgotten this batch")
 	}

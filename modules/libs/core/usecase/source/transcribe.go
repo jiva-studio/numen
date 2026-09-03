@@ -48,18 +48,18 @@ type Transcribe struct {
 	// what has been heard is searchable before the rest of it is.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(Transcribed)
+	OnProgress func(TranscribeResult)
 }
 
-// Transcribed reports what listening did.
-type Transcribed struct {
-	Path     string // the recording being listened to
+// TranscribeResult reports what transcribing did.
+type TranscribeResult struct {
+	Path     string // the recording being transcribed
 	Length   int    // how long it is, in milliseconds
 	Heard    int    // how much of it has been written down, this run and before it
 	Resumed  int    // how much a run before this one had already written down
 	Silent   bool   // it carries no speech, and that is what was written
 	Unopened bool   // nothing here can open it, and that is what was written
-	Busy     bool   // somebody else is listening to these bytes, and nothing was done
+	Busy     bool   // somebody else is transcribing these bytes, and nothing was done
 }
 
 // DefaultHeard is how many stretches of speech are heard before they are
@@ -67,8 +67,8 @@ type Transcribed struct {
 const DefaultHeard = 16
 
 // Execute listens to one recording.
-func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (Transcribed, error) {
-	res := Transcribed{Path: path}
+func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (TranscribeResult, error) {
+	res := TranscribeResult{Path: path}
 	if u.By == nil {
 		return res, errors.New("no transcriber: none is configured")
 	}
@@ -344,7 +344,7 @@ func (u Transcribe) batch() int {
 	return u.Batch
 }
 
-func (u Transcribe) progress(res Transcribed) {
+func (u Transcribe) progress(res TranscribeResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

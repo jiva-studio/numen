@@ -1,4 +1,4 @@
-package container
+package source
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/lit"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -22,13 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
-const document = "books/one.pdf"
-
-// standing is how far a run putting a reading right got.
-type standing struct {
-	By    string `json:"by"`
-	Pages int    `json:"pages"`
-}
+const scan = "books/one.pdf"
 
 // printed is a reading of one line to a page, as the artifact and the boxes its
 // prose was read from.
@@ -58,26 +51,25 @@ func halted(
 ) (*watched, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
 	root := t.TempDir()
-	at := filepath.Join(root, filepath.FromSlash(document))
+	at := filepath.Join(root, filepath.FromSlash(scan))
 	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	raw := []byte("not a document: " + document)
+	raw := []byte("not a document: " + scan)
 	if err := os.WriteFile(at, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	v := domain.Vault{ID: "v", Path: root}
 
 	w := recognising(t, nil)
-	w.Recognising.cfg.Proofreading = proofreading.Defaults()
-	w.Recognising.cfg.Proofreading.Profiles = map[string]proofreading.Profile{
-		"by hand": {Use: proofreading.UseAgent, Model: "a-model", BatchSize: 1},
+	w.Recognising.with.Proofreading = Correcting{
+		Named: true, Automatically: true, Batch: 1,
+		By:    func(string) (port.Proofreader, error) { return by, nil },
+		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 	}
-	w.Recognising.cfg.ScanProofreading = proofreading.Proofread{With: "by hand", Automatically: true}
-	w.Recognising.cfg.AgentProofreader = func(AgentProofreader) (port.Proofreader, error) { return by, nil }
 
 	hash := text.Fingerprint(raw)
-	store, err := w.Recognising.cfg.DerivedStores().Open(v)
+	store, err := derivedStores.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +109,7 @@ type books struct{ port.SourceQueries }
 func (books) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
 ) ([]port.Recognised, error) {
-	return []port.Recognised{{Path: document, From: "ocr", Hash: "x"}}, nil
+	return []port.Recognised{{Path: scan, From: "ocr", Hash: "x"}}, nil
 }
 
 // corrected is a line as a proofreader puts it right.
@@ -190,7 +182,7 @@ func TestAReadingWithABatchOutIsLeftToTheCollection(t *testing.T) {
 	lines := []string{"the words one", "the words two"}
 	by := &puts{says: map[int]string{1: numbered(1, lines[1])}}
 	w, v, _, _ := halted(t, by, 1, lines...)
-	w.Recognising.queue = func() (port.ProofreadQueue, error) { return leaves{}, nil }
+	w.Recognising.with.Proofreading.Queue = func(string) (port.ProofreadQueue, error) { return leaves{}, nil }
 
 	w.TakingUp(t.Context(), books{}, v)
 	w.Wait()
@@ -228,7 +220,7 @@ func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	}
 	defer release()
 	w.tasks.Set(task.Task{
-		ID: correcting(document), Doing: "Proofreading a reading", About: document,
+		ID: proofreadingID(scan), Doing: "Proofreading a reading", About: scan,
 		Done: 1, Total: 2,
 	})
 

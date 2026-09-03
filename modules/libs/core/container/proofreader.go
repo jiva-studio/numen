@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading/openai"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
 // AgentProofreader is what the platform is told to start: the command line, the
@@ -71,6 +72,22 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		Instruction: instruction,
 		InFlight:    profile.InFlight,
 	})
+}
+
+// correcting is what a reading of one kind is put right with: the profile the
+// settings name for it, opened when there is something to put right.
+func (c Config) correcting(said proofreading.Proofread) source.Correcting {
+	profile := c.Proofreading.Profiles[said.With]
+	return source.Correcting{
+		Named:           said.With != "",
+		Automatically:   said.Automatically,
+		By:              func(what string) (port.Proofreader, error) { return c.Proofreader(said.With, what) },
+		Queue:           func(what string) (port.ProofreadQueue, error) { return c.ProofreadQueue(said.With, what) },
+		Batch:           profile.BatchSize,
+		Overlap:         profile.Overlap,
+		InFlight:        profile.InFlight,
+		MaxEditDistance: c.Proofreading.Distance(),
+	}
 }
 
 // ProofreadQueue is where batches are left for the profile named to answer
