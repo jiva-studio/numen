@@ -93,8 +93,14 @@ type Recognising struct {
 
 	mu      sync.Mutex
 	running bool
+	// runs counts the runs that have taken the turn. A run gives the turn up
+	// only while it still holds it.
+	runs uint64
 	// asked is the documents a person named that have not been read yet.
 	asked asked
+	// idle is called where a run has found the line empty and given the turn
+	// up. A test names a document at that instant.
+	idle func()
 	// last is what the reading before this one was called. A reading that
 	// failed is left in the list under that name, and the next reading takes it
 	// out.
@@ -159,12 +165,14 @@ func (r *Recognising) Start(v domain.Vault, path string) port.Taking {
 		return port.Queued
 	}
 	r.running = true
+	r.runs++
+	mine := r.runs
 	r.mu.Unlock()
 
 	r.going.Add(1)
 	go func() {
 		defer r.going.Done()
-		defer r.stopped()
+		defer r.stopped(mine)
 		r.drain(r.context())
 	}()
 	return port.Began
@@ -180,14 +188,23 @@ func (r *Recognising) Waiting() int {
 // drain reads every document a person named, in the order they named them. A
 // document is out of the line before it is read, so one whose reading ends
 // where nothing expected it to holds nothing afterwards.
+//
+// The line is found empty and the turn given up under one hold of the lock, so
+// a document named at that instant is answered "began" and read by the run that
+// answers it.
 func (r *Recognising) drain(ctx context.Context) {
 	for {
 		r.mu.Lock()
 		one, waiting := r.asked.take()
-		r.mu.Unlock()
 		if !waiting || ctx.Err() != nil {
+			r.running = false
+			r.mu.Unlock()
+			if r.idle != nil {
+				r.idle()
+			}
 			return
 		}
+		r.mu.Unlock()
 		r.one(ctx, one.vault, one.path)
 	}
 }
@@ -219,10 +236,14 @@ func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
 	}
 }
 
-func (r *Recognising) stopped() {
+// stopped gives the turn up where this run still holds it, so a reading that
+// ended where nothing expected it to leaves the turn free.
+func (r *Recognising) stopped(run uint64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.running = false
+	if r.runs == run {
+		r.running = false
+	}
 }
 
 func (r *Recognising) context() context.Context {
@@ -378,8 +399,8 @@ func (r *Recognising) done(id string) {
 }
 
 // Collecting asks after the batches left with a proofreader, until the context
-// is done. A batch outlives the run that left it, so one left before the
-// application closed is collected when it opens.
+// is done, behind the caller. A batch outlives the run that left it, so one
+// left before the application closed is collected when it opens.
 //
 // Nothing here is done unless a person configured a proofreader with a queue.
 func (r *Recognising) Collecting(
@@ -393,7 +414,20 @@ func (r *Recognising) Collecting(
 		return
 	}
 	r.going.Add(1)
-	defer r.going.Done()
+	go func() {
+		defer r.going.Done()
+		r.collecting(ctx, known, queue, every, vaults)
+	}()
+}
+
+// collecting is the round of asking, and the wait between rounds.
+func (r *Recognising) collecting(
+	ctx context.Context,
+	known port.SourceQueries,
+	queue port.ProofreadQueue,
+	every time.Duration,
+	vaults []domain.Vault,
+) {
 	for {
 		for _, v := range vaults {
 			r.collect(ctx, known, queue, queue, v)

@@ -158,6 +158,9 @@ type Transcribing struct {
 
 	mu      sync.Mutex
 	running bool
+	// runs counts the runs that have taken the turn. A run gives the turn up
+	// only while it still holds it.
+	runs uint64
 	// asked is the recordings a person named that have not been heard yet.
 	asked asked
 	// answered is every recording this run has had an answer about, by vault
@@ -214,13 +217,15 @@ func (t *Transcribing) Start(v domain.Vault, path string) port.Taking {
 		return port.Queued
 	}
 	t.running = true
+	t.runs++
+	mine := t.runs
 	t.mu.Unlock()
 
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
-		defer t.release()
-		t.drain(t.context())
+		defer t.release(mine)
+		t.settle(t.context())
 	}()
 	return port.Began
 }
@@ -247,8 +252,25 @@ func (t *Transcribing) drain(ctx context.Context) {
 	}
 }
 
+// settle hears everything a person named and gives the turn up. The line is
+// found empty and the turn given up under one hold of the lock, so a recording
+// named at that instant is answered "began" and heard by the run that answers
+// it.
+func (t *Transcribing) settle(ctx context.Context) {
+	for {
+		t.drain(ctx)
+		t.mu.Lock()
+		if t.asked.waiting() == 0 || ctx.Err() != nil {
+			t.running = false
+			t.mu.Unlock()
+			return
+		}
+		t.mu.Unlock()
+	}
+}
+
 // Queue listens to every recording this vault holds no transcript for, one
-// after another, until the context ends.
+// after another, until the context ends, behind the caller.
 //
 // The queue is not stored: which recordings owe their text is a question the
 // index already answers, so a round interrupted by the application closing is
@@ -261,7 +283,19 @@ func (t *Transcribing) Queue(
 	v domain.Vault,
 ) {
 	t.going.Add(1)
-	defer t.going.Done()
+	go func() {
+		defer t.going.Done()
+		t.queueing(ctx, known, every, v)
+	}()
+}
+
+// queueing is the round, and the wait between rounds.
+func (t *Transcribing) queueing(
+	ctx context.Context,
+	known port.SourceQueries,
+	every time.Duration,
+	v domain.Vault,
+) {
 	for {
 		t.round(ctx, known, v)
 		select {
@@ -272,18 +306,26 @@ func (t *Transcribing) Queue(
 	}
 }
 
-// round hands over the recordings a person named and then the ones that owe
-// their text, one after another. It ends early where what stopped a recording
-// was the machine and not the file: the rest of the round would reach the same
-// nothing.
+// round holds this installation's one transcription for the whole of a hand
+// over, and gives it up with the line empty.
 func (t *Transcribing) round(ctx context.Context, known port.SourceQueries, v domain.Vault) {
-	if !t.claim() {
+	mine, free := t.claim()
+	if !free {
 		// The hand is listening to something. What this round did not hand over
 		// is handed over by the next one.
 		return
 	}
-	defer t.release()
+	defer t.release(mine)
 
+	t.owed(ctx, known, v)
+	t.settle(ctx)
+}
+
+// owed hands over the recordings a person named and then the ones this vault
+// owes the text of, one after another. It ends early where what stopped a
+// recording was the machine and not the file: the rest of the round would reach
+// the same nothing.
+func (t *Transcribing) owed(ctx context.Context, known port.SourceQueries, v domain.Vault) {
 	t.drain(ctx)
 	for _, path := range t.owing(ctx, known, v) {
 		if ctx.Err() != nil {
@@ -341,20 +383,25 @@ func (t *Transcribing) owing(ctx context.Context, known port.SourceQueries, v do
 
 // claim takes this installation's one transcription, and says whether it was
 // free.
-func (t *Transcribing) claim() bool {
+func (t *Transcribing) claim() (run uint64, free bool) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.running {
-		return false
+		return 0, false
 	}
 	t.running = true
-	return true
+	t.runs++
+	return t.runs, true
 }
 
-func (t *Transcribing) release() {
+// release gives the turn up where this run still holds it, so a round that
+// ended where nothing expected it to leaves the turn free.
+func (t *Transcribing) release(run uint64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.running = false
+	if t.runs == run {
+		t.running = false
+	}
 }
 
 // hear is one recording, listened to and written down.
