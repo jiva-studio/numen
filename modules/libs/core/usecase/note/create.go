@@ -51,7 +51,7 @@ type CreateResult struct {
 
 func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact, err := nameOf(title)
+	name, exact, err := domain.Filed(title)
 	if err != nil {
 		return CreateResult{}, err
 	}
@@ -78,7 +78,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	if err := bounded(path, content, MaxBytes); err != nil {
+	if err := Bounded(path, len(content), MaxBytes); err != nil {
 		return CreateResult{}, err
 	}
 

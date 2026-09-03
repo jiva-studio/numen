@@ -14,6 +14,22 @@ import (
 // Such a note is never written.
 var ErrUnreadable = errors.New("the frontmatter of this note cannot be read")
 
+// ErrBodyRefused is a body that opens with the frontmatter delimiter. It is a
+// whole note handed back as prose — a caller that read a file, changed it, and
+// returned all of it. Writing it would put a second frontmatter block inside
+// the first one's note, and the block that then reads as the note's own is the
+// wrong one.
+var ErrBodyRefused = errors.New(
+	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
+		"send what note_read gave you, or use the link tools to change the frontmatter")
+
+// OpensFrontmatter reports whether text begins a frontmatter block. A byte
+// order mark stands before the delimiter and is no part of the prose.
+func OpensFrontmatter(text string) bool {
+	opening := strings.TrimPrefix(text, "\ufeff")
+	return strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n")
+}
+
 // Document is a note held open so that one part of it can be changed and every
 // other part left as the bytes it arrived as.
 //

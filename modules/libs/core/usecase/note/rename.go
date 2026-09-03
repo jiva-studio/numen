@@ -32,7 +32,7 @@ var errFilenameNamesIt = errors.New("the filename says it")
 
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)
-	name, exact, err := nameOf(title)
+	name, exact, err := domain.Filed(title)
 	if err != nil {
 		return RenameResult{}, err
 	}

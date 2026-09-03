@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"slices"
-	"strings"
 	"time"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
@@ -52,9 +51,8 @@ type WriteResult struct {
 func (u Write) Deck(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (WriteResult, error) {
-	if len(body) > MaxBytes {
-		return WriteResult{}, fmt.Errorf(
-			"%w: %d bytes, and %d is the most a deck is", note.ErrTooLarge, len(body), MaxBytes)
+	if err := note.Bounded(path, len(body), MaxBytes); err != nil {
+		return WriteResult{}, err
 	}
 	whole, minted, err := u.whole(ctx, v, path, body)
 	if err != nil {
@@ -94,9 +92,8 @@ func (u Write) Stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	if len(body) > note.MaxBytes {
-		return domain.Fingerprint{}, fmt.Errorf(
-			"%w: %d bytes, and %d is the most a stencil is", note.ErrTooLarge, len(body), note.MaxBytes)
+	if err := note.Bounded(path, len(body), note.MaxBytes); err != nil {
+		return domain.Fingerprint{}, err
 	}
 	at, err := u.stencil(ctx, v, path, body, fields, fingerprint)
 	if err != nil {
@@ -111,11 +108,7 @@ func (u Write) stencil(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	// A body opening with the delimiter is read back as a frontmatter block, and
-	// then the prose it was is no longer the note's body. A byte order mark —
-	// "\xef\xbb\xbf" — stands before the delimiter and is no part of the prose.
-	if opening := strings.TrimPrefix(body, "\xef\xbb\xbf"); strings.HasPrefix(opening, "---\n") ||
-		strings.HasPrefix(opening, "---\r\n") {
+	if markdown.OpensFrontmatter(body) {
 		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 

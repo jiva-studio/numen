@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // The two frontmatter keys a deck and a stencil are made with: what the note
@@ -83,13 +82,9 @@ func (u Create) Preset(ctx context.Context, v domain.Vault, in New) (CreateNoteR
 
 func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, in New) (CreateNoteResult, error) {
 	title := strings.TrimSpace(in.Title)
-	name, exact := domain.Filename(title)
-	switch {
-	case name == "":
-		return CreateNoteResult{}, fmt.Errorf(
-			"%w: %q leaves nothing a file can be named after", note.ErrUnnameable, title)
-	case strings.ContainsAny(title, "\n\r"):
-		return CreateNoteResult{}, fmt.Errorf("%w: %q is more than one line", note.ErrUnnameable, title)
+	name, exact, err := domain.Filed(title)
+	if err != nil {
+		return CreateNoteResult{}, err
 	}
 	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 

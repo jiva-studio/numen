@@ -1,12 +1,6 @@
 package note
 
-import (
-	"errors"
-	"fmt"
-	"strings"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
-)
+import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
 // NamedBy is which of the two a note is shown by, and so which one naming it
 // writes.
@@ -48,19 +42,4 @@ func (ask Syncing) Kept() SyncTitleAndFilename {
 }
 
 // ErrUnnameable is a title no note can be given. Nothing is written.
-var ErrUnnameable = errors.New("a note cannot be given this title")
-
-// nameOf is the filename a title is filed under, and whether the filename is
-// the whole of the title.
-//
-// Two titles are refused whatever the note: one that leaves no filename, and
-// one carrying a line break. The title comes in trimmed.
-func nameOf(title string) (name string, exact bool, err error) {
-	switch name, exact = domain.Filename(title); {
-	case name == "":
-		return "", false, fmt.Errorf("%w: %q leaves nothing a file can be named after", ErrUnnameable, title)
-	case strings.ContainsAny(title, "\n\r"):
-		return "", false, fmt.Errorf("%w: %q is more than one line", ErrUnnameable, title)
-	}
-	return name, exact, nil
-}
+var ErrUnnameable = domain.ErrUnnameable

@@ -161,7 +161,7 @@ func (e editing) splice(
 	// Every change to a note's contents comes through here, so the size it is
 	// written within is asked once, of the file the change came to.
 	content := doc.Bytes()
-	if err := bounded(path, content, e.bound); err != nil {
+	if err := Bounded(path, len(content), e.bound); err != nil {
 		return domain.Fingerprint{}, err
 	}
 

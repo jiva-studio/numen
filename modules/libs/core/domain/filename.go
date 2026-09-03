@@ -1,9 +1,29 @@
 package domain
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 )
+
+// ErrUnnameable is a title no note can be given. Nothing is written.
+var ErrUnnameable = errors.New("a note cannot be given this title")
+
+// Filed is what a note of this title is filed under, and whether the title
+// survived the trip.
+//
+// Two titles are refused whatever the note: one that leaves no filename, and
+// one carrying a line break. The title comes in trimmed.
+func Filed(title string) (name string, exact bool, err error) {
+	switch name, exact = Filename(title); {
+	case name == "":
+		return "", false, fmt.Errorf("%w: %q leaves nothing a file can be named after", ErrUnnameable, title)
+	case strings.ContainsAny(title, "\n\r"):
+		return "", false, fmt.Errorf("%w: %q is more than one line", ErrUnnameable, title)
+	}
+	return name, exact, nil
+}
 
 // maxFilename is how long a name is allowed to get. Most filesystems stop at
 // 255 bytes for one component, and a title is not the place to find that out.

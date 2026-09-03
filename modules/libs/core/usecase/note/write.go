@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -17,24 +16,18 @@ import (
 // measures.
 var ErrTooLarge = errors.New("this is more text than a note is written with")
 
-// bounded holds a file to the most it may be: its frontmatter and its prose
+// Bounded holds a file to the most it may be: its frontmatter and its prose
 // together, as they are about to go to disk. Zero holds it to nothing.
-func bounded(path string, content []byte, bound int) error {
-	if bound <= 0 || len(content) <= bound {
+func Bounded(path string, size, bound int) error {
+	if bound <= 0 || size <= bound {
 		return nil
 	}
 	return fmt.Errorf("write %s: %w: %d bytes, and %d is the most",
-		path, ErrTooLarge, len(content), bound)
+		path, ErrTooLarge, size, bound)
 }
 
-// ErrBodyRefused is a body that opens with the frontmatter delimiter. It is a
-// whole note handed back as prose — a caller that read a file, changed it, and
-// returned all of it. Writing it would put a second frontmatter block inside
-// the first one's note, and the block that then reads as the note's own is the
-// wrong one.
-var ErrBodyRefused = errors.New(
-	"a body is the prose below the frontmatter, and this one begins with a frontmatter block; " +
-		"send what note_read gave you, or use the link tools to change the frontmatter")
+// ErrBodyRefused is a body that opens with the frontmatter delimiter.
+var ErrBodyRefused = markdown.ErrBodyRefused
 
 // ErrUnreadable is a note whose frontmatter is not YAML. A write discovers it
 // on the way past and leaves the file alone: repairing the block means guessing
@@ -80,8 +73,7 @@ type Write struct {
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	opening := strings.TrimPrefix(body, "\ufeff")
-	if strings.HasPrefix(opening, "---\n") || strings.HasPrefix(opening, "---\r\n") {
+	if markdown.OpensFrontmatter(body) {
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
 
@@ -153,10 +145,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, seen *LastRead,
 ) (domain.Fingerprint, error) {
-	// A body opening with the delimiter is read back as a frontmatter block, and
-	// then the prose it was is no longer the note's body.
-	if opening := strings.TrimPrefix(body, "\ufeff"); strings.HasPrefix(opening, "---\n") ||
-		strings.HasPrefix(opening, "---\r\n") {
+	if markdown.OpensFrontmatter(body) {
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
 	e := editing{
