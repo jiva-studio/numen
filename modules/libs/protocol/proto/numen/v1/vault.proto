@@ -154,6 +154,14 @@ service VaultService {
   // settings could not be read out of again is not written at all.
   rpc ChooseSettings(ChooseSettingsRequest) returns (ChooseSettingsResponse);
 
+  // SettingsFile is that file as its person wrote it, byte for byte.
+  rpc SettingsFile(SettingsFileRequest) returns (SettingsFileResponse);
+
+  // WriteSettingsFile replaces that file whole, with the bytes as they were
+  // typed. A file the settings cannot be read out of is refused and the file is
+  // left as it was; what is said names where in the file the trouble is.
+  rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
+
   // Remove takes a file or a folder out of the vault, into the trash it can be
   // brought back from. The links that pointed at it are left as they were
   // written: a link is not wrong because the note it names is gone.
@@ -1008,6 +1016,26 @@ message Model {
   // What choosing it writes. One model is several keys where the model decides
   // more than its own name.
   repeated Setting writes = 6;
+
+  // What this model's files are on this machine.
+  Presence presence = 7;
+}
+
+// Presence is what a model's files are on this machine. It says where files
+// stand and nothing else: it is no reason to prefer one model to another.
+enum Presence {
+  // Nothing was said about this model's files.
+  PRESENCE_UNSPECIFIED = 0;
+
+  // The files stand where a fetch puts them.
+  PRESENCE_PRESENT = 1;
+
+  // The files are not on this machine. They are fetched when the model is next
+  // needed.
+  PRESENCE_NOT_FETCHED = 2;
+
+  // The model is reached over the network, and nothing of it is fetched.
+  PRESENCE_NOTHING_TO_FETCH = 3;
 }
 
 // Setting is one setting of the file and what to put there.
@@ -1026,6 +1054,24 @@ message ChooseSettingsRequest {
 }
 
 message ChooseSettingsResponse {}
+
+message SettingsFileRequest {}
+
+message SettingsFileResponse {
+  // The file as its person wrote it. A file that is not there is an empty
+  // object, which is what an installation nobody has configured runs on.
+  string written = 1;
+
+  // The file itself, absolute on this machine.
+  string path = 2;
+}
+
+message WriteSettingsFileRequest {
+  // What is to stand in the file, written as it was typed.
+  string written = 1;
+}
+
+message WriteSettingsFileResponse {}
 
 message MoveRequest {
   // The file or folder to move, as the vault calls it.

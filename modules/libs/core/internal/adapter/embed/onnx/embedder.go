@@ -325,9 +325,9 @@ type paths struct {
 // Where a repository keeps the models it publishes, and which of them is run
 // when the configuration names none.
 const (
-	modelFolder = "onnx"
+	modelFolder = embed.ModelFolder
 	modelFile   = embed.ModelFile
-	tokenFile   = "tokenizer.json"
+	tokenFile   = embed.TokenizerFile
 )
 
 // locate finds the model's files: in a directory the configuration names, or in

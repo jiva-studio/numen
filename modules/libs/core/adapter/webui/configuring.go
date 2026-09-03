@@ -56,6 +56,37 @@ func (a *API) ChooseSettings(
 	return connect.NewResponse(&v1.ChooseSettingsResponse{}), nil
 }
 
+// SettingsFile is that file as its person wrote it, byte for byte.
+func (a *API) SettingsFile(
+	_ context.Context, _ *connect.Request[v1.SettingsFileRequest],
+) (*connect.Response[v1.SettingsFileResponse], error) {
+	if a.ConfiguredFile == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	written, path, err := a.ConfiguredFile()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.SettingsFileResponse{Written: written, Path: path}), nil
+}
+
+// WriteSettingsFile replaces that file whole. A file the settings could not be
+// read out of is the client's to correct, and the file is left as it was.
+func (a *API) WriteSettingsFile(
+	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
+) (*connect.Response[v1.WriteSettingsFileResponse], error) {
+	if a.WritesFile == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	if err := a.WritesFile(r.Msg.GetWritten()); err != nil {
+		if errors.Is(err, port.ErrNotASetting) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.WriteSettingsFileResponse{}), nil
+}
+
 // offered is the models as the wire carries them.
 func offered(held []port.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(held))
@@ -67,9 +98,17 @@ func offered(held []port.Model) []*v1.Model {
 			Shelf:     one.Shelf,
 			ByDefault: one.ByDefault,
 			Writes:    writes(one.Writes),
+			Presence:  standing[one.Presence],
 		})
 	}
 	return models
+}
+
+// standing is what a model's files are on this machine, as the wire carries it.
+var standing = map[port.Presence]v1.Presence{
+	port.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
+	port.Present:        v1.Presence_PRESENCE_PRESENT,
+	port.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
 }
 
 // writes is what choosing a model writes, as the wire carries it.

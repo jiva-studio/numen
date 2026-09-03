@@ -27,9 +27,14 @@ const (
 // does not carry one.
 const KeyEnvVar = "NUMEN_EMBEDDING_KEY"
 
-// ModelFile is the build inside a repository or a directory that is run when
-// the configuration names none.
-const ModelFile = "model.onnx"
+// The files a model is made of, and where a repository keeps them. ModelFile is
+// the build that is run when the configuration names none, and TokenizerFile
+// defines the tokeniser in full.
+const (
+	ModelFile     = "model.onnx"
+	TokenizerFile = "tokenizer.json"
+	ModelFolder   = "onnx"
+)
 
 // Config is the embedding section of this installation's settings: what a
 // vector is, where it is made, and how near the query a passage stands to be an

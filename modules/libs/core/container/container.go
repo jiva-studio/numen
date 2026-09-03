@@ -263,10 +263,49 @@ func (c Config) Configured() func() (string, string, error) {
 	}
 }
 
+// ConfiguredFile reads, as the window asks, the settings file as its person
+// wrote it, and the file it stands in.
+func (c Config) ConfiguredFile() func() (string, string, error) {
+	return func() (string, string, error) {
+		path, err := c.settingsFile()
+		if err != nil {
+			return "", "", err
+		}
+		raw, err := settings.Read(path)
+		if err != nil {
+			return "", path, err
+		}
+		return string(raw), path, nil
+	}
+}
+
+// WritesConfiguredFile replaces the settings file whole, with the bytes as they
+// were typed. A file the settings could not be read out of is refused and the
+// file is left as it was.
+func (c Config) WritesConfiguredFile() func(written string) error {
+	return func(written string) error {
+		path, err := c.settingsFile()
+		if err != nil {
+			return err
+		}
+		return settings.Write(path, []byte(written))
+	}
+}
+
 // Models reads, as the window asks, the models each setting that names one can
-// be set to, and the programs the agent setting can name.
+// be set to, and the programs the agent setting can name. The settings are read
+// with them, so every row is answered against what is in force; a file that
+// cannot be read is answered against the defaults.
 func (c Config) Models() func() []port.Model {
-	return func() []port.Model { return append(settings.Models(), settings.Agents()...) }
+	return func() []port.Model {
+		held := settings.Defaults()
+		if path, err := c.settingsFile(); err == nil {
+			if read, err := settings.At(path); err == nil {
+				held = read
+			}
+		}
+		return append(settings.Models(held), settings.Agents()...)
+	}
 }
 
 // TurnsSetting writes settings into the file. The file is patched as an object,

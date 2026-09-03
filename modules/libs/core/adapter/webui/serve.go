@@ -254,6 +254,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Configured = cfg.Configured()
 	api.Models = cfg.Models()
 	api.ChoosesSetting = cfg.TurnsSetting()
+	api.ConfiguredFile = cfg.ConfiguredFile()
+	api.WritesFile = cfg.WritesConfiguredFile()
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{
 		Writers: cfg.VaultWriters(),

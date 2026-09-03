@@ -66,6 +66,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | kept | Held past the run that made it, and claimed again by what it was made from. | stored |
 | recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |
 | station | Where a vector is made: on this machine, or by a service. | placement |
+| presence | What a model's files are on this machine: `present` where a fetch put them, `not fetched` for a model this machine runs whose files are not here, and `nothing to fetch` for a model reached over the network. It says where files stand and nothing else, and a model is never preferred for it. | installed, missing, available, downloaded |
 | arriving | A model that is not on this machine yet. What it is is known from the settings, so the index is fitted and vectors are claimed under its recipe while the weights come down. | |
 | landed | The model turning up, or the reason it never will. The first of the two counts, and one turning up after the wait is over is let go of. | |
 | disown | The model turning out not to be the one whose vectors are kept: it is let go of, and nothing is asked of it again. | |
@@ -89,6 +90,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | --- | --- | --- |
 | agent | A program acting on a vault on a person's behalf, through tools. | |
 | tool | One operation an agent can call. | a use case |
+| MCP | The protocol this vault's tools are served over, so another program can reach them — [The agent](agents.md), [Settings](settings.md). The setting is `agent.serve_tools`, and the address is `-mcp-addr`. | tools on a port |
 | client | A consumer of the schema that draws a vault. | an agent |
 | conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. | thread |
 | session | What the agent's own program calls a conversation it is keeping, named by that program. It never leaves the adapter that started it. | |

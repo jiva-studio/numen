@@ -180,6 +180,12 @@ type API struct {
 	Models         func() []port.Model
 	ChoosesSetting func(written []port.Setting) error
 
+	// ConfiguredFile reads that file as its person wrote it, and WritesFile
+	// replaces it whole. A build without them answers that it configures
+	// nothing.
+	ConfiguredFile func() (string, string, error)
+	WritesFile     func(written string) error
+
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
 	// searched, and the names a vault holds are answered all the same.

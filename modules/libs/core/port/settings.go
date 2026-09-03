@@ -36,4 +36,22 @@ type Model struct {
 	// Writes is what choosing it writes. A model that decides more than its own
 	// name writes more than one setting.
 	Writes []Setting
+
+	// Presence is what this model's files are on this machine.
+	Presence Presence
 }
+
+// Presence is what a model's files are on this machine. It says where files
+// stand and nothing else.
+type Presence int
+
+const (
+	// NothingToFetch is a model reached over the network. Nothing of it is
+	// fetched.
+	NothingToFetch Presence = iota
+	// Present is a model whose files stand where a fetch puts them.
+	Present
+	// NotFetched is a model whose files are not on this machine. They are
+	// fetched when the model is next needed.
+	NotFetched
+)
