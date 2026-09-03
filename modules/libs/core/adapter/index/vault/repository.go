@@ -23,8 +23,17 @@ type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
+// Save writes what the vault is called and where it is, which the list is the
+// authority on.
 func (r *Repository) Save(ctx context.Context, v domain.Vault) error {
 	_, err := r.db.ExecContext(ctx, stmt.Get("save"), v.ID, v.Name, v.Path)
+	return err
+}
+
+// Register gives the vault a row for other rows to point at. A vault the index
+// already knows keeps the name and the path it holds.
+func (r *Repository) Register(ctx context.Context, v domain.Vault) error {
+	_, err := r.db.ExecContext(ctx, stmt.Get("register"), v.ID, v.Name, v.Path)
 	return err
 }
 

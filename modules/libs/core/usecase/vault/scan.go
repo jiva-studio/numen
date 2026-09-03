@@ -89,7 +89,10 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	if err != nil {
 		return res, err
 	}
-	if err := u.Vaults.Save(ctx, v); err != nil {
+	// The rows the walk writes point at the vault's own row. What the vault is
+	// called and where it is stay as the list has them, and the walk carries
+	// whatever copy of those it was handed.
+	if err := u.Vaults.Register(ctx, v); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
