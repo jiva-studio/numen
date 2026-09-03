@@ -64,7 +64,7 @@ func (s vaults) Choose(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPicker)
 	}
 	path, chose, err := s.api.Choosing.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
-	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoPicker) {
+	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
