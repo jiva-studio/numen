@@ -7,7 +7,6 @@
  */
 import { computed } from 'vue'
 import type { Listening } from './listening'
-import { canRun } from '../commanding'
 import type { Task } from '../core'
 import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
@@ -30,6 +29,11 @@ export interface Hearing {
    * step asking for an answer names.
    */
   runs(id: string, path: string, called: string): void
+  /**
+   * Whether this build can do a run at all, which decides whether the tab
+   * offers it. A window that says nothing offers every run.
+   */
+  canRun?(run: string): boolean
 }
 
 /** What one recording tab holds. */
@@ -42,6 +46,9 @@ export type Held = ReturnType<typeof transcribed>
  * at all.
  */
 export function transcribed(listen: Listening, asks: Hearing) {
+  /** Whether this build can do a run. A window that says nothing offers every run. */
+  const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
+
   const heard = computed(() => listen.times.value.length > 0)
 
   const transcribable = computed(() => !heard.value && !listen.working.value && canRun(TRANSCRIBE))
@@ -85,6 +92,8 @@ export function recordingKind(
       held.close()
       return true
     },
+    at: (held) => ({ file: held.path, source: 'recording' }),
+    attends: (held) => ({ path: held.path, at: held.heard.value, of: held.length.value }),
   }
 
   // The player of recordings. The person is taken to the moment the first of

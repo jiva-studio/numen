@@ -29,9 +29,9 @@ const model = defineModel<boolean>({ default: false })
     :class="
       cn(
         'inline-flex h-5 w-9 shrink-0 items-center rounded-pill p-px',
-        'cursor-pointer transition-colors duration-100 ease-numen',
+        'cursor-pointer transition-colors duration-hover ease-numen',
         'bg-hushed data-[state=checked]:bg-accent',
-        'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'outline-none ring-numen',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
@@ -41,7 +41,7 @@ const model = defineModel<boolean>({ default: false })
       :class="
         cn(
           'block size-4 rounded-pill bg-raised',
-          'transition-transform duration-100 ease-numen',
+          'transition-transform duration-hover ease-numen',
           'data-[state=checked]:translate-x-4',
         )
       "

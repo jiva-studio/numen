@@ -1,13 +1,11 @@
 /**
- * Putting a document in over the one that is there.
+ * Putting a document in over the one that is there. The change covers the
+ * stretch that differs and nothing else, and is annotated out of the undo
+ * history.
  *
- * The change covers the stretch that differs and nothing else, so everything
- * around it keeps its position and the view keeps its scroll offset.
- *
- * A position is held as a line and a column, and comes back at that line and
- * column. Where the line is shorter than the column, the position is the end
- * of the line; where the text has fewer lines, it is the last of them. The
- * change is annotated out of the undo history.
+ * A position is held as a line and a column: where the line is shorter than the
+ * column it is the end of the line, and where the text has fewer lines it is
+ * the last of them.
  */
 import {
   EditorSelection,

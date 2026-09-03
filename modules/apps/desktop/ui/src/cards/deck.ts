@@ -6,7 +6,7 @@
  * What travels between the store and the vault is the cards of the deck, and
  * the string the store is dirty against is those cards written out.
  */
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { Banded, Cut, Drawn, PlexShowing } from '@numen/ui'
 import type { Cards, Offer, Problem, Refused, Went } from '../core'
 import type { Store } from '../doing'
@@ -90,7 +90,7 @@ export interface Held {
   /** The identity this deck opened under, which its tab keeps wherever it goes. */
   readonly id: string
   /** The deck as the window draws it: the state it is in, and what it stands at. */
-  shown(): Editing
+  readonly shown: ComputedRef<Editing>
   /** The cards, as the window holds them. */
   deck(): Deck
   /** The same, as the grid draws them, each under the stencil that cuts it. */
@@ -102,7 +102,7 @@ export interface Held {
   /** What is wrong with the file, against the card it stands on. */
   marks(): Marks
   /** What the whole file was refused for, in words a person reads. */
-  saying(): string
+  readonly saying: ComputedRef<string>
   /** The preset this deck is scheduled by. */
   scheduled(): Scheduled
   /** The presets this deck may be put on, the defaults first. */
@@ -426,13 +426,13 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
 
   const held = (id: string): Held => ({
     id,
-    shown: () => store.shown(id),
+    shown: computed(() => store.shown(id)),
     deck: () => deckAt(id),
     drawn: () => drawnAt(id),
     bands: () => bandsAt(id),
     cuts: () => cuts.value,
     marks: () => marksAt(id),
-    saying: () => sayingOf(id),
+    saying: computed(() => sayingOf(id)),
     scheduled: () => scheduledAt(id),
     choices: () => choices.value,
     schedules: (preset) => void schedules(id, preset),
@@ -537,7 +537,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
       return held(id)
     },
     called: (one) => called(store.where(one.id)),
-    marked: (one) => markOf(store.shown(one.id).state),
+    marked: (one) => markOf(one.shown.value.state),
     draws: DeckTab,
     identity: (id) => id,
     // A tab back on screen is a tab a person is about to draw cards in, so a

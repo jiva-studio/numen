@@ -2,13 +2,11 @@
  * The keystrokes that reach a command away from the palette.
  *
  * A chord stands here once: the window reads it to know what a keystroke asks
- * for, and the commands read it to write the key on the row that names one, so
- * a key a person sees drawn is a key that works. Control and Command are the
- * same key, and a chord holding Alt is nobody's.
+ * for, and the commands read it to write the key on the row that names one.
+ * Control and Command are the same key, and a chord holding Alt is nobody's.
  *
- * The two the window keeps for itself are not here. `k` puts up the search and
- * `p` the commands; neither is a command being carried out, and each is that
- * letter with Shift left alone.
+ * `k` puts up the search and `p` the commands; neither is here, and each is
+ * that letter with Shift left alone.
  */
 import { keyChord, type PaletteKeys } from '@numen/ui'
 
@@ -25,10 +23,10 @@ export interface Chord {
 /**
  * Every keystroke that carries a command out.
  *
- * A command earns one by being reached often and by leaving nothing behind that
- * a person would have to undo. Nothing that removes a note, a vault or a file is
- * ever one keystroke away. A letter means one word wherever it is written, and
- * Shift is held where the letter on its own is spoken for.
+ * A command earns one by being reached often and by leaving nothing behind to
+ * undo. Nothing that removes a note, a vault or a file is ever one keystroke
+ * away. A letter means one word wherever it is written, and Shift is held where
+ * the letter on its own is spoken for.
  */
 export const CHORDS: readonly Chord[] = [
   { command: 'note', letter: 'n', shift: false },

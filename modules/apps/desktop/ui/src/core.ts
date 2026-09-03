@@ -87,8 +87,8 @@ export interface Movement {
 /**
  * One piece of work the application is doing behind the window.
  *
- * Every kind of work is one of these, which is what keeps the window from
- * growing a branch per kind: it draws the list it is given.
+ * Every kind of work is one of these, and the window draws the list it is
+ * given.
  */
 export interface Task {
   /** What the work is called, so that the same work reported again replaces it. */

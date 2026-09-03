@@ -5,6 +5,7 @@
  * for the whole window, and `showing.ts` tells every plex when to ask again.
  */
 import { ref } from 'vue'
+import { asking } from '../asking'
 import { wentTo, type Neighbourhood, type Went } from '../core'
 import { alike } from './picture'
 
@@ -27,21 +28,15 @@ export function standing(core: Neighbours) {
   /** What this plex could not show, in words the window puts up for it. */
   const trouble = ref('')
 
-  /**
-   * Which question is the current one. Two answers can be in flight — a click
-   * while a change is being followed — and without this the slower one wins
-   * whatever was asked last.
-   */
-  let asked = 0
-  /** Whether the tab this plex stands in is still open. */
-  let open = true
+  /** Two answers can be in flight — a click while a change is being followed. */
+  const asks = asking()
 
   async function go(path: string) {
-    if (!open) return
-    const mine = ++asked
+    if (!asks.open()) return
+    const mine = asks.ask()
     try {
       const answer = await core.neighbourhood(path)
-      if (!open || mine !== asked) return
+      if (!mine.current) return
       if (!answer.focus?.path) {
         // The vault no longer holds it. What is on screen stays, and following
         // goes on, so putting the file back brings it straight back.
@@ -54,7 +49,7 @@ export function standing(core: Neighbours) {
       // a vault that changed elsewhere leaves this plex standing.
       if (!alike(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (error) {
-      if (!open || mine !== asked) return
+      if (!mine.current) return
       trouble.value = String(error)
     }
   }
@@ -67,12 +62,12 @@ export function standing(core: Neighbours) {
     const to = wentTo(renamed, here.value)
     if (!to) return
     here.value = to
-    asked++
+    asks.drop()
   }
 
   /** The tab has closed. An answer still on its way is let go of. */
   const close = () => {
-    open = false
+    asks.close()
   }
 
   return { neighbourhood, here, trouble, go, follows, close }

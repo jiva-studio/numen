@@ -1,64 +1,59 @@
 <script setup lang="ts">
 /**
- * What a person turns and zooms a document with, standing over the page.
+ * What a person turns and zooms a document with.
  *
- * It floats: a row of its own would take a strip of the room off every document
- * for the whole time one is open, and what the room is for is the page.
+ * It floats over the page, and all the room there is belongs to the page. The
+ * page in front and how close it is drawn are the reader's, held here.
  */
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
-import { CLOSEST, FURTHEST, NEARER } from './strip'
+import { CLOSEST, drawn, FURTHEST, NEARER, READER_WORDS, type ReaderWords } from './strip'
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     /** How many pages the document has. */
     pages?: number
-    /** Which page is in front, counted from the first. */
-    at?: number
-    /** How close the page is drawn. What it may be is the reader's rule. */
-    zoom?: number
-    /** What turning back a page is called, and turning on. */
-    back?: string
-    next?: string
-    /** What the field the page is typed in is called. */
-    page?: string
-    /** What drawing the page larger is called, and smaller. */
-    closer?: string
-    further?: string
+    /** The words they are drawn with. */
+    words?: ReaderWords
   }>(),
   {
     pages: 0,
-    at: 0,
-    zoom: 1,
-    back: 'Previous page',
-    next: 'Next page',
-    page: 'Page',
-    closer: 'Closer',
-    further: 'Further',
+    words: () => READER_WORDS,
   },
 )
 
-const emit = defineEmits<{
-  /** The page to turn to, counted from the first. */
-  (event: 'go', page: number): void
-  /** Draw the page this many times closer. */
-  (event: 'draw', how: number): void
-}>()
+/** Which page is in front, counted from the first. */
+const at = defineModel<number>('at', { default: 0 })
 
-/** What is typed in the field, which follows the page in front. */
-const typed = ref(String(props.at + 1))
-watch(
-  () => props.at,
-  (page) => {
-    typed.value = String(page + 1)
+/** How close the page is drawn, which is never past either end. */
+const zoom = defineModel<number>('zoom', { default: 1, set: drawn })
+
+/**
+ * What is being typed over the page in front, and nothing while nothing is. A
+ * number field hands over a number for what parses as one and the text itself
+ * for what does not.
+ */
+const typing = ref<string | number | null>(null)
+
+/** What is in the field: the page in front, or what is being typed over it. */
+const typed = computed({
+  get: () => typing.value ?? String(at.value + 1),
+  set: (text: string | number) => {
+    typing.value = text
   },
-)
+})
 
-/** A page asked for by its place in the document. The field shows the page in front. */
+/**
+ * A page asked for by its place in the document. The field shows the page in
+ * front, and an empty field asks for nothing.
+ */
 const turn = () => {
-  const page = Number(typed.value)
-  if (Number.isFinite(page)) emit('go', Math.round(page) - 1)
-  typed.value = String(props.at + 1)
+  const asked = typing.value
+  typing.value = null
+  if (asked === null || (typeof asked === 'string' && !asked.trim())) return
+
+  const page = Number(asked)
+  if (Number.isFinite(page)) at.value = Math.round(page) - 1
 }
 </script>
 
@@ -67,15 +62,15 @@ const turn = () => {
     <!-- Standing over the page, so it carries a panel's own ground and lets
          what is behind it through. -->
     <div
-      class="reader__pill pointer-events-auto flex items-center gap-1 rounded-full border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
+      class="reader__pill pointer-events-auto flex items-center gap-1 rounded-pill border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
     >
       <Button
         variant="ghost"
         size="icon-small"
-        class="rounded-full"
-        :aria-label="back"
+        class="rounded-pill"
+        :aria-label="words.back"
         :disabled="at <= 0"
-        @click="emit('go', at - 1)"
+        @click="at -= 1"
       >
         <svg
           viewBox="0 0 16 16"
@@ -92,10 +87,10 @@ const turn = () => {
       <Button
         variant="ghost"
         size="icon-small"
-        class="rounded-full"
-        :aria-label="next"
+        class="rounded-pill"
+        :aria-label="words.next"
         :disabled="at >= pages - 1"
-        @click="emit('go', at + 1)"
+        @click="at += 1"
       >
         <svg
           viewBox="0 0 16 16"
@@ -112,11 +107,11 @@ const turn = () => {
 
       <input
         v-model="typed"
-        class="reader__at w-10 rounded-node border border-field-rule bg-field px-1 text-center text-small text-ink outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+        class="reader__at w-10 rounded-node border border-field-rule bg-field px-1 text-center text-small text-ink outline-none ring-numen"
         type="number"
         min="1"
         :max="pages"
-        :aria-label="page"
+        :aria-label="words.page"
         @change="turn"
         @keydown.enter="turn"
       />
@@ -125,10 +120,10 @@ const turn = () => {
       <Button
         variant="ghost"
         size="icon-small"
-        class="rounded-full"
-        :aria-label="further"
+        class="rounded-pill"
+        :aria-label="words.further"
         :disabled="zoom <= FURTHEST"
-        @click="emit('draw', 1 / NEARER)"
+        @click="zoom /= NEARER"
       >
         <svg
           viewBox="0 0 16 16"
@@ -144,10 +139,10 @@ const turn = () => {
       <Button
         variant="ghost"
         size="icon-small"
-        class="rounded-full"
-        :aria-label="closer"
+        class="rounded-pill"
+        :aria-label="words.closer"
         :disabled="zoom >= CLOSEST"
-        @click="emit('draw', NEARER)"
+        @click="zoom *= NEARER"
       >
         <svg
           viewBox="0 0 16 16"

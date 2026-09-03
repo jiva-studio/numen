@@ -1,9 +1,7 @@
 /**
- * A finger left still on a box.
- *
- * A touch has no hover, so the handle a hand finds by moving over a node is
- * never under it. Resting on the node is what asks for the handle instead, and
- * the finger is already down, so the gesture carries on from where it rested.
+ * A finger left still on a box. A touch has no hover, so resting on the node is
+ * what asks for the handle, and the finger is already down, so the gesture
+ * carries on from where it rested.
  *
  * A mouse is left alone: it has the handle.
  */

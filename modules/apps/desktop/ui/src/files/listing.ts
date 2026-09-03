@@ -4,9 +4,8 @@
  *
  * A folder is read again when it is opened, when something this tab did
  * finished, when a change names a path inside it, and when the window comes
- * back to the front. A file the vault holds no source for — a picture dropped
- * in by another program — is not reported by the watcher, and appears at the
- * next of those.
+ * back to the front. A file the vault holds no source for is not reported by
+ * the watcher, and appears at the next of those.
  */
 import { computed, ref, shallowRef } from 'vue'
 import { wentTo, type Entry, type Went } from '../core'

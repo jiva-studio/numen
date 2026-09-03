@@ -41,26 +41,21 @@ const pressed = (press: MouseEvent) => {
 </template>
 
 <style scoped>
-/* A card is read at the size an answer is read at. */
 .marks {
   font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
 }
 
-</style>
-
-<!-- The marks below are made from a person's text, so they carry the scope of
-     nothing. They are named by the one class this component draws. -->
-<style>
-/* A table wider than the measure scrolls inside itself. */
-.marks table {
+/* A table wider than the measure scrolls inside itself, carrying its own
+   scrollbar. */
+.marks :deep(table) {
   display: block;
   overflow-x: auto;
 }
 
 /* A slot naming no field is read where it stands. */
-.marks mark {
+.marks :deep(mark) {
   border-radius: var(--numen-radius);
   padding-inline: 0.25em;
   background: var(--numen-alarm-bg);

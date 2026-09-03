@@ -131,6 +131,10 @@ export interface FaceBlock {
   readonly at: number
   /** How many faces stand with it. */
   readonly of: number
+  /** The fields a card is asked for, which are what may be written into a half. */
+  readonly fields: readonly string[]
+  /** The names the other faces carry, which this one's is measured against. */
+  readonly taken: readonly string[]
   /** What is written in the two boxes. */
   readonly front: string
   readonly back: string
@@ -151,12 +155,15 @@ export function faceBlocks(
   fields: readonly string[],
   sample: readonly Filled[],
 ): readonly FaceBlock[] {
+  const names = faces.map((each) => each.name)
   return faces.map((face, index) => {
     return {
       id: face.id,
       name: face.name,
       at: index + 1,
       of: faces.length,
+      fields,
+      taken: names.filter((_, at) => at !== index),
       front: face.front,
       back: face.back,
       frontShown: previewed(face.front, sample, fields),

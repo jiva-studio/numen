@@ -6,7 +6,6 @@
  * what the whole range of the goal comes to.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
 import type {
   Stopped,
@@ -17,6 +16,7 @@ import type {
 } from '@numen/protocol'
 import { fingerprint, refusalIn, stamp } from '../answers'
 import type { Refused } from '../core'
+import { transport } from '../transport'
 
 /** Which value the one control steers. */
 export type Goal = 'minutes' | 'retention' | 'date'
@@ -312,10 +312,7 @@ export interface Presets {
   curve(path: string, settings: Settings): Promise<Curve>
 }
 
-const asking = createClient(
-  PresetsService,
-  createConnectTransport({ baseUrl: window.location.origin }),
-)
+const asking = createClient(PresetsService, transport)
 
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {

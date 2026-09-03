@@ -5,23 +5,28 @@
  * The strip and the pane carry their identities on the element, so that a
  * drag can find out what the pointer is over by asking the document.
  */
-import { onMounted, useTemplateRef, watch } from 'vue'
+import { inject, onMounted, watch } from 'vue'
 import WorkspaceTab from './WorkspaceTab.vue'
 import { stepTo } from './keys'
+import { WORKSPACING } from './context'
 import type { Pane, TabId } from '../model'
 
 const props = withDefaults(
   defineProps<{
     pane: Pane
-    /** What each tab is called. A tab with no title is shown by its identity. */
-    titles: Readonly<Record<TabId, string>>
-    /** What a tab is carrying, for the tabs that are carrying anything. */
-    marks?: Readonly<Record<TabId, string>>
     /** The pane a tab would open into. */
     focused?: boolean
   }>(),
-  { marks: () => ({}), focused: false },
+  { focused: false },
 )
+
+const workspace = inject(WORKSPACING)
+
+/** What a tab is called. A tab with no title is shown by its identity. */
+const titleOf = (tab: TabId): string => workspace?.value.tabOf(tab)?.title ?? tab
+
+/** What a tab is carrying, and nothing for a tab carrying nothing. */
+const markOf = (tab: TabId): string | undefined => workspace?.value.tabOf(tab)?.mark
 
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
@@ -69,29 +74,30 @@ watch(
 const tabName = (at: number): string => `${props.pane.id}-tab-${at}`
 const panelName = (at: number): string => `${props.pane.id}-panel-${at}`
 
-const strip = useTemplateRef<HTMLElement>('strip')
+/** The tabs as they are drawn, each under the tab it stands for. */
+const drawnTabs = new Map<TabId, { focus: () => void }>()
 
-function reach(at: number): void {
-  strip.value?.querySelectorAll<HTMLElement>('[data-workspace-tab]')[at]?.focus()
+const holdTab = (tab: TabId, drawn: unknown): void => {
+  if (drawn) drawnTabs.set(tab, drawn as { focus: () => void })
+  else drawnTabs.delete(tab)
+}
+
+function reach(tab: TabId): void {
+  drawnTabs.get(tab)?.focus()
 }
 
 /**
  * The strip is walked with the arrows, and what is reached is shown. The tabs
  * are what it walks; the way to a new tab is a stop of its own.
  */
-function along(event: KeyboardEvent): void {
-  const held = (event.target as Element | null)
-    ?.closest('[data-workspace-tab]')
-    ?.getAttribute('data-workspace-tab')
-  if (!held) return
-
-  const next = stepTo(event.key, props.pane.tabs.indexOf(held), props.pane.tabs.length)
+function along(at: number, event: KeyboardEvent): void {
+  const next = stepTo(event.key, at, props.pane.tabs.length)
   const tab = next === null ? undefined : props.pane.tabs[next]
   if (next === null || tab === undefined) return
 
   event.preventDefault()
   emit('choose', tab)
-  reach(next)
+  reach(tab)
 }
 
 /**
@@ -101,11 +107,11 @@ function along(event: KeyboardEvent): void {
 function out(event: KeyboardEvent): void {
   if (event.defaultPrevented) return
 
-  const at = props.pane.active === null ? -1 : props.pane.tabs.indexOf(props.pane.active)
-  if (at < 0) return
+  const showing = props.pane.active
+  if (showing === null) return
 
   event.preventDefault()
-  reach(at)
+  reach(showing)
 }
 </script>
 
@@ -119,25 +125,25 @@ function out(event: KeyboardEvent): void {
     <!-- The strip is the list of tabs. A pane holding no tabs has none. -->
     <div
       v-if="pane.tabs.length > 0"
-      ref="strip"
       class="pane__strip flex min-w-0 shrink-0 items-stretch overflow-hidden"
       role="tablist"
       :data-workspace-strip="pane.id"
-      @keydown="along"
     >
       <WorkspaceTab
         v-for="(tab, at) in pane.tabs"
         :id="tabName(at)"
+        :ref="(drawn) => holdTab(tab, drawn)"
         :key="tab"
         :aria-controls="panelName(at)"
         :tab="tab"
-        :title="titles[tab] ?? tab"
-        :mark="marks[tab]"
+        :title="titleOf(tab)"
+        :mark="markOf(tab)"
         :showing="tab === pane.active"
         :focused="tab === pane.active && focused"
         @lift="emit('lift', tab, $event)"
         @close="emit('close', tab)"
         @click="emit('choose', tab)"
+        @keydown="(event: KeyboardEvent) => along(at, event)"
       >
         <template v-if="$slots.icon" #icon>
           <slot name="icon" :id="tab" />
@@ -187,11 +193,9 @@ function out(event: KeyboardEvent): void {
   overflow: hidden;
 }
 
-/* Every tab of the pane is drawn; the ones not shown are held out of sight.
- *
- * What a tab holds is alive for as long as the tab is: a caret, a scroll offset,
- * an undo history. Drawing only the active one hands those back to the person
- * emptied every time they look at something else. */
+/* Every tab of the pane is drawn; the ones not shown are held out of sight. What
+   a tab holds is alive for as long as the tab is: a caret, a scroll offset, an
+   undo history. */
 .pane__held {
   display: none;
   block-size: 100%;
@@ -209,10 +213,13 @@ function out(event: KeyboardEvent): void {
 }
 
 .pane__nothing {
+  /* How plainly what is said in place of a tab is drawn. */
+  --fade: 0.6;
+
   display: grid;
   place-items: center;
   block-size: 100%;
   margin: 0;
-  opacity: 0.6;
+  opacity: var(--fade);
 }
 </style>

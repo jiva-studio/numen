@@ -221,13 +221,15 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const palette = () => document.body.querySelector<HTMLElement>('.palette')
+const palette = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
 const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
-const options = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__item'))
-const field = () => document.body.querySelector<HTMLInputElement>('.palette__field')
-const sheet = () => document.body.querySelector<HTMLElement>('.palette__actions')
-const hunt = () => document.body.querySelector<HTMLInputElement>('.palette__hunt')
-const deeds = () => Array.from(document.body.querySelectorAll<HTMLElement>('.palette__deed'))
+const options = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
+const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
+const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const deeds = () =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
 /** What a line says, with the runs it is written in run together. */
 const said = (of: Element | null | undefined): string =>
@@ -456,9 +458,9 @@ export const Nothing: Story = {
   },
   play: async () => {
     await waitFor(() =>
-      expect(document.body.querySelectorAll('.palette__title')).toHaveLength(0),
+      expect(document.body.querySelectorAll('[data-palette="title"]')).toHaveLength(0),
     )
-    await expect(said(document.body.querySelector('.palette__nothing'))).toBe(
+    await expect(said(document.body.querySelector('[data-palette="nothing"]'))).toBe(
       'Type to look for something',
     )
   },
@@ -479,11 +481,11 @@ export const CouldNotBeAsked: Story = {
   },
   play: async () => {
     const drawn = () =>
-      Array.from(document.body.querySelectorAll('.palette__title')).map((band) =>
+      Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
         band.textContent?.trim(),
       )
     await waitFor(() => expect(drawn()).toEqual(['Meaning']))
-    await expect(said(document.body.querySelector('.palette__silence'))).toBe('No model is set')
+    await expect(said(document.body.querySelector('[data-palette="silence"]'))).toBe('No model is set')
   },
 }
 
@@ -582,7 +584,7 @@ export const Marks: Story = {
       '',
     ])
     // The row with no mark keeps the room for one, so the names line up.
-    await expect(options()[6]?.querySelector('.palette__icon')).not.toBeNull()
+    await expect(options()[6]?.querySelector('[data-palette="icon"]')).not.toBeNull()
   },
 }
 
@@ -608,8 +610,8 @@ export const MarksOnTheName: Story = {
     await waitFor(() => expect(options()).toHaveLength(2))
 
     for (const row of options()) {
-      const mark = row.querySelector('.palette__icon')!.getBoundingClientRect()
-      const name = row.querySelector('.palette__name')!.getBoundingClientRect()
+      const mark = row.querySelector('[data-palette="icon"]')!.getBoundingClientRect()
+      const name = row.querySelector('[data-palette="name"]')!.getBoundingClientRect()
       const middle = (box: DOMRect) => box.top + box.height / 2
       // Centred on the name's own line, within the rounding a layout leaves.
       await expect(Math.abs(middle(mark) - middle(name))).toBeLessThan(1.5)
@@ -650,7 +652,7 @@ export const FarTooMany: Story = {
 
     // A row is as tall as the type it is set in, so it lands on a fraction of
     // a pixel and is brought into sight to within one.
-    const list = document.body.querySelector<HTMLElement>('.palette__list')!
+    const list = document.body.querySelector<HTMLElement>('[data-palette="list"]')!
     const inside = last.getBoundingClientRect()
     const room = list.getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(room.bottom + 1)
@@ -700,8 +702,8 @@ export const TooLong: Story = {
   play: async () => {
     await waitFor(() => expect(palette()).not.toBeNull())
 
-    const panel = document.body.querySelector<HTMLElement>('.palette__panel')!
-    const over = document.body.querySelector<HTMLElement>('.palette')!
+    const panel = document.body.querySelector<HTMLElement>('[data-palette="panel"]')!
+    const over = document.body.querySelector<HTMLElement>('[data-palette="ground"]')!
     const clear = parseFloat(getComputedStyle(over).paddingInlineStart)
     const drawn = panel.getBoundingClientRect()
     const room = over.getBoundingClientRect()
@@ -776,7 +778,7 @@ export const SomeCameBackEmpty: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const drawn = Array.from(document.body.querySelectorAll('.palette__title')).map((band) =>
+    const drawn = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map((band) =>
       band.textContent?.trim(),
     )
     await expect(drawn).toEqual(['Text', 'Meaning', 'Names'])
@@ -801,9 +803,9 @@ export const FiveActions: Story = {
   play: async ({ args }) => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const reach = Array.from(document.body.querySelectorAll('.palette__key')).map(said)
+    const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(said)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
-    await expect(document.body.querySelector('.palette__more')?.textContent).toContain('Actions')
+    await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
 
     await userEvent.keyboard('{Enter}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
@@ -845,7 +847,7 @@ export const ActionPanel: Story = {
     await userEvent.keyboard('{ArrowUp}')
     const last = deeds().at(-1)!
     const inside = last.getBoundingClientRect()
-    const room = document.body.querySelector<HTMLElement>('.palette__deeds')!.getBoundingClientRect()
+    const room = document.body.querySelector<HTMLElement>('[data-actions="list"]')!.getBoundingClientRect()
     await expect(inside.bottom).toBeLessThanOrEqual(Math.ceil(room.bottom))
     await expect(inside.top).toBeGreaterThanOrEqual(Math.floor(room.top))
 
@@ -927,7 +929,7 @@ export const Steps: Story = {
     await userEvent.keyboard('{Enter}')
 
     await waitFor(() =>
-      expect(document.body.querySelector('.palette__crumb')?.textContent).toBe(
+      expect(document.body.querySelector('[data-palette="crumb"]')?.textContent).toBe(
         'New name for «Entropy»',
       ),
     )
@@ -971,7 +973,7 @@ export const KeyHints: Story = {
   play: async () => {
     await waitFor(() => expect(lit()).not.toBeNull())
 
-    const hints = Array.from(document.body.querySelectorAll('.palette__hint'))
+    const hints = Array.from(document.body.querySelectorAll('[data-palette="hint"]'))
     await expect(hints.map(spoken)).toEqual([
       'Command N',
       'Command Shift P',

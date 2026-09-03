@@ -24,10 +24,14 @@ defineProps<{
 
 <style scoped>
 /* A line or two saying what is wrong, and never a list to read: no bullet, and
-   no room kept for one, so it stands over the edge the host draws it on. */
+   no room kept for one, so it stands over the edge the host draws it on. It
+   takes the whole row under whatever it is wrong about. */
 .amiss {
+  flex-basis: 100%;
   margin: 0;
   padding-inline-start: 0;
   list-style: none;
+  /* A name with nothing in it to break at is broken where the line ends. */
+  overflow-wrap: anywhere;
 }
 </style>

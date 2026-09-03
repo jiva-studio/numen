@@ -1,12 +1,7 @@
 /**
- * Markdown as Vue's own nodes.
- *
- * The marks are read by markdown-it and turned into elements here. Two things
- * follow, and both matter for prose that arrives a piece at a time:
- *
- * - Vue patches the tree it drew before, so what is on the screen stays.
- * - a word that has just arrived is a node that has just arrived, and can be
- *   shown arriving.
+ * Markdown as Vue's own nodes, read by markdown-it. Vue patches the tree it
+ * drew before, so prose arriving a piece at a time keeps what is on the screen,
+ * and a word that has just arrived can be shown arriving.
  *
  * HTML in the text is text.
  */

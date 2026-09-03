@@ -3,14 +3,11 @@
  * What a person did on each day and what is still coming to them, as a grid of
  * weeks.
  *
- * A column is a week. The weeks behind run up to the one they are in, and a few
- * weeks of what is still to come stand after it. How many weeks are drawn is
- * how many fit the room there is: a wide window shows more of the year rather
- * than the same weeks drawn larger, and a narrow one shows fewer rather than a
- * grid marooned in the middle of empty room.
+ * A column is a week: the weeks behind run up to the one they are in, and a few
+ * of what is still to come stand after it. How many weeks are drawn is how many
+ * fit the room there is.
  *
- * How the grid is laid out is `heatmap` and what one day comes to is `Summary`.
- * This puts the two on the screen.
+ * Each cell carries `data-heatmap-day`, the day it stands for.
  */
 import { computed, ref } from 'vue'
 
@@ -88,6 +85,7 @@ const reaches = (day: Day, press: MouseEvent) => {
         :rx="2"
         :ry="2"
         class="heatmap__day"
+        :data-heatmap-day="day.day"
         :data-weight="day.weight"
         :data-ahead="day.ahead ? 'yes' : undefined"
         :data-today="day.today ? 'yes' : undefined"

@@ -7,7 +7,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import Notices from './Notices.vue'
 import type { Notice } from './model'
+import { hovered, lightness } from '@/fixtures/colour'
 import { LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 interface Knobs {
   notices: readonly Notice[]
@@ -360,7 +362,7 @@ export const EachCardNamesWhatItPutsAway: Story = {
     await waitFor(() => expect(cards()).toHaveLength(2))
 
     const named = [...cards()].map(
-      (card) => card.querySelector('.notice__away')?.getAttribute('aria-label') ?? '',
+      (card) => within(card).getByRole('button').getAttribute('aria-label') ?? '',
     )
     await expect(named[0]).toContain('Reading the vault')
     await expect(named[1]).toContain('Preparing search by meaning')
@@ -379,5 +381,63 @@ export const ReadOutInTurnAndOverTheRest: Story = {
     await waitFor(() => expect(polite?.textContent).toContain('Reading the vault'))
     await expect(urgent?.textContent).toContain('A note of that name is filed there already')
     await expect(polite?.textContent).not.toContain('filed there already')
+  },
+}
+
+/**
+ * On the dark set of tokens, with a card of each tone.
+ *
+ * A card a person has to read is framed in its own text, thinned until it is
+ * nearly the ground. That frame is the thing a dark ground swallows, so it is
+ * read off every card, and so is the ground the way out takes under the hand.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: {
+    notices: [
+      READING,
+      { id: 'unwatched', says: 'The vault is not being watched', tone: 'caution', stay: 'kept' },
+      OCCUPIED,
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const corner = within(document.body)
+    await waitFor(() => expect(corner.getAllByRole('article')).toHaveLength(3))
+
+    const cards = corner.getAllByRole('article')
+    await expect(cards.map((card) => card.getAttribute('data-tone'))).toEqual([
+      'plain',
+      'caution',
+      'alarm',
+    ])
+
+    for (const card of cards) {
+      const drawn = getComputedStyle(card)
+      const ground = lightness(drawn.backgroundColor)
+      const ink = lightness(drawn.color)
+      // Whatever its tone, a card is written in ink standing above its own
+      // ground, which is the way round the dark set is written.
+      await expect(ink).toBeGreaterThan(ground + 40)
+
+      // The frame is that ink, thinned: it lies between the two, and is a step
+      // away from the ground rather than lost in it.
+      const frame = lightness(drawn.borderTopColor, drawn.backgroundColor)
+      await expect(frame).toBeGreaterThan(Math.min(ink, ground))
+      await expect(frame).toBeLessThan(Math.max(ink, ground))
+      await expect(Math.abs(frame - ground)).toBeGreaterThan(2)
+    }
+
+    // The way out is only ink until a hand is on it, and then it stands on a
+    // ground of its own.
+    const away = within(cards[2]!).getByRole('button', { name: /^Put away/ })
+    await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+
+    const behind = getComputedStyle(cards[2]!).backgroundColor
+    await hovered(away)
+    await waitFor(async () => {
+      const under = lightness(getComputedStyle(away).backgroundColor, behind)
+      await expect(Math.abs(under - lightness(behind))).toBeGreaterThan(2)
+    })
   },
 }

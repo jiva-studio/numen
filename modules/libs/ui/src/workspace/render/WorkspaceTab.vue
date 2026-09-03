@@ -7,6 +7,7 @@
  * start of a drag is settled by what the pointer does next, which the
  * workspace watches.
  */
+import { useTemplateRef } from 'vue'
 import type { TabId } from '../model'
 withDefaults(
   defineProps<{
@@ -27,6 +28,11 @@ const emit = defineEmits<{
   (event: 'lift', at: PointerEvent): void
   (event: 'close'): void
 }>()
+
+const root = useTemplateRef<HTMLElement>('root')
+
+/** The keyboard put on this tab by the strip it stands in. */
+defineExpose({ focus: () => root.value?.focus() })
 
 defineSlots<{
   /** What is drawn before the name, which says what kind of tab it is. */
@@ -49,7 +55,8 @@ const onPointerDown = (event: PointerEvent) => {
 
 <template>
   <div
-    class="tab numen flex min-w-0 max-w-56 shrink items-center font-sans text-small text-hushed"
+    ref="root"
+    class="tab numen flex min-w-0 shrink items-center font-sans text-small text-hushed"
     role="tab"
     :aria-selected="showing"
     :tabindex="showing ? 0 : -1"
@@ -88,8 +95,11 @@ const onPointerDown = (event: PointerEvent) => {
      either side of it. */
   --height: 1.4rem;
   --pad: 0.4rem;
+  /* How far a tab reaches before its name is cut. */
+  --widest: 14rem;
 
   block-size: var(--height);
+  max-inline-size: var(--widest);
   padding-inline: var(--pad);
   column-gap: var(--pad);
   cursor: default;

@@ -2,12 +2,9 @@
 /**
  * An agent talked to: the conversation, and the field it is carried on with.
  *
- * The composer is written over the conversation, and the words pass behind it
- * as they scroll. How much room it takes is measured on every change of size,
- * and the conversation is held clear of that much and sits at its foot when a
- * question is sent.
- *
- * It fills whatever it is put in, and says nothing about where that is.
+ * The composer is written over the conversation, and the conversation is held
+ * clear of however much room it takes, sitting at its foot when a question is
+ * sent. It fills whatever it is put in, and says nothing about where that is.
  */
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Thread from '../thread/Thread.vue'

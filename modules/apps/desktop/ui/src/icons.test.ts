@@ -15,14 +15,17 @@ import { waysIn } from './welcome/welcoming'
 import { WORDS as words } from './words'
 import type { NoteType, Source } from './core'
 
+/** A window that has been told nothing, which can do every run. */
+const anything = () => true
+
 /** Every menu the tree draws: off every row, and on a row of each kind. */
 const inTheTree = [
-  itemsFor(null, false),
+  itemsFor(null, false, anything),
   ...(['note', 'book', 'recording', 'other'] as Source[]).flatMap((source) => [
-    itemsFor({ source, folder: false }, false),
-    itemsFor({ source, folder: true }, false),
+    itemsFor({ source, folder: false }, false, anything),
+    itemsFor({ source, folder: true }, false, anything),
   ]),
-  itemsFor({ source: 'note', folder: false }, true),
+  itemsFor({ source: 'note', folder: false }, true, anything),
 ].flat()
 
 describe('the icon a command is drawn with', () => {

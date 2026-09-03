@@ -2,16 +2,13 @@
  * One recording as its tab hears it: where the player stands in it, the words
  * heard in it, which of them is being said now, and the words as a person
  * edits them.
- *
- * Apart from the template the way `reading.ts` is: where the player is sent,
- * which cue that lands in, and when the words are asked for again are
- * decisions, and a test asks them without a browser.
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
 import { clock } from '@numen/ui'
+import { asking as latest } from '../asking'
 import { cued, same, spanning, spoken } from './cueing'
-import { player, type Player } from './playing'
+import { playable as canPlay, player, type Player, type Plays } from './playing'
 import { WORDS } from './words'
 
 /** One stretch of speech: what was said, and the milliseconds it spans. */
@@ -60,37 +57,6 @@ export interface Recordings {
   plays(path: string, run: Run): Promise<number | null>
 }
 
-// Whether this window can play a kind of sound. The answer is the window's and
-// is asked once, however many recordings are open.
-const asked = new Map<string, boolean>()
-
-/** Answers is what says whether a kind of sound can be played. A test says. */
-export type Answers = (type: string) => boolean
-
-let answers: Answers = (type) => {
-  try {
-    return document.createElement('audio').canPlayType(type) !== ''
-  } catch {
-    return false
-  }
-}
-
-/** Asking puts a different answer in front of the window's own. */
-export function asking(said: Answers) {
-  answers = said
-  asked.clear()
-}
-
-/** Plays is whether this window can play a recording of a media type. */
-export function plays(type: string): boolean {
-  if (!type) return false
-  const held = asked.get(type)
-  if (held !== undefined) return held
-  const can = answers(type)
-  asked.set(type, can)
-  return can
-}
-
 /**
  * The cue being said at a millisecond, and the last one said where a silence
  * stands there. Nothing until the first cue begins.
@@ -107,12 +73,20 @@ export type Listening = ReturnType<typeof listening>
 /** How long the words have to have been still before they are written. */
 export const QUIET = 800
 
-export function listening(
-  recordings: Recordings,
-  path: string,
-  through: Player = player,
-  quiet = QUIET,
-) {
+/** What the window hands one recording tab, beside the application and the path. */
+export interface Hearing {
+  /** The player the sound comes out of, which every recording of a window shares. */
+  through?: Player
+  /** How long the typing settles for before the words are written. */
+  quiet?: number
+  /** Whether this window can play a kind of sound. */
+  plays?: Plays
+}
+
+export function listening(recordings: Recordings, path: string, how: Hearing = {}) {
+  const through = how.through ?? player
+  const quiet = how.quiet ?? QUIET
+  const plays = how.plays ?? canPlay()
   /** Where the recording's own bytes are played from, once it is asked. */
   const address = ref('')
   /** The words heard in the recording, in the order they were spoken. */
@@ -182,14 +156,10 @@ export function listening(
   let wanted = -1
 
   /**
-   * asking counts the times the words have been asked for, and answered holds
-   * the last count to have landed. A run being written down is asked about
-   * again while it goes, and two answers may arrive in either order; the older
-   * of them carries fewer words, and writing it down would take words off the
-   * screen a person is reading.
+   * A run being written down is asked about again while it goes, and two
+   * answers may arrive in either order. The older of them carries fewer words.
    */
-  let asking = 0
-  let answered = 0
+  const asks = latest()
 
   /** Whether what is on screen has still to reach the file. */
   let owed = false
@@ -206,11 +176,10 @@ export function listening(
    * still plays.
    */
   const hear = async () => {
-    const count = ++asking
+    const mine = asks.ask()
     try {
       const said = await recordings.listened(path)
-      if (!open || count < answered) return
-      answered = count
+      if (!mine.lands()) return
       length.value = said.length
       heard.value = said.heard
       address.value = said.media
@@ -227,16 +196,14 @@ export function listening(
       if (address.value && through.address.value === '') through.load(address.value)
 
       const spoke = await recordings.cues(path)
-      if (!open || count < answered) return
-      answered = count
+      if (!mine.lands()) return
       cues.value = spoke.cues
       editable.value = spoke.editable
       // Words the person has typed and not yet had written stay on screen.
       if (!owed) prose.value = spoken(spoke.cues)
       trouble.value = ''
     } catch (error) {
-      if (!open || count < answered) return
-      answered = count
+      if (!mine.lands()) return
       trouble.value = String(error)
     }
   }
@@ -373,6 +340,7 @@ export function listening(
     void keep()
     pause()
     open = false
+    asks.close()
     clearTimeout(stilling)
     cues.value = []
     prose.value = ''

@@ -1,13 +1,9 @@
 /**
- * How a node is asked for on its own.
- *
- * A hand asks with a second click, which the browser reports as one event. A
- * finger gets no such report where the picture has taken the touch for itself,
- * so the two taps are counted here.
+ * How a node is asked for on its own. A hand asks with a second click, which
+ * the browser reports as one event; a finger's two taps are counted here.
  *
  * Which of the two a plex offers is the caller's, so neither is written into
- * the node. Where the node is then drawn is `PlexShowing`, and is the same
- * either way.
+ * the node.
  */
 import { onScopeDispose, ref } from 'vue'
 

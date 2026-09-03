@@ -8,6 +8,7 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { Stopped } from '@numen/protocol'
+import { asking, type Asking } from '../asking'
 import type { PlexShowing } from '@numen/ui'
 import type { Refused, Went } from '../core'
 import type { Says } from '../telling'
@@ -130,8 +131,8 @@ export function presetting(
     flight: Promise<void> | null
     /** The tab was held once at its close and says why; asked again it goes. */
     told: boolean
-    /** Which curve is the current one. An answer for a goal since left is dropped. */
-    asked: number
+    /** An answer for a goal this tab has since left is dropped. */
+    readonly asks: Asking
     /** A curve is out, and whether the settings moved again while it was. */
     drawing: boolean
     drawAgain: boolean
@@ -164,7 +165,7 @@ export function presetting(
     wanted: false,
     flight: null,
     told: false,
-    asked: 0,
+    asks: asking(),
     drawing: false,
     drawAgain: false,
     shape: '',
@@ -224,7 +225,7 @@ export function presetting(
     const shape = shapeOf(one.settings.value)
     const held = one.answers.get(shape)
     if (held) {
-      ++one.asked
+      one.asks.drop()
       one.shape = shape
       lands(one, held)
       one.place.value = standsAt(held, one.settings.value)
@@ -249,7 +250,7 @@ export function presetting(
 
   /** One curve, asked for and landed. */
   const drawing = async (one: Kept): Promise<void> => {
-    const mine = ++one.asked
+    const mine = one.asks.ask()
     const shape = shapeOf(one.settings.value)
     one.shape = shape
     const riding = one.curve.value.grid
@@ -277,12 +278,12 @@ export function presetting(
       answer = await core.curve(one.path.value, one.settings.value)
     } catch (error) {
       console.error(error)
-      if (mine !== one.asked) return
+      if (!mine.current) return
       one.saying.value = words.noCurve
       one.waiting.value = false
       return
     }
-    if (mine !== one.asked) return
+    if (!mine.current) return
     one.answers.set(shape, answer)
     lands(one, answer)
     if (standsAlready && alike(riding, answer.grid)) return

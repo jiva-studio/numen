@@ -99,10 +99,9 @@ const carried = (event: KeyboardEvent): void => {
   cursor: grabbing;
 }
 
-/* What the strip is pressed for is not drawn until it is reached for, by the
-   pointer or by the keyboard. It is drawn on a plane of its own, kept for as
-   long as the card stands, so reaching for the card repaints nothing but the
-   strip. */
+/* What the strip is pressed for is not drawn until the strip is reached for,
+   by the pointer or by the keyboard. It is drawn on a plane of its own, kept
+   for as long as the card stands. */
 .bar__deeds {
   opacity: 0;
   will-change: opacity;

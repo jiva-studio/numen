@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * A preset tab: the one control at the top, and under it the settings its goal
- * schedules by.
+ * schedules by. The goal owns one value and writes only that; every other
+ * setting stands as the person left it.
  *
- * The control is the goal's curve. The goal owns one value and writes only
- * that; every other setting is the person's own and stands as they left it,
- * whatever the picture says it comes to.
+ * A row of the receipt carries `data-preset-row`, the field it is about.
+ * `data-preset` names the rest: `label`, `unpointed`, `stopped`, `name`,
+ * `detail`, `day`, `choice` and `percent`.
  */
 import { computed } from 'vue'
 import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
@@ -135,14 +136,14 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
          and it waits on nothing in the vault. -->
     <p v-if="props.held.saying()" role="alert" class="preset__warning preset__answering">
       {{ props.held.saying() }}
-      <button type="button" class="preset__answer" @click="props.held.again()">
+      <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
       </button>
     </p>
 
     <p v-if="props.held.changed()" role="status" class="preset__warning preset__answering">
       {{ words.changed }}
-      <button type="button" class="preset__answer" @click="props.held.again()">
+      <button type="button" class="answer" @click="props.held.again()">
         {{ words.reads }}
       </button>
     </p>
@@ -158,7 +159,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
     <div class="preset__page">
       <div class="preset__column">
         <section class="preset__goal" :aria-label="words.goal">
-          <p class="preset__label">{{ words.goal }}</p>
+          <p class="preset__label" data-preset="label">{{ words.goal }}</p>
 
           <Segmented
             :model-value="settings.goal"
@@ -166,7 +167,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
             @update:model-value="(one: string) => props.held.chooses(one as Goal)"
           />
 
-          <p v-if="nothing" class="preset__unpointed">{{ saidInstead }}</p>
+          <p v-if="nothing" class="preset__unpointed" data-preset="unpointed">{{ saidInstead }}</p>
 
           <template v-else>
             <Control
@@ -180,14 +181,18 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
             />
           </template>
 
-          <p v-if="stopped" class="preset__stopped">{{ stopped }}</p>
+          <p v-if="stopped" class="preset__stopped" data-preset="stopped">{{ stopped }}</p>
         </section>
 
         <section class="preset__settings" :aria-label="words.settings">
-          <div v-for="field in fields" :key="field" class="preset__row">
+          <div v-for="field in fields" :key="field" class="preset__row" :data-preset-row="field">
             <span class="preset__said">
-              <span class="preset__name" :id="`preset-${field}`">{{ words.fieldName(field) }}</span>
-              <span class="preset__detail">{{ words.fieldDetail(field) }}</span>
+              <span class="preset__name" :id="`preset-${field}`" data-preset="name">{{
+                words.fieldName(field)
+              }}</span>
+              <span class="preset__detail" data-preset="detail">{{
+                words.fieldDetail(field)
+              }}</span>
             </span>
 
             <span class="preset__value">
@@ -195,6 +200,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                 v-if="field === 'byDate'"
                 type="date"
                 class="preset__day"
+                data-preset="day"
                 :value="settings.byDate"
                 :aria-labelledby="`preset-${field}`"
                 @change="dated"
@@ -206,6 +212,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                 :name="words.fieldName('learned')"
                 :aria-labelledby="`preset-${field}`"
                 class="preset__choice"
+                data-preset="choice"
                 @update:model-value="ruled"
               />
               <Segmented
@@ -228,7 +235,9 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                   @update:model-value="(share: number) => props.held.types(field, share)"
                   @settles="props.held.settles()"
                 />
-                <span class="preset__percent">{{ words.percent(settings.backlog) }}</span>
+                <span class="preset__percent" data-preset="percent">{{
+                  words.percent(settings.backlog)
+                }}</span>
               </template>
               <Days
                 v-else-if="field === 'load'"
@@ -456,22 +465,6 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 var(--numen-panel-gap);
-}
-
-.preset__answer {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-  cursor: pointer;
-}
-
-.preset__answer:focus-visible {
-  outline: var(--numen-stroke) solid currentColor;
-  outline-offset: var(--numen-caret);
 }
 
 .preset__problems {

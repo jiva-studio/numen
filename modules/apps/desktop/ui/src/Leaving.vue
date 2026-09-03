@@ -22,13 +22,13 @@ const props = defineProps<{
     <ul class="leaving__notes">
       <li v-for="one in props.questions" :key="one.note" class="leaving__note">
         <span class="leaving__title">{{ props.called(one.note) }}</span>
-        <button type="button" class="leaving__answer" @click="void one.keep()">
+        <button type="button" class="answer" @click="void one.keep()">
           {{ note.keep }}
         </button>
-        <button type="button" class="leaving__answer" @click="void one.take()">
+        <button type="button" class="answer" @click="void one.take()">
           {{ note.take }}
         </button>
-        <button type="button" class="leaving__answer" @click="one.later()">
+        <button type="button" class="answer" @click="one.later()">
           {{ words.later }}
         </button>
       </li>
@@ -79,23 +79,4 @@ const props = defineProps<{
   white-space: nowrap;
 }
 
-.leaving__answer {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-  cursor: pointer;
-}
-
-.leaving__answer:hover {
-  text-decoration-thickness: 2px;
-}
-
-.leaving__answer:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
-}
 </style>

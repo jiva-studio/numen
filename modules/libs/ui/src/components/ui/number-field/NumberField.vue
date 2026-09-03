@@ -1,20 +1,10 @@
 <script setup lang="ts">
 /**
- * One line of digits, typed by hand and held inside its bounds.
+ * One line of digits, typed by hand and held inside its bounds, worked as a
+ * spin button.
  *
- * What was typed stands as it was typed: a line that is not a number in the
- * bounds is marked, is read out as it stands, and hands nothing on, and the
- * number in force is written back only once the field is left.
- *
- * It is a spin button: the arrows move the number a step, the page keys ten,
- * and home and end take it to the ends.
- *
- * The number in force is one the bounds hold, so bounds that move under it
- * bring it in and it is written out where it now stands.
- *
- * Typing and leaving are two things said, so a caller can follow the digits
- * and act on the number the field comes to rest at. A field left standing where
- * it stood has come to rest nowhere new and says nothing.
+ * What was typed stands as it was typed, and the number is written out only
+ * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
@@ -185,7 +175,7 @@ defineExpose({
         // One row tall, which every control standing on a row is drawn at.
         'h-action px-2',
         'font-sans text-base leading-none text-ink tabular-nums placeholder:text-hushed',
-        'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+        'outline-none ring-numen',
         'aria-invalid:border-alarm aria-invalid:text-alarm',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,

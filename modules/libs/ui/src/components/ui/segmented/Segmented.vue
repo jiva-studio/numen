@@ -70,11 +70,11 @@ const onKey = (event: KeyboardEvent) => {
           // at the ends, which is measured to the ink the screen paints.
           'px-1.5',
           'font-sans text-base font-medium leading-none text-ink',
-          'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
+          'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
           'hover:bg-[color-mix(in_oklab,var(--numen-node-bg),var(--numen-node-fg)_8%)]',
           'data-[state=checked]:bg-accent data-[state=checked]:text-accent-ink',
           'data-[state=checked]:hover:bg-[color-mix(in_oklab,var(--numen-focus-bg),var(--numen-focus-fg)_8%)]',
-          'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+          'outline-none ring-numen',
           'disabled:cursor-not-allowed disabled:opacity-50',
         )
       "
