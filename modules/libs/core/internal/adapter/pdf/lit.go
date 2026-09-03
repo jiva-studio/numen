@@ -141,9 +141,9 @@ func widen(word, mark responses.CharPosition) responses.CharPosition {
 	}
 }
 
-// paper is one page in the space its text is written in: how wide and how high
+// sheet is one page in the space its text is written in: how wide and how high
 // it is, in points, and the quarter turns clockwise it is drawn with.
-type paper struct {
+type sheet struct {
 	wide, high float64
 	turn       int
 }
@@ -151,16 +151,16 @@ type paper struct {
 // paper measures one page. The size the library reports is of the page as it is
 // drawn, and a page drawn a quarter turn from the way its text is written is as
 // wide as its text is high.
-func (d *document) paper(page requests.Page) (paper, bool) {
+func (d *document) paper(page requests.Page) (sheet, bool) {
 	size, err := d.worker.GetPageSize(&requests.GetPageSize{Page: page})
 	if err != nil || size.Width <= 0 || size.Height <= 0 {
-		return paper{}, false
+		return sheet{}, false
 	}
 	turned, err := d.worker.FPDFPage_GetRotation(&requests.FPDFPage_GetRotation{Page: page})
 	if err != nil {
-		return paper{}, false
+		return sheet{}, false
 	}
-	sheet := paper{wide: size.Width, high: size.Height, turn: int(turned.PageRotation)}
+	sheet := sheet{wide: size.Width, high: size.Height, turn: int(turned.PageRotation)}
 	if sheet.turn%2 == 1 {
 		sheet.wide, sheet.high = sheet.high, sheet.wide
 	}
@@ -168,7 +168,7 @@ func (d *document) paper(page requests.Page) (paper, bool) {
 }
 
 // box is one word of a page, over the fraction of it the word covers.
-func (p paper) box(page, start, length int, word responses.CharPosition) lit.Box {
+func (p sheet) box(page, start, length int, word responses.CharPosition) lit.Box {
 	x0, y0 := p.drawn(word.Left, word.Top)
 	x1, y1 := p.drawn(word.Right, word.Bottom)
 	return lit.Box{
@@ -188,7 +188,7 @@ func (p paper) box(page, start, length int, word responses.CharPosition) lit.Box
 // A page's text is written with the origin at the bottom left corner, and the
 // page is drawn with the origin at the top left and turned by however much it
 // asks to be.
-func (p paper) drawn(x, y float64) (float32, float32) {
+func (p sheet) drawn(x, y float64) (float32, float32) {
 	wide, high := p.wide, p.high
 	switch p.turn {
 	case 1:
