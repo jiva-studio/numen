@@ -21,7 +21,7 @@ type blank struct{ closed bool }
 
 func (blank) Recognition() port.Recognition { return port.Recognition{Recogniser: "blank"} }
 
-func (blank) Read(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
+func (blank) Recognise(context.Context, image.Image) ([]ocr.Block, error) { return nil, nil }
 
 func (b *blank) Close() error {
 	b.closed = true

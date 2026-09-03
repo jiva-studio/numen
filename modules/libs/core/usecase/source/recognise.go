@@ -183,7 +183,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		if err != nil {
 			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 		}
-		blocks, err := u.By.Read(ctx, drawn)
+		blocks, err := u.By.Recognise(ctx, drawn)
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}

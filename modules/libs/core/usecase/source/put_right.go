@@ -204,7 +204,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		end := min(at+u.inFlight(), len(batches))
 		group := batches[at:end]
 
-		replies, err := u.By.Read(ctx, group)
+		replies, err := u.By.Proofread(ctx, group)
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}

@@ -193,7 +193,7 @@ type spelling struct{}
 
 func (spelling) Name() string { return "a test" }
 
-func (spelling) Read(_ context.Context, _ []proofread.Batch) (map[int]string, error) {
+func (spelling) Proofread(_ context.Context, _ []proofread.Batch) (map[int]string, error) {
 	return nil, errors.New("nothing here asks")
 }
 

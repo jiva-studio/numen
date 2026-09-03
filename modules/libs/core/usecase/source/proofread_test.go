@@ -34,7 +34,7 @@ func (c *corrector) Name() string {
 	return c.name
 }
 
-func (c *corrector) Read(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	var at []int
 	for _, page := range pages {
 		at = append(at, page.At)

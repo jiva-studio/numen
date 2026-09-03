@@ -66,12 +66,12 @@ func (c *Client) inFlight() int {
 	return c.service.InFlight
 }
 
-// Read asks about every page and answers with what came back about each, by the
-// page it is about. A page nothing came back about is left out.
+// Proofread asks about every page and answers with what came back about each,
+// by the page it is about. A page nothing came back about is left out.
 //
 // One page that fails ends the run: the pages already answered are dropped and
 // the caller asks again.
-func (c *Client) Read(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
+func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	if len(pages) == 0 {
 		return nil, nil
 	}

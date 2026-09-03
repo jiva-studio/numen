@@ -26,7 +26,7 @@ func TestAPageNothingCouldBeReadOnIsAFailure(t *testing.T) {
 		},
 	}
 
-	if _, err := r.Read(t.Context(), page); !errors.Is(err, broken) {
+	if _, err := r.Recognise(t.Context(), page); !errors.Is(err, broken) {
 		t.Errorf("a page nothing could be read on answered with %v", err)
 	}
 }
@@ -50,7 +50,7 @@ func TestOnePartThatCouldNotBeReadLeavesTheRest(t *testing.T) {
 		},
 	}
 
-	blocks, err := r.Read(t.Context(), page)
+	blocks, err := r.Recognise(t.Context(), page)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -152,7 +152,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		end := min(at+u.batch(), len(pages))
 		asked := pages[at:end]
 
-		replies, err := u.By.Read(ctx, asked)
+		replies, err := u.By.Proofread(ctx, asked)
 		if err != nil {
 			return res, fmt.Errorf("proofread %s: %w", path, err)
 		}

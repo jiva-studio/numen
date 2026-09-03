@@ -85,7 +85,7 @@ type puts struct {
 
 func (p *puts) Name() string { return "a proofreader" }
 
-func (p *puts) Read(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := map[int]string{}
@@ -329,7 +329,7 @@ type refuses struct{ why error }
 
 func (r *refuses) Name() string { return "a proofreader that will not answer" }
 
-func (r *refuses) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+func (r *refuses) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	return nil, r.why
 }
 
@@ -382,7 +382,7 @@ type waits struct {
 
 func (w *waits) Name() string { return "a proofreader that waits" }
 
-func (w *waits) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+func (w *waits) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on
 	return map[int]string{}, nil

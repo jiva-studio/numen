@@ -134,7 +134,7 @@ func (s *speaker) Recognition() port.Recognition {
 	return port.Recognition{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
-func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
+func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
 	s.pages++
 	if s.stop != nil {
 		s.stop(s.pages)

@@ -119,7 +119,7 @@ func (r *Recogniser) Close() error {
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
-func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
+func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err

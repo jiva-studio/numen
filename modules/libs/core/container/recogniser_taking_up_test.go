@@ -206,7 +206,9 @@ type leaves struct{}
 
 func (leaves) Name() string { return "a queue" }
 
-func (leaves) Read(context.Context, []proofread.Batch) (map[int]string, error) { return nil, nil }
+func (leaves) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+	return nil, nil
+}
 
 func (leaves) Leave(context.Context, []proofread.Batch) (string, error) { return "a batch", nil }
 
