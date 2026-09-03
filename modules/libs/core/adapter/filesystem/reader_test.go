@@ -353,6 +353,37 @@ func TestReadReturnsTheFile(t *testing.T) {
 	}
 }
 
+// TestANoteOverTheBoundIsNotRead. The bound is on the scan as much as on a
+// write: a file over it is a file the vault does not hold as a note, and its
+// bytes are never in memory. A book is left to the caller reading it.
+func TestANoteOverTheBoundIsNotRead(t *testing.T) {
+	root := t.TempDir()
+	big := make([]byte, 64)
+	if err := os.WriteFile(filepath.Join(root, "huge.md"), big, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "paper.pdf"), big, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "small.md"), []byte("# note\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	src, err := filesystem.Open(root, filesystem.Options{MaxNoteBytes: 32})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := src.Read(t.Context(), "huge.md"); !errors.Is(err, port.ErrNotANote) {
+		t.Errorf("read huge.md: %v, want ErrNotANote", err)
+	}
+	if _, err := src.Read(t.Context(), "small.md"); err != nil {
+		t.Errorf("read small.md: %v", err)
+	}
+	if _, err := src.Read(t.Context(), "paper.pdf"); err != nil {
+		t.Errorf("read paper.pdf: %v", err)
+	}
+}
+
 func TestOpenDoesNotWriteIntoTheFolder(t *testing.T) {
 	// Scanning a folder and adding a vault are different acts, and only the
 	// second may write.

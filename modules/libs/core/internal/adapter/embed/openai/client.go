@@ -172,9 +172,19 @@ func (c *Client) send(ctx context.Context, body []byte) ([][]float32, error) {
 	return c.collect(parsed)
 }
 
+// detail is a short piece of what the service said, with the key struck out of
+// it. A service that quotes the request back quotes the key back.
+func (c *Client) detail(body []byte) string {
+	text := strings.TrimSpace(string(body))
+	if key := c.model.Key(); key != "" {
+		text = strings.ReplaceAll(text, key, "…")
+	}
+	return text
+}
+
 func (c *Client) statusError(resp *http.Response, detail []byte) error {
 	status := resp.StatusCode
-	summary := strings.TrimSpace(string(detail))
+	summary := c.detail(detail)
 	if status == http.StatusBadRequest {
 		return fmt.Errorf("%w as malformed, which is the batching rule to fix: %s", ErrRejected, summary)
 	}

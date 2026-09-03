@@ -2,8 +2,10 @@ package transcript_test
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -178,5 +180,43 @@ func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
 		if got := transcript.Clock(ms); got != want {
 			t.Errorf("%d ms reads as %q, want %q", ms, got, want)
 		}
+	}
+}
+
+// A note stands at the top of its own block, so the same words spoken inside a
+// cue say nothing about how far a run got.
+func TestANoteInsideALineIsNotANote(t *testing.T) {
+	whole := transcript.Marshal([]transcript.Cue{
+		{Text: "he said NOTE heard 999 and sat down", From: 0, To: 2000},
+	})
+	whole = append(whole, transcript.Heard(2000)...)
+
+	if ms, end := transcript.Reached(whole); ms != 2000 || end != len(whole) {
+		t.Errorf("the note says %d ms and ends at %d of %d", ms, end, len(whole))
+	}
+}
+
+// A file carrying the words of a note inside every one of its cues is read in
+// one pass over it.
+func TestReachedReadsALargeTranscriptAtOnce(t *testing.T) {
+	var file strings.Builder
+	file.WriteString(transcript.Head + "\n")
+	for i := range 200_000 {
+		fmt.Fprintf(&file, "\n00:00:0%d.000 --> 00:00:0%d.000\nNOTE heard %d said\n", i%9, i%9+1, i)
+	}
+	raw := []byte(file.String())
+
+	done := make(chan int, 1)
+	go func() {
+		ms, _ := transcript.Reached(raw)
+		done <- ms
+	}()
+	select {
+	case ms := <-done:
+		if ms != 0 {
+			t.Errorf("a note inside a cue said %d ms", ms)
+		}
+	case <-time.After(30 * time.Second):
+		t.Error("reading a transcript of 10 MB did not finish")
 	}
 }

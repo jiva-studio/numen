@@ -86,10 +86,18 @@ const minimumParts = 2
 // library's worth of them and is reached only by a file built to reach it. The
 // bound on pages is what a reader can be shown before the offsets stop meaning
 // anything to anybody.
+//
+// The bound on pixels is what one page is drawn at, whatever its page box says.
+// A page of A2 at 300 dots to the inch is inside it.
 const (
-	mostPages = 20_000
-	mostText  = 256 << 20
+	mostPages  = 20_000
+	mostText   = 256 << 20
+	mostPixels = 64 << 20
 )
+
+// pointsPerInch is the page's own unit against the inch a resolution is given
+// in.
+const pointsPerInch = 72
 
 // The ways a file can fail to be a document.
 var (

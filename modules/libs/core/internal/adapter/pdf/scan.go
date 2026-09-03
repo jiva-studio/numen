@@ -67,6 +67,14 @@ func (s *Scan) Image(index, dpi int) (image.Image, error) {
 	if dpi <= 0 {
 		dpi = 300
 	}
+	wide, high, err := s.Size(index)
+	if err != nil {
+		return nil, err
+	}
+	if pixels := wide * high * float64(dpi) * float64(dpi) / (pointsPerInch * pointsPerInch); pixels > mostPixels {
+		return nil, fmt.Errorf("pdf: page %d cannot be drawn at %d DPI: it is %.0f pixels, and %d is the most",
+			index, dpi, pixels, mostPixels)
+	}
 	drawn, err := s.doc.worker.RenderPageInDPI(&requests.RenderPageInDPI{
 		DPI:  dpi,
 		Page: requests.Page{ByIndex: &requests.PageByIndex{Document: s.doc.ref, Index: index}},

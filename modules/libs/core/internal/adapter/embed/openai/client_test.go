@@ -282,6 +282,36 @@ func TestAServiceWithoutAKeyIsRefusedBeforeAnyRequest(t *testing.T) {
 	}
 }
 
+// A gateway that quotes the request back quotes the key back. The error a
+// person reads carries what the service said and not the key.
+func TestTheKeyIsNotInAnError(t *testing.T) {
+	for _, status := range []int{
+		http.StatusBadRequest,
+		http.StatusUnauthorized,
+		http.StatusInternalServerError,
+	} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			s := server(t, func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(status)
+				fmt.Fprintf(w, `{"error":{"message":"rejected","headers":{"Authorization":%q}}}`,
+					r.Header.Get("Authorization"))
+			})
+			c := client(t, s.URL, 4)
+			c.Attempts = 1
+			_, err := c.Embed(context.Background(), []string{"one"})
+			if err == nil {
+				t.Fatal("the request was answered")
+			}
+			if strings.Contains(err.Error(), "test-key") {
+				t.Errorf("the key is in %q", err.Error())
+			}
+			if !strings.Contains(err.Error(), "rejected") {
+				t.Errorf("what the service said is not in %q", err.Error())
+			}
+		})
+	}
+}
+
 func TestTheKeyIsNotInWhatTheConfigurationPrints(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-secret")
 	cfg := embed.Defaults()

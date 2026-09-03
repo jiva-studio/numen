@@ -69,8 +69,14 @@ func service(root, path, serviceDir string) (target, real string, err error) {
 }
 
 // ours says whether a path is in the folder the application keeps for itself.
+//
+// The name is compared without regard to case, which is how macOS and Windows
+// open it.
 func ours(clean, serviceDir string) bool {
-	return clean == serviceDir || strings.HasPrefix(clean, serviceDir+"/")
+	if len(clean) < len(serviceDir) || !strings.EqualFold(clean[:len(serviceDir)], serviceDir) {
+		return false
+	}
+	return len(clean) == len(serviceDir) || clean[len(serviceDir)] == '/'
 }
 
 // cleaned is a path a vault could hold, in the one form the rules are written
@@ -80,11 +86,13 @@ func cleaned(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
-	if filepath.IsAbs(path) || strings.ContainsRune(path, 0) {
+	// filepath.IsLocal refuses a path that is absolute or that climbs out, and
+	// on Windows one that is drive-relative or names a reserved device.
+	if !filepath.IsLocal(path) || strings.ContainsRune(path, 0) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if clean == "." || clean == ".." || strings.HasPrefix(clean, "../") {
+	if clean == "." {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}
 	return clean, nil

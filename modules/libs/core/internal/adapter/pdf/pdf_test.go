@@ -24,6 +24,7 @@ const (
 	labels  = "labels.pdf"  // front matter numbered apart from the body
 	turned  = "turned.pdf"  // a page drawn a quarter turn from the way its text is written
 	scan    = "scan.pdf"    // two pages that carry no text at all
+	vast    = "vast.pdf"    // one page of the largest box the format allows
 	prose   = "prose.txt"   // not a document
 )
 
@@ -273,6 +274,27 @@ func TestReadingIsSafeFromSeveralGoroutines(t *testing.T) {
 		if got := <-done; got != want {
 			t.Errorf("one reading gave %q, want %q", got, want)
 		}
+	}
+}
+
+// A page is drawn up to a number of pixels and no further. The same page at a
+// resolution that keeps it inside the bound is drawn.
+func TestAPageTooLargeToDrawIsRefused(t *testing.T) {
+	held, err := pdf.Open(fixture(t, vast))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer held.Close()
+
+	if _, err := held.Image(0, 300); err == nil {
+		t.Error("a page of 3.6 billion pixels was drawn")
+	}
+	drawn, err := held.Image(0, 4)
+	if err != nil {
+		t.Fatalf("the page was not drawn at 4 DPI: %v", err)
+	}
+	if drawn.Bounds().Dx() < 700 {
+		t.Errorf("the page is drawn %d across", drawn.Bounds().Dx())
 	}
 }
 
