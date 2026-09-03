@@ -53,6 +53,9 @@ const uid = useId()
  */
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
+/** What the strip says cut the card, and where nothing cut it, that nothing did. */
+const cut = computed(() => props.tile.stencil ?? props.words.unknown(null))
+
 const boxId = (value: Stood): string => `${uid}-${encodeURIComponent(value.key)}`
 
 /** What is wrong with one value, said once, under the last box standing for its field. */
@@ -77,16 +80,16 @@ const wrongIn = (value: Stood): readonly string[] =>
       @step="(way, press) => emit('step', way, press)"
     >
       <!-- A deck holds cards cut by more than one stencil, so the strip says
-           which cut this one. A name is exposed by nothing standing on a
-           paragraph, so the text takes a role that carries one. -->
+           which cut this one, and where nothing did, that nothing did. A name
+           is exposed by nothing standing on a paragraph, so the text takes a
+           role that carries one. -->
       <p
-        v-if="tile.stencil !== null"
         class="card__cut truncate text-small text-hushed"
         role="group"
         :aria-label="words.cut"
         data-cut-of
       >
-        {{ tile.stencil }}
+        {{ cut }}
       </p>
 
       <template #deeds>
@@ -95,8 +98,9 @@ const wrongIn = (value: Stood): readonly string[] =>
     </Bar>
 
     <div class="card__body flex flex-col">
+      <!-- A card is waiting for a stencil only where it names one. -->
       <Amiss
-        v-if="!tile.known"
+        v-if="!tile.known && tile.stencil !== null"
         class="card__objects"
         role="alert"
         :said="words.unknown(tile.stencil)"
@@ -112,17 +116,33 @@ const wrongIn = (value: Stood): readonly string[] =>
 
       <div v-for="value in tile.filled" :key="value.key" class="card__value">
         <Rule at="start">
-          <label class="card__field text-small text-hushed" :for="boxId(value)">
+          <label
+            v-if="value.declared"
+            class="card__field text-small text-hushed"
+            :for="boxId(value)"
+          >
             {{ value.field }}
           </label>
+          <span v-else class="card__field text-small text-hushed">{{ value.field }}</span>
         </Rule>
 
         <Grown
+          v-if="value.declared"
           :id="boxId(value)"
           :text="value.text"
           :data-value="value.field"
           @write="(text: string) => emit('write', value.field, value.nth, text)"
         />
+
+        <!-- No stencil names a slot for this value, so what was written is read
+             where it would be typed. -->
+        <p
+          v-else
+          class="card__wrote"
+          role="group"
+          :aria-label="value.field"
+          :data-wrote="value.field"
+        >{{ value.text }}</p>
 
         <Amiss
           v-if="wrongIn(value).length"
@@ -153,8 +173,10 @@ const wrongIn = (value: Stood): readonly string[] =>
   overflow-wrap: anywhere;
 }
 
-/* The strip runs the whole width, and the body keeps the clearance. */
+/* The strip runs the whole width, and the body keeps the clearance. The body
+   takes the rest of the tile, so what stands in place of values has the room. */
 .card__body {
+  flex: 1;
   gap: var(--numen-inset);
   padding: var(--numen-box-air);
 }
@@ -182,10 +204,24 @@ const wrongIn = (value: Stood): readonly string[] =>
 }
 
 /* Everything the body holds stands over one edge: what is wrong with the card,
-   what each value is called, and the box the value is typed in. */
+   what each value is called, and the value itself. */
 .card__objects,
-.card__silence {
+.card__wrote {
   margin: 0;
   padding-inline: var(--box-pad-inline);
+}
+
+/* A value no stencil names is read where it would be typed, and keeps the
+   breaks it was written with. */
+.card__wrote {
+  padding-block: var(--box-air, 0.5rem);
+  white-space: pre-wrap;
+}
+
+/* A card holding nothing says so in the middle of the room it is given. */
+.card__silence {
+  margin: auto;
+  padding-inline: var(--box-pad-inline);
+  text-align: center;
 }
 </style>
