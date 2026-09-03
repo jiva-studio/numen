@@ -31,9 +31,15 @@ func Read(path string) ([]byte, error) {
 // it was. What is said names where in the file the trouble is; the file holds a
 // person's keys, and nothing standing in it is repeated back.
 func Write(path string, raw []byte) error {
-	var whole json.RawMessage
+	// The sections are the fields of one object, and the file is read as that
+	// object. A bare `null` unmarshals into anything and leaves it alone, so an
+	// object that came back nought is refused by name.
+	var whole map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &whole); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+	}
+	if whole == nil {
+		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
 	}
 	if err := holds(raw); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))

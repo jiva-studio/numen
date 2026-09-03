@@ -93,6 +93,25 @@ func TestWriteRefusesAValueOfTheWrongKind(t *testing.T) {
 	}
 }
 
+// A settings file is one object. Anything else read into the settings leaves
+// them at their defaults, and defaults that hold say nothing about the bytes.
+func TestWriteRefusesWhatIsNotAnObject(t *testing.T) {
+	for _, written := range []string{"null", "42", `"hello"`, "[1,2]", "true"} {
+		held := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"
+		path := beside(t, held)
+
+		err := settings.Write(path, []byte(written))
+		if !errors.Is(err, port.ErrNotASetting) {
+			t.Errorf("%s: refused with %v, wanted a refusal", written, err)
+		}
+
+		raw, _ := os.ReadFile(path)
+		if string(raw) != held {
+			t.Errorf("%s: the file holds %q, wanted it left as it was", written, raw)
+		}
+	}
+}
+
 func TestWhatIsSaidDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
 	path := beside(t, "{}\n")
 	// A key is the one thing in a settings file worth keeping to itself.
