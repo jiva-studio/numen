@@ -277,7 +277,7 @@ func (r *Recognising) read(ctx context.Context, v domain.Vault, id, path string)
 		Documents: r.cfg.Documents(),
 		By:        models,
 		Cut:       r.Cut,
-		OnProgress: func(res source.RecogniseResult) {
+		OnProgress: func(res source.Recognised) {
 			r.say(task.Task{
 				ID:    id,
 				Doing: "Reading a scan",

@@ -29,9 +29,9 @@ type Refresh struct {
 	Sources port.SourceRepository
 }
 
-// RefreshResult is what happened, in the terms a caller acts on: the notes that
+// Refreshed is what happened, in the terms a caller acts on: the notes that
 // are now different from what was shown, and the ones that could not be read.
-type RefreshResult struct {
+type Refreshed struct {
 	Indexed []string
 	Removed []string
 	// LeftAlone is the paths holding a file the vault does not hold as a note.
@@ -44,12 +44,12 @@ type RefreshResult struct {
 }
 
 // Changed is every note the caller may need to look at again.
-func (r RefreshResult) Changed() []string {
+func (r Refreshed) Changed() []string {
 	return append(append([]string(nil), r.Indexed...), r.Removed...)
 }
 
-func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (RefreshResult, error) {
-	var res RefreshResult
+func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (Refreshed, error) {
+	var res Refreshed
 	if len(paths) == 0 {
 		return res, nil
 	}
