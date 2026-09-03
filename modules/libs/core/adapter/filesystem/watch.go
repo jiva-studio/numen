@@ -19,6 +19,10 @@ import (
 // missed.
 const Backlog = 4096
 
+// Walked is how many entries a folder that arrives is followed through. Past it
+// the vault is read from scratch, which is cheaper than the rest of the walk.
+const Walked = 4096
+
 // Watcher follows vaults on disk.
 type Watcher struct {
 	Options Options
@@ -41,7 +45,7 @@ func (w Watcher) Watch(
 
 	// The shape is taken before the first event, because the first event may be
 	// a folder leaving: what it was can only be known from before it went.
-	shape := remembered(reader)
+	shape, why := remembered(reader)
 
 	raw := make(chan notify.EventInfo, Backlog)
 	tree := filepath.Join(reader.Root(), "...")
@@ -51,6 +55,12 @@ func (w Watcher) Watch(
 
 	folded := make(chan []string)
 	gone := make(chan struct{}, 1)
+
+	// A shape short of a folder the walk could not enter cannot tell a folder
+	// that has gone from a file that has, so the vault is read again.
+	if why != nil {
+		gone <- struct{}{}
+	}
 
 	go func() {
 		defer notify.Stop(raw)
@@ -169,7 +179,7 @@ func fold(
 				rescan()
 				continue
 			}
-			paths, whole := shape.concerns(event.Path())
+			paths, whole := shape.concerns(ctx, event.Path())
 			if whole {
 				// A folder that is gone takes sources with it, and their paths
 				// are known only to the index.
@@ -214,10 +224,20 @@ type folders struct {
 
 // remembered walks the vault once for its shape, stopping where the vault's own
 // walk stops. A folder made later is learnt from the event that makes it.
-func remembered(reader *VaultReader) *folders {
+//
+// A folder the walk could not enter is missing from the shape, and comes back
+// as the first error it met.
+func remembered(reader *VaultReader) (*folders, error) {
 	f := &folders{reader: reader, are: map[string]bool{".": true}}
-	_ = filepath.WalkDir(reader.Root(), func(p string, d fs.DirEntry, err error) error {
-		if err != nil || !d.IsDir() {
+	var why error
+	walk := filepath.WalkDir(reader.Root(), func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if why == nil {
+				why = err
+			}
+			return nil
+		}
+		if !d.IsDir() {
 			return nil
 		}
 		path, inside := reader.relative(p)
@@ -230,7 +250,10 @@ func remembered(reader *VaultReader) *folders {
 		f.are[path] = true
 		return nil
 	})
-	return f
+	if why == nil {
+		why = walk
+	}
+	return f, why
 }
 
 func (f *folders) forget(path string) {
@@ -257,8 +280,9 @@ func (f *folders) forget(path string) {
 // `whole` is set when the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
 // index. A path outside the vault is that case too, and is what arrives when a
-// watched folder is renamed away.
-func (f *folders) concerns(absolute string) (paths []string, whole bool) {
+// watched folder is renamed away. A folder holding more than Walked entries is
+// that case as well.
+func (f *folders) concerns(ctx context.Context, absolute string) (paths []string, whole bool) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {
 		return nil, true
@@ -275,9 +299,18 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 		}
 		f.are[path] = true
 		var found []string
+		seen, over := 0, false
 		_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
+			if ctx.Err() != nil {
+				return fs.SkipAll
+			}
 			if err != nil {
 				return nil
+			}
+			seen++
+			if seen > Walked {
+				over = true
+				return fs.SkipAll
 			}
 			held, inside := f.reader.relative(p)
 			if !inside {
@@ -295,6 +328,9 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 			}
 			return nil
 		})
+		if over {
+			return nil, true
+		}
 		return found, false
 
 	case err != nil && f.are[path]:
