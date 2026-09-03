@@ -45,7 +45,27 @@ func Filename(title string) (name string, exact bool) {
 	if name == "" {
 		return "", false
 	}
+	if isDevice(name) {
+		return name + "-", false
+	}
 	return name, name == strings.TrimSpace(title)
+}
+
+// isDevice reports whether Windows keeps this name for a device, which no file
+// there may carry. The name is the device whatever extension follows it, and
+// whatever case it is written in: `con`, `CON.md` and `Con.notes.md` are all
+// the console.
+func isDevice(name string) bool {
+	stem, _, _ := strings.Cut(name, ".")
+	stem = strings.ToUpper(stem)
+	switch stem {
+	case "CON", "PRN", "AUX", "NUL":
+		return true
+	}
+	if len(stem) != 4 || stem[3] < '1' || stem[3] > '9' {
+		return false
+	}
+	return stem[:3] == "COM" || stem[:3] == "LPT"
 }
 
 // trimmedEnds is a name carrying at neither end a dot or a space. A leading dot
