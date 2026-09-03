@@ -118,7 +118,9 @@ const fadesAt = (thread: HTMLElement): readonly number[] => {
 const fadesUnderTheComposer = async (canvasElement: HTMLElement) => {
   const thread = canvasElement.querySelector('.agent__thread') as HTMLElement
   const composer = canvasElement.querySelector('.composer') as HTMLElement
-  const fade = parseFloat(getComputedStyle(thread).getPropertyValue('--fade'))
+  // The thread keeps the fade clear at its head, which is where it is read in
+  // the page's own units.
+  const fade = parseFloat(getComputedStyle(thread).paddingBlockStart)
 
   await waitFor(async () => {
     const [opaque, clear] = fadesAt(thread)

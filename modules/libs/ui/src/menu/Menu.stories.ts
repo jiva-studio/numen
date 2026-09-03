@@ -20,6 +20,8 @@ interface Knobs {
   opening: MenuOpening
   /** Which item is the one in force, if the menu names one. */
   current: string | null
+  /** Whether the name of a band is drawn over it. */
+  bands: boolean
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -78,6 +80,7 @@ const asked = (args: Knobs) => ({
         :from="from"
         :opening="args.opening"
         :current="args.current"
+        :bands="args.bands"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -127,6 +130,7 @@ const meta = {
     at: { x: 480, y: 300 },
     opening: 'pointer',
     current: null,
+    bands: false,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -464,6 +468,7 @@ export const BandsNamed: Story = {
       { id: 'sea', text: 'sea', band: 'Yours' },
     ],
     current: 'paper',
+    bands: true,
   },
   play: async () => {
     const menu = menuElement()!

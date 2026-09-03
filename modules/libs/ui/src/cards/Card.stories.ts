@@ -380,15 +380,21 @@ export const NoStencil: Story = {
     expect(tile.textContent).toContain('No stencil called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
-    // What is wrong with it stands over the edge a value would, and what it
-    // says of holding nothing stands in the middle of the room left over.
+    // What is wrong with it stands over the edge a value would: the clearance
+    // the body keeps, in from the tile's own stroke.
+    const body = found(canvasElement, '.card__body')
+    const clearance = Number.parseFloat(getComputedStyle(body).paddingInlineStart)
+    const stroke = Number.parseFloat(getComputedStyle(tile).borderInlineStartWidth)
     const objects = found(canvasElement, '.card__objects').getBoundingClientRect()
-    expect(Math.round(objects.left)).toBe(Math.round(tile.getBoundingClientRect().left))
+    expect(Math.round(objects.left)).toBe(
+      Math.round(tile.getBoundingClientRect().left + stroke + clearance),
+    )
 
-    const body = found(canvasElement, '.card__body').getBoundingClientRect()
+    // What it says of holding nothing stands in the middle of the room left
+    // over.
     const silence = found(canvasElement, '.card__silence').getBoundingClientRect()
     const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
-    expect(middle(silence)).toBe(middle(body))
+    expect(middle(silence)).toBe(middle(body.getBoundingClientRect()))
   },
 }
 
