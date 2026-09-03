@@ -210,10 +210,9 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.Scan = opened.scanning
 
 	api.Makes = &note.Create{
-		Writers:   cfg.VaultWriters(),
-		Names:     db.Queries(),
-		Index:     opened.level,
-		Extension: filedUnder(cfg),
+		Writers: cfg.VaultWriters(),
+		Names:   db.Queries(),
+		Index:   opened.level,
 	}
 	api.Joins = &note.Linking{
 		Readers: cfg.VaultReaders(),
@@ -686,15 +685,6 @@ func readable(cfg container.Config, v domain.Vault) error {
 		return fmt.Errorf("%w: %s is no longer the vault %s", usecase.ErrUnreadable, v.Path, v.Name)
 	}
 	return nil
-}
-
-// filedUnder is the extension a note this vault holds is filed under. Empty is
-// markdown.
-func filedUnder(cfg container.Config) string {
-	if len(cfg.Extensions) > 0 {
-		return cfg.Extensions[0]
-	}
-	return ""
 }
 
 // settling is everything owed landing: every client writes what only it holds,

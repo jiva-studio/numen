@@ -44,7 +44,6 @@ numen-cli search Research "entropy"
 | `--index <path>` | where the index lives (default: platform cache directory) |
 | `--registry <path>` | where the vault list lives (default: platform config directory) |
 | `--service-dir <name>` | the folder a vault keeps its identity in (default: .numen) |
-| `--note-extensions <list>` | which files are notes (default: .md) |
 <!-- END AUTOGEN -->
 
 ## The commands, one at a time
@@ -91,6 +90,5 @@ The same places the window uses: the index and the vault list where the platform
 `.numen/` inside each vault. `--index` and `--registry` point either somewhere else — a copy to
 try something on, a check that touches nothing you use.
 
-`--service-dir` renames the folder a vault keeps its identity in, and `--note-extensions`
-decides which files count as notes. Both have to match what the window is using, or the two will
-disagree about what your vault contains.
+`--service-dir` renames the folder a vault keeps its identity in. It has to match what the window
+is using, or the two will disagree about what your vault contains.

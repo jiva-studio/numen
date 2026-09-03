@@ -14,9 +14,6 @@ type Options struct {
 	// ServiceDir is the folder the application keeps its own files in. Empty
 	// means the default.
 	ServiceDir string
-	// Extensions are the file extensions treated as notes, with the leading
-	// dot. Empty means the default, which is markdown alone.
-	Extensions []string
 	// BookExtensions are the file extensions treated as books, with the leading
 	// dot. Empty means the default, which is EPUB and PDF.
 	BookExtensions []string
@@ -51,10 +48,9 @@ func (o Options) hold() time.Duration {
 	return o.Hold
 }
 
-// DefaultExtensions is what counts as a note when nothing says otherwise. It is
-// one entry because a default that guesses widely indexes what the user did not
-// mean.
-var DefaultExtensions = []string{".md"}
+// NoteExtensions is what counts as a note. A note, a deck, a stencil and a
+// preset are all markdown, and a vault holds them under one extension.
+var NoteExtensions = []string{domain.NoteExtension}
 
 // DefaultBookExtensions is what counts as a book: the formats a reader takes
 // text out of. A book is any source with text that a person did not type here.
@@ -77,13 +73,6 @@ func (o Options) serviceDir() string {
 	return o.ServiceDir
 }
 
-func (o Options) extensions() []string {
-	if len(o.Extensions) == 0 {
-		return DefaultExtensions
-	}
-	return o.Extensions
-}
-
 func (o Options) bookExtensions() []string {
 	if len(o.BookExtensions) == 0 {
 		return DefaultBookExtensions
@@ -95,7 +84,7 @@ func (o Options) bookExtensions() []string {
 // at all. A name that answers to more than one list is a note.
 func (o Options) kind(name string) (domain.SourceKind, bool) {
 	switch {
-	case named(name, o.extensions()):
+	case named(name, NoteExtensions):
 		return domain.KindNote, true
 	case named(name, o.bookExtensions()):
 		return domain.KindBook, true

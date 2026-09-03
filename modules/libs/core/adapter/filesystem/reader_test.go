@@ -442,7 +442,7 @@ func TestReadConfigDistinguishesMissingFromCorrupt(t *testing.T) {
 	}
 }
 
-func TestWhichExtensionsCountIsASetting(t *testing.T) {
+func TestANoteIsAMarkdownFile(t *testing.T) {
 	dir := t.TempDir()
 	for _, name := range []string{"a.md", "b.markdown", "c.txt"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("# x\n"), 0o644); err != nil {
@@ -450,15 +450,8 @@ func TestWhichExtensionsCountIsASetting(t *testing.T) {
 		}
 	}
 
-	// The default is markdown alone: a default that guesses widely indexes what
-	// the user did not mean.
 	if got := walked(t, dir, filesystem.Options{}); !slices.Equal(got, []string{"a.md"}) {
-		t.Errorf("default found %v, want [a.md]", got)
-	}
-
-	got := walked(t, dir, filesystem.Options{Extensions: []string{".md", ".markdown"}})
-	if !slices.Equal(got, []string{"a.md", "b.markdown"}) {
-		t.Errorf("configured found %v", got)
+		t.Errorf("the walk found %v, want [a.md]", got)
 	}
 }
 

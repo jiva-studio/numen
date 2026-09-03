@@ -6,7 +6,7 @@ Scope is the **note file only**. The layout of the vault around it — the servi
 
 ## What a note is
 
-A UTF-8 file whose extension is one of those configured as notes, in any folder of the vault the user likes. The default is `.md` alone (ADR-0008).
+A UTF-8 file named `.md`, in any folder of the vault the user likes. A stencil, a deck and a preset are notes and carry the same extension.
 
 Two places are never notes: the service folder — `.numen` by default — and any directory whose name begins with a dot, which holds tool state. Both are skipped whole. The application neither imposes nor rearranges layout (ADR-0001).
 

@@ -23,8 +23,6 @@ type Create struct {
 	// Index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
-	// Extension is what a new note is filed under. Empty means markdown.
-	Extension string
 	// Now is when this is happening. An identifier carries it.
 	Now func() time.Time
 }
@@ -57,7 +55,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err != nil {
 		return Created{}, err
 	}
-	path := pathpkg.Join(in.Folder, name+u.extension())
+	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
@@ -137,13 +135,6 @@ func joined(content []byte, links []domain.Link) ([]byte, error) {
 		}
 	}
 	return doc.Bytes(), nil
-}
-
-func (u Create) extension() string {
-	if u.Extension == "" {
-		return ".md"
-	}
-	return u.Extension
 }
 
 func (u Create) now() time.Time {

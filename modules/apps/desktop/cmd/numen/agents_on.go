@@ -169,10 +169,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		DeckBody:    format.DeckBody,
 		StencilBody: container.StencilBody,
 
-		Create: note.Create{
-			Writers: writers, Names: queries, Index: index,
-			Extension: extension(cfg),
-		},
+		Create:  note.Create{Writers: writers, Names: queries, Index: index},
 		Write:   note.Write{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
 		Move:    moves,
@@ -198,14 +195,6 @@ func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.V
 		}
 		return err
 	}
-}
-
-// extension is what a note this vault holds is filed under.
-func extension(cfg container.Config) string {
-	if len(cfg.Extensions) > 0 {
-		return cfg.Extensions[0]
-	}
-	return ""
 }
 
 // recogniser is what reads a scanned document for an agent that asks.

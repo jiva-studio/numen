@@ -24,9 +24,9 @@ Nothing else — no custom fences, no HTML comments carrying data, no sidecar fi
 
 ### Which files are notes
 
-The extensions treated as notes are a setting, and the default is `.md` alone. Markdown is written under several names, and the answer is a preference.
+A note is a file named `.md`. A stencil, a deck and a preset are notes, so one extension answers for all of them.
 
-Two places are never notes, whatever the setting says: the application's own folder inside the vault, and any directory whose name begins with a dot. Both are skipped whole, without being descended into.
+Two places are never notes: the application's own folder inside the vault, and any directory whose name begins with a dot. Both are skipped whole, without being descended into.
 
 ### The frontmatter is where the application's fields live
 
@@ -42,7 +42,7 @@ The owned keys, the extensions a note may carry, and the order a note's displaye
 - Parsing has to tolerate what other editors produce, which is irregular.
 - `title` is an ordinary English word taken as an owned key, and a person's own key of that name collides.
 - A reported collision stands until the person settles it, and the note carries a field the application will not read.
-- Extensions being a setting means one file is a note in one vault and prose in the next.
+- Markdown written under another name — `.markdown`, `.mdown` — is prose to this application, and the person renames it to bring it in.
 
 ## Alternatives considered
 
