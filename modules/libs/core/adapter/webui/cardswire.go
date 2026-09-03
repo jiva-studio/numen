@@ -13,7 +13,7 @@ import (
 const maxStencils = 200
 
 // stencilOf is one stencil as the schema carries it.
-func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
+func stencilOf(path, title string, s format.CardStencil) *v1.Stencil {
 	out := &v1.Stencil{
 		Path:     path,
 		Title:    title,

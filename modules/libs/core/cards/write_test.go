@@ -627,7 +627,7 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 		return out, nil
 	}
 
-	_, minted, err := cards.Whole(body, map[string]cards.Stencil{
+	_, minted, err := cards.Whole(body, map[string]cards.CardStencil{
 		"Animal": {Fields: []string{"Name"}},
 	}, mint)
 	if err != nil {

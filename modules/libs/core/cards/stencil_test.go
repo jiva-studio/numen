@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-func faceNames(s cards.Stencil) []string {
+func faceNames(s cards.CardStencil) []string {
 	var out []string
 	for _, f := range s.Faces {
 		out = append(out, f.Name)

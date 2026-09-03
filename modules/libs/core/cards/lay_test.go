@@ -8,8 +8,8 @@ import (
 
 // declaring is a stencil of nothing but its fields, which is what laying a face
 // out needs of one.
-func declaring(fields ...string) cards.Stencil {
-	return cards.Stencil{Fields: fields}
+func declaring(fields ...string) cards.CardStencil {
+	return cards.CardStencil{Fields: fields}
 }
 
 func TestLayFillsAFaceWithACard(t *testing.T) {

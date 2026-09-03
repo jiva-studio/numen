@@ -46,7 +46,7 @@ type Stencil struct {
 	Path    string
 	Outcome note.ReadOutcome
 	Type    domain.NoteType
-	Stencil format.Stencil
+	Stencil format.CardStencil
 	Ref     domain.Fingerprint
 }
 
@@ -103,7 +103,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 // card's fields is first.
 func (u Read) Cutting(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
-) (map[string]format.Stencil, error) {
+) (map[string]format.CardStencil, error) {
 	at, err := cutting(ctx, u.Links, v.ID, path, d)
 	if err != nil {
 		return nil, err
@@ -148,13 +148,13 @@ func cutting(
 // and stands in ordinary, so the cards written under it are marked.
 func (u Read) stencils(
 	ctx context.Context, v domain.Vault, at map[string]string,
-) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
+) (by map[string]format.CardStencil, ordinary map[string]bool, err error) {
 	if len(at) == 0 {
 		return nil, nil, nil
 	}
-	read := make(map[string]format.Stencil, len(at))
+	read := make(map[string]format.CardStencil, len(at))
 	loose := make(map[string]bool, len(at))
-	by = make(map[string]format.Stencil, len(at))
+	by = make(map[string]format.CardStencil, len(at))
 	ordinary = make(map[string]bool, len(at))
 	for written, path := range at {
 		held, seen := read[path]

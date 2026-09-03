@@ -65,7 +65,7 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 
 // Whole makes every card of the file whole and reports the marks it minted,
 // which is what Whole does to a body. The file keeps its own line endings.
-func (f *DeckFile) Whole(stencils map[string]Stencil, mint func() (string, error)) ([]Minted, error) {
+func (f *DeckFile) Whole(stencils map[string]CardStencil, mint func() (string, error)) ([]Minted, error) {
 	body, minted, err := Whole(markdown.Normalised(f.doc.Body()), stencils, mint)
 	if err != nil {
 		return nil, err
@@ -314,7 +314,7 @@ func stamped(doc *markdown.Document, identifier string) (bool, error) {
 
 // Stencil is what the file now says: the fields of the frontmatter in front of
 // the writer, and the faces of the body in front of it.
-func (f *StencilFile) Stencil(n domain.Note) Stencil {
+func (f *StencilFile) Stencil(n domain.Note) CardStencil {
 	n.Body = f.doc.Body()
 	n.Frontmatter = map[string]any{fieldsKey: declared(f.doc)}
 	return ReadStencil(n)

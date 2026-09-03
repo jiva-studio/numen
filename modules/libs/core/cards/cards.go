@@ -26,8 +26,9 @@ const (
 	FieldLevel = 3
 )
 
-// Stencil is a note declaring what a card has and how it is shown.
-type Stencil struct {
+// CardStencil is a note declaring what a card has and the face templates it is
+// shown through.
+type CardStencil struct {
 	Ref    domain.Fingerprint
 	Fields []string
 	// Preamble is every byte above the first face, down to the one its heading
@@ -111,7 +112,7 @@ type Value struct {
 
 // First is the field a card's heading holds the value of. A stencil declaring
 // none cuts nothing, and answers with no name.
-func (s Stencil) First() string {
+func (s CardStencil) First() string {
 	if len(s.Fields) == 0 {
 		return ""
 	}

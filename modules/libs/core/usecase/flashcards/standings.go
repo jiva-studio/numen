@@ -30,7 +30,7 @@ type Standing struct {
 	// What it is laid out from. It is read once with the deck and kept,
 	// so laying out is the last thing done and only for a card about to be
 	// shown: counting what a vault owes fills in no template at all.
-	stencil format.Stencil
+	stencil format.CardStencil
 	face    format.CardFaceTemplate
 	card    format.Card
 }
@@ -91,7 +91,7 @@ func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) 
 // settled.
 func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Standing {
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
-	stencils := make(map[string]format.Stencil)
+	stencils := make(map[string]format.CardStencil)
 	var out []Standing
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
@@ -107,7 +107,7 @@ func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Sta
 // face of the stencil it names that lays anything out.
 func (u Standings) standing(
 	ctx context.Context, v domain.Vault, read cards.Read,
-	deck cards.Deck, stencils map[string]format.Stencil,
+	deck cards.Deck, stencils map[string]format.CardStencil,
 ) []Standing {
 	var out []Standing
 	for _, card := range deck.Deck.Cards {
@@ -124,7 +124,7 @@ func (u Standings) standing(
 			if err != nil || one.Outcome != note.Ok || one.Type != domain.TypeStencil {
 				// A card whose stencil is not one is a card no face shows. It
 				// is a problem against the deck, and it is settled in a window.
-				stencils[path] = format.Stencil{}
+				stencils[path] = format.CardStencil{}
 				continue
 			}
 			stencil = one.Stencil
