@@ -2,7 +2,6 @@ package mcp_test
 
 import (
 	"encoding/json"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -228,7 +228,7 @@ func says(t *testing.T, session *sdk.ClientSession, name string, args any) strin
 // opened is one index, which is where every vault of an installation is held.
 func opened(t *testing.T) (container.Config, *container.Index) {
 	t.Helper()
-	cfg := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}
+	cfg := container.Config{IndexPath: indexfile.Path(t)}
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)

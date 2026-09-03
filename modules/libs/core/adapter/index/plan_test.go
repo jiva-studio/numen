@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -128,7 +127,7 @@ func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
 func populated(t *testing.T) *DB {
 	t.Helper()
 	ctx := t.Context()
-	db, err := Open(ctx, filepath.Join(t.TempDir(), "index.db"))
+	db, err := Open(ctx, migrated.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

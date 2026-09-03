@@ -96,6 +96,7 @@ func tallied(t *testing.T) (*DB, *note.Queries) {
 	}
 
 	path := filepath.Join(t.TempDir(), "index.db")
+	migrated.CopyTo(t, path)
 	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)

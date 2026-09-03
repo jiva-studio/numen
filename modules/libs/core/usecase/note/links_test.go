@@ -1,13 +1,13 @@
 package note_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -17,9 +17,7 @@ import (
 func indexed(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
-	db, err := container.Config{
-		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}.OpenIndex(t.Context())
+	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

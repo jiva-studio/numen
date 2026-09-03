@@ -3,7 +3,6 @@ package mcp_test
 import (
 	"context"
 	"net/http"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -53,9 +53,7 @@ func (p presenting) RoundTrip(r *http.Request) (*http.Response, error) {
 // drain that runs out of time says nothing about what is still writing.
 func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
-	db, err := container.Config{
-		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}.OpenIndex(t.Context())
+	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
