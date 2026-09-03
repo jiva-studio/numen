@@ -75,7 +75,7 @@ func directlyIn(into string, landed []string) []string {
 
 // refusedIn is what a drop could not bring in, in one sentence. Nothing is said
 // where every file arrived.
-func refusedIn(refused []usecase.Refusal) string {
+func refusedIn(refused []usecase.Refused) string {
 	if len(refused) == 0 {
 		return ""
 	}
