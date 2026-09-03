@@ -35,8 +35,8 @@ const (
 	NotText Outcome = "not text"
 )
 
-// Contents is one run of a file as a read hands it over.
-type Contents struct {
+// ReadResult is one run of a file as a read hands it over.
+type ReadResult struct {
 	Outcome Outcome
 	// Text is the run that was read. It is empty for every outcome but Ok.
 	Text string
@@ -65,8 +65,8 @@ type Read struct {
 // inside it. What is wrong with the file itself is an outcome.
 func (u Read) Execute(
 	ctx context.Context, v domain.Vault, path string, start, length int,
-) (Contents, error) {
-	out := Contents{Start: start}
+) (ReadResult, error) {
+	out := ReadResult{Start: start}
 	if start < 0 {
 		return out, fmt.Errorf("a run of %s begins at %d", path, start)
 	}
@@ -79,7 +79,7 @@ func (u Read) Execute(
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	file, err := reader.Open(ctx, path)
 	switch {
@@ -87,14 +87,14 @@ func (u Read) Execute(
 		out.Outcome = Missing
 		return out, nil
 	case err != nil:
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	defer file.Close()
 
 	// A listing of the folder above is the vault saying what it holds there.
 	held, err := reported(ctx, reader, path)
 	if err != nil {
-		return Contents{}, err
+		return ReadResult{}, err
 	}
 	if held != Ok {
 		out.Outcome = held
@@ -103,19 +103,19 @@ func (u Read) Execute(
 
 	whole, err := file.Seek(0, io.SeekEnd)
 	if err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	out.Whole = int(whole)
 
 	start = min(start, out.Whole)
 	length = min(length, out.Whole-start)
 	if _, err := file.Seek(int64(start), io.SeekStart); err != nil {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	raw := make([]byte, length)
 	read, err := io.ReadFull(file, raw)
 	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-		return Contents{}, fmt.Errorf("read %s: %w", path, err)
+		return ReadResult{}, fmt.Errorf("read %s: %w", path, err)
 	}
 	raw = raw[:read]
 

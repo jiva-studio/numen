@@ -20,7 +20,7 @@ func readable(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	return file.Read{Readers: filesystem.Readers{}}, testsupport.NewVault(t, files)
 }
 
-func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length int) file.Contents {
+func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length int) file.ReadResult {
 	t.Helper()
 	contents, err := u.Execute(t.Context(), v, path, start, length)
 	if err != nil {
