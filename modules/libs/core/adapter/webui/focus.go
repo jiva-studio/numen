@@ -13,7 +13,7 @@ import (
 
 // Viewing is this window, for whatever asks for a place to be put in front of
 // the person.
-func (a *API) Viewing() port.View { return viewing{a} }
+func (a *API) Viewing() port.Window { return viewing{a} }
 
 // viewing tells the clients and nothing more. What travelling there looks
 // like is theirs, and a place asked for while nobody is drawing is a place

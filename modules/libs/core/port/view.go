@@ -6,12 +6,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// View is what a person is looking at.
+// Window is what a person is looking at.
 //
 // It is how something working the vault beside them puts a place in front of
 // them. Only an application with a window can satisfy it; where there is none,
 // nothing asks.
-type View interface {
+type Window interface {
 	// Focus puts this place in front of the person: a note becomes the one the
 	// neighbourhood is seen from, and a document is opened where the place
 	// says. A place already in focus is focused again, which is what asking for

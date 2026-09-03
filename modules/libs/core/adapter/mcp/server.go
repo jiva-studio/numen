@@ -38,7 +38,7 @@ type Core struct {
 
 	// View is the person's window, where there is one. Without it an agent is
 	// served the vault and nothing that puts a note in front of anybody.
-	View port.View
+	View port.Window
 
 	// Attending is what the person has open, asked at every call so that an
 	// agent reads the window as it stands. Without it an agent is told nothing
