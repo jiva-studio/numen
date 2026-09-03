@@ -95,7 +95,12 @@ jobs:
 
       # -race because a scan will grow concurrent, and the cheapest time to find
       # that out is before it does.
+      #
+      # A test builds its vault in a temporary folder, and there is memory here
+      # to hold every one of them.
       - run: go test -race ./...
+        env:
+          TMPDIR: /dev/shm
 
       # Every run writes what it built. A branch reads its own back on the next
       # push to it and main's before that.
