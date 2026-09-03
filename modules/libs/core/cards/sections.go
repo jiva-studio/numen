@@ -30,17 +30,14 @@ type section struct {
 // text the face lays out.
 func sections(body []byte, first, last int) []section {
 	var out []section
-	fenced := false
+	var f markdown.Fence
 	for at := 0; at <= len(body); {
 		end, next := len(body), len(body)+1
 		if i := bytes.IndexByte(body[at:], '\n'); i >= 0 {
 			end, next = at+i, at+i+1
 		}
 		line := strings.TrimRight(string(body[at:end]), "\r")
-		switch {
-		case isFence(line):
-			fenced = !fenced
-		case !fenced:
+		if !f.Crosses(line) && !f.Inside() {
 			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
 					out[n-1].to = at
@@ -83,11 +80,6 @@ func heading(line string, first, last int) (level int, name string, ok bool) {
 		}
 	}
 	return hashes, name, true
-}
-
-func isFence(line string) bool {
-	t := strings.TrimSpace(line)
-	return strings.HasPrefix(t, "```") || strings.HasPrefix(t, "~~~")
 }
 
 // run is one part of the body as a person reads it — one kind of line break,
