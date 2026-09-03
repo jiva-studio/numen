@@ -14,6 +14,10 @@ type Passage struct {
 	// vault folder.
 	Source string
 
+	// Kind is what the vault holds there, so a caller drawing a passage draws
+	// the source it came out of as what it is.
+	Kind SourceKind
+
 	Start  int
 	Length int
 

@@ -681,6 +681,10 @@ message Passage {
   // Which of three the note is, so a client draws a deck and a stencil as what
   // they are. It says nothing about a source that is not a note.
   NoteType type = 9;
+
+  // What the vault holds at that path, so a client draws a book and a
+  // recording as what they are.
+  SourceKind kind = 10;
 }
 
 message ListRequest {

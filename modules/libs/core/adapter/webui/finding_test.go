@@ -2,10 +2,13 @@ package webui_test
 
 import (
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 // The two questions the palette asks, over the wire.
@@ -113,6 +116,45 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 	}
 	if is := found[0].GetType(); is != v1.NoteType_NOTE_TYPE_PRESET {
 		t.Errorf("the passage is drawn as %v, want the preset it was read out of", is)
+	}
+}
+
+// TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
+// down draws a book as a book, and a note as the note it is.
+func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
+		"library/A Book.epub": string(testsupport.Book(t)),
+	})
+
+	// The text of a book is taken out of it behind the window, and the search
+	// reaches it once that has finished.
+	kinds := map[string]v1.SourceKind{}
+	for range 500 {
+		answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+			Query: "book", Way: v1.Way_WAY_WORDS,
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		clear(kinds)
+		for _, one := range answer.Msg.GetFound() {
+			kinds[one.GetPath()] = one.GetKind()
+		}
+		if _, held := kinds["library/A Book.epub"]; held {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	want := map[string]v1.SourceKind{
+		"Engines.md":          v1.SourceKind_SOURCE_KIND_NOTE,
+		"library/A Book.epub": v1.SourceKind_SOURCE_KIND_BOOK,
+	}
+	for path, is := range want {
+		if got, held := kinds[path]; !held || got != is {
+			t.Errorf("the passage out of %s came back as %v, want %v", path, got, is)
+		}
 	}
 }
 

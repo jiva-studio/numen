@@ -8,7 +8,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
-import { FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
+import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
 import { keyChord, type PaletteBand, type PaletteSpan } from './model'
 import {
@@ -505,6 +505,8 @@ const MARKS: Record<string, Component> = {
   deck: Layers,
   stencil: LayoutTemplate,
   preset: Gauge,
+  book: BookOpen,
+  recording: AudioLines,
 }
 
 /** A palette whose rows are marked, which is the caller filling the icon slot. */
@@ -538,8 +540,9 @@ const markOf = (row: Element | null | undefined): string =>
 
 /**
  * A mark before every row, drawn by whoever offered the row: here a note, a
- * deck, a stencil and a preset, each drawn as itself. A row the caller has no
- * mark for keeps the room, so the names line up down the list.
+ * deck, a stencil, a preset, a book and a recording, each drawn as itself. A
+ * row the caller has no mark for keeps the room, so the names line up down the
+ * list.
  */
 export const Marks: Story = {
   args: {
@@ -552,6 +555,14 @@ export const Marks: Story = {
           named('deck', 'Words to learn', ''),
           named('stencil', 'Animal', ''),
           named('preset', 'Every day', ''),
+        ],
+      },
+      {
+        id: 'text',
+        title: 'Text',
+        items: [
+          passage('book', 'The Mahabharata', 'the war of the two houses', 'war'),
+          passage('recording', '730709BG.LON.mp3', 'what was said that morning', 'said'),
           named('nothing', 'A file of no kind', ''),
         ],
       },
@@ -559,17 +570,19 @@ export const Marks: Story = {
   },
   render: marked,
   play: async () => {
-    await waitFor(() => expect(options()).toHaveLength(5))
+    await waitFor(() => expect(options()).toHaveLength(7))
 
     await expect(options().map(markOf)).toEqual([
       'file-text',
       'layers',
       'layout-template',
       'gauge',
+      'book-open',
+      'audio-lines',
       '',
     ])
     // The row with no mark keeps the room for one, so the names line up.
-    await expect(options()[4]?.querySelector('.palette__icon')).not.toBeNull()
+    await expect(options()[6]?.querySelector('.palette__icon')).not.toBeNull()
   },
 }
 

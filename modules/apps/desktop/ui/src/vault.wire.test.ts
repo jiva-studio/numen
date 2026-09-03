@@ -75,4 +75,34 @@ describe('a passage the vault answers with', () => {
     expect(found[0]?.isNote).toBe(false)
     expect(found[0]?.type).toBe('note')
   })
+
+  it('carries what the vault holds at its path, whichever source that is', async () => {
+    answers({
+      found: [
+        { path: 'Ants.md', note: { path: 'Ants.md' }, at: [], kind: 'SOURCE_KIND_NOTE' },
+        { path: 'library/mahabharata.epub', at: [], kind: 'SOURCE_KIND_BOOK' },
+        { path: 'talks/730709BG.LON.mp3', at: [], kind: 'SOURCE_KIND_RECORDING' },
+      ],
+    })
+
+    expect((await core.search('war', 'words', 8)).map((one) => one.kind)).toEqual([
+      'note',
+      'book',
+      'recording',
+    ])
+  })
+
+  it('holds no source where the answer names none, or one this window cannot read', async () => {
+    answers({
+      found: [
+        { path: 'notes.txt', at: [] },
+        { path: 'later.xyz', at: [], kind: 9 },
+      ],
+    })
+
+    expect((await core.search('war', 'words', 8)).map((one) => one.kind)).toEqual([
+      'other',
+      'other',
+    ])
+  })
 })

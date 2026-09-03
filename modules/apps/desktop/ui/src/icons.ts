@@ -52,7 +52,7 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import type { NoteType } from './core'
+import type { NoteType, Source } from './core'
 import {
   AGENT,
   CONFIGURATION,
@@ -159,3 +159,16 @@ const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
 
 /** The icon for a kind of note. Every kind has one. */
 export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
+
+/**
+ * What each kind of source that is not a note is drawn as: the mark of the tab
+ * it opens in, so a recording is the same thing in a list that it is once it is
+ * open. A note is drawn by which of four it is.
+ */
+const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
+  ['book', BookOpen],
+  ['recording', AudioLines],
+])
+
+/** The icon for a source, and nothing for a file the vault holds no source for. */
+export const iconOfSource = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null

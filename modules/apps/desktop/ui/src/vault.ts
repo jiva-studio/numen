@@ -326,7 +326,7 @@ export const core: Core & Asking & Commanding = {
   standing: async (paths) => {
     const answer = await vault.standing({ paths: [...paths] })
     return new Map(
-      answer.found.map((one) => [one.path, { kind: holding[one.kind], type: noteType(one.type) }]),
+      answer.found.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
     )
   },
   /**
@@ -363,6 +363,7 @@ export const core: Core & Asking & Commanding = {
       // one as is the document it is.
       isNote: one.note !== undefined,
       type: noteType(one.type),
+      kind: sourceKind(one.kind),
       text: one.text,
       start: one.start,
       length: one.length,
@@ -545,17 +546,20 @@ const listed = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
   folder: one.folder,
-  kind: holding[one.kind],
+  kind: sourceKind(one.kind),
   type: noteType(one.type),
 })
 
 /** What the vault holds at a path, in the words the window uses. */
-const holding: Record<SourceKind, Source> = {
+const holding: Partial<Record<SourceKind, Source>> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
   [SourceKind.RECORDING]: 'recording',
 }
+
+/** A source this window has no word for is a file it holds no source for. */
+const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
 
 /** What a model's files are on this machine, in the words the window uses. */
 const standing: Record<Presences, Presence> = {

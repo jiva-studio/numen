@@ -35,7 +35,7 @@ import {
   type Where,
 } from './commanding'
 import { chorded, commandFor, keysOf } from './keying'
-import { iconFor, iconOfKind, iconOfNote } from './icons'
+import { iconFor, iconOfKind, iconOfNote, iconOfSource } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
 import { reviewing } from './reviewing'
@@ -740,7 +740,7 @@ const field = computed(() =>
  * What one row of the palette is drawn as: a command by its own mark, a name or
  * a passage by the kind of note it stands in, and the note a search did not
  * find by the mark of making one. A passage out of a book or a recording stands
- * in no note and is drawn with nothing.
+ * in no note and is drawn as the source it was read out of.
  */
 const rowIcon = (id: string) => {
   if (commands.open.value) {
@@ -749,7 +749,9 @@ const rowIcon = (id: string) => {
   }
   if (id === MAKING) return iconFor('note')
   const type = palette.typeOf(id)
-  return type ? iconOfNote(type) : null
+  if (type) return iconOfNote(type)
+  const kind = palette.kindOf(id)
+  return kind ? iconOfSource(kind) : null
 }
 
 /**

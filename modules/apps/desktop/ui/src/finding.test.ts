@@ -89,6 +89,7 @@ const passage = (over: Partial<Passage> = {}): Passage => ({
   text: 'no engine beats a reversible one',
   isNote: true,
   type: 'note',
+  kind: 'note',
   start: 0,
   length: 0,
   line: 0,
@@ -438,7 +439,7 @@ describe('what a row is drawn as', () => {
     expect(palette.typeOf(item.id)).toBe('deck')
   })
 
-  it('draws a passage as the note it was read out of, and a book as nothing', async () => {
+  it('draws a passage as the note it was read out of', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
     void palette.typing('ent')
@@ -446,7 +447,13 @@ describe('what a row is drawn as', () => {
 
     vault.way('words')?.answers([
       passage({ path: 'presets/daily.md', type: 'preset' }),
-      passage({ path: 'library/mahabharata.epub', title: '', isNote: false, start: 40_512 }),
+      passage({
+        path: 'library/mahabharata.epub',
+        title: '',
+        isNote: false,
+        kind: 'book',
+        start: 40_512,
+      }),
     ])
     await settled()
 
@@ -454,10 +461,41 @@ describe('what a row is drawn as', () => {
     expect(items.map((one) => palette.typeOf(one.id))).toEqual(['preset', null])
   })
 
+  it('says what the vault holds where a passage was read out of', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.way('words')?.answers([
+      passage({ path: 'notes/heat.md' }),
+      passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
+      passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
+    ])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'text')!.items
+    expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'book', 'recording'])
+  })
+
+  it('says a name stands in a note, whatever kind of note it is', async () => {
+    const vault = asking()
+    const palette = finding(vault.core, WORDS, now)
+    void palette.typing('ent')
+    await settled()
+
+    vault.names[0]?.answers([named(), named({ path: 'decks/words.md', type: 'deck' })])
+    await settled()
+
+    const items = bandOf(palette.bands.value, 'names')!.items
+    expect(items.map((one) => palette.kindOf(one.id))).toEqual(['note', 'note'])
+  })
+
   it('says nothing about an item it is not drawing', async () => {
     const vault = asking()
     const palette = finding(vault.core, WORDS, now)
     expect(palette.typeOf('notes/entropy.md')).toBeNull()
+    expect(palette.kindOf('notes/entropy.md')).toBeNull()
   })
 })
 

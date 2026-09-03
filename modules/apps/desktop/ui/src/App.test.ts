@@ -123,6 +123,7 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
       line: number
       at: []
       type: 'note' | 'deck' | 'stencil'
+      kind: 'note' | 'book' | 'recording' | 'other'
     }[],
     /**
      * Which of three the note at each path is, as the vault answers it. A path
@@ -385,6 +386,14 @@ const passageSaid = (path: string, title: string, type: 'note' | 'deck' | 'stenc
   line: 3,
   at: [] as [],
   type,
+  kind: 'note' as 'note' | 'book' | 'recording' | 'other',
+})
+
+/** One passage read out of a source that is not a note. */
+const sourceSaid = (path: string, kind: 'book' | 'recording') => ({
+  ...passageSaid(path, ''),
+  isNote: false,
+  kind,
 })
 
 /** Something drawn in a pane that answers what the window asks of it. */
@@ -865,20 +874,27 @@ describe('the palette', () => {
     expect(marks()).toStrictEqual(['file-text', 'layers', 'layout-template'])
   })
 
-  it('draws a passage as the note it was read out of, and a book as nothing', async () => {
+  it('draws a passage as the note it was read out of', async () => {
     said.names = []
-    said.passages = [
-      passageSaid('Animals.md', 'Animals', 'deck'),
-      { ...passageSaid('Ants.epub', ''), isNote: false },
-    ]
+    said.passages = [passageSaid('Animals.md', 'Animals', 'deck'), passageSaid('Ants.md', 'Ants')]
     const window = await drawnWithPalette()
 
     await searched(window)
 
     // Both halves of the search answer with the same two passages here.
-    expect(marks()).toStrictEqual(['layers', '', 'layers', ''])
-    // The row with no mark keeps the room for one, so the names line up.
-    expect(document.body.querySelectorAll('.palette__item .palette__icon')).toHaveLength(4)
+    expect(marks()).toStrictEqual(['layers', 'file-text', 'layers', 'file-text'])
+  })
+
+  it('draws a passage out of a book and one out of a recording as what each is', async () => {
+    said.names = []
+    said.passages = [sourceSaid('Ants.epub', 'book'), sourceSaid('730709BG.LON.mp3', 'recording')]
+    const window = await drawnWithPalette()
+
+    await searched(window)
+
+    expect(marks()).toStrictEqual(['book-open', 'audio-lines', 'book-open', 'audio-lines'])
+    // Every row of the list carries a mark, and none of them keeps empty room.
+    expect(marks().every(Boolean)).toBe(true)
   })
 
   /** The bands standing, by the name each carries. */
