@@ -31,9 +31,9 @@ Where speech recognition, spaced repetition, information retrieval, Markdown, We
 
 A word is never coined to keep clear of a word used elsewhere. Where the name a field gives a thing is taken in another context, it is taken again here, and the contexts are what make that safe. A coined word is for a concept this product has and nothing else names, and it is defended in its glossary entry.
 
-### The listed boundary rename is one
+### There are no listed boundary renames
 
-**`calling` and `doing`.** A step is `calling` in the core and `doing` on the wire. The core says what the agent is doing, and the wire is read by something drawing a line about it. The boundary is ADR-0005's.
+Nothing is renamed on its way across a boundary. A field whose name changes between the domain, the storage, the wire and the interface is a defect, and this list is where an exception would have to stand.
 
 ### A stretch and a span are two things
 

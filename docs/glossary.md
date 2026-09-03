@@ -107,7 +107,7 @@ One concept has one name, and a name means one thing inside its context: [ADR-00
 | finish | Saying a conversation is over: nothing is asked under its name again, and what the agent kept of it is let go of. One answer given up on is a stop, and the conversation stays open. | close |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it. | |
 | call | What an agent named one use of a tool, so every step reporting it is known to be one. | |
-| kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is `calling`. A note is created and a link is added; both are removed. | deleted |
+| kind | What a call does to the vault: `read`, `edit`, `remove`, `move`, `search`. A call that says no more than that it is one is a *tool call*. A note is created and a link is added; both are removed. | deleted |
 | place | Where a call is working: a source, by the path the vault files it under, and the stretch of that source's text the call names. A length of zero names the source and nothing inside it. | placement |
 | stood | A run named by the text standing in it, quoted. What an agent names a stretch by when it has read prose and not measured it. | |
 
