@@ -21,7 +21,7 @@ import (
 
 func TestWhichRefusalAnOutcomeIs(t *testing.T) {
 	for name, c := range map[string]struct {
-		outcome note.Outcome
+		outcome note.ReadOutcome
 		want    v1.Refusal
 		is      bool
 	}{

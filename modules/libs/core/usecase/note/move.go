@@ -24,22 +24,22 @@ type Move struct {
 	// Names is asked how many notes are filed under a name, which is what says
 	// whether a link repaired to that name reaches this note or another one.
 	// Nothing there leaves a repair writing the bare name.
-	Names Names
+	Names NameQueries
 	// Sources is where the index files each file. A move tells it that what was
 	// at one path is at another.
 	Sources port.SourceRepository
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 	// Moving is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
-	Moving Moving
+	Moving TellMove
 	// Sync is asked, as each rename is made, whether a note's title and its
 	// filename are kept as one name.
 	Sync Syncing
 }
 
-// Moved says where the note went and what it did to the links that pointed at
-// it.
-type Moved struct {
+// MoveResult says where the note went and what it did to the links that
+// pointed at it.
+type MoveResult struct {
 	From string
 	To   string
 	// Landed is whether the file is at To. It is false for a move that was
@@ -51,8 +51,8 @@ type Moved struct {
 	Repaired []string
 }
 
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Moved, error) {
-	res := Moved{From: from, To: to}
+func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (MoveResult, error) {
+	res := MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
 	}
@@ -90,8 +90,8 @@ func (u Move) filed(ctx context.Context, v domain.Vault, from, to string) error 
 //
 // Pointing is what pointed at the note before it went, read while there was
 // still something to read.
-func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (Moved, error) {
-	res := Moved{From: from, To: to, Landed: true}
+func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
+	res := MoveResult{From: from, To: to, Landed: true}
 
 	// The file is where it now is and the index is level with it. Whoever is
 	// reading this note at the name it had is reading a name with no file.

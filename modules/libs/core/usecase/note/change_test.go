@@ -66,8 +66,8 @@ func (c changing) remove() note.Remove {
 	}
 }
 
-func (c changing) linking() note.Linking {
-	return note.Linking{
+func (c changing) linking() note.EditLinks {
+	return note.EditLinks{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
 	}
 }

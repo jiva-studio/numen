@@ -65,7 +65,7 @@ type Write struct {
 	Bound int
 	// Telling is told what a write is doing while it is being made. Nothing is
 	// told where nobody is drawing the note.
-	Telling Telling
+	Telling TellEditing
 }
 
 // Execute puts body in the note at path.
@@ -110,7 +110,7 @@ func (u Write) Execute(
 	})
 }
 
-// Seen is what a caller last saw of the note it is saving.
+// LastRead is what a caller last saw of the note it is saving.
 //
 // Prose answers first: text that is still what the caller was given is the text
 // it read, whatever the file's size and time say. A synchroniser, a checkout
@@ -120,7 +120,7 @@ func (u Write) Execute(
 // At answers for text that did move, and is what makes a save that follows a
 // save land: the note is at the fingerprint the last write produced, so it is
 // the note this caller put there.
-type Seen struct {
+type LastRead struct {
 	// Prose is what a read gave this caller, with every line break as one \n.
 	Prose string
 	// At is the file that read came out of.
@@ -129,7 +129,7 @@ type Seen struct {
 
 // stale reports whether the note in front of the writer holds prose this caller
 // has not read.
-func (s *Seen) stale(on domain.Fingerprint, prose string) bool {
+func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
@@ -151,7 +151,7 @@ func (s *Seen) stale(on domain.Fingerprint, prose string) bool {
 // What comes back is the fingerprint of the file the save produced, which is
 // what the caller presents at its next save.
 func (u Write) Save(
-	ctx context.Context, v domain.Vault, path, body string, seen *Seen,
+	ctx context.Context, v domain.Vault, path, body string, seen *LastRead,
 ) (domain.Fingerprint, error) {
 	// A body opening with the delimiter is read back as a frontmatter block, and
 	// then the prose it was is no longer the note's body.

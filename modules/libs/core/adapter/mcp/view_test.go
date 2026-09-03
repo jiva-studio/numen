@@ -35,12 +35,12 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
-	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
+	tells := note.TellEditing(func(ctx context.Context, said domain.Editing) {
 		_ = looking.Editing(ctx, said)
 	})
 	core.Write.Telling = tells
 	core.Replace.Telling = tells
-	moving := note.Moving(func(ctx context.Context, went domain.Went) {
+	moving := note.TellMove(func(ctx context.Context, went domain.Went) {
 		_ = looking.Moved(ctx, went)
 	})
 	core.Move.Moving = moving

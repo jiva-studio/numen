@@ -77,7 +77,7 @@ func (u Presets) Point(
 			return domain.Fingerprint{}, err
 		}
 	}
-	linking := note.Linking{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
+	linking := note.EditLinks{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
 	return linking.PointAt(ctx, v, deck, LinkType, to, domain.RoleRef, fingerprint)
 }
 

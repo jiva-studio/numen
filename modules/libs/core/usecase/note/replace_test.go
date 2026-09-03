@@ -104,9 +104,9 @@ func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
 		"the wrath of the retreating foe", "nothing", domain.Fingerprint{})
-	var nowhere note.Nowhere
+	var nowhere note.MissingStretch
 	if !errors.As(err, &nowhere) {
-		t.Fatalf("want Nowhere, got %v", err)
+		t.Fatalf("want MissingStretch, got %v", err)
 	}
 	if !strings.HasPrefix(nowhere.Matched, "the wrath of the ") {
 		t.Errorf("what matched is reported as %q", nowhere.Matched)

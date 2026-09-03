@@ -114,13 +114,13 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	viewing := opened.API.Viewing()
 	// What a write is doing reaches the window the way a note put in front of
 	// the person does. A build with no window draws nothing and is told nothing.
-	tells := note.Telling(func(ctx context.Context, said domain.Editing) {
+	tells := note.TellEditing(func(ctx context.Context, said domain.Editing) {
 		if viewing == nil {
 			return
 		}
 		_ = viewing.Editing(ctx, said)
 	})
-	went := note.Moving(func(ctx context.Context, gone domain.Went) {
+	went := note.TellMove(func(ctx context.Context, gone domain.Went) {
 		if viewing == nil {
 			return
 		}
@@ -173,7 +173,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Move:    moves,
 		Rename:  note.Rename{Move: moves},
 		Remove:  note.Remove{Writers: writers, Links: opened.Index.Links(), Known: opened.Index.SourcesKnown(), Index: index},
-		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
+		Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
 	}
 }
 

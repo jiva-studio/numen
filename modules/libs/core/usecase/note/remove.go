@@ -30,8 +30,8 @@ type Remove struct {
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
 }
 
-// Removed says what happened to what was removed and what it leaves behind.
-type Removed struct {
+// RemoveResult says what happened to what was removed and what it leaves behind.
+type RemoveResult struct {
 	Path string
 	// Trashed is where it now sits, empty when it was destroyed.
 	Trashed string
@@ -43,8 +43,8 @@ type Removed struct {
 
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
-func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Removed, error) {
-	res := Removed{Path: path}
+func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	res := RemoveResult{Path: path}
 
 	went, err := u.Known.Under(ctx, v.ID, path)
 	if err != nil {
@@ -113,8 +113,8 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 // Destroy takes the file off the disk. Nothing brings it back.
-func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Removed, error) {
-	res := Removed{Path: path}
+func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
+	res := RemoveResult{Path: path}
 
 	pointing, err := u.Links.Backlinks(ctx, v.ID, path)
 	if err != nil {

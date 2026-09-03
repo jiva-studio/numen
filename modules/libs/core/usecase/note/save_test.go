@@ -26,13 +26,13 @@ func (c changing) saving() note.Write {
 
 // opened is a tab that has just read a note: the prose it was given, and the
 // file it came out of.
-func (c changing) opened(t *testing.T, path string) *note.Seen {
+func (c changing) opened(t *testing.T, path string) *note.LastRead {
 	t.Helper()
 	found, err := (note.Read{Readers: filesystem.Readers{}}).Execute(t.Context(), c.vault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.Seen{Prose: found.Body, At: found.Ref}
+	return &note.LastRead{Prose: found.Body, At: found.Ref}
 }
 
 // A flow sequence is the commonest frontmatter line there is, and an identifier
@@ -204,7 +204,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.Seen{Prose: seen.Prose, At: at}); err != nil {
+		&note.LastRead{Prose: seen.Prose, At: at}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -238,7 +238,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.Seen{Prose: mine, At: at}); err != nil {
+		&note.LastRead{Prose: mine, At: at}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -296,7 +296,7 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	agentRead := make(chan struct{})
 	agentMayWrite := make(chan struct{})
-	agent := note.Linking{
+	agent := note.EditLinks{
 		Readers: watchedReaders{inner: filesystem.Readers{}, read: func(path string) {
 			if path == "Heat.md" {
 				close(agentRead)

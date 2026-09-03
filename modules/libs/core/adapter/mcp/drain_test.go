@@ -103,7 +103,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
 		Rename:        note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
 		Remove:        note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-		Linking:       note.Linking{Readers: readers, Writers: writers, Index: index},
+		Linking:       note.EditLinks{Readers: readers, Writers: writers, Index: index},
 	}
 
 	const secret = "the-token"

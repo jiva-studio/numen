@@ -25,7 +25,7 @@ type Preset struct {
 	// Path is the note the settings were read from, and is empty for a deck
 	// naming no preset.
 	Path    string
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 	// Type is what the note at the path says it is, so a caller handed an
 	// ordinary note is told so.
 	Type domain.NoteType

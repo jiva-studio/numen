@@ -66,7 +66,7 @@ type API struct {
 	// Choosing puts this machine's own folder picker in front of the person.
 	// Only an application with a window has one, and a build without it answers
 	// that a folder cannot be picked here.
-	Choosing port.Folders
+	Choosing port.FolderDialog
 
 	// Adding turns a folder into a vault, Renaming is what a person calls one,
 	// and Forgetting and Erasing take one off the list. A build without them
@@ -118,7 +118,7 @@ type API struct {
 	// relationship into one. A build without them answers that a note cannot be
 	// made here.
 	Makes *note.Create
-	Joins *note.Linking
+	Joins *note.EditLinks
 
 	// Cards reads a deck or a stencil, Offered lists the stencils the vault
 	// holds, and Cuts puts either back. MakesCards makes a deck, a stencil or a
@@ -510,7 +510,7 @@ func noteOf(n domain.NoteRef) *v1.Note {
 	return &v1.Note{Path: n.Path, Title: n.Title, Identifier: n.ID}
 }
 
-func seatOf(s domain.Seat) v1.Seat {
+func seatOf(s domain.Relation) v1.Seat {
 	switch s {
 	case domain.SeatParent:
 		return v1.Seat_SEAT_PARENT

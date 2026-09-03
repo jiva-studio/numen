@@ -18,26 +18,26 @@ import (
 // leaves a note that says what it is called under a filename that does not.
 type Rename struct{ Move }
 
-// Renamed says what the note is called now and what the file did.
-type Renamed struct {
+// RenameResult says what the note is called now and what the file did.
+type RenameResult struct {
 	Path  string // where the note is filed now
 	Title string
-	By    Naming
-	Moved *Moved // nil when the file is not at a different path
+	By    NamedBy
+	Moved *MoveResult // nil when the file is not at a different path
 }
 
 // errFilenameNamesIt ends the edit without writing. A note its filename names
 // has nothing in it to bring into line, and is moved and not edited.
 var errFilenameNamesIt = errors.New("the filename says it")
 
-func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (Renamed, error) {
+func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	title = strings.TrimSpace(title)
 	name, exact, err := nameOf(title)
 	if err != nil {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
-	var by Naming
+	var by NamedBy
 	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
 	_, err = e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
@@ -53,12 +53,12 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 		return doc.SetTitle(title)
 	})
 	if err != nil && !errors.Is(err, errFilenameNamesIt) {
-		return Renamed{}, err
+		return RenameResult{}, err
 	}
 
 	// The answer carries the note's name whatever the file does, the file's new
 	// path once the file is at it, and the path it still has until then.
-	res := Renamed{Path: path, Title: title, By: by}
+	res := RenameResult{Path: path, Title: title, By: by}
 	if moves, _ := u.Sync.Kept().Renaming(by); !moves {
 		return res, nil
 	}

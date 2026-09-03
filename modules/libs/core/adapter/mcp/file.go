@@ -58,7 +58,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 // unread is a file read's outcome in words an agent can act on. A folder and a
 // file the vault passes over are outcomes only a file has, and the Refusal the
 // windows are answered with names neither.
-func unread(outcome file.Outcome) string {
+func unread(outcome file.ReadOutcome) string {
 	switch outcome {
 	case file.Missing:
 		return "the vault holds no file at this path"

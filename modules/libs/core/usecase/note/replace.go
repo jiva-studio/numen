@@ -23,12 +23,12 @@ type Replace struct {
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 	// Telling is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
-	Telling Telling
+	Telling TellEditing
 	Now     func() time.Time
 }
 
-// Replaced is what a replacement did.
-type Replaced struct {
+// ReplaceResult is what a replacement did.
+type ReplaceResult struct {
 	// At is the fingerprint of the file this write produced.
 	At domain.Fingerprint
 	// Span is where the span stood, as byte offsets into the prose a read hands
@@ -42,16 +42,16 @@ type Replaced struct {
 	Plainly bool
 }
 
-// Nowhere is a stretch that is not in the note, and where a copy of it stopped
+// MissingStretch is a stretch that is not in the note, and where a copy of it stopped
 // agreeing with what is there.
-type Nowhere struct {
+type MissingStretch struct {
 	// Matched is the longest opening of what was asked for that does stand in
 	// the note, and Instead is what stands in the note from there.
 	Matched string
 	Instead string
 }
 
-func (e Nowhere) Error() string {
+func (e MissingStretch) Error() string {
 	if e.Matched == "" {
 		return "no part of this stretch is in the note"
 	}
@@ -80,12 +80,12 @@ var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 // since it was read is left alone and port.ErrChanged comes back.
 func (u Replace) Execute(
 	ctx context.Context, v domain.Vault, path, stood, becomes string, fingerprint domain.Fingerprint,
-) (Replaced, error) {
+) (ReplaceResult, error) {
 	if stood == "" {
-		return Replaced{}, fmt.Errorf("name the text to replace")
+		return ReplaceResult{}, fmt.Errorf("name the text to replace")
 	}
 
-	done := Replaced{}
+	done := ReplaceResult{}
 	ends := func() {}
 	defer func() { ends() }()
 
@@ -126,7 +126,7 @@ func (u Replace) Execute(
 		return nil
 	})
 	if err != nil {
-		return Replaced{}, err
+		return ReplaceResult{}, err
 	}
 	done.At = at
 	return done, nil
@@ -137,7 +137,7 @@ func (u Replace) Execute(
 //
 // The opening is found by halving, which the text being present for every
 // shorter opening allows.
-func nowhere(body, stood string) Nowhere {
+func nowhere(body, stood string) MissingStretch {
 	low, high := 0, len(stood)
 	for low < high {
 		middle := low + (high-low+1)/2
@@ -157,16 +157,16 @@ func nowhere(body, stood string) Nowhere {
 		}
 	}
 	if low == 0 {
-		return Nowhere{}
+		return MissingStretch{}
 	}
 	matched := stood[:low]
 	at, _ := markdown.Where(body, matched)
 	if len(at) == 0 {
-		return Nowhere{}
+		return MissingStretch{}
 	}
 	end := min(at[0].From+len(stood), len(body))
 	for end < len(body) && !utf8.RuneStart(body[end]) {
 		end++
 	}
-	return Nowhere{Matched: matched, Instead: body[at[0].From:end]}
+	return MissingStretch{Matched: matched, Instead: body[at[0].From:end]}
 }

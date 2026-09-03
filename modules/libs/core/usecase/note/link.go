@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Linking writes the relationships one note declares.
+// EditLinks writes the relationships one note declares.
 //
 // It works on the `links:` block, which is where a link that carries a role
 // lives. A mention in prose is a link too, and is written by writing prose:
@@ -21,7 +21,7 @@ import (
 // Every change here is to one entry. The entries around it are the person's —
 // including ones the application could not read — and come out of a write as
 // the bytes they went in as.
-type Linking struct {
+type EditLinks struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
@@ -34,7 +34,7 @@ type Linking struct {
 //
 // One link is named on its own, so there is always at least one: no links is
 // still a read and a write, and stamps an identifier into a note without one.
-func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domain.Link, more ...domain.Link) error {
+func (u EditLinks) Add(ctx context.Context, v domain.Vault, from string, add domain.Link, more ...domain.Link) error {
 	links := append([]domain.Link{add}, more...)
 	for _, link := range links {
 		if err := Writable(link); err != nil {
@@ -54,7 +54,7 @@ func (u Linking) Add(ctx context.Context, v domain.Vault, from string, add domai
 
 // Update changes what an existing link says about itself — its role, its type,
 // its label, the reason it exists — without moving where it goes.
-func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to domain.Address, change domain.Link) error {
+func (u EditLinks) Update(ctx context.Context, v domain.Vault, from string, to domain.Address, change domain.Link) error {
 	if change.Role != "" && !domain.KnownRole(change.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
@@ -82,7 +82,7 @@ func (u Linking) Update(ctx context.Context, v domain.Vault, from string, to dom
 // that has changed since it was read is left alone and port.ErrChanged comes
 // back. What comes back otherwise is the fingerprint of the file this write
 // produced.
-func (u Linking) PointAt(
+func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
 	to domain.Address, role domain.LinkRole, fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
@@ -102,7 +102,7 @@ func (u Linking) PointAt(
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
-func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole) error {
+func (u EditLinks) Remove(ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole) error {
 	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
 		if err != nil {
@@ -116,8 +116,8 @@ func (u Linking) Remove(ctx context.Context, v domain.Vault, from string, to dom
 	return err
 }
 
-// Names is the one question writing a link asks of the vault.
-type Names interface {
+// NameQueries is the one question writing a link asks of the vault.
+type NameQueries interface {
 	// Named is the paths of every note filed under one name. More than one is
 	// what makes a link written by that name mean the wrong note.
 	Named(ctx context.Context, vaultID, name string) ([]string, error)
@@ -134,7 +134,7 @@ var ErrUnaddressable = errors.New("no link reaches a note named this")
 // neighbour, so a note filed beside a note of the same name at the root is
 // reached only by writing the path. Which of the two it is, only the vault
 // knows, and it is asked here.
-func Addressed(ctx context.Context, names Names, vaultID, path string) (domain.Address, error) {
+func Addressed(ctx context.Context, names NameQueries, vaultID, path string) (domain.Address, error) {
 	name := domain.Basename(path)
 	if name == "" {
 		return domain.Address{}, errors.New("a link needs a note to go to")
@@ -175,6 +175,6 @@ func Writable(link domain.Link) error {
 	return nil
 }
 
-func (u Linking) editing() editing {
+func (u EditLinks) editing() editing {
 	return editing{readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now}
 }

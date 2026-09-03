@@ -80,8 +80,8 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 // Which end a link was written at says nothing about the shape of the graph:
 // `parent: B` in A and `child: A` in B are the same edge, so the answer has to
 // read the role together with the direction it was found in.
-func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seating, error) {
-	seats := &seating{}
+func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seats, error) {
+	seats := &seats{}
 
 	links, err := u.Links.Links(ctx, v.ID, path)
 	if err != nil {
@@ -131,7 +131,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 	return seats, nil
 }
 
-func seatFor(role domain.LinkRole) (domain.Seat, bool) {
+func seatFor(role domain.LinkRole) (domain.Relation, bool) {
 	switch role {
 	case domain.RoleParent:
 		return domain.SeatParent, true
@@ -155,12 +155,12 @@ func mirror(role domain.LinkRole) domain.LinkRole {
 	return role
 }
 
-// seating collects notes in the order they were found: the links this note
+// seats collects notes in the order they were found: the links this note
 // wrote, in the order it wrote them; then the links that point at it, in the
 // order the query returns; then the siblings each parent brings. The order is
 // part of the answer, because it is what the picture is drawn in — and it is
 // total, so the same vault gives the same picture twice.
-type seating struct {
+type seats struct {
 	order []domain.Seated
 	at    map[string]int
 }
@@ -168,7 +168,7 @@ type seating struct {
 // take keeps the highest-ranked seat a note qualifies for, replacing a lesser
 // one it was given earlier: a pair who are each other's parent is drawn once,
 // and always the same way round.
-func (s *seating) take(seated domain.Seated) {
+func (s *seats) take(seated domain.Seated) {
 	if s.at == nil {
 		s.at = map[string]int{}
 	}
@@ -186,7 +186,7 @@ func (s *seating) take(seated domain.Seated) {
 // mutually seats a note that the one in focus names too. Both ends naming the
 // same seat is one relationship named twice, and the word for it is the
 // focus's own where it wrote one.
-func (s *seating) mutually(seated domain.Seated) {
+func (s *seats) mutually(seated domain.Seated) {
 	i, taken := s.at[seated.Path]
 	if !taken {
 		s.take(seated)
@@ -204,7 +204,7 @@ func (s *seating) mutually(seated domain.Seated) {
 	s.order[i] = held
 }
 
-func (s *seating) drop(path string) {
+func (s *seats) drop(path string) {
 	i, taken := s.at[path]
 	if !taken {
 		return
@@ -218,4 +218,4 @@ func (s *seating) drop(path string) {
 	}
 }
 
-func (s *seating) all() []domain.Seated { return s.order }
+func (s *seats) all() []domain.Seated { return s.order }

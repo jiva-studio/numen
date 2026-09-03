@@ -19,7 +19,7 @@ import (
 )
 
 // Of says which refusal an outcome is, and whether it is one at all.
-func Of(o note.Outcome) (v1.Refusal, bool) {
+func Of(o note.ReadOutcome) (v1.Refusal, bool) {
 	switch o {
 	case note.Missing:
 		return v1.Refusal_REFUSAL_MISSING, true

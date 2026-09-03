@@ -95,7 +95,7 @@ type Core struct {
 	Move    note.Move
 	Rename  note.Rename
 	Remove  note.Remove
-	Linking note.Linking
+	Linking note.EditLinks
 }
 
 // Shown is the vault a call is answered about: the vault itself, and where it

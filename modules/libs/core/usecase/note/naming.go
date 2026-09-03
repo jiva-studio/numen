@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Naming is which of the two a note is shown by, and so which one naming it
+// NamedBy is which of the two a note is shown by, and so which one naming it
 // writes.
-type Naming string
+type NamedBy string
 
 const (
-	ByFrontmatter Naming = "frontmatter"
-	ByFilename    Naming = "filename"
+	ByFrontmatter NamedBy = "frontmatter"
+	ByFilename    NamedBy = "filename"
 )
 
 // SyncTitleAndFilename is whether a note's title and its filename are kept as one name.
@@ -25,7 +25,7 @@ type SyncTitleAndFilename bool
 //
 // A note its filename names carries its name nowhere else, so its file moves
 // whatever this is set to and nothing is written into it.
-func (s SyncTitleAndFilename) Renaming(by Naming) (moves, writes bool) {
+func (s SyncTitleAndFilename) Renaming(by NamedBy) (moves, writes bool) {
 	if by == ByFilename {
 		return true, false
 	}

@@ -61,7 +61,7 @@ type editing struct {
 	// seen is what the caller last saw of the note, and is what a file that is
 	// there is compared with. Nil for a caller that puts its text down whatever
 	// the note now holds.
-	seen *Seen
+	seen *LastRead
 }
 
 func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {

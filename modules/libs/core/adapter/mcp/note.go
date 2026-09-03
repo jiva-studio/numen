@@ -270,9 +270,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		})
 		// A path alongside a refusal means the file was written and something
 		// after it was not; the note is there under that name.
-		outcome := CreateOutcome{Created: created}
+		outcome := CreateOutcome{CreateResult: created}
 		if err != nil {
-			outcome.Created.Title = in.Title
+			outcome.CreateResult.Title = in.Title
 			outcome.Refused = refusing(err)
 		}
 		return nil, outcome, nil
@@ -378,7 +378,7 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path  string `json:"path" jsonschema:"the note to rename"`
 		Title string `json:"title" jsonschema:"what it is called from now on"`
-	}) (*sdk.CallToolResult, note.Renamed, error) {
+	}) (*sdk.CallToolResult, note.RenameResult, error) {
 		renamed, err := core.Rename.Execute(ctx, core.shown().Vault, in.Path, in.Title)
 		return nil, renamed, err
 	})
@@ -407,9 +407,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 				return nil, out{}, err
 			}
 			moved, err := core.Move.Execute(ctx, core.shown().Vault, path, note.Into(in.Folder, path))
-			outcome := MoveOutcome{Moved: moved}
+			outcome := MoveOutcome{MoveResult: moved}
 			if err != nil {
-				outcome.Moved = note.Moved{From: path}
+				outcome.MoveResult = note.MoveResult{From: path}
 				outcome.Refused = refusing(err)
 			}
 			res.Moved = append(res.Moved, outcome)
@@ -448,21 +448,21 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 			}
 			if isFolder(ctx, reader, path) {
 				res.Removed = append(res.Removed, RemoveOutcome{
-					Removed: note.Removed{Path: path},
-					Refused: "this is a folder, and this removes notes: name the notes to remove",
+					RemoveResult: note.RemoveResult{Path: path},
+					Refused:      "this is a folder, and this removes notes: name the notes to remove",
 				})
 				continue
 			}
-			var removed note.Removed
+			var removed note.RemoveResult
 			var err error
 			if in.Destroy {
 				removed, err = core.Remove.Destroy(ctx, core.shown().Vault, path)
 			} else {
 				removed, err = core.Remove.Execute(ctx, core.shown().Vault, path)
 			}
-			outcome := RemoveOutcome{Removed: removed}
+			outcome := RemoveOutcome{RemoveResult: removed}
 			if err != nil {
-				outcome.Removed = note.Removed{Path: path}
+				outcome.RemoveResult = note.RemoveResult{Path: path}
 				outcome.Refused = refusing(err)
 			}
 			res.Removed = append(res.Removed, outcome)
@@ -538,7 +538,7 @@ func parseFingerprint(s string) (domain.Fingerprint, error) {
 // MoveOutcome is what happened to one note in a batch. Refused is empty when it
 // moved.
 type MoveOutcome struct {
-	note.Moved
+	note.MoveResult
 	Refused string `json:"refused,omitempty" jsonschema:"why this one did not move, empty when it did"`
 }
 
@@ -561,7 +561,7 @@ type NewLink struct {
 
 // CreateOutcome is what happened to one note in a batch.
 type CreateOutcome struct {
-	note.Created
+	note.CreateResult
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not made, empty when it was"`
 }
 
@@ -595,7 +595,7 @@ func carried(l NewLink) int {
 
 // RemoveOutcome is the same for removing.
 type RemoveOutcome struct {
-	note.Removed
+	note.RemoveResult
 	Refused string `json:"refused,omitempty" jsonschema:"why this one was not removed, empty when it was"`
 }
 

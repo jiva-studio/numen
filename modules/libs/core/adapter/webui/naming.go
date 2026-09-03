@@ -119,7 +119,7 @@ func (a *API) removal(
 	v domain.Vault,
 	path string,
 	destroy bool,
-) (note.Removed, error) {
+) (note.RemoveResult, error) {
 	if destroy {
 		return a.Removes.Destroy(ctx, v, path)
 	}
@@ -127,7 +127,7 @@ func (a *API) removal(
 }
 
 // namingOf is which of the three a rename wrote, as the schema carries it.
-func namingOf(by note.Naming) v1.Naming {
+func namingOf(by note.NamedBy) v1.Naming {
 	switch by {
 	case note.ByFrontmatter:
 		return v1.Naming_NAMING_FRONTMATTER
@@ -139,6 +139,6 @@ func namingOf(by note.Naming) v1.Naming {
 }
 
 // movedOf is what the file did, as the schema carries it.
-func movedOf(moved note.Moved) *v1.Moved {
+func movedOf(moved note.MoveResult) *v1.Moved {
 	return &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 }

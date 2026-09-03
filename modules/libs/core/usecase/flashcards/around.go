@@ -42,7 +42,7 @@ type Neighbour struct {
 	Ambiguous bool
 	// Outcome is how the reading of the text ended. Empty for a note whose text
 	// was never asked for.
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 }
 
 // Around is what the deck being reviewed is joined to, with the text of each.

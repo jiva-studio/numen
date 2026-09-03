@@ -19,25 +19,25 @@ import (
 // MostRead is how much of a file one read carries.
 const MostRead = 16000
 
-// Outcome is how a read ended.
-type Outcome string
+// ReadOutcome is how a read ended.
+type ReadOutcome string
 
 const (
 	// Ok is the text coming back.
-	Ok Outcome = "ok"
+	Ok ReadOutcome = "ok"
 	// Missing is a path with no file behind it.
-	Missing Outcome = "missing"
+	Missing ReadOutcome = "missing"
 	// LeftAlone is a file the vault's own rules pass over.
-	LeftAlone Outcome = "left alone"
+	LeftAlone ReadOutcome = "left alone"
 	// AFolder is a path holding a folder.
-	AFolder Outcome = "a folder"
+	AFolder ReadOutcome = "a folder"
 	// NotText is a run of bytes that is not valid UTF-8.
-	NotText Outcome = "not text"
+	NotText ReadOutcome = "not text"
 )
 
 // ReadResult is one run of a file as a read hands it over.
 type ReadResult struct {
-	Outcome Outcome
+	Outcome ReadOutcome
 	// Text is the run that was read. It is empty for every outcome but Ok.
 	Text string
 	// Start and Length are the run that came back: what was asked for, held
@@ -134,7 +134,7 @@ func (u Read) Execute(
 // reported is what the vault names at this path among the entries of the folder
 // above it: Ok for a file, AFolder for a folder, LeftAlone for a path it does
 // not report at all.
-func reported(ctx context.Context, reader port.VaultReader, path string) (Outcome, error) {
+func reported(ctx context.Context, reader port.VaultReader, path string) (ReadOutcome, error) {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	folder := pathpkg.Dir(clean)
 	if folder == "." {

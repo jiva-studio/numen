@@ -38,8 +38,8 @@ type Move struct {
 // A folder is one rename, so what it holds arrives whole or stays where it was.
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (note.Moved, error) {
-	res := note.Moved{From: from, To: to}
+func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (note.MoveResult, error) {
+	res := note.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
 	}

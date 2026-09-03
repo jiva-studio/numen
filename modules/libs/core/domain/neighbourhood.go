@@ -1,23 +1,23 @@
 package domain
 
-// Seat is where a note sits relative to the one being looked at.
+// Relation is where a note sits relative to the one being looked at.
 //
 // It is not a link role. A role is written in a file and says what one link is
 // for; a seat is worked out from both ends of every link at once, and one of
 // them — the sibling — is written nowhere at all.
-type Seat string
+type Relation string
 
 const (
-	SeatParent  Seat = "parent"
-	SeatChild   Seat = "child"
-	SeatJump    Seat = "jump"
-	SeatSibling Seat = "sibling"
+	SeatParent  Relation = "parent"
+	SeatChild   Relation = "child"
+	SeatJump    Relation = "jump"
+	SeatSibling Relation = "sibling"
 )
 
 // SeatRank orders the seats a note can take. A note can answer to two of them —
 // a pair that are each other's parent, a jump between siblings — and can be
 // shown in only one place, so it takes the first it qualifies for.
-func SeatRank(s Seat) int {
+func SeatRank(s Relation) int {
 	switch s {
 	case SeatParent:
 		return 0
@@ -45,7 +45,7 @@ type NoteRef struct {
 // Seated is a note, where it sits, and what the link that seated it says.
 type Seated struct {
 	NoteRef
-	Seat Seat
+	Seat Relation
 
 	// Label is what the person wrote on the link.
 	Label string

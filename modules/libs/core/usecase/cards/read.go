@@ -26,7 +26,7 @@ type Deck struct {
 	Path string
 	// Outcome is how the read ended, out of the list an ordinary note's read
 	// answers with.
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 	// Type is what the note at the path says it is, so a caller that asked for
 	// a deck and was handed a stencil is told so.
 	Type domain.NoteType
@@ -44,7 +44,7 @@ type Deck struct {
 // Stencil is one stencil as a read hands it over.
 type Stencil struct {
 	Path    string
-	Outcome note.Outcome
+	Outcome note.ReadOutcome
 	Type    domain.NoteType
 	Stencil format.Stencil
 	Ref     domain.Fingerprint
@@ -210,7 +210,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 // bytes parse to once everything that would refuse them has been asked.
 func (u Read) looked(
 	ctx context.Context, v domain.Vault, path string, bound int64,
-) (domain.Note, domain.Fingerprint, note.Outcome, error) {
+) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return domain.Note{}, domain.Fingerprint{}, "", err

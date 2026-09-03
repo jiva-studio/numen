@@ -110,7 +110,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 		Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
 		Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
 		Remove:  note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-		Linking: note.Linking{Readers: readers, Writers: writers, Index: index},
+		Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
 	}
 	return v, core
 }
@@ -553,7 +553,7 @@ func TestRemovingIsReversible(t *testing.T) {
 	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	removed := call[struct {
-		Removed []note.Removed `json:"removed"`
+		Removed []note.RemoveResult `json:"removed"`
 	}](t, session, "note_remove", map[string]any{"paths": []string{"Entropy.md"}})
 	if len(removed.Removed) != 1 || removed.Removed[0].Trashed != ".trash/Entropy.md" {
 		t.Fatalf("want the note in the trash: %+v", removed.Removed)

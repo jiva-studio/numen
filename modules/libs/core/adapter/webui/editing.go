@@ -238,11 +238,11 @@ func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
 
 // seenOf is what a client says it last saw of a note. Nothing said is nothing
 // compared, and the write lands on whatever the note now holds.
-func seenOf(seen *v1.Seen) *note.Seen {
+func seenOf(seen *v1.Seen) *note.LastRead {
 	if seen == nil {
 		return nil
 	}
-	return &note.Seen{Prose: seen.GetProse(), At: refOf(seen.GetAt())}
+	return &note.LastRead{Prose: seen.GetProse(), At: refOf(seen.GetAt())}
 }
 
 // refOf is a fingerprint as the core holds one. The kind is left empty: what

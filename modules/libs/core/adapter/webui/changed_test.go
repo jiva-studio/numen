@@ -163,7 +163,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 	on := filepath.Join(api.Showing().Path, "Heat.md")
 
 	var once sync.Once
-	api.Joins = &note.Linking{
+	api.Joins = &note.EditLinks{
 		Readers: beaten{VaultReaders: filesystem.Readers{}, after: func(path string) {
 			if path != "Heat.md" {
 				return

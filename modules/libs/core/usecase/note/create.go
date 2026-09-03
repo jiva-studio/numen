@@ -39,8 +39,8 @@ type NewNote struct {
 	Links []domain.Link
 }
 
-// Created is the note that now exists.
-type Created struct {
+// CreateResult is the note that now exists.
+type CreateResult struct {
 	Path       string
 	Identifier string
 	Title      string
@@ -49,52 +49,52 @@ type Created struct {
 	Shares []string
 }
 
-func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Created, error) {
+func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	title := strings.TrimSpace(in.Title)
 	name, exact, err := nameOf(title)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
 	// Before anything is made: a link the note cannot carry leaves no file.
 	for _, link := range in.Links {
 		if err := Writable(link); err != nil {
-			return Created{}, err
+			return CreateResult{}, err
 		}
 	}
 
 	identifier, err := ulid.New(u.now())
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	content, err := titled(markdown.Create(identifier, in.Body), title, exact)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	content, err = joined(content, in.Links)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	if err := bounded(path, content, MaxBytes); err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	writer, err := u.Writers.Open(v)
 	if err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 	// Whether the path was free is the filesystem's to answer, at the moment
 	// the file is made.
 	if err := writer.Create(ctx, path, content); err != nil {
-		return Created{}, err
+		return CreateResult{}, err
 	}
 
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
-	made := Created{Path: path, Identifier: identifier, Title: title}
+	made := CreateResult{Path: path, Identifier: identifier, Title: title}
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
