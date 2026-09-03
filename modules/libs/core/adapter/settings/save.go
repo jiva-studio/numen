@@ -419,8 +419,8 @@ func spliced(raw []byte, from, to int, with []byte) []byte {
 }
 
 // replace writes the file beside itself and renames it over the top, so a
-// machine that dies mid-write leaves the settings whole. The mode is the
-// person's alone: they type their service keys into this file.
+// machine that dies mid-write leaves the settings whole. Where a file carries a
+// mode it is the person's alone: they type their service keys into this file.
 //
 // The path is the one reaching hands its work: the file itself, with every link
 // on the way to it already followed.

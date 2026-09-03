@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -344,7 +345,9 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info.Mode().Perm() != 0o600 {
+	// Windows keeps no mode on a file: what it answers is the read-only
+	// attribute drawn as one.
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Errorf("the file is %v", info.Mode().Perm())
 	}
 	// The temporary file it was written through is not left behind.
