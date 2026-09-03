@@ -66,6 +66,7 @@ type PutRightResult struct {
 	None    bool   // there is no transcript to put right, and nothing was done
 	Edited  bool   // somebody else wrote what stands, and it is left as they left it
 	Busy    bool   // the recording is held by another run
+	Already bool   // this proofreader has been over every line, and nothing was asked
 }
 
 // How a transcript is cut up where nothing says otherwise: the lines to a
@@ -175,6 +176,8 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		at = len(spoken) + after(batches[len(spoken):], cues, stood.Seam)
 	}
 	if at >= len(batches) {
+		// This proofreader has been over every line and every seam.
+		res.Already = true
 		return res, nil
 	}
 	// Progress is reported once there is a batch to ask about, so a transcript

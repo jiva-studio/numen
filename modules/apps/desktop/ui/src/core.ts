@@ -110,9 +110,10 @@ export interface Task {
 /**
  * How a run asked for over a file came out: it began now, it waits its turn
  * behind another, this file is being worked on already, it has been done, the
- * file is not of that kind, nothing has listened to it, or a run got no words
- * out of it and wrote down what it got. Asking again over that last one gets
- * the same until the record of it is taken away.
+ * file is not of that kind, nothing has listened to it, the words are a
+ * person's own, or a run got no words out of it and wrote down what it got.
+ * Asking again over that last one gets the same until the record of it is taken
+ * away.
  */
 export type Answer =
   | 'started'
@@ -121,6 +122,7 @@ export type Answer =
   | 'done'
   | 'unfit'
   | 'unheard'
+  | 'byHand'
   | 'answered'
 
 /**

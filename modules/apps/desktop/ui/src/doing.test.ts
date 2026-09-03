@@ -358,6 +358,7 @@ const WHY: Record<Answer, string> = {
   done: 'This recording has already been transcribed.',
   unfit: 'Only a recording is transcribed, and this file is not one.',
   unheard: 'Nothing has been transcribed here, so there is nothing to proofread.',
+  byHand: 'These words were written by hand, and a model does not correct them.',
   answered:
     'Nothing came of transcribing this recording: unopened: the mp3 recording: mp3: MPEG version 2.5 is not supported',
 }

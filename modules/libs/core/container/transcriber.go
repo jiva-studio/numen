@@ -394,15 +394,44 @@ func (t *Transcribing) hear(ctx context.Context, v domain.Vault, path string, as
 // transcript right with. A person is offered the run where it has.
 func (t *Transcribing) ProofreaderReady() bool { return t.cfg.SpeechProofreading.With != "" }
 
-// Proofread puts one transcript right for a person who asked for it, behind the
-// caller. It reports itself into the list of what is being done under the line
-// a proofreading of that recording carries, so a person watching sees one run.
-func (t *Transcribing) Proofread(v domain.Vault, path string) {
+// Proofread puts one transcript right for a person who asked for it and says
+// what came of asking: the run began, or the transcript needed nothing of it.
+//
+// The asking waits only for what a run settles before it puts a question to the
+// proofreader, which is a few reads off the disk. The work itself carries on
+// behind the answer, under the line in the list of what is being done that a
+// proofreading of that recording carries.
+func (t *Transcribing) Proofread(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+) (source.PutRightResult, error) {
+	// A run says two things at most: that it began, and how it ended. The room
+	// for both is here, so a run whose caller has gone says them and ends.
+	said := make(chan outcome, 2)
+
 	t.going.Add(1)
 	go func() {
 		defer t.going.Done()
-		t.putRight(t.context(), v, path, true)
+		res, err := t.putRight(t.context(), v, path, true, func(began source.PutRightResult) {
+			said <- outcome{res: began}
+		})
+		said <- outcome{res: res, err: err}
 	}()
+
+	select {
+	case one := <-said:
+		return one.res, one.err
+	case <-ctx.Done():
+		return source.PutRightResult{Path: path}, ctx.Err()
+	}
+}
+
+// outcome is what a run putting a transcript right says about itself: what it
+// found, and what stopped it.
+type outcome struct {
+	res source.PutRightResult
+	err error
 }
 
 // correct puts a transcript right, where an installation asked for its
@@ -411,13 +440,21 @@ func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string,
 	if !t.cfg.SpeechProofreading.Automatically {
 		return
 	}
-	t.putRight(ctx, v, path, asked)
+	_, _ = t.putRight(ctx, v, path, asked, nil)
 }
 
 // putRight puts one transcript right with the profile named for speech.
 //
-// A transcript whose proofreading failed is the transcript as it was heard.
-func (t *Transcribing) putRight(ctx context.Context, v domain.Vault, path string, asked bool) {
+// A transcript whose proofreading failed is the transcript as it was heard, and
+// the failure stands in the list of what is being done until somebody reads it.
+// Work a person asked for is in that list from the moment they asked.
+func (t *Transcribing) putRight(
+	ctx context.Context,
+	v domain.Vault,
+	path string,
+	asked bool,
+	began func(source.PutRightResult),
+) (source.PutRightResult, error) {
 	said := t.cfg.SpeechProofreading
 
 	id := correcting(path)
@@ -426,18 +463,23 @@ func (t *Transcribing) putRight(ctx context.Context, v domain.Vault, path string
 			ID: id, Doing: "Proofreading a transcript", About: path, Failed: err.Error(),
 		}, asked)
 	}
+	if asked {
+		t.say(task.Task{ID: id, Doing: "Proofreading a transcript", About: path}, asked)
+	}
 
 	by, err := t.cfg.Proofreader(said.With, proofread.SpeechInstruction)
 	if err != nil {
 		fail(err)
-		return
+		return source.PutRightResult{Path: path}, err
 	}
 	if by == nil {
-		return
+		t.done(id)
+		return source.PutRightResult{Path: path}, nil
 	}
 
 	profile := t.cfg.Proofreading.Profiles[said.With]
 
+	var once sync.Once
 	res, err := source.PutRight{
 		Readers:   t.cfg.VaultReaders(),
 		Derived:   t.cfg.DerivedStores(),
@@ -447,6 +489,13 @@ func (t *Transcribing) putRight(ctx context.Context, v domain.Vault, path string
 		InFlight:  profile.InFlight,
 		Cut:       t.Cut,
 		OnProgress: func(res source.PutRightResult) {
+			// Progress is reported once there is a question to put, so the first
+			// of it is this run beginning.
+			once.Do(func() {
+				if began != nil {
+					began(res)
+				}
+			})
 			t.say(task.Task{
 				ID:    id,
 				Doing: "Proofreading a transcript",
@@ -458,14 +507,15 @@ func (t *Transcribing) putRight(ctx context.Context, v domain.Vault, path string
 	}.Execute(ctx, v, path)
 
 	switch {
-	case res.Busy:
+	case err != nil && !errors.Is(err, context.Canceled):
+		fail(err)
+	case res.Busy && !asked:
 		// The transcript is held by another run, and that run is the one whose
 		// progress the list carries.
-	case err == nil, errors.Is(err, context.Canceled):
-		t.done(id)
 	default:
-		fail(err)
+		t.done(id)
 	}
+	return res, err
 }
 
 // TakingUp puts right the transcripts of these vaults that stand short of their

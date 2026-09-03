@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -268,7 +269,7 @@ func TestATranscriptAskedForIsPutRightWithTheProfileNamedForSpeech(t *testing.T)
 		return speech, nil
 	}
 
-	held.Proofread(v, recording)
+	_, _ = held.Proofread(t.Context(), v, recording)
 	held.Wait()
 
 	if got := scans.lines(); len(got) != 0 {
@@ -320,5 +321,124 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	}
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
+	}
+}
+
+// refuses is a proofreader that will not answer about anything.
+type refuses struct{ why error }
+
+func (r *refuses) Name() string { return "a proofreader that will not answer" }
+
+func (r *refuses) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+	return nil, r.why
+}
+
+// A transcript this proofreader has been over every line of is asked about
+// nothing, and whoever asked is told that rather than nothing at all.
+func TestATranscriptAlreadyPutRightSaysThatNothingWasLeft(t *testing.T) {
+	by := &puts{}
+	held, v, _, _ := stopped(t, by, 2, "first thing", "second thing")
+
+	res, err := held.Proofread(t.Context(), v, recording)
+	held.Wait()
+
+	if err != nil {
+		t.Fatalf("putting a transcript right again failed: %v", err)
+	}
+	if !res.Already {
+		t.Errorf("a transcript nothing was left of answered %+v", res)
+	}
+	if got := by.lines(); len(got) != 0 {
+		t.Errorf("the proofreader was asked about lines %v", got)
+	}
+}
+
+// A run with work to do answers as soon as it has a question to put, and does
+// not keep whoever asked waiting for the whole of it.
+func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
+	stand := make(chan struct{})
+	by := &waits{on: stand, asked: make(chan struct{})}
+	held, v, _, _ := stopped(t, by, 0, "first thing", "second thing")
+
+	res, err := held.Proofread(t.Context(), v, recording)
+
+	if err != nil {
+		t.Fatalf("a run that began answered %v", err)
+	}
+	if res.Already || res.None || res.Edited || res.Busy {
+		t.Errorf("a run with work to do answered %+v", res)
+	}
+	<-by.asked
+	close(stand)
+	held.Wait()
+}
+
+// waits is a proofreader that says it was asked and then waits to be let go.
+type waits struct {
+	on    chan struct{}
+	asked chan struct{}
+	once  sync.Once
+}
+
+func (w *waits) Name() string { return "a proofreader that waits" }
+
+func (w *waits) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+	w.once.Do(func() { close(w.asked) })
+	<-w.on
+	return map[int]string{}, nil
+}
+
+// A run a person asked for stands in the list from the moment they asked, and
+// not from the moment it has something to count. Opening the proofreader is the
+// first thing it does, and the list already says so there.
+func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *testing.T) {
+	by := &puts{}
+	held, v, _, _ := stopped(t, by, 0, "first thing", "second thing")
+	reached, stand := make(chan struct{}), make(chan struct{})
+	held.cfg.AgentProofreader = func(AgentProofreading) (port.Proofreader, error) {
+		close(reached)
+		<-stand
+		return by, nil
+	}
+
+	go func() { _, _ = held.Proofread(t.Context(), v, recording) }()
+	<-reached
+	doing, _ := said(held, recording)
+	close(stand)
+	held.Wait()
+
+	if doing != "Proofreading a transcript" {
+		t.Errorf("a run a person asked for is in the list as %q", doing)
+	}
+}
+
+// A run that ends leaves nothing behind in the list.
+func TestAProofreadingThatEndsLeavesTheListEmpty(t *testing.T) {
+	by := &puts{says: map[int]string{0: "0|FIRST THING"}}
+	held, v, _, _ := stopped(t, by, 0, "first thing")
+
+	_, _ = held.Proofread(t.Context(), v, recording)
+	held.Wait()
+
+	if doing, failed := said(held, recording); doing != "" {
+		t.Errorf("a run that ended is in the list as %q, failing with %q", doing, failed)
+	}
+}
+
+// A proofreader that will not answer is a failure a person is shown, and the
+// failure stays in the list.
+func TestAProofreaderThatWillNotAnswerIsShownAsAFailure(t *testing.T) {
+	by := &refuses{why: errors.New("the command line is not on this machine")}
+	held, v, _, _ := stopped(t, by, 0, "first thing", "second thing")
+
+	_, _ = held.Proofread(t.Context(), v, recording)
+	held.Wait()
+
+	doing, failed := said(held, recording)
+	if doing != "Proofreading a transcript" {
+		t.Fatalf("a run that failed is in the list as %q", doing)
+	}
+	if !strings.Contains(failed, "not on this machine") {
+		t.Errorf("the failure says %q", failed)
 	}
 }

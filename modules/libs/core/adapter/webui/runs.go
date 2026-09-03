@@ -52,6 +52,9 @@ const (
 	// unheard is a proofreading asked for over a recording nothing has
 	// listened to, which holds no words to put right.
 	outcomeUnheard = "unheard"
+	// byHand is a proofreading asked for over words a person wrote themselves,
+	// which a model does not correct.
+	outcomeByHand = "byHand"
 )
 
 // The sentences the window shows, one for every outcome and told apart by what

@@ -161,6 +161,8 @@ It is read-only while the recording is still being listened to and while proofre
 
 **Proofread transcript** stands in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
 
+Asking always answers in a sentence, because a person who pressed it is owed one. The run begins, or it says what it found instead: the transcript has already been put right, the words were written by hand, another run holds the recording, or nothing has been transcribed. The answer comes back before the work is over — what a run settles before it puts its first question to the proofreader is a few reads off the disk, and that is all the asking waits for. Where `automatically` is on, every transcript has already been put right, so this is the answer a person will usually get.
+
 A **follow** toggle says whether the view moves with the recording. On, the line being said is scrolled to as the player reaches it. Off, the view stays where the person put it and they read one part of a talk while another plays. The line being said is highlighted either way, so the position is visible without the page moving.
 
 ## Settings
