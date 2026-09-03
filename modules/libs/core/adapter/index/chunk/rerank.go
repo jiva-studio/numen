@@ -18,8 +18,8 @@ import (
 // a fact about this index and not about the search, so the number is here.
 const coarseCandidates = 8
 
-// scored is one candidate and how near the query it turned out to be.
-type scored struct {
+// candidate is one candidate and how near the query it turned out to be.
+type candidate struct {
 	chunk      int64
 	similarity float64
 }
@@ -62,10 +62,10 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 		return nil, err
 	}
 
-	kept := make([]scored, 0, len(candidates))
+	kept := make([]candidate, 0, len(candidates))
 	for _, chunk := range candidates {
 		if s, held := similarity[chunk]; held && s >= floor {
-			kept = append(kept, scored{chunk: chunk, similarity: s})
+			kept = append(kept, candidate{chunk: chunk, similarity: s})
 		}
 	}
 	// Two chunks of equal similarity keep the coarse pass's order between them.

@@ -473,8 +473,8 @@ func (w statements) close() {
 //
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent` becomes.
-func (w statements) put(ctx context.Context, held *held, source, vault int64, c Chunk, parent any) (int64, error) {
-	key := text{hash: hashOf(c.Text), small: parent != nil}
+func (w statements) put(ctx context.Context, held *rows, source, vault int64, c Chunk, parent any) (int64, error) {
+	key := textID{hash: hashOf(c.Text), small: parent != nil}
 	if row, kept := held.claim(key); kept {
 		if _, err := w.move.ExecContext(ctx, c.Start, c.Length, parent, nullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move_chunk: %w", err)
@@ -512,47 +512,47 @@ func (w statements) opens(ctx context.Context, row int64, c Chunk) error {
 	return nil
 }
 
-// text is what a chunk has to hold to be held on a row: the same text, cut at
+// textID is what a chunk has to hold to be held on a row: the same text, cut at
 // the same size. A vector belongs to a chunk that sits inside another, so the
 // two sizes are separate populations.
-type text struct {
+type textID struct {
 	hash  string
 	small bool
 }
 
-// held is what a source's rows hold, in the shape a fresh cut asks about them.
-type held struct {
-	rows map[text][]int64
+// rows is what a source's rows hold, in the shape a fresh cut asks about them.
+type rows struct {
+	rows map[textID][]int64
 	left map[int64]bool
 	// text is the fingerprint each row holds, so a row that goes says which
 	// text went with it.
 	text map[int64]string
 }
 
-func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*held, error) {
-	rows, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
+func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
+	cursor, err := tx.QueryContext(ctx, stmt.Get("chunks_of"), source)
 	if err != nil {
 		return nil, fmt.Errorf("chunks_of: %w", err)
 	}
-	defer rows.Close()
+	defer cursor.Close()
 
-	h := &held{rows: map[text][]int64{}, left: map[int64]bool{}, text: map[int64]string{}}
-	for rows.Next() {
+	h := &rows{rows: map[textID][]int64{}, left: map[int64]bool{}, text: map[int64]string{}}
+	for cursor.Next() {
 		var row int64
-		var key text
-		if err := rows.Scan(&row, &key.hash, &key.small); err != nil {
+		var key textID
+		if err := cursor.Scan(&row, &key.hash, &key.small); err != nil {
 			return nil, fmt.Errorf("chunks_of: %w", err)
 		}
 		h.rows[key] = append(h.rows[key], row)
 		h.left[row] = true
 		h.text[row] = key.hash
 	}
-	return h, rows.Err()
+	return h, cursor.Err()
 }
 
 // claim is a row holding the text given, and false where none does. A row is
 // claimed once, so a text that occurs twice in a source is two rows.
-func (h *held) claim(key text) (int64, bool) {
+func (h *rows) claim(key textID) (int64, bool) {
 	rows := h.rows[key]
 	if len(rows) == 0 {
 		return 0, false
@@ -565,7 +565,7 @@ func (h *held) claim(key text) (int64, bool) {
 
 // unclaimed is the rows of the source no chunk holds, in order, so that a cut
 // writes the same thing twice running.
-func (h *held) unclaimed() []int64 {
+func (h *rows) unclaimed() []int64 {
 	out := make([]int64, 0, len(h.left))
 	for row := range h.left {
 		out = append(out, row)
@@ -642,7 +642,7 @@ func nullable(s string) any {
 
 // forgotten is the text of the rows no chunk holds: what this source used to
 // hold and does not any more.
-func (h *held) forgotten() []string {
+func (h *rows) forgotten() []string {
 	out := make([]string, 0, len(h.left))
 	for row := range h.left {
 		if hash := h.text[row]; hash != "" {
