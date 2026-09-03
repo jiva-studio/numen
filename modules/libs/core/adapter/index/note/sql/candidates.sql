@@ -4,8 +4,10 @@
 -- Each branch of the union is one index lookup. An OR across different columns
 -- leaves SQLite able to use only the leading one.
 --
--- The basename column folds case, so [[entropy]] finds Entropy.md. A path is
--- compared exactly: it is a path on a disk.
+-- The basename column holds the folded name and is asked for the folded name,
+-- so [[энтропия]] finds Энтропия.md. A path is compared byte for byte, and one
+-- written in another case reaches its note through the third branch, where the
+-- priority the caller applies folds the path and settles it.
 --
 -- Only notes answer to a name; the join says so.
 SELECT s.path FROM sources s JOIN notes n ON n.source_id = s.id

@@ -9,6 +9,7 @@ package index
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -58,6 +59,9 @@ var pragmas = []string{
 }
 
 func Open(ctx context.Context, path string) (*DB, error) {
+	if folding != nil {
+		return nil, fmt.Errorf("the name fold is not available to SQL: %w", folding)
+	}
 	write, err := sql.Open("sqlite", writeDSN(path))
 	if err != nil {
 		return nil, err
