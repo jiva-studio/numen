@@ -25,7 +25,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if made.Notes.Seen == 0 {
+	if made.Notes.Notes == 0 {
 		t.Error("no note was read")
 	}
 	if made.Books.Seen == 0 {

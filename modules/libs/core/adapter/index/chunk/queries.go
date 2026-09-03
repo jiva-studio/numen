@@ -60,7 +60,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 	out := map[string]domain.Fingerprint{}
 	for rows.Next() {
 		var ref domain.Fingerprint
-		if err := rows.Scan(&ref.Path, &ref.Size, &ref.MTime); err != nil {
+		if err := rows.Scan(&ref.Path, &ref.Size, &ref.ModTime); err != nil {
 			return nil, err
 		}
 		out[ref.Path] = ref
@@ -89,7 +89,7 @@ func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.Fin
 	var out []domain.Fingerprint
 	for rows.Next() {
 		var ref domain.Fingerprint
-		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &ref.MTime); err != nil {
+		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &ref.ModTime); err != nil {
 			return nil, err
 		}
 		out = append(out, ref)

@@ -102,19 +102,19 @@ func TestTheFocusIsNotRelatedToItself(t *testing.T) {
 // Size and modification time are the invalidation key: a walk that hashed every
 // file would read the whole vault to discover that nothing changed.
 func TestAFileIsSkippedOnItsSizeAndItsTime(t *testing.T) {
-	was := domain.Fingerprint{Path: "a.md", Kind: domain.KindNote, Size: 10, MTime: 100}
-	if !was.Unchanged(domain.Fingerprint{Size: 10, MTime: 100}) {
+	was := domain.Fingerprint{Path: "a.md", Kind: domain.KindNote, Size: 10, ModTime: 100}
+	if !was.Unchanged(domain.Fingerprint{Size: 10, ModTime: 100}) {
 		t.Error("an unchanged file is read again")
 	}
-	if was.Unchanged(domain.Fingerprint{Size: 11, MTime: 100}) {
+	if was.Unchanged(domain.Fingerprint{Size: 11, ModTime: 100}) {
 		t.Error("a file that grew is skipped")
 	}
-	if was.Unchanged(domain.Fingerprint{Size: 10, MTime: 101}) {
+	if was.Unchanged(domain.Fingerprint{Size: 10, ModTime: 101}) {
 		t.Error("a file written again is skipped")
 	}
 	// The path is not the key: a fingerprint the index hands back carries
 	// neither path nor kind.
-	if !was.Unchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, MTime: 100}) {
+	if !was.Unchanged(domain.Fingerprint{Path: "elsewhere.md", Size: 10, ModTime: 100}) {
 		t.Error("the path decided whether the file was read")
 	}
 }

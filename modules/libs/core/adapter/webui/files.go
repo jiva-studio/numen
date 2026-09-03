@@ -42,7 +42,7 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 		out.Entries = append(out.Entries, &v1.Entry{
 			Path:   entry.Path,
 			Name:   entry.Name,
-			Folder: entry.Folder,
+			Folder: entry.IsFolder,
 			Kind:   kindOf(entry.Kind),
 			Type:   typeOf(types[entry.Path]),
 		})
@@ -55,7 +55,7 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 func (a *API) typesOf(ctx context.Context, showing domain.Vault, held []domain.Entry) (map[string]domain.NoteType, error) {
 	paths := make([]string, 0, len(held))
 	for _, entry := range held {
-		if !entry.Folder && entry.Kind == domain.KindNote {
+		if !entry.IsFolder && entry.Kind == domain.KindNote {
 			paths = append(paths, entry.Path)
 		}
 	}

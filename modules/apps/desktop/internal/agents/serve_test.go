@@ -191,7 +191,7 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	if _, err := served.Agent.Take(t.Context(), port.Task{Asked: "anything"}); err == nil {
+	if _, err := served.Agent.Take(t.Context(), port.Task{Question: "anything"}); err == nil {
 		t.Error("the agent took work while the endpoint was closing")
 	}
 

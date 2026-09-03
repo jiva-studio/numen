@@ -317,7 +317,7 @@ func (rd *parser) calls(call, tool, arguments string) port.Step {
 		return step
 	}
 
-	step.Written = len([]rune(arguments))
+	step.Count = len([]rune(arguments))
 	step.About = about(words, arguments)
 	if words.About == notePath {
 		step.Place = placed(step.About, arguments)

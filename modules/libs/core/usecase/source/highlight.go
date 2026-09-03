@@ -67,7 +67,7 @@ func (u Highlight) Execute(
 	// describe those. A file rewritten since is read from its own layer, which
 	// is the words that are there now.
 	var boxes []lit.Box
-	if said.Producer != "" && ref.Unchanged(domain.Fingerprint{Size: said.Size, MTime: said.MTime}) {
+	if said.Producer != "" && ref.Unchanged(domain.Fingerprint{Size: said.Size, ModTime: said.ModTime}) {
 		boxes, err = u.read(ctx, v, said)
 	} else {
 		boxes, err = u.layer(ctx, reader, ref, runs)

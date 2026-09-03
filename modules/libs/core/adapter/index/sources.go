@@ -110,7 +110,7 @@ func stored(s port.Source) chunk.Source {
 		Path:     s.Ref.Path,
 		Kind:     string(s.Ref.Kind),
 		Size:     s.Ref.Size,
-		MTime:    s.Ref.MTime,
+		MTime:    s.Ref.ModTime,
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
 		TextFrom: s.TextFrom,
@@ -146,7 +146,7 @@ func (s queries) Reading(ctx context.Context, vaultID, path string) (port.Source
 	}
 	return port.SourceText{
 		Path: found.Path, Producer: found.Producer, Hash: found.Hash,
-		Size: found.Size, MTime: found.MTime,
+		Size: found.Size, ModTime: found.MTime,
 	}, true, nil
 }
 

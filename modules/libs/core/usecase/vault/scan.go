@@ -43,7 +43,7 @@ type Scan struct {
 // `Seen` counts notes and nothing else, and every other number here is about
 // those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
-	Seen       int // notes found in the vault
+	Notes      int // notes found in the vault
 	Assets     int // sources of another kind found in the vault
 	Indexed    int // parsed and written, because they were new or had changed
 	Unchanged  int // skipped on size and modification time alone
@@ -115,7 +115,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}); err != nil {
 		return res, err
 	}
-	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.MTime, a.MTime) })
+	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.ModTime, a.ModTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.Notes.Save(ctx, string(v.ID), notes); err != nil {
@@ -141,7 +141,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			res.Assets++
 			continue
 		}
-		res.Seen++
+		res.Notes++
 		seen[ref.Path] = true
 
 		if previous, ok := known[ref.Path]; ok && !u.RebuildIndex && previous.Unchanged(ref) {

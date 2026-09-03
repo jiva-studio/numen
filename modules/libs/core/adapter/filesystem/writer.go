@@ -77,7 +77,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		}
 		mode = info.Mode().Perm()
 		if fingerprint != (domain.Fingerprint{}) &&
-			(info.Size() != fingerprint.Size || info.ModTime().UnixNano() != fingerprint.MTime) {
+			(info.Size() != fingerprint.Size || info.ModTime().UnixNano() != fingerprint.ModTime) {
 			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 		}
 	case errors.Is(err, fs.ErrNotExist):
@@ -162,7 +162,7 @@ func replace(target string, content []byte, mode fs.FileMode) (domain.Fingerprin
 	if err := os.Rename(tmp.Name(), target); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written := domain.Fingerprint{Size: info.Size(), MTime: info.ModTime().UnixNano()}
+	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime().UnixNano()}
 	return written, settle(dir)
 }
 

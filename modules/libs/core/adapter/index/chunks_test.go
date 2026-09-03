@@ -377,7 +377,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: 1},
 		Title: "Entropy",
 		Body:  "the first body",
 	}
@@ -447,7 +447,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: 1},
 		Title: "Entropy",
 		Body:  body,
 	}
@@ -513,7 +513,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: 1},
 		Title: "Entropy",
 		Body:  "a body",
 	}
@@ -551,7 +551,7 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, ModTime: 1},
 		Title: "Entropy",
 		Body:  "a body",
 	}
@@ -1418,7 +1418,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	if err := db.Sources().SaveExtraction(ctx, string(first.ID), port.SourceChunks{
 		Source: port.Source{
 			Ref: domain.Fingerprint{
-				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, MTime: 1,
+				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, ModTime: 1,
 			},
 			Hash:   "hash",
 			Recipe: "pdf",

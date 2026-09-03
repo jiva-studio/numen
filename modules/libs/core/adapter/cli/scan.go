@@ -120,7 +120,7 @@ func describeSources(r source.ExtractResult) string {
 // or not at all.
 func describe(r usecase.ScanResult) string {
 	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
-		r.Seen, r.Indexed, r.Unchanged, r.Removed)
+		r.Notes, r.Indexed, r.Unchanged, r.Removed)
 	if r.Vanished > 0 {
 		s += fmt.Sprintf(", %d gone before they could be read", r.Vanished)
 	}

@@ -23,7 +23,7 @@ type Agent interface {
 // Task is what the person asked, where they were looking when they asked it,
 // and which conversation they asked it in.
 type Task struct {
-	Asked string
+	Question string
 	// Focus is the note the window is showing, empty when it shows none.
 	Focus string
 	// Conversation is which thread of talk this question belongs to, named by
@@ -93,10 +93,10 @@ type Step struct {
 	// Place is where in the vault the call is working, empty when what the
 	// call is about is not a source the vault holds.
 	Place domain.Place
-	// Written is how much of the call has been written, in characters. A call
+	// Count is how much of the call has been written, in characters. A call
 	// carrying the text of a note is written for minutes, and this is the only
 	// thing that moves while it is.
-	Written int
-	// Failed is why the work stopped, empty when the agent was done.
-	Failed string
+	Count int
+	// Detail is why the work stopped, empty when the agent was done.
+	Detail string
 }

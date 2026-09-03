@@ -119,7 +119,7 @@ func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.Sour
 			continue
 		}
 		// The kind is what was asked for, so the answer leaves it empty.
-		out[path] = domain.Fingerprint{Path: path, Size: src.Ref.Size, MTime: src.Ref.MTime}
+		out[path] = domain.Fingerprint{Path: path, Size: src.Ref.Size, ModTime: src.Ref.ModTime}
 	}
 	return out, nil
 }
@@ -365,7 +365,7 @@ func (l *library) Stat(_ context.Context, path string) (domain.Fingerprint, erro
 
 func (l *library) ref(path string) domain.Fingerprint {
 	held := l.files[path]
-	return domain.Fingerprint{Path: path, Kind: held.kind, Size: int64(len(held.raw)), MTime: held.mtime}
+	return domain.Fingerprint{Path: path, Kind: held.kind, Size: int64(len(held.raw)), ModTime: held.mtime}
 }
 
 // vaults opens the reader of each vault a test set up.
@@ -492,7 +492,7 @@ func (s *store) Reading(_ context.Context, vaultID, path string) (port.SourceTex
 	// The row says what the file was when it was read, as the query does.
 	return port.SourceText{
 		Path: path, Producer: src.TextFrom, Hash: src.Hash,
-		Size: src.Ref.Size, MTime: src.Ref.MTime,
+		Size: src.Ref.Size, ModTime: src.Ref.ModTime,
 	}, true, nil
 }
 

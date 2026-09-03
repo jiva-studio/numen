@@ -15,7 +15,7 @@ import (
 func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), MTime: 1},
+		Ref:   domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: 1},
 		Title: "Cut",
 		Body:  body,
 	}

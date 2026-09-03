@@ -23,14 +23,14 @@ type Fingerprint struct {
 	Path string
 	// Kind is what the file is. A walk and a stat both say it; a fingerprint the
 	// index hands back leaves it empty, because the kind is what was asked for.
-	Kind  SourceKind
-	Size  int64
-	MTime int64
+	Kind    SourceKind
+	Size    int64
+	ModTime int64
 }
 
 // Unchanged reports whether the file can be skipped. Size and modification time
 // are the invalidation key; content is not hashed during a walk, because that
 // would mean reading every file to discover that nothing changed.
 func (f Fingerprint) Unchanged(other Fingerprint) bool {
-	return f.Size == other.Size && f.MTime == other.MTime
+	return f.Size == other.Size && f.ModTime == other.ModTime
 }

@@ -41,7 +41,7 @@ func started(t *testing.T, prints string) port.Work {
 			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: port.StepEdit},
 		},
 	}
-	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
+	work, err := claude.Take(t.Context(), port.Task{Question: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestSaysWhatTheAgentSaid(t *testing.T) {
 	if steps[0].Kind != port.StepSaying || steps[0].Text != "Two notes." {
 		t.Errorf("first step is %+v", steps[0])
 	}
-	if steps[1].Kind != port.StepStopped || steps[1].Failed != "" {
+	if steps[1].Kind != port.StepStopped || steps[1].Detail != "" {
 		t.Errorf("last step is %+v", steps[1])
 	}
 }
@@ -162,7 +162,7 @@ func TestSaysWhyItStopped(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != port.StepStopped || last.Failed != "went round too many times" {
+	if last.Kind != port.StepStopped || last.Detail != "went round too many times" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -173,7 +173,7 @@ func TestSaysWhenTheVaultDidNotReachTheAgent(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != port.StepStopped || !strings.Contains(last.Failed, "without this vault") {
+	if last.Kind != port.StepStopped || !strings.Contains(last.Detail, "without this vault") {
 		t.Errorf("an agent that never got the tools answered anyway: %+v", last)
 	}
 }
@@ -218,7 +218,7 @@ func TestSaysNothingWhenTheLineSaysNothingAboutServers(t *testing.T) {
 
 	steps := heard(t, work)
 	last := steps[len(steps)-1]
-	if last.Kind != port.StepStopped || last.Failed != "" {
+	if last.Kind != port.StepStopped || last.Detail != "" {
 		t.Errorf("last step is %+v", last)
 	}
 }
@@ -272,7 +272,7 @@ func given(t *testing.T, change func(*claudecode.Agent)) run {
 		Allowed: []string{claudecode.Tool("*")},
 	}
 	change(&claude)
-	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
+	work, err := claude.Take(t.Context(), port.Task{Question: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func TestTheConfigurationIsReadableByThisUserAlone(t *testing.T) {
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 	}
-	work, err := claude.Take(t.Context(), port.Task{Asked: "what is here?"})
+	work, err := claude.Take(t.Context(), port.Task{Question: "what is here?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -461,9 +461,9 @@ func TestReportsACallWhileItIsStillBeingWritten(t *testing.T) {
 	if calls[1].About != "Bram Doyle's warning" {
 		t.Errorf("what it is writing is %q", calls[1].About)
 	}
-	if calls[len(calls)-1].Written <= calls[1].Written {
+	if calls[len(calls)-1].Count <= calls[1].Count {
 		t.Errorf("what has been written did not grow: %d then %d",
-			calls[1].Written, calls[len(calls)-1].Written)
+			calls[1].Count, calls[len(calls)-1].Count)
 	}
 }
 
@@ -624,7 +624,7 @@ sleep 120
 	works := map[string]port.Work{}
 	for conversation, question := range asked {
 		work, err := claude.Take(context.Background(),
-			port.Task{Asked: question, Conversation: conversation})
+			port.Task{Question: question, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -683,7 +683,7 @@ sleep 120
 	}
 
 	// A window that has closed does not start another.
-	if _, err := claude.Take(context.Background(), port.Task{Asked: "again"}); err == nil {
+	if _, err := claude.Take(context.Background(), port.Task{Question: "again"}); err == nil {
 		t.Error("an agent was started after the window closed")
 	}
 }
@@ -713,7 +713,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked, conversation string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -771,7 +771,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -813,7 +813,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), port.Task{Asked: asked})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -857,7 +857,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(context.Background(), port.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -938,7 +938,7 @@ echo '{"type":"result","subtype":"success","is_error":false}'
 	}
 	asks := func(asked, conversation string) {
 		t.Helper()
-		work, err := claude.Take(t.Context(), port.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(t.Context(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -987,7 +987,7 @@ sleep 120
 	}
 	takes := func(asked, conversation string) port.Work {
 		t.Helper()
-		work, err := claude.Take(context.Background(), port.Task{Asked: asked, Conversation: conversation})
+		work, err := claude.Take(context.Background(), port.Task{Question: asked, Conversation: conversation})
 		if err != nil {
 			t.Fatal(err)
 		}

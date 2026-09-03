@@ -217,7 +217,7 @@ func (a *API) standing(ctx context.Context, path string) (port.VaultReader, fing
 	if err != nil {
 		return nil, fingerprint{}, err
 	}
-	return reader, fingerprint{path: ref.Path, size: ref.Size, mtime: ref.MTime}, nil
+	return reader, fingerprint{path: ref.Path, size: ref.Size, mtime: ref.ModTime}, nil
 }
 
 // opening hands over the document at a fingerprint, held open.

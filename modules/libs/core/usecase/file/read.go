@@ -151,7 +151,7 @@ func reported(ctx context.Context, reader port.VaultReader, path string) (ReadOu
 		if entry.Path != clean {
 			continue
 		}
-		if entry.Folder {
+		if entry.IsFolder {
 			return AFolder, nil
 		}
 		return Ok, nil

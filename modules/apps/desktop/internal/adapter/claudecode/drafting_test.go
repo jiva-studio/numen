@@ -55,7 +55,7 @@ func drafting(t *testing.T, window *drawn, prints string) port.Work {
 		},
 		Drafting: window.drafting(),
 	}
-	work, err := claude.Take(t.Context(), port.Task{Asked: "change it"})
+	work, err := claude.Take(t.Context(), port.Task{Question: "change it"})
 	if err != nil {
 		t.Fatal(err)
 	}

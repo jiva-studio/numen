@@ -145,7 +145,7 @@ func TestStatDoesNotSayABookIsGone(t *testing.T) {
 	if ref.Kind != domain.KindBook {
 		t.Errorf("stat says the book is %q", ref.Kind)
 	}
-	if ref.Size <= 0 || ref.MTime == 0 {
+	if ref.Size <= 0 || ref.ModTime == 0 {
 		t.Errorf("stat gave %+v", ref)
 	}
 	if _, err := src.Read(t.Context(), "library/A Book.epub"); err != nil {
@@ -205,7 +205,7 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 		if r.Size <= 0 {
 			t.Errorf("%s has size %d", r.Path, r.Size)
 		}
-		if r.MTime == 0 {
+		if r.ModTime == 0 {
 			t.Errorf("%s has no modification time", r.Path)
 		}
 		return nil
@@ -272,7 +272,7 @@ func TestAListingSaysWhatEachEntryIs(t *testing.T) {
 	}
 
 	want := []domain.Entry{
-		{Path: "library/deeper", Name: "deeper", Folder: true},
+		{Path: "library/deeper", Name: "deeper", IsFolder: true},
 		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindBook},
 		{Path: "library/Notes.md", Name: "Notes.md", Kind: domain.KindNote},
 		{Path: "library/scan.png", Name: "scan.png"},

@@ -108,8 +108,8 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	})
 
 	task := <-taking.took
-	if task.Asked != "rewrite this note" {
-		t.Errorf("the agent was asked %q, want %q", task.Asked, "rewrite this note")
+	if task.Question != "rewrite this note" {
+		t.Errorf("the agent was asked %q, want %q", task.Question, "rewrite this note")
 	}
 	if task.Focus != "notes/Fugue.md" {
 		t.Errorf("the note in focus is %q, want %q", task.Focus, "notes/Fugue.md")
@@ -124,10 +124,10 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: port.StepThinking},
-		{Kind: port.StepToolCall, Tool: "note_write", About: "notes/Fugue.md", Written: 240},
+		{Kind: port.StepToolCall, Tool: "note_write", About: "notes/Fugue.md", Count: 240},
 		{Kind: port.StepAnswered},
 		{Kind: port.StepSaying, Text: "Rewritten."},
-		{Kind: port.StepStopped, Failed: "out of turns"},
+		{Kind: port.StepStopped, Detail: "out of turns"},
 	}}
 	client := panelled(t, panelling(taking))
 

@@ -57,9 +57,9 @@ type SourceText struct {
 	Producer string
 	Hash     string
 
-	// Size and MTime are the file as the index last saw it. A reading is of the
-	// bytes that were there then, and a file rewritten since is one those
+	// Size and ModTime are the file as the index last saw it. A reading is of
+	// the bytes that were there then, and a file rewritten since is one those
 	// coordinates no longer describe.
-	Size  int64
-	MTime int64
+	Size    int64
+	ModTime int64
 }

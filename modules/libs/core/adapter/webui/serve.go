@@ -936,7 +936,7 @@ func begin(
 			return false
 		}
 
-		fmt.Fprintf(out, "%s: %d notes\n", v.Name, result.Seen)
+		fmt.Fprintf(out, "%s: %d notes\n", v.Name, result.Notes)
 		api.Ready.Store(true)
 		return true
 	}

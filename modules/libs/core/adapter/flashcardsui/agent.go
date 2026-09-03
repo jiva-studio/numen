@@ -43,7 +43,7 @@ func (a *API) Ask(
 	}
 
 	work, err := taking.Take(ctx, port.Task{
-		Asked:        r.Msg.GetAsked(),
+		Question:     r.Msg.GetAsked(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
 	})
@@ -99,7 +99,7 @@ func stepsOf(step port.Step) []*v1.AskResponse {
 			ToolCall: &v1.ToolCall{
 				Tool:    step.Tool,
 				About:   step.About,
-				Written: int32(step.Written),
+				Written: int32(step.Count),
 				Path:    step.Place.Path,
 				Start:   int32(step.Place.Start),
 				Length:  int32(step.Place.Length),
@@ -110,7 +110,7 @@ func stepsOf(step port.Step) []*v1.AskResponse {
 	case port.StepThinking:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Thinking{Thinking: &v1.Thinking{}}}}
 	case port.StepStopped:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Failed}}}
+		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Detail}}}
 	default:
 		return []*v1.AskResponse{{Step: &v1.AskResponse_Said{Said: step.Text}}}
 	}

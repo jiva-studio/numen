@@ -84,8 +84,8 @@ func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
 	}
 
 	task := <-agent.took
-	if task.Asked != "why is it called that" {
-		t.Errorf("asked %q", task.Asked)
+	if task.Question != "why is it called that" {
+		t.Errorf("asked %q", task.Question)
 	}
 	if task.Focus != "decks/Words.md" {
 		t.Errorf("focused on %q", task.Focus)
@@ -100,11 +100,11 @@ func TestWhatIsAskedAboutACardReachesTheAgent(t *testing.T) {
 func TestEveryStepReachesThePageAsItself(t *testing.T) {
 	agent := &asking{took: make(chan port.Task, 1), takes: []port.Step{
 		{Kind: port.StepThinking},
-		{Kind: port.StepSearch, Tool: "note_search", About: "leaf mould", Written: 11,
+		{Kind: port.StepSearch, Tool: "note_search", About: "leaf mould", Count: 11,
 			Place: domain.Place{Path: "decks/Words.md", Start: 4, Length: 9}},
 		{Kind: port.StepAnswered},
 		{Kind: port.StepSaying, Text: "Because the leaves make it."},
-		{Kind: port.StepStopped, Failed: "the agent went away"},
+		{Kind: port.StepStopped, Detail: "the agent went away"},
 	}}
 	api := &API{}
 	api.Answers(agent)

@@ -53,7 +53,7 @@ func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 			if source.Hash == "" {
 				t.Error("nothing addresses the content the chunks were cut from")
 			}
-			if source.Ref.Size != int64(len(raw)) || source.Ref.MTime != 1 {
+			if source.Ref.Size != int64(len(raw)) || source.Ref.ModTime != 1 {
 				t.Errorf("the source was recorded as %+v, want the file as it is", source.Ref)
 			}
 

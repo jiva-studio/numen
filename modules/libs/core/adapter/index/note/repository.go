@@ -99,7 +99,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
+		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.ModTime).Scan(&row); err != nil {
 		return fmt.Errorf("save_source: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Ref.Path)),

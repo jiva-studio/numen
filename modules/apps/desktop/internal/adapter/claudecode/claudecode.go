@@ -262,7 +262,7 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 			failed = reason(err, said.String())
 		}
 		select {
-		case w.steps <- port.Step{Kind: port.StepStopped, Failed: failed}:
+		case w.steps <- port.Step{Kind: port.StepStopped, Detail: failed}:
 		case <-running.Done():
 		}
 		if err != nil && a.Trouble != nil {
@@ -385,7 +385,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	}
 
 	args := []string{
-		"-p", task.Asked,
+		"-p", task.Question,
 		"--output-format", "stream-json",
 		"--verbose",
 		"--include-partial-messages",

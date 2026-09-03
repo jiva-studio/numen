@@ -109,10 +109,10 @@ func (s *VaultReader) Walk(ctx context.Context, fn func(domain.Fingerprint) erro
 			return nil
 		}
 		return fn(domain.Fingerprint{
-			Path:  rel,
-			Kind:  kind,
-			Size:  found.Size(),
-			MTime: found.ModTime().UnixNano(),
+			Path:    rel,
+			Kind:    kind,
+			Size:    found.Size(),
+			ModTime: found.ModTime().UnixNano(),
 		})
 	})
 }
@@ -166,10 +166,10 @@ func (s *VaultReader) List(ctx context.Context, folder string) ([]domain.Entry, 
 			}
 		}
 		entries = append(entries, domain.Entry{
-			Path:   rel,
-			Name:   d.Name(),
-			Folder: d.IsDir(),
-			Kind:   kind,
+			Path:     rel,
+			Name:     d.Name(),
+			IsFolder: d.IsDir(),
+			Kind:     kind,
 		})
 	}
 	slices.SortFunc(entries, inOrder)
@@ -193,8 +193,8 @@ func info(path string, d fs.DirEntry) (fs.FileInfo, error) {
 // inOrder is folders before files, and names compared without regard to case.
 // Two names differing only in case keep a settled order of their own.
 func inOrder(a, b domain.Entry) int {
-	if a.Folder != b.Folder {
-		if a.Folder {
+	if a.IsFolder != b.IsFolder {
+		if a.IsFolder {
 			return -1
 		}
 		return 1
@@ -288,10 +288,10 @@ func (s *VaultReader) Stat(ctx context.Context, path string) (domain.Fingerprint
 		return domain.Fingerprint{}, s.leftAlone(path)
 	}
 	return domain.Fingerprint{
-		Path:  path,
-		Kind:  kind,
-		Size:  info.Size(),
-		MTime: info.ModTime().UnixNano(),
+		Path:    path,
+		Kind:    kind,
+		Size:    info.Size(),
+		ModTime: info.ModTime().UnixNano(),
 	}, nil
 }
 

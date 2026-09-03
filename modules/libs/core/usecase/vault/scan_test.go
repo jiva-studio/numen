@@ -60,8 +60,8 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d markdown files, want 14 — check what the walk skipped", res.Notes)
 	}
 	if res.Indexed != 14 || res.Unchanged != 0 || res.Removed != 0 {
 		t.Errorf("first scan: %+v", res)
@@ -91,8 +91,8 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Notes)
 	}
 	// The fixture carries a PDF of its own beside the EPUB written here.
 	if res.Assets != 2 {
@@ -132,8 +132,8 @@ func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
 	if res.Assets != 1 {
 		t.Errorf("counted %d sources of another kind, want the document alone", res.Assets)
 	}
-	if res.Seen != 14 {
-		t.Errorf("saw %d notes, want 14", res.Seen)
+	if res.Notes != 14 {
+		t.Errorf("saw %d notes, want 14", res.Notes)
 	}
 }
 
@@ -162,14 +162,14 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if one.Seen != 1 || one.Assets != 1 {
+	if one.Notes != 1 || one.Assets != 1 {
 		t.Errorf("the first vault scanned as %+v, want one note and one book", one)
 	}
 	two, err := scan.Execute(ctx, second)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if two.Seen != 2 || two.Assets != 2 {
+	if two.Notes != 2 || two.Assets != 2 {
 		t.Errorf("the second vault scanned as %+v, want two notes and two books", two)
 	}
 
@@ -227,7 +227,7 @@ func TestSecondScanOpensNoFiles(t *testing.T) {
 	if counter.reads != 0 {
 		t.Errorf("second scan read %d files, want 0", counter.reads)
 	}
-	if second.Unchanged != second.Seen || second.Indexed != 0 {
+	if second.Unchanged != second.Notes || second.Indexed != 0 {
 		t.Errorf("second scan: %+v", second)
 	}
 }
@@ -483,8 +483,8 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	if res.Vanished != 1 {
 		t.Errorf("vanished = %d, want 1", res.Vanished)
 	}
-	if res.Indexed != res.Seen-1 {
-		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
 	}
 
 	if res.Removed != 0 {
@@ -533,8 +533,8 @@ func TestAFileNobodyCanReadDoesNotStopAScan(t *testing.T) {
 	if res.Unreadable != 1 {
 		t.Errorf("unreadable = %d, want 1", res.Unreadable)
 	}
-	if res.Indexed != res.Seen-1 {
-		t.Errorf("indexed %d of %d seen", res.Indexed, res.Seen)
+	if res.Indexed != res.Notes-1 {
+		t.Errorf("indexed %d of %d seen", res.Indexed, res.Notes)
 	}
 	if res.Removed != 0 {
 		t.Errorf("removed %d notes: a file nobody can read is not a deletion", res.Removed)
@@ -649,8 +649,8 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled scan returned %v", err)
 	}
-	if res.Seen != 500 {
-		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Seen)
+	if res.Notes != 500 {
+		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
 	known, err := db.Queries().Fingerprints(t.Context(), string(v.ID))
@@ -686,7 +686,7 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("a cancelled warm scan returned %v", err)
 	}
-	if res.Seen != 0 {
-		t.Errorf("a warm scan cancelled before its first note looked at %d of 600", res.Seen)
+	if res.Notes != 0 {
+		t.Errorf("a warm scan cancelled before its first note looked at %d of 600", res.Notes)
 	}
 }

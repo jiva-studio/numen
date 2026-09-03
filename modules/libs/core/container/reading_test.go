@@ -37,7 +37,7 @@ func scanned(t *testing.T) (container.Config, domain.Vault) {
 	}
 	err = db.Sources().SaveExtraction(t.Context(), string(vault.ID), port.SourceChunks{
 		Source: port.Source{
-			Ref:    domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), MTime: 1},
+			Ref:    domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: int64(len(entropy)), ModTime: 1},
 			Hash:   "hash-entropy",
 			Recipe: "markdown",
 		},
