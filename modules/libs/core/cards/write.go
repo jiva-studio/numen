@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -65,7 +66,7 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 
 // Whole makes every card of the file whole and reports the marks it minted,
 // which is what Whole does to a body. The file keeps its own line endings.
-func (f *DeckFile) Whole(stencils map[string]CardStencil, mint func() (string, error)) ([]Minted, error) {
+func (f *DeckFile) Whole(stencils map[string]CardStencil, mint func() (cardid.CardID, error)) ([]Minted, error) {
 	body, minted, err := Whole(markdown.Normalised(f.doc.Body()), stencils, mint)
 	if err != nil {
 		return nil, err
@@ -83,7 +84,7 @@ func (f *DeckFile) Whole(stencils map[string]CardStencil, mint func() (string, e
 //
 // Writing the first field is what rewrites the heading, and that is done where
 // the deck is made whole, not here.
-func (f *DeckFile) SetValue(card, field, value string) error {
+func (f *DeckFile) SetValue(card cardid.CardID, field, value string) error {
 	body := []byte(f.doc.Body())
 	_, spans := readDeck(domain.Fingerprint{}, body)
 

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
@@ -231,7 +231,7 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 	if len(deck.Cards) != 1 {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
-	if !mark.Valid(deck.Cards[0].Mark) {
+	if !cardid.Valid(deck.Cards[0].Mark) {
 		t.Errorf("mark = %q, want the card given one", deck.Cards[0].Mark)
 	}
 	if deck.Cards[0].Heading != "Llama" {

@@ -8,7 +8,7 @@ import (
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -73,7 +73,7 @@ func (u Write) whole(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, minted, err := format.Whole(body, by, mark.New)
+	whole, minted, err := format.Whole(body, by, cardid.New)
 	if err != nil {
 		return "", nil, fmt.Errorf("make %s whole: %w", path, err)
 	}

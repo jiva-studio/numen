@@ -5,13 +5,17 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 )
 
 // A mark stands last, one space after the heading's text, and is a mark only at
 // that length and in that alphabet. Anything else at the end of a heading is
 // heading text.
 func TestReadHeading(t *testing.T) {
-	for name, one := range map[string]struct{ heading, text, mark string }{
+	for name, one := range map[string]struct {
+		heading, text string
+		mark          cardid.CardID
+	}{
 		"a text and a mark": {
 			"Compost, what is it made of ^k7m2xq9fzp", "Compost, what is it made of", "k7m2xq9fzp",
 		},
@@ -43,7 +47,11 @@ func TestReadHeading(t *testing.T) {
 // A card whose first field is empty stands under a heading of its mark alone,
 // and a heading is the text alone until the card is written.
 func TestWriteHeading(t *testing.T) {
-	for name, one := range map[string]struct{ text, mark, want string }{
+	for name, one := range map[string]struct {
+		text string
+		mark cardid.CardID
+		want string
+	}{
 		"both":         {"Compost", "k7m2xq9fzp", "Compost ^k7m2xq9fzp"},
 		"no text":      {"", "k7m2xq9fzp", "^k7m2xq9fzp"},
 		"no mark":      {"Compost", "", "Compost"},

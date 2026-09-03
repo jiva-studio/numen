@@ -7,7 +7,7 @@ import (
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -250,7 +250,7 @@ func (d deck) rename(ctx context.Context, path string, in Rename) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if _, err := f.Whole(by, mark.New); err != nil {
+	if _, err := f.Whole(by, cardid.New); err != nil {
 		return 0, err
 	}
 	if err := d.stamp(f.Stamped); err != nil {

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -22,31 +22,31 @@ const caret = "^"
 // A mark is separated from the text by one space, stands last, and is a mark
 // only at the length and in the alphabet marks are minted in. Anything else at
 // the end of a heading is heading text, and comes back as part of the text.
-func ReadHeading(heading string) (text, carried string) {
+func ReadHeading(heading string) (text string, carried cardid.CardID) {
 	at := strings.LastIndex(heading, " ")
 	last := heading
 	if at >= 0 {
 		last = heading[at+1:]
 	}
 	written, found := strings.CutPrefix(last, caret)
-	if !found || !mark.Valid(written) {
+	if !found || !cardid.Valid(cardid.CardID(written)) {
 		return heading, ""
 	}
 	if at < 0 {
-		return "", written
+		return "", cardid.CardID(written)
 	}
-	return heading[:at], written
+	return heading[:at], cardid.CardID(written)
 }
 
 // WriteHeading is the heading a card of this text and this mark stands under.
-func WriteHeading(text, carried string) string {
+func WriteHeading(text string, carried cardid.CardID) string {
 	switch {
 	case carried == "":
 		return text
 	case text == "":
-		return caret + carried
+		return caret + string(carried)
 	}
-	return text + " " + caret + carried
+	return text + " " + caret + string(carried)
 }
 
 // Project is the heading text a card's first field gives. The heading holds

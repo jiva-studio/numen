@@ -115,7 +115,7 @@ modules/libs/core/
   internal/
     adapter/               driven: what nothing outside composes
     onnxruntime/           the runtime two driven adapters run models through
-    ulid/  mark/           identifiers, and the marks a card is known by
+    ulid/  cardid/         identifiers, and the ones a card is known by
     wire/                  what two driving adapters both put on the wire
     testsupport/           fixtures and generated vaults, for tests only
 

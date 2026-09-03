@@ -4,6 +4,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
@@ -79,7 +80,7 @@ func deckOf(path, title string, d format.Deck, cutting map[string]string) *v1.De
 func cardOf(c format.Card, at string) *v1.Card {
 	out := &v1.Card{
 		Heading:   c.Heading,
-		Mark:      c.Mark,
+		Mark:      string(c.Mark),
 		Section:   section(c.Section),
 		Stencil:   c.Stencil,
 		StencilAt: at,
@@ -204,7 +205,7 @@ func cardsOf(cs []*v1.Card) []format.Card {
 	for _, c := range cs {
 		card := format.Card{
 			Heading: c.GetHeading(),
-			Mark:    c.GetMark(),
+			Mark:    cardid.CardID(c.GetMark()),
 			Section: sectionOf(c.Section),
 			Stencil: c.GetStencil(),
 			Lead:    c.GetLead(),

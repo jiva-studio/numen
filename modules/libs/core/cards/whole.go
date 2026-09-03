@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 )
 
 // Minted is a mark given to a card that carried none, and where that card
@@ -12,7 +13,7 @@ import (
 // written a card learns from this what to address it by.
 type Minted struct {
 	Card int
-	Mark string
+	Mark cardid.CardID
 }
 
 // Whole is a deck's body with every card made whole: a card carrying no mark is
@@ -36,7 +37,7 @@ type Minted struct {
 // The body is text whose line endings are normalised, and so is what comes
 // back. The endings the file keeps are put on when it is written.
 func Whole(
-	body string, stencils map[string]CardStencil, mint func() (string, error),
+	body string, stencils map[string]CardStencil, mint func() (cardid.CardID, error),
 ) (string, []Minted, error) {
 	raw := []byte(body)
 	deck, spans := readDeck(domain.Fingerprint{}, raw)

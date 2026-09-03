@@ -477,7 +477,7 @@ func standing(held []format.Card, carried string) (int, error) {
 	at := -1
 	if carried != "" {
 		for i, card := range held {
-			if card.Mark != carried {
+			if string(card.Mark) != carried {
 				continue
 			}
 			if at >= 0 {
@@ -497,7 +497,7 @@ func standing(held []format.Card, carried string) (int, error) {
 func markOf(minted []format.Minted, at int) string {
 	for _, one := range minted {
 		if one.Card == at {
-			return one.Mark
+			return string(one.Mark)
 		}
 	}
 	return ""
@@ -560,7 +560,7 @@ func whyNotADeck(read cards.Deck) string {
 }
 
 func carded(card format.Card) Card {
-	out := Card{Mark: card.Mark, Section: card.Section, Stencil: card.Stencil}
+	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.Stencil}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}

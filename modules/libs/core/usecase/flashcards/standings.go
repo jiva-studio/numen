@@ -140,7 +140,7 @@ func (u Standings) standing(
 			out = append(out, Standing{
 				Deck:     deck.Path,
 				Section:  section(deck.Deck, card),
-				CardFace: history.CardFaceID{Card: card.Mark, Face: face.Name},
+				CardFace: history.CardFaceID{Card: string(card.Mark), Face: face.Name},
 				Heading:  card.Heading,
 				stencil:  stencil,
 				face:     face,
