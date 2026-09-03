@@ -66,7 +66,7 @@ type Transcriber struct {
 	// speech is the model that finds the stretches, and cutting is how it cuts
 	// them. A recording opened by this transcriber is cut by them.
 	speech  *ort.Session
-	cutting SpeechModel
+	cutting SegmenterModel
 
 	named port.Transcription
 

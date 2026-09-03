@@ -35,7 +35,7 @@ type Config struct {
 	Threads int `json:"threads"`
 
 	Model  ParakeetModel `json:"model"`
-	Speech SpeechModel   `json:"speech"`
+	Speech SegmenterModel   `json:"speech"`
 
 	// Fetching is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
@@ -71,10 +71,10 @@ type ParakeetModel struct {
 	Tokens  string `json:"tokens"`
 }
 
-// SpeechModel finds where in a recording somebody is speaking. What it cuts is
+// SegmenterModel finds where in a recording somebody is speaking. What it cuts is
 // what the transcriber is given, so where it cuts is part of what the words
 // are.
-type SpeechModel struct {
+type SegmenterModel struct {
 	// Name is what this segmenter is called in the record kept beside a text.
 	Name string `json:"name"`
 	// From is where the model is fetched from, and Path is a file on this
@@ -116,7 +116,7 @@ func Defaults() Config {
 			Name: "parakeet-tdt-0.6b-v3-int8",
 			From: "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main/",
 		},
-		Speech: SpeechModel{
+		Speech: SegmenterModel{
 			Name: "silero-vad",
 			From: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
 		},
@@ -135,14 +135,14 @@ func (c Config) threads() int {
 	return c.Threads
 }
 
-func (s SpeechModel) threshold() float32 {
+func (s SegmenterModel) threshold() float32 {
 	if s.Threshold <= 0 {
 		return 0.5
 	}
 	return s.Threshold
 }
 
-func (s SpeechModel) silence() int {
+func (s SegmenterModel) silence() int {
 	if s.Silence <= 0 {
 		return 500
 	}
@@ -151,7 +151,7 @@ func (s SpeechModel) silence() int {
 
 // The model answers on the window a sound begins in, and the sound before that
 // window is what the first letter of the word is made of.
-func (s SpeechModel) pad() int {
+func (s SegmenterModel) pad() int {
 	if s.Pad <= 0 {
 		return 200
 	}
@@ -159,14 +159,14 @@ func (s SpeechModel) pad() int {
 }
 
 // One stretch is one run of the encoder, and its cost grows with its length.
-func (s SpeechModel) longest() int {
+func (s SegmenterModel) longest() int {
 	if s.Longest <= 0 {
 		return 30000
 	}
 	return s.Longest
 }
 
-func (s SpeechModel) shortest() int {
+func (s SegmenterModel) shortest() int {
 	if s.Shortest <= 0 {
 		return 100
 	}
@@ -175,7 +175,7 @@ func (s SpeechModel) shortest() int {
 
 // A line of a transcript is read, so it holds a phrase and not a breath. A
 // speaker hesitating in the middle of a sentence stops for about this long.
-func (s SpeechModel) least() int {
+func (s SegmenterModel) least() int {
 	if s.Least <= 0 {
 		return 2500
 	}
@@ -185,7 +185,7 @@ func (s SpeechModel) least() int {
 // cutting is every setting a stretch of speech is cut by, as one value. Each of
 // them moves where a stretch ends, and a stretch that ends elsewhere is heard
 // as other words.
-func (s SpeechModel) cutting() string {
+func (s SegmenterModel) cutting() string {
 	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
 		s.threshold(), s.silence(), s.pad(), s.longest(), s.shortest(), s.least())
 }
