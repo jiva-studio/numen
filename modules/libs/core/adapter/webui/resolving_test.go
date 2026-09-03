@@ -106,6 +106,30 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 	}
 }
 
+// An answer is written in no note, so it asks with no note to be relative to,
+// and a name carrying dots is one name.
+func TestANameWrittenInNoNoteReachesTheNoteItNames(t *testing.T) {
+	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
+	client, _ := opened(t, map[string]string{
+		"notes/" + lecture + ".md": "---\ntitle: " + lecture + "\n---\n\nprose\n",
+	})
+
+	answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+		From: "", Written: []string{"name://" + lecture},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	one := reached(t, answer.Msg)["name://"+lecture]
+	if one.GetPath() != "notes/"+lecture+".md" {
+		t.Errorf("it reaches %q", one.GetPath())
+	}
+	if one.GetAmbiguous() {
+		t.Error("one note answers to that name and it was called ambiguous")
+	}
+}
+
 // An address asked about twice is one question, so a caller reading the answer
 // by what it wrote finds one entry.
 func TestAnAddressAskedTwiceIsAnsweredOnce(t *testing.T) {

@@ -157,11 +157,8 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string
 func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]string, error) {
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
-	withExt := name
-	if path.Ext(withExt) == "" {
-		withExt += ".md"
-	}
-	base := domain.Basename(name)
+	withExt := name + domain.NoteExtension
+	base := domain.LinkName(name)
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
 		vault, name, vault, withExt, vault, base)
@@ -190,20 +187,23 @@ func pick(from, name string, candidates []string) (chosen string, ambiguous bool
 		return "", false
 	}
 
-	wanted := name
-	if path.Ext(wanted) == "" {
-		wanted += ".md"
-	}
-	for _, c := range candidates {
-		if strings.EqualFold(c, wanted) {
-			return c, false
+	// A name is written with an extension or without one, and both spellings
+	// name the same file.
+	wanted := []string{name, name + domain.NoteExtension}
+	for _, w := range wanted {
+		for _, c := range candidates {
+			if strings.EqualFold(c, w) {
+				return c, false
+			}
 		}
 	}
 
-	relative := path.Join(path.Dir(from), wanted)
-	for _, c := range candidates {
-		if strings.EqualFold(c, relative) {
-			return c, false
+	for _, w := range wanted {
+		relative := path.Join(path.Dir(from), w)
+		for _, c := range candidates {
+			if strings.EqualFold(c, relative) {
+				return c, false
+			}
 		}
 	}
 

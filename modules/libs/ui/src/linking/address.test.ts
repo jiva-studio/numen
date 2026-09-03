@@ -69,6 +69,14 @@ describe('the wikilinks in a text', () => {
     expect(wikilinksIn('[[Entropy]]')[0]?.text).toBe('Entropy')
   })
 
+  it('carry the name whole, dots, dashes and diacritics alike', () => {
+    const name = 'Seminar 1.2–1.3 — Lisbon, 9 July 1973'
+
+    expect(wikilinksIn(`Under [[${name}]].`).map((one) => one.address)).toStrictEqual([
+      `name://${name}`,
+    ])
+  })
+
   it('are not brackets holding nothing', () => {
     expect(wikilinksIn('[[]] and [[ ]]')).toStrictEqual([])
   })
