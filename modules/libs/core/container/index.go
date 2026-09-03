@@ -40,7 +40,7 @@ func (i *Index) Close() error { return i.db.Close() }
 func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
 	refresh := vault.Refresh{
 		Readers: c.VaultReaders(),
-		Notes:   db.NotesCutAt(c.Chunking()),
+		Notes:   db.NotesCutAt(c.Chunking(), c.Legibility()),
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
 	}

@@ -112,7 +112,7 @@ func TestCut(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			out := Cut(test.text, test.parts, test.sizes)
+			out := Cut(test.text, test.parts, test.sizes, Legibility{})
 
 			if len(out) != test.wantLarge {
 				t.Errorf("large chunks: got %d, want %d", len(out), test.wantLarge)
@@ -132,7 +132,7 @@ func TestCut(t *testing.T) {
 // one line is cut like a book on many.
 func TestCutOneLongLine(t *testing.T) {
 	text := line(200000)
-	out := Cut(text, nil, Sizes{})
+	out := Cut(text, nil, Sizes{}, Legibility{})
 
 	if len(out) != 1250 {
 		t.Errorf("large chunks: got %d, want 1250", len(out))
@@ -155,7 +155,7 @@ func TestCutOverlaps(t *testing.T) {
 	}
 	const size, overlap = 6, 3
 	sizes := Sizes{Large: 25, LargeOverlap: 10, Small: size, SmallOverlap: overlap}
-	out := Cut(text, parts, sizes)
+	out := Cut(text, parts, sizes, Legibility{})
 
 	small := flatten(out)
 	if len(small) < 2 {
@@ -195,7 +195,7 @@ func TestCutKeepsSmallChunksUnderTheLimit(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sizes := Sizes{Small: 50, Limit: test.limit}
-			out := Cut(test.text, nil, sizes)
+			out := Cut(test.text, nil, sizes, Legibility{})
 			seen := 0
 			for _, large := range out {
 				for _, small := range large.Small {
@@ -225,8 +225,8 @@ func TestCutIsPure(t *testing.T) {
 	given := append([]PartStart(nil), parts...)
 	sizes := Sizes{Large: 12, Small: 5}
 
-	first := Cut(text, given, sizes)
-	second := Cut(text, given, sizes)
+	first := Cut(text, given, sizes, Legibility{})
+	second := Cut(text, given, sizes, Legibility{})
 
 	if !same(first, second) {
 		t.Error("two cuts of the same text disagree")
@@ -241,10 +241,10 @@ func TestCutIsPure(t *testing.T) {
 // TestCutNothing covers the texts that carry no words.
 func TestCutNothing(t *testing.T) {
 	for _, text := range []string{"", "   \n\t\n  ", noise} {
-		if out := Cut(text, nil, Sizes{}); out != nil {
+		if out := Cut(text, nil, Sizes{}, Legibility{}); out != nil {
 			t.Errorf("Cut(%q) produced %d chunks", text, len(out))
 		}
-		if out := Cut(text, nil, Sizes{Large: Whole}); out != nil {
+		if out := Cut(text, nil, Sizes{Large: Whole}, Legibility{}); out != nil {
 			t.Errorf("Cut(%q) as one chunk produced %d chunks", text, len(out))
 		}
 	}

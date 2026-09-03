@@ -29,15 +29,19 @@ import (
 // enclosing every small chunk is the source itself. This is how a note is cut.
 const Whole = -1
 
-// The sizes and thresholds used where configuration names none.
+// The sizes used where configuration names none.
 const (
 	DefaultLarge        = 200
 	DefaultLargeOverlap = 40
 	DefaultSmall        = 50
 	DefaultSmallOverlap = 10
 	DefaultLimit        = 1000
-	DefaultAlphabetic   = 0.65
-	DefaultDirty        = 0.25
+)
+
+// The thresholds used where configuration names none.
+const (
+	DefaultAlphabetic = 0.65
+	DefaultDirty      = 0.25
 )
 
 // CharactersPerToken is the floor a token is worth in characters.
@@ -57,8 +61,7 @@ func Under(tokens int) int {
 	return tokens * CharactersPerToken
 }
 
-// Sizes are how large a chunk is cut and what makes a chunk legible enough to
-// index. A zero field takes its default.
+// Sizes are how large a chunk is cut. A zero field takes its default.
 type Sizes struct {
 	// Large and Small are how many words a chunk of each size holds. Large is
 	// Whole when one large chunk encloses the whole text.
@@ -74,12 +77,18 @@ type Sizes struct {
 	// Limit is the most characters a small chunk may hold. A chunk over it is
 	// cut further at a word, and a single word over it is not indexable.
 	Limit int
+}
 
+// Legibility is what makes a chunk legible enough to index. A zero field takes
+// its default, and a negative one asks for no threshold.
+type Legibility struct {
 	// Alphabetic is the least fraction of a chunk's characters that must be
-	// letters, and Dirty the most fraction of its words that may carry a
-	// non-letter inside. A negative value asks for no threshold.
+	// letters.
 	Alphabetic float64
-	Dirty      float64
+
+	// Dirty is the most fraction of a chunk's words that may carry a non-letter
+	// inside.
+	Dirty float64
 }
 
 // A PartStart is somewhere in the text that carries a name. Parts bound the
@@ -110,16 +119,16 @@ func (c Chunk) middle() int { return c.Start + c.Length/2 }
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
-func Cut(text string, parts []PartStart, sizes Sizes) []Chunk {
-	s := sizes.resolve()
+func Cut(text string, parts []PartStart, sizes Sizes, reads Legibility) []Chunk {
+	s, l := sizes.resolve(), reads.resolve()
 	divisions := divisionsOf(text, parts)
 
 	if s.Large == Whole {
-		return whole(text, divisions, s)
+		return whole(text, divisions, s, l)
 	}
 	var out []Chunk
 	for _, d := range divisions {
-		out = append(out, cutDivision(text, d, s)...)
+		out = append(out, cutDivision(text, d, s, l)...)
 	}
 	return out
 }
@@ -155,7 +164,7 @@ func divisionsOf(text string, parts []PartStart) []division {
 
 // cutDivision tiles one division twice and puts each small chunk under the large
 // one its middle falls in.
-func cutDivision(text string, d division, s Sizes) []Chunk {
+func cutDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 	words := wordsIn(text, d.from, d.to)
 	if len(words) == 0 {
 		return nil
@@ -163,28 +172,28 @@ func cutDivision(text string, d division, s Sizes) []Chunk {
 	var large []Chunk
 	for _, at := range tile(len(words), s.Large, s.LargeOverlap) {
 		c := extent(words, at, d.location)
-		if !legible(c.Slice(text), s) {
+		if !legible(c.Slice(text), l) {
 			continue
 		}
 		large = append(large, c)
 	}
-	return enclose(large, smallChunks(text, words, d.location, s))
+	return enclose(large, smallChunks(text, words, d.location, s, l))
 }
 
 // whole makes the text itself the large chunk and cuts the small chunks on the
 // structure inside it.
-func whole(text string, divisions []division, s Sizes) []Chunk {
+func whole(text string, divisions []division, s Sizes, l Legibility) []Chunk {
 	words := wordsIn(text, 0, len(text))
 	if len(words) == 0 {
 		return nil
 	}
 	large := extent(words, [2]int{0, len(words)}, "")
-	if !legible(large.Slice(text), s) {
+	if !legible(large.Slice(text), l) {
 		return nil
 	}
 	var small []Chunk
 	for _, d := range divisions {
-		small = append(small, smallChunks(text, wordsIn(text, d.from, d.to), d.location, s)...)
+		small = append(small, smallChunks(text, wordsIn(text, d.from, d.to), d.location, s, l)...)
 	}
 	return enclose([]Chunk{large}, small)
 }
@@ -192,13 +201,13 @@ func whole(text string, divisions []division, s Sizes) []Chunk {
 // smallChunks tiles the words of one division into the chunks that carry a
 // vector. A chunk over the character limit is cut further at a word, and one
 // that is still over it after that is a single word and is dropped.
-func smallChunks(text string, words []word, location string, s Sizes) []Chunk {
+func smallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
 	for _, at := range tile(len(words), s.Small, s.SmallOverlap) {
 		for _, piece := range limited(text, words, at, s.Limit) {
 			c := extent(words, piece, location)
 			body := c.Slice(text)
-			if utf8.RuneCountInString(body) > s.Limit || !legible(body, s) {
+			if utf8.RuneCountInString(body) > s.Limit || !legible(body, l) {
 				continue
 			}
 			out = append(out, c)
@@ -324,18 +333,23 @@ func (s Sizes) resolve() Sizes {
 	if s.Limit <= 0 {
 		s.Limit = DefaultLimit
 	}
-	if s.Alphabetic == 0 {
-		s.Alphabetic = DefaultAlphabetic
-	}
-	if s.Dirty == 0 {
-		s.Dirty = DefaultDirty
-	}
 	if s.Large < 0 {
 		s.Large = Whole
 	}
 	s.LargeOverlap = bound(s.LargeOverlap, s.Large)
 	s.SmallOverlap = bound(s.SmallOverlap, s.Small)
 	return s
+}
+
+// resolve fills in what configuration left unset.
+func (l Legibility) resolve() Legibility {
+	if l.Alphabetic == 0 {
+		l.Alphabetic = DefaultAlphabetic
+	}
+	if l.Dirty == 0 {
+		l.Dirty = DefaultDirty
+	}
+	return l
 }
 
 // bound keeps an overlap between none and one word short of the size it belongs

@@ -14,7 +14,7 @@ import (
 // writing saves one note of a title of its own through the opening given.
 func writing(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().Cut(chunking.Sizes{}).Save(t.Context(), string(v.ID), []domain.Note{{
+	return db.Notes().Cut(chunking.Sizes{}, chunking.Legibility{}).Save(t.Context(), string(v.ID), []domain.Note{{
 		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: 1},
 		Title:       title,
 		Type:        domain.TypeNote,

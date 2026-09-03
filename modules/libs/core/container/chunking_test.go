@@ -131,9 +131,9 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a source.Extract or a chunking.Sizes of its
-// own. The sizes decide what a chunk is kept under, and a second assembly is a
-// second answer for one settings file.
+// Nothing outside this package builds a source.Extract, a chunking.Sizes or a
+// chunking.Legibility of its own. They decide what a chunk is kept under, and a
+// second assembly is a second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
 	root := ".."
 	within := func(path, dir string) bool {
@@ -177,7 +177,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			switch {
 			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "usecase/source"):
 				built = append(built, path)
-			case pkg.Name == "chunking" && named.Sel.Name == "Sizes":
+			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility"):
 				sized = append(sized, path)
 			}
 			return true
@@ -191,7 +191,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 		t.Errorf("a cut is assembled outside the composition root: %v", built)
 	}
 	if len(sized) != 0 {
-		t.Errorf("sizes are assembled outside the composition root: %v", sized)
+		t.Errorf("a cut's sizes or thresholds are assembled outside the composition root: %v", sized)
 	}
 	if len(untold) != 0 {
 		t.Errorf("a note repository is taken without being told its sizes: %v", untold)

@@ -24,10 +24,17 @@ func (c Config) Chunking() chunking.Sizes {
 	return chunking.Sizes{Limit: chunking.Under(c.Embedding.Model.MaxTokens)}
 }
 
-// NotesCutAt is the note repository, told the sizes a note is cut at. A note is
-// cut in the adapter that stores it, and the sizes reach that adapter from here.
-func (i *Index) NotesCutAt(sizes chunking.Sizes) port.NoteRepository {
-	return i.db.Notes().Cut(sizes)
+// Legibility is what a chunk has to read like to be indexed. It comes from here
+// for the reason the sizes do: one answer for one installation.
+func (c Config) Legibility() chunking.Legibility {
+	return chunking.Legibility{}
+}
+
+// NotesCutAt is the note repository, told the sizes a note is cut at and what
+// makes one legible. A note is cut in the adapter that stores it, and both
+// reach that adapter from here.
+func (i *Index) NotesCutAt(sizes chunking.Sizes, reads chunking.Legibility) port.NoteRepository {
+	return i.db.Notes().Cut(sizes, reads)
 }
 
 // Scan is the walk that reads a vault's notes into the index, cut at this
@@ -36,7 +43,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 	return vault.Scan{
 		Readers:      c.VaultReaders(),
 		Vaults:       db.Vaults(),
-		Notes:        db.NotesCutAt(c.Chunking()),
+		Notes:        db.NotesCutAt(c.Chunking(), c.Legibility()),
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
 		RebuildIndex: c.RebuildIndex,
@@ -102,6 +109,7 @@ func (c Config) Extract(sources port.SourceRepository, owing port.SourceQueries,
 		Derived:      derived,
 		Documents:    c.Documents(),
 		Sizes:        c.Chunking(),
+		Legibility:   c.Legibility(),
 		RebuildIndex: c.RebuildIndex,
 	}, nil
 }

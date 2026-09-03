@@ -34,17 +34,20 @@ const kind = "note"
 type Repository struct {
 	db *sql.DB
 
-	// sizes are what a note is cut at. A repository told none cuts at the sizes
-	// the cutting package names.
+	// sizes are what a note is cut at, and reads what a chunk of it has to read
+	// like to be kept. A repository told neither takes what the chunking
+	// package names.
 	sizes chunking.Sizes
+	reads chunking.Legibility
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Cut is the repository, cutting a note at the sizes given. The settings decide
-// them, and what has read the settings passes them in here.
-func (r *Repository) Cut(sizes chunking.Sizes) *Repository {
-	return &Repository{db: r.db, sizes: sizes}
+// Cut is the repository, cutting a note at the sizes given and keeping what
+// reads as text. The settings decide both, and what has read the settings
+// passes them in here.
+func (r *Repository) Cut(sizes chunking.Sizes, reads chunking.Legibility) *Repository {
+	return &Repository{db: r.db, sizes: sizes, reads: reads}
 }
 
 // exec runs a named statement and says which one failed. A bare driver error
@@ -76,7 +79,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 		return err
 	}
 	for _, n := range notes {
-		if err := saveNote(ctx, tx, vault, n, r.sizes); err != nil {
+		if err := saveNote(ctx, tx, vault, n, r.sizes, r.reads); err != nil {
 			return fmt.Errorf("%s: %w", n.Fingerprint.Path, err)
 		}
 	}
@@ -86,7 +89,10 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes chunking.Sizes) error {
+func saveNote(
+	ctx context.Context, tx *sql.Tx, vault int64, n domain.Note,
+	sizes chunking.Sizes, reads chunking.Legibility,
+) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -121,7 +127,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	// The note goes in as its own large chunk, so the words in it are findable
 	// as soon as it is indexed. A chunk whose text is what it was keeps its
 	// row, and the vector made from it.
-	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes)); err != nil {
+	if err := chunk.Replace(ctx, tx, row, vault, cut(n, kept, sizes, reads)); err != nil {
 		return err
 	}
 	for _, h := range kept {
@@ -179,7 +185,9 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 // A deck and a stencil are cut into nothing. A card is found by its heading,
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
-func cut(n domain.Note, headings []domain.Heading, sizes chunking.Sizes) []chunk.Chunk {
+func cut(
+	n domain.Note, headings []domain.Heading, sizes chunking.Sizes, reads chunking.Legibility,
+) []chunk.Chunk {
 	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
 		return nil
 	}
@@ -191,7 +199,7 @@ func cut(n domain.Note, headings []domain.Heading, sizes chunking.Sizes) []chunk
 	sizes.Large = chunking.Whole
 
 	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range chunking.Cut(n.Body, parts(headings), sizes) {
+	for _, large := range chunking.Cut(n.Body, parts(headings), sizes, reads) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		c := chunk.Chunk{

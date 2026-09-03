@@ -8,7 +8,7 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	rubbish := "|| $$ ?? %%% ### @@@ ~~~ ^^^"
 	plain := "the quick brown fox jumps over the lazy dog"
 
-	kept := Sizes{Alphabetic: -1, Dirty: -1}
+	kept := Legibility{Alphabetic: -1, Dirty: -1}
 	for _, text := range []string{rubbish, plain} {
 		if !legible(text, kept) {
 			t.Errorf("with no threshold, %q was refused", text)
@@ -16,7 +16,7 @@ func TestANegativeThresholdAsksForNone(t *testing.T) {
 	}
 
 	// The thresholds as they stand still refuse what they were written for.
-	standing := Sizes{}.resolve()
+	standing := Legibility{}.resolve()
 	if legible(rubbish, standing) {
 		t.Errorf("%q passed the thresholds", rubbish)
 	}

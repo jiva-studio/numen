@@ -11,7 +11,7 @@ import (
 //
 // Both thresholds are configuration, because where they sit depends on the
 // scripts a corpus is written in.
-func legible(chunk string, s Sizes) bool {
+func legible(chunk string, reads Legibility) bool {
 	letters, characters := 0, 0
 	for _, r := range chunk {
 		if unicode.IsSpace(r) {
@@ -25,11 +25,11 @@ func legible(chunk string, s Sizes) bool {
 	if characters == 0 {
 		return false
 	}
-	if float64(letters)/float64(characters) < s.Alphabetic {
+	if float64(letters)/float64(characters) < reads.Alphabetic {
 		return false
 	}
 
-	if s.Dirty < 0 {
+	if reads.Dirty < 0 {
 		return true
 	}
 	words, dirty := 0, 0
@@ -39,7 +39,7 @@ func legible(chunk string, s Sizes) bool {
 			dirty++
 		}
 	}
-	return float64(dirty)/float64(words) <= s.Dirty
+	return float64(dirty)/float64(words) <= reads.Dirty
 }
 
 // spelled says whether one word is written the way words are: letters, the marks

@@ -21,7 +21,7 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		chunks := cut(n, outline(n), chunking.Sizes{Limit: limit})
+		chunks := cut(n, outline(n), chunking.Sizes{Limit: limit}, chunking.Legibility{})
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}

@@ -48,6 +48,10 @@ type Extract struct {
 	// cut at other sizes owes its text again.
 	Sizes chunking.Sizes
 
+	// Legibility is what a chunk has to read like to be kept. It is not in the
+	// recipe: a chunk dropped as unreadable is not a different cut of the text.
+	Legibility chunking.Legibility
+
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
 	//
@@ -415,7 +419,7 @@ func (u Extract) source(
 		return nil
 	}
 
-	chunks := chunksOf(doc, sizes)
+	chunks := chunksOf(doc, sizes, u.Legibility)
 	extraction := port.SourceChunks{
 		Source: port.Source{
 			Fingerprint: ref,
@@ -436,9 +440,9 @@ func (u Extract) source(
 
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
-func chunksOf(doc *text.Document, sizes chunking.Sizes) []port.Chunk {
+func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []port.Chunk {
 	var out []port.Chunk
-	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes) {
+	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes, reads) {
 		c := chunkAt(doc, large)
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
