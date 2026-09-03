@@ -64,7 +64,7 @@ func (v viewing) Moved(_ context.Context, went domain.Move) error {
 	return nil
 }
 
-func (v viewing) Editing(_ context.Context, said domain.Editing) error {
+func (v viewing) Editing(_ context.Context, said domain.Edit) error {
 	v.Drawing.tell(said)
 	return nil
 }

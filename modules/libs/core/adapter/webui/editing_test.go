@@ -19,7 +19,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	line, done := api.Drawing.listen()
 	t.Cleanup(done)
 
-	said := domain.Editing{
+	said := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
 	if err := api.Viewing().Editing(t.Context(), said); err != nil {
@@ -38,8 +38,8 @@ func TestTheLastChangeDrawnIsTheOneWaiting(t *testing.T) {
 	line, done := drawing.listen()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Editing{Change: "one", Text: "first"})
-	drawing.tell(domain.Editing{Change: "one", Text: "second"})
+	drawing.tell(domain.Edit{Change: "one", Text: "first"})
+	drawing.tell(domain.Edit{Change: "one", Text: "second"})
 
 	if got := <-line; got.Text != "second" {
 		t.Errorf("what waited is %q", got.Text)
@@ -53,8 +53,8 @@ func TestTheReportThatEndsAChangeIsNotReplaced(t *testing.T) {
 	line, done := drawing.listen()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Editing{Change: "one", Done: true})
-	drawing.tell(domain.Editing{Change: "one", Text: "more of it"})
+	drawing.tell(domain.Edit{Change: "one", Done: true})
+	drawing.tell(domain.Edit{Change: "one", Text: "more of it"})
 
 	got := <-line
 	if got.Change != "one" || !got.Done {
@@ -74,9 +74,9 @@ func TestAChangeDoesNotDisplaceOneToAnotherNote(t *testing.T) {
 	line, done := drawing.listen()
 	t.Cleanup(done)
 
-	drawing.tell(domain.Editing{Change: "one", Path: "Aggressor.md", Text: "An axe"})
-	drawing.tell(domain.Editing{Change: "two", Path: "Fugue.md", Text: "A theme"})
-	drawing.tell(domain.Editing{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
+	drawing.tell(domain.Edit{Change: "one", Path: "Aggressor.md", Text: "An axe"})
+	drawing.tell(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme"})
+	drawing.tell(domain.Edit{Change: "two", Path: "Fugue.md", Text: "A theme answered"})
 
 	if got := <-line; got.Change != "one" || got.Text != "An axe" {
 		t.Errorf("the first report waiting is %+v, want change one saying %q", got, "An axe")

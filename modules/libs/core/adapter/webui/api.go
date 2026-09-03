@@ -192,7 +192,7 @@ type API struct {
 
 	// Drawing is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
-	Drawing audience[domain.Editing]
+	Drawing audience[domain.Edit]
 
 	// Watching is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.

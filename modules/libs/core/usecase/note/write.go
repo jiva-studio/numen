@@ -98,7 +98,7 @@ func (u Write) Execute(
 		was := markdown.Normalised(doc.Body())
 		at, insert := markdown.Differs(was, markdown.Normalised(body))
 		if at.From != at.To || insert != "" {
-			ends = u.Telling.begins(ctx, domain.Editing{
+			ends = u.Telling.begins(ctx, domain.Edit{
 				Path: path,
 				From: markdown.Counted(was, at.From),
 				To:   markdown.Counted(was, at.To),

@@ -15,7 +15,7 @@ import (
 // window is what an agent puts a place in front of.
 type window struct {
 	asked []domain.Place
-	drawn []domain.Editing
+	drawn []domain.Edit
 	went  []domain.Move
 	fails error
 }
@@ -35,7 +35,7 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	_, core := built(t, notes)
 	looking := &window{}
 	core.View = looking
-	tells := note.TellEditing(func(ctx context.Context, said domain.Editing) {
+	tells := note.TellEditing(func(ctx context.Context, said domain.Edit) {
 		_ = looking.Editing(ctx, said)
 	})
 	core.Write.Telling = tells
@@ -166,7 +166,7 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 
 // drawn is what the window was told about a change being made, in the order it
 // was told.
-func (w *window) Editing(_ context.Context, said domain.Editing) error {
+func (w *window) Editing(_ context.Context, said domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}

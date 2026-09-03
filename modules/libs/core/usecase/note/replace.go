@@ -112,7 +112,7 @@ func (u Replace) Execute(
 
 		// A client counts text its own way, and a span named in bytes lands
 		// somewhere else in prose that is not ASCII.
-		ends = u.Telling.begins(ctx, domain.Editing{
+		ends = u.Telling.begins(ctx, domain.Edit{
 			Path: path,
 			From: markdown.Counted(body, span.From),
 			To:   markdown.Counted(body, span.To),

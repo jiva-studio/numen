@@ -40,11 +40,11 @@ func focusing() audience[domain.Place] {
 // are made at once, and each is drawn in a place of its own. The report that
 // ends a change is replaced by nothing, and arrives whatever a listener is
 // doing.
-func drawing() audience[domain.Editing] {
-	return audience[domain.Editing]{
+func drawing() audience[domain.Edit] {
+	return audience[domain.Edit]{
 		latest: true,
-		about:  func(said domain.Editing) string { return said.Change },
-		keep:   func(said domain.Editing) bool { return said.Done },
+		about:  func(said domain.Edit) string { return said.Change },
+		keep:   func(said domain.Edit) bool { return said.Done },
 		room:   8,
 	}
 }

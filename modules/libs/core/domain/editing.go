@@ -1,12 +1,12 @@
 package domain
 
-// Editing is a change to a note's prose as it is being made, for whoever is
+// Edit is a change to a note's prose as it is being made, for whoever is
 // looking at that note while it happens.
 //
 // It is a report and never the change itself: the file is what the note says,
 // and this only says what is about to happen to it. A report that never arrives
 // costs a drawing, not a note.
-type Editing struct {
+type Edit struct {
 	// Change names one change. Every report of the same change carries the same
 	// name, and no two changes carry one.
 	Change string

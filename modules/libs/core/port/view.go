@@ -24,5 +24,5 @@ type View interface {
 
 	// Editing says a change to a note's prose is being made, so that a person
 	// reading that note sees it arrive where it belongs.
-	Editing(ctx context.Context, said domain.Editing) error
+	Editing(ctx context.Context, said domain.Edit) error
 }
