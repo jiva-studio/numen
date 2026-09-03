@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"gopkg.in/yaml.v3"
 )
@@ -750,6 +751,18 @@ func lineOffsets(block []byte) []int {
 		offsets = append(offsets, len(block))
 	}
 	return offsets
+}
+
+// columnOffset is where the column the parser reports on one line stands in the
+// block, in bytes. The parser counts a column in characters, and a column past
+// the end of its line stands at the end of it.
+func columnOffset(block []byte, lines []int, line, column int) int {
+	at, end := lines[line-1], lines[line]
+	for count := 1; count < column && at < end; count++ {
+		_, width := utf8.DecodeRune(block[at:end])
+		at += width
+	}
+	return at
 }
 
 // linkEntry is one record of the `links:` block, in the order the format
