@@ -9,7 +9,7 @@ import { documenting, documentKind, type Drawn, type Held } from './kind'
 import { DOCUMENT } from '../workspace'
 import type { Reading } from './reading'
 import type { Putting, Reads } from '../putting'
-import type { Run } from '../core'
+import type { Stretch } from '../core'
 import type { Host } from '../windowing'
 
 /** A document being read, with only the parts a tab of it reaches for. */
@@ -127,15 +127,15 @@ describe('a search that landed in a document', () => {
     const { puts, opens } = putting()
     documentKind(host, (path) => documenting(read(path)), puts)
 
-    const runs: readonly Run[] = [
+    const stretches: readonly Stretch[] = [
       { start: 0, length: 12 },
       { start: 400, length: 20 },
     ]
-    opens()?.('physics/Boltzmann.pdf', runs)
+    opens()?.('physics/Boltzmann.pdf', stretches)
     await settles()
 
     expect(opened).toEqual(['document physics/Boltzmann.pdf'])
-    expect(reached).toHaveBeenCalledWith(...runs)
+    expect(reached).toHaveBeenCalledWith(...stretches)
   })
 })
 

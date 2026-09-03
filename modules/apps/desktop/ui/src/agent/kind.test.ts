@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, talking, type Held } from './kind'
-import type { Run } from '../core'
+import type { Stretch } from '../core'
 import { windowing } from '../windowing'
 import { AGENT } from '../workspace'
 
@@ -39,10 +39,10 @@ const tab = (
   notes: Record<string, string> = {},
 ) => {
   const talk = talked(places)
-  const opened: [string, readonly Run[]][] = []
+  const opened: [string, readonly Stretch[]][] = []
   const beside: string[] = []
   const held = talking(talk.talk, {
-    opens: (path, ...runs) => opened.push([path, runs]),
+    opens: (path, ...stretches) => opened.push([path, stretches]),
     beside: (path) => beside.push(path),
     resolve: async (written) =>
       new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),

@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { ref } from 'vue'
-import type { Core, Run, Said, Task, Went } from './core'
+import type { Core, Said, Stretch, Task, Went } from './core'
 import { following } from '@numen/ui'
 
 /**
@@ -34,7 +34,7 @@ export interface Showing {
    * What opens a document at stretches of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
-  reads?(path: string, runs: readonly Run[]): void
+  reads?(path: string, stretches: readonly Stretch[]): void
   /** What draws the page again, once another vault is under this window. */
   reloads?(): void
 }

@@ -17,7 +17,7 @@ export const wentTo = (renamed: readonly Went[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
 
 /** A stretch of a source's own text, counted in bytes. */
-export interface Run {
+export interface Stretch {
   readonly start: number
   readonly length: number
 }

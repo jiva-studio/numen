@@ -9,7 +9,7 @@
 import { computed, ref, watch } from 'vue'
 import { pointsAtNote, wikilinksIn, type Conversation, type Turn } from '@numen/ui'
 import { same, spotOf, spotsIn } from './places'
-import type { Run } from '../core'
+import type { Stretch } from '../core'
 import type { Host, Kind } from '../windowing'
 import { AGENT, shortened } from '../workspace'
 import AgentTab from './AgentTab.vue'
@@ -18,7 +18,7 @@ import { WORDS as words } from './words'
 /** What an agent tab asks of the window it is drawn in. */
 export interface Talking {
   /** A source opened at stretches of its own text, the first of them in front. */
-  opens(path: string, ...runs: readonly Run[]): void
+  opens(path: string, ...stretches: readonly Stretch[]): void
   /** A note opened in a tab beside the pane the person is in. */
   beside(path: string): void
   /**

@@ -6,7 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
-import type { Made, NoteType, Refused, Run, Standing } from './core'
+import type { Made, NoteType, Refused, Standing, Stretch } from './core'
 import type { Says } from './telling'
 
 /**
@@ -31,7 +31,7 @@ export type Opens = (
  * stretches are of the source's own text, and the person is taken to the first
  * of them.
  */
-export type Reads = (path: string, runs: readonly Run[]) => void
+export type Reads = (path: string, stretches: readonly Stretch[]) => void
 
 /** What the window asks the vault about the file it is opening. */
 export interface Asking {
@@ -115,11 +115,11 @@ export function putting(vault: Asking) {
    * of a note's bytes names no line for the keyboard to stand on, so a note
    * opens whole.
    */
-  const opensAt = async (path: string, runs: readonly Run[]): Promise<void> => {
+  const opensAt = async (path: string, stretches: readonly Stretch[]): Promise<void> => {
     const stands = await standingAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, '', stands.type)
-    sources.get(stands.kind)?.(path, runs)
+    sources.get(stands.kind)?.(path, stretches)
   }
 
   return { holds, reads, hears, opens, opensAt, made }

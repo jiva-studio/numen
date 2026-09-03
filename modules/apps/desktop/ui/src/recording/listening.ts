@@ -3,7 +3,7 @@
  * heard in it, which of them is being said now, and the words as a person
  * edits them.
  */
-import type { Run } from '../core'
+import type { Stretch } from '../core'
 import { computed, ref } from 'vue'
 import { clock } from '@numen/ui'
 import { asking as latest } from '../asking'
@@ -51,10 +51,10 @@ export interface Recordings {
   /** The words as a person has edited them, kept against the recording. */
   writes(path: string, cues: readonly Cue[]): Promise<void>
   /**
-   * The millisecond a run of the words written down is played from, and nothing
-   * where no cue holds it.
+   * The millisecond a stretch of the words written down is played from, and
+   * nothing where no cue holds it.
    */
-  plays(path: string, run: Run): Promise<number | null>
+  plays(path: string, stretch: Stretch): Promise<number | null>
 }
 
 /**
@@ -317,11 +317,11 @@ export function listening(recordings: Recordings, path: string, how: Hearing = {
    * moment the first of them was spoken at. A stretch no cue holds leaves the
    * player where it stands.
    */
-  const reach = async (...runs: readonly Run[]) => {
+  const reach = async (...stretches: readonly Stretch[]) => {
     await opened
-    if (!open || runs.length === 0) return
+    if (!open || stretches.length === 0) return
     try {
-      const ms = await recordings.plays(path, runs[0]!)
+      const ms = await recordings.plays(path, stretches[0]!)
       if (!open || ms === null) return
       go(ms)
     } catch (error) {

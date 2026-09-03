@@ -42,9 +42,9 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
   // The reader of documents. What stands at the stretches asked for is
   // highlighted, and the tab turns to the first page of them; the rest are
   // highlighted where they fall, each of them somewhere else to look.
-  puts.reads(async (path, runs) => {
+  puts.reads(async (path, stretches) => {
     const id = await host.opens(DOCUMENT, path)
-    void host.holds<Held>(DOCUMENT, id)?.reach(...runs)
+    void host.holds<Held>(DOCUMENT, id)?.reach(...stretches)
   })
 
   return { kind }

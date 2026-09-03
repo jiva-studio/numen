@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { showing } from './showing'
-import type { Core, Run, Task } from './core'
+import type { Core, Stretch, Task } from './core'
 import type { Neighbourhood } from './core'
 
 const answer = (path: string): Neighbourhood => ({
@@ -101,7 +101,7 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
  * note is wanted in front of the person. What each tab does about either is
  * asked where that tab is.
  */
-const heard = (core: Core, reads?: (path: string, runs: readonly Run[]) => void) => {
+const heard = (core: Core, reads?: (path: string, stretches: readonly Stretch[]) => void) => {
   const changed: string[] = []
   const wanted: string[] = []
   const showed = showing(core, {
@@ -344,8 +344,8 @@ describe('a place inside a source asked for from outside the window', () => {
   /** A window that records the documents it was asked to open, and where. */
   const watching = (core: Core) => {
     const opened: string[] = []
-    const one = heard(core, (path, runs) =>
-      opened.push(`${path} ${runs.map((run) => `${run.start} ${run.length}`).join(' ')}`),
+    const one = heard(core, (path, stretches) =>
+      opened.push(`${path} ${stretches.map((one) => `${one.start} ${one.length}`).join(' ')}`),
     )
     return { window: one.window, opened, wanted: one.wanted }
   }

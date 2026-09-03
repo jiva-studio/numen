@@ -6,7 +6,7 @@
  * wide it is drawn, and what is highlighted over it are decisions, and a test
  * asks them without a browser.
  */
-import type { Run } from '../core'
+import type { Stretch } from '../core'
 import { computed, ref } from 'vue'
 
 /** Where something sits on a page, in fractions of it. */
@@ -59,7 +59,10 @@ export interface Documents {
    * per stretch and in the order they were asked about. A stretch nothing was
    * recorded for stands nowhere.
    */
-  highlights(path: string, runs: readonly Run[]): Promise<readonly (readonly Highlight[])[]>
+  highlights(
+    path: string,
+    stretches: readonly Stretch[],
+  ): Promise<readonly (readonly Highlight[])[]>
 }
 
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
@@ -148,9 +151,9 @@ export function reading(documents: Documents, path: string) {
   }
 
   /**
-   * Where the runs of the document's text sit. The first of them is the place
-   * the person was sent to: the tab turns to its first page, and the rest are
-   * highlighted where they fall.
+   * Where the stretches of the document's text sit. The first of them is the
+   * place the person was sent to: the tab turns to its first page, and the rest
+   * are highlighted where they fall.
    */
   const highlight = async (where: readonly (readonly Highlight[])[]) => {
     const [front = [], ...rest] = where
@@ -166,11 +169,11 @@ export function reading(documents: Documents, path: string) {
    * stretch standing nowhere leaves the document on the page it is on with
    * nothing highlighted.
    */
-  const reach = async (...runs: readonly Run[]) => {
+  const reach = async (...stretches: readonly Stretch[]) => {
     await shape
-    if (!open || runs.length === 0) return
+    if (!open || stretches.length === 0) return
     try {
-      const where = await documents.highlights(path, runs)
+      const where = await documents.highlights(path, stretches)
       if (!open) return
       await highlight(where)
     } catch (error) {

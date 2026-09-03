@@ -392,13 +392,13 @@ export const documents: Documents = {
     return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
-  highlights: async (path, runs) => {
-    const where = runs
+  highlights: async (path, stretches) => {
+    const where = stretches
       .map((one) => `start=${one.start}&length=${one.length}`)
       .join('&')
     const answer = await served(`${asset(path)}/marks?${where}`)
     const said = (await answer.json()) as { runs?: readonly { marks?: readonly Highlight[] }[] }
-    return runs.map((_, i) => said.runs?.[i]?.marks ?? [])
+    return stretches.map((_, i) => said.runs?.[i]?.marks ?? [])
   },
 }
 
@@ -435,8 +435,8 @@ export const recordings: Recordings = {
       body: JSON.stringify({ path, cues }),
     })
   },
-  plays: async (path, run) => {
-    const where = `start=${run.start}&length=${run.length}`
+  plays: async (path, stretch) => {
+    const where = `start=${stretch.start}&length=${stretch.length}`
     const answer = await served(`${asset(path)}/cues?${where}`)
     const said = (await answer.json()) as { cues?: readonly Cue[] }
     return said.cues?.[0]?.from ?? null
