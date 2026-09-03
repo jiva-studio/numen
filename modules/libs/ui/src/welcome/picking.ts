@@ -36,8 +36,11 @@ export function opensVault(press: KeyboardEvent, vaults: number): number | null 
   return at >= 0 && at < vaults ? at : null
 }
 
-/** Whether the key was pressed into something being written in. */
-const typing = (press: KeyboardEvent): boolean => {
+/**
+ * Whether the key was pressed into something being written in. A letter is text
+ * there, and no screen reads its own keys out of a field.
+ */
+export const typing = (press: KeyboardEvent): boolean => {
   const at = press.target as HTMLElement | null
   if (!at) return false
   return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true

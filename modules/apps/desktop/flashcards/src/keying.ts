@@ -4,6 +4,7 @@
  * Apart from the template because what a key means is a rule, and a rule inside
  * a component can only be exercised by pressing a key at a screen.
  */
+import { typing } from '@numen/ui'
 import { said } from './core'
 import type { Said } from './core'
 
@@ -33,16 +34,6 @@ export const ASKS = 'a'
 
 /** The letter the panel the deck's notes are read in is brought in with. */
 export const READS = 'r'
-
-/**
- * Whether the key was pressed into something being written in. A letter is
- * text there, and a sitting reads none of its own keys out of a field.
- */
-export const typing = (press: KeyboardEvent): boolean => {
-  const at = press.target as HTMLElement | null
-  if (!at) return false
-  return at.tagName === 'INPUT' || at.tagName === 'TEXTAREA' || at.isContentEditable === true
-}
 
 /**
  * The keys a whole sitting is done with: the space bar turns a card over, the
