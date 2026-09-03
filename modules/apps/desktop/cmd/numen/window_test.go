@@ -54,7 +54,7 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		"a note in front": {
 			vault: vault,
 			open: domain.Attention{
-				Front: "two",
+				FrontID: "two",
 				Tabs: []domain.Tab{
 					{ID: "one", Kind: domain.TabPlex, Path: "Entropy.md"},
 					{ID: "two", Kind: domain.TabNote, Path: "Reading/Order.md"},
@@ -65,14 +65,14 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		"a tab holding no file": {
 			vault: vault,
 			open: domain.Attention{
-				Front: "one",
-				Tabs:  []domain.Tab{{ID: "one", Kind: "settings"}},
+				FrontID: "one",
+				Tabs:    []domain.Tab{{ID: "one", Kind: "settings"}},
 			},
 			want: "numen — Notes",
 		},
 		"a window with nothing open": {vault: vault, want: "numen — Notes"},
 		"a window standing on no vault": {
-			open: domain.Attention{Front: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
+			open: domain.Attention{FrontID: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
 			want: "numen",
 		},
 	} {

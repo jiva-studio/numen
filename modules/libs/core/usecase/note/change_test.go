@@ -94,7 +94,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 	if created.Path != "physics/Entropy.md" {
 		t.Errorf("want physics/Entropy.md, got %s", created.Path)
 	}
-	if created.Identifier == "" {
+	if created.ID == "" {
 		t.Error("a note the application made carries an identifier")
 	}
 	if len(created.Shares) != 0 {

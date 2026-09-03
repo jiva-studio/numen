@@ -49,9 +49,9 @@ type New struct {
 
 // CreateNoteResult is the file that now exists.
 type CreateNoteResult struct {
-	Path       string
-	Identifier string
-	Title      string
+	Path  string
+	ID    string
+	Title string
 }
 
 // Deck makes a deck of no cards.
@@ -124,7 +124,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 
 	// The file is on disk from here on, so what comes back says where it is
 	// whether or not the index caught up.
-	made := CreateNoteResult{Path: path, Identifier: identifier, Title: title}
+	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
 	if u.Index == nil {
 		return made, nil
 	}

@@ -17,7 +17,7 @@ import (
 func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	api := &API{}
 
-	if open := api.Attended(); len(open.Tabs) != 0 || open.Front != "" {
+	if open := api.Attended(); len(open.Tabs) != 0 || open.FrontID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -33,7 +33,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 	}
 
 	want := domain.Attention{
-		Front: "two",
+		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "recording", Path: "Talk.mp3", Title: "Talk.mp3", At: 1000, Of: 4000},
@@ -72,13 +72,13 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 	}{
 		"a tab in front": {
 			open: domain.Attention{
-				Front: "two",
-				Tabs:  []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
+				FrontID: "two",
+				Tabs:    []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
 			},
 			want: "Talk.mp3",
 		},
 		"nothing open":     {open: domain.Attention{}},
-		"a tab it lets go": {open: domain.Attention{Front: "three", Tabs: []domain.Tab{{ID: "one"}}}},
+		"a tab it lets go": {open: domain.Attention{FrontID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
 		"a tab with no identity": {
 			open: domain.Attention{Tabs: []domain.Tab{{Path: "Entropy.md"}}},
 		},

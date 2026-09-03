@@ -49,7 +49,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 		open := core.Attending()
 		res := out{Tabs: make([]Tab, 0, len(open.Tabs)), Says: "the window has nothing open"}
 		for _, one := range open.Tabs {
-			front := one.ID != "" && one.ID == open.Front
+			front := one.ID != "" && one.ID == open.FrontID
 			res.Tabs = append(res.Tabs, Tab{
 				Kind:  one.Kind,
 				Path:  one.Path,

@@ -5,16 +5,16 @@ package domain
 type Attention struct {
 	// Tabs are every tab open, in the order the person was last in them.
 	Tabs []Tab
-	// Front is the tab in front, by its id. Empty where the window has nothing
-	// open.
-	Front string
+	// FrontID is the tab in front, by its id. Empty where the window has
+	// nothing open.
+	FrontID string
 }
 
 // Fronted is the tab the person is looking at. A window holding none answers
 // with no tab at all.
 func (a Attention) Fronted() (Tab, bool) {
 	for _, one := range a.Tabs {
-		if one.ID != "" && one.ID == a.Front {
+		if one.ID != "" && one.ID == a.FrontID {
 			return one, true
 		}
 	}

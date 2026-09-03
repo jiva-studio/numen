@@ -40,7 +40,7 @@ func tabs(t *testing.T, session *sdk.ClientSession) struct {
 
 func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 	session := attending(t, domain.Attention{
-		Front: "two",
+		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabPlex, Path: "Main 222.md", Title: "Main 222"},
 			{ID: "two", Kind: domain.TabRecording, Path: "730707BG.LON.mp3",
@@ -65,7 +65,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 
 func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 	session := attending(t, domain.Attention{
-		Front: "one",
+		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabDocument, Path: "library/A Book.pdf",
 				Title: "A Book.pdf", At: 3, Of: 40},
@@ -85,7 +85,7 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 // tab is named by its own kind.
 func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
 	session := attending(t, domain.Attention{
-		Front: "two",
+		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabNote, Path: "notes/Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "kaleidoscope", Title: "Colours"},

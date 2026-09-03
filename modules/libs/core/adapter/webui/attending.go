@@ -18,7 +18,7 @@ func (a *API) Attending(
 	_ context.Context, r *connect.Request[v1.AttendingRequest],
 ) (*connect.Response[v1.AttendingResponse], error) {
 	told := r.Msg.GetTabs()
-	open := domain.Attention{Tabs: make([]domain.Tab, 0, len(told)), Front: r.Msg.GetFront()}
+	open := domain.Attention{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
 	for _, one := range told {
 		open.Tabs = append(open.Tabs, domain.Tab{
 			ID:    one.GetId(),

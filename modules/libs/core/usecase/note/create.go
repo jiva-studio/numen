@@ -41,9 +41,9 @@ type NewNote struct {
 
 // CreateResult is the note that now exists.
 type CreateResult struct {
-	Path       string
-	Identifier string
-	Title      string
+	Path  string
+	ID    string
+	Title string
 	// Shares is the other notes already filed under this name. Creating one
 	// anyway is allowed, and said out loud.
 	Shares []string
@@ -94,7 +94,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 
 	// The note is on disk from here on, so everything after it answers with
 	// where it is, whether or not it succeeds.
-	made := CreateResult{Path: path, Identifier: identifier, Title: title}
+	made := CreateResult{Path: path, ID: identifier, Title: title}
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
