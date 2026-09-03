@@ -348,7 +348,7 @@ The boundary the detector answers with is the text's own outline drawn inside th
 | --- | --- |
 | `transcribe_recordings` | whether a recording the vault holds no transcript for is listened to on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
 | `transcribe_under_mb` | how large a recording may be and still be listened to unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
-| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, and then the one the platform holds. |
+| `runtime` | the ONNX Runtime shared library. Empty takes the one beside the application, then the one the platform holds, and then the published one, fetched and checked against the sum this build carries. One process opens one, and both a recognition and a transcription run their models through it. |
 | `dir` | a folder holding the models. Empty takes the folder beside the application, and then the download cache. |
 | `download` | whether what is not on this machine may be fetched. |
 | `threads` | how many threads one model may use. 4. |

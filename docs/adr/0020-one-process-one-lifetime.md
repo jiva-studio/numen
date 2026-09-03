@@ -71,11 +71,19 @@ The order is what each part needs from the next: the page holds text nothing els
 
 A quit that does not arrive through the window is answered on the thread the page is served on, so the window is taken out of sight off that thread and the quit is asked for again once the settling is over. It happens once, whichever way the window is asked to go.
 
-### The runtime a page is read through is made before the window
+### One ONNX Runtime, made before the window
 
-A model is run through an ONNX Runtime environment made once and kept for the life of the process. **The one a page is read through is made before the window**, and a reading is refused where it was not. **A recording is transcribed through one opened when there is a recording to transcribe**, and nothing is refused and nothing is left for the next opening.
+A model is run through an ONNX Runtime engine made once and kept for the life of the process. Reading a page and listening to a recording ask one package for it: the first to ask makes it, and every caller after is handed that one. Which of them asks first settles nothing.
+
+**It is made before the window**, and a reading is refused where it was not: the binding stamps onto a tensor the engine that stood when the tensor was built, so a page read through an engine made after the window is read as nothing. A transcription refuses nothing on that account.
 
 A machine holding no runtime at all is left as it is, and a reading is what fetches one. The reading that fetched it says so, and the document is the next opening's to read.
+
+### What is loaded is what was published
+
+The runtime is published as one archive for each platform, and this build carries the sum of that archive and the sum of the library inside it. The archive is checked before it is opened, the library before it is left in the fetch directory, and a library already sitting there is checked again before it is offered: one carrying another sum is written over. A library the machine holds anywhere else is the machine's own, and is loaded as it stands.
+
+A runtime and a model alike are fetched over `https`, and a redirect to any other scheme is refused. A model carries no published sum: a model is what the address naming it served, and a changed address is a different file.
 
 ### An agent does not outlive the window
 
@@ -91,6 +99,8 @@ A grandchild holding the child's error output keeps a wait from returning, so th
 - The process outlives the window on the screen, and on macOS the dock tile stays lit until it ends.
 - A close a page calls off is a window that went and came back.
 - A machine that fetched its runtime during a reading reads that document at the next opening, and is told so where the reading was asked for.
+- A file dropped into the fetch directory under the library's name is written over by the published one.
+- Moving to another runtime version is new sums in the build, and every machine fetches again.
 - A note an agent was part of the way through writing is whatever its last complete write left.
 - Every bound here is a constant, and nothing measures what any of them is a bound on. A subprocess arriving with a feature of its own brings another, and nothing counts them.
 
