@@ -147,7 +147,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domai
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.Chunk, &p.Source, &p.Kind, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&p.ChunkID, &p.Source, &p.Kind, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -191,7 +191,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.
 	var out []domain.Passage
 	for rows.Next() {
 		var p domain.Passage
-		if err := rows.Scan(&p.Chunk, &p.Source, &p.Kind, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
+		if err := rows.Scan(&p.ChunkID, &p.Source, &p.Kind, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -273,7 +273,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, chunk := range chunks {
-		p := domain.Passage{Chunk: chunk}
+		p := domain.Passage{ChunkID: chunk}
 		err := enclosing.QueryRowContext(ctx, chunk, vault).
 			Scan(&p.Source, &p.Kind, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.HitAt)
 		if errors.Is(err, sql.ErrNoRows) {

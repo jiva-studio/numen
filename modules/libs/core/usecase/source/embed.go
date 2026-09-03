@@ -89,7 +89,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 			return res, nil
 		}
 		res.Owing += len(owing)
-		after = owing[len(owing)-1].Chunk
+		after = owing[len(owing)-1].ChunkID
 
 		chunks, texts, err := u.read(ctx, &source, owing, &res)
 		if err != nil {
@@ -179,12 +179,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			Chunk:       owing[i].Chunk,
-			Fingerprint: prints[i],
-			Model:       model,
-			Kind:        port.QuantisedInt8,
-			Value:       value,
-			Coarse:      embedding.Coarse(unsigned(value)),
+			ChunkID: owing[i].ChunkID,
+			Text:    prints[i],
+			Model:   model,
+			Kind:    port.QuantisedInt8,
+			Value:   value,
+			Coarse:  embedding.Coarse(unsigned(value)),
 		})
 		res.Reused++
 	}
@@ -207,12 +207,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			at := askingFor[i]
 			quantised := embedding.Bytes(v)
 			out = append(out, port.Vector{
-				Chunk:       owing[at].Chunk,
-				Fingerprint: prints[at],
-				Model:       model,
-				Kind:        port.QuantisedInt8,
-				Value:       signed(quantised),
-				Coarse:      embedding.Coarse(quantised),
+				ChunkID: owing[at].ChunkID,
+				Text:    prints[at],
+				Model:   model,
+				Kind:    port.QuantisedInt8,
+				Value:   signed(quantised),
+				Coarse:  embedding.Coarse(quantised),
 			})
 		}
 	}

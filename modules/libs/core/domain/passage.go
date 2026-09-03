@@ -7,8 +7,8 @@ package domain
 // of the file `Source` names, and `Text` is what stands there once the file has
 // been read.
 type Passage struct {
-	// Chunk is the row a ranking named. Two rankings are merged on it.
-	Chunk int64
+	// ChunkID is the row a ranking named. Two rankings are merged on it.
+	ChunkID int64
 
 	// Source is the path of the file the text is read from, relative to the
 	// vault folder.

@@ -121,16 +121,16 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	for _, group := range index.groups {
 		for _, v := range group {
 			if v.Kind != port.QuantisedInt8 {
-				t.Errorf("chunk %d was stored as %q", v.Chunk, v.Kind)
+				t.Errorf("chunk %d was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
-				t.Errorf("chunk %d holds %d bytes for %d dimensions", v.Chunk, len(v.Value), dimensions)
+				t.Errorf("chunk %d holds %d bytes for %d dimensions", v.ChunkID, len(v.Value), dimensions)
 			}
 			if want := (dimensions + 7) / 8; len(v.Coarse) != want {
-				t.Errorf("chunk %d holds %d coarse bytes, want %d", v.Chunk, len(v.Coarse), want)
+				t.Errorf("chunk %d holds %d coarse bytes, want %d", v.ChunkID, len(v.Coarse), want)
 			}
 			if v.Model != model.Model() {
-				t.Errorf("chunk %d was stored under %s", v.Chunk, v.Model)
+				t.Errorf("chunk %d was stored under %s", v.ChunkID, v.Model)
 			}
 		}
 	}

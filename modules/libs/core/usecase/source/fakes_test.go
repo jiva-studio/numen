@@ -92,7 +92,7 @@ func (s *store) SaveVectors(_ context.Context, vectors []port.Vector) error {
 	}
 	s.groups = append(s.groups, slices.Clone(vectors))
 	for _, v := range vectors {
-		s.vectors[v.Chunk] = append(s.vectors[v.Chunk], v)
+		s.vectors[v.ChunkID] = append(s.vectors[v.ChunkID], v)
 	}
 	return nil
 }
@@ -150,7 +150,7 @@ func (s *store) Unembedded(_ context.Context, vaultID string, model port.Embeddi
 		// reading and not from the file.
 		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
-			Chunk: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
+			ChunkID: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
 			TextFrom: src.TextFrom, Hash: src.Hash, Fingerprint: fingerprintOf(c.text),
 		})
 		if len(out) == limit {

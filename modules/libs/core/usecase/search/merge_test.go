@@ -11,7 +11,7 @@ import (
 func ranking(chunks ...int64) []domain.Passage {
 	out := make([]domain.Passage, 0, len(chunks))
 	for _, c := range chunks {
-		out = append(out, domain.Passage{Chunk: c, Source: "s"})
+		out = append(out, domain.Passage{ChunkID: c, Source: "s"})
 	}
 	return out
 }
@@ -19,7 +19,7 @@ func ranking(chunks ...int64) []domain.Passage {
 func numbers(passages []domain.Passage) []int64 {
 	out := make([]int64, 0, len(passages))
 	for _, p := range passages {
-		out = append(out, p.Chunk)
+		out = append(out, p.ChunkID)
 	}
 	return out
 }
@@ -87,16 +87,16 @@ func TestTheFusedOrderIsTheSumOfReciprocalRanks(t *testing.T) {
 func TestOneDocumentTakesOneResult(t *testing.T) {
 	// One passage per source, so an answer names each document once.
 	fused := []domain.Passage{
-		{Chunk: 1, Source: "book.epub"},
-		{Chunk: 2, Source: "book.epub"},
-		{Chunk: 3, Source: "note.md"},
-		{Chunk: 4, Source: "book.epub"},
+		{ChunkID: 1, Source: "book.epub"},
+		{ChunkID: 2, Source: "book.epub"},
+		{ChunkID: 3, Source: "note.md"},
+		{ChunkID: 4, Source: "book.epub"},
 	}
 	got := collapse(fused, nil, 1, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want one per document: %+v", len(got), got)
 	}
-	if got[0].Chunk != 1 || got[1].Chunk != 3 {
+	if got[0].ChunkID != 1 || got[1].ChunkID != 3 {
 		t.Errorf("the best-ranked chunk of each document is not what survived: %+v", got)
 	}
 }
@@ -105,18 +105,18 @@ func TestADocumentAnswersWithTheSectionNamedWhatWasAsked(t *testing.T) {
 	// The paragraph that says the words most often stands first in the fused
 	// order, and the section carrying the name is further down.
 	fused := []domain.Passage{
-		{Chunk: 2, Source: "book.epub"},
-		{Chunk: 3, Source: "note.md"},
-		{Chunk: 1, Source: "book.epub"},
+		{ChunkID: 2, Source: "book.epub"},
+		{ChunkID: 3, Source: "note.md"},
+		{ChunkID: 1, Source: "book.epub"},
 	}
-	named := []domain.Passage{{Chunk: 1, Source: "book.epub"}}
+	named := []domain.Passage{{ChunkID: 1, Source: "book.epub"}}
 
 	got := collapse(fused, named, 1, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want one per document: %+v", len(got), got)
 	}
-	if got[0].Chunk != 1 {
-		t.Errorf("the book answered with chunk %d, want the section it names", got[0].Chunk)
+	if got[0].ChunkID != 1 {
+		t.Errorf("the book answered with chunk %d, want the section it names", got[0].ChunkID)
 	}
 	if got[0].Source != "book.epub" || got[1].Source != "note.md" {
 		t.Errorf("the documents came back in another order: %+v", got)
@@ -125,30 +125,30 @@ func TestADocumentAnswersWithTheSectionNamedWhatWasAsked(t *testing.T) {
 
 func TestADocumentWithNoSectionOfThatNameIsUnchanged(t *testing.T) {
 	fused := []domain.Passage{
-		{Chunk: 2, Source: "book.epub"},
-		{Chunk: 1, Source: "book.epub"},
+		{ChunkID: 2, Source: "book.epub"},
+		{ChunkID: 1, Source: "book.epub"},
 	}
-	named := []domain.Passage{{Chunk: 9, Source: "other.epub"}}
+	named := []domain.Passage{{ChunkID: 9, Source: "other.epub"}}
 
 	got := collapse(fused, named, 1, 10)
-	if len(got) != 1 || got[0].Chunk != 2 {
+	if len(got) != 1 || got[0].ChunkID != 2 {
 		t.Errorf("got %+v, want the best-ranked chunk of the book", got)
 	}
 }
 
 func TestADocumentAnswersWithAsManyPassagesAsWereAskedFor(t *testing.T) {
 	fused := []domain.Passage{
-		{Chunk: 1, Source: "book.epub", Start: 0, Length: 10},
-		{Chunk: 2, Source: "book.epub", Start: 90, Length: 10},
-		{Chunk: 3, Source: "note.md", Start: 0, Length: 10},
-		{Chunk: 4, Source: "book.epub", Start: 500, Length: 10},
+		{ChunkID: 1, Source: "book.epub", Start: 0, Length: 10},
+		{ChunkID: 2, Source: "book.epub", Start: 90, Length: 10},
+		{ChunkID: 3, Source: "note.md", Start: 0, Length: 10},
+		{ChunkID: 4, Source: "book.epub", Start: 500, Length: 10},
 	}
 
 	got := collapse(fused, nil, 2, 10)
 	if len(got) != 3 {
 		t.Fatalf("%d results, want two of the book and the note: %+v", len(got), got)
 	}
-	if got[0].Chunk != 1 || got[1].Chunk != 2 || got[2].Chunk != 3 {
+	if got[0].ChunkID != 1 || got[1].ChunkID != 2 || got[2].ChunkID != 3 {
 		t.Errorf("got %+v, want the book's two best and the note", got)
 	}
 }
@@ -157,16 +157,16 @@ func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
 	// The section stands lower in the fused order than the passage that says
 	// the words most often, and both come back.
 	fused := []domain.Passage{
-		{Chunk: 2, Source: "book.epub", Start: 90, Length: 10},
-		{Chunk: 1, Source: "book.epub", Start: 0, Length: 10},
+		{ChunkID: 2, Source: "book.epub", Start: 90, Length: 10},
+		{ChunkID: 1, Source: "book.epub", Start: 0, Length: 10},
 	}
-	named := []domain.Passage{{Chunk: 1, Source: "book.epub", Start: 0, Length: 10}}
+	named := []domain.Passage{{ChunkID: 1, Source: "book.epub", Start: 0, Length: 10}}
 
 	got := collapse(fused, named, 2, 10)
 	if len(got) != 2 {
 		t.Fatalf("%d results, want the section and the passage: %+v", len(got), got)
 	}
-	if got[0].Chunk != 1 || got[1].Chunk != 2 {
+	if got[0].ChunkID != 1 || got[1].ChunkID != 2 {
 		t.Errorf("got %+v, want the section first and the passage after it", got)
 	}
 }
@@ -174,9 +174,9 @@ func TestASectionIsTheFirstOfWhatADocumentAnswersWith(t *testing.T) {
 func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
 	// A hit and the chunk enclosing it are two rows saying the same place.
 	fused := []domain.Passage{
-		{Chunk: 7, Source: "book.epub", Start: 100, Length: 20},
-		{Chunk: 8, Source: "book.epub", Start: 100, Length: 20},
-		{Chunk: 9, Source: "book.epub", Start: 400, Length: 20},
+		{ChunkID: 7, Source: "book.epub", Start: 100, Length: 20},
+		{ChunkID: 8, Source: "book.epub", Start: 100, Length: 20},
+		{ChunkID: 9, Source: "book.epub", Start: 400, Length: 20},
 	}
 
 	got := collapse(fused, nil, 3, 10)
@@ -190,9 +190,9 @@ func TestOnePlaceIsOnePassageHoweverManyRowsStandThere(t *testing.T) {
 
 func TestTheLimitIsWhatComesBack(t *testing.T) {
 	fused := []domain.Passage{
-		{Chunk: 1, Source: "a"},
-		{Chunk: 2, Source: "b"},
-		{Chunk: 3, Source: "c"},
+		{ChunkID: 1, Source: "a"},
+		{ChunkID: 2, Source: "b"},
+		{ChunkID: 3, Source: "c"},
 	}
 	if got := collapse(fused, nil, 1, 2); len(got) != 2 {
 		t.Errorf("%d results for a limit of two: %+v", len(got), got)

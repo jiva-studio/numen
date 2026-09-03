@@ -74,8 +74,8 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		out = append(out, chunk.Vector{
-			Chunk:       v.Chunk,
-			Fingerprint: v.Fingerprint,
+			Chunk:       v.ChunkID,
+			Fingerprint: v.Text,
 			Recipe:      v.Model.Recipe(),
 			Value:       v.Value,
 			Coarse:      v.Coarse,
@@ -92,7 +92,7 @@ func (s queries) Unembedded(ctx context.Context, vaultID string, model port.Embe
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.Passage{
-			Chunk:       p.Chunk,
+			ChunkID:     p.Chunk,
 			Source:      p.Path,
 			TextFrom:    p.TextFrom,
 			Hash:        p.Hash,

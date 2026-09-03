@@ -28,9 +28,9 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 	seen := map[int64]domain.Passage{}
 	for _, ranking := range rankings {
 		for i, p := range ranking {
-			score[p.Chunk] += 1 / float64(rankConstant+i+1)
-			if _, held := seen[p.Chunk]; !held {
-				seen[p.Chunk] = p
+			score[p.ChunkID] += 1 / float64(rankConstant+i+1)
+			if _, held := seen[p.ChunkID]; !held {
+				seen[p.ChunkID] = p
 			}
 		}
 	}
@@ -40,13 +40,13 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 		fused = append(fused, p)
 	}
 	slices.SortFunc(fused, func(a, b domain.Passage) int {
-		if by := cmp.Compare(score[b.Chunk], score[a.Chunk]); by != 0 {
+		if by := cmp.Compare(score[b.ChunkID], score[a.ChunkID]); by != 0 {
 			return by
 		}
 		if by := cmp.Compare(a.Source, b.Source); by != 0 {
 			return by
 		}
-		return cmp.Compare(a.Chunk, b.Chunk)
+		return cmp.Compare(a.ChunkID, b.ChunkID)
 	})
 	return fused
 }

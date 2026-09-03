@@ -268,7 +268,7 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 		if p.Location != "chapter 1" {
 			t.Errorf("a hit came back at the location %q", p.Location)
 		}
-		if p.Chunk == 0 {
+		if p.ChunkID == 0 {
 			t.Error("a hit came back naming no row, so nothing can be merged on it")
 		}
 	}
@@ -1296,7 +1296,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	if named[0].Location != "Madhavendra Puri" {
 		t.Errorf("the section came back as %q", named[0].Location)
 	}
-	if named[0].Chunk == 0 {
+	if named[0].ChunkID == 0 {
 		t.Error("the section names no row, so nothing can be merged on it")
 	}
 }
