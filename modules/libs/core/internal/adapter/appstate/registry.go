@@ -153,7 +153,7 @@ func (r *VaultRegistry) Remove(id string) error {
 	if err != nil {
 		return err
 	}
-	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
+	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return string(v.ID) == id })
 	if at < 0 {
 		return nil
 	}
@@ -173,7 +173,7 @@ func (r *VaultRegistry) Opened(id string) error {
 	if err != nil {
 		return err
 	}
-	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
+	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return string(v.ID) == id }) {
 		return fmt.Errorf("no vault on the list carries the identity %s", id)
 	}
 	if f.Last == id {
@@ -193,7 +193,7 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 		return domain.Vault{}, false, err
 	}
 	for _, v := range f.Vaults {
-		if v.ID == f.Last && f.Last != "" {
+		if string(v.ID) == f.Last && f.Last != "" {
 			return v, true, nil
 		}
 	}
@@ -215,7 +215,7 @@ func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
 	}
 	abs, _ := filepath.Abs(nameOrPath)
 	for _, v := range f.Vaults {
-		if v.ID == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
+		if string(v.ID) == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
 			return v, true, nil
 		}
 	}

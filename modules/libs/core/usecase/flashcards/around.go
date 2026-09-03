@@ -115,11 +115,11 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 			paths = append(paths, one.Path)
 		}
 	}
-	notes, err := u.Notes.Notes(ctx, v.ID, paths)
+	notes, err := u.Notes.Notes(ctx, string(v.ID), paths)
 	if err != nil {
 		return Joined{}, err
 	}
-	kinds, err := u.Notes.Types(ctx, v.ID, paths)
+	kinds, err := u.Notes.Types(ctx, string(v.ID), paths)
 	if err != nil {
 		return Joined{}, err
 	}

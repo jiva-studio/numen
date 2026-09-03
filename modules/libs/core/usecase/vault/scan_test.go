@@ -26,7 +26,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 	if err != nil {
 		t.Fatalf("fixture vault has no identity: %v", err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: "fixture", Path: root},
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "fixture", Path: root},
 		filesystem.VaultReaders{}
 }
 
@@ -67,7 +67,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := db.Queries().Summary(ctx, string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +102,7 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := db.Queries().Summary(ctx, string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.Queries().Search(ctx, v.ID, "hidden", 10)
+	matches, err := db.Queries().Search(ctx, string(v.ID), "hidden", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 	}
 
 	queries := db.Queries()
-	matches, err := queries.Search(ctx, v.ID, "crystallography", 10)
+	matches, err := queries.Search(ctx, string(v.ID), "crystallography", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
 		t.Errorf("new text not searchable: %+v", matches)
 	}
 	// The vault is authoritative: what is not on disk is not in the index.
-	stale, err := queries.Search(ctx, v.ID, "windows", 10)
+	stale, err := queries.Search(ctx, string(v.ID), "windows", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,7 +365,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 	// shows up as a match that cannot belong to the vault being searched. One
 	// database for every vault makes that failure invisible by construction,
 	// and a test that shares content between the vaults cannot see it either.
-	leaked, err := queries.Search(ctx, first.ID, "quasar", 10)
+	leaked, err := queries.Search(ctx, string(first.ID), "quasar", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -373,7 +373,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Errorf("searching the first vault returned the second vault's notes: %+v", leaked)
 	}
 
-	other, err := queries.Search(ctx, second.ID, "entropy", 10)
+	other, err := queries.Search(ctx, string(second.ID), "entropy", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 		t.Errorf("searching the second vault returned the first vault's notes: %+v", other)
 	}
 
-	own, err := queries.Search(ctx, second.ID, "quasar", 10)
+	own, err := queries.Search(ctx, string(second.ID), "quasar", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -422,7 +422,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 
 	queries := db.Queries()
 
-	known, err := queries.Fingerprints(ctx, first.ID)
+	known, err := queries.Fingerprints(ctx, string(first.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -433,7 +433,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		t.Error("the first vault knows a file that belongs to the second")
 	}
 
-	summary, err := queries.Summary(ctx, first.ID)
+	summary, err := queries.Summary(ctx, string(first.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -563,14 +563,14 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	known, err := db.Queries().Fingerprints(ctx, v.ID)
+	known, err := db.Queries().Fingerprints(ctx, string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, kept := known[gone]; !kept {
 		t.Error("a note that was briefly absent was dropped from the index")
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "uncertainty", 10)
+	matches, err := db.Queries().Search(ctx, string(v.ID), "uncertainty", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
-	matches, err := db.Queries().Search(ctx, v.ID, "searchable", 10)
+	matches, err := db.Queries().Search(ctx, string(v.ID), "searchable", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -653,7 +653,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Seen)
 	}
 
-	known, err := db.Queries().Fingerprints(t.Context(), v.ID)
+	known, err := db.Queries().Fingerprints(t.Context(), string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -62,7 +62,7 @@ func (a *API) titled(ctx context.Context, v domain.Vault, path string) string {
 	if a.Notes == nil || path == "" {
 		return ""
 	}
-	found, err := a.Notes.Notes(ctx, v.ID, []string{path})
+	found, err := a.Notes.Notes(ctx, string(v.ID), []string{path})
 	if err != nil {
 		return ""
 	}

@@ -274,7 +274,7 @@ func claiming(t *testing.T, s vaulted, version int, days map[string]history.Tall
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
-	raw, err := s.counted.Kept.Read(t.Context(), s.vault.ID)
+	raw, err := s.counted.Kept.Read(t.Context(), string(s.vault.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func claiming(t *testing.T, s vaulted, version int, days map[string]history.Tall
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.counted.Kept.Write(t.Context(), s.vault.ID, now); err != nil {
+	if err := s.counted.Kept.Write(t.Context(), string(s.vault.ID), now); err != nil {
 		t.Fatal(err)
 	}
 }

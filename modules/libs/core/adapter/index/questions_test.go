@@ -140,16 +140,16 @@ func TestWhatEveryNoteOfAFolderIsCostsTheSameHoweverManyThereAre(t *testing.T) {
 	}
 
 	// The pool is opened and the vault looked up before anything is counted.
-	if _, err := queries.Types(ctx, first.ID, paths[:1]); err != nil {
+	if _, err := queries.Types(ctx, string(first.ID), paths[:1]); err != nil {
 		t.Fatal(err)
 	}
 
 	few := questions(t, func() error {
-		_, err := queries.Types(ctx, first.ID, paths[:2])
+		_, err := queries.Types(ctx, string(first.ID), paths[:2])
 		return err
 	})
 	many := questions(t, func() error {
-		_, err := queries.Types(ctx, first.ID, paths)
+		_, err := queries.Types(ctx, string(first.ID), paths)
 		return err
 	})
 	if many != few {
@@ -169,17 +169,17 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	typed(t, db, first, "notes/entropy.md", "Entropy", domain.TypeNote)
 	typed(t, db, second, "decks/quasars.md", "Quasars", domain.TypeDeck)
 
-	if _, err := queries.OfType(ctx, first.ID, domain.TypeDeck); err != nil {
+	if _, err := queries.OfType(ctx, string(first.ID), domain.TypeDeck); err != nil {
 		t.Fatal(err)
 	}
 	if ran := questions(t, func() error {
-		_, err := queries.OfType(ctx, first.ID, domain.TypeDeck)
+		_, err := queries.OfType(ctx, string(first.ID), domain.TypeDeck)
 		return err
 	}); ran > 2 {
 		t.Errorf("the decks of a vault cost %d questions", ran)
 	}
 
-	found, err := queries.OfType(ctx, first.ID, domain.TypeDeck)
+	found, err := queries.OfType(ctx, string(first.ID), domain.TypeDeck)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +189,7 @@ func TestTheNotesOfOneTypeAreOneQuestion(t *testing.T) {
 	}
 	// One database holds every vault, and the second vault's deck is not this
 	// vault's.
-	other, err := queries.OfType(ctx, second.ID, domain.TypeDeck)
+	other, err := queries.OfType(ctx, string(second.ID), domain.TypeDeck)
 	if err != nil {
 		t.Fatal(err)
 	}

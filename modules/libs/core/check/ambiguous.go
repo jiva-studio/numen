@@ -25,7 +25,7 @@ func (ambiguousCheck) Name() domain.Check { return domain.CheckAmbiguous }
 func (ambiguousCheck) Quiet() bool        { return false }
 
 func (c ambiguousCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	found, err := c.queries.Ambiguous(ctx, v.ID)
+	found, err := c.queries.Ambiguous(ctx, string(v.ID))
 	if err != nil {
 		return nil, err
 	}

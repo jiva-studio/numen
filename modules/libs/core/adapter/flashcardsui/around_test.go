@@ -57,7 +57,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	}
 
 	out, err := api.Around(t.Context(), connect.NewRequest(&v1.AroundRequest{
-		VaultId: v.ID, Deck: "decks/Words.md",
+		VaultId: string(v.ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {
 		t.Fatal(err)

@@ -46,7 +46,7 @@ type RemoveResult struct {
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	went, err := u.Known.Under(ctx, v.ID, path)
+	went, err := u.Known.Under(ctx, string(v.ID), path)
 	if err != nil {
 		return res, err
 	}
@@ -57,7 +57,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.Links.Backlinks(ctx, v.ID, source.Path)
+		links, err := u.Links.Backlinks(ctx, string(v.ID), source.Path)
 		if err != nil {
 			return res, err
 		}
@@ -116,7 +116,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
 	res := RemoveResult{Path: path}
 
-	pointing, err := u.Links.Backlinks(ctx, v.ID, path)
+	pointing, err := u.Links.Backlinks(ctx, string(v.ID), path)
 	if err != nil {
 		return res, err
 	}

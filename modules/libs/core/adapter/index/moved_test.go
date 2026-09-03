@@ -16,7 +16,7 @@ func chunksOf(t *testing.T, db *DB, vault domain.Vault, path string) []int64 {
 	rows, err := db.read.QueryContext(t.Context(),
 		`SELECT c.id FROM chunks c JOIN sources s ON s.id = c.source_id
 		 WHERE s.vault_id = (SELECT id FROM vaults WHERE identifier = ?) AND s.path = ?
-		 ORDER BY c.id`, vault.ID, path)
+		 ORDER BY c.id`, string(vault.ID), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestAMovedFolderTakesEverythingUnderIt(t *testing.T) {
 		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
 	}
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "physics", "science/physics"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "physics", "science/physics"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,7 +79,7 @@ func TestAMovedFolderMovesInOneVaultAlone(t *testing.T) {
 	noted(t, db, first, "physics/Entropy.md", "Entropy")
 	noted(t, db, second, "physics/Quasar.md", "Quasar")
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "physics", "science"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "physics", "science"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -97,7 +97,7 @@ func TestAMovedFolderCarriesANameThatIsNotLatin(t *testing.T) {
 	db := opened(t)
 	noted(t, db, first, "физика/Энтропия.md", "Энтропия")
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "физика", "physics"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "физика", "physics"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,7 +119,7 @@ func TestAMoveLandsWhereAScanHasAlreadyFiledTheFile(t *testing.T) {
 		t.Fatal("the note was indexed with no chunks, and this test asks what happens to them")
 	}
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "Old.md", "Entropy.md"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "Old.md", "Entropy.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -141,7 +141,7 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 	noted(t, db, first, "Entropy.md", "Entropy", "Entropy is")
 	held := chunksOf(t, db, first, "Entropy.md")
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "Entropy.md", "Entropy.md"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "Entropy.md", "Entropy.md"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -158,7 +158,7 @@ func TestARenamedNoteIsFoundByTheNameItLandsUnder(t *testing.T) {
 	db := opened(t)
 	noted(t, db, first, "Torpor.md", "Torpor")
 
-	if err := db.Sources().MoveSources(t.Context(), first.ID, "Torpor.md", "Hibernation.md"); err != nil {
+	if err := db.Sources().MoveSources(t.Context(), string(first.ID), "Torpor.md", "Hibernation.md"); err != nil {
 		t.Fatal(err)
 	}
 

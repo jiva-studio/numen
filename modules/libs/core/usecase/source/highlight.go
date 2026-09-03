@@ -59,7 +59,7 @@ func (u Highlight) Execute(
 		return nil, nil
 	}
 
-	said, held, err := u.Sources.Reading(ctx, v.ID, path)
+	said, held, err := u.Sources.Reading(ctx, string(v.ID), path)
 	if err != nil || !held {
 		return nil, err
 	}

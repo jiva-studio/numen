@@ -98,7 +98,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	v := domain.Vault{ID: cfg.ID, Name: "transcripts", Path: root}
+	v := domain.Vault{ID: domain.VaultID(cfg.ID), Name: "transcripts", Path: root}
 
 	written := &groupedWrites{}
 	db := openIndex(t)

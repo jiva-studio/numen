@@ -91,12 +91,12 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		// moved, and the registry is what has to catch up.
 	}
 
-	v := domain.Vault{ID: id, Name: name, Path: root}
+	v := domain.Vault{ID: domain.VaultID(id), Name: name, Path: root}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
 		v.Name = filepath.Base(root)
 	}
-	v.Name = free(v.Name, known, id)
+	v.Name = free(v.Name, known, v.ID)
 	if err := u.Registry.Save(v); err != nil {
 		return domain.Vault{}, err
 	}
@@ -134,7 +134,7 @@ func within(path, root string) bool {
 // free answers with the name, or with the lowest free number appended to it.
 // The vault named self keeps the name it has: it is being added again, from
 // wherever it moved to.
-func free(name string, known []domain.Vault, self string) string {
+func free(name string, known []domain.Vault, self domain.VaultID) string {
 	taken := func(candidate string) bool {
 		for _, v := range known {
 			if v.ID != self && sameName(v.Name, candidate) {

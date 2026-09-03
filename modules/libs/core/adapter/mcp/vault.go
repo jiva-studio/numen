@@ -38,14 +38,14 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.shown()
-		summary, err := core.Notes.Summary(ctx, shown.Vault.ID)
+		summary, err := core.Notes.Summary(ctx, string(shown.Vault.ID))
 		if err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{
 			Name:     shown.Vault.Name,
 			Folder:   shown.Root,
-			ID:       shown.Vault.ID,
+			ID:       string(shown.Vault.ID),
 			Notes:    summary.Notes,
 			Headings: summary.Headings,
 		}, nil
@@ -118,7 +118,7 @@ func addVaultNamed(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Named(ctx, core.shown().Vault.ID, domain.LinkName(in.Name))
+		paths, err := core.Notes.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}

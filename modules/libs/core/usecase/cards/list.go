@@ -32,7 +32,7 @@ type List struct {
 // index says how many there are, so the count stands above the list without a
 // file being opened for the stencils left out.
 func (u List) Execute(ctx context.Context, v domain.Vault, limit int) ([]Listed, int, error) {
-	all, err := u.Notes.Stencils(ctx, v.ID)
+	all, err := u.Notes.Stencils(ctx, string(v.ID))
 	if err != nil {
 		return nil, 0, err
 	}

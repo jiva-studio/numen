@@ -68,5 +68,5 @@ func NewVault(t testing.TB, notes map[string]string) domain.Vault {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: filepath.Base(root), Path: root}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: filepath.Base(root), Path: root}
 }

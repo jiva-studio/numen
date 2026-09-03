@@ -55,10 +55,10 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 	if !slices.Equal(trash.moved, []string{gone.Path}) {
 		t.Errorf("trashed %v, want %s", trash.moved, gone.Path)
 	}
-	if !slices.Equal(index.forgot, []string{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
+	if !slices.Equal(index.forgot, []string{string(gone.ID)}) {
+		t.Errorf("the index was told to forget %v, want %s", index.forgot, string(gone.ID))
 	}
-	if _, found, err := registry.Find(gone.ID); err != nil || found {
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }
@@ -82,7 +82,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 	if len(index.forgot) != 0 {
 		t.Errorf("the index was told to forget %v", index.forgot)
 	}
-	if _, found, err := registry.Find(gone.ID); err != nil || !found {
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list: %v %v", found, err)
 	}
 }
@@ -102,10 +102,10 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 	if len(trash.moved) != 0 {
 		t.Errorf("trashed %v, and there was nothing there", trash.moved)
 	}
-	if !slices.Equal(index.forgot, []string{gone.ID}) {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
+	if !slices.Equal(index.forgot, []string{string(gone.ID)}) {
+		t.Errorf("the index was told to forget %v, want %s", index.forgot, string(gone.ID))
 	}
-	if _, found, err := registry.Find(gone.ID); err != nil || found {
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
 	}
 }

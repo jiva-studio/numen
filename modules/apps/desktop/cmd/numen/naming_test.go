@@ -21,7 +21,7 @@ import (
 func indexed(t *testing.T, opened *webui.Opened, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		shown, err := opened.Index.Queries().Notes(t.Context(), v.ID, []string{path})
+		shown, err := opened.Index.Queries().Notes(t.Context(), string(v.ID), []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -439,7 +439,7 @@ func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
 // order they are filed under.
 func pointedAt(t *testing.T, s vaulted, path string) []string {
 	t.Helper()
-	found, err := s.presets.Links.Backlinks(t.Context(), s.vault.ID, path)
+	found, err := s.presets.Links.Backlinks(t.Context(), string(s.vault.ID), path)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -206,7 +206,7 @@ func (u Owed) presets(
 		return out, nil
 	}
 
-	decks, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypeDeck)
+	decks, err := u.Standings.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (u Owed) presets(
 		pointed[out[at].Preset] = true
 	}
 
-	paths, err := u.Standings.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.Standings.Notes.OfType(ctx, string(v.ID), domain.TypePreset)
 	if err != nil {
 		return nil, err
 	}

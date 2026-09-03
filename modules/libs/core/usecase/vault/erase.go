@@ -39,7 +39,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) error {
 	if err != nil {
 		return err
 	}
-	if !carriesOne || carried != v.ID {
+	if !carriesOne || carried != string(v.ID) {
 		return fmt.Errorf("%w: %s no longer carries the identity of the vault %s, so it stays where it is",
 			ErrUnreadable, v.Path, v.Name)
 	}

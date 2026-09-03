@@ -23,9 +23,9 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 	kept := newShelf()
 	model := &voice{words: words}
 
-	cutting := Extract{Readers: vaults{first.ID: shelved}, Sources: index, Owing: index, Derived: kept}
+	cutting := Extract{Readers: vaults{string(first.ID): shelved}, Sources: index, Owing: index, Derived: kept}
 	listen := Transcribe{
-		Readers: vaults{first.ID: shelved},
+		Readers: vaults{string(first.ID): shelved},
 		Sources: index,
 		Derived: kept,
 		By:      model,
@@ -36,7 +36,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 		},
 	}
 	drop := DropTranscript{
-		Readers: vaults{first.ID: shelved},
+		Readers: vaults{string(first.ID): shelved},
 		Sources: index,
 		Owing:   index,
 		Derived: kept,
@@ -48,7 +48,7 @@ func dropping(t *testing.T, words ...string) (Transcribe, DropTranscript, domain
 func cutFrom(index *store, v domain.Vault, path string) []string {
 	var out []string
 	for _, c := range index.ordered() {
-		if c.vault == v.ID && c.path == path {
+		if c.vault == string(v.ID) && c.path == path {
 			out = append(out, c.text)
 		}
 	}
@@ -84,7 +84,7 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 		t.Errorf("the index still holds %d chunks of the words", len(chunks))
 	}
 
-	src := index.sources[v.ID][recordingPath]
+	src := index.sources[string(v.ID)][recordingPath]
 	if src.TextFrom != "" || src.Hash != "" || src.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
@@ -120,7 +120,7 @@ func TestARecordingIsHeardAgainAfterItsTranscriptIsDropped(t *testing.T) {
 	if said := spoken(t, raw); !slices.Equal(said, model.words) {
 		t.Errorf("the artifact says %q and the recording says %q", said, model.words)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[string(v.ID)][recordingPath].TextFrom != text.ASR {
 		t.Error("the source does not stand on the transcript the second run wrote")
 	}
 	chunks := cutFrom(index, v, recordingPath)
@@ -158,7 +158,7 @@ func TestTheAnswerOfARecordingWithNoSpeechIsDropped(t *testing.T) {
 	if left := kept.names(); len(left) != 0 {
 		t.Errorf("the store still holds %v", left)
 	}
-	if _, held := index.sources[v.ID][recordingPath]; !held {
+	if _, held := index.sources[string(v.ID)][recordingPath]; !held {
 		t.Error("the recording is no longer a source of the vault")
 	}
 }
@@ -173,7 +173,7 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	if !res.None {
 		t.Errorf("a recording nothing has listened to came back as %+v", res)
 	}
-	if _, held := index.sources[v.ID][recordingPath]; held {
+	if _, held := index.sources[string(v.ID)][recordingPath]; held {
 		t.Error("dropping nothing recorded a source")
 	}
 	if left := kept.names(); len(left) != 0 {
@@ -238,7 +238,7 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 	if res.None {
 		t.Error("a recording the index stands on came back as nothing to drop")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" || src.Hash != "" {
+	if src := index.sources[string(v.ID)][recordingPath]; src.TextFrom != "" || src.Hash != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
@@ -283,7 +283,7 @@ func TestATranscriptBeingWrittenIsNotDropped(t *testing.T) {
 	if _, err := kept.Read(t.Context(), text.Artifact(text.ASR, hash)); err != nil {
 		t.Errorf("the transcript went out from under the run: %v", err)
 	}
-	if index.sources[v.ID][recordingPath].TextFrom != text.ASR {
+	if index.sources[string(v.ID)][recordingPath].TextFrom != text.ASR {
 		t.Error("the source was taken off its transcript")
 	}
 }

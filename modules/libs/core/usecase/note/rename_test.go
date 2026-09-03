@@ -33,7 +33,7 @@ func (c changing) apart() note.Rename {
 // rather than of the file: it is the answer the person sees.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	shown, err := c.db.Queries().Notes(t.Context(), c.vault.ID, []string{path})
+	shown, err := c.db.Queries().Notes(t.Context(), string(c.vault.ID), []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,7 +486,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.Queries().Named(t.Context(), string(c.vault.ID), "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}

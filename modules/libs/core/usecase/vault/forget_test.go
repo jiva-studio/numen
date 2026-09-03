@@ -36,7 +36,7 @@ func (r *indexRows) Register(_ context.Context, v domain.Vault) error {
 	if r.fails != nil {
 		return r.fails
 	}
-	if _, there := r.rows[v.ID]; !there {
+	if _, there := r.rows[string(v.ID)]; !there {
 		r.put(v)
 	}
 	return nil
@@ -46,7 +46,7 @@ func (r *indexRows) put(v domain.Vault) {
 	if r.rows == nil {
 		r.rows = map[string]domain.Vault{}
 	}
-	r.rows[v.ID] = v
+	r.rows[string(v.ID)] = v
 }
 
 func (r *indexRows) Forget(_ context.Context, vaultID string) error {
@@ -93,8 +93,8 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	if len(known) != 1 || known[0].ID != kept.ID {
 		t.Errorf("the list holds %v, want only %s", known, kept.Name)
 	}
-	if len(index.forgot) != 1 || index.forgot[0] != gone.ID {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
+	if len(index.forgot) != 1 || index.forgot[0] != string(gone.ID) {
+		t.Errorf("the index was told to forget %v, want %s", index.forgot, string(gone.ID))
 	}
 }
 
@@ -144,7 +144,7 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err == nil {
 		t.Fatal("an index that refused was reported as success")
 	}
-	if _, found, err := registry.Find(gone.ID); err != nil || !found {
+	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {
 		t.Errorf("the vault left the list with its rows still in the index: %v %v", found, err)
 	}
 }

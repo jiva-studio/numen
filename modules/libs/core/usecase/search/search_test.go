@@ -94,7 +94,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 	for _, text := range small {
 		chunks.Small = append(chunks.Small, chunk.Chunk{Start: 0, Length: len(raw), Text: text})
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, []chunk.Chunk{chunks}); err != nil {
+	if err := c.db.Chunks().SaveChunks(t.Context(), string(v.ID), "note", path, []chunk.Chunk{chunks}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -103,7 +103,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 // given, in both of the representations a chunk carries.
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), v.ID, model.Recipe(), 0, 1000)
+	owing, err := c.db.ChunkQueries().Unembedded(t.Context(), string(v.ID), model.Recipe(), 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	near, err := dense.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 20, search.DefaultFloor)
+	near, err := dense.Nearest(ctx, string(c.first.ID), model.Recipe(), pointing(+1), nil, 20, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for a search by words.
-	words, err := dense.Lexical(ctx, c.second.ID, "shared", nil, 20, false)
+	words, err := dense.Lexical(ctx, string(c.second.ID), "shared", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +339,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every chunk of the note matches, the large one included.
-	hits, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "disorder", nil, 20, false)
+	hits, err := c.db.ChunkQueries().Lexical(ctx, string(c.first.ID), "disorder", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,7 +392,7 @@ func (c corpus) sectioned(t *testing.T, v domain.Vault, path string) {
 				"Madhavendra Puri is said. Madhavendra Puri again.",
 		},
 	}
-	if err := c.db.Chunks().SaveChunks(t.Context(), v.ID, "note", path, chunks); err != nil {
+	if err := c.db.Chunks().SaveChunks(t.Context(), string(v.ID), "note", path, chunks); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -405,7 +405,7 @@ func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	c := indexed(t)
 	c.sectioned(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, "Madhavendra Puri", nil, 20, false)
+	words, err := c.db.ChunkQueries().Lexical(ctx, string(c.first.ID), "Madhavendra Puri", nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -450,7 +450,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 		Start: 0, Length: len(isotherm), Text: isotherm,
 		Small: []chunk.Chunk{{Start: at, Length: len(held), Text: held}},
 	}
-	if err := c.db.Chunks().SaveChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
+	if err := c.db.Chunks().SaveChunks(ctx, string(v.ID), "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -497,7 +497,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 	// A word no note in the vault says, so nothing lexical can match it.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().Lexical(ctx, c.first.ID, unsaid, nil, 20, false)
+	words, err := c.db.ChunkQueries().Lexical(ctx, string(c.first.ID), unsaid, nil, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -523,7 +523,7 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	c.vectorise(t, c.first, pointing(+1))
 
 	under, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.Recipe(), pointing(+1), nil, 10, search.DefaultFloor)
+		ctx, string(c.first.ID), model.Recipe(), pointing(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -532,7 +532,7 @@ func TestASearchByMeaningAsksUnderTheRecipeAVectorIsKeptBy(t *testing.T) {
 	}
 
 	astray, err := c.db.ChunkQueries().Nearest(
-		ctx, c.first.ID, model.String(), pointing(+1), nil, 10, search.DefaultFloor)
+		ctx, string(c.first.ID), model.String(), pointing(+1), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +591,7 @@ func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 	queries := c.db.ChunkQueries()
 	books := []domain.SourceKind{domain.KindBook}
 
-	words, err := queries.Lexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	words, err := queries.Lexical(ctx, string(c.first.ID), "Madhavendra Puri", books, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,7 +599,7 @@ func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
-	named, err := queries.Named(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
+	named, err := queries.Named(ctx, string(c.first.ID), "Madhavendra Puri", books, 20, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,7 +607,7 @@ func TestEveryWayIsToldWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.Nearest(ctx, c.first.ID, model.Recipe(), pointing(+1), books, 20, -1)
+	dense, err := queries.Nearest(ctx, string(c.first.ID), model.Recipe(), pointing(+1), books, 20, -1)
 	if err != nil {
 		t.Fatal(err)
 	}

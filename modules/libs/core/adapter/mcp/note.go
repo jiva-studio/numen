@@ -134,7 +134,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 		}
-		found, err := core.Notes.Notes(ctx, core.shown().Vault.ID, in.Paths)
+		found, err := core.Notes.Notes(ctx, string(core.shown().Vault.ID), in.Paths)
 		if err != nil {
 			return nil, out{}, err
 		}

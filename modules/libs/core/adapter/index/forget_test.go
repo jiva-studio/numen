@@ -33,19 +33,19 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 		Links:    []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
 		Problems: []string{stem + " problem"},
 	}
-	if err := db.Notes().Save(ctx, vault.ID, []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(ctx, string(vault.ID), []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 
 	book(t, db, vault, "library/"+stem+".epub", seed)
 
 	path := "library/" + stem + "-sections.pdf"
-	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, string(vault.ID), chunk.Source{
 		Path: path, Kind: "book", Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "pdf",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{
+	if err := db.Chunks().SaveChunks(ctx, string(vault.ID), "book", path, []chunk.Chunk{
 		{
 			Start: 0, Length: 100, Location: stem + " section",
 			Opens: []string{stem + " section"},
@@ -78,14 +78,14 @@ func held(t *testing.T, db *DB, vault domain.Vault) contents {
 
 	c := contents{
 		sources: numbers(t, db, `SELECT s.id FROM sources s
-			JOIN vaults v ON v.id = s.vault_id WHERE v.identifier = ?`, vault.ID),
+			JOIN vaults v ON v.id = s.vault_id WHERE v.identifier = ?`, string(vault.ID)),
 		notes: numbers(t, db, `SELECT n.source_id FROM notes n
-			JOIN vaults v ON v.id = n.vault_id WHERE v.identifier = ?`, vault.ID),
+			JOIN vaults v ON v.id = n.vault_id WHERE v.identifier = ?`, string(vault.ID)),
 		headings: numbers(t, db, `SELECT h.id FROM headings h
 			JOIN notes n ON n.source_id = h.note_id
-			JOIN vaults v ON v.id = n.vault_id WHERE v.identifier = ?`, vault.ID),
+			JOIN vaults v ON v.id = n.vault_id WHERE v.identifier = ?`, string(vault.ID)),
 		chunks: numbers(t, db, `SELECT c.id FROM chunks c
-			JOIN vaults v ON v.id = c.vault_id WHERE v.identifier = ?`, vault.ID),
+			JOIN vaults v ON v.id = c.vault_id WHERE v.identifier = ?`, string(vault.ID)),
 	}
 	if len(c.sources) == 0 || len(c.notes) == 0 || len(c.headings) == 0 || len(c.chunks) == 0 {
 		t.Fatalf("%s holds %d sources, %d notes, %d headings, %d chunks",
@@ -189,7 +189,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 		}
 	}
 
-	if err := db.Vaults().Forget(ctx, first.ID); err != nil {
+	if err := db.Vaults().Forget(ctx, string(first.ID)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -203,7 +203,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 			t.Errorf("%s holds %d rows of the vault that was forgotten", table, n)
 		}
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, first.ID); got != 0 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, string(first.ID)); got != 0 {
 		t.Errorf("the forgotten vault still has %d rows of its own", got)
 	}
 
@@ -242,12 +242,12 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 	filled(t, db, first, "first", 0x0f)
 	filled(t, db, second, "second", 0xf0)
 
-	if err := db.Vaults().Forget(ctx, first.ID); err != nil {
+	if err := db.Vaults().Forget(ctx, string(first.ID)); err != nil {
 		t.Fatal(err)
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.Lexical(ctx, second.ID, "second", nil, 10, false)
+	lexical, err := queries.Lexical(ctx, string(second.ID), "second", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.Named(ctx, second.ID, "second section", nil, 10, false)
+	sections, err := queries.Named(ctx, string(second.ID), "second section", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -268,7 +268,7 @@ func TestTheVaultThatIsKeptStillAnswers(t *testing.T) {
 		t.Error("the vault that was kept answers with none of its sections")
 	}
 
-	names, err := db.NoteQueries().Names(ctx, second.ID, "second", 20)
+	names, err := db.NoteQueries().Names(ctx, string(second.ID), "second", 20)
 	if err != nil {
 		t.Fatal(err)
 	}

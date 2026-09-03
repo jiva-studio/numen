@@ -127,7 +127,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	shown, err := c.db.Queries().Notes(t.Context(), c.vault.ID, []string{created.Path})
+	shown, err := c.db.Queries().Notes(t.Context(), string(c.vault.ID), []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,7 +228,7 @@ func TestRenamingTheFileOfATitledNoteLeavesTheTitleAlone(t *testing.T) {
 	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
 		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
 	}
-	named, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.Queries().Named(t.Context(), string(c.vault.ID), "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +265,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 
 	// The note answers to the name it is filed under now, wherever a link
 	// naming it is written.
-	named, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.Queries().Named(t.Context(), string(c.vault.ID), "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -116,7 +116,7 @@ func (u Read) Cutting(
 // brackets. The link is written in the deck, so it resolves against the deck's
 // own folder the way every name in that file does.
 func cutting(
-	ctx context.Context, links port.LinkQueries, vaultID, path string, d format.Deck,
+	ctx context.Context, links port.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
 	if links == nil {
 		return nil, nil
@@ -130,7 +130,7 @@ func cutting(
 	if len(written) == 0 {
 		return nil, nil
 	}
-	reached, err := links.Resolve(ctx, vaultID, path, written)
+	reached, err := links.Resolve(ctx, string(vaultID), path, written)
 	if err != nil {
 		return nil, err
 	}

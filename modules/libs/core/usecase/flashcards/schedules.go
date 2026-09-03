@@ -282,7 +282,7 @@ func (u Schedules) remembered(
 	if u.Kept == nil {
 		return nil, false
 	}
-	raw, err := u.Kept.Read(ctx, v.ID)
+	raw, err := u.Kept.Read(ctx, string(v.ID))
 	if err != nil {
 		return nil, false
 	}
@@ -360,5 +360,5 @@ func (u Schedules) remember(
 	if err != nil {
 		return
 	}
-	_ = u.Kept.Write(ctx, v.ID, raw)
+	_ = u.Kept.Write(ctx, string(v.ID), raw)
 }

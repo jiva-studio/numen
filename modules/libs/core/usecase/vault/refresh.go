@@ -63,7 +63,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// checkout, a restore, a sync client unpacking an archive — so the number of
 	// paths handed here is not small because they were named individually.
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		return u.Notes.Save(ctx, v.ID, notes)
+		return u.Notes.Save(ctx, string(v.ID), notes)
 	}}
 
 	for _, path := range paths {
@@ -122,7 +122,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 	// Both leave the index, and they leave it for different reasons: one path
 	// has nothing at it, the other has something that is not a note.
 	gone := append(append([]string(nil), res.Removed...), res.LeftAlone...)
-	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
+	if err := u.Notes.Remove(ctx, string(v.ID), gone); err != nil {
 		return res, fmt.Errorf("remove: %w", err)
 	}
 	if err := u.swept(ctx, v, gone); err != nil {
@@ -141,7 +141,7 @@ func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) erro
 	// A path names one file, and a folder names everything under it.
 	held := make(map[domain.SourceKind][]string)
 	for _, path := range paths {
-		under, err := u.Known.Under(ctx, v.ID, path)
+		under, err := u.Known.Under(ctx, string(v.ID), path)
 		if err != nil {
 			return err
 		}
@@ -153,7 +153,7 @@ func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) erro
 		}
 	}
 	for _, kind := range slices.Sorted(maps.Keys(held)) {
-		if err := u.Sources.RemoveSources(ctx, v.ID, kind, held[kind]); err != nil {
+		if err := u.Sources.RemoveSources(ctx, string(v.ID), kind, held[kind]); err != nil {
 			return err
 		}
 	}

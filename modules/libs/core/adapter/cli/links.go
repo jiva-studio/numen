@@ -66,7 +66,7 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 		where += "  (several notes answer to that name)"
 	}
 	if vault, crossed := l.InVault(from.ID); crossed {
-		where += "  (in another vault: " + vault + ")"
+		where += "  (in another vault: " + string(vault) + ")"
 	}
 	line := fmt.Sprintf("%-10s %s", l.Role, where)
 	if l.Type != "" {

@@ -145,7 +145,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string
 		r.To, r.Ambiguous = pick(from, r.Target.Value, candidates)
 		if r.To != "" {
 			// A name means something only inside the vault it was written in.
-			r.ToVault = vaultID
+			r.ToVault = domain.VaultID(vaultID)
 		}
 		return nil
 	default:
@@ -304,7 +304,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		// A candidate belongs here when it landed on this path in this vault.
 		// An identifier resolves without regard to vault, and two vaults may
 		// file a note at the same path.
-		if c.To == to && c.ToVault == vaultID {
+		if c.To == to && c.ToVault == domain.VaultID(vaultID) {
 			out = append(out, c)
 		}
 	}

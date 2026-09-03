@@ -243,7 +243,7 @@ func vaultOpen(out io.Writer, cfg container.Config, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := registry.Opened(v.ID); err != nil {
+	if err := registry.Opened(string(v.ID)); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "the next window opens %s\n  path %s\n", v.Name, v.Path)

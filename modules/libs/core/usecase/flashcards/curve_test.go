@@ -78,7 +78,7 @@ func TestACurveWritesNoScheduleCache(t *testing.T) {
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
 		t.Fatal(err)
 	}
-	if raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID); err == nil {
+	if raw, err := s.kept.Kept.Read(t.Context(), string(s.vault.ID)); err == nil {
 		t.Errorf("a curve wrote a cache of %d bytes", len(raw))
 	}
 }

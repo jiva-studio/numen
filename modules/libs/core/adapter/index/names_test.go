@@ -19,7 +19,7 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 	for at, heading := range headings {
 		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: at * 2})
 	}
-	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), string(vault.ID), []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -28,7 +28,7 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 func named(t *testing.T, db *DB, vault domain.Vault, query string) []domain.NameMatch {
 	t.Helper()
 
-	found, err := db.NoteQueries().Names(t.Context(), vault.ID, query, 20)
+	found, err := db.NoteQueries().Names(t.Context(), string(vault.ID), query, 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestANameGoesWhenTheNoteDoes(t *testing.T) {
 	db := opened(t)
 	noted(t, db, first, "notes/entropy.md", "Entropy", "Entropy and heat")
 
-	if err := db.Notes().Remove(t.Context(), first.ID, []string{"notes/entropy.md"}); err != nil {
+	if err := db.Notes().Remove(t.Context(), string(first.ID), []string{"notes/entropy.md"}); err != nil {
 		t.Fatal(err)
 	}
 

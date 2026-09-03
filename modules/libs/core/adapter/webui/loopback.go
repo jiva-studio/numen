@@ -98,7 +98,7 @@ func (l *Loopback) Address(vault domain.Vault, path string) string {
 	if l == nil {
 		return ""
 	}
-	return l.at + "/" + l.word + "/" + url.PathEscape(vault.ID) + "/" + url.PathEscape(path)
+	return l.at + "/" + l.word + "/" + url.PathEscape(string(vault.ID)) + "/" + url.PathEscape(path)
 }
 
 // Close stops answering.
@@ -156,7 +156,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 // vaultOf is the vault an address names. The one the window shows is answered
 // without asking the list, which is every question but the first.
 func (a *API) vaultOf(id string) (domain.Vault, bool) {
-	if showing := a.Showing(); showing.ID == id {
+	if showing := a.Showing(); string(showing.ID) == id {
 		return showing, true
 	}
 	if a.Vaults == nil {
@@ -167,7 +167,7 @@ func (a *API) vaultOf(id string) (domain.Vault, bool) {
 		return domain.Vault{}, false
 	}
 	for _, one := range all {
-		if one.ID == id {
+		if string(one.ID) == id {
 			return one, true
 		}
 	}

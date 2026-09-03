@@ -162,10 +162,10 @@ func (c Core) found(nameOrPath string) (domain.Vault, error) {
 
 // knownOf is one vault as an agent is told about it. A folder that is not there
 // to be found is marked, and the vault stays on the list.
-func knownOf(v domain.Vault, showing string) Vault {
+func knownOf(v domain.Vault, showing domain.VaultID) Vault {
 	_, err := os.Stat(v.Path)
 	return Vault{
-		ID:      v.ID,
+		ID:      string(v.ID),
 		Name:    v.Name,
 		Folder:  v.Path,
 		Missing: err != nil,

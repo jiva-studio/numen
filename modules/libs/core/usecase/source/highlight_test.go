@@ -51,7 +51,7 @@ func placing(t *testing.T, name string) (Highlight, *store, *shelf, *pdf.Book, [
 	index := newStore()
 	store := newShelf()
 	return Highlight{
-		Readers:   vaults{first.ID: shelved},
+		Readers:   vaults{string(first.ID): shelved},
 		Sources:   index,
 		Derived:   store,
 		Documents: pdf.Documents{},
@@ -66,7 +66,7 @@ func holds(t *testing.T, index *store, shelved *library, from, hash string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	index.put(first.ID, port.Source{Ref: ref, Hash: hash, TextFrom: from})
+	index.put(string(first.ID), port.Source{Ref: ref, Hash: hash, TextFrom: from})
 }
 
 // run is where a word of the document is: its offset in the text, and how long

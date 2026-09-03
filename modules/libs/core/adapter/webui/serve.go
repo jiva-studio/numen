@@ -416,7 +416,7 @@ func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
 	}
 	// Recorded before the vault is built, so the next window opens on it. A
 	// list that could not be written is said and nothing more.
-	if err := o.registry.Opened(v.ID); err != nil {
+	if err := o.registry.Opened(string(v.ID)); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	on, err := o.begins(v, rebuild)
@@ -686,7 +686,7 @@ func readable(cfg container.Config, v domain.Vault) error {
 	if err != nil {
 		return err
 	}
-	if !found || carried != v.ID {
+	if !found || carried != string(v.ID) {
 		return fmt.Errorf("%w: %s is no longer the vault %s", usecase.ErrUnreadable, v.Path, v.Name)
 	}
 	return nil
@@ -1110,7 +1110,7 @@ func embedSources(
 	// wrote, and a vault owing no vector holds that goroutine for nothing.
 	owing := int64(0)
 	if api.Progress != nil {
-		held, embedded, err := api.Progress.Progress(ctx, v.ID, text(&api.Recipe))
+		held, embedded, err := api.Progress.Progress(ctx, string(v.ID), text(&api.Recipe))
 		if err == nil {
 			owing = max(0, held-embedded)
 			if owing == 0 {

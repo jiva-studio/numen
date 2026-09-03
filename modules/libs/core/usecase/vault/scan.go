@@ -57,7 +57,7 @@ var walks sync.Map
 
 // oneWalk takes the vault's turn and answers with the release of it. Walks of
 // different vaults do not wait on each other.
-func oneWalk(ctx context.Context, vaultID string) (func(), error) {
+func oneWalk(ctx context.Context, vaultID domain.VaultID) (func(), error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.Known.Fingerprints(ctx, v.ID)
+	known, err := u.Known.Fingerprints(ctx, string(v.ID))
 	if err != nil {
 		return res, fmt.Errorf("read index: %w", err)
 	}
@@ -118,7 +118,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.MTime, a.MTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
+		if err := u.Notes.Save(ctx, string(v.ID), notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
 				len(notes), v.Name, notes[0].Ref.Path, notes[len(notes)-1].Ref.Path, err)
@@ -183,7 +183,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			gone = append(gone, path)
 		}
 	}
-	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
+	if err := u.Notes.Remove(ctx, string(v.ID), gone); err != nil {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)

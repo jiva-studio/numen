@@ -83,7 +83,7 @@ type API struct {
 
 	mu sync.Mutex
 	// runs is the sitting open on each vault, by the vault's identity.
-	runs map[string]*flashcards.Run
+	runs map[domain.VaultID]*flashcards.Run
 
 	// reads is how a vault is brought up to date in the index, and behind is the
 	// life those readings run for. walked is the vaults read since the window
@@ -91,9 +91,9 @@ type API struct {
 	// reading of one failed.
 	reads      Read
 	behind     context.Context
-	walked     map[string]bool
-	underway   map[string]bool
-	unreadable map[string]string
+	walked     map[domain.VaultID]bool
+	underway   map[domain.VaultID]bool
+	unreadable map[domain.VaultID]string
 
 	// following is everyone waiting to hear that a vault moved.
 	following following
@@ -125,7 +125,7 @@ func (a *API) Vault(id string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	for _, v := range all {
-		if v.ID == id {
+		if string(v.ID) == id {
 			return v, nil
 		}
 	}
@@ -151,7 +151,7 @@ func (a *API) remember(v domain.Vault, run *flashcards.Run) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.runs == nil {
-		a.runs = make(map[string]*flashcards.Run)
+		a.runs = make(map[domain.VaultID]*flashcards.Run)
 	}
 	// One sitting to a vault: opening another lets go of the one before it, and
 	// the file that one wrote is never appended to again.
@@ -166,7 +166,7 @@ func (a *API) remember(v domain.Vault, run *flashcards.Run) {
 // person's answer in a history it does not belong to, and an answer written is
 // not written again. The name is asked for as well, so a page holding the name
 // of a sitting that is over cannot go on writing to it.
-func (a *API) running(vault, name string) (*flashcards.Run, error) {
+func (a *API) running(vault domain.VaultID, name string) (*flashcards.Run, error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	run, is := a.runs[vault]

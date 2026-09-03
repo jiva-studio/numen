@@ -371,7 +371,7 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
 	if a.Progress != nil && showing.ID != "" {
-		if held, embedded, err := a.Progress.Progress(ctx, showing.ID, text(&a.Recipe)); err == nil {
+		if held, embedded, err := a.Progress.Progress(ctx, string(showing.ID), text(&a.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}
@@ -385,7 +385,7 @@ func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]
 		return connect.NewResponse(&v1.OpeningResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Opening(ctx, showing.ID)
+	ref, found, err := a.Notes.Opening(ctx, string(showing.ID))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -442,7 +442,7 @@ func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := a.Links.Resolve(ctx, string(showing.ID), r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -461,7 +461,7 @@ func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]
 		out.Reached = append(out.Reached, &v1.Reached{
 			Written:   written,
 			Path:      one.To,
-			Vault:     vault,
+			Vault:     string(vault),
 			Crossed:   crossed,
 			Ambiguous: one.Ambiguous,
 		})

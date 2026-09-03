@@ -121,7 +121,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 				rating = v1.Rating_RATING_AGAIN
 			}
 			_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-				VaultId: v.ID, Run: sitting.GetRun(),
+				VaultId: string(v.ID), Run: sitting.GetRun(),
 				Card: one.GetCard(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
 			}))
@@ -136,14 +136,14 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultOwing {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
-		if one.GetVaultId() == v.ID {
+		if one.GetVaultId() == string(v.ID) {
 			if one.GetUnread() != "" {
 				t.Fatalf("the vault could not be counted: %s", one.GetUnread())
 			}
 			return one
 		}
 	}
-	t.Fatalf("the front door does not hold the vault %s", v.ID)
+	t.Fatalf("the front door does not hold the vault %s", string(v.ID))
 	return nil
 }
 
@@ -184,7 +184,7 @@ func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p history.
 func pictured(t *testing.T, api *API, v domain.Vault, path string, p history.Preset) *v1.Curve {
 	t.Helper()
 	out, err := api.Curve(t.Context(), connect.NewRequest(&v1.FlashcardsServiceCurveRequest{
-		VaultId: v.ID, Path: path, Settings: wire.SettingsOf(p),
+		VaultId: string(v.ID), Path: path, Settings: wire.SettingsOf(p),
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -295,7 +295,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		fresh += int(one.GetNew())
 
 		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-			VaultId: v.ID, Deck: one.GetDeck(),
+			VaultId: string(v.ID), Deck: one.GetDeck(),
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -341,7 +341,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 
 	// One deck answered, and only that deck counts it.
 	sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-		VaultId: v.ID, Deck: "decks/Roots.md",
+		VaultId: string(v.ID), Deck: "decks/Roots.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -351,7 +351,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	}
 	for _, card := range sat.Msg.GetAsked()[:3] {
 		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-			VaultId: v.ID, Run: sat.Msg.GetRun(),
+			VaultId: string(v.ID), Run: sat.Msg.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 		})); err != nil {
@@ -386,8 +386,8 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 		seen[one.GetVaultId()]++
 	}
 	for _, v := range held {
-		if seen[v.ID] != 1 {
-			t.Errorf("the vault %s stands on the front door %d times", v.ID, seen[v.ID])
+		if seen[string(v.ID)] != 1 {
+			t.Errorf("the vault %s stands on the front door %d times", string(v.ID), seen[string(v.ID)])
 		}
 	}
 

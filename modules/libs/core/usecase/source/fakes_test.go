@@ -372,9 +372,9 @@ func (l *library) ref(path string) domain.Fingerprint {
 type vaults map[string]*library
 
 func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
-	reader, ok := v[vault.ID]
+	reader, ok := v[string(vault.ID)]
 	if !ok {
-		return nil, fmt.Errorf("no vault %s", vault.ID)
+		return nil, fmt.Errorf("no vault %s", string(vault.ID))
 	}
 	return reader, nil
 }

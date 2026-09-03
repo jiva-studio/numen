@@ -65,7 +65,7 @@ func (r registry) Find(string) (domain.Vault, bool, error) { return domain.Vault
 
 func (r registry) Last() (domain.Vault, bool, error) {
 	for _, v := range r.held {
-		if v.ID == r.last {
+		if string(v.ID) == r.last {
 			return v, true, nil
 		}
 	}
@@ -202,7 +202,7 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Owin
 // started is a sitting opened on one vault, and what it holds to ask.
 func started(t *testing.T, api *API, v domain.Vault) *v1.StartResponse {
 	t.Helper()
-	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: v.ID}))
+	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +222,7 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: two.ID,
+		VaultId: string(two.ID),
 		Run:     sitting.GetRun(),
 		Card:    card.GetCard(),
 		Face:    card.GetFace(),
@@ -272,7 +272,7 @@ func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
 
 	card := now.GetAsked()[0]
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: v.ID,
+		VaultId: string(v.ID),
 		Run:     was.GetRun(),
 		Card:    card.GetCard(),
 		Face:    card.GetFace(),
@@ -293,12 +293,12 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	api, held := windowed(t, deck, other)
 	one, two := held[0], held[1]
 
-	was := counted(t, front(t, api), two.ID)
+	was := counted(t, front(t, api), string(two.ID))
 
 	sitting := started(t, api, one)
 	for _, card := range sitting.GetAsked() {
 		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-			VaultId: one.ID, Run: sitting.GetRun(),
+			VaultId: string(one.ID), Run: sitting.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_EASY,
 		})); err != nil {
@@ -307,11 +307,11 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	}
 
 	after := front(t, api)
-	if now := counted(t, after, two.ID); now.GetNew() != was.GetNew() ||
+	if now := counted(t, after, string(two.ID)); now.GetNew() != was.GetNew() ||
 		now.GetDue() != was.GetDue() || now.GetFaces() != was.GetFaces() {
 		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
 	}
-	if now := counted(t, after, one.ID); now.GetNew() != 0 || now.GetDue() != 0 {
+	if now := counted(t, after, string(one.ID)); now.GetNew() != 0 || now.GetDue() != 0 {
 		t.Errorf("the answered vault still owes %+v", now)
 	}
 	// Nothing was written into the other vault's folder either.
@@ -342,7 +342,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	given, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: v.ID,
+		VaultId: string(v.ID),
 		Run:     sitting.GetRun(),
 		Card:    card.GetCard(),
 		Face:    card.GetFace(),
@@ -357,7 +357,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	}
 
 	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: v.ID,
+		VaultId: string(v.ID),
 		Run:     sitting.GetRun(),
 		Answer:  given.Msg.GetAnswer(),
 	})); err != nil {
@@ -377,7 +377,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: v.ID, Run: sitting.GetRun(),
+		VaultId: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_UNSPECIFIED,
 	}))
@@ -461,7 +461,7 @@ func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: unread.ID}))
+	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: string(unread.ID)}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
 	}
@@ -662,7 +662,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 	}
 	card := sitting.GetAsked()[0]
 	if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: v.ID, Run: sitting.GetRun(),
+		VaultId: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
@@ -1057,7 +1057,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 		}
 
 		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-			VaultId: v.ID, Preset: naming(one.GetPreset()),
+			VaultId: string(v.ID), Preset: naming(one.GetPreset()),
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -1274,7 +1274,7 @@ type sat struct{ asked, owed, fresh int }
 func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	t.Helper()
 	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-		VaultId: v.ID, Preset: naming(preset),
+		VaultId: string(v.ID), Preset: naming(preset),
 	}))
 	if err != nil {
 		t.Fatal(err)

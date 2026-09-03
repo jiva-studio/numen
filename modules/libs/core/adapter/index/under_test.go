@@ -11,7 +11,7 @@ import (
 func under(t *testing.T, db *DB, vault domain.Vault, path string) []string {
 	t.Helper()
 
-	found, err := db.Sources().Under(t.Context(), vault.ID, path)
+	found, err := db.Sources().Under(t.Context(), string(vault.ID), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestWhatIsUnderAPathSaysWhichKindEachSourceIs(t *testing.T) {
 	book(t, db, first, "physics/A Book.epub", 1)
 
 	held := map[string]domain.SourceKind{}
-	found, err := db.Sources().Under(t.Context(), first.ID, "physics")
+	found, err := db.Sources().Under(t.Context(), string(first.ID), "physics")
 	if err != nil {
 		t.Fatal(err)
 	}

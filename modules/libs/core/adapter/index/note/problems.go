@@ -129,7 +129,7 @@ func (q *Queries) Ambiguous(ctx context.Context, vaultID string) ([]domain.Ambig
 		if !l.Ambiguous {
 			continue
 		}
-		l.ToVault = vaultID
+		l.ToVault = domain.VaultID(vaultID)
 		out = append(out, domain.AmbiguousLink{ResolvedLink: l, Candidates: answering})
 	}
 	return out, nil

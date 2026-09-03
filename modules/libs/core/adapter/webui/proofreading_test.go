@@ -33,7 +33,7 @@ func (p *proofreads) Proofread(
 	path string,
 ) (source.PutRightResult, error) {
 	p.times++
-	p.vault, p.path = v.ID, path
+	p.vault, p.path = string(v.ID), path
 	return p.came, p.why
 }
 
@@ -70,7 +70,7 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Why != proofreadingBegun {
 		t.Errorf("a run begun was told %q", back.Why)
 	}
-	if by.times != 1 || by.path != talk || by.vault != api.Showing().ID {
+	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }

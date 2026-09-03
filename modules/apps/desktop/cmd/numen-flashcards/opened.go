@@ -36,7 +36,7 @@ type openVaults struct {
 
 	mu    sync.Mutex
 	going bool
-	held  map[string]*vaultOpening
+	held  map[domain.VaultID]*vaultOpening
 }
 
 // vaultOpening is one vault's opening, made once however many ask for it.
@@ -76,7 +76,7 @@ func (o *openVaults) of(v domain.Vault) *vaultOpening {
 	if !there {
 		one = &vaultOpening{}
 		if o.held == nil {
-			o.held = map[string]*vaultOpening{}
+			o.held = map[domain.VaultID]*vaultOpening{}
 		}
 		o.held[v.ID] = one
 	}

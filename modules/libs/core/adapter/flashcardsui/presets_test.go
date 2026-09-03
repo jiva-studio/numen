@@ -31,7 +31,7 @@ var elsewhere = map[string]string{
 func scheduled(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
 	t.Helper()
 	out, err := api.Scheduling(t.Context(), connect.NewRequest(
-		&v1.FlashcardsServiceSchedulingRequest{VaultId: v.ID, Deck: path}))
+		&v1.FlashcardsServiceSchedulingRequest{VaultId: string(v.ID), Deck: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestACurveIsWorkedOutOverTheVaultTheRequestNames(t *testing.T) {
 	curved := func(v domain.Vault) *v1.Curve {
 		t.Helper()
 		out, err := api.Curve(t.Context(), connect.NewRequest(&v1.FlashcardsServiceCurveRequest{
-			VaultId: v.ID, Path: "Sanskrit.md",
+			VaultId: string(v.ID), Path: "Sanskrit.md",
 			Settings: wire.SettingsOf(history.Defaults()),
 		}))
 		if err != nil {

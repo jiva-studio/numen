@@ -265,15 +265,15 @@ func TestTheAgentIsServedBesideTheCards(t *testing.T) {
 func TestTheAgentIsToldWhichVaultTheSittingIsOn(t *testing.T) {
 	api, vaults := windowed(t, deck, other)
 	var told []string
-	api.Sat = func(_ context.Context, v domain.Vault) { told = append(told, v.ID) }
+	api.Sat = func(_ context.Context, v domain.Vault) { told = append(told, string(v.ID)) }
 
 	var opened []string
 	for _, v := range vaults {
 		if _, err := api.Start(t.Context(),
-			connect.NewRequest(&v1.StartRequest{VaultId: v.ID})); err != nil {
+			connect.NewRequest(&v1.StartRequest{VaultId: string(v.ID)})); err != nil {
 			t.Fatal(err)
 		}
-		opened = append(opened, v.ID)
+		opened = append(opened, string(v.ID))
 	}
 
 	if strings.Join(told, "|") != strings.Join(opened, "|") {

@@ -241,7 +241,7 @@ func (u Counted) remembered(ctx context.Context, v domain.Vault) map[string]coun
 	if u.Kept == nil {
 		return nil
 	}
-	raw, err := u.Kept.Read(ctx, v.ID)
+	raw, err := u.Kept.Read(ctx, string(v.ID))
 	if err != nil {
 		return nil
 	}
@@ -266,7 +266,7 @@ func (u Counted) remember(ctx context.Context, v domain.Vault, now counted) {
 	if err != nil {
 		return
 	}
-	_ = u.Kept.Write(ctx, v.ID, raw)
+	_ = u.Kept.Write(ctx, string(v.ID), raw)
 }
 
 func (u Counted) now() time.Time {

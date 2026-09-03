@@ -69,7 +69,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 	if a.Notes == nil || len(paths) == 0 {
 		return nil, nil
 	}
-	return a.Notes.Types(ctx, showing.ID, paths)
+	return a.Notes.Types(ctx, string(showing.ID), paths)
 }
 
 // Standing hands the client what the vault holds at each of those paths, so

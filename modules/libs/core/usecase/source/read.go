@@ -74,7 +74,7 @@ func (u Read) Execute(
 	// the same answer a search sliced its passage at.
 	var from, hash string
 	if u.Sources != nil {
-		said, held, err := u.Sources.Reading(ctx, v.ID, path)
+		said, held, err := u.Sources.Reading(ctx, string(v.ID), path)
 		if err != nil {
 			return res, err
 		}

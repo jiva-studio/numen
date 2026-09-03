@@ -280,7 +280,7 @@ func (u Curves) scheduled(ctx context.Context, v domain.Vault, path string) ([]s
 		return decks, err
 	}
 
-	at, err := u.Presets.Links.Backlinks(ctx, v.ID, path)
+	at, err := u.Presets.Links.Backlinks(ctx, string(v.ID), path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}

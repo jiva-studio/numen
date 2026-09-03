@@ -36,7 +36,7 @@ type asking struct {
 
 func (a *asking) Start(v domain.Vault, path string) port.Taking {
 	a.times++
-	a.vault, a.path = v.ID, path
+	a.vault, a.path = string(v.ID), path
 	return a.takes
 }
 
@@ -131,7 +131,7 @@ func TestAScanIsReadWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Why != "" {
 		t.Errorf("a run begun was told %q, which the list of what is being done says", back.Why)
 	}
-	if scans.times != 1 || scans.path != book || scans.vault != api.Showing().ID {
+	if scans.times != 1 || scans.path != book || scans.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", scans.path, scans.vault, scans.times)
 	}
 }
@@ -151,7 +151,7 @@ func TestARecordingIsHeardWhenTheWindowAsksForIt(t *testing.T) {
 	if back.Why != "" {
 		t.Errorf("a run begun was told %q, which the list of what is being done says", back.Why)
 	}
-	if hears.times != 1 || hears.path != talk || hears.vault != api.Showing().ID {
+	if hears.times != 1 || hears.path != talk || hears.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", hears.path, hears.vault, hears.times)
 	}
 }

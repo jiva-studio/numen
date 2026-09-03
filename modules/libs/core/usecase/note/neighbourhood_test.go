@@ -311,7 +311,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
 	})
 
-	opening, found, err := db.Queries().Opening(t.Context(), v.ID)
+	opening, found, err := db.Queries().Opening(t.Context(), string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -322,7 +322,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 		t.Errorf("opening = %+v", opening)
 	}
 
-	again, _, err := db.Queries().Opening(t.Context(), v.ID)
+	again, _, err := db.Queries().Opening(t.Context(), string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +335,7 @@ func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
 	t.Parallel()
 	db, v := indexed(t, map[string]string{})
 
-	_, found, err := db.Queries().Opening(t.Context(), v.ID)
+	_, found, err := db.Queries().Opening(t.Context(), string(v.ID))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -14,7 +14,7 @@ import (
 // writing saves one note of a title of its own through the opening given.
 func writing(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().Cut(cutting.Sizes{}).Save(t.Context(), v.ID, []domain.Note{{
+	return db.Notes().Cut(cutting.Sizes{}).Save(t.Context(), string(v.ID), []domain.Note{{
 		Ref:   domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), MTime: 1},
 		Title: title,
 		Type:  domain.TypeNote,
@@ -37,7 +37,7 @@ func TestASecondOpeningReadsWhatTheFirstWrote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := two.NoteQueries().Notes(t.Context(), first.ID, []string{"notes/entropy.md"})
+	found, err := two.NoteQueries().Notes(t.Context(), string(first.ID), []string{"notes/entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestTwoWritersOverOneIndexLoseNothing(t *testing.T) {
 			want = append(want, fmt.Sprintf("notes/%s-%d.md", who, i))
 		}
 	}
-	found, err := one.NoteQueries().Notes(t.Context(), first.ID, want)
+	found, err := one.NoteQueries().Notes(t.Context(), string(first.ID), want)
 	if err != nil {
 		t.Fatal(err)
 	}

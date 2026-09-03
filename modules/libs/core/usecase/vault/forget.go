@@ -28,10 +28,10 @@ func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
 	// The index goes first: no entry on the list points at rows that are gone.
 	// Rows a failure here leaves behind belong to a vault the next scan writes
 	// again.
-	if err := u.Index.Forget(ctx, v.ID); err != nil {
+	if err := u.Index.Forget(ctx, string(v.ID)); err != nil {
 		return fmt.Errorf("take %s out of the index: %w", v.Name, err)
 	}
-	return u.Registry.Remove(v.ID)
+	return u.Registry.Remove(string(v.ID))
 }
 
 // keepTheLastVault refuses a vault that is all the installation has left.

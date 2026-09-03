@@ -39,7 +39,7 @@ func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *contai
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().Lexical(
-		t.Context(), v.ID, query, []domain.SourceKind{domain.KindBook}, 10, false,
+		t.Context(), string(v.ID), query, []domain.SourceKind{domain.KindBook}, 10, false,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +49,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	matches, err := db.Queries().Search(t.Context(), v.ID, query, 10)
+	matches, err := db.Queries().Search(t.Context(), string(v.ID), query, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.SourceChunks{
+	if err := db.Sources().SaveExtraction(t.Context(), string(v.ID), port.SourceChunks{
 		Source: port.Source{
 			Ref:    domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, MTime: 1},
 			Hash:   "a-hash",
@@ -174,7 +174,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().Under(t.Context(), v.ID, "library")
+	held, err := db.SourcesKnown().Under(t.Context(), string(v.ID), "library")
 	if err != nil {
 		t.Fatal(err)
 	}

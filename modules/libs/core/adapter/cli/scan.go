@@ -71,7 +71,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 		return err
 	}
 
-	summary, err := db.Queries().Summary(ctx, v.ID)
+	summary, err := db.Queries().Summary(ctx, string(v.ID))
 	if err != nil {
 		return err
 	}

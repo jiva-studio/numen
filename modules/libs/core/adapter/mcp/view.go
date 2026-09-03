@@ -41,7 +41,7 @@ func addViewTools(server *sdk.Server, core Core) {
 			return nil, out{}, errors.New("name the note to put in focus")
 		}
 
-		found, err := core.Notes.Notes(ctx, core.shown().Vault.ID, []string{in.Path})
+		found, err := core.Notes.Notes(ctx, string(core.shown().Vault.ID), []string{in.Path})
 		if err != nil {
 			return nil, out{}, err
 		}

@@ -46,7 +46,7 @@ func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, faile
 		return false, ""
 	}
 	if a.underway == nil {
-		a.underway = make(map[string]bool)
+		a.underway = make(map[domain.VaultID]bool)
 	}
 	a.underway[v.ID] = true
 	a.mu.Unlock()
@@ -60,7 +60,7 @@ func (a *API) carries(ctx context.Context, v domain.Vault) bool {
 	if a.Notes == nil {
 		return false
 	}
-	held, err := a.Notes.Holds(ctx, v.ID)
+	held, err := a.Notes.Holds(ctx, string(v.ID))
 	return err == nil && held
 }
 
@@ -74,7 +74,7 @@ func (a *API) carries(ctx context.Context, v domain.Vault) bool {
 // has lasted.
 func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 	at := task.Task{
-		ID:    "reading\t" + v.ID,
+		ID:    "reading\t" + string(v.ID),
 		Doing: "Reading the vault",
 		About: v.Name,
 		Asked: !held,
@@ -90,12 +90,12 @@ func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 	delete(a.underway, v.ID)
 	if err != nil {
 		if a.unreadable == nil {
-			a.unreadable = make(map[string]string)
+			a.unreadable = make(map[domain.VaultID]string)
 		}
 		a.unreadable[v.ID] = err.Error()
 	} else {
 		if a.walked == nil {
-			a.walked = make(map[string]bool)
+			a.walked = make(map[domain.VaultID]bool)
 		}
 		a.walked[v.ID] = true
 	}
@@ -115,5 +115,5 @@ func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 func (a *API) Forget(vaultID string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	delete(a.unreadable, vaultID)
+	delete(a.unreadable, domain.VaultID(vaultID))
 }

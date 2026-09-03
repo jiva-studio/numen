@@ -81,7 +81,7 @@ func noParts(n domain.Note) domain.Note {
 
 func save(t *testing.T, db *DB, vault domain.Vault, n domain.Note) {
 	t.Helper()
-	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), string(vault.ID), []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -93,7 +93,7 @@ type embedder struct{ seed byte }
 
 func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), vault.ID, "model", 0, 1000)
+	owing, err := db.ChunkQueries().Unembedded(t.Context(), string(vault.ID), "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func smallChunks(t *testing.T, db *DB, vault domain.Vault, path string) []int64 
 	                      JOIN sources s ON s.id = c.source_id
 	                      JOIN vaults v ON v.id = c.vault_id
 	                      WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
-	                      ORDER BY c.start, c.length`, vault.ID, path)
+	                      ORDER BY c.start, c.length`, string(vault.ID), path)
 }
 
 // largeChunk is the chunk enclosing a note, which is the note itself.
@@ -119,7 +119,7 @@ func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 	rows := rowsOf(t, db, `SELECT c.id FROM chunks c
 	                       JOIN sources s ON s.id = c.source_id
 	                       JOIN vaults v ON v.id = c.vault_id
-	                       WHERE v.identifier = ? AND s.path = ? AND c.parent IS NULL`, vault.ID, path)
+	                       WHERE v.identifier = ? AND s.path = ? AND c.parent IS NULL`, string(vault.ID), path)
 	if len(rows) != 1 {
 		t.Fatalf("%d large chunks for %s", len(rows), path)
 	}
@@ -130,7 +130,7 @@ func largeChunk(t *testing.T, db *DB, vault domain.Vault, path string) int64 {
 func chunksIn(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	return counted(t, db, `SELECT COUNT(*) FROM chunks c JOIN vaults v ON v.id = c.vault_id
-	                       WHERE v.identifier = ?`, vault.ID)
+	                       WHERE v.identifier = ?`, string(vault.ID))
 }
 
 func rowsOf(t *testing.T, db *DB, statement string, args ...any) []int64 {
@@ -252,7 +252,7 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 
 	// Every chunk is read from where its text is now.
 	for _, row := range append(was, enclosing) {
-		p, found, err := db.ChunkQueries().Passage(ctx, first.ID, row)
+		p, found, err := db.ChunkQueries().Passage(ctx, string(first.ID), row)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -498,7 +498,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, opening, nil, 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, string(first.ID), opening, nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -510,7 +510,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.Ref.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().Lexical(ctx, first.ID, "wordzz", nil, 10, false)
+	typed, err := db.ChunkQueries().Lexical(ctx, string(first.ID), "wordzz", nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -567,7 +567,7 @@ func TestARecutStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
+		found, err := db.ChunkQueries().Lexical(ctx, string(ask.vault.ID), ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -585,7 +585,7 @@ func locationsOf(t *testing.T, db *DB, vault domain.Vault, path string) []string
 	                                                JOIN sources s ON s.id = c.source_id
 	                                                JOIN vaults v ON v.id = c.vault_id
 	                                                WHERE v.identifier = ? AND s.path = ? AND c.parent IS NOT NULL
-	                                                ORDER BY c.start, c.length`, vault.ID, path)
+	                                                ORDER BY c.start, c.length`, string(vault.ID), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -633,7 +633,7 @@ func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
 	}
 	save(t, db, first, n)
 
-	found, err := db.ChunkQueries().Lexical(ctx, first.ID, n.Title, nil, 10, false)
+	found, err := db.ChunkQueries().Lexical(ctx, string(first.ID), n.Title, nil, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -642,7 +642,7 @@ func TestANoteWithSectionsIsStillFoundByItsTitle(t *testing.T) {
 	}
 	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.
-	p, ok, err := db.ChunkQueries().Passage(ctx, first.ID, largeChunk(t, db, first, n.Ref.Path))
+	p, ok, err := db.ChunkQueries().Passage(ctx, string(first.ID), largeChunk(t, db, first, n.Ref.Path))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -711,7 +711,7 @@ func TestCuttingOneSectionStaysInsideItsVault(t *testing.T) {
 		{second, "quasar", true},
 		{first, "quasar", false},
 	} {
-		found, err := db.ChunkQueries().Lexical(ctx, ask.vault.ID, ask.word, nil, 10, false)
+		found, err := db.ChunkQueries().Lexical(ctx, string(ask.vault.ID), ask.word, nil, 10, false)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -22,11 +22,11 @@ func TestRegisteringAVaultLeavesTheNameAndThePathItHas(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, path := calledAt(t, db, first.ID)
+	name, path := calledAt(t, db, string(first.ID))
 	if name != renamed.Name || path != renamed.Path {
 		t.Errorf("the index holds %q at %s, want %q at %s", name, path, renamed.Name, renamed.Path)
 	}
-	if got := counted(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, first.ID); got != 1 {
+	if got := counted(t, db, `SELECT COUNT(*) FROM vaults WHERE identifier = ?`, string(first.ID)); got != 1 {
 		t.Errorf("the vault has %d rows", got)
 	}
 }
@@ -40,7 +40,7 @@ func TestRegisteringAVaultTheIndexDoesNotHoldWritesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	name, path := calledAt(t, db, fresh.ID)
+	name, path := calledAt(t, db, string(fresh.ID))
 	if name != fresh.Name || path != fresh.Path {
 		t.Errorf("the index holds %q at %s, want %q at %s", name, path, fresh.Name, fresh.Path)
 	}

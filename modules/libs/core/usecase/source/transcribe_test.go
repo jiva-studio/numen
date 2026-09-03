@@ -101,7 +101,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	kept := newShelf()
 	model := &voice{words: words}
 	return Transcribe{
-		Readers: vaults{first.ID: shelved},
+		Readers: vaults{string(first.ID): shelved},
 		Sources: index,
 		Derived: kept,
 		By:      model,
@@ -137,7 +137,7 @@ func TestWhatIsHeardIsWrittenDownAndClaimed(t *testing.T) {
 		t.Errorf("a recording that was written down came back as %+v", res)
 	}
 
-	src := index.sources[v.ID][recordingPath]
+	src := index.sources[string(v.ID)][recordingPath]
 	if src.TextFrom != "asr" {
 		t.Fatalf("the source says its text comes from %q", src.TextFrom)
 	}
@@ -252,7 +252,7 @@ func TestOneRunToARecording(t *testing.T) {
 	if names := shelf.names(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
 	}
-	if _, held := index.sources[v.ID][recordingPath]; held {
+	if _, held := index.sources[string(v.ID)][recordingPath]; held {
 		t.Error("it recorded a source")
 	}
 }
@@ -274,7 +274,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 			t.Errorf("it left %q behind", name)
 		}
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
+	if src := index.sources[string(v.ID)][recordingPath]; src.TextFrom != "" {
 		t.Errorf("the source was pointed at %q", src.TextFrom)
 	}
 
@@ -305,7 +305,7 @@ func TestARecordingNothingCanOpenIsAnsweredOnce(t *testing.T) {
 	if !res.Unopened {
 		t.Error("a recording nothing can open was not reported as such")
 	}
-	if src := index.sources[v.ID][recordingPath]; src.TextFrom != "" {
+	if src := index.sources[string(v.ID)][recordingPath]; src.TextFrom != "" {
 		t.Errorf("the source was pointed at %q", src.TextFrom)
 	}
 	raw, err := shelf.Read(t.Context(), text.Answer("asr", hash))

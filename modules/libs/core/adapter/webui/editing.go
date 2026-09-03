@@ -204,7 +204,7 @@ func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) 
 	if a.Notes == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.Addressed(ctx, a.Notes, a.Showing().ID, to)
+	return note.Addressed(ctx, a.Notes, string(a.Showing().ID), to)
 }
 
 // roleOf is the role a link carries, in the core's words. A link is written

@@ -318,7 +318,7 @@ func (a *API) titled(ctx context.Context, showing domain.Vault, path string) str
 	if a.Notes == nil {
 		return ""
 	}
-	found, err := a.Notes.Notes(ctx, showing.ID, []string{path})
+	found, err := a.Notes.Notes(ctx, string(showing.ID), []string{path})
 	if err != nil {
 		return ""
 	}

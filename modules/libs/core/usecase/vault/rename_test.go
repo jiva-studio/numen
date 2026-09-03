@@ -23,7 +23,7 @@ func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
 		t.Errorf("the vault is called %q", got.Name)
 	}
 
-	onTheList, found, err := registry.Find(renamed.ID)
+	onTheList, found, err := registry.Find(string(renamed.ID))
 	if err != nil || !found {
 		t.Fatalf("the vault left the list: %v %v", found, err)
 	}
@@ -49,7 +49,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 	if !errors.Is(err, usecase.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
 	}
-	onTheList, found, err := registry.Find(renamed.ID)
+	onTheList, found, err := registry.Find(string(renamed.ID))
 	if err != nil || !found {
 		t.Fatalf("the vault left the list: %v %v", found, err)
 	}
@@ -103,7 +103,7 @@ func TestAWalkDoesNotPutBackTheNameAVaultHad(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := index.rows[showing.ID]; got.Name != renamed.Name || got.Path != renamed.Path {
+	if got := index.rows[string(showing.ID)]; got.Name != renamed.Name || got.Path != renamed.Path {
 		t.Errorf("the index holds %q at %s, and the list holds %q at %s",
 			got.Name, got.Path, renamed.Name, renamed.Path)
 	}

@@ -46,7 +46,7 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 			t.Errorf("a card nobody answered is due at %q", card.GetDue())
 		}
 	}
-	answered(t, api, v.ID, first)
+	answered(t, api, string(v.ID), first)
 
 	// Answered well, so the card is minutes away and asked again in this
 	// sitting: what it carries is where the answer left it.
@@ -70,15 +70,15 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	v := held[0]
 
 	sitting := started(t, api, v)
-	given := answered(t, api, v.ID, sitting)
+	given := answered(t, api, string(v.ID), sitting)
 
 	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: v.ID, Run: sitting.GetRun(), Answer: given,
+		VaultId: string(v.ID), Run: sitting.GetRun(), Answer: given,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: v.ID}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	sitting := started(t, api, v)
 
 	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: v.ID, Run: sitting.GetRun(),
+		VaultId: string(v.ID), Run: sitting.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("refused with %v", connect.CodeOf(err))
@@ -111,10 +111,10 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 	api, held := windowed(t, deck)
 	v := held[0]
 	sitting := started(t, api, v)
-	given := answered(t, api, v.ID, sitting)
+	given := answered(t, api, string(v.ID), sitting)
 
 	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: v.ID, Run: "nothing", Answer: given,
+		VaultId: string(v.ID), Run: "nothing", Answer: given,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))

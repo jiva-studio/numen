@@ -99,14 +99,14 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]Listed, error) {
 	if u.Notes == nil {
 		return nil, nil
 	}
-	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypePreset)
+	paths, err := u.Notes.OfType(ctx, string(v.ID), domain.TypePreset)
 	if err != nil {
 		return nil, fmt.Errorf("the presets of %s: %w", v.ID, err)
 	}
 	if len(paths) == 0 {
 		return nil, nil
 	}
-	titles, err := u.Notes.Notes(ctx, v.ID, paths)
+	titles, err := u.Notes.Notes(ctx, string(v.ID), paths)
 	if err != nil {
 		return nil, fmt.Errorf("what the presets of %s are called: %w", v.ID, err)
 	}
@@ -177,7 +177,7 @@ func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (P
 	if r.Links == nil {
 		return Default(), nil
 	}
-	links, err := r.Links.Links(ctx, v.ID, deck)
+	links, err := r.Links.Links(ctx, string(v.ID), deck)
 	if err != nil {
 		return Preset{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
@@ -228,7 +228,7 @@ func (r *Reading) roleless(ctx context.Context, v domain.Vault, deck string) ([]
 		return nil, nil
 	}
 	if r.said == nil {
-		noted, err := r.Problems.Noted(ctx, v.ID)
+		noted, err := r.Problems.Noted(ctx, string(v.ID))
 		if err != nil {
 			return nil, fmt.Errorf("what was noted in %s: %w", v.ID, err)
 		}

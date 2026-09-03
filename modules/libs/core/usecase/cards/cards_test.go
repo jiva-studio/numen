@@ -360,7 +360,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 		t.Errorf("stencil written wrong: %q", got)
 	}
 
-	types, err := vs.db.NoteQueries().Types(t.Context(), vs.first.ID, []string{deck.Path, stencil.Path})
+	types, err := vs.db.NoteQueries().Types(t.Context(), string(vs.first.ID), []string{deck.Path, stencil.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,7 +392,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 		}
 	}
 
-	types, err := vs.db.NoteQueries().Types(t.Context(), vs.first.ID, []string{made.Path})
+	types, err := vs.db.NoteQueries().Types(t.Context(), string(vs.first.ID), []string{made.Path})
 	if err != nil {
 		t.Fatal(err)
 	}

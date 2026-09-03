@@ -35,7 +35,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		t.Fatalf("the front door opens on %d of %d vaults", len(first.GetVaults()), len(held))
 	}
 	for at, one := range first.GetVaults() {
-		if one.GetVaultId() != held[at].ID || one.GetName() == "" || one.GetPath() == "" {
+		if one.GetVaultId() != string(held[at].ID) || one.GetName() == "" || one.GetPath() == "" {
 			t.Errorf("the vault stands as %+v", one)
 		}
 		if one.GetFaces() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||
@@ -79,8 +79,8 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, v := range held {
-		if counts[v.ID] != 1 {
-			t.Errorf("the vault %s was counted %d times", v.ID, counts[v.ID])
+		if counts[string(v.ID)] != 1 {
+			t.Errorf("the vault %s was counted %d times", string(v.ID), counts[string(v.ID)])
 		}
 	}
 }
@@ -105,7 +105,7 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 
 			got := make([]string, 0, len(all))
 			for _, v := range api.wanted(all) {
-				got = append(got, v.ID)
+				got = append(got, string(v.ID))
 			}
 			if len(got) != len(c.want) {
 				t.Fatalf("counted %v", got)

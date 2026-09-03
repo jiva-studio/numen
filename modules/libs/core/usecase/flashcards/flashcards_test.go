@@ -916,7 +916,7 @@ func stamped(at time.Time) string { return at.UTC().Format(history.Stamp) }
 // claims and see whether it was believed.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
-	raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID)
+	raw, err := s.kept.Kept.Read(t.Context(), string(s.vault.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -929,7 +929,7 @@ func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.kept.Kept.Write(t.Context(), s.vault.ID, now); err != nil {
+	if err := s.kept.Kept.Write(t.Context(), string(s.vault.ID), now); err != nil {
 		t.Fatal(err)
 	}
 }

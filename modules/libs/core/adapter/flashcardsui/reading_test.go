@@ -87,7 +87,7 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 
 	// The vault moved underneath the window, which is what lets it be tried
 	// again.
-	api.Forget(unread.ID)
+	api.Forget(string(unread.ID))
 	api.counted(t.Context(), unread)
 	waitFor(t, func() bool { return tried.Load() == 2 })
 }

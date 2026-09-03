@@ -42,7 +42,7 @@ func GenerateVault(tb testing.TB, n int) domain.Vault {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return domain.Vault{ID: cfg.ID, Name: "generated", Path: root}
+	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "generated", Path: root}
 }
 
 // RareTerm appears in one generated note in a thousand.

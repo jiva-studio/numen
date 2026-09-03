@@ -66,7 +66,7 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	raw, err := s.kept.Kept.Read(t.Context(), s.vault.ID)
+	raw, err := s.kept.Kept.Read(t.Context(), string(s.vault.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.kept.Kept.Write(t.Context(), s.vault.ID, []byte("not a cache")); err != nil {
+	if err := s.kept.Kept.Write(t.Context(), string(s.vault.ID), []byte("not a cache")); err != nil {
 		t.Fatal(err)
 	}
 
