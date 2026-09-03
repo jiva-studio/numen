@@ -28,6 +28,7 @@ func says(at int) history.CardFace {
 // A day that cannot pay all of it answers the card faces waiting longest and
 // leaves the rest of the pile standing.
 func TestTheDebtIsPaidOldestFirst(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":       term,
 		"Two.md":        preset("new_a_day: 0\nreviews_a_day: 2\nminutes_a_day: 0\n"),
@@ -55,6 +56,7 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 // for: the same request over the same vault is the same cards in the same
 // order, card face by card face.
 func TestASittingOverSeveralPresetsIsTheSameSittingTwice(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":    term,
 		"One.md":     preset("new_a_day: 2\nreviews_a_day: 2\nminutes_a_day: 0\n"),

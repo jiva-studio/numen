@@ -35,6 +35,7 @@ var saturday = time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local)
 // What a day came to is counted under the preset each deck names, over as many
 // sittings as the day held. A deck naming no preset comes under the defaults.
 func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
+	t.Parallel()
 	s := opened(t, scheduled)
 
 	// Two sittings of the one day, each writing a file of its own.
@@ -81,6 +82,7 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 // A vault holding no preset at all is one scope: the defaults, with every deck
 // under them.
 func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":      term,
 		"decks/One.md": deckOf("", 20, 0),
@@ -108,6 +110,7 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 // Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
 func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
+	t.Parallel()
 	files := make(map[string]string, len(scheduled)+1)
 	for path, raw := range scheduled {
 		files[path] = raw
@@ -138,6 +141,7 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 // What was answered on another day is not what today came to, and neither is an
 // answer taken back.
 func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, scheduled)
 
 	before := s.run(t, saturday.AddDate(0, 0, -1))
@@ -165,6 +169,7 @@ func TestADayHoldsWhatWasAnsweredInIt(t *testing.T) {
 // deck nobody answered today is not carried by the one beside it under the same
 // preset.
 func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
+	t.Parallel()
 	s := opened(t, scheduled)
 
 	// One card of one of the two decks the Sanskrit preset schedules.
@@ -195,6 +200,7 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 // opens, a sitting ends or a vault moves, so a count over answers nothing has
 // changed replays nothing.
 func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
+	t.Parallel()
 	s := opened(t, scheduled)
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
@@ -262,6 +268,7 @@ func said(
 // A preset a deck names is pointed at whatever the deck holds, and how many
 // cards stand under it is counted beside that.
 func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
@@ -290,6 +297,7 @@ func TestAnEmptyDeckStillPointsAtItsPreset(t *testing.T) {
 
 // A preset nothing but an empty deck names is still named by that deck.
 func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Empty.md":       preset("new_a_day: 4\nreviews_a_day: 20\n"),
@@ -320,6 +328,7 @@ func TestAPresetOnlyAnEmptyDeckNamesIsPointedAt(t *testing.T) {
 // The scenario here holds nothing to read a vault through, so nothing past the
 // first check can run.
 func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
+	t.Parallel()
 	gone, went := context.WithCancel(t.Context())
 	went()
 

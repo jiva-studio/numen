@@ -29,6 +29,7 @@ var choosing = map[string]string{
 
 // Every preset the vault holds is listed, by path and by what it is called.
 func TestThePresetsOfAVaultAreListed(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	held, err := s.presets.List(t.Context(), s.vault)
@@ -49,6 +50,7 @@ func TestThePresetsOfAVaultAreListed(t *testing.T) {
 // A vault holding no preset lists none. Every deck in it is scheduled by the
 // defaults, which are no note.
 func TestAVaultOfNoPresetsListsNone(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	held, err := s.presets.List(t.Context(), s.vault)
@@ -62,6 +64,7 @@ func TestAVaultOfNoPresetsListsNone(t *testing.T) {
 
 // A deck that named no preset names one, and is scheduled by it afterwards.
 func TestADeckIsPutOnAPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
@@ -89,6 +92,7 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 // A deck already on a preset is put on another, and names one preset
 // afterwards.
 func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
@@ -119,6 +123,7 @@ func TestADeckIsMovedFromOnePresetToAnother(t *testing.T) {
 // A deck is taken off its preset, and is scheduled by the defaults again. The
 // `links:` block goes with the entry it held.
 func TestADeckIsTakenOffItsPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
@@ -143,6 +148,7 @@ func TestADeckIsTakenOffItsPreset(t *testing.T) {
 // Everything the deck's frontmatter holds beside the one entry comes out of the
 // write as the bytes it went in as.
 func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": choosing["Sanskrit.md"],
 		"decks/Roots.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\n" +
@@ -174,6 +180,7 @@ func TestPointingADeckLeavesTheRestOfTheFrontmatter(t *testing.T) {
 // What the person wrote on the entry stays on it when the deck is moved to
 // another preset.
 func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md":     choosing["Sanskrit.md"],
 		"presets/Slow.md": choosing["presets/Slow.md"],
@@ -198,6 +205,7 @@ func TestMovingADeckKeepsWhatThePersonWroteOnTheEntry(t *testing.T) {
 // A note that is not a preset schedules nothing, so a deck is not pointed at
 // one and the file is left as it stands.
 func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
@@ -212,6 +220,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 
 // A path the vault holds no note at is refused, and nothing is written.
 func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 	was := read(t, s.vault, "decks/Terms.md")
 
@@ -226,6 +235,7 @@ func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 
 // A deck the person has edited since the caller read it is left alone.
 func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	at, err := s.presets.Point(
@@ -248,6 +258,7 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 
 // The fingerprint a write answers with is the one the next write is held to.
 func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	at, err := s.presets.Point(
@@ -273,6 +284,7 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 // identity, the keys the application does not own, the comments beside them,
 // the block's own indentation and the order of the entries.
 func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
+	t.Parallel()
 	deck := "---\n" +
 		"id: 01J8F3K2M9QRSTVWXYZ012\n" +
 		"type: deck\n" +
@@ -315,6 +327,7 @@ func TestPointingADeckWritesOneEntryAndNothingElse(t *testing.T) {
 // A `links:` block left with nothing in it is taken out with the entry, and the
 // note is read back as the deck it is.
 func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
+	t.Parallel()
 	s := opened(t, choosing)
 
 	if _, err := s.presets.Point(
@@ -337,6 +350,7 @@ func TestABlockLeftEmptyIsTakenOutWithTheEntry(t *testing.T) {
 
 // A block holding other entries keeps them when the preset entry goes.
 func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": choosing["Sanskrit.md"],
 		"Grammar.md":  choosing["Grammar.md"],
@@ -361,6 +375,7 @@ func TestTakingADeckOffItsPresetKeepsItsOtherLinks(t *testing.T) {
 // A deck that already names two presets is a problem against it. Choosing one
 // leaves it naming one, which is what settles the problem.
 func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md":     choosing["Sanskrit.md"],
 		"presets/Slow.md": choosing["presets/Slow.md"],
@@ -389,6 +404,7 @@ func TestADeckNamingTwoPresetsIsLeftNamingOne(t *testing.T) {
 // preset is answered by asking for its backlinks. A deck that named its preset
 // by identifier is answered the same way after it is moved.
 func TestWhatPointsAtAPresetIsAnsweredAfterAChoice(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md":     "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\ntype: preset\ngoal: minutes_a_day\n---\n\n# Sanskrit\n",
 		"presets/Slow.md": choosing["presets/Slow.md"],

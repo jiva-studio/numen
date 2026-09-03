@@ -15,6 +15,7 @@ import (
 // What a person answered on a day is counted from the vault's own answers, and
 // the days are named for the day they began on.
 func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
@@ -52,6 +53,7 @@ func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 // A vault nobody has answered has no days and no streak, which is an answer and
 // not a failure.
 func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
@@ -68,6 +70,7 @@ func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 // what a schedule cannot do, because where an answer leaves a card depends on
 // every answer before it.
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -106,6 +109,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 // A run that grew is counted afresh, so a sitting's own answers are in the
 // counting as they are written.
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
@@ -138,6 +142,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 // that met a conflict leaves a second copy of a run beside the first, and the
 // day holds what the person answered.
 func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -205,6 +210,7 @@ func spaces(n int) []byte {
 // What is still to come is counted by the day it falls on, so a person can see
 // the week ahead of them as well as the year behind.
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -234,6 +240,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 // A card nobody has answered is not still to come: what a person owes now is
 // what the front door counts, and this says what is after it.
 func TestACardNobodyAnsweredIsNotStillToCome(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
@@ -293,6 +300,7 @@ func claiming(t *testing.T, s vaulted, version int, days map[string]history.Tall
 // read: what it holds is not what this build would have written, and the
 // answers are there to be counted again.
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -316,6 +324,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 // The same cache under the shape this build writes is believed, which is what
 // says the shape is what the reading turns on and not the file's name.
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -336,6 +345,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 // A build that keeps nothing counts the whole log at every launch, and says the
 // same as one that keeps it.
 func TestAVaultIsCountedWithNothingKept(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -358,6 +368,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 // scheduler behind it says what was answered and nothing about what is coming,
 // rather than refusing to count at all.
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
@@ -381,6 +392,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 
 // A card owed today is not still to come either, however it was answered.
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 

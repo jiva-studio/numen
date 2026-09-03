@@ -17,6 +17,7 @@ import (
 // A client that named none of goal, learned or counts sends a value that is not
 // one of them, and a day the goal names has to be there for the goal to read.
 func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct {
 		what   string
 		of     func(history.Preset) history.Preset

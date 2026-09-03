@@ -7,6 +7,7 @@ import (
 // The history screen opens each run file once. The days behind and the days
 // ahead are two questions of one reading.
 func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
@@ -28,6 +29,7 @@ func TestTheHistoryOpensEachRunFileOnce(t *testing.T) {
 // What the screen shows is what it showed: the days, the streak, the answers,
 // what is still to come and how much came back.
 func TestTheHistoryShowsWhatItShowed(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 

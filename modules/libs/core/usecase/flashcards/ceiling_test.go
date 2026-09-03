@@ -15,6 +15,7 @@ import (
 // twenty minutes gets twenty minutes, whether one deck names the preset or
 // five do.
 func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
+	t.Parallel()
 	for _, decks := range []int{1, 2, 5} {
 		files := map[string]string{
 			"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
@@ -67,6 +68,7 @@ func (s vaulted) minutes(t *testing.T, day history.Day, now time.Time) time.Dura
 
 // And the same ceiling holds when a person sits to one deck at a time.
 func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
+	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 			"new_a_day: 9999\nreviews_a_day: 9999\n---\n\n# Sanskrit\n",
@@ -114,6 +116,7 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 // A preset is the scope of its own budget, and entering one of its decks does
 // not open a budget of that deck's own.
 func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
+	t.Parallel()
 	files := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\ngoal: retention\nnew_a_day: 30\n" +
 			"reviews_a_day: 30\nretention: 0.9\n---\n\n# Sanskrit\n",

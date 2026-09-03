@@ -192,6 +192,7 @@ var today = history.Day{Starts: history.DayStarts}
 // A card stands once for each face of the stencil that cuts it, because each
 // face asks a different thing.
 func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	stood, err := s.standings.Execute(t.Context(), s.vault)
@@ -220,6 +221,7 @@ func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 // The face is laid out with this card's values, so what a person is shown is
 // their own writing.
 func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	stood, err := s.standings.Execute(t.Context(), s.vault)
@@ -253,6 +255,7 @@ var handwritten = map[string]string{
 // A card with no mark has nothing an answer could be recorded against, so
 // nothing stands for it. Reading what a vault holds writes nothing.
 func TestACardWithNoMarkStandsForNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 	before := read(t, s.vault, "decks/Own.md")
 
@@ -285,6 +288,7 @@ var mixed = map[string]string{
 // writing, and a mark minted over one a card already carries would orphan every
 // answer that card has ever been given.
 func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
+	t.Parallel()
 	s := opened(t, mixed)
 	before := read(t, s.vault, "decks/Mine.md")
 
@@ -352,6 +356,7 @@ func touched(t *testing.T, v domain.Vault, path string) time.Time {
 // A person sitting down to a vault has its cards given marks, and what stands
 // then is what they are asked.
 func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 
 	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
@@ -372,6 +377,7 @@ func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
 // Counting what a vault owes writes nothing to it: a person opening the window
 // is shown every vault they hold, and none of them is written to for that.
 func TestCountingAVaultWritesNothingToIt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, handwritten)
 	before := read(t, s.vault, "decks/Own.md")
 
@@ -386,6 +392,7 @@ func TestCountingAVaultWritesNothingToIt(t *testing.T) {
 // A card whose wikilink reaches a note that is not a stencil is a card no face
 // shows. It is left out, and the rest of the vault is reviewed.
 func TestACardWithNoStencilIsLeftOut(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{
 		"Term.md":    vault["Term.md"],
 		"Weather.md": "# Weather\n\nAn ordinary note.\n",
@@ -407,6 +414,7 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 // A face missing a front or a back lays out nothing, so nothing is asked through
 // it. The stencil's other faces are asked as usual.
 func TestAFaceMissingASideIsNotAsked(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{
 		"Half.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n" +
@@ -429,6 +437,7 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 // A card that leaves a field empty is asked like any other: the placeholder lays
 // out as nothing, and the card is still somebody's card.
 func TestACardLeavingAFieldEmptyIsStillAsked(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{
 		"Term.md": vault["Term.md"],
 		"decks/Empty.md": "---\ntype: deck\n---\n" +
@@ -451,6 +460,7 @@ func TestACardLeavingAFieldEmptyIsStillAsked(t *testing.T) {
 // A vault nobody has answered owes everything it holds, as cards nobody has
 // reached.
 func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	owing, err := s.owed(today).Execute(t.Context(), s.vault)
@@ -469,6 +479,7 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 // is owed is the day the schedule falls on, and a card answered easily is not
 // that day's.
 func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
@@ -502,6 +513,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 // The day the schedule falls on is the day it is owed, whatever hour it falls
 // at: a card put days away comes back when those days are up.
 func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -542,6 +554,7 @@ func TestACardComesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 // An answer is written to the vault's own folder, and it is what the next launch
 // reads: the card is no longer one nobody has reached.
 func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	when := time.Now()
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -569,6 +582,7 @@ func TestAnAnswerIsWrittenDownAndReadBack(t *testing.T) {
 // An answer taken back is not counted, and the card is one nobody has reached
 // again.
 func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	when := time.Now()
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -594,6 +608,7 @@ func TestAnAnswerTakenBackLeavesTheCardUnanswered(t *testing.T) {
 // A rating outside the four is refused: nothing here guesses what a person meant
 // to say about their own recall.
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	record := s.run(t, time.Now())
 
@@ -607,6 +622,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 // A session puts the cards owed and answered before in front of the ones nobody
 // has reached, and the one waiting longest at the very front.
 func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	long := time.Now().Add(-30 * 24 * time.Hour)
 	recent := time.Now().Add(-3 * 24 * time.Hour)
@@ -647,6 +663,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 
 // A session over one deck asks that deck's cards and no others.
 func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Deck("decks/Words.md"))
@@ -663,6 +680,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 // stands in for reading the answers, so a cache that answered differently would
 // be a card sent away on a day nobody worked out.
 func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	when := time.Now().Add(-72 * time.Hour)
@@ -702,6 +720,7 @@ func TestACacheReadBackSaysWhatTheAnswersSay(t *testing.T) {
 // A cache of a shape this build does not know is thrown away, because what it
 // means is what the build that wrote it meant.
 func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}
@@ -735,6 +754,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 // What was worked out is kept between launches, and a run the cache has not seen
 // is the whole history read again.
 func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	when := time.Now().Add(-24 * time.Hour)
@@ -768,6 +788,7 @@ func TestARunTheCacheHasNotSeenIsCountedIn(t *testing.T) {
 // answer was written is out of date the moment it is. A cache that went by the
 // names alone would call itself current and never count the rest of the file.
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	record := s.run(t, time.Now())
@@ -800,6 +821,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 // An answer taken back in the sitting it was given in is not counted, for the
 // same reason: the line is appended to a file already read.
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	record := s.run(t, time.Now())
@@ -827,6 +849,7 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 // A cache filled by another scheduler is thrown away and the answers are read
 // again, because the numbers one scheduler carries are its own.
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	invented := history.CardFace{Card: "nobodyhasit", Face: "Recognise"}

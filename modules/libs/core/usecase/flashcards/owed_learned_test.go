@@ -27,6 +27,7 @@ var learnedVault = map[string]string{
 // deck names counts by, and two decks on one preset are counted under the one
 // rule.
 func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
+	t.Parallel()
 	s := opened(t, learnedVault)
 
 	run := s.run(t, learnedHour)
@@ -64,6 +65,7 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 // A card nobody has answered is learned under neither rule, so a vault nobody
 // has sat down to stands at nothing learned.
 func TestADeckNobodyHasAnsweredStandsAtNothingLearned(t *testing.T) {
+	t.Parallel()
 	s := opened(t, learnedVault)
 
 	owing, err := s.owedAt(today, func() time.Time { return learnedHour }).
@@ -83,6 +85,7 @@ func TestADeckNobodyHasAnsweredStandsAtNothingLearned(t *testing.T) {
 // A deck holding no cards is counted for nothing: it has no card face to stand
 // learned.
 func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Recall.md":      preset("learned: retention\nretention: 0.9\n"),
@@ -106,6 +109,7 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 // How many of a deck's card faces nobody has begun is counted off the same
 // pass, so a deck every face of which is unbegun says so on its own row.
 func TestADecksUnbegunFacesAreCounted(t *testing.T) {
+	t.Parallel()
 	s := opened(t, learnedVault)
 
 	before, err := s.owedAt(today, func() time.Time { return learnedHour }).
