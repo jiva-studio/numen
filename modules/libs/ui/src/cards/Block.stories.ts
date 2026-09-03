@@ -5,13 +5,15 @@
  * What the face hands back is applied here, which is the stencil's part.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref, watch } from 'vue'
 import Block from './Block.vue'
 import type { Filled } from './deck'
 import { declared, type Half } from './order'
 import { faceBlocks, type FaceBlock, type Shown } from './stencil'
 import { sampled } from './fill'
+import { hovered, lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 interface Corpus {
   readonly face: Shown
@@ -143,14 +145,12 @@ const meta: Meta<Knobs> = {
         const fields = declared(held.value.fields)
         const laid = faceBlocks([face.value], fields, held.value.sample ?? sampled(fields))[0]
         if (!laid) throw new Error('a corpus holding no face')
-        return laid
+        return { ...laid, taken: held.value.taken ?? [] }
       })
 
       return {
         args,
         block,
-        fields: () => held.value.fields,
-        taken: () => held.value.taken ?? [],
         wrong: () => held.value.wrong ?? [],
         onRename: (name: string) => {
           face.value = { ...face.value, name }
@@ -164,8 +164,6 @@ const meta: Meta<Knobs> = {
       <div :style="{ width: args.width }">
         <Block
           :block="block"
-          :fields="fields()"
-          :taken="taken()"
           :wrong="wrong()"
           @rename="onRename"
           @write="onWrite"
@@ -192,6 +190,7 @@ const boxFor = (canvas: HTMLElement, half: Half): HTMLTextAreaElement => {
 
 const paneOf = (canvas: HTMLElement, pane: string): HTMLElement =>
   found(canvas, `[data-pane="${pane}"]`)
+
 
 /** The four parts of a face, in the order they are drawn. */
 const PANES = ['front-written', 'front-preview', 'back-written', 'back-preview'] as const
@@ -332,6 +331,21 @@ export const AStraySlot: Story = {
       found(canvasElement, '[data-pane="back-written"] .block__objects').textContent?.trim(),
     ).toBe('Not a field: Weight')
     expect(canvasElement.querySelector('header .block__objects')).toBeNull()
+
+    // It stands in the foot of the part, over what is written there: the box
+    // still fills the part, and a press meant for the box reaches it.
+    const pane = paneOf(canvasElement, 'front-written').getBoundingClientRect()
+    const box = boxFor(canvasElement, 'front').getBoundingClientRect()
+    expect(box.height).toBeCloseTo(pane.height, 0)
+
+    const layer = found(canvasElement, '[data-pane="front-written"] .block__amiss')
+    expect(getComputedStyle(layer).pointerEvents).toBe('none')
+
+    const said = found(canvasElement, '[data-pane="front-written"] .block__objects')
+    const over = said.getBoundingClientRect()
+    expect(over.bottom).toBeLessThanOrEqual(pane.bottom + 1)
+    expect(over.right).toBeLessThanOrEqual(pane.right + 1)
+    expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
   },
 }
 
@@ -410,8 +424,9 @@ export const FarTooManyFields: Story = {
 /**
  * What the vault found wrong with the face, and a name another face carries.
  *
- * What stands against the face is said under its name, in the strip, and what
- * is wrong with a name being typed is said in the same place, to the box.
+ * What stands against the face is said at the end of the strip, over the window
+ * under it, and what is wrong with a name being typed is said in the same
+ * place, to the box.
  */
 export const WhatIsWrongWithIt: Story = {
   args: { corpus: 'something wrong with it' },
@@ -420,11 +435,25 @@ export const WhatIsWrongWithIt: Story = {
     expect(said.textContent).toContain('this face has no back')
     expect(said.querySelectorAll('li')).toHaveLength(2)
 
-    // What is wrong stands under the strip's name and above the window.
-    const body = found(canvasElement, '.block__body')
-    expect(said.getBoundingClientRect().bottom).toBeLessThanOrEqual(
-      body.getBoundingClientRect().top + 1,
+    // The strip stands one row deep with all of it said, and the window begins
+    // where the strip ends: what is wrong hangs over the window and takes no
+    // room from it.
+    const bar = found(canvasElement, '.bar').getBoundingClientRect()
+    const head = found(canvasElement, '.block__head').getBoundingClientRect()
+    const body = found(canvasElement, '.block__body').getBoundingClientRect()
+    const over = said.getBoundingClientRect()
+    expect(bar.height).toBeLessThan(40)
+    expect(body.top).toBeCloseTo(bar.bottom, 0)
+    expect(over.top).toBeGreaterThanOrEqual(head.bottom - 1)
+    expect(over.bottom).toBeGreaterThan(body.top)
+
+    // It stays inside the block, and a press meant for the window reaches it.
+    const block = found(canvasElement, '[data-face-block]').getBoundingClientRect()
+    expect(over.right).toBeLessThanOrEqual(block.right + 1)
+    expect(getComputedStyle(found(canvasElement, 'header .block__amiss')).pointerEvents).toBe(
+      'none',
     )
+    expect(getComputedStyle(said).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
 
     // A name another face carries cannot be used, and the box says so.
     const name = found(canvasElement, '.block__title') as HTMLInputElement
@@ -435,5 +464,35 @@ export const WhatIsWrongWithIt: Story = {
       expect(objects.textContent?.trim()).toBe('That name is taken')
       expect(name.getAttribute('aria-describedby')).toBe(objects.id)
     })
+  },
+}
+
+/**
+ * On the dark set of tokens, where a field's chip takes its hover from the
+ * block's own ink mixed into the chip's ground.
+ *
+ * The mix is one expression for both sets, so on the dark set it has to move
+ * the chip towards the ink, which is lighter there than the ground under it.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const chip = within(canvasElement).getByRole('button', { name: 'Insert: Height' })
+
+    // The ink the chip is read by stands above the ground it stands on, which
+    // is the way round the dark set is written.
+    const ink = lightness(getComputedStyle(chip).color)
+    const resting = lightness(getComputedStyle(chip).backgroundColor)
+    expect(ink).toBeGreaterThan(resting)
+
+    await hovered(chip)
+    await waitFor(() =>
+      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(resting + 2),
+    )
+
+    // The chip is still a chip under the hand: lighter than it was, and still
+    // darker than what is written on it.
+    expect(lightness(getComputedStyle(chip).backgroundColor)).toBeLessThan(ink)
   },
 }

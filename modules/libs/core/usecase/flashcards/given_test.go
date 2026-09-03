@@ -6,6 +6,7 @@ import (
 
 // A reading works its order out once, however many callers ask for it.
 func TestAReadingIsPutInOrderOnce(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 
 	held, err := l.logRead(t)

@@ -7,13 +7,10 @@
  * multiplier, and how far it goes is the application's to say.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import { Mode as Modes, Shelf, ThemeService } from '@numen/protocol'
+import { transport } from './transport'
 
-export const dressing = createClient(
-  ThemeService,
-  createConnectTransport({ baseUrl: window.location.origin }),
-)
+export const dressing = createClient(ThemeService, transport)
 
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'

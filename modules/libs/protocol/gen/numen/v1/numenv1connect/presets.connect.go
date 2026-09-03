@@ -50,6 +50,9 @@ const (
 	// PresetsServiceListPresetsProcedure is the fully-qualified name of the PresetsService's
 	// ListPresets RPC.
 	PresetsServiceListPresetsProcedure = "/numen.v1.PresetsService/ListPresets"
+	// PresetsServiceMakePresetProcedure is the fully-qualified name of the PresetsService's MakePreset
+	// RPC.
+	PresetsServiceMakePresetProcedure = "/numen.v1.PresetsService/MakePreset"
 	// PresetsServiceScheduleProcedure is the fully-qualified name of the PresetsService's Schedule RPC.
 	PresetsServiceScheduleProcedure = "/numen.v1.PresetsService/Schedule"
 	// PresetsServiceReadPresetProcedure is the fully-qualified name of the PresetsService's ReadPreset
@@ -73,6 +76,13 @@ type PresetsServiceClient interface {
 	// not in it: they are what schedules a deck naming no preset, and no note
 	// holds them.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
+	// MakePreset puts a preset naming none of its settings in the vault. The
+	// file says it is a preset from the moment it exists, so it is one to
+	// everything that reads the vault before a setting has been chosen.
+	//
+	// A key the file does not carry stands at the default, so the decks pointed
+	// at it are scheduled by the defaults until the person moves one.
+	MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error)
 	// Schedule puts a deck on a preset, by writing the entry of its `links:`
 	// block that carries `type: preset`. The entry keeps the role and the words
 	// the person wrote on it, and every other entry of the block is left as the
@@ -123,6 +133,12 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(presetsServiceMethods.ByName("ListPresets")),
 			connect.WithClientOptions(opts...),
 		),
+		makePreset: connect.NewClient[v1.MakePresetRequest, v1.MakePresetResponse](
+			httpClient,
+			baseURL+PresetsServiceMakePresetProcedure,
+			connect.WithSchema(presetsServiceMethods.ByName("MakePreset")),
+			connect.WithClientOptions(opts...),
+		),
 		schedule: connect.NewClient[v1.ScheduleRequest, v1.ScheduleResponse](
 			httpClient,
 			baseURL+PresetsServiceScheduleProcedure,
@@ -154,6 +170,7 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 type presetsServiceClient struct {
 	scheduling  *connect.Client[v1.SchedulingRequest, v1.SchedulingResponse]
 	listPresets *connect.Client[v1.ListPresetsRequest, v1.ListPresetsResponse]
+	makePreset  *connect.Client[v1.MakePresetRequest, v1.MakePresetResponse]
 	schedule    *connect.Client[v1.ScheduleRequest, v1.ScheduleResponse]
 	readPreset  *connect.Client[v1.ReadPresetRequest, v1.ReadPresetResponse]
 	writePreset *connect.Client[v1.WritePresetRequest, v1.WritePresetResponse]
@@ -168,6 +185,11 @@ func (c *presetsServiceClient) Scheduling(ctx context.Context, req *connect.Requ
 // ListPresets calls numen.v1.PresetsService.ListPresets.
 func (c *presetsServiceClient) ListPresets(ctx context.Context, req *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error) {
 	return c.listPresets.CallUnary(ctx, req)
+}
+
+// MakePreset calls numen.v1.PresetsService.MakePreset.
+func (c *presetsServiceClient) MakePreset(ctx context.Context, req *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error) {
+	return c.makePreset.CallUnary(ctx, req)
 }
 
 // Schedule calls numen.v1.PresetsService.Schedule.
@@ -201,6 +223,13 @@ type PresetsServiceHandler interface {
 	// not in it: they are what schedules a deck naming no preset, and no note
 	// holds them.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
+	// MakePreset puts a preset naming none of its settings in the vault. The
+	// file says it is a preset from the moment it exists, so it is one to
+	// everything that reads the vault before a setting has been chosen.
+	//
+	// A key the file does not carry stands at the default, so the decks pointed
+	// at it are scheduled by the defaults until the person moves one.
+	MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error)
 	// Schedule puts a deck on a preset, by writing the entry of its `links:`
 	// block that carries `type: preset`. The entry keeps the role and the words
 	// the person wrote on it, and every other entry of the block is left as the
@@ -247,6 +276,12 @@ func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.Handler
 		connect.WithSchema(presetsServiceMethods.ByName("ListPresets")),
 		connect.WithHandlerOptions(opts...),
 	)
+	presetsServiceMakePresetHandler := connect.NewUnaryHandler(
+		PresetsServiceMakePresetProcedure,
+		svc.MakePreset,
+		connect.WithSchema(presetsServiceMethods.ByName("MakePreset")),
+		connect.WithHandlerOptions(opts...),
+	)
 	presetsServiceScheduleHandler := connect.NewUnaryHandler(
 		PresetsServiceScheduleProcedure,
 		svc.Schedule,
@@ -277,6 +312,8 @@ func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.Handler
 			presetsServiceSchedulingHandler.ServeHTTP(w, r)
 		case PresetsServiceListPresetsProcedure:
 			presetsServiceListPresetsHandler.ServeHTTP(w, r)
+		case PresetsServiceMakePresetProcedure:
+			presetsServiceMakePresetHandler.ServeHTTP(w, r)
 		case PresetsServiceScheduleProcedure:
 			presetsServiceScheduleHandler.ServeHTTP(w, r)
 		case PresetsServiceReadPresetProcedure:
@@ -300,6 +337,10 @@ func (UnimplementedPresetsServiceHandler) Scheduling(context.Context, *connect.R
 
 func (UnimplementedPresetsServiceHandler) ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.ListPresets is not implemented"))
+}
+
+func (UnimplementedPresetsServiceHandler) MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.MakePreset is not implemented"))
 }
 
 func (UnimplementedPresetsServiceHandler) Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error) {

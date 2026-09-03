@@ -8,8 +8,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Deck from './Deck.vue'
-import { HEAD, type Banded, type Drawn, type Filled, type Wrong } from './deck'
-import type { Landing } from './order'
+import { blanks, HEAD, type Banded, type Drawn, type Wrong } from './deck'
+import { declared, type Landing } from './order'
 import type { Cut } from './stencil'
 
 interface Corpus {
@@ -343,8 +343,10 @@ const meta: Meta<Knobs> = {
         cuts,
         sections,
         wrong,
-        onAdd: (stencil: string, filled: readonly Filled[]) => {
+        onAdd: (stencil: string) => {
           const id = `made00000${cards.value.length}`
+          const cut = cuts.value.find((each) => each.name === stencil)
+          const filled = blanks(declared(cut?.fields ?? []))
           cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
         },
         onRemove: (id: string) => {

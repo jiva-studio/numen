@@ -48,6 +48,8 @@ const (
 	// VaultServiceNeighbourhoodProcedure is the fully-qualified name of the VaultService's
 	// Neighbourhood RPC.
 	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
+	// VaultServiceResolveProcedure is the fully-qualified name of the VaultService's Resolve RPC.
+	VaultServiceResolveProcedure = "/numen.v1.VaultService/Resolve"
 	// VaultServiceNamesProcedure is the fully-qualified name of the VaultService's Names RPC.
 	VaultServiceNamesProcedure = "/numen.v1.VaultService/Names"
 	// VaultServiceHeadingsProcedure is the fully-qualified name of the VaultService's Headings RPC.
@@ -95,6 +97,17 @@ const (
 	// VaultServiceChooseReviewingProcedure is the fully-qualified name of the VaultService's
 	// ChooseReviewing RPC.
 	VaultServiceChooseReviewingProcedure = "/numen.v1.VaultService/ChooseReviewing"
+	// VaultServiceSettingsProcedure is the fully-qualified name of the VaultService's Settings RPC.
+	VaultServiceSettingsProcedure = "/numen.v1.VaultService/Settings"
+	// VaultServiceChooseSettingsProcedure is the fully-qualified name of the VaultService's
+	// ChooseSettings RPC.
+	VaultServiceChooseSettingsProcedure = "/numen.v1.VaultService/ChooseSettings"
+	// VaultServiceSettingsFileProcedure is the fully-qualified name of the VaultService's SettingsFile
+	// RPC.
+	VaultServiceSettingsFileProcedure = "/numen.v1.VaultService/SettingsFile"
+	// VaultServiceWriteSettingsFileProcedure is the fully-qualified name of the VaultService's
+	// WriteSettingsFile RPC.
+	VaultServiceWriteSettingsFileProcedure = "/numen.v1.VaultService/WriteSettingsFile"
 	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
@@ -114,6 +127,8 @@ type VaultServiceClient interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Resolve answers where addresses written in one note land.
+	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
 	// Names is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
 	// the last word matches on its prefix.
@@ -210,6 +225,19 @@ type VaultServiceClient interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
+	// Settings is every setting of the file a person configures this
+	// installation in, and the models the settings that name one can be set to.
+	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
+	// ChooseSettings writes settings into that file. The file is patched as an
+	// object, so every key a person typed stays where it was, and a file the
+	// settings could not be read out of again is not written at all.
+	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
+	// SettingsFile is that file as its person wrote it, byte for byte.
+	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
+	// WriteSettingsFile replaces that file whole, with the bytes as they were
+	// typed. A file the settings cannot be read out of is refused and the file is
+	// left as it was; what is said names where in the file the trouble is.
+	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -253,6 +281,12 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+VaultServiceNeighbourhoodProcedure,
 			connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
+			connect.WithClientOptions(opts...),
+		),
+		resolve: connect.NewClient[v1.ResolveRequest, v1.ResolveResponse](
+			httpClient,
+			baseURL+VaultServiceResolveProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Resolve")),
 			connect.WithClientOptions(opts...),
 		),
 		names: connect.NewClient[v1.NamesRequest, v1.NamesResponse](
@@ -387,6 +421,30 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
 			connect.WithClientOptions(opts...),
 		),
+		settings: connect.NewClient[v1.SettingsRequest, v1.SettingsResponse](
+			httpClient,
+			baseURL+VaultServiceSettingsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("Settings")),
+			connect.WithClientOptions(opts...),
+		),
+		chooseSettings: connect.NewClient[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse](
+			httpClient,
+			baseURL+VaultServiceChooseSettingsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("ChooseSettings")),
+			connect.WithClientOptions(opts...),
+		),
+		settingsFile: connect.NewClient[v1.SettingsFileRequest, v1.SettingsFileResponse](
+			httpClient,
+			baseURL+VaultServiceSettingsFileProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("SettingsFile")),
+			connect.WithClientOptions(opts...),
+		),
+		writeSettingsFile: connect.NewClient[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse](
+			httpClient,
+			baseURL+VaultServiceWriteSettingsFileProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("WriteSettingsFile")),
+			connect.WithClientOptions(opts...),
+		),
 		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
 			httpClient,
 			baseURL+VaultServiceRemoveProcedure,
@@ -416,35 +474,40 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // vaultServiceClient implements VaultServiceClient.
 type vaultServiceClient struct {
-	state           *connect.Client[v1.StateRequest, v1.StateResponse]
-	opening         *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
-	neighbourhood   *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
-	names           *connect.Client[v1.NamesRequest, v1.NamesResponse]
-	headings        *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
-	standing        *connect.Client[v1.StandingRequest, v1.StandingResponse]
-	search          *connect.Client[v1.SearchRequest, v1.SearchResponse]
-	changes         *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
-	focus           *connect.Client[v1.FocusRequest, v1.FocusResponse]
-	attending       *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
-	editing         *connect.Client[v1.EditingRequest, v1.EditingResponse]
-	tasks           *connect.Client[v1.TasksRequest, v1.TasksResponse]
-	list            *connect.Client[v1.ListRequest, v1.ListResponse]
-	read            *connect.Client[v1.ReadRequest, v1.ReadResponse]
-	write           *connect.Client[v1.WriteRequest, v1.WriteResponse]
-	create          *connect.Client[v1.CreateRequest, v1.CreateResponse]
-	join            *connect.Client[v1.JoinRequest, v1.JoinResponse]
-	rename          *connect.Client[v1.RenameRequest, v1.RenameResponse]
-	move            *connect.Client[v1.MoveRequest, v1.MoveResponse]
-	syncing         *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
-	chooseSyncing   *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
-	hanging         *connect.Client[v1.HangingRequest, v1.HangingResponse]
-	chooseHanging   *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
-	reviewing       *connect.Client[v1.ReviewingRequest, v1.ReviewingResponse]
-	chooseReviewing *connect.Client[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse]
-	remove          *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
-	makeFolder      *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
-	quitting        *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
-	flushed         *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
+	state             *connect.Client[v1.StateRequest, v1.StateResponse]
+	opening           *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
+	neighbourhood     *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
+	resolve           *connect.Client[v1.ResolveRequest, v1.ResolveResponse]
+	names             *connect.Client[v1.NamesRequest, v1.NamesResponse]
+	headings          *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
+	standing          *connect.Client[v1.StandingRequest, v1.StandingResponse]
+	search            *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	changes           *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
+	focus             *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	attending         *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
+	editing           *connect.Client[v1.EditingRequest, v1.EditingResponse]
+	tasks             *connect.Client[v1.TasksRequest, v1.TasksResponse]
+	list              *connect.Client[v1.ListRequest, v1.ListResponse]
+	read              *connect.Client[v1.ReadRequest, v1.ReadResponse]
+	write             *connect.Client[v1.WriteRequest, v1.WriteResponse]
+	create            *connect.Client[v1.CreateRequest, v1.CreateResponse]
+	join              *connect.Client[v1.JoinRequest, v1.JoinResponse]
+	rename            *connect.Client[v1.RenameRequest, v1.RenameResponse]
+	move              *connect.Client[v1.MoveRequest, v1.MoveResponse]
+	syncing           *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
+	chooseSyncing     *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
+	hanging           *connect.Client[v1.HangingRequest, v1.HangingResponse]
+	chooseHanging     *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
+	reviewing         *connect.Client[v1.ReviewingRequest, v1.ReviewingResponse]
+	chooseReviewing   *connect.Client[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse]
+	settings          *connect.Client[v1.SettingsRequest, v1.SettingsResponse]
+	chooseSettings    *connect.Client[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse]
+	settingsFile      *connect.Client[v1.SettingsFileRequest, v1.SettingsFileResponse]
+	writeSettingsFile *connect.Client[v1.WriteSettingsFileRequest, v1.WriteSettingsFileResponse]
+	remove            *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
+	makeFolder        *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
+	quitting          *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
+	flushed           *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -460,6 +523,11 @@ func (c *vaultServiceClient) Opening(ctx context.Context, req *connect.Request[v
 // Neighbourhood calls numen.v1.VaultService.Neighbourhood.
 func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return c.neighbourhood.CallUnary(ctx, req)
+}
+
+// Resolve calls numen.v1.VaultService.Resolve.
+func (c *vaultServiceClient) Resolve(ctx context.Context, req *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	return c.resolve.CallUnary(ctx, req)
 }
 
 // Names calls numen.v1.VaultService.Names.
@@ -572,6 +640,26 @@ func (c *vaultServiceClient) ChooseReviewing(ctx context.Context, req *connect.R
 	return c.chooseReviewing.CallUnary(ctx, req)
 }
 
+// Settings calls numen.v1.VaultService.Settings.
+func (c *vaultServiceClient) Settings(ctx context.Context, req *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
+	return c.settings.CallUnary(ctx, req)
+}
+
+// ChooseSettings calls numen.v1.VaultService.ChooseSettings.
+func (c *vaultServiceClient) ChooseSettings(ctx context.Context, req *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
+	return c.chooseSettings.CallUnary(ctx, req)
+}
+
+// SettingsFile calls numen.v1.VaultService.SettingsFile.
+func (c *vaultServiceClient) SettingsFile(ctx context.Context, req *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error) {
+	return c.settingsFile.CallUnary(ctx, req)
+}
+
+// WriteSettingsFile calls numen.v1.VaultService.WriteSettingsFile.
+func (c *vaultServiceClient) WriteSettingsFile(ctx context.Context, req *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {
+	return c.writeSettingsFile.CallUnary(ctx, req)
+}
+
 // Remove calls numen.v1.VaultService.Remove.
 func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
 	return c.remove.CallUnary(ctx, req)
@@ -601,6 +689,8 @@ type VaultServiceHandler interface {
 	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
 	// Neighbourhood is one note and everything joined to it.
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
+	// Resolve answers where addresses written in one note land.
+	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
 	// Names is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
 	// the last word matches on its prefix.
@@ -697,6 +787,19 @@ type VaultServiceHandler interface {
 	// installation in. The file is patched as an object, so every key a person
 	// typed stays where it was.
 	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
+	// Settings is every setting of the file a person configures this
+	// installation in, and the models the settings that name one can be set to.
+	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
+	// ChooseSettings writes settings into that file. The file is patched as an
+	// object, so every key a person typed stays where it was, and a file the
+	// settings could not be read out of again is not written at all.
+	ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error)
+	// SettingsFile is that file as its person wrote it, byte for byte.
+	SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error)
+	// WriteSettingsFile replaces that file whole, with the bytes as they were
+	// typed. A file the settings cannot be read out of is refused and the file is
+	// left as it was; what is said names where in the file the trouble is.
+	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
@@ -736,6 +839,12 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		VaultServiceNeighbourhoodProcedure,
 		svc.Neighbourhood,
 		connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceResolveHandler := connect.NewUnaryHandler(
+		VaultServiceResolveProcedure,
+		svc.Resolve,
+		connect.WithSchema(vaultServiceMethods.ByName("Resolve")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceNamesHandler := connect.NewUnaryHandler(
@@ -870,6 +979,30 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
 		connect.WithHandlerOptions(opts...),
 	)
+	vaultServiceSettingsHandler := connect.NewUnaryHandler(
+		VaultServiceSettingsProcedure,
+		svc.Settings,
+		connect.WithSchema(vaultServiceMethods.ByName("Settings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceChooseSettingsHandler := connect.NewUnaryHandler(
+		VaultServiceChooseSettingsProcedure,
+		svc.ChooseSettings,
+		connect.WithSchema(vaultServiceMethods.ByName("ChooseSettings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceSettingsFileHandler := connect.NewUnaryHandler(
+		VaultServiceSettingsFileProcedure,
+		svc.SettingsFile,
+		connect.WithSchema(vaultServiceMethods.ByName("SettingsFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	vaultServiceWriteSettingsFileHandler := connect.NewUnaryHandler(
+		VaultServiceWriteSettingsFileProcedure,
+		svc.WriteSettingsFile,
+		connect.WithSchema(vaultServiceMethods.ByName("WriteSettingsFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	vaultServiceRemoveHandler := connect.NewUnaryHandler(
 		VaultServiceRemoveProcedure,
 		svc.Remove,
@@ -902,6 +1035,8 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceOpeningHandler.ServeHTTP(w, r)
 		case VaultServiceNeighbourhoodProcedure:
 			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
+		case VaultServiceResolveProcedure:
+			vaultServiceResolveHandler.ServeHTTP(w, r)
 		case VaultServiceNamesProcedure:
 			vaultServiceNamesHandler.ServeHTTP(w, r)
 		case VaultServiceHeadingsProcedure:
@@ -946,6 +1081,14 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceReviewingHandler.ServeHTTP(w, r)
 		case VaultServiceChooseReviewingProcedure:
 			vaultServiceChooseReviewingHandler.ServeHTTP(w, r)
+		case VaultServiceSettingsProcedure:
+			vaultServiceSettingsHandler.ServeHTTP(w, r)
+		case VaultServiceChooseSettingsProcedure:
+			vaultServiceChooseSettingsHandler.ServeHTTP(w, r)
+		case VaultServiceSettingsFileProcedure:
+			vaultServiceSettingsFileHandler.ServeHTTP(w, r)
+		case VaultServiceWriteSettingsFileProcedure:
+			vaultServiceWriteSettingsFileHandler.ServeHTTP(w, r)
 		case VaultServiceRemoveProcedure:
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
@@ -973,6 +1116,10 @@ func (UnimplementedVaultServiceHandler) Opening(context.Context, *connect.Reques
 
 func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Neighbourhood is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Resolve is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
@@ -1061,6 +1208,22 @@ func (UnimplementedVaultServiceHandler) Reviewing(context.Context, *connect.Requ
 
 func (UnimplementedVaultServiceHandler) ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseReviewing is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Settings is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) ChooseSettings(context.Context, *connect.Request[v1.ChooseSettingsRequest]) (*connect.Response[v1.ChooseSettingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseSettings is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) SettingsFile(context.Context, *connect.Request[v1.SettingsFileRequest]) (*connect.Response[v1.SettingsFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.SettingsFile is not implemented"))
+}
+
+func (UnimplementedVaultServiceHandler) WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WriteSettingsFile is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {

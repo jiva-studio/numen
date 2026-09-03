@@ -94,7 +94,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 // nobody recorded as a link is answered as a link is.
 func (q *Queries) Resolve(
 	ctx context.Context, vaultID, from string, written []string,
-) (map[string]string, error) {
+) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -104,18 +104,18 @@ func (q *Queries) Resolve(
 	}
 
 	asked := make(map[string]bool, len(written))
-	out := make(map[string]string, len(written))
+	out := make(map[string]domain.ResolvedLink, len(written))
 	for _, raw := range written {
 		if asked[raw] {
 			continue
 		}
 		asked[raw] = true
-		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}}
+		one := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
 		if err := q.resolve(ctx, vault, vaultID, from, &one); err != nil {
 			return nil, err
 		}
 		if one.To != "" {
-			out[raw] = one.To
+			out[raw] = one
 		}
 	}
 	return out, nil
@@ -157,11 +157,8 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string
 func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]string, error) {
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
-	withExt := name
-	if path.Ext(withExt) == "" {
-		withExt += ".md"
-	}
-	base := domain.Basename(name)
+	withExt := name + domain.NoteExtension
+	base := domain.LinkName(name)
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
 		vault, name, vault, withExt, vault, base)
@@ -190,20 +187,23 @@ func pick(from, name string, candidates []string) (chosen string, ambiguous bool
 		return "", false
 	}
 
-	wanted := name
-	if path.Ext(wanted) == "" {
-		wanted += ".md"
-	}
-	for _, c := range candidates {
-		if strings.EqualFold(c, wanted) {
-			return c, false
+	// A name is written with an extension or without one, and both spellings
+	// name the same file.
+	wanted := []string{name, name + domain.NoteExtension}
+	for _, w := range wanted {
+		for _, c := range candidates {
+			if strings.EqualFold(c, w) {
+				return c, false
+			}
 		}
 	}
 
-	relative := path.Join(path.Dir(from), wanted)
-	for _, c := range candidates {
-		if strings.EqualFold(c, relative) {
-			return c, false
+	for _, w := range wanted {
+		relative := path.Join(path.Dir(from), w)
+		for _, c := range candidates {
+			if strings.EqualFold(c, relative) {
+				return c, false
+			}
 		}
 	}
 

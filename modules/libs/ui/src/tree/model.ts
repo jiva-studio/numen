@@ -6,7 +6,7 @@
  * at.
  */
 
-import type { Point } from '../plex/model'
+import type { Point } from '../lib/geometry'
 
 /** A row's identity. What it stands for is the caller's to decide. */
 export type RowId = string
@@ -21,6 +21,17 @@ export interface Row {
   readonly holds: boolean
   /** The rows it holds. A row that holds may hold none yet. */
   readonly rows?: readonly Row[]
+}
+
+/**
+ * An attribute rows are marked with, for something outside the tree to find
+ * them by. The tree writes the name and the value it is given and reads
+ * neither.
+ */
+export interface Marking {
+  readonly attribute: string
+  /** What the attribute says on a row, and nothing for a row left unmarked. */
+  readonly valueFor: (row: RowId | null) => string | null
 }
 
 /** A row in draw order, with everything placing it needs. */

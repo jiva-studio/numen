@@ -1,11 +1,21 @@
 /**
- * What the editor is painted in.
+ * What the editor is painted in. Every colour is a token, and the `--editor-`
+ * names are this file's own.
  *
- * Every colour is a token, so a theme reaches marked-up text as it reaches
- * everything else. The `--editor-` names are this file's own, and each stands
- * for the token it is given.
+ * Three of them are left to whoever puts the editor on the screen, set on the
+ * element the editor is drawn in: `--editor-measure`, how wide the column of
+ * words may be, `--editor-lead`, the room above the first line, and
+ * `--editor-margin`, the room either side of the column and its gutter.
  */
 import { EditorView } from '@codemirror/view'
+
+/**
+ * A whole document of code, set in the face the marks inside prose are set in.
+ * The family is the one this file names once.
+ */
+export const monospaced = EditorView.theme({
+  '&': { fontFamily: 'var(--editor-mono)' },
+})
 
 export const theme = EditorView.theme({
   '&': {
@@ -41,14 +51,23 @@ export const theme = EditorView.theme({
     height: '100%',
   },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'inherit', lineHeight: 'inherit' },
+  /* The words stand in the middle of whatever room there is, which is where a
+     measure narrower than the room puts them. */
+  '.cm-scroller': {
+    fontFamily: 'inherit',
+    lineHeight: 'inherit',
+    justifyContent: 'center',
+    paddingInline: 'var(--editor-margin, 0)',
+  },
   /* The prose opens close to the top of its box and keeps the gutter's room
      below it, so the last line can be brought clear of the edge. */
   '.cm-content': {
     caretColor: 'var(--numen-node-fg)',
-    paddingTop: 'var(--editor-room)',
+    paddingTop: 'var(--editor-lead, var(--editor-room))',
     paddingBottom: 'var(--numen-gutter)',
+    maxWidth: 'var(--editor-measure, none)',
   },
+  '.cm-gutters': { maxWidth: 'var(--editor-measure, none)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-node-fg)' },
   '.cm-line': { padding: '0 var(--numen-gutter)' },
   '.cm-placeholder': { color: 'var(--numen-edge-label)' },

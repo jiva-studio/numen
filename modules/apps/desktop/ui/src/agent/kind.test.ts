@@ -5,7 +5,7 @@
  * opens the source it is in.
  */
 import { describe, expect, it } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import type { Conversation, Turn } from '@numen/ui'
 import { agentKind, talking, type Held } from './kind'
 import type { Run } from '../core'
@@ -16,8 +16,9 @@ import { AGENT } from '../workspace'
 const talked = (places: Record<string, { path: string; start: number; length: number }> = {}) => {
   const asked: [string, string][] = []
   const stopped: string[] = []
+  const said = ref<Turn[]>([])
   const talk: Conversation = {
-    turns: ref<Turn[]>([]),
+    turns: said,
     working: ref(false),
     ask: async (text, focus) => {
       asked.push([text, focus])
@@ -26,29 +27,43 @@ const talked = (places: Record<string, { path: string; start: number; length: nu
     stop: () => stopped.push('stop'),
     finish: () => stopped.push('finish'),
   }
-  return { talk, asked, stopped }
+  return { talk, said, asked, stopped }
 }
 
-/** An agent tab with the window it is drawn in written down. */
-const tab = (places: Record<string, { path: string; start: number; length: number }> = {}) => {
+/**
+ * An agent tab with the window it is drawn in written down. The vault answers
+ * with the notes it was handed, and reaches nothing for every other address.
+ */
+const tab = (
+  places: Record<string, { path: string; start: number; length: number }> = {},
+  notes: Record<string, string> = {},
+) => {
   const talk = talked(places)
   const opened: [string, readonly Run[]][] = []
+  const beside: string[] = []
   const held = talking(talk.talk, {
     opens: (path, ...runs) => opened.push([path, runs]),
+    beside: (path) => beside.push(path),
+    resolve: async (written) =>
+      new Map(written.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { held, opened, ...talk }
+  return { held, opened, beside, ...talk }
 }
 
 /** A window of agent tabs, with a talk of its own for each. */
-const tabs = () => {
+const tabs = (about = { path: '', title: '' }) => {
   const talks: ReturnType<typeof tab>[] = []
   const held = windowing()
-  const agents = agentKind(held.host, () => {
-    const one = tab()
-    talks.push(one)
-    return one.held
-  })
+  const agents = agentKind(
+    held.host,
+    () => {
+      const one = tab()
+      talks.push(one)
+      return one.held
+    },
+    () => about,
+  )
   held.declares([agents.kind])
 
   /** An agent tab of this window, and what it holds. */
@@ -141,6 +156,40 @@ describe('a link inside an answer', () => {
     expect(press.was()).toBe(false)
     expect(one.opened).toEqual([])
   })
+
+  it('opens the note it names beside what the person is looking at', async () => {
+    const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
+    one.said.value = [turn('said', 'It sits under [[Thermodynamics]].')]
+    await nextTick()
+    const press = pressed()
+
+    one.held.followed(one.said.value[0]!, 'name://Thermodynamics', press.press)
+
+    expect(one.beside).toEqual(['physics/Thermodynamics.md'])
+  })
+
+  it('opens nothing, and goes nowhere else, where no note answers to it', async () => {
+    const one = tab()
+    one.said.value = [turn('said', 'It sits under [[Nowhere]].')]
+    await nextTick()
+    const press = pressed()
+
+    one.held.followed(one.said.value[0]!, 'name://Nowhere', press.press)
+
+    expect(one.beside).toEqual([])
+  })
+})
+
+describe('a turn of an answer', () => {
+  it('says which of the notes it names reach nothing', async () => {
+    const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
+    one.said.value = [turn('said', 'Under [[Thermodynamics]], beside [[Nowhere]].')]
+
+    await nextTick()
+    await nextTick()
+
+    expect(one.held.turns.value[0]?.unresolved).toEqual(['name://Nowhere'])
+  })
 })
 
 describe('something to ask about a note', () => {
@@ -195,7 +244,7 @@ describe('what an agent tab is called', () => {
   it('is the first thing asked of it, shortened', async () => {
     const window = tabs()
     const one = await window.holds()
-    one.held.turns.value = [
+    window.talks[0]!.said.value = [
       { id: 'a', voice: 'asked', text: 'what is this whole vault about', state: 'done' },
     ] as unknown as Turn[]
 
@@ -207,5 +256,17 @@ describe('what an agent tab is called', () => {
     const one = await window.holds()
 
     expect(window.kind.called(one.held)).toBe('Agent')
+  })
+})
+
+describe('what a command asked over an agent tab is over', () => {
+  it('is the note the talk is about, which is no note of the tab itself', async () => {
+    const window = tabs({ path: 'physics/Ontology.md', title: 'Ontology' })
+    const one = await window.holds()
+
+    expect(window.kind.at!(one.held)).toStrictEqual({
+      path: 'physics/Ontology.md',
+      title: 'Ontology',
+    })
   })
 })

@@ -15,7 +15,9 @@ import { expect, within } from 'storybook/test'
 import KeyCap from './KeyCap.vue'
 import { MARKS } from './marks'
 import type { PaletteKeys, PaletteMark } from './model'
+import { lightness } from '@/fixtures/colour'
 import { markInk } from '@/fixtures/ink'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
   title: 'Generic/KeyCap',
@@ -101,6 +103,30 @@ export const OneHeight: Story = {
   },
 }
 
+/** Every key on the dark set of tokens, where the cap's ground is a blend. */
+export const Dark: Story = {
+  globals: DARK,
+  args: { keys: { marks: [], letter: 'W' } },
+  render: ({ keys }) => row(EVERY.map((mark) => ({ marks: [mark], letter: keys.letter }))),
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const caps = Array.from(canvasElement.querySelectorAll('.cap'))
+    await expect(caps).toHaveLength(EVERY.length)
+
+    // A cap keeps a ground of its own, told from the surface the row of them
+    // stands on, and is read in ink standing above that ground — which is the
+    // way round the dark set is written.
+    const behind = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
+    const surface = lightness(behind)
+    for (const cap of caps) {
+      const drawn = getComputedStyle(cap)
+      const ground = lightness(drawn.backgroundColor, behind)
+      await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
+      await expect(lightness(drawn.color, drawn.backgroundColor)).toBeGreaterThan(ground + 24)
+    }
+  },
+}
+
 /** What a reader who is listening rather than looking is told. */
 export const Announced: Story = {
   args: { keys: { marks: ['control', 'shift'], letter: 'W' } },
@@ -108,8 +134,12 @@ export const Announced: Story = {
     // Everything drawn is hidden from a reader who is listening, so the
     // keystroke is heard once and in the order it is held.
     await expect(within(canvasElement).getByText('Control Shift W')).toHaveClass('sr-only')
-    for (const drawn of canvasElement.querySelectorAll('.cap > :not(.sr-only)')) {
-      await expect(drawn).toHaveAttribute('aria-hidden', 'true')
+
+    // Two marks and the letter held with them.
+    const drawn = Array.from(canvasElement.querySelectorAll('.cap > :not(.sr-only)'))
+    await expect(drawn).toHaveLength(3)
+    for (const one of drawn) {
+      await expect(one).toHaveAttribute('aria-hidden', 'true')
     }
   },
 }

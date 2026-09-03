@@ -178,11 +178,24 @@ func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	}
 }
 
+// A note an answer speaks about is a place the person can go, and the brackets
+// are the form that takes.
+func TestHowANoteIsNamedInAnAnswerIsInTheInstructions(t *testing.T) {
+	session, _ := connected(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	said := session.InitializeResult().Instructions
+	for _, rule := range []string{"[[Harmonic oscillator]]", "[[note://<identifier>]]"} {
+		if !strings.Contains(said, rule) {
+			t.Errorf("the instructions say nothing about %q:\n%s", rule, said)
+		}
+	}
+}
+
 func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	session, _ := connected(t, nil)
 	exactly(t, serves(t, session), []string{
 		"note_search", "note_get", "note_read", "note_neighbourhood",
 		"note_create", "note_write", "note_edit", "note_rename", "note_move", "note_remove",
+		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
 		"card_stencils", "card_read", "card_add", "card_edit", "card_remove",
 		"card_section_add", "card_deck_create", "card_stencil_create", "card_rename_field",
@@ -569,6 +582,21 @@ func TestTwoNotesOfOneNameAreReported(t *testing.T) {
 	}](t, session, "vault_named", map[string]any{"name": "Entropy"})
 	if len(named.Paths) != 2 {
 		t.Errorf("want both notes, got %v", named.Paths)
+	}
+}
+
+// A dot in a name is part of the name, and the note is filed under all of it.
+func TestANoteWhoseNameCarriesDotsIsFoundByIt(t *testing.T) {
+	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
+	session, _ := connected(t, map[string]string{
+		"notes/" + lecture + ".md": "# " + lecture + "\n",
+	})
+
+	named := call[struct {
+		Paths []string `json:"paths"`
+	}](t, session, "vault_named", map[string]any{"name": lecture})
+	if len(named.Paths) != 1 || named.Paths[0] != "notes/"+lecture+".md" {
+		t.Errorf("got %v", named.Paths)
 	}
 }
 

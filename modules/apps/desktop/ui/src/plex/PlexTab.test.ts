@@ -114,14 +114,14 @@ describe('a menu asked for over a tab drawing no picture', () => {
     await view.get('.plex').trigger('contextmenu', { clientX: 12, clientY: 34 })
 
     expect(asked).toStrictEqual([
-      { node: null, at: { x: 12, y: 34 }, from: null, opening: 'pointer' },
+      { node: null, at: { x: 12, y: 34 }, opening: 'pointer' },
     ])
   })
 
   it('offers a note to be made', async () => {
     drawing(13)
     const { tab } = empty()
-    tab.menu.value = { node: null, at: { x: 0, y: 0 }, from: null, opening: 'pointer' }
+    tab.menu.value = { node: null, at: { x: 0, y: 0 }, opening: 'pointer' }
     const view = mount(PlexTab, { props: { held: tab }, attachTo: document.body })
 
     const items = document.body.querySelectorAll('[role="menuitem"]')

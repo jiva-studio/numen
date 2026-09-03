@@ -69,7 +69,10 @@ export interface CardWords {
   readonly cardStem: string
   /** What is said of a card holding no value at all. */
   readonly nothing: string
-  /** What is said of a card whose stencil the vault does not hold. */
+  /**
+   * What is said of a card cut by a stencil that was not handed in, and of a
+   * card that names none, which the strip says in place of a stencil's name.
+   */
   readonly unknown: (stencil: string | null) => string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
@@ -268,10 +271,12 @@ export function grid(
 
     // A value the stencil does not name is the person's and stays in the file,
     // and nothing here draws it or says a word about it. A card whose stencil
-    // the vault does not hold draws no value at all, and says which stencil it
-    // is waiting for.
+    // was not handed in draws no value at all, and says which stencil it is
+    // waiting for. A card naming no stencil waits for nothing, so everything it
+    // wrote stands as it was written.
+    const named = card.stencil !== null
     const counted = laid(card.filled, fields)
-      .filter((each) => each.declared)
+      .filter((each) => each.declared || !named)
       .map((each, place) => {
         const nth = told(each.field)
         return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }

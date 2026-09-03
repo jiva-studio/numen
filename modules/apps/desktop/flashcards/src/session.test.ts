@@ -226,7 +226,7 @@ describe('a sitting', () => {
 
   it('says nothing was opened when the vault could not be sat down to', async () => {
     const cards: Asking = {
-      start: () => Promise.reject(new Error('this vault has not been read yet')),
+      start: () => Promise.reject(new Error('this folder cannot be read as a vault')),
       answer: () => Promise.reject(new Error('no')),
       takeBack: () => Promise.reject(new Error('no')),
     }

@@ -3,14 +3,13 @@
  * A menu: a list of things that can be chosen, put where it was asked for.
  *
  * It is drawn at the end of the document, so nothing it stands inside can clip
- * it, and it is placed against the area it is drawn into rather than against
- * whatever asked for it. It takes items and a point and says which item was
- * chosen; what the items are and what choosing one does are the caller's.
+ * it, and it is placed against the area it is drawn into. It takes items and a
+ * point and says which item was chosen; what the items are and what choosing
+ * one does are the caller's.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
-import type { Point } from '../plex/model'
-import type { Size } from '../plex/arrange'
+import type { Point, Size } from '../lib/geometry'
 
 const props = withDefaults(
   defineProps<{
@@ -32,6 +31,16 @@ const props = withDefaults(
     from?: HTMLElement | SVGElement | null
     /** The area it is placed in. The browser's own by default. */
     viewport?: Size | null
+    /**
+     * Whether the name of a band is drawn over it. A menu whose bands are
+     * named by identifiers draws none.
+     */
+    bands?: boolean
+    /**
+     * How wide what asked for it is. The menu is never narrower than that, and
+     * grows past it for what it holds.
+     */
+    asking?: number
     /** Kept clear of that area's edges. */
     margin?: number
     /** Where it is drawn. The end of the document by default. */
@@ -45,6 +54,8 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
+    bands: false,
+    asking: 0,
     margin: 8,
     to: 'body',
     name: 'Menu',
@@ -69,7 +80,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
-const menu = ref<HTMLElement | null>(null)
+const menu = useTemplateRef<HTMLElement>('menu')
 
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
@@ -94,9 +105,13 @@ const placed = computed(() =>
   }),
 )
 
-/** In document order, so an index into the items is an index into these. */
-const drawn = () =>
-  Array.from(menu.value?.querySelectorAll<HTMLElement>('.menu__item') ?? [])
+/** Each item as it is drawn, each under the item it stands for. */
+const drawn = new Map<string, HTMLElement>()
+
+const holdRow = (item: string, row: unknown): void => {
+  if (row) drawn.set(item, row as HTMLElement)
+  else drawn.delete(item)
+}
 
 const measure = () => {
   const element = menu.value
@@ -108,7 +123,8 @@ const measure = () => {
 /** The keyboard onto an item, or onto the menu itself where there is none. */
 const goTo = (index: number) => {
   here.value = index
-  const chosen = drawn()[index]
+  const item = props.items[index]
+  const chosen = item ? drawn.get(item.id) : undefined
   if (chosen) chosen.focus()
   else menu.value?.focus()
 }
@@ -135,6 +151,43 @@ const onWindowKey = (event: KeyboardEvent) => {
   emit('dismiss')
 }
 
+/** What has been typed to jump by, and when the last letter of it arrived. */
+let typed = ''
+let struck = 0
+
+/** How long a run of letters stays one word. */
+const TYPING = 1000
+
+/**
+ * The keyboard onto the next item beginning with what has been typed. A run of
+ * letters is one word, and stands where it is while the word grows. One letter
+ * struck again and again walks the items beginning with it.
+ */
+const jumpTo = (letter: string) => {
+  const now = Date.now()
+  typed = now - struck > TYPING ? letter : typed + letter
+  struck = now
+  const one = typed[0]!
+  const drumming = [...typed].every((each) => each === one)
+  const word = drumming ? one : typed
+  const total = props.items.length
+  const from = here.value < 0 ? 0 : here.value + (typed.length > 1 && !drumming ? 0 : 1)
+  const said = word.toLowerCase()
+  for (let step = 0; step < total; step += 1) {
+    const at = (from + step) % total
+    const item = props.items[at]
+    if (!item || item.disabled) continue
+    if (item.text.toLowerCase().startsWith(said)) {
+      goTo(at)
+      return
+    }
+  }
+}
+
+/** A key that stands for a letter a person meant to type. */
+const letters = (event: KeyboardEvent): boolean =>
+  event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey
+
 /**
  * The keyboard, while the menu is open. Tab moves within the items and wraps,
  * which is what keeps the keyboard inside a menu that stands over the page.
@@ -150,6 +203,10 @@ const onKey = (event: KeyboardEvent) => {
   else if (event.key === 'Home') step(1, -1)
   else if (event.key === 'End') step(-1, 0)
   else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
+  else if (letters(event)) {
+    event.preventDefault()
+    jumpTo(event.key)
+  }
 }
 
 /** What the open menu installed on the window, if anything. */
@@ -188,6 +245,7 @@ watch(
     if (now) void enter()
     else leave()
   },
+  { immediate: true },
 )
 
 /** Measured again when what it holds changes, and when the point does. */
@@ -200,10 +258,6 @@ watch(
   },
 )
 
-onMounted(() => {
-  if (props.open) void enter()
-})
-
 // A menu can go while it is still open, and what it left on the window with it.
 onBeforeUnmount(leave)
 </script>
@@ -213,17 +267,29 @@ onBeforeUnmount(leave)
     <div
       v-if="open"
       ref="menu"
-      class="menu numen flex flex-col rounded-panel border border-panel-rule bg-panel p-1.5 font-sans text-base text-ink shadow-panel backdrop-blur-panel"
+      class="menu numen panel-numen flex flex-col p-1.5 font-sans text-base text-ink"
       role="menu"
       tabindex="-1"
       :aria-label="name"
-      :style="{ left: `${placed.x}px`, top: `${placed.y}px` }"
+      :style="{
+        left: `${placed.x}px`,
+        top: `${placed.y}px`,
+        '--asking': `${asking}px`,
+      }"
       @keydown="onKey"
     >
       <template v-for="(item, index) in rows" :key="item.id">
-        <hr v-if="item.rule" class="menu__rule" role="separator" />
+        <p
+          v-if="bands && item.band && (item.rule || index === 0)"
+          class="menu__band px-2 py-1 text-hushed"
+          aria-hidden="true"
+        >
+          {{ item.band }}
+        </p>
+        <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
         <button
+          :ref="(row) => holdRow(item.id, row)"
           class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
           type="button"
           :role="current === null ? 'menuitem' : 'menuitemradio'"
@@ -236,7 +302,10 @@ onBeforeUnmount(leave)
           <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
             <slot name="icon" :id="item.id" />
           </span>
-          <span class="menu__text min-w-0">{{ item.text }}</span>
+          <span class="menu__said flex min-w-0 flex-col">
+            <span class="menu__text">{{ item.text }}</span>
+            <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
+          </span>
         </button>
       </template>
 
@@ -252,9 +321,12 @@ onBeforeUnmount(leave)
    page it was asked for from. */
 .menu {
   /* How wide it may be, how much of the screen it takes before its list
-     scrolls, and how far above the page it stands. */
-  --narrowest: 180px;
-  --widest: 320px;
+     scrolls, and how far above the page it stands. The two widths are set in
+     the interface's own units, so they grow with everything drawn beside them. */
+  --narrowest: 11.25rem;
+  --widest: 20rem;
+  /* What asked for it, which it is never narrower than. */
+  --asking: 0px;
   --tallest: 60vh;
   --lift: var(--numen-lift-menu);
   /* The room a rule keeps on each side of itself. */
@@ -265,13 +337,11 @@ onBeforeUnmount(leave)
 
   position: fixed;
   z-index: var(--lift);
-  /* As wide as the longest thing it offers. A menu stands over the page and
-     is placed by two numbers, so without a width of its own it would be as
-     wide as the room left beside the point it was asked for and would cut its
-     own words short there. */
+  /* As wide as the longest thing it offers, and always between these two
+     widths. */
   inline-size: max-content;
-  min-inline-size: var(--narrowest);
-  max-inline-size: var(--widest);
+  min-inline-size: max(var(--narrowest), var(--asking));
+  max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -315,10 +385,27 @@ onBeforeUnmount(leave)
 }
 
 /* One line, then an ellipsis. A menu is read down its leading edge. */
-.menu__text {
+.menu__text,
+.menu__detail {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* What an item is beside its words: the address a model is fetched from, the
+   place a file stands. */
+.menu__detail {
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+}
+
+/* The name of a band, set as this product sets a label over what it names. */
+.menu__band {
+  margin: 0;
+  font-size: var(--numen-text-1);
+  font-weight: 600;
+  letter-spacing: var(--numen-caps-tracking);
+  text-transform: uppercase;
 }
 
 .menu__silence {

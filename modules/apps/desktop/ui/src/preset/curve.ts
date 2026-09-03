@@ -2,10 +2,9 @@
  * The one control of a preset, without drawing it: what the curve costs at
  * each place, where the knob stands, and the settings a place produces.
  *
- * The application works a curve out over the whole range in one pass, so
- * moving the control computes nothing. What is here besides is the line the
- * window draws in its place while that answer is on its way, which is arithmetic
- * over the settings alone and is shown as the approximation it is.
+ * The application works a curve out over the whole range in one pass, so moving
+ * the control computes nothing. The line drawn while that answer is on its way
+ * is arithmetic over the settings alone, and is shown as an approximation.
  */
 import { BOUNDS, DEFAULTS, NOWHERE } from './core'
 import type { Curve, Goal, Mark, Point, Rule, Settings } from './core'

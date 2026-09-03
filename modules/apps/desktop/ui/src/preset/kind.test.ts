@@ -102,6 +102,7 @@ const opened = async (
     }),
     scheduling: async () => ({ preset: null, refusal: null, at: '' }),
     list: async () => [],
+    makes: async () => ({ path: '', refusal: null }),
     schedules: async () => ({ refusal: null, changed: false, at: '' }),
     write: async (_path, put) => {
       written.push(put)

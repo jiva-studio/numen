@@ -11,6 +11,8 @@ import { expect, userEvent, waitFor } from 'storybook/test'
 import { computed, ref } from 'vue'
 import Days from './Days.vue'
 import { weekFrom, WEEK, type Named } from './week'
+import { lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 /** The week as Russian names it, for the names that are not Latin. */
 const RUSSIAN: readonly Named[] = [
@@ -319,6 +321,39 @@ export const TheKeyboardComesBack: Story = {
     await waitFor(() => expect(offered()).toEqual([]))
     expect(document.activeElement).toBe(chip)
     expect(said(canvasElement)[5]).toBe('Saturday, 25%')
+  },
+}
+
+/**
+ * The same week on the dark set of tokens, where the fill of a chip is blended.
+ *
+ * The blend runs from the ground a chip stands on towards the accent, so a
+ * heavier day sits further from a day standing at nothing — and on the dark set
+ * that is towards the light.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: {
+    standing: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
+  },
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+    const all = chips(canvasElement)
+    expect(all).toHaveLength(7)
+
+    // Saturday stands at nothing, so its chip is the plain ground the rest are
+    // blended from: Friday, Thursday, Wednesday, Tuesday and Monday, in that
+    // order, each one further from it.
+    const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
+    const rising = [5, 4, 3, 2, 1, 0].map((at) => ground(all[at] as HTMLElement))
+    for (const [at, chip] of rising.slice(1).entries()) {
+      expect(chip).toBeGreaterThan((rising[at] as number) + 1)
+    }
+
+    // A day filled past half is read in the accent's own ink, which on the dark
+    // set stands below the ground it is written on.
+    const heavy = getComputedStyle(all[0] as HTMLElement)
+    expect(lightness(heavy.color)).toBeLessThan(lightness(heavy.backgroundColor))
   },
 }
 

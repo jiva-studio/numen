@@ -32,6 +32,10 @@ type API struct {
 	// being served, so every reader takes it through Showing.
 	vault atomic.Pointer[domain.Vault]
 
+	// shut is the door on every question. It is closed before the index and the
+	// embedder an answer reaches into are taken away.
+	shut atomic.Bool
+
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
@@ -101,11 +105,19 @@ type API struct {
 	// answers that it cannot do that run.
 	Recognises  Run
 	Transcribes Run
+	// Proofreads puts a recording's transcript right, for whoever asks. An
+	// installation naming nothing to put one right with answers that it cannot
+	// do that run.
+	Proofreads Proofreading
 	// Cut asks for a source to be cut again from whatever its text now says. A
 	// window that put a transcript right calls it, so search answers with the
 	// words as they now read. Nil for a build with nothing cutting behind it,
 	// and then a correction is seen in the tab alone.
 	Cut func(context.Context, domain.Vault, string) error
+	// Drops takes a recording's transcript away, with everything listening to
+	// it produced. A build without one answers that a transcript cannot be
+	// dropped here.
+	Drops *source.DropTranscript
 
 	// Makes is how the window makes a note, and Joins how it writes a
 	// relationship into one. A build without them answers that a note cannot be
@@ -114,9 +126,10 @@ type API struct {
 	Joins *note.Linking
 
 	// Cards reads a deck or a stencil, Offered lists the stencils the vault
-	// holds, and Cuts puts either back. MakesCards makes a deck or a stencil, and
-	// RenamesField gives one of a stencil's fields a different name everywhere it
-	// is written. A build without them answers that cards cannot be worked here.
+	// holds, and Cuts puts either back. MakesCards makes a deck, a stencil or a
+	// preset, and RenamesField gives one of a stencil's fields a different name
+	// everywhere it is written. A build without them answers that cards cannot
+	// be worked here.
 	Cards        *cards.Read
 	Offered      *cards.List
 	Cuts         *cards.Write
@@ -162,6 +175,20 @@ type API struct {
 	// with no reader reads what an installation nobody has configured does.
 	Reviews          func() string
 	ChoosesReviewing func(starts string) error
+
+	// Configured reads every setting as JSON and the file it stands in, Models
+	// the models the settings that name one can be set to, and ChoosesSetting
+	// writes settings into that file. A build without them answers that it
+	// configures nothing.
+	Configured     func() (string, string, error)
+	Models         func() []port.Model
+	ChoosesSetting func(written []port.Setting) error
+
+	// ConfiguredFile reads that file as its person wrote it, and WritesFile
+	// replaces it whole. A build without them answers that it configures
+	// nothing.
+	ConfiguredFile func() (string, string, error)
+	WritesFile     func(written string) error
 
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
@@ -236,6 +263,12 @@ func (a *API) Showing() domain.Vault {
 
 // show puts a vault in front of whoever asks from now on.
 func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
+
+// Shut refuses every question from now on, and there is no opening it again.
+// It is closed while everything an answer reaches into is still there.
+func (a *API) Shut() { a.shut.Store(true) }
+
+func (a *API) closed() bool { return a.shut.Load() }
 
 // shown is the vault a question is answered over. A window standing on nothing
 // has none, and every question that would reach into a vault is refused there.
@@ -348,6 +381,40 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 			Through: related.Through,
 			Mutual:  related.Mutual,
 			Type:    typeOf(types[related.Path]),
+		})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// Resolve answers where addresses written in one note land. An address that
+// reaches nothing is left out of the answer.
+func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+	showing, err := a.shown()
+	if err != nil {
+		return nil, err
+	}
+	found, err := a.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// In the order they were asked about, and an address asked about twice is
+	// one answer.
+	out := &v1.ResolveResponse{}
+	said := make(map[string]bool, len(found))
+	for _, written := range r.Msg.GetWritten() {
+		one, reached := found[written]
+		if !reached || said[written] {
+			continue
+		}
+		said[written] = true
+		vault, crossed := one.InVault(showing.ID)
+		out.Reached = append(out.Reached, &v1.Reached{
+			Written:   written,
+			Path:      one.To,
+			Vault:     vault,
+			Crossed:   crossed,
+			Ambiguous: one.Ambiguous,
 		})
 	}
 	return connect.NewResponse(out), nil

@@ -2,10 +2,36 @@ package main
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"testing"
 	"time"
 )
+
+// screen records the window going out of sight and coming back into it.
+type screen struct {
+	mu   sync.Mutex
+	seen []string
+}
+
+func watching() *screen { return &screen{} }
+
+func (s *screen) sight() sight {
+	return sight{hide: func() { s.mark("hide") }, show: func() { s.mark("show") }}
+}
+
+func (s *screen) mark(what string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.seen = append(s.seen, what)
+}
+
+// was is what has happened to the window so far.
+func (s *screen) was() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.seen)
+}
 
 // settler is a vault whose settling a test writes the answers for, and which
 // records how many times it was asked.
@@ -141,7 +167,7 @@ func TestAQuitAskedForElsewhereDoesNotGoOnAQuestion(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
-	if asked(g, func() { quit <- struct{}{} }) {
+	if asked(g, watching().sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 
@@ -158,7 +184,7 @@ func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	quit := make(chan struct{}, 1)
-	if asked(g, func() { quit <- struct{}{} }) {
+	if asked(g, watching().sight(), func() { quit <- struct{}{} }) {
 		t.Fatal("the quit went before the vault settled")
 	}
 
@@ -167,7 +193,7 @@ func TestAQuitAskedForElsewhereGoesOnceTheVaultSettles(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the quit was never asked for again")
 	}
-	if !asked(g, func() { t.Error("a settled vault was quit twice") }) {
+	if !asked(g, watching().sight(), func() { t.Error("a settled vault was quit twice") }) {
 		t.Error("a settled vault refused the quit")
 	}
 }
@@ -186,7 +212,7 @@ func TestAQuestionCallsTheCloseOffAndTheWindowIsAskedForAgain(t *testing.T) {
 	}
 	again := make(chan struct{}, 1)
 
-	if closing(t.Context(), g, answered, func() { again <- struct{}{} }) {
+	if closing(t.Context(), g, watching().sight(), answered, func() { again <- struct{}{} }) {
 		t.Fatal("a question standing let the window go")
 	}
 	select {
@@ -212,7 +238,7 @@ func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
 	g := &going{settle: vault.settle}
 
 	again := make(chan struct{}, 1)
-	if closing(t.Context(), g, func(context.Context) bool { return false }, func() {
+	if closing(t.Context(), g, watching().sight(), func(context.Context) bool { return false }, func() {
 		again <- struct{}{}
 	}) {
 		t.Fatal("a question standing let the window go")
@@ -229,10 +255,62 @@ func TestAWindowNobodyAnswersForIsNotAskedForAgain(t *testing.T) {
 func TestAWindowWithNothingOwedIsDestroyed(t *testing.T) {
 	g := &going{settle: settles(true).settle}
 
-	if !closing(t.Context(), g, func(context.Context) bool {
+	if !closing(t.Context(), g, watching().sight(), func(context.Context) bool {
 		t.Error("a settled vault was waited on for an answer")
 		return false
 	}, func() { t.Error("a settled vault asked for the close again") }) {
 		t.Fatal("a settled vault did not let the window go")
+	}
+}
+
+// TestTheWindowIsOutOfSightBeforeTheSettlingBegins. The window goes from the
+// screen when the close is asked for, and everything owed lands behind it.
+func TestTheWindowIsOutOfSightBeforeTheSettlingBegins(t *testing.T) {
+	seen := watching()
+	begun := make(chan []string, 1)
+	g := &going{settle: func(context.Context) bool {
+		begun <- seen.was()
+		return true
+	}}
+
+	if !closing(t.Context(), g, seen.sight(), func(context.Context) bool {
+		t.Error("a settled vault was waited on for an answer")
+		return false
+	}, func() { t.Error("a settled vault asked for the close again") }) {
+		t.Fatal("a settled vault did not let the window go")
+	}
+
+	select {
+	case was := <-begun:
+		if !slices.Equal(was, []string{"hide"}) {
+			t.Errorf("the window was %v when the settling began", was)
+		}
+	default:
+		t.Fatal("the vault was never settled")
+	}
+	if was := seen.was(); !slices.Equal(was, []string{"hide"}) {
+		t.Errorf("the window that went was %v", was)
+	}
+}
+
+// TestAQuestionPutsTheWindowBackAndHoldsTheQuitOff. A settling that ends with a
+// question standing is a window on the screen the person answers on, and an
+// application that has not gone.
+func TestAQuestionPutsTheWindowBackAndHoldsTheQuitOff(t *testing.T) {
+	seen := watching()
+	g := &going{settle: settles(false).settle}
+
+	quit := make(chan struct{}, 1)
+	if asked(g, seen.sight(), func() { quit <- struct{}{} }) {
+		t.Fatal("the quit went before the vault settled")
+	}
+
+	select {
+	case <-quit:
+		t.Fatal("a question standing quit the application")
+	case <-time.After(300 * time.Millisecond):
+	}
+	if was := seen.was(); !slices.Equal(was, []string{"hide", "show"}) {
+		t.Errorf("the window a question was asked in was %v", was)
 	}
 }

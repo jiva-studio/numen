@@ -12,6 +12,7 @@ import (
 // A card is scheduled by the preset of the deck it stands in, so the window
 // under each of the four is the moment that scheduler brings the card back.
 func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
+	t.Parallel()
 	// The share of the cards each deck's preset asks to come back, by the deck.
 	shares := map[string]float64{"decks/Roots.md": 0.99, "decks/Terms.md": 0.9}
 	s := opened(t, map[string]string{
@@ -73,6 +74,7 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 // through the same one, so a preset evening its load names the day it moved the
 // card to.
 func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct {
 		what string
 		even bool

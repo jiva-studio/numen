@@ -171,6 +171,31 @@ describe('a tab that closes', () => {
   })
 })
 
+describe('a tab let go of from outside', () => {
+  it('lets go of what it held and comes off the screen', async () => {
+    const thing = kind()
+    const window = told([thing.declared])
+    const id = await window.opens('thing', 'Note.md')
+
+    window.drops(id)
+
+    expect(thing.shut).toEqual(['Note.md'])
+    expect(window.heldIn(id)).toBeNull()
+    expect(onScreen(window.layout.value)).not.toContain(id)
+  })
+
+  it('stays on the screen while its kind has something to finish', async () => {
+    const holding = kind({ keeps: true })
+    const window = told([holding.declared])
+    const id = await window.opens('thing', 'Note.md')
+
+    window.drops(id)
+
+    expect(window.heldIn(id)?.held).toBeTruthy()
+    expect(onScreen(window.layout.value)).toContain(id)
+  })
+})
+
 describe('the tab now on screen', () => {
   it('is told, so what it holds has room to measure', async () => {
     const thing = kind()

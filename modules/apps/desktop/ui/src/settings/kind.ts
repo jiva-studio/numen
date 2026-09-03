@@ -5,6 +5,7 @@
  * write, and this is a second way to the same values. A row here and the
  * command of the same name in the palette go through one piece of code.
  */
+import type { Model, Written } from '../core'
 import type { Host, Kind } from '../windowing'
 import { SETTINGS } from '../workspace'
 import type { Mode, Ranges, Sizes, Wearable } from '../theme'
@@ -32,6 +33,20 @@ export interface Installation {
   parts(): number
   choosesHanging(on: boolean): void
   choosesParts(count: number): void
+  /** The hour a day of review begins at, written as `04:00`. */
+  dayStarts(): string
+  choosesDayStarts(hour: string): void
+  /**
+   * The rest of the file: what stands at a setting, the models a setting that
+   * names one can be set to, and settings written where they stand.
+   */
+  setting(at: readonly string[]): unknown
+  models(at: readonly string[]): readonly Model[]
+  writes(written: readonly Written[]): void
+  /** The file the settings stand in, absolute on this machine. */
+  file(): string
+  /** That file opened whole, in a tab of its own. */
+  opensFile(): void
 }
 
 /** What the settings tab holds. */

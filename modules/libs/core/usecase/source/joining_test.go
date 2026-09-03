@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -355,5 +356,22 @@ func TestALineTheFirstPassJoinedIsNotJoinedAgain(t *testing.T) {
 	}
 	if cues[2].Text != stretches[3] {
 		t.Errorf("the line after the run says %q", cues[2].Text)
+	}
+}
+
+// A seam carries what the recording holds, as a batch of the first pass does.
+func TestASeamCarriesWhatTheRecordingHolds(t *testing.T) {
+	u, v, _, by, _ := crossing(t, map[int]string{0: joins(2, 4, crossed)})
+
+	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
+		t.Fatal(err)
+	}
+	if len(by.about) < 4 {
+		t.Fatalf("it was asked about %d batches", len(by.about))
+	}
+	for at, about := range by.about {
+		if !strings.Contains(about, "The speech opens: Welcome, everyone. Today we will read") {
+			t.Errorf("batch %d says the recording holds %q", at, about)
+		}
 	}
 }

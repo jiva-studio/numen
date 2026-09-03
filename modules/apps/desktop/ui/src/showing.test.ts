@@ -44,6 +44,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     },
     headings: async () => new Map(),
     standing: async () => new Map(),
+    resolve: async () => new Map(),
     opening: async () => ({ path: 'Opening.md' }),
     state: async () => settled,
     // eslint-disable-next-line require-yield
@@ -76,6 +77,12 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
+    reviewing: async () => '04:00',
+    choosesReviewing: async () => null,
+    settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
+    choosesSetting: async () => {},
+    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    writesSettingsFile: async () => {},
     // eslint-disable-next-line require-yield
     quitting: async function* () {},
     flushed: async () => {},
@@ -93,18 +100,16 @@ const nap = () => new Promise((wake) => setTimeout(wake, 0))
 const heard = (core: Core, reads?: (path: string, runs: readonly Run[]) => void) => {
   const changed: string[] = []
   const wanted: string[] = []
-  const showed = showing(
-    core,
-    async () => showed.close(),
-    async (paths, renamed) => {
+  const showed = showing(core, {
+    wait: async () => showed.close(),
+    told: async (paths, renamed) => {
       changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
     },
-    undefined,
-    async (path) => {
+    wanted: async (path) => {
       wanted.push(path)
     },
-    reads,
-  )
+    ...(reads ? { reads } : {}),
+  })
   return { window: showed, changed, wanted }
 }
 
@@ -118,9 +123,11 @@ describe('the stream of changes', () => {
       },
     })
     const waits: number[] = []
-    const window = showing(core, async (ms) => {
-      waits.push(ms)
-      if (streams >= 3) window.close()
+    const window = showing(core, {
+      wait: async (ms) => {
+        waits.push(ms)
+        if (streams >= 3) window.close()
+      },
     })
 
     await window.follow()
@@ -137,8 +144,10 @@ describe('the stream of changes', () => {
         throw new Error('connection lost')
       } as unknown as Core['changes'],
     })
-    const window = showing(core, async () => {
-      if (streams >= 2) window.close()
+    const window = showing(core, {
+      wait: async () => {
+        if (streams >= 2) window.close()
+      },
     })
 
     await window.follow()
@@ -233,15 +242,11 @@ describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
   const swapping = (core: Core) => {
     const drawn: string[] = []
-    const window = showing(
-      core,
-      async () => {},
-      async (paths) => void drawn.push(`told ${paths.join(' ')}`),
-      undefined,
-      undefined,
-      undefined,
-      () => void drawn.push('reloads'),
-    )
+    const window = showing(core, {
+      wait: async () => {},
+      told: async (paths) => void drawn.push(`told ${paths.join(' ')}`),
+      reloads: () => void drawn.push('reloads'),
+    })
     return { window, drawn }
   }
 
@@ -398,7 +403,7 @@ describe('a vault that could not be read', () => {
       opening: async () => null,
       state: async () => ({ ...settled, ready: false, failed: 'permission denied' }),
     })
-    const window = showing(core, async () => window.close())
+    const window = showing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -411,7 +416,7 @@ describe('a vault that could not be read', () => {
 
 describe('a vault with a note in it', () => {
   it('says it holds one, which is not what an unreadable vault says', async () => {
-    const window = showing(fake(), async () => window.close())
+    const window = showing(fake(), { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -424,7 +429,7 @@ describe('a vault with a note in it', () => {
 describe('a vault that is not being followed', () => {
   it('says so rather than looking up to date', async () => {
     const core = fake({ state: async () => ({ ...settled, unwatched: 'too many watches' }) })
-    const window = showing(core, async () => window.close())
+    const window = showing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -438,7 +443,7 @@ describe('chunks with nothing to embed them', () => {
     const core = fake({
       state: async () => ({ ...settled, chunks: 4823n, embedded: 0n, embedding: false }),
     })
-    const window = showing(core, async () => window.close())
+    const window = showing(core, { wait: async () => window.close() })
 
     await window.start()
     await nap()
@@ -478,7 +483,7 @@ describe('what the application is doing', () => {
         await held()
       },
     })
-    const window = showing(core, async () => {})
+    const window = showing(core, { wait: async () => {} })
 
     await window.start()
     await nap()
@@ -509,7 +514,7 @@ describe('what the application is doing', () => {
     })
     // The clock is the test's, so the wait between one stream and the next is
     // not a second of it.
-    const window = showing(core, async () => {})
+    const window = showing(core, { wait: async () => {} })
 
     await window.start()
     await nap()
@@ -547,7 +552,7 @@ describe('what the application is doing', () => {
         await held()
       },
     })
-    const window = showing(core, async () => {})
+    const window = showing(core, { wait: async () => {} })
 
     await window.start()
     await nap()

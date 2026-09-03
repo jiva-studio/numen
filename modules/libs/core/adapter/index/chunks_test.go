@@ -274,6 +274,69 @@ func TestAHitComesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 }
 
+// TestAPassageSaysWhatItWasReadOutOf. A list a person runs their eye down draws
+// a book and a recording as what they are, and every ranking has to say which
+// it answered with.
+func TestAPassageSaysWhatItWasReadOutOf(t *testing.T) {
+	ctx := t.Context()
+	db := opened(t)
+	source(t, db, first, "library/talk.epub", domain.KindBook, "opening words")
+	source(t, db, first, "talks/lecture.mp3", domain.KindRecording, "opening words")
+	source(t, db, first, "Entropy.md", domain.KindNote, "opening words")
+	vectorise(t, db, first, 0x00)
+
+	queries := db.ChunkQueries()
+	want := map[string]domain.SourceKind{
+		"library/talk.epub": domain.KindBook,
+		"talks/lecture.mp3": domain.KindRecording,
+		"Entropy.md":        domain.KindNote,
+	}
+
+	lexical, err := queries.Lexical(ctx, first.ID, "opening", nil, 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	named, err := queries.Named(ctx, first.ID, "opening", nil, 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dense, err := queries.Nearest(ctx, first.ID, "model", direction(0x00), nil, 10, search.DefaultFloor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, half := range []struct {
+		asked string
+		found []domain.Passage
+	}{{"words", lexical}, {"names", named}, {"meaning", dense}} {
+		if len(half.found) == 0 {
+			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.asked)
+		}
+		for _, p := range half.found {
+			if p.Kind != want[p.Source] {
+				t.Errorf("%s came back as %q, want %q", p.Source, p.Kind, want[p.Source])
+			}
+		}
+	}
+}
+
+// source is one source of one kind, holding one chunk under a name of its own.
+func source(t *testing.T, db *DB, vault domain.Vault, path string, kind domain.SourceKind, text string) {
+	t.Helper()
+	ctx := t.Context()
+	chunks := db.Chunks()
+	if err := chunks.SaveSource(ctx, vault.ID, chunk.Source{
+		Path: path, Kind: string(kind), Size: 1000, MTime: 1, Hash: "hash-" + path, Recipe: "any",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.SaveChunks(ctx, vault.ID, string(kind), path, []chunk.Chunk{{
+		Start: 0, Length: 100, Location: "opening", Opens: []string{"opening"}, Text: text,
+		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: text}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCuttingASourceTwiceDoesNotDoubleIt(t *testing.T) {
 	// Nothing cascades when a source is written again: the row survives, so its
 	// chunks are cleared by hand, and the rows in both virtual tables with them.

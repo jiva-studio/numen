@@ -34,6 +34,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
     },
   ],
   unread: '',
+  reading: false,
   ...said,
 })
 
@@ -149,14 +150,29 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.says(listing(vault('01A'), vault('01B')))
-    front.says(count(vault('01A', { unread: 'this vault has not been read yet' })))
+    front.says(count(vault('01A', { unread: 'this folder cannot be read as a vault' })))
     front.says(count(vault('01B', { due: 6, new: 0 })))
     front.ends()
     await settles()
 
-    expect(one.vaults.value[0]?.unread).toBe('this vault has not been read yet')
+    expect(one.vaults.value[0]?.unread).toBe('this folder cannot be read as a vault')
     expect(one.vaults.value[1]).toMatchObject({ counted: true, due: 6 })
     expect(one.counting.value).toBe(false)
+  })
+
+  // A vault being read into the index has no numbers yet, so its row goes on
+  // waiting for them rather than standing at nothing.
+  it('leaves a vault being read uncounted, and says it is being read', async () => {
+    const front = feeding()
+    const one = counting({ cards: front.cards, failed: () => {} })
+
+    void one.count()
+    front.says(listing(vault('01A')))
+    front.says(count(vault('01A', { reading: true, faces: 0, due: 0, new: 0 })))
+    front.ends()
+    await settles()
+
+    expect(one.vaults.value[0]).toMatchObject({ counted: false, reading: true, unread: '' })
   })
 
   it('is still counting until the last of them has arrived', async () => {
@@ -198,6 +214,36 @@ describe('counting what every vault owes', () => {
 
     // And the next ask is a count of its own, because the vaults have moved on.
     void one.count()
+    expect(asked).toBe(2)
+  })
+
+  // A vault read while a count was running lands after that count worked its
+  // row out, so the asking it wakes is answered by a count of its own.
+  it('counts again when asked after it has worked a row out', async () => {
+    let asked = 0
+    const front = feeding()
+    const cards: Counts = {
+      owing(said, how) {
+        asked += 1
+        return front.cards.owing(said, how)
+      },
+    }
+    const one = counting({ cards, failed: () => {} })
+
+    const first = one.count()
+    front.says(listing(vault('01A')))
+    front.says(count(vault('01A', { reading: true })))
+    await settles()
+
+    // The reading finished and woke the counting while the first was still on.
+    void one.count()
+    front.ends()
+    await settles()
+
+    // Which is a count of its own, and it is the one that ends the asking.
+    front.ends()
+    await first
+
     expect(asked).toBe(2)
   })
 

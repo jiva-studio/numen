@@ -2,16 +2,18 @@
 /**
  * What the window has to say, as cards in its bottom corner.
  *
- * Work appears once it has lasted and goes when the work does. Something that
- * is so stands while it is so. Something that happened stands to be read and
- * then goes, unless it is trouble, which stands until it is put away.
+ * Work appears once it has lasted and goes when the work does; something that is
+ * so stands while it is so; something that happened stands to be read and then
+ * goes, unless it is trouble, which stands until it is put away.
  *
- * It stands over what it covers and takes no room from it. What each card is
- * and what it is called belong to whoever draws this.
+ * It takes no room from what it covers, and what each card says is the caller's.
  */
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch, watchEffect } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
+import Announce from './Announce.vue'
 import { remainingWord } from '../activity/model'
+import { useAnnouncer } from './announcing'
+import { useHeld } from './held'
 import {
   arrivals,
   dwellOf,
@@ -42,9 +44,9 @@ const props = withDefaults(
     wait?: number
     /** How many cards stand at once. */
     room?: number
-    /** What the moment is. The window's, unless a story hands in its own. */
+    /** What the moment is. The window's clock by default. */
     clock?: () => number
-    /** Whether nobody is looking. The window's, unless a story hands in its own. */
+    /** Whether nobody is looking. The window's own answer by default. */
     hidden?: () => boolean
   }>(),
   {
@@ -64,51 +66,17 @@ const emit = defineEmits<{
   (event: 'gone', id: string): void
 }>()
 
-/** The ones a person has put away, and when each of the rest arrived. */
-const away = ref<ReadonlySet<string>>(new Set())
-const arrived = ref<ReadonlyMap<string, number>>(new Map())
-const now = ref(props.clock())
-
 /** How fast each count is moving. This is the clock the rate is read against. */
 const moving = ref<ReadonlyMap<string, Movement>>(new Map())
 
 const stack = useTemplateRef<HTMLElement>('stack')
-/** Whether a pointer is on the stack, and whether the keyboard is in it. */
-const pointed = ref(false)
-const focused = ref(false)
-/** Whether the corner is being held. */
-const holding = (): boolean => pointed.value || focused.value || props.hidden()
-/** How long it has been held for. */
-const heldFor = ref(0)
 
-/**
- * The moment a card is read against.
- *
- * Time a person spent with the corner under their pointer, or away from the
- * window entirely, is not time they spent reading it.
- */
-const read = computed(() => now.value - heldFor.value)
-
-/** The card a pointer is on, for as long as that card is still there. */
-let on: Element | null = null
-
-/**
- * Takes the clock forward, and the held time with it.
- *
- * A card is taken out from under whatever was on it, and a browser owes nothing
- * about the boundary event for one that has gone, so what holds the corner is
- * asked of the page each time.
- */
-const beat = () => {
-  if (pointed.value && on !== null && !on.isConnected) {
-    pointed.value = false
-    on = null
-  }
-  if (focused.value && !stack.value?.contains(document.activeElement)) focused.value = false
-  const at = props.clock()
-  if (holding()) heldFor.value += at - now.value
-  now.value = at
-}
+/** What a person has put away, and how long the corner has been held for. */
+const { away, arrived, now, read, beat, enters, leaves, holds, lets } = useHeld(
+  stack,
+  () => props.clock(),
+  () => props.hidden(),
+)
 
 /** The ones whose caller has already been told they are finished with. */
 const forgotten = new Set<string>()
@@ -178,109 +146,45 @@ watchEffect(() => {
   }
 })
 
-/** The ways away, in the order they stand. */
-const ways = (): readonly HTMLElement[] => [
-  ...(stack.value?.querySelectorAll<HTMLElement>('.notice__away') ?? []),
-]
+/** The ways away, each under the card it stands on. */
+const ways = new Map<string, HTMLElement>()
+
+const holdWay = (id: string, way: unknown): void => {
+  if (way) ways.set(id, way as HTMLElement)
+  else ways.delete(id)
+}
 
 /**
- * A card put away, and the keyboard left where it can go on putting them away.
+ * A card put away, and the keyboard left where it can go on putting them away:
+ * on the card that takes the place of the one that went, or on the last.
  */
 const put = async (id: string) => {
-  const at = ways().indexOf(document.activeElement as HTMLElement)
+  const at = folds.value.shown.findIndex((one) => one.id === id)
+  const held = ways.get(id) === document.activeElement
   forgotten.add(id)
   away.value = new Set([...away.value, id])
   emit('gone', id)
-  if (at < 0) return
+  if (!held || at < 0) return
   await nextTick()
-  const left = ways()
-  left[Math.min(at, left.length - 1)]?.focus()
+  const left = folds.value.shown
+  const next = left[Math.min(at, left.length - 1)]
+  if (next) ways.get(next.id)?.focus()
 }
 
-/** What each card reads out as. */
-const wordsOf = (one: Notice): string => (one.about ? `${one.says} — ${one.about}` : one.says)
+/** What the corner is read out through. */
+const { told, cried } = useAnnouncer(() => drawn.value)
 
-/** What is read out, and what is read out over whatever else is being read. */
-const told = ref('')
-const cried = ref('')
-/** The words each card was last read out by. */
-const announced = ref<ReadonlyMap<string, string>>(new Map())
-/** Whether both regions have stood empty, which is what makes them read. */
-let listening = false
-/**
- * Which reading is the one in hand, and what is waiting to be read out.
- *
- * Two changes can land inside one tick, and what the second reads out is
- * everything neither of them has read out yet.
- */
-let reading = 0
-let waiting: readonly Notice[] = []
-
-const reads = async (all: readonly Notice[]) => {
-  if (!listening) return
-  const fresh = all.filter((one) => announced.value.get(one.id) !== wordsOf(one))
-  announced.value = new Map(all.map((one) => [one.id, wordsOf(one)]))
-  if (fresh.length === 0) return
-  waiting = [...waiting, ...fresh]
-
-  // A region holding the words already is a region that reads out nothing.
-  const mine = ++reading
-  told.value = ''
-  cried.value = ''
-  await nextTick()
-  if (mine !== reading) return
-
-  const said = waiting
-  waiting = []
-  const loud = said.filter((one) => one.tone === 'alarm')
-  const quiet = said.filter((one) => one.tone !== 'alarm')
-  if (loud.length) cried.value = loud.map(wordsOf).join('. ')
-  if (quiet.length) told.value = quiet.map(wordsOf).join('. ')
-}
-
-watch(drawn, (all) => void reads(all))
-
-onMounted(async () => {
-  await nextTick()
-  listening = true
-  void reads(drawn.value)
-})
-
-const enters = (event: PointerEvent) => {
-  const target = event.target
-  on = target instanceof Element ? target.closest('.notice') : null
-  pointed.value = true
-}
-
-const leaves = (event: PointerEvent) => {
-  const to = event.relatedTarget
-  if (to instanceof Node && stack.value?.contains(to)) return
-  pointed.value = false
-  on = null
-}
-
-const holds = () => {
-  focused.value = true
-}
-
-const lets = (event: FocusEvent) => {
-  const to = event.relatedTarget
-  if (to instanceof Node && stack.value?.contains(to)) return
-  focused.value = false
-}
 </script>
 
 <template>
   <div class="notices numen font-sans text-small">
-    <span class="sr-only" aria-live="polite">{{ told }}</span>
-    <span class="sr-only" aria-live="assertive">{{ cried }}</span>
+    <Announce :told="told" :cried="cried" />
 
     <aside
       v-if="folds.shown.length || folds.over"
       ref="stack"
       class="notices__stack flex flex-col"
       :aria-label="name"
-      @pointerover="enters"
       @pointerout="leaves"
       @focusin="holds"
       @focusout="lets"
@@ -291,6 +195,7 @@ const lets = (event: FocusEvent) => {
           key="folded"
           type="button"
           class="notice notice__folded"
+          @pointerover="enters"
           @click="opened = true"
         >
           {{ folds.over }} {{ more }}
@@ -301,6 +206,7 @@ const lets = (event: FocusEvent) => {
           :key="one.id"
           class="notice"
           :data-tone="one.tone ?? 'plain'"
+          @pointerover="enters"
         >
           <Activity
             class="notice__work"
@@ -312,8 +218,9 @@ const lets = (event: FocusEvent) => {
             :tone="one.tone ?? 'plain'"
           />
           <button
+            :ref="(way) => holdWay(one.id, way)"
             type="button"
-            class="notice__away focus-visible:ring-ring focus-visible:ring-(length:--numen-ring-width)"
+            class="notice__away ring-numen"
             :aria-label="`${putAway}: ${one.says}`"
             @click="put(one.id)"
           >

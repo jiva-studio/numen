@@ -5,7 +5,6 @@
  * both halves are generated from it.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import {
   CardsService,
   Counting,
@@ -13,6 +12,7 @@ import {
   Naming,
   NoteType as NoteTypes,
   Owed,
+  Presence as Presences,
   Role as Roles,
   SourceKind,
   VaultService,
@@ -46,6 +46,7 @@ import type {
   Entry,
   Faced,
   Fault,
+  Configured,
   Hanging,
   Known,
   Made,
@@ -55,6 +56,7 @@ import type {
   NoteType,
   Offer,
   Outcome,
+  Presence,
   Problem,
   Refused,
   Removed,
@@ -66,8 +68,7 @@ import type {
   VaultRefused,
   Vaults,
 } from './core'
-
-const transport = createConnectTransport({ baseUrl: window.location.origin })
+import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
 
@@ -269,6 +270,37 @@ export const core: Core & Asking & Commanding = {
     refusalIn(
       await vault.chooseHanging({ hangPartsUnderANode: hangs, partsUnderANode: parts }),
     ),
+  settings: async () => {
+    const answer = await vault.settings({})
+    return {
+      written: answer.written,
+      path: answer.path,
+      models: answer.models.map((one) => ({
+        namedAt: one.namedAt,
+        name: one.name,
+        title: one.title,
+        shelf: one.shelf,
+        byDefault: one.byDefault,
+        writes: one.writes.map((write) => ({ at: write.at, value: write.value })),
+        presence: standing[one.presence],
+      })),
+    } satisfies Configured
+  },
+  choosesSetting: async (written) => {
+    await vault.chooseSettings({
+      settings: written.map((one) => ({ at: [...one.at], value: one.value })),
+    })
+  },
+  settingsFile: async () => {
+    const answer = await vault.settingsFile({})
+    return { written: answer.written, path: answer.path }
+  },
+  writesSettingsFile: async (written) => {
+    await vault.writeSettingsFile({ written })
+  },
+  reviewing: async () => (await vault.reviewing({})).dayStarts,
+  choosesReviewing: async (starts) =>
+    refusalIn(await vault.chooseReviewing({ dayStarts: starts })),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {
@@ -292,7 +324,18 @@ export const core: Core & Asking & Commanding = {
   standing: async (paths) => {
     const answer = await vault.standing({ paths: [...paths] })
     return new Map(
-      answer.found.map((one) => [one.path, { kind: holding[one.kind], type: typed[one.type] }]),
+      answer.found.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
+    )
+  },
+  /**
+   * Where each of those addresses lands, by the address it was asked about. A
+   * note an identifier reaches in another vault is left out: this window puts
+   * the vault it is showing in its tabs.
+   */
+  resolve: async (from, written) => {
+    const answer = await vault.resolve({ from, written: [...written] })
+    return new Map(
+      answer.reached.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
     )
   },
   /** The names in the vault that match what is typed. */
@@ -305,6 +348,7 @@ export const core: Core & Asking & Commanding = {
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
       at: one.at.map(run),
+      type: noteType(one.type),
     }))
   },
   /** The text the vault holds that answers what is typed, asked one way. */
@@ -316,6 +360,8 @@ export const core: Core & Asking & Commanding = {
       // A source that is not a note carries none, and what this window opens
       // one as is the document it is.
       isNote: one.note !== undefined,
+      type: noteType(one.type),
+      kind: sourceKind(one.kind),
       text: one.text,
       start: one.start,
       length: one.length,
@@ -395,6 +441,13 @@ export const recordings: Recordings = {
 export const running: Runs = {
   transcribes: (path) => begins(`${asset(path)}/transcribe`),
   recognises: (path) => begins(`${asset(path)}/recognise`),
+  proofreads: (path) => begins(`${asset(path)}/proofread`),
+  drops: async (path) => {
+    const answer = await fetch(`${asset(path)}/cues`, { method: 'DELETE' })
+    if (answer.status === 501) return false
+    if (!answer.ok) throw new Error((await answer.text()).trim() || `${answer.status}`)
+    return true
+  },
 }
 
 /**
@@ -491,25 +544,39 @@ const listed = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
   folder: one.folder,
-  kind: holding[one.kind],
-  type: typed[one.type],
+  kind: sourceKind(one.kind),
+  type: noteType(one.type),
 })
 
 /** What the vault holds at a path, in the words the window uses. */
-const holding: Record<SourceKind, Source> = {
+const holding: Partial<Record<SourceKind, Source>> = {
   [SourceKind.UNSPECIFIED]: 'other',
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
   [SourceKind.RECORDING]: 'recording',
 }
 
+/** A source this window has no word for is a file it holds no source for. */
+const sourceKind = (of: SourceKind): Source => holding[of] ?? 'other'
+
+/** What a model's files are on this machine, in the words the window uses. */
+const standing: Record<Presences, Presence> = {
+  [Presences.UNSPECIFIED]: 'nothing to fetch',
+  [Presences.PRESENT]: 'present',
+  [Presences.NOT_FETCHED]: 'not fetched',
+  [Presences.NOTHING_TO_FETCH]: 'nothing to fetch',
+}
+
 /** Which of four a note is, in the words the window uses. */
-const typed: Record<NoteTypes, NoteType> = {
+const typed: Partial<Record<NoteTypes, NoteType>> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
   [NoteTypes.PRESET]: 'preset',
 }
+
+/** A kind this window has no word for is an ordinary note. */
+const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
 
 /** One stencil of the list, kept as the plain value the window carries it as. */
 const offered = (one: { path: string; title: string; fields: string[] }): Offer => ({

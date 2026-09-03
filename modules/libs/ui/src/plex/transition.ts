@@ -1,22 +1,11 @@
-/** The clock, and the only thing in the plex that knows what time it is. */
+/** A frame moving towards each new neighbourhood. */
 import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import { arrangePlex, easeOut, interpolatePlex } from './arrange'
 import type { ArrangeInput } from './arrange'
 import type { PlexFrame, PlexNeighbourhood } from './model'
+import { browserEnvironment, type Environment } from '../lib/environment'
 
-/** What the plex needs from the world outside it. */
-export interface Environment {
-  /** Milliseconds, monotonic. Only differences are used. */
-  readonly now: () => number
-  readonly schedule: (run: (now: number) => void) => number
-  readonly cancel: (handle: number) => void
-}
-
-export const browserEnvironment: Environment = {
-  now: () => performance.now(),
-  schedule: (run) => requestAnimationFrame(run),
-  cancel: (handle) => cancelAnimationFrame(handle),
-}
+export { browserEnvironment, type Environment }
 
 export interface PlexTransition {
   readonly frame: Ref<PlexFrame>

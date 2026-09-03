@@ -74,6 +74,8 @@ A name in brackets is the primary written form: `[[Thermodynamics]]`. `note://<i
 
 A name is stored exactly as written and compared without regard to case: `[[entropy]]` finds `Entropy.md`, and a rename puts back the form the person chose.
 
+A note's extension may be written or left off, and every other dot belongs to the name: `[[Lecture 1.2]]` finds `Lecture 1.2.md`.
+
 Inside the brackets, an alias after `|` is how the link is read in the sentence and a fragment after `#` names a place inside the note. Neither is part of the address, and both survive whatever happens to the target.
 
 A filename carrying `#`, `|`, `://` or `]]`, or with a space at either end, cannot be written as an address that reaches it back: the character is read as punctuation of the link. Such a note is addressed by its identifier or not at all.

@@ -11,6 +11,7 @@ import { WORDS as agent } from './agent/words'
 import { WORDS as cards } from './cards/words'
 import { WORDS as note } from './note/words'
 import { WORDS as plex } from './plex/words'
+import { WORDS as preset } from './preset/words'
 
 /** What the vault refused a command, in words a person reads. */
 export const REFUSED: Record<Refused, string> = {
@@ -78,6 +79,13 @@ export const WORDS = {
   /** The two runs over the file in front: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe this recording',
   recognise: 'Recognise the text of this document',
+  /** The transcript of the recording in front, put right by a proofreader. */
+  proofread: 'Proofread the transcript of this recording',
+  /** The transcript of the recording in front, taken away, and the two answers. */
+  dropTranscript: 'Delete the transcript of this recording',
+  keepsTranscript: 'Keep the transcript',
+  drops: 'Delete',
+  dropped: 'The words go, and the recording can be transcribed again',
   reveal: 'Show this note in the files',
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
@@ -86,6 +94,8 @@ export const WORDS = {
   newNote: note.newNote,
   newDeck: cards.newDeck,
   newStencil: cards.newStencil,
+  /** The note that says how the decks pointing at it are scheduled. */
+  newPreset: preset.made,
   newPlex: plex.newPlex,
   newAgent: agent.newAgent,
   files: 'Show the files of the vault',

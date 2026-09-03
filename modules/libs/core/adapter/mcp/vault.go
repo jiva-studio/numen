@@ -118,7 +118,7 @@ func addVaultNamed(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Named(ctx, core.shown().Vault.ID, domain.Basename(in.Name))
+		paths, err := core.Notes.Named(ctx, core.shown().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}

@@ -1,17 +1,15 @@
 /**
- * What the words typed turn up, and the rules for asking.
- *
- * The palette draws bands of items and knows nothing of vaults. This is what
- * turns a question about a vault into those bands, and an item chosen back into
- * a place in the window.
+ * What the words typed turn up, and the rules for asking: a question about a
+ * vault turned into the palette's bands, and an item chosen back into a place
+ * in the window.
  *
  * Three questions go out on every keystroke and come back in whatever order
- * they take. Each fills its own band as it lands, so the fast ones are readable
- * while the slow one is still out.
+ * they take, each filling its own band as it lands.
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteBand } from '@numen/ui'
-import type { NoteType } from './core'
+import { asking, type Question } from './asking'
+import type { NoteType, Source } from './core'
 import { wordsOnly, type Meaning } from './meaning'
 
 /** A run of a name or a passage, counted the way this window counts text. */
@@ -31,6 +29,8 @@ export interface Named {
   /** Where that heading stands, counted from the first line of the prose. */
   line: number
   at: readonly Span[]
+  /** Which of four the note is. A heading carries the type of the note it stands in. */
+  type: NoteType
 }
 
 /** One passage: the text around a hit, and where it came from. */
@@ -43,6 +43,10 @@ export interface Passage {
    * over the passage: a book is not a node, so there is nowhere to travel to.
    */
   isNote: boolean
+  /** Which of four that note is. It says nothing about a source that is not one. */
+  type: NoteType
+  /** What the vault holds at that path, whatever sort of source it is. */
+  kind: Source
   text: string
   /**
    * Where the hit stands in the source's own text, counted in bytes, which is
@@ -134,6 +138,10 @@ interface Stands {
   start: number
   length: number
   offers: readonly string[]
+  /** Which of four the note it stands in is, and nothing where it stands in none. */
+  type: NoteType | null
+  /** What the vault holds where it stands. */
+  kind: Source
 }
 
 /** One item as it is drawn, beside where it stands and what it offers. */
@@ -144,13 +152,16 @@ interface Drawn {
 
 const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
 
-export function finding(
-  core: Asking,
-  words: Words,
-  wait: (ms: number) => Promise<unknown> = sleep,
+/** What the window hands the palette, beside the vault and its own words. */
+export interface Finding {
+  wait?(ms: number): Promise<unknown>
   /** How far the vault has been read for meaning, where the window knows. */
-  reading?: () => Meaning,
-) {
+  reading?(): Meaning
+}
+
+export function finding(core: Asking, words: Words, how: Finding = {}) {
+  const wait = how.wait ?? sleep
+  const reading = how.reading
   /** Whether the palette is drawn at all. */
   const open = ref(false)
   const typed = ref('')
@@ -164,12 +175,8 @@ export function finding(
   /** What a band could not be filled with, in words a person reads. */
   const said = ref<Record<Band, string>>({ names: '', text: '', meaning: '' })
 
-  /**
-   * Which question is the current one. A keystroke, and every answer to what
-   * was asked before it, is measured against this: three questions are in the
-   * air at once, and only the newest is drawn.
-   */
-  let asked = 0
+  /** Three questions are in the air at once, and only the newest is drawn. */
+  const asks = asking()
 
   /** Nothing is being asked, and nothing already asked for will be drawn. */
   const drop = () => {
@@ -182,29 +189,29 @@ export function finding(
 
   /** One band's question, filled in when it lands and only while it is wanted. */
   const fill = async <T>(
-    mine: number,
+    mine: Question,
     band: Band,
     question: () => Promise<readonly T[]>,
     into: (found: readonly T[]) => void,
   ) => {
     try {
       const found = await question()
-      if (mine !== asked) return
+      if (!mine.current) return
       into(found)
     } catch (error) {
-      if (mine !== asked) return
+      if (!mine.current) return
       into([])
       // What went wrong is said in the window's own voice. The reason belongs
       // where a person reading it can do something about it.
       console.error(error)
       said.value = { ...said.value, [band]: words.notAsked }
     } finally {
-      if (mine === asked) waiting.value = { ...waiting.value, [band]: false }
+      if (mine.current) waiting.value = { ...waiting.value, [band]: false }
     }
   }
 
   /** Everything the palette wants to know about one query, asked at once. */
-  const ask = async (mine: number, query: string) => {
+  const ask = async (mine: Question, query: string) => {
     waiting.value = { names: true, text: true, meaning: true }
     said.value = { names: '', text: '', meaning: '' }
     await Promise.all([
@@ -225,14 +232,14 @@ export function finding(
    */
   const typing = async (text: string) => {
     typed.value = text
-    const mine = ++asked
+    const mine = asks.ask()
     const query = text.trim()
     if (!query) {
       drop()
       return
     }
     await wait(HOLD)
-    if (mine !== asked) return
+    if (!mine.current) return
     await ask(mine, query)
   }
 
@@ -240,7 +247,7 @@ export function finding(
   const shows = (now: boolean) => {
     open.value = now
     if (now) return
-    asked += 1
+    asks.drop()
     typed.value = ''
     drop()
   }
@@ -272,6 +279,8 @@ export function finding(
             start: 0,
             length: 0,
             offers: [NOTE, PLEX],
+            type: one.type,
+            kind: 'note',
           },
         }
       : {
@@ -291,6 +300,8 @@ export function finding(
             start: 0,
             length: 0,
             offers: [PLEX, NOTE],
+            type: one.type,
+            kind: 'note',
           },
         }
 
@@ -322,19 +333,24 @@ export function finding(
       start: one.start,
       length: one.length,
       offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],
+      // A book and a recording are notes of no kind, and are drawn as the
+      // source each of them is.
+      type: one.isNote ? one.type : null,
+      kind: one.kind,
     },
   })
 
   /**
-   * Why a band holds nothing. A search by meaning is asked of the vectors, so a
-   * vault that has none says so.
+   * Why a band holds nothing, and nothing where it was asked and answered with
+   * nothing. A search by meaning is asked of the vectors, so a vault that has
+   * none says so.
    */
   const silenceOf = (id: Band): string => {
     if (said.value[id]) return said.value[id]
     const read = id === 'meaning' ? reading?.() : undefined
-    if (!read) return words.noneFound
+    if (!read) return ''
     if (wordsOnly(read)) return words.wordsOnly
-    return read.embedded === 0 ? words.notEmbedded : words.noneFound
+    return read.embedded === 0 ? words.notEmbedded : ''
   }
 
   /** What the bands hold, and where each thing in them stands in the vault. */
@@ -373,6 +389,18 @@ export function finding(
 
   const bands = computed(() => built.value.bands)
 
+  /**
+   * Which of four the note an item stands in is, and nothing where it stands in
+   * none. It is what the row is drawn with.
+   */
+  const typeOf = (item: string): NoteType | null => built.value.held.get(item)?.type ?? null
+
+  /**
+   * What the vault holds where an item stands, and nothing for an item the
+   * palette is not drawing. A row standing in no note is drawn as this.
+   */
+  const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
+
   /** Where one item, asked one thing, takes the person. */
   const chose = (item: string, action: string): Landing | null => {
     const stands = built.value.held.get(item)
@@ -389,5 +417,8 @@ export function finding(
       : { at: 'file', ...named }
   }
 
-  return { open, typed, bands, typing, shows, chose }
+  return { open, typed, bands, typing, shows, chose, typeOf, kindOf }
 }
+
+/** The search of one window: what the words typed turn up, and where each goes. */
+export type Searching = ReturnType<typeof finding>

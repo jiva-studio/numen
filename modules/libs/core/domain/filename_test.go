@@ -95,6 +95,7 @@ func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 		"  Entropy  ", " Entropy ", ".hidden", "trailing.",
 		"a .", "x" + strings.Repeat("é", 200) + "#",
 		"ordinary", "Ṛtu and the seasons",
+		"Lecture 1.2", "Seminar 1.2–1.3 — Lisbon, 9 July 1973",
 	} {
 		name, _ := domain.Filename(title)
 		if name == "" {
@@ -105,6 +106,10 @@ func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {
 		}
 		if domain.Basename(name+".md") != name {
 			t.Errorf("%q is filed as %q, which is not the name a link resolves by", title, name)
+		}
+		if domain.LinkName(name) != name {
+			t.Errorf("%q is filed as %q, and a link written by it is stored as %q",
+				title, name, domain.LinkName(name))
 		}
 	}
 }

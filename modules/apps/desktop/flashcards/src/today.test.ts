@@ -35,6 +35,7 @@ const vault: Owing = {
   decks: [{ deck: 'decks/Words.md', faces: 4, due: 3, new: 1, learned: 2, unbegun: 1 }],
   presets: [],
   unread: '',
+  reading: false,
 }
 
 const answering = (settings: Settings): Asks => ({

@@ -1,15 +1,10 @@
 <script setup lang="ts">
 /**
- * One note, written where it is read.
+ * One note, written where it is read. The prose is what the file holds below
+ * its frontmatter, and what was read is carried back with the write, so a note
+ * changed elsewhere meanwhile is refused.
  *
- * The prose is what the file holds below its frontmatter. What was read is
- * carried back with the write, so a note changed elsewhere meanwhile is
- * refused rather than overwritten.
- *
- * The sheet is a layer over the page and not an overlay of the framework's.
- * An overlay holds its content in a shadow root while it comes up and moves it
- * out afterwards; an editor built in there paints itself into a root it then
- * leaves behind, and is drawn with none of its own styles.
+ * The editor stands in the page's own root, under the layer this draws.
  */
 import { onMounted, ref, useTemplateRef } from 'vue'
 import {
@@ -90,7 +85,7 @@ async function keep() {
 .note {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: var(--numen-lift-sheet);
   display: flex;
   flex-direction: column;
   background: var(--numen-surface);
@@ -98,6 +93,6 @@ async function keep() {
 
 .note__prose {
   flex: 1;
-  min-height: 0;
+  min-block-size: 0;
 }
 </style>

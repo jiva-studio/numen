@@ -16,6 +16,7 @@ import (
 // launch, and says what a build that keeps them says. The cache is a saving and
 // never an answer of its own.
 func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -48,6 +49,7 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 // out in, so two machines that answered the same cards hold the same file and a
 // synchroniser has nothing to reconcile.
 func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	// Both faces of one card, so the order turns on the face and not the card.
 	recognise := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
@@ -84,6 +86,7 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 // A cache nothing can read is nothing remembered: the answers are there, and
 // the schedules are worked out from them again.
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -146,6 +149,7 @@ func answeredAlike(t *testing.T, s vaulted) {
 // A card is scheduled at the share of the cards its own preset asks for, so two
 // presets asking for different shares send the same answer different distances.
 func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
+	t.Parallel()
 	s := opened(t, targeted(0.95, 0.75))
 	answeredAlike(t, s)
 
@@ -166,6 +170,7 @@ func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 // Moving one preset's target throws the cache away and works the schedules out
 // again, so the cards under it come round somewhere else.
 func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, targeted(0.95, 0.75))
 	answeredAlike(t, s)
 
@@ -202,6 +207,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 // targets in force did not move; which card stands under which did, and that is
 // what the cache is held against.
 func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
+	t.Parallel()
 	files := targeted(0.95, 0.75)
 	s := opened(t, files)
 	answeredAlike(t, s)
@@ -233,6 +239,7 @@ func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 // Both decks go on holding cards and go on pointing where they pointed, so the
 // two targets in force are the two that were in force.
 func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
+	t.Parallel()
 	// The card that moves, written so that it can be cut from one deck and
 	// pasted into the other.
 	moving := "\n## One ^k7m2xq9fzp\n\n[[Term]]\n\n### Word\n\nbhu\n\n### Meaning\n\nto be\n"
@@ -263,6 +270,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 // A vault whose decks name no preset is scheduled as it always was: the
 // defaults are the target the whole vault stood at.
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, saturday).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -294,6 +302,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 // at all since its last answer is one the projection is certain came back, so
 // the two work the same interval out and what is compared is where it is put.
 func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
+	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
 	by := history.NewFSRSAt(0.9)
 	begun := by.Next(history.Schedule{}, when, history.Good)
@@ -373,6 +382,7 @@ func dayFrom(from, at time.Time) int {
 // card falls on a day carrying none of the load. Nothing is shown there: the
 // card stands overdue, and the next day picks it up.
 func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
+	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
 	by := history.NewFSRSAt(0.9)
 	begun := by.Next(history.Schedule{}, when, history.Good)

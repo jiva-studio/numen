@@ -8,6 +8,7 @@
  */
 
 import { grouped } from '../counting'
+import { clock } from '../player/clock'
 
 /**
  * Where a piece of work has got to.
@@ -145,26 +146,15 @@ export const percentWord = (share: number): string => {
 }
 
 /**
- * How long the rest will take, in words.
+ * How long the rest will take, on a clock.
  *
  * `perSecond` is measured by whoever is watching the count, because a rate needs
  * a clock and this has none. A rate of nothing means nothing is known, and
  * nothing is said: an estimate from no movement is a guess dressed as a fact.
- *
- * Coarse on purpose. Work measured in hours does not become more predictable by
- * being reported to the minute, and a figure that jitters every time it is drawn
- * reads as broken.
  */
 export const remainingWord = (left: number, perSecond: number): string => {
   if (left <= 0 || perSecond <= 0) return ''
-  const seconds = left / perSecond
-  if (seconds < 60) return 'under a minute left'
-  const minutes = Math.round(seconds / 60)
-  if (minutes < 60) return `about ${minutes} ${minutes === 1 ? 'minute' : 'minutes'} left`
-  const hours = Math.round(seconds / 3600)
-  if (hours < 24) return `about ${hours} ${hours === 1 ? 'hour' : 'hours'} left`
-  const days = Math.round(seconds / 86400)
-  return `about ${days} ${days === 1 ? 'day' : 'days'} left`
+  return clock((left / perSecond) * 1000)
 }
 
 /**

@@ -1,5 +1,5 @@
 /** A clock that only moves when a test says so. */
-import type { Environment } from '../transition'
+import type { Environment } from '../lib/environment'
 
 export function stubEnvironment() {
   let clock = 0

@@ -11,6 +11,7 @@ import (
 // the day the load asks for both stand inside it. It is never shorter than a
 // short day and never longer than a day holds.
 func TestHowFarACurveOfMinutesRuns(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct{ load, keeping, want float64 }{
 		{load: 0, keeping: 0, want: LeastCeiling},
 		{load: 4, keeping: 1, want: LeastCeiling},
@@ -29,6 +30,7 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 // The place of the grid a value falls at is the nearest of them, the first of
 // two it stands equally far from. A value beyond either end stands nowhere.
 func TestThePlaceOfTheGridAValueFallsAt(t *testing.T) {
+	t.Parallel()
 	grid := []float64{10, 20, 30, 40}
 	for _, one := range []struct {
 		value float64

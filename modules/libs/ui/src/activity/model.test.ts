@@ -149,11 +149,11 @@ describe('remainingWord', () => {
     { left: 0, rate: 5, want: '', why: 'nothing left to wait for' },
     { left: 100, rate: 0, want: '', why: 'no rate is no estimate' },
     { left: 100, rate: -1, want: '' },
-    { left: 30, rate: 5, want: 'under a minute left' },
-    { left: 600, rate: 5, want: 'about 2 minutes left' },
-    { left: 300, rate: 5, want: 'about 1 minute left' },
-    { left: 36000, rate: 3, want: 'about 3 hours left' },
-    { left: 400000, rate: 3, want: 'about 2 days left' },
+    { left: 30, rate: 5, want: '0:06' },
+    { left: 600, rate: 5, want: '2:00' },
+    { left: 300, rate: 5, want: '1:00' },
+    { left: 36000, rate: 3, want: '3:20:00' },
+    { left: 400000, rate: 3, want: '37:02:13' },
   ])('says $want for $left at $rate a second', ({ left, rate, want }) => {
     expect(remainingWord(left, rate)).toBe(want)
   })

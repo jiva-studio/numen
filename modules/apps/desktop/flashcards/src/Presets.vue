@@ -177,7 +177,7 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
    catching the eye. */
 .presets__wrong {
   color: var(--numen-caution-fg);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 
 /* How far through the day it is, with what pressing it would ask under that. */
@@ -199,7 +199,7 @@ const percent = (done: number): string => `${Math.round(done * 100)}%`
 /* What the sitting would ask, in the small print a count is read in. */
 .presets__left {
   color: var(--numen-hushed);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-weight: 400;
   white-space: nowrap;
 }

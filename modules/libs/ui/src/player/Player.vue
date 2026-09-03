@@ -69,6 +69,7 @@ const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputE
 </template>
 
 <style scoped>
+/* The controls are drawn flat, on whatever ground they stand on. */
 .player {
   display: flex;
   align-items: center;
@@ -76,15 +77,16 @@ const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputE
   inline-size: 100%;
 }
 
+/* A disc one row across, which is the height every control is drawn at. */
 .player__sound {
   display: grid;
   place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
+  inline-size: var(--numen-action-size);
+  block-size: var(--numen-action-size);
   flex: none;
   padding: 0;
   border: 0;
-  border-radius: var(--numen-radius-field);
+  border-radius: var(--numen-radius-pill);
   background: none;
   color: inherit;
   cursor: pointer;

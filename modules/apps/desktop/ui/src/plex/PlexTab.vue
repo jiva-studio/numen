@@ -7,11 +7,12 @@
  * this picture and goes when the picture does. A note this tab cannot draw is
  * this tab's own trouble, and is said in it.
  */
-import { computed } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize } from '@numen/ui'
 import type { MenuOpening, PlexRelatedSeat, PlexShowing } from '@numen/ui'
 import type { LucideIcon } from '@lucide/vue'
 import { ITEMS, NONE } from './menu'
+import Caution from '../Caution.vue'
 import { iconFor, iconOfNote } from '../icons'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
@@ -52,20 +53,30 @@ const asks = (event: MouseEvent) => {
   props.held.asks({
     node: null,
     at: { x: event.clientX, y: event.clientY },
-    from: null,
     opening: 'pointer',
   })
+}
+
+const picture = useTemplateRef<{ focusNode: (id: string) => void }>('picture')
+
+/** A menu put away, and the keyboard back on the node it was asked from. */
+const closed = (chose?: string) => {
+  const node = props.held.menu.value?.node ?? null
+  if (chose === undefined) props.held.dismiss()
+  else props.held.chose(chose)
+  if (node !== null) picture.value?.focusNode(node)
 }
 </script>
 
 <template>
   <div class="plex" @contextmenu="asks">
-    <p v-if="props.held.view.trouble.value" class="warning">
+    <Caution v-if="props.held.view.trouble.value">
       {{ props.held.view.trouble.value }}
-    </p>
+    </Caution>
 
     <Plex
       v-if="props.held.picture.value"
+      ref="picture"
       class="plex__picture"
       :neighbourhood="props.held.picture.value!"
       :options="options"
@@ -83,12 +94,8 @@ const asks = (event: MouseEvent) => {
           void props.held.brought(carried, seat)
       "
       @menu="
-        (
-          node: string,
-          at: { x: number; y: number },
-          from: SVGGElement,
-          opening: MenuOpening,
-        ) => props.held.asks({ node, at, from, opening })
+        (node: string, at: { x: number; y: number }, opening: MenuOpening) =>
+          props.held.asks({ node, at, opening })
       "
       @show="(node: string, how: PlexShowing) => props.held.opens(node, how)"
       @enter="(node: string, part: string) => props.held.entered(node, part)"
@@ -110,11 +117,10 @@ const asks = (event: MouseEvent) => {
       v-if="props.held.menu.value"
       :items="items"
       :at="props.held.menu.value!.at"
-      :from="props.held.menu.value!.from"
       :opening="props.held.menu.value!.opening"
       open
-      @choose="(id: string) => props.held.chose(id)"
-      @dismiss="props.held.dismiss()"
+      @choose="(id: string) => closed(id)"
+      @dismiss="closed()"
     >
       <template #icon="{ id }">
         <component :is="iconFor(id)" v-if="iconFor(id)" class="plex__icon" aria-hidden="true" />
@@ -144,16 +150,5 @@ const asks = (event: MouseEvent) => {
   inline-size: 0.875rem;
   block-size: 0.875rem;
   stroke-width: 1.875;
-}
-
-/* A warning carries a filesystem path, and a long one breaks where it stands. */
-.warning {
-  margin: 0;
-  padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans);
-  font-size: 0.8rem;
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-  overflow-wrap: break-word;
 }
 </style>

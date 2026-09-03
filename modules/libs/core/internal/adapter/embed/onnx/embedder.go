@@ -230,22 +230,9 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		longest = max(longest, len(ids))
 	}
 	seq := bucket(longest, tokenStep, e.maxTokens)
+	rows := max(e.batchTexts, len(batch))
 
-	ids := make([][]int64, len(batch))
-	mask := make([][]int64, len(batch))
-	types := make([][]int64, len(batch))
-	for row, tokens := range batch {
-		ids[row] = make([]int64, seq)
-		mask[row] = make([]int64, seq)
-		types[row] = make([]int64, seq)
-		for i := range ids[row] {
-			ids[row][i] = int64(e.pad)
-		}
-		for i, id := range tokens {
-			ids[row][i] = int64(id)
-			mask[row][i] = 1
-		}
-	}
+	ids, mask, types := padded(batch, rows, seq, e.pad)
 
 	args := []any{ids, mask}
 	if e.typeIDs {
@@ -272,15 +259,19 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 		return nil, err
 	}
 	if e.pooled {
-		return split(flat, len(batch), e.dimensions)
+		vectors, err := split(flat, rows, e.dimensions)
+		if err != nil {
+			return nil, err
+		}
+		return vectors[:len(batch)], nil
 	}
-	if want := len(batch) * seq * e.dimensions; len(flat) != want {
+	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %s", e.name, len(flat), outputs[0].Shape())
 	}
 	if e.head {
-		return headPool(flat, len(batch), seq, e.dimensions), nil
+		return headPool(flat, rows, seq, e.dimensions)[:len(batch)], nil
 	}
-	return meanPool(flat, mask, e.dimensions), nil
+	return meanPool(flat, mask, e.dimensions)[:len(batch)], nil
 }
 
 func split(flat []float32, rows, dimensions int) ([][]float32, error) {
@@ -334,9 +325,9 @@ type paths struct {
 // Where a repository keeps the models it publishes, and which of them is run
 // when the configuration names none.
 const (
-	modelFolder = "onnx"
+	modelFolder = embed.ModelFolder
 	modelFile   = embed.ModelFile
-	tokenFile   = "tokenizer.json"
+	tokenFile   = embed.TokenizerFile
 )
 
 // locate finds the model's files: in a directory the configuration names, or in

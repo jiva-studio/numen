@@ -13,6 +13,7 @@ import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
 import Marks from './Marks.vue'
+import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
 import { heading, type Half, type Refusal, type Way } from './order'
@@ -29,11 +30,7 @@ const props = withDefaults(
   defineProps<{
     /** The face, laid out against the fields the stencil declares. */
     block: FaceBlock
-    /** The fields a card is asked for, which are what may be written into a half. */
-    fields: readonly string[]
-    /** The names the other faces carry, which this one's is measured against. */
-    taken: readonly string[]
-    /** What the caller found wrong with this face, said under its name. */
+    /** What the caller found wrong with this face, said beside its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
     words?: StencilWords
@@ -61,13 +58,10 @@ const objectsId = `${uid}-objects`
 /** A name typed over the one this face carries, until it is committed. */
 const naming = useNaming<Refusal>({
   carries: () => props.block.name,
-  taken: () => props.taken,
+  taken: () => props.block.taken,
   amiss: heading,
   renamed: (_over, name) => emit('rename', name),
 })
-
-/** What is in the name box: the name it carries, or what is being typed over it. */
-const text = computed(() => naming.text(props.block.id))
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
 const objects = computed(() => naming.objection(props.block.id))
@@ -136,19 +130,14 @@ const put = async (field: string): Promise<void> => {
       @dragend="emit('release')"
       @step="(way, press) => emit('step', way, press)"
     >
-      <div class="block__said flex flex-col">
+      <div class="block__said">
         <div class="block__head flex items-center">
-          <input
-            class="block__title min-w-0 rounded-node"
-            type="text"
-            :value="text"
-            :placeholder="`${words.faceStem} ${block.at}`"
-            :aria-label="`${words.faceStem} ${block.at}`"
-            :aria-invalid="objects !== null || undefined"
-            :aria-describedby="says ? objectsId : undefined"
-            @input="naming.typing(block.id, ($event.target as HTMLInputElement).value)"
-            @change="naming.commit(block.id)"
-            @keydown="naming.onKey($event, block.id)"
+          <NameBox
+            class="block__title rounded-node"
+            :naming="naming"
+            :over="block.id"
+            :stem="`${words.faceStem} ${block.at}`"
+            :described-by="says ? objectsId : null"
           />
 
           <!-- The fields are small quiet chips, as small quiet actions are
@@ -156,7 +145,7 @@ const put = async (field: string): Promise<void> => {
                reader by the group, and to everyone else by their look. -->
           <div class="block__slots flex" role="group" :aria-label="`${words.insert}: ${block.name}`">
             <Button
-              v-for="field in fields"
+              v-for="field in block.fields"
               :key="field"
               variant="ghost"
               size="small"
@@ -170,15 +159,19 @@ const put = async (field: string): Promise<void> => {
           </div>
         </div>
 
-        <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
+        <!-- What is wrong with the face stands at the end of the strip, over
+             the window under it. -->
+        <div v-if="says || wrong.length" class="block__amiss">
+          <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
 
-        <Amiss
-          v-if="wrong.length"
-          class="block__objects"
-          data-wrong
-          :said="wrong"
-          :label="words.wrong"
-        />
+          <Amiss
+            v-if="wrong.length"
+            class="block__objects"
+            data-wrong
+            :said="wrong"
+            :label="words.wrong"
+          />
+        </div>
       </div>
 
       <template #deeds>
@@ -226,12 +219,11 @@ const put = async (field: string): Promise<void> => {
           {{ pane.said }}
         </p>
 
-        <Amiss
-          v-if="pane.stray.length"
-          class="block__objects"
-          role="alert"
-          :said="words.stray(pane.stray)"
-        />
+        <!-- What is wrong with the half stands in the foot of the part, over
+             what is written there. -->
+        <div v-if="pane.stray.length" class="block__amiss">
+          <Amiss class="block__objects" role="alert" :said="words.stray(pane.stray)" />
+        </div>
       </div>
     </div>
   </article>
@@ -273,11 +265,10 @@ const put = async (field: string): Promise<void> => {
   }
 }
 
-/* The strip is the face's own, so its name leads it and the fields follow.
-   What is wrong with the name stands under the row it is wrong about. */
+/* The strip is the face's own, so its name leads it and the fields follow. */
 .block__said {
+  position: relative;
   inline-size: 100%;
-  gap: 0.125rem;
 }
 
 .block__head {
@@ -285,24 +276,12 @@ const put = async (field: string): Promise<void> => {
   gap: var(--numen-inset);
 }
 
-/* A name is typed in the strip it stands in, and carries neither a line nor a
-   ground of its own. A press on it works it, and does not take hold of what it
-   stands in. It is the heading of the block: the largest thing in the strip,
-   and never squeezed by however many fields stand beside it. */
+/* The name is the heading of the block: the largest thing in the strip, and
+   never squeezed by however many fields stand beside it. */
 .block__title {
   flex: 0 1 12rem;
   min-inline-size: 5rem;
-  padding: 0.125rem 0.375rem;
-  border: none;
-  background: none;
-  color: inherit;
-  font: inherit;
   font-weight: 500;
-  cursor: auto;
-}
-
-.block__title:focus-visible {
-  outline: none;
 }
 
 /* The fields are a group under the heading, not its equal. A long row scrolls
@@ -333,9 +312,9 @@ const put = async (field: string): Promise<void> => {
 /* A part is a pane of the window: it carries a ground and no line of its own.
    What it holds and what it says while it holds nothing share its one cell. */
 .block__pane {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  /* What the part holds takes the room; what is wrong takes a line under it. */
   grid-template-rows: 1fr;
   min-inline-size: 0;
   min-block-size: var(--pane-min);
@@ -354,20 +333,34 @@ const put = async (field: string): Promise<void> => {
   grid-area: 1 / 1;
 }
 
-/* What is wrong takes the whole row under what it is wrong about. */
-.block__objects {
-  flex-basis: 100%;
-  margin: 0;
+/* What is wrong stands at the end of what it is wrong about and over it, taking
+   no room from it. A press meant for what is underneath reaches it. */
+.block__amiss {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: var(--box-pad-inline);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  max-inline-size: calc(100% - 2 * var(--box-pad-inline));
+  pointer-events: none;
 }
 
-/* A name with nothing in it to break at is broken where the line ends. */
-ul.block__objects {
-  overflow-wrap: anywhere;
+/* The strip's stands under it, and a part's inside its foot. */
+.block__said > .block__amiss {
+  inset-block-start: 100%;
 }
 
-.block__pane > .block__objects {
-  grid-area: 2 / 1;
-  padding: 0 var(--box-pad-inline) var(--box-air);
+.block__pane > .block__amiss {
+  inset-block-end: var(--box-air);
+}
+
+/* What is wrong is read over whatever it covers, so it carries a ground. */
+.block__amiss > .block__objects {
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--numen-radius);
+  background: var(--numen-alarm-bg);
 }
 
 /* A face's box stands open at a few lines and grows with what is written in

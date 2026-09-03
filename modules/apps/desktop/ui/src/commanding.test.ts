@@ -10,17 +10,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   asksCommands,
-  cannotRun,
   commanding,
   commandsOf,
   creates,
-  runsAgain,
+  runnable,
   MAKING,
   offering,
   overNote,
   type Holds,
   type Knows,
   type Offering,
+  type Runnable,
   type Where,
 } from './commanding'
 import type { Known, Listed } from './core'
@@ -47,6 +47,7 @@ const name = (path: string, title: string, heading = ''): Named => ({
   heading,
   line: heading ? 4 : -1,
   at: [{ from: 0, to: 1 }],
+  type: 'note',
 })
 
 /** One vault as the list answers one. */
@@ -107,6 +108,7 @@ const asking = (
   found: readonly Named[] = [],
   offers: Record<string, readonly Offering[]> = {},
   listed: Listed = installation(vault('physics', 'Physics')),
+  runs: Runnable = runnable(),
 ) => {
   const at = ref(front(over))
   const asked: string[] = []
@@ -125,6 +127,7 @@ const asking = (
     () => at.value,
     window.knows,
     kept.holds,
+    runs,
     async () => {},
   )
   commands.shows(true)
@@ -164,6 +167,7 @@ describe('the commands as they open', () => {
         'note',
         'deck',
         'stencil',
+        'newPreset',
         'plex',
         'files',
         'agent',
@@ -334,6 +338,21 @@ describe('a command that asks for a name', () => {
     expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['naming'])
   })
 
+  it('asks for one before a preset is made, as it does before a deck', () => {
+    const { commands } = asking()
+
+    expect(commands.asks('newPreset', front())).toBeNull()
+    expect(commands.bands.value.map((band) => band.id)).toStrictEqual(['naming'])
+  })
+
+  it('carries the name a preset was asked for under', () => {
+    const { commands } = asking()
+    commands.asks('newPreset', front())
+    void commands.typing('Sanskrit')
+
+    expect(commands.chose('name', 'name')?.name).toBe('Sanskrit')
+  })
+
   it('offers what was typed as the name, and nothing before anything is', () => {
     const { commands } = asking()
     commands.asks('child', front())
@@ -496,7 +515,9 @@ describe('a note that moves under an open step', () => {
 const heard: Partial<Where> = {
   kind: 'recording',
   path: '',
-  title: '',
+  // A recording tab is filed at no note, and what it is called is the name of
+  // the file it plays.
+  title: 'Ants.mp3',
   file: 'talks/Ants.mp3',
   source: 'recording',
 }
@@ -509,10 +530,14 @@ const scanned: Partial<Where> = {
 }
 
 describe('the runs over the file in front', () => {
-  it('offers a recording to be transcribed, and nothing to recognise', () => {
+  it('offers a recording to be transcribed, put right and dropped, and nothing to recognise', () => {
     const { commands } = asking(heard)
 
-    expect(drawn(commands.bands).file).toStrictEqual(['transcribe'])
+    expect(drawn(commands.bands).file).toStrictEqual([
+      'transcribe',
+      'proofread',
+      'dropTranscript',
+    ])
   })
 
   it('offers a scan to be recognised, and nothing to transcribe', () => {
@@ -542,13 +567,64 @@ describe('the runs over the file in front', () => {
   })
 
   it('is offered nowhere once this build has said it cannot do it at all', () => {
-    cannotRun('transcribe')
-    try {
-      expect(drawn(asking(heard).commands.bands).file).toBeUndefined()
-      expect(drawn(asking(scanned).commands.bands).file).toStrictEqual(['recognise'])
-    } finally {
-      runsAgain()
-    }
+    const runs = runnable()
+    runs.cannotRun('transcribe')
+    runs.cannotRun('proofread')
+    runs.cannotRun('dropTranscript')
+
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
+    expect(drawn(asking(scanned, [], {}, undefined, runs).commands.bands).file).toStrictEqual([
+      'recognise',
+    ])
+  })
+
+  it('is still offered in a window that has not been told it', () => {
+    const runs = runnable()
+    runs.cannotRun('transcribe')
+    runs.cannotRun('proofread')
+    runs.cannotRun('dropTranscript')
+
+    expect(drawn(asking(heard, [], {}, undefined, runs).commands.bands).file).toBeUndefined()
+    expect(drawn(asking(heard).commands.bands).file).toStrictEqual([
+      'transcribe',
+      'proofread',
+      'dropTranscript',
+    ])
+  })
+})
+
+describe('dropping the transcript of a recording', () => {
+  it('asks before the words go, and is nothing until the answer is given', () => {
+    const { commands } = asking(heard)
+
+    expect(commands.asks('dropTranscript', front(heard))).toBeNull()
+    expect(commands.bands.value[0]?.id).toBe('asking')
+    expect(commands.bands.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
+  })
+
+  // The answer that changes nothing is the one the keyboard opens on.
+  it('names the recording in the answer that takes the words away', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.bands.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
+    expect(commands.bands.value[0]?.items[1]?.title).toBe(`${words.drops} “${heard.title}”`)
+    expect(commands.bands.value[0]?.items[1]?.detail).toBe(words.dropped)
+  })
+
+  it('carries the recording the tab in front holds once the answer is given', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.chose('yes', 'yes')?.file).toBe('talks/Ants.mp3')
+  })
+
+  it('does nothing and puts the step away where the answer keeps the words', () => {
+    const { commands } = asking(heard)
+    commands.asks('dropTranscript', front(heard))
+
+    expect(commands.chose('no', 'no')).toBeNull()
+    expect(commands.bands.value[0]?.id).not.toBe('asking')
   })
 })
 
@@ -624,6 +700,7 @@ describe('a command that asks for a note', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
+      runnable(),
       async () => {},
     )
     commands.shows(true)
@@ -1033,6 +1110,7 @@ describe('a command that asks for a vault', () => {
       () => at.value,
       { called: () => '', holding: () => null },
       { offers: () => [], shows: () => {} },
+      runnable(),
       async () => {},
     )
     commands.shows(true)

@@ -94,6 +94,7 @@ func mark(at int) string { return fmt.Sprintf("card%06d", at) }
 // Each preset turns its own minutes into a count from its own answer times, so
 // two presets of the same day hold as many cards as their cards cost.
 func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Slow.md":        preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
@@ -127,6 +128,7 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 // The day of the week a budget is read off is the review day being sat, which
 // the small hours of the morning belong to the day before.
 func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"Light.md": preset(
@@ -154,6 +156,7 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 // A preset aiming at a day schedules through the whole of that review day, and
 // stops when the next one opens.
 func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"By.md": preset("goal: by_date\nby_date: 2026-09-05\n" +
@@ -181,6 +184,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 // A second sitting of the same day takes up where the first left off: what was
 // answered since the day opened is off the day's budget.
 func TestASecondSittingTakesUpWhereTheFirstLeftOff(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":       term,
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -203,6 +207,7 @@ func TestASecondSittingTakesUpWhereTheFirstLeftOff(t *testing.T) {
 // A card the day has already charged for comes round again for nothing under
 // `counts: cards`, and spends the budget again under `counts: shows`.
 func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct {
 		counts string
 		cards  int
@@ -237,6 +242,7 @@ func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
 // in a later one under `counts: cards`, and is charged again under
 // `counts: shows`.
 func TestAFaceTheDayHasChargedIsFreeInALaterSitting(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct {
 		counts string
 		cards  int
@@ -265,6 +271,7 @@ func TestAFaceTheDayHasChargedIsFreeInALaterSitting(t *testing.T) {
 // A day's cards are counted in cards: three new cards that each take three
 // steps to settle are the three the day holds, and no fourth is begun.
 func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Three.md":       preset("new_a_day: 3\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -293,6 +300,7 @@ func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 // Each preset holds its own decks to its own budget, and one preset running out
 // leaves the others where they were.
 func TestTwoPresetsInOneSittingKeepTheirOwnBudgets(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":       term,
 		"Few.md":        preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -316,6 +324,7 @@ func TestTwoPresetsInOneSittingKeepTheirOwnBudgets(t *testing.T) {
 // A preset of no cards a day schedules nothing, and every deck pointing at it
 // is empty for the day. A deck scheduled by another preset is untouched.
 func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":          term,
 		"Paused.md":        preset("new_a_day: 0\nreviews_a_day: 0\n"),
@@ -335,6 +344,7 @@ func TestAPresetOfNoCardsADaySchedulesNothing(t *testing.T) {
 // A day the preset gives half the load carries half the cards, and a preset
 // naming that day nothing carries all of them on it.
 func TestALightDayCutsTheDaysCards(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"Light.md": preset(
@@ -357,6 +367,7 @@ func TestALightDayCutsTheDaysCards(t *testing.T) {
 // Under a goal of minutes the minutes close the day: a day of one minute holds
 // three answers at the twenty seconds a new card costs.
 func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Short.md":       preset("goal: minutes_a_day\nnew_a_day: 10\nminutes_a_day: 1\n"),
@@ -374,6 +385,7 @@ func TestTheMinutesCloseTheDayUnderAGoalOfMinutes(t *testing.T) {
 // no part: moved to either end of what a preset may hold, a budget the goal
 // does not name leaves the day asking the same cards.
 func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
+	t.Parallel()
 	for _, one := range []struct {
 		what  string
 		goal  string
@@ -417,6 +429,7 @@ func TestTheBudgetTheGoalDoesNotNameMovesNothing(t *testing.T) {
 // the reviews it keeps none of do not close it. Beside it the decks naming no
 // preset are asked their own day.
 func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"Steady.md": preset("goal: minutes_a_day\nminutes_a_day: 34\n" +
@@ -450,6 +463,7 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 // A goal of a date paces the day: the material still to begin, over the days
 // left to begin it in. Neither the minutes nor the counts cut it short.
 func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		// Ten days from the Saturday to the day it aims at, counting both, and
@@ -467,6 +481,7 @@ func TestAGoalOfADatePacesTheDayOverTheDaysLeft(t *testing.T) {
 
 // What is owed is what the sitting asks: the same numbers, deck by deck.
 func TestWhatIsOwedIsWhatTheSittingAsks(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Few.md":         preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -498,6 +513,7 @@ func asked(sat flashcards.Sitting) int { return len(sat.Asked) }
 // The decks naming no preset are one scope, so a second deck of them is a
 // second deck of the same day and not a second day's work.
 func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
+	t.Parallel()
 	one := opened(t, map[string]string{
 		"Term.md":      term,
 		"decks/One.md": deckOf("", 80, 0),
@@ -521,6 +537,7 @@ func TestDecksNamingNoPresetShareTheDefaultsBudget(t *testing.T) {
 // The decks naming one preset are one scope, and the decks naming none are
 // another beside it.
 func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":       term,
 		"Six.md":        preset("new_a_day: 6\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -543,6 +560,7 @@ func TestDecksNamingOnePresetShareItsBudget(t *testing.T) {
 // A sitting over the whole vault is the union of the presets it holds, so a
 // minute under each of two is two minutes of cards.
 func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
+	t.Parallel()
 	apart := opened(t, map[string]string{
 		"Term.md":      term,
 		"First.md":     preset("goal: minutes_a_day\nnew_a_day: 50\nminutes_a_day: 1\n"),
@@ -569,6 +587,7 @@ func TestTwoPresetsOfAMinuteEachHoldTwoMinutesOfCards(t *testing.T) {
 // A day's new cards and a day's reviews are two budgets, so a preset out of the
 // one goes on asking the other.
 func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":      term,
 		"New.md":       preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -593,6 +612,7 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 // A deck pointed at another preset between sittings is held to the budget of
 // the preset it now names.
 func TestADeckRepointedBetweenSittingsIsHeldToItsNewPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"Few.md":      preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -613,6 +633,7 @@ func TestADeckRepointedBetweenSittingsIsHeldToItsNewPreset(t *testing.T) {
 // What a day has already spent is spent against the preset the deck now names,
 // so a deck repointed halfway through a day carries the morning with it.
 func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"Few.md":      preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -638,6 +659,7 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 // A limit edited in the middle of a day holds from that moment, and what the
 // day has already spent stands against it either way.
 func TestALimitEditedInTheMiddleOfADayHoldsAtOnce(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -667,6 +689,7 @@ func TestALimitEditedInTheMiddleOfADayHoldsAtOnce(t *testing.T) {
 // `counts` edited in the middle of a day is what the day is counted by: the
 // showings the day already held are charged for from that moment.
 func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("counts: cards\nnew_a_day: 0\nreviews_a_day: 3\n" +
@@ -700,6 +723,7 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 // A preset paused in the middle of a day stops the decks pointing at it, and
 // the cards the day had already begun stop with them.
 func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 5\nreviews_a_day: 5\nminutes_a_day: 0\n"),
@@ -725,6 +749,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 // A day moved behind us in the middle of a day stops the preset from that
 // moment.
 func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: by_date\nby_date: 2026-09-30\nlearned: retention\n" +
@@ -746,6 +771,7 @@ func TestADayMovedBehindUsStopsThePresetAtOnce(t *testing.T) {
 // A goal moved off a day starts the preset again: the day stands in the file
 // and is read only while the goal names it.
 func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: by_date\nby_date: 2026-09-01\n" +
@@ -766,6 +792,7 @@ func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 // The budget is whole again when the day of review turns over, and not before:
 // the small hours are the evening's day still.
 func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"Five.md":     preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -797,6 +824,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 // A day carrying none of the load is asked no card, and the day after it opens
 // on the whole of the budget.
 func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"On.md":       preset("new_a_day: 8\nreviews_a_day: 0\nminutes_a_day: 0\nload: {sun: 0}\n"),
@@ -821,6 +849,7 @@ func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 // A card face is new on the day it was first answered at all, which is read off
 // the times the answers carry and not the order the runs arrived in.
 func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":     term,
 		"One.md":      preset("new_a_day: 1\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -845,6 +874,7 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 // from that moment. The cache stands from before the edit and is thrown away,
 // so what a sitting asks is the cards at the target now in force.
 func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("retention: 0.7\nnew_a_day: 0\nreviews_a_day: 50\n" +
@@ -897,6 +927,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 // the one that first showed it, so a single sitting is a batch of that day and
 // not the day.
 func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
+	t.Parallel()
 	// A day of the week the vault's own preset is read on, so a light Saturday
 	// and a dead Saturday are read where a person meets them.
 	const day = 90
@@ -1100,6 +1131,7 @@ func backlogged(t *testing.T, front string) vaulted {
 // offered. It is a share of the day and not a budget of its own, so it is read
 // against the one pot a goal of minutes keeps.
 func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
+	t.Parallel()
 	// Four minutes a day over twenty card faces owed and twenty unbegun, which
 	// is more of each than the day can carry.
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
@@ -1128,6 +1160,7 @@ func TestTheBacklogShareSaysWhatTheDayIsSpentOn(t *testing.T) {
 // A preset naming no share pays the debt first, which is what every preset
 // written before the setting existed does.
 func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
+	t.Parallel()
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	was := s0(t, backlogged(t, day+"backlog: 100\n"))
@@ -1142,6 +1175,7 @@ func TestAPresetNamingNoBacklogShareIsUnchanged(t *testing.T) {
 // A side that runs short leaves the rest of the day to the other, so a day is
 // never left part spent because one half of it had nothing to offer.
 func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"On.md": preset("goal: retention\nbacklog: 50\n" +
@@ -1165,6 +1199,7 @@ func TestASideThatRunsShortLeavesTheDayToTheOther(t *testing.T) {
 // A goal of a date carries the whole material by its own reckoning, so the
 // share takes no part and the value stands in the file untouched.
 func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
+	t.Parallel()
 	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {
 		s := backlogged(t, "goal: by_date\nby_date: 2026-09-14\nlearned: retention\n"+share+
 			"new_a_day: 1\nreviews_a_day: 1\nminutes_a_day: 0\n")
@@ -1198,6 +1233,7 @@ func s0(t *testing.T, s vaulted) sitting {
 // holds each side to a count of its own, so the order the two are drawn in
 // cannot move either total.
 func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
+	t.Parallel()
 	const minutes = "goal: minutes_a_day\nminutes_a_day: 4\n"
 	// Counts larger than either side holds, so nothing but the share could
 	// close the day.
@@ -1228,6 +1264,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 // the preset counts cards, and the minutes go on it as they go on every answer.
 // A day of a minute spent four times over is a day nobody asked for.
 func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
+	t.Parallel()
 	for _, counts := range []string{"cards", "shows"} {
 		s := opened(t, map[string]string{
 			"Term.md": term,

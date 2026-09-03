@@ -1,0 +1,118 @@
+/*
+ * The chrome a plot of the one control is drawn in: the name up its side, the
+ * room the picture takes, and the numbers read off its edges.
+ *
+ * The curve and the band under it are two pictures, and this is what they draw
+ * alike. The lengths come off `.control`, which both stand inside.
+ */
+
+/* The y's name beside the plot, and the plot. */
+.control__frame {
+  display: flex;
+  align-items: stretch;
+  gap: var(--numen-node-gap);
+}
+
+/*
+ * The room the y's name runs in. It is a box of its own width and no height of
+ * its own, so however long the name is the plot keeps its height.
+ */
+.control__axis {
+  position: relative;
+  flex: none;
+  inline-size: var(--control-axis);
+}
+
+.control__name {
+  margin: 0;
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  line-height: 1;
+}
+
+/* Read up the picture, the way an axis is named on a chart. */
+.control__name--y {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  overflow: hidden;
+}
+
+.control__name--x {
+  text-align: center;
+}
+
+/* Everything read off the picture keeps the picture's own width. */
+.control__foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-dot-gap);
+  padding-inline-start: calc(var(--control-axis) + var(--numen-node-gap));
+}
+
+/* The picture, and what is named over it. */
+.control__over {
+  position: relative;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/*
+ * The room a plot is drawn in. It stands at the plot's own proportion whatever
+ * is inside it, so the box is one size while the answer is worked out, once it
+ * has landed, and where there is nothing to draw.
+ */
+.control__room {
+  inline-size: 100%;
+}
+
+.control__picture {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  touch-action: none;
+  cursor: ew-resize;
+  border-radius: var(--numen-radius-tight);
+}
+
+.control__rule {
+  stroke: var(--numen-node-border);
+  stroke-width: 1;
+}
+
+/*
+ * A number read off the picture: the ends of the band against the lines they
+ * are the height of, and the value the knob stands at under it. The halo keeps
+ * it legible where the line runs behind it.
+ */
+.control__number {
+  position: absolute;
+  padding-inline: var(--numen-edge-label-halo);
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-shadow:
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg),
+    0 0 var(--numen-edge-label-halo) var(--numen-node-bg);
+  pointer-events: none;
+}
+
+.control__ends {
+  display: flex;
+  justify-content: space-between;
+  min-block-size: var(--control-line);
+  margin: 0;
+  padding-inline: var(--numen-inset);
+  color: var(--numen-hushed);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+}

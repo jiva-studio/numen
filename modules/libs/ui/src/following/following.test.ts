@@ -113,3 +113,45 @@ describe('a window that has closed', () => {
     expect(heard).toStrictEqual(['one'])
   })
 })
+
+describe('what a follower holds for one reading of a stream', () => {
+  it('is let go of when the stream ends, before it is taken up again', async () => {
+    const order: string[] = []
+    let taken = 0
+    const follows = following({
+      open: () => taken <= 2,
+      lost: () => {},
+      wait: async () => {
+        taken++
+        order.push('waits')
+      },
+      reset: () => void order.push('resets'),
+    })
+
+    await follows(says('a change'), () => {})
+
+    expect(order).toStrictEqual(['resets', 'waits', 'resets', 'waits', 'resets', 'waits'])
+  })
+
+  it('is let go of when the stream fails, the same way', async () => {
+    const order: string[] = []
+    let taken = 0
+    const follows = following({
+      open: () => taken < 1,
+      lost: () => void order.push('lost'),
+      wait: async () => {
+        taken++
+      },
+      reset: () => void order.push('resets'),
+    })
+
+    await follows(
+      async function* (): AsyncIterable<string> {
+        throw new Error('the connection went')
+      },
+      () => {},
+    )
+
+    expect(order).toStrictEqual(['lost', 'resets'])
+  })
+})

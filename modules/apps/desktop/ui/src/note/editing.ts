@@ -65,12 +65,17 @@ const overtaken: Overtaken = {
   take: "take the file's",
 }
 
-export function editing(
-  core: Notes,
-  limits = waiting,
+/** What the window hands the store of open notes, beside the vault itself. */
+export interface Keeping {
+  /** How long the typing settles for, and how long a note may go unwritten. */
+  limits?: typeof waiting
   /** What hears that a note on screen was replaced by what its file holds. */
-  replaced: (path: string) => void = () => {},
-) {
+  replaced?(path: string): void
+}
+
+export function editing(core: Notes, how: Keeping = {}) {
+  const limits = how.limits ?? waiting
+  const replaced = how.replaced ?? (() => {})
   /** Every open note, under an identity its caller mints and this never reads into. */
   const tabs = ref(new Map<string, Tab>())
   /** The interval each tab is waiting on, so arming again replaces it. */

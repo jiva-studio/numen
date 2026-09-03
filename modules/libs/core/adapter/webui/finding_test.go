@@ -2,10 +2,13 @@ package webui_test
 
 import (
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 // The two questions the palette asks, over the wire.
@@ -62,6 +65,96 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 	}
 	if heading.GetLine() < 0 {
 		t.Errorf("the heading stands on line %d, which is no line", heading.GetLine())
+	}
+}
+
+// TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
+// what they are, and a heading is drawn as the note it stands in.
+func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
+		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
+	})
+
+	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "entropy"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	types := map[string]v1.NoteType{}
+	for _, one := range answer.Msg.GetFound() {
+		types[one.GetNote().GetPath()] = one.GetType()
+	}
+	want := map[string]v1.NoteType{
+		"Entropy.md": v1.NoteType_NOTE_TYPE_UNSPECIFIED,
+		"Animals.md": v1.NoteType_NOTE_TYPE_DECK,
+	}
+	for path, is := range want {
+		if got, held := types[path]; !held || got != is {
+			t.Errorf("the name found in %s is drawn as %v, want %v", path, got, is)
+		}
+	}
+}
+
+// TestAPassageSaysWhichOfFourItsNoteIs. A passage is drawn with the mark of the
+// note it was read out of.
+func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
+	})
+
+	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "reversible", Way: v1.Way_WAY_WORDS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	found := answer.Msg.GetFound()
+	if len(found) == 0 {
+		t.Fatal("nothing found")
+	}
+	if is := found[0].GetType(); is != v1.NoteType_NOTE_TYPE_PRESET {
+		t.Errorf("the passage is drawn as %v, want the preset it was read out of", is)
+	}
+}
+
+// TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
+// down draws a book as a book, and a note as the note it is.
+func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
+		"library/A Book.epub": string(testsupport.Book(t)),
+	})
+
+	// The text of a book is taken out of it behind the window, and the search
+	// reaches it once that has finished.
+	kinds := map[string]v1.SourceKind{}
+	for range 500 {
+		answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+			Query: "book", Way: v1.Way_WAY_WORDS,
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		clear(kinds)
+		for _, one := range answer.Msg.GetFound() {
+			kinds[one.GetPath()] = one.GetKind()
+		}
+		if _, held := kinds["library/A Book.epub"]; held {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	want := map[string]v1.SourceKind{
+		"Engines.md":          v1.SourceKind_SOURCE_KIND_NOTE,
+		"library/A Book.epub": v1.SourceKind_SOURCE_KIND_BOOK,
+	}
+	for path, is := range want {
+		if got, held := kinds[path]; !held || got != is {
+			t.Errorf("the passage out of %s came back as %v, want %v", path, got, is)
+		}
 	}
 }
 

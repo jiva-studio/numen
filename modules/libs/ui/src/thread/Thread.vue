@@ -3,12 +3,14 @@
  * The conversation. What was said sits in a bubble; what came back is prose on
  * the surface; what the agent reached for is a quiet line between them.
  *
- * Scrolls on its own, and stays at the foot while an answer arrives: that is
- * the browser's own scroll anchoring.
+ * Scrolls on its own, and follows the foot: a turn that arrives is brought
+ * into view, and reading further up leaves it where it was read until the foot
+ * is reached again.
  */
-import { computed } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Prose from '../prose/Prose.vue'
 import Tool from '../tool/Tool.vue'
+import { atFoot, footOf } from './foot'
 import { placeTurns, type PlacedTurn, type Turn } from './model'
 
 const props = defineProps<{
@@ -31,11 +33,35 @@ const toolOf = (entry: PlacedTurn) => ({
   aside: entry.turn.aside ?? '',
   working: entry.state === 'arriving',
 })
+
+const area = useTemplateRef<HTMLElement>('area')
+
+/** Whether the foot is followed. Scrolling away from it stops that. */
+const follows = ref(true)
+
+const scrolled = () => {
+  if (area.value) follows.value = atFoot(area.value)
+}
+
+/** Brings the foot into view. Asked to, it takes the following up again. */
+const toFoot = (again = false) => {
+  if (again) follows.value = true
+  if (!follows.value || !area.value) return
+  area.value.scrollTop = footOf(area.value)
+}
+
+watch(() => props.turns, () => toFoot(), { deep: true, flush: 'post' })
+
+onMounted(() => toFoot())
+
+defineExpose({ toFoot })
 </script>
 
 <template>
   <div
+    ref="area"
     class="thread numen flex min-h-0 flex-col gap-turn overflow-y-auto overscroll-contain font-sans text-base"
+    @scroll="scrolled"
   >
     <p v-if="!placed.length" class="m-auto text-hushed">
       <slot name="silence">Nothing said yet</slot>
@@ -53,7 +79,7 @@ const toolOf = (entry: PlacedTurn) => ({
         class="thread__body min-w-0"
         :class="
           entry.voice.bubble
-            ? 'max-w-(--numen-bubble-measure) rounded-bubble bg-bubble px-3 py-2 text-bubble-ink'
+            ? 'max-w-(--measure) rounded-bubble bg-bubble px-3 py-2 text-bubble-ink'
             : 'text-answer-ink'
         "
       >
@@ -62,7 +88,7 @@ const toolOf = (entry: PlacedTurn) => ({
             <button
               v-if="entry.turn.opens"
               type="button"
-              class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring"
+              class="thread__opens block w-full cursor-pointer rounded-node text-start outline-none ring-numen"
               @click="emit('open', entry.turn)"
             >
               <Tool v-bind="toolOf(entry)" />
@@ -74,12 +100,13 @@ const toolOf = (entry: PlacedTurn) => ({
             v-else
             :text="entry.turn.text"
             :arriving="entry.state === 'arriving'"
+            :unresolved="entry.turn.unresolved ?? []"
             @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
           />
         </slot>
       </div>
 
-      <p v-if="entry.state === 'failed'" class="mt-1 text-small text-alarm">
+      <p v-if="entry.state === 'failed'" class="thread__failure mt-1 text-small text-alarm">
         <slot name="failure" :turn="entry.turn">Did not send</slot>
       </p>
     </div>
@@ -96,6 +123,9 @@ const toolOf = (entry: PlacedTurn) => ({
 
 /* Nothing is drawn to scroll with. */
 .thread {
+  /* How much of the width one bubble may take before it wraps. */
+  --measure: 80%;
+
   scrollbar-width: none;
 }
 

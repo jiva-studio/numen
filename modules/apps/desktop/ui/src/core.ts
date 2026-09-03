@@ -87,8 +87,8 @@ export interface Movement {
 /**
  * One piece of work the application is doing behind the window.
  *
- * Every kind of work is one of these, which is what keeps the window from
- * growing a branch per kind: it draws the list it is given.
+ * Every kind of work is one of these, and the window draws the list it is
+ * given.
  */
 export interface Task {
   /** What the work is called, so that the same work reported again replaces it. */
@@ -110,11 +110,20 @@ export interface Task {
 /**
  * How a run asked for over a file came out: it began now, it waits its turn
  * behind another, this file is being worked on already, it has been done, the
- * file is not of that kind, or a run got no words out of it and wrote down what
- * it got. Asking again over that last one gets the same until the record of it
- * is taken away.
+ * file is not of that kind, nothing has listened to it, the words are a
+ * person's own, or a run got no words out of it and wrote down what it got.
+ * Asking again over that last one gets the same until the record of it is taken
+ * away.
  */
-export type Answer = 'started' | 'queued' | 'running' | 'done' | 'unfit' | 'answered'
+export type Answer =
+  | 'started'
+  | 'queued'
+  | 'running'
+  | 'done'
+  | 'unfit'
+  | 'unheard'
+  | 'byHand'
+  | 'answered'
 
 /**
  * What asking for a run answered: how it came out, and one sentence beside it
@@ -136,12 +145,58 @@ export interface Runs {
   transcribes(path: string): Promise<Outcome>
   /** A scanned document read, and the text of it written down. */
   recognises(path: string): Promise<Outcome>
+  /** The transcript of a recording put right by a proofreader. */
+  proofreads(path: string): Promise<Outcome>
+  /**
+   * The transcript of a recording taken away, with everything cut from it, and
+   * whether this build can do it at all.
+   */
+  drops(path: string): Promise<boolean>
 }
 
 /** Whether a node hangs the parts of its note, and how many stand at once. */
 export interface Hanging {
   readonly hangs: boolean
   readonly parts: number
+}
+
+/** One setting of the file, and what to put there. */
+export interface Written {
+  /** The setting, as a path through the file. */
+  readonly at: readonly string[]
+  /** What stands there, as JSON. */
+  readonly value: string
+}
+
+/**
+ * What a model's files are on this machine. A model reached over the network
+ * has nothing to fetch, and where files stand says nothing about it.
+ */
+export type Presence = 'present' | 'not fetched' | 'nothing to fetch'
+
+/** One model a setting that names a model can be set to. */
+export interface Model {
+  /** The setting it is read from. The one in force names this model there. */
+  readonly namedAt: readonly string[]
+  readonly name: string
+  /** What is drawn on the row, and the shelf the rows around it stand under. */
+  readonly title: string
+  readonly shelf: string
+  /** Set on the model an installation nobody has configured runs on. */
+  readonly byDefault: boolean
+  /** What choosing it writes. */
+  readonly writes: readonly Written[]
+  /** What this model's files are on this machine. */
+  readonly presence: Presence
+}
+
+/** Every setting as it stands, where they stand, and the models offered. */
+export interface Configured {
+  /** Every setting as JSON, the defaults under everything the file leaves out. */
+  readonly written: string
+  /** The file itself, absolute on this machine. */
+  readonly path: string
+  readonly models: readonly Model[]
 }
 
 /**
@@ -184,6 +239,12 @@ export interface Core {
    * with what stands there; a path with nothing at it is absent.
    */
   standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
+  /**
+   * Where each of those addresses lands, by the address it was asked about. A
+   * name resolves by a path relative to the note it is written in, which is
+   * `from`; an address that reaches nothing is absent.
+   */
+  resolve(from: string, written: readonly string[]): Promise<ReadonlyMap<string, string>>
   opening(): Promise<{ path: string } | null>
   state(): Promise<{
     name: string
@@ -297,6 +358,32 @@ export interface Core {
    * and nothing where it was. A count left out stands as it is.
    */
   choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
+  /**
+   * The hour a day of review begins at, on the clock on the wall, written as
+   * `04:00`.
+   */
+  reviewing(): Promise<string>
+  /**
+   * That hour written into the settings file. What could not be written, and
+   * nothing where it was.
+   */
+  choosesReviewing(starts: string): Promise<Refused | null>
+  /** Every setting as it stands, and the models the settings offer. */
+  settings(): Promise<Configured>
+  /**
+   * Settings written into the settings file, together or not at all. A value
+   * the settings could not be read out of again is refused, and what the file
+   * holds is unchanged.
+   */
+  choosesSetting(written: readonly Written[]): Promise<void>
+  /** The settings file as its person wrote it, and where it stands. */
+  settingsFile(): Promise<{ readonly written: string; readonly path: string }>
+  /**
+   * The settings file replaced whole, with the bytes as they were typed. A file
+   * the settings could not be read out of is refused, and what the file holds
+   * is unchanged.
+   */
+  writesSettingsFile(written: string): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

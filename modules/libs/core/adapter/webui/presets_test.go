@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -330,6 +331,94 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 	}
 	if held[1].GetPath() != "presets/Slow.md" || held[1].GetTitle() != "Slow going" {
 		t.Errorf("the second is %+v", held[1])
+	}
+}
+
+// TestAPresetMadeIsAPresetToRead. A preset is made where there was no file, and
+// it says it is a preset from the moment it exists. It names none of its
+// settings, so the read that follows stands at the defaults.
+func TestAPresetMadeIsAPresetToRead(t *testing.T) {
+	f := steering(t, pointed)
+
+	made, err := f.client.MakePreset(t.Context(), connect.NewRequest(&v1.MakePresetRequest{
+		Title: "Prosody", Folder: "presets",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := made.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("making a preset answered %v", refusal)
+	}
+	if path := made.Msg.GetPath(); path != "presets/Prosody.md" {
+		t.Fatalf("the preset was filed at %q", path)
+	}
+	held := onDisk(t, f.root, "presets/Prosody.md")
+	if !strings.Contains(held, "type: preset\n") {
+		t.Errorf("the file does not say what it is: %q", held)
+	}
+	for _, key := range []string{"goal", "minutes_a_day", "new_a_day", "reviews_a_day", "load"} {
+		if strings.Contains(held, key+":") {
+			t.Errorf("the file names %s: %q", key, held)
+		}
+	}
+
+	read, err := f.client.ReadPreset(t.Context(), connect.NewRequest(&v1.ReadPresetRequest{
+		Path: "presets/Prosody.md",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refusal := read.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
+		t.Fatalf("the preset just made was refused with %v", refusal)
+	}
+	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
+		t.Errorf("the preset just made stands against %v", problems)
+	}
+	if stops := read.Msg.GetPreset().GetStops(); stops != v1.Stopped_STOPPED_NOTHING {
+		t.Errorf("the preset just made schedules nothing, and says %v", stops)
+	}
+	settled := read.Msg.GetPreset().GetSettings()
+	if settled.GetGoal() != v1.Goal_GOAL_MINUTES_A_DAY || settled.GetMinutesADay() != 20 {
+		t.Errorf("the goal is %v at %d minutes", settled.GetGoal(), settled.GetMinutesADay())
+	}
+	if settled.GetNewADay() != 10 || settled.GetReviewsADay() != 200 {
+		t.Errorf("a day holds %d new and %d reviews",
+			settled.GetNewADay(), settled.GetReviewsADay())
+	}
+	if settled.GetRetention() != 0.9 || settled.GetInterval() != 21 {
+		t.Errorf("retention %g at an interval of %d days",
+			settled.GetRetention(), settled.GetInterval())
+	}
+	if settled.GetCounts() != v1.Counts_COUNTS_CARDS || settled.GetBacklog() != 100 {
+		t.Errorf("a day counts %v and gives %d to the debt",
+			settled.GetCounts(), settled.GetBacklog())
+	}
+	if len(settled.GetLoad()) != 0 || !settled.GetEvenLoad() {
+		t.Errorf("the load is %v, evened %t", settled.GetLoad(), settled.GetEvenLoad())
+	}
+}
+
+// TestAPresetMadeIsOneTheVaultLists. The list a deck's preset is chosen from
+// holds a preset the moment it is made.
+func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
+	f := steering(t, pointed)
+
+	if _, err := f.client.MakePreset(t.Context(), connect.NewRequest(&v1.MakePresetRequest{
+		Title: "Prosody", Folder: "presets",
+	})); err != nil {
+		t.Fatal(err)
+	}
+
+	answer, err := f.client.ListPresets(t.Context(), connect.NewRequest(&v1.ListPresetsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed := make([]string, 0, len(answer.Msg.GetPresets()))
+	for _, one := range answer.Msg.GetPresets() {
+		listed = append(listed, one.GetPath())
+	}
+	if !slices.Contains(listed, "presets/Prosody.md") {
+		t.Errorf("the vault lists %v", listed)
 	}
 }
 

@@ -1,12 +1,9 @@
 /**
- * The parts of a node, hung under its box.
+ * The parts of a node, hung under its box. While the attention rests on the
+ * node they come out from under it, each setting off a little behind the one
+ * above, and choosing one says which it was.
  *
- * A node stands for something divided into named parts. While the attention
- * rests on the node they come out from under its box, each one setting off a
- * little behind the one above it, and choosing one says which it was.
- *
- * They hang from the box as it is drawn, so nothing here works out a width: a
- * part too long for the box is cut short in it, as a title is.
+ * They hang from the box as it is drawn, so nothing here works out a width.
  */
 import { clamp01, easeOut, lerp } from './arrange'
 import type { PlexOptions, Size } from './arrange'

@@ -55,6 +55,7 @@ export interface Vaulted {
     stopsOn: Stopped
   }[]
   unread: string
+  reading: boolean
 }
 
 /** One message of the count. */
@@ -92,13 +93,36 @@ export function counting(deps: Counting) {
   /** What ends the count on its way. */
   let taking: AbortController | null = null
 
+  /** Whether the count on its way has begun handing back what it worked out. */
+  let sampled = false
+
+  /** Whether it was asked for again after it had. */
+  let again = false
+
   const count = (): Promise<void> => {
-    if (!underway) {
-      underway = ask().finally(() => {
-        underway = null
-      })
+    if (underway) {
+      // Asked for before anything was worked out, this count answers the asking
+      // too. Asked for after, it has already passed the row that moved.
+      if (sampled) again = true
+      return underway
     }
+    underway = runs().finally(() => {
+      underway = null
+    })
     return underway
+  }
+
+  /**
+   * The counting, until nothing has asked for it again. A vault read while a
+   * count was running is one whose numbers landed after that count had worked
+   * its row out, so the asking is answered rather than dropped.
+   */
+  const runs = async (): Promise<void> => {
+    for (;;) {
+      again = false
+      if (!(await ask())) return
+      if (!again) return
+    }
   }
 
   /**
@@ -120,7 +144,8 @@ export function counting(deps: Counting) {
     new: 0,
     decks: [],
     presets: [],
-    unread: '',
+    unread: one.unread,
+    reading: one.reading,
   })
 
   /** A vault as its own count leaves it. */
@@ -161,6 +186,7 @@ export function counting(deps: Counting) {
       stopsOn: preset.stopsOn,
     })),
     unread: one.unread,
+    reading: false,
   })
 
   /**
@@ -176,17 +202,24 @@ export function counting(deps: Counting) {
     })
   }
 
-  /** One vault's count, into the row it belongs to. */
+  /**
+   * One vault's count, into the row it belongs to. A vault being read into the
+   * index has no count yet, and its row goes on waiting for one.
+   */
   const fills = (one: Vaulted) => {
-    vaults.value = vaults.value.map((row) => (row.vaultId === one.vaultId ? owed(one) : row))
+    const now = one.reading ? listed(one) : owed(one)
+    vaults.value = vaults.value.map((row) => (row.vaultId === one.vaultId ? now : row))
   }
 
-  const ask = async () => {
+  /** One count, answering whether it ran to the end. */
+  const ask = async (): Promise<boolean> => {
     counting.value = true
+    sampled = false
     const ends = new AbortController()
     taking = ends
     try {
       for await (const said of deps.cards.owing({}, { signal: ends.signal })) {
+        sampled = true
         if (said.counted) fills(said.counted)
         else {
           day.value = said.day
@@ -200,6 +233,7 @@ export function counting(deps: Counting) {
       if (taking === ends) taking = null
       counting.value = false
     }
+    return !ends.signal.aborted
   }
 
   return { vaults, counting, day, count, stop }

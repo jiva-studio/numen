@@ -83,6 +83,43 @@ describe('Card', () => {
     expect(held.emitted('write')).toEqual([['Name', 1, 'Llama\nand alpaca']])
   })
 
+  it('says on the strip which stencil cut the card, and where none did, that none did', () => {
+    const bare: readonly Drawn[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    expect(mountCard(tileOf('llama')).get('[data-cut-of]').text()).toBe('Animal')
+    expect(mountCard(tileOf('bare', bare), { words: WORDS }).get('[data-cut-of]').text()).toBe(
+      'Cut by no stencil',
+    )
+  })
+
+  it('holds nothing against a card that names no stencil, having said so on its strip', () => {
+    const bare: readonly Drawn[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const held = mountCard(tileOf('bare', bare), { words: WORDS })
+    expect(held.findAll('.card__objects')).toHaveLength(0)
+  })
+
+  it('says which stencil a card naming one is waiting for', () => {
+    const gone: readonly Drawn[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
+    const held = mountCard(tileOf('gone', gone), { words: WORDS })
+    expect(held.get('.card__objects').text()).toContain('No stencil called Gone')
+  })
+
+  it('reads a value of a card no stencil cuts, and types into none of them', () => {
+    const bare: readonly Drawn[] = [
+      {
+        id: 'bare',
+        section: null,
+        stencil: null,
+        filled: [{ field: 'Question', text: 'what did I mean' }],
+      },
+    ]
+    const held = mountCard(tileOf('bare', bare), { words: WORDS })
+    expect(held.findAll('textarea')).toHaveLength(0)
+    expect(held.find('.card__silence').exists()).toBe(false)
+    const wrote = held.get('[data-wrote="Question"]')
+    expect(wrote.text()).toBe('what did I mean')
+    expect(wrote.attributes('aria-label')).toBe('Question')
+  })
+
   it('says what is wrong with a value once, under the last box standing for it', () => {
     const twice: readonly Drawn[] = [
       {

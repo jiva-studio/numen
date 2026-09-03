@@ -15,8 +15,10 @@ import (
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
 //	GET /assets/<id>/media                    its own bytes, where it is sound
 //	GET /assets/<id>/cues                     the words heard in it
+//	DELETE /assets/<id>/cues                  take the transcript away
 //	POST /assets/<id>/recognise               read the scan
 //	POST /assets/<id>/transcribe              hear the recording
+//	POST /assets/<id>/proofread               put the transcript right
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
 // window holds.
@@ -29,6 +31,7 @@ const (
 	cuesFacet       = "cues"
 	recogniseFacet  = "recognise"
 	transcribeFacet = "transcribe"
+	proofreadFacet  = "proofread"
 )
 
 // An address is one question about one asset: which file, which facet, and what
@@ -86,6 +89,8 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 		a.Recognise(w, r, at.path)
 	case transcribeFacet:
 		a.Transcribe(w, r, at.path)
+	case proofreadFacet:
+		a.Proofread(w, r, at.path)
 	default:
 		http.Error(w, "an asset has no "+at.facet, http.StatusNotFound)
 	}

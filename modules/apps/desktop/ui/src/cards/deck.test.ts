@@ -159,6 +159,7 @@ const vault = (
         { path: 'Sanskrit.md', title: 'Sanskrit' },
         { path: 'presets/Slow.md', title: '' },
       ],
+    makes: async () => ({ path: '', refusal: null }),
     scheduling: async () => ({
       preset: {
         path: by,
@@ -311,7 +312,7 @@ describe('a card written in a deck', () => {
 
     tab.adds('Animal', [], null)
 
-    expect(tab.shown().state).toBe('unsaved')
+    expect(tab.shown.value.state).toBe('unsaved')
     expect(decks.kind.marked?.(tab)).toBe('unsaved')
   })
 
@@ -351,7 +352,7 @@ describe('a deck whose file moved past what was read', () => {
     tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.flush()
 
-    expect(tab.shown().state).toBe('overtaken')
+    expect(tab.shown.value.state).toBe('overtaken')
   })
 
   it('keeps what the person wrote when they say so, over whatever the file holds', async () => {
@@ -375,7 +376,7 @@ describe('a deck whose file moved past what was read', () => {
     await settles()
 
     expect(reads()).toBe(2)
-    expect(tab.shown().state).toBe('clean')
+    expect(tab.shown.value.state).toBe('clean')
     expect(tab.deck().cards.map(calling)).toStrictEqual(['Llama', 'Alpaca'])
   })
 })
@@ -384,20 +385,20 @@ describe('a deck the vault refused', () => {
   it('says which bound it is over, and draws no card', async () => {
     const { tab } = await open({ refusal: 'deckTooLarge', bound: 8388608 })
 
-    expect(tab.saying()).toBe(words.tooLarge(8388608))
+    expect(tab.saying.value).toBe(words.tooLarge(8388608))
     expect(tab.deck().cards).toStrictEqual([])
   })
 
   it('says the note is not a deck where that is what it is', async () => {
     const { tab } = await open({ refusal: 'notADeck' })
 
-    expect(tab.saying()).toBe(words.notADeck)
+    expect(tab.saying.value).toBe(words.notADeck)
   })
 
   it('says nothing where the deck was read', async () => {
     const { tab } = await open()
 
-    expect(tab.saying()).toBe('')
+    expect(tab.saying.value).toBe('')
   })
 })
 
@@ -832,7 +833,7 @@ describe('a deck the vault could not be reached for', () => {
   it('says the vault could not be reached, where the read reached nothing', async () => {
     const { tab } = await open({ unreachable: true })
 
-    expect(tab.saying()).toBe(words.unreachable)
+    expect(tab.saying.value).toBe(words.unreachable)
   })
 
   it('says the file could not be written, where that is what was refused', async () => {
@@ -841,7 +842,7 @@ describe('a deck the vault could not be reached for', () => {
     tab.adds('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
     await decks.kept.settles(decks.all()[0] ?? '')
 
-    expect(tab.saying()).toBe(words.notSaved)
+    expect(tab.saying.value).toBe(words.notSaved)
   })
 })
 

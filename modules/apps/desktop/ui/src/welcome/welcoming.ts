@@ -27,6 +27,8 @@ export interface Words {
   /** What each of the ways into the vault the window names is called. */
   readonly newNote: string
   readonly newAgent: string
+  /** Everything this installation is configured as. */
+  readonly settings: string
   /** The vaults, and what a row of that list carries beside its name. */
   readonly vaults: string
   readonly current: string
@@ -38,17 +40,22 @@ export interface Words {
 /** The row that puts the commands up, which is no command of its own. */
 export const COMMANDS = 'commands'
 
+/** The row that opens the settings, which stand outside any vault. */
+export const SETTINGS = 'settings'
+
 /**
- * The ways into the vault the window is showing, in the order they are drawn.
- * A window showing none offers no way at all: a plex and an agent each stand
- * on a vault, and the list below is where a person goes first. A note is
- * offered once the vault has been read.
+ * The ways in, in the order they are drawn. The settings are the
+ * installation's, so they are offered last and are offered always. The rest
+ * stand on a vault: a window showing none offers none of them, and the list
+ * below is where a person goes first. A note is offered once the vault has
+ * been read.
  *
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
  */
 export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[] => {
-  if (at.vault === '') return []
+  const settings: Way = { id: SETTINGS, text: words.settings, ...keysOf(SETTINGS, agent) }
+  if (at.vault === '') return [settings]
   const note: readonly Way[] = at.ready
     ? [{ id: 'note', text: words.newNote, ...keysOf('note', agent) }]
     : []
@@ -58,6 +65,7 @@ export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[
     ...note,
     { id: 'plex', text: own.plex, ...keysOf('plex', agent) },
     { id: 'agent', text: words.newAgent, ...keysOf('agent', agent) },
+    settings,
   ]
 }
 

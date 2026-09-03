@@ -34,6 +34,11 @@ func (a *API) Serving(files http.Handler) http.Handler {
 	policy := appearance.Policy(appearance.Sources{Media: a.Playing.named()})
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
+		// A window being taken away answers nothing.
+		if a.closed() {
+			http.Error(w, "this window is going", http.StatusServiceUnavailable)
+			return
+		}
 		switch {
 		case strings.HasPrefix(r.URL.Path, listing):
 			held.ServeHTTP(w, r)
