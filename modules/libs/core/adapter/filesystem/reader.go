@@ -220,7 +220,22 @@ func (s *VaultReader) Read(ctx context.Context, path string) ([]byte, error) {
 	if err := readable(path, info); err != nil {
 		return nil, err
 	}
+	if err := s.sized(path, info); err != nil {
+		return nil, err
+	}
 	return os.ReadFile(target)
+}
+
+// sized holds a note to the most one is read whole at. A book and a recording
+// are read a part at a time by a caller that knows how large the thing it is
+// reading is.
+func (s *VaultReader) sized(path string, info fs.FileInfo) error {
+	bound := s.opts.maxNoteBytes()
+	if !s.opts.isNote(pathpkg.Base(path)) || info.Size() <= bound {
+		return nil
+	}
+	return fmt.Errorf("%s is %d bytes, and %d is the most a note is read at: %w",
+		path, info.Size(), bound, ErrNotANote)
 }
 
 // Open is one file, to read a part of. The path is checked by the same rule

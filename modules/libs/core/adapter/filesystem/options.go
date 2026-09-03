@@ -26,6 +26,9 @@ type Options struct {
 	// Hold is how long changes are kept before they are reported. Zero means
 	// the default.
 	Hold time.Duration
+	// MaxNoteBytes is the most a note may be and still be read whole. Zero
+	// means the default.
+	MaxNoteBytes int64
 }
 
 // DefaultHold is how long events are held before they are acted on. One save
@@ -39,6 +42,18 @@ const DefaultHold = 50 * time.Millisecond
 // to be left alone is not asking for an editor's lock files to be indexed.
 func (o Options) ignored() *ignore.GitIgnore {
 	return ignore.CompileIgnoreLines(append(append([]string(nil), DefaultIgnore...), o.Ignore...)...)
+}
+
+// DefaultMaxNoteBytes is the most a note is read whole at. It stands above
+// every bound a caller holds its own reads to, and a file over it is a file
+// this vault does not hold as a note.
+const DefaultMaxNoteBytes = 16 << 20
+
+func (o Options) maxNoteBytes() int64 {
+	if o.MaxNoteBytes <= 0 {
+		return DefaultMaxNoteBytes
+	}
+	return o.MaxNoteBytes
 }
 
 func (o Options) hold() time.Duration {
