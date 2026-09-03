@@ -117,6 +117,51 @@ jobs:
           done
           cat "$GITHUB_OUTPUT"
 
+  # What has landed since the last release everybody was handed. A beta is
+  # measured from there too, so it says everything the stable release it
+  # precedes will say.
+  notes:
+    name: Notes
+    needs: [naming]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Git-cliff
+        env:
+          CLIFF: 2.14.1
+          SHA256: dfe9bef0c7a00d05fafe78e6e591a1a280d39dd495b8066764db0a559acde67f
+        run: |
+          set -euo pipefail
+          at="git-cliff-$CLIFF-x86_64-unknown-linux-gnu.tar.gz"
+          curl -sfSL -o "$RUNNER_TEMP/$at" \
+            "https://github.com/orhun/git-cliff/releases/download/v$CLIFF/$at"
+          echo "$SHA256  $RUNNER_TEMP/$at" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
+          sudo install "$RUNNER_TEMP/git-cliff-$CLIFF/git-cliff" /usr/local/bin/
+
+      - name: What is in it
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          since=$(git tag -l 'v*' | grep -v -- '-' | sort -V | tail -1)
+          echo "since ${since:-the first commit}"
+          if [ -n "$since" ]; then
+            git cliff --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
+          else
+            git cliff --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
+          fi
+          cat "$RUNNER_TEMP/notes.md"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: notes
+          path: ${{ runner.temp }}/notes.md
+          if-no-files-found: error
+
   linux:
     name: "Package :: Linux"
     needs: [naming]
@@ -507,7 +552,7 @@ jobs:
   publish:
     name: Publish
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
-    needs: [naming, linux, windows, macos]
+    needs: [naming, notes, linux, windows, macos]
     runs-on: ubuntu-24.04
     steps:
       # Every one of these has to be set before a build can go anywhere, and a
@@ -533,6 +578,12 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/built
+          pattern: numen-*
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes
+          path: ${{ runner.temp }}
 
       # Whatever was built this run is renamed to the name the page asks for,
       # and copied a second time under a name carrying its version, its build
@@ -588,6 +639,11 @@ jobs:
             printf '%s|%s|%s|%s|%s\n' "$stable" "$platform" "$arch" "$kind" "$at" >> "$made"
           done
 
+          # What the release holds goes up beside it. The repository is closed,
+          # so this is the copy anybody reading the page can reach.
+          cp "$RUNNER_TEMP/notes.md" "$upload/$SHELF/notes.md"
+          cp "$RUNNER_TEMP/notes.md" "$upload/$kept/notes.md"
+
           find "$upload" -type f -printf '%P\n' | sort
 
       # What the shelf holds, for anything that wants to know before it fetches.
@@ -602,11 +658,14 @@ jobs:
           CHANNEL: ${{ needs.naming.outputs.channel }}
           SHELF: ${{ needs.naming.outputs.shelf }}
           SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
-          SERVER: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
           shelf="$RUNNER_TEMP/upload/$SHELF"
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
           {
             printf '{\n'
             printf '  "version": "%s",\n' "$VERSION"
@@ -614,7 +673,7 @@ jobs:
             printf '  "commit": "%s",\n' "$COMMIT"
             printf '  "stamp": "%s",\n' "$STAMP"
             printf '  "channel": "%s",\n' "$CHANNEL"
-            printf '  "notes": "%s",\n' "$SERVER/$REPOSITORY/releases/tag/v$VERSION"
+            printf '  "notes": "%s",\n' "$SERVED_FROM/$kept/notes.md"
             printf '  "released": "%s",\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             printf '  "files": [\n'
             first=1
@@ -715,7 +774,7 @@ jobs:
   announce:
     name: Announce
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
-    needs: [naming, publish]
+    needs: [naming, notes, publish]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -725,37 +784,12 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/built
+          pattern: numen-*
 
-      - name: Git-cliff
-        env:
-          CLIFF: 2.14.1
-          SHA256: dfe9bef0c7a00d05fafe78e6e591a1a280d39dd495b8066764db0a559acde67f
-        run: |
-          set -euo pipefail
-          at="git-cliff-$CLIFF-x86_64-unknown-linux-gnu.tar.gz"
-          curl -sfSL -o "$RUNNER_TEMP/$at" \
-            "https://github.com/orhun/git-cliff/releases/download/v$CLIFF/$at"
-          echo "$SHA256  $RUNNER_TEMP/$at" | sha256sum -c -
-          tar -xzf "$RUNNER_TEMP/$at" -C "$RUNNER_TEMP"
-          sudo install "$RUNNER_TEMP/git-cliff-$CLIFF/git-cliff" /usr/local/bin/
-
-      # What has landed since the last release everybody was handed. A beta is
-      # measured from there too, so it says everything the stable release it
-      # precedes will say.
-      - name: What is in it
-        id: notes
-        env:
-          VERSION: ${{ needs.naming.outputs.version }}
-        run: |
-          set -euo pipefail
-          since=$(git tag -l 'v*' | grep -v -- '-' | sort -V | tail -1)
-          echo "since ${since:-the first commit}"
-          if [ -n "$since" ]; then
-            git cliff --tag "v$VERSION" "$since..HEAD" -o "$RUNNER_TEMP/notes.md"
-          else
-            git cliff --tag "v$VERSION" -o "$RUNNER_TEMP/notes.md"
-          fi
-          cat "$RUNNER_TEMP/notes.md"
+      - uses: actions/download-artifact@v8
+        with:
+          name: notes
+          path: ${{ runner.temp }}
 
       - name: The tag
         env:
