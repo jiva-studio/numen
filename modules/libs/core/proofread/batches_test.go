@@ -7,19 +7,19 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
 // box is one printed line on a page, over a run of the prose.
-func box(page, start, length int) lit.Box {
-	return lit.Box{Page: page, Start: start, Length: length}
+func box(page, start, length int) highlight.Box {
+	return highlight.Box{Page: page, Start: start, Length: length}
 }
 
 func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 	prose := "one two three four "
-	boxes := []lit.Box{
+	boxes := []highlight.Box{
 		box(4, 0, 4), box(4, 4, 4),
 		box(5, 8, 6), box(5, 14, 5),
 	}
@@ -54,7 +54,7 @@ func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 
 func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 	prose := "one two"
-	boxes := []lit.Box{box(1, 0, 4), box(1, 4, 90)}
+	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 90)}
 
 	if batches := proofread.Scanned(prose, boxes); batches != nil {
 		t.Errorf("a reading of other bytes came back as %v", batches)
@@ -63,7 +63,7 @@ func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 
 func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 	prose := "one two "
-	boxes := []lit.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
+	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
 
 	batches := proofread.Scanned(prose, boxes)
 	if len(batches) != 1 {

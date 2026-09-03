@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/klippa-app/go-pdfium/requests"
 	"github.com/klippa-app/go-pdfium/responses"
 )
@@ -26,7 +26,7 @@ const (
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Lit(raw []byte, pages []int) ([]lit.Box, error) {
+func (b *Book) Lit(raw []byte, pages []int) ([]highlight.Box, error) {
 	wanted := ordered(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil
@@ -38,7 +38,7 @@ func (b *Book) Lit(raw []byte, pages []int) ([]lit.Box, error) {
 	}
 	defer doc.close()
 
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	for _, page := range wanted {
 		boxes = append(boxes, doc.words(page, b.Pages[page].Offset)...)
 	}
@@ -66,7 +66,7 @@ func ordered(pages []int, most int) []int {
 //
 // A page that cannot be measured, or cannot be read, says nothing about where
 // its words are.
-func (d *document) words(index, offset int) []lit.Box {
+func (d *document) words(index, offset int) []highlight.Box {
 	page := requests.Page{ByIndex: &requests.PageByIndex{Document: d.ref, Index: index}}
 	sheet, ok := d.paper(page)
 	if !ok {
@@ -80,7 +80,7 @@ func (d *document) words(index, offset int) []lit.Box {
 		return nil
 	}
 
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	// The word being read: where it covers the page, where it begins in the
 	// text, and how far it has got.
 	var word responses.CharPosition
@@ -168,10 +168,10 @@ func (d *document) paper(page requests.Page) (sheet, bool) {
 }
 
 // box is one word of a page, over the fraction of it the word covers.
-func (p sheet) box(page, start, length int, word responses.CharPosition) lit.Box {
+func (p sheet) box(page, start, length int, word responses.CharPosition) highlight.Box {
 	x0, y0 := p.drawn(word.Left, word.Top)
 	x1, y1 := p.drawn(word.Right, word.Bottom)
-	return lit.Box{
+	return highlight.Box{
 		Page:   page,
 		Start:  start,
 		Length: length,

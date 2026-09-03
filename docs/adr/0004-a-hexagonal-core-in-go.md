@@ -95,7 +95,7 @@ modules/libs/core/
   markdown/                the note format, parsed
   cards/  flashcards/      what a card is, and how one is scheduled
   cutting/  embedding/     text into chunks, chunks into vectors
-  epub/  ocr/  lit/        a book's text, and where it falls on a page
+  epub/  ocr/  highlight/  a book's text, and where it falls on a page
   transcript/  proofread/  a recording's words, and putting them right
   text/  task/  check/     read a source, follow a run, report a vault's faults
   fixes/  refusal/         a correction kept, an outcome named

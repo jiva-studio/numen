@@ -1,4 +1,4 @@
-package lit
+package highlight
 
 import (
 	"encoding/binary"

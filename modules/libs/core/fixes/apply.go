@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
@@ -32,7 +32,7 @@ type walk struct {
 // plan is the corrections a reading's boxes answer to, in reading order. A
 // number no box answers to is dropped, a line named twice keeps what came last,
 // and a box reaching back into the one before it is left as it was.
-func plan(boxes []lit.Box, lines []Line) walk {
+func plan(boxes []highlight.Box, lines []Line) walk {
 	w := walk{grown: []int{0}}
 	said := make(map[int]string, len(lines))
 	for _, line := range lines {
@@ -84,12 +84,12 @@ func (w walk) inside(start, length int) int {
 }
 
 // Boxes are where the runs of a reading sit once its corrections are in it.
-func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
+func Boxes(boxes []highlight.Box, lines []Line) []highlight.Box {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return boxes
 	}
-	out := make([]lit.Box, len(boxes))
+	out := make([]highlight.Box, len(boxes))
 	copy(out, boxes)
 	next := 0
 	for i := range out {
@@ -104,7 +104,7 @@ func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
 
 // Prose is a reading's text with its corrections in it, and the pages and the
 // parts where they now stand.
-func Prose(prose string, marks []ocr.PageStart, boxes []lit.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
+func Prose(prose string, marks []ocr.PageStart, boxes []highlight.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return prose, marks, parts

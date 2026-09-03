@@ -3,7 +3,7 @@ package ocr
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
 // The artifact is plain text with the pages marked in it:
@@ -40,9 +40,9 @@ type PageStart struct {
 // A box and a part are both placed in the prose, which is what Read gives back.
 // The mark and the newline closing it are bookkeeping and are counted in none of
 // them.
-func Write(pages []Page) ([]byte, []lit.Box, []Part) {
+func Write(pages []Page) ([]byte, []highlight.Box, []Part) {
 	var out strings.Builder
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	var parts []Part
 	prose := 0
 	for _, page := range pages {
@@ -70,14 +70,14 @@ func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 // within is where each stretch of a block sits: at its offset from base in the
 // prose, and over the fraction of the page its rectangle covers. A page nothing
 // was measured on gives no boxes, having no size to take a fraction of.
-func within(page Page, block Block, base int) []lit.Box {
+func within(page Page, block Block, base int) []highlight.Box {
 	if page.Size.X <= 0 || page.Size.Y <= 0 {
 		return nil
 	}
 	wide, high := float32(page.Size.X), float32(page.Size.Y)
-	boxes := make([]lit.Box, 0, len(block.Stretches))
+	boxes := make([]highlight.Box, 0, len(block.Stretches))
 	for _, stretch := range block.Stretches {
-		boxes = append(boxes, lit.Box{
+		boxes = append(boxes, highlight.Box{
 			Page:   page.Index,
 			Start:  base + stretch.Start,
 			Length: stretch.Length,

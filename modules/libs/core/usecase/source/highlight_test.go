@@ -9,8 +9,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
@@ -19,15 +19,15 @@ import (
 // with what the test put in.
 type layered struct {
 	port.Documents
-	where func(raw []byte, pages []int) ([]lit.Box, error)
+	where func(raw []byte, pages []int) ([]highlight.Box, error)
 }
 
-func (l layered) Lit(_ context.Context, raw []byte, _ []int, pages []int) ([]lit.Box, error) {
+func (l layered) Lit(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
 	return l.where(raw, pages)
 }
 
 // answering is the use case with the test's own answer for where words sit.
-func answering(u Highlight, where func(raw []byte, pages []int) ([]lit.Box, error)) Highlight {
+func answering(u Highlight, where func(raw []byte, pages []int) ([]highlight.Box, error)) Highlight {
 	u.Documents = layered{Documents: pdf.Documents{}, where: where}
 	return u
 }
@@ -82,9 +82,9 @@ func run(t *testing.T, book *pdf.Book, word string) (start, length int) {
 
 // litOn is where one run of a source's text sits, asked about on its own. A
 // source with no reading and no layer is lit nowhere.
-func litOn(t *testing.T, u Highlight, path string, start, length int) []lit.Page {
+func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Page {
 	t.Helper()
-	found, err := u.Execute(t.Context(), first, path, []lit.Run{{Start: start, Length: length}})
+	found, err := u.Execute(t.Context(), first, path, []highlight.Run{{Start: start, Length: length}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,19 +100,19 @@ func litOn(t *testing.T, u Highlight, path string, start, length int) []lit.Page
 func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "ocr", "abc123")
-	u = answering(u, func([]byte, []int) ([]lit.Box, error) {
+	u = answering(u, func([]byte, []int) ([]highlight.Box, error) {
 		t.Error("the document's own layer was read for a source standing on a reading")
 		return nil, nil
 	})
 
 	// Two words on one page and a third on the next, as a model reading the
 	// pages wrote them down.
-	written := []lit.Box{
+	written := []highlight.Box{
 		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
 		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
 		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), lit.Pack(written)); err != nil {
+	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -120,7 +120,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	if len(found) != 1 || found[0].Index != 4 || len(found[0].Rects) != 2 {
 		t.Fatalf("the run was lit at %+v", found)
 	}
-	want := lit.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
+	want := highlight.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
 	if found[0].Rects[0] != want {
 		t.Errorf("the first word is at %+v, want %+v", found[0].Rects[0], want)
 	}
@@ -143,10 +143,10 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var want lit.Rect
+	var want highlight.Rect
 	for _, box := range boxes {
 		if box.Start == start {
-			want = lit.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+			want = highlight.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		}
 	}
 	if found[0].Rects[0] != want {
@@ -196,7 +196,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	var asked []int
-	u = answering(u, func(raw []byte, pages []int) ([]lit.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]highlight.Box, error) {
 		asked = pages
 		return book.Lit(raw, pages)
 	})
@@ -219,14 +219,14 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	holds(t, index, shelved, "", "abc123")
 
 	var asked [][]int
-	u = answering(u, func(raw []byte, pages []int) ([]lit.Box, error) {
+	u = answering(u, func(raw []byte, pages []int) ([]highlight.Box, error) {
 		asked = append(asked, pages)
 		return book.Lit(raw, pages)
 	})
 
 	after, afterLength := run(t, book, "Afterword")
 	closer, closerLength := run(t, book, "closer")
-	found, err := u.Execute(t.Context(), first, documentPath, []lit.Run{
+	found, err := u.Execute(t.Context(), first, documentPath, []highlight.Run{
 		{Start: after, Length: afterLength},
 		{Start: closer, Length: closerLength},
 	})
@@ -255,7 +255,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
 		t.Run(path, func(t *testing.T) {
-			found, err := u.Execute(t.Context(), first, path, []lit.Run{{Start: 0, Length: 5}})
+			found, err := u.Execute(t.Context(), first, path, []highlight.Run{{Start: 0, Length: 5}})
 			if err == nil {
 				t.Errorf("%s was answered with %+v", path, found)
 			}
@@ -267,7 +267,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 // text is what says where its offsets are, and nothing has said.
 func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 	u, _, _, book, _, _ := placing(t, "tiny.pdf")
-	u = answering(u, func([]byte, []int) ([]lit.Box, error) {
+	u = answering(u, func([]byte, []int) ([]highlight.Box, error) {
 		t.Error("a source the index does not hold was read")
 		return nil, nil
 	})
@@ -310,7 +310,7 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	holds(t, index, shelved, "ocr", "abc123")
 
 	// A reading whose words sit at the top of the first page.
-	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), lit.Pack([]lit.Box{
+	if err := store.Write(ctx, text.Boxes("ocr", "abc123"), highlight.Pack([]highlight.Box{
 		{Page: 0, Start: 0, Length: 400, MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2},
 	})); err != nil {
 		t.Fatal(err)
@@ -342,12 +342,12 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	u, index, store, _, _, shelved := placing(t, "tiny.pdf")
 	holds(t, index, shelved, "ocr", "abc123")
 
-	written := []lit.Box{
+	written := []highlight.Box{
 		{Page: 4, Start: 0, Length: 5, MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23},
 		{Page: 4, Start: 6, Length: 4, MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23},
 		{Page: 5, Start: 11, Length: 5, MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53},
 	}
-	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), lit.Pack(written)); err != nil {
+	if err := store.Write(t.Context(), text.Boxes("ocr", "abc123"), highlight.Pack(written)); err != nil {
 		t.Fatal(err)
 	}
 	// The first line is put right and grows by three bytes, so the third line

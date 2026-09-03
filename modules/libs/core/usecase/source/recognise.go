@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -156,7 +156,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		for i := range named {
 			named[i].Start += prose
 		}
-		if err := store.Append(ctx, boxes, lit.Pack(found)); err != nil {
+		if err := store.Append(ctx, boxes, highlight.Pack(found)); err != nil {
 			return err
 		}
 		if len(named) > 0 {
@@ -285,8 +285,8 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	if err != nil {
 		return err
 	}
-	held := lit.Unpack(raw)
-	kept := make([]lit.Box, 0, len(held))
+	held := highlight.Unpack(raw)
+	kept := make([]highlight.Box, 0, len(held))
 	for _, box := range held {
 		if box.Page < done {
 			kept = append(kept, box)
@@ -295,7 +295,7 @@ func trimmed(ctx context.Context, store port.DerivedStore, name string, done int
 	// Written back whatever was dropped. An append that did not land whole
 	// leaves bytes that are not a record, and every record appended after them
 	// is read at a shifted offset.
-	return store.Write(ctx, name, lit.Pack(kept))
+	return store.Write(ctx, name, highlight.Pack(kept))
 }
 
 // shortened drops the parts no count claims: those opening past the prose the

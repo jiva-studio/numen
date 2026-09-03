@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
 // errNoHighlight is what a build with nothing to place a passage with answers.
@@ -99,7 +99,7 @@ const longestRun = 100_000
 
 // places is which parts of the source's text the window is asking about: a
 // `start` and a `length` for each of them, paired in the order they are given.
-func places(query url.Values) ([]lit.Run, error) {
+func places(query url.Values) ([]highlight.Run, error) {
 	starts, lengths := query["start"], query["length"]
 	if len(starts) != len(lengths) {
 		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
@@ -107,7 +107,7 @@ func places(query url.Values) ([]lit.Run, error) {
 	if len(starts) == 0 || len(starts) > domain.MostLit {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(starts))
 	}
-	runs := make([]lit.Run, 0, len(starts))
+	runs := make([]highlight.Run, 0, len(starts))
 	for i, at := range starts {
 		start, err := strconv.Atoi(at)
 		if err != nil || start < 0 {
@@ -117,7 +117,7 @@ func places(query url.Values) ([]lit.Run, error) {
 		if err != nil || length < 1 || length > longestRun {
 			return nil, fmt.Errorf("length: %q is not a run of the text", lengths[i])
 		}
-		runs = append(runs, lit.Run{Start: start, Length: length})
+		runs = append(runs, highlight.Run{Start: start, Length: length})
 	}
 	return runs, nil
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 )
 
@@ -17,15 +17,15 @@ const perPage = 3
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func reading(lines []string) (string, []ocr.PageStart, []lit.Box, []ocr.Part) {
+func reading(lines []string) (string, []ocr.PageStart, []highlight.Box, []ocr.Part) {
 	var marks []ocr.PageStart
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
 			marks = append(marks, ocr.PageStart{Offset: at})
 		}
-		boxes = append(boxes, lit.Box{
+		boxes = append(boxes, highlight.Box{
 			Page: i / perPage, Start: at, Length: len(line),
 			MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 		})

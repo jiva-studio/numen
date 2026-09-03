@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
@@ -142,7 +142,7 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 	prose, marks := ocr.Read(raw)
 	named := ocr.Unpack(parts)
 	if put := fixes.Unpack(corrections); len(put) > 0 {
-		prose, marks, named = fixes.Prose(prose, marks, lit.Unpack(boxes), named, put)
+		prose, marks, named = fixes.Prose(prose, marks, highlight.Unpack(boxes), named, put)
 	}
 	doc := &Document{Text: prose}
 	for _, p := range divided(prose, named) {

@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -391,7 +391,7 @@ func document(t *testing.T) string {
 //
 // The offsets rise, because the prose of every page written before this one
 // stands in front of it.
-func reads(t *testing.T, prose string, boxes []lit.Box, says string) {
+func reads(t *testing.T, prose string, boxes []highlight.Box, says string) {
 	t.Helper()
 	at := -1
 	for i, box := range boxes {
@@ -454,7 +454,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := lit.Unpack(packed)
+	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -481,7 +481,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := lit.Pack([]lit.Box{{Page: 2, Start: 9000, Length: 7}})
+	stray := highlight.Pack([]highlight.Box{{Page: 2, Start: 9000, Length: 7}})
 	if err := shelf.Append(t.Context(), text.Boxes("ocr", document(t)), stray); err != nil {
 		t.Fatal(err)
 	}
@@ -502,7 +502,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 	}
 
 	prose, _ := ocr.Read(raw)
-	boxes := lit.Unpack(packed)
+	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}
@@ -576,7 +576,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, lit.Unpack(packed), says)
+	reads(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
@@ -631,7 +631,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reads(t, prose, lit.Unpack(packed), says)
+	reads(t, prose, highlight.Unpack(packed), says)
 }
 
 func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
@@ -669,7 +669,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 		t.Fatal(err)
 	}
 	prose, _ := ocr.Read(raw)
-	boxes := lit.Unpack(packed)
+	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
 	}

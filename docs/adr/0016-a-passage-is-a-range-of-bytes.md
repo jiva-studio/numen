@@ -19,7 +19,7 @@ What goes from a search, or from an agent, to the thing that shows a passage is 
 
 ### One shape says where a run of text sits, and it has two producers
 
-`lit` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
+`highlight` holds it: a box is a page, a run of bytes, and a rectangle in **fractions of the page**, so a page drawn at any size lines up by multiplying.
 
 Two things produce it and nothing above asks which: a recognition, kept on disk because a model made it and no machine here remakes it cheaply, and a document's own text layer, kept nowhere because it answers per word on demand.
 

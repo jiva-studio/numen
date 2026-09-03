@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
@@ -38,7 +38,7 @@ func printed(lines []string) ([]byte, []byte) {
 		})
 	}
 	artifact, boxes, _ := ocr.Write(pages)
-	return artifact, lit.Pack(boxes)
+	return artifact, highlight.Pack(boxes)
 }
 
 // halted is a Recognising over a vault holding one document, with the reading of

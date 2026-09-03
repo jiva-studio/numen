@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -34,7 +34,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 }
 
 // Lit is where the words of the pages named sit on them.
-func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]lit.Box, error) {
+func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

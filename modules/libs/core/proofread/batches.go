@@ -1,7 +1,7 @@
 package proofread
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
@@ -14,7 +14,7 @@ import (
 //
 // A box reaching past the prose was written for other bytes, and the reading is
 // refused whole.
-func Scanned(prose string, boxes []lit.Box) []Batch {
+func Scanned(prose string, boxes []highlight.Box) []Batch {
 	var out []Batch
 	for at, box := range boxes {
 		if box.Length <= 0 {

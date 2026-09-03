@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/proofread"
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
@@ -97,7 +97,7 @@ func TestARunWrittenBackwardsRefusesTheBatch(t *testing.T) {
 // The printed lines of a page stay where they were printed, so a reply putting
 // two of them together is no answer to what was asked.
 func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
-	page := proofread.Scanned("one two three ", []lit.Box{
+	page := proofread.Scanned("one two three ", []highlight.Box{
 		box(4, 0, 4), box(4, 4, 4), box(4, 8, 6),
 	})[0]
 	if page.Joinable {

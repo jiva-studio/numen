@@ -6,7 +6,7 @@ import (
 	"image"
 
 	"github.com/jiva-studio/numen/modules/libs/core/cutting"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
 // Documents reads a file whose text is laid out on printed pages: what it
@@ -22,7 +22,7 @@ type Documents interface {
 	// Lit is where the words of the pages named sit, as fractions of the page,
 	// one box a word. Starts is where each page begins, as Read answered, and
 	// pages are the ones wanted, by index.
-	Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]lit.Box, error)
+	Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
 
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
-	"github.com/jiva-studio/numen/modules/libs/core/lit"
+	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
@@ -43,8 +43,8 @@ func (u Highlight) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	runs []lit.Run,
-) ([][]lit.Page, error) {
+	runs []highlight.Run,
+) ([][]highlight.Page, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (u Highlight) Execute(
 	// A reading is of the bytes the index last saw, and its coordinates
 	// describe those. A file rewritten since is read from its own layer, which
 	// is the words that are there now.
-	var boxes []lit.Box
+	var boxes []highlight.Box
 	if said.Producer != "" && ref.Unchanged(domain.Fingerprint{Size: said.Size, ModTime: said.ModTime}) {
 		boxes, err = u.read(ctx, v, said)
 	} else {
@@ -80,10 +80,10 @@ func (u Highlight) Execute(
 
 // over is where each run sits, in the order the runs were asked about. A run
 // standing nowhere is lit nowhere and keeps its place in the answer.
-func over(boxes []lit.Box, runs []lit.Run) [][]lit.Page {
-	out := make([][]lit.Page, 0, len(runs))
+func over(boxes []highlight.Box, runs []highlight.Run) [][]highlight.Page {
+	out := make([][]highlight.Page, 0, len(runs))
 	for _, one := range runs {
-		out = append(out, lit.Marks(boxes, one.Start, one.Length))
+		out = append(out, highlight.Marks(boxes, one.Start, one.Length))
 	}
 	return out
 }
@@ -95,7 +95,7 @@ func (u Highlight) read(
 	ctx context.Context,
 	v domain.Vault,
 	said port.SourceText,
-) ([]lit.Box, error) {
+) ([]highlight.Box, error) {
 	if u.Derived == nil {
 		return nil, nil
 	}
@@ -111,7 +111,7 @@ func (u Highlight) read(
 	if err != nil {
 		return nil, err
 	}
-	boxes := lit.Unpack(raw)
+	boxes := highlight.Unpack(raw)
 
 	// A reading that was proofread is read with its corrections in it, so a run
 	// of its text is a run of the corrected prose and the coordinates say where
@@ -132,8 +132,8 @@ func (u Highlight) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.Fingerprint,
-	runs []lit.Run,
-) ([]lit.Box, error) {
+	runs []highlight.Run,
+) ([]highlight.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
 		// carries no rectangles.
@@ -159,7 +159,7 @@ func (u Highlight) layer(
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.Reading, runs []lit.Run) []int {
+func every(book port.Reading, runs []highlight.Run) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {
