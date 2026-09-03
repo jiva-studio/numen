@@ -571,6 +571,9 @@ func (t *Transcribing) listen(
 	}
 	defer release()
 
+	// Getting the models is a step of its own and stands under its own name.
+	// Which file is coming down, and how much of it, is known once one is.
+	t.say(task.Task{ID: id, Doing: "Fetching models"}, asked)
 	models, close, err := t.open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.

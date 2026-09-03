@@ -61,4 +61,26 @@ describe('a line of work', () => {
 
     expect(drawn.find('.activity__count').exists()).toBe(false)
   })
+
+  it('waits rather than draw a share of nothing', () => {
+    const drawn = line({ says: 'Fetching models', about: 'inference.onnx', working: true })
+
+    expect(drawn.find('.activity__percent').exists()).toBe(false)
+    expect(drawn.find('.activity__waiting').exists()).toBe(true)
+  })
+
+  it('follows what the work moved on to', async () => {
+    const drawn = line({
+      says: 'Indexing',
+      about: 'Sabhaparva.epub',
+      working: true,
+      tally: { done: 3, total: 12 },
+    })
+    expect(drawn.get('.activity__about').text()).toBe('Sabhaparva.epub')
+
+    await drawn.setProps({ about: 'notes/Vrindavan.md', tally: { done: 8, total: 12 } })
+
+    expect(drawn.get('.activity__about').text()).toBe('notes/Vrindavan.md')
+    expect(drawn.get('.activity__percent').text()).toBe('66%')
+  })
 })

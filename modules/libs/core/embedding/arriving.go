@@ -35,6 +35,15 @@ type Embedding struct {
 	settled bool
 }
 
+// Arrival is an embedder whose model may still be on its way. Fetching a model
+// and preparing it are their own step in the list of what is being done, and a
+// pass that fills an index waits here until that step is over.
+type Arrival interface {
+	port.Embedder
+	// Wait blocks until the model turns up, and says what stopped it.
+	Wait(ctx context.Context) error
+}
+
 // Arriving is an embedder being loaded somewhere else, under the identity the
 // settings give it.
 func Arriving(is port.EmbeddingModel) *Embedding {
@@ -135,6 +144,9 @@ func (e *Embedding) embedding(ctx context.Context, texts []string) ([][]float32,
 type waiting struct{ e *Embedding }
 
 func (w waiting) Model() port.EmbeddingModel { return w.e.is }
+
+// Wait blocks until the model turns up, and says what stopped it.
+func (w waiting) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
 
 func (w waiting) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	if err := w.e.Wait(ctx); err != nil {

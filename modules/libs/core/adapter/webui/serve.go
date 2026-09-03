@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -1094,6 +1095,15 @@ func embedSources(
 		return
 	}
 
+	// Fetching the model and preparing it is a step of its own, and it stands in
+	// the list under its own name. Nothing is indexed until it is over, and a
+	// model that never arrived is said under that name.
+	if arrival, ok := embedder.(embedding.Arrival); ok {
+		if err := arrival.Wait(ctx); err != nil {
+			return
+		}
+	}
+
 	// What this pass owes, asked once before it starts: the chunks that can
 	// carry a vector and do not. The pass finds them a few hundred at a time,
 	// and a total that grows as it goes is a count that never settles.
@@ -1114,16 +1124,16 @@ func embedSources(
 		return
 	}
 	making.Vectors.OnProgress = func(res source.EmbedResult) {
-		// A person who edited one note is waiting on that note, so this is the
-		// work in hand and not the size of the vault.
+		// Indexing is always of something, and the source open now is what it is
+		// of. The count is the work in hand and not the size of the vault.
 		api.say(task.Task{
-			ID: makingVectors, Doing: "Indexing",
+			ID: makingVectors, Doing: "Indexing", About: res.Reading,
 			Done: int64(res.Embedded), Total: owing,
 		})
 	}
 
-	// This pass says what it owes and what it has made. The source a vector is
-	// made from is named by the reading of that source.
+	// This pass says what it owes and what it has made. Which source it is on is
+	// named the moment one is open.
 	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
 	switch _, err := making.MakeVectors(ctx, v); {
 	case err == nil, errors.Is(err, context.Canceled):

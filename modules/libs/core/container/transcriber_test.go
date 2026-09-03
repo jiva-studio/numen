@@ -124,6 +124,38 @@ func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 	}
 }
 
+// Getting the models is a step of its own, and it is named for what it is. A
+// row that calls it by the name of the work that follows leaves a person
+// watching a recording nothing has listened to yet.
+func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
+	by := &deaf{}
+	listening, v := listens(t, by, "talks/one.mp3")
+	known := held{recordings: []string{"talks/one.mp3"}}
+
+	var while []task.Task
+	open := listening.open
+	listening.open = func(
+		ctx context.Context,
+		tell func(string, int64, int64),
+	) (port.Transcriber, func() error, error) {
+		while = listening.tasks.List()
+		return open(ctx, tell)
+	}
+
+	listening.round(t.Context(), known, v)
+
+	if len(while) != 1 {
+		t.Fatalf("the list holds %d pieces of work while the models arrive: %+v", len(while), while)
+	}
+	if while[0].Doing != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", while[0].Doing)
+	}
+	// Nothing has come down, so there is no share of it to draw.
+	if while[0].Total != 0 {
+		t.Errorf("a step that has counted nothing is drawn against %d", while[0].Total)
+	}
+}
+
 // Silence is an answer too.
 func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 	by := &deaf{}
