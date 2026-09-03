@@ -137,11 +137,11 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 	}
 	for _, one := range list.Vaults {
 		switch one.ID {
-		case f.first.ID:
+		case string(f.first.ID):
 			if !one.Showing || one.Missing || one.Folder != f.first.Path {
 				t.Errorf("the vault in front is answered as %+v", one)
 			}
-		case f.second.ID:
+		case string(f.second.ID):
 			if one.Showing || !one.Missing || one.Name != f.second.Name {
 				t.Errorf("the vault whose folder is gone is answered as %+v", one)
 			}
@@ -222,10 +222,10 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 	if _, err := os.Stat(f.second.Path); err != nil {
 		t.Errorf("the folder went with the vault: %v", err)
 	}
-	if got := f.rows.forgotten(); len(got) != 1 || got[0] != f.second.ID {
+	if got := f.rows.forgotten(); len(got) != 1 || got[0] != string(f.second.ID) {
 		t.Errorf("the index was told to forget %v", got)
 	}
-	if _, found, err := f.registry.Find(f.second.ID); err != nil || found {
+	if _, found, err := f.registry.Find(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v", err)
 	}
 }

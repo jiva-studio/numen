@@ -89,11 +89,11 @@ func (u Replace) Execute(
 	ends := func() {}
 	defer func() { ends() }()
 
-	e := editing{
-		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
-		fingerprint: fingerprint, bound: MaxBytes,
+	e := Editing{
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
+		Fingerprint: fingerprint, Bound: MaxBytes,
 	}
-	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalised(doc.Body())
 
 		where, plainly := markdown.Where(body, stood)

@@ -38,8 +38,8 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	}
 
 	var by NamedBy
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
-	_, err = e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	e := Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
+	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			by = ByFrontmatter
 			return doc.SetTitle(title)
@@ -80,8 +80,8 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 	}
 
 	name := domain.Basename(path)
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index}
-	_, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	e := Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index}
+	_, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled {
 			return doc.SetTitle(name)
 		}

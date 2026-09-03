@@ -2,16 +2,13 @@ package cards
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/fs"
 	"slices"
 	"time"
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -112,76 +109,19 @@ func (u Write) stencil(
 		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 
-	release, err := u.Writers.Hold(ctx, v)
-	if err != nil {
-		return domain.Fingerprint{}, err
+	e := note.Editing{
+		Readers: u.Readers, Writers: u.Writers, Now: u.Now,
+		Fingerprint: fingerprint, Bound: note.MaxBytes,
 	}
-	defer release()
-
-	reader, err := u.Readers.Open(v)
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	// A caller that said what it believed the stencil was is held to that; one
-	// that said nothing is held to what stands there now.
-	against := fingerprint
-	if against == (domain.Fingerprint{}) {
-		on, err := reader.Stat(ctx, path)
-		if err != nil {
-			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(err))
+	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+		doc.SetBody(body)
+		// A stencil already declaring these, in this order, keeps the bytes the
+		// person wrote them as.
+		if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {
+			return doc.SetList(fieldsKey, fields)
 		}
-		against = on
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", path, missing(err))
-	}
-	doc, err := markdown.Open(raw)
-	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
-	}
-
-	doc.SetBody(body)
-	// A stencil already declaring these, in this order, keeps the bytes the
-	// person wrote them as.
-	if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {
-		if err := doc.SetList(fieldsKey, fields); err != nil {
-			return domain.Fingerprint{}, fmt.Errorf("%s: %w", path, err)
-		}
-	}
-	// The application is changing what this note holds, so it writes the
-	// identifier the note does not carry.
-	if _, carried := doc.Identifier(); !carried {
-		identifier, err := ulid.New(u.now())
-		if err != nil {
-			return domain.Fingerprint{}, err
-		}
-		if err := doc.SetIdentifier(identifier); err != nil {
-			return domain.Fingerprint{}, err
-		}
-	}
-
-	writer, err := u.Writers.Open(v)
-	if err != nil {
-		return domain.Fingerprint{}, err
-	}
-	return writer.Write(ctx, path, doc.Bytes(), against)
-}
-
-// missing is note.ErrNoNote where the vault holds nothing at the path, and the
-// error as it arrived otherwise.
-func missing(err error) error {
-	if errors.Is(err, fs.ErrNotExist) {
-		return note.ErrNoNote
-	}
-	return err
-}
-
-func (u Write) now() time.Time {
-	if u.Now == nil {
-		return time.Now()
-	}
-	return u.Now()
+		return nil
+	})
 }
 
 // level brings what a write touched up to date. The levelling is done here so

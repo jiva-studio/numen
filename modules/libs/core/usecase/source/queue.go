@@ -52,4 +52,4 @@ func (q *queue) take() (wanted, bool) {
 func (q *queue) waiting() int { return len(q.line) }
 
 // named is one source of one vault, as the one string a set is keyed by.
-func named(v domain.Vault, path string) string { return v.ID + "\x00" + path }
+func named(v domain.Vault, path string) string { return string(v.ID) + "\x00" + path }

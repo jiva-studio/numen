@@ -108,7 +108,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 		if err != nil {
 			return nil, out{}, err
 		}
-		return nil, out{ID: renamed.ID, Name: renamed.Name, Folder: renamed.Path}, nil
+		return nil, out{ID: string(renamed.ID), Name: renamed.Name, Folder: renamed.Path}, nil
 	})
 }
 

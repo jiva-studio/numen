@@ -41,7 +41,7 @@ func (u EditLinks) Add(ctx context.Context, v domain.Vault, from string, add dom
 			return err
 		}
 	}
-	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
 		for _, link := range links {
 			if err := doc.AddLink(link); err != nil {
 				return err
@@ -58,7 +58,7 @@ func (u EditLinks) Update(ctx context.Context, v domain.Vault, from string, to d
 	if change.Role != "" && !domain.KnownRole(change.Role) {
 		return fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
-	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
 		changed, err := doc.UpdateLink(to, change)
 		if err != nil {
 			return err
@@ -93,8 +93,8 @@ func (u EditLinks) PointAt(
 		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", role)
 	}
 	e := u.editing()
-	e.fingerprint = fingerprint
-	return e.apply(ctx, v, from, func(doc *markdown.Document) error {
+	e.Fingerprint = fingerprint
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		return doc.SetLinkOfType(of, to, role)
 	})
 }
@@ -103,7 +103,7 @@ func (u EditLinks) PointAt(
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
 func (u EditLinks) Remove(ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole) error {
-	_, err := u.editing().apply(ctx, v, from, func(doc *markdown.Document) error {
+	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
 		if err != nil {
 			return err
@@ -175,6 +175,6 @@ func Writable(link domain.Link) error {
 	return nil
 }
 
-func (u EditLinks) editing() editing {
-	return editing{readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now}
+func (u EditLinks) editing() Editing {
+	return Editing{Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now}
 }

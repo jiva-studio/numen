@@ -77,14 +77,14 @@ func (u Write) Execute(
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
 
-	e := editing{
-		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
-		fingerprint: fingerprint, bound: u.bound(),
+	e := Editing{
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index, Now: u.Now,
+		Fingerprint: fingerprint, Bound: u.bound(),
 	}
 	ends := func() {}
 	defer func() { ends() }()
 
-	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is drawn as the stretch that changed, so what
 		// a person watching sees is the change and not the note.
 		was := markdown.Normalised(doc.Body())
@@ -148,13 +148,13 @@ func (u Write) Save(
 	if markdown.OpensFrontmatter(body) {
 		return domain.Fingerprint{}, ErrBodyRefused
 	}
-	e := editing{
-		readers: u.Readers, writers: u.Writers, index: u.Index,
-		overwrite: true,
-		seen:      seen,
-		bound:     u.bound(),
+	e := Editing{
+		Readers: u.Readers, Writers: u.Writers, Index: u.Index,
+		Overwrite: true,
+		Seen:      seen,
+		Bound:     u.bound(),
 	}
-	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
+	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)
 		return nil
 	})

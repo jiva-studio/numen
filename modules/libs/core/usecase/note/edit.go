@@ -40,55 +40,56 @@ func missing(err error) error {
 	return err
 }
 
-// editing is what every change to the contents of an existing note needs.
+// Editing is what every change to the contents of an existing note needs.
 //
 // It is one function because the shape is always the same and the rules in it
 // are easy to forget one at a time: read, refuse what cannot be read, write the
 // identifier because this is an edit, change the one thing, put it back, and
 // bring the index level.
-type editing struct {
-	readers     port.VaultReaders
-	writers     port.VaultWriters
-	index       func(ctx context.Context, v domain.Vault, paths []string) error
-	now         func() time.Time
-	fingerprint domain.Fingerprint
-	// overwrite is a caller writing what is in front of the person: the note
+type Editing struct {
+	Readers     port.VaultReaders
+	Writers     port.VaultWriters
+	Index       func(ctx context.Context, v domain.Vault, paths []string) error
+	Now         func() time.Time
+	Fingerprint domain.Fingerprint
+	// Overwrite is a caller writing what is in front of the person: the note
 	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
-	overwrite bool
-	// bound is the most the file may be. Zero holds it to nothing.
-	bound int
-	// seen is what the caller last saw of the note, and is what a file that is
+	Overwrite bool
+	// Bound is the most the file may be. Zero holds it to nothing.
+	Bound int
+	// Seen is what the caller last saw of the note, and is what a file that is
 	// there is compared with. Nil for a caller that puts its text down whatever
 	// the note now holds.
-	seen *LastRead
+	Seen *LastRead
 }
 
-func (e editing) apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
+// Apply makes one change to the note at path and puts it back.
+func (e Editing) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
 	written, err := e.splice(ctx, v, path, change)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	if e.index == nil {
+	if e.Index == nil {
 		return written, nil
 	}
 	// The file is on disk, so the fingerprint stands beside whatever the
 	// levelling came to and a caller can tell the two apart.
-	return written, Levelled(path, e.index(ctx, v, []string{path}))
+	return written, Levelled(path, e.Index(ctx, v, []string{path}))
 }
 
 // splice is the read, the change and the write, under this vault's write lock
 // from before the read until after the file is replaced.
-func (e editing) splice(
+func (e Editing) splice(
 	ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error,
 ) (domain.Fingerprint, error) {
-	release, err := e.writers.Hold(ctx, v)
+	release, err := e.Writers.Hold(ctx, v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
 	defer release()
 
-	reader, err := e.readers.Open(v)
+	reader, err := e.Readers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -97,14 +98,14 @@ func (e editing) splice(
 	// read hands its fingerprint over in.
 	var on domain.Fingerprint
 	var looked error
-	if e.seen != nil || (e.fingerprint == (domain.Fingerprint{}) && !e.overwrite) {
+	if e.Seen != nil || (e.Fingerprint == (domain.Fingerprint{}) && !e.Overwrite) {
 		on, looked = reader.Stat(ctx, path)
 	}
 
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case err == nil:
-	case e.overwrite && errors.Is(err, fs.ErrNotExist):
+	case e.Overwrite && errors.Is(err, fs.ErrNotExist):
 		// The note is made by this write, out of the person's own text and
 		// nothing else: no frontmatter, and no identifier. An identifier
 		// arrives when the application changes a note's contents.
@@ -117,8 +118,8 @@ func (e editing) splice(
 	// note in their own editor in between. A caller that said what it believed
 	// the note was is held to that; one that said nothing is held to what was
 	// read just now. A caller writing over what is there is held to neither.
-	against := e.fingerprint
-	if against == (domain.Fingerprint{}) && !e.overwrite {
+	against := e.Fingerprint
+	if against == (domain.Fingerprint{}) && !e.Overwrite {
 		if looked != nil {
 			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", path, missing(looked))
 		}
@@ -131,7 +132,7 @@ func (e editing) splice(
 
 	// A note that is not there cannot hold anything the caller has not read, so
 	// it is made.
-	if looked == nil && e.seen.stale(on, markdown.Normalised(doc.Body())) {
+	if looked == nil && e.Seen.stale(on, markdown.Normalised(doc.Body())) {
 		return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, port.ErrChanged)
 	}
 
@@ -144,10 +145,10 @@ func (e editing) splice(
 	// past it does not: nothing backfills an identifier into a note it only read.
 	// A caller writing over what is there is the person editing their own note,
 	// and leaves the frontmatter as they wrote it.
-	if _, carried := doc.Identifier(); !carried && !e.overwrite {
+	if _, carried := doc.Identifier(); !carried && !e.Overwrite {
 		at := time.Now
-		if e.now != nil {
-			at = e.now
+		if e.Now != nil {
+			at = e.Now
 		}
 		identifier, err := ulid.New(at())
 		if err != nil {
@@ -161,11 +162,11 @@ func (e editing) splice(
 	// Every change to a note's contents comes through here, so the size it is
 	// written within is asked once, of the file the change came to.
 	content := doc.Bytes()
-	if err := Bounded(path, len(content), e.bound); err != nil {
+	if err := Bounded(path, len(content), e.Bound); err != nil {
 		return domain.Fingerprint{}, err
 	}
 
-	writer, err := e.writers.Open(v)
+	writer, err := e.Writers.Open(v)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
