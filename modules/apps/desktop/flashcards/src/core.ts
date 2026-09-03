@@ -4,11 +4,9 @@
  * Nothing here draws: it is the client, and the words the answers arrive in.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import { Goal as Goals, Rating, FlashcardsService } from '@numen/protocol'
 import type { Stopped } from '@numen/protocol'
-
-const transport = createConnectTransport({ baseUrl: window.location.origin })
+import { transport } from './transport'
 
 /**
  * What this window asks, presets among it. Every question names the vault it is
