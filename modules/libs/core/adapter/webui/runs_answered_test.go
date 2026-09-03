@@ -150,7 +150,7 @@ func (deaf) Close() error                                           { return nil
 // unrecorded is an index a run writes to and nothing reads back.
 type unrecorded struct{}
 
-func (unrecorded) SaveSource(context.Context, string, port.Source) error         { return nil }
+func (unrecorded) SaveSource(context.Context, string, port.Source) error           { return nil }
 func (unrecorded) SaveExtraction(context.Context, string, port.SourceChunks) error { return nil }
 
 func (unrecorded) RemoveSources(context.Context, string, domain.SourceKind, []string) error {

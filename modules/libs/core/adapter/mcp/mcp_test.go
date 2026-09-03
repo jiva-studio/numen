@@ -445,7 +445,7 @@ func TestLinkingTwoNotesShowsAtBothEnds(t *testing.T) {
 	}
 
 	around := call[struct {
-		Focus   mcp.Note     `json:"focus"`
+		Focus   mcp.Note        `json:"focus"`
 		Related []mcp.Neighbour `json:"related"`
 	}](t, session, "note_neighbourhood", map[string]any{"path": "Entropy.md"})
 	if len(around.Related) != 1 || around.Related[0].Seat != "child" {

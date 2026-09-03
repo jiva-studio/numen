@@ -26,8 +26,8 @@ const (
 // batchRequest is a run of pages left with the queue. The service stream-parses
 // the requests, so the fields stand in the order it reads them.
 type batchRequest struct {
-	Endpoint string       `json:"endpoint"`
-	Model    string       `json:"model"`
+	Endpoint string           `json:"endpoint"`
+	Model    string           `json:"model"`
 	Requests []batchedRequest `json:"requests"`
 }
 

@@ -211,11 +211,11 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the note to look out from"`
 	}) (*sdk.CallToolResult, struct {
-		Focus   Note     `json:"focus"`
+		Focus   Note        `json:"focus"`
 		Related []Neighbour `json:"related"`
 	}, error) {
 		type out = struct {
-			Focus   Note     `json:"focus"`
+			Focus   Note        `json:"focus"`
 			Related []Neighbour `json:"related"`
 		}
 		found, err := core.Neighbourhood.Execute(ctx, core.shown().Vault, in.Path)

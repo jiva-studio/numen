@@ -34,8 +34,8 @@ type Config struct {
 	// Threads is how many threads one model may use.
 	Threads int `json:"threads"`
 
-	Model  ParakeetModel `json:"model"`
-	Speech SegmenterModel   `json:"speech"`
+	Model  ParakeetModel  `json:"model"`
+	Speech SegmenterModel `json:"speech"`
 
 	// Fetching is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
