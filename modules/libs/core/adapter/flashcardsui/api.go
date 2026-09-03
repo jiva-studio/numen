@@ -44,12 +44,12 @@ type API struct {
 	// ask next, where the answers leave a card, the run they are appended to,
 	// what each day of them came to, and what the deck being sat to is joined
 	// to.
-	Owed      flashcards.Owed
-	Session   flashcards.Session
-	Schedules flashcards.Schedules
-	Log       flashcards.Log
-	Counted   flashcards.Counted
-	Joined    flashcards.Around
+	Owed          flashcards.Owed
+	Session       flashcards.Session
+	Schedules     flashcards.Schedules
+	Log           flashcards.Log
+	Counted       flashcards.Counted
+	Neighbourhood flashcards.Around
 	// Presets is which preset each deck of a vault is scheduled by. Curves is
 	// what the one control of a preset comes to over the whole range of its
 	// goal.
@@ -70,39 +70,39 @@ type API struct {
 	// Now is when this is happening.
 	Now func() time.Time
 
-	// Sat is called with the vault a sitting has just opened on. What answers
+	// Opened is called with the vault a sitting has just opened on. What answers
 	// about a card works one vault, and it is told which when the sitting is.
-	Sat func(context.Context, domain.Vault)
+	Opened func(context.Context, domain.Vault)
 
 	// Unreachable is why an agent cannot be reached, when one cannot.
 	Unreachable atomic.Value
 
-	// taking is the agent a question about a card goes to. A window without one
+	// agent is the agent a question about a card goes to. A window without one
 	// answers that it has none, and the rest of it works as it did.
-	taking atomic.Pointer[port.Agent]
+	agent atomic.Pointer[port.Agent]
 
 	mu sync.Mutex
 	// runs is the sitting open on each vault, by the vault's identity.
 	runs map[domain.VaultID]*flashcards.Run
 
-	// reads is how a vault is brought up to date in the index, and behind is the
-	// life those readings run for. walked is the vaults read since the window
-	// opened, underway the ones being read now, and unreadable why the last
+	// reads is how a vault is brought up to date in the index, and ctx is the
+	// life those readings run for. read is the vaults read since the window
+	// opened, underway the ones being read now, and why the reason the last
 	// reading of one failed.
-	reads      Read
-	behind     context.Context
-	walked     map[domain.VaultID]bool
-	underway   map[domain.VaultID]bool
-	unreadable map[domain.VaultID]string
+	reads    Read
+	ctx      context.Context
+	read     map[domain.VaultID]bool
+	underway map[domain.VaultID]bool
+	why      map[domain.VaultID]string
 
-	// following is everyone waiting to hear that a vault moved.
-	following following
+	// listeners is everyone waiting to hear that a vault moved.
+	listeners following
 }
 
 // Answering is the agent a question about a card goes to, and nothing where
 // this window has none.
 func (a *API) Answering() port.Agent {
-	if taking := a.taking.Load(); taking != nil {
+	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
 	return nil
@@ -112,10 +112,10 @@ func (a *API) Answering() port.Agent {
 // with no agent.
 func (a *API) Answers(taking port.Agent) {
 	if taking == nil {
-		a.taking.Store(nil)
+		a.agent.Store(nil)
 		return
 	}
-	a.taking.Store(&taking)
+	a.agent.Store(&taking)
 }
 
 // Vault is the vault of an identity, as the registry holds it.
@@ -141,8 +141,8 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, erro
 	a.remember(v, run)
 	// The agent works the vault the person is sitting to, and it is told which
 	// once, when the sitting opens.
-	if a.Sat != nil {
-		a.Sat(ctx, v)
+	if a.Opened != nil {
+		a.Opened(ctx, v)
 	}
 	return run, nil
 }

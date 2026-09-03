@@ -46,10 +46,10 @@ type Stretch struct {
 type Block struct {
 	Label string
 	Text  string
-	// Head says the region is a heading, and Depth is how far in the part it
+	// Heading says the region is a heading, and Depth is how far in the part it
 	// opens sits. A document title stands above the section titles within it.
-	Head  bool
-	Depth int
+	Heading bool
+	Depth   int
 	// Stretches are where on the page each run of Text was read. A recogniser
 	// that reports no rectangles leaves them empty.
 	Stretches []Stretch
@@ -60,8 +60,8 @@ type Block struct {
 // It carries no name of its own. What a page is called is where it stands in
 // the document, and that is what a person is shown and what a viewer opens at.
 type Page struct {
-	// At is which page of the document this is, counted from zero.
-	At int
+	// Index is which page of the document this is, counted from zero.
+	Index int
 	// Size is the page as it was rendered, which the rectangles are addressed
 	// from. A zero size is a page nothing was measured on.
 	Size image.Point

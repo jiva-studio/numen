@@ -39,9 +39,9 @@ type Reader struct {
 // A source naming a producer reads what that producer wrote or reads nothing.
 // Falling back to the document would slice one text at another text's offsets,
 // which is a wrong answer given confidently and is worse than no answer.
-func (r Reader) Of(ctx context.Context, path, from, hash string) (*Document, error) {
-	if from != "" {
-		return r.recognised(ctx, from, hash)
+func (r Reader) Of(ctx context.Context, path, reader, hash string) (*Document, error) {
+	if reader != "" {
+		return r.recognised(ctx, reader, hash)
 	}
 	ref, err := r.Vault.Stat(ctx, path)
 	if err != nil {
@@ -84,11 +84,11 @@ func (r Reader) recognised(ctx context.Context, from, hash string) (*Document, e
 func Composed(
 	ctx context.Context,
 	store port.DerivedStore,
-	from, hash string,
+	reader, hash string,
 	raw []byte,
 ) (*Document, error) {
-	if from == ASR {
-		put, err := beside(ctx, store, Corrected(from, hash))
+	if reader == ASR {
+		put, err := beside(ctx, store, Corrected(reader, hash))
 		if err != nil {
 			return nil, err
 		}
@@ -99,17 +99,17 @@ func Composed(
 		}
 		return Transcribed(raw), nil
 	}
-	parts, err := beside(ctx, store, Parts(from, hash))
+	parts, err := beside(ctx, store, Parts(reader, hash))
 	if err != nil {
 		return nil, err
 	}
-	corrections, err := beside(ctx, store, Fixes(from, hash))
+	corrections, err := beside(ctx, store, Fixes(reader, hash))
 	if err != nil {
 		return nil, err
 	}
 	var boxes []byte
 	if len(corrections) > 0 {
-		if boxes, err = beside(ctx, store, Boxes(from, hash)); err != nil {
+		if boxes, err = beside(ctx, store, Boxes(reader, hash)); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +164,7 @@ func Transcribed(raw []byte) *Document {
 	prose, cues := transcript.Parse(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
-		doc.paged = append(doc.paged, namedPlace{Offset: cue.At, Name: transcript.Clock(cue.From)})
+		doc.paged = append(doc.paged, namedPlace{Offset: cue.Offset, Name: transcript.Clock(cue.From)})
 	}
 	return doc
 }

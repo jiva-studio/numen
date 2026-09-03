@@ -64,7 +64,7 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 	asked := make([]batchedRequest, 0, len(pages))
 	for _, page := range pages {
 		asked = append(asked, batchedRequest{
-			CustomID: strconv.Itoa(page.At),
+			CustomID: strconv.Itoa(page.Number),
 			Body: request{
 				Model:       c.service.Name,
 				Temperature: 0,

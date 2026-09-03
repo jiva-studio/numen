@@ -68,7 +68,7 @@ type Transcriber struct {
 	speech  *ort.Session
 	cutting SegmenterModel
 
-	named port.TranscriptionModel
+	model port.TranscriptionModel
 
 	// One set of sessions, one stretch at a time. The library is safe to call
 	// from several goroutines, and a stretch is heard start to finish.
@@ -103,7 +103,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		pieces:  said,
 		blank:   blank,
 		cutting: cfg.Speech,
-		named: port.TranscriptionModel{
+		model: port.TranscriptionModel{
 			Model:     named(cfg.Model.Name, found.encoder),
 			Segmenter: named(cfg.Speech.Name, found.speech),
 			Cutting:   cfg.Speech.cutting(),
@@ -111,9 +111,9 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		},
 	}
 	for _, one := range []struct {
-		into **ort.Session
+		dst  **ort.Session
 		at   string
-		what string
+		kind string
 	}{
 		{&out.encoder, found.encoder, "encoder"},
 		{&out.decoder, found.decoder, "decoder"},
@@ -123,15 +123,15 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		session, err := found.engine.NewSession(one.at, options)
 		if err != nil {
 			out.Close()
-			return nil, fmt.Errorf("the %s %s: %w", one.what, one.at, err)
+			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
 		}
-		*one.into = session
+		*one.dst = session
 	}
 	return out, nil
 }
 
 // Transcription is what every recording this transcriber hears was heard by.
-func (t *Transcriber) Transcription() port.TranscriptionModel { return t.named }
+func (t *Transcriber) Transcription() port.TranscriptionModel { return t.model }
 
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.
@@ -219,7 +219,7 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 	return transducer{
 		frames: width,
 		blank:  t.blank,
-		encoded: func(at int) []float32 {
+		encoder: func(at int) []float32 {
 			// The frames are channel after channel, each holding every frame.
 			one := make([]float32, encoded)
 			for c := range one {
@@ -227,7 +227,7 @@ func (t *Transcriber) decode(ctx context.Context, out map[string]*ort.Value) ([]
 			}
 			return one
 		},
-		predict: func(token int) ([]float32, error) {
+		predictor: func(token int) ([]float32, error) {
 			said, next, cells, err := t.predict(token, state, cell)
 			if err != nil {
 				return nil, err
@@ -344,11 +344,11 @@ func (t *Transcriber) joint(frame, said []float32) ([]float32, error) {
 // there are, how to reach one, what the predictor says after a token, and what
 // the two say together.
 type transducer struct {
-	frames  int
-	blank   int
-	encoded func(at int) []float32
-	predict func(token int) ([]float32, error)
-	joint   func(frame, said []float32) ([]float32, error)
+	frames    int
+	blank     int
+	encoder   func(at int) []float32
+	predictor func(token int) ([]float32, error)
+	joint     func(frame, said []float32) ([]float32, error)
 }
 
 // decode reads the frames from the first to the last and answers with the
@@ -359,7 +359,7 @@ type transducer struct {
 // way, so that a stretch is always read to its end.
 func (d transducer) decode(ctx context.Context) ([]int, error) {
 	// The predictor opens on the blank: nothing has been said yet.
-	upto, err := d.predict(d.blank)
+	upto, err := d.predictor(d.blank)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +372,7 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		scores, err := d.joint(d.encoded(at), upto)
+		scores, err := d.joint(d.encoder(at), upto)
 		if err != nil {
 			return nil, err
 		}
@@ -383,7 +383,7 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		step := largest(scores[d.blank+1:])
 		if token != d.blank {
 			said = append(said, token)
-			if upto, err = d.predict(token); err != nil {
+			if upto, err = d.predictor(token); err != nil {
 				return nil, err
 			}
 			spoken++

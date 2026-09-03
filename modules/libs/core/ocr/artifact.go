@@ -55,7 +55,7 @@ func Write(pages []Page) ([]byte, []lit.Box, []Part) {
 				prose += len(blockGap)
 			}
 			boxes = append(boxes, within(page, block, prose)...)
-			if block.Head && block.Text != "" {
+			if block.Heading && block.Text != "" {
 				parts = append(parts, Part{Start: prose, Length: len(block.Text), Depth: block.Depth})
 			}
 			out.WriteString(block.Text)
@@ -78,7 +78,7 @@ func within(page Page, block Block, base int) []lit.Box {
 	boxes := make([]lit.Box, 0, len(block.Stretches))
 	for _, stretch := range block.Stretches {
 		boxes = append(boxes, lit.Box{
-			Page:   page.At,
+			Page:   page.Index,
 			Start:  base + stretch.Start,
 			Length: stretch.Length,
 			MinX:   float32(stretch.Box.Min.X) / wide,

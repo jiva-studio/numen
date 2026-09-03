@@ -29,8 +29,8 @@ func printed(lines []string) ([]byte, []byte) {
 	pages := make([]ocr.Page, 0, len(lines))
 	for at, said := range lines {
 		pages = append(pages, ocr.Page{
-			At:   at,
-			Size: image.Point{X: 100, Y: 100},
+			Index: at,
+			Size:  image.Point{X: 100, Y: 100},
 			Blocks: []ocr.Block{{
 				Text:      said,
 				Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 100, 10), Length: len(said)}},
@@ -88,7 +88,7 @@ func halted(
 	// it wrote, and the count standing after them.
 	put := make([]fixes.Line, 0, through)
 	for at := range through {
-		put = append(put, fixes.Line{At: at, Text: corrected(lines[at])})
+		put = append(put, fixes.Line{Number: at, Text: corrected(lines[at])})
 	}
 	if err := store.Append(t.Context(), text.Fixes("ocr", hash), fixes.Pack(put)); err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func corrections(t *testing.T, store port.DerivedStore, name string) []int {
 	}
 	out := []int{}
 	for _, line := range fixes.Unpack(raw) {
-		out = append(out, line.At)
+		out = append(out, line.Number)
 	}
 	return out
 }
@@ -221,7 +221,7 @@ func TestAReadingAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	defer release()
 	w.tasks.Set(task.Task{
 		ID: proofreadingID(scan), Doing: "Proofreading a reading", About: scan,
-		Done: 1, Total: 2,
+		Count: 1, Total: 2,
 	})
 
 	w.TakingUp(t.Context(), books{}, v)

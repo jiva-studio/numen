@@ -10,10 +10,10 @@ import (
 // A window dressed in everything a person can set.
 func dressed() appearance.Settings {
 	return appearance.Settings{
-		Mode:  appearance.Dark,
-		Theme: ":root{--numen-surface:#010203}",
-		Drawn: 1.25,
-		Set:   1.5,
+		Mode:           appearance.Dark,
+		Theme:          ":root{--numen-surface:#010203}",
+		InterfaceScale: 1.25,
+		TextScale:      1.5,
 	}
 }
 

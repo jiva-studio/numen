@@ -216,7 +216,7 @@ func (u Proofread) gathered(
 	replies map[int]string,
 ) (put []fixes.Line, refused int) {
 	for _, page := range asked {
-		reply, answered := replies[page.At]
+		reply, answered := replies[page.Number]
 		if !answered {
 			continue
 		}
@@ -226,7 +226,7 @@ func (u Proofread) gathered(
 			continue
 		}
 		for _, line := range lines {
-			put = append(put, fixes.Line{At: line.At, Text: line.Text})
+			put = append(put, fixes.Line{Number: line.Number, Text: line.Text})
 		}
 	}
 	return put, refused
@@ -344,7 +344,7 @@ func cropped(
 	held := fixes.Unpack(raw)
 	kept := make([]fixes.Line, 0, len(held))
 	for _, line := range held {
-		if line.At < beyond {
+		if line.Number < beyond {
 			kept = append(kept, line)
 		}
 	}
@@ -361,7 +361,7 @@ func cropped(
 func opening(pages []proofread.Batch, done int) (int, bool) {
 	for _, page := range pages[min(done, len(pages)):] {
 		if len(page.Lines) > 0 {
-			return page.Lines[0].At, true
+			return page.Lines[0].Number, true
 		}
 	}
 	return 0, false

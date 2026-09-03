@@ -25,14 +25,14 @@ import (
 // Nothing about a recording is here. What the vault holds is what is served,
 // and what may be played is decided where a player is drawn.
 type Loopback struct {
-	server *http.Server
-	api    *API
-	at     string
-	// word stands in the address and in no setting. Every process on this
+	server  *http.Server
+	api     *API
+	address string
+	// token stands in the address and in no setting. Every process on this
 	// machine can reach a loopback socket, and a vault is the person's own
 	// writing; the address is what tells this window's own asking from anybody
 	// else's. It is made afresh for each run and outlives none of them.
-	word string
+	token string
 }
 
 // Listen opens the socket. A machine that refuses one leaves whatever cannot
@@ -49,9 +49,9 @@ func Listen(api *API) (*Loopback, error) {
 	}
 
 	back := &Loopback{
-		api:  api,
-		at:   "http://" + held.Addr().String(),
-		word: base64.RawURLEncoding.EncodeToString(word),
+		api:     api,
+		address: "http://" + held.Addr().String(),
+		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
 	back.server = &http.Server{
 		Handler:           back.serving(),
@@ -71,7 +71,7 @@ func Listen(api *API) (*Loopback, error) {
 // the vault's own reader. That is the boundary, and it is the same one every
 // other question crosses.
 func (l *Loopback) serving() http.Handler {
-	held := "/" + l.word + "/"
+	held := "/" + l.token + "/"
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		escaped := r.URL.EscapedPath()
 		if !strings.HasPrefix(escaped, held) {
@@ -98,7 +98,7 @@ func (l *Loopback) Address(vault domain.Vault, path string) string {
 	if l == nil {
 		return ""
 	}
-	return l.at + "/" + l.word + "/" + url.PathEscape(string(vault.ID)) + "/" + url.PathEscape(path)
+	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) + "/" + url.PathEscape(path)
 }
 
 // Close stops answering.
@@ -180,5 +180,5 @@ func (l *Loopback) named() []string {
 	if l == nil {
 		return nil
 	}
-	return []string{l.at}
+	return []string{l.address}
 }

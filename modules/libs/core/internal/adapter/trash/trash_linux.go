@@ -139,7 +139,7 @@ func into(dir, path, from string) error {
 // reserve is a free name in one trash directory and the open note that holds
 // it. Two deletions of folders called the same thing race for the note, and the
 // one that creates it has the name.
-func reserve(files, info, name string) (string, *os.File, error) {
+func reserve(files, notes, name string) (string, *os.File, error) {
 	for n := 1; ; n++ {
 		taken := name
 		if n > 1 {
@@ -148,7 +148,7 @@ func reserve(files, info, name string) (string, *os.File, error) {
 		if _, err := os.Lstat(filepath.Join(files, taken)); err == nil {
 			continue
 		}
-		note, err := os.OpenFile(filepath.Join(info, taken+suffix), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+		note, err := os.OpenFile(filepath.Join(notes, taken+suffix), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 		if err == nil {
 			return taken, note, nil
 		}

@@ -197,8 +197,8 @@ func TestLocate(t *testing.T) {
 			if where.Part != c.part {
 				t.Errorf("part is %q, want %q", where.Part, c.part)
 			}
-			if where.At != c.sheet {
-				t.Errorf("page stands at %d in the file, want %d", where.At, c.sheet)
+			if where.Page != c.sheet {
+				t.Errorf("page stands at %d in the file, want %d", where.Page, c.sheet)
 			}
 		})
 	}

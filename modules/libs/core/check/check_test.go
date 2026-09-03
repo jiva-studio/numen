@@ -163,7 +163,7 @@ func TestAskingForACheckThatDoesNotExistSaysWhatDoes(t *testing.T) {
 // Adding a check is adding a file, and what runs is whatever the set holds.
 func TestTheSetOfChecksIsWhatRuns(t *testing.T) {
 	l, v := checked(t, map[string]string{"Heat.md": "---\nlinks:\n  - to: Entropy\n---\n# Heat\n"})
-	l.Checks = nil
+	l.List = nil
 
 	if found := run(t, l, v); len(found) != 0 {
 		t.Errorf("an empty set of checks found %+v", found)

@@ -112,18 +112,18 @@ const (
 //
 // The runs move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
-func around(text string, at []domain.Span, from int) (string, []domain.Span) {
+func around(text string, spans []domain.Span, from int) (string, []domain.Span) {
 	runes, units := counting(text)
 	total := units[len(runes)]
 	if total <= glancing {
-		return text, at
+		return text, spans
 	}
 
 	// Where the window opens on: the first run that matched, and where the hit
 	// itself stands when no word matched at all.
 	point := from
-	if len(at) > 0 {
-		point = at[0].From
+	if len(spans) > 0 {
+		point = spans[0].From
 	}
 
 	opens := 0
@@ -137,7 +137,7 @@ func around(text string, at []domain.Span, from int) (string, []domain.Span) {
 	shift := units[first]
 
 	var kept []domain.Span
-	for _, span := range at {
+	for _, span := range spans {
 		clipped := domain.Span{From: max(span.From, units[first]), To: min(span.To, units[last])}
 		if clipped.From >= clipped.To {
 			continue

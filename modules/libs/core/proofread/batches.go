@@ -24,12 +24,12 @@ func Scanned(prose string, boxes []lit.Box) []Batch {
 		if box.Start < 0 || end > len(prose) {
 			return nil
 		}
-		line := Line{At: at, Text: prose[box.Start:end]}
-		if n := len(out); n > 0 && out[n-1].At == box.Page {
+		line := Line{Number: at, Text: prose[box.Start:end]}
+		if n := len(out); n > 0 && out[n-1].Number == box.Page {
 			out[n-1].Lines = append(out[n-1].Lines, line)
 			continue
 		}
-		out = append(out, Batch{At: box.Page, Lines: []Line{line}})
+		out = append(out, Batch{Number: box.Page, Lines: []Line{line}})
 	}
 	return out
 }
@@ -53,7 +53,7 @@ func Spoken(cues []transcript.Cue, size, overlap int) []Batch {
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
 		end := min(start+size, len(lines))
-		out = append(out, Batch{At: len(out), Lines: lines[start:end:end], Joining: true})
+		out = append(out, Batch{Number: len(out), Lines: lines[start:end:end], Joinable: true})
 		if end == len(lines) {
 			break
 		}
@@ -95,9 +95,9 @@ func Seams(cues []transcript.Cue, size, overlap int, cuts []int) []Batch {
 		reach = end
 		start := max(end-size, 0)
 		out = append(out, Batch{
-			At:      len(batches) + len(out),
-			Lines:   lines[start:end:end],
-			Joining: true,
+			Number:   len(batches) + len(out),
+			Lines:    lines[start:end:end],
+			Joinable: true,
 		})
 	}
 	return out
@@ -111,7 +111,7 @@ func heard(cues []transcript.Cue) []Line {
 		if cue.Text == "" {
 			continue
 		}
-		out = append(out, Line{At: at, Text: cue.Text})
+		out = append(out, Line{Number: at, Text: cue.Text})
 	}
 	return out
 }

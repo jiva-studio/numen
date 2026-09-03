@@ -150,7 +150,7 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, er
 	said := fmt.Sprintf("%s %d", s.says, s.pages)
 	var out []ocr.Block
 	if s.heads != "" {
-		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Head: true, Depth: 1})
+		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Heading: true, Depth: 1})
 	}
 	return append(out, ocr.Block{
 		Label:     "text",

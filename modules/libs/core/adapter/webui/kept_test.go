@@ -11,7 +11,7 @@ import (
 // onDisk gives a window a folder of its own to keep its drawings in.
 func onDisk(t *testing.T, api *API) *shelf {
 	t.Helper()
-	kept := &shelf{dir: t.TempDir(), most: mostKept}
+	kept := &shelf{dir: t.TempDir(), limit: mostKept}
 	api.Viewer.kept = kept
 	return kept
 }
@@ -128,13 +128,13 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	}
 
 	// Older than the rest, the way a page nobody has turned back to is.
-	first := filepath.Join(kept.dir, kept.named(pictureID{of: print(t, api), at: 0, wide: 400}))
+	first := filepath.Join(kept.dir, kept.named(pictureID{document: print(t, api), page: 0, width: 400}))
 	old := time.Now().Add(-time.Hour)
 	if err := os.Chtimes(first, old, old); err != nil {
 		t.Fatal(err)
 	}
 
-	kept.most = totalOf(t, kept) - 1
+	kept.limit = totalOf(t, kept) - 1
 	kept.sweep()
 
 	if _, err := os.Stat(first); !os.IsNotExist(err) {

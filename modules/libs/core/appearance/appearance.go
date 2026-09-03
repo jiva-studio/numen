@@ -43,11 +43,11 @@ type Settings struct {
 	// Theme is the stylesheet chosen, as its text. A window wearing none is
 	// left to `tokens.css`.
 	Theme string
-	// Drawn is how large the interface is drawn and Set how large the text a
-	// person reads is set, one being as designed. A size nobody named is zero
-	// and is left to `tokens.css` as well.
-	Drawn float64
-	Set   float64
+	// InterfaceScale is how large the interface is drawn and TextScale how
+	// large the text a person reads is set, one being as designed. A size
+	// nobody named is zero and is left to `tokens.css` as well.
+	InterfaceScale float64
+	TextScale      float64
 }
 
 // Styles is the elements the head ends with.
@@ -66,7 +66,7 @@ func Styles(c Settings) string {
 	// The two sizes last. They are what a person set this window to, inside the
 	// bounds each goes to, and the element carrying them is the last word on
 	// them.
-	return out + sized(c.Drawn, c.Set)
+	return out + sized(c.InterfaceScale, c.TextScale)
 }
 
 // Into is the page carrying those elements, put where the head ends. A page

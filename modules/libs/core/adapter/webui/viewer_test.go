@@ -305,7 +305,7 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)
 	alone(api)
-	api.Viewer.drawn.Load().most = 1
+	api.Viewer.drawn.Load().limit = 1
 
 	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
@@ -468,7 +468,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	from := sheets(4)
 	api, handler := drawnFrom(t, from)
 	alone(api)
-	api.Viewer.docs.Load().most = 1
+	api.Viewer.docs.Load().limit = 1
 
 	for _, path := range []string{book, another} {
 		if out := ask(handler, pageOf(path, 0, 400)); out.Code != http.StatusOK {

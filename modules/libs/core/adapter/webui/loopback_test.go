@@ -172,10 +172,10 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 
 	said := handed(api.Serving(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
-	if !strings.Contains(said, "media-src 'self' "+back.at) {
+	if !strings.Contains(said, "media-src 'self' "+back.address) {
 		t.Errorf("the socket is not what a recording may be played from: %q", said)
 	}
-	if strings.Contains(said, "img-src 'self' "+back.at) {
+	if strings.Contains(said, "img-src 'self' "+back.address) {
 		t.Error("naming where a recording plays from widened where a picture comes from")
 	}
 }

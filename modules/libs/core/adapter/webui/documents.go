@@ -33,10 +33,10 @@ var errBusy = errors.New("the document is busy")
 
 // document is one document open on a worker of the library's pool.
 type document struct {
-	// drawing is held for the length of one call into the library, which
+	// lock is held for the length of one call into the library, which
 	// answers one question about one document at a time. It is a channel
 	// because a request waiting for it waits under a bound.
-	drawing chan struct{}
+	lock chan struct{}
 
 	// ready is closed once the document is open or the reason it is not is
 	// known. Whoever asked for it while it was opening waits here.
@@ -56,14 +56,14 @@ type document struct {
 // where the caller ran out of time.
 func (d *document) hold(ctx context.Context) bool {
 	select {
-	case d.drawing <- struct{}{}:
+	case d.lock <- struct{}{}:
 		return true
 	case <-ctx.Done():
 		return false
 	}
 }
 
-func (d *document) release() { <-d.drawing }
+func (d *document) release() { <-d.lock }
 
 // shut closes the document once whatever is opening it has finished.
 func (d *document) shut() {
@@ -93,9 +93,9 @@ type documents struct {
 	open map[fingerprint]*document
 	// order is what is held, least recently asked for first.
 	order []fingerprint
-	// most is how many are held open at once, and idleFor how long one nobody
+	// limit is how many are held open at once, and idleFor how long one nobody
 	// is looking at is kept.
-	most    int
+	limit   int
 	idleFor time.Duration
 
 	// closing is the window going. A document being drawn from is left to the
@@ -117,7 +117,7 @@ const (
 func keeping() *documents {
 	return &documents{
 		open:    map[fingerprint]*document{},
-		most:    mostOpen,
+		limit:   mostOpen,
 		idleFor: openIdleFor,
 		empty:   make(chan struct{}),
 	}
@@ -143,9 +143,9 @@ func (d *documents) take(
 	doc, held := d.open[print]
 	if !held {
 		doc = &document{
-			drawing: make(chan struct{}, 1),
-			ready:   make(chan struct{}),
-			points:  map[int]int{},
+			lock:   make(chan struct{}, 1),
+			ready:  make(chan struct{}),
+			points: map[int]int{},
 		}
 		d.open[print] = doc
 		go d.fill(print, doc, open)
@@ -254,7 +254,7 @@ func (d *documents) close() {
 // evict closes what is over the bound, oldest first. A document somebody is
 // drawing from stays, and the bound is over until they are done with it.
 func (d *documents) evict() {
-	for len(d.open) > d.most {
+	for len(d.open) > d.limit {
 		dropped := -1
 		for i, print := range d.order {
 			if doc := d.open[print]; doc != nil && doc.uses == 0 {

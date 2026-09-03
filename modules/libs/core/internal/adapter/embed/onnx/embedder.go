@@ -49,8 +49,8 @@ const (
 // Embedder is one model, loaded and compiled.
 type Embedder struct {
 	name string
-	// from is where these vectors are made, which is part of what they are.
-	from       string
+	// origin is where these vectors are made, which is part of what they are.
+	origin     string
 	dimensions int
 	maxTokens  int
 	pooling    string
@@ -60,12 +60,12 @@ type Embedder struct {
 	pad       int
 	net       onnxgomlx.Model
 	exec      *model.Exec
-	typeIDs   bool
+	typed     bool
 	// pooled says the model's output is already one vector per text.
 	pooled bool
-	// head says the vector is the token that opens a text rather than the
+	// headPooled says the vector is the token that opens a text rather than the
 	// average of them.
-	head bool
+	headPooled bool
 
 	// One compiled graph, one execution at a time.
 	mu sync.Mutex
@@ -81,20 +81,20 @@ type FetchProgress func(done, total int64)
 //
 // is is the identity the vectors this model returns are kept under, which the
 // settings decide.
-func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tell FetchProgress) (*Embedder, error) {
-	if is.Dimensions <= 0 {
+func Open(ctx context.Context, identity port.EmbeddingModel, cfg embed.LocalModel, progress FetchProgress) (*Embedder, error) {
+	if identity.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
 	// Where a text is cut off is part of what a vector is, and this machine is
 	// what does the cutting. A model run here says where.
-	if is.MaxTokens <= 0 {
+	if identity.MaxTokens <= 0 {
 		return nil, fmt.Errorf("%s: where a text is cut off must be known before a vector is stored", cfg.Name)
 	}
-	if is.Pooling != "" && is.Pooling != embed.PoolMean && is.Pooling != embed.PoolHead {
+	if identity.Pooling != "" && identity.Pooling != embed.PoolMean && identity.Pooling != embed.PoolHead {
 		return nil, fmt.Errorf("%s is pooled %q, and a model is pooled %q or %q",
-			is.Name, is.Pooling, embed.PoolMean, embed.PoolHead)
+			identity.Name, identity.Pooling, embed.PoolMean, embed.PoolHead)
 	}
-	paths, err := locate(ctx, cfg, tell)
+	paths, err := locate(ctx, cfg, progress)
 	if err != nil {
 		return nil, err
 	}
@@ -108,15 +108,15 @@ func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tel
 	}
 
 	e := &Embedder{
-		name:       is.Name,
-		from:       is.From,
-		dimensions: is.Dimensions,
-		maxTokens:  is.MaxTokens,
-		pooling:    is.Pooling,
+		name:       identity.Name,
+		origin:     identity.From,
+		dimensions: identity.Dimensions,
+		maxTokens:  identity.MaxTokens,
+		pooling:    identity.Pooling,
 		batchTexts: max(cfg.BatchTexts, 1),
 		tokenizer:  tokenizer,
 		net:        net,
-		head:       is.Pooling == embed.PoolHead,
+		headPooled: identity.Pooling == embed.PoolHead,
 	}
 	if pad, err := tokenizer.SpecialTokenID(api.TokPad); err == nil {
 		e.pad = pad
@@ -127,7 +127,7 @@ func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tel
 		switch name {
 		case inputIDs, attentionMask:
 		case tokenTypeIDs:
-			e.typeIDs = true
+			e.typed = true
 		default:
 			return nil, fmt.Errorf("%s asks for an input this adapter does not have: %s", cfg.Name, name)
 		}
@@ -152,7 +152,7 @@ func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tel
 	}
 	exec, err := model.NewExec(backend, store, func(scope *model.Scope, inputs []*graph.Node) []*graph.Node {
 		in := map[string]*graph.Node{inputIDs: inputs[0], attentionMask: inputs[1]}
-		if e.typeIDs {
+		if e.typed {
 			in[tokenTypeIDs] = inputs[2]
 		}
 		return net.CallGraph(scope, inputs[0].Graph(), in, output)
@@ -184,7 +184,7 @@ func (e *Embedder) Close() error {
 func (e *Embedder) Model() port.EmbeddingModel {
 	return port.EmbeddingModel{
 		Name: e.name, Dimensions: e.dimensions, MaxTokens: e.maxTokens, Pooling: e.pooling,
-		From: e.from,
+		From: e.origin,
 	}
 }
 
@@ -235,7 +235,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	ids, mask, types := padded(batch, rows, seq, e.pad)
 
 	args := []any{ids, mask}
-	if e.typeIDs {
+	if e.typed {
 		args = append(args, types)
 	}
 
@@ -268,7 +268,7 @@ func (e *Embedder) forward(batch [][]int) ([][]float32, error) {
 	if want := rows * seq * e.dimensions; len(flat) != want {
 		return nil, fmt.Errorf("%s returned %d values for %s", e.name, len(flat), outputs[0].Shape())
 	}
-	if e.head {
+	if e.headPooled {
 		return headPool(flat, rows, seq, e.dimensions)[:len(batch)], nil
 	}
 	return meanPool(flat, mask, e.dimensions)[:len(batch)], nil
@@ -333,7 +333,7 @@ const (
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(ctx context.Context, cfg embed.LocalModel, tell FetchProgress) (paths, error) {
+func locate(ctx context.Context, cfg embed.LocalModel, progress FetchProgress) (paths, error) {
 	file := cfg.File
 	if file == "" {
 		file = modelFile
@@ -372,7 +372,7 @@ func locate(ctx context.Context, cfg embed.LocalModel, tell FetchProgress) (path
 		total += sizes[name]
 	}
 	if dir, err := repo.CacheDir(); err == nil {
-		defer arriving(dir, files, sizes, total, tell)()
+		defer arriving(dir, files, sizes, total, progress)()
 	}
 
 	p := paths{}
@@ -425,8 +425,8 @@ func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 //
 // What is counted is the bytes under the repository's own place in the cache,
 // which is what has arrived.
-func arriving(dir string, files []string, sizes map[string]int64, total int64, tell FetchProgress) func() {
-	if tell == nil || total <= 0 {
+func arriving(dir string, files []string, sizes map[string]int64, total int64, progress FetchProgress) func() {
+	if progress == nil || total <= 0 {
 		return func() {}
 	}
 	done := make(chan struct{})
@@ -440,7 +440,7 @@ func arriving(dir string, files []string, sizes map[string]int64, total int64, t
 			case <-done:
 				return
 			case <-tick.C:
-				tell(min(weighed(dir, files, sizes), total), total)
+				progress(min(weighed(dir, files, sizes), total), total)
 			}
 		}
 	}()

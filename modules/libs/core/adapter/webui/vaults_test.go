@@ -144,7 +144,7 @@ func onAList(t *testing.T) *onTheList {
 	}
 	f.api = &API{
 		Vaults:     registry,
-		Choosing:   f.picker,
+		Picker:     f.picker,
 		Adding:     &adding,
 		Renaming:   &usecase.Rename{Registry: registry, Index: rows},
 		Forgetting: &forget,

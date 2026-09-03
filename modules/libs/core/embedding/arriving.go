@@ -20,16 +20,16 @@ var ErrArriving = errors.New("the model is still arriving")
 // Two ways of waiting. A pass that fills the index waits; a person who has
 // typed a question is answered by the words.
 type Embedder struct {
-	is port.EmbeddingModel
+	model port.EmbeddingModel
 
-	// here is closed once there is something to answer with, or a reason there
+	// ready is closed once there is something to answer with, or a reason there
 	// never will be.
-	here chan struct{}
-	once sync.Once
+	ready chan struct{}
+	once  sync.Once
 
-	mu   sync.RWMutex
-	held port.Embedder
-	why  error
+	mu     sync.RWMutex
+	held   port.Embedder
+	reason error
 	// settled is the wait being over: something answered for it, it was let go
 	// of, or it was closed.
 	settled bool
@@ -47,7 +47,7 @@ type WaitingEmbedder interface {
 // Arriving is an embedder being loaded somewhere else, under the identity the
 // settings give it.
 func Arriving(is port.EmbeddingModel) *Embedder {
-	return &Embedder{is: is, here: make(chan struct{})}
+	return &Embedder{model: is, ready: make(chan struct{})}
 }
 
 // Landed is the model turning up, or the reason it never will. It is the first
@@ -58,11 +58,11 @@ func (e *Embedder) Landed(held port.Embedder, why error) {
 	late := e.settled
 	if !late {
 		e.settled = true
-		e.held, e.why = held, why
+		e.held, e.reason = held, why
 	}
 	e.mu.Unlock()
 
-	e.once.Do(func() { close(e.here) })
+	e.once.Do(func() { close(e.ready) })
 	if late {
 		_ = letGo(held)
 	}
@@ -75,10 +75,10 @@ func (e *Embedder) Landed(held port.Embedder, why error) {
 func (e *Embedder) Disown(why error) error {
 	e.mu.Lock()
 	held := e.held
-	e.held, e.why, e.settled = nil, why, true
+	e.held, e.reason, e.settled = nil, why, true
 	e.mu.Unlock()
 
-	e.once.Do(func() { close(e.here) })
+	e.once.Do(func() { close(e.ready) })
 	return letGo(held)
 }
 
@@ -92,20 +92,20 @@ func letGo(held port.Embedder) error {
 }
 
 // Model is what the settings say this is, known before the weights are here.
-func (e *Embedder) Model() port.EmbeddingModel { return e.is }
+func (e *Embedder) Model() port.EmbeddingModel { return e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (e *Embedder) Wait(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-e.here:
+	case <-e.ready:
 	}
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 	switch {
-	case e.why != nil:
-		return e.why
+	case e.reason != nil:
+		return e.reason
 	case e.held == nil:
 		return ErrArriving
 	}
@@ -143,7 +143,7 @@ func (e *Embedder) embedding(ctx context.Context, texts []string) ([][]float32, 
 
 type waitingEmbedder struct{ e *Embedder }
 
-func (w waitingEmbedder) Model() port.EmbeddingModel { return w.e.is }
+func (w waitingEmbedder) Model() port.EmbeddingModel { return w.e.model }
 
 // Wait blocks until the model turns up, and says what stopped it.
 func (w waitingEmbedder) Wait(ctx context.Context) error { return w.e.Wait(ctx) }
@@ -160,16 +160,16 @@ func (w waitingEmbedder) Close() error { return w.e.Close() }
 
 type impatient struct{ e *Embedder }
 
-func (i impatient) Model() port.EmbeddingModel { return i.e.is }
+func (i impatient) Model() port.EmbeddingModel { return i.e.model }
 
 func (i impatient) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	select {
-	case <-i.e.here:
+	case <-i.e.ready:
 	default:
 		return nil, ErrArriving
 	}
 	i.e.mu.RLock()
-	why := i.e.why
+	why := i.e.reason
 	i.e.mu.RUnlock()
 	if why != nil {
 		return nil, why

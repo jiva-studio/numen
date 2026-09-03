@@ -320,7 +320,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 			if at.About == "" {
 				t.Errorf("the pass stood in the list saying nothing but %q", at.Doing)
 			}
-			if at.Total > 0 && at.Done == 0 {
+			if at.Total > 0 && at.Count == 0 {
 				t.Errorf("the pass drew a share of nothing: %+v", at)
 			}
 		}

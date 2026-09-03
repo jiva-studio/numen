@@ -156,10 +156,10 @@ type Location struct {
 	Part string
 	// PartOffset is where that part begins.
 	PartOffset int
-	// At is where the page the offset falls on stands in the file, counted from
+	// Page is where the page the offset falls on stands in the file, counted from
 	// the first. It is known for every page, and it is the one thing a page is
 	// called.
-	At int
+	Page int
 }
 
 // Locate answers where one offset in the document's text is.
@@ -169,7 +169,7 @@ func (b *Book) Locate(offset int) Location {
 		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	if i := preceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.At = i
+		at.Page = i
 	}
 	return at
 }

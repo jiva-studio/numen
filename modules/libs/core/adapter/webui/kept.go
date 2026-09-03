@@ -23,13 +23,13 @@ import (
 // work, and the folder a person keeps their notes in is not where an
 // application puts what it can remake.
 type shelf struct {
-	dir  string
-	most int64
+	dir   string
+	limit int64
 
 	mu sync.Mutex
-	// since is what has been written since the last sweep. Counting the folder
+	// written is what has been written since the last sweep. Counting the folder
 	// on every write is a folder read per page turned.
-	since int64
+	written int64
 }
 
 const (
@@ -52,7 +52,7 @@ func shelved() *shelf {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
-	return &shelf{dir: dir, most: mostKept}
+	return &shelf{dir: dir, limit: mostKept}
 }
 
 // get is a page drawn before, and nothing where it was not.
@@ -101,10 +101,10 @@ func (s *shelf) put(key pictureID, body []byte) {
 	}
 
 	s.mu.Lock()
-	s.since += int64(len(body))
-	due := s.since >= sweptEvery
+	s.written += int64(len(body))
+	due := s.written >= sweptEvery
 	if due {
-		s.since = 0
+		s.written = 0
 	}
 	s.mu.Unlock()
 	if due {
@@ -123,9 +123,9 @@ func (s *shelf) sweep() {
 		return
 	}
 	type page struct {
-		name string
-		size int64
-		when int64
+		name  string
+		size  int64
+		mtime int64
 	}
 	pages := make([]page, 0, len(held))
 	var total int64
@@ -134,15 +134,15 @@ func (s *shelf) sweep() {
 		if err != nil {
 			continue
 		}
-		pages = append(pages, page{name: one.Name(), size: info.Size(), when: info.ModTime().UnixNano()})
+		pages = append(pages, page{name: one.Name(), size: info.Size(), mtime: info.ModTime().UnixNano()})
 		total += info.Size()
 	}
-	if total <= s.most {
+	if total <= s.limit {
 		return
 	}
-	sort.Slice(pages, func(a, b int) bool { return pages[a].when < pages[b].when })
+	sort.Slice(pages, func(a, b int) bool { return pages[a].mtime < pages[b].mtime })
 	for _, one := range pages {
-		if total <= s.most {
+		if total <= s.limit {
 			return
 		}
 		if os.Remove(filepath.Join(s.dir, one.name)) == nil {
@@ -159,6 +159,6 @@ func (s *shelf) sweep() {
 // theirs.
 func (s *shelf) named(key pictureID) string {
 	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%d\x00%d\x00%d\x00%d",
-		key.of.path, key.of.size, key.of.mtime, key.at, key.wide))
+		key.document.path, key.document.size, key.document.mtime, key.page, key.width))
 	return hex.EncodeToString(sum[:]) + ".jpg"
 }

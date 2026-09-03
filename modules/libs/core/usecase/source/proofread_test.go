@@ -37,8 +37,8 @@ func (c *corrector) Name() string {
 func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map[int]string, error) {
 	var at []int
 	for _, page := range pages {
-		at = append(at, page.At)
-		c.about = append(c.about, page.About)
+		at = append(at, page.Number)
+		c.about = append(c.about, page.Context)
 	}
 	c.asked = append(c.asked, at)
 	if c.stop != nil {
@@ -52,8 +52,8 @@ func (c *corrector) Proofread(ctx context.Context, pages []proofread.Batch) (map
 	}
 	out := map[int]string{}
 	for _, page := range pages {
-		if said, has := c.says[page.At]; has {
-			out[page.At] = said
+		if said, has := c.says[page.Number]; has {
+			out[page.Number] = said
 		}
 	}
 	return out, nil
@@ -371,7 +371,7 @@ func leaving(says map[int]string) *proofreadQueue {
 func (q *proofreadQueue) Leave(_ context.Context, pages []proofread.Batch) (string, error) {
 	var at []int
 	for _, page := range pages {
-		at = append(at, page.At)
+		at = append(at, page.Number)
 	}
 	name := fmt.Sprintf("batch-%d", len(q.left)+1)
 	q.left[name] = at

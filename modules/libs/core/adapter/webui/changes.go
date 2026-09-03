@@ -20,8 +20,8 @@ type changed struct {
 // certain it is current.
 func following() audience[changed] {
 	return audience[changed]{
-		behind: func(changed) changed { return changed{reload: true} },
-		room:   8,
+		fallback: func(changed) changed { return changed{reload: true} },
+		room:     8,
 	}
 }
 

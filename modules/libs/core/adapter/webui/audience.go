@@ -5,11 +5,11 @@ import "sync"
 // audience is everyone listening for one kind of message.
 //
 // A listener that is not keeping up is not waited for: one slow listener does
-// not hold up the vault. What it is given when it falls behind is `behind`'s
+// not hold up the vault. What it is given when it falls behind is `fallback`'s
 // answer, and how much it may be owed before it is behind is `room`.
 type audience[T any] struct {
-	// behind makes the message for a listener that has not read the last one.
-	behind func(latest T) T
+	// fallback makes the message for a listener that has not read the last one.
+	fallback func(latest T) T
 	// latest hands a listener what has just happened in place of what it has
 	// not read yet about the same thing.
 	latest bool
@@ -24,9 +24,9 @@ type audience[T any] struct {
 	// room is how many messages a listener may be owed before it is behind.
 	room int
 
-	mu   sync.Mutex
-	next int
-	to   map[int]*line[T]
+	mu        sync.Mutex
+	next      int
+	listeners map[int]*line[T]
 }
 
 // line is one listener and whether it is owed a message it never received.
@@ -42,19 +42,19 @@ func (a *audience[T]) listen() (<-chan T, func()) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	if a.to == nil {
-		a.to = map[int]*line[T]{}
+	if a.listeners == nil {
+		a.listeners = map[int]*line[T]{}
 	}
 	id := a.next
 	a.next++
 	l := &line[T]{ch: make(chan T, a.held())}
-	a.to[id] = l
+	a.listeners[id] = l
 
 	return l.ch, func() {
 		a.mu.Lock()
 		defer a.mu.Unlock()
-		if l, open := a.to[id]; open {
-			delete(a.to, id)
+		if l, open := a.listeners[id]; open {
+			delete(a.listeners, id)
 			close(l.ch)
 		}
 	}
@@ -64,10 +64,10 @@ func (a *audience[T]) tell(what T) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	for _, l := range a.to {
+	for _, l := range a.listeners {
 		message := what
-		if l.behind && a.behind != nil {
-			message = a.behind(what)
+		if l.behind && a.fallback != nil {
+			message = a.fallback(what)
 		}
 		l.behind = !a.queue(l, message)
 	}

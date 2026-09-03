@@ -147,8 +147,8 @@ func TestStructureFallsThroughTheTiers(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			book := read(t, tinyBook(t, c.replace))
 
-			if book.Structure != c.want {
-				t.Errorf("structure = %q, want %q (parts: %v)", book.Structure, c.want, titles(book))
+			if book.Tier != c.want {
+				t.Errorf("structure = %q, want %q (parts: %v)", book.Tier, c.want, titles(book))
 			}
 			if got := titles(book); !slices.Equal(got, c.parts) {
 				t.Errorf("parts = %v, want %v", got, c.parts)

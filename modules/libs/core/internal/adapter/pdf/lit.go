@@ -144,8 +144,8 @@ func widen(word, mark responses.CharPosition) responses.CharPosition {
 // sheet is one page in the space its text is written in: how wide and how high
 // it is, in points, and the quarter turns clockwise it is drawn with.
 type sheet struct {
-	wide, high float64
-	turn       int
+	width, height float64
+	turn          int
 }
 
 // paper measures one page. The size the library reports is of the page as it is
@@ -160,9 +160,9 @@ func (d *document) paper(page requests.Page) (sheet, bool) {
 	if err != nil {
 		return sheet{}, false
 	}
-	sheet := sheet{wide: size.Width, high: size.Height, turn: int(turned.PageRotation)}
+	sheet := sheet{width: size.Width, height: size.Height, turn: int(turned.PageRotation)}
 	if sheet.turn%2 == 1 {
-		sheet.wide, sheet.high = sheet.high, sheet.wide
+		sheet.width, sheet.height = sheet.height, sheet.width
 	}
 	return sheet, true
 }
@@ -189,16 +189,16 @@ func (p sheet) box(page, start, length int, word responses.CharPosition) lit.Box
 // page is drawn with the origin at the top left and turned by however much it
 // asks to be.
 func (p sheet) drawn(x, y float64) (float32, float32) {
-	wide, high := p.wide, p.high
+	wide, high := p.width, p.height
 	switch p.turn {
 	case 1:
 		x, y, wide, high = y, x, high, wide
 	case 2:
-		x = p.wide - x
+		x = p.width - x
 	case 3:
-		x, y, wide, high = p.high-y, p.wide-x, high, wide
+		x, y, wide, high = p.height-y, p.width-x, high, wide
 	default:
-		y = p.high - y
+		y = p.height - y
 	}
 	return float32(x / wide), float32(y / high)
 }

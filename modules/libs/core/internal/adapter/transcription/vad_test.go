@@ -17,7 +17,7 @@ func scored(count int, sure ...int) []float32 {
 func TestAPauseInsideASentenceDoesNotCloseIt(t *testing.T) {
 	scores := scored(12, 2, 3, 6, 7)
 	got := runs(scores, 0.5, 3, 0, 100, 1)
-	if len(got) != 1 || got[0].from != 2 || got[0].to != 8 {
+	if len(got) != 1 || got[0].start != 2 || got[0].end != 8 {
 		t.Errorf("a sentence with a pause in it came out as %v", got)
 	}
 }
@@ -26,7 +26,7 @@ func TestAPauseInsideASentenceDoesNotCloseIt(t *testing.T) {
 func TestQuietClosesAStretch(t *testing.T) {
 	scores := scored(16, 1, 2, 10, 11)
 	got := runs(scores, 0.5, 3, 0, 100, 1)
-	if len(got) != 2 || got[0].to != 3 || got[1].from != 10 {
+	if len(got) != 2 || got[0].end != 3 || got[1].start != 10 {
 		t.Errorf("two sentences came out as %v", got)
 	}
 }
@@ -35,7 +35,7 @@ func TestQuietClosesAStretch(t *testing.T) {
 func TestWideningJoinsTwoStretchesThatMeet(t *testing.T) {
 	scores := scored(20, 4, 10)
 	got := runs(scores, 0.5, 2, 3, 100, 1)
-	if len(got) != 1 || got[0].from != 1 || got[0].to != 14 {
+	if len(got) != 1 || got[0].start != 1 || got[0].end != 14 {
 		t.Errorf("two stretches widened into %v", got)
 	}
 }
@@ -57,11 +57,11 @@ func TestSpeechThatRunsOnIsCutWhereItIsQuietest(t *testing.T) {
 	scores[7] = 0.6
 
 	got := runs(scores, 0.5, 2, 0, 10, 1)
-	if len(got) != 2 || got[0].to != 7 || got[1].from != 7 {
+	if len(got) != 2 || got[0].end != 7 || got[1].start != 7 {
 		t.Errorf("a stretch of sixteen windows came out as %v", got)
 	}
-	if got[1].to != 16 {
-		t.Errorf("the second stretch ends at %d", got[1].to)
+	if got[1].end != 16 {
+		t.Errorf("the second stretch ends at %d", got[1].end)
 	}
 }
 
@@ -70,13 +70,13 @@ func TestSpeechThatRunsOnIsCutWhereItIsQuietest(t *testing.T) {
 func TestAShortStretchJoinsTheNextOne(t *testing.T) {
 	// least 10 windows, longest 100.
 	got := joined([]stretch{
-		{from: 0, to: 3},   // "So"
-		{from: 5, to: 8},   // "The"
-		{from: 10, to: 40}, // a sentence
-		{from: 50, to: 90}, // another
+		{start: 0, end: 3},   // "So"
+		{start: 5, end: 8},   // "The"
+		{start: 10, end: 40}, // a sentence
+		{start: 50, end: 90}, // another
 	}, 10, 100)
 
-	want := []stretch{{from: 0, to: 40}, {from: 50, to: 90}}
+	want := []stretch{{start: 0, end: 40}, {start: 50, end: 90}}
 	if len(got) != len(want) {
 		t.Fatalf("joined into %v", got)
 	}
@@ -90,12 +90,12 @@ func TestAShortStretchJoinsTheNextOne(t *testing.T) {
 // Joining stops at the longest a stretch may run to, however short the pieces.
 func TestJoiningStopsAtTheLongest(t *testing.T) {
 	got := joined([]stretch{
-		{from: 0, to: 5},
-		{from: 6, to: 11},
-		{from: 12, to: 17},
+		{start: 0, end: 5},
+		{start: 6, end: 11},
+		{start: 12, end: 17},
 	}, 100, 12)
 
-	if len(got) != 2 || got[0] != (stretch{from: 0, to: 11}) {
+	if len(got) != 2 || got[0] != (stretch{start: 0, end: 11}) {
 		t.Errorf("joined into %v", got)
 	}
 }

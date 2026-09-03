@@ -76,7 +76,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	for _, pages := range found {
 		one := covered{Marks: make([]onPage, 0, len(pages))}
 		for _, page := range pages {
-			marks := onPage{Page: page.Page, Rects: make([]rect, 0, len(page.Rects))}
+			marks := onPage{Page: page.Index, Rects: make([]rect, 0, len(page.Rects))}
 			for _, box := range page.Rects {
 				marks.Rects = append(marks.Rects, rect{
 					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,

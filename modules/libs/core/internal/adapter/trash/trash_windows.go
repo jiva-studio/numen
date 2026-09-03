@@ -22,9 +22,9 @@ const (
 // shFileOpStruct is SHFILEOPSTRUCTW.
 type shFileOpStruct struct {
 	window        windows.Handle
-	function      uint32
-	from          *uint16
-	to            *uint16
+	operation     uint32
+	source        *uint16
+	destination   *uint16
 	flags         uint16
 	aborted       int32
 	nameMappings  uintptr
@@ -44,9 +44,9 @@ func send(path string) error {
 	from = append(from, 0)
 
 	op := shFileOpStruct{
-		function: deletion,
-		from:     &from[0],
-		flags:    allowUndo | noConfirmation | noErrorUI | silent,
+		operation: deletion,
+		source:    &from[0],
+		flags:     allowUndo | noConfirmation | noErrorUI | silent,
 	}
 	if rc, _, _ := shFileOperationW.Call(uintptr(unsafe.Pointer(&op))); rc != 0 {
 		return fmt.Errorf("%s: the shell would not delete it (0x%x)", path, rc)

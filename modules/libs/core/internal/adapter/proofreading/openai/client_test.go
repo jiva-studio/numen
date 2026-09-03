@@ -68,9 +68,9 @@ func reply(w http.ResponseWriter, text string) {
 }
 
 func page(at int, lines ...string) proofread.Batch {
-	p := proofread.Batch{At: at}
+	p := proofread.Batch{Number: at}
 	for i, text := range lines {
-		p.Lines = append(p.Lines, proofread.Line{At: at*100 + i, Text: text})
+		p.Lines = append(p.Lines, proofread.Line{Number: at*100 + i, Text: text})
 	}
 	return p
 }
@@ -141,14 +141,14 @@ func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
 		t.Fatalf("got %d answers: %v", len(got), got)
 	}
 	for _, p := range pages {
-		if p.At == 3 {
+		if p.Number == 3 {
 			if _, ok := got[3]; ok {
 				t.Errorf("page 3 was answered: %q", got[3])
 			}
 			continue
 		}
-		if got[p.At] != proofread.Ask(p) {
-			t.Errorf("page %d came back as %q", p.At, got[p.At])
+		if got[p.Number] != proofread.Ask(p) {
+			t.Errorf("page %d came back as %q", p.Number, got[p.Number])
 		}
 	}
 }

@@ -110,7 +110,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Joined: flashcards.Around{
+		Neighbourhood: flashcards.Around{
 			Linked: note.ShowLinks{Links: db.Links()},
 			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: filesystem.VaultReaders{}},

@@ -39,7 +39,7 @@ type leaving struct {
 
 // client is one browser tab drawing the vault, and what it has said.
 type client struct {
-	tell chan string
+	told chan string
 	said owed
 	// gone is a page whose stream ended with a question standing. It is told
 	// nothing and answers nothing; a page that listens takes it over.
@@ -89,14 +89,14 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	}
 	token := strconv.Itoa(l.next)
 	l.next++
-	p := &client{tell: make(chan string, 1)}
+	p := &client{told: make(chan string, 1)}
 	l.pages[token] = p
 	if l.asking() {
-		p.tell <- token
+		p.told <- token
 	}
 	l.reckon()
 
-	return token, p.tell, func() { l.left(token, p) }
+	return token, p.told, func() { l.left(token, p) }
 }
 
 // asking reports whether a round is running. The lock is held.
@@ -112,7 +112,7 @@ func (l *leaving) left(token string, p *client) {
 	if l.pages[token] != p || p.gone {
 		return
 	}
-	close(p.tell)
+	close(p.told)
 	// A page that went with a question standing is the only place that work
 	// exists. It is remembered, and it is remembered as silence, which is what
 	// a round waits its bound for.
@@ -147,7 +147,7 @@ func (l *leaving) ask() *round {
 			continue
 		}
 		select {
-		case p.tell <- token:
+		case p.told <- token:
 		default:
 		}
 	}
@@ -222,7 +222,7 @@ func (a *API) Quitting(
 	_ *connect.Request[v1.QuittingRequest],
 	out *connect.ServerStream[v1.QuittingResponse],
 ) error {
-	token, told, done := a.Leaving.listen()
+	token, told, done := a.clients.listen()
 	defer done()
 
 	// The token before anything is asked. A client that has not been given one
@@ -252,7 +252,7 @@ func (a *API) Flushed(
 	_ context.Context,
 	r *connect.Request[v1.FlushedRequest],
 ) (*connect.Response[v1.FlushedResponse], error) {
-	a.Leaving.flushed(r.Msg.GetToken(), left(r.Msg.GetOwed()))
+	a.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetOwed()))
 	return connect.NewResponse(&v1.FlushedResponse{}), nil
 }
 

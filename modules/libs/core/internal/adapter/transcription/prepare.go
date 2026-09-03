@@ -16,7 +16,7 @@ func Ready(cfg Config) bool {
 	}
 	var found paths
 	for _, one := range wanted(cfg, &found) {
-		if _, err := model(context.Background(), cfg, one.path, one.name, one.what); err != nil {
+		if _, err := model(context.Background(), cfg, one.path, one.name, one.kind); err != nil {
 			return false
 		}
 	}

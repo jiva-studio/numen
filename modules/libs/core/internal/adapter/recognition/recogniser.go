@@ -37,7 +37,7 @@ type Recogniser struct {
 	body   map[string]bool
 	head   map[string]int
 	margin int
-	named  port.RecognitionModel
+	model  port.RecognitionModel
 }
 
 // Open loads the models and compiles them. It is expensive — the weights are
@@ -92,7 +92,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		body:   set(cfg.Regions.body()),
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
-		named: port.RecognitionModel{
+		model: port.RecognitionModel{
 			Layout:     name(paths.layout),
 			Recogniser: name(paths.recognise),
 			DPI:        cfg.Page.dpi(),
@@ -101,7 +101,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 	}, nil
 }
 
-func (r *Recogniser) Recognition() port.RecognitionModel { return r.named }
+func (r *Recogniser) Recognition() port.RecognitionModel { return r.model }
 
 // Close lets go of the models this reading loaded. The runtime they ran on is
 // the process's and stays.
@@ -165,7 +165,7 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 			out = append(out, ocr.Block{
 				Label:     region.Label,
 				Text:      text,
-				Head:      head,
+				Heading:   head,
 				Depth:     depth,
 				Stretches: stretches,
 			})
@@ -184,8 +184,8 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Blo
 // addressed from the crop, and has to be read as a box of the page. The
 // widening is because the first letter of a line sits on the boundary the
 // layout model drew.
-func cropped(page image.Image, rect image.Rectangle, by int) (image.Image, image.Point) {
-	wider := rect.Inset(-by).Intersect(page.Bounds())
+func cropped(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
+	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		return nil, image.Point{}
 	}

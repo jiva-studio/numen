@@ -36,17 +36,18 @@ type API struct {
 	// embedder an answer reaches into are taken away.
 	shut atomic.Bool
 
-	// answering is the questions taken and not yet answered. A search, a note
+	// questions are the questions taken and not yet answered. A search, a note
 	// and a link are read straight from the index, and Shut stands here until
 	// the last of them is off it.
 	//
 	// A stream is not counted: it lives as long as the page that opened it.
-	answering inflight
+	questions inflight
 
-	// on is the passes behind the vault the window is showing. It is published
-	// as one after the vault, so a run, a cut and a drop reach the vault the
-	// request was answered over. Nothing while the vault is being changed.
-	on atomic.Pointer[showing]
+	// showing is the passes behind the vault the window is showing. It is
+	// published as one after the vault, so a run, a cut and a drop reach the
+	// vault the request was answered over. Nothing while the vault is being
+	// changed.
+	showing atomic.Pointer[showing]
 
 	Notes port.NoteQueries
 	Links port.LinkQueries
@@ -63,10 +64,10 @@ type API struct {
 	// is showing among them. A build without one answers that it holds no list.
 	Vaults port.VaultRegistry
 
-	// Choosing puts this machine's own folder picker in front of the person.
+	// Picker puts this machine's own folder picker in front of the person.
 	// Only an application with a window has one, and a build without it answers
 	// that a folder cannot be picked here.
-	Choosing port.FolderDialog
+	Picker port.FolderDialog
 
 	// Adding turns a folder into a vault, Renaming is what a person calls one,
 	// and Forgetting and Erasing take one off the list. A build without them
@@ -76,11 +77,11 @@ type API struct {
 	Forgetting *usecase.Forget
 	Erasing    *usecase.Erase
 
-	// taking is the agent the panel's tasks go to. A vault without one answers
+	// agent is the agent the panel's tasks go to. A vault without one answers
 	// that it has none, and the rest of the window works as it did. It is
 	// replaced while requests are being served, so it is taken through
 	// Answering.
-	taking atomic.Pointer[port.Agent]
+	agent atomic.Pointer[port.Agent]
 
 	// Reads and Saves are how the window opens a note and puts it back. A build
 	// without them answers that a note cannot be edited here.
@@ -190,27 +191,27 @@ type API struct {
 	// searched, and the names a vault holds are answered all the same.
 	Finds *search.Search
 
-	// Drawing is everyone drawing this vault, for a change to a note being made
+	// Edits is everyone drawing this vault, for a change to a note being made
 	// while they may be showing it.
-	Drawing audience[domain.Edit]
+	Edits audience[domain.Edit]
 
-	// Watching is everyone drawing this vault, for when something asks that a
+	// Places is everyone drawing this vault, for when something asks that a
 	// place be put in front of the person.
-	Watching audience[domain.Place]
+	Places audience[domain.Place]
 
-	// attending is what the person has open, as the window last said. It is
+	// attention is what the person has open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
 	// through Attended.
-	attending atomic.Pointer[domain.Attention]
+	attention atomic.Pointer[domain.Attention]
 
 	// Attends hears what the person has open each time the window says it,
 	// once what it said stands. A build without one takes the report and tells
 	// nobody.
 	Attends func(domain.Attention)
 
-	// Leaving is everyone drawing this vault, for the moment the window goes:
+	// clients is everyone drawing this vault, for the moment the window goes:
 	// each is asked to write what only it holds, and answers when it has.
-	Leaving leaving
+	clients leaving
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
@@ -261,21 +262,21 @@ func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
 // runs is the passes a run, a cut and a drop are taken through from now on.
 // They arrive together, after the vault they belong to.
-func (a *API) runs(on *showing) { a.on.Store(on) }
+func (a *API) runs(on *showing) { a.showing.Store(on) }
 
 // recognises reads a scanned document and transcribes hears a recording, each
 // for whoever asks. They are the jobs an agent asks through too, so what a
 // person started in the window is shown to both. Nothing where the window has
 // no vault, and where this build does no such run.
 func (a *API) recognises() Run {
-	if on := a.on.Load(); on != nil {
+	if on := a.showing.Load(); on != nil {
 		return on.recognises
 	}
 	return nil
 }
 
 func (a *API) transcribes() Run {
-	if on := a.on.Load(); on != nil {
+	if on := a.showing.Load(); on != nil {
 		return on.transcribes
 	}
 	return nil
@@ -283,7 +284,7 @@ func (a *API) transcribes() Run {
 
 // proofreads puts a recording's transcript right, for whoever asks.
 func (a *API) proofreads() Proofreading {
-	if on := a.on.Load(); on != nil {
+	if on := a.showing.Load(); on != nil {
 		return on.proofreads
 	}
 	return nil
@@ -294,7 +295,7 @@ func (a *API) proofreads() Proofreading {
 // as they now read. Nothing while the window has no vault, and then a
 // correction is seen in the tab alone.
 func (a *API) cuts() func(context.Context, domain.Vault, string) error {
-	if on := a.on.Load(); on != nil {
+	if on := a.showing.Load(); on != nil {
 		return on.cut
 	}
 	return nil
@@ -303,7 +304,7 @@ func (a *API) cuts() func(context.Context, domain.Vault, string) error {
 // forgets takes a recording out of what the queue behind the vault has already
 // had an answer about, so one that gave no words is offered again.
 func (a *API) forgets() func(domain.Vault, string) {
-	if on := a.on.Load(); on != nil {
+	if on := a.showing.Load(); on != nil {
 		return on.forgets
 	}
 	return nil
@@ -314,7 +315,7 @@ func (a *API) forgets() func(domain.Vault, string) {
 // answer reaches into is still there for the whole of it.
 func (a *API) Shut() {
 	a.shut.Store(true)
-	<-a.answering.seal()
+	<-a.questions.seal()
 }
 
 func (a *API) closed() bool { return a.shut.Load() }
@@ -332,7 +333,7 @@ func (a *API) shown() (domain.Vault, error) {
 // Answering is the agent the panel's tasks go to, and nothing where the vault
 // has none.
 func (a *API) Answering() port.Agent {
-	if taking := a.taking.Load(); taking != nil {
+	if taking := a.agent.Load(); taking != nil {
 		return *taking
 	}
 	return nil
@@ -342,10 +343,10 @@ func (a *API) Answering() port.Agent {
 // with no agent.
 func (a *API) Answers(taking port.Agent) {
 	if taking == nil {
-		a.taking.Store(nil)
+		a.agent.Store(nil)
 		return
 	}
-	a.taking.Store(&taking)
+	a.agent.Store(&taking)
 }
 
 // failure is what stopped the scan, or empty while nothing has.

@@ -41,10 +41,10 @@ const arrow = "-->"
 // stands in the words a transcript reads as. At is filled by reading, because
 // only then is there a text for it to be an offset into.
 type Cue struct {
-	Text string
-	From int
-	To   int
-	At   int
+	Text   string
+	From   int
+	To     int
+	Offset int
 }
 
 // Marshal is the artifact for a run of cues.
@@ -80,7 +80,7 @@ func Parse(raw []byte) (string, []Cue) {
 		if out.Len() > 0 {
 			out.WriteString("\n")
 		}
-		cue.At = out.Len()
+		cue.Offset = out.Len()
 		out.WriteString(cue.Text)
 		cues = append(cues, cue)
 	}
@@ -187,11 +187,11 @@ func At(cues []Cue, start, length int) []Cue {
 	// The first cue that reaches into the run. A cue before it ends before the
 	// run begins.
 	at := sort.Search(len(cues), func(i int) bool {
-		return cues[i].At+len(cues[i].Text) > start
+		return cues[i].Offset+len(cues[i].Text) > start
 	})
 
 	var out []Cue
-	for ; at < len(cues) && cues[at].At < end; at++ {
+	for ; at < len(cues) && cues[at].Offset < end; at++ {
 		out = append(out, cues[at])
 	}
 	return out

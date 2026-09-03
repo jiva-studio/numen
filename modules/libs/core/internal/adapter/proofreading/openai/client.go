@@ -110,7 +110,7 @@ func (c *Client) Proofread(ctx context.Context, pages []proofread.Batch) (map[in
 						stop()
 					}
 				case reply != "":
-					out[page.At] = reply
+					out[page.Number] = reply
 				}
 				mu.Unlock()
 				if err != nil {
@@ -168,19 +168,19 @@ func (c *Client) ask(ctx context.Context, page proofread.Batch) (string, error) 
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("page %d: %w", page.At, err)
+		return "", fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		return "", fmt.Errorf("page %d: %d %s: %s", page.At,
+		return "", fmt.Errorf("page %d: %d %s: %s", page.Number,
 			resp.StatusCode, http.StatusText(resp.StatusCode), c.detail(body))
 	}
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", fmt.Errorf("page %d: %w", page.At, err)
+		return "", fmt.Errorf("page %d: %w", page.Number, err)
 	}
 	if len(parsed.Choices) == 0 {
 		return "", nil

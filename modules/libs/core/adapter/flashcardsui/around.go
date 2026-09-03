@@ -20,7 +20,7 @@ func (a *API) Around(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	joined, err := a.Joined.Execute(ctx, v, r.Msg.GetDeck())
+	joined, err := a.Neighbourhood.Execute(ctx, v, r.Msg.GetDeck())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

@@ -36,10 +36,10 @@ type Config struct {
 	Page      PageReading     `json:"page"`
 	Regions   RegionKinds     `json:"regions"`
 
-	// Fetching is told how far a download has got, when anything is listening.
+	// Progress is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
 	// whoever is watching it.
-	Fetching func(what string, done, total int64) `json:"-"`
+	Progress func(what string, done, total int64) `json:"-"`
 }
 
 // settings are what the runtime and the models are found by.
@@ -49,7 +49,7 @@ func (c Config) settings() onnxruntime.Settings {
 		Runtime:  c.Runtime,
 		Dir:      c.Dir,
 		Download: c.Download,
-		Fetching: c.Fetching,
+		Fetching: c.Progress,
 	}
 }
 
@@ -289,14 +289,14 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 		return paths{}, err
 	}
 	for _, one := range []struct {
-		into             *string
-		path, name, what string
+		dst              *string
+		path, name, kind string
 	}{
 		{&found.layout, cfg.Layout.Path, cfg.Layout.Name, "layout"},
 		{&found.detect, cfg.Detect.Path, cfg.Detect.Name, "detect"},
 		{&found.recognise, cfg.Recognise.Path, cfg.Recognise.Name, "recognise"},
 	} {
-		if *one.into, err = model(ctx, cfg, one.path, one.name, one.what); err != nil {
+		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
 			return paths{}, err
 		}
 	}
@@ -311,15 +311,15 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 // A path written down is used as given, and its absence is an error rather than
 // a reason to look elsewhere: a person who said where a model is meant it. A
 // name is looked for beside the application and then fetched.
-func model(ctx context.Context, cfg Config, path, name, what string) (string, error) {
+func model(ctx context.Context, cfg Config, path, name, kind string) (string, error) {
 	if path != "" {
 		if _, err := os.Stat(path); err != nil {
-			return "", fmt.Errorf("the %s model: %w", what, err)
+			return "", fmt.Errorf("the %s model: %w", kind, err)
 		}
 		return path, nil
 	}
 	if name == "" {
-		return "", fmt.Errorf("no %s model: name one, or say where it is", what)
+		return "", fmt.Errorf("no %s model: name one, or say where it is", kind)
 	}
 	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err == nil {
@@ -327,11 +327,11 @@ func model(ctx context.Context, cfg Config, path, name, what string) (string, er
 		}
 	}
 	if !onnxruntime.IsAddress(name) {
-		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", what, name)
+		return "", fmt.Errorf("the %s model %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
 	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)
 	if err != nil {
-		return "", fmt.Errorf("the %s model: %w", what, err)
+		return "", fmt.Errorf("the %s model: %w", kind, err)
 	}
 	return found, nil
 }

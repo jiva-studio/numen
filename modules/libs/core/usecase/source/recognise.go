@@ -188,7 +188,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
 		pages = append(pages, ocr.Page{
-			At:     index,
+			Index:  index,
 			Size:   drawn.Bounds().Size(),
 			Blocks: blocks,
 		})

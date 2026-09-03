@@ -128,9 +128,9 @@ func chosen(
 		return Settings{}, false
 	}
 	out := Settings{
-		Mode:  mode(worn.Msg.GetMode()),
-		Drawn: worn.Msg.GetInterfaceScale(),
-		Set:   worn.Msg.GetTextScale(),
+		Mode:           mode(worn.Msg.GetMode()),
+		InterfaceScale: worn.Msg.GetInterfaceScale(),
+		TextScale:      worn.Msg.GetTextScale(),
 	}
 	text, err := themes.Theme(ctx, connect.NewRequest(&v1.ThemeRequest{Name: worn.Msg.GetApplied()}))
 	if err == nil {

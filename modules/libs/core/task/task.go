@@ -27,10 +27,10 @@ type Task struct {
 	// particular.
 	About string
 
-	// Done and Total are how far it has got, when there is a total to count
+	// Count and Total are how far it has got, when there is a total to count
 	// against. Both zero is work that is running with nothing to count, which is
 	// an ordinary state and not an unknown one.
-	Done, Total int64
+	Count, Total int64
 
 	// Failed is why the work stopped, when it stopped badly. A task that failed
 	// stays in the list until whoever put it there takes it out, because a
@@ -42,8 +42,8 @@ type Task struct {
 	// before that.
 	Asked bool
 
-	// Counting is what Done and Total are counted in.
-	Counting Unit
+	// Unit is what Count and Total are counted in.
+	Unit Unit
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a

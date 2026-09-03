@@ -15,8 +15,8 @@ import (
 // A change reaches everyone drawing the vault the way a note put in front of
 // the person does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	api := &API{Drawing: drawing()}
-	line, done := api.Drawing.listen()
+	api := &API{Edits: drawing()}
+	line, done := api.Edits.listen()
 	t.Cleanup(done)
 
 	said := domain.Edit{

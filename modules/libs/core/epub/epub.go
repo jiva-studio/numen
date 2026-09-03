@@ -32,16 +32,16 @@ type Book struct {
 	// Documents are the spine documents and where each begins in Text.
 	Documents []Document
 
-	// Parts are what the book names, ascending by offset. Structure says where
-	// they came from.
+	// Parts are what the book names, ascending by offset. Tier says where they
+	// came from.
 	Parts []Part
 
 	// Pages are the pages of the printed book this file was made from,
 	// ascending by offset. Most books carry none.
 	Pages []Page
 
-	// Structure names the tier that produced Parts.
-	Structure Structure
+	// Tier names the tier that produced Parts.
+	Tier Structure
 }
 
 // A Document is one document of the spine.
@@ -132,11 +132,11 @@ func Read(raw []byte) (*Book, error) {
 	named := navigationParts(files, pkg, text)
 	switch {
 	case len(named) >= minimumParts:
-		book.Parts, book.Structure = named, FromNavigation
+		book.Parts, book.Tier = named, FromNavigation
 	case len(text.headings) >= minimumParts:
-		book.Parts, book.Structure = text.headings, FromHeadings
+		book.Parts, book.Tier = text.headings, FromHeadings
 	default:
-		book.Structure = FromNothing
+		book.Tier = FromNothing
 	}
 	sort.SliceStable(book.Parts, func(i, j int) bool {
 		return book.Parts[i].Offset < book.Parts[j].Offset

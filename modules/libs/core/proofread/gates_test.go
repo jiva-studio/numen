@@ -8,12 +8,12 @@ import (
 
 // batch is a page as it was read, misreadings and all.
 func batch() proofread.Batch {
-	return proofread.Batch{At: 7, Lines: []proofread.Line{
-		{At: 10, Text: "the Sodërby gardin hcdge. "},
-		{At: 11, Text: "Sodërby Tradgard's Handbok "},
-		{At: 12, Text: "TRADGARD HANDBOK "},
-		{At: 13, Text: "The hedge will very soon need cutting back "},
-		{At: 20, Text: "blessings."},
+	return proofread.Batch{Number: 7, Lines: []proofread.Line{
+		{Number: 10, Text: "the Sodërby gardin hcdge. "},
+		{Number: 11, Text: "Sodërby Tradgard's Handbok "},
+		{Number: 12, Text: "TRADGARD HANDBOK "},
+		{Number: 13, Text: "The hedge will very soon need cutting back "},
+		{Number: 20, Text: "blessings."},
 	}}
 }
 
@@ -59,8 +59,8 @@ func TestAFencedReplyIsUnwrapped(t *testing.T) {
 	if len(fixed) != 2 {
 		t.Fatalf("%d lines out of a fenced reply, want two: %v", len(fixed), fixed)
 	}
-	if fixed[0].At != 10 || fixed[0].Text != "the Södërby garden hedge." {
-		t.Errorf("line %d says %q", fixed[0].At, fixed[0].Text)
+	if fixed[0].Number != 10 || fixed[0].Text != "the Södërby garden hedge." {
+		t.Errorf("line %d says %q", fixed[0].Number, fixed[0].Text)
 	}
 }
 
@@ -101,7 +101,7 @@ func TestACorrectionThatMovedTooFarIsDroppedAndTheBatchKept(t *testing.T) {
 	}
 	var numbers []int
 	for _, line := range fixed {
-		numbers = append(numbers, line.At)
+		numbers = append(numbers, line.Number)
 	}
 	if len(numbers) != 2 || numbers[0] != 10 || numbers[1] != 11 {
 		t.Errorf("lines %v put right, want the two whose letters stayed put", numbers)
@@ -115,7 +115,7 @@ func TestACorrectionSayingWhatTheLineSaysIsNotACorrection(t *testing.T) {
 	if !answered {
 		t.Fatalf("a line answered with as it was read refused the batch")
 	}
-	if len(fixed) != 1 || fixed[0].At != 10 {
+	if len(fixed) != 1 || fixed[0].Number != 10 {
 		t.Errorf("%v put right, want only the line that changed", fixed)
 	}
 }
@@ -147,7 +147,7 @@ func TestTheNumberIsTakenFromTheLineHoweverItIsSeparated(t *testing.T) {
 			t.Errorf("%q was refused", reply)
 			continue
 		}
-		if len(fixed) != 1 || fixed[0].At != 10 || fixed[0].Text != "the Södërby garden hedge." {
+		if len(fixed) != 1 || fixed[0].Number != 10 || fixed[0].Text != "the Södërby garden hedge." {
 			t.Errorf("%q gave back %v", reply, fixed)
 		}
 	}
@@ -192,8 +192,8 @@ func TestALineThatChangedIsACorrectionHoweverItOpens(t *testing.T) {
 
 // A line whose own text opens with digits is a row whose number was left out.
 func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
-	dated := proofread.Batch{At: 3, Lines: []proofread.Line{
-		{At: 1, Text: "1 January 1970 was a Thursday"},
+	dated := proofread.Batch{Number: 3, Lines: []proofread.Line{
+		{Number: 1, Text: "1 January 1970 was a Thursday"},
 	}}
 
 	// The number is there, and the line is put right after it.
@@ -209,7 +209,7 @@ func TestARowWhoseNumberIsTheLinesOwnDigitsRefusesTheBatch(t *testing.T) {
 
 // heard is one stretch of speech as the machine heard it.
 func heard(at int) proofread.Line {
-	return proofread.Line{At: at, Text: []string{
+	return proofread.Line{Number: at, Text: []string{
 		"",
 		"the ferry left at noone",
 		"and the sea was calm",
@@ -222,13 +222,13 @@ func heard(at int) proofread.Line {
 // wide and narrow both answer about lines 3 and 4. In wide the two stand
 // further from the end.
 func wide() proofread.Batch {
-	return proofread.Batch{At: 0, Lines: []proofread.Line{
+	return proofread.Batch{Number: 0, Lines: []proofread.Line{
 		heard(1), heard(2), heard(3), heard(4), heard(5),
 	}}
 }
 
 func narrow() proofread.Batch {
-	return proofread.Batch{At: 1, Lines: []proofread.Line{heard(3), heard(4)}}
+	return proofread.Batch{Number: 1, Lines: []proofread.Line{heard(3), heard(4)}}
 }
 
 func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
@@ -252,8 +252,8 @@ func TestACorrectionComesFromTheBatchThatSawMoreOfWhatFollows(t *testing.T) {
 }
 
 func TestBatchesSeeingAsMuchAsEachOtherAreSettledByTheLaterOne(t *testing.T) {
-	early := proofread.Batch{At: 0, Lines: []proofread.Line{heard(1), heard(2), heard(3)}}
-	late := proofread.Batch{At: 1, Lines: []proofread.Line{heard(2), heard(3)}}
+	early := proofread.Batch{Number: 0, Lines: []proofread.Line{heard(1), heard(2), heard(3)}}
+	late := proofread.Batch{Number: 1, Lines: []proofread.Line{heard(2), heard(3)}}
 	replies := map[int]string{
 		0: "3|we spoke of the harbour lights",
 		1: "3|we spoke of the harbor lite",

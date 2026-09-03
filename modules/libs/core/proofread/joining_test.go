@@ -11,10 +11,10 @@ import (
 
 // A sentence a recording broke across three stretches of speech.
 func broken() proofread.Batch {
-	return proofread.Batch{At: 1, Joining: true, Lines: []proofread.Line{
-		{At: 4, Through: 4, Text: "Krishna is Raj. Krishna is"},
-		{At: 5, Through: 5, Text: "connected with Raj Dila."},
-		{At: 6, Through: 6, Text: "Sure."},
+	return proofread.Batch{Number: 1, Joinable: true, Lines: []proofread.Line{
+		{Number: 4, Last: 4, Text: "Krishna is Raj. Krishna is"},
+		{Number: 5, Last: 5, Text: "connected with Raj Dila."},
+		{Number: 6, Last: 6, Text: "Sure."},
 	}}
 }
 
@@ -28,8 +28,8 @@ func TestASentenceBrokenAcrossLinesIsPutBackTogether(t *testing.T) {
 	if len(put) != 1 {
 		t.Fatalf("%v put right, want one line", put)
 	}
-	if put[0].At != 4 || put[0].Through != 5 || !put[0].Joins() {
-		t.Errorf("the run stands at %d-%d", put[0].At, put[0].Through)
+	if put[0].Number != 4 || put[0].Last != 5 || !put[0].Joins() {
+		t.Errorf("the run stands at %d-%d", put[0].Number, put[0].Last)
 	}
 }
 
@@ -53,7 +53,7 @@ func TestARunReachingPastTheBatchIsDroppedAndTheRestStands(t *testing.T) {
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
-	if len(put) != 1 || put[0].At != 6 || put[0].Text != "Sure of it." {
+	if len(put) != 1 || put[0].Number != 6 || put[0].Text != "Sure of it." {
 		t.Errorf("%v put right", put)
 	}
 	if !past {
@@ -100,7 +100,7 @@ func TestARunRefusesABatchThatDoesNotPutLinesTogether(t *testing.T) {
 	page := proofread.Scanned("one two three ", []lit.Box{
 		box(4, 0, 4), box(4, 4, 4), box(4, 8, 6),
 	})[0]
-	if page.Joining {
+	if page.Joinable {
 		t.Fatal("a page of a scan puts its lines together")
 	}
 	if _, _, ok := proofread.Fixed(page, "0-1|one two", 0.30); ok {
@@ -123,7 +123,7 @@ func TestABatchOfSpeechPutsLinesTogether(t *testing.T) {
 		{Text: "Krishna is Raj. Krishna is", From: 0, To: 800},
 		{Text: "connected with Raj Dila.", From: 1000, To: 1800},
 	}, 2, 0)
-	if len(batches) != 1 || !batches[0].Joining {
+	if len(batches) != 1 || !batches[0].Joinable {
 		t.Fatalf("the batches are %+v", batches)
 	}
 }
@@ -142,7 +142,7 @@ func TestAnAnswerOfNothingButMarksRefusesTheBatch(t *testing.T) {
 // in the order they were asked. A batch it refuses names none.
 func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 	first, second := broken(), broken()
-	first.At, second.At = 1, 2
+	first.Number, second.Number = 1, 2
 	replies := map[int]string{
 		1: "5-9 | whatever it says",
 		2: "4-5 | Krishna is Radha, Krishna is connected with Radhika.",
@@ -160,9 +160,9 @@ func TestGatheredNamesTheBatchesARunRanPast(t *testing.T) {
 // A line where one sentence ends and the next begins stands in the run of
 // both, and the run is answered with every sentence it covers.
 func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
-	batch := proofread.Batch{At: 1, Joining: true, Lines: []proofread.Line{
-		{At: 4, Through: 4, Text: "we should go. And then"},
-		{At: 5, Through: 5, Text: "the next day he left."},
+	batch := proofread.Batch{Number: 1, Joinable: true, Lines: []proofread.Line{
+		{Number: 4, Last: 4, Text: "we should go. And then"},
+		{Number: 5, Last: 5, Text: "the next day he left."},
 	}}
 	said := "We should go. And then the next day he left."
 
@@ -170,7 +170,7 @@ func TestARunHoldsEverySentenceItsLinesCarry(t *testing.T) {
 	if !ok {
 		t.Fatal("the batch was refused")
 	}
-	if len(put) != 1 || put[0].At != 4 || put[0].Through != 5 || put[0].Text != said {
+	if len(put) != 1 || put[0].Number != 4 || put[0].Last != 5 || put[0].Text != said {
 		t.Errorf("%v put right", put)
 	}
 }

@@ -45,10 +45,10 @@ type Opened struct {
 	// under is what every vault's passes run under.
 	under context.Context
 	wake  nudges
-	// vectors is why this installation embeds nothing, when it does not. It
+	// why says why this installation embeds nothing, when it does not. It
 	// stands in the list of what is being done, and is put back there when a
 	// vault going takes its own entries out.
-	vectors error
+	why error
 	// stopEmbedder gives back the models the installation is holding.
 	stopEmbedder func() error
 
@@ -152,8 +152,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
-		Watching:  focusing(),
-		Drawing:   drawing(),
+		Places:    focusing(),
+		Edits:     drawing(),
 		Progress:  db.Progress(),
 		Tasking:   tasks,
 		Reads:     &note.Read{Readers: cfg.VaultReaders()},
@@ -212,7 +212,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		out:          out,
 		under:        ctx,
 		wake:         wake,
-		vectors:      why,
+		why:          why,
 		stopEmbedder: closeEmbedder,
 	}
 
@@ -374,7 +374,7 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	held, spent := context.WithTimeout(ctx, HandedOverIn)
 	defer spent()
 
-	if !settling(held, &o.API.Leaving, &o.API.Writing) {
+	if !settling(held, &o.API.clients, &o.API.Writing) {
 		return errAsking
 	}
 
@@ -396,7 +396,7 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.Leaving.over()
+	o.API.clients.over()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
 	o.API.Listeners.tell(changed{reload: true})
@@ -513,7 +513,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 // leave takes down the half of the window that belongs to the vault it is
 // showing.
 func (o *Opened) leave() {
-	on := o.API.on.Swap(nil)
+	on := o.API.showing.Swap(nil)
 	if on == nil {
 		return
 	}
@@ -544,8 +544,8 @@ func (o *Opened) forget() {
 	for _, pass := range []string{walkingNotes, readingBooks, makingVectors, wordsAlone} {
 		o.API.finished(pass)
 	}
-	if o.vectors != nil {
-		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: o.vectors.Error()})
+	if o.why != nil {
+		o.API.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: o.why.Error()})
 	}
 }
 
@@ -591,7 +591,7 @@ func (o *Opened) Settle(ctx context.Context) bool {
 	o.busy = true
 	o.mu.Unlock()
 
-	settled := settling(ctx, &o.API.Leaving, &o.API.Writing)
+	settled := settling(ctx, &o.API.clients, &o.API.Writing)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -605,7 +605,7 @@ func (o *Opened) Settle(ctx context.Context) bool {
 // waits on while a person answers a question, and that wait is on a person and
 // is not measured. It answers false where ctx ended or the vault was asked
 // again.
-func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.Leaving) }
+func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.clients) }
 
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes the index.
@@ -635,7 +635,7 @@ func (o *Opened) Showing() domain.Vault { return o.API.Showing() }
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Opened) Refresh() usecase.Refresh {
-	if on := o.API.on.Load(); on != nil {
+	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
 	return usecase.Refresh{
@@ -650,7 +650,7 @@ func (o *Opened) Refresh() usecase.Refresh {
 // window and for an agent alike, so that what a person started through one of
 // them is shown by the other. Nothing while the window has no vault.
 func (o *Opened) Recognising() *source.Recognising {
-	if on := o.API.on.Load(); on != nil {
+	if on := o.API.showing.Load(); on != nil {
 		return on.recognising
 	}
 	return nil
@@ -661,7 +661,7 @@ func (o *Opened) Recognising() *source.Recognising {
 // person started through one of them is shown by the other. Nothing while the
 // window has no vault.
 func (o *Opened) Transcribing() *source.Transcribing {
-	if on := o.API.on.Load(); on != nil {
+	if on := o.API.showing.Load(); on != nil {
 		return on.transcribing
 	}
 	return nil
@@ -922,7 +922,7 @@ func begin(
 		// The walk a person watches is this one. A later one is the index being
 		// brought level with a vault that moved under it.
 		result, err := open.Read(ctx, func(res usecase.ScanResult) {
-			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Done: int64(res.Indexed)})
+			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Count: int64(res.Indexed)})
 		})
 
 		switch {
@@ -1025,7 +1025,7 @@ func readSources(
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of four ways, and
 			// all four count as done.
-			Done:  int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
+			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
 			Total: int64(res.Seen),
 		})
 	}
@@ -1144,7 +1144,7 @@ func embedSources(
 	making.Vectors.OnProgress = func(res source.EmbedResult) {
 		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
 		if res.Embedded > 0 {
-			at.Done, at.Total = int64(res.Embedded), owing
+			at.Count, at.Total = int64(res.Embedded), owing
 		}
 		api.say(at)
 	}

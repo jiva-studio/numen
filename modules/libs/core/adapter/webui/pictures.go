@@ -11,9 +11,9 @@ import (
 // for the width its screen has, and a page drawn for one width is not the page
 // another width asks for.
 type pictureID struct {
-	of   fingerprint
-	at   int
-	wide int
+	document fingerprint
+	page     int
+	width    int
 }
 
 // picture is one page drawn and encoded, or the drawing of it under way.
@@ -46,12 +46,12 @@ type kept struct {
 // second, and what is here goes when the window does.
 type pictures struct {
 	mu    sync.Mutex
-	by    map[pictureID]*list.Element
+	index map[pictureID]*list.Element
 	order *list.List
-	// bytes is what the drawings held come to, and most is what they may come
+	// bytes is what the drawings held come to, and limit is what they may come
 	// to.
 	bytes int
-	most  int
+	limit int
 }
 
 // mostDrawn is how many bytes of drawn pages are held.
@@ -59,21 +59,21 @@ const mostDrawn = 64 << 20
 
 // drawings is a window with nothing drawn yet.
 func drawings() *pictures {
-	return &pictures{by: map[pictureID]*list.Element{}, order: list.New(), most: mostDrawn}
+	return &pictures{index: map[pictureID]*list.Element{}, order: list.New(), limit: mostDrawn}
 }
 
 // draw hands over one drawn page, drawing it where it is not held. Several asks
 // for the same page draw it once and are answered with the one drawing.
 func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte, error)) ([]byte, error) {
 	p.mu.Lock()
-	if el, held := p.by[key]; held {
+	if el, held := p.index[key]; held {
 		p.order.MoveToFront(el)
 		pic := el.Value.(*kept).pic
 		p.mu.Unlock()
 		return pic.wait(ctx)
 	}
 	pic := &picture{ready: make(chan struct{})}
-	p.by[key] = p.order.PushFront(&kept{key: key, pic: pic})
+	p.index[key] = p.order.PushFront(&kept{key: key, pic: pic})
 	p.mu.Unlock()
 
 	pic.body, pic.why = drawn()
@@ -83,7 +83,7 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 	defer p.mu.Unlock()
 	// It may have been dropped for room while it was being drawn, and then it
 	// is this caller's answer and nothing else's.
-	if el, still := p.by[key]; !still || el.Value.(*kept).pic != pic {
+	if el, still := p.index[key]; !still || el.Value.(*kept).pic != pic {
 		return pic.body, pic.why
 	}
 	if pic.why != nil {
@@ -100,17 +100,17 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 func (p *pictures) has(key pictureID) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	_, held := p.by[key]
+	_, held := p.index[key]
 	return held
 }
 
 // drop takes one drawing out.
 func (p *pictures) drop(key pictureID) {
-	el, held := p.by[key]
+	el, held := p.index[key]
 	if !held {
 		return
 	}
-	delete(p.by, key)
+	delete(p.index, key)
 	p.order.Remove(el)
 	if pic := el.Value.(*kept).pic; pic.why == nil {
 		p.bytes -= len(pic.body)
@@ -121,7 +121,7 @@ func (p *pictures) drop(key pictureID) {
 // bound. A drawing still being made is left alone: it is nobody's to count
 // until it is done.
 func (p *pictures) trim() {
-	for el := p.order.Back(); el != nil && p.bytes > p.most; {
+	for el := p.order.Back(); el != nil && p.bytes > p.limit; {
 		before := el.Prev()
 		entry := el.Value.(*kept)
 		select {

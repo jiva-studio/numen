@@ -37,10 +37,10 @@ type Config struct {
 	Model  ParakeetModel  `json:"model"`
 	Speech SegmenterModel `json:"speech"`
 
-	// Fetching is told how far a download has got, when anything is listening.
+	// Progress is told how far a download has got, when anything is listening.
 	// It is not a setting and is not written down: it is how the wait reaches
 	// whoever is watching it.
-	Fetching func(what string, done, total int64) `json:"-"`
+	Progress func(what string, done, total int64) `json:"-"`
 }
 
 // settings are what the runtime and the models are found by.
@@ -50,7 +50,7 @@ func (c Config) settings() onnxruntime.Settings {
 		Runtime:  c.Runtime,
 		Dir:      c.Dir,
 		Download: c.Download,
-		Fetching: c.Fetching,
+		Fetching: c.Progress,
 	}
 }
 
@@ -60,11 +60,11 @@ func (c Config) settings() onnxruntime.Settings {
 type ParakeetModel struct {
 	// Name is what this model is called in the record kept beside a text.
 	Name string `json:"name"`
-	// From is the folder the four files are fetched from.
-	From string `json:"from"`
+	// Repo is the folder the four files are fetched from.
+	Repo string `json:"from"`
 
 	// Encoder, Decoder, Joiner and Tokens are the files on this machine. A path
-	// is used as given; an empty one is the file of that name under From.
+	// is used as given; an empty one is the file of that name under Repo.
 	Encoder string `json:"encoder"`
 	Decoder string `json:"decoder"`
 	Joiner  string `json:"joiner"`
@@ -77,9 +77,9 @@ type ParakeetModel struct {
 type SegmenterModel struct {
 	// Name is what this segmenter is called in the record kept beside a text.
 	Name string `json:"name"`
-	// From is where the model is fetched from, and Path is a file on this
-	// machine. A path is used as given; From is looked for in Dir first.
-	From string `json:"from"`
+	// Repo is where the model is fetched from, and Path is a file on this
+	// machine. A path is used as given; Repo is looked for in Dir first.
+	Repo string `json:"from"`
 	Path string `json:"path"`
 
 	// Threshold is how sure the model has to be that a window carries speech.
@@ -114,11 +114,11 @@ func Defaults() Config {
 	return Config{
 		Model: ParakeetModel{
 			Name: "parakeet-tdt-0.6b-v3-int8",
-			From: "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main/",
+			Repo: "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/main/",
 		},
 		Speech: SegmenterModel{
 			Name: "silero-vad",
-			From: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
+			Repo: "https://huggingface.co/onnx-community/silero-vad/resolve/main/onnx/model.onnx",
 		},
 		Threads: 4,
 
@@ -217,7 +217,7 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 		return paths{}, err
 	}
 	for _, one := range wanted(cfg, &found) {
-		if *one.into, err = model(ctx, cfg, one.path, one.name, one.what); err != nil {
+		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
 			return paths{}, err
 		}
 	}
@@ -231,25 +231,25 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 // it is found, where the settings say it is, where it is fetched from, and what
 // it is called when it is missing.
 type wantedFile struct {
-	into             *string
-	path, name, what string
+	dst              *string
+	path, name, kind string
 }
 
 // wanted is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
 func wanted(cfg Config, into *paths) []wantedFile {
 	under := func(name string) string {
-		if cfg.Model.From == "" {
+		if cfg.Model.Repo == "" {
 			return ""
 		}
-		return strings.TrimSuffix(cfg.Model.From, "/") + "/" + name
+		return strings.TrimSuffix(cfg.Model.Repo, "/") + "/" + name
 	}
 	return []wantedFile{
 		{&into.encoder, cfg.Model.Encoder, under(encoderFile), "encoder"},
 		{&into.decoder, cfg.Model.Decoder, under(decoderFile), "decoder"},
 		{&into.joiner, cfg.Model.Joiner, under(joinerFile), "joiner"},
 		{&into.tokens, cfg.Model.Tokens, under(tokensFile), "tokens"},
-		{&into.speech, cfg.Speech.Path, cfg.Speech.From, "speech model"},
+		{&into.speech, cfg.Speech.Path, cfg.Speech.Repo, "speech model"},
 	}
 }
 
@@ -258,15 +258,15 @@ func wanted(cfg Config, into *paths) []wantedFile {
 // A path written down is used as given, and its absence is an error rather than
 // a reason to look elsewhere: a person who said where a model is meant it. A
 // name is looked for beside the application and then fetched.
-func model(ctx context.Context, cfg Config, path, name, what string) (string, error) {
+func model(ctx context.Context, cfg Config, path, name, kind string) (string, error) {
 	if path != "" {
 		if _, err := os.Stat(path); err != nil {
-			return "", fmt.Errorf("the %s: %w", what, err)
+			return "", fmt.Errorf("the %s: %w", kind, err)
 		}
 		return path, nil
 	}
 	if name == "" {
-		return "", fmt.Errorf("no %s: name one, or say where it is", what)
+		return "", fmt.Errorf("no %s: name one, or say where it is", kind)
 	}
 	for _, at := range onnxruntime.Beside(cfg.Dir, filepath.Base(name)) {
 		if _, err := os.Stat(at); err == nil {
@@ -274,11 +274,11 @@ func model(ctx context.Context, cfg Config, path, name, what string) (string, er
 		}
 	}
 	if !onnxruntime.IsAddress(name) {
-		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", what, name)
+		return "", fmt.Errorf("the %s %q is not beside the application, and is not somewhere to fetch it from", kind, name)
 	}
 	found, err := onnxruntime.Fetched(ctx, cfg.settings(), name)
 	if err != nil {
-		return "", fmt.Errorf("the %s: %w", what, err)
+		return "", fmt.Errorf("the %s: %w", kind, err)
 	}
 	return found, nil
 }

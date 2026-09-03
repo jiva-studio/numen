@@ -410,8 +410,8 @@ func TestInitializeGivesAnIdentityOnceAndKeepsIt(t *testing.T) {
 	if !ulid.Valid(first.ID) {
 		t.Fatalf("identity %q is not a ULID", first.ID)
 	}
-	if first.V != 1 {
-		t.Errorf("format version = %d", first.V)
+	if first.Version != 1 {
+		t.Errorf("format version = %d", first.Version)
 	}
 
 	// Re-adding a vault must not mint a new identity: every row in the index

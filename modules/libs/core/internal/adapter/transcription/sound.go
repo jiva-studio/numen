@@ -19,15 +19,15 @@ import (
 // header, and its samples are decoded when somebody asks where the speech is:
 // a person is told how long a recording is while it is still being taken apart.
 type recording struct {
-	by     *Transcriber
+	owner  *Transcriber
 	raw    []byte
 	length int
 
-	// found is where the speech is, and cut says the recording has been through
+	// speech is where the speech is, and cut says the recording has been through
 	// the segmenter. A recording carrying no speech is cut and holds none.
-	found []port.Audio
-	cut   bool
-	mu    sync.Mutex
+	speech []port.Audio
+	cut    bool
+	mu     sync.Mutex
 }
 
 // Open is a recording, ready to be listened to.
@@ -36,7 +36,7 @@ func (t *Transcriber) Open(ctx context.Context, raw []byte) (port.Recording, err
 	if err != nil {
 		return nil, err
 	}
-	return &recording{by: t, raw: raw, length: length}, nil
+	return &recording{owner: t, raw: raw, length: length}, nil
 }
 
 // Length is how long the recording is, in milliseconds.
@@ -61,14 +61,14 @@ func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, 
 		if err != nil {
 			return nil, err
 		}
-		if r.found, err = r.by.stretches(ctx, at); err != nil {
+		if r.speech, err = r.owner.stretches(ctx, at); err != nil {
 			return nil, err
 		}
 		r.raw, r.cut = nil, true
 	}
 
 	var out []port.Audio
-	for _, one := range r.found {
+	for _, one := range r.speech {
 		if one.From < from {
 			continue
 		}
@@ -83,7 +83,7 @@ func (r *recording) Speech(ctx context.Context, from, count int) ([]port.Audio, 
 func (r *recording) Close() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.raw, r.found = nil, nil
+	r.raw, r.speech = nil, nil
 	return nil
 }
 

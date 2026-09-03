@@ -181,7 +181,7 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 //
 // An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
-func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkRole) error {
+func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
 	if err != nil {
 		return err
@@ -190,7 +190,7 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 	var carrying []int
 	kept := 0
 	for i, e := range b.entries {
-		if e.link.Type != of || !e.readable {
+		if e.link.Type != kind || !e.readable {
 			kept++
 			continue
 		}
@@ -207,7 +207,7 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 			continue
 		}
 		next := e.link
-		next.Target, next.Type = to, of
+		next.Target, next.Type = to, kind
 		rendered, err := renderEntry(next, b.indent, d.eol)
 		if err != nil {
 			return err
@@ -225,7 +225,7 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 		return nil
 	}
 
-	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: of}, b.indent, d.eol)
+	rendered, err := renderEntry(domain.Link{Target: to, Role: role, Type: kind}, b.indent, d.eol)
 	if err != nil {
 		return err
 	}

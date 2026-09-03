@@ -185,7 +185,7 @@ func (a *API) begin(
 	case got.under:
 		answer(w, began{Path: ref.Path, Answer: outcomeRunning, Why: says.running})
 		return
-	case got.gave != "":
+	case got.answer != "":
 		answer(w, began{Path: ref.Path, Answer: outcomeAnswered, Why: says.about(got)})
 		return
 	}
@@ -204,26 +204,26 @@ func (a *API) begin(
 // about is the sentence a person reads for a source a run got no words out of.
 // What the run said about bytes it could not open stands after it.
 func (t telling) about(got reached) string {
-	if got.gave == derived.Silent {
+	if got.answer == derived.Silent {
 		return t.silent
 	}
-	if got.said == "" {
+	if got.why == "" {
 		return t.unopened
 	}
-	return t.unopened + " " + got.said
+	return t.unopened + " " + got.why
 }
 
 // reached is how far a run over one source has got: done is the whole of the
 // text a model produced already standing, and under is a run holding this very
 // source now.
 //
-// gave is what a run got out of a source it got no words out of, and said is
+// answer is what a run got out of a source it got no words out of, and why is
 // what it wrote about it.
 type reached struct {
-	done  bool
-	under bool
-	gave  string
-	said  string
+	done   bool
+	under  bool
+	answer string
+	why    string
 }
 
 // far says how far a run over the source at a path has got.
@@ -269,7 +269,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	// asks for the source to be tried afresh.
 	switch held, err := store.Read(ctx, derived.Answer(from, hash)); {
 	case err == nil:
-		got.gave, got.said = derived.Answered(held)
+		got.answer, got.why = derived.Answered(held)
 		return got, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err

@@ -216,7 +216,7 @@ func preparing(tasks *task.Tasks, at listing) onnx.FetchProgress {
 	return func(done, total int64) {
 		held := task.Task{ID: at.id, Doing: "Preparing the model", About: at.name}
 		if done > 0 {
-			held.Done, held.Total, held.Counting = done, total, task.Bytes
+			held.Count, held.Total, held.Unit = done, total, task.Bytes
 		}
 		tasks.Set(held)
 	}

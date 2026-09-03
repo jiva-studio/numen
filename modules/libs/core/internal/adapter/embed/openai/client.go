@@ -29,9 +29,9 @@ var ErrNoKey = errors.New("no key in the configuration or the environment")
 
 // Client is one hosted model.
 type Client struct {
-	model embed.ServiceModel
-	is    port.EmbeddingModel
-	http  *http.Client
+	model    embed.ServiceModel
+	identity port.EmbeddingModel
+	http     *http.Client
 
 	// Attempts is how many times one request is sent before its error is
 	// reported. A real run meets "engine overloaded" repeatedly.
@@ -61,14 +61,14 @@ func New(is port.EmbeddingModel, model embed.ServiceModel) (*Client, error) {
 	}
 	return &Client{
 		model:    model,
-		is:       is,
+		identity: is,
 		http:     &http.Client{Timeout: 90 * time.Second},
 		Attempts: 5,
 		Delay:    time.Second,
 	}, nil
 }
 
-func (c *Client) Model() port.EmbeddingModel { return c.is }
+func (c *Client) Model() port.EmbeddingModel { return c.identity }
 
 // Close releases what the model holds on this machine, which is nothing: the
 // weights are the service's.
@@ -107,7 +107,7 @@ type response struct {
 // what the service asked to be waited.
 type temporaryError struct {
 	err   error
-	after time.Duration
+	delay time.Duration
 }
 
 func (t temporaryError) Error() string { return t.err.Error() }
@@ -138,8 +138,8 @@ func (c *Client) request(ctx context.Context, texts []string) ([][]float32, erro
 			return nil, err
 		}
 		last = err
-		if again.after > 0 {
-			delay = again.after
+		if again.delay > 0 {
+			delay = again.delay
 		}
 	}
 	return nil, fmt.Errorf("%d attempts: %w", attempts, last)
@@ -191,7 +191,7 @@ func (c *Client) statusError(resp *http.Response, detail []byte) error {
 	if status >= 500 || status == http.StatusTooManyRequests {
 		return temporaryError{
 			err:   fmt.Errorf("%d %s: %s", status, http.StatusText(status), summary),
-			after: retryDelay(resp),
+			delay: retryDelay(resp),
 		}
 	}
 	return fmt.Errorf("%w with %d %s: %s", ErrRejected, status, http.StatusText(status), summary)
@@ -205,9 +205,9 @@ func (c *Client) collect(parsed response) ([][]float32, error) {
 		if item.Index < 0 || item.Index >= len(vectors) {
 			return nil, fmt.Errorf("vector %d of %d is out of range", item.Index, len(vectors))
 		}
-		if len(item.Embedding) != c.is.Dimensions {
+		if len(item.Embedding) != c.identity.Dimensions {
 			return nil, fmt.Errorf("%s returned %d dimensions, configured as %d",
-				c.model.Name, len(item.Embedding), c.is.Dimensions)
+				c.model.Name, len(item.Embedding), c.identity.Dimensions)
 		}
 		if vectors[item.Index] != nil {
 			return nil, fmt.Errorf("vector %d arrived twice", item.Index)

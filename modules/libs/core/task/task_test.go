@@ -34,15 +34,15 @@ func TestWhatIsBeingDoneIsWhatIsListed(t *testing.T) {
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	tasks := task.New()
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Done: 1, Total: 9})
-	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Done: 4, Total: 9})
+	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: 1, Total: 9})
+	tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
 		t.Fatalf("listed %d, want the one piece of work", len(list))
 	}
-	if list[0].Done != 4 {
-		t.Errorf("it has got to %d, want 4", list[0].Done)
+	if list[0].Count != 4 {
+		t.Errorf("it has got to %d, want 4", list[0].Count)
 	}
 }
 
@@ -88,9 +88,9 @@ func TestAListenerBehindIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Done: i, Total: 5})
+		tasks.Set(task.Task{ID: "reading", Doing: "Reading a scan", Count: i, Total: 5})
 	}
-	if list := next(t, watching); len(list) != 1 || list[0].Done != 5 {
+	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
 	}
 }
@@ -129,10 +129,10 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 		var last []task.Task
 		for list := range watching {
 			for _, at := range list {
-				if at.Done < far[at.ID] {
-					t.Errorf("%s had got to %d and is now said to be at %d", at.ID, far[at.ID], at.Done)
+				if at.Count < far[at.ID] {
+					t.Errorf("%s had got to %d and is now said to be at %d", at.ID, far[at.ID], at.Count)
 				}
-				far[at.ID] = at.Done
+				far[at.ID] = at.Count
 			}
 			last = list
 		}
@@ -146,7 +146,7 @@ func TestWhatAListenerIsToldLastIsTheNewest(t *testing.T) {
 			defer reporting.Done()
 			id := fmt.Sprintf("reading-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(task.Task{ID: id, Doing: "Reading a scan", Done: page, Total: 200})
+				tasks.Set(task.Task{ID: id, Doing: "Reading a scan", Count: page, Total: 200})
 			}
 		}()
 	}

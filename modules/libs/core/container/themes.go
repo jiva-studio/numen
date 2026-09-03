@@ -86,7 +86,7 @@ func (c Config) dressed(said *scales) (theme.Appearance, error) {
 		return theme.Appearance{}, err
 	}
 	worn := theme.Appearance{
-		Theme:          held.Appearance.Theme,
+		ThemeName:      held.Appearance.Theme,
 		Mode:           mode(held.Appearance.Mode),
 		InterfaceScale: held.Appearance.InterfaceScale,
 		TextScale:      held.Appearance.TextScale,
@@ -104,8 +104,8 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 		return err
 	}
 	writing := []settings.Setting{
-		{At: []string{"appearance", "theme"}, Value: chosen.Theme},
-		{At: []string{"appearance", "mode"}, Value: word(chosen.Mode)},
+		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
+		{At: []string{"appearance", "mode"}, Written: word(chosen.Mode)},
 	}
 	if chosen.InterfaceScale > 0 {
 		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
@@ -113,14 +113,14 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "interface_scale"}, Value: chosen.InterfaceScale})
+			settings.Setting{At: []string{"appearance", "interface_scale"}, Written: chosen.InterfaceScale})
 	}
 	if chosen.TextScale > 0 {
 		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{"appearance", "text_scale"}, Value: chosen.TextScale})
+			settings.Setting{At: []string{"appearance", "text_scale"}, Written: chosen.TextScale})
 	}
 	if err := settings.Save(path, writing...); err != nil {
 		return err

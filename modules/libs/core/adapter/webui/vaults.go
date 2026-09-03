@@ -60,10 +60,10 @@ func (s vaults) Choose(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceChooseRequest],
 ) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
-	if s.api.Choosing == nil {
+	if s.api.Picker == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPicker)
 	}
-	path, chose, err := s.api.Choosing.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	path, chose, err := s.api.Picker.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}

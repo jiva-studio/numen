@@ -11,7 +11,7 @@ import (
 )
 
 func theme(name string) settings.Setting {
-	return settings.Setting{At: []string{"appearance", "theme"}, Value: name}
+	return settings.Setting{At: []string{"appearance", "theme"}, Written: name}
 }
 
 // arranged is a file as somebody wrote it by hand: their order, their
@@ -65,7 +65,7 @@ func TestAHandArrangedFileComesBackWithOneValueChanged(t *testing.T) {
 func TestTheThemeAndTheModeAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.Save(path, theme("preset:nord"),
-		settings.Setting{At: []string{"appearance", "mode"}, Value: settings.ModeDark}); err != nil {
+		settings.Setting{At: []string{"appearance", "mode"}, Written: settings.ModeDark}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -93,8 +93,8 @@ func TestTheTwoSizesAreWrittenWithoutMovingAnythingElse(t *testing.T) {
 `
 	path := write(t, sized)
 	if err := settings.Save(path,
-		settings.Setting{At: []string{"appearance", "interface_scale"}, Value: 1.25},
-		settings.Setting{At: []string{"appearance", "text_scale"}, Value: 1.5}); err != nil {
+		settings.Setting{At: []string{"appearance", "interface_scale"}, Written: 1.25},
+		settings.Setting{At: []string{"appearance", "text_scale"}, Written: 1.5}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -119,7 +119,7 @@ func TestASizeIsWrittenBesideTheZoomAFileStillNames(t *testing.T) {
 }
 `)
 	if err := settings.Save(path,
-		settings.Setting{At: []string{"appearance", "interface_scale"}, Value: 1.25}); err != nil {
+		settings.Setting{At: []string{"appearance", "interface_scale"}, Written: 1.25}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -446,7 +446,7 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 		t.Errorf("the file came back as:\n%s\nand not as:\n%s", raw, want)
 	}
 
-	err = settings.Save(path, settings.Setting{At: []string{"appearance", "text_scale"}, Value: 9})
+	err = settings.Save(path, settings.Setting{At: []string{"appearance", "text_scale"}, Written: 9})
 	if err == nil {
 		t.Fatal("a size out of its band was written")
 	}
@@ -460,8 +460,8 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 func TestASectionHandedInIsCheckedAtTheNumbersItHolds(t *testing.T) {
 	path := write(t, `{"appearance":{"theme":"preset:numen"}}`)
 	err := settings.Save(path, settings.Setting{
-		At:    []string{"appearance"},
-		Value: map[string]any{"theme": "preset:nord", "text_scale": 9},
+		At:      []string{"appearance"},
+		Written: map[string]any{"theme": "preset:nord", "text_scale": 9},
 	})
 	if err == nil {
 		t.Fatal("a section carrying a size out of its band was written")

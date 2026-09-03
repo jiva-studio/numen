@@ -13,8 +13,8 @@ import (
 // Appearance is what the window wears: which theme, which half of a colour pair its
 // tokens are read as, and how large it is drawn and its reading text set.
 type Appearance struct {
-	Theme string
-	Mode  v1.Mode
+	ThemeName string
+	Mode      v1.Mode
 
 	// InterfaceScale is how large the window is drawn and TextScale how large the
 	// text a person reads is set, AsDesigned being the size each was designed at.
@@ -66,7 +66,7 @@ func (s *Service) Themes(
 	_ *connect.Request[v1.ThemesRequest],
 ) (*connect.Response[v1.ThemesResponse], error) {
 	worn := s.worn()
-	applied, missing := s.Catalogue.Applied(worn.Theme)
+	applied, missing := s.Catalogue.Applied(worn.ThemeName)
 	if missing != "" {
 		s.say(fmt.Sprintf("there is no theme called %s, so the window wears %s", missing, applied))
 	}
@@ -134,7 +134,7 @@ func (s *Service) Choose(
 		return failed("this build writes no settings")
 	}
 	chosen := Appearance{
-		Theme:          name,
+		ThemeName:      name,
 		Mode:           req.Msg.GetMode(),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
@@ -176,7 +176,7 @@ func (s *Service) Changed(
 // not be read.
 func (s *Service) worn() Appearance {
 	worn := Appearance{
-		Theme:          Default,
+		ThemeName:      Default,
 		Mode:           v1.Mode_MODE_SYSTEM,
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
@@ -189,8 +189,8 @@ func (s *Service) worn() Appearance {
 		s.say(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
 		return worn
 	}
-	if said.Theme != "" {
-		worn.Theme = said.Theme
+	if said.ThemeName != "" {
+		worn.ThemeName = said.ThemeName
 	}
 	if said.Mode != v1.Mode_MODE_UNSPECIFIED {
 		worn.Mode = said.Mode

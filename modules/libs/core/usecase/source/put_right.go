@@ -211,8 +211,8 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 		res.Refused += refused(group, replies, unbounded)
 		for _, batch := range group {
 			for _, line := range batch.Lines {
-				if line.At >= from {
-					asked[line.At] = true
+				if line.Number >= from {
+					asked[line.Number] = true
 				}
 			}
 		}
@@ -243,7 +243,7 @@ func (u PutRight) Execute(ctx context.Context, v domain.Vault, path string) (Put
 			// the run to the last. The cues it swallowed say nothing, and
 			// nothing is what a transcript writes them as.
 			together[line] = true
-			for gone := line + 1; gone <= said.Through; gone++ {
+			for gone := line + 1; gone <= said.Last; gone++ {
 				cues[line].To = max(cues[line].To, cues[gone].To)
 				cues[gone].Text = ""
 				together[gone] = true
@@ -333,7 +333,7 @@ func (u PutRight) counted(ctx context.Context, store port.DerivedStore, far stri
 func refused(asked []proofread.Batch, replies map[int]string, apart float64) int {
 	out := 0
 	for _, batch := range asked {
-		reply, answered := replies[batch.At]
+		reply, answered := replies[batch.Number]
 		if !answered {
 			continue
 		}
@@ -368,7 +368,7 @@ func unasked(cues []transcript.Cue, ms int) int {
 // joined says whether a correction answers about a line already put together
 // with another. Those words no longer stand on their own.
 func joined(together map[int]bool, said proofread.Line) bool {
-	for at := said.At; at <= said.Through; at++ {
+	for at := said.Number; at <= said.Last; at++ {
 		if together[at] {
 			return true
 		}
@@ -405,7 +405,7 @@ func (u PutRight) seams(cues []transcript.Cue, cuts []int, about string) []proof
 // told is the batches with what the recording holds on each of them.
 func told(batches []proofread.Batch, about string) []proofread.Batch {
 	for at := range batches {
-		batches[at].About = about
+		batches[at].Context = about
 	}
 	return batches
 }
@@ -432,7 +432,7 @@ func left(asked, fixed map[int]bool) int {
 
 // last is the number of the final line a batch holds.
 func last(batch proofread.Batch) int {
-	return batch.Lines[len(batch.Lines)-1].At
+	return batch.Lines[len(batch.Lines)-1].Number
 }
 
 // linesBefore is how many of the cues before one carry a line. A cue saying

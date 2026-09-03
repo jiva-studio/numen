@@ -35,7 +35,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 
 	read := make(map[int]string, len(batch.Lines))
 	for _, line := range batch.Lines {
-		read[line.At] = line.Text
+		read[line.Number] = line.Text
 	}
 
 	var out []Line
@@ -53,7 +53,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 		if !named {
 			return nil, false, false
 		}
-		if through > at && !batch.Joining {
+		if through > at && !batch.Joinable {
 			return nil, false, false
 		}
 		// A sentence runs on past the last line a batch was given, and a model
@@ -110,7 +110,7 @@ func Fixed(batch Batch, reply string, maxDistance float64) (put []Line, past, ok
 				continue
 			}
 		}
-		out = append(out, Line{At: at, Through: through, Text: text})
+		out = append(out, Line{Number: at, Last: through, Text: text})
 	}
 	return out, past, true
 }
@@ -129,7 +129,7 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 	standing := make(map[int]int)
 	var past []int
 	for _, batch := range asked {
-		reply, answered := replies[batch.At]
+		reply, answered := replies[batch.Number]
 		if !answered {
 			continue
 		}
@@ -138,18 +138,18 @@ func Gathered(asked []Batch, replies map[int]string, maxDistance float64) (map[i
 			continue
 		}
 		if ran {
-			past = append(past, batch.At)
+			past = append(past, batch.Number)
 		}
 		after := make(map[int]int, len(batch.Lines))
 		for i, line := range batch.Lines {
-			after[line.At] = len(batch.Lines) - 1 - i
+			after[line.Number] = len(batch.Lines) - 1 - i
 		}
 		for _, line := range lines {
-			if stood, seen := standing[line.At]; seen && after[line.At] < stood {
+			if stood, seen := standing[line.Number]; seen && after[line.Number] < stood {
 				continue
 			}
-			put[line.At] = line
-			standing[line.At] = after[line.At]
+			put[line.Number] = line
+			standing[line.Number] = after[line.Number]
 		}
 	}
 	return put, past

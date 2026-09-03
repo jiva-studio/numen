@@ -42,7 +42,7 @@ func (c Config) Transcribing(
 		Tasks:   tasks,
 		Open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error) {
 			cfg := c.Transcription
-			cfg.Fetching = tell
+			cfg.Progress = tell
 			models, err := transcription.Open(ctx, cfg)
 			if err != nil {
 				return nil, nil, err

@@ -35,9 +35,10 @@ import (
 // about. A person looking for a setting looks for the part of the application it
 // belongs to.
 type Config struct {
-	// V is the shape of the file. Nothing reads it yet, and it is written so that
-	// the day a section changes shape there is something to tell the two apart.
-	V int `json:"v"`
+	// Version is the shape of the file. Nothing reads it yet, and it is written
+	// so that the day a section changes shape there is something to tell the
+	// two apart.
+	Version int `json:"v"`
 
 	// Appearance is how the window is drawn.
 	Appearance Appearance `json:"appearance"`
@@ -142,20 +143,20 @@ func (b Bounds) Check(at string, value float64) error {
 	if b.Holds(value) {
 		return nil
 	}
-	return &Outside{At: at, Value: value, Bounds: b}
+	return &Outside{At: at, Number: value, Bounds: b}
 }
 
 // Outside is a number a setting does not take, and how far that setting goes.
 // The number is left as the person wrote it and nothing is drawn at it.
 type Outside struct {
 	// At is where the number sits in the file: `appearance.text_scale`.
-	At    string
-	Value float64
+	At     string
+	Number float64
 	Bounds
 }
 
 func (o *Outside) Error() string {
-	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Value, o.Least, o.Most)
+	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Number, o.Least, o.Most)
 }
 
 // Outsides is every number the section holds that its setting does not take,
@@ -354,7 +355,7 @@ func on() *bool {
 // Defaults are what an installation nobody has configured does.
 func Defaults() Config {
 	return Config{
-		V: 1,
+		Version: 1,
 		Appearance: Appearance{
 			InterfaceScale:      AsDesigned,
 			TextScale:           AsDesigned,
@@ -412,8 +413,8 @@ func At(path string) (Config, error) {
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		return Config{}, err
 	}
-	if cfg.V == 0 {
-		cfg.V = 1
+	if cfg.Version == 0 {
+		cfg.Version = 1
 	}
 	cfg.carrying(path, raw)
 	if err := cfg.Appearance.Check(); err != nil {

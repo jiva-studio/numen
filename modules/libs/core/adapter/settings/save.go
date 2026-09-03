@@ -16,8 +16,8 @@ import (
 // Setting is one field of the file and where in it that field sits:
 // `appearance.theme` is `Setting{At: []string{"appearance", "theme"}}`.
 type Setting struct {
-	At    []string
-	Value any
+	At      []string
+	Written any
 }
 
 // Save writes settings into the file, leaving every other byte of it as it was.
@@ -197,7 +197,7 @@ func set(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
 		return nil, errors.New("a setting with no name")
 	}
-	value, err := json.Marshal(setting.Value)
+	value, err := json.Marshal(setting.Written)
 	if err != nil {
 		return nil, err
 	}

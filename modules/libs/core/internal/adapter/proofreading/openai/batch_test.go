@@ -135,7 +135,7 @@ func TestEveryPageOfTheRunIsAskedWhatOnePageIsAskedOnItsOwn(t *testing.T) {
 		t.Fatalf("got %d requests, want %d", len(run.Requests), len(pages))
 	}
 	for i, one := range run.Requests {
-		if want := fmt.Sprint(pages[i].At); one.CustomID != want {
+		if want := fmt.Sprint(pages[i].Number); one.CustomID != want {
 			t.Errorf("request %d comes back under %q, want %q", i, one.CustomID, want)
 		}
 		if one.Body.Model != "test-model" {

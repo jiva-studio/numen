@@ -28,15 +28,15 @@ func TestALineIsKnownByItsPlaceInTheWholeReading(t *testing.T) {
 	if len(batches) != 2 {
 		t.Fatalf("%d batches, want the two pages the boxes were read from", len(batches))
 	}
-	if batches[0].At != 4 || batches[1].At != 5 {
-		t.Errorf("pages %d and %d", batches[0].At, batches[1].At)
+	if batches[0].Number != 4 || batches[1].Number != 5 {
+		t.Errorf("pages %d and %d", batches[0].Number, batches[1].Number)
 	}
 
 	var numbers []int
 	var text []string
 	for _, batch := range batches {
 		for _, line := range batch.Lines {
-			numbers = append(numbers, line.At)
+			numbers = append(numbers, line.Number)
 			text = append(text, line.Text)
 		}
 	}
@@ -72,14 +72,14 @@ func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 	if len(batches[0].Lines) != 2 {
 		t.Errorf("%d lines, want the two that say something", len(batches[0].Lines))
 	}
-	if batches[0].Lines[1].At != 2 {
-		t.Errorf("line numbered %d, want its place in the reading 2", batches[0].Lines[1].At)
+	if batches[0].Lines[1].Number != 2 {
+		t.Errorf("line numbered %d, want its place in the reading 2", batches[0].Lines[1].Number)
 	}
 }
 
 // cue is one stretch of speech, at the place in the transcript it was heard.
 func cue(at int, text string) transcript.Cue {
-	return transcript.Cue{Text: text, At: at}
+	return transcript.Cue{Text: text, Offset: at}
 }
 
 func TestSpeechIsCutIntoBatchesOfSize(t *testing.T) {
@@ -96,11 +96,11 @@ func TestSpeechIsCutIntoBatchesOfSize(t *testing.T) {
 		if len(batches[i].Lines) != want {
 			t.Errorf("batch %d holds %d lines, want %d", i, len(batches[i].Lines), want)
 		}
-		if batches[i].At != i {
-			t.Errorf("batch %d is numbered %d, want its place in the run", i, batches[i].At)
+		if batches[i].Number != i {
+			t.Errorf("batch %d is numbered %d, want its place in the run", i, batches[i].Number)
 		}
 	}
-	if batches[2].Lines[0].At != 4 || batches[2].Lines[0].Text != "five" {
+	if batches[2].Lines[0].Number != 4 || batches[2].Lines[0].Text != "five" {
 		t.Errorf("last line is %v, want the fifth cue", batches[2].Lines[0])
 	}
 }
@@ -111,7 +111,7 @@ func numbers(batches []proofread.Batch) [][]int {
 	for _, batch := range batches {
 		var carried []int
 		for _, line := range batch.Lines {
-			carried = append(carried, line.At)
+			carried = append(carried, line.Number)
 		}
 		out = append(out, carried)
 	}
@@ -180,11 +180,11 @@ func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
 					if len(batch.Lines) > size {
 						t.Errorf("%d cues by %d sharing %d: batch %d holds %d lines", count, size, overlap, i, len(batch.Lines))
 					}
-					if batch.At != i {
-						t.Errorf("%d cues by %d sharing %d: batch %d is numbered %d", count, size, overlap, i, batch.At)
+					if batch.Number != i {
+						t.Errorf("%d cues by %d sharing %d: batch %d is numbered %d", count, size, overlap, i, batch.Number)
 					}
 					for _, line := range batch.Lines {
-						seen[line.At] = true
+						seen[line.Number] = true
 					}
 				}
 				for at := range cues {
@@ -197,11 +197,11 @@ func TestEveryLineIsInABatchHoweverSpeechIsCut(t *testing.T) {
 				// through the transcript never stalls.
 				for i := 1; i < len(batches); i++ {
 					last, before := batches[i].Lines, batches[i-1].Lines
-					if last[len(last)-1].At <= before[len(before)-1].At {
+					if last[len(last)-1].Number <= before[len(before)-1].Number {
 						t.Errorf("%d cues by %d sharing %d: batch %d reaches no further than %d",
 							count, size, overlap, i, i-1)
 					}
-					if last[0].At <= before[0].At {
+					if last[0].Number <= before[0].Number {
 						t.Errorf("%d cues by %d sharing %d: batch %d opens no later than %d",
 							count, size, overlap, i, i-1)
 					}
@@ -239,8 +239,8 @@ func TestACueSayingNothingCarriesNoLine(t *testing.T) {
 	if len(batches[0].Lines) != 2 {
 		t.Errorf("%d lines, want the two that say something", len(batches[0].Lines))
 	}
-	if batches[0].Lines[1].At != 2 {
-		t.Errorf("line numbered %d, want its place in the transcript 2", batches[0].Lines[1].At)
+	if batches[0].Lines[1].Number != 2 {
+		t.Errorf("line numbered %d, want its place in the transcript 2", batches[0].Lines[1].Number)
 	}
 }
 
@@ -316,10 +316,10 @@ func TestASeamHoldsTheLinesOnBothSidesOfACut(t *testing.T) {
 		t.Errorf("seams %v, want a window over each of the two cuts", got)
 	}
 	for i, seam := range seams {
-		if seam.At != len(batches)+i {
-			t.Errorf("seam %d is numbered %d, want its place after the batches", i, seam.At)
+		if seam.Number != len(batches)+i {
+			t.Errorf("seam %d is numbered %d, want its place after the batches", i, seam.Number)
 		}
-		if !seam.Joining {
+		if !seam.Joinable {
 			t.Errorf("seam %d does not put lines together", i)
 		}
 	}
@@ -359,7 +359,7 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 func carries(batch proofread.Batch, at, through int) bool {
 	held := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
-		held[line.At] = true
+		held[line.Number] = true
 	}
 	for line := at; line <= through; line++ {
 		if !held[line] {

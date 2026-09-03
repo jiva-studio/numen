@@ -220,7 +220,7 @@ func fold(
 // question is answerable.
 type folders struct {
 	reader *VaultReader
-	are    map[string]bool
+	known  map[string]bool
 }
 
 // remembered walks the vault once for its shape, stopping where the vault's own
@@ -229,7 +229,7 @@ type folders struct {
 // A folder the walk could not enter is missing from the shape, and comes back
 // as the first error it met.
 func remembered(reader *VaultReader) (*folders, error) {
-	f := &folders{reader: reader, are: map[string]bool{".": true}}
+	f := &folders{reader: reader, known: map[string]bool{".": true}}
 	var why error
 	walk := filepath.WalkDir(reader.Root(), func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -248,7 +248,7 @@ func remembered(reader *VaultReader) (*folders, error) {
 		if p != reader.Root() && reader.skipped(path, d.Name()) {
 			return fs.SkipDir
 		}
-		f.are[path] = true
+		f.known[path] = true
 		return nil
 	})
 	if why == nil {
@@ -258,10 +258,10 @@ func remembered(reader *VaultReader) (*folders, error) {
 }
 
 func (f *folders) forget(path string) {
-	delete(f.are, path)
-	for held := range f.are {
+	delete(f.known, path)
+	for held := range f.known {
 		if strings.HasPrefix(held, path+"/") {
-			delete(f.are, held)
+			delete(f.known, held)
 		}
 	}
 }
@@ -295,10 +295,10 @@ func (f *folders) concerns(ctx context.Context, absolute string) (paths []string
 		if path != "." && f.reader.skipped(path, filepath.Base(absolute)) {
 			return nil, false
 		}
-		if f.are[path] {
+		if f.known[path] {
 			return nil, false
 		}
-		f.are[path] = true
+		f.known[path] = true
 		var found []string
 		seen, over := 0, false
 		_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
@@ -321,7 +321,7 @@ func (f *folders) concerns(ctx context.Context, absolute string) (paths []string
 				if p != absolute && f.reader.skipped(held, d.Name()) {
 					return fs.SkipDir
 				}
-				f.are[held] = true
+				f.known[held] = true
 				return nil
 			}
 			if _, holds := f.reader.holds(held); holds {
@@ -334,7 +334,7 @@ func (f *folders) concerns(ctx context.Context, absolute string) (paths []string
 		}
 		return found, false
 
-	case err != nil && f.are[path]:
+	case err != nil && f.known[path]:
 		f.forget(path)
 		return nil, true
 	}

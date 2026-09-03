@@ -240,7 +240,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 		// are the window's to write.
 		r.say(task.Task{
 			ID: id, Doing: "Fetching models", About: what,
-			Done: done, Total: total, Counting: task.Bytes,
+			Count: done, Total: total, Unit: task.Bytes,
 		})
 	})
 	if err != nil {
@@ -269,7 +269,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 				ID:    id,
 				Doing: "Reading a scan",
 				About: path,
-				Done:  int64(res.Read),
+				Count: int64(res.Read),
 				Total: int64(res.Pages),
 			})
 		},
@@ -330,7 +330,7 @@ func (r *Recognising) proofread(ctx context.Context, v domain.Vault, path string
 				ID:    id,
 				Doing: "Proofreading a reading",
 				About: path,
-				Done:  int64(res.Read),
+				Count: int64(res.Read),
 				Total: int64(res.Pages),
 			})
 		},
@@ -455,7 +455,7 @@ func (r *Recognising) collect(
 			OnProgress: func(res ProofreadResult) {
 				r.says(task.Task{
 					ID: id, Doing: "Proofreading a reading", About: one.Path,
-					Done: int64(res.Read), Total: int64(res.Pages),
+					Count: int64(res.Read), Total: int64(res.Pages),
 				}, false)
 			},
 		}.Execute(ctx, v, one.Path)
@@ -476,7 +476,7 @@ func (r *Recognising) collect(
 		default:
 			r.says(task.Task{
 				ID: id, Doing: "Proofreading a reading", About: one.Path,
-				Done: int64(res.Read), Total: int64(res.Pages),
+				Count: int64(res.Read), Total: int64(res.Pages),
 			}, false)
 		}
 	}

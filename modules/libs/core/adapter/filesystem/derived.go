@@ -49,19 +49,19 @@ type DerivedStore struct {
 	id      string   // the identity that folder carried when this store was opened
 	root    string   // <vault>/<serviceDir>
 	areas   []string // the folders inside it this store answers for
-	// seen is the configuration file as it stood when the identity was last
+	// last is the configuration file as it stood when the identity was last
 	// read out of it. Every name checks the identity, and a file that has not
 	// moved carries the identity already read.
-	seen atomic.Pointer[fileInfo]
+	last atomic.Pointer[fileInfo]
 }
 
 // fileInfo is a file as it stood: what says whether it is still the one read.
-type fileInfo struct{ info os.FileInfo }
+type fileInfo struct{ stat os.FileInfo }
 
 // holds reports whether a file is the one a fileInfo was taken of.
 func (s *fileInfo) holds(now os.FileInfo) bool {
-	return s != nil && os.SameFile(s.info, now) &&
-		s.info.Size() == now.Size() && s.info.ModTime().Equal(now.ModTime())
+	return s != nil && os.SameFile(s.stat, now) &&
+		s.stat.Size() == now.Size() && s.stat.ModTime().Equal(now.ModTime())
 }
 
 // ErrNotThisVault is what a name gets when the folder underneath it no longer
@@ -120,7 +120,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore
 		root:    filepath.Join(abs, opts.serviceDir()),
 		areas:   kept,
 	}
-	d.seen.Store(was)
+	d.last.Store(was)
 	return d, nil
 }
 
@@ -182,11 +182,11 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 }
 
 // short is what an append that did not land says.
-func short(name string, wrote, asked int, why error) error {
+func short(name string, written, wanted int, why error) error {
 	if why == nil {
 		why = io.ErrShortWrite
 	}
-	return fmt.Errorf("%s: %d of %d bytes: %w", name, wrote, asked, why)
+	return fmt.Errorf("%s: %d of %d bytes: %w", name, written, wanted, why)
 }
 
 // back cuts the bytes an append left behind and closes the file. What it wrote
@@ -289,7 +289,7 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 // written in: the same file, of the same length and the same age, carries the
 // identity already read out of it. Anything else is read again.
 func (d *DerivedStore) still() error {
-	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.seen.Load().holds(now) {
+	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.last.Load().holds(now) {
 		return nil
 	}
 	id, was, err := carried(d.vault, d.service)
@@ -306,7 +306,7 @@ func (d *DerivedStore) still() error {
 			return fmt.Errorf("%s: %w", d.vault, err)
 		}
 	}
-	d.seen.Store(was)
+	d.last.Store(was)
 	return nil
 }
 
@@ -319,7 +319,7 @@ func carried(root, serviceDir string) (string, *fileInfo, error) {
 	}
 	var was *fileInfo
 	if info, err := os.Stat(configAt(root, serviceDir)); err == nil {
-		was = &fileInfo{info: info}
+		was = &fileInfo{stat: info}
 	}
 	cfg, err := ReadConfig(root, serviceDir)
 	if errors.Is(err, ErrNotAVault) || errors.Is(err, fs.ErrNotExist) {

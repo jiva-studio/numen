@@ -39,7 +39,7 @@ func (r *VaultRegistry) Path() string { return r.path }
 func (r *VaultRegistry) load() (registryFile, error) {
 	raw, err := os.ReadFile(r.path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return registryFile{V: 1}, nil
+		return registryFile{Version: 1}, nil
 	}
 	if err != nil {
 		return registryFile{}, err
@@ -48,8 +48,8 @@ func (r *VaultRegistry) load() (registryFile, error) {
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return registryFile{}, err
 	}
-	if f.V == 0 {
-		f.V = 1
+	if f.Version == 0 {
+		f.Version = 1
 	}
 	return f, nil
 }
@@ -158,8 +158,8 @@ func (r *VaultRegistry) Remove(id string) error {
 		return nil
 	}
 	f.Vaults = slices.Delete(f.Vaults, at, at+1)
-	if f.Last == id {
-		f.Last = ""
+	if f.LastID == id {
+		f.LastID = ""
 	}
 	return r.save(f)
 }
@@ -176,10 +176,10 @@ func (r *VaultRegistry) Opened(id string) error {
 	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return string(v.ID) == id }) {
 		return fmt.Errorf("no vault on the list carries the identity %s", id)
 	}
-	if f.Last == id {
+	if f.LastID == id {
 		return nil
 	}
-	f.Last = id
+	f.LastID = id
 	return r.save(f)
 }
 
@@ -193,7 +193,7 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 		return domain.Vault{}, false, err
 	}
 	for _, v := range f.Vaults {
-		if string(v.ID) == f.Last && f.Last != "" {
+		if string(v.ID) == f.LastID && f.LastID != "" {
 			return v, true, nil
 		}
 	}

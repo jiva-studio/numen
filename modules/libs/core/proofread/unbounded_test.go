@@ -13,7 +13,7 @@ const (
 )
 
 func oneLine(text string) proofread.Batch {
-	return proofread.Batch{At: 1, Lines: []proofread.Line{{At: 7, Text: text}}}
+	return proofread.Batch{Number: 1, Lines: []proofread.Line{{Number: 7, Text: text}}}
 }
 
 // Held to no distance, a correction stands however far from the line it puts

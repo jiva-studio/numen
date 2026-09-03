@@ -67,11 +67,11 @@ func doing(list []task.Task) []*v1.Task {
 			Id:       at.ID,
 			Doing:    at.Doing,
 			About:    at.About,
-			Done:     at.Done,
+			Done:     at.Count,
 			Total:    at.Total,
 			Failed:   at.Failed,
 			Asked:    at.Asked,
-			Counting: countedIn(at.Counting),
+			Counting: countedIn(at.Unit),
 		})
 	}
 	return out

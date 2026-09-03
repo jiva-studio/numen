@@ -178,7 +178,7 @@ func openingWith(
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
-		Watching:  focusing(),
+		Places:    focusing(),
 		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
 		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
 	}
@@ -439,7 +439,7 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 // vault arriving in the window does.
 func runningBehind(api *API, change func(*showing)) {
 	on := showing{}
-	if held := api.on.Load(); held != nil {
+	if held := api.showing.Load(); held != nil {
 		on = *held
 	}
 	change(&on)
@@ -514,7 +514,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
-		Watching:  focusing(),
+		Places:    focusing(),
 		Tasking:   task.New(),
 	}
 	api.show(v)

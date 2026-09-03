@@ -117,7 +117,7 @@ func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
 	}
 
 	found := litOn(t, u, documentPath, 0, 10)
-	if len(found) != 1 || found[0].Page != 4 || len(found[0].Rects) != 2 {
+	if len(found) != 1 || found[0].Index != 4 || len(found[0].Rects) != 2 {
 		t.Fatalf("the run was lit at %+v", found)
 	}
 	want := lit.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
@@ -134,7 +134,7 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 
 	start, length := run(t, book, "gamma")
 	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Page != 0 || len(found[0].Rects) != 1 {
+	if len(found) != 1 || found[0].Index != 0 || len(found[0].Rects) != 1 {
 		t.Fatalf("%q was lit at %+v", "gamma", found)
 	}
 
@@ -164,13 +164,13 @@ func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
 	from, _ := run(t, book, "gamma")
 	to, length := run(t, book, "Delta")
 	found := litOn(t, u, documentPath, from, to+length-from)
-	if len(found) != 2 || found[0].Page != 0 || found[1].Page != 1 {
+	if len(found) != 2 || found[0].Index != 0 || found[1].Index != 1 {
 		t.Fatalf("a run across a page was lit at %+v", found)
 	}
 	for _, page := range found {
 		if len(page.Rects) != 1 {
 			t.Errorf("page %d lights %d words, want the one printed on it",
-				page.Page, len(page.Rects))
+				page.Index, len(page.Rects))
 		}
 	}
 }
@@ -184,7 +184,7 @@ func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
 
 	start, length := run(t, book, "Afterword")
 	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Page != 3 {
+	if len(found) != 1 || found[0].Index != 3 {
 		t.Fatalf("%q is printed on page 3 and was lit at %+v", "Afterword", found)
 	}
 }
@@ -206,7 +206,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	if !slices.Equal(asked, []int{2}) {
 		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), asked)
 	}
-	if len(found) != 1 || found[0].Page != 2 {
+	if len(found) != 1 || found[0].Index != 2 {
 		t.Errorf("%q was lit at %+v", "closer", found)
 	}
 }
@@ -236,10 +236,10 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	if len(found) != 2 {
 		t.Fatalf("two places were asked about and %d came back: %+v", len(found), found)
 	}
-	if len(found[0]) != 1 || found[0][0].Page != 3 {
+	if len(found[0]) != 1 || found[0][0].Index != 3 {
 		t.Errorf("%q is printed on page 3 and was lit at %+v", "Afterword", found[0])
 	}
-	if len(found[1]) != 1 || found[1][0].Page != 2 {
+	if len(found[1]) != 1 || found[1][0].Index != 2 {
 		t.Errorf("%q is printed on page 2 and was lit at %+v", "closer", found[1])
 	}
 	if len(asked) != 1 || !slices.Equal(asked[0], []int{2, 3}) {
@@ -352,13 +352,13 @@ func TestAProofreadReadingIsLitWhereItsWordsNowStand(t *testing.T) {
 	}
 	// The first line is put right and grows by three bytes, so the third line
 	// begins at 14 and runs to 19.
-	put := []fixes.Line{{At: 0, Text: "eighteen"}}
+	put := []fixes.Line{{Number: 0, Text: "eighteen"}}
 	if err := store.Write(t.Context(), text.Fixes("ocr", "abc123"), fixes.Pack(put)); err != nil {
 		t.Fatal(err)
 	}
 
 	found := litOn(t, u, documentPath, 16, 3)
-	if len(found) != 1 || found[0].Page != 5 || len(found[0].Rects) != 1 {
+	if len(found) != 1 || found[0].Index != 5 || len(found[0].Rects) != 1 {
 		t.Fatalf("the run was lit at %+v", found)
 	}
 }

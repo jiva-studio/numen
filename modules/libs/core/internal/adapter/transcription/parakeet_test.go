@@ -32,8 +32,8 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 	said, err := transducer{
 		frames:  4,
 		blank:   blank,
-		encoded: func(at int) []float32 { return []float32{float32(at)} },
-		predict: func(token int) ([]float32, error) {
+		encoder: func(at int) []float32 { return []float32{float32(at)} },
+		predictor: func(token int) ([]float32, error) {
 			asked = append(asked, token)
 			return []float32{float32(token)}, nil
 		},
@@ -59,10 +59,10 @@ func TestDecodeSaysWhatTheJoinerNames(t *testing.T) {
 func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
 	said, err := transducer{
-		frames:  4,
-		blank:   blank,
-		encoded: func(int) []float32 { return nil },
-		predict: func(int) ([]float32, error) { return nil, nil },
+		frames:    4,
+		blank:     blank,
+		encoder:   func(int) []float32 { return nil },
+		predictor: func(int) ([]float32, error) { return nil, nil },
 		joint: func([]float32, []float32) ([]float32, error) {
 			return answer(blank, blank, 0, steps), nil
 		},
@@ -79,10 +79,10 @@ func TestDecodeLeavesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 // joiner these tokens came from, and is refused.
 func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	_, err := transducer{
-		frames:  1,
-		blank:   8192,
-		encoded: func(int) []float32 { return nil },
-		predict: func(int) ([]float32, error) { return nil, nil },
+		frames:    1,
+		blank:     8192,
+		encoder:   func(int) []float32 { return nil },
+		predictor: func(int) ([]float32, error) { return nil, nil },
 		joint: func([]float32, []float32) ([]float32, error) {
 			return make([]float32, 16), nil
 		},

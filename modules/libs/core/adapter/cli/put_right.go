@@ -24,7 +24,7 @@ func putRightCommand(
 	v domain.Vault,
 	path string,
 ) error {
-	named := cfg.SpeechProofreading.With
+	named := cfg.SpeechProofreading.Profile
 	by, err := cfg.Proofreader(named, proofread.SpeechInstruction)
 	if err != nil {
 		return fmt.Errorf("nothing to proofread with: %w", err)

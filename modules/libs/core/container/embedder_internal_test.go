@@ -25,17 +25,17 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 
 	// The cache is read before the first bytes land, and the size is known.
 	tell(0, 90_000_000)
-	if at := only(t, tasks); at.Total != 0 || at.Done != 0 {
-		t.Errorf("a model with none of it here is drawn as %d of %d", at.Done, at.Total)
+	if at := only(t, tasks); at.Total != 0 || at.Count != 0 {
+		t.Errorf("a model with none of it here is drawn as %d of %d", at.Count, at.Total)
 	}
 
 	tell(30_000_000, 90_000_000)
 	at = only(t, tasks)
-	if at.Done != 30_000_000 || at.Total != 90_000_000 {
-		t.Errorf("the model is drawn as %d of %d", at.Done, at.Total)
+	if at.Count != 30_000_000 || at.Total != 90_000_000 {
+		t.Errorf("the model is drawn as %d of %d", at.Count, at.Total)
 	}
-	if at.Counting != task.Bytes {
-		t.Errorf("a model is counted as %v", at.Counting)
+	if at.Unit != task.Bytes {
+		t.Errorf("a model is counted as %v", at.Unit)
 	}
 }
 

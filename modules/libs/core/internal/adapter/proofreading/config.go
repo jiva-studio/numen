@@ -101,9 +101,9 @@ type Profile struct {
 // Proofread is how one kind of reading is put right: the profile that does it,
 // and whether that happens without anybody asking.
 type Proofread struct {
-	// With is the profile, by the name the profiles carry it under. Empty
+	// Profile is the profile, by the name the profiles carry it under. Empty
 	// names none, and nothing is put right.
-	With string `json:"with"`
+	Profile string `json:"with"`
 	// Automatically is whether a reading already written down is put right
 	// without anybody asking for it.
 	Automatically bool `json:"automatically"`

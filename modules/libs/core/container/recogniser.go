@@ -53,7 +53,7 @@ func (c Config) Recognising(
 		Tasks:     tasks,
 		Open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error) {
 			cfg := c.Recognition
-			cfg.Fetching = tell
+			cfg.Progress = tell
 			models, err := recognition.Open(ctx, cfg)
 			if err != nil {
 				return nil, nil, err

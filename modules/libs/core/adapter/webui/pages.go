@@ -61,11 +61,11 @@ func (a *API) Serving(files http.Handler) http.Handler {
 		case strings.HasPrefix(r.URL.Path, wearing):
 			themes.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
-			if !a.answering.begin() {
+			if !a.questions.begin() {
 				http.Error(w, errGone.Error(), http.StatusServiceUnavailable)
 				return
 			}
-			defer a.answering.done()
+			defer a.questions.done()
 			a.Asset(w, r)
 		case slices.Contains(appearance.OpenedAt, r.URL.Path):
 			appearance.Window(w, r, pages, a.Themes, files)
@@ -84,10 +84,10 @@ func (a *API) counting() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
-				if !a.answering.begin() {
+				if !a.questions.begin() {
 					return nil, connect.NewError(connect.CodeUnavailable, errGone)
 				}
-				defer a.answering.done()
+				defer a.questions.done()
 				return next(ctx, r)
 			}
 		},

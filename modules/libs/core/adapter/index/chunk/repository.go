@@ -522,11 +522,11 @@ type textID struct {
 
 // rows is what a source's rows hold, in the shape a fresh cut asks about them.
 type rows struct {
-	rows map[textID][]int64
-	left map[int64]bool
-	// text is the fingerprint each row holds, so a row that goes says which
+	candidates map[textID][]int64
+	left       map[int64]bool
+	// hash is the fingerprint each row holds, so a row that goes says which
 	// text went with it.
-	text map[int64]string
+	hash map[int64]string
 }
 
 func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
@@ -536,16 +536,16 @@ func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
 	}
 	defer cursor.Close()
 
-	h := &rows{rows: map[textID][]int64{}, left: map[int64]bool{}, text: map[int64]string{}}
+	h := &rows{candidates: map[textID][]int64{}, left: map[int64]bool{}, hash: map[int64]string{}}
 	for cursor.Next() {
 		var row int64
 		var key textID
 		if err := cursor.Scan(&row, &key.hash, &key.small); err != nil {
 			return nil, fmt.Errorf("chunks_of: %w", err)
 		}
-		h.rows[key] = append(h.rows[key], row)
+		h.candidates[key] = append(h.candidates[key], row)
 		h.left[row] = true
-		h.text[row] = key.hash
+		h.hash[row] = key.hash
 	}
 	return h, cursor.Err()
 }
@@ -553,12 +553,12 @@ func chunksOf(ctx context.Context, tx *sql.Tx, source int64) (*rows, error) {
 // claim is a row holding the text given, and false where none does. A row is
 // claimed once, so a text that occurs twice in a source is two rows.
 func (h *rows) claim(key textID) (int64, bool) {
-	rows := h.rows[key]
+	rows := h.candidates[key]
 	if len(rows) == 0 {
 		return 0, false
 	}
 	row := rows[0]
-	h.rows[key] = rows[1:]
+	h.candidates[key] = rows[1:]
 	delete(h.left, row)
 	return row, true
 }
@@ -645,7 +645,7 @@ func nullable(s string) any {
 func (h *rows) forgotten() []string {
 	out := make([]string, 0, len(h.left))
 	for row := range h.left {
-		if hash := h.text[row]; hash != "" {
+		if hash := h.hash[row]; hash != "" {
 			out = append(out, hash)
 		}
 	}

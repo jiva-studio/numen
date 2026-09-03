@@ -21,8 +21,8 @@ const configName = "config.json"
 // and what the person has said not to look at. Nothing that could be
 // recomputed.
 type Config struct {
-	V  int    `json:"v"`
-	ID string `json:"id"`
+	Version int    `json:"v"`
+	ID      string `json:"id"`
 	// Ignore is written by the person, in the syntax of `.gitignore`. An
 	// attachments folder, an export directory, a sync client's scratch space:
 	// what is noise is a property of this vault.
@@ -80,7 +80,7 @@ func Initialize(root, serviceDir string, now time.Time) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	c := Config{V: 1, ID: id}
+	c := Config{Version: 1, ID: id}
 
 	dir := filepath.Join(root, serviceDir)
 	if err := os.MkdirAll(dir, 0o755); err != nil {

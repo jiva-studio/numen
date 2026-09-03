@@ -29,7 +29,7 @@ func (a *API) Attending(
 			Of:    int(one.GetOf()),
 		})
 	}
-	a.attending.Store(&open)
+	a.attention.Store(&open)
 	if a.Attends != nil {
 		a.Attends(open)
 	}
@@ -39,7 +39,7 @@ func (a *API) Attending(
 // Attended is what the person has open, as the window last said. A window that
 // has said nothing has nothing open as far as anyone here knows.
 func (a *API) Attended() domain.Attention {
-	if open := a.attending.Load(); open != nil {
+	if open := a.attention.Load(); open != nil {
 		return *open
 	}
 	return domain.Attention{}

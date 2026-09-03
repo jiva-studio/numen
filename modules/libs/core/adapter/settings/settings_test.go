@@ -92,7 +92,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
-	if outside.At != "appearance.text_scale" || outside.Value != 3 {
+	if outside.At != "appearance.text_scale" || outside.Number != 3 {
 		t.Errorf("refused %+v", outside)
 	}
 	if outside.Least != settings.TextScaleBounds.Least || outside.Most != settings.TextScaleBounds.Most {
@@ -771,10 +771,10 @@ func TestEachReadingNamesTheProfileThatPutsItRight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Recognition.Proofread; got.With != "openrouter" || !got.Automatically {
+	if got := cfg.Indexing.Recognition.Proofread; got.Profile != "openrouter" || !got.Automatically {
 		t.Errorf("a scan is put right by %+v", got)
 	}
-	if got := cfg.Indexing.Transcription.Proofread; got.With != "agent" || got.Automatically {
+	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.Automatically {
 		t.Errorf("a transcript is put right by %+v", got)
 	}
 }
@@ -973,7 +973,7 @@ func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
-	if outside.At != "appearance.parts_under_a_node" || outside.Value != 20 {
+	if outside.At != "appearance.parts_under_a_node" || outside.Number != 20 {
 		t.Errorf("refused %+v", outside)
 	}
 	if outside.Least != settings.PartsUnderANodeBounds.Least ||

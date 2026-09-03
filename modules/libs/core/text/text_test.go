@@ -24,18 +24,18 @@ const (
 
 func book() []ocr.Page {
 	return []ocr.Page{
-		{At: 0, Blocks: []ocr.Block{
+		{Index: 0, Blocks: []ocr.Block{
 			{Label: "text", Text: frontMatter},
 		}},
-		{At: 1, Blocks: []ocr.Block{
+		{Index: 1, Blocks: []ocr.Block{
 			{Label: "doc_title", Text: docTitle},
 			{Label: "text", Text: birth},
 		}},
-		{At: 2, Blocks: []ocr.Block{
+		{Index: 2, Blocks: []ocr.Block{
 			{Label: "paragraph_title", Text: sectionOne},
 			{Label: "text", Text: ganges},
 		}},
-		{At: 3, Blocks: []ocr.Block{
+		{Index: 3, Blocks: []ocr.Block{
 			{Label: "paragraph_title", Text: sectionTwo},
 			{Label: "text", Text: padmavati},
 		}},
@@ -124,7 +124,7 @@ func TestAPassageBeforeTheFirstPartIsLocatedByPageAlone(t *testing.T) {
 
 func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 	raw, _, _ := ocr.Write([]ocr.Page{
-		{At: 0, Blocks: []ocr.Block{
+		{Index: 0, Blocks: []ocr.Block{
 			{Label: "doc_title", Text: docTitle},
 			{Label: "text", Text: birth},
 		}},
@@ -184,8 +184,8 @@ func TestAPageIsSaidByWhereItStandsInTheFile(t *testing.T) {
 	// printed is a second number for the same page, and a person shown both has
 	// to work out which is being talked about.
 	raw, _, _ := ocr.Write([]ocr.Page{
-		{At: 0, Blocks: []ocr.Block{{Label: "text", Text: "Alpha beta."}}},
-		{At: 1, Blocks: []ocr.Block{{Label: "text", Text: "Gamma delta."}}},
+		{Index: 0, Blocks: []ocr.Block{{Label: "text", Text: "Alpha beta."}}},
+		{Index: 1, Blocks: []ocr.Block{{Label: "text", Text: "Gamma delta."}}},
 	})
 	doc := text.Recognised(raw, nil, nil, nil)
 

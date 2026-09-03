@@ -451,7 +451,7 @@ func (t *Transcribing) putRight(
 				ID:    id,
 				Doing: "Proofreading a transcript",
 				About: path,
-				Done:  int64(res.Read),
+				Count: int64(res.Read),
 				Total: int64(res.Lines),
 			}, asked)
 		},
@@ -530,7 +530,7 @@ func (t *Transcribing) transcribe(
 		// are the window's to write.
 		t.say(task.Task{
 			ID: id, Doing: "Fetching models", About: what,
-			Done: done, Total: total, Counting: task.Bytes,
+			Count: done, Total: total, Unit: task.Bytes,
 		}, asked)
 	})
 	if err != nil {
@@ -547,12 +547,12 @@ func (t *Transcribing) transcribe(
 		Cut:     t.Cut,
 		OnProgress: func(res TranscribeResult) {
 			t.say(task.Task{
-				ID:       id,
-				Doing:    "Transcribing a recording",
-				About:    path,
-				Done:     int64(res.Heard / 1000),
-				Total:    int64(res.Length / 1000),
-				Counting: task.Seconds,
+				ID:    id,
+				Doing: "Transcribing a recording",
+				About: path,
+				Count: int64(res.Heard / 1000),
+				Total: int64(res.Length / 1000),
+				Unit:  task.Seconds,
 			}, asked)
 		},
 	}.Execute(ctx, v, path)

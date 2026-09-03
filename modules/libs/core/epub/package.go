@@ -171,7 +171,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 	}
 
 	type item struct {
-		at        string
+		path      string
 		mediaType string
 	}
 	manifest := make(map[string]item, len(document.Items))
@@ -180,7 +180,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			continue
 		}
 		at := resolve(read.base, entry.Href)
-		manifest[entry.ID] = item{at: at, mediaType: entry.MediaType}
+		manifest[entry.ID] = item{path: at, mediaType: entry.MediaType}
 
 		switch {
 		case entry.MediaType == mediaNCX:
@@ -190,7 +190,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 		}
 	}
 	if named, ok := manifest[document.Spine.TOC]; ok && named.mediaType == mediaNCX {
-		read.ncx = named.at
+		read.ncx = named.path
 	}
 
 	for _, ref := range document.Spine.ItemRefs {
@@ -199,7 +199,7 @@ func readPackage(files map[string]*zip.File, opfPath string) (packageDoc, error)
 			// A spine may name an item the manifest does not describe.
 			continue
 		}
-		read.spine = append(read.spine, named.at)
+		read.spine = append(read.spine, named.path)
 	}
 	return read, nil
 }

@@ -96,10 +96,10 @@ func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]
 	out := map[int]string{}
 	for _, batch := range batches {
 		for _, line := range batch.Lines {
-			p.asked = append(p.asked, line.At)
+			p.asked = append(p.asked, line.Number)
 		}
-		if said, held := p.says[batch.At]; held {
-			out[batch.At] = said
+		if said, held := p.says[batch.Number]; held {
+			out[batch.Number] = said
 		}
 	}
 	return out, nil
@@ -259,7 +259,7 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 	defer release()
 	held.with.Tasks.Set(task.Task{
 		ID: proofreadingID(recording), Doing: "Proofreading a transcript", About: recording,
-		Done: 1, Total: 2,
+		Count: 1, Total: 2,
 	})
 
 	held.TakingUp(t.Context(), recognised{recording}, v)

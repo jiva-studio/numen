@@ -28,7 +28,7 @@ type Rect struct {
 
 // A Page is one page and what to light on it.
 type Page struct {
-	Page  int
+	Index int
 	Rects []Rect
 }
 
@@ -59,11 +59,11 @@ func Marks(boxes []Box, start, length int) []Page {
 	for ; at < len(boxes) && boxes[at].Start < end; at++ {
 		box := boxes[at]
 		rect := Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
-		if n := len(out); n > 0 && out[n-1].Page == box.Page {
+		if n := len(out); n > 0 && out[n-1].Index == box.Page {
 			out[n-1].Rects = append(out[n-1].Rects, rect)
 			continue
 		}
-		out = append(out, Page{Page: box.Page, Rects: []Rect{rect}})
+		out = append(out, Page{Index: box.Page, Rects: []Rect{rect}})
 	}
 	return out
 }

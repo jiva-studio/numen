@@ -11,7 +11,7 @@ import (
 // A change is one box put right: which box of the reading, the run of prose it
 // covers, and what that run should say.
 type change struct {
-	at     int
+	index  int
 	start  int
 	length int
 	text   string
@@ -36,10 +36,10 @@ func plan(boxes []lit.Box, lines []Line) walk {
 	w := walk{grown: []int{0}}
 	said := make(map[int]string, len(lines))
 	for _, line := range lines {
-		if line.At < 0 || line.At >= len(boxes) {
+		if line.Number < 0 || line.Number >= len(boxes) {
 			continue
 		}
-		said[line.At] = line.Text
+		said[line.Number] = line.Text
 	}
 	if len(said) == 0 {
 		return w
@@ -57,7 +57,7 @@ func plan(boxes []lit.Box, lines []Line) walk {
 		if box.Start < end || box.Length < 0 {
 			continue
 		}
-		one := change{at: i, start: box.Start, length: box.Length, text: said[i]}
+		one := change{index: i, start: box.Start, length: box.Length, text: said[i]}
 		w.changes = append(w.changes, one)
 		w.grown = append(w.grown, w.grown[len(w.grown)-1]+one.delta())
 		end = box.Start + box.Length
@@ -94,7 +94,7 @@ func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
 	next := 0
 	for i := range out {
 		out[i].Start += w.grown[next]
-		if next < len(w.changes) && w.changes[next].at == i {
+		if next < len(w.changes) && w.changes[next].index == i {
 			out[i].Length = len(w.changes[next].text)
 			next++
 		}

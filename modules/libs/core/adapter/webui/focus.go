@@ -21,7 +21,7 @@ func (a *API) Viewing() port.Window { return viewing{a} }
 type viewing struct{ *API }
 
 func (v viewing) Focus(_ context.Context, at domain.Place) error {
-	v.Watching.tell(at)
+	v.Places.tell(at)
 	return nil
 }
 
@@ -32,7 +32,7 @@ func (a *API) Focus(
 	_ *connect.Request[v1.FocusRequest],
 	out *connect.ServerStream[v1.FocusResponse],
 ) error {
-	line, done := a.Watching.listen()
+	line, done := a.Places.listen()
 	defer done()
 
 	for {
@@ -65,7 +65,7 @@ func (v viewing) Moved(_ context.Context, went domain.Move) error {
 }
 
 func (v viewing) Editing(_ context.Context, said domain.Edit) error {
-	v.Drawing.tell(said)
+	v.Edits.tell(said)
 	return nil
 }
 
@@ -76,7 +76,7 @@ func (a *API) Editing(
 	_ *connect.Request[v1.EditingRequest],
 	out *connect.ServerStream[v1.EditingResponse],
 ) error {
-	line, done := a.Drawing.listen()
+	line, done := a.Edits.listen()
 	defer done()
 
 	// A stream that says nothing until a note is changed is indistinguishable

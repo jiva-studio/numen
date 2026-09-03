@@ -62,10 +62,10 @@ var right = []string{
 
 // put is the corrections as a proofreading run wrote them down.
 var put = []fixes.Line{
-	{At: 1, Text: right[1]},
-	{At: 3, Text: right[3]},
-	{At: 4, Text: right[4]},
-	{At: 5, Text: right[5]},
+	{Number: 1, Text: right[1]},
+	{Number: 3, Text: right[3]},
+	{Number: 4, Text: right[4]},
+	{Number: 5, Text: right[5]},
 }
 
 func TestEveryBoxStillNamesItsWords(t *testing.T) {
@@ -110,7 +110,7 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
 
 	// Only the second heading, which the reading had a letter short.
-	_, _, named := fixes.Prose(prose, marks, boxes, parts, []fixes.Line{{At: 3, Text: right[3]}})
+	_, _, named := fixes.Prose(prose, marks, boxes, parts, []fixes.Line{{Number: 3, Text: right[3]}})
 
 	if named[0].Length != parts[0].Length {
 		t.Errorf("the first heading is %d bytes, want the %d it was", named[0].Length, parts[0].Length)
@@ -125,7 +125,7 @@ func TestAHeadingPutRightKeepsItsOwnLength(t *testing.T) {
 
 func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
-	stray := []fixes.Line{{At: -1, Text: "before the book"}, {At: 99, Text: "after it"}}
+	stray := []fixes.Line{{Number: -1, Text: "before the book"}, {Number: 99, Text: "after it"}}
 
 	if got := fixes.Boxes(boxes, stray); !reflect.DeepEqual(got, boxes) {
 		t.Errorf("boxes %+v, want them untouched", got)
@@ -141,7 +141,7 @@ func TestALineNoBoxAnswersToIsIgnored(t *testing.T) {
 
 func TestTheLastWordOnALineWins(t *testing.T) {
 	prose, marks, boxes, parts := reading(read)
-	twice := []fixes.Line{{At: 1, Text: "a first thought"}, {At: 1, Text: right[1]}}
+	twice := []fixes.Line{{Number: 1, Text: "a first thought"}, {Number: 1, Text: right[1]}}
 
 	said, _, _ := fixes.Prose(prose, marks, boxes, parts, twice)
 	moved := fixes.Boxes(boxes, twice)
@@ -178,7 +178,7 @@ func TestCorrectionsWrittenForOtherBytesSliceNothing(t *testing.T) {
 	boxes[2].Start, boxes[2].Length = len(prose)+100, 40
 	boxes[4].Start = 0
 
-	lines := []fixes.Line{{At: 2, Text: "far past the end"}, {At: 4, Text: "back at the start"}}
+	lines := []fixes.Line{{Number: 2, Text: "far past the end"}, {Number: 4, Text: "back at the start"}}
 
 	said, pages, named := fixes.Prose(prose, marks, boxes, parts, lines)
 	if said == "" {

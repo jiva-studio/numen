@@ -156,7 +156,7 @@ func (c Config) Turns() func(kept note.SyncTitleAndFilename) error {
 			return err
 		}
 		return settings.Save(path, settings.Setting{
-			At: []string{"naming", "sync_title_and_filename"}, Value: bool(kept),
+			At: []string{"naming", "sync_title_and_filename"}, Written: bool(kept),
 		})
 	}
 }
@@ -188,7 +188,7 @@ func (c Config) TurnsHanging() func(hangs bool) error {
 			return err
 		}
 		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "hang_parts_under_a_node"}, Value: hangs,
+			At: []string{"appearance", "hang_parts_under_a_node"}, Written: hangs,
 		})
 	}
 }
@@ -224,7 +224,7 @@ func (c Config) TurnsParts() func(parts int) error {
 			return err
 		}
 		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "parts_under_a_node"}, Value: parts,
+			At: []string{"appearance", "parts_under_a_node"}, Written: parts,
 		})
 	}
 }
@@ -249,7 +249,7 @@ func (c Config) TurnsReviewing() func(starts string) error {
 			return err
 		}
 		return settings.Save(path, settings.Setting{
-			At: []string{"review", "day_starts"}, Value: written,
+			At: []string{"review", "day_starts"}, Written: written,
 		})
 	}
 }
@@ -330,7 +330,7 @@ func (c Config) TurnsSetting() func(written []port.Setting) error {
 			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
 			}
-			held = append(held, settings.Setting{At: one.Path, Value: value})
+			held = append(held, settings.Setting{At: one.Path, Written: value})
 		}
 		path, err := c.settingsFile()
 		if err != nil {

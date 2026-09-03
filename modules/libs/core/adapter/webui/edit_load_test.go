@@ -52,7 +52,7 @@ func TestEditLoad(t *testing.T) {
 		Notes:     db.Queries(),
 		Links:     db.Links(),
 		Listeners: following(),
-		Watching:  focusing(),
+		Places:    focusing(),
 		Progress:  db.Progress(),
 		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
 		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},

@@ -32,7 +32,7 @@ func TestWhatIsWrittenIsReadBack(t *testing.T) {
 	if cues[0].From != 1500 || cues[0].To != 4200 {
 		t.Errorf("the first cue spans %d-%d", cues[0].From, cues[0].To)
 	}
-	if said[cues[1].At:cues[1].At+len(cues[1].Text)] != "вторая реплика" {
+	if said[cues[1].Offset:cues[1].Offset+len(cues[1].Text)] != "вторая реплика" {
 		t.Errorf("the second cue does not stand where it says it does")
 	}
 }

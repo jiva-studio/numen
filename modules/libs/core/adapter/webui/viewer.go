@@ -184,7 +184,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 		return
 	}
 
-	key := pictureID{of: print, at: at, wide: wide}
+	key := pictureID{document: print, page: at, width: wide}
 	body, err := a.picture(ctx, reader, key)
 	if err != nil {
 		refuse(w, err)
@@ -259,7 +259,7 @@ func (a *API) picture(ctx context.Context, reader port.VaultReader, key pictureI
 
 // drawing is one page of a document, drawn and encoded.
 func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureID) ([]byte, error) {
-	doc, give, err := a.opening(ctx, reader, key.of)
+	doc, give, err := a.opening(ctx, reader, key.document)
 	if err != nil {
 		return nil, err
 	}
@@ -270,10 +270,10 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureI
 	}
 	defer doc.release()
 
-	if key.at >= doc.scan.Pages() {
-		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.at, doc.scan.Pages())
+	if key.page >= doc.scan.Pages() {
+		return nil, fmt.Errorf("%w: page %d of %d", errNoPage, key.page, doc.scan.Pages())
 	}
-	drawn, err := doc.picture(key.at, key.wide)
+	drawn, err := doc.picture(key.page, key.width)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (a *API) drawing(ctx context.Context, reader port.VaultReader, key pictureI
 // drawn. One page is drawn ahead at a time, and an ask being answered now comes
 // first.
 func (a *API) readAhead(reader port.VaultReader, key pictureID) {
-	next := pictureID{of: key.of, at: key.at + 1, wide: key.wide}
+	next := pictureID{document: key.document, page: key.page + 1, width: key.width}
 	if a.Viewer.drawn.Load().has(next) {
 		return
 	}
@@ -312,7 +312,7 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 // window lays the page out at the width it asked for, so the browser takes those
 // pixels off; resampling them off here is a pass over every pixel of the page to
 // change nothing anybody sees.
-func (d *document) picture(at, wide int) (image.Image, error) {
+func (d *document) picture(at, width int) (image.Image, error) {
 	points, measured := d.points[at]
 	if !measured {
 		across, _, err := d.scan.Size(at)
@@ -325,7 +325,7 @@ func (d *document) picture(at, wide int) (image.Image, error) {
 		}
 		d.points[at] = points
 	}
-	dpi := (wide*pointsDPI + points - 1) / points
+	dpi := (width*pointsDPI + points - 1) / points
 	drawn, err := d.scan.Image(at, max(dpi, 1))
 	if err != nil {
 		return nil, err
@@ -344,16 +344,16 @@ func encoded(drawn image.Image) ([]byte, error) {
 
 // wanted is which page the window asks for and how wide, in the pixels of the
 // device it draws on.
-func wanted(page string, query url.Values) (at, wide int, err error) {
+func wanted(page string, query url.Values) (at, width int, err error) {
 	at, err = strconv.Atoi(page)
 	if err != nil || at < 0 {
 		return 0, 0, fmt.Errorf("%q is not a page", page)
 	}
-	wide, err = strconv.Atoi(query.Get("wide"))
-	if err != nil || wide < 1 || wide > widestPage {
+	width, err = strconv.Atoi(query.Get("wide"))
+	if err != nil || width < 1 || width > widestPage {
 		return 0, 0, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
 	}
-	return at, wide, nil
+	return at, width, nil
 }
 
 // refuse says why a document or a page is not coming.
