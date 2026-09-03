@@ -96,7 +96,7 @@ func refused(from, to string) string {
 		}
 	case from == "container":
 	// Fixtures build the real adapters, and only a test is compiled from them.
-	case from == "testsupport":
+	case from == "testsupport", strings.HasPrefix(from, "testsupport/"):
 	default:
 		if strings.HasPrefix(to, "adapter/") || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"

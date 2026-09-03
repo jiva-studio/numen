@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -32,7 +33,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 
 func openIndex(t *testing.T) *container.Index {
 	t.Helper()
-	db, err := container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}.OpenIndex(t.Context())
+	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

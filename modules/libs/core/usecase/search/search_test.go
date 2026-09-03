@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -51,7 +51,7 @@ func indexed(t *testing.T) corpus {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, filepath.Join(t.TempDir(), "index.db"))
+	db, err := index.Open(ctx, indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

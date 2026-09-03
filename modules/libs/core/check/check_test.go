@@ -1,7 +1,6 @@
 package check_test
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -17,9 +17,7 @@ import (
 func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
-	db, err := container.Config{
-		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}.OpenIndex(t.Context())
+	db, err := container.Config{IndexPath: indexfile.Path(t)}.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

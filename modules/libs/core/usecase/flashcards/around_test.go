@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -23,7 +24,7 @@ import (
 func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) domain.Vault) {
 	t.Helper()
 
-	db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
+	db, err := index.Open(t.Context(), indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

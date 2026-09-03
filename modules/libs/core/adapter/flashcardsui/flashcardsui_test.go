@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -80,7 +81,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	// Every location is the test's own: the schedules are a cache, and a test
 	// that let it fall to the platform's would fill the machine's.
 	cfg := container.Config{
-		IndexPath:     filepath.Join(t.TempDir(), "index.db"),
+		IndexPath:     indexfile.Path(t),
 		RegistryPath:  filepath.Join(t.TempDir(), "vaults.json"),
 		SchedulesPath: filepath.Join(t.TempDir(), "flashcards"),
 	}
