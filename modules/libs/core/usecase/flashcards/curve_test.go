@@ -965,7 +965,7 @@ func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	if !p.Paused(today, noon) {
 		t.Error("a preset aiming at a day and naming none schedules something")
 	}
-	admits := p.Admits(today, noon, history.Spent{}, history.Left{New: 30})
+	admits := p.Admits(today, noon, history.Spent{}, 30, 0)
 	if !admits.Paused() {
 		t.Errorf("the day of a preset aiming at no day admits %+v", admits)
 	}

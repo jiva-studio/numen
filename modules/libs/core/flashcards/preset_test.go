@@ -230,7 +230,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 	} {
 		p := flashcards.Defaults()
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.Admits(day, time.Now(), flashcards.Spent{}, flashcards.Left{})
+		admits := p.Admits(day, time.Now(), flashcards.Spent{}, 0, 0)
 
 		if got := admits.Closes.Backlog != ""; got != one.reads {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
@@ -409,10 +409,10 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	p.Goal, p.MinutesADay = flashcards.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	fresh := p.Admits(day, time.Now(), flashcards.Spent{}, flashcards.Left{})
+	fresh := p.Admits(day, time.Now(), flashcards.Spent{}, 0, 0)
 	after := p.Admits(day, time.Now(), flashcards.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
-	}, flashcards.Left{})
+	}, 0, 0)
 
 	if after.Minutes != fresh.Minutes-18*time.Second {
 		t.Errorf("a day of %v with 18s gone still admits %v", fresh.Minutes, after.Minutes)

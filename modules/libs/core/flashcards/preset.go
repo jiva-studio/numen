@@ -287,19 +287,15 @@ type Allowance struct {
 // Paused reports whether this day schedules nothing.
 func (a Allowance) Paused() bool { return a.Stops != StoppedNothing }
 
-// Left is what a preset has still to get through: the card faces nobody has
-// begun, and how many days of review one begun now needs before the preset
-// counts it learned, which is Ripens and which a date paces the day against.
-type Left struct {
-	New    int
-	Ripens int
-}
-
 // Admits is what this preset's day admits.
 //
 // Now is any instant of the review day, spent is what that day has already gone
-// through under the preset, and left is the material it has still to begin.
-func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
+// through under the preset, unbegunCards is the material it has still to begin,
+// and daysToLearn is how many days of review a card face begun now needs before
+// the preset counts it learned, which a date paces the day against.
+func (p Preset) Admits(
+	d Day, now time.Time, spent Spent, unbegunCards, daysToLearn int,
+) Allowance {
 	opened := d.Opened(now)
 	out := Allowance{
 		Keeps:  p.on(opened.Weekday()),
@@ -309,7 +305,8 @@ func (p Preset) Admits(d Day, now time.Time, spent Spent, left Left) Allowance {
 	if p.Goal == GoalDate {
 		// The pace is a whole day's share of the material, and this day carries
 		// as much of it as its day of the week carries of the load.
-		out.Keeps.New = int(math.Round(p.Share(opened.Weekday()) * float64(p.paces(d, now, left))))
+		out.Keeps.New = int(math.Round(
+			p.Share(opened.Weekday()) * float64(p.paces(d, now, unbegunCards, daysToLearn))))
 	}
 	// A split that takes no part leaves the day spending on the debt first,
 	// which is what a preset naming no share does.
@@ -453,19 +450,19 @@ func (p Preset) Paused(d Day, now time.Time) bool { return p.Stops(d, now) != St
 // Where no day leaves that much time, the pace is everything left. It is the
 // pace that gets there every card face that can, and how many cannot is
 // Projection.Short.
-func (p Preset) paces(d Day, now time.Time, left Left) int {
+func (p Preset) paces(d Day, now time.Time, unbegunCards, daysToLearn int) int {
 	days := p.days(d, now)
 	if days <= 0 {
 		return 0
 	}
-	if left.Ripens == NeverRipens {
-		return left.New
+	if daysToLearn == NeverRipens {
+		return unbegunCards
 	}
-	in := p.beginning(d, now, left.Ripens)
+	in := p.beginning(d, now, daysToLearn)
 	if in <= 0 {
-		return left.New
+		return unbegunCards
 	}
-	return int(math.Ceil(float64(left.New) / in))
+	return int(math.Ceil(float64(unbegunCards) / in))
 }
 
 // beginning is how much room a date leaves for beginning cards: the days of

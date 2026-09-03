@@ -247,7 +247,7 @@ func keeps(p history.Preset, day time.Weekday) history.Budget {
 	for at.Weekday() != day {
 		at = at.AddDate(0, 0, 1)
 	}
-	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, history.Left{}).Keeps
+	return p.Admits(history.Day{Starts: history.DayStarts}, at, history.Spent{}, 0, 0).Keeps
 }
 
 // The budget a preset keeps on one day is that day of the week's share of it,
@@ -282,10 +282,10 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 	if at.Weekday() != time.Sunday {
 		t.Fatalf("%v is a %v", at, at.Weekday())
 	}
-	if !p.Admits(ahead, at, history.Spent{}, history.Left{}).Paused() {
+	if !p.Admits(ahead, at, history.Spent{}, 0, 0).Paused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, history.Left{}).Paused() {
+	if p.Admits(ahead, at.AddDate(0, 0, 1), history.Spent{}, 0, 0).Paused() {
 		t.Error("the day after it is a pause")
 	}
 }
@@ -1093,9 +1093,9 @@ func TestThePaceOfADateCarriesTheDaysShareOfTheLoad(t *testing.T) {
 	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 9)
 	p.Rule, p.Retention = history.RuleRetention, 0.9
 
-	whole := p.Admits(ahead, now, history.Spent{}, history.Left{New: 40})
+	whole := p.Admits(ahead, now, history.Spent{}, 40, 0)
 	p.Load = map[time.Weekday]int{time.Saturday: 50}
-	half := p.Admits(ahead, now, history.Spent{}, history.Left{New: 40})
+	half := p.Admits(ahead, now, history.Spent{}, 40, 0)
 
 	if half.Keeps.New >= whole.Keeps.New {
 		t.Errorf("a Saturday at half the load is paced %d card faces and a whole Saturday %d",
@@ -1285,11 +1285,11 @@ func TestAPaceUnderALightWeekDividesByTheRoomThatIsLeft(t *testing.T) {
 	for _, out := range []int{29, 45, 60} {
 		p.By = now.AddDate(0, 0, out).Truncate(24 * time.Hour)
 		full.By = p.By
-		light := history.Left{New: 500, Ripens: history.Ripens(by, ahead, p, now)}
-		whole := history.Left{New: 500, Ripens: history.Ripens(by, ahead, full, now)}
+		light := history.Ripens(by, ahead, p, now)
+		whole := history.Ripens(by, ahead, full, now)
 
-		at := p.Admits(ahead, now, history.Spent{}, light).Keeps.New
-		was := full.Admits(ahead, now, history.Spent{}, whole).Keeps.New
+		at := p.Admits(ahead, now, history.Spent{}, 500, light).Keeps.New
+		was := full.Admits(ahead, now, history.Spent{}, 500, whole).Keeps.New
 		if at > was {
 			t.Errorf("%d days out, a week at half the load begins %d card faces "+
 				"a day and a whole week begins %d", out, at, was)

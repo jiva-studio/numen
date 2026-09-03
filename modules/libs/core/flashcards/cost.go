@@ -553,7 +553,7 @@ func (s Simulation) Run(
 		if today == 0 {
 			gone = s.Spent
 		}
-		admits := p.Admits(s.Day, open, gone, Left{New: left, Ripens: ripens})
+		admits := p.Admits(s.Day, open, gone, left, ripens)
 
 		// What has fallen due by the close of the day, the oldest debt first, so
 		// a day that cannot pay all of it leaves the cards least overdue

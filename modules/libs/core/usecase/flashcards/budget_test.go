@@ -1075,7 +1075,7 @@ func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 // all is answered with the day it was asked about.
 func admitting(p history.Preset, day history.Day, now time.Time) time.Time {
 	for range 8 {
-		if !p.Admits(day, now, history.Spent{}, history.Left{}).Paused() {
+		if !p.Admits(day, now, history.Spent{}, 0, 0).Paused() {
 			return now
 		}
 		now = day.Ends(now)

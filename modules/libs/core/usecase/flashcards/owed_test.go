@@ -96,8 +96,8 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 
 	want := flashcards.PresetOwing{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
-		Budget: history.Defaults().Admits(today, saturday, history.Spent{}, history.Left{}).Keeps,
-		Closes: history.Defaults().Admits(today, saturday, history.Spent{}, history.Left{}).Closes,
+		Budget: history.Defaults().Admits(today, saturday, history.Spent{}, 0, 0).Keeps,
+		Closes: history.Defaults().Admits(today, saturday, history.Spent{}, 0, 0).Closes,
 	}
 	if len(owing.Presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", owing.Presets)

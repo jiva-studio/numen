@@ -116,12 +116,12 @@ func budgeted(
 		// A date paces the day against how long a card face begun today takes to
 		// be learned, worked out under the scheduler this preset's cards are
 		// spaced by. No other goal reads it, and it is asked for under no other.
-		left := history.Left{New: unseen[path]}
+		learn := 0
 		if p.Goal == history.GoalDate {
-			left.Ripens = history.Ripens(at(p.Retention), day, p, now)
+			learn = history.Ripens(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
-			admits: p.Admits(day, now, spent[path], left),
+			admits: p.Admits(day, now, spent[path], unseen[path], learn),
 			cost:   cost,
 			counts: p.Counts,
 			spent:  spent[path],
