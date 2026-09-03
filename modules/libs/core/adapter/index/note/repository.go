@@ -98,9 +98,9 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 	}
 
 	var row int64
-	if err := tx.QueryRowContext(ctx, stmt.Get("save"),
+	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
 		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
-		return fmt.Errorf("save: %w", err)
+		return fmt.Errorf("save_source: %w", err)
 	}
 	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Ref.Path)),
 		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
@@ -308,7 +308,7 @@ func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string)
 				return err
 			}
 		}
-		if err := exec(ctx, tx, "delete", row); err != nil {
+		if err := exec(ctx, tx, "delete_source", row); err != nil {
 			return err
 		}
 	}
