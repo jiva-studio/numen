@@ -35,6 +35,28 @@ const PATIENCE = 120_000
 const SETTLING = 2_000
 
 /**
+ * Whether a picture taken is the picture already on disk, pixel for pixel. The
+ * encoder writes different bytes of the same window, so the file is compared by
+ * what it draws.
+ */
+const same = async (at, taken) => {
+  try {
+    const [before, after] = await Promise.all([
+      sharp(at).raw().toBuffer({ resolveWithObject: true }),
+      sharp(taken).raw().toBuffer({ resolveWithObject: true }),
+    ])
+    return (
+      before.info.width === after.info.width &&
+      before.info.height === after.info.height &&
+      before.data.equals(after.data)
+    )
+  } catch {
+    // Nothing to compare with: there is no such picture yet, or it is unreadable.
+    return false
+  }
+}
+
+/**
  * What is taken, and from which story.
  *
  * A window is drawn narrower than the column it lands in, so the application's
@@ -141,6 +163,19 @@ if (process.argv[1] !== fileURLToPath(import.meta.url)) {
           `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
           { waitUntil: 'networkidle' },
         )
+        // The screen is waited for, not timed: a story reached through a module
+        // graph the server has not built yet takes longer than any pause, and a
+        // story that will not load draws Storybook's error page instead.
+        try {
+          await page.waitForFunction(
+            () =>
+              !document.body.classList.contains('sb-show-errordisplay') &&
+              (document.querySelector('#storybook-root')?.children.length ?? 0) > 0,
+            { timeout: PATIENCE },
+          )
+        } catch {
+          throw new Error(`${shot.story} drew nothing this build could photograph`)
+        }
         // A picture of a theme is the window wearing that theme: the palette
         // that ships with the application, spliced in as the window splices it.
         if (shot.preset) {
@@ -157,8 +192,13 @@ if (process.argv[1] !== fileURLToPath(import.meta.url)) {
         const name = `${shot.name}-${theme}.webp`
         const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
         if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
-        await writeFile(join(INTO, name), taken)
-        console.log(name)
+        const at = join(INTO, name)
+        if (await same(at, taken)) {
+          console.log(`${name} — the same picture`)
+        } else {
+          await writeFile(at, taken)
+          console.log(name)
+        }
         await page.close()
       }
     }
