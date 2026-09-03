@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
 
 import { raising } from './notices'
-import type { Task } from './notices'
+import type { Task } from '@numen/ui'
 
 describe('what the window has to say', () => {
   it('names each thing once, so putting one away leaves the rest', () => {

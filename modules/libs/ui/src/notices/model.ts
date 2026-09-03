@@ -47,6 +47,41 @@ export interface Notice {
   readonly asked?: boolean
 }
 
+/** One piece of work a window is doing behind itself, as it is answered for. */
+export interface Task {
+  readonly id: string
+  /** The work, in the words to show, and what it is on. */
+  readonly doing: string
+  readonly about: string
+  /** Why it stopped, when it stopped badly. */
+  readonly failed: string
+  /** Whether a person asked for this and is waiting to be told it began. */
+  readonly asked: boolean
+  /** How far it has got, where there is a total to count against. */
+  readonly done?: number
+  readonly total?: number
+  /** What that count counts. */
+  readonly counting?: Counting
+}
+
+/**
+ * One piece of work as a notice.
+ *
+ * What stopped a piece of work is what its card is called: it is the sentence a
+ * person acts on, and the room on a card is the words at the front of it.
+ */
+export const noticed = (task: Task): Notice => ({
+  id: task.id,
+  says: task.failed || task.doing,
+  about: task.about,
+  working: task.failed === '',
+  asked: task.asked || task.failed !== '',
+  ...(task.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
+  ...(task.done !== undefined && task.total !== undefined && task.total > 0
+    ? { done: task.done, total: task.total, ...(task.counting ? { counting: task.counting } : {}) }
+    : {}),
+})
+
 /**
  * The notices worth drawing: the ones that have something to say.
  *

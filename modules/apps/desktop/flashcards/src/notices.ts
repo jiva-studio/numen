@@ -8,16 +8,8 @@
 import { computed, ref } from 'vue'
 import { ConnectError } from '@connectrpc/connect'
 
-import type { Notice, Tone } from '@numen/ui'
-
-/** One piece of work the window is doing behind itself, as the answer holds it. */
-export interface Task {
-  readonly id: string
-  readonly doing: string
-  readonly about: string
-  readonly failed: string
-  readonly asked: boolean
-}
+import { noticed } from '@numen/ui'
+import type { Notice, Task, Tone } from '@numen/ui'
 
 export function raising() {
   /** What the window is doing behind itself, which stands above what it said. */
@@ -56,14 +48,7 @@ export function raising() {
    * arrives at once, so the whole list is what stands.
    */
   const doing = (said: readonly Task[]) => {
-    tasks.value = said.map((at) => ({
-      id: at.id,
-      says: at.failed || at.doing,
-      about: at.about,
-      working: at.failed === '',
-      asked: at.asked || at.failed !== '',
-      ...(at.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
-    }))
+    tasks.value = said.map(noticed)
   }
 
   /** One card let go of. Work put away is the corner's own to keep away. */

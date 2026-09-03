@@ -5,6 +5,7 @@
  * in, and what it answered the last thing it was asked. A new kind of any of
  * them is an entry in one of the three lists and nothing here.
  */
+import { noticed } from '@numen/ui'
 import type { Notice, Stay, Tone } from '@numen/ui'
 import type { Task } from './core'
 import { wordsOnly, type Meaning } from './meaning'
@@ -107,17 +108,7 @@ export const cornerOf = (
   vault: Meaning,
   words: Words,
 ): readonly Notice[] => {
-  // What stopped a piece of work is what its card is called: it is the sentence
-  // a person acts on, and the room on a card is the words at the front of it.
-  const working: Notice[] = alone(tasks).map((at) => ({
-    id: at.id,
-    says: at.failed || at.doing,
-    about: at.about,
-    working: !at.failed,
-    asked: at.asked || at.failed !== '',
-    ...(at.failed ? { tone: 'alarm' as const, stay: 'kept' as const } : {}),
-    ...(at.total > 0 ? { done: at.done, total: at.total, counting: at.counting } : {}),
-  }))
+  const working: readonly Notice[] = alone(tasks).map(noticed)
 
   const so: Notice[] = [
     ...soThat('unwatched', state.unwatched && words.unwatched, {

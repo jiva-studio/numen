@@ -171,8 +171,8 @@ export {
 export type { ActivityDescriptor, ActivityState, Counting, Tally, Tone } from './activity/model'
 
 export { default as Notices } from './notices/Notices.vue'
-export { ROOM, dwellOf, finished, folded, measured, standing, tallyOf } from './notices/model'
-export type { Movement, Notice, Stay } from './notices/model'
+export { ROOM, dwellOf, finished, folded, measured, noticed, standing, tallyOf } from './notices/model'
+export type { Movement, Notice, Stay, Task } from './notices/model'
 
 export { default as Agent } from './screens/Agent.vue'
 export { default as Reader } from './reader/Reader.vue'
