@@ -368,11 +368,11 @@ func under(folder string) (first, past string) {
 
 // Clear takes out the chunks of one source, and everything indexed over them.
 //
-// The rows in the two virtual tables go first, by the chunk's own number.
-// Nothing cascades into a virtual table, and a row left in either answers a
-// search with a chunk that no longer exists.
+// The rows in the three virtual tables go first, by the chunk's own number.
+// Nothing cascades into a virtual table, and a chunk's number is handed to the
+// next chunk that wants one, so a row left behind answers for that one.
 func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
-	for _, name := range []string{"clear_fts", "clear_vec"} {
+	for _, name := range []string{"clear_fts", "clear_vec", "clear_parts"} {
 		if err := exec(ctx, tx, name, source); err != nil {
 			return err
 		}
