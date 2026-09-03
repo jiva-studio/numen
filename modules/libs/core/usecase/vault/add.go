@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/unicode/norm"
-
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -160,5 +158,5 @@ func free(name string, known []domain.Vault, self string) string {
 // and the same name typed at a command line are composed differently, and the
 // case is the person's to choose.
 func sameName(a, b string) bool {
-	return strings.EqualFold(norm.NFC.String(a), norm.NFC.String(b))
+	return domain.FoldName(a) == domain.FoldName(b)
 }

@@ -158,7 +158,7 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name + domain.NoteExtension
-	base := domain.LinkName(name)
+	base := domain.FoldName(domain.LinkName(name))
 
 	rows, err := q.db.QueryContext(ctx, stmt.Get("candidates"),
 		vault, name, vault, withExt, vault, base)
@@ -182,28 +182,32 @@ func (q *Queries) candidates(ctx context.Context, vault int64, name string) ([]s
 // then a path relative to the note the link is written in, then a single match
 // by name. Several matches are ambiguous: the link resolves to the nearest one
 // in the tree, and the ambiguity is shown.
+//
+// A path is matched under domain.FoldName: every folder on the way to a note
+// answers the way the note's own name does.
 func pick(from, name string, candidates []string) (chosen string, ambiguous bool) {
 	if len(candidates) == 0 {
 		return "", false
+	}
+
+	folded := make([]string, len(candidates))
+	for i, c := range candidates {
+		folded[i] = domain.FoldName(c)
 	}
 
 	// A name is written with an extension or without one, and both spellings
 	// name the same file.
 	wanted := []string{name, name + domain.NoteExtension}
 	for _, w := range wanted {
-		for _, c := range candidates {
-			if strings.EqualFold(c, w) {
-				return c, false
-			}
+		if at := where(folded, domain.FoldName(w)); at >= 0 {
+			return candidates[at], false
 		}
 	}
 
 	for _, w := range wanted {
-		relative := path.Join(path.Dir(from), w)
-		for _, c := range candidates {
-			if strings.EqualFold(c, relative) {
-				return c, false
-			}
+		relative := domain.FoldName(path.Join(path.Dir(from), w))
+		if at := where(folded, relative); at >= 0 {
+			return candidates[at], false
 		}
 	}
 
@@ -220,6 +224,16 @@ func pick(from, name string, candidates []string) (chosen string, ambiguous bool
 		}
 	}
 	return best, true
+}
+
+// where one key stands among many, and -1 when none of them is it.
+func where(keys []string, want string) int {
+	for i, key := range keys {
+		if key == want {
+			return i
+		}
+	}
+	return -1
 }
 
 func sharedPrefix(a, b string) int {

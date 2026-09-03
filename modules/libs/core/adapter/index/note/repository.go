@@ -102,7 +102,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.MTime).Scan(&row); err != nil {
 		return fmt.Errorf("save: %w", err)
 	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.Basename(n.Ref.Path),
+	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Ref.Path)),
 		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 		defer insert.Close()
 		for i, l := range n.Links {
 			if _, err := insert.ExecContext(ctx, row, i,
-				l.Target.Scheme, l.Target.Value, domain.LinkName(l.Target.Value),
+				l.Target.Scheme, l.Target.Value, domain.FoldName(domain.LinkName(l.Target.Value)),
 				string(l.Role), nullable(l.Type), nullable(l.Note), nullable(l.Label),
 			); err != nil {
 				return fmt.Errorf("insert_link: %w", err)

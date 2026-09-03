@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -216,7 +215,7 @@ func (r *VaultRegistry) Find(nameOrPath string) (domain.Vault, bool, error) {
 	}
 	abs, _ := filepath.Abs(nameOrPath)
 	for _, v := range f.Vaults {
-		if v.ID == nameOrPath || strings.EqualFold(v.Name, nameOrPath) || v.Path == abs {
+		if v.ID == nameOrPath || domain.FoldName(v.Name) == domain.FoldName(nameOrPath) || v.Path == abs {
 			return v, true, nil
 		}
 	}

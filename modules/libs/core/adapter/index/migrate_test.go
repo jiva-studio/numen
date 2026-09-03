@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -864,10 +867,10 @@ func TestALinkNameCutAtItsLastDotIsWrittenAgainWhole(t *testing.T) {
 	}
 
 	for position, want := range map[int]string{
-		0: "Lecture 1.2",
-		1: "Lecture 1.2",
-		2: "Entropy",
-		3: "Entropy",
+		0: "lecture 1.2",
+		1: "lecture 1.2",
+		2: "entropy",
+		3: "entropy",
 	} {
 		if filed[position] != want {
 			t.Errorf("the link at %d is filed under %q, want %q", position, filed[position], want)
@@ -953,13 +956,157 @@ func TestALinkNameKeepingAnUppercaseExtensionIsWrittenAgainWithout(t *testing.T)
 	}
 
 	for position, want := range map[int]string{
-		0: "Entropy",
-		1: "Entropy",
-		2: "Lecture 1.2",
-		3: "Entropy",
+		0: "entropy",
+		1: "entropy",
+		2: "lecture 1.2",
+		3: "entropy",
 	} {
 		if filed[position] != want {
 			t.Errorf("the link at %d is filed under %q, want %q", position, filed[position], want)
+		}
+	}
+}
+
+// The names an index holds are folded, and every row filed under a note comes
+// through the rewrite with it.
+//
+// An older index folded `a` to `A` and nothing else, and held each name as it
+// was spelled. So `[[энтропия]]` reached no `Энтропия.md`, and a name composed
+// one way reached no file composed the other.
+func TestTheNamesAnOlderIndexHeldAreFolded(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const folded = 11
+	var through []migration
+	for _, m := range available {
+		if m.version >= folded {
+			break
+		}
+		through = append(through, m)
+	}
+	if len(through) == len(available) {
+		t.Skip("a name is still held as it was spelled")
+	}
+	for _, m := range through {
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Two notes and the links written at them, with a heading and a problem
+	// hanging off the note that wrote the links. The note filed under a
+	// decomposed name is the one an index built on a Mac would hold.
+	decomposed := norm.NFD.String("Приём")
+	if decomposed == "Приём" {
+		t.Fatal("the decomposed name is the composed one, so nothing is tested")
+	}
+	for _, statement := range []string{
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at) VALUES
+		   (1, 1, 'Источник.md', 'note', 100, 1),
+		   (2, 1, 'Энтропия.md', 'note', 100, 1),
+		   (3, 1, '` + decomposed + `.md', 'note', 100, 1)`,
+		`INSERT INTO notes (source_id, vault_id, basename, title) VALUES
+		   (1, 1, 'Источник', 'Источник'),
+		   (2, 1, 'Энтропия', 'Энтропия'),
+		   (3, 1, '` + decomposed + `', 'Приём')`,
+		`INSERT INTO links (note_id, position, scheme, value, value_base, role) VALUES
+		   (1, 0, 'name', 'энтропия', 'энтропия', 'ref'),
+		   (1, 1, 'name', 'ПРИЁМ',    'ПРИЁМ',    'parent')`,
+		`INSERT INTO headings (id, note_id, line, level, text) VALUES (7, 1, 3, 2, 'О чём это')`,
+		`INSERT INTO problems (note_id, detail) VALUES (1, 'a link nothing understands')`,
+	} {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			t.Fatalf("%s: %v", statement, err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating an index that held names as they were spelled: %v", err)
+	}
+	defer upgraded.Close()
+
+	for _, want := range []struct {
+		source int
+		key    string
+	}{
+		{1, domain.FoldName("Источник")},
+		{2, domain.FoldName("Энтропия")},
+		{3, domain.FoldName("Приём")},
+	} {
+		var held string
+		if err := upgraded.write.QueryRowContext(ctx,
+			`SELECT basename FROM notes WHERE source_id = ?`, want.source).Scan(&held); err != nil {
+			t.Fatal(err)
+		}
+		if held != want.key {
+			t.Errorf("the note at %d is filed under %q, want %q", want.source, held, want.key)
+		}
+	}
+
+	for position, want := range map[int]string{
+		0: domain.FoldName("Энтропия"),
+		1: domain.FoldName("Приём"),
+	} {
+		var held string
+		if err := upgraded.write.QueryRowContext(ctx,
+			`SELECT value_base FROM links WHERE note_id = 1 AND position = ?`, position).Scan(&held); err != nil {
+			t.Fatal(err)
+		}
+		if held != want {
+			t.Errorf("the link at %d is filed under %q, want %q", position, held, want)
+		}
+	}
+
+	// The note is the parent of these, and a rewrite of the table it is in must
+	// not take them with it.
+	for _, kept := range []struct {
+		what  string
+		query string
+	}{
+		{"the heading", `SELECT count(*) FROM headings WHERE id = 7 AND note_id = 1 AND text = 'О чём это'`},
+		{"the problem", `SELECT count(*) FROM problems WHERE note_id = 1`},
+		{"the links", `SELECT count(*) FROM links WHERE note_id = 1`},
+	} {
+		var held int
+		if err := upgraded.write.QueryRowContext(ctx, kept.query).Scan(&held); err != nil {
+			t.Fatal(err)
+		}
+		if held == 0 {
+			t.Errorf("%s went with the table the note is in", kept.what)
+		}
+	}
+
+	// The rewritten tables are still the children they were.
+	if _, err := upgraded.write.ExecContext(ctx,
+		`INSERT INTO links (note_id, position, scheme, value, value_base, role)
+		 VALUES (99, 0, 'name', 'x', 'x', 'ref')`); err == nil {
+		t.Error("a link may now be written for a note that does not exist")
+	}
+
+	// The fold is the whole rule, and a collation beside it would be a second
+	// one written in the schema.
+	for _, table := range []string{"notes", "links"} {
+		var ddl string
+		if err := upgraded.write.QueryRowContext(ctx,
+			`SELECT sql FROM sqlite_master WHERE name = ?`, table).Scan(&ddl); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(strings.ToUpper(ddl), "COLLATE") {
+			t.Errorf("%s still declares a collation:\n%s", table, ddl)
 		}
 	}
 }

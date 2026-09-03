@@ -1,6 +1,26 @@
 package domain
 
-import "strings"
+import (
+	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/unicode/norm"
+)
+
+// folder case folds a name. It is stateless, and any number of goroutines may
+// use it at once.
+var folder = cases.Fold()
+
+// FoldName is the key under which two names are one name: composed, case
+// folded, and composed again, since folding `İ` yields `i` and a combining dot.
+// Every decision that two names are the same is this key compared.
+//
+// The fold is the one every reader gets, so `İstanbul` and `istanbul` are two
+// names here. The form is NFC: a disk holds `Ｎｏｔｅ` and `Note` as two files,
+// and so does this.
+func FoldName(name string) string {
+	return norm.NFC.String(folder.String(norm.NFC.String(name)))
+}
 
 // Basename is the name a note is filed under: the last segment of its path,
 // without its extension.
@@ -33,7 +53,7 @@ func LinkName(written string) string {
 		name = name[i+1:]
 	}
 	if cut := len(name) - len(NoteExtension); cut > 0 &&
-		strings.EqualFold(name[cut:], NoteExtension) {
+		FoldName(name[cut:]) == NoteExtension {
 		return name[:cut]
 	}
 	return name

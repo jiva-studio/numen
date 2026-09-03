@@ -126,7 +126,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, name string) ([]string, er
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, name)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("named"), vault, domain.FoldName(name))
 	if err != nil {
 		return nil, err
 	}
