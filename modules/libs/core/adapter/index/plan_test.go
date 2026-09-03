@@ -98,7 +98,7 @@ func TestEveryQuestionIsAnsweredThroughAnIndex(t *testing.T) {
 	ctx := t.Context()
 	db := populated(t)
 
-	if err := (Statistics{db.write}).Changed(ctx); err != nil {
+	if err := (Maintenance{db.write}).Changed(ctx); err != nil {
 		t.Fatal(err)
 	}
 
