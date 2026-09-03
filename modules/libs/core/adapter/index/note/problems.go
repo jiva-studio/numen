@@ -16,7 +16,7 @@ func (q *Queries) Noted(ctx context.Context, vaultID string) ([]domain.VaultProb
 
 // Unreadable is the notes whose frontmatter is not YAML.
 func (q *Queries) Unreadable(ctx context.Context, vaultID string) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "unreadable")
+	return q.said(ctx, vaultID, "frontmatter_errors")
 }
 
 // said reads the two questions that come back as a path and a line of text. What
