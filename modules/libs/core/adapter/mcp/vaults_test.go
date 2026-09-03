@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -133,7 +134,7 @@ func joined(t *testing.T, add usecase.Add, name string) domain.Vault {
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
-	at := filepath.Join(t.TempDir(), name)
+	at := filepath.Join(testsupport.TempDir(t), name)
 	if err := os.MkdirAll(at, 0o755); err != nil {
 		t.Fatal(err)
 	}
