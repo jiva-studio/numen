@@ -242,21 +242,26 @@ func Written(raw []byte) bool {
 // Reached is how far a run before this one got, and where the last note about
 // it ends. A file carrying none is a recording nothing has listened to.
 func Reached(raw []byte) (ms, end int) {
-	const note = "NOTE heard "
-	at := strings.LastIndex(string(raw), note)
-	if at < 0 {
-		return 0, 0
+	note := []byte("NOTE heard ")
+	// Each note is looked at once, and only what stands between it and the one
+	// after it is read.
+	for end := len(raw); ; {
+		at := bytes.LastIndex(raw[:end], note)
+		if at < 0 {
+			return 0, 0
+		}
+		line := raw[at+len(note) : end]
+		end = at
+		stop := bytes.IndexByte(line, '\n')
+		if stop < 0 || !begins(raw, at) {
+			continue
+		}
+		ms, err := strconv.Atoi(strings.TrimSpace(string(line[:stop])))
+		if err != nil {
+			continue
+		}
+		return ms, at + len(note) + stop + 1
 	}
-	line := string(raw[at+len(note):])
-	stop := strings.IndexByte(line, '\n')
-	if stop < 0 || !begins(raw, at) {
-		return Reached(raw[:at])
-	}
-	ms, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
-	if err != nil {
-		return Reached(raw[:at])
-	}
-	return ms, at + len(note) + stop + 1
 }
 
 // begins says whether a byte is where a block of the file starts: the top of
