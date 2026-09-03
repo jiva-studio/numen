@@ -148,24 +148,43 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 }
 
 // libraryWalked is every card face a walk of seven answers reaches, each answer
-// given after a gap of its own.
+// given a gap of its own after the answer already on the card face.
+//
+// The walk opens far enough back that its last answer still falls before the
+// instant these card faces are asked about, so every gap the library is handed
+// runs forwards.
 func libraryWalked(engine *fsrs.FSRS) []flashcards.Schedule {
+	type step struct {
+		s  flashcards.Schedule
+		at time.Time
+	}
 	out := []flashcards.Schedule{{}}
-	frontier := []flashcards.Schedule{{}}
+	frontier := []step{{at: libraryNow.Add(-libraryWalkOpens)}}
 	for depth := range 7 {
-		var next []flashcards.Schedule
-		for _, s := range frontier {
+		var next []step
+		for _, f := range frontier {
 			for i, r := range libraryRatings {
-				at := libraryNow.Add(-libraryGaps[(depth+i)%len(libraryGaps)])
-				one := asSchedule(engine.Next(asCard(s), at, r).Card)
+				at := f.at.Add(libraryGaps[(depth+i)%len(libraryGaps)])
+				one := asSchedule(engine.Next(asCard(f.s), at, r).Card)
 				out = append(out, one)
-				next = append(next, one)
+				next = append(next, step{one, at})
 			}
 		}
 		frontier = next
 	}
 	return out
 }
+
+// libraryWalkOpens is how long before the instant a card face is asked about a
+// walk of seven answers opens. Every gap taken together is more than seven of
+// them, so no answer of the walk falls after that instant.
+var libraryWalkOpens = func() time.Duration {
+	var all time.Duration
+	for _, g := range libraryGaps {
+		all += g
+	}
+	return all
+}()
 
 // libraryMade is a grid of card faces standing where a walk does not reach: at
 // the stability a run of lapses wears a card down to and at the stability of a
