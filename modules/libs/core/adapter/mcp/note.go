@@ -10,6 +10,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
@@ -421,7 +422,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Title: "Remove a note",
 		Description: "Take notes out of the vault. They go to the vault's trash folder " +
 			"and can be put back. Links that pointed at them are left as they are and " +
-			"come back under `dangling`: a link is not wrong because its note is gone.",
+			"come back under `dangling`: a link is not wrong because its note is gone. " +
+			"This removes notes: a path naming a folder is refused, and the notes under " +
+			"one are removed by naming each of them.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Paths   []string `json:"paths" jsonschema:"the notes to remove"`
 		Destroy bool     `json:"destroy,omitempty" jsonschema:"delete outright instead of moving to the trash; nothing brings these back"`
@@ -434,10 +437,21 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("remove at most %d notes at a time", maxRefs)
 		}
+		reader, err := core.Readers.Open(core.shown().Vault)
+		if err != nil {
+			return nil, out{}, err
+		}
 		res := out{Removed: make([]RemoveOutcome, 0, len(in.Paths))}
 		for _, path := range in.Paths {
 			if err := ctx.Err(); err != nil {
 				return nil, out{}, err
+			}
+			if isFolder(ctx, reader, path) {
+				res.Removed = append(res.Removed, RemoveOutcome{
+					Removed: note.Removed{Path: path},
+					Refused: "this is a folder, and this removes notes: name the notes to remove",
+				})
+				continue
 			}
 			var removed note.Removed
 			var err error
@@ -455,6 +469,13 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		}
 		return nil, res, nil
 	})
+}
+
+// isFolder reports whether the vault holds a folder at the path. A folder is
+// listed; a path holding a file is not.
+func isFolder(ctx context.Context, reader port.VaultReader, path string) bool {
+	_, err := reader.List(ctx, path)
+	return err == nil
 }
 
 // Contents is a note as note_write takes it back: the prose, without the

@@ -569,6 +569,30 @@ func TestRemovingIsReversible(t *testing.T) {
 
 }
 
+// note_remove takes notes. A folder holds as many notes as somebody filed
+// under it, and removing one by naming the folder is not what this tool does.
+func TestRemovingAFolderIsRefused(t *testing.T) {
+	session, v := connected(t, map[string]string{
+		"Reading/Entropy.md": "# Entropy\n",
+		"Reading/Order.md":   "# Order\n",
+	})
+
+	removed := call[struct {
+		Removed []mcp.RemoveOutcome `json:"removed"`
+	}](t, session, "note_remove", map[string]any{"paths": []string{"Reading"}})
+	if len(removed.Removed) != 1 || removed.Removed[0].Refused == "" {
+		t.Fatalf("a folder was not refused: %+v", removed.Removed)
+	}
+	if !strings.Contains(removed.Removed[0].Refused, "folder") {
+		t.Errorf("the refusal reads %q", removed.Removed[0].Refused)
+	}
+	for _, path := range []string{"Reading/Entropy.md", "Reading/Order.md"} {
+		if _, err := os.Stat(filepath.Join(v.Path, path)); err != nil {
+			t.Errorf("%s went with the folder: %v", path, err)
+		}
+	}
+}
+
 // A ceiling that truncated in silence would read as "that is all there is".
 func TestAskingForTooMuchIsRefusedRatherThanTrimmed(t *testing.T) {
 	session, _ := connected(t, nil)
