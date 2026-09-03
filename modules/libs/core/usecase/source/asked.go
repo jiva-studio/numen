@@ -1,4 +1,4 @@
-package container
+package source
 
 import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
@@ -50,3 +50,6 @@ func (a *asked) take() (wanted, bool) {
 
 // waiting is how many sources are named and not yet taken up.
 func (a *asked) waiting() int { return len(a.line) }
+
+// named is one source of one vault, as the one string a set is keyed by.
+func named(v domain.Vault, path string) string { return v.ID + "\x00" + path }

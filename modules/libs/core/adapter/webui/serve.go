@@ -64,8 +64,8 @@ type Opened struct {
 // It is published as one, through API.on, and every request reads it there.
 type showing struct {
 	opening      *container.Opening
-	recognising  *container.Recognising
-	transcribing *container.Transcribing
+	recognising  *source.Recognising
+	transcribing *source.Transcribing
 
 	// recognises reads a scanned document, transcribes hears a recording, and
 	// proofreads puts a transcript right, each for whoever asks.
@@ -649,7 +649,7 @@ func (o *Opened) Refresh() usecase.Refresh {
 // Recognising reads a scanned document for whoever asks. It is one job for the
 // window and for an agent alike, so that what a person started through one of
 // them is shown by the other. Nothing while the window has no vault.
-func (o *Opened) Recognising() *container.Recognising {
+func (o *Opened) Recognising() *source.Recognising {
 	if on := o.API.on.Load(); on != nil {
 		return on.recognising
 	}
@@ -660,7 +660,7 @@ func (o *Opened) Recognising() *container.Recognising {
 // vault. It is one job for the window and for an agent alike, so that what a
 // person started through one of them is shown by the other. Nothing while the
 // window has no vault.
-func (o *Opened) Transcribing() *container.Transcribing {
+func (o *Opened) Transcribing() *source.Transcribing {
 	if on := o.API.on.Load(); on != nil {
 		return on.transcribing
 	}

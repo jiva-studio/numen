@@ -1,4 +1,4 @@
-package container
+package source
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -45,12 +44,15 @@ func recognising(t *testing.T, why error) *watched {
 	t.Helper()
 	tasks := task.New()
 	w := &watched{tasks: tasks, held: &blank{}}
-	w.Recognising = &Recognising{
-		cfg:   Config{ServiceDir: ".numen"},
-		tasks: tasks,
-		ready: func() bool { return true },
-		queue: func() (port.ProofreadQueue, error) { return nil, nil },
-		open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising = NewRecognising(context.Background(), Readings{
+		Readers: vaultReaders,
+		Derived: derivedStores,
+		Tasks:   tasks,
+		Ready:   func() bool { return true },
+		Proofreading: Correcting{
+			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
+		},
+		Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 			w.mu.Lock()
 			w.open++
 			w.while = tasks.List()
@@ -60,7 +62,7 @@ func recognising(t *testing.T, why error) *watched {
 			}
 			return w.held, w.held.Close, nil
 		},
-	}
+	})
 	return w
 }
 
@@ -115,7 +117,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := recognising(t, errors.New("nothing to read with"))
 
 	reading, held := make(chan struct{}, 2), make(chan struct{})
-	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		w.mu.Unlock()
@@ -225,8 +227,8 @@ func TestTheNextReadingClearsTheOneBeforeIt(t *testing.T) {
 func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	w := recognising(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
-	w.Recognising.under = ctx
-	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.under = ctx
+	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled
 	}
@@ -250,7 +252,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	// reading does.
 	abrupt := make(chan struct{}, 1)
 	abrupt <- struct{}{}
-	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		select {
 		case <-abrupt:
 			runtime.Goexit()
@@ -275,7 +277,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 // the document, so what was missing is fetched and nothing is read.
 func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	w := recognising(t, nil)
-	w.Recognising.standing = func() bool { return false }
+	w.Recognising.with.Standing = func() bool { return false }
 
 	err := w.read(t.Context(), somewhere, "reading-1", "a.pdf")
 	if !errors.Is(err, errLateRuntime) {
@@ -295,7 +297,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 	w := recognising(t, nil)
 
 	holding := make(chan struct{})
-	w.Recognising.open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		<-holding
 		return nil, nil, errors.New("nothing to read with")
 	}
@@ -323,19 +325,13 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 // A queue that failed to build is said, as the proofreader that failed to build
 // is said. A person who configured a queue and is given none is owed the reason.
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
-	t.Setenv(proofreading.KeyEnvVar, "sk-test")
 	w := recognising(t, nil)
-
-	service := proofreading.ServiceDefaults()
-	service.Name = "a-model"
-
-	cfg := Config{ServiceDir: ".numen"}
-	cfg.Proofreading = proofreading.Defaults()
-	cfg.Proofreading.Profiles = map[string]proofreading.Profile{"a-service": service}
-	cfg.ScanProofreading = proofreading.Proofread{With: "a-service", Automatically: true}
-	w.Recognising.cfg = cfg
-	w.Recognising.queue = func() (port.ProofreadQueue, error) {
-		return nil, errors.New("no queue for the proofreading service")
+	w.Recognising.with.Proofreading = Correcting{
+		Named: true, Automatically: true,
+		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
+		Queue: func(string) (port.ProofreadQueue, error) {
+			return nil, errors.New("no queue for the proofreading service")
+		},
 	}
 
 	w.correct(t.Context(), somewhere, "a.pdf")
