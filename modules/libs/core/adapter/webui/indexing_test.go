@@ -39,7 +39,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	api.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
 
 	at := listed(t, api, makingVectors)
 	if at == nil {
@@ -68,7 +68,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	api.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, model)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
 
 	if at := listed(t, api, makingVectors); at != nil {
 		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
@@ -95,7 +95,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	cut(t, db, api)
 	watching.tasks = api.Tasking
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, watching)
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, watching)
 
 	at, held := watching.opening(makingVectors)
 	if !held {
@@ -130,7 +130,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, arriving.Filling())
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling())
 	}()
 
 	select {
@@ -163,7 +163,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	over := make(chan struct{})
 	go func() {
 		defer close(over)
-		embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, arriving.Filling())
+		embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, arriving.Filling())
 	}()
 
 	for range 20 {
@@ -229,7 +229,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, nil, io.Discard)
+	readSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, nil, io.Discard)
 
 	at := listed(t, api, readingBooks)
 	if at == nil {
@@ -260,7 +260,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 	t.Helper()
 
 	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
 		Known:       db.Queries(),
@@ -310,7 +310,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	held := embedding.Arriving(model.Model())
 	held.Landed(over, nil)
 
-	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, held.Filling())
+	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, held.Filling())
 
 	for _, list := range over.lists() {
 		for _, at := range list {

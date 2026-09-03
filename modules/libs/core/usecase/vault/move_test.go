@@ -36,10 +36,10 @@ func fileable(t *testing.T, notes map[string]string) filing {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	readers := &countingReaders{VaultReaders: filesystem.Readers{}}
+	readers := &countingReaders{VaultReaders: filesystem.VaultReaders{}}
 	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
 	return filing{
 		db:      db,
@@ -62,13 +62,13 @@ func (f filing) apart() usecase.Move { return f.moving(false) }
 
 func (f filing) moving(kept note.SyncTitleAndFilename) usecase.Move {
 	return usecase.Move{
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Links:   f.db.Links(),
 		Known:   f.db.SourcesKnown(),
 		Sources: f.db.Sources(),
 		Notes: note.Move{
 			Readers: f.readers,
-			Writers: filesystem.Writers{},
+			Writers: filesystem.VaultWriters{},
 			Links:   f.db.Links(),
 			Sources: f.db.Sources(),
 			Index:   f.index,
@@ -191,7 +191,7 @@ func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
 // by path.
 func walked(t *testing.T, f filing, path string) []string {
 	t.Helper()
-	reader, err := filesystem.Readers{}.Open(f.vault)
+	reader, err := filesystem.VaultReaders{}.Open(f.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(f.db.Passages(), filesystem.Readers{}, nil, nil, nil, 0, nil)
+	searching := search.New(f.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

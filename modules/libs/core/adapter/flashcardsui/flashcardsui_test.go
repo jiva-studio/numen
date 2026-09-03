@@ -113,7 +113,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 		Joined: flashcards.Around{
 			Linked: note.ShowLinks{Links: db.Links()},
 			Notes:  db.Queries(),
-			Reads:  note.Read{Readers: filesystem.Readers{}},
+			Reads:  note.Read{Readers: filesystem.VaultReaders{}},
 		},
 		Presets: running.Presets,
 		Curves:  running.Curves,
@@ -126,7 +126,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	// The window reads a vault the index does not carry, over the same scan.
 	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
 		walk := scan
-		walk.OnProgress = func(res usecase.Scanned) { got(int64(res.Indexed)) }
+		walk.OnProgress = func(res usecase.ScanResult) { got(int64(res.Indexed)) }
 		_, err := walk.Execute(ctx, v)
 		return err
 	})

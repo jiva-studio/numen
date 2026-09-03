@@ -17,7 +17,7 @@ import (
 // readable is a vault on disk and the read that works on it.
 func readable(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	t.Helper()
-	return file.Read{Readers: filesystem.Readers{}}, testsupport.NewVault(t, files)
+	return file.Read{Readers: filesystem.VaultReaders{}}, testsupport.NewVault(t, files)
 }
 
 func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length int) file.ReadResult {

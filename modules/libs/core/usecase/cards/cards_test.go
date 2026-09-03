@@ -81,7 +81,7 @@ func indexed(t *testing.T) vaults {
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Statistics(),
 	}
 	out := vaults{db: db}
@@ -102,7 +102,7 @@ func indexed(t *testing.T) vaults {
 func (vs vaults) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
 		Known: vs.db.NoteQueries(), Maintenance: vs.db.Statistics(),
 	}
 	return func(ctx context.Context, v domain.Vault, _ []string) error {
@@ -138,7 +138,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	vs := indexed(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
-	got, err := cards.Read{Readers: filesystem.Readers{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -149,7 +149,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 		t.Fatalf("deck = %+v", got.Deck)
 	}
 
-	w := cards.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
+	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Ref); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}
+	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
 	got, err := u.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -216,7 +216,7 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}
+	u := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}
 	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -266,7 +266,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	counted := &counting{VaultReaders: filesystem.Readers{}}
+	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 	got, err := cards.Read{Readers: counted}.Deck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -295,7 +295,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.Read{Readers: filesystem.Readers{}}.Stencil(t.Context(), vs.first, "Animal.md")
+	got, err := cards.Read{Readers: filesystem.VaultReaders{}}.Stencil(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -308,9 +308,9 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 // file outranks a caller that read it, thought about it, and arrived late.
 func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	vs := indexed(t)
-	w := cards.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
+	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
 
-	first, err := cards.Read{Readers: filesystem.Readers{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
+	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +336,7 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 // it.
 func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
 
 	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Folder: "decks"})
 	if err != nil {
@@ -373,7 +373,7 @@ func TestWhatIsMadeSaysWhatItIs(t *testing.T) {
 // settings, and every key it does not carry stands at the default.
 func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
 
 	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Folder: "presets"})
 	if err != nil {
@@ -405,7 +405,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 // with one and nothing is written where there is none.
 func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 	vs := indexed(t)
-	u := cards.Create{Writers: filesystem.Writers{}, Index: vs.index(t)}
+	u := cards.Create{Writers: filesystem.VaultWriters{}, Index: vs.index(t)}
 
 	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
@@ -426,7 +426,7 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 // stencils, and from no other vault's.
 func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 	vs := indexed(t)
-	u := cards.List{Readers: filesystem.Readers{}, Notes: vs.db.NoteQueries()}
+	u := cards.List{Readers: filesystem.VaultReaders{}, Notes: vs.db.NoteQueries()}
 
 	got, held, err := u.Execute(t.Context(), vs.first, 0)
 	if err != nil {
@@ -462,7 +462,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 // count still says how many the vault holds.
 func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := indexed(t)
-	counted := &counting{VaultReaders: filesystem.Readers{}}
+	counted := &counting{VaultReaders: filesystem.VaultReaders{}}
 
 	got, held, err := (cards.List{Readers: counted, Notes: vs.db.NoteQueries()}).
 		Execute(t.Context(), vs.first, 1)

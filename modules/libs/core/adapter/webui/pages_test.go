@@ -338,7 +338,7 @@ func (h holdsOpen) Stat(ctx context.Context, path string) (domain.Fingerprint, e
 // is taken away.
 func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	readers := holdingOpen{
-		VaultReaders: filesystem.Readers{},
+		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan struct{}, 1),
 		until:        make(chan struct{}),
 	}

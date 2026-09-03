@@ -117,7 +117,7 @@ func drawnFrom(t *testing.T, from *paper) (*API, http.Handler) {
 		another: "the bytes of a second scan",
 		beside:  "a file the vault leaves alone",
 	})
-	api := &API{Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
 	api.show(vault)
 	api.Viewer.open = from.opened
 	t.Cleanup(api.Viewer.close)
@@ -135,7 +135,7 @@ func alone(api *API) { api.Viewer.reading = make(chan struct{}) }
 func fromTheLibrary(t *testing.T, raw string) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{book: raw})
-	api := &API{Readers: filesystem.Readers{}, Viewer: looking(pdf.Documents{})}
+	api := &API{Readers: filesystem.VaultReaders{}, Viewer: looking(pdf.Documents{})}
 	api.show(vault)
 	api.Viewer.patience = time.Minute
 	t.Cleanup(api.Viewer.close)

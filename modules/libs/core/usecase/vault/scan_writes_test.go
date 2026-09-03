@@ -51,7 +51,7 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 	db := openIndex(t)
 
 	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
 		Known:       db.Queries(),
@@ -103,7 +103,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 	written := &groupedWrites{}
 	db := openIndex(t)
 	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
 		Known:       db.Queries(),
@@ -131,7 +131,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	db := openIndex(t)
 
 	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       &groupedWrites{fail: refused},
 		Known:       db.Queries(),

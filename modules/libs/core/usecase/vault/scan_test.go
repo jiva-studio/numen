@@ -27,7 +27,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, port.VaultReaders) {
 		t.Fatalf("fixture vault has no identity: %v", err)
 	}
 	return domain.Vault{ID: cfg.ID, Name: "fixture", Path: root},
-		filesystem.Readers{}
+		filesystem.VaultReaders{}
 }
 
 func openIndex(t *testing.T) *container.Index {
@@ -156,7 +156,7 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	testsupport.WriteBook(t, second.Path, "shelf/Cosmology.epub")
 
 	db := openIndex(t)
-	scan := scanner(filesystem.Readers{}, db)
+	scan := scanner(filesystem.VaultReaders{}, db)
 
 	one, err := scan.Execute(ctx, first)
 	if err != nil {
@@ -407,7 +407,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		shared:     "# Entropy\n\nthe second vault\n",
 		"extra.md": "# Extra\n\nonly the second vault has this\n",
 	})
-	readers := filesystem.Readers{}
+	readers := filesystem.VaultReaders{}
 
 	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -589,7 +589,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
 	})
 
-	if _, err := scanner(filesystem.Readers{}, db).Execute(ctx, v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
 	matches, err := db.Queries().Search(ctx, v.ID, "searchable", 10)
@@ -642,8 +642,8 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
 
-	scan := scanner(filesystem.Readers{}, db)
-	scan.OnProgress = func(usecase.Scanned) { cancel() }
+	scan := scanner(filesystem.VaultReaders{}, db)
+	scan.OnProgress = func(usecase.ScanResult) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
@@ -673,14 +673,14 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
-	scan := scanner(filesystem.Readers{}, db)
+	scan := scanner(filesystem.VaultReaders{}, db)
 
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(t.Context())
-	warm := scanner(&cancellingReaders{VaultReaders: filesystem.Readers{}, cancel: cancel}, db)
+	warm := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
 
 	res, err := warm.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {

@@ -61,7 +61,7 @@ type waiting struct {
 
 func slowly() *waiting {
 	return &waiting{
-		VaultReaders: filesystem.Readers{},
+		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan string, 1),
 		until:        make(chan struct{}),
 	}
@@ -179,8 +179,8 @@ func openingWith(
 		Links:     db.Links(),
 		Listeners: following(),
 		Watching:  focusing(),
-		Reads:     &note.Read{Readers: filesystem.Readers{}},
-		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
+		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
+		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
 	}
 	api.show(v)
 	if embedder != nil {
@@ -394,7 +394,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, watcher, unreadable{VaultReaders: filesystem.Readers{}})
+	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
 	eventually(t, "the scan was not reported as failed", func() bool {
 		return f.api.failure() != ""
@@ -414,7 +414,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, unwatchable{}, filesystem.Readers{})
+	}, unwatchable{}, filesystem.VaultReaders{})
 
 	if reason := text(&f.api.Unwatched); reason == "" {
 		t.Error("a vault whose watch never started is shown as followed")
@@ -426,7 +426,7 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, watcher, filesystem.Readers{})
+	}, watcher, filesystem.VaultReaders{})
 
 	close(watcher.changes)
 
@@ -508,7 +508,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers := filesystem.Readers{}
+	readers := filesystem.VaultReaders{}
 	watcher := byHand()
 	api := &API{
 		Notes:     db.Queries(),

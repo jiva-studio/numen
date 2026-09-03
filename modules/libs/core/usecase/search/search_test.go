@@ -57,7 +57,7 @@ func indexed(t *testing.T) corpus {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers := filesystem.Readers{}
+	readers := filesystem.VaultReaders{}
 	scan := usecase.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Statistics(),
@@ -82,7 +82,7 @@ func indexed(t *testing.T) corpus {
 // each carrying its own words. A small chunk is what a vector belongs to.
 func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) {
 	t.Helper()
-	reader, err := filesystem.Readers{}.Open(v)
+	reader, err := filesystem.VaultReaders{}.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder port.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil, embedder, 0, nil)
+	return search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil, embedder, 0, nil)
 }
 
 var model = port.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -301,7 +301,7 @@ func TestAModelOutOfReachLeavesTheWordsToAnswer(t *testing.T) {
 	c := indexed(t)
 
 	var said []error
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
 		func(err error) { said = append(said, err) })
 
@@ -323,7 +323,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := indexed(t)
 
-	finds := search.New(c.db.ChunkQueries(), filesystem.Readers{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
 		outOfReach{why: context.Canceled}, 0, func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
@@ -438,7 +438,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	const held = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
 		Known: c.db.NoteQueries(), Maintenance: c.db.Statistics(),
 	}
 	if _, err := scan.Execute(ctx, v); err != nil {

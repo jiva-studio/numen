@@ -12,7 +12,7 @@ import (
 
 func (c changing) replace() note.Replace {
 	return note.Replace{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
 	}
 }
 

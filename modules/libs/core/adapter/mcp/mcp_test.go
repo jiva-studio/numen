@@ -72,7 +72,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers, writers := filesystem.Readers{}, filesystem.Writers{}
+	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
 	scan := usecase.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),

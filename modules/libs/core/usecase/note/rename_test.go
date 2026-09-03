@@ -454,7 +454,7 @@ func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
 	}
 

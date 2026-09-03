@@ -69,15 +69,15 @@ func following(t *testing.T, notes map[string]string, watcher *hand) followed {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	moved := make(chan usecase.VaultChanges, 8)
 	follow := usecase.Follow{
 		Watcher: watcher,
-		Refresh: usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()},
-		Scan:    scanner(filesystem.Readers{}, db),
+		Refresh: usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()},
+		Scan:    scanner(filesystem.VaultReaders{}, db),
 		Changed: func(m usecase.VaultChanges) { moved <- m },
 	}
 
@@ -200,16 +200,16 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	trouble := make(chan error, 8)
-	readers := &sometimes{VaultReaders: filesystem.Readers{}}
+	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
 	follow := usecase.Follow{
 		Watcher: watcher,
 		Refresh: usecase.Refresh{Readers: readers, Notes: db.Notes()},
-		Scan:    scanner(filesystem.Readers{}, db),
+		Scan:    scanner(filesystem.VaultReaders{}, db),
 		Trouble: func(err error) { trouble <- err },
 	}
 	started, err := follow.Begin(t.Context(), v)

@@ -21,7 +21,7 @@ func BenchmarkRead(b *testing.B) {
 	for _, notes := range []int{1_000, 100_000} {
 		b.Run(fmt.Sprintf("%d notes", notes), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, notes)
-			read := note.Read{Readers: filesystem.Readers{}}
+			read := note.Read{Readers: filesystem.VaultReaders{}}
 			path := "01/note-000001.md"
 
 			b.ResetTimer()
@@ -45,7 +45,7 @@ func BenchmarkSave(b *testing.B) {
 	for _, size := range []int{500, 5_000} {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
-			write := note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
+			write := note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
 			path := "01/note-000001.md"
 
 			body := ""

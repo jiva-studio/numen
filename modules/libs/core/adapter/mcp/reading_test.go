@@ -242,7 +242,7 @@ func opened(t *testing.T) (container.Config, *container.Index) {
 func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Vault) mcp.Core {
 	t.Helper()
 
-	readers := filesystem.Readers{}
+	readers := filesystem.VaultReaders{}
 	scan := usecase.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),

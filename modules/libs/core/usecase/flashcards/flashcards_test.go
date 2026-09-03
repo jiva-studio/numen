@@ -60,7 +60,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Statistics(),
 	}
 	v := testsupport.NewVault(t, notes)
@@ -74,10 +74,10 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
 	standings := flashcards.Standings{
-		Readers: filesystem.Readers{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
+		Readers: filesystem.VaultReaders{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
 	}
 	presets := flashcards.Presets{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
 		Links: db.NoteQueries(), Notes: db.NoteQueries(),
 		Problems: db.NoteQueries(), Index: scanned,
 	}
@@ -97,7 +97,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 		standings: standings,
 		presets:   presets,
 		marking: flashcards.Marking{
-			Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+			Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
 			Notes: db.NoteQueries(), Links: db.NoteQueries(),
 			Index: scanned, Now: time.Now,
 		},

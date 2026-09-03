@@ -74,7 +74,7 @@ func running(
 		idea: "# an idea\n",
 	})
 	api := &API{
-		Readers:   filesystem.Readers{},
+		Readers:   filesystem.VaultReaders{},
 		Highlight: &source.Highlight{Sources: read, Derived: held},
 	}
 	api.show(vault)

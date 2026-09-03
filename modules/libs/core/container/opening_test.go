@@ -30,7 +30,7 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 
 	// Written through the levelling while the walk is running, which is what the
 	// window does when a person saves.
-	if _, err := open.Read(t.Context(), func(usecase.Scanned) {
+	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {
 		write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 		if err := opening.Level(t.Context(), v, []string{"Leaf.md"}); err != nil {
 			t.Error(err)
@@ -57,7 +57,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 	// The first walk goes through, and the second is held with the note's old
 	// bytes in the walk's hand.
 	held.release()
-	if _, err := open.Read(t.Context(), func(usecase.Scanned) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -68,7 +68,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(usecase.Scanned) {})
+		_, err := open.Read(t.Context(), func(usecase.ScanResult) {})
 		walked <- err
 	}()
 
@@ -98,7 +98,7 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 		t.Fatal("a vault nobody can follow says nothing about it")
 	}
 	// And it still reads: what cannot be followed can still be walked.
-	if _, err := open.Read(t.Context(), func(usecase.Scanned) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {}); err != nil {
 		t.Fatal(err)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Leaf" {
@@ -124,7 +124,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(usecase.Scanned) {})
+		_, err := open.Read(t.Context(), func(usecase.ScanResult) {})
 		walked <- err
 	}()
 
@@ -189,7 +189,7 @@ func (w *waves) Watch(context.Context, domain.Vault) (<-chan []string, <-chan st
 // asked for while the first is still holding an older copy.
 func staging() *staged {
 	return &staged{
-		VaultReaders: filesystem.Readers{},
+		VaultReaders: filesystem.VaultReaders{},
 		read:         make(chan string, 1),
 		first:        make(chan struct{}),
 	}
@@ -240,7 +240,7 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 // test can change the file the walk is holding a copy of.
 func gated() *gate {
 	return &gate{
-		VaultReaders: filesystem.Readers{},
+		VaultReaders: filesystem.VaultReaders{},
 		begun:        make(chan string, 1),
 		until:        make(chan struct{}),
 	}

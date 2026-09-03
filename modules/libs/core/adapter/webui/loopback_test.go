@@ -97,7 +97,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		talk:      sound,
 		"note.md": "# What a note says",
 	})
-	api := &API{Readers: filesystem.Readers{}}
+	api := &API{Readers: filesystem.VaultReaders{}}
 	api.show(vault)
 	back, handler := played(t, api)
 

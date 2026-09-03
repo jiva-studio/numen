@@ -60,7 +60,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 		t.Fatal(err)
 	}
 
-	readers, writers := filesystem.Readers{}, filesystem.Writers{}
+	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
 	scan := usecase.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),

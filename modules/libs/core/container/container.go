@@ -382,13 +382,13 @@ func (c Config) Registry() (port.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() port.VaultReaders {
-	return filesystem.Readers{Options: c.VaultOptions()}
+	return filesystem.VaultReaders{Options: c.VaultOptions()}
 }
 
 // VaultWriters opens vaults for changing. It is a separate opener from the
 // readers because reading and writing a person's notes are different rights.
 func (c Config) VaultWriters() port.VaultWriters {
-	return filesystem.Writers{Options: c.VaultOptions()}
+	return filesystem.VaultWriters{Options: c.VaultOptions()}
 }
 
 // VaultWatcher follows vaults for changes the application did not make.

@@ -46,8 +46,8 @@ func (w *countedWriter) Write(
 // in a shape nobody asked for whenever the second of them does not land.
 func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := indexed(t)
-	writers := &counted{VaultWriters: filesystem.Writers{}}
-	u := cards.Write{Readers: filesystem.Readers{}, Writers: writers}
+	writers := &counted{VaultWriters: filesystem.VaultWriters{}}
+	u := cards.Write{Readers: filesystem.VaultReaders{}, Writers: writers}
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	at, err := u.Stencil(
@@ -85,7 +85,7 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n")
 
-	u := cards.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}}
+	u := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
 	if _, err := u.Stencil(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
@@ -112,14 +112,14 @@ func laid(t *testing.T, vs vaults, path, body string) cards.Write {
 		t.Fatal(err)
 	}
 	return cards.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Links: vs.db.NoteQueries(),
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Links: vs.db.NoteQueries(),
 	}
 }
 
 // held is the deck as the vault now holds it.
 func held(t *testing.T, vs vaults, path string) format.Deck {
 	t.Helper()
-	got, err := cards.Read{Readers: filesystem.Readers{}, Links: vs.db.NoteQueries()}.
+	got, err := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}.
 		Deck(t.Context(), vs.first, path)
 	if err != nil {
 		t.Fatalf("read: %v", err)
@@ -195,7 +195,7 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 	}
 
 	w := cards.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Links: vs.db.NoteQueries(),
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Links: vs.db.NoteQueries(),
 	}
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
@@ -316,7 +316,7 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 			}
 
 			w := cards.Write{
-				Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+				Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
 				Links: vs.db.NoteQueries(),
 			}
 			if _, err := w.Deck(

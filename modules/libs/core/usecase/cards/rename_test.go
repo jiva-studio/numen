@@ -20,8 +20,8 @@ import (
 func renaming(t *testing.T, vs vaults) cards.RenameField {
 	t.Helper()
 	return cards.RenameField{
-		Readers: filesystem.Readers{},
-		Writers: filesystem.Writers{},
+		Readers: filesystem.VaultReaders{},
+		Writers: filesystem.VaultWriters{},
 		Notes:   vs.db.NoteQueries(),
 		Links:   vs.db.NoteQueries(),
 		Index:   vs.index(t),
@@ -185,7 +185,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	before := read(t, vs.first, "decks/Birds.md")
 
 	u := renaming(t, vs)
-	u.Writers = refusing{VaultWriters: filesystem.Writers{}, path: "decks/Birds.md"}
+	u.Writers = refusing{VaultWriters: filesystem.VaultWriters{}, path: "decks/Birds.md"}
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",

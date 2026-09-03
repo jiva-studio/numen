@@ -78,7 +78,7 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
 	api := &API{
-		Readers: filesystem.Readers{},
+		Readers: filesystem.VaultReaders{},
 		Highlight: &source.Highlight{
 			Sources: indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
 			Derived: held,
@@ -251,7 +251,7 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 // played all the same.
 func TestABuildThatReadsNoTranscriptSaysSo(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
-	api := &API{Readers: filesystem.Readers{}}
+	api := &API{Readers: filesystem.VaultReaders{}}
 	api.show(vault)
 	handler := api.Serving(http.NotFoundHandler())
 
@@ -630,7 +630,7 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	standing := api.Showing()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
-	api.Readers = swapping{VaultReaders: filesystem.Readers{}, then: func() { api.show(elsewhere) }}
+	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.show(elsewhere) }}
 
 	var cutIn []domain.Vault
 	runningBehind(api, func(on *showing) {

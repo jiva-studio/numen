@@ -23,11 +23,11 @@ func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *contai
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.Readers{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	return usecase.Refresh{
-		Readers: filesystem.Readers{},
+		Readers: filesystem.VaultReaders{},
 		Notes:   db.Notes(),
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
@@ -246,7 +246,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 		}
 	}
 
-	refresh.Readers = unreadableReaders{VaultReaders: filesystem.Readers{}, refuses: "Locked.md"}
+	refresh.Readers = unreadableReaders{VaultReaders: filesystem.VaultReaders{}, refuses: "Locked.md"}
 	res, err := refresh.Execute(t.Context(), v, []string{"Locked.md", "Note.md"})
 	if err != nil {
 		t.Fatalf("one unreadable file ended the refresh: %v", err)
@@ -277,7 +277,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	written := &countingNotes{}
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: written}
+	refresh := usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: written}
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
@@ -321,7 +321,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 
-	refresh.Readers = vanishingReaders{VaultReaders: filesystem.Readers{}, gone: "Note.md"}
+	refresh.Readers = vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"}
 	res, err := refresh.Execute(t.Context(), v, []string{"Note.md"})
 	if err != nil {
 		t.Fatal(err)

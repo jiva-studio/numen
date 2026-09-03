@@ -24,8 +24,8 @@ import (
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
 	api := &API{
-		Reads: &note.Read{Readers: filesystem.Readers{}},
-		Saves: &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
+		Reads: &note.Read{Readers: filesystem.VaultReaders{}},
+		Saves: &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
 	}
 	api.show(testsupport.NewVault(t, notes))
 	return api
@@ -164,7 +164,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 
 	var once sync.Once
 	api.Joins = &note.EditLinks{
-		Readers: beaten{VaultReaders: filesystem.Readers{}, after: func(path string) {
+		Readers: beaten{VaultReaders: filesystem.VaultReaders{}, after: func(path string) {
 			if path != "Heat.md" {
 				return
 			}
@@ -174,7 +174,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 				}
 			})
 		}},
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 	}
 
 	out, err := api.Join(t.Context(), connect.NewRequest(&v1.JoinRequest{

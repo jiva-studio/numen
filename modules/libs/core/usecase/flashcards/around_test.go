@@ -30,7 +30,7 @@ func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) dom
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Statistics(),
 	}
 	add := func(notes map[string]string) domain.Vault {
@@ -45,7 +45,7 @@ func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) dom
 	return flashcards.Around{
 		Linked: note.ShowLinks{Links: db.NoteQueries()},
 		Notes:  db.NoteQueries(),
-		Reads:  note.Read{Readers: filesystem.Readers{}},
+		Reads:  note.Read{Readers: filesystem.VaultReaders{}},
 	}, add
 }
 

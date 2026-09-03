@@ -54,14 +54,14 @@ func TestEditLoad(t *testing.T) {
 		Listeners: following(),
 		Watching:  focusing(),
 		Progress:  db.Progress(),
-		Reads:     &note.Read{Readers: filesystem.Readers{}},
-		Saves:     &note.Write{Readers: filesystem.Readers{}, Writers: filesystem.Writers{}},
+		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
+		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
 	}
 	api.show(v)
 	opened := cfg.Opening(db)
 
 	reading := time.Now()
-	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.Readers{}, nil, waking(time.Hour), &pending{}, io.Discard)
+	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, waking(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
 	for !api.Ready.Load() && api.failure() == "" {
 		time.Sleep(50 * time.Millisecond)

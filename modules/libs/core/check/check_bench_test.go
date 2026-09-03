@@ -73,7 +73,7 @@ func scanned(b *testing.B, notes map[string]string) (check.Checks, domain.Vault)
 	b.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	if _, err := scan.Execute(b.Context(), v); err != nil {

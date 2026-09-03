@@ -29,7 +29,7 @@ type changing struct {
 func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := indexed(t, notes)
-	refresh := usecase.Refresh{Readers: filesystem.Readers{}, Notes: db.Notes()}
+	refresh := usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()}
 	return changing{
 		db:    db,
 		vault: v,
@@ -42,18 +42,18 @@ func changeable(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), filesystem.Readers{}, nil, nil, nil, 0, nil)
+	return search.New(c.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
 }
 
 func (c changing) create() note.Create {
 	return note.Create{
-		Writers: filesystem.Writers{}, Names: c.db.Queries(), Index: c.index,
+		Writers: filesystem.VaultWriters{}, Names: c.db.Queries(), Index: c.index,
 	}
 }
 
 func (c changing) move() note.Move {
 	return note.Move{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
 		Links: c.db.Links(), Names: c.db.Queries(),
 		Sources: c.db.Sources(), Index: c.index,
 	}
@@ -61,14 +61,14 @@ func (c changing) move() note.Move {
 
 func (c changing) remove() note.Remove {
 	return note.Remove{
-		Writers: filesystem.Writers{},
+		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
 	}
 }
 
 func (c changing) linking() note.EditLinks {
 	return note.EditLinks{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
 	}
 }
 
@@ -529,10 +529,10 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
 	}
 
-	reader, err := (filesystem.Readers{}).Open(c.vault)
+	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -562,10 +562,10 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.Write{
-		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
+		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
 	}
 
-	reader, err := (filesystem.Readers{}).Open(c.vault)
+	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

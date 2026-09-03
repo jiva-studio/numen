@@ -26,7 +26,7 @@ func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault)
 	t.Cleanup(func() { db.Close() })
 
 	scan := usecase.Scan{
-		Readers: filesystem.Readers{}, Vaults: db.Vaults(), Notes: db.Notes(),
+		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {

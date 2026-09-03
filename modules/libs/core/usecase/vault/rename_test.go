@@ -86,7 +86,7 @@ func TestAWalkDoesNotPutBackTheNameAVaultHad(t *testing.T) {
 	_, showing, registry := twoVaults(t)
 	index := &indexRows{}
 
-	walk := scanner(filesystem.Readers{}, openIndex(t))
+	walk := scanner(filesystem.VaultReaders{}, openIndex(t))
 	walk.Vaults = index
 	if _, err := walk.Execute(t.Context(), showing); err != nil {
 		t.Fatal(err)

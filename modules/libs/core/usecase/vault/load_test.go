@@ -56,7 +56,7 @@ func TestLoad(t *testing.T) {
 	defer db.Close()
 
 	scan := usecase.Scan{
-		Readers:     filesystem.Readers{},
+		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
 		Known:       db.Queries(),

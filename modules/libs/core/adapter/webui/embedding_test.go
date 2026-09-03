@@ -145,7 +145,7 @@ type walking struct {
 	walks atomic.Int64
 }
 
-func walked() *walking { return &walking{VaultReaders: filesystem.Readers{}} }
+func walked() *walking { return &walking{VaultReaders: filesystem.VaultReaders{}} }
 
 func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
@@ -284,7 +284,7 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
-	}, watcher, unwalkable{VaultReaders: filesystem.Readers{}}, model, 20*time.Millisecond)
+	}, watcher, unwalkable{VaultReaders: filesystem.VaultReaders{}}, model, 20*time.Millisecond)
 
 	eventually(t, "the scan was not reported as failed", func() bool {
 		return f.api.failure() != ""
