@@ -80,7 +80,7 @@ func Costed(by Scheduler, answers []Answer) Cost {
 // cards and one of short cards turn the same minutes into different counts. A
 // card face nothing groups is left out, and a kind of answer a preset holds too
 // few of stands at the default.
-func CostedUnder(by Scheduler, answers []Answer, under map[CardFace]string) map[string]Cost {
+func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]Cost {
 	held := make(map[string]*taking)
 	replayed(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
@@ -336,7 +336,7 @@ func (p Projection) Sitting() (int, bool) {
 // A card falling due later in the day holding at is not overdue: its day is
 // this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
-func Overdue(d Day, at map[CardFace]Schedule, now time.Time) int {
+func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	opened := d.Opens(now)
 	out := 0
 	for _, s := range at {
@@ -463,7 +463,7 @@ func (s Simulation) Covers() int {
 // A run over many days is long enough that a caller may give up on it, so the
 // day it is on is where it is left.
 func (s Simulation) Run(
-	ctx context.Context, now time.Time, p Preset, at map[CardFace]Schedule, unseen int,
+	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule, unseen int,
 ) (Projection, error) {
 	days := s.Covers()
 	// The days this run answers the returning share for.

@@ -258,7 +258,7 @@ func said(
 ) string {
 	t.Helper()
 	given, err := record.Answer(
-		t.Context(), history.CardFace{Card: card, Face: "Say it"}, rating, took)
+		t.Context(), history.CardFaceID{Card: card, Face: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}

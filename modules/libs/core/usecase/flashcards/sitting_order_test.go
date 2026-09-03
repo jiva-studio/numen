@@ -10,8 +10,8 @@ import (
 )
 
 // faces is the card faces a sitting asks, in the order it asks them.
-func faces(sat flashcards.Sitting) []history.CardFace {
-	out := make([]history.CardFace, 0, len(sat.Asked))
+func faces(sat flashcards.Sitting) []history.CardFaceID {
+	out := make([]history.CardFaceID, 0, len(sat.Asked))
 	for _, one := range sat.Asked {
 		out = append(out, one.CardFace)
 	}
@@ -19,8 +19,8 @@ func faces(sat flashcards.Sitting) []history.CardFace {
 }
 
 // says is a card face of the one stencil these vaults are cut by.
-func says(at int) history.CardFace {
-	return history.CardFace{Card: mark(at), Face: "Say it"}
+func says(at int) history.CardFaceID {
+	return history.CardFaceID{Card: mark(at), Face: "Say it"}
 }
 
 // The debt is paid oldest first, whatever order the cards stand in their deck.
@@ -41,7 +41,7 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	}
 
 	got := faces(s.under(t, today, saturday, "Two.md"))
-	want := []history.CardFace{says(4), says(3)}
+	want := []history.CardFaceID{says(4), says(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)
 	}

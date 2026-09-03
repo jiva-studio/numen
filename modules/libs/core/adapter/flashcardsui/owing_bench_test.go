@@ -143,7 +143,7 @@ func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay in
 		for one := range perDay {
 			if err := run.Append(ctx, history.Answer{
 				ID:       fmt.Sprintf("%s%06d%010d", v.ID, day, one),
-				CardFace: history.CardFace{Card: benchMark(card % cards), Face: "Say it"},
+				CardFace: history.CardFaceID{Card: benchMark(card % cards), Face: "Say it"},
 				At:       when.Add(time.Duration(one) * time.Minute),
 				Rating:   history.Rating(one%4 + 1),
 				Took:     4 * time.Second,

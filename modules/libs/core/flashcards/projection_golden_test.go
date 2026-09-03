@@ -190,7 +190,7 @@ func shares(one []float64) string {
 // goldenMaterial is one vault a projection is drawn over.
 type goldenMaterial struct {
 	name   string
-	at     map[history.CardFace]history.Schedule
+	at     map[history.CardFaceID]history.Schedule
 	unseen int
 }
 
@@ -216,8 +216,8 @@ func goldenMaterials(by history.Scheduler) []goldenMaterial {
 // which is a state a vault does not hold: a due day is worked out forward from
 // the instant of an answer. It stands here as a stress case, and the figures
 // written down under "a large debt" are not a picture of anybody's vault.
-func goldenAt(by history.Scheduler, faces, overdue int) map[history.CardFace]history.Schedule {
-	out := make(map[history.CardFace]history.Schedule, faces)
+func goldenAt(by history.Scheduler, faces, overdue int) map[history.CardFaceID]history.Schedule {
+	out := make(map[history.CardFaceID]history.Schedule, faces)
 	for i := range faces {
 		c := history.Schedule{}
 		when := goldenNow.AddDate(0, 0, -90+i%17)
@@ -237,7 +237,7 @@ func goldenAt(by history.Scheduler, faces, overdue int) map[history.CardFace]his
 			// down the material it stands.
 			c.Due = goldenNow.AddDate(0, 0, -1-i%30)
 		}
-		out[history.CardFace{Card: fmt.Sprintf("card%06d", i), Face: "Recognise"}] = c
+		out[history.CardFaceID{Card: fmt.Sprintf("card%06d", i), Face: "Recognise"}] = c
 	}
 	return out
 }

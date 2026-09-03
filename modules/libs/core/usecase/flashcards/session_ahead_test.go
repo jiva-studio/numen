@@ -31,7 +31,7 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	at := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, at.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
-		on := history.CardFace{Card: card, Face: "Say it"}
+		on := history.CardFaceID{Card: card, Face: "Say it"}
 		if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
 			t.Fatal(err)
 		}

@@ -47,8 +47,8 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	other := history.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
 	if _, err := s.run(t, time.Now().AddDate(0, 0, -1)).Answer(
 		t.Context(), on, history.Good, 0,
@@ -114,7 +114,7 @@ func (l listing) List(ctx context.Context, name string) ([]port.Entry, error) {
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClo
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +183,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	writing := s.run(t, time.Now())
 	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
@@ -247,7 +247,7 @@ func (f *filling) Append(ctx context.Context, name string, content []byte) error
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	full := &brimming{DerivedStores: s.logs}
 	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, time.Now())
@@ -289,7 +289,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 		t.Skip("root opens a file whatever its permissions say")
 	}
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	shut := s.run(t, time.Now().AddDate(0, 0, -1))
 	if _, err := shut.Answer(t.Context(), on, history.Good, 0); err != nil {

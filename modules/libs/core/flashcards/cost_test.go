@@ -35,7 +35,7 @@ func opens(at time.Time) time.Time { return ahead.Ends(at).AddDate(0, 0, -1) }
 // ran is one projection, over a context nothing gives up on.
 func ran(
 	t *testing.T, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFace]history.Schedule, unseen int,
+	at map[history.CardFaceID]history.Schedule, unseen int,
 ) history.Projection {
 	t.Helper()
 	out, err := run.Run(t.Context(), now, p, at, unseen)
@@ -57,8 +57,8 @@ func everyDay(days int) []int {
 
 // learned is a vault of card faces answered a few times each, which leaves them
 // at stabilities of days and weeks.
-func learned(by history.Scheduler, at time.Time, faces int) map[history.CardFace]history.Schedule {
-	out := make(map[history.CardFace]history.Schedule, faces)
+func learned(by history.Scheduler, at time.Time, faces int) map[history.CardFaceID]history.Schedule {
+	out := make(map[history.CardFaceID]history.Schedule, faces)
 	for i := range faces {
 		c := history.Schedule{}
 		when := at.AddDate(0, 0, -60)
@@ -66,7 +66,7 @@ func learned(by history.Scheduler, at time.Time, faces int) map[history.CardFace
 			c = by.Next(c, when, history.Good)
 			when = c.Due
 		}
-		out[history.CardFace{Card: fmt.Sprintf("card%06d", i), Face: "Recognise"}] = c
+		out[history.CardFaceID{Card: fmt.Sprintf("card%06d", i), Face: "Recognise"}] = c
 	}
 	return out
 }
@@ -368,7 +368,7 @@ func timed(
 ) []history.Answer {
 	var out []history.Answer
 	for face := range faces {
-		on := history.CardFace{Card: fmt.Sprintf("card%06d", face), Face: "Recognise"}
+		on := history.CardFaceID{Card: fmt.Sprintf("card%06d", face), Face: "Recognise"}
 		for step := range each {
 			out = append(out, history.Answer{
 				ID: fmt.Sprintf("%06d", len(out)), CardFace: on,
@@ -536,7 +536,7 @@ func TestNothingOverdueClearsInNoDays(t *testing.T) {
 	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost}
 
 	// A vault of cards nobody has answered: none of them has had a day.
-	at := map[history.CardFace]history.Schedule{}
+	at := map[history.CardFaceID]history.Schedule{}
 	if got := history.Overdue(ahead, at, now); got != 0 {
 		t.Errorf("%d card faces stand overdue in a vault nobody has answered", got)
 	}
@@ -662,9 +662,9 @@ func TestAPausedDayNeverDropsTheOverduePile(t *testing.T) {
 // sent away for this many days from that answer.
 func sent(
 	name string, at time.Time, since, away int, stability float64,
-) (history.CardFace, history.Schedule) {
+) (history.CardFaceID, history.Schedule) {
 	last := at.AddDate(0, 0, -since)
-	return history.CardFace{Card: name, Face: "Recognise"}, history.Schedule{
+	return history.CardFaceID{Card: name, Face: "Recognise"}, history.Schedule{
 		Due: last.AddDate(0, 0, away), Last: last, Reps: 3,
 		Stability: stability, Difficulty: 5, Phase: 2,
 	}
@@ -681,7 +681,7 @@ func TestWhatStandsLearnedToday(t *testing.T) {
 		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 1,
 	}
 
-	at := make(map[history.CardFace]history.Schedule)
+	at := make(map[history.CardFaceID]history.Schedule)
 	for _, one := range []struct {
 		name        string
 		since, away int
@@ -802,7 +802,7 @@ func TestAMaterialAlreadyLearnedIsLearnedInNoDays(t *testing.T) {
 	p := history.Defaults()
 	p.Rule, p.Interval = history.RuleInterval, 21
 
-	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: schedule}, 0)
+	got := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{face: schedule}, 0)
 	if got.Learned != 1 || got.Learns != 0 {
 		t.Errorf("a material of one learned card face stands %d learned, learned in %d days",
 			got.Learned, got.Learns)
@@ -854,7 +854,7 @@ func TestWhatNoPaceCanReachIsCounted(t *testing.T) {
 	}
 	// One card face already sent away for forty days, and five nobody has begun.
 	face, schedule := sent("long", now, 30, 40, 60)
-	at := map[history.CardFace]history.Schedule{face: schedule}
+	at := map[history.CardFaceID]history.Schedule{face: schedule}
 
 	p := history.Defaults()
 	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 10)
@@ -1049,7 +1049,7 @@ func TestNoFigureOfAProjectionIsUnreadable(t *testing.T) {
 		Last: now.AddDate(0, 0, -1), Due: now.AddDate(0, 0, -1),
 		Difficulty: 9, Reps: 300, Lapses: 300, Phase: 2,
 	}
-	at := map[history.CardFace]history.Schedule{{Card: "worn", Face: "Say it"}: worn}
+	at := map[history.CardFaceID]history.Schedule{{Card: "worn", Face: "Say it"}: worn}
 
 	p := history.Defaults()
 	p.Goal, p.MinutesADay = history.GoalMinutes, 1440
@@ -1160,7 +1160,7 @@ func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	by := history.NewFSRS()
 	p := history.Defaults()
 
-	face := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	face := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	stood := history.ReplayUnder(day, history.By(by), []history.Answer{
 		answered("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", history.Good),
 		answered("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", history.Good),
@@ -1208,10 +1208,10 @@ func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 
 // owing is this many card faces answered once a long while ago, so every one of
 // them stands overdue.
-func owing(by history.Scheduler, at time.Time, faces int) map[history.CardFace]history.Schedule {
-	out := make(map[history.CardFace]history.Schedule, faces)
+func owing(by history.Scheduler, at time.Time, faces int) map[history.CardFaceID]history.Schedule {
+	out := make(map[history.CardFaceID]history.Schedule, faces)
 	for i := range faces {
-		out[history.CardFace{Card: fmt.Sprintf("owed%06d", i), Face: "Recognise"}] =
+		out[history.CardFaceID{Card: fmt.Sprintf("owed%06d", i), Face: "Recognise"}] =
 			by.Next(history.Schedule{}, at.AddDate(0, 0, -60), history.Good)
 	}
 	return out
@@ -1420,7 +1420,7 @@ func TestAnAnswerThatLandsInsideTheDayIsAskedAgainInIt(t *testing.T) {
 	p := history.Preset{Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 9999}
 
 	face, one := sent("lapsing", now, 30, 1, 2)
-	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: one}, 0)
+	got := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{face: one}, 0)
 	if got.Load[0] <= 1 {
 		t.Errorf("a day that forgot its one card gave it %d showings, and a card "+
 			"answered into minutes comes round again in the day", got.Load[0])
@@ -1440,7 +1440,7 @@ func TestADayAsksOneCardFaceNoMoreThanMostShowings(t *testing.T) {
 	p := history.Preset{Goal: history.GoalRetention, NewADay: 0, ReviewsADay: 9999}
 
 	face, one := sent("looping", now, 30, 1, 2)
-	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{face: one}, 0)
+	got := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{face: one}, 0)
 	if got.Load[0] != history.MostShowings {
 		t.Errorf("the day gave one card face %d showings, want %d",
 			got.Load[0], history.MostShowings)

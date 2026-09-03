@@ -27,7 +27,7 @@ type Record struct {
 // Answer writes down one card answered once, and hands back the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, on history.CardFace, r history.Rating, took time.Duration,
+	ctx context.Context, on history.CardFaceID, r history.Rating, took time.Duration,
 ) (history.Answer, error) {
 	if !r.Valid() {
 		return history.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)

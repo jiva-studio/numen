@@ -137,7 +137,7 @@ func (u Schedules) under(
 	}
 
 	by := make(map[string]history.Scheduling)
-	under := make(map[history.CardFace]history.Scheduling, len(standing))
+	under := make(map[history.CardFaceID]history.Scheduling, len(standing))
 	asked := make(map[string]string, len(standing))
 	for _, one := range standing {
 		path, known := asked[one.Deck]
@@ -161,7 +161,7 @@ func (u Schedules) under(
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
 	out.mark = marked(marks)
-	out.under = func(face history.CardFace) history.Scheduling {
+	out.under = func(face history.CardFaceID) history.Scheduling {
 		if one, held := under[face]; held {
 			return one
 		}
@@ -194,7 +194,7 @@ func (u Schedules) at(retention float64) history.Scheduler {
 // Execute is every card face the vault's answers name, and where they leave it.
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
-) (map[history.CardFace]history.Schedule, error) {
+) (map[history.CardFaceID]history.Schedule, error) {
 	log := Log{Stores: u.Logs}
 
 	// The listing comes first, and the files are read only when the cache does
@@ -223,7 +223,7 @@ func (u Schedules) Execute(
 // caller holding the answers does not read them again to be told this.
 func (u Schedules) From(
 	ctx context.Context, v domain.Vault, held Held,
-) (map[history.CardFace]history.Schedule, error) {
+) (map[history.CardFaceID]history.Schedule, error) {
 	asks, err := u.asking(ctx, v)
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held Held, asks scheduling) map[history.CardFace]history.Schedule {
+func (u Schedules) worked(held Held, asks scheduling) map[history.CardFaceID]history.Schedule {
 	return projected(u.Day, held, asks)
 }
 
@@ -249,7 +249,7 @@ func (u Schedules) worked(held Held, asks scheduling) map[history.CardFace]histo
 // is told what the first worked out.
 func (u Schedules) replayed(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
+) map[history.CardFaceID]history.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
@@ -260,7 +260,7 @@ func (u Schedules) replayed(
 // caller that has already found the cache out of date asks for.
 func (u Schedules) filled(
 	ctx context.Context, v domain.Vault, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
+) map[history.CardFaceID]history.Schedule {
 	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
@@ -270,7 +270,7 @@ func (u Schedules) filled(
 // that only reads them asks for.
 func projected(
 	d history.Day, held Held, asks scheduling,
-) map[history.CardFace]history.Schedule {
+) map[history.CardFaceID]history.Schedule {
 	return held.Given().Replay(d, asks.under)
 }
 
@@ -278,7 +278,7 @@ func projected(
 // runs the vault now holds and under the targets now in force.
 func (u Schedules) remembered(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
-) (map[history.CardFace]history.Schedule, bool) {
+) (map[history.CardFaceID]history.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
 	}
@@ -294,7 +294,7 @@ func (u Schedules) remembered(
 		return nil, false
 	}
 
-	out := make(map[history.CardFace]history.Schedule, len(was.Faces))
+	out := make(map[history.CardFaceID]history.Schedule, len(was.Faces))
 	for _, s := range was.Faces {
 		due, err := history.Moment(s.Due)
 		if err != nil {
@@ -304,7 +304,7 @@ func (u Schedules) remembered(
 		if err != nil {
 			return nil, false
 		}
-		out[history.CardFace{Card: s.Card, Face: s.Face}] = history.Schedule{
+		out[history.CardFaceID{Card: s.Card, Face: s.Face}] = history.Schedule{
 			Due: due, Last: last, Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		}
@@ -331,7 +331,7 @@ func read(was []keptFile, files []port.Entry) bool {
 // here is reported.
 func (u Schedules) remember(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
-	out map[history.CardFace]history.Schedule,
+	out map[history.CardFaceID]history.Schedule,
 ) {
 	if u.Kept == nil {
 		return

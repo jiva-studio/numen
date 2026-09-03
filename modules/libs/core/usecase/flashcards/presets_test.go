@@ -617,7 +617,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	at := map[history.CardFace]history.Schedule{
+	at := map[history.CardFaceID]history.Schedule{
 		{Card: "near", Face: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
@@ -625,7 +625,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.Learned(at[history.CardFace{Card: "near", Face: "Recognise"}], now) {
+	if p.Learned(at[history.CardFaceID{Card: "near", Face: "Recognise"}], now) {
 		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
 	}
 

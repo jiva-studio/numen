@@ -10,7 +10,7 @@ import (
 func answered(id, card, face, when string, r flashcards.Rating) flashcards.Answer {
 	return flashcards.Answer{
 		ID:       id,
-		CardFace: flashcards.CardFace{Card: card, Face: face},
+		CardFace: flashcards.CardFaceID{Card: card, Face: face},
 		At:       at(when),
 		Rating:   r,
 	}
@@ -28,7 +28,7 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 	want := flashcards.Replay(ahead, by, []flashcards.Answer{first, second, third})
 	got := flashcards.Replay(ahead, by, []flashcards.Answer{third, first, second})
 
-	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	shown := flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if got[shown] != want[shown] {
 		t.Errorf("read out of order gave %+v, want %+v", got[shown], want[shown])
 	}
@@ -41,7 +41,7 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 	late := answered("01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", flashcards.Easy)
 
 	by := flashcards.NewFSRS()
-	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	shown := flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	one := flashcards.Replay(ahead, by, []flashcards.Answer{early, late})[shown]
 	other := flashcards.Replay(ahead, by, []flashcards.Answer{late, early})[shown]
 	if one != other {
@@ -70,8 +70,8 @@ func TestEachFaceOfACardIsScheduledOnItsOwn(t *testing.T) {
 	if len(left) != 2 {
 		t.Fatalf("two faces answered left %d schedules", len(left))
 	}
-	easy := left[flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}]
-	again := left[flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Name it"}]
+	easy := left[flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}]
+	again := left[flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}]
 	if !easy.Due.After(again.Due) {
 		t.Errorf("the face that came back easily is due %v, the one that did not %v", easy.Due, again.Due)
 	}
@@ -85,14 +85,14 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 	for i, r := range []flashcards.Rating{flashcards.Good, flashcards.Again, flashcards.Hard, flashcards.Good, flashcards.Easy} {
 		history = append(history, flashcards.Answer{
 			ID:       string(rune('A'+i)) + "01",
-			CardFace: flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+			CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 			At:       when.Add(time.Duration(i) * 24 * time.Hour),
 			Rating:   r,
 		})
 	}
 
 	by := flashcards.NewFSRS()
-	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	shown := flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if one, other := flashcards.Replay(ahead, by, history)[shown], flashcards.Replay(ahead, by, history)[shown]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
@@ -103,7 +103,7 @@ func TestReplayingOneHistoryTwiceGivesOneSchedule(t *testing.T) {
 // counted: a card that came through this twice would be sent away for longer
 // than it was earned.
 func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
-	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	shown := flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	one := answered("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", flashcards.Good)
 	two := answered("01B", shown.Card, shown.Face, "2026-08-21T09:00:00Z", flashcards.Good)
 
@@ -124,7 +124,7 @@ func TestALineThatStandsTwiceIsCountedOnce(t *testing.T) {
 // An answer taken back stays taken back however many copies of the line that
 // took it back arrive.
 func TestALineTakingAnAnswerBackTwiceTakesItBackOnce(t *testing.T) {
-	shown := flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	shown := flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	given := answered("01A", shown.Card, shown.Face, "2026-08-20T09:00:00Z", flashcards.Good)
 	back := flashcards.Answer{ID: "01B", At: at("2026-08-20T09:01:00Z"), Undoes: given.ID}
 

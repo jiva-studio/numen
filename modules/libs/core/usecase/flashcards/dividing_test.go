@@ -58,7 +58,7 @@ func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
 // back to is the one card.
 func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	faces := make(map[history.CardFace]bool)
+	faces := make(map[history.CardFaceID]bool)
 	for range 100 {
 		sat, err := s.over(t, today, now, flashcards.OverDeck(deck))
 		if err != nil {

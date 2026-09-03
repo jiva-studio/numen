@@ -128,8 +128,8 @@ func TestWhatStandsOverdue(t *testing.T) {
 	day := history.Day{Starts: history.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.Ends(now).AddDate(0, 0, -1)
-	answered := func(name string, since, due int) (history.CardFace, history.Schedule) {
-		return history.CardFace{Card: name, Face: "Say it"}, history.Schedule{
+	answered := func(name string, since, due int) (history.CardFaceID, history.Schedule) {
+		return history.CardFaceID{Card: name, Face: "Say it"}, history.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
 		}
@@ -137,9 +137,9 @@ func TestWhatStandsOverdue(t *testing.T) {
 	late, lateAt := answered("late", 10, -1)
 	soon, soonAt := answered("soon", 4, 0)
 	soonAt.Due = now.Add(6 * time.Hour)
-	unbegun := history.CardFace{Card: "unbegun", Face: "Say it"}
+	unbegun := history.CardFaceID{Card: "unbegun", Face: "Say it"}
 
-	at := map[history.CardFace]history.Schedule{
+	at := map[history.CardFaceID]history.Schedule{
 		late: lateAt, soon: soonAt, unbegun: {},
 	}
 	if got := history.Overdue(day, at, now); got != 1 {
@@ -150,7 +150,7 @@ func TestWhatStandsOverdue(t *testing.T) {
 	// is answering never gets there.
 	run := history.Simulation{By: history.NewFSRS(), Day: day, Cost: history.DefaultCost, Days: 3}
 	p := history.Preset{Goal: history.GoalRetention}
-	clear := map[history.CardFace]history.Schedule{soon: soonAt, unbegun: {}}
+	clear := map[history.CardFaceID]history.Schedule{soon: soonAt, unbegun: {}}
 	if got := ran(t, run, now, p, clear, 0).Clears; got != 0 {
 		t.Errorf("a run with nothing overdue clears in %d days, want none", got)
 	}
@@ -169,8 +169,8 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	day := history.Day{Starts: history.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.Ends(now).AddDate(0, 0, -1)
-	standing := func(name string, since, due int) (history.CardFace, history.Schedule) {
-		return history.CardFace{Card: name, Face: "Say it"}, history.Schedule{
+	standing := func(name string, since, due int) (history.CardFaceID, history.Schedule) {
+		return history.CardFaceID{Card: name, Face: "Say it"}, history.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
 		}
@@ -188,7 +188,7 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	}
 	p := history.Preset{Goal: history.GoalRetention, ReviewsADay: 2}
 
-	got := ran(t, run, now, p, map[history.CardFace]history.Schedule{
+	got := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{
 		first: firstAt, second: secondAt, third: thirdAt, fourth: fourthAt, fifth: fifthAt,
 	}, 0)
 	if got.Load[0] != 2 {
@@ -202,7 +202,7 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	// the days after it instead.
 	thirdAt.Due, fourthAt.Due, fifthAt.Due =
 		open.AddDate(0, 0, 1), open.AddDate(0, 0, 2), open.AddDate(0, 0, 3)
-	want := ran(t, run, now, p, map[history.CardFace]history.Schedule{
+	want := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{
 		first: firstAt, second: secondAt, third: thirdAt, fourth: fourthAt, fifth: fifthAt,
 	}, 0)
 	if want.Load[0] != 2 || want.Backlog[0] != 0 {

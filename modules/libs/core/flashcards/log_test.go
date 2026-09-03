@@ -20,7 +20,7 @@ func at(s string) time.Time {
 func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 	given := flashcards.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+		CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 		At:       at("2026-08-29T09:12:33.412Z"),
 		Rating:   flashcards.Good,
 		Took:     4210 * time.Millisecond,
@@ -68,7 +68,7 @@ func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := flashcards.Write(flashcards.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"},
+		CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 		At:       at("2026-08-29T09:12:33.412Z"),
 		Rating:   flashcards.Good,
 	})

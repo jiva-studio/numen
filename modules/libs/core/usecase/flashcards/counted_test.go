@@ -17,8 +17,8 @@ import (
 func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	other := history.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
 	yesterday := time.Now().AddDate(0, 0, -1)
 	past := s.run(t, yesterday)
@@ -72,7 +72,7 @@ func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	first := s.run(t, time.Now().AddDate(0, 0, -1))
 	if _, err := first.Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -111,8 +111,8 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	other := history.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -144,7 +144,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 func TestARunCopiedUnderAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func spaces(n int) []byte {
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	// Answered easily, so it is days away rather than minutes.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
@@ -302,7 +302,7 @@ func claiming(t *testing.T, s vaulted, version int, days map[string]history.Tall
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +326,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +347,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +370,7 @@ func TestAVaultIsCountedWithNothingKept(t *testing.T) {
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -394,7 +394,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	// Answered again, so it comes back in minutes and is owed today.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Again, 0); err != nil {

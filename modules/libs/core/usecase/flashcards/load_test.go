@@ -234,7 +234,7 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 		for one := range perDay {
 			raw, err := history.Write(history.Answer{
 				ID:       fmt.Sprintf("%06d%010d", day, one),
-				CardFace: history.CardFace{Card: loadMark(card % cards), Face: "Say it"},
+				CardFace: history.CardFaceID{Card: loadMark(card % cards), Face: "Say it"},
 				At:       when.Add(time.Duration(one) * time.Minute),
 				Rating:   history.Rating(one%4 + 1),
 				Took:     4 * time.Second,

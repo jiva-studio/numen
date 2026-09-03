@@ -17,7 +17,7 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 	s := opened(t, vault)
 	record := s.run(t, time.Now())
 
-	for _, on := range []history.CardFace{
+	for _, on := range []history.CardFaceID{
 		{Card: "", Face: "Recognise"},
 		{Card: "k7m2xq9fzp", Face: ""},
 		{},
@@ -52,7 +52,7 @@ func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {

@@ -906,7 +906,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	on := history.CardFace{Card: mark(0), Face: "Say it"}
+	on := history.CardFaceID{Card: mark(0), Face: "Say it"}
 	if now[on].Due.Equal(was[on].Due) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
@@ -1309,7 +1309,7 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 // kind at, so driving the day does not move the day's own arithmetic under it.
 func (s vaulted) through(t *testing.T, day history.Day, now time.Time) int {
 	t.Helper()
-	faces := make(map[history.CardFace]bool)
+	faces := make(map[history.CardFaceID]bool)
 	for range 100 {
 		sat := s.sittingAt(t, day, now)
 		if len(sat.Asked) == 0 {

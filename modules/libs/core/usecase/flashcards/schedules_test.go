@@ -18,7 +18,7 @@ import (
 func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -52,8 +52,8 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 	// Both faces of one card, so the order turns on the face and not the card.
-	recognise := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
-	name := history.CardFace{Card: "k7m2xq9fzp", Face: "Name it"}
+	recognise := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	name := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), name, history.Good, 0); err != nil {
@@ -88,7 +88,7 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
@@ -130,8 +130,8 @@ func targeted(high, low float64) map[string]string {
 
 // The two card faces of the targeted vault, answered alike.
 var (
-	underHigh = history.CardFace{Card: "k7m2xq9fzp", Face: "Say it"}
-	underLow  = history.CardFace{Card: "zpqrstvwxy", Face: "Say it"}
+	underHigh = history.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"}
+	underLow  = history.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"}
 )
 
 // answeredAlike takes both cards through the same answers at the same moments,
@@ -272,7 +272,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, saturday).Answer(t.Context(), on, history.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 			history.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := history.CardFace{Card: mark(0), Face: "Say it"}
+	on := history.CardFaceID{Card: mark(0), Face: "Say it"}
 	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
 	if err != nil {
 		t.Fatal(err)
@@ -395,7 +395,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 			history.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := history.CardFace{Card: mark(0), Face: "Say it"}
+	on := history.CardFaceID{Card: mark(0), Face: "Say it"}
 
 	for range 2 {
 		if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {

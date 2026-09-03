@@ -17,7 +17,7 @@ import (
 // One identifier is one answer however many lines carry it: a synchroniser that
 // met a conflict leaves a second copy of a run beside the first, and a person
 // restoring a backup puts one there by hand.
-func Replay(d Day, by Scheduler, answers []Answer) map[CardFace]Schedule {
+func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
 	return ReplayUnder(d, By(by), answers)
 }
 
@@ -31,17 +31,17 @@ type Scheduling struct {
 // Under is how one card face is scheduled. A card face is scheduled by the
 // preset its deck points at, and two presets asking for different shares of the
 // cards send the same card away for different lengths of time.
-type Under func(CardFace) Scheduling
+type Under func(CardFaceID) Scheduling
 
 // By is one scheduler for every card face, on the preset a deck naming none is
 // scheduled by.
 func By(s Scheduler) Under {
-	return func(CardFace) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
+	return func(CardFaceID) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
 }
 
 // ReplayUnder works out where a history leaves every card face, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
-func ReplayUnder(d Day, by Under, answers []Answer) map[CardFace]Schedule {
+func ReplayUnder(d Day, by Under, answers []Answer) map[CardFaceID]Schedule {
 	return Give(answers).Replay(d, by)
 }
 
@@ -61,8 +61,8 @@ func Give(answers []Answer) Given { return given(answers) }
 //
 // The days the answers have already filled are what the next card is placed
 // against.
-func (g Given) Replay(d Day, by Under) map[CardFace]Schedule {
-	out := make(map[CardFace]Schedule)
+func (g Given) Replay(d Day, by Under) map[CardFaceID]Schedule {
+	out := make(map[CardFaceID]Schedule)
 	on := Spreading(d)
 	for _, a := range g {
 		one := by(a.CardFace)
@@ -117,14 +117,14 @@ func (g Given) Retained(by Scheduler, d Day) map[string]RecallTally {
 // the caller with the schedule the card face stood at before it.
 func replayed(
 	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
-) map[CardFace]Schedule {
+) map[CardFaceID]Schedule {
 	return Give(answers).replayed(by, each)
 }
 
 func (g Given) replayed(
 	by Scheduler, each func(before Schedule, a Answer),
-) map[CardFace]Schedule {
-	out := make(map[CardFace]Schedule)
+) map[CardFaceID]Schedule {
+	out := make(map[CardFaceID]Schedule)
 	for _, a := range g {
 		before := out[a.CardFace]
 		if each != nil {

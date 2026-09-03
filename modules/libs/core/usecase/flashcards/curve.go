@@ -197,9 +197,9 @@ func (u Curves) Execute(
 	schedules := u.Schedules.worked(held, asks)
 
 	decks := make(map[string]bool)
-	at := make(map[history.CardFace]history.Schedule)
+	at := make(map[history.CardFaceID]history.Schedule)
 	// The card faces this preset schedules, which is what it is costed from.
-	under := make(map[history.CardFace]string)
+	under := make(map[history.CardFaceID]string)
 	unseen := 0
 	for _, one := range standing {
 		mine, asked := decks[one.Deck]
@@ -330,7 +330,7 @@ func (u Curves) pointing(
 // person would sit down to now, which is the day the deck screen offers.
 func (u Curves) minutes(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFace]history.Schedule, unseen int,
+	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
 	free := p
 	free.MinutesADay = int(history.MinutesADayBounds.Most)
@@ -392,7 +392,7 @@ func (u Curves) minutes(
 // tomorrow on.
 func (u Curves) retention(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFace]history.Schedule, unseen int,
+	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
 	out := Curve{Goal: history.GoalRetention, Now: Nowhere, Suggested: Nowhere}
 	least, most := history.RetentionBounds.Least, history.RetentionBounds.Most
@@ -442,7 +442,7 @@ func (u Curves) retention(
 // one card a day, which is the slowest a day of review goes.
 func (u Curves) date(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFace]history.Schedule, unseen int,
+	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
 	out := Curve{Goal: history.GoalDate, Now: Nowhere, Suggested: Nowhere}
 	open := u.Day.Opens(now)
@@ -596,7 +596,7 @@ func places(count int, each func(at int) error) error {
 // are those of every figure beside it.
 func learnt(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFace]history.Schedule, unseen int,
+	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (int, error) {
 	run.Recalls = history.NothingForgotten
 	// The day the material is learned is all this run is read for.

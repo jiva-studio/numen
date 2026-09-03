@@ -22,7 +22,7 @@ type Standing struct {
 	Section string
 	// CardFace is what a schedule belongs to: the card's mark and the face's
 	// name.
-	CardFace history.CardFace
+	CardFace history.CardFaceID
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string
@@ -140,7 +140,7 @@ func (u Standings) standing(
 			out = append(out, Standing{
 				Deck:     deck.Path,
 				Section:  section(deck.Deck, card),
-				CardFace: history.CardFace{Card: card.Mark, Face: face.Name},
+				CardFace: history.CardFaceID{Card: card.Mark, Face: face.Name},
 				Heading:  card.Heading,
 				stencil:  stencil,
 				face:     face,

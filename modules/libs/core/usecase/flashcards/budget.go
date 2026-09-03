@@ -19,14 +19,14 @@ import (
 // The presets are separate scopes: one running out closes its own decks and no
 // others. A preset standing in no note schedules the decks naming none.
 type budgets struct {
-	under map[history.CardFace]string
+	under map[history.CardFaceID]string
 	left  map[string]*allowance
 	// decks says which preset schedules each deck, by the path of its file.
 	decks map[string]string
 	// cards is how many card faces stand under each preset.
 	cards map[string]int
 	// faced are the card faces answered in the review day being sat.
-	faced map[history.CardFace]bool
+	faced map[history.CardFaceID]bool
 	// sat is what the review day being sat came to in each deck.
 	sat map[string]history.Spent
 }
@@ -46,12 +46,12 @@ type allowance struct {
 // takes up where the first left off.
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *Reading, day history.Day,
-	standing []Standing, schedules map[history.CardFace]history.Schedule,
+	standing []Standing, schedules map[history.CardFaceID]history.Schedule,
 	log Held, by history.Scheduler, at func(retention float64) history.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
-		under: make(map[history.CardFace]string, len(standing)),
+		under: make(map[history.CardFaceID]string, len(standing)),
 		left:  make(map[string]*allowance),
 		cards: make(map[string]int),
 	}
@@ -61,7 +61,7 @@ func budgeted(
 	asked := make(map[string]string, len(standing))
 	// The deck each card face stands in, which is how the day's answers are
 	// grouped, and the settings each preset was read with.
-	in := make(map[history.CardFace]string, len(standing))
+	in := make(map[history.CardFaceID]string, len(standing))
 	settings := make(map[string]history.Preset)
 	// The material each preset has still to begin.
 	unseen := make(map[string]int)
@@ -140,7 +140,7 @@ func budgeted(
 // face the first time the day answers it, so a face the day has already charged
 // comes round again for no count. The minutes are spent on every answer
 // whichever way the preset counts.
-func (b *budgets) takes(share *allowance, face history.CardFace, fresh bool) bool {
+func (b *budgets) takes(share *allowance, face history.CardFaceID, fresh bool) bool {
 	one, held := b.left[b.under[face]]
 	if !held || one.admits.Paused() {
 		return false
@@ -231,7 +231,7 @@ func (b *budgets) refuses(preset string) error {
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
 func (b *budgets) asks(
-	standing []Standing, schedules map[history.CardFace]history.Schedule,
+	standing []Standing, schedules map[history.CardFaceID]history.Schedule,
 	day history.Day, now time.Time, over Over,
 ) asking {
 	var owed, fresh []Standing

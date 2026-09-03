@@ -111,7 +111,7 @@ func answer(raw []byte) (Answer, bool) {
 	}
 	return Answer{
 		ID:       l.ID,
-		CardFace: CardFace{Card: l.Card, Face: l.Face},
+		CardFace: CardFaceID{Card: l.Card, Face: l.Face},
 		At:       at,
 		Rating:   Rating(l.Rating),
 		Took:     time.Duration(l.Ms) * time.Millisecond,

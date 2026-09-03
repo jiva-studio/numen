@@ -12,15 +12,15 @@ import (
 func jumbled() []flashcards.Answer {
 	at := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := flashcards.Answer{
-		ID: "b", CardFace: flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Say it"},
+		ID: "b", CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
 		At: at.Add(time.Minute), Rating: flashcards.Good, Took: 4 * time.Second,
 	}
 	two := flashcards.Answer{
-		ID: "a", CardFace: flashcards.CardFace{Card: "k7m2xq9fzp", Face: "Say it"},
+		ID: "a", CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
 		At: at, Rating: flashcards.Again, Took: 9 * time.Second,
 	}
 	three := flashcards.Answer{
-		ID: "c", CardFace: flashcards.CardFace{Card: "zpqrstvwxy", Face: "Say it"},
+		ID: "c", CardFace: flashcards.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"},
 		At: at.Add(2 * time.Minute), Rating: flashcards.Hard, Took: 6 * time.Second,
 	}
 	back := flashcards.Answer{
@@ -36,7 +36,7 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
 	by := flashcards.NewFSRS()
 	named := day.Names(answers[0].At)
-	under := map[flashcards.CardFace]string{
+	under := map[flashcards.CardFaceID]string{
 		{Card: "k7m2xq9fzp", Face: "Say it"}: "Sanskrit.md",
 		{Card: "zpqrstvwxy", Face: "Say it"}: "Sanskrit.md",
 	}

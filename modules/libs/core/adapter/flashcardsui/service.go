@@ -251,7 +251,7 @@ func (a *API) Answer(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	on := history.CardFace{Card: r.Msg.GetCard(), Face: r.Msg.GetFace()}
+	on := history.CardFaceID{Card: r.Msg.GetCard(), Face: r.Msg.GetFace()}
 	record := flashcards.Record{Run: run, Now: a.Now}
 	given, err := record.Answer(ctx, on, rating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)

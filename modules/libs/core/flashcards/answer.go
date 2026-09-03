@@ -36,15 +36,15 @@ func (r Rating) String() string {
 	return "unknown"
 }
 
-// CardFace is what a schedule belongs to: one card, and one face of the stencil
-// that cuts it. The card is the mark it is known by, and the face is the name it
-// carries in its stencil.
+// CardFaceID is the key a schedule is filed under: one card, and one face of
+// the stencil that cuts it. The card is the mark it is known by, and the face is
+// the name it carries in its stencil.
 //
 // A card is shown once through each of its stencil's faces, and each of them
 // asks a different thing, so each has a path of its own. The mark travels with
 // the card between decks and between vaults; the face's name does not travel at
 // all, and renaming a face starts its schedule again.
-type CardFace struct {
+type CardFaceID struct {
 	Card string
 	Face string
 }
@@ -57,7 +57,7 @@ type Answer struct {
 	ID string
 	// CardFace is which card was shown, through which face. It is empty on an
 	// answer that takes another back.
-	CardFace CardFace
+	CardFace CardFaceID
 	At       time.Time
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
