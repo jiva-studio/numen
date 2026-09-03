@@ -143,6 +143,11 @@ func named(object []byte, at []string, to string) ([]byte, bool) {
 // something other than an object.
 var errNotASection = errors.New("a setting goes inside a section")
 
+// errRepeated is a name written twice in one section. The settings are read
+// from the last of them and a span is replaced at the first, so the file is
+// left alone and the person is told which name to settle.
+var errRepeated = errors.New("a section holds one of a name")
+
 func set(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {
 		return nil, errors.New("a setting with no name")
@@ -230,6 +235,9 @@ func members(object []byte) (shape, error) {
 		// A name is read up to its closing quote, so the quoted name ends where
 		// the decoder now stands. It is the file's own bytes only where they are
 		// the plain quoting of it.
+		if held.holds(key) {
+			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
+		}
 		one := pair{key: key}
 		quoted, err := json.Marshal(key)
 		if err != nil {

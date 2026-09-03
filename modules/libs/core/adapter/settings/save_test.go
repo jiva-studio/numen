@@ -357,6 +357,31 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	}
 }
 
+// A name written twice is read from the last of the two and patched at the
+// first, so a save that landed would be read back as the value it replaced.
+func TestASectionHoldsOneOfAName(t *testing.T) {
+	for what, body := range map[string]string{
+		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,
+		"a field beside it":       `{"appearance":{"mode":"dark","mode":"light","theme":"preset:numen"}}`,
+		"a section":               `{"appearance":{"theme":"preset:numen"},"appearance":{"mode":"dark"}}`,
+	} {
+		path := write(t, body)
+		err := settings.Save(path, theme("preset:nord"))
+		if err == nil {
+			t.Errorf("%s: a repeated name took a setting", what)
+		} else if !strings.Contains(err.Error(), "one of a name") {
+			t.Errorf("%s: said %q, wanted it to name the trouble", what, err)
+		}
+		raw, readErr := os.ReadFile(path)
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if string(raw) != body {
+			t.Errorf("%s: the file is now:\n%s", what, raw)
+		}
+	}
+}
+
 func TestASettingGoesInsideASection(t *testing.T) {
 	path := write(t, `{"appearance":"warm"}`)
 	if err := settings.Save(path, theme("preset:nord")); err == nil {
