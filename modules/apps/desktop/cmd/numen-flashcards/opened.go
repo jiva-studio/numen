@@ -43,7 +43,7 @@ type opened struct {
 type vaulted struct {
 	once    sync.Once
 	opening *container.Opening
-	open    *container.Opened
+	open    *container.OpenVault
 }
 
 // wait lets go of every vault and holds until nothing is still writing.

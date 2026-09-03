@@ -82,7 +82,7 @@ func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) err
 // Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
 // A vault that cannot be watched is opened all the same, and Unwatched says why.
-func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Opened {
+func (o *Opening) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.Scanning()
 	follow := vault.Follow{
 		Watcher: o.watcher,
@@ -92,7 +92,7 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Opened {
 		Trouble: o.Trouble,
 	}
 	watching, err := follow.Begin(ctx, v)
-	return &Opened{
+	return &OpenVault{
 		opening:   o,
 		vault:     v,
 		scan:      scan,
@@ -102,8 +102,8 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) *Opened {
 	}
 }
 
-// Opened is one vault an application has opened.
-type Opened struct {
+// OpenVault is one vault an application has opened.
+type OpenVault struct {
 	opening   *Opening
 	vault     domain.Vault
 	scan      vault.Scan
@@ -114,7 +114,7 @@ type Opened struct {
 
 // Unwatched is why the vault is not being followed, and nothing while it is. A
 // vault nobody is following looks exactly like a vault nothing happens to.
-func (o *Opened) Unwatched() error { return o.unwatched }
+func (o *OpenVault) Unwatched() error { return o.unwatched }
 
 // Read walks the vault into the index, handing back how far it has got as it
 // goes.
@@ -122,7 +122,7 @@ func (o *Opened) Unwatched() error { return o.unwatched }
 // The walk writes in groups from what it read, so its copy of a note lands last
 // however early the note was read. Every note brought up to date underneath it
 // is read once more, and the newest copy of each lands last.
-func (o *Opened) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
+func (o *OpenVault) Read(ctx context.Context, got func(vault.ScanResult)) (vault.ScanResult, error) {
 	o.opening.held.begin()
 
 	walk := o.scan
@@ -146,14 +146,14 @@ func (o *Opened) Read(ctx context.Context, got func(vault.ScanResult)) (vault.Sc
 //
 // A change named by the watch is acted on while Read is still running; reading
 // the vault again waits its turn behind the walk.
-func (o *Opened) Run(ctx context.Context) {
+func (o *OpenVault) Run(ctx context.Context) {
 	if o.watching == nil {
 		return
 	}
 	o.watching.Run(ctx)
 }
 
-func (o *Opened) trouble(err error) {
+func (o *OpenVault) trouble(err error) {
 	if o.follow.Trouble != nil {
 		o.follow.Trouble(err)
 	}
