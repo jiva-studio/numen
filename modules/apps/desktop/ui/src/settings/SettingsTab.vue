@@ -1,20 +1,21 @@
 <script setup lang="ts">
 /**
- * The settings tab: everything in numen.json a person can change, in the
- * groups the file keeps them in.
+ * The settings tab: everything in numen.json a person can change, grouped by
+ * the part of the application it governs.
  *
  * A setting the window has a command for is drawn as a control and goes through
  * the same code that command goes through. The rest are read out of the file
- * and written back into it where they stand. A setting that is an object or a
- * list is opened in the editor, written as JSON5.
+ * and written back into it where they stand. The file itself is opened whole,
+ * by the one button at the head of the page.
  */
 import { computed } from 'vue'
-import { NumberField, Segmented, Select, Switch, TimeField, type SelectChoice } from '@numen/ui'
-import Editable from './Editable.vue'
+import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'
+import type { SelectChoice } from '@numen/ui'
 import type { Held } from './kind'
 import type { Mode } from '../theme'
 import { LATEST_STARTS as LATEST } from '../reviewing'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '../wearing'
+import { choicesFor } from './models'
 import { write } from './json5'
 import { WORDS as words } from './words'
 
@@ -49,24 +50,26 @@ const STEP = 0.1
 /** How early in the day a day of review may be asked to begin. */
 const EARLIEST = '00:00'
 
-/** The settings read out of the file whole, each as a path through it. */
+/**
+ * The settings read out of the file whole, each as a path through it. A reading
+ * off a scanned page and a transcript of a recording are put right at a profile
+ * each, and each stands beside the thing it puts right.
+ */
 const AT = {
   indexingModel: ['indexing', 'embedding', 'model', 'name'],
-  indexing: ['indexing', 'embedding'],
   ocrModel: ['indexing', 'recognition', 'recognise', 'name'],
-  ocr: ['indexing', 'recognition'],
-  proofreadWith: ['indexing', 'recognition', 'proofread', 'with'],
-  profiles: ['indexing', 'proofreading', 'profiles'],
-  proofreading: ['indexing', 'proofreading'],
+  ocrProofread: ['indexing', 'recognition', 'proofread', 'with'],
+  ocrProofreadAlways: ['indexing', 'recognition', 'proofread', 'automatically'],
   transcribing: ['indexing', 'transcribe_recordings'],
   transcribeUnder: ['indexing', 'transcribe_under_mb'],
-  transcription: ['indexing', 'transcription'],
+  transcriptProofread: ['indexing', 'transcription', 'proofread', 'with'],
+  transcriptProofreadAlways: ['indexing', 'transcription', 'proofread', 'automatically'],
+  profiles: ['indexing', 'proofreading', 'profiles'],
   agent: ['agent', 'use'],
   agentModel: ['agent', 'claude', 'model'],
   agentSteps: ['agent', 'claude', 'max_steps'],
   agentTools: ['agent', 'serve_tools'],
   agentHooks: ['agent', 'claude', 'reads_hooks_and_skills'],
-  agentCommand: ['agent', 'claude', 'command'],
 } as const
 
 /**
@@ -88,25 +91,18 @@ const counted = (at: readonly string[]): number | null => {
   return typeof value === 'number' ? value : null
 }
 
-/**
- * The models a setting can be set to. A name the file holds that this build
- * does not offer is offered all the same, and is drawn as one that is not there.
- */
-const models = (at: readonly string[]): readonly SelectChoice[] => {
-  const offered = held.value.models(at).map((one) => ({
-    id: one.name,
-    text: one.byDefault ? `${one.title} — ${words.byDefault}` : one.title,
-    ...(one.shelf ? { group: one.shelf } : {}),
-  }))
-  const now = said(at)
-  if (offered.some((one) => one.id === now)) return offered
-  return [...offered, { id: now, text: `${now} — ${words.notFound}` }]
-}
+/** The models a setting can be set to: what the file holds, then the presets. */
+const models = (at: readonly string[]): readonly SelectChoice[] =>
+  choicesFor(held.value.models(at), said(at), words)
 
-/** A model chosen, which writes everything that model decides. */
+/**
+ * A model chosen. A preset writes everything that preset decides; a value the
+ * presets do not name is written where it stands.
+ */
 const picks = (at: readonly string[], name: string): void => {
   const model = held.value.models(at).find((one) => one.name === name)
   if (model) held.value.writes(model.writes)
+  else puts(at, name)
 }
 
 /** One setting written, by what is to stand there. */
@@ -124,7 +120,12 @@ const profiles = computed<readonly SelectChoice[]>(() => {
 <template>
   <div class="settings">
     <div class="settings__page">
-      <p class="settings__where">{{ held.file() || words.file }}</p>
+      <!-- Where the settings stand, and the one way to the file itself. Every
+           setting with a control is turned by its control. -->
+      <div class="settings__where">
+        <p class="settings__file">{{ held.file() || words.file }}</p>
+        <Button variant="outline" size="small" @click="held.opensFile()">{{ words.opens }}</Button>
+      </div>
 
       <section class="settings__group" :aria-label="words.window">
         <h2 class="settings__heading">{{ words.window }}</h2>
@@ -139,6 +140,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
               id="settings-theme"
               :model-value="held.applied()"
               :choices="themes"
+              :name="words.theme"
               class="settings__choice"
               @update:model-value="(name: string) => held.chooses(name)"
             />
@@ -278,79 +280,8 @@ const profiles = computed<readonly SelectChoice[]>(() => {
         </div>
       </section>
 
-      <section class="settings__group" :aria-label="words.indexing">
-        <h2 class="settings__heading">{{ words.indexing }}</h2>
-
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-indexing">{{ words.indexingModel }}</label>
-            <span class="settings__detail">{{ words.indexingModelDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-indexing"
-              :model-value="said(AT.indexingModel)"
-              :choices="models(AT.indexingModel)"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.indexingModel, name)"
-            />
-          </span>
-        </div>
-
-        <Editable
-          :name="words.indexingSection"
-          :detail="words.indexingSectionDetail"
-          :value="held.setting(AT.indexing)"
-          @keeps="(value: unknown) => puts(AT.indexing, value)"
-        />
-
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-ocr">{{ words.ocr }}</label>
-            <span class="settings__detail">{{ words.ocrDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-ocr"
-              :model-value="said(AT.ocrModel)"
-              :choices="models(AT.ocrModel)"
-              class="settings__choice"
-              @update:model-value="(name: string) => picks(AT.ocrModel, name)"
-            />
-          </span>
-        </div>
-
-        <Editable
-          :name="words.ocrSection"
-          :detail="words.ocrSectionDetail"
-          :value="held.setting(AT.ocr)"
-          @keeps="(value: unknown) => puts(AT.ocr, value)"
-        />
-
-        <div class="settings__row">
-          <span class="settings__said">
-            <label class="settings__name" for="settings-proofreading">
-              {{ words.proofreading }}
-            </label>
-            <span class="settings__detail">{{ words.proofreadingDetail }}</span>
-          </span>
-          <span class="settings__value">
-            <Select
-              id="settings-proofreading"
-              :model-value="said(AT.proofreadWith)"
-              :choices="profiles"
-              class="settings__choice"
-              @update:model-value="(name: string) => puts(AT.proofreadWith, name)"
-            />
-          </span>
-        </div>
-
-        <Editable
-          :name="words.proofreadingSection"
-          :detail="words.proofreadingSectionDetail"
-          :value="held.setting(AT.proofreading)"
-          @keeps="(value: unknown) => puts(AT.proofreading, value)"
-        />
+      <section class="settings__group" :aria-label="words.transcription">
+        <h2 class="settings__heading">{{ words.transcription }}</h2>
 
         <div class="settings__row">
           <span class="settings__said">
@@ -384,12 +315,117 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           </span>
         </div>
 
-        <Editable
-          :name="words.transcriptionSection"
-          :detail="words.transcriptionSectionDetail"
-          :value="held.setting(AT.transcription)"
-          @keeps="(value: unknown) => puts(AT.transcription, value)"
-        />
+        <div class="settings__row">
+          <span class="settings__said">
+            <label class="settings__name" for="settings-transcript-proofread">
+              {{ words.transcriptProofread }}
+            </label>
+            <span class="settings__detail">{{ words.transcriptProofreadDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Select
+              id="settings-transcript-proofread"
+              :model-value="said(AT.transcriptProofread)"
+              :choices="profiles"
+              :name="words.transcriptProofread"
+              class="settings__choice"
+              @update:model-value="(name: string) => puts(AT.transcriptProofread, name)"
+            />
+          </span>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <span class="settings__name" id="settings-transcript-always">
+              {{ words.transcriptProofreadAlways }}
+            </span>
+            <span class="settings__detail">{{ words.transcriptProofreadAlwaysDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Switch
+              :model-value="on(AT.transcriptProofreadAlways)"
+              :aria-labelledby="'settings-transcript-always'"
+              @update:model-value="(kept: boolean) => puts(AT.transcriptProofreadAlways, kept)"
+            />
+          </span>
+        </div>
+      </section>
+
+      <section class="settings__group" :aria-label="words.ocr">
+        <h2 class="settings__heading">{{ words.ocr }}</h2>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <label class="settings__name" for="settings-ocr">{{ words.ocrModel }}</label>
+            <span class="settings__detail">{{ words.ocrModelDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Select
+              id="settings-ocr"
+              :model-value="said(AT.ocrModel)"
+              :choices="models(AT.ocrModel)"
+              :name="words.ocrModel"
+              class="settings__choice"
+              @update:model-value="(name: string) => picks(AT.ocrModel, name)"
+            />
+          </span>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <label class="settings__name" for="settings-ocr-proofread">
+              {{ words.ocrProofread }}
+            </label>
+            <span class="settings__detail">{{ words.ocrProofreadDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Select
+              id="settings-ocr-proofread"
+              :model-value="said(AT.ocrProofread)"
+              :choices="profiles"
+              :name="words.ocrProofread"
+              class="settings__choice"
+              @update:model-value="(name: string) => puts(AT.ocrProofread, name)"
+            />
+          </span>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <span class="settings__name" id="settings-ocr-always">
+              {{ words.ocrProofreadAlways }}
+            </span>
+            <span class="settings__detail">{{ words.ocrProofreadAlwaysDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Switch
+              :model-value="on(AT.ocrProofreadAlways)"
+              :aria-labelledby="'settings-ocr-always'"
+              @update:model-value="(kept: boolean) => puts(AT.ocrProofreadAlways, kept)"
+            />
+          </span>
+        </div>
+      </section>
+
+      <section class="settings__group" :aria-label="words.indexing">
+        <h2 class="settings__heading">{{ words.indexing }}</h2>
+
+        <div class="settings__row">
+          <span class="settings__said">
+            <label class="settings__name" for="settings-indexing">{{ words.indexingModel }}</label>
+            <span class="settings__detail">{{ words.indexingModelDetail }}</span>
+          </span>
+          <span class="settings__value">
+            <Select
+              id="settings-indexing"
+              :model-value="said(AT.indexingModel)"
+              :choices="models(AT.indexingModel)"
+              :name="words.indexingModel"
+              class="settings__choice"
+              @update:model-value="(name: string) => picks(AT.indexingModel, name)"
+            />
+          </span>
+        </div>
       </section>
 
       <section class="settings__group" :aria-label="words.agent">
@@ -405,6 +441,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
               id="settings-agent"
               :model-value="said(AT.agent)"
               :choices="models(AT.agent)"
+              :name="words.agentUse"
               class="settings__choice"
               @update:model-value="(name: string) => picks(AT.agent, name)"
             />
@@ -421,6 +458,7 @@ const profiles = computed<readonly SelectChoice[]>(() => {
               id="settings-agent-model"
               :model-value="said(AT.agentModel)"
               :choices="models(AT.agentModel)"
+              :name="words.agentModel"
               class="settings__choice"
               @update:model-value="(name: string) => picks(AT.agentModel, name)"
             />
@@ -473,12 +511,6 @@ const profiles = computed<readonly SelectChoice[]>(() => {
           </span>
         </div>
 
-        <Editable
-          :name="words.agentCommand"
-          :detail="words.agentCommandDetail"
-          :value="held.setting(AT.agentCommand)"
-          @keeps="(value: unknown) => puts(AT.agentCommand, value)"
-        />
       </section>
     </div>
   </div>
@@ -515,10 +547,22 @@ const profiles = computed<readonly SelectChoice[]>(() => {
   padding: var(--numen-gutter);
 }
 
+/* Where the settings stand, with the one way to the file itself at the end of
+   the line the groups are read against. */
 .settings__where {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--numen-panel-gap);
   max-inline-size: var(--settings-measure);
   margin: 0 auto var(--settings-apart);
+}
+
+.settings__file {
+  min-inline-size: 0;
+  margin: 0;
   color: var(--numen-hushed);
+  overflow-wrap: anywhere;
 }
 
 /* The groups are read in one column, centred in whatever room the pane has. */

@@ -1,37 +1,78 @@
 <script setup lang="ts">
 /**
- * One choice out of a list, taken from a menu the machine draws.
+ * One choice out of a list, taken from the menu this product draws.
  *
- * It stands as tall as a line of typing does, so a row of controls shares one
- * middle. Choices naming a shelf are drawn under it, in the runs they arrive in.
+ * The line says what is in force and opens the choices under itself. It stands
+ * as tall as every other control on a row, and choices naming a shelf are drawn
+ * under its name.
  *
- * A value in force that is none of the choices leaves the menu standing on
- * nothing, and the caller is told nothing until a choice is made.
+ * A value in force that is none of the choices is written on the line as it
+ * stands, and the caller is told nothing until a choice is made.
  */
-import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
+import { computed, ref, useTemplateRef, type HTMLAttributes } from 'vue'
+import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/lib/utils'
-import { shelved } from './shelves'
+import Menu from '../../../menu/Menu.vue'
+import type { MenuItem } from '../../../menu/model'
+import type { Point } from '../../../plex/model'
 import type { SelectChoice } from '.'
 
 const props = withDefaults(
   defineProps<{
     /** The choices, in the order they are offered. */
     choices: readonly SelectChoice[]
+    /** What stands on the line while nothing is in force. */
+    placeholder?: string
+    /** What the list of choices is announced as. */
+    name?: string
     disabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { disabled: false },
+  { placeholder: '', name: 'Choices', disabled: false },
 )
+
+defineOptions({ inheritAttrs: false })
 
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
-const shelves = computed(() => shelved(props.choices))
+const items = computed<readonly MenuItem[]>(() =>
+  props.choices.map((one) => ({
+    id: one.id,
+    text: one.text,
+    ...(one.detail ? { detail: one.detail } : {}),
+    ...(one.group ? { band: one.group } : {}),
+  })),
+)
 
-const element = useTemplateRef<HTMLSelectElement>('element')
+/** The choice in force, and none where the value is none of them. */
+const chosen = computed(() => props.choices.find((one) => one.id === model.value))
 
-const chose = (event: Event) => {
-  model.value = (event.target as HTMLSelectElement).value
+/** What is written on the line: the choice, the value itself, or the stand-in. */
+const reading = computed(() => chosen.value?.text || model.value || props.placeholder)
+
+const element = useTemplateRef<HTMLButtonElement>('element')
+
+/** Where the choices are drawn, and nothing while they are not drawn at all. */
+const asking = ref<Point | null>(null)
+
+/** The line opens the choices under itself, along its own leading edge. */
+const opens = () => {
+  const line = element.value
+  if (!line || props.disabled) return
+  const box = line.getBoundingClientRect()
+  asking.value = { x: box.left, y: box.bottom }
+}
+
+const chose = (id: string) => {
+  model.value = id
+}
+
+/** The arrows open the choices standing on the one in force. */
+const onKey = (event: KeyboardEvent) => {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+  event.preventDefault()
+  opens()
 }
 
 defineExpose({
@@ -42,33 +83,66 @@ defineExpose({
 </script>
 
 <template>
-  <select
+  <button
     ref="element"
+    v-bind="$attrs"
+    type="button"
     data-slot="select"
-    :value="model"
+    aria-haspopup="menu"
+    :aria-expanded="asking !== null"
     :disabled="disabled"
     :class="
       cn(
-        'w-full rounded-tight border border-field-rule bg-field',
-        // The gaps are measured to the ink the screen paints, which is what a
-        // field of typing beside it is measured to.
-        'px-2 py-1.5',
-        'font-sans text-base leading-none text-ink',
-        'cursor-pointer outline-none',
+        'flex w-full items-center justify-between gap-2',
+        'h-action rounded-tight border border-field-rule bg-field px-2',
+        'font-sans text-base leading-none text-ink text-left',
+        'cursor-pointer outline-none transition-colors duration-100 ease-numen',
+        'hover:border-rule',
         'focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
         'disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
-    @change="chose"
+    @click="opens"
+    @keydown="onKey"
   >
-    <template v-for="(shelf, at) in shelves" :key="shelf.label ?? at">
-      <optgroup v-if="shelf.label" :label="shelf.label">
-        <option v-for="one in shelf.choices" :key="one.id" :value="one.id">{{ one.text }}</option>
-      </optgroup>
-      <template v-else>
-        <option v-for="one in shelf.choices" :key="one.id" :value="one.id">{{ one.text }}</option>
-      </template>
-    </template>
-  </select>
+    <span class="select__reading min-w-0" :class="{ 'text-hushed': !chosen && !model }">
+      {{ reading }}
+    </span>
+    <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
+  </button>
+
+  <Menu
+    v-if="asking"
+    :items="items"
+    :at="asking"
+    :from="element"
+    :current="model"
+    :name="name"
+    bands
+    open
+    opening="keyboard"
+    @choose="chose"
+    @dismiss="asking = null"
+  >
+    <template #silence>Nothing to choose</template>
+  </Menu>
 </template>
+
+<style scoped>
+/* One line, then an ellipsis. A model is named by a word and addressed by a
+   line too long to read, and the name is what the line carries. */
+.select__reading {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lucide draws on a 24 grid, and the stroke is given in those units. */
+.select__mark {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  stroke-width: 1.875;
+  color: var(--numen-hushed);
+}
+</style>

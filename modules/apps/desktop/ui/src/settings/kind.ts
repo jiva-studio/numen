@@ -45,6 +45,8 @@ export interface Installation {
   writes(written: readonly Written[]): void
   /** The file the settings stand in, absolute on this machine. */
   file(): string
+  /** That file opened whole, in a tab of its own. */
+  opensFile(): void
 }
 
 /** What the settings tab holds. */

@@ -133,3 +133,102 @@ func TestSettingsWrittenTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T)
 		t.Errorf("the settings read out as %s", said.Msg.GetWritten())
 	}
 }
+
+// The window opens the settings file whole, and what it reads is the file as
+// its person wrote it.
+func TestTheSettingsFileIsReadAsItStands(t *testing.T) {
+	f := opening(t, nil, nil, true)
+
+	said, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetPath() == "" {
+		t.Error("the file stands nowhere")
+	}
+
+	var held map[string]any
+	if err := json.Unmarshal([]byte(said.Msg.GetWritten()), &held); err != nil {
+		t.Fatalf("the file reads as %q: %v", said.Msg.GetWritten(), err)
+	}
+}
+
+// The file is written as it was typed, and read back the same way.
+func TestTheSettingsFileIsWrittenAsItWasTyped(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	written := "{\n  \"agent\": {\n    \"claude\": { \"model\": \"opus\" }\n  }\n}\n"
+
+	if _, err := f.client.WriteSettingsFile(
+		t.Context(),
+		connect.NewRequest(&v1.WriteSettingsFileRequest{Written: written}),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	said, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if said.Msg.GetWritten() != written {
+		t.Errorf("the file reads as %q, wanted %q", said.Msg.GetWritten(), written)
+	}
+}
+
+// A file the settings cannot be read out of is the client's to correct, and
+// what a person already has in the file is worth more than the write.
+func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	was, err := f.client.SettingsFile(t.Context(), connect.NewRequest(&v1.SettingsFileRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, one := range []struct {
+		name    string
+		written string
+	}{
+		{"not JSON at all", `{ "agent": `},
+		{"a value of the wrong kind", `{"appearance": {"text_scale": "large"}}`},
+		{"a number past what its setting goes to", `{"appearance": {"text_scale": 5}}`},
+	} {
+		t.Run(one.name, func(t *testing.T) {
+			_, err := f.client.WriteSettingsFile(
+				t.Context(),
+				connect.NewRequest(&v1.WriteSettingsFileRequest{Written: one.written}),
+			)
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("the file was taken as %v", err)
+			}
+
+			now, err := f.client.SettingsFile(
+				t.Context(),
+				connect.NewRequest(&v1.SettingsFileRequest{}),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if now.Msg.GetWritten() != was.Msg.GetWritten() {
+				t.Errorf("the file reads as %q", now.Msg.GetWritten())
+			}
+		})
+	}
+}
+
+// The file holds a person's keys, and what a refusal says does not repeat them.
+func TestWhatARefusalSaysDoesNotRepeatWhatStandsInTheFile(t *testing.T) {
+	f := opening(t, nil, nil, true)
+	secret := "sk-not-a-real-key-0000"
+
+	_, err := f.client.WriteSettingsFile(
+		t.Context(),
+		connect.NewRequest(&v1.WriteSettingsFileRequest{
+			Written: `{"appearance": {"text_scale": "` + secret + `"}}`,
+		}),
+	)
+	if err == nil {
+		t.Fatal("the file was taken")
+	}
+	if strings.Contains(err.Error(), secret) {
+		t.Errorf("the refusal says %q", err)
+	}
+}

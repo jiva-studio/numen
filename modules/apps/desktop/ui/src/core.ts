@@ -157,6 +157,12 @@ export interface Written {
   readonly value: string
 }
 
+/**
+ * What a model's files are on this machine. A model reached over the network
+ * has nothing to fetch, and where files stand says nothing about it.
+ */
+export type Presence = 'present' | 'not fetched' | 'nothing to fetch'
+
 /** One model a setting that names a model can be set to. */
 export interface Model {
   /** The setting it is read from. The one in force names this model there. */
@@ -169,6 +175,8 @@ export interface Model {
   readonly byDefault: boolean
   /** What choosing it writes. */
   readonly writes: readonly Written[]
+  /** What this model's files are on this machine. */
+  readonly presence: Presence
 }
 
 /** Every setting as it stands, where they stand, and the models offered. */
@@ -357,6 +365,14 @@ export interface Core {
    * holds is unchanged.
    */
   choosesSetting(written: readonly Written[]): Promise<void>
+  /** The settings file as its person wrote it, and where it stands. */
+  settingsFile(): Promise<{ readonly written: string; readonly path: string }>
+  /**
+   * The settings file replaced whole, with the bytes as they were typed. A file
+   * the settings could not be read out of is refused, and what the file holds
+   * is unchanged.
+   */
+  writesSettingsFile(written: string): Promise<void>
   /** An empty folder. The folders above it are made with it. */
   makeFolder(path: string): Promise<Refused | null>
   /**

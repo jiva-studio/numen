@@ -13,6 +13,7 @@ import {
   Naming,
   NoteType as NoteTypes,
   Owed,
+  Presence as Presences,
   Role as Roles,
   SourceKind,
   VaultService,
@@ -56,6 +57,7 @@ import type {
   NoteType,
   Offer,
   Outcome,
+  Presence,
   Problem,
   Refused,
   Removed,
@@ -282,6 +284,7 @@ export const core: Core & Asking & Commanding = {
         shelf: one.shelf,
         byDefault: one.byDefault,
         writes: one.writes.map((write) => ({ at: write.at, value: write.value })),
+        presence: standing[one.presence],
       })),
     } satisfies Configured
   },
@@ -289,6 +292,13 @@ export const core: Core & Asking & Commanding = {
     await vault.chooseSettings({
       settings: written.map((one) => ({ at: [...one.at], value: one.value })),
     })
+  },
+  settingsFile: async () => {
+    const answer = await vault.settingsFile({})
+    return { written: answer.written, path: answer.path }
+  },
+  writesSettingsFile: async (written) => {
+    await vault.writeSettingsFile({ written })
   },
   reviewing: async () => (await vault.reviewing({})).dayStarts,
   choosesReviewing: async (starts) =>
@@ -542,6 +552,14 @@ const holding: Record<SourceKind, Source> = {
   [SourceKind.NOTE]: 'note',
   [SourceKind.BOOK]: 'book',
   [SourceKind.RECORDING]: 'recording',
+}
+
+/** What a model's files are on this machine, in the words the window uses. */
+const standing: Record<Presences, Presence> = {
+  [Presences.UNSPECIFIED]: 'nothing to fetch',
+  [Presences.PRESENT]: 'present',
+  [Presences.NOT_FETCHED]: 'not fetched',
+  [Presences.NOTHING_TO_FETCH]: 'nothing to fetch',
 }
 
 /** Which of four a note is, in the words the window uses. */

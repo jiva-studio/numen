@@ -4,6 +4,9 @@
  *
  * The awkward ones are the words on the rows: far too long, in another script,
  * with nothing to break at, and a value in force that is none of them.
+ *
+ * The choices are drawn at the end of the document, so they are read off the
+ * document and not off the canvas.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
@@ -67,21 +70,37 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const control = (canvas: HTMLElement): HTMLSelectElement =>
-  canvas.querySelector<HTMLSelectElement>('[data-slot="select"]')!
+const control = (canvas: HTMLElement): HTMLButtonElement =>
+  canvas.querySelector<HTMLButtonElement>('[data-slot="select"]')!
+
+const rows = (): readonly HTMLElement[] =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+
+const words = (): readonly string[] =>
+  rows().map((one) => one.querySelector('.menu__text')?.textContent?.trim() ?? '')
+
+const shelves = (): readonly string[] =>
+  Array.from(document.body.querySelectorAll<HTMLElement>('.menu__band')).map(
+    (one) => one.textContent?.trim() ?? '',
+  )
+
+/** The choices opened, which is what a person does before choosing one. */
+const opens = async (canvas: HTMLElement) => {
+  await userEvent.click(control(canvas))
+}
 
 /** Three choices, none of them on a shelf. */
 export const ASelect: Story = {}
 
-/** The choices on the two shelves they come off. */
+/** The choices on the two shelves they come off, named over each run. */
 export const OnShelves: Story = {
   args: {
     words: 'numen\tShips with numen\npaper\tShips with numen\nsea\tYours',
     chosen: 'paper',
   },
   play: async ({ canvasElement }) => {
-    const shelves = canvasElement.querySelectorAll('optgroup')
-    expect(Array.from(shelves).map((one) => one.label)).toEqual(['Ships with numen', 'Yours'])
+    await opens(canvasElement)
+    expect(shelves()).toEqual(['Ships with numen', 'Yours'])
   },
 }
 
@@ -105,43 +124,70 @@ export const Unbroken: Story = {
   args: { words: `${UNBROKEN}\nShort`, chosen: 'short', width: '10rem' },
 }
 
-/** No choices at all: a menu with nothing on it. */
+/** No choices at all: the list says so and offers nothing. */
 export const NoChoicesAtAll: Story = {
   args: { words: '', chosen: '' },
   play: async ({ canvasElement }) => {
-    expect(control(canvasElement).options).toHaveLength(0)
+    await opens(canvasElement)
+    expect(rows()).toHaveLength(0)
+    expect(document.body.querySelector('.menu__silence')).not.toBeNull()
   },
 }
 
-/** Far more choices than the menu is drawn for. */
+/** Far more choices than the list is drawn for. */
 export const FarTooMany: Story = {
   args: {
     words: Array.from({ length: 40 }, (_, at) => `Choice ${at + 1}`).join('\n'),
     chosen: 'choice-1',
   },
   play: async ({ canvasElement }) => {
-    expect(control(canvasElement).options).toHaveLength(40)
+    await opens(canvasElement)
+    expect(rows()).toHaveLength(40)
   },
 }
 
-/** A value in force that is none of the choices: the menu stands on none. */
+/** A value in force that is none of the choices: the line says the value. */
 export const AValueNotAmongThem: Story = {
   args: { chosen: 'enormous' },
   play: async ({ canvasElement }) => {
-    expect(control(canvasElement).selectedIndex).toBe(-1)
+    expect(control(canvasElement).textContent).toContain('enormous')
   },
 }
 
 /** A control nobody may turn. */
 export const Disabled: Story = { args: { disabled: true } }
 
-/** The keyboard lands on it, and what it comes to rest on is what is in force. */
+/** The keyboard lands on it, opens it, and walks the choices. */
 export const OneStopOnTheWayRound: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.tab()
     expect(document.activeElement).toBe(control(canvasElement))
 
-    await userEvent.selectOptions(control(canvasElement), 'large')
-    expect(control(canvasElement).value).toBe('large')
+    await userEvent.keyboard('{ArrowDown}')
+    expect(words()).toEqual(['Small', 'Medium', 'Large'])
+    expect(document.activeElement).toBe(rows()[0])
+
+    await userEvent.keyboard('{ArrowDown}{Enter}')
+    expect(control(canvasElement).textContent).toContain('Medium')
+    expect(document.activeElement).toBe(control(canvasElement))
+  },
+}
+
+/** Typing jumps to the choice the letter begins. */
+export const TypingToJump: Story = {
+  play: async ({ canvasElement }) => {
+    await opens(canvasElement)
+    await userEvent.keyboard('l')
+    expect(document.activeElement).toBe(rows()[2])
+  },
+}
+
+/** Escape puts the choices away and leaves what is in force alone. */
+export const EscapePutsItAway: Story = {
+  play: async ({ canvasElement }) => {
+    await opens(canvasElement)
+    await userEvent.keyboard('{Escape}')
+    expect(rows()).toHaveLength(0)
+    expect(control(canvasElement).textContent).toContain('Small')
   },
 }
