@@ -119,7 +119,7 @@ func (r *Recogniser) Close() error {
 //
 // A part the configuration calls a head opens a part of the document, and
 // carries how deep that part sits.
-func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, error) {
+func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error) {
 	regions, err := r.layout(page)
 	if err != nil {
 		return nil, err
@@ -160,14 +160,14 @@ func (r *Recogniser) Read(ctx context.Context, page image.Image) ([]ocr.Block, e
 				Score: line.Score,
 			})
 		}
-		if text, spans := ocr.Assemble(lines); text != "" {
+		if text, stretches := ocr.Assemble(lines); text != "" {
 			depth, head := r.head[region.Label]
 			out = append(out, ocr.Block{
-				Label: region.Label,
-				Text:  text,
-				Head:  head,
-				Depth: depth,
-				Spans: spans,
+				Label:     region.Label,
+				Text:      text,
+				Head:      head,
+				Depth:     depth,
+				Stretches: stretches,
 			})
 		}
 	}

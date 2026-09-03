@@ -101,12 +101,12 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	var progress []EmbedResult
+	var progress []Embedded
 	model := &embedder{dims: dimensions}
 	res, err := (Embed{
 		Readers: vaults{first.ID: shelf}, Chunks: index, Vectors: index,
 		Embedder: model, BatchCharacters: 2000,
-		OnProgress: func(r EmbedResult) { progress = append(progress, r) },
+		OnProgress: func(r Embedded) { progress = append(progress, r) },
 	}).Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -158,7 +158,7 @@ func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
-	if res != (EmbedResult{}) {
+	if res != (Embedded{}) {
 		t.Errorf("the run reports %+v, want nothing done", res)
 	}
 	if len(index.vectors) != 0 || len(index.groups) != 0 {
@@ -177,12 +177,12 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 	cases := []struct {
 		name    string
 		replace func(t *testing.T, shelf *library)
-		want    func(t *testing.T, res EmbedResult, owed int)
+		want    func(t *testing.T, res Embedded, owed int)
 	}{
 		{
 			name:    "the file is gone",
 			replace: func(_ *testing.T, shelf *library) { delete(shelf.files, bookPath) },
-			want: func(t *testing.T, res EmbedResult, owed int) {
+			want: func(t *testing.T, res Embedded, owed int) {
 				if res.Vanished != owed || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
 				}
@@ -193,7 +193,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(_ *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindBook, []byte("not an archive"), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, owed int) {
+			want: func(t *testing.T, res Embedded, owed int) {
 				if res.Vanished != owed || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
 				}
@@ -204,7 +204,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(t *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 20)), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, owed int) {
+			want: func(t *testing.T, res Embedded, owed int) {
 				if res.Displaced == 0 {
 					t.Errorf("the run reports %+v, want the places past the end of the text left alone", res)
 				}

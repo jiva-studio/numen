@@ -81,7 +81,7 @@ func transcribeCommand(ctx context.Context, out io.Writer, cfg container.Config,
 		},
 		// A terminal that prints nothing for an hour looks broken, and this
 		// takes about that. The line rewrites itself.
-		OnProgress: func(res source.TranscribeResult) {
+		OnProgress: func(res source.Transcribed) {
 			if res.Length > 0 {
 				fmt.Fprintf(out, "  %s of %s\r",
 					transcript.Stamp(res.Heard), transcript.Stamp(res.Length))

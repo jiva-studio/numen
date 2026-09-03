@@ -79,7 +79,7 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
 	api := &API{
 		Readers: filesystem.Readers{},
-		Marking: &source.Marks{
+		Highlight: &source.Highlight{
 			Sources: indexed{talk: {Path: talk, From: listener, Hash: hashed}},
 			Derived: held,
 		},
@@ -556,7 +556,7 @@ func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	held := stored{}
 	api, handler := listeningTo(t, held)
-	api.Marking.Sources = indexed{}
+	api.Highlight.Sources = indexed{}
 
 	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
 	if out.Code != http.StatusNotFound {

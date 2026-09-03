@@ -44,10 +44,10 @@ type Recogniser interface {
 	// Recognition is what every page this recogniser reads was read by.
 	Recognition() Recognition
 
-	// Read is one page: its parts, in the order the page is read, and what each
-	// of them says. A page that carries nothing readable is an empty page and
-	// not an error.
-	Read(ctx context.Context, page image.Image) ([]ocr.Block, error)
+	// Recognise is one page: its parts, in the order the page is read, and what
+	// each of them says. A page that carries nothing readable is an empty page
+	// and not an error.
+	Recognise(ctx context.Context, page image.Image) ([]ocr.Block, error)
 
 	// Close releases whatever the models hold.
 	Close() error

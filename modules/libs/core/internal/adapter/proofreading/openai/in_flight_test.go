@@ -63,7 +63,7 @@ func TestTheServiceIsAskedAboutAsManyBatchesAsTheProfileNames(t *testing.T) {
 			batches = append(batches, page(at, "a line"))
 		}
 
-		if _, err := asking(t, s.URL, want).Read(context.Background(), batches); err != nil {
+		if _, err := asking(t, s.URL, want).Proofread(context.Background(), batches); err != nil {
 			t.Fatal(err)
 		}
 		if got := most(); got != want {
@@ -80,7 +80,7 @@ func TestAProfileNamingNoNumberTakesTheDefault(t *testing.T) {
 		batches = append(batches, page(at, "a line"))
 	}
 
-	if _, err := asking(t, s.URL, 0).Read(context.Background(), batches); err != nil {
+	if _, err := asking(t, s.URL, 0).Proofread(context.Background(), batches); err != nil {
 		t.Fatal(err)
 	}
 	if got := most(); got != 4 {

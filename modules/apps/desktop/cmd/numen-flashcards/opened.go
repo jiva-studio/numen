@@ -43,7 +43,7 @@ type opened struct {
 type vaulted struct {
 	once    sync.Once
 	opening *container.Opening
-	open    *container.Open
+	open    *container.Opened
 }
 
 // wait lets go of every vault and holds until nothing is still writing.
@@ -118,7 +118,7 @@ func (o *opened) reads(ctx context.Context, v domain.Vault, got func(int64)) err
 	}
 	defer o.running.Done()
 
-	_, err := o.of(v).open.Read(ctx, func(res vault.ScanResult) { got(int64(res.Indexed)) })
+	_, err := o.of(v).open.Read(ctx, func(res vault.Scanned) { got(int64(res.Indexed)) })
 	return err
 }
 

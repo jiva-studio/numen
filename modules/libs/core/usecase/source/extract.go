@@ -60,15 +60,15 @@ type Extract struct {
 	// OnProgress, if set, is called as each source is opened and as each one is
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
-	OnProgress func(ExtractResult)
+	OnProgress func(Extracted)
 }
 
-// ExtractResult reports what extraction did.
+// Extracted reports what extraction did.
 //
 // `Seen` counts the sources of the kinds this cuts and nothing else. `Recorded`
 // and `Extracted` are separate numbers because they are separate passes: a book
 // is recorded when the vault is walked and extracted when its text is read.
-type ExtractResult struct {
+type Extracted struct {
 	Seen       int    // sources found in the vault
 	Recorded   int    // new or changed, so owing their text
 	Unchanged  int    // skipped on size and modification time alone
@@ -83,8 +83,8 @@ type ExtractResult struct {
 
 // Execute brings the chunks of one vault's books up to date with what is on
 // disk.
-func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, error) {
-	var res ExtractResult
+func (u Extract) Execute(ctx context.Context, v domain.Vault) (Extracted, error) {
+	var res Extracted
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -110,7 +110,7 @@ func (u Extract) discover(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
-	res *ExtractResult,
+	res *Extracted,
 	swept *[]port.Recognised,
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.FileRef, len(u.kinds()))
@@ -245,7 +245,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.Recognis
 // so, because its recipe is still the one in use: nothing else asks after it.
 // Recording it afresh with no recipe clears which producer made its text, so the
 // next pass cuts it from the document again.
-func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.VaultReader, res *Extracted) error {
 	if u.Derived == nil {
 		return nil
 	}
@@ -295,7 +295,7 @@ func (u Extract) holds(ctx context.Context, names ...string) bool {
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it names nothing that has not been tried, so a run that stopped part way
 // is continued by starting another.
-func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *ExtractResult) error {
+func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReader, res *Extracted) error {
 	sizes := u.sizes()
 	known := recipes(sizes)
 	tried := map[string]bool{}
@@ -343,8 +343,8 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 //
 // It is what a recognition calls as it writes: the pages already read are cut
 // and can be embedded while the rest of the document is still being read.
-func (u Extract) One(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
-	var res ExtractResult
+func (u Extract) One(ctx context.Context, v domain.Vault, path string) (Extracted, error) {
+	var res Extracted
 	reader, err := u.Readers.Open(v)
 	if err != nil {
 		return res, err
@@ -366,7 +366,7 @@ func (u Extract) source(
 	reader port.VaultReader,
 	path string,
 	sizes cutting.Sizes,
-	res *ExtractResult,
+	res *Extracted,
 ) error {
 	res.Reading = path
 	u.progress(*res)
@@ -513,7 +513,7 @@ func (u Extract) sizes() cutting.Sizes {
 	return s
 }
 
-func (u Extract) progress(res ExtractResult) {
+func (u Extract) progress(res Extracted) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

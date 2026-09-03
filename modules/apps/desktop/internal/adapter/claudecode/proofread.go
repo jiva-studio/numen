@@ -66,12 +66,12 @@ func (p *Proofreader) Name() string {
 	return "claude " + p.Model
 }
 
-// Read asks about every batch and answers with what came back about each, by
-// the batch it is about. A batch nothing came back about is left out.
+// Proofread asks about every batch and answers with what came back about each,
+// by the batch it is about. A batch nothing came back about is left out.
 //
 // One batch that fails ends the run: the batches already answered are dropped
 // and the caller asks again.
-func (p *Proofreader) Read(ctx context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *Proofreader) Proofread(ctx context.Context, batches []proofread.Batch) (map[int]string, error) {
 	if len(batches) == 0 {
 		return nil, nil
 	}

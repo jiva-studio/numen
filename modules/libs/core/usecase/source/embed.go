@@ -43,11 +43,11 @@ type Embed struct {
 	BatchCharacters int
 
 	// OnProgress, if set, is called each time a group of vectors is written.
-	OnProgress func(EmbedResult)
+	OnProgress func(Embedded)
 }
 
-// EmbedResult reports what embedding did.
-type EmbedResult struct {
+// Embedded reports what embedding did.
+type Embedded struct {
 	Owing    int // chunks found with no vector from the model in use
 	Embedded int // chunks that now carry one
 	// Reused counts the chunks whose vector was already made for their text and
@@ -59,8 +59,8 @@ type EmbedResult struct {
 }
 
 // Execute embeds what one vault owes, in groups, until nothing owes anything.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error) {
-	var res EmbedResult
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (Embedded, error) {
+	var res Embedded
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -112,7 +112,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 // A chunk whose source is gone, or whose place is not in the text that source
 // holds now, is left as it is: the file is what is true, and the index follows it
 // when the file is next read.
-func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *EmbedResult) ([]domain.Passage, []string, error) {
+func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passage, res *Embedded) ([]domain.Passage, []string, error) {
 	chunks := make([]domain.Passage, 0, len(owing))
 	texts := make([]string, 0, len(owing))
 
@@ -145,7 +145,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 // embedded is stored, and both representations of a vector are one value: a chunk
 // holding one and not the other is absent from the coarse pass and invisible to
 // the question of what has no vector.
-func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []domain.Passage, texts []string, res *EmbedResult) error {
+func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []domain.Passage, texts []string, res *Embedded) error {
 	if len(texts) == 0 {
 		return nil
 	}
@@ -234,7 +234,7 @@ func unsigned(stored []byte) []int8 {
 	return out
 }
 
-func (u Embed) progress(res EmbedResult) {
+func (u Embed) progress(res Embedded) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

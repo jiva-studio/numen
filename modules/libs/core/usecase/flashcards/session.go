@@ -32,12 +32,12 @@ type Over struct {
 	ByPreset bool
 }
 
-// Deck is a sitting over one deck.
-func Deck(path string) Over { return Over{Deck: path} }
+// OverDeck is a sitting over one deck.
+func OverDeck(path string) Over { return Over{Deck: path} }
 
-// Under is a sitting over the cards of every deck pointing at one preset, held
-// to that preset's budget.
-func Under(preset string) Over { return Over{Preset: preset, ByPreset: true} }
+// ByPreset is a sitting over the cards of every deck pointing at one preset,
+// held to that preset's budget.
+func ByPreset(preset string) Over { return Over{Preset: preset, ByPreset: true} }
 
 // Asked is one card face as it is put to a person: where it stands, how it is laid
 // out, and where the answers so far have left it.

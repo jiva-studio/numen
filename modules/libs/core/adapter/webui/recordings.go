@@ -382,10 +382,10 @@ func (a *API) held(ctx context.Context, path string) (domain.Vault, domain.FileR
 // wrote is kept. They are the index and the store a passage is placed from,
 // which read the same artifacts.
 func (a *API) hearing() (port.SourceQueries, port.DerivedStores, bool) {
-	if a.Marking == nil || a.Marking.Sources == nil || a.Marking.Derived == nil {
+	if a.Highlight == nil || a.Highlight.Sources == nil || a.Highlight.Derived == nil {
 		return nil, nil, false
 	}
-	return a.Marking.Sources, a.Marking.Derived, true
+	return a.Highlight.Sources, a.Highlight.Derived, true
 }
 
 // heard is what listened to the recording at a path and the store holding what

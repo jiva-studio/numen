@@ -75,9 +75,9 @@ type Transcriber interface {
 	// the vault holds it, in whatever container it was recorded in.
 	Open(ctx context.Context, raw []byte) (Recording, error)
 
-	// Hear is one stretch of speech, as the words it carries. A stretch that
-	// carries none is silence and not an error.
-	Hear(ctx context.Context, audio Audio) (string, error)
+	// Transcribe is one stretch of speech, as the words it carries. A stretch
+	// that carries none is silence and not an error.
+	Transcribe(ctx context.Context, audio Audio) (string, error)
 
 	// Close releases whatever the models hold.
 	Close() error

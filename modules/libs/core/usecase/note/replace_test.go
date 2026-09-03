@@ -54,8 +54,8 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if done.Stretch.From != 4 || done.Stretch.To != 8 {
-		t.Errorf("landed at %d..%d, wanted 4..8", done.Stretch.From, done.Stretch.To)
+	if done.Span.From != 4 || done.Span.To != 8 {
+		t.Errorf("landed at %d..%d, wanted 4..8", done.Span.From, done.Span.To)
 	}
 }
 

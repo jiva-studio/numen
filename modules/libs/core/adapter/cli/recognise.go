@@ -69,7 +69,7 @@ func recogniseCommand(ctx context.Context, out io.Writer, cfg container.Config, 
 		},
 		// A terminal that prints nothing for an hour looks broken, and this
 		// takes about that. The line rewrites itself.
-		OnProgress: func(res source.RecogniseResult) {
+		OnProgress: func(res source.Recognised) {
 			if res.Pages > 0 {
 				fmt.Fprintf(out, "  page %d of %d\r", res.Read, res.Pages)
 				shown = true

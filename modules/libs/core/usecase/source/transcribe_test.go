@@ -47,7 +47,7 @@ func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
 	return played{s}, nil
 }
 
-func (s *voice) Hear(ctx context.Context, audio port.Audio) (string, error) {
+func (s *voice) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
 	s.heard = append(s.heard, audio.From)
 	if s.stop != nil {
 		s.stop(len(s.heard))

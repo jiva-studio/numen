@@ -134,7 +134,7 @@ func (s *speaker) Recognition() port.Recognition {
 	return port.Recognition{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
 }
 
-func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
+func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]ocr.Block, error) {
 	s.pages++
 	if s.stop != nil {
 		s.stop(s.pages)
@@ -153,9 +153,9 @@ func (s *speaker) Read(ctx context.Context, _ image.Image) ([]ocr.Block, error) 
 		out = append(out, ocr.Block{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), Head: true, Depth: 1})
 	}
 	return append(out, ocr.Block{
-		Label: "text",
-		Text:  said,
-		Spans: []ocr.Span{{Box: image.Rect(10, 20, 30, 40), Length: len(said)}},
+		Label:     "text",
+		Text:      said,
+		Stretches: []ocr.Stretch{{Box: image.Rect(10, 20, 30, 40), Length: len(said)}},
 	}), nil
 }
 

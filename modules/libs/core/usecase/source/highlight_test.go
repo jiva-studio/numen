@@ -27,16 +27,16 @@ func (l layered) Lit(_ context.Context, raw []byte, _ []int, pages []int) ([]lit
 }
 
 // answering is the use case with the test's own answer for where words sit.
-func answering(u Marks, where func(raw []byte, pages []int) ([]lit.Box, error)) Marks {
+func answering(u Highlight, where func(raw []byte, pages []int) ([]lit.Box, error)) Highlight {
 	u.Documents = layered{Documents: pdf.Documents{}, where: where}
 	return u
 }
 
-// placing is a Marks over one vault holding one document, and the document read.
+// placing is a Highlight over one vault holding one document, and the document read.
 //
 // The document is the pdf package's own fixture: pages of a few words each, so
 // a test can name a word and say which page it is printed on.
-func placing(t *testing.T, name string) (Marks, *store, *shelf, *pdf.Book, []byte, *library) {
+func placing(t *testing.T, name string) (Highlight, *store, *shelf, *pdf.Book, []byte, *library) {
 	t.Helper()
 	raw, err := os.ReadFile("../../internal/adapter/pdf/testdata/" + name)
 	if err != nil {
@@ -50,7 +50,7 @@ func placing(t *testing.T, name string) (Marks, *store, *shelf, *pdf.Book, []byt
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	index := newStore()
 	store := newShelf()
-	return Marks{
+	return Highlight{
 		Readers:   vaults{first.ID: shelved},
 		Sources:   index,
 		Derived:   store,
@@ -82,7 +82,7 @@ func run(t *testing.T, book *pdf.Book, word string) (start, length int) {
 
 // litOn is where one run of a source's text sits, asked about on its own. A
 // source with no reading and no layer is lit nowhere.
-func litOn(t *testing.T, u Marks, path string, start, length int) []lit.Page {
+func litOn(t *testing.T, u Highlight, path string, start, length int) []lit.Page {
 	t.Helper()
 	found, err := u.Execute(t.Context(), first, path, []lit.Run{{Start: start, Length: length}})
 	if err != nil {

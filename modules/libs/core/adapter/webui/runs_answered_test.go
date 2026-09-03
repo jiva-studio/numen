@@ -144,8 +144,8 @@ func (deaf) Open(context.Context, []byte) (port.Recording, error) {
 	return nil, errors.New("mp3: MPEG version 2.5 is not supported")
 }
 
-func (deaf) Hear(context.Context, port.Audio) (string, error) { return "", nil }
-func (deaf) Close() error                                     { return nil }
+func (deaf) Transcribe(context.Context, port.Audio) (string, error) { return "", nil }
+func (deaf) Close() error                                           { return nil }
 
 // unrecorded is an index a run writes to and nothing reads back.
 type unrecorded struct{}
@@ -182,8 +182,8 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 
 	talks := willRun()
 	api := &API{
-		Readers: filesystem.Readers{},
-		Marking: &source.Marks{Sources: nothingRead(), Derived: stores},
+		Readers:   filesystem.Readers{},
+		Highlight: &source.Highlight{Sources: nothingRead(), Derived: stores},
 	}
 	api.show(vault)
 	runningBehind(api, func(on *showing) { on.transcribes = talks })

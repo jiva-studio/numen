@@ -85,7 +85,7 @@ type puts struct {
 
 func (p *puts) Name() string { return "a proofreader" }
 
-func (p *puts) Read(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
+func (p *puts) Proofread(_ context.Context, batches []proofread.Batch) (map[int]string, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := map[int]string{}
@@ -140,7 +140,7 @@ func stopped(
 		"by hand": {Use: proofreading.UseAgent, Model: "a-model", BatchSize: 1, InFlight: 1},
 	}
 	held.cfg.SpeechProofreading = proofreading.Proofread{With: "by hand", Automatically: true}
-	held.cfg.AgentProofreader = func(AgentProofreading) (port.Proofreader, error) { return by, nil }
+	held.cfg.AgentProofreader = func(AgentProofreader) (port.Proofreader, error) { return by, nil }
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(recording)))
 	if err != nil {
@@ -262,7 +262,7 @@ func TestATranscriptAskedForIsPutRightWithTheProfileNamedForSpeech(t *testing.T)
 	held.cfg.Proofreading.Profiles["off a page"] = proofreading.Profile{
 		Use: proofreading.UseAgent, Model: "another model", BatchSize: 1, InFlight: 1,
 	}
-	held.cfg.AgentProofreader = func(said AgentProofreading) (port.Proofreader, error) {
+	held.cfg.AgentProofreader = func(said AgentProofreader) (port.Proofreader, error) {
 		if said.Model == "another model" {
 			return scans, nil
 		}
@@ -329,7 +329,7 @@ type refuses struct{ why error }
 
 func (r *refuses) Name() string { return "a proofreader that will not answer" }
 
-func (r *refuses) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+func (r *refuses) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	return nil, r.why
 }
 
@@ -382,7 +382,7 @@ type waits struct {
 
 func (w *waits) Name() string { return "a proofreader that waits" }
 
-func (w *waits) Read(context.Context, []proofread.Batch) (map[int]string, error) {
+func (w *waits) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
 	w.once.Do(func() { close(w.asked) })
 	<-w.on
 	return map[int]string{}, nil
@@ -395,7 +395,7 @@ func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *test
 	by := &puts{}
 	held, v, _, _ := stopped(t, by, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
-	held.cfg.AgentProofreader = func(AgentProofreading) (port.Proofreader, error) {
+	held.cfg.AgentProofreader = func(AgentProofreader) (port.Proofreader, error) {
 		close(reached)
 		<-stand
 		return by, nil

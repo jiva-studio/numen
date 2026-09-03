@@ -30,7 +30,7 @@ func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 
 	// Written through the levelling while the walk is running, which is what the
 	// window does when a person saves.
-	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {
+	if _, err := open.Read(t.Context(), func(usecase.Scanned) {
 		write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 		if err := opening.Level(t.Context(), v, []string{"Leaf.md"}); err != nil {
 			t.Error(err)
@@ -57,7 +57,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 	// The first walk goes through, and the second is held with the note's old
 	// bytes in the walk's hand.
 	held.release()
-	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(usecase.Scanned) {}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -68,7 +68,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(usecase.ScanResult) {})
+		_, err := open.Read(t.Context(), func(usecase.Scanned) {})
 		walked <- err
 	}()
 
@@ -98,7 +98,7 @@ func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 		t.Fatal("a vault nobody can follow says nothing about it")
 	}
 	// And it still reads: what cannot be followed can still be walked.
-	if _, err := open.Read(t.Context(), func(usecase.ScanResult) {}); err != nil {
+	if _, err := open.Read(t.Context(), func(usecase.Scanned) {}); err != nil {
 		t.Fatal(err)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Leaf" {
@@ -124,7 +124,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 
 	walked := make(chan error, 1)
 	go func() {
-		_, err := open.Read(t.Context(), func(usecase.ScanResult) {})
+		_, err := open.Read(t.Context(), func(usecase.Scanned) {})
 		walked <- err
 	}()
 

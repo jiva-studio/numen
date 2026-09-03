@@ -64,7 +64,7 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 	})
 	api := &API{
 		Readers: filesystem.Readers{},
-		Marking: &source.Marks{
+		Highlight: &source.Highlight{
 			Readers:   filesystem.Readers{},
 			Sources:   indexed{book: {Path: book}},
 			Documents: pdf.Documents{},
@@ -124,7 +124,7 @@ func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 // list of no pages.
 func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
 	api, handler, doc := placing(t)
-	api.Marking.Sources = indexed{}
+	api.Highlight.Sources = indexed{}
 
 	out := ask(handler, where(t, doc, "Delta"))
 	if out.Code != http.StatusOK {
@@ -181,7 +181,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 // window works as it did.
 func TestABuildThatCannotPlaceAPassageSaysSo(t *testing.T) {
 	api, handler, doc := placing(t)
-	api.Marking = nil
+	api.Highlight = nil
 
 	out := ask(handler, where(t, doc, "Delta"))
 	if out.Code != http.StatusNotImplemented {

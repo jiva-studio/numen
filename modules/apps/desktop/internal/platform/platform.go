@@ -19,7 +19,7 @@ func Config() container.Config {
 
 // proofreading opens a proofreading profile that reaches the command line the
 // person already has installed.
-func proofreading(said container.AgentProofreading) (port.Proofreader, error) {
+func proofreading(said container.AgentProofreader) (port.Proofreader, error) {
 	return &claudecode.Proofreader{
 		Command:     said.Command,
 		Model:       said.Model,

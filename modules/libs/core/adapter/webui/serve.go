@@ -164,7 +164,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Viewer:    keepingDrawings(cfg.Documents()),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
-		Marking: &source.Marks{
+		Highlight: &source.Highlight{
 			Readers:   cfg.VaultReaders(),
 			Sources:   db.SourcesKnown(),
 			Derived:   cfg.DerivedStores(),
@@ -921,7 +921,7 @@ func begin(
 
 		// The walk a person watches is this one. A later one is the index being
 		// brought level with a vault that moved under it.
-		result, err := open.Read(ctx, func(res usecase.ScanResult) {
+		result, err := open.Read(ctx, func(res usecase.Scanned) {
 			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Done: int64(res.Indexed)})
 		})
 
@@ -1020,7 +1020,7 @@ func readSources(
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
 		return
 	}
-	making.Books.OnProgress = func(res source.ExtractResult) {
+	making.Books.OnProgress = func(res source.Extracted) {
 		api.say(task.Task{
 			ID: readingBooks, Doing: "Reading books", About: res.Reading,
 			// Every book the walk found leaves this pass one of four ways, and
@@ -1141,7 +1141,7 @@ func embedSources(
 	// The pass enters the list when it opens the first of them, so the row is
 	// never a word with nothing under it. A share is drawn once a vector has
 	// been made, counted over the work in hand and not the size of the vault.
-	making.Vectors.OnProgress = func(res source.EmbedResult) {
+	making.Vectors.OnProgress = func(res source.Embedded) {
 		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
 		if res.Embedded > 0 {
 			at.Done, at.Total = int64(res.Embedded), owing

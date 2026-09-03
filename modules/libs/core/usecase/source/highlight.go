@@ -13,7 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
 
-// Marks says where a run of a source's text sits on the pages it was read from.
+// Highlight says where a run of a source's text sits on the pages it was read
+// from.
 //
 // Two things place a word — a model reading a scan, and the document's own text
 // layer — and which of them made the text the chunks are places in is the one
@@ -22,7 +23,7 @@ import (
 // other producer's rectangles cover other words.
 //
 // A source with no reading and no layer is lit nowhere, and that is an answer.
-type Marks struct {
+type Highlight struct {
 	Readers port.VaultReaders
 	Sources port.SourceQueries
 	Derived port.DerivedStores
@@ -38,7 +39,7 @@ type Marks struct {
 // The answer stands in the order the runs were asked about, so a caller that
 // asked about a passage and the places around it knows which is which. The
 // coordinates are read once however many runs are asked about.
-func (u Marks) Execute(
+func (u Highlight) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
@@ -90,7 +91,7 @@ func over(boxes []lit.Box, runs []lit.Run) [][]lit.Page {
 // read is where a producer put the words it read. The coordinates are kept
 // beside the text they were read with, under the hash of the bytes both came
 // from.
-func (u Marks) read(
+func (u Highlight) read(
 	ctx context.Context,
 	v domain.Vault,
 	said port.Recognised,
@@ -127,7 +128,7 @@ func (u Marks) read(
 //
 // Which pages those are comes from where each page's text begins, which the
 // document says when it is read. A page nothing asked about is not read.
-func (u Marks) layer(
+func (u Highlight) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.FileRef,

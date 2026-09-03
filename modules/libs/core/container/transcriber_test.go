@@ -37,7 +37,7 @@ func (d *deaf) Open(context.Context, []byte) (port.Recording, error) {
 	return quiet{}, nil
 }
 
-func (d *deaf) Hear(context.Context, port.Audio) (string, error) { return "", nil }
+func (d *deaf) Transcribe(context.Context, port.Audio) (string, error) { return "", nil }
 
 func (d *deaf) Close() error { return nil }
 

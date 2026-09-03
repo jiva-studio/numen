@@ -58,7 +58,7 @@ func TestNoMoreRunsStandAtOnceThanWereAllowed(t *testing.T) {
 		command, most := counting(t)
 		by := &Proofreader{Command: command, Instruction: "put it right", InFlight: allowed}
 
-		if _, err := by.Read(context.Background(), batches(6)); err != nil {
+		if _, err := by.Proofread(context.Background(), batches(6)); err != nil {
 			t.Fatal(err)
 		}
 		if got := most(); got > allowed {
@@ -74,7 +74,7 @@ func TestAProfileNamingNoneRunsOneAtATime(t *testing.T) {
 	command, most := counting(t)
 	by := &Proofreader{Command: command, Instruction: "put it right"}
 
-	if _, err := by.Read(context.Background(), batches(4)); err != nil {
+	if _, err := by.Proofread(context.Background(), batches(4)); err != nil {
 		t.Fatal(err)
 	}
 	if got := most(); got != 1 {
@@ -93,7 +93,7 @@ func TestTwoCallersAtOnceShareTheLimit(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if _, err := by.Read(context.Background(), batches(3)); err != nil {
+			if _, err := by.Proofread(context.Background(), batches(3)); err != nil {
 				t.Error(err)
 			}
 		}()

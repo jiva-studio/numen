@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// AgentProofreading is what the platform is told to start: the command line, the
+// AgentProofreader is what the platform is told to start: the command line, the
 // model it answers with, and what it is being asked to put right.
-type AgentProofreading struct {
+type AgentProofreader struct {
 	Command     []string
 	Model       string
 	Instruction string
@@ -65,7 +65,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		return nil, fmt.Errorf(
 			"proofreading profile %q reaches a command line this application does not start", name)
 	}
-	return c.AgentProofreader(AgentProofreading{
+	return c.AgentProofreader(AgentProofreader{
 		Command:     profile.Command,
 		Model:       profile.Model,
 		Instruction: instruction,

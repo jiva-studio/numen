@@ -90,7 +90,7 @@ func TestTheServiceIsAskedAboutOnePageWithTheInstruction(t *testing.T) {
 		reply(w, "700|the first line")
 	})
 
-	if _, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{one}); err != nil {
+	if _, err := client(t, s.URL).Proofread(context.Background(), []proofread.Batch{one}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -133,7 +133,7 @@ func TestEveryPageComesBackUnderItsOwnNumber(t *testing.T) {
 		reply(w, asked)
 	})
 
-	got, err := client(t, s.URL).Read(context.Background(), pages)
+	got, err := client(t, s.URL).Proofread(context.Background(), pages)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +161,7 @@ func TestARefusedRunNamesTheStatusAndNotTheKey(t *testing.T) {
 				fmt.Fprintf(w, "the service says no, and quotes %s back", r.Header.Get("Authorization"))
 			})
 
-			got, err := client(t, s.URL).Read(context.Background(), []proofread.Batch{page(1, "a line")})
+			got, err := client(t, s.URL).Proofread(context.Background(), []proofread.Batch{page(1, "a line")})
 			if err == nil {
 				t.Fatal("no error")
 			}
@@ -198,7 +198,7 @@ func TestACancelledContextStopsTheRun(t *testing.T) {
 		cancel()
 	}()
 
-	_, err := client(t, s.URL).Read(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
+	_, err := client(t, s.URL).Proofread(ctx, []proofread.Batch{page(1, "a line"), page(2, "another")})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("want a cancelled context, got %v", err)
 	}

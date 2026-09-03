@@ -48,11 +48,11 @@ type Recognise struct {
 	// what has been read is searchable before the rest of it is.
 	Cut func(ctx context.Context, v domain.Vault, path string) error
 
-	OnProgress func(RecogniseResult)
+	OnProgress func(Recognised)
 }
 
-// RecogniseResult reports what recognition did.
-type RecogniseResult struct {
+// Recognised reports what recognition did.
+type Recognised struct {
 	Path    string // the document being read
 	Pages   int    // how many it has
 	Read    int    // how many have been read, this run and before it
@@ -65,8 +65,8 @@ type RecogniseResult struct {
 const DefaultBatch = 16
 
 // Execute reads one document.
-func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (RecogniseResult, error) {
-	res := RecogniseResult{Path: path}
+func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Recognised, error) {
+	res := Recognised{Path: path}
 	if u.By == nil {
 		return res, errors.New("no recogniser: none is configured")
 	}
@@ -183,7 +183,7 @@ func (u Recognise) Execute(ctx context.Context, v domain.Vault, path string) (Re
 		if err != nil {
 			return res, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 		}
-		blocks, err := u.By.Read(ctx, drawn)
+		blocks, err := u.By.Recognise(ctx, drawn)
 		if err != nil {
 			return res, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 		}
@@ -420,7 +420,7 @@ func (u Recognise) batch() int {
 	return u.Batch
 }
 
-func (u Recognise) progress(res RecogniseResult) {
+func (u Recognise) progress(res Recognised) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

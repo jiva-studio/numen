@@ -1,4 +1,4 @@
-package letgo
+package shutdown
 
 import (
 	"slices"

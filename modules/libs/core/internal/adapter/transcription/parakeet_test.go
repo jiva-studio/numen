@@ -173,7 +173,7 @@ func TestHearingARecording(t *testing.T) {
 
 	var out []string
 	for _, one := range found {
-		text, err := by.Hear(t.Context(), one)
+		text, err := by.Transcribe(t.Context(), one)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -202,7 +202,7 @@ func TestHearingAWholeRecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	text, err := by.Hear(t.Context(), port.Audio{Samples: at})
+	text, err := by.Transcribe(t.Context(), port.Audio{Samples: at})
 	if err != nil {
 		t.Fatal(err)
 	}

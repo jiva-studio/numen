@@ -605,8 +605,8 @@ func (t *Transcribing) listen(
 	v domain.Vault,
 	id, path string,
 	asked bool,
-) (source.TranscribeResult, error) {
-	var res source.TranscribeResult
+) (source.Transcribed, error) {
+	var res source.Transcribed
 
 	// One heavy run on a machine: a scan being read holds the turn, and this
 	// waits for it.
@@ -641,7 +641,7 @@ func (t *Transcribing) listen(
 		Derived: t.cfg.DerivedStores(),
 		By:      models,
 		Cut:     t.Cut,
-		OnProgress: func(res source.TranscribeResult) {
+		OnProgress: func(res source.Transcribed) {
 			t.say(task.Task{
 				ID:       id,
 				Doing:    "Transcribing a recording",

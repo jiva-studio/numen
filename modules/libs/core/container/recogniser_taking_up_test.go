@@ -39,8 +39,8 @@ func printed(lines []string) ([]byte, []byte) {
 			At:   at,
 			Size: image.Point{X: 100, Y: 100},
 			Blocks: []ocr.Block{{
-				Text:  said,
-				Spans: []ocr.Span{{Box: image.Rect(0, 0, 100, 10), Length: len(said)}},
+				Text:      said,
+				Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 100, 10), Length: len(said)}},
 			}},
 		})
 	}
@@ -74,7 +74,7 @@ func halted(
 		"by hand": {Use: proofreading.UseAgent, Model: "a-model", BatchSize: 1},
 	}
 	w.Recognising.cfg.ScanProofreading = proofreading.Proofread{With: "by hand", Automatically: true}
-	w.Recognising.cfg.AgentProofreader = func(AgentProofreading) (port.Proofreader, error) { return by, nil }
+	w.Recognising.cfg.AgentProofreader = func(AgentProofreader) (port.Proofreader, error) { return by, nil }
 
 	hash := text.Fingerprint(raw)
 	store, err := w.Recognising.cfg.DerivedStores().Open(v)
@@ -206,7 +206,9 @@ type leaves struct{}
 
 func (leaves) Name() string { return "a queue" }
 
-func (leaves) Read(context.Context, []proofread.Batch) (map[int]string, error) { return nil, nil }
+func (leaves) Proofread(context.Context, []proofread.Batch) (map[int]string, error) {
+	return nil, nil
+}
 
 func (leaves) Leave(context.Context, []proofread.Batch) (string, error) { return "a batch", nil }
 

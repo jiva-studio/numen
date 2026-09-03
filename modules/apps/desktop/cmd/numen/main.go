@@ -21,8 +21,8 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
-	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
@@ -139,7 +139,7 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	// Everything behind the settling, in the order each part needs the next: the
 	// agents are let go of, then the scan and the follower stop and the database
 	// closes, then what they ran under ends.
-	behind := letgo.InOrder(
+	behind := shutdown.InOrder(
 		reachable.Off,
 		func() {
 			if err := opened.Close(); err != nil {

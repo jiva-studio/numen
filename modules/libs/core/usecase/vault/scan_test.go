@@ -643,7 +643,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	db := openIndex(t)
 
 	scan := scanner(filesystem.Readers{}, db)
-	scan.OnProgress = func(usecase.ScanResult) { cancel() }
+	scan.OnProgress = func(usecase.Scanned) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {

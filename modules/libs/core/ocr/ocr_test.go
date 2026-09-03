@@ -216,17 +216,17 @@ func TestALineWrittenForTheWriterIsNotProse(t *testing.T) {
 func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	// Two pages, and the first of them two regions. The offsets are in the
 	// prose, so the second page's boxes are past everything the first says.
-	first, firstSpans := ocr.Assemble([]ocr.Line{
+	first, firstStretches := ocr.Assemble([]ocr.Line{
 		line(0, 0, 50, 20, "Alpha"),
 		line(60, 0, 100, 20, "beta"),
 		line(0, 40, 60, 60, "gamma"),
 	})
-	last, lastSpans := ocr.Assemble([]ocr.Line{
+	last, lastStretches := ocr.Assemble([]ocr.Line{
 		line(0, 0, 70, 20, "Epsilon"),
 		line(80, 0, 120, 20, "zeta"),
 	})
 	opening := []ocr.Block{
-		{Label: "text", Text: first, Spans: firstSpans},
+		{Label: "text", Text: first, Stretches: firstStretches},
 		// A region read by something that reports no rectangles. It says
 		// what it says and the prose after it moves along by that much.
 		{Label: "text", Text: "Delta."},
@@ -234,7 +234,7 @@ func TestEveryBoxSaysWhereItsWordsAreInTheProse(t *testing.T) {
 	pages := []ocr.Page{
 		{At: 0, Size: image.Pt(600, 800), Blocks: opening},
 		{At: 1, Size: image.Pt(600, 800), Blocks: []ocr.Block{
-			{Label: "text", Text: last, Spans: lastSpans},
+			{Label: "text", Text: last, Stretches: lastStretches},
 		}},
 	}
 	raw, boxes, _ := ocr.Write(pages)
@@ -294,9 +294,9 @@ func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
 	// A page with no size gives no fraction of itself to divide a rectangle by.
 	raw, boxes, _ := ocr.Write([]ocr.Page{
 		{At: 0, Blocks: []ocr.Block{{
-			Label: "text",
-			Text:  "Alpha beta",
-			Spans: []ocr.Span{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
+			Label:     "text",
+			Text:      "Alpha beta",
+			Stretches: []ocr.Stretch{{Box: image.Rect(0, 0, 50, 20), Start: 0, Length: 5}},
 		}}},
 	})
 
