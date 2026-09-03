@@ -164,7 +164,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Viewer:    keepingDrawings(cfg.Documents()),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
-		Marking: &source.Marks{
+		Highlight: &source.Highlight{
 			Readers:   cfg.VaultReaders(),
 			Sources:   db.SourcesKnown(),
 			Derived:   cfg.DerivedStores(),

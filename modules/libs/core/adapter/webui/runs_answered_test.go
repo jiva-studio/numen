@@ -182,8 +182,8 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 
 	talks := willRun()
 	api := &API{
-		Readers: filesystem.Readers{},
-		Marking: &source.Marks{Sources: nothingRead(), Derived: stores},
+		Readers:   filesystem.Readers{},
+		Highlight: &source.Highlight{Sources: nothingRead(), Derived: stores},
 	}
 	api.show(vault)
 	runningBehind(api, func(on *showing) { on.transcribes = talks })

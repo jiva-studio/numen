@@ -97,9 +97,10 @@ type API struct {
 	// Viewer holds the documents the window has open and the pages it has
 	// drawn. A build without one answers that it cannot draw a document.
 	Viewer *viewer
-	// Marking says where a run of a source's text sits on the pages it was read
-	// from. A build without one answers that it cannot say where a passage is.
-	Marking *source.Marks
+	// Highlight says where a run of a source's text sits on the pages it was
+	// read from. A build without one answers that it cannot say where a passage
+	// is.
+	Highlight *source.Highlight
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be
 	// played here.

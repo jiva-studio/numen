@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/lit"
 )
 
-// errNoMarking is what a build with nothing to place a passage with answers.
-var errNoMarking = errors.New("this build cannot say where a passage is")
+// errNoHighlight is what a build with nothing to place a passage with answers.
+var errNoHighlight = errors.New("this build cannot say where a passage is")
 
 // covering is what the window is told the runs of the prose cover, one entry per
 // run and in the order they were asked about.
@@ -45,8 +45,8 @@ type rect struct {
 // Marks answers where a run of a source's text sits: the pages it falls on and,
 // on each, the rectangles covering it.
 func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
-	if a.Marking == nil {
-		http.Error(w, errNoMarking.Error(), http.StatusNotImplemented)
+	if a.Highlight == nil {
+		http.Error(w, errNoHighlight.Error(), http.StatusNotImplemented)
 		return
 	}
 	showing := a.Showing()
@@ -66,7 +66,7 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 	ctx, cancel := context.WithTimeout(r.Context(), patience)
 	defer cancel()
 
-	found, err := a.Marking.Execute(ctx, showing, path, runs)
+	found, err := a.Highlight.Execute(ctx, showing, path, runs)
 	if err != nil {
 		refuse(w, err)
 		return
