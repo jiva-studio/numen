@@ -103,15 +103,15 @@ type response struct {
 	} `json:"data"`
 }
 
-// temporary is an error worth sending the same request for again, carrying what
-// the service asked to be waited.
-type temporary struct {
+// temporaryError is an error worth sending the same request for again, carrying
+// what the service asked to be waited.
+type temporaryError struct {
 	err   error
 	after time.Duration
 }
 
-func (t temporary) Error() string { return t.err.Error() }
-func (t temporary) Unwrap() error { return t.err }
+func (t temporaryError) Error() string { return t.err.Error() }
+func (t temporaryError) Unwrap() error { return t.err }
 
 // request sends one batch, retrying what the service says is temporary.
 func (c *Client) request(ctx context.Context, texts []string) ([][]float32, error) {
@@ -133,7 +133,7 @@ func (c *Client) request(ctx context.Context, texts []string) ([][]float32, erro
 		if err == nil {
 			return vectors, nil
 		}
-		var again temporary
+		var again temporaryError
 		if !errors.As(err, &again) {
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func (c *Client) send(ctx context.Context, body []byte) ([][]float32, error) {
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, temporary{err: err}
+		return nil, temporaryError{err: err}
 	}
 	defer resp.Body.Close()
 
@@ -167,7 +167,7 @@ func (c *Client) send(ctx context.Context, body []byte) ([][]float32, error) {
 
 	var parsed response
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return nil, temporary{err: err}
+		return nil, temporaryError{err: err}
 	}
 	return c.collect(parsed)
 }
@@ -189,7 +189,7 @@ func (c *Client) statusError(resp *http.Response, detail []byte) error {
 		return fmt.Errorf("%w as malformed, which is the batching rule to fix: %s", ErrRejected, summary)
 	}
 	if status >= 500 || status == http.StatusTooManyRequests {
-		return temporary{
+		return temporaryError{
 			err:   fmt.Errorf("%d %s: %s", status, http.StatusText(status), summary),
 			after: retryDelay(resp),
 		}

@@ -385,10 +385,10 @@ func (w *VaultWriter) holds(path string) bool {
 // Root is where this vault is on disk.
 func (w *VaultWriter) Root() string { return w.root }
 
-// Writers opens vaults for writing.
-type Writers struct{ Options Options }
+// VaultWriters opens vaults for writing.
+type VaultWriters struct{ Options Options }
 
-func (w Writers) Open(v domain.Vault) (port.VaultWriter, error) {
+func (w VaultWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)
 }
 

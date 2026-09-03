@@ -34,7 +34,7 @@ func erasing(registry *appstate.VaultRegistry) (usecase.Erase, *bin, *indexRows,
 	trash := &bin{steps: steps}
 	index := &indexRows{steps: steps}
 	return usecase.Erase{
-		Identity: filesystem.Identity{},
+		Identity: filesystem.VaultIdentity{},
 		Trash:    trash,
 		Forget:   usecase.Forget{Registry: registry, Index: index},
 	}, trash, index, steps

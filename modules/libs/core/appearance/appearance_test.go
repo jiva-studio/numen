@@ -8,8 +8,8 @@ import (
 )
 
 // A window dressed in everything a person can set.
-func dressed() appearance.Chosen {
-	return appearance.Chosen{
+func dressed() appearance.Settings {
+	return appearance.Settings{
 		Mode:  appearance.Dark,
 		Theme: ":root{--numen-surface:#010203}",
 		Drawn: 1.25,
@@ -53,7 +53,7 @@ func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
 // A window at no size of its own is left to `tokens.css`, and nothing in the
 // head is marked as the sizes'.
 func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
-	head := appearance.Styles(appearance.Chosen{Mode: appearance.Light})
+	head := appearance.Styles(appearance.Settings{Mode: appearance.Light})
 
 	if strings.Contains(head, marked(appearance.IsSizes)) {
 		t.Errorf("the head ends with %q", head)
@@ -65,7 +65,7 @@ func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
 // inside it.
 func TestAThemeCannotMarkAnElementOfItsOwn(t *testing.T) {
 	forged := `</style>` + marked(appearance.IsMode) + `:root{color-scheme:light}`
-	head := appearance.Styles(appearance.Chosen{Mode: appearance.Dark, Theme: forged})
+	head := appearance.Styles(appearance.Settings{Mode: appearance.Dark, Theme: forged})
 
 	if count := strings.Count(head, "</style>"); count != 2 {
 		t.Errorf("the head ends with %d elements: %q", count, head)

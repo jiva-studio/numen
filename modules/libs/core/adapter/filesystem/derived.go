@@ -33,8 +33,8 @@ const SpeechDir = text.ASR
 // person's own writing, and a year of answers to them is not.
 const FlashcardsDir = "flashcards"
 
-// Derived is the application's own shelf inside one vault: where a file it
-// made, and cannot make again, is kept.
+// DerivedStore is the application's own shelf inside one vault: where a file
+// it made, and cannot make again, is kept.
 //
 // It is a type of its own and not a method on VaultWriter, because it writes to
 // the one place VaultWriter refuses and refuses everywhere VaultWriter writes.
@@ -43,7 +43,7 @@ const FlashcardsDir = "flashcards"
 // Every name it takes begins with the name of one of its areas, and it answers
 // for no other, so the vault's identity — which is in the folder and in no area
 // — is not a name this can express.
-type Derived struct {
+type DerivedStore struct {
 	vault   string   // the vault folder
 	service string   // the application's folder inside it
 	id      string   // the identity that folder carried when this store was opened
@@ -52,14 +52,14 @@ type Derived struct {
 	// seen is the configuration file as it stood when the identity was last
 	// read out of it. Every name checks the identity, and a file that has not
 	// moved carries the identity already read.
-	seen atomic.Pointer[stamp]
+	seen atomic.Pointer[fileInfo]
 }
 
-// stamp is a file as it stood: what says whether it is still the one read.
-type stamp struct{ info os.FileInfo }
+// fileInfo is a file as it stood: what says whether it is still the one read.
+type fileInfo struct{ info os.FileInfo }
 
-// holds reports whether a file is the one a stamp was taken of.
-func (s *stamp) holds(now os.FileInfo) bool {
+// holds reports whether a file is the one a fileInfo was taken of.
+func (s *fileInfo) holds(now os.FileInfo) bool {
 	return s != nil && os.SameFile(s.info, now) &&
 		s.info.Size() == now.Size() && s.info.ModTime().Equal(now.ModTime())
 }
@@ -88,7 +88,7 @@ func (d DerivedStores) Open(v domain.Vault) (port.DerivedStore, error) {
 //
 // The store answers for every area named and the first of them is what it is
 // called. Naming none is the default area alone.
-func OpenDerived(vaultRoot string, opts Options, areas ...string) (*Derived, error) {
+func OpenDerived(vaultRoot string, opts Options, areas ...string) (*DerivedStore, error) {
 	kept := make([]string, 0, len(areas))
 	for _, area := range areas {
 		if area == "" {
@@ -113,7 +113,7 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*Derived, err
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", abs, err)
 	}
-	d := &Derived{
+	d := &DerivedStore{
 		vault:   abs,
 		service: opts.serviceDir(),
 		id:      id,
@@ -126,9 +126,9 @@ func OpenDerived(vaultRoot string, opts Options, areas ...string) (*Derived, err
 
 // Area is the folder inside the service folder this store is called by, which
 // is the first part of every name the index records.
-func (d *Derived) Area() string { return d.areas[0] }
+func (d *DerivedStore) Area() string { return d.areas[0] }
 
-func (d *Derived) Read(_ context.Context, name string) ([]byte, error) {
+func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	target, err := d.at(name)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (d *Derived) Read(_ context.Context, name string) ([]byte, error) {
 	return os.ReadFile(target)
 }
 
-func (d *Derived) Write(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
 	target, err := d.at(name)
 	if err != nil {
 		return err
@@ -159,7 +159,7 @@ func (d *Derived) Write(_ context.Context, name string, content []byte) error {
 //
 // A machine that stopped mid-write leaves a torn tail all the same, and what
 // reads the file back takes the whole pages and drops what follows them.
-func (d *Derived) Append(_ context.Context, name string, content []byte) error {
+func (d *DerivedStore) Append(_ context.Context, name string, content []byte) error {
 	target, err := d.at(name)
 	if err != nil {
 		return err
@@ -216,7 +216,7 @@ const claimSuffix = ".claim"
 // artifact, so the claim crosses processes and a run that was killed leaves the
 // name free. A claim file lying on disk with no lock on it is a name free to
 // take.
-func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
+func (d *DerivedStore) Claim(_ context.Context, name string) (func() error, error) {
 	target, err := d.at(name + claimSuffix)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (d *Derived) Claim(_ context.Context, name string) (func() error, error) {
 // List reports the files directly under a name, as names of this store, sorted.
 // A folder among them is not one: what is kept here is files, and a caller
 // after them would have to be told which entries it may read.
-func (d *Derived) List(_ context.Context, name string) ([]port.Entry, error) {
+func (d *DerivedStore) List(_ context.Context, name string) ([]port.Entry, error) {
 	target, err := d.at(name)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (d *Derived) List(_ context.Context, name string) ([]port.Entry, error) {
 // Remove takes a name out of the store, along with the file a claim on it is
 // held on. A caller works in names and knows of no claim, so a name it takes
 // away leaves none behind.
-func (d *Derived) Remove(_ context.Context, name string) error {
+func (d *DerivedStore) Remove(_ context.Context, name string) error {
 	for _, one := range []string{name, name + claimSuffix} {
 		target, err := d.at(one)
 		if err != nil {
@@ -288,7 +288,7 @@ func (d *Derived) Remove(_ context.Context, name string) error {
 // Every name is checked, so the check is a stat of the file the identity is
 // written in: the same file, of the same length and the same age, carries the
 // identity already read out of it. Anything else is read again.
-func (d *Derived) still() error {
+func (d *DerivedStore) still() error {
 	if now, err := os.Stat(configAt(d.vault, d.service)); err == nil && d.seen.Load().holds(now) {
 		return nil
 	}
@@ -313,13 +313,13 @@ func (d *Derived) still() error {
 // carried is the identity a folder holds, and nothing where it holds none. The
 // file it was read from comes back with it, stamped before the reading, so a
 // file that changed under the reading is read again at the next asking.
-func carried(root, serviceDir string) (string, *stamp, error) {
+func carried(root, serviceDir string) (string, *fileInfo, error) {
 	if serviceDir == "" {
 		serviceDir = DefaultServiceDir
 	}
-	var was *stamp
+	var was *fileInfo
 	if info, err := os.Stat(configAt(root, serviceDir)); err == nil {
-		was = &stamp{info: info}
+		was = &fileInfo{info: info}
 	}
 	cfg, err := ReadConfig(root, serviceDir)
 	if errors.Is(err, ErrNotAVault) || errors.Is(err, fs.ErrNotExist) {
@@ -332,7 +332,7 @@ func carried(root, serviceDir string) (string, *stamp, error) {
 }
 
 // holds says whether a cleaned name is in one of this store's areas.
-func (d *Derived) holds(clean string) bool {
+func (d *DerivedStore) holds(clean string) bool {
 	for _, area := range d.areas {
 		if clean == area || strings.HasPrefix(clean, area+"/") {
 			return true
@@ -352,7 +352,7 @@ func (d *Derived) holds(clean string) bool {
 //
 // The store's folder need not exist: as much of each path as does exist is
 // resolved, which is the same rule a write into the vault is judged by.
-func (d *Derived) at(name string) (string, error) {
+func (d *DerivedStore) at(name string) (string, error) {
 	clean, err := cleaned(name)
 	if err != nil {
 		return "", err

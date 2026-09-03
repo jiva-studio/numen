@@ -28,12 +28,12 @@ const (
 type batchRequest struct {
 	Endpoint string       `json:"endpoint"`
 	Model    string       `json:"model"`
-	Requests []batchAsked `json:"requests"`
+	Requests []batchedRequest `json:"requests"`
 }
 
-// batchAsked is one page of the run: the number what comes back is known by,
+// batchedRequest is one page of the run: the number what comes back is known by,
 // and the body one page is asked with on its own.
-type batchAsked struct {
+type batchedRequest struct {
 	CustomID string  `json:"custom_id"`
 	Body     request `json:"body"`
 }
@@ -61,9 +61,9 @@ func (c *Client) Leave(ctx context.Context, pages []proofread.Batch) (string, er
 		return "", errors.New("no batch queue for the proofreading service")
 	}
 
-	asked := make([]batchAsked, 0, len(pages))
+	asked := make([]batchedRequest, 0, len(pages))
 	for _, page := range pages {
-		asked = append(asked, batchAsked{
+		asked = append(asked, batchedRequest{
 			CustomID: strconv.Itoa(page.At),
 			Body: request{
 				Model:       c.service.Name,

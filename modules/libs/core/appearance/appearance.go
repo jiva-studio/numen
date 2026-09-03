@@ -27,19 +27,19 @@ const (
 	IsSizes = "sizes"
 )
 
-// Mode is which half of every colour pair the tokens are read as.
-type Mode int
+// ColorScheme is which half of every colour pair the tokens are read as.
+type ColorScheme int
 
 const (
 	// System is both halves, and the machine decides between them.
-	System Mode = iota
+	System ColorScheme = iota
 	Light
 	Dark
 )
 
-// Chosen is what a person set their windows to.
-type Chosen struct {
-	Mode Mode
+// Settings is what a person set their windows to.
+type Settings struct {
+	Mode ColorScheme
 	// Theme is the stylesheet chosen, as its text. A window wearing none is
 	// left to `tokens.css`.
 	Theme string
@@ -55,7 +55,7 @@ type Chosen struct {
 // The page arrives carrying all of them, so no frame is drawn in the default
 // colours or at a size nobody asked for. A size arriving after the first frame
 // relays out the document.
-func Styles(c Chosen) string {
+func Styles(c Settings) string {
 	// The mode first and the theme second. A theme pinning `color-scheme` is
 	// the later of two declarations weighing the same, and light and dark are
 	// then that theme's own.
@@ -101,7 +101,7 @@ func sized(drawn, set float64) string {
 func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
 // scheme is which half of every colour pair the tokens are read as.
-func scheme(mode Mode) string {
+func scheme(mode ColorScheme) string {
 	switch mode {
 	case Light:
 		return "light"

@@ -209,7 +209,7 @@ func arriving(role string, where embed.Station) listing {
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
 // takes the same road as a window.
-func preparing(tasks *task.Tasks, at listing) onnx.Fetching {
+func preparing(tasks *task.Tasks, at listing) onnx.FetchProgress {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}

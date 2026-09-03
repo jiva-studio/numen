@@ -20,7 +20,7 @@ func adding(t *testing.T) (usecase.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
 	return usecase.Add{
-		Identity: filesystem.Identity{},
+		Identity: filesystem.VaultIdentity{},
 		Registry: registry,
 		Now:      time.Now,
 	}, registry
@@ -100,7 +100,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); !errors.Is(err, usecase.ErrOverlaps) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
-	if _, carriesOne, err := (filesystem.Identity{}).Of(inner); err != nil || carriesOne {
+	if _, carriesOne, err := (filesystem.VaultIdentity{}).Of(inner); err != nil || carriesOne {
 		t.Errorf("the refused folder was given an identity: %v %v", carriesOne, err)
 	}
 }

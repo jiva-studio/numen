@@ -82,9 +82,9 @@ type Sizes struct {
 	Dirty      float64
 }
 
-// A Part is somewhere in the text that carries a name. Parts bound the divisions
-// chunks are cut inside, and need not arrive in order.
-type Part struct {
+// A PartStart is somewhere in the text that carries a name. Parts bound the
+// divisions chunks are cut inside, and need not arrive in order.
+type PartStart struct {
 	Title  string
 	Offset int
 }
@@ -110,7 +110,7 @@ func (c Chunk) middle() int { return c.Start + c.Length/2 }
 
 // Cut returns the large chunks of the text, each carrying the small chunks
 // inside it.
-func Cut(text string, parts []Part, sizes Sizes) []Chunk {
+func Cut(text string, parts []PartStart, sizes Sizes) []Chunk {
 	s := sizes.resolve()
 	divisions := divisionsOf(text, parts)
 
@@ -133,8 +133,8 @@ type division struct {
 // divisionsOf divides the text at the parts it names. The parts are copied
 // before they are ordered, so that Cut leaves its arguments as it found them.
 // Where two parts share an offset, the last of them names the text after it.
-func divisionsOf(text string, parts []Part) []division {
-	named := make([]Part, 0, len(parts))
+func divisionsOf(text string, parts []PartStart) []division {
+	named := make([]PartStart, 0, len(parts))
 	for _, p := range parts {
 		if p.Offset >= 0 && p.Offset < len(text) {
 			named = append(named, p)

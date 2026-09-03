@@ -19,8 +19,8 @@ const (
 	noErrorUI      = 0x0400
 )
 
-// operation is SHFILEOPSTRUCTW.
-type operation struct {
+// shFileOpStruct is SHFILEOPSTRUCTW.
+type shFileOpStruct struct {
 	window        windows.Handle
 	function      uint32
 	from          *uint16
@@ -43,7 +43,7 @@ func send(path string) error {
 	}
 	from = append(from, 0)
 
-	op := operation{
+	op := shFileOpStruct{
 		function: deletion,
 		from:     &from[0],
 		flags:    allowUndo | noConfirmation | noErrorUI | silent,

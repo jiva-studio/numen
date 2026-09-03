@@ -94,7 +94,7 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 	raw, parts := written(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	want := []cutting.Part{
+	want := []cutting.PartStart{
 		{Title: docTitle, Offset: at(t, doc, docTitle)},
 		{Title: sectionOne, Offset: at(t, doc, sectionOne)},
 		{Title: sectionTwo, Offset: at(t, doc, sectionTwo)},

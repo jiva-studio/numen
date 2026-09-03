@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-// Identity gives folders the identity that makes them vaults, and answers
+// VaultIdentity gives folders the identity that makes them vaults, and answers
 // whether a folder can be read as one at all.
-type Identity struct{ Options Options }
+type VaultIdentity struct{ Options Options }
 
-func (i Identity) Readable(root string) error {
+func (i VaultIdentity) Readable(root string) error {
 	_, err := Open(root, i.Options)
 	return err
 }
 
-func (i Identity) Ensure(root string, at time.Time) (string, error) {
+func (i VaultIdentity) Ensure(root string, at time.Time) (string, error) {
 	cfg, err := Initialize(root, i.Options.ServiceDir, at)
 	if err != nil {
 		return "", err
@@ -26,7 +26,7 @@ func (i Identity) Ensure(root string, at time.Time) (string, error) {
 // Of reads the identity a folder carries without creating one. A folder that is
 // gone, or was never a vault, simply carries none — that is an answer rather
 // than a failure.
-func (i Identity) Of(root string) (string, bool, error) {
+func (i VaultIdentity) Of(root string) (string, bool, error) {
 	cfg, err := ReadConfig(root, i.Options.ServiceDir)
 	if errors.Is(err, ErrNotAVault) {
 		return "", false, nil

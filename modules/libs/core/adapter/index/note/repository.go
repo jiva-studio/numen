@@ -223,13 +223,13 @@ func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.
 //
 // They are the headings the index keeps, so a passage is announced under a name
 // somebody wrote.
-func parts(headings []domain.Heading) []cutting.Part {
+func parts(headings []domain.Heading) []cutting.PartStart {
 	if len(headings) == 0 {
 		return nil
 	}
-	out := make([]cutting.Part, 0, len(headings))
+	out := make([]cutting.PartStart, 0, len(headings))
 	for _, h := range headings {
-		out = append(out, cutting.Part{Title: h.Text, Offset: h.Offset})
+		out = append(out, cutting.PartStart{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }

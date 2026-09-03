@@ -36,7 +36,7 @@ type Reading struct {
 	// stream. Every offset below is an offset into it.
 	Text string
 	// Parts are the names the document gives divisions of itself.
-	Parts []cutting.Part
+	Parts []cutting.PartStart
 	// Pages is where each page begins.
 	Pages []int
 }

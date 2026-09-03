@@ -17,13 +17,13 @@ const perPage = 3
 // begins, one box for each line, and the two parts it divides into. The
 // rectangle follows the line's number, so a box that keeps its place keeps its
 // rectangle too.
-func reading(lines []string) (string, []ocr.Mark, []lit.Box, []ocr.Part) {
-	var marks []ocr.Mark
+func reading(lines []string) (string, []ocr.PageStart, []lit.Box, []ocr.Part) {
+	var marks []ocr.PageStart
 	var boxes []lit.Box
 	at := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
-			marks = append(marks, ocr.Mark{Offset: at})
+			marks = append(marks, ocr.PageStart{Offset: at})
 		}
 		boxes = append(boxes, lit.Box{
 			Page: i / perPage, Start: at, Length: len(line),

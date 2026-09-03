@@ -26,8 +26,8 @@ const (
 	pageStart = "\x0c"
 )
 
-// A Mark is a page of the artifact, at the offset its prose begins.
-type Mark struct {
+// A PageStart is a page of the artifact, at the offset its prose begins.
+type PageStart struct {
 	Offset int
 }
 
@@ -105,14 +105,14 @@ const Note = "\x00"
 // Anything before the first mark is prose belonging to no page, which is what a
 // file written by something else looks like. It is kept, because dropping text
 // silently is worse than naming its page wrongly.
-func Read(raw []byte) (string, []Mark) {
+func Read(raw []byte) (string, []PageStart) {
 	text := withoutNotes(string(raw))
 	if !strings.ContainsRune(text, pageMark) {
 		return text, nil
 	}
 
 	var out strings.Builder
-	var marks []Mark
+	var marks []PageStart
 	rest := text
 	for {
 		before, after, found := strings.Cut(rest, pageStart)
@@ -127,7 +127,7 @@ func Read(raw []byte) (string, []Mark) {
 			break
 		}
 		prose = strings.TrimPrefix(prose, "\n")
-		marks = append(marks, Mark{Offset: out.Len()})
+		marks = append(marks, PageStart{Offset: out.Len()})
 		rest = prose
 	}
 	return out.String(), marks

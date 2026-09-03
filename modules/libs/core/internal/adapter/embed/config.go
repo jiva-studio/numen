@@ -235,9 +235,9 @@ func (c *Config) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
-// serviceFile is the shape on disk, with the key among the fields a person
+// serviceModelFile is the shape on disk, with the key among the fields a person
 // writes.
-type serviceFile struct {
+type serviceModelFile struct {
 	BaseURL         *string `json:"base_url"`
 	Name            *string `json:"name"`
 	BatchCharacters *int    `json:"batch_characters"`
@@ -248,7 +248,7 @@ type serviceFile struct {
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
-	var f serviceFile
+	var f serviceModelFile
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (s *ServiceModel) UnmarshalJSON(raw []byte) error {
 // MarshalJSON writes everything but the key. Rewriting the file is not how a
 // key is set.
 func (s ServiceModel) MarshalJSON() ([]byte, error) {
-	return json.Marshal(serviceFile{
+	return json.Marshal(serviceModelFile{
 		BaseURL:         &s.BaseURL,
 		Name:            &s.Name,
 		BatchCharacters: &s.BatchCharacters,

@@ -119,15 +119,15 @@ func Window(
 // stand.
 func chosen(
 	ctx context.Context, themes numenv1connect.ThemeServiceHandler,
-) (Chosen, bool) {
+) (Settings, bool) {
 	if themes == nil {
-		return Chosen{}, false
+		return Settings{}, false
 	}
 	worn, err := themes.Themes(ctx, connect.NewRequest(&v1.ThemesRequest{}))
 	if err != nil {
-		return Chosen{}, false
+		return Settings{}, false
 	}
-	out := Chosen{
+	out := Settings{
 		Mode:  mode(worn.Msg.GetMode()),
 		Drawn: worn.Msg.GetInterfaceScale(),
 		Set:   worn.Msg.GetTextScale(),
@@ -140,7 +140,7 @@ func chosen(
 }
 
 // mode is which half of every colour pair the tokens are read as.
-func mode(said v1.Mode) Mode {
+func mode(said v1.Mode) ColorScheme {
 	switch said {
 	case v1.Mode_MODE_LIGHT:
 		return Light

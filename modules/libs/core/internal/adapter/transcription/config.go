@@ -227,24 +227,24 @@ func locate(ctx context.Context, cfg Config) (paths, error) {
 	return found, nil
 }
 
-// A file is one of the things a transcription reads: where it is put once it is
-// found, where the settings say it is, where it is fetched from, and what it is
-// called when it is missing.
-type file struct {
+// A wantedFile is one of the things a transcription reads: where it is put once
+// it is found, where the settings say it is, where it is fetched from, and what
+// it is called when it is missing.
+type wantedFile struct {
 	into             *string
 	path, name, what string
 }
 
 // wanted is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
-func wanted(cfg Config, into *paths) []file {
+func wanted(cfg Config, into *paths) []wantedFile {
 	under := func(name string) string {
 		if cfg.Model.From == "" {
 			return ""
 		}
 		return strings.TrimSuffix(cfg.Model.From, "/") + "/" + name
 	}
-	return []file{
+	return []wantedFile{
 		{&into.encoder, cfg.Model.Encoder, under(encoderFile), "encoder"},
 		{&into.decoder, cfg.Model.Decoder, under(decoderFile), "decoder"},
 		{&into.joiner, cfg.Model.Joiner, under(joinerFile), "joiner"},

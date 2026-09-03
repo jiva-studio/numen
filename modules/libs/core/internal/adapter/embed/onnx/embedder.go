@@ -71,9 +71,9 @@ type Embedder struct {
 	mu sync.Mutex
 }
 
-// Fetching is how much of a model is here and how much is wanted, told while it
+// FetchProgress is how much of a model is here and how much is wanted, told while it
 // comes down. Nothing is told for a model that is already on this machine.
-type Fetching func(done, total int64)
+type FetchProgress func(done, total int64)
 
 // Open loads the model and compiles it, fetching it first where this machine
 // does not hold it. It is expensive — the weights are read and converted — and
@@ -81,7 +81,7 @@ type Fetching func(done, total int64)
 //
 // is is the identity the vectors this model returns are kept under, which the
 // settings decide.
-func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tell Fetching) (*Embedder, error) {
+func Open(ctx context.Context, is port.EmbeddingModel, cfg embed.LocalModel, tell FetchProgress) (*Embedder, error) {
 	if is.Dimensions <= 0 {
 		return nil, fmt.Errorf("%s: dimensions must be known before a vector is stored", cfg.Name)
 	}
@@ -333,7 +333,7 @@ const (
 // locate finds the model's files: in a directory the configuration names, or in
 // the download cache. A named directory is what an installation with no network
 // uses.
-func locate(ctx context.Context, cfg embed.LocalModel, tell Fetching) (paths, error) {
+func locate(ctx context.Context, cfg embed.LocalModel, tell FetchProgress) (paths, error) {
 	file := cfg.File
 	if file == "" {
 		file = modelFile
@@ -425,7 +425,7 @@ func published(repo *hub.Repo) ([]string, map[string]int64, error) {
 //
 // What is counted is the bytes under the repository's own place in the cache,
 // which is what has arrived.
-func arriving(dir string, files []string, sizes map[string]int64, total int64, tell Fetching) func() {
+func arriving(dir string, files []string, sizes map[string]int64, total int64, tell FetchProgress) func() {
 	if tell == nil || total <= 0 {
 		return func() {}
 	}

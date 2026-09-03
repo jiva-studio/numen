@@ -104,7 +104,7 @@ func Boxes(boxes []lit.Box, lines []Line) []lit.Box {
 
 // Prose is a reading's text with its corrections in it, and the pages and the
 // parts where they now stand.
-func Prose(prose string, marks []ocr.Mark, boxes []lit.Box, parts []ocr.Part, lines []Line) (string, []ocr.Mark, []ocr.Part) {
+func Prose(prose string, marks []ocr.PageStart, boxes []lit.Box, parts []ocr.Part, lines []Line) (string, []ocr.PageStart, []ocr.Part) {
 	w := plan(boxes, lines)
 	if len(w.changes) == 0 {
 		return prose, marks, parts
@@ -125,9 +125,9 @@ func Prose(prose string, marks []ocr.Mark, boxes []lit.Box, parts []ocr.Part, li
 
 	pages := marks
 	if len(marks) > 0 {
-		pages = make([]ocr.Mark, len(marks))
+		pages = make([]ocr.PageStart, len(marks))
 		for i, mark := range marks {
-			pages[i] = ocr.Mark{Offset: mark.Offset + w.before(mark.Offset)}
+			pages[i] = ocr.PageStart{Offset: mark.Offset + w.before(mark.Offset)}
 		}
 	}
 	named := parts

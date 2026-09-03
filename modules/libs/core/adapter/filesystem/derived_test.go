@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-func store(t *testing.T) (*filesystem.Derived, string) {
+func store(t *testing.T) (*filesystem.DerivedStore, string) {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {

@@ -38,17 +38,17 @@ type Document struct {
 
 	// Parts are where the source names something, and are what chunks are cut
 	// inside so that one never runs across a part into the next.
-	Parts []cutting.Part
+	Parts []cutting.PartStart
 
 	// named and paged are what the source calls the place an offset falls in,
 	// in the vocabulary of its own format. Both ascend by offset, and either may
 	// be empty: half the books read name neither.
-	named []mark
-	paged []mark
+	named []namedPlace
+	paged []namedPlace
 }
 
-// A mark is somewhere the source gives a name to.
-type mark struct {
+// A namedPlace is somewhere the source gives a name to.
+type namedPlace struct {
 	Offset int
 	Name   string
 }
@@ -96,8 +96,8 @@ func sheet(at int) string {
 	return fmt.Sprintf("page %d of the file", at+1)
 }
 
-func preceding(marks []mark, offset int) int {
-	return sort.Search(len(marks), func(i int) bool { return marks[i].Offset > offset }) - 1
+func preceding(namedPlaces []namedPlace, offset int) int {
+	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
 }
 
 // Readers are the names of what takes text out of a file. A name is part of a
@@ -167,8 +167,8 @@ func fromEPUB(raw []byte) (*Document, error) {
 	}
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, cutting.Part{Title: p.Title, Offset: p.Offset})
-		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+		doc.Parts = append(doc.Parts, cutting.PartStart{Title: p.Title, Offset: p.Offset})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	// A book made for a screen has no pages of its own, and those it names are
 	// the printed edition it was set from. That is the only name they have.
@@ -176,7 +176,7 @@ func fromEPUB(raw []byte) (*Document, error) {
 		if p.Label == "" {
 			continue
 		}
-		doc.paged = append(doc.paged, mark{Offset: p.Offset, Name: p.Label})
+		doc.paged = append(doc.paged, namedPlace{Offset: p.Offset, Name: p.Label})
 	}
 	return doc, nil
 }
@@ -194,10 +194,10 @@ func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document,
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
 		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, mark{Offset: p.Offset, Name: p.Title})
+		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	for i, at := range book.Pages {
-		doc.paged = append(doc.paged, mark{Offset: at, Name: sheet(i)})
+		doc.paged = append(doc.paged, namedPlace{Offset: at, Name: sheet(i)})
 	}
 	return doc, nil
 }

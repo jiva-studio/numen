@@ -398,7 +398,7 @@ func (c Config) VaultWatcher() port.VaultWatcher {
 
 // VaultIdentity gives folders their identity.
 func (c Config) VaultIdentity() port.VaultIdentity {
-	return filesystem.Identity{Options: c.VaultOptions()}
+	return filesystem.VaultIdentity{Options: c.VaultOptions()}
 }
 
 // Trash is the place this machine keeps what a person deleted.

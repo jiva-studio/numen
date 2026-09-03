@@ -9,7 +9,7 @@ import (
 
 // opening is a store on a vault of one file, which is what the store operations
 // below are measured on.
-func opening(b *testing.B) *filesystem.Derived {
+func opening(b *testing.B) *filesystem.DerivedStore {
 	b.Helper()
 	root := b.TempDir()
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {

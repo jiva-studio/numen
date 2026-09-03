@@ -36,17 +36,17 @@ func At(path string) *VaultRegistry { return &VaultRegistry{path: path} }
 
 func (r *VaultRegistry) Path() string { return r.path }
 
-func (r *VaultRegistry) load() (file, error) {
+func (r *VaultRegistry) load() (registryFile, error) {
 	raw, err := os.ReadFile(r.path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return file{V: 1}, nil
+		return registryFile{V: 1}, nil
 	}
 	if err != nil {
-		return file{}, err
+		return registryFile{}, err
 	}
-	var f file
+	var f registryFile
 	if err := json.Unmarshal(raw, &f); err != nil {
-		return file{}, err
+		return registryFile{}, err
 	}
 	if f.V == 0 {
 		f.V = 1
@@ -54,7 +54,7 @@ func (r *VaultRegistry) load() (file, error) {
 	return f, nil
 }
 
-func (r *VaultRegistry) save(f file) error {
+func (r *VaultRegistry) save(f registryFile) error {
 	if err := os.MkdirAll(filepath.Dir(r.path), 0o755); err != nil {
 		return err
 	}

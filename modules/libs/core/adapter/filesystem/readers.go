@@ -5,10 +5,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Readers opens vaults from the filesystem. It is what a use case is handed when
+// VaultReaders opens vaults from the filesystem. It is what a use case is handed when
 // the vault it works on is chosen while it runs.
-type Readers struct{ Options Options }
+type VaultReaders struct{ Options Options }
 
-func (r Readers) Open(v domain.Vault) (port.VaultReader, error) {
+func (r VaultReaders) Open(v domain.Vault) (port.VaultReader, error) {
 	return Open(v.Path, r.Options)
 }

@@ -57,7 +57,7 @@ func onTheList(t *testing.T) *installation {
 	t.Helper()
 
 	registry := appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
-	adding := usecase.Add{Identity: filesystem.Identity{}, Registry: registry, Now: time.Now}
+	adding := usecase.Add{Identity: filesystem.VaultIdentity{}, Registry: registry, Now: time.Now}
 	held := &rows{}
 
 	f := &installation{

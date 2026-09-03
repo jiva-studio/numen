@@ -25,7 +25,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 	}
 	out := port.Reading{Text: book.Text}
 	for _, p := range book.Parts {
-		out.Parts = append(out.Parts, cutting.Part{Title: p.Title, Offset: p.Offset})
+		out.Parts = append(out.Parts, cutting.PartStart{Title: p.Title, Offset: p.Offset})
 	}
 	for _, p := range book.Pages {
 		out.Pages = append(out.Pages, p.Offset)
