@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// A Document is one source of a vault that is not a note, as an agent is told
+// A Source is one source of a vault that is not a note, as an agent is told
 // about it.
-type Document struct {
+type Source struct {
 	Path string `json:"path"`
 	// Read says whether this document stands on what a model read in it. A
 	// reading still running stands on the pages it has reached, so this is true
@@ -43,12 +43,12 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			"that does carry text says whether that text is any good. Use this before " +
 			"asking for one to be read.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
-		Documents []Document `json:"documents"`
-		Says      string     `json:"says,omitempty"`
+		Documents []Source `json:"documents"`
+		Says      string   `json:"says,omitempty"`
 	}, error) {
 		type out = struct {
-			Documents []Document `json:"documents"`
-			Says      string     `json:"says,omitempty"`
+			Documents []Source `json:"documents"`
+			Says      string   `json:"says,omitempty"`
 		}
 		if core.Sources == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
@@ -66,9 +66,9 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 		for _, one := range read {
 			stands[one.Path] = one.Producer != ""
 		}
-		documents := make([]Document, 0, len(known))
+		documents := make([]Source, 0, len(known))
 		for path := range known {
-			documents = append(documents, Document{Path: path, Read: stands[path]})
+			documents = append(documents, Source{Path: path, Read: stands[path]})
 		}
 		says := ""
 		if core.Recognise != nil {
