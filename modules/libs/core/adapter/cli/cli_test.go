@@ -64,7 +64,7 @@ func (s *session) mustRun(args ...string) string {
 // An installation keeps a vault, so a test that forgets or erases one has two.
 func (s *session) another(name string) string {
 	s.t.Helper()
-	dir := s.t.TempDir()
+	dir := testsupport.TempDir(s.t)
 	s.mustRun("vault", "add", dir, "--name", name)
 	return dir
 }
