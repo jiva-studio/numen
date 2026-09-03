@@ -34,10 +34,10 @@ inside. Nothing has to be configured for that.
 | --- | --- |
 | `latest/` | The newest release, under names that carry no version |
 | `releases/<version>/` | That release under names that carry the stamp, kept |
-| `dev/` | The last build somebody asked for by hand |
-| `builds/<stamp>/` | That build under names that carry the stamp, kept |
+| `beta/` | The newest beta, under names that carry no version |
+| `builds/<stamp>/` | That beta under names that carry the stamp, kept |
 
-Six files in each, and one name each in `latest/` and `dev/`:
+Six files in each, and one name each in `latest/` and `beta/`:
 
 | File | What it is |
 | --- | --- |
@@ -48,7 +48,7 @@ Six files in each, and one name each in `latest/` and `dev/`:
 | `numen-linux-amd64.rpm` | Fedora and RHEL |
 | `numen-linux-amd64.tar.gz` | The window on its own |
 
-A name in `latest/` or `dev/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. Every file is put up a second time under a name carrying the stamp — `numen-0.4.0-alpha.1-364-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
+A name in `latest/` or `beta/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. Every file is put up a second time under a name carrying the stamp — `numen-2026.9.1-beta.884-884-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
 
 Beside the six, `latest.json` says the version, the build number, the commit, the stamp, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the stamped copy. That last one is what a machine asking what is newest is sent to fetch, and it is what the page moves its links to, so a file taken from the page says in its own name which build it is.
 
@@ -116,7 +116,9 @@ one thing more before it builds: that the keyboard page still says what the
 window does. It runs on a pull request touching the manual and on the three
 files the keyboard page is written from.
 
-**The builds.** `release.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/` and `builds/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
+**The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
+
+Then it tags the commit it built, works out what has landed since the last stable release, and makes a release on GitHub carrying those notes and the same files. A beta's release is marked as a prerelease. The tag is made once the builds are up, so no tag names a build that failed.
 
 `latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 
