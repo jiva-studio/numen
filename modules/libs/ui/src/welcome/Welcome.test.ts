@@ -173,9 +173,11 @@ describe('the screen drawn narrow', () => {
 
 /**
  * Short of the height the one column takes, the ways in and the vaults stand
- * side by side, which the stylesheet does. What is asked here is that they are
- * two regions to begin with, so that each of them can be a column, and that
- * every row of both is drawn and pressed wherever they stand.
+ * side by side and the emblem over them gives way a step at a time, both of
+ * which the stylesheet does. What is asked here is that they are two regions to
+ * begin with, so that each of them can be a column; that what a short screen
+ * gives up is marked to be given up; and that every row of both is drawn and
+ * pressed at every height.
  */
 describe('the screen drawn short', () => {
   const WAYS: readonly Way[] = [
@@ -205,9 +207,10 @@ describe('the screen drawn short', () => {
   })
 
   it('keeps the mark and the name with the ways in', () => {
-    const screen = drawBoth()
+    const lead = drawBoth().get('.welcome__lead')
 
-    expect(screen.get('.welcome__lead').find('.welcome__head').exists()).toBe(true)
+    expect(lead.find('.welcome__mark').exists()).toBe(true)
+    expect(lead.find('.welcome__name').exists()).toBe(true)
   })
 
   it('drops no row from either region', () => {

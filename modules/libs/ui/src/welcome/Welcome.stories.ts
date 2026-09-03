@@ -107,12 +107,27 @@ export const Opening: Story = {}
 
 /** Wide and not tall: the ways in on the left, the vaults on the right. */
 export const ShortAndWide: Story = {
-  args: { wide: 1120, high: 420 },
+  args: { wide: 1120, high: 460 },
 }
 
 /** The same window with more vaults than it can hold, where the list scrolls. */
 export const ShortAndWideWithManyVaults: Story = {
-  args: { wide: 1120, high: 420, vaults: MANY },
+  args: { wide: 1120, high: 460, vaults: MANY },
+}
+
+/** Shorter, where the mark gives way first and stands at half its height. */
+export const TheMarkGivesWay: Story = {
+  args: { wide: 1120, high: 340, vaults: MANY },
+}
+
+/** Shorter still: the mark has gone and the name stands over the ways in alone. */
+export const TheMarkHasGone: Story = {
+  args: { wide: 1120, high: 300, vaults: MANY },
+}
+
+/** The shortest window: the six ways in and the list, and nothing above them. */
+export const TheWaysInAndTheListAlone: Story = {
+  args: { wide: 1120, high: 260, vaults: MANY },
 }
 
 /** Short and narrow at once: no width to stand in two, so the whole of it scrolls. */

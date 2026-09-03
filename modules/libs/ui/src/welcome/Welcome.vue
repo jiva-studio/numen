@@ -169,7 +169,10 @@ defineEmits<{
   gap: 0.5rem;
 }
 
+/* The glyph carries no size of its own, so it stands at the height it is given
+   and is never squeezed to fit the room. */
 .welcome__mark {
+  flex: none;
   inline-size: auto;
   block-size: var(--mark);
 }
@@ -302,26 +305,27 @@ defineEmits<{
 }
 
 /* Short of the height the one column takes — the mark over the name, six ways
-   in, the heading and two vaults, inside the screen's own gutters — the ways in
-   and the vaults stand side by side, each column the width of a short line and
-   scrolled on its own. */
-@container (max-height: 30rem) and (min-width: 45.4rem) {
+   in, the heading and two vaults — the ways in and the vaults stand side by
+   side, each column the width of a short line. The list is the one thing here
+   with no end to it, and the one thing that scrolls. */
+@container (max-height: 27.55rem) and (min-width: 45.4rem) {
   .welcome__column {
     flex-direction: row;
+    margin-block: 0;
+    block-size: 100%;
     max-inline-size: 45.4rem;
-    max-block-size: 100%;
   }
 
   .welcome__lead,
   .welcome__vaults {
     flex: 1;
     min-inline-size: 0;
-    min-block-size: 0;
   }
 
+  /* The ways in stand at their own height, whole, from the top of the screen
+     down. */
   .welcome__lead {
-    overflow: auto;
-    overscroll-behavior: contain;
+    align-self: start;
   }
 
   /* The heading holds its place at the head of the column and the offer holds
@@ -329,12 +333,34 @@ defineEmits<{
   .welcome__vaults {
     display: flex;
     flex-direction: column;
+    min-block-size: 0;
   }
 
   .welcome__list {
     min-block-size: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+}
+
+/* Shorter than the mark, the name and the six ways in take together, the screen
+   gives up the emblem a step at a time: the mark at half its height, then the
+   mark, then the name after it. A way in is never given up. */
+@container (max-height: 19.85rem) {
+  .welcome__head {
+    --mark: 2.7rem;
+  }
+}
+
+@container (max-height: 17.15rem) {
+  .welcome__mark {
+    display: none;
+  }
+}
+
+@container (max-height: 13.95rem) {
+  .welcome__head {
+    display: none;
   }
 }
 
