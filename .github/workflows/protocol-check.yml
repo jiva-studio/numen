@@ -1,4 +1,4 @@
-name: (Protocol) Check schema
+name: Protocol :: Check schema
 
 on:
   pull_request:
@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   check:
-    name: Check
+    name: Schema check
     runs-on: ubuntu-latest
     steps:
       # The breaking-change check reads the schema as it stands on the base

@@ -1,4 +1,4 @@
-name: (Release) Package and publish
+name: Release :: Package and publish
 run-name: Release ${{ inputs.version || github.ref_name }}
 
 # Files to hand to somebody. A tag is a release and is named by the tag; a run
@@ -41,7 +41,7 @@ jobs:
   # What this run is called and where it goes. A tag is named by the tag and
   # goes where the page looks; anything else goes where nothing points at it.
   naming:
-    name: Name the run
+    name: Version
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.said.outputs.version }}
@@ -508,7 +508,7 @@ jobs:
   # links to, which carries no version and holds the newest build, and under a
   # name carrying its version, in a folder that is written once and kept.
   publish:
-    name: Publish
+    name: Builds publish
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
     needs: [naming, linux, windows, macos]
     runs-on: ubuntu-24.04

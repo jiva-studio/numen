@@ -1,4 +1,4 @@
-name: (Go) Build and test
+name: Go :: Build and test
 
 on:
   pull_request:
@@ -116,7 +116,7 @@ jobs:
   # The other half of the promise the two binaries make: this one is built for
   # a machine it is not being built on.
   cross-compile:
-    name: Cross-compile
+    name: Command line tool
     runs-on: ubuntu-latest
     defaults:
       run:

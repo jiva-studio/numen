@@ -1,4 +1,4 @@
-name: (Interface) Build and test
+name: Interface :: Build and test
 
 on:
   pull_request:

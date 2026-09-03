@@ -1,4 +1,4 @@
-name: (Commits) Lint
+name: Commits :: Lint
 
 on:
   pull_request:
