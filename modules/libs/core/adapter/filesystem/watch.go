@@ -212,17 +212,22 @@ type folders struct {
 	are    map[string]bool
 }
 
-// remembered walks the vault once for its shape. A folder made later is learnt
-// from the event that makes it.
+// remembered walks the vault once for its shape, stopping where the vault's own
+// walk stops. A folder made later is learnt from the event that makes it.
 func remembered(reader *VaultReader) *folders {
 	f := &folders{reader: reader, are: map[string]bool{".": true}}
 	_ = filepath.WalkDir(reader.Root(), func(p string, d fs.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {
 			return nil
 		}
-		if path, inside := reader.relative(p); inside {
-			f.are[path] = true
+		path, inside := reader.relative(p)
+		if !inside {
+			return nil
 		}
+		if p != reader.Root() && reader.skipped(path, d.Name()) {
+			return fs.SkipDir
+		}
+		f.are[path] = true
 		return nil
 	})
 	return f
@@ -244,7 +249,8 @@ func (f *folders) forget(path string) {
 // A file is itself, when the vault holds it. A folder is everything under it:
 // a folder arrives with its contents already in place — copied, restored,
 // checked out — and where the system has no recursion of its own the watch on
-// it is established after the fact.
+// it is established after the fact. A folder the walk stops at names nothing,
+// and neither does anything under it.
 //
 // `whole` is set when the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
@@ -259,6 +265,9 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 	info, err := os.Stat(absolute)
 	switch {
 	case err == nil && info.IsDir():
+		if path != "." && f.reader.skipped(path, filepath.Base(absolute)) {
+			return nil, false
+		}
 		f.are[path] = true
 		var found []string
 		_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
@@ -270,6 +279,9 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 				return nil
 			}
 			if d.IsDir() {
+				if p != absolute && f.reader.skipped(held, d.Name()) {
+					return fs.SkipDir
+				}
 				f.are[held] = true
 				return nil
 			}
