@@ -18,10 +18,6 @@ type Follow struct {
 	Refresh Refresh
 	Scan    Scan
 
-	// Walked, if set, is closed by the caller when its first scan is over. The
-	// vault is read again only after it.
-	Walked <-chan struct{}
-
 	// Changed, if set, is called each time the index and the vault are level
 	// again. What is done with that is the caller's business.
 	Changed func(Moved)
@@ -50,8 +46,8 @@ func (m Moved) Reading() bool { return m.Reload || len(m.Assets) > 0 }
 // separate because they belong at different moments.
 //
 // The watch belongs before the first scan: an edit made while the vault is
-// being read is then held. Reading the vault again belongs after that scan, and
-// Walked is what says when it is over.
+// being read is then held. Reading the vault again waits its turn behind a walk
+// already running.
 func (u Follow) Begin(ctx context.Context, v domain.Vault) (*Following, error) {
 	changes, lost, err := u.Watcher.Watch(ctx, v)
 	if err != nil {
@@ -92,9 +88,6 @@ func (f *Following) Run(ctx context.Context) {
 			// More changed at once than could be followed, or something went
 			// that cannot be asked what it held. Reading the vault again is the
 			// answer, and whoever is listening is told to ask again.
-			if !f.walked(ctx) {
-				return
-			}
 			if _, err := f.follow.Scan.Execute(ctx, f.vault); err != nil {
 				f.trouble(err)
 				continue
@@ -104,20 +97,6 @@ func (f *Following) Run(ctx context.Context) {
 			// walk finds.
 			f.changed(Moved{Reload: true})
 		}
-	}
-}
-
-// walked waits for the caller's first scan, and answers whether it is over. A
-// caller that named no scan has nothing to wait for.
-func (f *Following) walked(ctx context.Context) bool {
-	if f.follow.Walked == nil {
-		return true
-	}
-	select {
-	case <-f.follow.Walked:
-		return true
-	case <-ctx.Done():
-		return false
 	}
 }
 

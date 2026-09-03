@@ -129,7 +129,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	}()
 
 	// The first walk has the note's old bytes in hand.
-	if path := <-readers.read; path != "Leaf.md" {
+	if path := awaited(t, readers.read, "the walk read nothing"); path != "Leaf.md" {
 		t.Fatalf("the walk is reading %q", path)
 	}
 	write(t, v, "Leaf.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -144,14 +144,28 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 	}
 
 	readers.release()
-	if err := <-walked; err != nil {
+	if err := awaited(t, walked, "the first walk did not finish"); err != nil {
 		t.Fatal(err)
 	}
-	if m := <-told; !m.Reload {
+	if m := awaited(t, told, "the vault was never read again"); !m.Reload {
 		t.Fatalf("reported %+v", m)
 	}
 	if got := titleOf(t, db, v, "Leaf.md"); got != "Renamed" {
 		t.Errorf("the index says %q", got)
+	}
+}
+
+// awaited is what the channel carries, and a failure saying what did not happen
+// when it carries nothing.
+func awaited[T any](t *testing.T, from <-chan T, what string) T {
+	t.Helper()
+	select {
+	case value := <-from:
+		return value
+	case <-time.After(10 * time.Second):
+		t.Fatal(what)
+		var zero T
+		return zero
 	}
 }
 
