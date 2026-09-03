@@ -49,13 +49,6 @@ jobs:
       - name: Test
         run: npm run test:unit --prefix modules/libs/ui
 
-      # The windows are typed against this build.
-      - uses: actions/upload-artifact@v7
-        with:
-          name: components
-          path: modules/libs/ui/dist
-          if-no-files-found: error
-
   # A story runs in a real browser, and several of them are the only test of a
   # thing a browser decides: what is clipped by an overflow, where a scroll
   # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
@@ -91,7 +84,6 @@ jobs:
   # The screens that arrange the components. All are typed against the schema,
   # so a change to it fails here rather than on screen.
   windows:
-    needs: components
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -107,23 +99,18 @@ jobs:
             modules/apps/desktop/flashcards/package-lock.json
             modules/apps/mobile/package-lock.json
 
-      # A window reaches the components through their build, so it is here
-      # before anything is installed against it.
-      - uses: actions/download-artifact@v8
-        with:
-          name: components
-          path: modules/libs/ui/dist
-
-      # What the components are typed against is theirs to carry, and a window
-      # reads those types through them. Nothing here draws a story, so the
-      # tools that do are left out.
+      # A window is typed against the schema and against the components, and
+      # reaches the components through their build.
       - name: Install
         run: |
           npm install --prefix modules/libs/protocol
-          npm ci --prefix modules/libs/ui --omit=dev
+          npm ci --prefix modules/libs/ui
           npm install --prefix modules/apps/desktop/ui
           npm install --prefix modules/apps/desktop/flashcards
           npm install --prefix modules/apps/mobile
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
 
       - name: Typecheck
         run: |
