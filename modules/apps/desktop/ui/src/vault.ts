@@ -326,7 +326,7 @@ export const core: Core & Asking & Commanding = {
   standing: async (paths) => {
     const answer = await vault.standing({ paths: [...paths] })
     return new Map(
-      answer.found.map((one) => [one.path, { kind: holding[one.kind], type: typed[one.type] }]),
+      answer.found.map((one) => [one.path, { kind: holding[one.kind], type: noteType(one.type) }]),
     )
   },
   /**
@@ -350,7 +350,7 @@ export const core: Core & Asking & Commanding = {
       // A name with no heading stands on no line of the prose.
       line: one.heading?.line ?? -1,
       at: one.at.map(run),
-      type: typed[one.type],
+      type: noteType(one.type),
     }))
   },
   /** The text the vault holds that answers what is typed, asked one way. */
@@ -362,7 +362,7 @@ export const core: Core & Asking & Commanding = {
       // A source that is not a note carries none, and what this window opens
       // one as is the document it is.
       isNote: one.note !== undefined,
-      type: typed[one.type],
+      type: noteType(one.type),
       text: one.text,
       start: one.start,
       length: one.length,
@@ -546,7 +546,7 @@ const listed = (one: EntryMessage): Entry => ({
   name: one.name,
   folder: one.folder,
   kind: holding[one.kind],
-  type: typed[one.type],
+  type: noteType(one.type),
 })
 
 /** What the vault holds at a path, in the words the window uses. */
@@ -566,12 +566,15 @@ const standing: Record<Presences, Presence> = {
 }
 
 /** Which of four a note is, in the words the window uses. */
-const typed: Record<NoteTypes, NoteType> = {
+const typed: Partial<Record<NoteTypes, NoteType>> = {
   [NoteTypes.UNSPECIFIED]: 'note',
   [NoteTypes.DECK]: 'deck',
   [NoteTypes.STENCIL]: 'stencil',
   [NoteTypes.PRESET]: 'preset',
 }
+
+/** A kind this window has no word for is an ordinary note. */
+const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
 
 /** One stencil of the list, kept as the plain value the window carries it as. */
 const offered = (one: { path: string; title: string; fields: string[] }): Offer => ({
