@@ -112,6 +112,8 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     choosesReviewing: async () => null,
     settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
     choosesSetting: async () => {},
+    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    writesSettingsFile: async () => {},
   }
   return {
     core,

@@ -81,6 +81,8 @@ function fake(over: Partial<Faked> = {}) {
     choosesReviewing: async () => null,
     settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
     choosesSetting: async () => {},
+    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    writesSettingsFile: async () => {},
     ...over,
   }
   return { core, files, wrote }

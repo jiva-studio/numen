@@ -3,11 +3,12 @@
  *
  * What is asked here is that a row writes through the same value the command of
  * that name writes, that a setting read out of the file is written back where
- * it stands, and that a model the file names and this build does not offer is
- * drawn as one that is not there.
+ * it stands, and that what the file holds is what is drawn as chosen.
+ *
+ * Every value here is invented.
  */
-import { describe, expect, it } from 'vitest'
-import { ref } from 'vue'
+import { afterEach, describe, expect, it } from 'vitest'
+import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import type { Model, Written } from '../core'
@@ -25,6 +26,7 @@ const MODELS: readonly Model[] = [
     shelf: '',
     byDefault: true,
     writes: [{ at: ['agent', 'claude', 'model'], value: '""' }],
+    presence: 'nothing to fetch',
   },
   {
     namedAt: ['agent', 'claude', 'model'],
@@ -33,6 +35,18 @@ const MODELS: readonly Model[] = [
     shelf: 'By how large it is',
     byDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
+    presence: 'nothing to fetch',
+  },
+  {
+    namedAt: ['indexing', 'recognition', 'recognise', 'name'],
+    name: 'https://models.example/held/Tiny_rec.onnx',
+    title: 'Tiny, small',
+    shelf: '',
+    byDefault: true,
+    writes: [
+      { at: ['indexing', 'recognition', 'recognise', 'name'], value: '"held/Tiny_rec.onnx"' },
+    ],
+    presence: 'present',
   },
 ]
 
@@ -47,6 +61,7 @@ const standing = (pinned = false, file: Record<string, unknown> = {}) => {
     models: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     writes: (said) => void written.push(...said),
     file: () => '/numen.json',
+    opensFile: () => void done.push('opens the file'),
     themes: () => [
       { name: 'preset:numen', title: 'numen', shipped: true, pinned: false },
       { name: 'mine:sea', title: 'sea', shipped: false, pinned: false },
@@ -75,34 +90,74 @@ const standing = (pinned = false, file: Record<string, unknown> = {}) => {
     dayStarts: () => '04:00',
     choosesDayStarts: (hour) => void done.push(`day starts ${hour}`),
   }
-  return { done, written, tab: mount(SettingsTab, { props: { held: { installation } } }) }
+  const tab = mount(SettingsTab, {
+    props: { held: { installation } },
+    attachTo: document.body,
+  })
+  drawn.push(tab)
+  return { done, written, tab }
+}
+
+/** Every tab this file drew, put away between one test and the next. */
+const drawn: { unmount: () => void }[] = []
+
+afterEach(() => {
+  while (drawn.length) drawn.pop()?.unmount()
+})
+
+type Tab = ReturnType<typeof standing>['tab']
+
+/** The choices one line offers, opened. They are drawn at the end of the document. */
+const opens = async (tab: Tab, id: string) => {
+  await tab.get(`#${id}`).trigger('click')
+  await nextTick()
+  await nextTick()
+}
+
+const offered = (): readonly string[] =>
+  Array.from(document.body.querySelectorAll('.menu__item .menu__text')).map(
+    (one) => one.textContent?.trim() ?? '',
+  )
+
+const shelved = (): readonly string[] =>
+  Array.from(document.body.querySelectorAll('.menu__band')).map(
+    (one) => one.textContent?.trim() ?? '',
+  )
+
+/** One choice taken off the open list, by what is written on it. */
+const takes = async (words: string) => {
+  const rows = Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
+  rows.find((one) => one.querySelector('.menu__text')?.textContent?.trim() === words)?.click()
+  await nextTick()
 }
 
 describe('the settings tab', () => {
-  it('draws every group of the file, in the order the file keeps them', () => {
+  it('draws every group, by the part of the application it governs', () => {
     const { tab } = standing()
     const headings = tab.findAll('.settings__heading').map((one) => one.text())
     expect(headings).toStrictEqual([
       words.window,
       words.naming,
       words.review,
+      words.transcription,
+      words.ocr,
       words.indexing,
       words.agent,
     ])
   })
 
-  it('opens on the theme the settings name, off both shelves', () => {
+  it('opens on the theme the settings name, off both shelves', async () => {
     const { tab } = standing()
-    const chosen = tab.get('select').element as HTMLSelectElement
-    expect(chosen.value).toBe('preset:numen')
-    expect(
-      tab.get('#settings-theme').findAll('optgroup').map((one) => one.attributes('label')),
-    ).toStrictEqual([words.shipped, words.owned])
+    expect(tab.get('#settings-theme').text()).toContain('numen')
+
+    await opens(tab, 'settings-theme')
+    expect(shelved()).toStrictEqual([words.shipped, words.owned])
   })
 
   it('writes a theme the way the command of that name writes it', async () => {
     const { tab, done } = standing()
-    await tab.get('select').setValue('mine:sea')
+    await opens(tab, 'settings-theme')
+    await takes('sea')
     expect(done).toStrictEqual(['chooses mine:sea'])
   })
 
@@ -118,35 +173,119 @@ describe('the settings tab', () => {
     expect(done).toStrictEqual(['hanging false', 'syncing false'])
   })
 
-  it('names the file the settings stand in, where the vault has said where it is', () => {
-    expect(standing().tab.get('.settings__where').text()).toBe('/numen.json')
+  it('names the file the settings stand in, and opens it whole', async () => {
+    const { tab, done } = standing()
+    expect(tab.get('.settings__file').text()).toBe('/numen.json')
+
+    await tab.get('.settings__where button').trigger('click')
+    expect(done).toStrictEqual(['opens the file'])
+  })
+
+  it('carries no pencil, and no editor spliced under a row', () => {
+    const { tab } = standing()
+    expect(tab.findAll('.editable__row')).toHaveLength(0)
+    expect(tab.findAll('.cm-editor')).toHaveLength(0)
+    expect(tab.text()).not.toContain('JSON5')
   })
 
   it('draws the settings it reads out of the file, each under the group it is in', () => {
     const { tab } = standing()
     expect(tab.text()).toContain(words.indexingModel)
-    expect(tab.text()).toContain(words.ocr)
-    expect(tab.text()).toContain(words.proofreading)
+    expect(tab.text()).toContain(words.ocrModel)
+    expect(tab.text()).toContain(words.transcribing)
     expect(tab.text()).toContain(words.agentUse)
   })
 
-  it('opens a model on what the file names, and says which one is the default', () => {
-    const { tab } = standing(false, { agent: { claude: { model: 'opus' } } })
-    const model = tab.get('#settings-agent-model').element as HTMLSelectElement
-    expect(model.value).toBe('opus')
-    expect(tab.text()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
+  it('draws each of the two proofreadings beside the thing it puts right', () => {
+    const { tab } = standing()
+    const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
+    const heard = tab.get('section[aria-label="' + words.transcription + '"]')
+
+    expect(ocr.text()).toContain(words.ocrProofread)
+    expect(ocr.find('#settings-ocr-proofread').exists()).toBe(true)
+    expect(heard.text()).toContain(words.transcriptProofread)
+    expect(heard.find('#settings-transcript-proofread').exists()).toBe(true)
   })
 
-  it('draws a model the file names and this build does not offer as one not there', () => {
-    const { tab } = standing(false, { agent: { claude: { model: 'a-model-of-my-own' } } })
-    const model = tab.get('#settings-agent-model').element as HTMLSelectElement
-    expect(model.value).toBe('a-model-of-my-own')
-    expect(tab.text()).toContain(`a-model-of-my-own — ${words.notFound}`)
+  it('reads each of the two proofreadings out of its own path', () => {
+    const { tab } = standing(false, {
+      indexing: {
+        recognition: { proofread: { with: 'careful' } },
+        transcription: { proofread: { with: 'quick' } },
+      },
+    })
+    expect(tab.get('#settings-ocr-proofread').text()).toContain('careful')
+    expect(tab.get('#settings-transcript-proofread').text()).toContain('quick')
+  })
+
+  it('writes each of the two proofreadings into its own path', async () => {
+    const { tab, written } = standing(false, {
+      indexing: { proofreading: { profiles: { careful: {} } } },
+    })
+    await opens(tab, 'settings-transcript-proofread')
+    await takes('careful')
+    expect(written).toStrictEqual([
+      { at: ['indexing', 'transcription', 'proofread', 'with'], value: '"careful"' },
+    ])
+  })
+
+  it('turns whether each of the two is put right unasked', async () => {
+    const { tab, written } = standing()
+    await tab.get('[aria-labelledby="settings-ocr-always"]').trigger('click')
+    await tab.get('[aria-labelledby="settings-transcript-always"]').trigger('click')
+    expect(written).toStrictEqual([
+      { at: ['indexing', 'recognition', 'proofread', 'automatically'], value: 'true' },
+      { at: ['indexing', 'transcription', 'proofread', 'automatically'], value: 'true' },
+    ])
+  })
+
+  it('opens a model on what the file names, and says which one is the default', async () => {
+    const { tab } = standing(false, { agent: { claude: { model: 'opus' } } })
+    expect(tab.get('#settings-agent-model').text()).toContain('opus')
+
+    await opens(tab, 'settings-agent-model')
+    expect(offered()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
+  })
+
+  it('names a model by its own words, and addresses it underneath', async () => {
+    const { tab } = standing()
+    await opens(tab, 'settings-ocr')
+    expect(offered()).toStrictEqual([`Tiny, small — ${words.byDefault}`])
+    expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
+      `${words.present} · https://models.example/held/Tiny_rec.onnx`,
+    )
+  })
+
+  it('draws a value the presets do not name as the person’s own, and says nothing else', async () => {
+    const own = 'https://models.example/mine/Other_rec.onnx'
+    const { tab } = standing(false, {
+      indexing: { recognition: { recognise: { name: own } } },
+    })
+    expect(tab.get('#settings-ocr').text()).toContain('Other_rec.onnx')
+    expect(tab.text()).not.toMatch(/not found/i)
+
+    await opens(tab, 'settings-ocr')
+    expect(offered()[0]).toBe('Other_rec.onnx')
+    expect(shelved()[0]).toBe(words.owned)
+  })
+
+  it('leaves a value the presets do not name alone while nothing is chosen', async () => {
+    const own = 'https://models.example/mine/Other_rec.onnx'
+    const { tab, written } = standing(false, {
+      indexing: { recognition: { recognise: { name: own } } },
+    })
+    await opens(tab, 'settings-ocr')
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await nextTick()
+
+    expect(written).toStrictEqual([])
+    expect(tab.get('#settings-ocr').text()).toContain('Other_rec.onnx')
   })
 
   it('writes everything a model decides, not its name alone', async () => {
     const { tab, written } = standing()
-    await tab.get('#settings-agent-model').setValue('opus')
+    await opens(tab, 'settings-agent-model')
+    await takes('opus')
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 
@@ -156,16 +295,12 @@ describe('the settings tab', () => {
     expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })
 
-  it('offers the profiles the file holds, and naming none', () => {
+  it('offers the profiles the file holds, and naming none', async () => {
     const { tab } = standing(false, {
       indexing: { proofreading: { profiles: { careful: {}, quick: {} } } },
     })
-    const profiles = tab.get('#settings-proofreading').findAll('option')
-    expect(profiles.map((one) => one.text())).toStrictEqual([
-      words.proofreadingNone,
-      'careful',
-      'quick',
-    ])
+    await opens(tab, 'settings-ocr-proofread')
+    expect(offered()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
   })
 
   it('opens on the hour the settings begin a day of review at', () => {
@@ -179,5 +314,14 @@ describe('the settings tab', () => {
     const { tab, done } = standing()
     await tab.get('[data-slot="time-field"]').setValue('06:30')
     expect(done).toStrictEqual(['day starts 06:30'])
+  })
+
+  it('names every row by what it is, without leaning on the row above', () => {
+    const { tab } = standing()
+    const names = tab.findAll('.settings__name').map((one) => one.text())
+    expect(names).toContain(words.transcribeUnder)
+    expect(names).not.toContain('Only under')
+    expect(names).toContain(words.agentTools)
+    expect(tab.text()).not.toContain('Tools on a port')
   })
 })

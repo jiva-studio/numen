@@ -60,6 +60,7 @@ import { presets } from './preset/core'
 import { presetting } from './preset/kind'
 import { configuring } from './settings/configuring'
 import { settling } from './settings/kind'
+import { configuring as holdingFile } from './configuration/kind'
 import { documentKind, documenting, type Held as DocumentHeld } from './document/kind'
 import { recordingKind } from './recording/kind'
 import { listening, type Listening as RecordingHeld } from './recording/listening'
@@ -497,6 +498,9 @@ const dayBegins = reviewing(core, words, tell.under('reviewed'))
 /** The rest of the settings file, which no command of the window turns. */
 const rest = configuring(core, words, tell.under('configured'))
 
+/** The settings file itself, opened whole in a tab of its own. */
+const file = holdingFile(held.host, core, () => void rest.start())
+
 /**
  * Everything this installation is configured as, in a tab of its own. It holds
  * nothing: each row reaches the same value the command of that name reaches.
@@ -521,9 +525,10 @@ const configured = settling(held.host, {
   models: (at) => rest.offers(at),
   writes: (written) => void rest.chooses(written),
   file: () => rest.path.value,
+  opensFile: () => file.shows(),
 })
 
-held.declares([configured.kind])
+held.declares([configured.kind, file.kind])
 
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box

@@ -127,6 +127,7 @@ const INSTALLATION: Installation = {
   models: () => [],
   writes: () => {},
   file: () => '/numen.json',
+  opensFile: () => {},
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */
