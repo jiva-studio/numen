@@ -18,7 +18,7 @@ import (
 // The vault a queue reads and writes through in these tests, on the disk a test
 // was given.
 var (
-	vaultReaders  = filesystem.Readers{Options: filesystem.Options{ServiceDir: ".numen"}}
+	vaultReaders  = filesystem.VaultReaders{Options: filesystem.Options{ServiceDir: ".numen"}}
 	derivedStores = filesystem.DerivedStores{
 		Options: filesystem.Options{ServiceDir: ".numen"},
 		Area:    filesystem.OCRDir,
@@ -208,7 +208,9 @@ func (h recognised) Recognised(
 	return []port.SourceText{{Path: h.path, Producer: "asr", Hash: "x"}}, nil
 }
 
-func (h recognised) Under(context.Context, string, string) ([]domain.Fingerprint, error) { return nil, nil }
+func (h recognised) Under(context.Context, string, string) ([]domain.Fingerprint, error) {
+	return nil, nil
+}
 
 func (h recognised) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
