@@ -7,7 +7,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, type Component } from 'vue'
+import { FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
 import { keyChord, type PaletteBand, type PaletteSpan } from './model'
 import {
@@ -323,7 +324,7 @@ export const LitAlone: Story = {
 /** Every band came back with nothing, so there is nowhere to stand. */
 export const LitNothing: Story = {
   args: {
-    bands: [{ id: 'names', title: 'Names', items: [], silence: 'No name holds those words' }],
+    bands: [{ id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(palette()).not.toBeNull())
@@ -440,14 +441,49 @@ export const Filling: Story = {
   },
 }
 
-/** Every band came back with nothing, each saying so in its own words. */
+/**
+ * Every band was asked and answered with nothing. A band that has answered and
+ * has nothing to say is worth no heading of its own, so none of them is drawn
+ * and what stands there is what the caller says in place of a list.
+ */
 export const Nothing: Story = {
   args: {
     bands: [
-      { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
-      { id: 'text', title: 'Text', items: [], silence: 'Nothing is written with them' },
+      { id: 'names', title: 'Names', items: [] },
+      { id: 'text', title: 'Text', items: [] },
+      { id: 'meaning', title: 'Meaning', items: [] },
+    ],
+  },
+  play: async () => {
+    await waitFor(() =>
+      expect(document.body.querySelectorAll('.palette__title')).toHaveLength(0),
+    )
+    await expect(said(document.body.querySelector('.palette__nothing'))).toBe(
+      'Type to look for something',
+    )
+  },
+}
+
+/**
+ * One band answered with nothing and another could not be asked at all. The
+ * first is drawn nowhere; the second says why in its own words, which is
+ * something a person needs to be told.
+ */
+export const CouldNotBeAsked: Story = {
+  args: {
+    bands: [
+      { id: 'names', title: 'Names', items: [] },
+      { id: 'text', title: 'Text', items: [] },
       { id: 'meaning', title: 'Meaning', items: [], silence: 'No model is set' },
     ],
+  },
+  play: async () => {
+    const drawn = () =>
+      Array.from(document.body.querySelectorAll('.palette__title')).map((band) =>
+        band.textContent?.trim(),
+      )
+    await waitFor(() => expect(drawn()).toEqual(['Meaning']))
+    await expect(said(document.body.querySelector('.palette__silence'))).toBe('No model is set')
   },
 }
 
@@ -460,6 +496,70 @@ export const Unasked: Story = {
 export const Alone: Story = {
   args: {
     bands: [{ id: 'names', title: 'Names', items: [named('entropy', 'Entropy', 'ent')] }],
+  },
+}
+
+/**
+ * A mark before every row, drawn by whoever offered the row: here a note, a
+ * deck, a stencil and a preset, each drawn as itself. A row the caller has no
+ * mark for keeps the room, so the names line up down the list.
+ */
+export const Marks: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          named('note', 'Entropy', 'ent'),
+          named('deck', 'Words to learn', ''),
+          named('stencil', 'Animal', ''),
+          named('preset', 'Every day', ''),
+          named('nothing', 'A book of the vault', ''),
+        ],
+      },
+    ],
+  },
+  render: (args) => ({
+    components: { Palette },
+    setup() {
+      const open = ref(true)
+      const typed = ref('ent')
+      const marks: Record<string, Component> = {
+        note: FileText,
+        deck: Layers,
+        stencil: LayoutTemplate,
+        preset: Gauge,
+      }
+      return { args, open, typed, marks }
+    },
+    template: `
+      <div class="numen" style="height:100vh;background:var(--numen-surface)">
+        <Palette
+          v-model="typed"
+          :bands="args.bands"
+          :open="open"
+          @choose="args.onChoose"
+          @dismiss="args.onDismiss"
+        >
+          <template #icon="{ id }">
+            <component :is="marks[id]" v-if="marks[id]" style="inline-size:100%;block-size:100%" />
+          </template>
+        </Palette>
+      </div>
+    `,
+  }),
+  play: async () => {
+    await waitFor(() => expect(options()).toHaveLength(5))
+
+    const drawn = options().map(
+      (row) =>
+        /lucide-([a-z-]+)-icon/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
+        '',
+    )
+    await expect(drawn).toEqual(['file-text', 'layers', 'layout-template', 'gauge', ''])
+    // The row with no mark keeps the room for one, so the names line up.
+    await expect(options()[4]?.querySelector('.palette__icon')).not.toBeNull()
   },
 }
 
@@ -601,15 +701,15 @@ export const NotToBeChosen: Story = {
 }
 
 /**
- * One band answered and another came back with nothing.
+ * One band answered, another is still filling, and a third could not be asked.
  *
- * The empty one is still drawn — it says the question was asked — and it stands
- * at the foot, out of the way of what a person is actually reading.
+ * The one with something to say is still drawn, and it stands at the foot, out
+ * of the way of what a person is actually reading.
  */
 export const SomeCameBackEmpty: Story = {
   args: {
     bands: [
-      { id: 'names', title: 'Names', items: [], silence: 'No name holds those words' },
+      { id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' },
       TEXT,
       { ...MEANING, working: true },
     ],

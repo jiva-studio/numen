@@ -2282,7 +2282,10 @@ type Named struct {
 	// Where in that name the words stand, counted the way a client counts text:
 	// in UTF-16 code units.
 	// A word reached by its prefix is marked whole.
-	At            []*Span `protobuf:"bytes,3,rep,name=at,proto3" json:"at,omitempty"`
+	At []*Span `protobuf:"bytes,3,rep,name=at,proto3" json:"at,omitempty"`
+	// Which of three the note is, so a client draws a deck and a stencil as what
+	// they are. A heading carries the type of the note it stands in.
+	Type          NoteType `protobuf:"varint,4,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2336,6 +2339,13 @@ func (x *Named) GetAt() []*Span {
 		return x.At
 	}
 	return nil
+}
+
+func (x *Named) GetType() NoteType {
+	if x != nil {
+		return x.Type
+	}
+	return NoteType_NOTE_TYPE_UNSPECIFIED
 }
 
 // Heading is one line of a note that names what stands below it.
@@ -2883,7 +2893,10 @@ type Passage struct {
 	Length int32 `protobuf:"varint,7,opt,name=length,proto3" json:"length,omitempty"`
 	// Where the chunk that matched stands, counted from the first line of the
 	// source's prose. It is the line a note opens on, and the caret stands there.
-	Line          int32 `protobuf:"varint,8,opt,name=line,proto3" json:"line,omitempty"`
+	Line int32 `protobuf:"varint,8,opt,name=line,proto3" json:"line,omitempty"`
+	// Which of three the note is, so a client draws a deck and a stencil as what
+	// they are. It says nothing about a source that is not a note.
+	Type          NoteType `protobuf:"varint,9,opt,name=type,proto3,enum=numen.v1.NoteType" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2972,6 +2985,13 @@ func (x *Passage) GetLine() int32 {
 		return x.Line
 	}
 	return 0
+}
+
+func (x *Passage) GetType() NoteType {
+	if x != nil {
+		return x.Type
+	}
+	return NoteType_NOTE_TYPE_UNSPECIFIED
 }
 
 type ListRequest struct {
@@ -5662,11 +5682,12 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"6\n" +
 	"\rNamesResponse\x12%\n" +
-	"\x05found\x18\x01 \x03(\v2\x0f.numen.v1.NamedR\x05found\"\x89\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x0f.numen.v1.NamedR\x05found\"\xb1\x01\n" +
 	"\x05Named\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12\x1e\n" +
-	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02atB\n" +
+	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12&\n" +
+	"\x04type\x18\x04 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\n" +
 	"\n" +
 	"\b_heading\"G\n" +
 	"\aHeading\x12\x12\n" +
@@ -5696,7 +5717,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1f\n" +
 	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"9\n" +
 	"\x0eSearchResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xe1\x01\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x89\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -5705,7 +5726,8 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\blocation\x18\x05 \x01(\tR\blocation\x12\x14\n" +
 	"\x05start\x18\x06 \x01(\x05R\x05start\x12\x16\n" +
 	"\x06length\x18\a \x01(\x05R\x06length\x12\x12\n" +
-	"\x04line\x18\b \x01(\x05R\x04lineB\a\n" +
+	"\x04line\x18\b \x01(\x05R\x04line\x12&\n" +
+	"\x04type\x18\t \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\a\n" +
 	"\x05_note\"%\n" +
 	"\vListRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\"9\n" +
@@ -6108,117 +6130,119 @@ var file_numen_v1_vault_proto_depIdxs = []int32{
 	10, // 14: numen.v1.Named.note:type_name -> numen.v1.Note
 	38, // 15: numen.v1.Named.heading:type_name -> numen.v1.Heading
 	45, // 16: numen.v1.Named.at:type_name -> numen.v1.Span
-	41, // 17: numen.v1.HeadingsResponse.found:type_name -> numen.v1.NoteHeadings
-	38, // 18: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
-	44, // 19: numen.v1.StandingResponse.found:type_name -> numen.v1.Standing
-	4,  // 20: numen.v1.Standing.kind:type_name -> numen.v1.SourceKind
-	5,  // 21: numen.v1.Standing.type:type_name -> numen.v1.NoteType
-	3,  // 22: numen.v1.SearchRequest.way:type_name -> numen.v1.Way
-	48, // 23: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
-	10, // 24: numen.v1.Passage.note:type_name -> numen.v1.Note
-	45, // 25: numen.v1.Passage.at:type_name -> numen.v1.Span
-	51, // 26: numen.v1.ListResponse.entries:type_name -> numen.v1.Entry
-	4,  // 27: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
-	5,  // 28: numen.v1.Entry.type:type_name -> numen.v1.NoteType
-	0,  // 29: numen.v1.ReadResponse.refusal:type_name -> numen.v1.Refusal
-	54, // 30: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
-	54, // 31: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
-	55, // 32: numen.v1.WriteRequest.seen:type_name -> numen.v1.Seen
-	0,  // 33: numen.v1.WriteResponse.refusal:type_name -> numen.v1.Refusal
-	54, // 34: numen.v1.WriteResponse.at:type_name -> numen.v1.Fingerprint
-	6,  // 35: numen.v1.NewLink.role:type_name -> numen.v1.Role
-	58, // 36: numen.v1.CreateRequest.links:type_name -> numen.v1.NewLink
-	0,  // 37: numen.v1.CreateResponse.refusal:type_name -> numen.v1.Refusal
-	58, // 38: numen.v1.JoinRequest.link:type_name -> numen.v1.NewLink
-	0,  // 39: numen.v1.JoinResponse.refusal:type_name -> numen.v1.Refusal
-	7,  // 40: numen.v1.RenameResponse.by:type_name -> numen.v1.Naming
-	65, // 41: numen.v1.RenameResponse.moved:type_name -> numen.v1.Moved
-	0,  // 42: numen.v1.RenameResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 43: numen.v1.ChooseSyncingResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 44: numen.v1.ChooseHangingResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 45: numen.v1.ChooseReviewingResponse.refusal:type_name -> numen.v1.Refusal
-	80, // 46: numen.v1.SettingsResponse.models:type_name -> numen.v1.Model
-	81, // 47: numen.v1.Model.writes:type_name -> numen.v1.Setting
-	8,  // 48: numen.v1.Model.presence:type_name -> numen.v1.Presence
-	81, // 49: numen.v1.ChooseSettingsRequest.settings:type_name -> numen.v1.Setting
-	65, // 50: numen.v1.MoveResponse.moved:type_name -> numen.v1.Moved
-	0,  // 51: numen.v1.MoveResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 52: numen.v1.MakeFolderResponse.refusal:type_name -> numen.v1.Refusal
-	0,  // 53: numen.v1.RemoveResponse.refusal:type_name -> numen.v1.Refusal
-	9,  // 54: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
-	12, // 55: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
-	17, // 56: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
-	30, // 57: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	32, // 58: numen.v1.VaultService.Resolve:input_type -> numen.v1.ResolveRequest
-	35, // 59: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
-	39, // 60: numen.v1.VaultService.Headings:input_type -> numen.v1.HeadingsRequest
-	42, // 61: numen.v1.VaultService.Standing:input_type -> numen.v1.StandingRequest
-	46, // 62: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
-	19, // 63: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	22, // 64: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
-	25, // 65: numen.v1.VaultService.Attending:input_type -> numen.v1.AttendingRequest
-	28, // 66: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
-	14, // 67: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
-	49, // 68: numen.v1.VaultService.List:input_type -> numen.v1.ListRequest
-	52, // 69: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
-	56, // 70: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
-	59, // 71: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
-	61, // 72: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
-	63, // 73: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
-	88, // 74: numen.v1.VaultService.Move:input_type -> numen.v1.MoveRequest
-	66, // 75: numen.v1.VaultService.Syncing:input_type -> numen.v1.SyncingRequest
-	68, // 76: numen.v1.VaultService.ChooseSyncing:input_type -> numen.v1.ChooseSyncingRequest
-	70, // 77: numen.v1.VaultService.Hanging:input_type -> numen.v1.HangingRequest
-	72, // 78: numen.v1.VaultService.ChooseHanging:input_type -> numen.v1.ChooseHangingRequest
-	74, // 79: numen.v1.VaultService.Reviewing:input_type -> numen.v1.ReviewingRequest
-	76, // 80: numen.v1.VaultService.ChooseReviewing:input_type -> numen.v1.ChooseReviewingRequest
-	78, // 81: numen.v1.VaultService.Settings:input_type -> numen.v1.SettingsRequest
-	82, // 82: numen.v1.VaultService.ChooseSettings:input_type -> numen.v1.ChooseSettingsRequest
-	84, // 83: numen.v1.VaultService.SettingsFile:input_type -> numen.v1.SettingsFileRequest
-	86, // 84: numen.v1.VaultService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
-	92, // 85: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
-	90, // 86: numen.v1.VaultService.MakeFolder:input_type -> numen.v1.MakeFolderRequest
-	94, // 87: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
-	96, // 88: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
-	13, // 89: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	18, // 90: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
-	31, // 91: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	33, // 92: numen.v1.VaultService.Resolve:output_type -> numen.v1.ResolveResponse
-	36, // 93: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
-	40, // 94: numen.v1.VaultService.Headings:output_type -> numen.v1.HeadingsResponse
-	43, // 95: numen.v1.VaultService.Standing:output_type -> numen.v1.StandingResponse
-	47, // 96: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
-	20, // 97: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	23, // 98: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
-	26, // 99: numen.v1.VaultService.Attending:output_type -> numen.v1.AttendingResponse
-	29, // 100: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
-	15, // 101: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
-	50, // 102: numen.v1.VaultService.List:output_type -> numen.v1.ListResponse
-	53, // 103: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
-	57, // 104: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
-	60, // 105: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
-	62, // 106: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
-	64, // 107: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
-	89, // 108: numen.v1.VaultService.Move:output_type -> numen.v1.MoveResponse
-	67, // 109: numen.v1.VaultService.Syncing:output_type -> numen.v1.SyncingResponse
-	69, // 110: numen.v1.VaultService.ChooseSyncing:output_type -> numen.v1.ChooseSyncingResponse
-	71, // 111: numen.v1.VaultService.Hanging:output_type -> numen.v1.HangingResponse
-	73, // 112: numen.v1.VaultService.ChooseHanging:output_type -> numen.v1.ChooseHangingResponse
-	75, // 113: numen.v1.VaultService.Reviewing:output_type -> numen.v1.ReviewingResponse
-	77, // 114: numen.v1.VaultService.ChooseReviewing:output_type -> numen.v1.ChooseReviewingResponse
-	79, // 115: numen.v1.VaultService.Settings:output_type -> numen.v1.SettingsResponse
-	83, // 116: numen.v1.VaultService.ChooseSettings:output_type -> numen.v1.ChooseSettingsResponse
-	85, // 117: numen.v1.VaultService.SettingsFile:output_type -> numen.v1.SettingsFileResponse
-	87, // 118: numen.v1.VaultService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
-	93, // 119: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
-	91, // 120: numen.v1.VaultService.MakeFolder:output_type -> numen.v1.MakeFolderResponse
-	95, // 121: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
-	97, // 122: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
-	89, // [89:123] is the sub-list for method output_type
-	55, // [55:89] is the sub-list for method input_type
-	55, // [55:55] is the sub-list for extension type_name
-	55, // [55:55] is the sub-list for extension extendee
-	0,  // [0:55] is the sub-list for field type_name
+	5,  // 17: numen.v1.Named.type:type_name -> numen.v1.NoteType
+	41, // 18: numen.v1.HeadingsResponse.found:type_name -> numen.v1.NoteHeadings
+	38, // 19: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
+	44, // 20: numen.v1.StandingResponse.found:type_name -> numen.v1.Standing
+	4,  // 21: numen.v1.Standing.kind:type_name -> numen.v1.SourceKind
+	5,  // 22: numen.v1.Standing.type:type_name -> numen.v1.NoteType
+	3,  // 23: numen.v1.SearchRequest.way:type_name -> numen.v1.Way
+	48, // 24: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
+	10, // 25: numen.v1.Passage.note:type_name -> numen.v1.Note
+	45, // 26: numen.v1.Passage.at:type_name -> numen.v1.Span
+	5,  // 27: numen.v1.Passage.type:type_name -> numen.v1.NoteType
+	51, // 28: numen.v1.ListResponse.entries:type_name -> numen.v1.Entry
+	4,  // 29: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
+	5,  // 30: numen.v1.Entry.type:type_name -> numen.v1.NoteType
+	0,  // 31: numen.v1.ReadResponse.refusal:type_name -> numen.v1.Refusal
+	54, // 32: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
+	54, // 33: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
+	55, // 34: numen.v1.WriteRequest.seen:type_name -> numen.v1.Seen
+	0,  // 35: numen.v1.WriteResponse.refusal:type_name -> numen.v1.Refusal
+	54, // 36: numen.v1.WriteResponse.at:type_name -> numen.v1.Fingerprint
+	6,  // 37: numen.v1.NewLink.role:type_name -> numen.v1.Role
+	58, // 38: numen.v1.CreateRequest.links:type_name -> numen.v1.NewLink
+	0,  // 39: numen.v1.CreateResponse.refusal:type_name -> numen.v1.Refusal
+	58, // 40: numen.v1.JoinRequest.link:type_name -> numen.v1.NewLink
+	0,  // 41: numen.v1.JoinResponse.refusal:type_name -> numen.v1.Refusal
+	7,  // 42: numen.v1.RenameResponse.by:type_name -> numen.v1.Naming
+	65, // 43: numen.v1.RenameResponse.moved:type_name -> numen.v1.Moved
+	0,  // 44: numen.v1.RenameResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 45: numen.v1.ChooseSyncingResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 46: numen.v1.ChooseHangingResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 47: numen.v1.ChooseReviewingResponse.refusal:type_name -> numen.v1.Refusal
+	80, // 48: numen.v1.SettingsResponse.models:type_name -> numen.v1.Model
+	81, // 49: numen.v1.Model.writes:type_name -> numen.v1.Setting
+	8,  // 50: numen.v1.Model.presence:type_name -> numen.v1.Presence
+	81, // 51: numen.v1.ChooseSettingsRequest.settings:type_name -> numen.v1.Setting
+	65, // 52: numen.v1.MoveResponse.moved:type_name -> numen.v1.Moved
+	0,  // 53: numen.v1.MoveResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 54: numen.v1.MakeFolderResponse.refusal:type_name -> numen.v1.Refusal
+	0,  // 55: numen.v1.RemoveResponse.refusal:type_name -> numen.v1.Refusal
+	9,  // 56: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
+	12, // 57: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
+	17, // 58: numen.v1.VaultService.Opening:input_type -> numen.v1.OpeningRequest
+	30, // 59: numen.v1.VaultService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
+	32, // 60: numen.v1.VaultService.Resolve:input_type -> numen.v1.ResolveRequest
+	35, // 61: numen.v1.VaultService.Names:input_type -> numen.v1.NamesRequest
+	39, // 62: numen.v1.VaultService.Headings:input_type -> numen.v1.HeadingsRequest
+	42, // 63: numen.v1.VaultService.Standing:input_type -> numen.v1.StandingRequest
+	46, // 64: numen.v1.VaultService.Search:input_type -> numen.v1.SearchRequest
+	19, // 65: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
+	22, // 66: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
+	25, // 67: numen.v1.VaultService.Attending:input_type -> numen.v1.AttendingRequest
+	28, // 68: numen.v1.VaultService.Editing:input_type -> numen.v1.EditingRequest
+	14, // 69: numen.v1.VaultService.Tasks:input_type -> numen.v1.TasksRequest
+	49, // 70: numen.v1.VaultService.List:input_type -> numen.v1.ListRequest
+	52, // 71: numen.v1.VaultService.Read:input_type -> numen.v1.ReadRequest
+	56, // 72: numen.v1.VaultService.Write:input_type -> numen.v1.WriteRequest
+	59, // 73: numen.v1.VaultService.Create:input_type -> numen.v1.CreateRequest
+	61, // 74: numen.v1.VaultService.Join:input_type -> numen.v1.JoinRequest
+	63, // 75: numen.v1.VaultService.Rename:input_type -> numen.v1.RenameRequest
+	88, // 76: numen.v1.VaultService.Move:input_type -> numen.v1.MoveRequest
+	66, // 77: numen.v1.VaultService.Syncing:input_type -> numen.v1.SyncingRequest
+	68, // 78: numen.v1.VaultService.ChooseSyncing:input_type -> numen.v1.ChooseSyncingRequest
+	70, // 79: numen.v1.VaultService.Hanging:input_type -> numen.v1.HangingRequest
+	72, // 80: numen.v1.VaultService.ChooseHanging:input_type -> numen.v1.ChooseHangingRequest
+	74, // 81: numen.v1.VaultService.Reviewing:input_type -> numen.v1.ReviewingRequest
+	76, // 82: numen.v1.VaultService.ChooseReviewing:input_type -> numen.v1.ChooseReviewingRequest
+	78, // 83: numen.v1.VaultService.Settings:input_type -> numen.v1.SettingsRequest
+	82, // 84: numen.v1.VaultService.ChooseSettings:input_type -> numen.v1.ChooseSettingsRequest
+	84, // 85: numen.v1.VaultService.SettingsFile:input_type -> numen.v1.SettingsFileRequest
+	86, // 86: numen.v1.VaultService.WriteSettingsFile:input_type -> numen.v1.WriteSettingsFileRequest
+	92, // 87: numen.v1.VaultService.Remove:input_type -> numen.v1.RemoveRequest
+	90, // 88: numen.v1.VaultService.MakeFolder:input_type -> numen.v1.MakeFolderRequest
+	94, // 89: numen.v1.VaultService.Quitting:input_type -> numen.v1.QuittingRequest
+	96, // 90: numen.v1.VaultService.Flushed:input_type -> numen.v1.FlushedRequest
+	13, // 91: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	18, // 92: numen.v1.VaultService.Opening:output_type -> numen.v1.OpeningResponse
+	31, // 93: numen.v1.VaultService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
+	33, // 94: numen.v1.VaultService.Resolve:output_type -> numen.v1.ResolveResponse
+	36, // 95: numen.v1.VaultService.Names:output_type -> numen.v1.NamesResponse
+	40, // 96: numen.v1.VaultService.Headings:output_type -> numen.v1.HeadingsResponse
+	43, // 97: numen.v1.VaultService.Standing:output_type -> numen.v1.StandingResponse
+	47, // 98: numen.v1.VaultService.Search:output_type -> numen.v1.SearchResponse
+	20, // 99: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
+	23, // 100: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
+	26, // 101: numen.v1.VaultService.Attending:output_type -> numen.v1.AttendingResponse
+	29, // 102: numen.v1.VaultService.Editing:output_type -> numen.v1.EditingResponse
+	15, // 103: numen.v1.VaultService.Tasks:output_type -> numen.v1.TasksResponse
+	50, // 104: numen.v1.VaultService.List:output_type -> numen.v1.ListResponse
+	53, // 105: numen.v1.VaultService.Read:output_type -> numen.v1.ReadResponse
+	57, // 106: numen.v1.VaultService.Write:output_type -> numen.v1.WriteResponse
+	60, // 107: numen.v1.VaultService.Create:output_type -> numen.v1.CreateResponse
+	62, // 108: numen.v1.VaultService.Join:output_type -> numen.v1.JoinResponse
+	64, // 109: numen.v1.VaultService.Rename:output_type -> numen.v1.RenameResponse
+	89, // 110: numen.v1.VaultService.Move:output_type -> numen.v1.MoveResponse
+	67, // 111: numen.v1.VaultService.Syncing:output_type -> numen.v1.SyncingResponse
+	69, // 112: numen.v1.VaultService.ChooseSyncing:output_type -> numen.v1.ChooseSyncingResponse
+	71, // 113: numen.v1.VaultService.Hanging:output_type -> numen.v1.HangingResponse
+	73, // 114: numen.v1.VaultService.ChooseHanging:output_type -> numen.v1.ChooseHangingResponse
+	75, // 115: numen.v1.VaultService.Reviewing:output_type -> numen.v1.ReviewingResponse
+	77, // 116: numen.v1.VaultService.ChooseReviewing:output_type -> numen.v1.ChooseReviewingResponse
+	79, // 117: numen.v1.VaultService.Settings:output_type -> numen.v1.SettingsResponse
+	83, // 118: numen.v1.VaultService.ChooseSettings:output_type -> numen.v1.ChooseSettingsResponse
+	85, // 119: numen.v1.VaultService.SettingsFile:output_type -> numen.v1.SettingsFileResponse
+	87, // 120: numen.v1.VaultService.WriteSettingsFile:output_type -> numen.v1.WriteSettingsFileResponse
+	93, // 121: numen.v1.VaultService.Remove:output_type -> numen.v1.RemoveResponse
+	91, // 122: numen.v1.VaultService.MakeFolder:output_type -> numen.v1.MakeFolderResponse
+	95, // 123: numen.v1.VaultService.Quitting:output_type -> numen.v1.QuittingResponse
+	97, // 124: numen.v1.VaultService.Flushed:output_type -> numen.v1.FlushedResponse
+	91, // [91:125] is the sub-list for method output_type
+	57, // [57:91] is the sub-list for method input_type
+	57, // [57:57] is the sub-list for extension type_name
+	57, // [57:57] is the sub-list for extension extendee
+	0,  // [0:57] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }

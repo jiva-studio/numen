@@ -551,6 +551,10 @@ message Named {
   // in UTF-16 code units.
   // A word reached by its prefix is marked whole.
   repeated Span at = 3;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. A heading carries the type of the note it stands in.
+  NoteType type = 4;
 }
 
 // Heading is one line of a note that names what stands below it.
@@ -673,6 +677,10 @@ message Passage {
   // Where the chunk that matched stands, counted from the first line of the
   // source's prose. It is the line a note opens on, and the caret stands there.
   int32 line = 8;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are. It says nothing about a source that is not a note.
+  NoteType type = 9;
 }
 
 message ListRequest {
