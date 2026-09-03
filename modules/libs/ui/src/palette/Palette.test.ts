@@ -469,6 +469,26 @@ describe('what a band says about itself', () => {
       'No model is set',
     )
   })
+
+  it('draws a band that answered with nothing nowhere', async () => {
+    mountPalette({
+      bands: [SECTIONS[0]!, { id: 'meaning', title: 'Meaning', items: [] }],
+    })
+    await settle()
+
+    expect(bands()).toHaveLength(1)
+    expect(document.body.querySelector('.palette__silence')).toBeNull()
+  })
+
+  it('draws a band holding nothing while it is still working', async () => {
+    mountPalette({
+      bands: [{ id: 'meaning', title: 'Meaning', items: [], working: true }],
+    })
+    await settle()
+
+    expect(bands()).toHaveLength(1)
+    expect(document.body.querySelector('.palette__silence')).toBeNull()
+  })
 })
 
 describe('marking why an item is here', () => {
@@ -524,7 +544,7 @@ describe('which band stands where', () => {
 
   it('brings a band back up the moment it holds something', async () => {
     const palette = mountPalette({
-      bands: [{ id: 'names', title: 'Names', items: [] }, SECTIONS[1]!],
+      bands: [{ id: 'names', title: 'Names', items: [], silence: 'Nothing' }, SECTIONS[1]!],
     })
     await settle()
     expect(bands()).toEqual(['Text', 'Names'])

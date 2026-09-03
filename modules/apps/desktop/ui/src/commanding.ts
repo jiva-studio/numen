@@ -11,7 +11,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
-import { wentTo, type Known, type Listed, type Source, type Went } from './core'
+import { wentTo, type Known, type Listed, type NoteType, type Source, type Went } from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
 
@@ -211,6 +211,13 @@ export interface Words extends Silences {
   /** The two runs a person asks for over the file in front. */
   readonly transcribe: string
   readonly recognise: string
+  /** The transcript of the recording in front, put right by a proofreader. */
+  readonly proofread: string
+  /** The transcript of the recording in front, taken away, and the two answers. */
+  readonly dropTranscript: string
+  readonly keepsTranscript: string
+  readonly drops: string
+  readonly dropped: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
   /** The preset the note in front is, or the one the deck in front is scheduled by. */
@@ -418,6 +425,25 @@ export const commandsOf = (
     text: words.transcribe,
     band: 'file',
     where: onSource('transcribe', 'recording'),
+  },
+  {
+    id: 'proofread',
+    text: words.proofread,
+    band: 'file',
+    where: onSource('proofread', 'recording'),
+  },
+  {
+    id: 'dropTranscript',
+    text: words.dropTranscript,
+    band: 'file',
+    needs: 'asking',
+    where: onSource('dropTranscript', 'recording'),
+    answers: {
+      keeps: words.keepsTranscript,
+      kept: words.kept,
+      does: words.drops,
+      then: words.dropped,
+    },
   },
   { id: 'recognise', text: words.recognise, band: 'file', where: onSource('recognise', 'book') },
   {
@@ -859,6 +885,10 @@ export function commanding(
    * The notes the vault turned up. A note found by a heading is that note, and
    * a note found twice is one row.
    */
+  /** Which of four the note a row of the picking step stands for is. */
+  const typeOf = (id: string): NoteType | null =>
+    found.value.find((one) => one.path === id)?.type ?? null
+
   const picking = (text: string): PaletteBand => {
     const seen = new Set<string>()
     const items: PaletteItem[] = []
@@ -1167,5 +1197,6 @@ export function commanding(
     chose,
     leaves,
     backs,
+    typeOf,
   }
 }

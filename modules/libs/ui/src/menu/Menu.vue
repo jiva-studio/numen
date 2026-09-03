@@ -32,6 +32,16 @@ const props = withDefaults(
     from?: HTMLElement | SVGElement | null
     /** The area it is placed in. The browser's own by default. */
     viewport?: Size | null
+    /**
+     * Whether the name of a band is drawn over it. A menu whose bands are
+     * named by identifiers draws none.
+     */
+    bands?: boolean
+    /**
+     * How wide what asked for it is. The menu is never narrower than that, and
+     * grows past it for what it holds.
+     */
+    asking?: number
     /** Kept clear of that area's edges. */
     margin?: number
     /** Where it is drawn. The end of the document by default. */
@@ -45,6 +55,8 @@ const props = withDefaults(
     current: null,
     from: null,
     viewport: null,
+    bands: false,
+    asking: 0,
     margin: 8,
     to: 'body',
     name: 'Menu',
@@ -135,6 +147,43 @@ const onWindowKey = (event: KeyboardEvent) => {
   emit('dismiss')
 }
 
+/** What has been typed to jump by, and when the last letter of it arrived. */
+let typed = ''
+let struck = 0
+
+/** How long a run of letters stays one word. */
+const TYPING = 1000
+
+/**
+ * The keyboard onto the next item beginning with what has been typed. A run of
+ * letters is one word, and stands where it is while the word grows. One letter
+ * struck again and again walks the items beginning with it.
+ */
+const jumpTo = (letter: string) => {
+  const now = Date.now()
+  typed = now - struck > TYPING ? letter : typed + letter
+  struck = now
+  const one = typed[0]!
+  const drumming = [...typed].every((each) => each === one)
+  const word = drumming ? one : typed
+  const total = props.items.length
+  const from = here.value < 0 ? 0 : here.value + (typed.length > 1 && !drumming ? 0 : 1)
+  const said = word.toLowerCase()
+  for (let step = 0; step < total; step += 1) {
+    const at = (from + step) % total
+    const item = props.items[at]
+    if (!item || item.disabled) continue
+    if (item.text.toLowerCase().startsWith(said)) {
+      goTo(at)
+      return
+    }
+  }
+}
+
+/** A key that stands for a letter a person meant to type. */
+const letters = (event: KeyboardEvent): boolean =>
+  event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey && !event.altKey
+
 /**
  * The keyboard, while the menu is open. Tab moves within the items and wraps,
  * which is what keeps the keyboard inside a menu that stands over the page.
@@ -150,6 +199,10 @@ const onKey = (event: KeyboardEvent) => {
   else if (event.key === 'Home') step(1, -1)
   else if (event.key === 'End') step(-1, 0)
   else if (event.key === 'Tab') step(event.shiftKey ? -1 : 1)
+  else if (letters(event)) {
+    event.preventDefault()
+    jumpTo(event.key)
+  }
 }
 
 /** What the open menu installed on the window, if anything. */
@@ -217,11 +270,22 @@ onBeforeUnmount(leave)
       role="menu"
       tabindex="-1"
       :aria-label="name"
-      :style="{ left: `${placed.x}px`, top: `${placed.y}px` }"
+      :style="{
+        left: `${placed.x}px`,
+        top: `${placed.y}px`,
+        '--asking': `${asking}px`,
+      }"
       @keydown="onKey"
     >
       <template v-for="(item, index) in rows" :key="item.id">
-        <hr v-if="item.rule" class="menu__rule" role="separator" />
+        <p
+          v-if="bands && item.band && (item.rule || index === 0)"
+          class="menu__band px-2 py-1 text-hushed"
+          aria-hidden="true"
+        >
+          {{ item.band }}
+        </p>
+        <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
         <button
           class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
@@ -236,7 +300,10 @@ onBeforeUnmount(leave)
           <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
             <slot name="icon" :id="item.id" />
           </span>
-          <span class="menu__text min-w-0">{{ item.text }}</span>
+          <span class="menu__said flex min-w-0 flex-col">
+            <span class="menu__text">{{ item.text }}</span>
+            <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
+          </span>
         </button>
       </template>
 
@@ -252,9 +319,12 @@ onBeforeUnmount(leave)
    page it was asked for from. */
 .menu {
   /* How wide it may be, how much of the screen it takes before its list
-     scrolls, and how far above the page it stands. */
-  --narrowest: 180px;
-  --widest: 320px;
+     scrolls, and how far above the page it stands. The two widths are set in
+     the interface's own units, so they grow with everything drawn beside them. */
+  --narrowest: 11.25rem;
+  --widest: 20rem;
+  /* What asked for it, which it is never narrower than. */
+  --asking: 0px;
   --tallest: 60vh;
   --lift: var(--numen-lift-menu);
   /* The room a rule keeps on each side of itself. */
@@ -270,8 +340,8 @@ onBeforeUnmount(leave)
      wide as the room left beside the point it was asked for and would cut its
      own words short there. */
   inline-size: max-content;
-  min-inline-size: var(--narrowest);
-  max-inline-size: var(--widest);
+  min-inline-size: max(var(--narrowest), var(--asking));
+  max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -315,10 +385,27 @@ onBeforeUnmount(leave)
 }
 
 /* One line, then an ellipsis. A menu is read down its leading edge. */
-.menu__text {
+.menu__text,
+.menu__detail {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* What an item is beside its words: the address a model is fetched from, the
+   place a file stands. */
+.menu__detail {
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+}
+
+/* The name of a band, set as this product sets a label over what it names. */
+.menu__band {
+  margin: 0;
+  font-size: var(--numen-text-1);
+  font-weight: 600;
+  letter-spacing: var(--numen-caps-tracking);
+  text-transform: uppercase;
 }
 
 .menu__silence {

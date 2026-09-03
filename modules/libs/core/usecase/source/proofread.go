@@ -133,7 +133,11 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 		return res, err
 	}
 	res.Resumed, res.Read = done, done
-	u.progress(res)
+	// Progress is reported once there is a page to ask about, so a reading
+	// nothing is left to be asked about is never work anybody is shown.
+	if done < len(pages) {
+		u.progress(res)
+	}
 
 	if u.Queue != nil {
 		return u.await(ctx, v, store, path, pages, stood, corrections, far, res)

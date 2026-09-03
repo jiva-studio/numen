@@ -65,6 +65,7 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     neighbourhood: async () => ({}) as never,
     headings: async () => new Map(),
     standing: async () => new Map(),
+    resolve: async () => new Map(),
     opening: async () => null,
     state: async () => idle,
     // eslint-disable-next-line require-yield
@@ -107,6 +108,12 @@ function fake(quitting: () => AsyncIterable<{ token: string; flush: boolean }>) 
     hanging: async () => ({ hangs: true, parts: 6 }),
     choosesSyncing: async () => null,
     choosesHanging: async () => null,
+    reviewing: async () => '04:00',
+    choosesReviewing: async () => null,
+    settings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
+    choosesSetting: async () => {},
+    settingsFile: async () => ({ written: '{}', path: '/numen.json' }),
+    writesSettingsFile: async () => {},
   }
   return {
     core,

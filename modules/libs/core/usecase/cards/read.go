@@ -130,7 +130,15 @@ func cutting(
 	if len(written) == 0 {
 		return nil, nil
 	}
-	return links.Resolve(ctx, vaultID, path, written)
+	reached, err := links.Resolve(ctx, vaultID, path, written)
+	if err != nil {
+		return nil, err
+	}
+	at := make(map[string]string, len(reached))
+	for raw, one := range reached {
+		at[raw] = one.To
+	}
+	return at, nil
 }
 
 // stencils is the stencil the cards of a deck are cut by, keyed by what stands

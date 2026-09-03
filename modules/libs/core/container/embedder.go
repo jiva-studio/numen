@@ -203,7 +203,8 @@ func arriving(role string, where embed.Station) listing {
 // it that are here. Fetching it and compiling it are one wait.
 //
 // The count is bytes and says so, and the sizes a person reads them in are the
-// window's to write.
+// window's to write. A share is drawn once some of the model is here: none of
+// it counted is nothing known about how long the rest will take.
 //
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
@@ -213,10 +214,11 @@ func preparing(tasks *task.Tasks, at listing) onnx.Fetching {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
-		tasks.Set(task.Task{
-			ID: at.id, Doing: "Preparing the model", About: at.name,
-			Done: done, Total: total, Counting: task.Bytes,
-		})
+		held := task.Task{ID: at.id, Doing: "Preparing the model", About: at.name}
+		if done > 0 {
+			held.Done, held.Total, held.Counting = done, total, task.Bytes
+		}
+		tasks.Set(held)
 	}
 }
 

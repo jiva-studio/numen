@@ -21,6 +21,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/events"
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
+	"github.com/jiva-studio/numen/modules/apps/desktop/internal/letgo"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
@@ -107,11 +108,15 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 	if err := cfg.PrepareRecogniser(ctx); err != nil {
 		fmt.Fprintln(os.Stderr, "numen: nothing to read a scan with:", err)
 	}
+	pages, err := webui.Pages()
+	if err != nil {
+		return err
+	}
+
 	opened, err := webui.Open(ctx, cfg, vault, os.Stdout)
 	if err != nil {
 		return err
 	}
-	defer opened.Close()
 
 	// What reading the settings had to tell a person goes where they are: a
 	// window opened from a desktop entry has no terminal to write to.
@@ -128,18 +133,28 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Unreachable: func(said string) { opened.API.Unreachable.Store(said) },
 		Trouble:     func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
-	defer reachable.Off()
 
-	pages, err := webui.Pages()
-	if err != nil {
-		return err
-	}
-
-	// Registered last so that it runs first: what the page owes lands, then the
-	// agents are let go of, then the scan and the follower stop and the
-	// database closes.
 	going := &going{settle: opened.Settle}
-	defer func() { going.wait() }()
+
+	// Everything behind the settling, in the order each part needs the next: the
+	// agents are let go of, then the scan and the follower stop and the database
+	// closes, then what they ran under ends.
+	behind := letgo.InOrder(
+		reachable.Off,
+		func() {
+			if err := opened.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, "numen:", err)
+			}
+		},
+		stop,
+	)
+
+	// The vault settles before a quit is let through, so the steps behind it are
+	// asked for here with nothing left owed.
+	defer func() {
+		going.wait()
+		behind.Go()
+	}()
 
 	// The window is taken out of sight before the settling begins, and put back
 	// where a page calls the close off: the question is asked on the screen the
@@ -155,6 +170,14 @@ func run(cfg container.Config, letting agentOptions, vault string, said sizes) e
 		Assets: application.AssetOptions{
 			Handler: opened.API.Serving(pages),
 		},
+		// The application ends when its last window closes.
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+		// Run on the thread the window is drawn on, once the application has
+		// stopped dispatching. The door on the vault's questions is shut in the
+		// step that closes it, and a request arriving after that is refused.
+		PostShutdown: behind.Go,
 		// A quit that does not come through the window is answered on the
 		// thread the page is served on, so the settling happens off it and the
 		// quit is asked for again once it is over. A settling that ended with a

@@ -27,7 +27,7 @@ const props = withDefaults(
     tally?: Tally | undefined
     /** Whether the work named is happening now. */
     working?: boolean
-    /** How much longer, in words, from whoever is timing the count. */
+    /** How much longer, on a clock, from whoever is timing the count. */
     left?: string
     /** How the line reads. An alarm is a line that stopped badly. */
     tone?: Tone
@@ -61,10 +61,14 @@ const left = computed(() => (shown.value.counts ? props.left : ''))
 /**
  * How the words give way.
  *
- * A count needs the room beside it and keeps the line to one. A line carrying
- * only words is carrying a path or a reason, and those are read to the end.
+ * What is happening keeps to one line where anything stands beside or under it.
+ * A count keeps what it is about to one line too, and without one a path or a
+ * reason is read over two.
  */
-const gives = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-3'))
+const givesSays = computed(() =>
+  shown.value.counts || props.about ? 'truncate' : 'line-clamp-3',
+)
+const givesAbout = computed(() => (shown.value.counts ? 'truncate' : 'line-clamp-2'))
 
 /**
  * A line about work is hushed. A line with a tone is drawn in it, and takes the
@@ -81,12 +85,14 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
     :data-state="shown.state"
     :data-tone="tone"
   >
-    <span class="activity__words min-w-0 flex-1" :class="gives">
-      <span class="activity__says">{{ words }}</span>
-      <span v-if="about" class="activity__about">{{ about }}</span>
+    <span class="activity__words flex min-w-0 flex-1 flex-col">
+      <span class="activity__says" :class="givesSays">{{ words }}</span>
+      <span v-if="about" class="activity__about" :class="givesAbout">{{ about }}</span>
     </span>
-    <span v-if="percent" class="activity__percent tabular-nums opacity-70">{{ percent }}</span>
-    <span v-if="left" class="activity__left opacity-70">{{ left }}</span>
+    <span v-if="percent || left" class="activity__count flex gap-2 tabular-nums opacity-70">
+      <span v-if="percent" class="activity__percent">{{ percent }}</span>
+      <span v-if="left" class="activity__left">{{ left }}</span>
+    </span>
     <Waiting
       v-if="shown.share === undefined && shown.state === 'working'"
       class="activity__waiting"
@@ -95,22 +101,15 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 </template>
 
 <style scoped>
-/* What is happening and what it is happening to are one sentence, so a long
-   reason runs on under the words it belongs to instead of standing in a column
-   of its own. A path and a reason carry no spaces to break at, so they break
-   anywhere. */
+/* A path and a reason carry no spaces to break at, so they break anywhere. */
 .activity__words {
   overflow-wrap: anywhere;
 }
 
-/* What it is happening to is said more quietly than what is happening, and the
-   dash is what holds the two apart. */
+/* What it is happening to stands under what is happening, and is said more
+   quietly. */
 .activity__about {
   opacity: 0.75;
-}
-
-.activity__about::before {
-  content: ' — ';
 }
 
 /* Every state of the line stands the same height. */
@@ -118,10 +117,15 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
   min-block-size: calc(var(--numen-line-height) * 1em);
 }
 
-/* How far and how long are short, and the words beside them are what gives
-   way. */
-.activity__percent,
-.activity__left {
+/* How far and how long stand across from the words, and the words are what
+   gives way. */
+.activity__count {
   flex: none;
+}
+
+/* The share holds the room for three figures, and stands to the end of it. */
+.activity__percent {
+  min-inline-size: 3em;
+  text-align: end;
 }
 </style>

@@ -121,6 +121,13 @@ const INSTALLATION: Installation = {
   parts: () => 6,
   choosesHanging: () => {},
   choosesParts: () => {},
+  dayStarts: () => '04:00',
+  choosesDayStarts: () => {},
+  setting: () => undefined,
+  models: () => [],
+  writes: () => {},
+  file: () => '/numen.json',
+  opensFile: () => {},
 }
 
 /** Everything in numen.json a person can change, in the groups the file keeps. */
@@ -481,13 +488,27 @@ export const Recording: Story = {
 }
 
 /** A recording nothing has written down, and the run that would. */
-export const Transcribing: Story = {
+export const NoTranscript: Story = {
   render: () =>
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
       transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', PLAYER), { runs: () => {} }),
     ),
+}
+
+/**
+ * The same recording with the run going. The player stands where it stands in
+ * every other recording, and only what is below it says a run is on.
+ */
+export const Transcribing: Story = {
+  render: () => {
+    const held = transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', PLAYER), {
+      runs: () => {},
+    })
+    held.ticks(true)
+    return window(`${RECORDING}:lecture`, RecordingTab, held)
+  },
 }
 
 /* The tree, and the runs a row can be put through. ------------------------- */

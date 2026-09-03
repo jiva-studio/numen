@@ -211,12 +211,13 @@ func (q *Queries) Names(ctx context.Context, vaultID, query string, limit int) (
 	out := make([]domain.NameMatch, 0, limit)
 	for rows.Next() {
 		var kind, line int
-		var marked string
+		var marked, held string
 		var score float64
 		var m domain.NameMatch
-		if err := rows.Scan(&kind, &m.Path, &m.Title, &line, &marked, &score); err != nil {
+		if err := rows.Scan(&kind, &m.Path, &m.Title, &held, &line, &marked, &score); err != nil {
 			return nil, err
 		}
+		m.Type = domain.NoteType(held)
 		name, at := split(marked)
 		m.At = at
 		if kind != 0 {

@@ -76,6 +76,10 @@ The buffer holds the body. The save reads the file under the vault's write lock,
 
 The read is the check. A name is called gone when a read of it finds nothing, and a read that finds the note again — at that name or the one it moved to — clears the mark. A note renamed by something other than this application is a note gone from one name and arrived at another, with nothing to connect the two. The tab says the note is gone, which is what is known.
 
+## Following a link
+
+A link in the prose is followed with the platform's modifier held down. `[[Entropy]]` and `[[note://<identifier>]]` are read as an address, resolved the way every link in the vault is, and the note that answers opens in a tab beside this one. An address no note answers to opens nothing.
+
 ## Limits
 
 **A megabyte is the most a note may be and still be read here.** The size is asked of the file before it is opened, so a file over the bound is refused with none of its bytes read, and the tab says which file and what the bound is. A body handed back over the same number is refused by it too. The bound is the core's, so what is refused to the window is refused to an agent.

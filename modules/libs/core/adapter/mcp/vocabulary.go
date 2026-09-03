@@ -47,6 +47,7 @@ var doing = map[string]Words{
 	"note_move":           {Kind: port.StepMove},
 	"note_remove":         {Kind: port.StepRemove},
 	"note_focus":          {Kind: port.StepRead},
+	"file_read":           {Kind: port.StepRead},
 	"card_stencils":       {Kind: port.StepRead},
 	"card_read":           {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},

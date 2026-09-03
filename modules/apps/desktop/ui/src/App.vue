@@ -35,9 +35,10 @@ import {
   type Where,
 } from './commanding'
 import { chorded, commandFor, keysOf } from './keying'
-import { iconFor, iconOfKind } from './icons'
+import { iconFor, iconOfKind, iconOfNote, iconOfSource } from './icons'
 import { themes } from './theme'
 import { APPEARANCE, DRESSING, INTERFACE_SCALE, MODE, TEXT_SCALE, wearing } from './wearing'
+import { reviewing } from './reviewing'
 import { OFF, ON, SYNCING, syncing } from './syncing'
 import { HANGING, PARTS, hanging } from './hanging'
 import { does, reaching, type Doing, type Store } from './doing'
@@ -57,7 +58,9 @@ import { decking } from './cards/deck'
 import { stencilling } from './cards/stencil'
 import { presets } from './preset/core'
 import { presetting } from './preset/kind'
+import { configuring } from './settings/configuring'
 import { settling } from './settings/kind'
+import { configuring as holdingFile } from './configuration/kind'
 import { documentKind, documenting, type Held as DocumentHeld } from './document/kind'
 import { recordingKind } from './recording/kind'
 import { listening, type Listening as RecordingHeld } from './recording/listening'
@@ -201,6 +204,8 @@ const plexes = plexKind(held.host, () => standing(core), {
 const agents = agentKind(held.host, () =>
   talking(conversation(agent, talk, named(CONVERSATION)), {
     opens: (path, ...runs) => void puts.opensAt(path, runs),
+    beside: (path) => void puts.opens(path, '', 'beside'),
+    resolve: (written) => core.resolve('', written),
     unreachable: () => unreachable.value,
   }),
 )
@@ -213,8 +218,8 @@ const heard = recordingKind(
   held.host,
   (path) => listening(recordings, path),
   {
-    runs: (id, path) =>
-      carries(id, { ...where(), path: '', title: '', file: path, source: 'recording' }),
+    runs: (id, path, called) =>
+      carries(id, { ...where(), path: '', title: called, file: path, source: 'recording' }),
   },
   puts,
 )
@@ -487,6 +492,15 @@ const dressed = wearing(themes, words, tell.under('worn'))
 /** Whether a note's title and the name of its file are kept as one name. */
 const oneName = syncing(core, words, tell.under('named'))
 
+/** The hour a day of review begins at, on the clock on the wall. */
+const dayBegins = reviewing(core, words, tell.under('reviewed'))
+
+/** The rest of the settings file, which no command of the window turns. */
+const rest = configuring(core, words, tell.under('configured'))
+
+/** The settings file itself, opened whole in a tab of its own. */
+const file = holdingFile(held.host, core, () => void rest.start())
+
 /**
  * Everything this installation is configured as, in a tab of its own. It holds
  * nothing: each row reaches the same value the command of that name reaches.
@@ -505,9 +519,16 @@ const configured = settling(held.host, {
   parts: () => hungParts.parts.value,
   choosesHanging: (on) => void hungParts.chooses(on ? ON : OFF),
   choosesParts: (count) => void hungParts.choosesCount(`${count}`),
+  dayStarts: () => dayBegins.starts.value,
+  choosesDayStarts: (hour) => void dayBegins.chooses(hour),
+  setting: (at) => rest.at(at),
+  models: (at) => rest.offers(at),
+  writes: (written) => void rest.chooses(written),
+  file: () => rest.path.value,
+  opensFile: () => file.shows(),
 })
 
-held.declares([configured.kind])
+held.declares([configured.kind, file.kind])
 
 // A size is drawn, and every open editor takes its measurements again. An
 // editor watches its own box, and a size changes the type inside that box
@@ -557,6 +578,12 @@ const doing: Doing = {
   makesFolder: (path) => core.makeFolder(path),
   transcribes: (path) => running.transcribes(path),
   recognises: (path) => running.recognises(path),
+  proofreads: (path) => running.proofreads(path),
+  drops: async (path) => {
+    const able = await running.drops(path)
+    if (able) heard.dropped(path)
+    return able
+  },
   cuts: (folder, name) => opensCards(folder, name, false),
   stencils: (folder, name) => opensCards(folder, name, true),
   presets: (folder, name) => opensMadePreset(folder, name),
@@ -710,6 +737,24 @@ const field = computed(() =>
 )
 
 /**
+ * What one row of the palette is drawn as: a command by its own mark, a name or
+ * a passage by the kind of note it stands in, and the note a search did not
+ * find by the mark of making one. A passage out of a book or a recording stands
+ * in no note and is drawn as the source it was read out of.
+ */
+const rowIcon = (id: string) => {
+  if (commands.open.value) {
+    const picked = commands.typeOf(id)
+    return picked ? iconOfNote(picked) : iconFor(id)
+  }
+  if (id === MAKING) return iconFor('note')
+  const type = palette.typeOf(id)
+  if (type) return iconOfNote(type)
+  const kind = palette.kindOf(id)
+  return kind ? iconOfSource(kind) : null
+}
+
+/**
  * Something typed in the field. The one character that means the commands is
  * the one typed into a field holding nothing.
  */
@@ -776,6 +821,8 @@ onMounted(async () => {
   void dressed.start()
   void oneName.start()
   void hungParts.start()
+  void dayBegins.start()
+  void rest.start()
 })
 onUnmounted(() => {
   globalThis.removeEventListener('keydown', asked)
@@ -854,10 +901,8 @@ onUnmounted(() => {
       @back="back"
       @dismiss="dismissed"
     >
-      <!-- A command is drawn with its icon. What a search turns up is a note, a
-           heading or a passage, and none of those is a command. -->
-      <template v-if="commands.open.value" #icon="{ id }">
-        <component :is="iconFor(id)" v-if="iconFor(id)" class="command-icon" />
+      <template #icon="{ id }">
+        <component :is="rowIcon(id)" v-if="rowIcon(id)" class="command-icon" />
       </template>
     </Palette>
   </main>

@@ -235,6 +235,19 @@ describe('a change the vault reports', () => {
     expect(asked).toStrictEqual([])
   })
 
+  it('reads the open folder above a folder it draws no row for', async () => {
+    const { core, asked, puts } = vault()
+    const list = listing(core)
+    await list.opens(ROOT)
+    puts(ROOT, folder('trips'))
+    asked.length = 0
+
+    await list.changed(['trips/Kyoto.md'])
+
+    expect(asked).toStrictEqual([ROOT])
+    expect(paths(list.rows.value)).toContain('trips')
+  })
+
   it('reads every open folder when it names nothing at all', async () => {
     const { core, asked } = vault()
     const list = listing(core)

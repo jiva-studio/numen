@@ -47,7 +47,8 @@ const props = withDefaults(
   defineProps<{
     /**
      * The bands, in the order they are offered. A band holding nothing is
-     * drawn at the foot, whatever order it was offered in.
+     * drawn at the foot, whatever order it was offered in, and only while it
+     * is working or has something to say in place of items.
      */
     bands?: readonly PaletteBand[]
     /** Whether it is drawn at all. */
@@ -523,8 +524,11 @@ onBeforeUnmount(() => {
               <KeyCap v-if="drawn.item.keys" class="palette__hint" :keys="drawn.item.keys" />
             </div>
 
-            <p v-if="!one.items.length" class="palette__silence px-2 py-1.5 text-hushed">
-              {{ one.band.silence ?? 'Nothing' }}
+            <p
+              v-if="!one.items.length && one.band.silence"
+              class="palette__silence px-2 py-1.5 text-hushed"
+            >
+              {{ one.band.silence }}
             </p>
           </section>
         </div>
@@ -710,8 +714,13 @@ onBeforeUnmount(() => {
 }
 
 /* The room an icon takes, kept whether or not the row draws one, so the words
-   line up down the list. What is drawn in it is the caller's. */
+   line up down the list. What is drawn in it is the caller's.
+
+   It stands on the name, centred against that one line, so the marks read down
+   the list beside the names on a row carrying a second line. */
 .palette__icon {
+  align-self: start;
+  margin-block-start: calc((1lh - var(--icon)) / 2);
   inline-size: var(--icon);
   block-size: var(--icon);
 }

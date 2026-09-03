@@ -15,7 +15,9 @@ import {
   AudioLines,
   BookOpen,
   Bot,
+  Braces,
   Captions,
+  CaptionsOff,
   Command,
   Compass,
   Contrast,
@@ -42,6 +44,7 @@ import {
   ScanText,
   Search,
   SlidersHorizontal,
+  SpellCheck,
   SquareX,
   Trash2,
   Type,
@@ -49,9 +52,10 @@ import {
   X,
   type LucideIcon,
 } from '@lucide/vue'
-import type { NoteType } from './core'
+import type { NoteType, Source } from './core'
 import {
   AGENT,
+  CONFIGURATION,
   DECK,
   DOCUMENT,
   FILES,
@@ -79,9 +83,11 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
-  // Over the file in front: the transcript of a recording, and the text
-  // recognised off a scan.
+  // Over the file in front: the transcript of a recording, the same put right,
+  // the same taken away, and the text recognised off a scan.
   ['transcribe', Captions],
+  ['proofread', SpellCheck],
+  ['dropTranscript', CaptionsOff],
   ['recognise', ScanText],
   // What a tab of the tree does itself.
   ['newNote', FilePlus],
@@ -133,6 +139,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [STENCIL, LayoutTemplate],
   [PRESET, Gauge],
   [SETTINGS, SlidersHorizontal],
+  [CONFIGURATION, Braces],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */
@@ -152,3 +159,16 @@ const NOTES: ReadonlyMap<NoteType, LucideIcon> = new Map([
 
 /** The icon for a kind of note. Every kind has one. */
 export const iconOfNote = (type: NoteType): LucideIcon => NOTES.get(type) ?? FileText
+
+/**
+ * What each kind of source that is not a note is drawn as: the mark of the tab
+ * it opens in, so a recording is the same thing in a list that it is once it is
+ * open. A note is drawn by which of four it is.
+ */
+const SOURCES: ReadonlyMap<Source, LucideIcon> = new Map([
+  ['book', BookOpen],
+  ['recording', AudioLines],
+])
+
+/** The icon for a source, and nothing for a file the vault holds no source for. */
+export const iconOfSource = (kind: Source): LucideIcon | null => SOURCES.get(kind) ?? null

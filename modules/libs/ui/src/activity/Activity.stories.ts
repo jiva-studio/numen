@@ -37,20 +37,65 @@ export const Working: Story = {
   },
 }
 
-/** A count that moves: how far, and how long is left. */
+/** A count that moves: how far, and how long is left, in figures. */
 export const Counting: Story = {
   args: {
     says: 'Learning what it says',
+    about: 'Sabhaparva.epub',
     working: true,
     tally: { done: 1200, total: 36560 },
-    left: 'about 2 hours left',
+    left: '1:58:20',
   },
   play: async ({ canvasElement }) => {
     const line = lineIn(canvasElement)
     await expect(line).toHaveTextContent('3%')
-    await expect(line).toHaveTextContent('about 2 hours left')
+    await expect(line).toHaveTextContent('1:58:20')
     await expect(line).not.toHaveTextContent('1 200')
     await expect(line).not.toHaveTextContent('36 560')
+  },
+}
+
+/**
+ * What is happening and what it is happening to stand one above the other, and
+ * how far and how long stand beside them.
+ */
+export const TwoLines: Story = {
+  args: {
+    says: 'Proofreading the transcript',
+    about: 'A Conversation in Vrindavan, 1972-11-04.md',
+    working: true,
+    tally: { done: 9, total: 100 },
+    left: '4:05',
+  },
+  play: async ({ canvasElement }) => {
+    const line = lineIn(canvasElement)
+    const says = line?.querySelector<HTMLElement>('.activity__says') ?? null
+    const about = line?.querySelector<HTMLElement>('.activity__about') ?? null
+    await expect(says).toHaveTextContent('Proofreading the transcript')
+    await expect(about).toHaveTextContent('A Conversation in Vrindavan, 1972-11-04.md')
+    await expect(about && getComputedStyle(about, '::before').content).toBe('none')
+    await expect(says?.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      about?.getBoundingClientRect().top ?? 0,
+    )
+  },
+}
+
+/** Names far too long for the room give way; how far and how long do not. */
+export const TooLong: Story = {
+  args: {
+    says: 'Learning what a very long name for a piece of work has to say about itself',
+    about: 'a-note-whose-name-nobody-shortened-before-they-filed-it-away-for-good.md',
+    working: true,
+    tally: { done: 74, total: 100 },
+    left: '0:41',
+  },
+  play: async ({ canvasElement }) => {
+    const line = lineIn(canvasElement)
+    const count = line?.querySelector<HTMLElement>('.activity__count') ?? null
+    await expect(line).toHaveTextContent('74%')
+    await expect(count?.getBoundingClientRect().right).toBeLessThanOrEqual(
+      (line?.getBoundingClientRect().right ?? 0) + 1,
+    )
   },
 }
 

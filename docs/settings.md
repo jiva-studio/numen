@@ -4,6 +4,8 @@ One file, JSON, named `numen.json` in the folder this desktop keeps a person's c
 
 Every field left out keeps its default. A file naming one setting is a valid file.
 
+A setting the window draws a control for is turned by that control, which patches the file as an object and leaves every other byte of it where it was. The window also opens the file whole, in a tab of its own, from the settings page: what is typed there is written as it stands, and a file the settings cannot be read out of is refused with where in it the trouble is.
+
 This document is every section of the file, and it is the one place a key is written down. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
 
 ## Appearance

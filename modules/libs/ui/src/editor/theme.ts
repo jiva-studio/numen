@@ -7,6 +7,14 @@
  */
 import { EditorView } from '@codemirror/view'
 
+/**
+ * A whole document of code, set in the face the marks inside prose are set in.
+ * The family is the one this file names once.
+ */
+export const monospaced = EditorView.theme({
+  '&': { fontFamily: 'var(--editor-mono)' },
+})
+
 export const theme = EditorView.theme({
   '&': {
     '--editor-mark': 'var(--numen-syntax-mark)',

@@ -11,7 +11,7 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import type { PaletteItem, PaletteBand } from '@numen/ui'
-import type { NoteType } from './core'
+import type { NoteType, Source } from './core'
 import { wordsOnly, type Meaning } from './meaning'
 
 /** A run of a name or a passage, counted the way this window counts text. */
@@ -31,6 +31,8 @@ export interface Named {
   /** Where that heading stands, counted from the first line of the prose. */
   line: number
   at: readonly Span[]
+  /** Which of four the note is. A heading carries the type of the note it stands in. */
+  type: NoteType
 }
 
 /** One passage: the text around a hit, and where it came from. */
@@ -43,6 +45,10 @@ export interface Passage {
    * over the passage: a book is not a node, so there is nowhere to travel to.
    */
   isNote: boolean
+  /** Which of four that note is. It says nothing about a source that is not one. */
+  type: NoteType
+  /** What the vault holds at that path, whatever sort of source it is. */
+  kind: Source
   text: string
   /**
    * Where the hit stands in the source's own text, counted in bytes, which is
@@ -134,6 +140,10 @@ interface Stands {
   start: number
   length: number
   offers: readonly string[]
+  /** Which of four the note it stands in is, and nothing where it stands in none. */
+  type: NoteType | null
+  /** What the vault holds where it stands. */
+  kind: Source
 }
 
 /** One item as it is drawn, beside where it stands and what it offers. */
@@ -272,6 +282,8 @@ export function finding(
             start: 0,
             length: 0,
             offers: [NOTE, PLEX],
+            type: one.type,
+            kind: 'note',
           },
         }
       : {
@@ -291,6 +303,8 @@ export function finding(
             start: 0,
             length: 0,
             offers: [PLEX, NOTE],
+            type: one.type,
+            kind: 'note',
           },
         }
 
@@ -322,19 +336,24 @@ export function finding(
       start: one.start,
       length: one.length,
       offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],
+      // A book and a recording are notes of no kind, and are drawn as the
+      // source each of them is.
+      type: one.isNote ? one.type : null,
+      kind: one.kind,
     },
   })
 
   /**
-   * Why a band holds nothing. A search by meaning is asked of the vectors, so a
-   * vault that has none says so.
+   * Why a band holds nothing, and nothing where it was asked and answered with
+   * nothing. A search by meaning is asked of the vectors, so a vault that has
+   * none says so.
    */
   const silenceOf = (id: Band): string => {
     if (said.value[id]) return said.value[id]
     const read = id === 'meaning' ? reading?.() : undefined
-    if (!read) return words.noneFound
+    if (!read) return ''
     if (wordsOnly(read)) return words.wordsOnly
-    return read.embedded === 0 ? words.notEmbedded : words.noneFound
+    return read.embedded === 0 ? words.notEmbedded : ''
   }
 
   /** What the bands hold, and where each thing in them stands in the vault. */
@@ -373,6 +392,18 @@ export function finding(
 
   const bands = computed(() => built.value.bands)
 
+  /**
+   * Which of four the note an item stands in is, and nothing where it stands in
+   * none. It is what the row is drawn with.
+   */
+  const typeOf = (item: string): NoteType | null => built.value.held.get(item)?.type ?? null
+
+  /**
+   * What the vault holds where an item stands, and nothing for an item the
+   * palette is not drawing. A row standing in no note is drawn as this.
+   */
+  const kindOf = (item: string): Source | null => built.value.held.get(item)?.kind ?? null
+
   /** Where one item, asked one thing, takes the person. */
   const chose = (item: string, action: string): Landing | null => {
     const stands = built.value.held.get(item)
@@ -389,5 +420,5 @@ export function finding(
       : { at: 'file', ...named }
   }
 
-  return { open, typed, bands, typing, shows, chose }
+  return { open, typed, bands, typing, shows, chose, typeOf, kindOf }
 }

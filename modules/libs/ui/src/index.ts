@@ -31,12 +31,19 @@ export type { Bounds } from './components/ui/number-field'
 
 export { Switch } from './components/ui/switch'
 
+/** An hour and a minute of the day, typed on the clock the machine draws. */
+export { TimeField, onTheClock } from './components/ui/time-field'
+
 /** One value along a track, moved by a handle. */
 export { Slider } from './components/ui/slider'
 
 /** Two to four choices side by side, one of them chosen. */
 export { Segmented } from './components/ui/segmented'
 export type { SegmentedChoice } from './components/ui/segmented'
+
+/** One choice out of a list, taken from a menu the machine draws. */
+export { Select } from './components/ui/select'
+export type { SelectChoice } from './components/ui/select'
 
 /** The days of the week, each drawn at the level it stands at. */
 export { Days } from './components/ui/days'
@@ -133,6 +140,18 @@ export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
 export { conversation } from './thread/conversation'
 export type { Conversation, Wording } from './thread/conversation'
 export type { AgentPort, AgentStep, Place } from './thread/agent'
+
+/** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
+export {
+  addressOf,
+  pointsAtNote,
+  stated,
+  wikilinkAt,
+  wikilinksIn,
+  NAME,
+  NOTE,
+} from './linking/address'
+export type { Address, Wikilink } from './linking/address'
 
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'

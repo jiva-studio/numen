@@ -234,7 +234,7 @@ describe('Block, the fields it is written with', () => {
 })
 
 describe('Block, what is wrong with it', () => {
-  it('says a stray slot under the markup naming it, and nowhere else', () => {
+  it('says a stray slot over the markup naming it, and nowhere else', () => {
     const held = mountBlock(blockOf({ id: 'one', name: 'One', front: '{{Name}}', back: '{{Colour}}' }))
 
     expect(held.get('[data-pane="back-written"] .block__objects').text()).toBe(
@@ -259,11 +259,22 @@ describe('Block, what is wrong with it', () => {
     expect(mountBlock().find('.block__objects').exists()).toBe(false)
   })
 
-  it('says what the caller found wrong under the name it is wrong about', () => {
+  it('says what the caller found wrong beside the name it is wrong about', () => {
     const held = mountBlock(undefined, { wrong: ['this face has no back'] })
     const said = held.get('header [data-wrong]')
     expect(said.text()).toBe('this face has no back')
     expect(said.attributes('aria-label')).toBe('What is wrong')
+  })
+
+  it('stands what is wrong outside the rows it is wrong about', () => {
+    const held = mountBlock(blockOf({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
+      wrong: ['this face has no back'],
+    })
+    expect(held.find('.block__head .block__objects').exists()).toBe(false)
+    expect(held.get('header .block__amiss').findAll('.block__objects')).toHaveLength(1)
+
+    const stray = held.get('[data-pane="front-written"] .block__amiss')
+    expect(stray.findAll('.block__objects')).toHaveLength(1)
   })
 
   it('says a line for each of them', () => {

@@ -324,6 +324,18 @@ export function listening(
   }
 
   /**
+   * The words are asked for again, and what stands on screen is whatever comes
+   * back. An edit still waiting to be written goes: it was of words that are no
+   * longer the ones the recording has.
+   */
+  const again = () => {
+    clearTimeout(settling)
+    settling = undefined
+    owed = false
+    void hear()
+  }
+
+  /**
    * Work on this recording, as the application last reported it. The words are
    * asked for again while a run is going and once more when it stops.
    */
@@ -407,6 +419,7 @@ export function listening(
     follows,
     typed,
     keep,
+    again,
     playing,
     play,
     pause,

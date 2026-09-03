@@ -13,6 +13,8 @@ export interface MenuItem {
   readonly id: string
   /** What is written on it. */
   readonly text: string
+  /** A second line under the words, in the small print. */
+  readonly detail?: string
   /** Drawn and announced, and not choosable. */
   readonly disabled?: boolean
   /**

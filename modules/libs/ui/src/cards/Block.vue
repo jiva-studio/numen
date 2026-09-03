@@ -33,7 +33,7 @@ const props = withDefaults(
     fields: readonly string[]
     /** The names the other faces carry, which this one's is measured against. */
     taken: readonly string[]
-    /** What the caller found wrong with this face, said under its name. */
+    /** What the caller found wrong with this face, said beside its name. */
     wrong?: readonly string[]
     /** The words it is drawn with. */
     words?: StencilWords
@@ -136,7 +136,7 @@ const put = async (field: string): Promise<void> => {
       @dragend="emit('release')"
       @step="(way, press) => emit('step', way, press)"
     >
-      <div class="block__said flex flex-col">
+      <div class="block__said">
         <div class="block__head flex items-center">
           <input
             class="block__title min-w-0 rounded-node"
@@ -170,15 +170,19 @@ const put = async (field: string): Promise<void> => {
           </div>
         </div>
 
-        <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
+        <!-- What is wrong with the face stands at the end of the strip, over
+             the window under it. -->
+        <div v-if="says || wrong.length" class="block__amiss">
+          <Amiss v-if="says" :id="objectsId" class="block__objects" role="alert" :said="says" />
 
-        <Amiss
-          v-if="wrong.length"
-          class="block__objects"
-          data-wrong
-          :said="wrong"
-          :label="words.wrong"
-        />
+          <Amiss
+            v-if="wrong.length"
+            class="block__objects"
+            data-wrong
+            :said="wrong"
+            :label="words.wrong"
+          />
+        </div>
       </div>
 
       <template #deeds>
@@ -226,12 +230,11 @@ const put = async (field: string): Promise<void> => {
           {{ pane.said }}
         </p>
 
-        <Amiss
-          v-if="pane.stray.length"
-          class="block__objects"
-          role="alert"
-          :said="words.stray(pane.stray)"
-        />
+        <!-- What is wrong with the half stands in the foot of the part, over
+             what is written there. -->
+        <div v-if="pane.stray.length" class="block__amiss">
+          <Amiss class="block__objects" role="alert" :said="words.stray(pane.stray)" />
+        </div>
       </div>
     </div>
   </article>
@@ -273,11 +276,10 @@ const put = async (field: string): Promise<void> => {
   }
 }
 
-/* The strip is the face's own, so its name leads it and the fields follow.
-   What is wrong with the name stands under the row it is wrong about. */
+/* The strip is the face's own, so its name leads it and the fields follow. */
 .block__said {
+  position: relative;
   inline-size: 100%;
-  gap: 0.125rem;
 }
 
 .block__head {
@@ -333,9 +335,9 @@ const put = async (field: string): Promise<void> => {
 /* A part is a pane of the window: it carries a ground and no line of its own.
    What it holds and what it says while it holds nothing share its one cell. */
 .block__pane {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  /* What the part holds takes the room; what is wrong takes a line under it. */
   grid-template-rows: 1fr;
   min-inline-size: 0;
   min-block-size: var(--pane-min);
@@ -354,20 +356,37 @@ const put = async (field: string): Promise<void> => {
   grid-area: 1 / 1;
 }
 
-/* What is wrong takes the whole row under what it is wrong about. */
+/* What is wrong stands at the end of what it is wrong about and over it, taking
+   no room from it. A press meant for what is underneath reaches it. */
+.block__amiss {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: var(--box-pad-inline);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+  max-inline-size: calc(100% - 2 * var(--box-pad-inline));
+  pointer-events: none;
+}
+
+/* The strip's stands under it, and a part's inside its foot. */
+.block__said > .block__amiss {
+  inset-block-start: 100%;
+}
+
+.block__pane > .block__amiss {
+  inset-block-end: var(--box-air);
+}
+
+/* What is wrong is read over whatever it covers, so it carries a ground. */
 .block__objects {
-  flex-basis: 100%;
   margin: 0;
-}
-
-/* A name with nothing in it to break at is broken where the line ends. */
-ul.block__objects {
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--numen-radius);
+  background: var(--numen-alarm-bg);
+  /* A name with nothing in it to break at is broken where the line ends. */
   overflow-wrap: anywhere;
-}
-
-.block__pane > .block__objects {
-  grid-area: 2 / 1;
-  padding: 0 var(--box-pad-inline) var(--box-air);
 }
 
 /* A face's box stands open at a few lines and grows with what is written in

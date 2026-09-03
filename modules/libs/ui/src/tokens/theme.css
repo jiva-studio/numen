@@ -18,7 +18,7 @@
 
   --text-base: var(--numen-font-size);
   --text-base--line-height: var(--numen-line-height);
-  --text-small: var(--numen-edge-label-size);
+  --text-small: var(--numen-text-1);
   --text-small--line-height: var(--numen-line-height);
 
   --radius-node: var(--numen-radius);

@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -250,6 +252,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	api.ChoosesParts = cfg.TurnsParts()
 	api.Reviews = cfg.Reviewing()
 	api.ChoosesReviewing = cfg.TurnsReviewing()
+	api.Configured = cfg.Configured()
+	api.Models = cfg.Models()
+	api.ChoosesSetting = cfg.TurnsSetting()
+	api.ConfiguredFile = cfg.ConfiguredFile()
+	api.WritesFile = cfg.WritesConfiguredFile()
 	api.Renames = &note.Rename{Move: moving}
 	api.Moves = &usecase.Move{
 		Writers: cfg.VaultWriters(),
@@ -264,6 +271,12 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Links:   api.Links,
 		Known:   db.SourcesKnown(),
 		Index:   opened.level,
+	}
+	api.Drops = &source.DropTranscript{
+		Readers: cfg.VaultReaders(),
+		Sources: db.Sources(),
+		Owing:   db.SourcesKnown(),
+		Derived: cfg.DerivedStores(),
 	}
 
 	// The vaults this installation holds, beside the one the window is showing.
@@ -442,15 +455,30 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// vault this installation holds is asked after.
 	go recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
 
+	// A proofreading stands at the page it reached, so one that ended among the
+	// batches is taken up when the application opens.
+	recognising.TakingUp(watching, o.Index.SourcesKnown(), known...)
+
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
 	o.API.Transcribes = transcribing
+	// A transcript is put right by the same proofreading that runs on its own,
+	// so a person asking for one is shown the run everything else is shown in.
+	o.API.Proofreads = transcribing
+	// A recording whose answer was dropped is one the queue has had no answer
+	// about.
+	o.API.Drops.Forgets = transcribing.Forget
 	if o.cfg.Transcribes {
 		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
+
+	// A transcript's proofreading stands at the line it reached, and is taken up
+	// here whether or not this installation listens to recordings on its own.
+	// Every vault this installation holds is asked after.
+	transcribing.TakingUp(watching, o.Index.SourcesKnown(), known...)
 
 	// Opening a vault is the same act in both windows, so it is one thing in the
 	// container. What this window says about it while it runs is below.
@@ -566,9 +594,12 @@ func (o *Opened) Settle(ctx context.Context) bool {
 // again.
 func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.Leaving) }
 
-// Close stops the passes behind the vault, waits for them, and closes the
-// index.
+// Close shuts the door on every question, stops the passes behind the vault,
+// waits for them, and closes the index.
 func (o *Opened) Close() error {
+	// First: a search, a note and a link are answered straight from the index,
+	// and the index closes here.
+	o.API.Shut()
 	o.leave()
 	if o.API.Viewer != nil {
 		o.API.Viewer.close()
@@ -851,8 +882,10 @@ func begin(
 	}
 	opening.Trouble = trouble
 	opening.Told = func(m usecase.Moved) {
-		api.Listeners.tell(changed{paths: m.Paths, reload: m.Reload})
-		if m.Sources {
+		// A client draws every file the vault holds, so an asset is named to it
+		// the way a note is.
+		api.Listeners.tell(changed{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
+		if m.Reading() {
 			// A book dropped into an open vault is read without anybody asking.
 			raise(wake.sources)
 		}
@@ -1062,6 +1095,15 @@ func embedSources(
 		return
 	}
 
+	// Fetching the model and preparing it is a step of its own, and it stands in
+	// the list under its own name. Nothing is indexed until it is over, and a
+	// model that never arrived is said under that name.
+	if arrival, ok := embedder.(embedding.Arrival); ok {
+		if err := arrival.Wait(ctx); err != nil {
+			return
+		}
+	}
+
 	// What this pass owes, asked once before it starts: the chunks that can
 	// carry a vector and do not. The pass finds them a few hundred at a time,
 	// and a total that grows as it goes is a count that never settles.
@@ -1081,18 +1123,18 @@ func embedSources(
 		indexing(err)
 		return
 	}
+	// Indexing is always of something, and the source open now is what it is of.
+	// The pass enters the list when it opens the first of them, so the row is
+	// never a word with nothing under it. A share is drawn once a vector has
+	// been made, counted over the work in hand and not the size of the vault.
 	making.Vectors.OnProgress = func(res source.EmbedResult) {
-		// A person who edited one note is waiting on that note, so this is the
-		// work in hand and not the size of the vault.
-		api.say(task.Task{
-			ID: makingVectors, Doing: "Indexing",
-			Done: int64(res.Embedded), Total: owing,
-		})
+		at := task.Task{ID: makingVectors, Doing: "Indexing", About: res.Reading}
+		if res.Embedded > 0 {
+			at.Done, at.Total = int64(res.Embedded), owing
+		}
+		api.say(at)
 	}
 
-	// This pass says what it owes and what it has made. The source a vector is
-	// made from is named by the reading of that source.
-	api.say(task.Task{ID: makingVectors, Doing: "Indexing", Total: owing})
 	switch _, err := making.MakeVectors(ctx, v); {
 	case err == nil, errors.Is(err, context.Canceled):
 		api.finished(makingVectors)

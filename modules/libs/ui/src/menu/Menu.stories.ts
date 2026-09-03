@@ -20,6 +20,8 @@ interface Knobs {
   opening: MenuOpening
   /** Which item is the one in force, if the menu names one. */
   current: string | null
+  /** Whether the name of a band is drawn over it. */
+  bands: boolean
   margin: number
   name: string
   onChoose: (id: string) => void
@@ -78,6 +80,7 @@ const asked = (args: Knobs) => ({
         :from="from"
         :opening="args.opening"
         :current="args.current"
+        :bands="args.bands"
         :margin="args.margin"
         :name="args.name"
         @choose="args.onChoose"
@@ -127,6 +130,7 @@ const meta = {
     at: { x: 480, y: 300 },
     opening: 'pointer',
     current: null,
+    bands: false,
     margin: 8,
     name: 'Menu',
     onChoose: fn(),
@@ -452,5 +456,50 @@ export const Banded: Story = {
     await expect(menu.getByRole('menuitem', { name: 'Open the note' })).toHaveFocus()
     await userEvent.keyboard('{ArrowUp}')
     await expect(menu.getByRole('menuitem', { name: 'Remove note' })).toHaveFocus()
+  },
+}
+
+/** Bands named over the run they open, which is what a list of choices does. */
+export const BandsNamed: Story = {
+  args: {
+    items: [
+      { id: 'numen', text: 'numen', band: 'Ships with numen' },
+      { id: 'paper', text: 'paper', band: 'Ships with numen' },
+      { id: 'sea', text: 'sea', band: 'Yours' },
+    ],
+    current: 'paper',
+    bands: true,
+  },
+  play: async () => {
+    const menu = menuElement()!
+    const named = Array.from(menu.querySelectorAll('.menu__band')).map((one) =>
+      one.textContent?.trim(),
+    )
+    await expect(named).toEqual(['Ships with numen', 'Yours'])
+    // The names are drawn, not ruled: a name and a rule do the one job.
+    await expect(menu.querySelectorAll('.menu__rule')).toHaveLength(0)
+  },
+}
+
+/** What an item says beside its words: the address a model is fetched from. */
+export const ASecondLine: Story = {
+  args: {
+    items: [
+      { id: 'small', text: 'PP-OCRv6, small', detail: 'somewhere/PP-OCRv6_rec_tiny.onnx' },
+      { id: 'large', text: 'PP-OCRv6, large' },
+    ],
+  },
+  play: async () => {
+    const menu = menuElement()!
+    await expect(menu.querySelectorAll('.menu__detail')).toHaveLength(1)
+  },
+}
+
+/** Typing lands the keyboard on the item the letters begin. */
+export const TypingToJump: Story = {
+  play: async () => {
+    const menu = within(menuElement()!)
+    await userEvent.keyboard('c')
+    await expect(menu.getByRole('menuitem', { name: 'Copy path' })).toHaveFocus()
   },
 }

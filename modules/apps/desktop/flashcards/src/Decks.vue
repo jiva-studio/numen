@@ -216,7 +216,7 @@ const share = (deck: DeckOwing): string => {
 
 .decks__by {
   color: var(--numen-hushed);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
 }
 
 /* The share stands to the left of what the deck owes, in the screen's quiet
@@ -224,7 +224,7 @@ const share = (deck: DeckOwing): string => {
 .decks__learned {
   flex: none;
   color: var(--numen-hushed);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -233,7 +233,7 @@ const share = (deck: DeckOwing): string => {
 .decks__met {
   flex: none;
   color: var(--numen-hushed);
-  font-size: var(--numen-edge-label-size);
+  font-size: var(--numen-text-1);
   white-space: nowrap;
 }
 </style>
