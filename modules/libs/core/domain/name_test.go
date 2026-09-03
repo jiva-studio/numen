@@ -55,6 +55,21 @@ func TestALinkIsWrittenByItsLastSegment(t *testing.T) {
 	}
 }
 
+// A name is compared without regard to case, and the extension is part of what
+// is compared.
+func TestTheExtensionComesOffALinkHoweverItIsSpelled(t *testing.T) {
+	for written, want := range map[string]string{
+		"Entropy.MD":       "Entropy",
+		"Entropy.Md":       "Entropy",
+		"notes/Entropy.mD": "Entropy",
+		".MD":              ".MD",
+	} {
+		if got := domain.LinkName(written); got != want {
+			t.Errorf("[[%s]] is written by %q, want %q", written, got, want)
+		}
+	}
+}
+
 // A note can answer to two seats and is shown in one place, so it takes the
 // first it qualifies for.
 func TestASeatIsTakenInOneOrder(t *testing.T) {

@@ -874,3 +874,92 @@ func TestALinkNameCutAtItsLastDotIsWrittenAgainWhole(t *testing.T) {
 		}
 	}
 }
+
+// A link spelling a note's extension in any case reaches the note it names.
+//
+// An older index compared the extension byte for byte, so `[[Entropy.MD]]` was
+// filed with the extension on and the note it names never answered to it.
+func TestALinkNameKeepingAnUppercaseExtensionIsWrittenAgainWithout(t *testing.T) {
+	ctx := t.Context()
+	path := filepath.Join(t.TempDir(), "index.db")
+
+	db, err := sql.Open("sqlite", dsn(path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := loadMigrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	const folded = 10
+	var through []migration
+	for _, m := range available {
+		if m.version >= folded {
+			break
+		}
+		through = append(through, m)
+	}
+	if len(through) == len(available) {
+		t.Skip("an extension is still compared byte for byte")
+	}
+	for _, m := range through {
+		if err := apply(ctx, db, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, statement := range []string{
+		`INSERT INTO vaults (id, identifier, name, path) VALUES (1, '01AAA', 'kept', '/notes')`,
+		`INSERT INTO sources (id, vault_id, path, kind, size, modified_at) VALUES
+		   (1, 1, 'notes/source.md', 'note', 100, 1)`,
+		`INSERT INTO notes (source_id, vault_id, basename, title) VALUES
+		   (1, 1, 'source', 'Source')`,
+		`INSERT INTO links (note_id, position, scheme, value, value_base, role) VALUES
+		   (1, 0, 'name', 'Entropy.MD',        'Entropy.MD',  'ref'),
+		   (1, 1, 'name', 'talks/Entropy.Md',  'Entropy.Md',  'ref'),
+		   (1, 2, 'name', 'Lecture 1.2',       'Lecture 1.2', 'parent'),
+		   (1, 3, 'name', 'talks/Entropy.md',  'Entropy',     'ref')`,
+	} {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			t.Fatalf("%s: %v", statement, err)
+		}
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	upgraded, err := Open(ctx, path)
+	if err != nil {
+		t.Fatalf("migrating an index that compared an extension byte for byte: %v", err)
+	}
+	defer upgraded.Close()
+
+	rows, err := upgraded.write.QueryContext(ctx,
+		`SELECT position, value_base FROM links WHERE note_id = 1 ORDER BY position`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	filed := map[int]string{}
+	for rows.Next() {
+		var position int
+		var base string
+		if err := rows.Scan(&position, &base); err != nil {
+			t.Fatal(err)
+		}
+		filed[position] = base
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	for position, want := range map[int]string{
+		0: "Entropy",
+		1: "Entropy",
+		2: "Lecture 1.2",
+		3: "Entropy",
+	} {
+		if filed[position] != want {
+			t.Errorf("the link at %d is filed under %q, want %q", position, filed[position], want)
+		}
+	}
+}
