@@ -17,7 +17,7 @@ import (
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.catalogue()
-	said := &launched{drawn: c.InterfaceScale, set: c.TextScale}
+	said := &scales{drawn: c.InterfaceScale, set: c.TextScale}
 	return &theme.Service{
 		Catalogue: catalogue,
 		Say:       say,
@@ -32,15 +32,15 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	}, err
 }
 
-// launched is what the command line said about size. Each stands over the file
+// scales is what the command line said about size. Each stands over the file
 // until a person chooses that size themselves, and zero is not said.
-type launched struct {
+type scales struct {
 	mu         sync.Mutex
 	drawn, set float64
 }
 
 // over puts what was said this launch over what the file holds.
-func (l *launched) over(worn *theme.Dress) {
+func (l *scales) over(worn *theme.Dress) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.drawn > 0 {
@@ -53,7 +53,7 @@ func (l *launched) over(worn *theme.Dress) {
 
 // chose lets go of what was said this launch about a size a person has now
 // chosen for themselves.
-func (l *launched) chose(chosen theme.Dress) {
+func (l *scales) chose(chosen theme.Dress) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if chosen.InterfaceScale > 0 {
@@ -76,7 +76,7 @@ func (c Config) catalogue() (theme.Catalogue, error) {
 
 // dressed and wear are the settings file as the themes need it: one section of
 // it read, and up to four fields of it written.
-func (c Config) dressed(said *launched) (theme.Dress, error) {
+func (c Config) dressed(said *scales) (theme.Dress, error) {
 	path, err := c.settingsFile()
 	if err != nil {
 		return theme.Dress{}, err
@@ -98,7 +98,7 @@ func (c Config) dressed(said *launched) (theme.Dress, error) {
 // wear writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
-func (c Config) wear(chosen theme.Dress, said *launched) error {
+func (c Config) wear(chosen theme.Dress, said *scales) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
