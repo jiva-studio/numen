@@ -193,9 +193,22 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 		return nil, errors.New("no tools to give an agent")
 	}
 
+	configuration, err := a.configuration()
+	if err != nil {
+		return nil, fmt.Errorf("write the tools an agent is given: %w", err)
+	}
+	// The child reads the file as it starts and the run holds it until the
+	// process is done with it.
+	started := false
+	defer func() {
+		if !started {
+			os.Remove(configuration)
+		}
+	}()
+
 	running, stop := context.WithCancel(ctx)
 	name, rest := a.command()
-	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task)...)...)
+	cmd := exec.CommandContext(running, name, append(rest, a.arguments(task, configuration)...)...)
 	cmd.Dir = a.Root
 	cmd.Env = environment(os.Environ())
 	detach(cmd)
@@ -230,11 +243,13 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 		stop()
 		return nil, fmt.Errorf("start %s: %w", name, err)
 	}
+	started = true
 	w.reading.Add(1)
 	go func() {
 		defer w.reading.Done()
 		defer a.letGo(w)
 		defer close(w.steps)
+		defer os.Remove(configuration)
 
 		failed := read(running, out, w.steps, a.Words, a.carrying(task.Conversation), a.Drafting)
 
@@ -363,7 +378,7 @@ const brought = "WebSearch,WebFetch"
 // disabled. An agent works this vault through the tools this vault serves, and
 // every one of those goes through a use case that says what a note is and keeps
 // the index level with the file.
-func (a *Agent) arguments(task port.Task) []string {
+func (a *Agent) arguments(task port.Task, configuration string) []string {
 	turns := a.Turns
 	if turns <= 0 {
 		turns = DefaultTurns
@@ -375,7 +390,7 @@ func (a *Agent) arguments(task port.Task) []string {
 		"--verbose",
 		"--include-partial-messages",
 		"--strict-mcp-config",
-		"--mcp-config", a.servers(),
+		"--mcp-config", configuration,
 		"--tools", brought,
 		"--permission-mode", "dontAsk",
 		"--max-turns", fmt.Sprint(turns),
@@ -459,7 +474,7 @@ func manners(task port.Task) string {
 
 // servers is the one server this agent is given, written the way the command
 // line reads it.
-func (a *Agent) servers() string {
+func (a *Agent) servers() ([]byte, error) {
 	type server struct {
 		Type    string            `json:"type"`
 		URL     string            `json:"url"`
@@ -473,11 +488,40 @@ func (a *Agent) servers() string {
 		Headers: map[string]string{"Authorization": "Bearer " + a.Tools.Token},
 	}}}
 
-	written, err := json.Marshal(config)
+	return json.Marshal(config)
+}
+
+// configuration writes the server this agent is given to a file of its own and
+// answers with its path.
+//
+// The configuration carries the bearer token for this vault's tools. The file
+// is this user's to read and nobody else's, and a command line is not, so the
+// path is what the child is given. Whoever makes it removes it.
+func (a *Agent) configuration() (string, error) {
+	written, err := a.servers()
 	if err != nil {
-		return "{}"
+		return "", err
 	}
-	return string(written)
+	file, err := os.CreateTemp("", "numen-tools-*.json")
+	if err != nil {
+		return "", err
+	}
+	at := file.Name()
+	if err := file.Chmod(0o600); err != nil {
+		file.Close()
+		os.Remove(at)
+		return "", err
+	}
+	if _, err := file.Write(written); err != nil {
+		file.Close()
+		os.Remove(at)
+		return "", err
+	}
+	if err := file.Close(); err != nil {
+		os.Remove(at)
+		return "", err
+	}
+	return at, nil
 }
 
 // prefix is what a tool of this vault's server is called under once it reaches

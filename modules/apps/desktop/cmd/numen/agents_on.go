@@ -177,7 +177,6 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	}
 }
 
-
 // recogniser is what reads a scanned document for an agent that asks.
 //
 // It is always served, even on a machine holding none of the models: what is
