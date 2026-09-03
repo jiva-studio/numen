@@ -71,6 +71,8 @@ A search costs more while a scan is continuously rewriting the index. That is th
 
 **Nothing here measures a cold start of the application**, only of the scan.
 
+**A flashcard benchmark runs on an index that does not flush.** It shares its setup with the tests around it, and what it times is scheduling arithmetic. The vault benchmarks and the load test ask for the index the application ships with, so those two numbers are not one another's.
+
 ## Where the time goes
 
 A cold scan, by profile, taken 2026-08-15 with one transaction per note: 1 % reading the files, 5 % parsing them, 77 % storing what was parsed — of which **43 % of the whole scan is ending transactions**, the largest single part. Parsing in parallel is therefore worth at most a few percent, and has been measured and left alone.
