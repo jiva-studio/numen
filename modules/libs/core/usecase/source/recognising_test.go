@@ -49,7 +49,7 @@ func recognising(t *testing.T, why error) *watched {
 		Derived: derivedStores,
 		Tasks:   tasks,
 		Ready:   func() bool { return true },
-		Proofreading: Correcting{
+		Proofreading: Proofreading{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 		},
 		Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
@@ -326,7 +326,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 // is said. A person who configured a queue and is given none is owed the reason.
 func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 	w := recognising(t, nil)
-	w.Recognising.with.Proofreading = Correcting{
+	w.Recognising.with.Proofreading = Proofreading{
 		Named: true, Automatically: true,
 		By: func(string) (port.Proofreader, error) { return &puts{}, nil },
 		Queue: func(string) (port.ProofreadQueue, error) {
@@ -334,7 +334,7 @@ func TestAProofreadQueueThatFailedToBuildIsSaid(t *testing.T) {
 		},
 	}
 
-	w.correct(t.Context(), somewhere, "a.pdf")
+	w.proofread(t.Context(), somewhere, "a.pdf")
 
 	at, held := w.said(t)
 	if !held {

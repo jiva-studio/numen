@@ -12,8 +12,8 @@ import "github.com/jiva-studio/numen/modules/libs/core/domain"
 //
 // It locks nothing: it is held by the run that owns it, under that run's lock.
 type queue struct {
-	line []wanted
-	held map[string]bool
+	line   []wanted
+	queued map[string]bool
 }
 
 // wanted is one source a person named: the vault it is in, and where.
@@ -22,16 +22,16 @@ type wanted struct {
 	path  string
 }
 
-// want puts a source at the back of the line and says whether it went in.
-func (q *queue) want(v domain.Vault, path string) bool {
-	if q.held == nil {
-		q.held = map[string]bool{}
+// add puts a source at the back of the line and says whether it went in.
+func (q *queue) add(v domain.Vault, path string) bool {
+	if q.queued == nil {
+		q.queued = map[string]bool{}
 	}
 	key := named(v, path)
-	if q.held[key] {
+	if q.queued[key] {
 		return false
 	}
-	q.held[key] = true
+	q.queued[key] = true
 	q.line = append(q.line, wanted{vault: v, path: path})
 	return true
 }
@@ -44,7 +44,7 @@ func (q *queue) take() (wanted, bool) {
 	}
 	one := q.line[0]
 	q.line = q.line[1:]
-	delete(q.held, named(one.vault, one.path))
+	delete(q.queued, named(one.vault, one.path))
 	return one, true
 }
 

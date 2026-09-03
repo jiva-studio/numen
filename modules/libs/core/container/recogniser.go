@@ -62,6 +62,6 @@ func (c Config) Recognising(
 		},
 		Ready:        c.RecogniserReady,
 		Standing:     recognition.Prepared,
-		Proofreading: c.correcting(c.ScanProofreading),
+		Proofreading: c.proofreadingFor(c.ScanProofreading),
 	})
 }

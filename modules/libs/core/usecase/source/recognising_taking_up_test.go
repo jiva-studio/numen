@@ -62,7 +62,7 @@ func halted(
 	v := domain.Vault{ID: "v", Path: root}
 
 	w := recognising(t, nil)
-	w.Recognising.with.Proofreading = Correcting{
+	w.Recognising.with.Proofreading = Proofreading{
 		Named: true, Automatically: true, Batch: 1,
 		By:    func(string) (port.Proofreader, error) { return by, nil },
 		Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },

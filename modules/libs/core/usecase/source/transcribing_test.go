@@ -187,40 +187,40 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by)
-	owed := listening.owing(t.Context(), standsOn{"talks/one.mp3"}, v)
+	owed := listening.owing(t.Context(), recognised{"talks/one.mp3"}, v)
 	if len(owed) != 0 {
 		t.Errorf("the queue owes %v", owed)
 	}
 }
 
-// standsOn is an index holding one recording that stands on what a model wrote.
-type standsOn struct{ path string }
+// recognised is an index holding one recording that stands on what a model wrote.
+type recognised struct{ path string }
 
-func (h standsOn) Fingerprints(
+func (h recognised) Fingerprints(
 	_ context.Context, _ string, _ domain.SourceKind,
 ) (map[string]domain.FileRef, error) {
 	return map[string]domain.FileRef{h.path: {Path: h.path}}, nil
 }
 
-func (h standsOn) Recognised(
+func (h recognised) Recognised(
 	_ context.Context, _ string, _ domain.SourceKind,
 ) ([]port.Recognised, error) {
 	return []port.Recognised{{Path: h.path, From: "asr", Hash: "x"}}, nil
 }
 
-func (h standsOn) Under(context.Context, string, string) ([]domain.FileRef, error) { return nil, nil }
+func (h recognised) Under(context.Context, string, string) ([]domain.FileRef, error) { return nil, nil }
 
-func (h standsOn) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
+func (h recognised) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
-func (h standsOn) ByOtherRecipe(
+func (h recognised) ByOtherRecipe(
 	context.Context, string, domain.SourceKind, []string, int,
 ) ([]string, error) {
 	return nil, nil
 }
 
-func (h standsOn) Reading(context.Context, string, string) (port.Recognised, bool, error) {
+func (h recognised) Reading(context.Context, string, string) (port.Recognised, bool, error) {
 	return port.Recognised{}, false, nil
 }
 
@@ -322,7 +322,7 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 		order = append(order, path)
 		return nil
 	}
-	listening.queue.want(v, "talks/named.mp3")
+	listening.queue.add(v, "talks/named.mp3")
 
 	listening.round(t.Context(), unheard{recordings: []string{"talks/owed.mp3"}}, v)
 
@@ -333,13 +333,13 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 	}
 }
 
-// One heavy run on a machine: a scan being read holds the turn, and a
-// transcription waits for it and says so.
-func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
+// One run holds the models on a machine: a scan being read holds them, and a
+// transcription waits for them and says so.
+func TestARecordingWaitsForTheModelsAScanHolds(t *testing.T) {
 	by := &deaf{}
 	listening, v := listens(t, by, "talks/one.mp3")
 
-	held, err := heavy.take(t.Context(), true, nil)
+	held, err := models.acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +347,7 @@ func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
 	waited := false
 	for range 200 {
 		for _, at := range listening.with.Tasks.List() {
-			if at.Doing == "Waiting for a turn at the models" {
+			if at.Doing == "Waiting for the models" {
 				waited = true
 			}
 		}
@@ -360,10 +360,10 @@ func TestARecordingWaitsForTheTurnAScanHolds(t *testing.T) {
 	listening.Wait()
 
 	if !waited {
-		t.Error("the transcription was not shown waiting for its turn")
+		t.Error("the transcription was not shown waiting for the models")
 	}
 	if got := by.times(); got != 1 {
-		t.Errorf("the recording was heard %d times once the turn was free", got)
+		t.Errorf("the recording was heard %d times once the models were free", got)
 	}
 }
 

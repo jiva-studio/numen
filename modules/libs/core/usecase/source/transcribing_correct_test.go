@@ -19,9 +19,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/transcript"
 )
 
-// about is what the list of what is being done says about putting a transcript
+// shown is what the list of what is being done says about putting a transcript
 // right.
-func about(held *Transcribing, path string) (doing, failed string) {
+func shown(held *Transcribing, path string) (doing, failed string) {
 	for _, at := range held.with.Tasks.List() {
 		if at.ID == proofreadingID(path) {
 			return at.Doing, at.Failed
@@ -40,11 +40,11 @@ func nowhere(string) (port.Proofreader, error) {
 // nothing and says nothing.
 func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = Correcting{Named: true, By: nowhere}
+	held.with.Proofreading = Proofreading{Named: true, By: nowhere}
 
-	held.correct(t.Context(), v, "talks/one.mp3", false)
+	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
-	if doing, _ := about(held, "talks/one.mp3"); doing != "" {
+	if doing, _ := shown(held, "talks/one.mp3"); doing != "" {
 		t.Errorf("a transcript nobody asked about is %q", doing)
 	}
 }
@@ -52,11 +52,11 @@ func TestATranscriptIsPutRightOnlyWhereItWasAskedFor(t *testing.T) {
 // A profile no settings name is a person's mistake, and they are shown it.
 func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 	held, v := listens(t, &deaf{}, "talks/one.mp3")
-	held.with.Proofreading = Correcting{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = Proofreading{Named: true, Automatically: true, By: nowhere}
 
-	held.correct(t.Context(), v, "talks/one.mp3", false)
+	held.proofread(t.Context(), v, "talks/one.mp3", false)
 
-	doing, failed := about(held, "talks/one.mp3")
+	doing, failed := shown(held, "talks/one.mp3")
 	if doing != "Proofreading a transcript" {
 		t.Fatalf("the list says %q", doing)
 	}
@@ -69,12 +69,12 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 func TestSilenceIsNotPutRight(t *testing.T) {
 	by := &deaf{}
 	held, v := listens(t, by, "talks/one.mp3")
-	held.with.Proofreading = Correcting{Named: true, Automatically: true, By: nowhere}
+	held.with.Proofreading = Proofreading{Named: true, Automatically: true, By: nowhere}
 
 	held.Start(v, "talks/one.mp3")
 	held.Wait()
 
-	if doing, failed := about(held, "talks/one.mp3"); doing != "" {
+	if doing, failed := shown(held, "talks/one.mp3"); doing != "" {
 		t.Errorf("silence is %q, failing with %q", doing, failed)
 	}
 }
@@ -134,7 +134,7 @@ func stopped(
 ) (*Transcribing, domain.Vault, port.DerivedStore, string) {
 	t.Helper()
 	held, v := listens(t, &deaf{}, recording)
-	held.with.Proofreading = Correcting{
+	held.with.Proofreading = Proofreading{
 		Named: true, Automatically: true, Batch: 1, InFlight: 1,
 		By: func(string) (port.Proofreader, error) { return by, nil },
 	}
@@ -200,7 +200,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 	}}
 	held, v, store, hash := stopped(t, by, 1, "first thing", "second thing", "third thing")
 
-	held.TakingUp(t.Context(), standsOn{recording}, v)
+	held.TakingUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
@@ -210,7 +210,7 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 	if got := written(t, store, text.Corrected(text.ASR, hash)); !slices.Equal(got, want) {
 		t.Errorf("the transcript says %q", got)
 	}
-	if doing, failed := about(held, recording); doing != "" {
+	if doing, failed := shown(held, recording); doing != "" {
 		t.Errorf("the transcript is left in the list as %q, failing with %q", doing, failed)
 	}
 }
@@ -221,13 +221,13 @@ func TestATranscriptAlreadyPutRightIsAskedAboutNothing(t *testing.T) {
 	by := &puts{}
 	held, v, _, _ := stopped(t, by, 3, "first thing", "second thing", "third thing")
 
-	held.TakingUp(t.Context(), standsOn{recording}, v)
+	held.TakingUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
-	if doing, failed := about(held, recording); doing != "" {
+	if doing, failed := shown(held, recording); doing != "" {
 		t.Errorf("the transcript is in the list as %q, failing with %q", doing, failed)
 	}
 }
@@ -239,7 +239,7 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 	held, v, _, _ := stopped(t, by, 1, "first thing", "second thing")
 	held.with.Proofreading.Automatically = false
 
-	held.TakingUp(t.Context(), standsOn{recording}, v)
+	held.TakingUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
 	if got := by.lines(); len(got) != 0 {
@@ -262,10 +262,10 @@ func TestATranscriptAnotherRunHoldsKeepsItsPlaceInTheList(t *testing.T) {
 		Done: 1, Total: 2,
 	})
 
-	held.TakingUp(t.Context(), standsOn{recording}, v)
+	held.TakingUp(t.Context(), recognised{recording}, v)
 	held.Wait()
 
-	if doing, _ := about(held, recording); doing != "Proofreading a transcript" {
+	if doing, _ := shown(held, recording); doing != "Proofreading a transcript" {
 		t.Errorf("the run holding the transcript is in the list as %q", doing)
 	}
 	if got := by.lines(); len(got) != 0 {
@@ -352,7 +352,7 @@ func TestAProofreadingAskedForStandsInTheListBeforeItOpensTheProofreader(t *test
 
 	go func() { _, _ = held.Proofread(t.Context(), v, recording) }()
 	<-reached
-	doing, _ := about(held, recording)
+	doing, _ := shown(held, recording)
 	close(stand)
 	held.Wait()
 
@@ -369,7 +369,7 @@ func TestAProofreadingThatEndsLeavesTheListEmpty(t *testing.T) {
 	_, _ = held.Proofread(t.Context(), v, recording)
 	held.Wait()
 
-	if doing, failed := about(held, recording); doing != "" {
+	if doing, failed := shown(held, recording); doing != "" {
 		t.Errorf("a run that ended is in the list as %q, failing with %q", doing, failed)
 	}
 }
@@ -383,7 +383,7 @@ func TestAProofreaderThatWillNotAnswerIsShownAsAFailure(t *testing.T) {
 	_, _ = held.Proofread(t.Context(), v, recording)
 	held.Wait()
 
-	doing, failed := about(held, recording)
+	doing, failed := shown(held, recording)
 	if doing != "Proofreading a transcript" {
 		t.Fatalf("a run that failed is in the list as %q", doing)
 	}

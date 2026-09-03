@@ -51,6 +51,6 @@ func (c Config) Transcribing(
 		},
 		Ready:        c.TranscriberReady,
 		Unasked:      c.TranscribesUnder,
-		Proofreading: c.correcting(c.SpeechProofreading),
+		Proofreading: c.proofreadingFor(c.SpeechProofreading),
 	})
 }

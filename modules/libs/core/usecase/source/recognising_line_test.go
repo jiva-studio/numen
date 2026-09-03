@@ -1,4 +1,4 @@
-package container
+package source
 
 import (
 	"errors"
@@ -9,7 +9,7 @@ import (
 )
 
 // A document named at the instant the line empties is read. The run that finds
-// the line empty gives the turn up under the same lock, so the ask that follows
+// the line empty stops the running under the same lock, so the ask that follows
 // is told it began and reads the document itself.
 //
 // Nothing else reads this line: a document told it was queued with no run to

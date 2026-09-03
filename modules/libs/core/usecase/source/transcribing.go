@@ -28,20 +28,21 @@ func transcriptionID(path string) string { return "transcription-" + path }
 // transcribe. It is told how far the fetching of what it needs has got.
 type Transcribes func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error)
 
-// Correcting is what a text is put right with: what answers, where batches are
-// left for it to answer about later, and how much of a text goes over at a time.
+// Proofreading is what a text is put right with: what answers, where batches
+// are left for it to answer about later, and how much of a text goes over at a
+// time.
 //
 // Naming no proofreader is a text used exactly as it was made.
-type Correcting struct {
+type Proofreading struct {
 	// Named says whether a profile is named for this kind of text. A person is
 	// offered the run where one is.
 	Named bool
 	// Automatically says whether a text is put right without anybody asking.
 	Automatically bool
 	// By opens what answers about a batch, and Queue where batches are left for
-	// it to answer about later. Each is told what it is correcting. Both answer
-	// nothing where no profile is named, and the reason where one cannot be
-	// opened.
+	// it to answer about later. Each is told what it is proofreading. Both
+	// answer nothing where no profile is named, and the reason where one cannot
+	// be opened.
 	By    func(instruction string) (port.Proofreader, error)
 	Queue func(instruction string) (port.ProofreadQueue, error)
 	// Batch is how much of a text one request carries, Overlap how much of it
@@ -72,7 +73,7 @@ type Transcriptions struct {
 	Unasked int64
 
 	// Proofreading is what a transcript is put right with.
-	Proofreading Correcting
+	Proofreading Proofreading
 }
 
 // Transcribing transcribes recordings behind whoever asked, and behind nobody.
@@ -97,8 +98,8 @@ type Transcribing struct {
 
 	mu      sync.Mutex
 	running bool
-	// runs counts the runs that have taken the turn. A run gives the turn up
-	// only while it still holds it.
+	// runs counts the runs that have begun. A run stops the running only while
+	// it is still the one running.
 	runs uint64
 	// queue is the recordings a person named that have not been transcribed yet.
 	queue queue
@@ -127,13 +128,13 @@ func (t *Transcribing) Wait() { t.going.Wait() }
 //
 // One at a time: the models hold a worker each. A recording named while one is
 // being transcribed goes to the back of the line and is transcribed as soon as
-// the turn is free, ahead of everything the vault set itself.
+// the run before it ends, ahead of everything the vault set itself.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the transcription carries on.
 func (t *Transcribing) Start(v domain.Vault, path string) port.Taking {
 	t.mu.Lock()
-	t.queue.want(v, path)
+	t.queue.add(v, path)
 	if t.running {
 		t.mu.Unlock()
 		return port.Queued
@@ -212,28 +213,20 @@ func (t *Transcribing) round(ctx context.Context, known port.SourceQueries, v do
 	}
 	defer t.release(mine)
 
-	t.owed(ctx, known, v)
-	t.drainAndRelease(ctx)
-}
-
-// owed hands over the recordings a person named and then the ones this vault
-// owes the text of, one after another. It ends early where what stopped a
-// recording was the machine and not the file: the rest of the round would reach
-// the same nothing.
-func (t *Transcribing) owed(ctx context.Context, known port.SourceQueries, v domain.Vault) {
 	t.drain(ctx)
 	for _, path := range t.owing(ctx, known, v) {
 		if ctx.Err() != nil {
-			return
+			break
 		}
 		err := t.one(ctx, v, path, false)
 		if errors.Is(err, errNothingTranscribes) {
-			return
+			break
 		}
 		// A recording named while this round ran is transcribed before the next
 		// one the vault owes.
 		t.drain(ctx)
 	}
+	t.drainAndRelease(ctx)
 }
 
 // owing is the recordings this vault holds that no model has written the words
@@ -289,8 +282,8 @@ func (t *Transcribing) claim() (uint64, bool) {
 	return t.runs, true
 }
 
-// release gives the turn up where this run still holds it, so a round that
-// ended where nothing expected it to leaves the turn free.
+// release stops the running where this run is still the one running, so a round
+// that ended where nothing expected it to leaves nothing running.
 func (t *Transcribing) release(run uint64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -299,10 +292,10 @@ func (t *Transcribing) release(run uint64) {
 	}
 }
 
-// drainAndRelease transcribes everything a person named and gives the turn up.
-// The line is found empty and the turn given up under one hold of the lock, so a
-// recording named at that instant is answered "began" and transcribed by the run
-// that answers it.
+// drainAndRelease transcribes everything a person named and stops the running.
+// The line is found empty and the running stopped under one hold of the lock,
+// so a recording named at that instant is answered "began" and transcribed by
+// the run that answers it.
 func (t *Transcribing) drainAndRelease(ctx context.Context) {
 	for {
 		t.drain(ctx)
@@ -343,7 +336,7 @@ func (t *Transcribing) one(ctx context.Context, v domain.Vault, path string, ask
 		t.done(id)
 		t.recordAnswer(v, path)
 		if !res.Silent && !res.Unopened {
-			t.correct(ctx, v, path, asked)
+			t.proofread(ctx, v, path, asked)
 		}
 	}
 	return err
@@ -393,9 +386,9 @@ type outcome struct {
 	err error
 }
 
-// correct puts a transcript right, where an installation asked for its
+// proofread puts a transcript right, where an installation asked for its
 // transcripts to be put right on their own.
-func (t *Transcribing) correct(ctx context.Context, v domain.Vault, path string, asked bool) {
+func (t *Transcribing) proofread(ctx context.Context, v domain.Vault, path string, asked bool) {
 	if !t.with.Proofreading.Automatically {
 		return
 	}
@@ -503,14 +496,14 @@ func (t *Transcribing) TakingUp(
 				if ctx.Err() != nil {
 					return
 				}
-				t.correct(ctx, v, said.Path, false)
+				t.proofread(ctx, v, said.Path, false)
 			}
 		}
 	}()
 }
 
-// transcribe is the work itself: this machine's turn at the models, what is
-// missing arriving, and then the recording transcribed.
+// transcribe is the work itself: this machine's models held, what is missing
+// arriving, and then the recording transcribed.
 func (t *Transcribing) transcribe(
 	ctx context.Context,
 	v domain.Vault,
@@ -519,10 +512,10 @@ func (t *Transcribing) transcribe(
 ) (TranscribeResult, error) {
 	var res TranscribeResult
 
-	// One heavy run on a machine: a scan being recognised holds the turn, and
-	// this waits for it.
-	release, err := heavy.take(ctx, asked, func() {
-		t.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path}, asked)
+	// One run holds the models on a machine: a scan being recognised holds them,
+	// and this waits for it.
+	release, err := models.acquire(ctx, asked, func() {
+		t.say(task.Task{ID: id, Doing: "Waiting for the models", About: path}, asked)
 	})
 	if err != nil {
 		return res, err
@@ -532,7 +525,7 @@ func (t *Transcribing) transcribe(
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.say(task.Task{ID: id, Doing: "Fetching models"}, asked)
-	models, close, err := t.with.Open(ctx, func(what string, done, total int64) {
+	by, close, err := t.with.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.say(task.Task{
@@ -550,7 +543,7 @@ func (t *Transcribing) transcribe(
 		Readers: t.with.Readers,
 		Sources: t.with.Sources,
 		Derived: t.with.Derived,
-		By:      models,
+		By:      by,
 		Cut:     t.Cut,
 		OnProgress: func(res TranscribeResult) {
 			t.say(task.Task{

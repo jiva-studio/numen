@@ -9,9 +9,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 )
 
-// AgentProofreader is what the platform is told to start: the command line, the
-// model it answers with, and what it is being asked to put right.
-type AgentProofreader struct {
+// AgentProofreading is what the platform is told to start: the command line,
+// the model it answers with, and what it is being asked to put right.
+type AgentProofreading struct {
 	Command     []string
 	Model       string
 	Instruction string
@@ -41,7 +41,7 @@ func (c Config) Profile(name string) (proofreading.Profile, error) {
 }
 
 // Proofreader is what puts a reading right at the profile named, told what it
-// is correcting.
+// is proofreading.
 //
 // Naming no profile is naming no proofreader: nothing comes back and a reading
 // is used exactly as it was read. A profile that cannot be opened — no key — is
@@ -66,7 +66,7 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 		return nil, fmt.Errorf(
 			"proofreading profile %q reaches a command line this application does not start", name)
 	}
-	return c.AgentProofreader(AgentProofreader{
+	return c.AgentProofreader(AgentProofreading{
 		Command:     profile.Command,
 		Model:       profile.Model,
 		Instruction: instruction,
@@ -74,11 +74,11 @@ func (c Config) Proofreader(name, instruction string) (port.Proofreader, error) 
 	})
 }
 
-// correcting is what a reading of one kind is put right with: the profile the
-// settings name for it, opened when there is something to put right.
-func (c Config) correcting(said proofreading.Proofread) source.Correcting {
+// proofreadingFor is what a reading of one kind is put right with: the profile
+// the settings name for it, opened when there is something to put right.
+func (c Config) proofreadingFor(said proofreading.Proofread) source.Proofreading {
 	profile := c.Proofreading.Profiles[said.With]
-	return source.Correcting{
+	return source.Proofreading{
 		Named:           said.With != "",
 		Automatically:   said.Automatically,
 		By:              func(what string) (port.Proofreader, error) { return c.Proofreader(said.With, what) },

@@ -50,7 +50,7 @@ type Recognitions struct {
 	Standing func() bool
 
 	// Proofreading is what a recognition is put right with.
-	Proofreading Correcting
+	Proofreading Proofreading
 }
 
 // Recognising recognises scanned documents behind whoever asked.
@@ -77,11 +77,14 @@ type Recognising struct {
 
 	mu      sync.Mutex
 	running bool
-	// runs counts the runs that have taken the turn. A run gives the turn up
-	// only while it still holds it.
+	// runs counts the runs that have begun. A run stops the running only while
+	// it is still the one running.
 	runs uint64
 	// queue is the documents a person named that have not been recognised yet.
 	queue queue
+	// idle is called where a run has found the line empty and stopped. A test
+	// names a document there, at the one instant the two could cross.
+	idle func()
 	// last is what the recognition before this one was called. A recognition
 	// that failed is left in the list under that name, and the next recognition
 	// takes it out.
@@ -114,14 +117,14 @@ func (r *Recognising) Running() bool {
 //
 // One at a time: the models hold a worker each, and a second recognition would
 // take twice as long and say so half as clearly. A document named while one is
-// being recognised goes to the back of the line and is recognised as soon as the
-// turn is free.
+// being recognised goes to the back of the line and is recognised as soon as
+// the run before it ends.
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the recognition carries on.
 func (r *Recognising) Start(v domain.Vault, path string) port.Taking {
 	r.mu.Lock()
-	r.queue.want(v, path)
+	r.queue.add(v, path)
 	if r.running {
 		r.mu.Unlock()
 		return port.Queued
@@ -150,9 +153,9 @@ func (r *Recognising) Waiting() int {
 // drain recognises every document a person named, in the order they named them.
 // A document is out of the line before it is recognised, so one whose
 // recognition ends where nothing expected it to holds nothing afterwards.
-// The line is found empty and the turn given up under one hold of the lock, so
-// a document named at that instant is answered "began" and recognised by the run
-// that answers it.
+// The line is found empty and the running stopped under one hold of the lock,
+// so a document named at that instant is answered "began" and recognised by the
+// run that answers it.
 func (r *Recognising) drain(ctx context.Context) {
 	for {
 		r.mu.Lock()
@@ -160,6 +163,9 @@ func (r *Recognising) drain(ctx context.Context) {
 		if !waiting || ctx.Err() != nil {
 			r.running = false
 			r.mu.Unlock()
+			if r.idle != nil {
+				r.idle()
+			}
 			return
 		}
 		r.mu.Unlock()
@@ -180,7 +186,7 @@ func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
 
 	err := r.recognise(ctx, v, id, path)
 	if err == nil {
-		r.correct(ctx, v, path)
+		r.proofread(ctx, v, path)
 	}
 
 	switch {
@@ -195,8 +201,8 @@ func (r *Recognising) one(ctx context.Context, v domain.Vault, path string) {
 	}
 }
 
-// stopped gives the turn up where this run still holds it, so a recognition
-// that ended where nothing expected it to leaves the turn free.
+// stopped stops the running where this run is still the one running, so a
+// recognition that ended where nothing expected it to leaves nothing running.
 func (r *Recognising) stopped(run uint64) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -215,11 +221,11 @@ func (r *Recognising) context() context.Context {
 // recognise is the work itself: what is missing arrives, and then the document
 // is recognised.
 func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path string) error {
-	// One heavy run on a machine: a recording being transcribed holds the turn,
-	// and this waits for it.
+	// One run holds the models on a machine: a recording being transcribed holds
+	// them, and this waits for it.
 	// A scan is recognised only where somebody asked for it.
-	release, err := heavy.take(ctx, true, func() {
-		r.say(task.Task{ID: id, Doing: "Waiting for a turn at the models", About: path})
+	release, err := models.acquire(ctx, true, func() {
+		r.say(task.Task{ID: id, Doing: "Waiting for the models", About: path})
 	})
 	if err != nil {
 		return err
@@ -229,7 +235,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.say(task.Task{ID: id, Doing: "Fetching models"})
-	models, close, err := r.with.Open(ctx, func(what string, done, total int64) {
+	by, close, err := r.with.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		r.say(task.Task{
@@ -256,7 +262,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 		Sources:   r.with.Sources,
 		Derived:   r.with.Derived,
 		Documents: r.with.Documents,
-		By:        models,
+		By:        by,
 		Cut:       r.Cut,
 		OnProgress: func(res RecogniseResult) {
 			r.say(task.Task{
@@ -279,13 +285,13 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	return nil
 }
 
-// correct puts a recognition right, where a person configured something to
+// proofread puts a recognition right, where a person configured something to
 // proofread it with. An installation that named no profile, or asked for a
 // recognition to be put right by hand, does nothing here.
 //
 // It reports itself under its own name, and a recognition whose proofreading
 // failed is the recognition as it was recognised.
-func (r *Recognising) correct(ctx context.Context, v domain.Vault, path string) {
+func (r *Recognising) proofread(ctx context.Context, v domain.Vault, path string) {
 	said := r.with.Proofreading
 	if !said.Automatically {
 		return
