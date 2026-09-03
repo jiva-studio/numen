@@ -29,6 +29,7 @@ var pointing = map[string]string{
 
 // A deck is scheduled by the preset its link names.
 func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 
 	held, err := s.presets.Of(t.Context(), s.vault, "decks/Roots.md")
@@ -48,6 +49,7 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 
 // A deck naming no preset is scheduled by the defaults.
 func TestADeckNamingNoPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 
 	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
@@ -65,6 +67,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 // An entry of the `links:` block written with no role is not read, so a preset
 // named in one schedules nothing. The deck is told why it is on the defaults.
 func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{
 		"Sanskrit.md": pointing["Sanskrit.md"],
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
@@ -93,6 +96,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 // A preset note that is gone leaves the deck on the defaults, and the address
 // that reaches nothing is named against it.
 func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Sanskrit.md":    preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -127,6 +131,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 // A deck naming two presets is held to the budget of the first, which is the
 // preset it is scheduled by.
 func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Few.md":         preset("new_a_day: 2\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -143,6 +148,7 @@ func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 // file the write produced comes back with it, and the caller's next save lands
 // on that file.
 func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 	presets := s.presets
 	presets.Index = busy
@@ -175,6 +181,7 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 // A write that never reached the vault is not one of those: the note is left as
 // it stands and nothing was levelled.
 func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 	was := read(t, s.vault, "Sanskrit.md")
 
@@ -204,6 +211,7 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 // A deck naming no preset and carrying no such entry has nothing said against
 // it: standing on the defaults is not a problem.
 func TestADeckNamingNoPresetHasNothingSaidAgainstIt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 
 	held, err := s.presets.Of(t.Context(), s.vault, "decks/Terms.md")
@@ -218,6 +226,7 @@ func TestADeckNamingNoPresetHasNothingSaidAgainstIt(t *testing.T) {
 // A link reaching a note that is not a preset leaves the deck on the defaults
 // and says so against it.
 func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
+	t.Parallel()
 	s := opened(t, pointing)
 
 	held, err := s.presets.Of(t.Context(), s.vault, "decks/Mantras.md")
@@ -238,6 +247,7 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 
 // A deck naming two presets is scheduled by the first and carries a problem.
 func TestADeckNamingTwoPresets(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{
 		"Sanskrit.md": "---\ntype: preset\nnew_a_day: 8\n---\n\n# Sanskrit\n",
 		"Mantras.md":  "---\ntype: preset\nnew_a_day: 3\n---\n\n# Mantras\n",
@@ -296,6 +306,7 @@ func frontmatter(t *testing.T, s vaulted, path string) map[string]any {
 // A write puts the settings in and leaves every other key, and the body, as
 // they were.
 func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", minutes(), domain.FileRef{}); err != nil {
@@ -335,6 +346,7 @@ func TestAWriteLeavesWhatItDoesNotOwn(t *testing.T) {
 // written flush ends the mapping, and the person's keys below it — the identity
 // among them — stop being read at all.
 func TestAWriteIntoAnIndentedBlock(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\n  id: 01J8F3K2M9QRSTVWXYZ012\n  type: preset\n" +
 			"  goal: minutes_a_day\n  minutes_a_day: 20\n  colour: green\n---\n\n# Sanskrit\n",
@@ -365,6 +377,7 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 // A note written by an editor that marks its files and ends its lines the other
 // way comes out of a write written the same way.
 func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "\xef\xbb\xbf---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\ntype: preset\r\n" +
 			"minutes_a_day: 20\r\n---\r\n\r\n# Sanskrit\r\n",
@@ -388,6 +401,7 @@ func TestAWriteKeepsTheLineEndingsAndTheMark(t *testing.T) {
 
 // A setting outside its bounds is refused and the note is left alone.
 func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 	was := read(t, s.vault, "Sanskrit.md")
 
@@ -404,6 +418,7 @@ func TestASettingOutsideItsBoundsWritesNothing(t *testing.T) {
 
 // A note that is not a preset is refused.
 func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 	was := read(t, s.vault, "Grammar.md")
 
@@ -418,6 +433,7 @@ func TestANoteThatIsNotAPresetIsNotWritten(t *testing.T) {
 
 // The load each day of the week carries goes in and comes back out as it was.
 func TestTheLoadComesBackAsItWentIn(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 
 	p := minutes()
@@ -442,6 +458,7 @@ func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 // file is never repaired, and a save that wrote only the days it understood
 // would take the rest of the week out with it.
 func TestASaveLeavesTheLoadItCouldNotRead(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
 			"load:\n  sat: 50\n  fri: half\n  caturdasi: 20\n---\n\n# Sanskrit\n",
@@ -477,6 +494,7 @@ func TestASaveLeavesTheLoadItCouldNotRead(t *testing.T) {
 // A save into a note whose every `load` entry is one the read could not make
 // out leaves the key where it stands.
 func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
 			"load:\n  fri: half\n---\n\n# Sanskrit\n",
@@ -497,6 +515,7 @@ func TestASaveLeavesALoadItCouldReadNoneOf(t *testing.T) {
 // A `load` written as anything but a week of days is the person's whole, and a
 // save leaves it as it stands.
 func TestASaveLeavesALoadThatIsNotAWeek(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
 			"load: every other day\n---\n\n# Sanskrit\n",
@@ -515,6 +534,7 @@ func TestASaveLeavesALoadThatIsNotAWeek(t *testing.T) {
 
 // A goal of a day writes the day, and it is read back as the day it was.
 func TestAGoalOfADateWritesTheDay(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 
 	p := minutes()
@@ -539,6 +559,7 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 // who set an interval finds it where they left it after a spell under the other
 // rule.
 func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 
 	p := minutes()
@@ -573,6 +594,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 // before there was one to name. A card face put off by less than the default
 // interval is not learned, and the counts a window draws say so.
 func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Old.md": "---\ntype: preset\ngoal: retention\nminutes_a_day: 10\n" +
 			"new_a_day: 12\nreviews_a_day: 5\nretention: 0.8\nbacklog: 68\n" +
@@ -627,6 +649,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 // A note over the bound a read refuses is a note a save refuses too, and
 // nothing is written.
 func TestASaveRefusesANoteOverTheBound(t *testing.T) {
+	t.Parallel()
 	body := "# Sanskrit\n\n" + strings.Repeat("Grammar and vocabulary. ", note.MaxBytes/20)
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\n" +
@@ -648,6 +671,7 @@ func TestASaveRefusesANoteOverTheBound(t *testing.T) {
 // the file is read; the file itself is never repaired, and a save that put the
 // default down would write a value the person never chose.
 func TestASaveLeavesTheSettingsItCouldNotRead(t *testing.T) {
+	t.Parallel()
 	for _, wrong := range []string{
 		"even_load: no",
 		"retention: ninety per cent",
@@ -695,6 +719,7 @@ func TestASaveLeavesTheSettingsItCouldNotRead(t *testing.T) {
 // A setting the read could not make out and the person has since moved is
 // written: that is them settling it.
 func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\n" +
 			"even_load: no\n---\n\n# Sanskrit\n",
@@ -718,6 +743,7 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 
 // A save that changes nothing leaves the file as it stands, comments and all.
 func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
+	t.Parallel()
 	s := opened(t, settled)
 	was := read(t, s.vault, "Sanskrit.md")
 
@@ -738,6 +764,7 @@ func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
 // A day the block already names carries its new share in the place it was
 // written in, and is written once.
 func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
 			"load:\n  wed: 50\n  mon: 80\n---\n\n# Sanskrit\n",
@@ -767,6 +794,7 @@ func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
 // one day to the read. The share goes into the entry the read takes, and the
 // save does not report a value the next read will not find.
 func TestADayNamedTwiceIsSavedWhereTheReadTakesIt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Sanskrit.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: preset\ngoal: minutes_a_day\n" +
 			"load:\n  Mon: 100\n  mon: 50\n---\n\n# Sanskrit\n",

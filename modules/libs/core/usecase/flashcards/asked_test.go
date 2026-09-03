@@ -18,6 +18,7 @@ const (
 // The front door consults the cache and does not rewrite it: the answers are
 // replayed once, and every request after that is told what the replay came to.
 func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
@@ -38,6 +39,7 @@ func TestTheFrontDoorConsultsTheScheduleCache(t *testing.T) {
 // Starting a sitting is answered from the cache like the front door, so a
 // person sitting down waits for a listing and not for the whole history.
 func TestStartingASittingConsultsTheScheduleCache(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
@@ -58,6 +60,7 @@ func TestStartingASittingConsultsTheScheduleCache(t *testing.T) {
 
 // Opening the history consults the cache and leaves it as it stands.
 func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 
@@ -75,6 +78,7 @@ func TestTheHistoryConsultsTheScheduleCache(t *testing.T) {
 // A vault answered the same way is left in the same place whether the cache
 // answered or the answers were replayed.
 func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
+	t.Parallel()
 	l := load(t, loadCards, loadDays, loadPerDay)
 	ctx := t.Context()
 

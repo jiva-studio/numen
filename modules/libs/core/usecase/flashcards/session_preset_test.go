@@ -37,6 +37,7 @@ func (s vaulted) under(
 // Pressing a preset sits to the cards of every deck pointing at it, and to no
 // card of another preset.
 func TestASittingOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":         term,
 		"Steady.md":       preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -61,6 +62,7 @@ func TestASittingOverAPresetAsksTheDecksThatPointAtIt(t *testing.T) {
 // The decks naming no preset are a preset of their own, and the sitting over it
 // is opened by naming no note.
 func TestASittingOverThePresetOfTheDecksNamingNone(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 20\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -77,6 +79,7 @@ func TestASittingOverThePresetOfTheDecksNamingNone(t *testing.T) {
 // The cards a preset offers are what its own allowance admits for the day, and
 // the decks under it share that one budget.
 func TestASittingOverAPresetIsHeldToItsBudget(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Five.md":        preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -92,6 +95,7 @@ func TestASittingOverAPresetIsHeldToItsBudget(t *testing.T) {
 // A second sitting over the same preset takes up where the first left off: what
 // the day has spent is off the allowance the tile was drawn from.
 func TestASecondSittingOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":       term,
 		"Five.md":       preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -114,6 +118,7 @@ func TestASecondSittingOverAPresetTakesUpWhereTheFirstLeftOff(t *testing.T) {
 // A deck and a preset are two answers to which cards were meant, and the
 // sitting puts the question back.
 func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -130,6 +135,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 
 // A preset no deck points at has nothing to sit to, and says so.
 func TestASittingOverAPresetNothingPointsAtIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Steady.md":      preset("new_a_day: 5\nreviews_a_day: 0\nminutes_a_day: 0\n"),
@@ -148,6 +154,7 @@ func TestASittingOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 
 // A paused preset is refused with the reason, and not with an empty sitting.
 func TestASittingOverAPausedPresetIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":         term,
 		"Paused.md":       preset("new_a_day: 0\nreviews_a_day: 0\n"),
@@ -166,6 +173,7 @@ func TestASittingOverAPausedPresetIsRefused(t *testing.T) {
 // A day already spent is refused with the reason. The first sitting takes the
 // whole of the allowance, and the second is told why there is nothing left.
 func TestASittingOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"Two.md": preset(

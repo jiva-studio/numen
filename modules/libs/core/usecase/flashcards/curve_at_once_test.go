@@ -17,6 +17,7 @@ import (
 // the places happen to finish in, which is the order of the cores the machine
 // has.
 func TestACurveIsTheSameCurveEveryTimeItIsAsked(t *testing.T) {
+	t.Parallel()
 	s := answering(t, 200)
 	curves := s.curves(noon)
 	for _, one := range atOnceGoals() {

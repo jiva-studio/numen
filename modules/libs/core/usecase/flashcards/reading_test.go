@@ -75,6 +75,7 @@ func (a lookups) Links(ctx context.Context, vaultID, from string) ([]domain.Reso
 // Counting a vault reads it once: every deck is opened once and asked once
 // which preset schedules it.
 func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
@@ -111,6 +112,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 
 // A preset note is opened once however many decks name it.
 func TestAPresetIsOpenedOncePerCall(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"Sanskrit.md":    preset("new_a_day: 8\nreviews_a_day: 45\n"),
@@ -136,6 +138,7 @@ func TestAPresetIsOpenedOncePerCall(t *testing.T) {
 // The answers are read once at a launch: what is owed and the schedules it is
 // counted from come out of the one reading.
 func TestTheAnswerLogIsReadOnce(t *testing.T) {
+	t.Parallel()
 	s := opened(t, map[string]string{
 		"Term.md":        term,
 		"decks/Roots.md": deckOf("", 3, 0),
@@ -164,6 +167,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 // A curve is a long walk, and a caller that has given up on it is answered with
 // what it gave up on.
 func TestACurveAnswersTheCallersCancellation(t *testing.T) {
+	t.Parallel()
 	s := opened(t, studied(30))
 	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 

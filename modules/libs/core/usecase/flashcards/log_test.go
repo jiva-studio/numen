@@ -20,6 +20,7 @@ import (
 // it can be read. That is a file gone, not a vault whose history cannot be
 // read: everything else the person answered is still theirs.
 func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	store, err := s.logs.Open(s.vault)
 	if err != nil {
@@ -44,6 +45,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 // from at the length they were read at — which is what a cache is measured
 // against.
 func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := history.CardFace{Card: "zpqrstvwxy", Face: "Recognise"}
@@ -110,6 +112,7 @@ func (l listing) List(ctx context.Context, name string) ([]port.Stored, error) {
 // runs that are still there are read. A vault's history is not refused because
 // another machine tidied up while this one was reading.
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -153,6 +156,7 @@ func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClo
 // difference is a person's whole history, so it is refused and said rather than
 // counted as nothing.
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
@@ -177,6 +181,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 // application would fill with a stub, and an evening of answers in it is
 // shadowed the moment the real vault comes back.
 func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 	writing := s.run(t, time.Now())
@@ -240,6 +245,7 @@ func (f *filling) Append(ctx context.Context, name string, content []byte) error
 // A run whose append did not land stops. The file it was writing ends where a
 // line ends, and going on would put the next answer behind whatever landed.
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 	on := history.CardFace{Card: "k7m2xq9fzp", Face: "Recognise"}
 
@@ -278,6 +284,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 // already skips a torn line and counts it, and a file nobody may open is the
 // same kind of event: everything else the person answered is returned.
 func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
+	t.Parallel()
 	if os.Geteuid() == 0 {
 		t.Skip("root opens a file whatever its permissions say")
 	}
@@ -324,6 +331,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 // A vault nobody has reviewed holds no folder and no files, which is an answer
 // and not a failure.
 func TestAVaultNobodyReviewedHoldsNoRuns(t *testing.T) {
+	t.Parallel()
 	s := opened(t, vault)
 
 	held, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
