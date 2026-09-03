@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
@@ -15,7 +14,9 @@ import (
 // excerptRunes is how much of a passage one line of terminal output carries.
 const excerptRunes = 160
 
-func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
+func searchCommand(
+	ctx context.Context, out, errOut io.Writer, cfg container.Config, args []string,
+) error {
 	if len(args) < 2 {
 		return errors.New("usage: numen-cli search <vault> <query>")
 	}
@@ -35,13 +36,13 @@ func searchCommand(ctx context.Context, out io.Writer, cfg container.Config, arg
 	// index.
 	embedder, closeEmbedder, why := cfg.Asking(ctx)
 	if why != nil {
-		fmt.Fprintf(os.Stderr, "searching by words alone: %v\n", why)
+		fmt.Fprintf(errOut, "searching by words alone: %v\n", why)
 	}
 	if closeEmbedder != nil {
 		defer func() { _ = closeEmbedder() }()
 	}
 
-	trouble := func(err error) { fmt.Fprintf(os.Stderr, "answering by words alone: %v\n", err) }
+	trouble := func(err error) { fmt.Fprintf(errOut, "answering by words alone: %v\n", err) }
 	found, err := cfg.Searching(db, embedder, trouble).
 		Execute(ctx, v, args[1], search.Parameters{})
 	if err != nil {

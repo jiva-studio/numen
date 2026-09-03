@@ -20,7 +20,7 @@ type Opening struct {
 	Told func(vault.Moved)
 	// Trouble, if set, is called with what went wrong, and with nil when a later
 	// attempt succeeds.
-	Trouble func(error)
+	Trouble port.Trouble
 	// Rebuild reads every note again, whatever its fingerprint says.
 	Rebuild bool
 
