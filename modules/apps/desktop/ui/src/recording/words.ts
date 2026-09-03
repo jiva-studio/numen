@@ -4,6 +4,8 @@ export const WORDS = {
   transcript: 'The transcript',
   /** The view keeps the line being said in sight. */
   follow: 'Follow',
+  /** The menu at the end of the strip, and what it is announced as. */
+  more: 'More',
   /** Nothing has transcribed this recording. */
   silence: 'No transcript yet.',
   /** The run that writes the words of the recording down, asked for here. */

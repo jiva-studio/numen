@@ -7,12 +7,17 @@
  * play from there. The player stands at the top of the pane on a rule, and
  * everything else is drawn below that rule: what a recording with no transcript
  * offers, what a run says while it goes, and the words themselves.
+ *
+ * What can be asked over the words already written down is offered in the menu
+ * at the end of the strip, and each item stands there only where it applies.
  */
-import { computed, watchPostEffect } from 'vue'
-import { LocateFixed } from '@lucide/vue'
-import { Editor, Player, timing } from '@numen/ui'
+import { computed, ref, watchPostEffect } from 'vue'
+import { Ellipsis, LocateFixed } from '@lucide/vue'
+import { Editor, Menu, Player, timing } from '@numen/ui'
+import type { Point } from '@numen/ui'
+import { iconFor } from '../icons'
 import { WORDS as words } from './words'
-import type { Held } from './kind'
+import { DROP, type Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
 
@@ -34,6 +39,26 @@ const follows = computed(() => props.held.following.value)
 
 /** Whether this recording has no transcript, which decides what stands below the player. */
 const empty = computed(() => props.held.times.value.length === 0)
+
+/** What the menu offers over this recording: each item only where it applies. */
+const offered = computed(() =>
+  props.held.droppable.value ? [{ id: DROP, text: words.drop }] : [],
+)
+
+/** Where the menu was asked for, and nothing while it is not open. */
+const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
+
+const asks = (event: Event) => {
+  const button = event.currentTarget
+  if (!(button instanceof HTMLElement)) return
+  const box = button.getBoundingClientRect()
+  asking.value = { at: { x: box.left, y: box.bottom }, from: button }
+}
+
+const chose = (id: string) => {
+  asking.value = null
+  if (id === DROP) props.held.drops()
+}
 </script>
 
 <template>
@@ -61,6 +86,17 @@ const empty = computed(() => props.held.times.value.length === 0)
         @click="props.held.follows(!follows)"
       >
         <LocateFixed class="recording__icon" />
+      </button>
+      <button
+        v-if="offered.length"
+        type="button"
+        class="recording__more"
+        :aria-label="words.more"
+        :title="words.more"
+        aria-haspopup="menu"
+        @click="asks"
+      >
+        <Ellipsis class="recording__icon" />
       </button>
     </div>
 
@@ -90,30 +126,38 @@ const empty = computed(() => props.held.times.value.length === 0)
         </button>
       </div>
 
-      <template v-else>
-        <!-- One button, and which it is the words decide: writing them down
-             where there are none, taking them away where there are. -->
-        <button
-          v-if="props.held.droppable.value"
-          type="button"
-          class="recording__ask recording__ask--aside"
-          @click="props.held.drops()"
-        >
-          {{ words.drop }}
-        </button>
+      <Editor
+        v-else
+        class="recording__transcript"
+        :model-value="props.held.prose.value"
+        :readonly="!props.held.editable.value"
+        :live="false"
+        :extensions="times.extension"
+        :aria-label="words.transcript"
+        @update:model-value="(said: string) => props.held.typed(said)"
+        @save="props.held.keep()"
+      />
+    </div>
 
-        <Editor
-          class="recording__transcript"
-          :model-value="props.held.prose.value"
-          :readonly="!props.held.editable.value"
-          :live="false"
-          :extensions="times.extension"
-          :aria-label="words.transcript"
-          @update:model-value="(said: string) => props.held.typed(said)"
-          @save="props.held.keep()"
+    <Menu
+      v-if="asking"
+      :items="offered"
+      :at="asking.at"
+      :from="asking.from"
+      open
+      :name="words.more"
+      @choose="chose"
+      @dismiss="asking = null"
+    >
+      <template #icon="{ id }">
+        <component
+          :is="iconFor(id)"
+          v-if="iconFor(id)"
+          class="recording__mark"
+          aria-hidden="true"
         />
       </template>
-    </div>
+    </Menu>
   </div>
 </template>
 
@@ -134,15 +178,15 @@ const empty = computed(() => props.held.times.value.length === 0)
 
 /* The player heads the pane at its full width, on the rule that separates it
    from what stands below. The strip is one row of controls tall whatever it
-   holds, so nothing drawn below moves the player. */
+   holds, and each control carries its own air around the mark on it. */
 .recording__head {
   display: flex;
   align-items: center;
   flex: none;
   gap: var(--recording-apart);
   inline-size: 100%;
-  min-block-size: calc(var(--numen-action-size) + 2 * var(--numen-box-air));
-  padding: var(--numen-box-air) var(--numen-gutter);
+  min-block-size: var(--numen-action-size);
+  padding-inline: var(--numen-gutter);
   border-block-end: var(--numen-stroke) solid var(--numen-node-border);
 }
 
@@ -181,18 +225,14 @@ const empty = computed(() => props.held.times.value.length === 0)
   border-color: var(--numen-focus-border);
 }
 
-/* The button stands beside the words, at the end of the line above them. */
-.recording__ask--aside {
-  align-self: end;
-  margin: var(--numen-box-air) var(--numen-gutter) 0;
-}
-
 .recording__player {
   flex: 1;
   min-inline-size: 0;
 }
 
-.recording__follow {
+/* The two controls at the end of the strip. */
+.recording__follow,
+.recording__more {
   display: grid;
   place-items: center;
   flex: none;
@@ -206,7 +246,8 @@ const empty = computed(() => props.held.times.value.length === 0)
   cursor: pointer;
 }
 
-.recording__follow:hover {
+.recording__follow:hover,
+.recording__more:hover {
   background: var(--numen-field-bg);
 }
 
@@ -217,6 +258,12 @@ const empty = computed(() => props.held.times.value.length === 0)
 .recording__icon {
   inline-size: 1rem;
   block-size: 1rem;
+}
+
+/* The room the menu keeps beside an item for the mark of what it asks for. */
+.recording__mark {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
 }
 
 /* The editor scrolls, so the bar stands at the edge of the pane and only the
