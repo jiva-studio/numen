@@ -389,7 +389,7 @@ func declared(doc *markdown.Document) []any {
 
 // AddFace writes a face at the end of the stencil. A stencil shows a card once
 // through each face it carries, so two faces of one name are two faces.
-func (f *StencilFile) AddFace(face Face) error {
+func (f *StencilFile) AddFace(face CardFaceTemplate) error {
 	body := []byte(f.doc.Body())
 	at := len(body)
 	return f.doc.SpliceBody(at, at, insert(body, at, laid(face)))
@@ -398,7 +398,7 @@ func (f *StencilFile) AddFace(face Face) error {
 // laid is the markdown one face is written as: its heading, the lead beneath
 // it, and each side the face has under a heading of its name. A face missing a
 // side is written missing it, and it is the face that lays out nothing.
-func laid(face Face) string {
+func laid(face CardFaceTemplate) string {
 	blocks := []string{headingLine(2, face.Name)}
 	if lead := trimBlankLines(markdown.Normalised(face.Lead)); lead != "" {
 		blocks = append(blocks, lead)

@@ -51,7 +51,7 @@ func renamedOf(r cards.RenameResult) *v1.RenameFieldResponse {
 	return out
 }
 
-func faceOf(f format.Face) *v1.Face {
+func faceOf(f format.CardFaceTemplate) *v1.Face {
 	return &v1.Face{Name: f.Name, Lead: f.Lead, Front: f.Front, Back: f.Back}
 }
 
@@ -218,13 +218,13 @@ func cardsOf(cs []*v1.Card) []format.Card {
 }
 
 // facesOf is the faces a client is putting into a stencil.
-func facesOf(fs []*v1.Face) []format.Face {
+func facesOf(fs []*v1.Face) []format.CardFaceTemplate {
 	if len(fs) == 0 {
 		return nil
 	}
-	out := make([]format.Face, 0, len(fs))
+	out := make([]format.CardFaceTemplate, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.Face{
+		out = append(out, format.CardFaceTemplate{
 			Name: f.GetName(), Lead: f.GetLead(), Front: f.GetFront(), Back: f.GetBack(),
 		})
 	}

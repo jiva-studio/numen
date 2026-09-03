@@ -474,7 +474,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddFace(cards.Face{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
+	if err := f.AddFace(cards.CardFaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 

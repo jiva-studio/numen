@@ -13,7 +13,7 @@ func declaring(fields ...string) cards.Stencil {
 }
 
 func TestLayFillsAFaceWithACard(t *testing.T) {
-	face := cards.Face{
+	face := cards.CardFaceTemplate{
 		Name:  "Recognise",
 		Front: "![[llama.jpg]]",
 		Back:  "**{{Name}}** is {{Height}} and lives {{Life span}}.",
@@ -46,7 +46,7 @@ func TestTheFirstFieldLaysOutWhatTheCardHolds(t *testing.T) {
 			{Field: "Height", Text: `45"`},
 		},
 	}
-	face := cards.Face{Front: "{{Name}}", Back: "{{Height}}"}
+	face := cards.CardFaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}
 
 	front, _ := cards.Lay(declaring("Name", "Height"), face, card)
 	if front != "Llama, and everything the heading had no room for" {
@@ -66,7 +66,7 @@ func TestACardWithNoFirstFieldLaysNothingOutForIt(t *testing.T) {
 	card := cards.Card{Heading: "Llama", Values: []cards.Value{{Field: "Height", Text: `45"`}}}
 
 	front, _ := cards.Lay(declaring("Name", "Height"),
-		cards.Face{Front: "{{Name}}", Back: "{{Height}}"}, card)
+		cards.CardFaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
 	if front != "" {
 		t.Errorf("front = %q, want nothing", front)
 	}
@@ -75,7 +75,7 @@ func TestACardWithNoFirstFieldLaysNothingOutForIt(t *testing.T) {
 // A field the card leaves out lays out as nothing, and so does one the stencil
 // never declared.
 func TestAPlaceholderWithNothingBehindItLaysOutAsNothing(t *testing.T) {
-	face := cards.Face{Front: "{{Name}}", Back: "[{{Height}}][{{Weight}}]"}
+	face := cards.CardFaceTemplate{Front: "{{Name}}", Back: "[{{Height}}][{{Weight}}]"}
 	card := cards.Card{Heading: "Llama", Values: []cards.Value{{Field: "Height", Text: `45"`}}}
 
 	front, back := cards.Lay(declaring("Name", "Height"), face, card)
@@ -100,7 +100,7 @@ func TestAPlaceholderIsANameWrittenExactly(t *testing.T) {
 	}
 	s := declaring("Слово", "Life span", "Жизнь", "Height")
 
-	_, back := cards.Lay(s, cards.Face{
+	_, back := cards.Lay(s, cards.CardFaceTemplate{
 		Front: "{{Слово}}", Back: "{{Life span}} {{Жизнь}} {{ Height }} {{Слово}}",
 	}, card)
 	if want := "20 двадцать  "; back != want {
@@ -114,7 +114,7 @@ func TestBracesAreNotEscaped(t *testing.T) {
 	card := cards.Card{Heading: "Llama", Values: []cards.Value{{Field: "Height", Text: `45"`}}}
 
 	_, back := cards.Lay(declaring("Name", "Height"),
-		cards.Face{Front: "{{Name}}", Back: `\{{Height}} and {{{Height}}}`}, card)
+		cards.CardFaceTemplate{Front: "{{Name}}", Back: `\{{Height}} and {{{Height}}}`}, card)
 	if want := `\45" and {45"}`; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
@@ -127,7 +127,7 @@ func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 	}}
 
 	_, back := cards.Lay(declaring("Name", "Height"),
-		cards.Face{Front: "{{Name}}", Back: "> {{Height}}"}, card)
+		cards.CardFaceTemplate{Front: "{{Name}}", Back: "> {{Height}}"}, card)
 	if want := "> #### At the shoulder\n\nabout 45\""; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
@@ -138,7 +138,7 @@ func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 func TestAStencilOfNoFieldsLaysNothingOut(t *testing.T) {
 	card := cards.Card{Heading: "Llama", Values: []cards.Value{{Field: "Height", Text: `45"`}}}
 
-	front, back := cards.Lay(declaring(), cards.Face{Front: "{{Name}}", Back: "{{Height}}"}, card)
+	front, back := cards.Lay(declaring(), cards.CardFaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
 	if front != "" {
 		t.Errorf("front = %q, want nothing", front)
 	}

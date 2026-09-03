@@ -31,7 +31,7 @@ type Standing struct {
 	// so laying out is the last thing done and only for a card about to be
 	// shown: counting what a vault owes fills in no template at all.
 	stencil format.Stencil
-	face    format.Face
+	face    format.CardFaceTemplate
 	card    format.Card
 }
 

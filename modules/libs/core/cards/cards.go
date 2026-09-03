@@ -35,16 +35,16 @@ type Stencil struct {
 	// read. Both are kept as they were written and neither is any face's.
 	Preamble string
 	Tail     string
-	Faces    []Face
+	Faces    []CardFaceTemplate
 	// Problems are what was wrong with the file and could not be repaired.
 	// They are shown to the person, and never guessed at.
 	Problems []Problem
 }
 
-// Face is one way a card is shown: what stands before the answer and what
-// stands after it, each with `{{Field}}` where a value goes. A face with only
-// one of the two lays out nothing.
-type Face struct {
+// CardFaceTemplate is one way a card is shown, as its stencil declares it: what
+// stands before the answer and what stands after it, each with `{{Field}}` where
+// a value goes. A face with only one of the two lays out nothing.
+type CardFaceTemplate struct {
 	Name string
 	// Lead is what stands between the face's heading and its first side.
 	Lead  string

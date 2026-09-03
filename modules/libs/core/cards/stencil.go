@@ -51,7 +51,7 @@ func ReadStencil(n domain.Note) Stencil {
 		}
 
 		at := len(s.Faces)
-		face := Face{Name: sec.name}
+		face := CardFaceTemplate{Name: sec.name}
 
 		rest := secs[i+1:]
 		under := 0
