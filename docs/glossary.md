@@ -42,9 +42,9 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | artifact | Data that cannot be reproduced locally, deterministically and for free. Lives in the vault. | |
 | cache | Data that can. Lives outside the vault. | |
 | bought | Data a model made. Lives outside the vault and is kept, addressed by the text it was made from and the recipe it was made under. | |
-| index | The cache. | a SQL index |
+| index | The cache. | |
 | source | A thing the index holds text for. A note and a book are kinds of source. | |
-| chunk | One cut of a source's text, as a row. Both sizes are chunks; the large one is the chunk with no parent. | window |
+| chunk | One cut of a source's text, as a row. Both sizes are chunks; the large one is the chunk with no parent. | |
 | cutting | How a source's text is cut into chunks: the sizes, taken from the settings and from one place, so a vault cut in a terminal and one cut in a window are cut alike. | |
 | part | A named division of a source: the heading that names it, and where in the source's text the division begins. A note's headings and a book's outline are both parts; where a call is working is a place. A node hangs the parts of the note it stands for under its box, and choosing one opens that note where the part begins. | place |
 | page | One page of a document, at the offset where its text begins. Called by where it stands in the file, and by nothing else. | sheet |
@@ -59,7 +59,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | group | What a scan writes in: one transaction's worth. | pane |
 | searchable | A vault whose notes are read, whose books are read, and whose chunks have their vectors. The three are one pass in one order. | |
 | way | How a search is asked: `words`, `meaning`, `part`, or every way fused into one ranking. | half |
-| vector | What a model made of one chunk's text. Kept by its text and its recipe. | embedding |
+| vector | What a model made of one chunk's text. Kept by its text and its recipe. | |
 | kept | Held past the run that made it, and claimed again by what it was made from. | stored |
 | recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |
 | station | Where a vector is made: on this machine, or by a service. | placement |
@@ -102,7 +102,7 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | tool | One operation an agent can call. | a use case |
 | MCP | The protocol this vault's tools are served over, so another program can reach them — [The agent](agents.md), [Settings](settings.md). The setting is `agent.serve_tools`, and the address is `-mcp-addr`. | tools on a port |
 | client | A consumer of the schema that draws a vault. | an agent |
-| conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. | thread |
+| conversation | One thread of talk with an agent, named by the client and carried in every question of it. Where the English word is wanted the phrase is *thread of talk*, and the field is still `conversation`. | |
 | session | What the agent's own program calls a conversation it is keeping, named by that program. It never leaves the adapter that started it. | |
 | finish | Saying a conversation is over: nothing is asked under its name again, and what the agent kept of it is let go of. One answer given up on is a stop, and the conversation stays open. | close |
 | step | One thing an agent said, did, or stopped for, as the panel is told about it. | |
@@ -130,14 +130,14 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | neighbour | One of the notes a neighbourhood holds: a note joined to the one it is seen from, either way round. | |
 | focus | A neighbourhood's: the note it is seen from. A workspace's: the pane a tab opens into. | the keyboard's position |
 | node | What is drawn in place of a note. | |
-| ticket | What the picture calls a note. The application mints one the first time a note is drawn, and the note holds it while its file moves. Every gesture the plex reports names a node by its ticket, and the application translates it back to a path. | identifier, id, key |
+| ticket | What the picture calls a note. The application mints one the first time a note is drawn, and the note holds it while its file moves. Every gesture the plex reports names a node by its ticket, and the application translates it back to a path. | |
 | edge | A line drawn between two nodes. Two links can be one edge. | connection |
 | seat | Where a node sits relative to the focus: `parent`, `child`, `jump`, `sibling`. It is not a value that can be written to a note. | role |
 | hang_parts_under_a_node | Whether a node hangs the parts of the note it stands for under its box — [Settings](settings.md). On. | |
 | parts_under_a_node | How many of those parts stand under a node at once, the rest being wound to — [Settings](settings.md). 6. | |
 | viewport | The area the plex is drawn into. | window |
 | span | A run of text as a client counts it: `from` and `to`, in UTF-16 code units. The one form a run takes on the wire; in the core the same run is a stretch. | |
-| lit | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each. | |
+| highlight | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each. | |
 | standing on nothing | A window showing no vault: an installation that holds none, or one whose vault was taken down and nothing came up in its place. Every question that would reach into a vault is refused there, and the welcome screen offers the list and the way to add one. | empty vault, no workspace |
 | panel | The column beside the plex where a person asks an agent something. | |
 | turn | One thing shown in the panel's conversation: what was asked, what was answered, what is being done. | |
@@ -150,9 +150,9 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | tree | A hierarchy of rows drawn as an indented list, some of them holding others. The vault's folders and files are shown in one. | |
 | row | One line of a tree: an entry, at the depth it sits. | node |
 | selection | The rows of a tree chosen together. A gesture made on one of them is made on all of them. | |
-| carry | A gesture that lifts something in one part of the window and lets it go in another. The tree says what it has lifted; the plex says which seat letting go over it comes to, and never what is being carried. | drag |
+| carry | A gesture that lifts something in one part of the window and lets it go in another. The tree says what it has lifted; the plex says which seat letting go over it comes to, and never what is being carried. | |
 | anchor | The row a selection is reached from, which is where a plain or joining press last landed. | |
-| unsaved | A tab whose text is not the text in its file. | dirty |
+| unsaved | A tab whose text is not the text in its file. | |
 | stuck | A tab whose file can be neither read nor written: not a note, not text, over the ceiling, or frontmatter that will not parse. | |
 | gone | What a name points to is not on disk: a tab whose name has no file behind it, so its save stopped, and a vault with nothing at its path. | |
 | overtaken | A tab whose file no longer holds the prose the tab read, so its save stopped. | |
@@ -165,8 +165,8 @@ One concept has one name, and one name means one thing: [ADR-0026](adr/0026-one-
 | Term | What it is | Never called |
 | --- | --- | --- |
 | menu | A list of things that can be done, opened on what they are done to. | |
-| band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | group, section |
-| shelf | The heading a run of rows stands under in a list: the two a theme comes off, and the ones the agent's models stand on. | group, category |
+| band | A stretch of one list of things to choose. The palette gives each a title; a menu draws a rule where one band gives way to the next. | |
+| shelf | The heading a run of rows stands under in a list: the two a theme comes off, and the ones the agent's models stand on. | |
 | current | The row a list opens on, which is the one in force: the theme shelf, light and dark, the two size ladders, the vaults. | worn now, the size now |
 | theme | A CSS file redeclaring tokens under `:root`, applied whole. Exactly one is applied — [Themes](themes.md). | |
 | preset | A theme shipped inside the application, named `preset:`. A theme in the person's own folder is named `mine:` — [Themes](themes.md). | |
