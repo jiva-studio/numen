@@ -88,6 +88,7 @@ docs/*.md                    the specifications: the note format, cards, search
 modules/apps/desktop/        the editor, the review window, the command line
 modules/apps/mobile/         mobile client
 modules/apps/landing/        the page the product is read about on
+modules/apps/docs/           the manual, for the person using the application
 modules/libs/core/           the core every client is built on
 modules/libs/protocol/       the schema every client is generated from
 modules/libs/ui/             shared interface components
@@ -97,5 +98,7 @@ modules/tools/git-hooks/     repo-level tooling
 Mixed-language by design. Each module owns its toolchain; the root carries no
 build system.
 
+- [The manual](https://docs.numen.md) — how the application is used
+- [Specifications](docs/) — how each part behaves
 - [Architecture decisions](docs/adr/) — what was settled, and what it cost
 - [Contributing](CONTRIBUTING.md) — layout, labels, commit format

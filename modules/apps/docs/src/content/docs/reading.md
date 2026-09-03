@@ -36,9 +36,9 @@ and running heads stay out of your search.
 anything — the two together are how a machine with no network reads a book. `runtime` names the
 ONNX Runtime library, for a machine whose own is the one to use.
 
-## Putting a reading right
+## Correcting what OCR read
 
-A reading can be corrected afterwards by a model that speaks the ordinary chat request, or by the `claude` command line you already have installed. **Nothing does this by default**: name no profile under `indexing.proofreading` and a reading is used exactly as it was read, with no key and no network.
+The text OCR read off the pages can be corrected afterwards by a model that speaks the ordinary chat request, or by the `claude` command line you already have installed. **Nothing does this by default**: name no profile under `indexing.proofreading` and the text is used exactly as it was read, with no key and no network.
 
 ```json
 {

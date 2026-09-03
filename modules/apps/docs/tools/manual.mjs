@@ -115,13 +115,14 @@ const commands = async () => {
   const listed = commanding.slice(commanding.indexOf('export const commandsOf'))
   const rows = [
     ...listed.matchAll(
-      /id:\s*'([A-Za-z]+)',\s*(?:\n\s*)?text:\s*words\.([A-Za-z]+),[\s\S]{0,220}?band:\s*'(note|window|vault)'/g,
+      /id:\s*'([A-Za-z]+)',\s*(?:\n\s*)?text:\s*words\.([A-Za-z]+),[\s\S]{0,220}?band:\s*'(note|file|window|vault)'/g,
     ),
   ].map(([, id, word, band]) => ({ id, word, band }))
   if (rows.length === 0) die('no commands are declared in commanding.ts')
 
   const bands = [
     ['note', 'overNote'],
+    ['file', 'overFile'],
     ['window', 'overWindow'],
     ['vault', 'overVault'],
   ]

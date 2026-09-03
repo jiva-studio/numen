@@ -33,19 +33,22 @@ ends the run wherever it has got to.
 | --- | --- |
 | Notes | search the vault, read notes, write and edit them, rename, move, remove, and put one in front of you. |
 | Links | add, change, remove and list the links a note carries. |
-| Documents | list the books a vault holds, read a stretch of one, ask for a scanned one to be read, show you a passage. |
+| Documents | list the books and recordings a vault holds, read a stretch of one, ask for a scan to be read or a recording to be written down, show you a passage. |
+| Cards | read a [deck](/cards/) and the stencils a vault has, add a card, edit one, remove one, open a section, make a deck or a stencil, rename a field across a stencil and everything cut by it. |
+| Files | read a stretch of any other file the vault holds, by its path — a transcript somebody typed, an export, whatever you put in the folder. |
 | Vaults | tell you what a scan could not make sense of, and list, add, rename, forget and open vaults. |
 
-It also has web search and web fetch, for the questions your notes do not answer.
+It also knows what you have open — every tab of the window and which of them you are looking at — because you move between tabs while it works.
 
-Anything it writes lands in your files, so it shows up in the plex and in search at once — an
-agent that creates a note and then searches for it finds it.
+It has web search and web fetch as well, for the questions your notes do not answer.
+
+Anything it writes lands in your files, so it shows up in the plex and in search at once — an agent that creates a note and then searches for it finds it.
+
+A note it names in its answer is a link you can press: it opens in a tab beside the conversation. See [following a link](/links/#following-a-link).
 
 ## What it cannot do
 
-**It has no shell, no file reader and no file writer.** It reaches your vault through the
-operations above and through nothing else. It cannot run a command on your machine, and it
-cannot touch a file outside the places a note may live.
+**It has no shell.** It reaches your vault through the operations above and through nothing else. It cannot run a command on your machine, and the one tool that reads a file by its path reads inside the vault folder and nowhere else — a path leading out of it, or at a file the vault passes over, is refused.
 
 **It reads no instructions carried by the vault.** A vault is a folder that arrives from
 somewhere — synced, cloned, shared, restored — and a configuration file inside one names
