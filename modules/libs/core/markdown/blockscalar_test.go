@@ -55,8 +55,8 @@ func TestAHashLineInsideABlockScalarIsTheValue(t *testing.T) {
 			if err != nil {
 				t.Fatalf("links: %v", err)
 			}
-			if len(links) == 0 || links[0].Note != "the first thought\n# the second one" {
-				t.Errorf("note = %q\n%s", links[0].Note, got)
+			if len(links) == 0 || links[0].Why != "the first thought\n# the second one" {
+				t.Errorf("note = %q\n%s", links[0].Why, got)
 			}
 		})
 	}

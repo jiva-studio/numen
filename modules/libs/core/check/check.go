@@ -80,7 +80,7 @@ func (c Checks) Run(ctx context.Context, v domain.Vault, named ...domain.Check) 
 		if out[i].Path != out[j].Path {
 			return out[i].Path < out[j].Path
 		}
-		return out[i].Check < out[j].Check
+		return out[i].Kind < out[j].Kind
 	})
 	return out, nil
 }

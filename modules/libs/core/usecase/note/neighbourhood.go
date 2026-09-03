@@ -45,7 +45,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 				NoteRef: domain.NoteRef{Path: sibling.Path},
 				Seat:    domain.SeatSibling,
 				Label:   sibling.Label,
-				Through: parent.Path,
+				Parent:  parent.Path,
 			})
 		}
 	}

@@ -74,8 +74,8 @@ type Heading struct {
 // For a link that reaches two notes that is the note the link is written in,
 // and neither of the notes it could mean.
 type VaultProblem struct {
-	Path  string
-	Check Check
+	Path string
+	Kind Check
 	// Detail says what is wrong, in the terms the file itself uses.
 	Detail string
 

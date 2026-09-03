@@ -47,7 +47,7 @@ func run(t *testing.T, l check.Checks, v domain.Vault, named ...domain.Check) []
 func only(found []domain.VaultProblem, check domain.Check) []domain.VaultProblem {
 	var out []domain.VaultProblem
 	for _, p := range found {
-		if p.Check == check {
+		if p.Kind == check {
 			out = append(out, p)
 		}
 	}

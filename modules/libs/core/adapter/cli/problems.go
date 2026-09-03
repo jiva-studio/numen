@@ -39,7 +39,7 @@ func problemsCommand(ctx context.Context, out io.Writer, cfg container.Config, a
 		return nil
 	}
 	for _, p := range found {
-		fmt.Fprintf(out, "%s\n  %s: %s\n", p.Path, p.Check, p.Detail)
+		fmt.Fprintf(out, "%s\n  %s: %s\n", p.Path, p.Kind, p.Detail)
 	}
 	return nil
 }

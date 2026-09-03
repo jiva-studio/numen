@@ -98,7 +98,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 			return nil, out{}, err
 		}
 		found, err := core.Search.Execute(ctx, core.shown().Vault, in.Query,
-			search.Parameters{Of: of, Limit: in.Limit, Each: passagesEach})
+			search.Parameters{Kinds: of, Limit: in.Limit, Each: passagesEach})
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -228,7 +228,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 				Note:    noteOf(related.NoteRef),
 				Seat:    string(related.Seat),
 				Label:   related.Label,
-				Through: related.Through,
+				Through: related.Parent,
 				Mutual:  related.Mutual,
 			})
 		}
@@ -556,7 +556,7 @@ type NewLink struct {
 	Role  string `json:"role" jsonschema:"what kind of relationship this is: parent, child, jump, ref or attachment"`
 	Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
 	Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship, shown along the line"`
-	Note  string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
+	Why   string `json:"note,omitempty" jsonschema:"why the link exists, in the person's words"`
 }
 
 // CreateOutcome is what happened to one note in a batch.
@@ -572,7 +572,7 @@ func writes(l NewLink) domain.Link {
 		Role:   domain.LinkRole(l.Role),
 		Type:   l.Type,
 		Label:  l.Label,
-		Note:   l.Note,
+		Why:    l.Why,
 	}
 }
 
@@ -590,7 +590,7 @@ func written(links []NewLink) []domain.Link {
 // carried is how many bytes a link will put in a file. Every field of one is
 // written into the frontmatter, so every field is measured.
 func carried(l NewLink) int {
-	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Note)
+	return len(l.To) + len(l.Role) + len(l.Type) + len(l.Label) + len(l.Why)
 }
 
 // RemoveOutcome is the same for removing.

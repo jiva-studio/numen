@@ -562,7 +562,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	// This vault holds notes alone, so a question about books is answered by
 	// nothing: what is asserted is that the kind reached every half.
 	books, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
-		search.Parameters{Of: []domain.SourceKind{domain.KindBook}})
+		search.Parameters{Kinds: []domain.SourceKind{domain.KindBook}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -571,7 +571,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	}
 
 	notes, err := c.search(oneWay{pointing(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
-		search.Parameters{Of: []domain.SourceKind{domain.KindNote}})
+		search.Parameters{Kinds: []domain.SourceKind{domain.KindNote}})
 	if err != nil {
 		t.Fatal(err)
 	}

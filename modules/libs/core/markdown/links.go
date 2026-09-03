@@ -83,7 +83,7 @@ func frontmatterLinks(frontmatter map[string]any) ([]domain.Link, []string) {
 			Target: domain.ParseAddress(to),
 			Role:   role,
 			Type:   str(fields["type"]),
-			Note:   str(fields["note"]),
+			Why:    str(fields["note"]),
 			Label:  str(fields["label"]),
 		})
 	}

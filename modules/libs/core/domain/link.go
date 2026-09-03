@@ -103,8 +103,8 @@ type Link struct {
 	// code that reads it.
 	Type string
 
-	// Note is why the link exists, in the author's words.
-	Note string
+	// Why the link exists, in the author's words.
+	Why string
 
 	// Label is what the person calls this relationship, in a few words, drawn
 	// along the line between the two notes. It is theirs, not a copy of

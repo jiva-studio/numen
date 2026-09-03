@@ -40,7 +40,7 @@ func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.Res
 		var r domain.ResolvedLink
 		var role string
 		if err := rows.Scan(&r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Note, &r.Label); err != nil {
+			&r.Type, &r.Why, &r.Label); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)
@@ -286,7 +286,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		var role string
 		var position int
 		if err := rows.Scan(&r.From, &r.Target.Scheme, &r.Target.Value, &role,
-			&r.Type, &r.Note, &r.Label, &position); err != nil {
+			&r.Type, &r.Why, &r.Label, &position); err != nil {
 			return nil, err
 		}
 		r.Role = domain.LinkRole(role)

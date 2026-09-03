@@ -43,8 +43,8 @@ func (a *API) Focus(
 			if !open {
 				return nil
 			}
-			also := make([]*v1.Stretch, 0, len(at.Also))
-			for _, one := range at.Also {
+			also := make([]*v1.Stretch, 0, len(at.Stretches))
+			for _, one := range at.Stretches {
 				also = append(also, &v1.Stretch{Start: int32(one.Start), Length: int32(one.Length)})
 			}
 			if err := out.Send(&v1.FocusResponse{

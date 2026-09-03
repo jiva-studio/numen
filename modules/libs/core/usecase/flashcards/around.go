@@ -34,8 +34,9 @@ type Neighbour struct {
 	Body  string
 	// Label is what the person called the relationship, where they did.
 	Label string
-	// Points is the deck pointing at this note; otherwise it points at the deck.
-	Points bool
+	// Backlink is this note pointing at the deck; otherwise the deck points
+	// at it.
+	Backlink bool
 	// Ambiguous is several notes answering to the name that was written. The
 	// link resolves to the nearest, and a person reading the wrong note has no
 	// other way to find out.
@@ -84,7 +85,6 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 			Written:   l.Target.Written(),
 			Path:      l.To,
 			Label:     l.Label,
-			Points:    true,
 			Ambiguous: l.Ambiguous,
 		}
 		if l.To == "" {
@@ -106,7 +106,7 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 		seen[l.From] = true
 		// Nothing is ambiguous on this side: the note shown is the one that
 		// wrote the link, whatever its own name resolved through.
-		found = append(found, Neighbour{Path: l.From, Label: l.Label})
+		found = append(found, Neighbour{Path: l.From, Label: l.Label, Backlink: true})
 	}
 
 	paths := make([]string, 0, len(found))

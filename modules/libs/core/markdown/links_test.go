@@ -77,7 +77,7 @@ body
 		t.Fatalf("got %v", targets(n))
 	}
 	l := n.Links[0]
-	if l.Role != domain.RoleParent || l.Type != "requires" || l.Note == "" {
+	if l.Role != domain.RoleParent || l.Type != "requires" || l.Why == "" {
 		t.Errorf("got %+v", l)
 	}
 }

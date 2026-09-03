@@ -26,7 +26,7 @@ func (c parseCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultPro
 	out := make([]domain.VaultProblem, 0, len(noted))
 	for _, n := range noted {
 		out = append(out, domain.VaultProblem{
-			Path: n.Path, Check: domain.CheckParse, Detail: n.Detail,
+			Path: n.Path, Kind: domain.CheckParse, Detail: n.Detail,
 		})
 	}
 	return out, nil
@@ -50,8 +50,8 @@ func (c frontmatterCheck) Look(ctx context.Context, v domain.Vault) ([]domain.Va
 	out := make([]domain.VaultProblem, 0, len(unreadable))
 	for _, n := range unreadable {
 		out = append(out, domain.VaultProblem{
-			Path:  n.Path,
-			Check: domain.CheckFrontmatter,
+			Path: n.Path,
+			Kind: domain.CheckFrontmatter,
 			Detail: "the frontmatter is not YAML, so nothing may be written here: " +
 				n.Detail,
 		})

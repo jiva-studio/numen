@@ -93,7 +93,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		for _, p := range found {
 			res.Problems = append(res.Problems, Problem{
 				Path:       p.Path,
-				Check:      string(p.Check),
+				Check:      string(p.Kind),
 				Detail:     p.Detail,
 				Address:    p.Target.String(),
 				Candidates: p.Candidates,

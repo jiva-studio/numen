@@ -33,7 +33,7 @@ func (c danglingCheck) Look(ctx context.Context, v domain.Vault) ([]domain.Vault
 	for _, l := range found {
 		out = append(out, domain.VaultProblem{
 			Path:   l.From,
-			Check:  domain.CheckDangling,
+			Kind:   domain.CheckDangling,
 			Target: l.Target,
 			Detail: fmt.Sprintf("nothing in this vault answers to %s; writing the note it names is what mends it",
 				l.Target.Value),

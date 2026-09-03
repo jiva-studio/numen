@@ -121,13 +121,13 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		Role  string `json:"role,omitempty" jsonschema:"the role it should carry: parent, child, jump, ref or attachment"`
 		Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
 		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
-		Note  string `json:"note,omitempty" jsonschema:"why the link exists"`
+		Why   string `json:"note,omitempty" jsonschema:"why the link exists"`
 	}) (*sdk.CallToolResult, Done, error) {
 		err := core.Linking.Update(ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 			Role:  domain.LinkRole(in.Role),
 			Type:  in.Type,
 			Label: in.Label,
-			Note:  in.Note,
+			Why:   in.Why,
 		})
 		return nil, Done{Path: in.From}, err
 	})
@@ -158,7 +158,7 @@ type Link struct {
 	Role      string `json:"role"`
 	Type      string `json:"type,omitempty"`
 	Label     string `json:"label,omitempty"`
-	Note      string `json:"note,omitempty"`
+	Why       string `json:"note,omitempty"`
 	Ambiguous bool   `json:"ambiguous,omitempty" jsonschema:"more than one note answers to this name, and it reached the nearest"`
 }
 
@@ -172,7 +172,7 @@ func linksOf(links []domain.ResolvedLink) []Link {
 			Role:      string(l.Role),
 			Type:      l.Type,
 			Label:     l.Label,
-			Note:      l.Note,
+			Why:       l.Why,
 			Ambiguous: l.Ambiguous,
 		})
 	}

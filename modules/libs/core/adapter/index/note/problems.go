@@ -141,7 +141,7 @@ func scanWritten(rows *sql.Rows) (domain.ResolvedLink, error) {
 	var l domain.ResolvedLink
 	var role string
 	if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,
-		&l.Type, &l.Note, &l.Label); err != nil {
+		&l.Type, &l.Why, &l.Label); err != nil {
 		return domain.ResolvedLink{}, err
 	}
 	l.Role = domain.LinkRole(role)

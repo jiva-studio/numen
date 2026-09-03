@@ -56,7 +56,7 @@ type NoteQueries interface {
 	// OfType is every note of one type the vault holds, by path. A caller after
 	// the decks or the stencils of a vault asks for them, and opens no file to
 	// find out what each note is.
-	OfType(ctx context.Context, vaultID string, of domain.NoteType) ([]string, error)
+	OfType(ctx context.Context, vaultID string, noteType domain.NoteType) ([]string, error)
 
 	// Holds reports whether the index carries this vault at all. A vault it
 	// does not carry is one nothing has scanned yet, and a caller that only

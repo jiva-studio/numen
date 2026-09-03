@@ -36,7 +36,7 @@ func (a *API) Around(
 			Title:     one.Title,
 			Body:      one.Body,
 			Label:     one.Label,
-			Points:    one.Points,
+			Points:    !one.Backlink,
 			Ambiguous: one.Ambiguous,
 		}
 		if reason, refused := refusal.Of(one.Outcome); refused {

@@ -266,8 +266,8 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if change.Type != "" {
 			next.Type = change.Type
 		}
-		if change.Note != "" {
-			next.Note = change.Note
+		if change.Why != "" {
+			next.Why = change.Why
 		}
 		if change.Label != "" {
 			next.Label = change.Label
@@ -417,7 +417,7 @@ func renderEntry(l domain.Link, indent, eol string) ([]byte, error) {
 		To:    l.Target.Written(),
 		Role:  string(l.Role),
 		Type:  l.Type,
-		Note:  l.Note,
+		Note:  l.Why,
 		Label: l.Label,
 	}}); err != nil {
 		return nil, err
@@ -451,7 +451,7 @@ func linkOf(item *yaml.Node) domain.Link {
 		case "type":
 			l.Type = value
 		case "note":
-			l.Note = value
+			l.Why = value
 		case "label":
 			l.Label = value
 		}

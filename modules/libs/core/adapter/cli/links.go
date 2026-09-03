@@ -72,8 +72,8 @@ func describeLink(from domain.Vault, l domain.ResolvedLink) string {
 	if l.Type != "" {
 		line += "  [" + l.Type + "]"
 	}
-	if l.Note != "" {
-		line += "  — " + l.Note
+	if l.Why != "" {
+		line += "  — " + l.Why
 	}
 	return line
 }

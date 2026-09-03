@@ -34,7 +34,7 @@ func (c ambiguousCheck) Look(ctx context.Context, v domain.Vault) ([]domain.Vaul
 	for _, l := range found {
 		out = append(out, domain.VaultProblem{
 			Path:       l.From,
-			Check:      domain.CheckAmbiguous,
+			Kind:       domain.CheckAmbiguous,
 			Target:     l.Target,
 			Candidates: l.Candidates,
 			Detail: fmt.Sprintf(

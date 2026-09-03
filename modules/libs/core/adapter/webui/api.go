@@ -427,7 +427,7 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 			Note:    noteOf(related.NoteRef),
 			Seat:    seatOf(related.Seat),
 			Label:   related.Label,
-			Through: related.Through,
+			Through: related.Parent,
 			Mutual:  related.Mutual,
 			Type:    typeOf(types[related.Path]),
 		})

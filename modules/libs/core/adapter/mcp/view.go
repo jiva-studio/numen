@@ -104,7 +104,7 @@ func addViewTools(server *sdk.Server, core Core) {
 				return nil, out{}, errors.New(
 					"a passage begins at or after the start of the text, and is longer than nothing")
 			}
-			at.Also = append(at.Also, domain.Stretch{Start: one.Start, Length: one.Length})
+			at.Stretches = append(at.Stretches, domain.Stretch{Start: one.Start, Length: one.Length})
 		}
 		if err := core.View.Focus(ctx, at); err != nil {
 			return nil, out{}, err

@@ -54,10 +54,10 @@ type Neighbour struct {
 	// words. Label is then the word the note in focus wrote for it.
 	Mutual bool
 
-	// Through is the note the relationship runs from, when that is not the one
+	// Parent is the note the relationship runs from, when that is not the one
 	// in focus. A sibling is another child of a shared parent, and which parent
 	// is a fact about the vault.
-	Through string
+	Parent string
 }
 
 // Neighbourhood is one note and everything joined to it, seen from that note.
