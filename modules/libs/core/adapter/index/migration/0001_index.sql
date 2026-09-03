@@ -123,11 +123,11 @@ CREATE TABLE links (
     scheme     TEXT NOT NULL,
     value      TEXT NOT NULL,
 
-    -- The last segment of the address, without an extension and folded the way
-    -- a note's basename is: what [[notes/Entropy]], [[Entropy]] and
-    -- [[entropy.MD]] have in common, and what the backwards question is
-    -- answered through.
-    value_base TEXT NOT NULL,
+    -- The last segment of the address, without an extension and under the same
+    -- fold a note's basename is held to, which is what the two are compared on:
+    -- what [[notes/Entropy]], [[Entropy]] and [[entropy.MD]] have in common,
+    -- and what the backwards question is answered through.
+    basename   TEXT NOT NULL,
 
     role       TEXT NOT NULL,
     type       TEXT,
@@ -140,7 +140,7 @@ CREATE TABLE links (
 -- A name and an identifier each find few links, which are then narrowed to a
 -- vault by the notes they belong to.
 CREATE INDEX links_by_target ON links (scheme, value);
-CREATE INDEX links_by_name ON links (value_base);
+CREATE INDEX links_by_name ON links (basename);
 
 -- What could not be acted on and is worth showing: a link with no role, a
 -- target nothing understands. A frontmatter block that could not be read is not
@@ -226,7 +226,7 @@ CREATE INDEX chunks_by_hash ON chunks (hash);
 CREATE TABLE vectors (
     fingerprint BLOB NOT NULL,
     recipe      TEXT NOT NULL,
-    v           BLOB NOT NULL
+    vector      BLOB NOT NULL
 );
 
 CREATE UNIQUE INDEX vectors_of ON vectors (fingerprint, recipe);

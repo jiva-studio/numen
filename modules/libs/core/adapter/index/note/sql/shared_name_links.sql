@@ -10,7 +10,7 @@ FROM links l
 JOIN sources s ON s.id = l.note_id
 WHERE s.vault_id = ?
   AND l.scheme = 'name'
-  AND l.value_base IN (
+  AND l.basename IN (
     SELECT basename FROM notes WHERE vault_id = ? GROUP BY basename HAVING count(*) > 1
   )
 ORDER BY s.path, l.position;

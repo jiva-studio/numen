@@ -26,6 +26,6 @@ WHERE s.vault_id = ?
   )
   AND NOT EXISTS (
     SELECT 1 FROM notes tn
-    WHERE tn.vault_id = s.vault_id AND tn.basename = l.value_base
+    WHERE tn.vault_id = s.vault_id AND tn.basename = l.basename
   )
 ORDER BY s.path, l.position;

@@ -174,7 +174,7 @@ func populated(t *testing.T) *DB {
 				source, vault, name, name, held, fmt.Sprintf("01M%d%022d", vault, i))
 			for j := range 3 {
 				target := fmt.Sprintf("%s-%05d", prefix, (i+j+1)%notes)
-				exec(`INSERT INTO links (note_id, position, scheme, value, value_base, role)
+				exec(`INSERT INTO links (note_id, position, scheme, value, basename, role)
 				      VALUES (?, ?, 'name', ?, ?, 'ref')`, source, j, target, target)
 			}
 			// Every second note is cut, so that a question about what is not cut
@@ -219,7 +219,7 @@ func cut(t *testing.T, tx *sql.Tx, source, vault int64) {
 		}
 		index(t, tx, small, "entropy and the observer")
 		if _, err := tx.ExecContext(ctx,
-			`INSERT OR IGNORE INTO vectors (fingerprint, recipe, v) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
+			`INSERT OR IGNORE INTO vectors (fingerprint, recipe, vector) VALUES (unhex((SELECT hash FROM chunks WHERE id = ?)), 'model', ?)`,
 			small, coarse); err != nil {
 			t.Fatal(err)
 		}
