@@ -2,11 +2,8 @@
  * Whether a node in the plex hangs the parts of its note under the box, and how
  * many of them stand there at once.
  *
- * Two settings, offered as two lists: the first is two rows, the second a
- * ladder from one end of what the setting takes to the other. The row in force
- * is the one the setting holds, so a list opens on what this installation is
- * doing, and choosing another writes it. The plex reads both as it draws, so
- * the picture answers the choice as it is made.
+ * Two settings, offered as two lists. A list opens on the row the setting
+ * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
 import type { Offered, Offering } from './commanding'

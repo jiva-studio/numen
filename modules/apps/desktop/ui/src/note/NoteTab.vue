@@ -8,6 +8,7 @@
  */
 import { watch } from 'vue'
 import { Editor } from '@numen/ui'
+import Answering from '../Answering.vue'
 import { WORDS as words } from './words'
 import type { Held } from './kind'
 
@@ -16,7 +17,7 @@ const props = defineProps<{ held: Held }>()
 // The prose of a note arrives after the tab it is drawn in. The editor takes
 // the keyboard it is owed once there are lines for a caret to stand on.
 watch(
-  () => props.held.shown().body,
+  () => props.held.shown.value.body,
   (body, was) => {
     if (!was && body) props.held.measure()
   },
@@ -25,28 +26,18 @@ watch(
 
 <template>
   <div class="note">
-    <p v-if="props.held.saying()" role="alert" class="warning">{{ props.held.saying() }}</p>
-
-    <p v-if="props.held.shown().state === 'gone'" role="status" class="warning overtaken">
-      {{ words.gone }}
-      <button type="button" class="overtaken__answer" @click="props.held.keep()">
-        {{ words.makeAgain }}
-      </button>
-    </p>
-    <p v-if="props.held.shown().state === 'overtaken'" role="status" class="warning overtaken">
-      {{ words.overtaken }}
-      <button type="button" class="overtaken__answer" @click="props.held.keep()">
-        {{ words.keep }}
-      </button>
-      <button type="button" class="overtaken__answer" @click="props.held.take()">
-        {{ words.take }}
-      </button>
-    </p>
+    <Answering
+      :saying="props.held.saying.value"
+      :state="props.held.shown.value.state"
+      :words="words"
+      @keep="props.held.keep()"
+      @take="props.held.take()"
+    />
 
     <Editor
       :ref="(editor: unknown) => props.held.drew(editor)"
-      :model-value="props.held.shown().body"
-      :change="props.held.change()"
+      :model-value="props.held.shown.value.body"
+      :change="props.held.change.value"
       class="note__text"
       @update:model-value="(body: string) => props.held.typed(body)"
       @save="props.held.save()"
@@ -68,46 +59,5 @@ watch(
 .note__text {
   flex: 1;
   min-block-size: 0;
-}
-
-/* A warning and a failure carry filesystem paths, and a long one breaks where
-   it stands. */
-.warning {
-  margin: 0;
-  padding: 0.4rem 1rem;
-  font-family: var(--numen-font-sans);
-  font-size: var(--numen-text-2);
-  background: var(--numen-caution-bg);
-  color: var(--numen-caution-fg);
-  overflow-wrap: break-word;
-}
-
-/* The question a note holds: the band a refusal is said in, with the two
-   answers on the same line as the sentence, so the band stands one line high. */
-.overtaken {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 0.9rem;
-}
-
-.overtaken__answer {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-  cursor: pointer;
-}
-
-.overtaken__answer:hover {
-  text-decoration-thickness: 2px;
-}
-
-.overtaken__answer:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
 }
 </style>

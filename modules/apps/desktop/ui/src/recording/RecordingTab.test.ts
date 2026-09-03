@@ -5,14 +5,17 @@
  * gutter. The transcript arrives after the tab is drawn, so the times have to
  * reach an editor that was not there when they were first shown.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+// The editor measures the text it drew on a frame of its own, after the test
+// that mounted it is over.
+import '../testing/no-layout'
+import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { ref } from 'vue'
+import { runnable } from '../commanding'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
-import { asking, listening, type Cue, type Recordings } from './listening'
-import type { Player } from './playing'
-import { cannotRun, runsAgain } from '../commanding'
+import { listening, type Cue, type Recordings } from './listening'
+import type { Player, Plays } from './playing'
 import { WORDS } from './words'
 
 const CUES: readonly Cue[] = [
@@ -51,22 +54,26 @@ function played(): Player {
   }
 }
 
-/** One recording tab, and every run it asked the window for. */
-function tab(cues: readonly Cue[] = CUES) {
+/**
+ * One recording tab, and every run it asked the window for. The window plays
+ * what it is given, so the controls stand where they stand and the only note
+ * drawn is the one about the words.
+ */
+function tab(
+  cues: readonly Cue[] = CUES,
+  plays: Plays = () => true,
+  canRun: (run: string) => boolean = () => true,
+) {
   const asked: string[] = []
-  const held = transcribed(listening(talk(cues), 'talks/Ants.mp3', played()), {
-    runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`),
-  })
+  const held = transcribed(
+    listening(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
+    { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
+  )
   return { held, asked }
 }
 
-// The window plays what it is given, so the controls stand where they stand
-// and the only note drawn is the one about the words.
-beforeEach(() => asking(() => true))
-
-// A build that answered it cannot do a run offers it nowhere after that, and
-// the answer outlives the tab that got it.
-afterEach(() => runsAgain())
+/** A window this build has told it can do no run at all. */
+const nothing = () => false
 
 /** Everything asked for has been answered and everything drawn has settled. */
 const settled = async () => {
@@ -110,8 +117,7 @@ describe('a recording with no transcript', () => {
 
   // Where the run cannot be asked for, what there is to say is said.
   it('says there is no transcript where the run cannot be asked for', async () => {
-    cannotRun('transcribe')
-    const { held } = tab([])
+    const { held } = tab([], undefined, nothing)
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -152,8 +158,7 @@ describe('a recording with no transcript', () => {
   })
 
   it('offers nothing where this build cannot do the run at all', async () => {
-    cannotRun('transcribe')
-    const { held } = tab([])
+    const { held } = tab([], undefined, nothing)
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -205,8 +210,7 @@ describe('a recording with no transcript', () => {
   // The player is what a recording is for, and a build with nothing to play it
   // with says so where the controls would stand.
   it('says a recording it cannot play at all is one', async () => {
-    asking(() => false)
-    const { held } = tab([])
+    const { held } = tab([], () => false)
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -330,8 +334,9 @@ describe('the menu at the end of the player strip', () => {
   // Each item stands only where this build can do the run behind it, and the
   // menu itself only where an item stands.
   it('drops an item this build cannot do at all, and goes where none is left', async () => {
-    cannotRun('dropTranscript')
-    const { held } = tab()
+    const runs = runnable()
+    runs.cannotRun('dropTranscript')
+    const { held } = tab(CUES, undefined, (run) => runs.canRun(run))
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
     await settled()
@@ -341,7 +346,7 @@ describe('the menu at the end of the player strip', () => {
     await drawn.get('.recording__more').trigger('click')
     expect(offered()).toStrictEqual([WORDS.proofread])
 
-    cannotRun('proofread')
+    runs.cannotRun('proofread')
     await drawn.vm.$nextTick()
 
     expect(drawn.find('.recording__more').exists()).toBe(false)

@@ -1,14 +1,9 @@
 /**
- * JSON5 read and written.
+ * JSON5 read and written: comments, trailing commas, single quotes and bare
+ * keys are read, and what is written back is JSON.
  *
- * A person editing a setting by hand writes comments beside it, leaves a comma
- * after the last member, and quotes a key or does not. This reads all of that
- * and hands back what JSON holds; what is written back is JSON, which is what
- * the settings file is.
- *
- * The subset read is the one a settings file is written in: comments, trailing
- * commas, single quotes and bare keys. A number written the way JSON5 allows
- * and JSON does not is left as it was typed, and refused.
+ * A number written the way JSON5 allows and JSON does not is left as it was
+ * typed, and refused.
  */
 
 /** What is not JSON5 at all. */

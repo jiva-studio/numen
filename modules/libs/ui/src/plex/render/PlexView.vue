@@ -7,14 +7,16 @@
  * two things about it that only the whole picture knows.
  */
 import { computed, ref, useId, useTemplateRef, watch } from 'vue'
+import PlexEdgeLine from './PlexEdgeLine.vue'
+import PlexEdgeTitle from './PlexEdgeTitle.vue'
 import PlexNodeView from './PlexNodeView.vue'
+import type { EdgeLine } from './lines'
 import {
-  ARROW_LENGTH,
   edgeKey,
+  ghostNode,
   handleIn,
   seatWord,
   type NodeStanding,
-  type PlacedEdge,
   type PlacedNode,
   type PlexFrame,
   type PlexRelatedSeat,
@@ -26,7 +28,13 @@ import { byHandle, type Reaching } from '../reaching'
 import { byDoubleClick, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { browserEnvironment, type Environment } from '../transition'
-import type { Drop } from '../arrange'
+import {
+  arrowTransformOf,
+  pathOf,
+  readingPathOf,
+  threadOf,
+  type Drop,
+} from '../arrange'
 import type { MenuOpening } from '../../menu/model'
 
 const props = withDefaults(
@@ -79,8 +87,7 @@ const props = withDefaults(
     carriedSeat?: PlexRelatedSeat | null
     /**
      * What to call what letting go with something carried in would do, for the
-     * one place it is written into the picture. English by default, because
-     * something has to be drawn.
+     * one place it is written into the picture. English by default.
      */
     carriedName?: (seat: PlexRelatedSeat) => string
   }>(),
@@ -110,14 +117,23 @@ const emit = defineEmits<{
   (event: 'reach', id: string, pointer: PointerEvent): void
   /** A handle was pressed from the keyboard, where there is nowhere to drag. */
   (event: 'ask', id: string): void
-  /** A menu was asked for on a node: where, from what, and by what. */
-  (event: 'menu', id: string, at: Point, from: SVGGElement, opening: MenuOpening): void
+  /** A menu was asked for on a node: which, where, and by what. */
+  (event: 'menu', id: string, at: Point, opening: MenuOpening): void
   /** A part of a node was chosen. Both identifiers are the caller's. */
   (event: 'enter', id: string, part: string): void
 }>()
 
 const svg = useTemplateRef<SVGSVGElement>('svg')
-defineExpose({ svg })
+
+/** The boxes as they are drawn, so the keyboard can be put back on one. */
+const views = new Map<string, { focus: () => void }>()
+
+const holdNode = (id: string, view: unknown): void => {
+  if (view) views.set(id, view as { focus: () => void })
+  else views.delete(id)
+}
+
+defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
 
 /**
  * One plex unit is one pixel, origin at the middle of the window.
@@ -132,54 +148,23 @@ const viewBox = computed(() => {
   return `${-width / 2} ${-height / 2} ${width} ${height}`
 })
 
-const path = (edge: PlacedEdge) =>
-  `M ${edge.fromPoint.x} ${edge.fromPoint.y}` +
-  ` C ${edge.control1.x} ${edge.control1.y}` +
-  ` ${edge.control2.x} ${edge.control2.y}` +
-  ` ${edge.toPoint.x} ${edge.toPoint.y}`
-
-/** The same curve, running the way its words are read. */
-const readingLine = (edge: PlacedEdge) =>
-  edge.heading === 'against'
-    ? `M ${edge.toPoint.x} ${edge.toPoint.y}` +
-      ` C ${edge.control2.x} ${edge.control2.y}` +
-      ` ${edge.control1.x} ${edge.control1.y}` +
-      ` ${edge.fromPoint.x} ${edge.fromPoint.y}`
-    : path(edge)
-
 /** Two plexes on one page each name their own paths. */
 const uid = useId()
 
 /**
- * The head itself, drawn about its own tip. It stands in the markup, where
- * every renderer reads geometry.
+ * Every edge with what the drawing asks of it. A title is always set along the
+ * line it belongs to, in the words the arrangement cut for it and at the place
+ * along it the arrangement chose.
  */
-const ARROWHEAD = `M 0 0 L ${-ARROW_LENGTH} 5.5 L ${-ARROW_LENGTH} -5.5 Z`
-
-/** An arrowhead, put on its end of the line and turned along it. */
-const arrowhead = (edge: PlacedEdge) =>
-  edge.arrowhead
-    ? `translate(${edge.arrowhead.at.x} ${edge.arrowhead.at.y})` +
-      ` rotate(${edge.arrowhead.angle})`
-    : null
-
-/**
- * Every edge with what the drawing asks of it: the two keys it is remembered
- * by, the curve, the line its title is set along, and the arrowhead it ends
- * in. A title is always set along the line it belongs to, in the words the
- * arrangement cut for it and at the place along it the arrangement chose.
- */
-const lines = computed(() =>
+const lines = computed<readonly EdgeLine[]>(() =>
   props.frame.edges.map((edge, at) => ({
     edge,
-    /** One drawing per pair and direction, so a pair may carry two lines. */
     key: `${edge.from}->${edge.to}`,
-    /** What the hand is on: two lines between one pair are one line to point at. */
     pair: edgeKey(edge),
-    d: path(edge),
-    arrow: arrowhead(edge),
+    d: pathOf(edge),
+    arrow: edge.arrowhead ? arrowTransformOf(edge.arrowhead) : null,
     titlePath: edge.words ? `${uid}-title-${at}` : null,
-    titleLine: readingLine(edge),
+    titleLine: readingPathOf(edge),
     titleAt: `${100 * edge.wordsAt}%`,
   })),
 )
@@ -200,13 +185,6 @@ watch(
 const lifted = computed(() => lines.value.filter((line) => line.pair === over.value))
 
 const resting = computed(() => lines.value.filter((line) => line.pair !== over.value))
-
-/**
- * A title is painted twice over, the halo finished before a letter is drawn.
- * Each glyph set along a path is a run of its own, and a halo painted with the
- * letters lies over the one beside it.
- */
-const TITLE_LAYERS = ['halo', 'letters'] as const
 
 /**
  * What each node is to the gesture. Only the node it left from keeps a handle
@@ -238,22 +216,13 @@ const drawn = computed(() => {
   return [...props.frame.nodes.filter((each) => each.id !== node.id), node]
 })
 
-/** A line under the hand: out of where it left, and into where it is. */
-const threadTo = (start: Point, to: Point): string => {
-  const reachOut = Math.abs(to.x - start.x) / 2
-  return (
-    `M ${start.x} ${start.y}` +
-    ` C ${start.x + reachOut} ${start.y} ${to.x - reachOut} ${to.y} ${to.x} ${to.y}`
-  )
-}
-
 /** The line a gesture drags behind it, from the handle to the pointer. */
 const thread = computed(() => {
   const source = props.frame.nodes.find((node) => node.id === props.gestureFrom)
   const to = props.gestureAt
   if (!source || !to) return null
   const offset = handleIn(source)
-  return threadTo({ x: source.x + offset.x, y: source.y + offset.y }, to)
+  return threadOf({ x: source.x + offset.x, y: source.y + offset.y }, to)
 })
 
 /**
@@ -270,17 +239,8 @@ const carrying = computed(() => {
   const focus = props.frame.nodes.find((node) => node.seat === 'focus')
   if (!seat || !to || !focus) return null
 
-  const ghost: PlacedNode = {
-    id: 'carried',
-    title: props.carriedName(seat),
-    seat,
-    x: to.x,
-    y: to.y,
-    ...props.nodeSize,
-    order: 0,
-    opacity: 1,
-  }
-  return { thread: threadTo(focus, to), ghost }
+  const ghost = ghostNode('carried', props.carriedName(seat), seat, to, props.nodeSize)
+  return { thread: threadOf(focus, to), ghost }
 })
 
 /**
@@ -293,16 +253,7 @@ const ghost = computed<PlacedNode | null>(() => {
   const outcome = props.gestureOutcome
   const to = props.gestureAt
   if (outcome?.kind !== 'create' || !to) return null
-  return {
-    id: 'ghost',
-    title: props.seatName(outcome.seat),
-    seat: outcome.seat,
-    x: to.x,
-    y: to.y,
-    ...props.nodeSize,
-    order: 0,
-    opacity: 1,
-  }
+  return ghostNode('ghost', props.seatName(outcome.seat), outcome.seat, to, props.nodeSize)
 })
 </script>
 
@@ -322,16 +273,7 @@ const ghost = computed<PlacedNode | null>(() => {
     </defs>
 
     <g aria-hidden="true">
-      <template v-for="line in resting" :key="line.key">
-        <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
-        <path
-          v-if="line.arrow"
-          class="plex__edge-arrow"
-          :d="ARROWHEAD"
-          :transform="line.arrow"
-          :opacity="line.edge.opacity"
-        />
-      </template>
+      <PlexEdgeLine v-for="line in resting" :key="line.key" :line="line" />
     </g>
 
     <!-- The band a line is found by. It paints nothing, and the nodes come
@@ -348,22 +290,7 @@ const ghost = computed<PlacedNode | null>(() => {
     </g>
 
     <g v-if="showEdgeLabels" aria-hidden="true">
-      <template v-for="line in resting" :key="`title:${line.key}`">
-        <template v-if="line.titlePath">
-          <text
-            v-for="layer in TITLE_LAYERS"
-            :key="layer"
-            class="plex__edge-label"
-            :class="`plex__edge-label--${layer}`"
-            :opacity="line.edge.opacity"
-            text-anchor="middle"
-            dominant-baseline="middle"
-          ><textPath
-            :href="`#${line.titlePath}`"
-            :startOffset="line.titleAt"
-          >{{ line.edge.words }}</textPath></text>
-        </template>
-      </template>
+      <PlexEdgeTitle v-for="line in resting" :key="`title:${line.key}`" :line="line" />
     </g>
 
     <PlexNodeView
@@ -381,7 +308,8 @@ const ghost = computed<PlacedNode | null>(() => {
       @show="emit('show', node.id, $event)"
       @reach="emit('reach', node.id, $event)"
       @ask="emit('ask', node.id)"
-      @menu="(at, from, opening) => emit('menu', node.id, at, from, opening)"
+      :ref="(view) => holdNode(node.id, view)"
+      @menu="(at, opening) => emit('menu', node.id, at, opening)"
       @enter="(part) => emit('enter', node.id, part)"
       @rest="rest(node.id, $event)"
     >
@@ -392,28 +320,8 @@ const ghost = computed<PlacedNode | null>(() => {
          them, and with it the title it carries. -->
     <g v-if="lifted.length" class="plex__lift" aria-hidden="true">
       <template v-for="line in lifted" :key="line.key">
-        <path class="plex__edge" :d="line.d" :opacity="line.edge.opacity" />
-        <path
-          v-if="line.arrow"
-          class="plex__edge-arrow"
-          :d="ARROWHEAD"
-          :transform="line.arrow"
-          :opacity="line.edge.opacity"
-        />
-        <template v-if="showEdgeLabels && line.titlePath">
-          <text
-            v-for="layer in TITLE_LAYERS"
-            :key="layer"
-            class="plex__edge-label"
-            :class="`plex__edge-label--${layer}`"
-            :opacity="line.edge.opacity"
-            text-anchor="middle"
-            dominant-baseline="middle"
-          ><textPath
-            :href="`#${line.titlePath}`"
-            :startOffset="line.titleAt"
-          >{{ line.edge.words }}</textPath></text>
-        </template>
+        <PlexEdgeLine :line="line" lifted />
+        <PlexEdgeTitle v-if="showEdgeLabels" :line="line" lifted />
       </template>
     </g>
 
@@ -440,43 +348,10 @@ const ghost = computed<PlacedNode | null>(() => {
   font-family: var(--numen-font-sans);
   user-select: none;
   -webkit-user-select: none;
-  /* Every touch on the picture belongs to the picture. Left to the browser, a
-     finger that travels is a scroll, and the gesture it was making is
-     cancelled halfway. */
+  /* Every touch on the picture belongs to the picture, and a finger that
+     travels is carrying something across it. */
   touch-action: none;
   -webkit-touch-callout: none;
-}
-
-.plex__edge {
-  fill: none;
-  stroke: var(--numen-edge);
-  stroke-width: var(--numen-edge-width);
-  stroke-linecap: round;
-}
-
-/* The head, drawn about its own tip and turned onto its end of the line by the
-   transform it is given. It stays within the room the arrangement keeps for it
-   at the end of a line. */
-.plex__edge-arrow {
-  fill: var(--numen-edge);
-}
-
-.plex__edge-label {
-  fill: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
-  stroke: var(--numen-surface);
-  stroke-width: var(--numen-edge-label-halo);
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-/* The halo is stroke alone; the letters over it, fill alone. */
-.plex__edge-label--halo {
-  fill: none;
-}
-
-.plex__edge-label--letters {
-  stroke: none;
 }
 
 /* Wide enough for a hand to land on, and unpainted. */
@@ -494,23 +369,6 @@ const ghost = computed<PlacedNode | null>(() => {
 
 .plex__lift {
   pointer-events: none;
-}
-
-.plex__lift .plex__edge {
-  stroke: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
-}
-
-.plex__lift .plex__edge-arrow {
-  fill: color-mix(in oklab, var(--numen-edge), var(--numen-node-fg) 55%);
-}
-
-/* The title stands over the boxes here, on a halo as heavy as that asks for. */
-.plex__lift .plex__edge-label--halo {
-  stroke-width: 6px;
-}
-
-.plex__lift .plex__edge-label--letters {
-  fill: var(--numen-node-fg);
 }
 
 .plex__reach {

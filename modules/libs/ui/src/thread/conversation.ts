@@ -1,16 +1,11 @@
 /**
  * What the panel shows: what was said, what the agent is doing, and whether an
- * answer is still on its way.
+ * answer is still on its way, in the panel's vocabulary and not the agent's.
  *
- * The turns are what one conversation draws, in the panel's vocabulary and not
- * the agent's. An answer grows as its pieces arrive.
- *
- * Work is one line, saying what the agent has in hand now. It is put up the
- * moment a task is taken and taken down when the answer begins. Under it stands
- * the wait, which is up for every moment nothing more particular is known.
- *
- * One of these is one thread of talk. Every question it sends carries the name
- * of the conversation, and the agent answers them all as one.
+ * An answer grows as its pieces arrive. Work is one line, put up the moment a
+ * task is taken and taken down when the answer begins, with the wait under it.
+ * Every question carries the name of the conversation, and the agent answers
+ * them all as one.
  */
 import { ref, type Ref } from 'vue'
 import { charsWord, type Turn } from './model'

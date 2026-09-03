@@ -6,12 +6,14 @@
  * room there is can only be answered by a browser that laid them out.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 
 import Heatmap from './Heatmap.vue'
 import { names, ROWS } from './heatmap'
 import type { Tally } from './heatmap'
 import type { Words } from './words'
+import { lightness } from '@/fixtures/colour'
+import { DARK, drawnDark } from '@/fixtures/theme'
 
 const meta = {
   title: 'Generic/Heatmap',
@@ -60,7 +62,7 @@ function worked(): Map<string, Tally> {
   return out
 }
 
-const cells = (canvas: HTMLElement) => canvas.querySelectorAll('.heatmap__day')
+const cells = (canvas: HTMLElement) => canvas.querySelectorAll('[data-heatmap-day]')
 
 /** A year of answers, in the room a window gives it. */
 export const AYear: Story = {
@@ -99,8 +101,43 @@ export const Narrow: Story = {
     await expect(one?.getAttribute('width')).toBe('11')
 
     // The grid reaches the far edge, rather than ending short of it.
-    const grid = canvasElement.querySelector('.heatmap__grid') as SVGSVGElement
+    const grid = within(canvasElement).getByRole('img', {
+      name: 'What was answered on each day',
+    })
     await expect(Math.round(grid.getBoundingClientRect().width)).toBeGreaterThan(230)
+  },
+}
+
+/**
+ * A year of answers on the dark set of tokens. A day is read by how much it is
+ * filled, and each level is a blend, so the levels have to stay apart there.
+ */
+export const Dark: Story = {
+  globals: DARK,
+  args: { did: worked(), now, words },
+  render: (args) => ({
+    components: { Heatmap },
+    setup: () => ({ args }),
+    template: '<div style="inline-size: 640px"><Heatmap v-bind="args" /></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    await drawnDark(canvasElement)
+
+    const filled = new Map<string, string>()
+    for (const day of cells(canvasElement)) {
+      if (day.hasAttribute('data-ahead')) continue
+      filled.set(day.getAttribute('data-weight') ?? '', getComputedStyle(day).fill)
+    }
+
+    await expect(filled.size).toBeGreaterThan(1)
+    await expect(new Set(filled.values()).size).toBe(filled.size)
+
+    // A day is filled from its own ground towards the accent, and on the dark
+    // set that runs towards the light, so a fuller day is a lighter one.
+    const rising = [...filled.keys()].sort().map((weight) => lightness(filled.get(weight)!))
+    for (const [at, fill] of rising.slice(1).entries()) {
+      await expect(fill).toBeGreaterThan((rising[at] as number) + 2)
+    }
   },
 }
 
@@ -138,7 +175,7 @@ const pointsAtToday = async (canvas: HTMLElement): Promise<HTMLElement> => {
   const today = canvas.querySelector('[data-today]')
   await expect(today).not.toBeNull()
   await userEvent.hover(today as Element)
-  const said = canvas.querySelector('.summary')
+  const said = canvas.querySelector('[data-summary="account"]')
   await expect(said).not.toBeNull()
   return said as HTMLElement
 }
@@ -159,13 +196,13 @@ export const ADayReviewed: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('.summary__day')?.textContent).toBe(TODAY)
-    await expect(said.querySelector('.summary__count')?.textContent?.trim()).toBe('26 answered')
+    await expect(said.querySelector('[data-summary="day"]')?.textContent).toBe(TODAY)
+    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('26 answered')
 
-    const four = [...said.querySelectorAll('.summary__four li')].map((one) => one.textContent)
+    const four = [...said.querySelectorAll('[data-summary="four"] li')].map((one) => one.textContent)
     await expect(four).toEqual(['Again2', 'Hard3', 'Good18', 'Easy3'])
 
-    const came = said.querySelector('.summary__came') as HTMLElement
+    const came = said.querySelector('[data-summary="came"]') as HTMLElement
     await expect(came.textContent?.trim()).toBe('83% of cards you are reviewing came back')
 
     // 8rem is the least the panel is drawn at and not the most, so the panel
@@ -189,9 +226,9 @@ export const ADayOfNewCards: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('.summary__count')?.textContent?.trim()).toBe('12 answered')
-    await expect(said.querySelectorAll('.summary__four li')).toHaveLength(3)
-    await expect(said.querySelector('.summary__came')).toBeNull()
+    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('12 answered')
+    await expect(said.querySelectorAll('[data-summary="four"] li')).toHaveLength(3)
+    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
   },
 }
 
@@ -201,9 +238,9 @@ export const ADayOfNothing: Story = {
   render: room,
   play: async ({ canvasElement }) => {
     const said = await pointsAtToday(canvasElement)
-    await expect(said.querySelector('.summary__count')?.textContent?.trim()).toBe('Nothing answered')
-    await expect(said.querySelector('.summary__four')).toBeNull()
-    await expect(said.querySelector('.summary__came')).toBeNull()
+    await expect(said.querySelector('[data-summary="count"]')?.textContent?.trim()).toBe('Nothing answered')
+    await expect(said.querySelector('[data-summary="four"]')).toBeNull()
+    await expect(said.querySelector('[data-summary="came"]')).toBeNull()
   },
 }
 
@@ -270,7 +307,7 @@ export const AtEveryEdge: Story = {
       await userEvent.hover(cell)
 
       await waitFor(() => {
-        const said = canvasElement.querySelector('.tooltip')
+        const said = canvasElement.querySelector('[role="tooltip"]')
         expect(said, corner.name).not.toBeNull()
 
         // The whole of it is on the screen, on every side.

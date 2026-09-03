@@ -10,7 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
-import { stubEnvironment } from '../fixtures/clock'
+import { stubEnvironment } from '../../fixtures/clock'
 import type { NodeStanding, PlacedNode, PlexSeat } from '../model'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({

@@ -3,35 +3,23 @@
  * One page of a document, in the row: the picture, what is lit over it, and a
  * ring turning while it is on its way.
  *
- * A page arrives drawn, and nothing of it is painted until it has: a picture
- * still coming is the browser's own broken-picture mark and its words, standing
- * where the page will be.
- *
- * A rectangle is a fraction of the page, so it is placed in per cent and the zoom
- * carries it along, and it too waits: over a page not yet arrived it is a mark on
- * nothing.
- *
- * A document is busy while another page of it is drawing, so a page that did
- * not come is asked for again a few times before it says it is not coming. Each
- * ask carries a number the last one did not, because a picture at an address
- * the browser already refused is not asked for again.
+ * Nothing is painted until the page has arrived, and what is lit is placed in
+ * fractions of it, so the zoom carries it along. A page that did not come is
+ * asked for again a few times, each ask carrying a number the last one did not.
  */
 import { computed, ref, watch } from 'vue'
 import Waiting from '@/waiting/Waiting.vue'
-
-/** Where something sits on the page, in fractions of it. */
-interface Lit {
-  readonly minX: number
-  readonly minY: number
-  readonly maxX: number
-  readonly maxY: number
-}
+import type { Lit } from './strip'
 
 const props = withDefaults(
   defineProps<{
     /** Which page of the document this is, counted from the first. */
     at: number
-    /** Where it is drawn, as an address to point a picture at. */
+    /**
+     * Where it is drawn, as an address to point a picture at. A page asked for
+     * again carries an `again` parameter, joined on with `&` where the address
+     * already asks something and with `?` where it does not.
+     */
     picture?: string
     /** What is lit on it, in fractions of it. */
     lit?: readonly Lit[]
@@ -64,7 +52,8 @@ const givenUp = computed(() => tries.value > ATTEMPTS)
 /** The address it is asked for at, this attempt. */
 const drawing = computed(() => {
   if (!props.picture || givenUp.value) return ''
-  return tries.value > 0 ? `${props.picture}&again=${tries.value}` : props.picture
+  if (tries.value === 0) return props.picture
+  return `${props.picture}${props.picture.includes('?') ? '&' : '?'}again=${tries.value}`
 })
 
 // Another address is another question, and it is asked afresh. What would not
@@ -108,13 +97,13 @@ const boxOf = (one: Lit) => ({
       <div
         v-for="(one, index) in also"
         :key="`also-${index}`"
-        class="reader__also pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
+        class="reader__also pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
       <div
         v-for="(one, index) in lit"
         :key="index"
-        class="reader__lit pointer-events-none absolute rounded-[2px] bg-(--numen-highlight)"
+        class="reader__lit pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
     </template>

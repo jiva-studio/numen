@@ -1,12 +1,11 @@
 <script setup lang="ts">
 /**
- * The handle on a node, reached out from to make something: a disc with a
- * cross on it.
+ * The handle on a node, reached out from to make something: a disc with a cross
+ * on it, drawn about its own origin and put where it belongs by the one number
+ * it takes.
  *
- * Drawn about its own origin and put where it belongs by the one number it
- * takes, so every size in it is a token and none is arithmetic. It sits inside
- * a node that answers a click and a double click of its own, so pressing it
- * must never reach that.
+ * It sits inside a node that answers a click and a double click of its own, so
+ * pressing it must never reach that.
  */
 import type { Point } from '../model'
 import { isPress } from './keys'
@@ -58,9 +57,17 @@ const onKey = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
+/* The disc, the arms of the cross on it, and the bar they are drawn with. The
+   arms read as a plus sign at about half the radius. */
+.plex__handle-at {
+  --radius: 0.5625rem;
+  --arm: 0.25rem;
+  --bar: 1.5px;
+}
+
 /* The hue is the one thing it inherits: it belongs to whatever it hangs off. */
 .plex__handle {
-  r: var(--numen-handle-radius);
+  r: var(--radius);
   fill: var(--numen-node-bg);
   stroke: var(--numen-seat-hue, var(--numen-node-border));
   stroke-width: var(--numen-stroke);
@@ -73,25 +80,24 @@ const onKey = (event: KeyboardEvent) => {
   stroke-width: var(--numen-ring-width);
 }
 
-/* The cross, as two bars: its length and its thickness are sizes the theme
-   sets. */
+/* The cross, as two bars, each drawn about the origin the group is placed at. */
 .plex__handle-mark {
   fill: var(--numen-node-fg);
-  rx: calc(var(--numen-handle-stroke) / 2);
+  rx: calc(var(--bar) / 2);
   pointer-events: none;
 }
 
 .plex__handle-mark--across {
-  x: calc(-1 * var(--numen-handle-arm));
-  y: calc(-0.5 * var(--numen-handle-stroke));
-  width: calc(2 * var(--numen-handle-arm));
-  height: var(--numen-handle-stroke);
+  x: calc(-1 * var(--arm));
+  y: calc(-0.5 * var(--bar));
+  width: calc(2 * var(--arm));
+  height: var(--bar);
 }
 
 .plex__handle-mark--down {
-  x: calc(-0.5 * var(--numen-handle-stroke));
-  y: calc(-1 * var(--numen-handle-arm));
-  width: var(--numen-handle-stroke);
-  height: calc(2 * var(--numen-handle-arm));
+  x: calc(-0.5 * var(--bar));
+  y: calc(-1 * var(--arm));
+  width: var(--bar);
+  height: calc(2 * var(--arm));
 }
 </style>

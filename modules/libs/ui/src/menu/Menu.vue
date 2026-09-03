@@ -3,14 +3,13 @@
  * A menu: a list of things that can be chosen, put where it was asked for.
  *
  * It is drawn at the end of the document, so nothing it stands inside can clip
- * it, and it is placed against the area it is drawn into rather than against
- * whatever asked for it. It takes items and a point and says which item was
- * chosen; what the items are and what choosing one does are the caller's.
+ * it, and it is placed against the area it is drawn into. It takes items and a
+ * point and says which item was chosen; what the items are and what choosing
+ * one does are the caller's.
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
-import type { Point } from '../plex/model'
-import type { Size } from '../plex/arrange'
+import type { Point, Size } from '../lib/geometry'
 
 const props = withDefaults(
   defineProps<{
@@ -81,7 +80,7 @@ defineSlots<{
   silence(): unknown
 }>()
 
-const menu = ref<HTMLElement | null>(null)
+const menu = useTemplateRef<HTMLElement>('menu')
 
 /** Its own size, which only the drawing knows. Placement is worked out from it. */
 const size = ref<Size>({ width: 0, height: 0 })
@@ -106,9 +105,13 @@ const placed = computed(() =>
   }),
 )
 
-/** In document order, so an index into the items is an index into these. */
-const drawn = () =>
-  Array.from(menu.value?.querySelectorAll<HTMLElement>('.menu__item') ?? [])
+/** Each item as it is drawn, each under the item it stands for. */
+const drawn = new Map<string, HTMLElement>()
+
+const holdRow = (item: string, row: unknown): void => {
+  if (row) drawn.set(item, row as HTMLElement)
+  else drawn.delete(item)
+}
 
 const measure = () => {
   const element = menu.value
@@ -120,7 +123,8 @@ const measure = () => {
 /** The keyboard onto an item, or onto the menu itself where there is none. */
 const goTo = (index: number) => {
   here.value = index
-  const chosen = drawn()[index]
+  const item = props.items[index]
+  const chosen = item ? drawn.get(item.id) : undefined
   if (chosen) chosen.focus()
   else menu.value?.focus()
 }
@@ -241,6 +245,7 @@ watch(
     if (now) void enter()
     else leave()
   },
+  { immediate: true },
 )
 
 /** Measured again when what it holds changes, and when the point does. */
@@ -253,10 +258,6 @@ watch(
   },
 )
 
-onMounted(() => {
-  if (props.open) void enter()
-})
-
 // A menu can go while it is still open, and what it left on the window with it.
 onBeforeUnmount(leave)
 </script>
@@ -266,7 +267,7 @@ onBeforeUnmount(leave)
     <div
       v-if="open"
       ref="menu"
-      class="menu numen flex flex-col rounded-panel border border-panel-rule bg-panel p-1.5 font-sans text-base text-ink shadow-panel backdrop-blur-panel"
+      class="menu numen panel-numen flex flex-col p-1.5 font-sans text-base text-ink"
       role="menu"
       tabindex="-1"
       :aria-label="name"
@@ -288,6 +289,7 @@ onBeforeUnmount(leave)
         <hr v-else-if="item.rule" class="menu__rule" role="separator" />
 
         <button
+          :ref="(row) => holdRow(item.id, row)"
           class="menu__item flex w-full items-center rounded-node px-2 py-1.5 text-left"
           type="button"
           :role="current === null ? 'menuitem' : 'menuitemradio'"
@@ -335,10 +337,8 @@ onBeforeUnmount(leave)
 
   position: fixed;
   z-index: var(--lift);
-  /* As wide as the longest thing it offers. A menu stands over the page and
-     is placed by two numbers, so without a width of its own it would be as
-     wide as the room left beside the point it was asked for and would cut its
-     own words short there. */
+  /* As wide as the longest thing it offers, and always between these two
+     widths. */
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));

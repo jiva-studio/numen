@@ -29,6 +29,7 @@ import { monospaced, theme } from './theme'
 export const drawing = new Compartment()
 export const editing = new Compartment()
 export const showing = new Compartment()
+export const adding = new Compartment()
 export const written = new Compartment()
 
 export interface Settings {
@@ -38,6 +39,8 @@ export interface Settings {
   readonly placeholder?: string
   /** A change being made to the text by something other than the reader. */
   readonly change?: EditorChange | null
+  /** What whoever put the editor on the screen draws into it. */
+  readonly extensions?: Extension
 }
 
 export const preview = (on: boolean): Extension => (on ? [wholeLines, live, following] : [])
@@ -84,4 +87,5 @@ export const setup = (settings: Settings = {}): Extension => [
   drawing.of(preview(settings.live ?? true)),
   editing.of(editable(!settings.readonly)),
   showing.of(shown(settings.change ?? null)),
+  adding.of(settings.extensions ?? []),
 ]

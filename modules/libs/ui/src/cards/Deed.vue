@@ -3,10 +3,8 @@
  * What a strip is pressed to be rid of what it heads: the bin alone, named to
  * a reader.
  *
- * It carries no ground and no shape of its own, because the strip does not draw
- * it until the strip is reached for. It is set as quietly as what a value is
- * called, and comes up to the ink of what it stands on under the hand about to
- * press it.
+ * It carries no ground and no shape of its own, and comes up to the ink of what
+ * it stands on under the hand about to press it.
  */
 import Glyph from './Glyph.vue'
 

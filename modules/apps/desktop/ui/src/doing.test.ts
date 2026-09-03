@@ -5,7 +5,7 @@
  * or removed, and that what a remove leaves behind is put to the person.
  */
 import { describe, expect, it } from 'vitest'
-import { canRun, commandsOf, deedOf, runsAgain, type Deed, type Where } from './commanding'
+import { commandsOf, deedOf, runnable, type Deed, type Where } from './commanding'
 import { does, reaching, type Doing, type Store } from './doing'
 import type {
   Added,
@@ -105,57 +105,64 @@ const window = (
   const tones: string[] = []
   const at = answers.at ?? 'physics/Ontology.md'
   const refusal = answers.turnedDown ?? null
+  /** The runs this one window has been told this build cannot do. */
+  const runs = runnable()
   const on: Doing = {
-    makes: async (title, from, seat) => {
-      done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
-      return answers.made === false ? null : { path: `${title}.md`, title }
+    files: {
+      makes: async (title, from, seat) => {
+        done.push(`makes ${title} ${from || '—'} ${seat ?? '—'}`)
+        return answers.made === false ? null : { path: `${title}.md`, title }
+      },
+      renames: async (path, title) => {
+        done.push(`renames ${path} ${title}`)
+        return answers.renamed ?? renamed()
+      },
+      removes: async (path, destroy) => {
+        done.push(`removes ${path} ${destroy}`)
+        return answers.removed ?? removed()
+      },
+      moves: async (from, to) => {
+        done.push(`moves ${from} ${to}`)
+        return answers.movement ?? { moved: null, refusal: null }
+      },
+      makesFolder: async (path) => {
+        done.push(`makes folder ${path}`)
+        return answers.folderRefused ?? null
+      },
     },
-    renames: async (path, title) => {
-      done.push(`renames ${path} ${title}`)
-      return answers.renamed ?? renamed()
+    runs: {
+      transcribes: async (path) => {
+        done.push(`transcribes ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      recognises: async (path) => {
+        done.push(`recognises ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      proofreads: async (path) => {
+        done.push(`proofreads ${path}`)
+        return answers.outcome ?? outcome('started', '')
+      },
+      drops: async (path) => {
+        done.push(`drops ${path}`)
+        if (answers.dropRefused) throw new Error(answers.dropRefused)
+        return answers.undroppable !== true
+      },
     },
-    removes: async (path, destroy) => {
-      done.push(`removes ${path} ${destroy}`)
-      return answers.removed ?? removed()
+    cards: {
+      cuts: async (folder, name) => {
+        done.push(`cuts ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
+      stencils: async (folder, name) => {
+        done.push(`stencils ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
+      presets: async (folder, name) => {
+        done.push(`presets ${folder || '—'} ${name}`)
+        return folder ? `${folder}/${name}` : name
+      },
     },
-    moves: async (from, to) => {
-      done.push(`moves ${from} ${to}`)
-      return answers.movement ?? { moved: null, refusal: null }
-    },
-    makesFolder: async (path) => {
-      done.push(`makes folder ${path}`)
-      return answers.folderRefused ?? null
-    },
-    transcribes: async (path) => {
-      done.push(`transcribes ${path}`)
-      return answers.outcome ?? outcome('started', '')
-    },
-    recognises: async (path) => {
-      done.push(`recognises ${path}`)
-      return answers.outcome ?? outcome('started', '')
-    },
-    proofreads: async (path) => {
-      done.push(`proofreads ${path}`)
-      return answers.outcome ?? outcome('started', '')
-    },
-    drops: async (path) => {
-      done.push(`drops ${path}`)
-      if (answers.dropRefused) throw new Error(answers.dropRefused)
-      return answers.undroppable !== true
-    },
-    cuts: async (folder, name) => {
-      done.push(`cuts ${folder || '—'} ${name}`)
-      return folder ? `${folder}/${name}` : name
-    },
-    stencils: async (folder, name) => {
-      done.push(`stencils ${folder || '—'} ${name}`)
-      return folder ? `${folder}/${name}` : name
-    },
-    presets: async (folder, name) => {
-      done.push(`presets ${folder || '—'} ${name}`)
-      return folder ? `${folder}/${name}` : name
-    },
-    reveals: (path) => void done.push(`reveals ${path}`),
     notes: {
       holding: (path) => (path === at ? 'held' : null),
       where: (id) => (id === 'held' ? at : id),
@@ -192,29 +199,35 @@ const window = (
         done.push(`opens vault ${id}`)
         return refusal
       },
+      calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
+      reloads: () => void done.push('reloads'),
     },
-    calls: (vault) => void done.push(`calls ${vault.id} ${vault.name}`),
-    reloads: () => void done.push('reloads'),
-    travel: async (path) => void done.push(`travel ${path}`),
-    leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
-    opening: () => 'Root.md',
-    opens: (kind) => void done.push(`opens ${kind}`),
-    preset: async (path) => void done.push(`preset ${path}`),
-    closes: (tab) => void done.push(`closes ${tab}`),
-    asks: (text) => void done.push(`asks ${text}`),
+    goes: {
+      reveals: (path) => void done.push(`reveals ${path}`),
+      travel: async (path) => void done.push(`travel ${path}`),
+      leaves: async (from, to) => void done.push(`leaves ${from} ${to}`),
+      opening: () => 'Root.md',
+      opens: (kind) => void done.push(`opens ${kind}`),
+      preset: async (path) => void done.push(`preset ${path}`),
+      closes: (tab) => void done.push(`closes ${tab}`),
+      asks: (text) => void done.push(`asks ${text}`),
+      searches: () => void done.push('searches'),
+    },
+    settings: {
+      appearance: async (chosen) => void done.push(`appearance ${chosen}`),
+      syncing: async (chosen) => void done.push(`syncing ${chosen}`),
+      hanging: async (chosen) => void done.push(`hanging ${chosen}`),
+      parts: async (chosen) => void done.push(`parts ${chosen}`),
+    },
+    runnable: runs,
     copies: (path) => void done.push(`copies ${path}`),
-    searches: () => void done.push('searches'),
-    appearance: async (chosen) => void done.push(`appearance ${chosen}`),
-    syncing: async (chosen) => void done.push(`syncing ${chosen}`),
-    hanging: async (chosen) => void done.push(`hanging ${chosen}`),
-    parts: async (chosen) => void done.push(`parts ${chosen}`),
     says: (text, kind) => {
       if (!text) return
       said.push(text)
       tones.push(kind ?? '')
     },
   }
-  return { on, done, said, tones }
+  return { on, done, said, tones, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -441,13 +454,17 @@ describe('a run asked for over a file', () => {
 
     await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    try {
-      expect(one.said).toStrictEqual([words.unrunnable])
-      expect(canRun('transcribe')).toBe(false)
-      expect(canRun('recognise')).toBe(true)
-    } finally {
-      runsAgain()
-    }
+    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.runs.canRun('transcribe')).toBe(false)
+    expect(one.runs.canRun('recognise')).toBe(true)
+  })
+
+  it('is said only in the window it was asked in', async () => {
+    const one = window({ outcome: { able: false } })
+
+    await carry(deedOf('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+
+    expect(window().runs.canRun('transcribe')).toBe(true)
   })
 })
 
@@ -476,12 +493,8 @@ describe('the transcript of a recording dropped', () => {
 
     await carry(deedOf('dropTranscript', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    try {
-      expect(one.said).toStrictEqual([words.unrunnable])
-      expect(canRun('dropTranscript')).toBe(false)
-    } finally {
-      runsAgain()
-    }
+    expect(one.said).toStrictEqual([words.unrunnable])
+    expect(one.runs.canRun('dropTranscript')).toBe(false)
   })
 })
 
@@ -620,7 +633,7 @@ describe('a note removed', () => {
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
     const one = window()
-    const nowhere: Doing = { ...one.on, opening: () => '' }
+    const nowhere: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await carry(deedOf('remove', front()), nowhere)
 
@@ -699,9 +712,12 @@ describe('several files removed at once', () => {
     const one = window()
     const picky: Doing = {
       ...one.on,
-      removes: async (path, destroy) => {
-        one.done.push(`removes ${path} ${destroy}`)
-        return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+      files: {
+        ...one.on.files,
+        removes: async (path, destroy) => {
+          one.done.push(`removes ${path} ${destroy}`)
+          return removed(path === 'physics/Ontology.md' ? { refusal: 'missing' } : {})
+        },
       },
     }
 
@@ -867,7 +883,7 @@ describe('a command over the vault', () => {
 
   it('says a vault that opens with no note at all', async () => {
     const one = window()
-    const empty: Doing = { ...one.on, opening: () => '' }
+    const empty: Doing = { ...one.on, goes: { ...one.on.goes, opening: () => '' } }
 
     await does(deedOf('first', front()), empty, words)
 
@@ -1036,7 +1052,10 @@ describe('nothing to carry out', () => {
 
   it('says what the vault could not be asked, and asks no further', async () => {
     const one = window()
-    const broken: Doing = { ...one.on, removes: async () => Promise.reject(new Error('gone')) }
+    const broken: Doing = {
+      ...one.on,
+      files: { ...one.on.files, removes: async () => Promise.reject(new Error('gone')) },
+    }
 
     await does(deedOf('remove', front()), broken, words)
 

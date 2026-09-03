@@ -9,7 +9,29 @@
 import { computed, ref, shallowRef, type Component, type Ref } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
+import type { Source } from './core'
 import { named } from './workspace'
+
+/**
+ * What a command asked over one tab is over: the note the tab means, and the
+ * file a run is asked over. A kind that means neither answers with neither.
+ */
+export interface At {
+  readonly path?: string
+  readonly title?: string
+  readonly file?: string
+  readonly source?: Source | null
+}
+
+/**
+ * What one tab holds, as whoever answers on the person's behalf is told it: the
+ * file it stands at, where in it the person is, and how much of it there is.
+ */
+export interface Attends {
+  readonly path: string
+  readonly at?: number
+  readonly of?: number
+}
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */
 export interface Kind<Held> {
@@ -31,6 +53,10 @@ export interface Kind<Held> {
   identity?(at: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   shown?(held: Held, id: string): void
+  /** What a command asked over one of its tabs is over. */
+  at?(held: Held): At
+  /** What one of its tabs holds, as whoever answers for the person is told it. */
+  attends?(held: Held): Attends
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.
@@ -240,6 +266,14 @@ export function windowing() {
     return true
   }
 
+  /**
+   * A tab let go of from outside and taken off the screen. A kind with
+   * something to finish keeps its tab and closes it itself.
+   */
+  const drops = (id: string) => {
+    if (shut(id)) layout.value = closeTab(layout.value, id)
+  }
+
   /** The window is going, and nothing a tab holds outlives it. */
   const close = () => {
     for (const [id, one] of open.value) {
@@ -261,6 +295,7 @@ export function windowing() {
     closes,
     shown,
     shut,
+    drops,
     close,
   }
 }

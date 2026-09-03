@@ -18,29 +18,34 @@ import { following } from '@numen/ui'
  * of counts. What is drawn from any of it, and by how many tabs, is the
  * window's; nothing here knows what a tab holds.
  */
-export function showing(
-  core: Core,
-  wait: (ms: number) => Promise<unknown> = sleep,
+/** What the window hands the reading of a vault, beside the vault itself. */
+export interface Showing {
+  wait?(ms: number): Promise<unknown>
   /**
    * What hears that the vault changed, and is waited for. A change carrying no
    * paths names nothing: everything showing the vault reads again.
    */
-  told: (
-    paths: readonly string[],
-    renamed?: readonly Went[],
-  ) => void | Promise<void> = () => {},
+  told?(paths: readonly string[], renamed?: readonly Went[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
-  drawing: (said: Said) => void = () => {},
+  drawing?(said: Said): void
   /** What puts a note in front of the person, asked for from outside the window. */
-  wanted: (path: string) => void | Promise<void> = () => {},
+  wanted?(path: string): void | Promise<void>
   /**
    * What opens a document at stretches of its own text, in the tab it is read
    * in. The person is taken to the first of them.
    */
-  reads: (path: string, runs: readonly Run[]) => void = () => {},
+  reads?(path: string, runs: readonly Run[]): void
   /** What draws the page again, once another vault is under this window. */
-  reloads: () => void = () => {},
-) {
+  reloads?(): void
+}
+
+export function showing(core: Core, how: Showing = {}) {
+  const wait = how.wait ?? sleep
+  const told = how.told ?? (() => {})
+  const drawing = how.drawing ?? (() => {})
+  const wanted = how.wanted ?? (() => {})
+  const reads = how.reads ?? (() => {})
+  const reloads = how.reloads ?? (() => {})
   const name = ref('')
   /** The folder the vault the window is showing sat in when the page was drawn. */
   const at = ref('')
@@ -73,11 +78,8 @@ export function showing(
    */
   const embedding = ref(false)
   /**
-   * Everything the application is doing behind the window.
-   *
-   * It arrives whole and is shown whole. A new kind of work is an entry here
-   * rather than another count to read out of the state and another branch in
-   * what draws it.
+   * Everything the application is doing behind the window. It arrives whole
+   * and is shown whole, and a new kind of work is an entry here.
    */
   const tasks = ref<readonly Task[]>([])
 

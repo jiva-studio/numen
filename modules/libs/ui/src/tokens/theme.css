@@ -51,7 +51,6 @@
 
   --spacing-panel: var(--numen-panel-padding);
   --spacing-gap: var(--numen-panel-gap);
-  --spacing-field: var(--numen-field-padding);
   --spacing-action: var(--numen-action-size);
   --spacing-turn: var(--numen-turn-gap);
   --spacing-inset: var(--numen-inset);
@@ -60,6 +59,21 @@
   --shadow-panel: var(--numen-panel-shadow);
 
   --ease-numen: var(--numen-easing);
+}
+
+/* How long a pointer is answered in. */
+@utility duration-hover {
+  transition-duration: var(--numen-motion-hover);
+}
+
+/* Where the keyboard stands, drawn the one way it is drawn. */
+@utility ring-numen {
+  @apply focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring;
+}
+
+/* The surface a panel is: a tinted, blurred box lifted off the window. */
+@utility panel-numen {
+  @apply rounded-panel border border-panel-rule bg-panel shadow-panel backdrop-blur-panel;
 }
 
 /* The way a few words are set in capitals: tracked wider than a sentence, so

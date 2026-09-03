@@ -20,7 +20,7 @@ export type Stay = 'holds' | 'read' | 'kept'
  * is so, or something that happened.
  *
  * `done` and `total` are the work in hand, not the size of what it is being
- * done to: somebody who changed one note is waiting on one thing.
+ * done to: one change is one thing, however large the thing changed.
  */
 export interface Notice {
   /** Whatever the caller addresses this notice by. Never read, only handed back. */

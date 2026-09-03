@@ -41,7 +41,7 @@ interface Knobs {
   onCreate: (from: string, seat: PlexRelatedSeat) => void
   onLink: (from: string, to: string, seat: PlexRelatedSeat) => void
   onBring: (carried: readonly string[], seat: PlexRelatedSeat) => void
-  onMenu: (id: string, at: Point, from: SVGGElement, opening: MenuOpening) => void
+  onMenu: (id: string, at: Point, opening: MenuOpening) => void
   onDismiss: () => void
   parts: (id: string) => readonly PlexPart[]
   onEnter: (id: string, part: string) => void
@@ -661,7 +661,6 @@ export const AskingForAMenu: Story = {
     await expect(args.onMenu).toHaveBeenCalledWith(
       expect.any(String),
       expect.any(Object),
-      focus,
       'pointer',
     )
     await expect(refused).toBe(true)
@@ -1050,10 +1049,26 @@ export const ArrowedLines: Story = {
     const headAt = (end: DOMPoint) =>
       heads().some((head) => holds(head.getBoundingClientRect(), end))
 
+    /** Where every head and every end of every line stands, as one reading. */
+    const standing = () =>
+      JSON.stringify([
+        heads().map((head) => {
+          const box = head.getBoundingClientRect()
+          return [box.x, box.y, box.width, box.height]
+        }),
+        lines().map(({ ends }) => ends.map((end) => [end.x, end.y])),
+      ])
+
+    /** A frame, after which what was arranged on the last one can be read. */
+    const frame = () => new Promise((done) => requestAnimationFrame(() => done(null)))
+
     // The window is measured after the first drawing, so the plex settles on
-    // its second.
+    // its second, and the picture stands still once it has.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
+      const was = standing()
+      await frame()
+      await expect(standing()).toBe(was)
     })
 
     // A head is really drawn, and is not an empty path.

@@ -48,9 +48,8 @@ const spoken = computed(() =>
 .cap {
   /* The corner of a key cap, which is tighter than the corner of a node. */
   --cap-radius: 0.25rem;
-  /* How wide a mark filling the cap is drawn. A capital is 0.713em tall at this
-     type and a mark is twenty of the twenty-four units it is drawn on, so this
-     stands a mark at the height of the letter beside it. */
+  /* How wide a mark filling the cap is drawn: the height of the letter beside
+     it. */
   --cap-mark: 0.85em;
 
   display: inline-flex;

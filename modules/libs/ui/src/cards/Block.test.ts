@@ -38,7 +38,7 @@ const blockOf = (
 const mountBlock = (block: FaceBlock = blockOf(FACE), props: Record<string, unknown> = {}) =>
   mount(Block, {
     attachTo: document.body,
-    props: { block, fields: FIELDS, taken: [], ...props },
+    props: { block, ...props },
   })
 
 type Drawn = ReturnType<typeof mountBlock>
@@ -303,7 +303,7 @@ describe('Block, its name', () => {
   })
 
   it('renames nothing where the name typed is another face’s', async () => {
-    const held = mountBlock(undefined, { taken: ['Recall'] })
+    const held = mountBlock({ ...blockOf(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
     await nameOf(held).trigger('change')
     expect(held.emitted('rename')).toBeUndefined()
@@ -333,7 +333,7 @@ describe('Block, its name', () => {
   })
 
   it('says why a name typed cannot be used, and says it to the box', async () => {
-    const held = mountBlock(undefined, { taken: ['Recall'] })
+    const held = mountBlock({ ...blockOf(FACE), taken: ['Recall'] })
     await type(held, 'Recall')
 
     const said = held.get('header .block__objects')

@@ -13,8 +13,8 @@ export const buttonVariants = cva(
   [
     'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap',
     'font-sans text-base font-medium',
-    'cursor-pointer transition-[background-color,color] duration-100 ease-numen',
-    'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
+    'cursor-pointer transition-[background-color,color] duration-hover ease-numen',
+    'outline-none ring-numen',
     'disabled:pointer-events-none disabled:opacity-50',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   ],

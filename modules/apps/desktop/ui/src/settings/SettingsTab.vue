@@ -4,9 +4,8 @@
  * the part of the application it governs.
  *
  * A setting the window has a command for is drawn as a control and goes through
- * the same code that command goes through. The rest are read out of the file
- * and written back into it where they stand. The file itself is opened whole,
- * by the one button at the head of the page.
+ * that command's own code; the rest are read out of the file and written back
+ * where they stand.
  */
 import { computed } from 'vue'
 import { Button, NumberField, Segmented, Select, Switch, TimeField } from '@numen/ui'

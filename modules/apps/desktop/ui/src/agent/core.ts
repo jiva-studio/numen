@@ -5,14 +5,11 @@
  * does it. The port is `AgentPort`, and this is what answers it over the wire.
  */
 import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
 import { AgentService } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
+import { transport } from '../transport'
 
-const agent = createClient(
-  AgentService,
-  createConnectTransport({ baseUrl: window.location.origin }),
-)
+const agent = createClient(AgentService, transport)
 
 export const core: AgentPort = {
   async *ask(asked, focus, conversation, signal) {

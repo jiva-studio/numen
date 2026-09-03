@@ -1,15 +1,11 @@
 <script setup lang="ts">
 /**
- * A recording tab: a player for one recording, and under it the transcript of
- * it, written as one text.
+ * A recording tab: a player at the top of the pane on a rule, and under it the
+ * transcript written as one text.
  *
  * A cue is a place in the recording, so its time in the gutter is clicked to
- * play from there. The player stands at the top of the pane on a rule, and
- * everything else is drawn below that rule: what a recording with no transcript
- * offers, what a run says while it goes, and the words themselves.
- *
- * What can be asked over the words already written down is offered in the menu
- * at the end of the strip, and each item stands there only where it applies.
+ * play from there. What can be asked over the words stands in the menu at the
+ * end of the strip, each item only where it applies.
  */
 import { computed, ref, watchPostEffect } from 'vue'
 import { Ellipsis, LocateFixed } from '@lucide/vue'
@@ -285,31 +281,17 @@ const chose = (id: string) => {
   block-size: 0.875rem;
 }
 
-/* The editor scrolls, so the bar stands at the edge of the pane and only the
-   lines on screen are drawn. */
+/* The words are read in one column, clear of the rule the player stands on, and
+   the editor scrolls so the bar stands at the edge of the pane. */
 .recording .recording__transcript {
+  --editor-measure: var(--recording-measure);
+  --editor-lead: var(--numen-gutter);
+  --editor-margin: var(--numen-gutter);
+
   flex: 1;
   min-block-size: 0;
   isolation: isolate;
   font-size: inherit;
-}
-
-.recording .recording__transcript :deep(.cm-editor) {
-  block-size: 100%;
-  font-size: inherit;
-}
-
-/* The words are read in one column, centred in whatever room the pane has. */
-.recording .recording__transcript :deep(.cm-content),
-.recording .recording__transcript :deep(.cm-gutters) {
-  max-inline-size: var(--recording-measure);
-}
-
-/* The words keep clear of the rule the player stands on. */
-.recording .recording__transcript :deep(.cm-scroller) {
-  justify-content: center;
-  padding-block-start: var(--numen-gutter);
-  padding-inline: var(--numen-gutter);
 }
 
 .recording__note {

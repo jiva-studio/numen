@@ -1,18 +1,15 @@
 <script setup lang="ts">
 /**
- * What a thing is, said beside it while a person points at it.
+ * What a thing is, said beside it while a person points at it. It follows the
+ * pointer and never takes it.
  *
- * It follows the pointer and never takes it: a tooltip a mouse can land on is
- * one that moves out from under the hand reaching for what it is about.
- *
- * It stands on the far side of the thing it is about, takes the near side
- * where the far one has no room for it, and is brought inside the edge where
- * neither side has. A menu is placed the same way.
+ * It stands on the far side of the thing it is about, takes the near side where
+ * the far one has no room, and is brought inside the edge where neither has.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { beside, type Box } from '../placing/place'
-import type { Size } from '../plex/arrange'
+import type { Size } from '../lib/geometry'
 
 const props = withDefaults(
   defineProps<{
@@ -97,7 +94,7 @@ watch(() => props.at, measure, { flush: 'post' })
 <style scoped>
 .tooltip {
   position: fixed;
-  z-index: 1;
+  z-index: var(--numen-lift-tooltip);
   /* As wide as what it says, whatever room is left beside where it stands. */
   inline-size: max-content;
   padding: var(--numen-inset);
@@ -105,7 +102,7 @@ watch(() => props.at, measure, { flush: 'post' })
   border-radius: var(--numen-radius);
   background: var(--numen-node-bg);
   color: var(--numen-node-fg);
-  box-shadow: var(--numen-shadow-raised, 0 2px 8px rgb(0 0 0 / 25%));
+  box-shadow: var(--numen-shadow-card);
   font-size: var(--numen-text-1);
   pointer-events: none;
 }

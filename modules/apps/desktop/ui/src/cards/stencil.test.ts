@@ -293,7 +293,7 @@ describe('a stencil whose file moved past what was read', () => {
     tab.addsField('Weight')
     await stencils.flush()
 
-    expect(tab.shown().state).toBe('overtaken')
+    expect(tab.shown.value.state).toBe('overtaken')
   })
 
   it('keeps what the person wrote when they say so', async () => {
@@ -312,20 +312,20 @@ describe('a stencil the vault refused', () => {
   it('says the note is not a stencil where that is what it is', async () => {
     const { tab } = await open({ refusal: 'notAStencil' })
 
-    expect(tab.saying()).toBe(words.notAStencil)
+    expect(tab.saying.value).toBe(words.notAStencil)
     expect(tab.sheet().fields).toStrictEqual([])
   })
 
   it('says nothing where the stencil was read', async () => {
     const { tab } = await open()
 
-    expect(tab.saying()).toBe('')
+    expect(tab.saying.value).toBe('')
   })
 
   it('says the vault could not be reached, where the read reached nothing', async () => {
     const { tab } = await open({ unreachable: true })
 
-    expect(tab.saying()).toBe(words.unreachable)
+    expect(tab.saying.value).toBe(words.unreachable)
   })
 
   it('says the file could not be written, where that is what was refused', async () => {
@@ -334,7 +334,7 @@ describe('a stencil the vault refused', () => {
     tab.addsField('Weight')
     await stencils.kept.settles(stencils.all()[0] ?? '')
 
-    expect(tab.saying()).toBe(words.notSaved)
+    expect(tab.saying.value).toBe(words.notSaved)
   })
 })
 

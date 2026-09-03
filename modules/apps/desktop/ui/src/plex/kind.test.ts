@@ -208,7 +208,6 @@ describe('the menu on a node', () => {
   const asked = (node: string) => ({
     node,
     at: { x: 1, y: 2 },
-    from: null,
     opening: 'pointer' as const,
   })
 
@@ -305,7 +304,7 @@ describe('a plex drawing nothing', () => {
 })
 
 describe('the menu off every node', () => {
-  const asked = { node: null, at: { x: 1, y: 2 }, from: null, opening: 'pointer' as const }
+  const asked = { node: null, at: { x: 1, y: 2 }, opening: 'pointer' as const }
 
   it('makes a note, and the plex stands on it', async () => {
     const one = tab('Root.md')
@@ -923,7 +922,7 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', Seat.CHILD]])
     await one.moves({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.held.asks({ node: one.node('Heat'), at: { x: 1, y: 2 }, from: null, opening: 'pointer' })
+    one.held.asks({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
     one.held.chose('read')
 
     expect(one.ran).toStrictEqual([['read', 'physics/Heat.md', 'Heat']])
@@ -955,7 +954,7 @@ describe('a gesture the plex reports', () => {
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
       one.held.activate(node)
       one.held.opens(node, 'here')
-      one.held.asks({ node, at: { x: 1, y: 2 }, from: null, opening: 'pointer' })
+      one.held.asks({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
       one.held.chose('read')
       await one.held.made(node, 'child')
       await one.held.joined(node, one.node('Root'), 'jump')
@@ -1319,5 +1318,33 @@ describe('which of three a node stands for', () => {
     expect(one.held.typeOf(one.node('Deck.md'))).toBe('deck')
     expect(one.held.typeOf(one.node('Stencil.md'))).toBe('stencil')
     expect(one.held.typeOf(one.node('Root.md'))).toBe('note')
+  })
+})
+
+describe('what a command asked over a plex tab is over', () => {
+  it('is the note the plex is standing on, under the name the picture gives it', async () => {
+    const one = window()
+    const { held } = await one.holds('physics/Ontology.md')
+
+    expect(one.kind.at!(held)).toStrictEqual({
+      path: 'physics/Ontology.md',
+      title: 'physics/Ontology',
+    })
+  })
+
+  it('is no note at all while the plex stands nowhere', async () => {
+    const one = window('')
+    const { held } = await one.holds()
+
+    expect(one.kind.at!(held)).toStrictEqual({ path: '', title: '' })
+  })
+})
+
+describe('what a plex tab holds, as whoever answers for the person is told it', () => {
+  it('is the note it is standing on', async () => {
+    const one = window()
+    const { held } = await one.holds('Root.md')
+
+    expect(one.kind.attends!(held)).toStrictEqual({ path: 'Root.md' })
   })
 })

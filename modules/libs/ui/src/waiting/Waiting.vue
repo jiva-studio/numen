@@ -1,12 +1,9 @@
 <script setup lang="ts">
 /**
- * A ring turning beside something still filling: more of it is on its way.
+ * A ring turning beside something still filling: more of it is on its way. It
+ * says nothing about how much is left.
  *
- * It says nothing about how much is left. What is coming is counted somewhere
- * or it is not.
- *
- * What is filling is what a screen reader is told about, so this is drawn for
- * the eye alone and whoever draws it marks the region busy.
+ * It is drawn for the eye alone, and whoever draws it marks the region busy.
  */
 </script>
 

@@ -1,12 +1,10 @@
 /**
- * The settings the window reads out of the file whole.
- *
- * The window has a command for the settings it turns often, and this is the
- * rest of them: what stands at a path through the file, the models a setting
- * that names one can be set to, and one setting written where it stands.
+ * The settings the window reads out of the file whole: what stands at a path
+ * through it, the models a setting that names one can be set to, and one
+ * setting written where it stands.
  *
  * What the vault answers with holds the defaults under everything the file
- * leaves out, so a row draws what this installation is doing.
+ * leaves out.
  */
 import { ref, shallowRef } from 'vue'
 import type { Model, Written } from '../core'

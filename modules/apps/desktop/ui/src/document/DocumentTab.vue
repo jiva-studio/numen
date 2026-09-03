@@ -20,11 +20,7 @@ const props = defineProps<{ held: Held }>()
     :picture="props.held.pictureOf"
     :lit="props.held.litOn"
     :also="props.held.alsoOn"
-    :back="words.back"
-    :next="words.next"
-    :page="words.page"
-    :closer="words.closer"
-    :further="words.further"
+    :words="words"
     @go="(page: number) => void props.held.go(page)"
     @wide="(wide: number) => props.held.widen(wide)"
   >
