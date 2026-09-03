@@ -43,6 +43,7 @@ func (c changing) title(t *testing.T, path string) string {
 // Whichever of the title and the filename names the note is the one brought
 // into line, and whatever the prose says is left as it was written.
 func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string
 		title string
@@ -125,6 +126,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 // the two carries it. A title the filename says as something else is the note
 // named something the person did not ask for.
 func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string
 		title string
@@ -174,6 +176,7 @@ func TestTheVaultShowsTheTitleTheRenameWasGiven(t *testing.T) {
 // A title no filename can carry is written into the `title` key, whether or not
 // the note already carries one.
 func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
+	t.Parallel()
 	for name, raw := range map[string]string{
 		"a note carrying the key":      "---\ntitle: Old\n---\nA measure.\n",
 		"a note carrying a heading":    "# Old\n\nA measure.\n",
@@ -198,6 +201,7 @@ func TestATitleOnlyTheKeyCanCarryIsWrittenThere(t *testing.T) {
 
 // A link written by a name reaches the note the name is on.
 func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
+	t.Parallel()
 	for name, title := range map[string]string{
 		"a title in double brackets":   "Notes [[draft]]",
 		"a title carrying a pipe":      "Either|Or",
@@ -232,6 +236,7 @@ func TestARenamedNoteIsStillReachedByTheLinksThatNameIt(t *testing.T) {
 // A note whose filename is the whole of its naming is moved and not edited, so
 // it comes out of a rename with the bytes it went in with.
 func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "A measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "Entropy")
@@ -246,6 +251,7 @@ func TestRenamingByTheFilenameAloneLeavesTheBytesAlone(t *testing.T) {
 // The filename is already what the title reduces to, so there is nothing for
 // the file to do and nothing to report about it.
 func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "---\ntitle: Old\n---\nA measure.\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Entropy.md", "Entropy")
@@ -264,6 +270,7 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 }
 
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Old.md":     "---\ntitle: Old\n---\nA measure.\n",
 		"Entropy.md": "# Entropy\n",
@@ -298,6 +305,7 @@ func (s sulking) MoveSources(context.Context, string, string, string) error { re
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
 func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
@@ -320,6 +328,7 @@ func TestAMoveThatLandedIsAnsweredWithEvenWhenWhatFollowsFails(t *testing.T) {
 }
 
 func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
+	t.Parallel()
 	for name, title := range map[string]string{
 		"nothing at all":                "",
 		"only spaces":                   "   ",
@@ -348,6 +357,7 @@ func TestRenamingRefusesATitleNoNoteCanBeGiven(t *testing.T) {
 // The title is trimmed once, so the name, the note and the answer all say the
 // same thing.
 func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 
 	renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", "  Entropy  ")
@@ -368,6 +378,7 @@ func TestRenamingTrimsTheTitleItIsGiven(t *testing.T) {
 // A title longer than a filename will take is cut to make the name, and the
 // whole of it goes into the note, where the order of resolution finds it.
 func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "A measure.\n"})
 	title := strings.TrimSpace(strings.Repeat("disorder ", 20))
 
@@ -392,6 +403,7 @@ func TestALongTitleIsCutFromTheNameAndKeptWhole(t *testing.T) {
 // The file half of a rename is a move, so a link that stopped resolving is
 // repaired by the machinery a move already has.
 func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
@@ -418,6 +430,7 @@ func TestRenamingRepairsALinkThatStoppedResolving(t *testing.T) {
 // A note the vault does not hold is named as one, and a vault that cannot be
 // reached is not.
 func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 
 	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, note.ErrNoNote) {
@@ -438,6 +451,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 // A note taken out of the vault is taken out of it, and one that was never
 // there is said to be missing rather than reported as the vault failing.
 func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.Remove{
 		Writers: filesystem.Writers{},
@@ -452,6 +466,7 @@ func TestRemovingSaysWhenThereIsNoSuchNote(t *testing.T) {
 // A renamed note is found by the name it was given, from any folder in the
 // vault. Whichever of the three carries the name, the note answers to it.
 func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
+	t.Parallel()
 	for name, raw := range map[string]string{
 		"a title in the frontmatter": "---\ntitle: Old\n---\nA measure.\n",
 		"a level-one heading":        "# Old\n\nA measure.\n",
@@ -485,6 +500,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 // Where a title and a filename are told apart, a new title is written into the
 // note and the file stays where it is.
 func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string
 		title string
@@ -536,6 +552,7 @@ func TestRenamingLeavesTheFileWhereItIsWhereTheTwoAreToldApart(t *testing.T) {
 // A note its filename names carries its name nowhere else, so its file moves
 // however a title and a filename are held.
 func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
+	t.Parallel()
 	for name, renaming := range map[string]func(changing) note.Rename{
 		"one name":   changing.rename,
 		"told apart": changing.apart,

@@ -103,6 +103,7 @@ func next[T any](t *testing.T, from <-chan T) T {
 
 // TestAChangedNoteIsBroughtUpToDateAndReported.
 func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
+	t.Parallel()
 	watcher := held()
 	f := following(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -125,6 +126,7 @@ func TestAChangedNoteIsBroughtUpToDateAndReported(t *testing.T) {
 // TestABookThatChangedIsNotANoteThatMoved. The watcher reports every kind of
 // source it sees; what a listener is told to look at again is notes.
 func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
+	t.Parallel()
 	watcher := held()
 	f := following(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -149,6 +151,7 @@ func TestABookThatChangedIsNotANoteThatMoved(t *testing.T) {
 
 // Not knowing what changed is answered by looking at everything, books included.
 func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
+	t.Parallel()
 	watcher := held()
 	f := following(t, map[string]string{"Note.md": "# Note\n"}, watcher)
 
@@ -163,6 +166,7 @@ func TestWhatCannotBeFollowedTakesTheBooksWithIt(t *testing.T) {
 // to look at everything, and whoever is listening is told to ask again rather
 // than told which notes moved.
 func TestWhatCannotBeFollowedIsRead(t *testing.T) {
+	t.Parallel()
 	watcher := held()
 	f := following(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -190,6 +194,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 // TestATroubleThatIsOverStopsBeingReported. A message left in place says the
 // application is failing when it is working.
 func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
+	t.Parallel()
 	watcher := held()
 	v := testsupport.NewVault(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -230,6 +235,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 // following it, and the failure has to reach whoever would otherwise see a
 // window that looks up to date.
 func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
+	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	_, err := usecase.Follow{Watcher: refuses{}}.Begin(t.Context(), v)
 	if err == nil {

@@ -41,6 +41,7 @@ func erasing(registry *appstate.VaultRegistry) (usecase.Erase, *bin, *indexRows,
 }
 
 func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
+	t.Parallel()
 	_, gone, registry := twoVaults(t)
 	erase, trash, index, steps := erasing(registry)
 
@@ -63,6 +64,7 @@ func TestEraseTrashesTheFolderBeforeForgettingIt(t *testing.T) {
 }
 
 func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
+	t.Parallel()
 	_, gone, registry := twoVaults(t)
 	erase, trash, index, _ := erasing(registry)
 
@@ -86,6 +88,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 }
 
 func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
+	t.Parallel()
 	_, gone, registry := twoVaults(t)
 	erase, trash, index, _ := erasing(registry)
 
@@ -108,6 +111,7 @@ func TestAFolderThatIsGoneIsForgottenAndNothingIsTrashed(t *testing.T) {
 }
 
 func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
+	t.Parallel()
 	add, registry := adding(t)
 	only, err := add.Execute(folder(t, "personal"), "")
 	if err != nil {

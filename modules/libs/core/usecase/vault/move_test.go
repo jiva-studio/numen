@@ -106,6 +106,7 @@ func (f filing) read(t *testing.T, path string) string {
 // notes are filed where they now are, and the links written by their names
 // follow them.
 func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n",
 		"physics/Heat.md":    "# Heat\n",
@@ -161,6 +162,7 @@ func (f filing) sources(t *testing.T, path string) []string {
 // What the vault holds under a path is asked of the index, and it is the same
 // answer walking the folder gives.
 func TestWhatIsUnderAPathIsWhatAWalkFinds(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{
 		"physics/Entropy.md":      "# Entropy\n",
 		"physics/heat/Heat.md":    "# Heat\n",
@@ -210,6 +212,7 @@ func walked(t *testing.T, f filing, path string) []string {
 // each source is still the source's. The files say what they said, so none of
 // them is opened.
 func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n\nA measure of disorder.\n",
 		"physics/heat/Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -254,6 +257,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 // A destination that is taken is refused, and nothing has moved when the caller
 // is told.
 func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{
 		"physics/Entropy.md":     "# Entropy\n",
 		"archive/physics/Old.md": "# Old\n",
@@ -276,6 +280,7 @@ func TestAMoveOntoATakenNameMovesNothing(t *testing.T) {
 
 // One file moves by the same use case, and a book is a file like any other.
 func TestABookMovesOnItsOwn(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	testsupport.WriteBook(t, f.vault.Path, "A Book.epub")
 

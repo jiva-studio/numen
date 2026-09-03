@@ -63,6 +63,7 @@ func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []s
 
 // TestARefreshedNoteIsWhatIsOnDisk.
 func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -87,6 +88,7 @@ func TestARefreshedNoteIsWhatIsOnDisk(t *testing.T) {
 // disk is not in the index, and a note that stays behind is still searchable
 // and opens nothing.
 func TestADeletedNoteLeavesTheIndex(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Note.md":  "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 		"Other.md": "---\ntitle: Other\n---\n\n# Other\n\nentropy\n",
@@ -111,6 +113,7 @@ func TestADeletedNoteLeavesTheIndex(t *testing.T) {
 // each path is still there and reads fs.ErrNotExist as "it was removed". A book
 // the vault holds is there, and taking its text out of it is its own step.
 func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -141,6 +144,7 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 // of its own, and a row left behind goes on answering searches with a passage
 // that opens nothing.
 func TestABookThatWentLeavesTheIndex(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	})
@@ -182,6 +186,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 // TestARefreshedBookThatWentIsStillGone. Nothing about a second kind of source
 // changes what a path that is not there means.
 func TestARefreshedBookThatWentIsStillGone(t *testing.T) {
+	t.Parallel()
 	refresh, _, v := refreshing(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
@@ -228,6 +233,7 @@ func (u unreadableReader) Read(ctx context.Context, path string) ([]byte, error)
 // TestOneUnreadableFileDoesNotCostTheRest. A watcher's event arrives once, so
 // anything dropped alongside a failure is dropped until the next full scan.
 func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Locked.md": "---\ntitle: Locked\n---\n\n# Locked\n\nentropy\n",
 		"Note.md":   "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
@@ -260,6 +266,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 // on what is held in memory and on the length of one write is the same one a
 // scan keeps.
 func TestARefreshWritesInGroups(t *testing.T) {
+	t.Parallel()
 	notes := map[string]string{}
 	paths := make([]string, 0, 1200)
 	for i := range 1200 {
@@ -309,6 +316,7 @@ func (c *countingNotes) Remove(context.Context, string, []string) error { return
 // what an editor saving through a temporary file looks like, and the save that
 // follows arrives as its own event.
 func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
+	t.Parallel()
 	refresh, db, v := refreshing(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})

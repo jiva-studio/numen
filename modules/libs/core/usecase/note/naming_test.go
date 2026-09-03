@@ -9,6 +9,7 @@ import (
 // One rule answers for both halves of a name, at either setting and for each of
 // the two that name a note.
 func TestWhatARenameBringsIntoLine(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		sync   note.Sync
 		by     note.Naming

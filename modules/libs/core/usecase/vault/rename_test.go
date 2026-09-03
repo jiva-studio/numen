@@ -10,6 +10,7 @@ import (
 )
 
 func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
+	t.Parallel()
 	_, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
@@ -37,6 +38,7 @@ func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
 }
 
 func TestANameAnotherVaultHasIsRefused(t *testing.T) {
+	t.Parallel()
 	taken, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
@@ -59,6 +61,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 }
 
 func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
+	t.Parallel()
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 

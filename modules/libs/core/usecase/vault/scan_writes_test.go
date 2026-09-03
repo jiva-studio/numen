@@ -44,6 +44,7 @@ func (c *countedMeasurements) Changed(context.Context) error { c.n++; return nil
 // TestNotesAreWrittenInGroups. Nothing about a scan's result says how many
 // writes it took, so that is what is asserted.
 func TestNotesAreWrittenInGroups(t *testing.T) {
+	t.Parallel()
 	const notes = 600
 	v := testsupport.GenerateVault(t, notes)
 	written := &groupedWrites{}
@@ -83,6 +84,7 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 // TestALongNoteClosesTheGroupEarly covers the size bound. No other test or
 // benchmark has a vault of long files, so nothing else reaches it.
 func TestALongNoteClosesTheGroupEarly(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	const notes, each = 12, 1 << 20
 	body := strings.Repeat("entropy thermodynamics observer ", each/32)
@@ -123,6 +125,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 // TestAFailedWriteCountsNothing: a group that did not reach the index is not
 // indexed, however many notes were parsed into it.
 func TestAFailedWriteCountsNothing(t *testing.T) {
+	t.Parallel()
 	v := testsupport.GenerateVault(t, 10)
 	refused := errors.New("disk full")
 	db := openIndex(t)
@@ -146,6 +149,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 // TestTheIndexIsMeasuredWhenItChanges, and only then: an unchanged vault is
 // scanned at every startup and must not pay for it.
 func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 	measured := &countedMeasurements{}

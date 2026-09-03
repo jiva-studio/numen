@@ -25,6 +25,7 @@ func (unreachable) Named(context.Context, string, string) ([]string, error) {
 }
 
 func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
+	t.Parallel()
 	held := named{"Untitled note": {"allotments/Untitled note.md"}}
 
 	to, err := note.Addressed(context.Background(), held, "v", "allotments/Untitled note.md")
@@ -42,6 +43,7 @@ func TestALinkIsWrittenByNameWhereTheNameMeansOneNote(t *testing.T) {
 // neighbour, so the note beside the one the link is written in is reached only
 // by writing where it is filed.
 func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
+	t.Parallel()
 	held := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
 	to, err := note.Addressed(context.Background(), held, "v", "allotments/Untitled note.md")
@@ -58,6 +60,7 @@ func TestALinkIsWrittenByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 }
 
 func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
+	t.Parallel()
 	to, err := note.Addressed(context.Background(), named{}, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
@@ -69,12 +72,14 @@ func TestALinkToANoteTheIndexDoesNotHoldYetIsWrittenByName(t *testing.T) {
 }
 
 func TestALinkToNowhereIsRefused(t *testing.T) {
+	t.Parallel()
 	if _, err := note.Addressed(context.Background(), named{}, "v", ""); err == nil {
 		t.Error("Addressed() = nil error, want a refusal: a link needs a note to go to")
 	}
 }
 
 func TestAVaultThatCannotBeAskedWritesNoLink(t *testing.T) {
+	t.Parallel()
 	_, err := note.Addressed(context.Background(), unreachable{}, "v", "Note.md")
 
 	if err == nil {
@@ -90,6 +95,7 @@ func TestAVaultThatCannotBeAskedWritesNoLink(t *testing.T) {
 // in front of it, which is another note or none, and rewriting the entry from
 // what was read moves the link there for good.
 func TestANoteNoLinkReachesIsRefused(t *testing.T) {
+	t.Parallel()
 	for _, path := range []string{
 		"study/Study #1.md",
 		"study/Verbs | strong.md",

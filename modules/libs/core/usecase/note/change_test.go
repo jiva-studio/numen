@@ -81,6 +81,7 @@ func (c changing) read(t *testing.T, path string) string {
 }
 
 func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"other.md": "# Other\n"})
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
@@ -111,6 +112,7 @@ func TestACreatedNoteIsNamedAfterItsTitleAndFoundByIt(t *testing.T) {
 
 // A title that cannot be a filename still names the note, from the `title` key.
 func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, nil)
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "TCP/IP"})
@@ -134,6 +136,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 }
 
 func TestCreatingSaysWhenTheNameIsAlreadyTaken(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"archive/Entropy.md": "# Entropy\n"})
 
 	created, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
@@ -146,6 +149,7 @@ func TestCreatingSaysWhenTheNameIsAlreadyTaken(t *testing.T) {
 }
 
 func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.create().Execute(t.Context(), c.vault, note.NewNote{Title: "Entropy"})
@@ -157,6 +161,7 @@ func TestCreatingRefusesToLandOnAnExistingNote(t *testing.T) {
 // The whole point of resolving a name at the moment it is asked: a note moves
 // and the links written by its name follow it, untouched.
 func TestMovingLeavesLinksWrittenByNameAlone(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -183,6 +188,7 @@ func TestMovingLeavesLinksWrittenByNameAlone(t *testing.T) {
 // A note its title names is called that wherever its file goes, so the name a
 // link is written by still finds it after the file is renamed.
 func TestRenamingTheFileOfATitledNoteLeavesTheNameLinksFindItBy(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Old.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
@@ -209,6 +215,7 @@ func TestRenamingTheFileOfATitledNoteLeavesTheNameLinksFindItBy(t *testing.T) {
 // A `title` key names the note whatever the filename says, so a file renamed
 // under it leaves the note called what the file says it is called.
 func TestRenamingTheFileOfATitledNoteLeavesTheTitleAlone(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\nA measure of disorder.\n",
 	})
@@ -233,6 +240,7 @@ func TestRenamingTheFileOfATitledNoteLeavesTheTitleAlone(t *testing.T) {
 // renaming the file renames the note, and a link written by the old name is
 // written again by the new one.
 func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Old.md": "A measure of disorder.\n",
 		"Heat.md":        "---\nlinks:\n  - to: Old\n    role: parent\n---\n# Heat\n",
@@ -270,6 +278,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 // finds it any more — and the repair writes the new name, which survives every
 // later move.
 func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md": "A measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Heat\n",
@@ -300,6 +309,7 @@ func TestMovingRepairsALinkThatStoppedResolving(t *testing.T) {
 // A link that reaches a different note of the same name is not broken, so it is
 // left alone: which of two notes under one name it means is the person's.
 func TestMovingLeavesALinkThatNowMeansAnotherNote(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md":   "# Entropy\n",
 		"chemistry/Entropy.md": "# Entropy\n",
@@ -323,6 +333,7 @@ func TestMovingLeavesALinkThatNowMeansAnotherNote(t *testing.T) {
 }
 
 func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n\nA measure of disorder.\n",
 		"Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -355,6 +366,7 @@ func TestRemovingPutsTheNoteInTheTrashAndOutOfTheIndex(t *testing.T) {
 // into it are named. A note that went with the folder points at nothing from
 // the trash, so it is not among them.
 func TestRemovingAFolderTakesWhatIsUnderItAndNamesTheLinksLeft(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"physics/Entropy.md": "# Entropy\n\nA measure of disorder.\n",
 		"physics/Heat.md":    "---\nlinks:\n  - to: Entropy\n    role: parent\n---\n# Heat\n",
@@ -387,6 +399,7 @@ func TestRemovingAFolderTakesWhatIsUnderItAndNamesTheLinksLeft(t *testing.T) {
 }
 
 func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md":    "# Heat\n",
@@ -418,6 +431,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 }
 
 func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Sanskrit.md": "# Sanskrit\n",
 		"Slow.md":     "# Slow going\n",
@@ -461,6 +475,7 @@ func TestPointingANoteAtAPlaceUnderATypeReplacesTheEntryItHad(t *testing.T) {
 }
 
 func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Entropy.md": "# Entropy\n",
 		"Heat.md": "---\nlinks:\n  - to: Entropy\n    role: parent\n" +
@@ -487,6 +502,7 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 }
 
 func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.Write{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
@@ -519,6 +535,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 // own write answered with. Holding the one it read would leave every sitting
 // with one write in it.
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.Write{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{}, Index: c.index,
