@@ -528,7 +528,7 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 		return 0, 0, false
 	}
 
-	last := d.endLine(node.Content[at+1], node.Content[at].Column)
+	last := d.endLine(lines, node.Content[at+1], node.Content[at].Column)
 	if last < keyLine {
 		last = keyLine
 	}
@@ -544,7 +544,7 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 // endLine is the last line of the frontmatter one node stands on. A value
 // continuing past its first line stands indented past the column of the key or
 // the dash it hangs from, which is the column given here.
-func (d *Document) endLine(node *yaml.Node, column int) int {
+func (d *Document) endLine(lines []int, node *yaml.Node, column int) int {
 	if node == nil || node.Line < 1 {
 		return 0
 	}
@@ -552,7 +552,7 @@ func (d *Document) endLine(node *yaml.Node, column int) int {
 	case yaml.MappingNode:
 		last := node.Line
 		for i := 0; i+1 < len(node.Content); i += 2 {
-			if end := d.endLine(node.Content[i+1], node.Content[i].Column); end > last {
+			if end := d.endLine(lines, node.Content[i+1], node.Content[i].Column); end > last {
 				last = end
 			}
 		}
@@ -560,14 +560,13 @@ func (d *Document) endLine(node *yaml.Node, column int) int {
 	case yaml.SequenceNode:
 		last := node.Line
 		for _, item := range node.Content {
-			if end := d.endLine(item, node.Column); end > last {
+			if end := d.endLine(lines, item, node.Column); end > last {
 				last = end
 			}
 		}
 		return last
 	}
 
-	lines := lineOffsets(d.front)
 	last := node.Line
 	for at := node.Line + 1; at < len(lines); at++ {
 		text := string(d.front[lines[at-1]:lines[at]])

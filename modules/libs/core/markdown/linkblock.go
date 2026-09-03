@@ -86,17 +86,18 @@ func (d *Document) block() (block, error) {
 		}
 		// An entry ends at the last line of its own value. A comment or a blank
 		// line below that belongs to the entry following it.
-		last := d.endLine(item, items.Column)
+		bound := len(lines) - 1
+		if i+1 < len(items.Content) {
+			bound = items.Content[i+1].Line - 1
+		} else if to := offsetLine(lines, end); to > 0 {
+			bound = to - 1
+		}
+		last := d.endLine(lines, item, items.Column)
+		if last > bound {
+			last = bound
+		}
 		if last < at {
 			last = at
-		}
-		if i+1 < len(items.Content) && last > items.Content[i+1].Line-1 {
-			last = items.Content[i+1].Line - 1
-		} else if to := offsetLine(lines, end); i+1 == len(items.Content) && to > 0 && last > to-1 {
-			last = to - 1
-		}
-		if last > len(lines)-1 {
-			last = len(lines) - 1
 		}
 		b.entries = append(b.entries, entry{
 			link:     linkOf(item),
