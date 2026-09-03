@@ -6,7 +6,7 @@
  * and they are the ones asked about here.
  */
 import { describe, expect, it } from 'vitest'
-import { reading, type Documents, type Marked, type Shape } from './reading'
+import { reading, type Documents, type Highlight, type Shape } from './reading'
 
 const SHAPE: Shape = {
   pages: 3,
@@ -19,10 +19,10 @@ const SHAPE: Shape = {
 
 /**
  * A document of three pages, recording every question put to it. It answers
- * about each run asked about with the marks standing at the same place in
+ * about each run asked about with the highlights standing at the same place in
  * `where`, and with nothing where that list is shorter.
  */
-function book(shape: Shape | Error = SHAPE, where: readonly (readonly Marked[])[] = []) {
+function book(shape: Shape | Error = SHAPE, where: readonly (readonly Highlight[])[] = []) {
   const asked: string[] = []
   /** Every run of the document's text it was asked what stands on. */
   const runs: string[] = []
@@ -34,7 +34,7 @@ function book(shape: Shape | Error = SHAPE, where: readonly (readonly Marked[])[
       return shape
     },
     page: (path, at, wide) => `${path} ${at} ${wide}`,
-    marks: async (path, asking) => {
+    highlights: async (path, asking) => {
       for (const one of asking) runs.push(`${path} ${one.start} ${one.length}`)
       return asking.map((_, i) => where[i] ?? [])
     },
@@ -138,25 +138,25 @@ describe('the width a page is drawn at', () => {
   })
 })
 
-describe('what is lit', () => {
+describe('what is highlighted', () => {
   it('is the rectangles of the page in front, and the tab turns to the first', async () => {
     const { documents } = book()
     const read = reading(documents, 'Book.pdf')
     read.widen(800)
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.9, maxY: 0.3 }
 
-    await read.light([[{ page: 2, rects: [rect] }]])
+    await read.highlight([[{ page: 2, rects: [rect] }]])
 
     expect(read.at.value).toBe(2)
-    expect(read.lit.value).toStrictEqual([rect])
+    expect(read.highlighted.value).toStrictEqual([rect])
 
     await read.go(0)
-    expect(read.lit.value).toStrictEqual([])
+    expect(read.highlighted.value).toStrictEqual([])
   })
 })
 
 describe('a document opened at a place in its text', () => {
-  it('lights what stands there, on the first page it falls on', async () => {
+  it('highlights what stands there, on the first page it falls on', async () => {
     const rect = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const { documents, runs } = book(SHAPE, [[{ page: 1, rects: [rect] }]])
     const read = reading(documents, 'Book.pdf')
@@ -166,10 +166,10 @@ describe('a document opened at a place in its text', () => {
 
     expect(runs).toStrictEqual(['Book.pdf 40512 31'])
     expect(read.at.value).toBe(1)
-    expect(read.lit.value).toStrictEqual([rect])
+    expect(read.highlighted.value).toStrictEqual([rect])
   })
 
-  it('lights the other places asked for where they fall, apart from the first', async () => {
+  it('highlights the other places asked for where they fall, apart from the first', async () => {
     const here = { minX: 0.1, minY: 0.2, maxX: 0.4, maxY: 0.23 }
     const there = { minX: 0.1, minY: 0.5, maxX: 0.4, maxY: 0.53 }
     const alsoThere = { minX: 0.1, minY: 0.8, maxX: 0.4, maxY: 0.83 }
@@ -188,16 +188,16 @@ describe('a document opened at a place in its text', () => {
     )
 
     expect(runs).toStrictEqual(['Book.pdf 40512 31', 'Book.pdf 41000 20', 'Book.pdf 90000 12'])
-    // The tab stands at the first place, which is the one lit.
+    // The tab stands at the first place, which is the one highlighted.
     expect(read.at.value).toBe(1)
-    expect(read.lit.value).toStrictEqual([here])
+    expect(read.highlighted.value).toStrictEqual([here])
     expect(read.also.value).toStrictEqual([there])
-    // The third place falls on another page and is lit there.
+    // The third place falls on another page and is highlighted there.
     expect(read.alsoOn(2)).toStrictEqual([alsoThere])
-    expect(read.litOn(2)).toStrictEqual([])
+    expect(read.highlightedOn(2)).toStrictEqual([])
   })
 
-  it('stands on the first page with nothing lit where nothing stands there', async () => {
+  it('stands on the first page with nothing highlighted where nothing stands there', async () => {
     const { documents } = book()
     const read = reading(documents, 'Book.pdf')
     read.widen(800)
@@ -205,13 +205,13 @@ describe('a document opened at a place in its text', () => {
     await read.reach({ start: 40_512, length: 31 })
 
     expect(read.at.value).toBe(0)
-    expect(read.lit.value).toStrictEqual([])
+    expect(read.highlighted.value).toStrictEqual([])
     expect(read.trouble.value).toBe('')
   })
 
   it('says what it could not ask, and reads on', async () => {
     const { documents } = book()
-    documents.marks = async () => {
+    documents.highlights = async () => {
       throw new Error('the layer is being written')
     }
     const read = reading(documents, 'Book.pdf')

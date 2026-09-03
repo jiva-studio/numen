@@ -36,7 +36,7 @@ import type { Counting } from '@numen/ui'
 import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
-import type { Documents, Marked, Sheet } from './document/reading'
+import type { Documents, Highlight, Sheet } from './document/reading'
 import type { Cue, Recordings } from './recording/listening'
 import type {
   Added,
@@ -392,12 +392,12 @@ export const documents: Documents = {
     return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
-  marks: async (path, runs) => {
+  highlights: async (path, runs) => {
     const where = runs
       .map((one) => `start=${one.start}&length=${one.length}`)
       .join('&')
     const answer = await served(`${asset(path)}/marks?${where}`)
-    const said = (await answer.json()) as { runs?: readonly { marks?: readonly Marked[] }[] }
+    const said = (await answer.json()) as { runs?: readonly { marks?: readonly Highlight[] }[] }
     return runs.map((_, i) => said.runs?.[i]?.marks ?? [])
   },
 }

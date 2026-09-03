@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A document tab: the pages of one document, and what is lit on them.
+ * A document tab: the pages of one document, and what is highlighted on them.
  *
  * What the document could not be read as is said where the pages would be.
  */
@@ -18,7 +18,7 @@ const props = defineProps<{ held: Held }>()
     :sheets="props.held.sheets.value"
     :at="props.held.at.value"
     :picture="props.held.pictureOf"
-    :lit="props.held.litOn"
+    :highlights="props.held.highlightedOn"
     :also="props.held.alsoOn"
     :words="words"
     @go="(page: number) => void props.held.go(page)"

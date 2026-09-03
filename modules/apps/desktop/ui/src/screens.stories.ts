@@ -664,10 +664,10 @@ const pageAt = (page: number): string => {
 
 /**
  * Where one line of the drawn page stands, in fractions of it. What was read
- * off a scan is lit where it sits on the paper, so a passage is a rectangle a
- * line at a time and not a block.
+ * off a scan is highlighted where it sits on the paper, so a passage is a
+ * rectangle a line at a time and not a block.
  */
-const litLine = (at: number, ends: number) => ({
+const overLine = (at: number, ends: number) => ({
   minX: (MARGIN - 4) / PAGE.wide,
   maxX: (MARGIN + ends) / PAGE.wide,
   minY: (FIRST + at * LEADING - 22) / PAGE.high,
@@ -675,12 +675,12 @@ const litLine = (at: number, ends: number) => ({
 })
 
 /** The passage a search found: the sentence the count is defined by. */
-const LIT = [litLine(10, 396), litLine(11, 412), litLine(12, 372)]
+const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
   shape: async () => ({ pages: LEAVES, sheets: Array.from({ length: LEAVES }, () => PAGE) }),
   page: (_path, at) => pageAt(at),
-  marks: async () => [[{ page: OPENS_AT, rects: LIT }]],
+  highlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
 }
 
 /**
@@ -761,7 +761,7 @@ export const Recognised: Story = {
         draws: DocumentTab,
         held,
         // The reading a search sent a person into: the book turns to the page
-        // the passage stands on, and the passage is lit where it stands on it.
+        // the passage stands on, and the passage is highlighted where it stands.
         opens: () => held.reach({ start: 0, length: 1 }),
       },
     )

@@ -330,7 +330,7 @@ const drawnPage = (page: number): string => {
 }
 
 /** Where a run of lines stands on the page, in fractions of it. */
-const litLines = (from: number, to: number, ends: number) => ({
+const overLines = (from: number, to: number, ends: number) => ({
   minX: (MARGIN - 4) / PAPER.wide,
   maxX: (MARGIN + ends) / PAPER.wide,
   minY: (FIRST + from * LEADING - 18) / PAPER.high,
@@ -338,7 +338,7 @@ const litLines = (from: number, to: number, ends: number) => ({
 })
 
 /** The passage a search found in it: the sentence the count is defined by. */
-const LIT = [litLines(8, 9, 420), litLines(10, 11, 360)]
+const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
 const said = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
 
@@ -635,7 +635,7 @@ const screen = ({
       pages: BOOK_LEAVES,
       sheets: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (page: number) => drawnPage(page),
-      litOn: (page: number) => (page === BOOK_FIRST ? LIT : []),
+      highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
       go: (page: number) => {
         at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
       },
@@ -688,7 +688,7 @@ const screen = ({
             :sheets="sheets"
             :at="at"
             :picture="picture"
-            :lit="litOn"
+            :highlights="highlightsOn"
             @go="go"
           />
           <Tree
@@ -994,11 +994,11 @@ export const Reading: Story = {
     }),
   play: async ({ canvasElement }) => {
     // Reading means the document is open at the page the search landed on,
-    // with the passage it found lit on it.
+    // with the passage it found highlighted on it.
     await waitFor(() => {
       const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
       expect(page).not.toBeNull()
-      expect(page?.querySelectorAll('.reader__lit').length).toBeGreaterThan(0)
+      expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
     })
   },
 }

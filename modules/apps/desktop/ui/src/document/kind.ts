@@ -39,9 +39,9 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
     attends: (held) => ({ path: held.path, at: held.at.value + 1, of: held.pages.value }),
   }
 
-  // The reader of documents. What stands at the stretches asked for is lit, and
-  // the tab turns to the first page of them; the rest are lit where they fall,
-  // each of them somewhere else to look.
+  // The reader of documents. What stands at the stretches asked for is
+  // highlighted, and the tab turns to the first page of them; the rest are
+  // highlighted where they fall, each of them somewhere else to look.
   puts.reads(async (path, runs) => {
     const id = await host.opens(DOCUMENT, path)
     void host.holds<Held>(DOCUMENT, id)?.reach(...runs)

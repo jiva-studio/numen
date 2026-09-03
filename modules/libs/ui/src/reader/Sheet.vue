@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * One page of a document, in the row: the picture, what is lit over it, and a
- * ring turning while it is on its way.
+ * One page of a document, in the row: the picture, what is highlighted over it,
+ * and a ring turning while it is on its way.
  *
- * Nothing is painted until the page has arrived, and what is lit is placed in
+ * Nothing is painted until the page has arrived, and a highlight is placed in
  * fractions of it, so the zoom carries it along. A page that did not come is
  * asked for again a few times, each ask carrying a number the last one did not.
  */
 import { computed, ref, watch } from 'vue'
 import Waiting from '@/waiting/Waiting.vue'
-import type { Lit } from './strip'
+import type { Rect } from './strip'
 
 const props = withDefaults(
   defineProps<{
@@ -21,10 +21,10 @@ const props = withDefaults(
      * already asks something and with `?` where it does not.
      */
     picture?: string
-    /** What is lit on it, in fractions of it. */
-    lit?: readonly Lit[]
+    /** What is highlighted on it, in fractions of it. */
+    highlights?: readonly Rect[]
     /** The other places on it, each of them somewhere else to look. */
-    also?: readonly Lit[]
+    also?: readonly Rect[]
     /** What the page is called, for whoever cannot see it. */
     page?: string
     /** What is said where it would not come. */
@@ -32,7 +32,7 @@ const props = withDefaults(
   }>(),
   {
     picture: '',
-    lit: () => [],
+    highlights: () => [],
     also: () => [],
     page: 'Page',
     undrawn: 'This page would not come.',
@@ -66,8 +66,8 @@ watch(
   },
 )
 
-/** One lit rectangle, as a share of the page it is drawn over. */
-const boxOf = (one: Lit) => ({
+/** One rectangle, as a share of the page it is drawn over. */
+const boxOf = (one: Rect) => ({
   insetInlineStart: `${one.minX * 100}%`,
   insetBlockStart: `${one.minY * 100}%`,
   inlineSize: `${(one.maxX - one.minX) * 100}%`,
@@ -101,9 +101,9 @@ const boxOf = (one: Lit) => ({
         :style="boxOf(one)"
       />
       <div
-        v-for="(one, index) in lit"
+        v-for="(one, index) in highlights"
         :key="index"
-        class="reader__lit pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
+        class="reader__highlight pointer-events-none absolute rounded-tight bg-(--numen-highlight)"
         :style="boxOf(one)"
       />
     </template>
@@ -112,14 +112,14 @@ const boxOf = (one: Lit) => ({
 
 <style scoped>
 /* The page stands on the surface, and its own edge is what tells it from it.
-   The edge is the page's, so what is lit is placed inside it. */
+   The edge is the page's, so a highlight is placed inside it. */
 .reader__page {
   border: var(--numen-stroke) solid var(--numen-node-border);
   background: var(--numen-node-bg);
 }
 
 /* A place the person was not sent to is drawn faintly: it says there is
-   something here, and the place they were sent to is the one that reads as lit. */
+   something here, and the place they were sent to is the one drawn full. */
 .reader__also {
   opacity: 0.35;
 }

@@ -19,7 +19,7 @@ import {
   row,
   standAt,
   within,
-  type Lit,
+  type Rect,
   type ReaderWords,
   type Sheet as Paper,
 } from './strip'
@@ -34,10 +34,10 @@ const props = withDefaults(
     at?: number
     /** Where one page is drawn, as an address to point a picture at. */
     picture?: (page: number) => string
-    /** What is lit on one page, in fractions of it. */
-    lit?: (page: number) => readonly Lit[]
+    /** What is highlighted on one page, in fractions of it. */
+    highlights?: (page: number) => readonly Rect[]
     /** The other places on one page, each of them somewhere else to look. */
-    also?: (page: number) => readonly Lit[]
+    also?: (page: number) => readonly Rect[]
     /** The words it is read with. */
     words?: ReaderWords
     /** What is said where a page would not come. */
@@ -48,7 +48,7 @@ const props = withDefaults(
     sheets: () => [],
     at: 0,
     picture: () => '',
-    lit: () => [],
+    highlights: () => [],
     also: () => [],
     words: () => READER_WORDS,
     undrawn: 'This page would not come.',
@@ -166,7 +166,7 @@ defineExpose({
           :key="page"
           :at="page"
           :picture="drawing(page)"
-          :lit="lit(page)"
+          :highlights="highlights(page)"
           :also="also(page)"
           :page="words.page"
           :undrawn="undrawn"

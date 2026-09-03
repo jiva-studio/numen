@@ -2,13 +2,13 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Sheet from './Sheet.vue'
 
-const LIT = [
+const HIGHLIGHTS = [
   { minX: 0.1, minY: 0.2, maxX: 0.6, maxY: 0.26 },
   { minX: 0.1, minY: 0.27, maxX: 0.4, maxY: 0.33 },
 ]
 
 const sheet = (picture = '/assets/book/pages/0?wide=400') =>
-  mount(Sheet, { props: { at: 0, picture, lit: LIT } })
+  mount(Sheet, { props: { at: 0, picture, highlights: HIGHLIGHTS } })
 
 describe('a page still coming', () => {
   it('paints nothing of the picture', () => {
@@ -30,7 +30,7 @@ describe('a page still coming', () => {
   it('lights nothing', () => {
     // A rectangle over a page still coming is a mark on nothing, standing where
     // the page is not.
-    expect(sheet().findAll('.reader__lit')).toHaveLength(0)
+    expect(sheet().findAll('.reader__highlight')).toHaveLength(0)
   })
 })
 
@@ -50,7 +50,7 @@ describe('a page that has come', () => {
   })
 
   it('lights what was found on it', async () => {
-    expect((await arrived()).findAll('.reader__lit')).toHaveLength(LIT.length)
+    expect((await arrived()).findAll('.reader__highlight')).toHaveLength(HIGHLIGHTS.length)
   })
 
   it('marks the other places apart from the one it was opened at', async () => {
@@ -58,12 +58,12 @@ describe('a page that has come', () => {
     // others, which say there is something here and are not where they are.
     const also = [{ minX: 0.1, minY: 0.6, maxX: 0.5, maxY: 0.66 }]
     const page = mount(Sheet, {
-      props: { at: 0, picture: '/assets/book/pages/0?wide=400', lit: LIT, also },
+      props: { at: 0, picture: '/assets/book/pages/0?wide=400', highlights: HIGHLIGHTS, also },
     })
     await page.find('.reader__picture').trigger('load')
 
     expect(page.findAll('.reader__also')).toHaveLength(also.length)
-    expect(page.findAll('.reader__lit')).toHaveLength(LIT.length)
+    expect(page.findAll('.reader__highlight')).toHaveLength(HIGHLIGHTS.length)
   })
 })
 

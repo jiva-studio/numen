@@ -7,7 +7,7 @@
  */
 
 /** Where something sits on a page, in fractions of it. */
-export interface Lit {
+export interface Rect {
   readonly minX: number
   readonly minY: number
   readonly maxX: number

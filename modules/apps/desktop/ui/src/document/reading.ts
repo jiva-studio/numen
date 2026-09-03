@@ -1,10 +1,10 @@
 /**
- * One document as its tab reads it: the page in front, what is lit on it, and
- * the address that page is drawn at.
+ * One document as its tab reads it: the page in front, what is highlighted on
+ * it, and the address that page is drawn at.
  *
  * Apart from the template the way `holding.ts` is: which page is shown, how
- * wide it is drawn, and what is lit over it are decisions, and a test asks them
- * without a browser.
+ * wide it is drawn, and what is highlighted over it are decisions, and a test
+ * asks them without a browser.
  */
 import type { Run } from '../core'
 import { computed, ref } from 'vue'
@@ -17,8 +17,8 @@ export interface Rect {
   readonly maxY: number
 }
 
-/** One page and what is lit on it. */
-export interface Marked {
+/** One page and what is highlighted on it. */
+export interface Highlight {
   readonly page: number
   readonly rects: readonly Rect[]
 }
@@ -59,7 +59,7 @@ export interface Documents {
    * per stretch and in the order they were asked about. A stretch nothing was
    * recorded for stands nowhere.
    */
-  marks(path: string, runs: readonly Run[]): Promise<readonly (readonly Marked[])[]>
+  highlights(path: string, runs: readonly Run[]): Promise<readonly (readonly Highlight[])[]>
 }
 
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
@@ -75,29 +75,29 @@ export function reading(documents: Documents, path: string) {
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
   const wide = ref(0)
-  /** What is lit, page by page: the place the tab turned to. */
-  const marks = ref<readonly Marked[]>([])
+  /** What is highlighted, page by page: the place the tab turned to. */
+  const highlights = ref<readonly Highlight[]>([])
   /**
    * The other places asked for, page by page. They are somewhere else to look
    * and not where the person was taken.
    */
-  const others = ref<readonly (readonly Marked[])[]>([])
+  const others = ref<readonly (readonly Highlight[])[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
 
   /**
-   * What is lit on one page, in fractions of it. A rectangle is multiplied by
-   * the page as it is drawn, so the zoom changes nothing here.
+   * What is highlighted on one page, in fractions of it. A rectangle is
+   * multiplied by the page as it is drawn, so the zoom changes nothing here.
    */
-  const litOn = (page: number): readonly Rect[] =>
-    marks.value.find((one) => one.page === page)?.rects ?? []
+  const highlightedOn = (page: number): readonly Rect[] =>
+    highlights.value.find((one) => one.page === page)?.rects ?? []
 
   /** The other places on one page, each of them somewhere else to look. */
   const alsoOn = (page: number): readonly Rect[] =>
     others.value.flatMap((where) => where.find((one) => one.page === page)?.rects ?? [])
 
-  /** What is lit on the page in front. */
-  const lit = computed<readonly Rect[]>(() => litOn(at.value))
+  /** What is highlighted on the page in front. */
+  const highlighted = computed<readonly Rect[]>(() => highlightedOn(at.value))
 
   /** The other places on the page in front. */
   const also = computed<readonly Rect[]>(() => alsoOn(at.value))
@@ -150,11 +150,11 @@ export function reading(documents: Documents, path: string) {
   /**
    * Where the runs of the document's text sit. The first of them is the place
    * the person was sent to: the tab turns to its first page, and the rest are
-   * lit where they fall.
+   * highlighted where they fall.
    */
-  const light = async (where: readonly (readonly Marked[])[]) => {
+  const highlight = async (where: readonly (readonly Highlight[])[]) => {
     const [front = [], ...rest] = where
-    marks.value = front
+    highlights.value = front
     others.value = rest
     const first = front[0] ?? rest.flat()[0]
     if (first) await go(first.page)
@@ -162,16 +162,17 @@ export function reading(documents: Documents, path: string) {
 
   /**
    * Stretches of the document's text reached: where they stand is asked for and
-   * lit, and the tab turns to the first page of the first of them. A stretch
-   * standing nowhere leaves the document on the page it is on with nothing lit.
+   * highlighted, and the tab turns to the first page of the first of them. A
+   * stretch standing nowhere leaves the document on the page it is on with
+   * nothing highlighted.
    */
   const reach = async (...runs: readonly Run[]) => {
     await shape
     if (!open || runs.length === 0) return
     try {
-      const where = await documents.marks(path, runs)
+      const where = await documents.highlights(path, runs)
       if (!open) return
-      await light(where)
+      await highlight(where)
     } catch (error) {
       if (!open) return
       trouble.value = String(error)
@@ -192,8 +193,8 @@ export function reading(documents: Documents, path: string) {
     at,
     picture,
     pictureOf,
-    lit,
-    litOn,
+    highlighted,
+    highlightedOn,
     also,
     alsoOn,
     trouble,
@@ -201,7 +202,7 @@ export function reading(documents: Documents, path: string) {
     next,
     back,
     widen,
-    light,
+    highlight,
     reach,
     close,
   }
