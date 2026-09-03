@@ -42,6 +42,7 @@ func folder(t *testing.T, name string) string {
 }
 
 func TestANameAnotherVaultHasGetsANumber(t *testing.T) {
+	t.Parallel()
 	add, registry := adding(t)
 	var names []string
 	for range 3 {
@@ -69,6 +70,7 @@ func TestANameAnotherVaultHasGetsANumber(t *testing.T) {
 }
 
 func TestANameIsTakenWhateverItsCaseAndComposition(t *testing.T) {
+	t.Parallel()
 	// A folder name from a file picker arrives decomposed and the same name
 	// typed at a command line arrives composed.
 	add, _ := adding(t)
@@ -85,6 +87,7 @@ func TestANameIsTakenWhateverItsCaseAndComposition(t *testing.T) {
 }
 
 func TestAVaultInsideAnotherIsRefused(t *testing.T) {
+	t.Parallel()
 	add, _ := adding(t)
 	outer := folder(t, "outer")
 	if _, err := add.Execute(outer, ""); err != nil {
@@ -103,6 +106,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 }
 
 func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
+	t.Parallel()
 	add, _ := adding(t)
 	outer := folder(t, "outer")
 	inner := filepath.Join(outer, "inner")
@@ -118,6 +122,7 @@ func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 }
 
 func TestAFolderReachedThroughASymlinkIsTheFolderItself(t *testing.T) {
+	t.Parallel()
 	add, registry := adding(t)
 	target := folder(t, "notes")
 	link := filepath.Join(t.TempDir(), "link")

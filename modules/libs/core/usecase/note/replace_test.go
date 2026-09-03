@@ -17,6 +17,7 @@ func (c changing) replace() note.Replace {
 
 // What is asked for is replaced, and what is not asked for is the bytes it was.
 func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Aggressor.md": "# The aggressor\n\nA hedgehog is named.\n\nAnd nothing else.\n",
 	})
@@ -45,6 +46,7 @@ func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
 // The offsets answer where the new text now stands, so a window can draw it
 // without being told anything else.
 func TestAReplacementSaysWhereItLanded(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 
 	done, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "two", "four")
@@ -59,6 +61,7 @@ func TestAReplacementSaysWhereItLanded(t *testing.T) {
 // The frontmatter is the person's, and a replacement in the prose is not a
 // reason to touch it.
 func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
+	t.Parallel()
 	front := "---\nkeep: 'this'   # and this\nid: 01J8XYZ\n---\n"
 	c := changeable(t, map[string]string{"Aggressor.md": front + "\nA hedgehog.\n"})
 
@@ -74,6 +77,7 @@ func TestTheFrontmatterSurvivesAReplacement(t *testing.T) {
 // A stretch standing twice does not say which was meant, and guessing at one
 // is how the wrong half of a note is rewritten.
 func TestAStretchStandingTwiceIsRefused(t *testing.T) {
+	t.Parallel()
 	was := "A foe advances.\n\nAnother foe advances.\n"
 	c := changeable(t, map[string]string{"Aggressor.md": was})
 
@@ -94,6 +98,7 @@ func TestAStretchStandingTwiceIsRefused(t *testing.T) {
 // A stretch that is not there is answered with where a copy of it stopped
 // agreeing, which is what tells a caller its copy is one character out.
 func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "the wrath of the advancing foe\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
@@ -113,6 +118,7 @@ func TestAStretchThatIsNotThereSaysWhereItDiverged(t *testing.T) {
 // A replacement already in the note and an original that is gone is a write
 // that landed. Saying so is what stops it landing twice.
 func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "An axe is named.\n"})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
@@ -125,6 +131,7 @@ func TestAReplacementAlreadyInTheNoteIsSaidSo(t *testing.T) {
 // A person's editor writes the quotes and dashes; a program writing about that
 // prose rarely reproduces them. The stretch is found, and the reading is said.
 func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Aggressor.md": "Он сказал «да» — и ушёл.\n",
 	})
@@ -147,6 +154,7 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 
 // A file written with CRLF is a file the application is a guest in.
 func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{
 		"Aggressor.md": "# The aggressor\r\n\r\nA hedgehog.\r\n",
 	})
@@ -167,6 +175,7 @@ func TestACRLFNoteKeepsItsBreaks(t *testing.T) {
 // A replacement is the application changing what is in a note, so the note
 // takes an identifier if it has none.
 func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "A hedgehog.\n"})
 
 	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md",
@@ -181,6 +190,7 @@ func TestAReplacedNoteTakesAnIdentifier(t *testing.T) {
 // The fingerprint a replacement answers with is what the next one presents, so
 // a caller changing a note twice does not read it back in between.
 func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
+	t.Parallel()
 	c := changeable(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 

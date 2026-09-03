@@ -42,6 +42,7 @@ func arrived(t *testing.T, root, path string) string {
 // Files a person lets go of over a folder are copied into it, whatever kind of
 // file they are, and what they let go of stays where it was.
 func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
+	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := outside(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
 	bring := usecase.Bring{Writers: filesystem.Writers{}}
@@ -71,6 +72,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 // A folder arrives with everything under it, and an empty folder inside it is
 // still a folder.
 func TestAFolderIsBroughtInWhole(t *testing.T) {
+	t.Parallel()
 	v := testsupport.NewVault(t, nil)
 	from := outside(t, map[string]string{
 		"scans/Cover.png":       "PNG",
@@ -107,6 +109,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 // A name the folder already carries is a question only the person can answer,
 // so that file stays outside and the rest arrive.
 func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
+	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
 	from := outside(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
 	bring := usecase.Bring{Writers: filesystem.Writers{}}
@@ -136,6 +139,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 // A folder the vault itself sits in would be copied into itself for as long as
 // the disk lasted.
 func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
+	t.Parallel()
 	v := testsupport.NewVault(t, nil)
 	bring := usecase.Bring{Writers: filesystem.Writers{}}
 

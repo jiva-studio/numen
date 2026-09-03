@@ -50,6 +50,7 @@ func twoVaults(t *testing.T) (domain.Vault, domain.Vault, *appstate.VaultRegistr
 }
 
 func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
+	t.Parallel()
 	kept, gone, registry := twoVaults(t)
 	index := &indexRows{}
 
@@ -70,6 +71,7 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 }
 
 func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
+	t.Parallel()
 	_, gone, registry := twoVaults(t)
 
 	if err := (usecase.Forget{Registry: registry, Index: &indexRows{}}).Execute(t.Context(), gone); err != nil {
@@ -82,6 +84,7 @@ func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
 }
 
 func TestForgetRefusesTheOnlyVault(t *testing.T) {
+	t.Parallel()
 	add, registry := adding(t)
 	only, err := add.Execute(folder(t, "personal"), "")
 	if err != nil {
@@ -106,6 +109,7 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 }
 
 func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
+	t.Parallel()
 	_, gone, registry := twoVaults(t)
 	index := &indexRows{fails: errors.New("the index is locked")}
 

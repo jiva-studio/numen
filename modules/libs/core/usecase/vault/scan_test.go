@@ -51,6 +51,7 @@ func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
 }
 
 func TestScanIndexesEveryNoteOnce(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
@@ -79,6 +80,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 // anybody asking, and it is not counted as a note: what `Seen` means did not
 // change when a second kind of source became visible.
 func TestAScanSeesBooksBesideNotes(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
@@ -113,6 +115,7 @@ func TestAScanSeesBooksBesideNotes(t *testing.T) {
 // a file of a format no reader handles is neither a note nor a source of
 // another kind, however much of a vault it is.
 func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
+	t.Parallel()
 	root := testsupport.CopyVault(t)
 	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
 		t.Fatal(err)
@@ -138,6 +141,7 @@ func TestAFormatNothingExtractsIsNotSeenAtAll(t *testing.T) {
 // words, and both directions asked: one index holds every vault, so a query
 // that forgets which one returns a plausible number.
 func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	first := testsupport.NewVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\nthermodynamics\n",
@@ -184,6 +188,7 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 }
 
 func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
@@ -203,6 +208,7 @@ func TestScanSkipsWhatIsNotVaultContent(t *testing.T) {
 }
 
 func TestSecondScanOpensNoFiles(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
@@ -227,6 +233,7 @@ func TestSecondScanOpensNoFiles(t *testing.T) {
 }
 
 func TestEditedNoteIsReindexedAndDeletedNoteDisappears(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	// A copy, because this test writes: the fixture is shared and must stay
 	// exactly as committed.
@@ -336,6 +343,7 @@ func (c *countingReader) Read(ctx context.Context, path string) ([]byte, error) 
 }
 
 func TestSearchNeverCrossesVaults(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	db := openIndex(t)
 
@@ -383,6 +391,7 @@ func TestSearchNeverCrossesVaults(t *testing.T) {
 }
 
 func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	db := openIndex(t)
 
@@ -461,6 +470,7 @@ func (v vanishingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
 }
 
 func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
@@ -483,6 +493,7 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 }
 
 func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
+	t.Parallel()
 	// Saving through a temporary file and a rename makes a note briefly absent.
 	// A scan that catches that moment must not take the note out of search
 	// until the next one.
@@ -520,6 +531,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 }
 
 func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	db := openIndex(t)
 	// `.nan` is valid YAML and not representable in JSON. The note is still a
@@ -541,6 +553,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 }
 
 func TestNewestNotesAreIndexedFirst(t *testing.T) {
+	t.Parallel()
 	// A vault has a working set and an archive. While a scan runs, what the
 	// person is looking for is what they touched recently, so that is what the
 	// index gets first.
@@ -575,6 +588,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 // Asserted on how far the walk got, not on the error: the next read refuses a
 // cancelled context by itself, so the error arrives either way.
 func TestScanStopsWhenCancelled(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithCancel(t.Context())
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
@@ -607,6 +621,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 // first query refuses and the loop is never reached, so the check it is written
 // for is never the thing that stopped it.
 func TestAWarmScanStopsWhenCancelled(t *testing.T) {
+	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
 	scan := scanner(filesystem.Readers{}, db)

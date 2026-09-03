@@ -48,6 +48,7 @@ func links(t *testing.T, db *container.Index, v domain.Vault, path string) note.
 }
 
 func TestANameResolvesToTheNoteThatAnswersToIt(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"source.md":        "Points at [[Entropy]].\n",
 		"notes/Entropy.md": "# Entropy\n",
@@ -66,6 +67,7 @@ func TestANameResolvesToTheNoteThatAnswersToIt(t *testing.T) {
 }
 
 func TestAPathFromTheRootWinsOverAName(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"source.md":          "Points at [[archive/Entropy]].\n",
 		"notes/Entropy.md":   "# The near one\n",
@@ -79,6 +81,7 @@ func TestAPathFromTheRootWinsOverAName(t *testing.T) {
 }
 
 func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
+	t.Parallel()
 	// Two notes answer to the name, and one of them is in the same folder as the
 	// note that wrote the link. That is a determined answer rather than an
 	// ambiguity: the rule picked it, not a tie-break.
@@ -98,6 +101,7 @@ func TestTheFolderTheLinkWasWrittenInDecidesIt(t *testing.T) {
 }
 
 func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
+	t.Parallel()
 	// Neither an exact path nor the folder the link was written in picks one, so
 	// only the name is left and it answers twice. The link still goes somewhere —
 	// a dead link would be worse — and the vault has a question in it.
@@ -120,6 +124,7 @@ func TestSeveralNotesByOneNameAreAmbiguousAndStillResolve(t *testing.T) {
 // filed under. Both directions are asked here: the link and the backlink are
 // answered through the same stored name.
 func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
+	t.Parallel()
 	const lecture = "Seminar 1.2–1.3 — Lisbon, 9 July 1973"
 	db, v := indexed(t, map[string]string{
 		"source.md":                "Points at [[" + lecture + "]].\n",
@@ -141,6 +146,7 @@ func TestANameCarryingDotsResolvesWholeAndIsABacklink(t *testing.T) {
 }
 
 func TestALinkToNothingIsDanglingRatherThanAnError(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"source.md": "Points at [[Nothing At All]].\n",
 	})
@@ -155,6 +161,7 @@ func TestALinkToNothingIsDanglingRatherThanAnError(t *testing.T) {
 }
 
 func TestAnIdentifierResolvesWhateverTheFileIsCalled(t *testing.T) {
+	t.Parallel()
 	// This is what the identifier form is for: the target was renamed, and the
 	// link did not have to be.
 	db, v := indexed(t, map[string]string{
@@ -169,6 +176,7 @@ func TestAnIdentifierResolvesWhateverTheFileIsCalled(t *testing.T) {
 }
 
 func TestBacklinksFindBothFormsOfAddress(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"target.md":    "---\nid: 01M02ACGM0FYMSXNDP29C90JNR\n---\n\n# Target\n",
 		"by-name.md":   "Points at [[target]].\n",
@@ -190,6 +198,7 @@ func TestBacklinksFindBothFormsOfAddress(t *testing.T) {
 }
 
 func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"source.md": "---\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n---\n\nbody\n",
 	})
@@ -207,6 +216,7 @@ func TestAnAttachmentIsALinkAndResolvesToNoNote(t *testing.T) {
 }
 
 func TestANameNeverLeavesItsVault(t *testing.T) {
+	t.Parallel()
 	// A name means something only inside one vault. Another vault holding a note
 	// by the same name is not an answer, and there is no way to ask it for one.
 	db, first := indexed(t, map[string]string{
@@ -221,6 +231,7 @@ func TestANameNeverLeavesItsVault(t *testing.T) {
 }
 
 func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
+	t.Parallel()
 	// The seam the user put there on purpose: a link written by identifier finds
 	// its note wherever that note is, and says which vault that turned out to be.
 	const id = "01M02DTC80PABQQW3XS3XWDVHW"
@@ -242,6 +253,7 @@ func TestAnIdentifierCrossesIntoAConnectedVault(t *testing.T) {
 }
 
 func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *testing.T) {
+	t.Parallel()
 	// Nothing here can tell a deleted note from one in a vault the user has not
 	// added, and calling it broken would report a link that is fine on the
 	// machine where both vaults are open.
@@ -279,6 +291,7 @@ func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 }
 
 func TestALinkWrittenAsAPathIsStillABacklink(t *testing.T) {
+	t.Parallel()
 	// A backlink is a link that resolves here, not one whose text looks like
 	// this note. Written as a path, it never matches by name.
 	db, v := indexed(t, map[string]string{
@@ -296,6 +309,7 @@ func TestALinkWrittenAsAPathIsStillABacklink(t *testing.T) {
 }
 
 func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
+	t.Parallel()
 	// Two notes answer to the name, and the link resolves to the near one. The
 	// far one must not claim it.
 	db, v := indexed(t, map[string]string{
@@ -315,6 +329,7 @@ func TestALinkThatResolvesElsewhereIsNotABacklink(t *testing.T) {
 }
 
 func TestBacklinksNeverCrossVaults(t *testing.T) {
+	t.Parallel()
 	// One database for every vault makes a query that forgets its vault
 	// invisible by construction. Asked here of the direction that has to look
 	// at every link in the vault.
@@ -338,6 +353,7 @@ func TestBacklinksNeverCrossVaults(t *testing.T) {
 }
 
 func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
+	t.Parallel()
 	// The links block names it by path, the prose names it by name. Both mean
 	// the same note, so there is one link, and the described one wins.
 	db, v := indexed(t, map[string]string{
@@ -355,6 +371,7 @@ func TestOneNoteWrittenTwoWaysIsOneLink(t *testing.T) {
 }
 
 func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
+	t.Parallel()
 	// A name that answers to nothing is matched as it is written, so two of
 	// them stay two.
 	db, v := indexed(t, map[string]string{
@@ -368,6 +385,7 @@ func TestTwoUnresolvedLinksAreOnlyTheSameWhenWrittenTheSame(t *testing.T) {
 }
 
 func TestANameMatchesWhateverCaseItWasTypedIn(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"source.md":  "Points at [[entropy]].\n",
 		"Entropy.md": "# Entropy\n",

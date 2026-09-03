@@ -17,6 +17,7 @@ import (
 // A vault made searchable in a terminal and one made searchable in a window are
 // the same vault: the three passes, in the one order.
 func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
@@ -40,6 +41,7 @@ func TestAVaultIsMadeSearchableByThreePasses(t *testing.T) {
 // The notes come first, and a vault whose notes could not be read is not a
 // vault whose books are read next.
 func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
@@ -75,6 +77,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 
 // Reading the notes is what the whole pass stands on.
 func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
@@ -95,6 +98,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 // Two passes that failed are two things wrong with the vault, and the caller is
 // told both.
 func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
@@ -122,6 +126,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 // cancelled, and both are the run being over: the pass that met the limit is
 // what the caller is told, and nothing is asked of the context afterwards.
 func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
+	t.Parallel()
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 

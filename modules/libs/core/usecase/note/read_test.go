@@ -30,6 +30,7 @@ func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents 
 }
 
 func TestAReadGivesTheProseAndWhatTheFileWas(t *testing.T) {
+	t.Parallel()
 	raw := "---\nid: 01J8F3K2M9QRSTVWXYZ012\n---\n# Entropy\n\nA measure of disorder.\n"
 	u, v := readable(t, map[string]string{"Entropy.md": raw})
 
@@ -48,6 +49,7 @@ func TestAReadGivesTheProseAndWhatTheFileWas(t *testing.T) {
 // A path with no file behind it is an answer. The tab that asked keeps what the
 // person is reading, and the next write makes the note.
 func TestAPathWithNoFileIsMissing(t *testing.T) {
+	t.Parallel()
 	u, v := readable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := read(t, u, v, "gone.md")
@@ -62,6 +64,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 // The vault holds notes. Anything else in the folder — an export, an
 // attachment, a book — is refused by name rather than handed over as prose.
 func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
+	t.Parallel()
 	u, v := readable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	book := "PK\x03\x04 chapters and chapters of somebody else's book"
 	if err := os.WriteFile(filepath.Join(v.Path, "library.epub"), []byte(book), 0o644); err != nil {
@@ -81,6 +84,7 @@ func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 // into U+FFFD wherever it is shown. The note is refused, and its bytes stay as
 // the person left them.
 func TestAFileThatIsNotTextIsRefused(t *testing.T) {
+	t.Parallel()
 	u, v := readable(t, map[string]string{"Entropy.md": "# Entropy\n\xff\xfe pasted\n"})
 
 	got := read(t, u, v, "Entropy.md")
@@ -93,6 +97,7 @@ func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 }
 
 func TestANoteOverTheCeilingIsRefused(t *testing.T) {
+	t.Parallel()
 	u, v := readable(t, map[string]string{
 		"Entropy.md": "# Entropy\n" + strings.Repeat("a measure of disorder ", note.MaxBytes/20),
 	})
@@ -112,6 +117,7 @@ func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 // A note whose frontmatter is not YAML can be neither read nor written from
 // here, and the outcome says which note that is.
 func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
+	t.Parallel()
 	u, v := readable(t, map[string]string{"Entropy.md": "---\nid: [unterminated\n---\n# Entropy\n"})
 
 	got := read(t, u, v, "Entropy.md")
@@ -127,6 +133,7 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 // its own: a chunk's offsets are byte offsets into it, so the bytes the index
 // is built from are the bytes on disk.
 func TestAReadNormalisesTheProseAndLeavesTheFileAlone(t *testing.T) {
+	t.Parallel()
 	raw := "---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\n---\r\n# Entropy\r\n\r\nA measure of disorder.\r\n"
 	u, v := readable(t, map[string]string{"Entropy.md": raw})
 
@@ -163,6 +170,7 @@ func TestAReadNormalisesTheProseAndLeavesTheFileAlone(t *testing.T) {
 // One database holds every vault and one folder is read at a time. A read is
 // answered by the vault it was given and by no other.
 func TestAReadStaysInTheVaultItWasGiven(t *testing.T) {
+	t.Parallel()
 	u, physics := readable(t, map[string]string{
 		"Entropy.md":  "# Entropy\n\nA measure of disorder.\n",
 		"Momentum.md": "# Momentum\n",

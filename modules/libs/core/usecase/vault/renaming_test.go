@@ -28,6 +28,7 @@ func (f filing) title(t *testing.T, path string) string {
 // Whichever of the title and the filename names the note is the one brought
 // into line, and a note its filename names has nothing to write.
 func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string
 		holds []string
@@ -80,6 +81,7 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 // as it was written. A note its filename names still changes its name, because
 // it carries it nowhere else.
 func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
+	t.Parallel()
 	for name, c := range map[string]struct {
 		raw   string
 		shown string
@@ -113,6 +115,7 @@ func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
 // A move between folders is not a rename, so the note keeps the name it had
 // however the two are held.
 func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
+	t.Parallel()
 	for name, moving := range map[string]func(filing) usecase.Move{
 		"one name":   filing.move,
 		"told apart": filing.apart,
@@ -139,6 +142,7 @@ func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
 // A folder renamed is not a note renamed, so nothing under it is written to
 // however the two are held.
 func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
+	t.Parallel()
 	for name, moving := range map[string]func(filing) usecase.Move{
 		"one name":   filing.move,
 		"told apart": filing.apart,
@@ -166,6 +170,7 @@ func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 // A note its filename names carries its name nowhere else, so a renamed file is
 // the whole of the rename and the prose is left as it was written.
 func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
+	t.Parallel()
 	raw := "# Entropy\n\nA measure.\n"
 	f := fileable(t, map[string]string{"Entropy.md": raw})
 
@@ -184,6 +189,7 @@ func TestARenamedFileLeavesANoteCarryingNoTitleAlone(t *testing.T) {
 // A move that landed is settled whatever the note's own name did. Whoever is
 // drawing the note at the name it had is reading a name with no file behind it.
 func TestAMoveThatLandedIsSettled(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n\nA measure.\n"})
 
 	if _, err := f.move().Execute(t.Context(), f.vault, "Entropy.md", "Note #.md"); err != nil {
@@ -197,6 +203,7 @@ func TestAMoveThatLandedIsSettled(t *testing.T) {
 // A note whose frontmatter cannot be read is never written, and renaming its
 // file is not the moment to repair it.
 func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) {
+	t.Parallel()
 	raw := "---\nid: [unterminated\n---\n# Entropy\n"
 	f := fileable(t, map[string]string{"Entropy.md": raw})
 
@@ -215,6 +222,7 @@ func TestARenamedFileLeavesANoteWhoseFrontmatterCannotBeReadAlone(t *testing.T) 
 // Where the two are told apart, a renamed file is not read at all. The note is
 // opened only where the setting writes into it.
 func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{"Entropy.md": "---\ntitle: Entropy\n---\nA measure.\n"})
 	before := f.readers.reads
 
@@ -229,6 +237,7 @@ func TestARenamedFileIsNotReadWhereTheTwoAreToldApart(t *testing.T) {
 // A file filed under another extension is a file of another kind, so it is not
 // a note given a different name.
 func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
+	t.Parallel()
 	raw := "---\ntitle: Entropy\n---\nA measure.\n"
 	f := fileable(t, map[string]string{"Entropy.md": raw})
 
@@ -243,6 +252,7 @@ func TestAFileGivenAnotherExtensionIsNotANoteRenamed(t *testing.T) {
 // A file the index holds nothing about is renamed like any other, and there is
 // no note in it to call anything.
 func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
+	t.Parallel()
 	f := fileable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	loose := filepath.Join(f.vault.Path, "notes.txt")
 	if err := os.WriteFile(loose, []byte("A measure.\n"), 0o644); err != nil {
@@ -264,6 +274,7 @@ func TestRenamingAFileTheIndexHoldsNothingAbout(t *testing.T) {
 // A name already taken moves nothing, so the note is not left called one thing
 // and filed under another.
 func TestARenameOntoATakenNameLeavesTheNoteCalledWhatItWas(t *testing.T) {
+	t.Parallel()
 	raw := "---\ntitle: Entropy\n---\nA measure.\n"
 	f := fileable(t, map[string]string{"Entropy.md": raw, "Disorder.md": "# Disorder\n"})
 

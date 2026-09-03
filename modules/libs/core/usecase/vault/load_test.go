@@ -29,6 +29,7 @@ import (
 // teaches people to ignore the test; the numbers belong in docs/performance.md,
 // where a human compares them.
 func TestLoad(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("NUMEN_LOAD") == "" {
 		t.Skip("set NUMEN_LOAD=1 to run the load test")
 	}

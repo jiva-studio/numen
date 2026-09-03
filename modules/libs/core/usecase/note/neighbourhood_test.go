@@ -35,6 +35,7 @@ func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.
 // TestBothEndsOfAnEdgeAreOneRelationship. `parent: B` in A and `child: A` in B
 // say the same thing, so A must be B's child either way it was written.
 func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
+	t.Parallel()
 	written := neighbourhoodOf(t, map[string]string{
 		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
 		"Idea.md":  "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Idea\n",
@@ -79,6 +80,7 @@ func drawnOn(t *testing.T, files map[string]string, from, to string) string {
 // edge mutual. The word shown is then the one the note in focus wrote, so the
 // two notes read the same edge in their own language.
 func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
+	t.Parallel()
 	written := func(title, links string) string {
 		if links == "" {
 			return "---\ntitle: " + title + "\n---\n\n# " + title + "\n"
@@ -145,6 +147,7 @@ func TestALabelWrittenAtEitherEndIsDrawn(t *testing.T) {
 // TestEndsThatDisagreeAnswerNothing. A pair who are each other's parent name
 // two relationships, and the one drawn is the one whose seat wins.
 func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
+	t.Parallel()
 	mutualParents := map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
@@ -173,6 +176,7 @@ func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
 // TestSiblingsAreTheOtherChildrenOfAParent. Nothing stores a sibling; it is
 // what the shared parent knows.
 func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
+	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
 		"One.md":   "---\ntitle: One\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# One\n",
@@ -190,6 +194,7 @@ func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
 // the vault is allowed to contain, and a picture that draws one note twice is
 // not a picture.
 func TestANoteTakesOneSeat(t *testing.T) {
+	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n---\n\n# Egg\n",
@@ -206,6 +211,7 @@ func TestANoteTakesOneSeat(t *testing.T) {
 // second. Keeping whichever was seen first would seat it as a child; the rule
 // is that a parent outranks one.
 func TestTheHigherSeatWins(t *testing.T) {
+	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n---\n\n# Chicken\n",
 		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n---\n\n# Egg\n",
@@ -221,6 +227,7 @@ func TestTheHigherSeatWins(t *testing.T) {
 // check where one landed draws a note from somewhere else — or, when the two
 // vaults file a note at the same path, the wrong note under the right name.
 func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
+	t.Parallel()
 	const shared = "notes/Entropy.md"
 	db, here := indexed(t, map[string]string{
 		shared:    "---\ntitle: Entropy here\nid: 01M02ACGM0FYMSXNDP29C90JN1\n---\n\n# Entropy here\n",
@@ -243,6 +250,7 @@ func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
 // TestOnlyNavigableLinksTakeASeat. A wikilink in prose and an attachment are
 // links, and neither is a place in the hierarchy.
 func TestOnlyNavigableLinksTakeASeat(t *testing.T) {
+	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n" +
 			"  - to: \"[[Idea]]\"\n    role: jump\n---\n\n# Area\n\nMentioned in prose: [[Other]].\n",
@@ -257,6 +265,7 @@ func TestOnlyNavigableLinksTakeASeat(t *testing.T) {
 
 // TestADanglingLinkHasNoSeat: there is nothing to draw and nowhere to go.
 func TestADanglingLinkHasNoSeat(t *testing.T) {
+	t.Parallel()
 	n := neighbourhoodOf(t, map[string]string{
 		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Nothing by that name]]\"\n    role: child\n---\n\n# Area\n",
 	}, "Area.md")
@@ -276,6 +285,7 @@ func TestADanglingLinkHasNoSeat(t *testing.T) {
 // vault where that is true is the one a person notices it in: twelve daily
 // notes, twelve chapters, twelve "Notes".
 func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
+	t.Parallel()
 	files := map[string]string{"Area.md": "---\ntitle: Area\n---\n\n# Area\n"}
 	for i := range 12 {
 		files[fmt.Sprintf("Child%02d.md", i)] = fmt.Sprintf(
@@ -295,6 +305,7 @@ func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
 
 // TestAVaultOpensOnItsFirstNote.
 func TestAVaultOpensOnItsFirstNote(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{
 		"Area.md": "---\ntitle: Area\n---\n\n# Area\n",
 		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
@@ -321,6 +332,7 @@ func TestAVaultOpensOnItsFirstNote(t *testing.T) {
 }
 
 func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
+	t.Parallel()
 	db, v := indexed(t, map[string]string{})
 
 	_, found, err := db.Queries().Opening(t.Context(), v.ID)
