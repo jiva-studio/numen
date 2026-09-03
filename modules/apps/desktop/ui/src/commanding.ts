@@ -676,7 +676,7 @@ export function commanding(
   const known = shallowRef<readonly Known[]>([])
   /** Which of them that answer said this window is showing. */
   const showing = ref('')
-  const waiting = ref(false)
+  const working = ref(false)
   /** What the vault could not be asked, in words a person reads. */
   const said = ref('')
 
@@ -758,7 +758,7 @@ export function commanding(
     found.value = []
     known.value = []
     showing.value = ''
-    waiting.value = false
+    working.value = false
     said.value = ''
   }
 
@@ -770,11 +770,11 @@ export function commanding(
     const mine = asked.ask()
     if (!query) {
       found.value = []
-      waiting.value = false
+      working.value = false
       said.value = ''
       return
     }
-    waiting.value = true
+    working.value = true
     said.value = ''
     await wait(HOLD)
     if (!mine.current) return
@@ -790,14 +790,14 @@ export function commanding(
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine.current) waiting.value = false
+      if (mine.current) working.value = false
     }
   }
 
   /** Every vault the installation holds, asked for as the step that lists them opens. */
   const lists = async () => {
     const mine = asked.ask()
-    waiting.value = true
+    working.value = true
     said.value = ''
     try {
       const listed = await core.vaults()
@@ -812,7 +812,7 @@ export function commanding(
       console.error(error)
       said.value = words.notAsked
     } finally {
-      if (mine.current) waiting.value = false
+      if (mine.current) working.value = false
     }
   }
 
@@ -908,7 +908,7 @@ export function commanding(
       id: 'picking',
       title: words.names,
       items,
-      working: waiting.value,
+      working: working.value,
       silence: said.value || (text.trim() ? words.noneFound : words.typeNote),
     }
   }
@@ -973,7 +973,7 @@ export function commanding(
       id: 'vaults',
       title: words.vaults,
       items,
-      working: waiting.value,
+      working: working.value,
       silence: said.value || words.noneFound,
     }
   }

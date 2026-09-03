@@ -21,12 +21,12 @@ export interface Task {
 
 export function raising() {
   /** What the window is doing behind itself, which stands above what it said. */
-  const working = ref<readonly Notice[]>([])
+  const tasks = ref<readonly Notice[]>([])
 
   /** What it has told the person, newest last. */
   const told = ref<readonly Notice[]>([])
 
-  const notices = computed<readonly Notice[]>(() => [...working.value, ...told.value])
+  const notices = computed<readonly Notice[]>(() => [...tasks.value, ...told.value])
 
   /** How many have been raised, which is what names the next one. */
   let raised = 0
@@ -55,8 +55,8 @@ export function raising() {
    * What is being done behind the window, as cards to draw. The whole list
    * arrives at once, so the whole list is what stands.
    */
-  const doing = (tasks: readonly Task[]) => {
-    working.value = tasks.map((at) => ({
+  const doing = (said: readonly Task[]) => {
+    tasks.value = said.map((at) => ({
       id: at.id,
       says: at.failed || at.doing,
       about: at.about,

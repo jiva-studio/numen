@@ -34,7 +34,7 @@ const listed = computed<readonly Held[]>(() =>
       id: one.vaultId,
       name: one.name,
       path: one.path,
-      waiting: !one.counted,
+      working: !one.counted,
       ...(said ? { detail: said } : {}),
     }
   }),

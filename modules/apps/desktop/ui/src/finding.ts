@@ -173,8 +173,8 @@ export function finding(core: Asking, words: Words, how: Finding = {}) {
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
-  /** Which bands are still waiting on an answer. */
-  const waiting = ref<Record<Band, boolean>>({ names: false, text: false, meaning: false })
+  /** Which bands are still working on an answer. */
+  const working = ref<Record<Band, boolean>>({ names: false, text: false, meaning: false })
   /** What a band could not be filled with, in words a person reads. */
   const said = ref<Record<Band, string>>({ names: '', text: '', meaning: '' })
 
@@ -186,7 +186,7 @@ export function finding(core: Asking, words: Words, how: Finding = {}) {
     names.value = []
     texts.value = []
     meanings.value = []
-    waiting.value = { names: false, text: false, meaning: false }
+    working.value = { names: false, text: false, meaning: false }
     said.value = { names: '', text: '', meaning: '' }
   }
 
@@ -209,13 +209,13 @@ export function finding(core: Asking, words: Words, how: Finding = {}) {
       console.error(error)
       said.value = { ...said.value, [band]: words.notAsked }
     } finally {
-      if (mine.current) waiting.value = { ...waiting.value, [band]: false }
+      if (mine.current) working.value = { ...working.value, [band]: false }
     }
   }
 
   /** Everything the palette wants to know about one query, asked at once. */
   const ask = async (mine: Question, query: string) => {
-    waiting.value = { names: true, text: true, meaning: true }
+    working.value = { names: true, text: true, meaning: true }
     said.value = { names: '', text: '', meaning: '' }
     await Promise.all([
       fill(mine, 'names', () => core.names(query, EACH), (found) => (names.value = found)),
@@ -367,7 +367,7 @@ export function finding(core: Asking, words: Words, how: Finding = {}) {
         id,
         title,
         items: drawn.map((one) => one.item),
-        working: waiting.value[id],
+        working: working.value[id],
         silence: silenceOf(id),
       }
     }

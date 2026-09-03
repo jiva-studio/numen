@@ -74,7 +74,7 @@ defineEmits<{
             <button
               type="button"
               class="welcome__row welcome__row--vault"
-              :disabled="one.waiting"
+              :disabled="one.working"
               @click="$emit('opens', one.id)"
             >
               <FolderRoot class="welcome__icon" />
@@ -89,10 +89,10 @@ defineEmits<{
               <span v-if="one.detail" class="welcome__state">{{ one.detail }}</span>
               <!-- The letter it is opened by, at the end of the row the ways in
                    carry their keystrokes at. Past the alphabet a vault is opened
-                   with the hand and carries none, and a row still waiting is
+                   with the hand and carries none, and a row still working is
                    drawn without the letter it will be opened by. -->
               <KeyCap
-                v-if="vaultLetter(at) && !one.waiting"
+                v-if="vaultLetter(at) && !one.working"
                 class="welcome__keys"
                 :keys="{ icons: [], letter: vaultLetter(at) }"
               />
