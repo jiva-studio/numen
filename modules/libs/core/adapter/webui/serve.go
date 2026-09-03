@@ -454,7 +454,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// A batch left with a proofreader outlives the run that left it, so one
 	// left before the application closed is collected when it opens. Every
 	// vault this installation holds is asked after.
-	go recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
+	recognising.Collecting(watching, o.Index.SourcesKnown(), collectedEvery, known...)
 
 	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
@@ -466,7 +466,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	transcribing := o.cfg.Transcribing(watching, o.Index.Sources(), o.tasks)
 	transcribing.Cut = recognising.Cut
 	if o.cfg.Transcribes {
-		go transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
+		transcribing.Queue(watching, o.Index.SourcesKnown(), heardEvery, v)
 	}
 
 	// A transcript's proofreading stands at the line it reached, and is taken up
