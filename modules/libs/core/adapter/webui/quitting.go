@@ -33,12 +33,12 @@ const (
 type leaving struct {
 	mu    sync.Mutex
 	next  int
-	pages map[string]*page
+	pages map[string]*client
 	round *round
 }
 
-// page is one client drawing the vault, and what it has said.
-type page struct {
+// client is one browser tab drawing the vault, and what it has said.
+type client struct {
 	tell chan string
 	said owed
 	// gone is a page whose stream ended with a question standing. It is told
@@ -78,7 +78,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	defer l.mu.Unlock()
 
 	if l.pages == nil {
-		l.pages = map[string]*page{}
+		l.pages = map[string]*client{}
 	}
 	// One window draws one vault, so a page that listens is the page that went,
 	// and it takes over what that one was holding.
@@ -89,7 +89,7 @@ func (l *leaving) listen() (string, <-chan string, func()) {
 	}
 	token := strconv.Itoa(l.next)
 	l.next++
-	p := &page{tell: make(chan string, 1)}
+	p := &client{tell: make(chan string, 1)}
 	l.pages[token] = p
 	if l.asking() {
 		p.tell <- token
@@ -105,7 +105,7 @@ func (l *leaving) asking() bool {
 }
 
 // left is one client no longer listening.
-func (l *leaving) left(token string, p *page) {
+func (l *leaving) left(token string, p *client) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
