@@ -6,7 +6,7 @@
  * take the first one's start and the last one's end; a line split shares its
  * span out where the split fell in its characters.
  */
-import type { Cue } from './listening'
+import type { Cue } from './transcript'
 
 /** The prose of a transcript: one cue to a line. */
 export const spoken = (cues: readonly Cue[]): string => cues.map((cue) => cue.text).join('\n')

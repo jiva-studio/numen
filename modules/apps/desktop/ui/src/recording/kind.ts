@@ -6,7 +6,7 @@
  * recording it holds moves and asks for the words again.
  */
 import { computed } from 'vue'
-import type { Listening } from './listening'
+import type { Transcript } from './transcript'
 import type { Task } from '../core'
 import type { Putting } from '../putting'
 import type { Host, Kind } from '../windowing'
@@ -15,7 +15,7 @@ import { DROP, PROOFREAD, TRANSCRIBE } from './words'
 import RecordingTab from './RecordingTab.vue'
 
 /** What a recording tab asks of the window it is drawn in. */
-export interface Hearing {
+export interface Transcribing {
   /**
    * A command asked for over the recording the tab holds, carried out where the
    * commands are. `called` is what the tab calls the recording, which is what a
@@ -38,23 +38,23 @@ export type Held = ReturnType<typeof transcribed>
  * are. None is offered while a run is going, or where this build cannot do it
  * at all.
  */
-export function transcribed(listen: Listening, asks: Hearing) {
+export function transcribed(read: Transcript, asks: Transcribing) {
   /** Whether this build can do a run. A window that says nothing offers every run. */
   const canRun = (run: string): boolean => asks.canRun?.(run) ?? true
 
-  const heard = computed(() => listen.times.value.length > 0)
+  const written = computed(() => read.times.value.length > 0)
 
-  const transcribable = computed(() => !heard.value && !listen.working.value && canRun(TRANSCRIBE))
-  const proofreadable = computed(() => heard.value && !listen.working.value && canRun(PROOFREAD))
-  const droppable = computed(() => heard.value && !listen.working.value && canRun(DROP))
+  const transcribable = computed(() => !written.value && !read.working.value && canRun(TRANSCRIBE))
+  const proofreadable = computed(() => written.value && !read.working.value && canRun(PROOFREAD))
+  const droppable = computed(() => written.value && !read.working.value && canRun(DROP))
 
-  const called = listen.path.split('/').pop() ?? listen.path
-  const transcribes = () => asks.runs(TRANSCRIBE, listen.path, called)
-  const proofreads = () => asks.runs(PROOFREAD, listen.path, called)
-  const drops = () => asks.runs(DROP, listen.path, called)
+  const called = read.path.split('/').pop() ?? read.path
+  const transcribes = () => asks.runs(TRANSCRIBE, read.path, called)
+  const proofreads = () => asks.runs(PROOFREAD, read.path, called)
+  const drops = () => asks.runs(DROP, read.path, called)
 
   return {
-    ...listen,
+    ...read,
     called,
     transcribable,
     transcribes,
@@ -71,8 +71,8 @@ export function transcribed(listen: Listening, asks: Hearing) {
  */
 export function recordingKind(
   host: Host,
-  opens: (path: string) => Listening,
-  asks: Hearing,
+  opens: (path: string) => Transcript,
+  asks: Transcribing,
   puts: Putting,
 ) {
   const kind: Kind<Held> = {
@@ -91,9 +91,9 @@ export function recordingKind(
 
   // The player of recordings. The person is taken to the moment the first of
   // the stretches asked for was spoken at.
-  puts.hears(async (path, runs) => {
+  puts.hears(async (path, stretches) => {
     const id = await host.opens(RECORDING, path)
-    void host.holds<Held>(RECORDING, id)?.reach(...runs)
+    void host.holds<Held>(RECORDING, id)?.reach(...stretches)
   })
 
   /**

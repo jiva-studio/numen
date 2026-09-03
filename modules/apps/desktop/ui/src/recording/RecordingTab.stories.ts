@@ -12,7 +12,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
-import { listening, type Cue, type Recordings } from './listening'
+import { transcript, type Cue, type Recordings } from './transcript'
 import type { Player, Plays } from './playing'
 import { WORDS as words } from './words'
 
@@ -61,7 +61,7 @@ const played = (): Player => {
 }
 
 const holding = (cues: readonly Cue[], plays: Plays = () => true) =>
-  transcribed(listening(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
+  transcribed(transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }), {
     runs: () => {},
   })
 

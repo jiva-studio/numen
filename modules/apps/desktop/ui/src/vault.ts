@@ -37,7 +37,7 @@ import { fingerprint, refusalIn, stamp } from './answers'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Highlight, Sheet } from './document/reading'
-import type { Cue, Recordings } from './recording/listening'
+import type { Cue, Recordings } from './recording/transcript'
 import type {
   Added,
   Answer,

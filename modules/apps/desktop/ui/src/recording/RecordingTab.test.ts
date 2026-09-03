@@ -14,7 +14,7 @@ import { ref } from 'vue'
 import { runnable } from '../commanding'
 import RecordingTab from './RecordingTab.vue'
 import { transcribed } from './kind'
-import { listening, type Cue, type Recordings } from './listening'
+import { transcript, type Cue, type Recordings } from './transcript'
 import type { Player, Plays } from './playing'
 import { WORDS } from './words'
 
@@ -66,7 +66,7 @@ function tab(
 ) {
   const asked: string[] = []
   const held = transcribed(
-    listening(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
+    transcript(talk(cues), 'talks/Ants.mp3', { through: played(), plays }),
     { runs: (id, path, called) => void asked.push(`${id} ${path} ${called}`), canRun },
   )
   return { held, asked }

@@ -1,7 +1,7 @@
 /**
- * One recording as its tab hears it: where the player stands in it, the words
- * heard in it, which of them is being said now, and the words as a person
- * edits them.
+ * One recording as its tab reads it: where the player stands in it, its
+ * transcript, which cue is being said now, and the words as a person edits
+ * them.
  */
 import type { Stretch } from '../core'
 import { computed, ref } from 'vue'
@@ -18,10 +18,10 @@ export interface Cue {
   readonly to: number
 }
 
-/** What was heard in a recording, and whether it may be written over. */
+/** The transcript of a recording, and whether it may be written over. */
 export interface Spoken {
   readonly cues: readonly Cue[]
-  /** False while a run listening to the recording holds it. */
+  /** False while a run writing the transcript holds it. */
   readonly editable: boolean
 }
 
@@ -68,13 +68,13 @@ const holding = (cues: readonly Cue[], ms: number): number => {
   return -1
 }
 
-export type Listening = ReturnType<typeof listening>
+export type Transcript = ReturnType<typeof transcript>
 
 /** How long the words have to have been still before they are written. */
 export const QUIET = 800
 
 /** What the window hands one recording tab, beside the application and the path. */
-export interface Hearing {
+export interface Playing {
   /** The player the sound comes out of, which every recording of a window shares. */
   through?: Player
   /** How long the typing settles for before the words are written. */
@@ -83,7 +83,7 @@ export interface Hearing {
   plays?: Plays
 }
 
-export function listening(recordings: Recordings, path: string, how: Hearing = {}) {
+export function transcript(recordings: Recordings, path: string, how: Playing = {}) {
   const through = how.through ?? player
   const quiet = how.quiet ?? QUIET
   const plays = how.plays ?? canPlay()
@@ -171,11 +171,11 @@ export function listening(recordings: Recordings, path: string, how: Hearing = {
   let stilling: ReturnType<typeof setTimeout> | undefined
 
   /**
-   * What the recording is and what has been heard in it. A build that cannot
-   * read a transcript says so where the words would stand, and the recording
-   * still plays.
+   * What the recording is and what has been written down of it. A build that
+   * cannot read a transcript says so where the words would stand, and the
+   * recording still plays.
    */
-  const hear = async () => {
+  const reads = async () => {
     const mine = asks.ask()
     try {
       const said = await recordings.listened(path)
@@ -209,7 +209,7 @@ export function listening(recordings: Recordings, path: string, how: Hearing = {
   }
 
   /** What the recording is, asked for as its tab opens. */
-  const opened = hear()
+  const opened = reads()
 
   /** The moment the person went to. Before the beginning is the beginning. */
   const go = (ms: number) => {
@@ -299,7 +299,7 @@ export function listening(recordings: Recordings, path: string, how: Hearing = {
     clearTimeout(settling)
     settling = undefined
     owed = false
-    void hear()
+    void reads()
   }
 
   /**
@@ -309,7 +309,7 @@ export function listening(recordings: Recordings, path: string, how: Hearing = {
   const ticks = (running: boolean) => {
     if (!open || (!running && !working.value)) return
     working.value = running
-    void hear()
+    void reads()
   }
 
   /**

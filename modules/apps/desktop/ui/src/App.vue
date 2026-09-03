@@ -59,7 +59,7 @@ import { settling } from './settings/kind'
 import { configuring as holdingFile } from './configuration/kind'
 import { documentKind, documenting } from './document/kind'
 import { recordingKind } from './recording/kind'
-import { listening } from './recording/listening'
+import { transcript } from './recording/transcript'
 import { playable } from './recording/playing'
 import { filesKind } from './files/kind'
 import { listing as folders } from './files/listing'
@@ -215,7 +215,7 @@ const plays = playable()
 /** The recording tabs, each playing the recording it is filed at. */
 const heard = recordingKind(
   held.host,
-  (path) => listening(recordings, path, { plays }),
+  (path) => transcript(recordings, path, { plays }),
   {
     runs: (id, path, called) =>
       carries(id, { ...where(), path: '', title: called, file: path, source: 'recording' }),

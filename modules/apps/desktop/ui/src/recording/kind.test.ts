@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { recordingKind, type Held } from './kind'
-import type { Listening } from './listening'
+import type { Transcript } from './transcript'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 
@@ -20,7 +20,7 @@ const kind = (held: Held) => {
   const window = windowing()
   return recordingKind(
     window.host,
-    () => held as unknown as Listening,
+    () => held as unknown as Transcript,
     { runs: () => {} },
     putting({ standing: async () => new Map() }),
   ).kind

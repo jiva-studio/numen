@@ -30,7 +30,7 @@ import StencilTab from './cards/StencilTab.vue'
 import type { Held as StencilHeld } from './cards/stencil'
 import type { Marks } from './cards/model'
 import RecordingTab from './recording/RecordingTab.vue'
-import { listening, type Cue, type Recordings } from './recording/listening'
+import { transcript, type Cue, type Recordings } from './recording/transcript'
 import type { Player } from './recording/playing'
 import { transcribed } from './recording/kind'
 import DocumentTab from './document/DocumentTab.vue'
@@ -483,7 +483,7 @@ export const Recording: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -493,7 +493,7 @@ export const NoTranscript: Story = {
     window(
       `${RECORDING}:lecture`,
       RecordingTab,
-      transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
+      transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), { runs: () => {} }),
     ),
 }
 
@@ -503,7 +503,7 @@ export const NoTranscript: Story = {
  */
 export const Transcribing: Story = {
   render: () => {
-    const held = transcribed(listening(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+    const held = transcribed(transcript(heard([]), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
       runs: () => {},
     })
     held.ticks(true)
@@ -743,7 +743,7 @@ export const Transcribed: Story = {
     asking('Lectures/Lecture 4.mp3', ['Lectures', 'Physics', 'Reading', 'Sanskrit'], {
       tab: `${RECORDING}:lecture`,
       draws: RecordingTab,
-      held: transcribed(listening(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
+      held: transcribed(transcript(heard(SPOKEN), 'Lectures/Lecture 4.mp3', { through: PLAYER }), {
         runs: () => {},
       }),
     }),

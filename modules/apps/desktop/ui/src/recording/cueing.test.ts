@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { cued, same, spanning, spoken } from './cueing'
-import type { Cue } from './listening'
+import type { Cue } from './transcript'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },
