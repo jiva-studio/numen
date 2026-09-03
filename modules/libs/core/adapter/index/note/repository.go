@@ -77,7 +77,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	}
 	for _, n := range notes {
 		if err := saveNote(ctx, tx, vault, n, r.sizes); err != nil {
-			return fmt.Errorf("%s: %w", n.Ref.Path, err)
+			return fmt.Errorf("%s: %w", n.Fingerprint.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -99,10 +99,10 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 
 	var row int64
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Ref.Path, kind, n.Ref.Size, n.Ref.ModTime).Scan(&row); err != nil {
+		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, n.Fingerprint.ModTime).Scan(&row); err != nil {
 		return fmt.Errorf("save_source: %w", err)
 	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Ref.Path)),
+	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
 		n.Title, string(noteType(n)), nullable(n.ID), frontmatter, nullable(problem)); err != nil {
 		return err
 	}
@@ -184,7 +184,7 @@ func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.
 		return nil
 	}
 
-	at := int(n.Ref.Size) - len(n.Body)
+	at := int(n.Fingerprint.Size) - len(n.Body)
 	if at < 0 {
 		at = 0
 	}

@@ -42,7 +42,7 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 	for _, m := range found {
 		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
-			At:   spansOf(m.At),
+			At:   spansOf(m.Spans),
 			Type: typeOf(m.Type),
 		}
 		if m.Heading != "" {

@@ -45,7 +45,7 @@ func (a *API) Scheduling(
 	out.Preset = wire.PresetOf(found, a.titled(ctx, showing, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
-	out.At = fingerprintOf(found.Ref)
+	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -152,7 +152,7 @@ func (a *API) ReadPreset(
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = wire.PresetOf(found, a.titled(ctx, showing, found.Path))
-	out.At = fingerprintOf(found.Ref)
+	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 

@@ -98,7 +98,7 @@ func (u DropTranscript) Execute(ctx context.Context, v domain.Vault, path string
 	// The source is recorded as it was walked: no fingerprint, no recipe, no
 	// producer, and no chunks. What the index knew about the words goes in the
 	// one write that says the recording owes its text again.
-	if err := u.Sources.SaveExtraction(ctx, string(v.ID), port.SourceChunks{Source: port.Source{Ref: ref}}); err != nil {
+	if err := u.Sources.SaveExtraction(ctx, string(v.ID), port.SourceChunks{Source: port.Source{Fingerprint: ref}}); err != nil {
 		return res, fmt.Errorf("record %s: %w", path, err)
 	}
 	if u.Forgets != nil {

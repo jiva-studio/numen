@@ -18,9 +18,9 @@ type Rename struct {
 	Stencil string
 	From    string
 	To      string
-	// At is the stencil as the caller read it. A stencil that has changed since
-	// is left alone, and no deck is written.
-	At domain.Fingerprint
+	// Fingerprint is the stencil as the caller read it. A stencil that has
+	// changed since is left alone, and no deck is written.
+	Fingerprint domain.Fingerprint
 }
 
 // NotWritten is one deck a rename did not reach. It keeps the old heading.
@@ -82,7 +82,7 @@ func (u RenameField) stamp() (string, error) {
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
 	if in.From == in.To {
-		return RenameResult{Stencil: in.At}, nil
+		return RenameResult{Stencil: in.Fingerprint}, nil
 	}
 
 	out, err := u.rename(ctx, v, in)
@@ -150,7 +150,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 func (u RenameField) stencil(
 	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
-	against := in.At
+	against := in.Fingerprint
 	if against == (domain.Fingerprint{}) {
 		on, err := reader.Stat(ctx, in.Stencil)
 		if err != nil {

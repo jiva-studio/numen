@@ -178,5 +178,5 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 func curveOf(c flashcards.Curve) string {
 	return fmt.Sprintf("%d decks, %d card faces, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
-		c.Now, c.Suggested, c.At)
+		c.Now, c.Suggested, c.Points)
 }

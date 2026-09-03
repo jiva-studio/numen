@@ -17,7 +17,7 @@ import (
 // what choosing it writes.
 func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 	for _, one := range append(Models(Defaults()), Agents()...) {
-		if len(one.NamedAt) == 0 {
+		if len(one.Path) == 0 {
 			t.Errorf("%q is read from nowhere", one.Title)
 		}
 		if one.Title == "" {
@@ -33,8 +33,8 @@ func TestEveryModelSaysWhereItIsReadAndWhatItWrites(t *testing.T) {
 func TestOneModelToASettingIsTheDefault(t *testing.T) {
 	byDefault := map[string]int{}
 	for _, one := range append(Models(Defaults()), Agents()...) {
-		if one.ByDefault {
-			byDefault[at(one.NamedAt)]++
+		if one.Default {
+			byDefault[at(one.Path)]++
 		}
 	}
 	for _, setting := range []string{
@@ -55,7 +55,7 @@ func TestTheIndexingModelIsWrittenWithItsStation(t *testing.T) {
 	}
 	written := []string{}
 	for _, one := range held[0].Writes {
-		written = append(written, at(one.At))
+		written = append(written, at(one.Path))
 	}
 	for _, want := range []string{
 		"indexing.embedding.model",
@@ -72,7 +72,7 @@ func TestTheIndexingModelIsWrittenWithItsStation(t *testing.T) {
 // otherwise, and the sizes and the names in full stand on shelves of their own.
 func TestTheAgentAnswersWithWhateverTheMachineAnswersWith(t *testing.T) {
 	held := models(t, Defaults(), AgentModelAt)
-	if held[0].Name != "" || !held[0].ByDefault {
+	if held[0].Name != "" || !held[0].Default {
 		t.Errorf("the agent opens on %+v", held[0])
 	}
 	shelves := map[string]bool{}
@@ -206,7 +206,7 @@ func models(t *testing.T, held Config, setting []string) []port.Model {
 	t.Helper()
 	found := []port.Model{}
 	for _, one := range append(Models(held), Agents()...) {
-		if at(one.NamedAt) == at(setting) {
+		if at(one.Path) == at(setting) {
 			found = append(found, one)
 		}
 	}

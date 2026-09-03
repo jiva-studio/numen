@@ -327,10 +327,10 @@ func (c Config) TurnsSetting() func(written []port.Setting) error {
 		held := make([]settings.Setting, 0, len(written))
 		for _, one := range written {
 			var value json.RawMessage
-			if err := json.Unmarshal([]byte(one.Value), &value); err != nil {
+			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
 			}
-			held = append(held, settings.Setting{At: one.At, Value: value})
+			held = append(held, settings.Setting{At: one.Path, Value: value})
 		}
 		path, err := c.settingsFile()
 		if err != nil {

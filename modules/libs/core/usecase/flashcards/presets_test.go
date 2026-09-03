@@ -160,7 +160,7 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	settings := held.Preset
 	settings.MinutesADay = 35
 
-	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Ref)
+	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Fingerprint)
 	if !errors.Is(err, note.ErrUnlevelled) {
 		t.Fatalf("a levelling that failed came back as %v", err)
 	}
@@ -191,7 +191,7 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	}
 	// A fingerprint no file answers to, which is the note having moved on since
 	// the caller read it.
-	stale := held.Ref
+	stale := held.Fingerprint
 	stale.Size += 100
 	settings := held.Preset
 	settings.MinutesADay = 35

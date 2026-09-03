@@ -53,8 +53,8 @@ func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 			if source.Hash == "" {
 				t.Error("nothing addresses the content the chunks were cut from")
 			}
-			if source.Ref.Size != int64(len(raw)) || source.Ref.ModTime != 1 {
-				t.Errorf("the source was recorded as %+v, want the file as it is", source.Ref)
+			if source.Fingerprint.Size != int64(len(raw)) || source.Fingerprint.ModTime != 1 {
+				t.Errorf("the source was recorded as %+v, want the file as it is", source.Fingerprint)
 			}
 
 			// A chunk keeps a place in the extracted text and not the text

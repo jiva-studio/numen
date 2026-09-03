@@ -26,12 +26,12 @@ func filled(t *testing.T, db *DB, vault domain.Vault, stem string, seed byte) {
 
 	body := stem + " heading\n" + stem + " body"
 	n := domain.Note{
-		Ref:      domain.Fingerprint{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: 1},
-		Title:    stem + " title",
-		Body:     body,
-		Headings: []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
-		Links:    []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
-		Problems: []string{stem + " problem"},
+		Fingerprint: domain.Fingerprint{Path: "notes/" + stem + ".md", Kind: domain.KindNote, Size: int64(len(body)), ModTime: 1},
+		Title:       stem + " title",
+		Body:        body,
+		Headings:    []domain.Heading{{Level: 2, Text: stem + " heading", Line: 0, Offset: 0}},
+		Links:       []domain.Link{{Target: domain.Address{Scheme: domain.SchemeName, Value: stem + " elsewhere"}, Role: domain.RoleRef}},
+		Problems:    []string{stem + " problem"},
 	}
 	if err := db.Notes().Save(ctx, string(vault.ID), []domain.Note{n}); err != nil {
 		t.Fatal(err)

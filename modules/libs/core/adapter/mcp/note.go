@@ -192,7 +192,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 					// What the file was when it was asked about, which is
 					// before its bytes were read. A write landing in between
 					// makes this stale, and the next write is refused.
-					Fingerprint: fingerprintOf(contents.Ref),
+					Fingerprint: fingerprintOf(contents.Fingerprint),
 				})
 			case note.Missing:
 				res.Missing = append(res.Missing, path)
@@ -361,8 +361,8 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		// reading is not the text that was asked for.
 		return nil, out{
 			Path:        in.Path,
-			Fingerprint: fingerprintOf(done.At),
-			Stood:       done.Stood,
+			Fingerprint: fingerprintOf(done.Fingerprint),
+			Stood:       done.Matched,
 			Plainly:     done.Plainly,
 		}, nil
 	})

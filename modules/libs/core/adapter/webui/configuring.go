@@ -45,7 +45,7 @@ func (a *API) ChooseSettings(
 	}
 	written := make([]port.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		written = append(written, port.Setting{At: one.GetAt(), Value: one.GetValue()})
+		written = append(written, port.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
 	if err := a.ChoosesSetting(written); err != nil {
 		if errors.Is(err, port.ErrNotASetting) {
@@ -99,11 +99,11 @@ func offered(held []port.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(held))
 	for _, one := range held {
 		models = append(models, &v1.Model{
-			NamedAt:   one.NamedAt,
+			NamedAt:   one.Path,
 			Name:      one.Name,
 			Title:     one.Title,
 			Shelf:     one.Shelf,
-			ByDefault: one.ByDefault,
+			ByDefault: one.Default,
 			Writes:    writes(one.Writes),
 			Presence:  standing[one.Presence],
 		})
@@ -122,7 +122,7 @@ var standing = map[port.Presence]v1.Presence{
 func writes(held []port.Setting) []*v1.Setting {
 	written := make([]*v1.Setting, 0, len(held))
 	for _, one := range held {
-		written = append(written, &v1.Setting{At: one.At, Value: one.Value})
+		written = append(written, &v1.Setting{At: one.Path, Value: one.JSON})
 	}
 	return written
 }

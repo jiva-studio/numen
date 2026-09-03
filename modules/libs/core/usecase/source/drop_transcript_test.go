@@ -88,8 +88,8 @@ func TestDroppingATranscriptLeavesTheRecordingAsItWas(t *testing.T) {
 	if src.TextFrom != "" || src.Hash != "" || src.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", src)
 	}
-	if src.Ref.Path != recordingPath || src.Ref.Kind != domain.KindRecording {
-		t.Errorf("the recording is no longer a source of the vault: %+v", src.Ref)
+	if src.Fingerprint.Path != recordingPath || src.Fingerprint.Kind != domain.KindRecording {
+		t.Errorf("the recording is no longer a source of the vault: %+v", src.Fingerprint)
 	}
 }
 

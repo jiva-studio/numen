@@ -15,7 +15,7 @@ import (
 // It never fails: a deck that could not be understood is still somebody's
 // writing, and every value in it is read whatever else is wrong.
 func ReadDeck(n domain.Note) Deck {
-	deck, _ := readDeck(n.Ref, []byte(n.Body))
+	deck, _ := readDeck(n.Fingerprint, []byte(n.Body))
 	return deck
 }
 

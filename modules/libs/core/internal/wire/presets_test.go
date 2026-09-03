@@ -52,7 +52,7 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 	got := CurveOf(flashcards.Curve{
 		Goal: history.GoalRetention,
 		Grid: []float64{0.9},
-		At: []flashcards.Point{
+		Points: []flashcards.Point{
 			{Learns: history.LearnsUnasked},
 			{Learns: history.NeverLearns},
 			{Learns: 12},

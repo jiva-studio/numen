@@ -12,9 +12,9 @@ func noted(t *testing.T, db *DB, vault domain.Vault, path, title string, heading
 	t.Helper()
 
 	n := domain.Note{
-		Ref:   domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
-		Title: title,
-		Body:  strings.Join(headings, "\n"),
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
+		Title:       title,
+		Body:        strings.Join(headings, "\n"),
 	}
 	for at, heading := range headings {
 		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: at * 2})
@@ -45,8 +45,8 @@ func marked(m domain.NameMatch) string {
 	runes := []rune(text)
 	// The runs come in order and do not overlap, so they are put in from the
 	// end and no offset moves before it is used.
-	for at := len(m.At) - 1; at >= 0; at-- {
-		span := m.At[at]
+	for at := len(m.Spans) - 1; at >= 0; at-- {
+		span := m.Spans[at]
 		runes = append(runes[:span.From],
 			append([]rune("["+string(runes[span.From:span.To])+"]"), runes[span.To:]...)...)
 	}
@@ -240,7 +240,7 @@ func TestARunIsCountedTheWayAClientCountsText(t *testing.T) {
 	if len(found) != 1 {
 		t.Fatalf("found %d names, want 1", len(found))
 	}
-	if len(found[0].At) != 1 || found[0].At[0] != (domain.Span{From: 3, To: 10}) {
-		t.Errorf("the run is at %+v, want one run from 3 to 10", found[0].At)
+	if len(found[0].Spans) != 1 || found[0].Spans[0] != (domain.Span{From: 3, To: 10}) {
+		t.Errorf("the run is at %+v, want one run from 3 to 10", found[0].Spans)
 	}
 }

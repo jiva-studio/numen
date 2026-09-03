@@ -72,7 +72,7 @@ func (u Marking) Execute(ctx context.Context, v domain.Vault) (MarkingResult, er
 		}
 		// A deck the index could not be brought level with carries its marks all
 		// the same, and its cards stand in this sitting.
-		if _, err := write.Deck(ctx, v, path, body, deck.Ref); err != nil &&
+		if _, err := write.Deck(ctx, v, path, body, deck.Fingerprint); err != nil &&
 			!errors.Is(err, note.ErrUnlevelled) {
 			out.Unwritten = append(out.Unwritten, path)
 		}

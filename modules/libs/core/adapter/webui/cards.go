@@ -140,7 +140,7 @@ func (a *API) RenameField(
 
 	renamed, err := a.RenamesField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
-		At: refOf(r.Msg.GetSeen()),
+		Fingerprint: refOf(r.Msg.GetSeen()),
 	})
 	if err == nil {
 		if a.Wrote != nil {
@@ -187,7 +187,7 @@ func (a *API) ReadStencil(
 	out.Stencil = stencilOf(found.Path, a.titled(ctx, showing, found.Path), found.Stencil)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
-	out.At = fingerprintOf(found.Ref)
+	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -218,7 +218,7 @@ func (a *API) ReadDeck(
 		return connect.NewResponse(out), nil
 	}
 	out.Deck = deckOf(found.Path, a.titled(ctx, showing, found.Path), found.Deck, found.Stencils)
-	out.At = fingerprintOf(found.Ref)
+	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
 
@@ -251,7 +251,7 @@ func (a *API) WriteDeck(
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(wrote.At)}), nil
+		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(wrote.Fingerprint)}), nil
 	}
 	if errors.Is(err, port.ErrChanged) {
 		return connect.NewResponse(&v1.WriteDeckResponse{Changed: true}), nil

@@ -36,8 +36,8 @@ type Write struct {
 // which is what the caller presents at its next write, and the mark every card
 // that carried none was given.
 type WriteResult struct {
-	At     domain.Fingerprint
-	Minted []format.Minted
+	Fingerprint domain.Fingerprint
+	Minted      []format.Minted
 }
 
 // Deck puts body in the deck at path.
@@ -59,7 +59,7 @@ func (u Write) Deck(
 	if err != nil {
 		return WriteResult{}, err
 	}
-	return WriteResult{At: at, Minted: minted}, u.level(ctx, v, path)
+	return WriteResult{Fingerprint: at, Minted: minted}, u.level(ctx, v, path)
 }
 
 // whole is the body every card of which has been made whole, and the marks that

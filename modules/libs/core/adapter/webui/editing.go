@@ -37,7 +37,7 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = fingerprintOf(found.Ref)
+		out.At = fingerprintOf(found.Fingerprint)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -242,7 +242,7 @@ func seenOf(seen *v1.Seen) *note.LastRead {
 	if seen == nil {
 		return nil
 	}
-	return &note.LastRead{Prose: seen.GetProse(), At: refOf(seen.GetAt())}
+	return &note.LastRead{Prose: seen.GetProse(), Fingerprint: refOf(seen.GetAt())}
 }
 
 // refOf is a fingerprint as the core holds one. The kind is left empty: what

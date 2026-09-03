@@ -22,8 +22,8 @@ type NameMatch struct {
 	// prose. Zero for a title, which stands on no line of the prose at all.
 	Line int
 
-	// At is where in the name that matched the words typed stand.
-	At []Span
+	// Spans are where in the name that matched the words typed stand.
+	Spans []Span
 }
 
 // Span is a run of text, by where it begins and where it ends, counted the way

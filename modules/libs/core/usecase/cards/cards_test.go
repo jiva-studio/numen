@@ -150,7 +150,7 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	}
 
 	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Ref); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
@@ -315,14 +315,14 @@ func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Ref); err != nil {
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	written := read(t, vs.first, "decks/Birds.md")
 
 	// The same fingerprint again is a caller holding what the file no longer is.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Ref)
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
 	if !errors.Is(err, port.ErrChanged) {
 		t.Fatalf("write = %v, want it refused", err)
 	}

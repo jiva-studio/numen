@@ -35,8 +35,8 @@ type Curve struct {
 	Grid []float64
 	// Days names the day of each place, and is filled for a goal of a date.
 	Days []string
-	// At is what the preset comes to at each place of the grid.
-	At []Point
+	// Points are what the preset comes to at each place of the grid.
+	Points []Point
 	// Now is where the preset stands.
 	Now Place
 	// Suggested is the place worth pointing at: under a goal of minutes the
@@ -85,11 +85,11 @@ type Point struct {
 	// Ahead days off under a goal of minutes or of retention, and the day the
 	// place names under a goal of a date.
 	Owed int
-	// Through is the share of the material learned by this day, and Enough is
+	// Share is the share of the material learned by this day, and Enough is
 	// whether the pace this place sets learns every card face that can be
 	// learned by it. A goal keeping no such account stands at true.
-	Through float64
-	Enough  bool
+	Share  float64
+	Enough bool
 	// Short is how many card faces cannot be learned by this day whatever the
 	// pace, which is the rule wanting more days than the day leaves them.
 	Short int
@@ -114,8 +114,8 @@ type Point struct {
 
 // Place is one place on the curve worth pointing at.
 type Place struct {
-	// At is the place of the grid, and is -1 when the value falls outside it.
-	At int
+	// Index is the place of the grid, and is -1 when the value falls outside it.
+	Index int
 	// Value is the goal's value at the mark, in the units of the grid. What the
 	// preset stands at need not sit on the grid.
 	Value float64
@@ -124,7 +124,7 @@ type Place struct {
 }
 
 // Nowhere is a mark that falls outside the grid.
-var Nowhere = Place{At: -1}
+var Nowhere = Place{Index: -1}
 
 // Curves is the simulator behind the one control of a preset.
 //
@@ -138,9 +138,9 @@ type Curves struct {
 	Presets Presets
 	Day     history.Day
 	Now     func() time.Time
-	// At is the scheduler asking for a share of the cards to come back. A build
+	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
-	At func(retention float64) history.Scheduler
+	By func(retention float64) history.Scheduler
 }
 
 // steered is what is wrong with the value the goal moves, and is nil where the
@@ -349,7 +349,7 @@ func (u Curves) minutes(
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
-	out.At = make([]Point, len(out.Grid))
+	out.Points = make([]Point, len(out.Grid))
 	if err := places(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
@@ -361,20 +361,20 @@ func (u Curves) minutes(
 		if place.Learns, err = learnt(ctx, run, now, one, at, unseen); err != nil {
 			return err
 		}
-		out.At[i] = place
+		out.Points[i] = place
 		return nil
 	}); err != nil {
 		return Curve{}, err
 	}
 
-	out.Now = Place{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
+	out.Now = Place{Index: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
 	// What is suggested is the shortest day that asks everything the day holds:
 	// the minutes stop closing it, and the material is what runs out. A load
 	// nothing on the grid carries is suggested at the longest day on it.
-	out.Suggested = Place{At: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
-	for i, one := range out.At {
+	out.Suggested = Place{Index: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
+	for i, one := range out.Points {
 		if len(one.Closed) == 0 {
-			out.Suggested = Place{At: i, Value: out.Grid[i]}
+			out.Suggested = Place{Index: i, Value: out.Grid[i]}
 			break
 		}
 	}
@@ -406,7 +406,7 @@ func (u Curves) retention(
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
-	out.At = make([]Point, len(out.Grid))
+	out.Points = make([]Point, len(out.Grid))
 	if err := places(len(out.Grid), func(i int) error {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
@@ -419,13 +419,13 @@ func (u Curves) retention(
 		if place.Learns, err = learnt(ctx, asks, now, one, at, unseen); err != nil {
 			return err
 		}
-		out.At[i] = place
+		out.Points[i] = place
 		return nil
 	}); err != nil {
 		return Curve{}, err
 	}
 
-	out.Now = Place{At: nearest(out.Grid, p.Retention), Value: p.Retention}
+	out.Now = Place{Index: nearest(out.Grid, p.Retention), Value: p.Retention}
 	// A goal of retention suggests nothing, and its mark stands at Nowhere.
 	return out, nil
 }
@@ -457,7 +457,7 @@ func (u Curves) date(
 	for day := open; u.Day.Names(day) < by; day = day.AddDate(0, 0, 1) {
 		named++
 		if named > MostAhead {
-			named = Nowhere.At
+			named = Nowhere.Index
 			break
 		}
 	}
@@ -478,7 +478,7 @@ func (u Curves) date(
 	steps := naming(spread(last-first+1, Points), named-first)
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
-	out.At = make([]Point, len(steps))
+	out.Points = make([]Point, len(steps))
 	if err := places(len(steps), func(i int) error {
 		day := first + steps[i]
 		aiming, asks := p, run
@@ -506,7 +506,7 @@ func (u Curves) date(
 			// horizon is a debt nobody was asked to pay.
 			Owed:     ran.Backlog[day],
 			Retained: back,
-			Through:  ran.Through[day],
+			Share:    ran.Through[day],
 			Enough:   reached(ran, day, ran.Short),
 			Short:    ran.Short,
 			Closed:   history.Closing{history.ClosedPaused},
@@ -518,7 +518,7 @@ func (u Curves) date(
 		if sitting {
 			one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
 		}
-		out.At[i] = one
+		out.Points[i] = one
 		return nil
 	}); err != nil {
 		return Curve{}, err
@@ -528,7 +528,7 @@ func (u Curves) date(
 	// mark is worked out for that day.
 	if named >= 0 {
 		out.Now = Place{
-			At:    nearest(out.Grid, float64(named)),
+			Index: nearest(out.Grid, float64(named)),
 			Value: float64(named),
 			Day:   u.Day.Names(open.AddDate(0, 0, named)),
 		}
@@ -537,9 +537,9 @@ func (u Curves) date(
 	// nothing out of reach on it and the pace through the whole of it. Where the
 	// preset keeps minutes, it is the soonest such day whose cost fits them.
 	if p.MinutesADay > 0 {
-		for i, one := range out.At {
+		for i, one := range out.Points {
 			if learns(one) && one.Minutes <= float64(p.MinutesADay) {
-				out.Suggested = Place{At: i, Value: out.Grid[i], Day: out.Days[i]}
+				out.Suggested = Place{Index: i, Value: out.Grid[i], Day: out.Days[i]}
 				return out, nil
 			}
 		}
@@ -547,9 +547,9 @@ func (u Curves) date(
 	// A preset keeping no minutes, and a range no day of which fits them, are
 	// suggested the soonest day that gets there at whatever it costs. A range no
 	// day of which gets there points at none.
-	for i, one := range out.At {
+	for i, one := range out.Points {
 		if learns(one) {
-			out.Suggested = Place{At: i, Value: out.Grid[i], Day: out.Days[i]}
+			out.Suggested = Place{Index: i, Value: out.Grid[i], Day: out.Days[i]}
 			return out, nil
 		}
 	}
@@ -635,7 +635,7 @@ func point(p history.Projection) Point {
 		Enough:   true,
 		Retained: back,
 		Owed:     p.Owed,
-		Through:  p.Through[len(p.Through)-1],
+		Share:    p.Through[len(p.Through)-1],
 		Closed:   closing(p),
 		Short:    p.Short,
 		Clears:   p.Clears,
@@ -770,8 +770,8 @@ func nearest(grid []float64, value float64) int {
 
 // at is the scheduler asking for a share of the cards to come back.
 func (u Curves) at(retention float64) history.Scheduler {
-	if u.At != nil {
-		return u.At(retention)
+	if u.By != nil {
+		return u.By(retention)
 	}
 	return history.NewFSRSAt(retention)
 }

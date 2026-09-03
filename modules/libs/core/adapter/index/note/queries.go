@@ -219,7 +219,7 @@ func (q *Queries) Names(ctx context.Context, vaultID, query string, limit int) (
 		}
 		m.Type = domain.NoteType(held)
 		name, at := split(marked)
-		m.At = at
+		m.Spans = at
 		if kind != 0 {
 			m.Heading, m.Line = name, line
 		}

@@ -55,7 +55,7 @@ func TestASettingWrittenLeavesTheRestOfTheFileAlone(t *testing.T) {
 }`)
 
 	err := cfg.TurnsSetting()([]port.Setting{
-		{At: []string{"agent", "claude", "model"}, Value: `"opus"`},
+		{Path: []string{"agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -87,8 +87,8 @@ func TestSettingsWrittenTogetherAllArrive(t *testing.T) {
 	cfg, path := given(t, `{}`)
 
 	err := cfg.TurnsSetting()([]port.Setting{
-		{At: []string{"agent", "use"}, Value: `"claude"`},
-		{At: []string{"agent", "claude", "max_steps"}, Value: `12`},
+		{Path: []string{"agent", "use"}, JSON: `"claude"`},
+		{Path: []string{"agent", "claude", "max_steps"}, JSON: `12`},
 	})
 	if err != nil {
 		t.Fatal(err)

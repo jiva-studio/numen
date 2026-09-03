@@ -73,14 +73,14 @@ func (s *store) SaveSource(_ context.Context, vaultID string, src port.Source) e
 }
 
 func (s *store) SaveExtraction(_ context.Context, vaultID string, e port.SourceChunks) error {
-	s.written[e.Source.Ref.Path]++
+	s.written[e.Source.Fingerprint.Path]++
 	s.put(vaultID, e.Source)
-	s.clear(vaultID, e.Source.Ref.Path)
+	s.clear(vaultID, e.Source.Fingerprint.Path)
 
 	for _, large := range e.Chunks {
-		parent := s.insert(vaultID, e.Source.Ref, large, 0)
+		parent := s.insert(vaultID, e.Source.Fingerprint, large, 0)
 		for _, small := range large.Small {
-			s.insert(vaultID, e.Source.Ref, small, parent)
+			s.insert(vaultID, e.Source.Fingerprint, small, parent)
 		}
 	}
 	return nil
@@ -115,18 +115,18 @@ func (s *store) Kept(_ context.Context, recipe string, of [][]byte) (map[string]
 func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
 	for path, src := range s.sources[vaultID] {
-		if src.Ref.Kind != kind {
+		if src.Fingerprint.Kind != kind {
 			continue
 		}
 		// The kind is what was asked for, so the answer leaves it empty.
-		out[path] = domain.Fingerprint{Path: path, Size: src.Ref.Size, ModTime: src.Ref.ModTime}
+		out[path] = domain.Fingerprint{Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime}
 	}
 	return out, nil
 }
 
 func (s *store) Unchunked(_ context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
-		return !s.cut(vaultID, src.Ref.Path)
+		return !s.cut(vaultID, src.Fingerprint.Path)
 	})
 }
 
@@ -173,7 +173,7 @@ func (s *store) put(vaultID string, src port.Source) {
 	if s.sources[vaultID] == nil {
 		s.sources[vaultID] = map[string]port.Source{}
 	}
-	s.sources[vaultID][src.Ref.Path] = src
+	s.sources[vaultID][src.Fingerprint.Path] = src
 }
 
 // clear takes out the chunks of one source, and the vectors made from them.
@@ -182,7 +182,7 @@ func (s *store) put(vaultID string, src port.Source) {
 func (s *store) RemoveSources(_ context.Context, vaultID string, kind domain.SourceKind, paths []string) error {
 	held := s.sources[vaultID]
 	for _, path := range paths {
-		if src, ok := held[path]; ok && src.Ref.Kind == kind {
+		if src, ok := held[path]; ok && src.Fingerprint.Kind == kind {
 			delete(held, path)
 			s.clear(vaultID, path)
 		}
@@ -200,7 +200,7 @@ func (s *store) MoveSources(_ context.Context, vaultID, from, to string) error {
 		}
 		landed := to + path[len(from):]
 		delete(held, path)
-		src.Ref.Path = landed
+		src.Fingerprint.Path = landed
 		held[landed] = src
 		for i, c := range s.chunks {
 			if c.vault == vaultID && c.path == path {
@@ -216,7 +216,7 @@ func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.Fingerp
 	var out []domain.Fingerprint
 	for held, src := range s.sources[vaultID] {
 		if held == path || strings.HasPrefix(held, path+"/") {
-			out = append(out, src.Ref)
+			out = append(out, src.Fingerprint)
 		}
 	}
 	slices.SortFunc(out, func(a, b domain.Fingerprint) int { return strings.Compare(a.Path, b.Path) })
@@ -252,8 +252,8 @@ func (s *store) paths(vaultID string, kind domain.SourceKind, limit int, owing f
 	}
 	var out []string
 	for _, src := range s.sources[vaultID] {
-		if src.Ref.Kind == kind && owing(src) {
-			out = append(out, src.Ref.Path)
+		if src.Fingerprint.Kind == kind && owing(src) {
+			out = append(out, src.Fingerprint.Path)
 		}
 	}
 	slices.Sort(out)
@@ -492,14 +492,14 @@ func (s *store) Reading(_ context.Context, vaultID, path string) (port.SourceTex
 	// The row says what the file was when it was read, as the query does.
 	return port.SourceText{
 		Path: path, Producer: src.TextFrom, Hash: src.Hash,
-		Size: src.Ref.Size, ModTime: src.Ref.ModTime,
+		Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
 	}, true, nil
 }
 
 func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.SourceText, error) {
 	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
-		if src.Ref.Kind == kind && src.TextFrom != "" {
+		if src.Fingerprint.Kind == kind && src.TextFrom != "" {
 			out = append(out, port.SourceText{Path: path, Producer: src.TextFrom, Hash: src.Hash})
 		}
 	}

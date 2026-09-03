@@ -41,8 +41,8 @@ type Preset struct {
 	StopsToday history.Stopped
 	// Problems are what was wrong in the file and was not guessed at. They are
 	// shown against the preset, and the editor is where they are settled.
-	Problems []string
-	Ref      domain.Fingerprint
+	Problems    []string
+	Fingerprint domain.Fingerprint
 }
 
 // Presets is how each deck of a vault is scheduled.
@@ -288,7 +288,7 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 	held := err == nil
 	switch {
 	case held:
-		out.Ref = ref
+		out.Fingerprint = ref
 		if ref.Kind != domain.KindNote {
 			out.Outcome = note.NotANote
 			return out, nil

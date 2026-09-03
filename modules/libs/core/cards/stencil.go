@@ -22,7 +22,7 @@ const fieldsKey = "fields"
 // It never fails. A face missing a side and a placeholder nobody declared are
 // problems against the stencil, and everything else in the file is read.
 func ReadStencil(n domain.Note) CardStencil {
-	s := CardStencil{Ref: n.Ref}
+	s := CardStencil{Ref: n.Fingerprint}
 	s.Fields, s.Problems = fields(n.Frontmatter)
 
 	declared := map[string]bool{}

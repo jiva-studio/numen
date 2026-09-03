@@ -32,7 +32,7 @@ func (c changing) opened(t *testing.T, path string) *note.LastRead {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.LastRead{Prose: found.Body, At: found.Ref}
+	return &note.LastRead{Prose: found.Body, Fingerprint: found.Fingerprint}
 }
 
 // A flow sequence is the commonest frontmatter line there is, and an identifier
@@ -204,7 +204,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.LastRead{Prose: seen.Prose, At: at}); err != nil {
+		&note.LastRead{Prose: seen.Prose, Fingerprint: at}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -238,7 +238,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.LastRead{Prose: mine, At: at}); err != nil {
+		&note.LastRead{Prose: mine, Fingerprint: at}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -511,7 +511,7 @@ func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if found.Outcome != note.Ok {
-		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Ref.Size)
+		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Fingerprint.Size)
 	}
 }
 

@@ -76,8 +76,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Fatalf("the index was written %d times", len(index.written))
 	}
 	wrote := index.written[0]
-	if wrote.Source.Ref.Path != talk {
-		t.Errorf("the index was told about %q", wrote.Source.Ref.Path)
+	if wrote.Source.Fingerprint.Path != talk {
+		t.Errorf("the index was told about %q", wrote.Source.Fingerprint.Path)
 	}
 	if wrote.Source.TextFrom != "" || wrote.Source.Hash != "" || wrote.Source.Recipe != "" {
 		t.Errorf("the source still stands on a reading: %+v", wrote.Source)

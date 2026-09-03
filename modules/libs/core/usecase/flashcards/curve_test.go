@@ -94,25 +94,25 @@ func TestTheCurveOfMinutesCoversTheWholeRange(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != flashcards.Points || len(got.At) != flashcards.Points {
-		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.At))
+	if len(got.Grid) != flashcards.Points || len(got.Points) != flashcards.Points {
+		t.Fatalf("the curve has %d places and %d values", len(got.Grid), len(got.Points))
 	}
 	for i := 1; i < len(got.Grid); i++ {
 		if got.Grid[i] <= got.Grid[i-1] {
 			t.Fatalf("the grid runs %v then %v", got.Grid[i-1], got.Grid[i])
 		}
-		if got.At[i].Reviews < got.At[i-1].Reviews {
+		if got.Points[i].Reviews < got.Points[i-1].Reviews {
 			t.Errorf("a longer day answers %v, a shorter one %v",
-				got.At[i].Reviews, got.At[i-1].Reviews)
+				got.Points[i].Reviews, got.Points[i-1].Reviews)
 		}
-		if got.At[i].Owed > got.At[i-1].Owed {
+		if got.Points[i].Owed > got.Points[i-1].Owed {
 			t.Errorf("a longer day leaves %d owed, a shorter one %d",
-				got.At[i].Owed, got.At[i-1].Owed)
+				got.Points[i].Owed, got.Points[i-1].Owed)
 		}
 	}
 	inRange(t, got, "now", "suggested")
-	if got.At[len(got.At)-1].Owed != 0 {
-		t.Errorf("the longest day on the grid still leaves %d owed", got.At[len(got.At)-1].Owed)
+	if got.Points[len(got.Points)-1].Owed != 0 {
+		t.Errorf("the longest day on the grid still leaves %d owed", got.Points[len(got.Points)-1].Owed)
 	}
 }
 
@@ -130,22 +130,22 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := flashcards.Nowhere
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if len(one.Closed) == 0 {
-			want = flashcards.Place{At: i, Value: got.Grid[i]}
+			want = flashcards.Place{Index: i, Value: got.Grid[i]}
 			break
 		}
 	}
-	if want.At <= 0 || want.At >= len(got.At)-1 {
+	if want.Index <= 0 || want.Index >= len(got.Points)-1 {
 		t.Fatalf("the first place asking everything the day holds is %d of %d",
-			want.At, len(got.At))
+			want.Index, len(got.Points))
 	}
 	if got.Suggested != want {
 		t.Errorf("%+v is suggested, and the shortest day asking everything is %+v",
 			got.Suggested, want)
 	}
 	// And the place before it is one the minutes closed.
-	if before := got.At[want.At-1]; !before.Closed.Holds(history.ClosedMinutes) {
+	if before := got.Points[want.Index-1]; !before.Closed.Holds(history.ClosedMinutes) {
 		t.Errorf("the place under the one suggested was closed by %v", before.Closed.Names())
 	}
 }
@@ -170,10 +170,10 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 		got.Grid[len(got.Grid)-1] != history.RetentionBounds.Most {
 		t.Errorf("the grid runs from %v to %v", got.Grid[0], got.Grid[len(got.Grid)-1])
 	}
-	for i := 1; i < len(got.At); i++ {
-		if got.At[i].Minutes < got.At[i-1].Minutes-1e-9 {
+	for i := 1; i < len(got.Points); i++ {
+		if got.Points[i].Minutes < got.Points[i-1].Minutes-1e-9 {
 			t.Errorf("a target of %v costs %v minutes, one of %v costs %v",
-				got.Grid[i], got.At[i].Minutes, got.Grid[i-1], got.At[i-1].Minutes)
+				got.Grid[i], got.Points[i].Minutes, got.Grid[i-1], got.Points[i-1].Minutes)
 		}
 	}
 	inRange(t, got, "now")
@@ -183,7 +183,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 			got.Suggested.Value)
 	}
 	// What the cost buys climbs the whole range, and peaks at the far end of it.
-	least, most := got.At[0].Retained, got.At[len(got.At)-1].Retained
+	least, most := got.Points[0].Retained, got.Points[len(got.Points)-1].Retained
 	if most <= least {
 		t.Errorf("the easiest target retains %v and the hardest %v", least, most)
 	}
@@ -208,8 +208,8 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got.Grid) != len(got.Days) || len(got.Grid) != len(got.At) {
-		t.Fatalf("%d places, %d days, %d values", len(got.Grid), len(got.Days), len(got.At))
+	if len(got.Grid) != len(got.Days) || len(got.Grid) != len(got.Points) {
+		t.Fatalf("%d places, %d days, %d values", len(got.Grid), len(got.Days), len(got.Points))
 	}
 	if len(got.Grid) < 2 {
 		t.Fatalf("the curve has %d places", len(got.Grid))
@@ -224,13 +224,13 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	if got.Now.Value != 20 || got.Now.Day != p.By.Format(history.Named) {
 		t.Errorf("the preset stands at %+v, and the day it names is 20 days off", got.Now)
 	}
-	if got.Now.At <= 0 || got.Now.At >= len(got.Grid)-1 {
+	if got.Now.Index <= 0 || got.Now.Index >= len(got.Grid)-1 {
 		t.Errorf("the day named stands at place %d of %d, and is not inside the range",
-			got.Now.At, len(got.Grid))
+			got.Now.Index, len(got.Grid))
 	}
 
-	for i := 1; i < len(got.At); i++ {
-		was, now := got.At[i-1], got.At[i]
+	for i := 1; i < len(got.Points); i++ {
+		was, now := got.Points[i-1], got.Points[i]
 		// Where a day is out of reach the pace is the whole material at once,
 		// which is the same pace at every such day, and what separates their
 		// costs is how many days of review each is averaged over.
@@ -238,9 +238,9 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
 				got.Days[i], now.Minutes, got.Days[i-1], was.Minutes)
 		}
-		if now.Through < was.Through-1e-9 {
+		if now.Share < was.Share-1e-9 {
 			t.Errorf("%s gets through %v and %s, a day earlier, gets through %v",
-				got.Days[i], now.Through, got.Days[i-1], was.Through)
+				got.Days[i], now.Share, got.Days[i-1], was.Share)
 		}
 	}
 	inRange(t, got, "now", "suggested")
@@ -267,26 +267,26 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if one.Minutes <= 0 {
 			t.Errorf("%s wants %v minutes a day, and no day is got through for nothing",
 				got.Days[i], one.Minutes)
 		}
-		if i > 0 && one.Short == 0 && got.At[i-1].Short == 0 &&
-			one.Minutes > got.At[i-1].Minutes {
+		if i > 0 && one.Short == 0 && got.Points[i-1].Short == 0 &&
+			one.Minutes > got.Points[i-1].Minutes {
 			t.Errorf("%s wants %v minutes a day and %s, a day earlier, wants %v",
-				got.Days[i], one.Minutes, got.Days[i-1], got.At[i-1].Minutes)
+				got.Days[i], one.Minutes, got.Days[i-1], got.Points[i-1].Minutes)
 		}
 	}
 	// And the range holds both regimes, so the fall is said of a pace that
 	// thins and not of one that never changed.
-	if got.At[0].Short == 0 || got.At[len(got.At)-1].Short != 0 {
+	if got.Points[0].Short == 0 || got.Points[len(got.Points)-1].Short != 0 {
 		t.Errorf("the range leaves %d card faces short at one end and %d at the other",
-			got.At[0].Short, got.At[len(got.At)-1].Short)
+			got.Points[0].Short, got.Points[len(got.Points)-1].Short)
 	}
-	if got.At[0].Minutes <= got.At[len(got.At)-1].Minutes {
+	if got.Points[0].Minutes <= got.Points[len(got.Points)-1].Minutes {
 		t.Errorf("the first day wants %v minutes a day and the last wants %v",
-			got.At[0].Minutes, got.At[len(got.At)-1].Minutes)
+			got.Points[0].Minutes, got.Points[len(got.Points)-1].Minutes)
 	}
 }
 
@@ -308,19 +308,19 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if !one.Enough {
 			t.Errorf("%s is out of reach at %+v, and a date paces what it holds",
 				got.Days[i], one)
 		}
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Fatalf("the preset stands nowhere on its own curve: %+v", got.Now)
 	}
-	stands := got.At[got.Now.At]
-	if stands.Through < 1 || !stands.Enough || stands.Short != 0 {
+	stands := got.Points[got.Now.Index]
+	if stands.Share < 1 || !stands.Enough || stands.Short != 0 {
 		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
-			stands.Through, stands.Short)
+			stands.Share, stands.Short)
 	}
 	if got.Suggested == flashcards.Nowhere {
 		t.Error("no day is suggested, and the day it aims at is through the material")
@@ -370,11 +370,11 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 			t.Fatal(err)
 		}
 		inRange(t, got, "now")
-		if got.Now.At != flat.Now.At {
+		if got.Now.Index != flat.Now.Index {
 			t.Fatalf("with %s the preset stands at place %d, and without at %d",
-				name, got.Now.At, flat.Now.At)
+				name, got.Now.Index, flat.Now.Index)
 		}
-		one, was := got.At[got.Now.At], flat.At[flat.Now.At]
+		one, was := got.Points[got.Now.Index], flat.Points[flat.Now.Index]
 		if one.Reviews == was.Reviews && one.Minutes == was.Minutes &&
 			one.Retained == was.Retained {
 			t.Errorf("with %s the preset comes to %+v, the same as a preset keeping neither",
@@ -401,9 +401,9 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 
 	// Thirty cards of a one-faced stencil against one, so the day the load
 	// wants is not the same day.
-	if mine.At[0].Reviews <= rest.At[0].Reviews {
+	if mine.Points[0].Reviews <= rest.Points[0].Reviews {
 		t.Errorf("the preset's deck answers %v a day and the deck naming none answers %v",
-			mine.At[0].Reviews, rest.At[0].Reviews)
+			mine.Points[0].Reviews, rest.Points[0].Reviews)
 	}
 }
 
@@ -471,15 +471,15 @@ func inRange(t *testing.T, c flashcards.Curve, stands ...string) {
 		if mark == flashcards.Nowhere {
 			continue
 		}
-		if mark.At < 0 || mark.At >= len(c.Grid) {
-			t.Errorf("the %s mark is at place %d of %d", name, mark.At, len(c.Grid))
+		if mark.Index < 0 || mark.Index >= len(c.Grid) {
+			t.Errorf("the %s mark is at place %d of %d", name, mark.Index, len(c.Grid))
 			continue
 		}
 		// A mark stands on a place of the grid, so the figures a person reads
 		// under it are the figures of the setting they are standing at.
-		if mark.Value != c.Grid[mark.At] {
+		if mark.Value != c.Grid[mark.Index] {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
-				name, mark.Value, c.Grid[mark.At])
+				name, mark.Value, c.Grid[mark.Index])
 		}
 		if c.Goal == history.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
@@ -508,12 +508,12 @@ func TestANearDateStillLeavesRoomToGiveYourselfLonger(t *testing.T) {
 	if last := got.Grid[len(got.Grid)-1]; last < 30 {
 		t.Errorf("a date two days off is a range of %v days, and the material is 30 cards", last)
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Errorf("the day named stands nowhere on the range: %+v", got.Now)
 	}
-	if got.At[got.Now.At].Minutes <= got.At[len(got.At)-1].Minutes {
+	if got.Points[got.Now.Index].Minutes <= got.Points[len(got.Points)-1].Minutes {
 		t.Errorf("the day named costs %v minutes a day and the furthest day %v",
-			got.At[got.Now.At].Minutes, got.At[len(got.At)-1].Minutes)
+			got.Points[got.Now.Index].Minutes, got.Points[len(got.Points)-1].Minutes)
 	}
 }
 
@@ -538,7 +538,7 @@ func TestABacklogIsMeasuredOverTheSameHorizonOnEveryGoal(t *testing.T) {
 	if got.Grid[0] != 1 {
 		t.Fatalf("the curve begins %v days off", got.Grid[0])
 	}
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if len(one.Backlog) < history.Ahead {
 			t.Errorf("%v days off carries %d days of backlog, and a clearing is asked "+
 				"over %d", got.Grid[i], len(one.Backlog), history.Ahead)
@@ -564,10 +564,10 @@ func TestACurveOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.At[0].Reviews == 0 {
+	if got.Points[0].Reviews == 0 {
 		t.Error("the shortest day of the range draws nothing")
 	}
-	if first, last := got.At[0].Reviews, got.At[len(got.At)-1].Reviews; !(last > first) {
+	if first, last := got.Points[0].Reviews, got.Points[len(got.Points)-1].Reviews; !(last > first) {
 		t.Errorf("the range runs from %g cards to %g, and says nothing about the setting",
 			first, last)
 	}
@@ -594,11 +594,11 @@ func TestADayAtNoneOfTheLoadAwayFromTodayLeavesTheCurve(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i := range got.At {
-		if got.At[i].Reviews != was.At[i].Reviews || got.At[i].Minutes != was.At[i].Minutes {
+	for i := range got.Points {
+		if got.Points[i].Reviews != was.Points[i].Reviews || got.Points[i].Minutes != was.Points[i].Minutes {
 			t.Errorf("at %g the curve draws %g cards in %g minutes, and drew %g in %g",
-				got.Grid[i], got.At[i].Reviews, got.At[i].Minutes,
-				was.At[i].Reviews, was.At[i].Minutes)
+				got.Grid[i], got.Points[i].Reviews, got.Points[i].Minutes,
+				was.Points[i].Reviews, was.Points[i].Minutes)
 		}
 	}
 }
@@ -625,23 +625,23 @@ func TestACurveOfADateSaysWhatNoPaceReaches(t *testing.T) {
 	if got.Cards == 0 {
 		t.Fatal("the preset schedules nothing, and there is nothing to fall short")
 	}
-	if first := got.At[0]; first.Short != got.Cards {
+	if first := got.Points[0]; first.Short != got.Cards {
 		t.Errorf("%s leaves %d of the %d card faces short, and a day is no time to learn any",
 			got.Days[0], first.Short, got.Cards)
 	}
-	if last := got.At[len(got.At)-1]; last.Short != 0 {
+	if last := got.Points[len(got.Points)-1]; last.Short != 0 {
 		t.Errorf("%s leaves %d card faces short, and it is %v days off",
 			got.Days[len(got.Days)-1], last.Short, got.Grid[len(got.Grid)-1])
 	}
-	for i := 1; i < len(got.At); i++ {
-		if got.At[i].Short > got.At[i-1].Short {
+	for i := 1; i < len(got.Points); i++ {
+		if got.Points[i].Short > got.Points[i-1].Short {
 			t.Errorf("%s leaves %d short and %s, a day earlier, leaves %d",
-				got.Days[i], got.At[i].Short, got.Days[i-1], got.At[i-1].Short)
+				got.Days[i], got.Points[i].Short, got.Days[i-1], got.Points[i-1].Short)
 		}
 	}
 	// A day nothing can be learned by is met by the pace all the same: every
 	// card face that can be learned by it is, and there are none.
-	if !got.At[0].Enough {
+	if !got.Points[0].Enough {
 		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
 	}
 }
@@ -655,7 +655,7 @@ func learnedAt(t *testing.T, s vaulted, p history.Preset) []int {
 		t.Fatal(err)
 	}
 	var out []int
-	for _, one := range got.At {
+	for _, one := range got.Points {
 		if len(out) == 0 || out[len(out)-1] != one.Learned {
 			out = append(out, one.Learned)
 		}
@@ -757,7 +757,7 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 			t.Fatal(err)
 		}
 		named := false
-		for i, place := range got.At {
+		for i, place := range got.Points {
 			if place.Learns == history.LearnsUnasked {
 				t.Errorf("steered by its %s, %v names no day the material is learned",
 					goal, got.Grid[i])
@@ -778,7 +778,7 @@ func TestTheDayTheMaterialIsLearnedIsDrawnUnderMinutesAndRetention(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, place := range got.At {
+	for i, place := range got.Points {
 		if place.Learns != history.LearnsUnasked {
 			t.Errorf("aiming at a day, %v names day %d as well", got.Grid[i], place.Learns)
 		}
@@ -804,16 +804,16 @@ func TestTheMarkOfADateStandsOnTheDayTheFileNames(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 {
+		if got.Now.Index < 0 {
 			t.Fatalf("a date %d days off stands nowhere on its own range", days)
 		}
-		if got.Days[got.Now.At] != got.Now.Day {
+		if got.Days[got.Now.Index] != got.Now.Day {
 			t.Errorf("a date %d days off is marked at %s and the place under the mark is %s",
-				days, got.Now.Day, got.Days[got.Now.At])
+				days, got.Now.Day, got.Days[got.Now.Index])
 		}
-		if got.Grid[got.Now.At] != got.Now.Value {
+		if got.Grid[got.Now.Index] != got.Now.Value {
 			t.Errorf("a date %d days off is marked at %v days and the place under the mark "+
-				"is %v days", days, got.Now.Value, got.Grid[got.Now.At])
+				"is %v days", days, got.Now.Value, got.Grid[got.Now.Index])
 		}
 		// The range still begins tomorrow and still runs past the day named.
 		if got.Grid[0] != 1 {
@@ -846,12 +846,12 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Now.At < 0 {
+	if got.Now.Index < 0 {
 		t.Fatal("the preset stands nowhere on its own curve")
 	}
-	stands := got.At[got.Now.At]
-	if stands.Through < 1 {
-		t.Fatalf("the day it aims at gets through %v of the material", stands.Through)
+	stands := got.Points[got.Now.Index]
+	if stands.Share < 1 {
+		t.Fatalf("the day it aims at gets through %v of the material", stands.Share)
 	}
 	if stands.Owed != 0 {
 		t.Errorf("the day it aims at is through the material and leaves %d card faces owed",
@@ -882,8 +882,8 @@ func TestAPlaceOfADateIsOneRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
-		if i > 0 && got.At[i-1].Enough && !one.Enough {
+	for i, one := range got.Points {
+		if i > 0 && got.Points[i-1].Enough && !one.Enough {
 			t.Errorf("%s is got through and %s, a day later, is not",
 				got.Days[i-1], got.Days[i])
 		}
@@ -909,7 +909,7 @@ func TestACurveOfADateOnADayAtNoneOfTheLoadDrawsTheNextSitting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, one := range got.At {
+	for i, one := range got.Points {
 		if one.Reviews == 0 {
 			t.Fatalf("%s draws nothing for the day of review it names", got.Days[i])
 		}
@@ -937,14 +937,14 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 	if got.Suggested == flashcards.Nowhere {
 		t.Fatal("no day is suggested, and the range holds days the material is through by")
 	}
-	stands := got.At[got.Suggested.At]
-	if stands.Short != 0 || !stands.Enough || stands.Through < 1 {
+	stands := got.Points[got.Suggested.Index]
+	if stands.Short != 0 || !stands.Enough || stands.Share < 1 {
 		t.Errorf("%s is suggested, and it leaves %d card faces out of reach and gets "+
-			"through %v of the material", got.Suggested.Day, stands.Short, stands.Through)
+			"through %v of the material", got.Suggested.Day, stands.Short, stands.Share)
 	}
 	// And it is the soonest such day.
-	for i, one := range got.At {
-		if i < got.Suggested.At && one.Short == 0 && one.Enough &&
+	for i, one := range got.Points {
+		if i < got.Suggested.Index && one.Short == 0 && one.Enough &&
 			one.Minutes <= float64(p.MinutesADay) {
 			t.Errorf("%s is suggested and %s, earlier, is through the material too",
 				got.Suggested.Day, got.Days[i])
@@ -1034,14 +1034,14 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if after.At[after.Now.At].Reviews >= fresh.At[fresh.Now.At].Reviews {
+	if after.Points[after.Now.Index].Reviews >= fresh.Points[fresh.Now.Index].Reviews {
 		t.Errorf("a day with a minute of it spent draws %v cards and an unspent day %v",
-			after.At[after.Now.At].Reviews, fresh.At[fresh.Now.At].Reviews)
+			after.Points[after.Now.Index].Reviews, fresh.Points[fresh.Now.Index].Reviews)
 	}
 	sat := s.under(t, today, noon, "Sanskrit.md")
-	if got := float64(len(sat.Asked)); got != after.At[after.Now.At].Reviews {
+	if got := float64(len(sat.Asked)); got != after.Points[after.Now.Index].Reviews {
 		t.Errorf("the sitting offers %v card faces and the curve draws %v",
-			got, after.At[after.Now.At].Reviews)
+			got, after.Points[after.Now.Index].Reviews)
 	}
 }
 
@@ -1067,13 +1067,13 @@ func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 {
+		if got.Now.Index < 0 {
 			t.Errorf("a day of %d minutes stands nowhere on its own curve", minutes)
 			continue
 		}
-		if got.Grid[got.Now.At] != float64(minutes) {
+		if got.Grid[got.Now.Index] != float64(minutes) {
 			t.Errorf("a day of %d minutes is marked at the place drawing %v minutes",
-				minutes, got.Grid[got.Now.At])
+				minutes, got.Grid[got.Now.Index])
 		}
 	}
 
@@ -1086,9 +1086,9 @@ func TestTheMarkStandsOnTheSettingThePresetHolds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Now.At < 0 || got.Grid[got.Now.At] != share {
+		if got.Now.Index < 0 || got.Grid[got.Now.Index] != share {
 			t.Errorf("a target of %v is marked at place %d, which draws %v",
-				share, got.Now.At, got.Grid[got.Now.At])
+				share, got.Now.Index, got.Grid[got.Now.Index])
 		}
 	}
 }
@@ -1146,7 +1146,7 @@ func TestOnlyADateDrawsAPlaceAsFallingShort(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for i, one := range got.At {
+		for i, one := range got.Points {
 			if !one.Enough {
 				t.Errorf("%s draws place %d as one the budget does not get through", goal, i)
 				break

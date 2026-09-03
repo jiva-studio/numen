@@ -36,18 +36,18 @@ type Deck struct {
 	// Stencils is where the wikilink under each card's heading lands, keyed by
 	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
-	// Ref is what the file was when it was asked about, which is before its
-	// bytes were read.
-	Ref domain.Fingerprint
+	// Fingerprint is what the file was when it was asked about, which is before
+	// its bytes were read.
+	Fingerprint domain.Fingerprint
 }
 
 // Stencil is one stencil as a read hands it over.
 type Stencil struct {
-	Path    string
-	Outcome note.ReadOutcome
-	Type    domain.NoteType
-	Stencil format.CardStencil
-	Ref     domain.Fingerprint
+	Path        string
+	Outcome     note.ReadOutcome
+	Type        domain.NoteType
+	Stencil     format.CardStencil
+	Fingerprint domain.Fingerprint
 }
 
 // Read hands over a deck or a stencil, read out of the vault.
@@ -71,7 +71,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, erro
 	if err != nil {
 		return Deck{}, err
 	}
-	out.Ref, out.Outcome, out.Type = ref, outcome, n.Type
+	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	switch outcome {
 	case note.Ok:
 		out.Deck = format.ReadDeck(n)
@@ -199,7 +199,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 	if err != nil {
 		return Stencil{}, err
 	}
-	out.Ref, out.Outcome, out.Type = ref, outcome, n.Type
+	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	if outcome == note.Ok {
 		out.Stencil = format.ReadStencil(n)
 	}

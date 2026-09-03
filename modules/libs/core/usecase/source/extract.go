@@ -134,7 +134,7 @@ func (u Extract) discover(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Ref: ref}); err != nil {
+		if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Fingerprint: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -268,7 +268,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 			if err != nil {
 				return fmt.Errorf("stat %s: %w", r.Path, err)
 			}
-			if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Ref: ref}); err != nil {
+			if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Fingerprint: ref}); err != nil {
 				return fmt.Errorf("record %s: %w", r.Path, err)
 			}
 			res.Forgotten++
@@ -418,10 +418,10 @@ func (u Extract) source(
 	chunks := chunksOf(doc, sizes)
 	extraction := port.SourceChunks{
 		Source: port.Source{
-			Ref:      ref,
-			Hash:     hash,
-			Recipe:   recipe(name, sizes),
-			TextFrom: from,
+			Fingerprint: ref,
+			Hash:        hash,
+			Recipe:      recipe(name, sizes),
+			TextFrom:    from,
 		},
 		Chunks: chunks,
 	}

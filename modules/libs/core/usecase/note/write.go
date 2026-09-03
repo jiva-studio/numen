@@ -109,14 +109,14 @@ func (u Write) Execute(
 // and a touch all move those over text that did not change, and comparing them
 // alone is what asks a person about a file nobody edited.
 //
-// At answers for text that did move, and is what makes a save that follows a
-// save land: the note is at the fingerprint the last write produced, so it is
-// the note this caller put there.
+// Fingerprint answers for text that did move, and is what makes a save that
+// follows a save land: the note is at the fingerprint the last write produced,
+// so it is the note this caller put there.
 type LastRead struct {
 	// Prose is what a read gave this caller, with every line break as one \n.
 	Prose string
-	// At is the file that read came out of.
-	At domain.Fingerprint
+	// Fingerprint is the file that read came out of.
+	Fingerprint domain.Fingerprint
 }
 
 // stale reports whether the note in front of the writer holds prose this caller
@@ -125,7 +125,7 @@ func (s *LastRead) stale(on domain.Fingerprint, prose string) bool {
 	if s == nil {
 		return false
 	}
-	return prose != s.Prose && !on.Unchanged(s.At)
+	return prose != s.Prose && !on.Unchanged(s.Fingerprint)
 }
 
 // Save puts body in the note at path, and makes the note where there is none.

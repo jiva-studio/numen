@@ -121,7 +121,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		if err := u.Notes.Save(ctx, string(v.ID), notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
-				len(notes), v.Name, notes[0].Ref.Path, notes[len(notes)-1].Ref.Path, err)
+				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
 		}
 		res.Indexed += len(notes)
 		if u.OnProgress != nil {

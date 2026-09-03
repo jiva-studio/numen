@@ -12,10 +12,10 @@ func typed(t *testing.T, db *DB, vault domain.Vault, path, title string, kind do
 	t.Helper()
 
 	n := domain.Note{
-		Ref:   domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
-		Title: title,
-		Type:  kind,
-		Body:  title,
+		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: 1},
+		Title:       title,
+		Type:        kind,
+		Body:        title,
 	}
 	if err := db.Notes().Save(t.Context(), string(vault.ID), []domain.Note{n}); err != nil {
 		t.Fatal(err)

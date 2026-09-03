@@ -29,14 +29,14 @@ type Replace struct {
 
 // ReplaceResult is what a replacement did.
 type ReplaceResult struct {
-	// At is the fingerprint of the file this write produced.
-	At domain.Fingerprint
+	// Fingerprint is of the file this write produced.
+	Fingerprint domain.Fingerprint
 	// Span is where the span stood, as byte offsets into the prose a read hands
 	// out.
 	Span markdown.Span
-	// Stood is the span as the note held it, which is not always the text the
+	// Matched is the span as the note held it, which is not always the text the
 	// caller asked for.
-	Stood string
+	Matched string
 	// Plainly says the span was found only once punctuation or spacing were
 	// allowed to differ.
 	Plainly bool
@@ -120,7 +120,7 @@ func (u Replace) Execute(
 		})
 
 		done.Span = markdown.Span{From: span.From, To: span.From + len(becomes)}
-		done.Stood = body[span.From:span.To]
+		done.Matched = body[span.From:span.To]
 		done.Plainly = plainly
 		doc.SetBody(written)
 		return nil
@@ -128,7 +128,7 @@ func (u Replace) Execute(
 	if err != nil {
 		return ReplaceResult{}, err
 	}
-	done.At = at
+	done.Fingerprint = at
 	return done, nil
 }
 

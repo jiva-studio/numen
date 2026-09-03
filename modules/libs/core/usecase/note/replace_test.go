@@ -36,8 +36,8 @@ func TestOnlyTheStretchAskedForIsReplaced(t *testing.T) {
 	if !strings.Contains(body, "# The aggressor\n") || !strings.Contains(body, "And nothing else.\n") {
 		t.Errorf("what was not asked for changed:\n%s", body)
 	}
-	if done.Stood != "A hedgehog" {
-		t.Errorf("what stood there is reported as %q", done.Stood)
+	if done.Matched != "A hedgehog" {
+		t.Errorf("what stood there is reported as %q", done.Matched)
 	}
 	if done.Plainly {
 		t.Error("a stretch that stood exactly is reported as read plainly")
@@ -145,8 +145,8 @@ func TestPunctuationThatDiffersIsFoundAndReported(t *testing.T) {
 	if !done.Plainly {
 		t.Error("the reading was not reported")
 	}
-	if done.Stood != "сказал «да» — и ушёл" {
-		t.Errorf("what stood there is reported as %q", done.Stood)
+	if done.Matched != "сказал «да» — и ушёл" {
+		t.Errorf("what stood there is reported as %q", done.Matched)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.HasSuffix(body, "Он промолчал.\n") {
 		t.Errorf("the note reads:\n%q", body)
@@ -200,7 +200,7 @@ func TestAReplacementFollowsAReplacementWithNoReadBetween(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := replacing.Execute(
-		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.At); err != nil {
+		t.Context(), c.vault, "Aggressor.md", "three", "THREE", first.Fingerprint); err != nil {
 		t.Fatalf("the second replacement was refused: %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); !strings.Contains(body, "ONE two THREE") {

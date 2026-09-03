@@ -22,7 +22,7 @@ var headingRe = regexp.MustCompile(`^(#{1,6})\s+(.+?)\s*#*\s*$`)
 // Parse reads one note. It never fails: a file that cannot be understood is
 // still readable text, and refusing to index it would hide it from the user.
 func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
-	n := domain.Note{Ref: ref}
+	n := domain.Note{Fingerprint: ref}
 
 	body := raw
 	if frontmatter, rest, ok := splitFrontmatter(raw); ok {

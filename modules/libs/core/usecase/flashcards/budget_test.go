@@ -1057,11 +1057,11 @@ func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if curve.Now.At < 0 {
+			if curve.Now.Index < 0 {
 				t.Fatalf("the value the preset holds stands nowhere on the grid %v", curve.Grid)
 			}
 
-			drawn := curve.At[curve.Now.At].Reviews
+			drawn := curve.Points[curve.Now.Index].Reviews
 			faces := s.through(t, today, admitting(read.Preset, today, saturday))
 			if drawn != float64(faces) {
 				t.Errorf("the curve draws %v and the day hands over %d", drawn, faces)

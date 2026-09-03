@@ -23,7 +23,7 @@ func why(c note.Contents) string {
 	// an agent asks the file tools for a stretch of.
 	if reason == v1.Refusal_REFUSAL_TOO_LARGE {
 		return fmt.Sprintf("it is %d bytes, larger than the %d this reads; open the file instead",
-			c.Ref.Size, note.MaxBytes)
+			c.Fingerprint.Size, note.MaxBytes)
 	}
 	return said(reason)
 }

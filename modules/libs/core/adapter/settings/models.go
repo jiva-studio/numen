@@ -48,12 +48,12 @@ func embedding(held Config) []port.Model {
 	offered := embed.Defaults()
 	station := held.Indexing.Embedding.Indexing
 	models := []port.Model{{
-		NamedAt:   EmbeddingModelAt,
-		Name:      offered.Model.Name,
-		Title:     offered.Model.Name,
-		Shelf:     shelfMachine,
-		ByDefault: true,
-		Presence:  embedded(station, offered.Model.Name),
+		Path:     EmbeddingModelAt,
+		Name:     offered.Model.Name,
+		Title:    offered.Model.Name,
+		Shelf:    shelfMachine,
+		Default:  true,
+		Presence: embedded(station, offered.Model.Name),
 		Writes: []port.Setting{
 			setting([]string{"indexing", "embedding", "model"}, offered.Model),
 			setting([]string{"indexing", "embedding", "indexing", "use"}, embed.UseLocal),
@@ -68,7 +68,7 @@ func embedding(held Config) []port.Model {
 		return models
 	}
 	return append(models, port.Model{
-		NamedAt:  EmbeddingModelAt,
+		Path:     EmbeddingModelAt,
 		Name:     name,
 		Title:    name,
 		Shelf:    shelfConfigured,
@@ -108,20 +108,20 @@ func recognising(held Config) []port.Model {
 	offered := recognition.Defaults()
 	cfg := held.Indexing.Recognition.Config
 	models := []port.Model{{
-		NamedAt:   RecognitionModelAt,
-		Name:      offered.Recognise.Name,
-		Title:     "PP-OCRv6, small",
-		Shelf:     shelfMachine,
-		ByDefault: true,
-		Presence:  fetching(recognition.Fetched(cfg, offered.Recognise)),
-		Writes:    []port.Setting{setting(RecognitionModelAt, offered.Recognise.Name)},
+		Path:     RecognitionModelAt,
+		Name:     offered.Recognise.Name,
+		Title:    "PP-OCRv6, small",
+		Shelf:    shelfMachine,
+		Default:  true,
+		Presence: fetching(recognition.Fetched(cfg, offered.Recognise)),
+		Writes:   []port.Setting{setting(RecognitionModelAt, offered.Recognise.Name)},
 	}}
 	name := cfg.Recognise.Name
 	if name == "" || name == offered.Recognise.Name {
 		return models
 	}
 	return append(models, port.Model{
-		NamedAt:  RecognitionModelAt,
+		Path:     RecognitionModelAt,
 		Name:     name,
 		Title:    name,
 		Shelf:    shelfConfigured,
@@ -137,23 +137,23 @@ func recognising(held Config) []port.Model {
 // The model is reached where the agent runs, and nothing of it is fetched here.
 func answering(held Config) []port.Model {
 	models := []port.Model{{
-		NamedAt:   AgentModelAt,
-		Title:     "Whatever this machine answers with",
-		ByDefault: true,
+		Path:    AgentModelAt,
+		Title:   "Whatever this machine answers with",
+		Default: true,
 	}}
 	for _, one := range []string{"opus", "sonnet", "haiku"} {
 		models = append(models, port.Model{
-			NamedAt: AgentModelAt, Name: one, Title: one, Shelf: shelfSize,
+			Path: AgentModelAt, Name: one, Title: one, Shelf: shelfSize,
 		})
 	}
 	for _, one := range []string{"claude-opus-5", "claude-sonnet-5", "claude-haiku-4-5"} {
 		models = append(models, port.Model{
-			NamedAt: AgentModelAt, Name: one, Title: one, Shelf: shelfInFull,
+			Path: AgentModelAt, Name: one, Title: one, Shelf: shelfInFull,
 		})
 	}
 	if name := held.Agent.Claude.Model; name != "" && !among(models, name) {
 		models = append(models, port.Model{
-			NamedAt: AgentModelAt, Name: name, Title: name, Shelf: shelfConfigured,
+			Path: AgentModelAt, Name: name, Title: name, Shelf: shelfConfigured,
 		})
 	}
 	for at := range models {
@@ -186,16 +186,16 @@ func fetching(there bool) port.Presence {
 func Agents() []port.Model {
 	return []port.Model{
 		{
-			NamedAt:   AgentAt,
-			Name:      agent.UseClaude,
-			Title:     "Claude Code",
-			ByDefault: true,
-			Writes:    []port.Setting{setting(AgentAt, agent.UseClaude)},
+			Path:    AgentAt,
+			Name:    agent.UseClaude,
+			Title:   "Claude Code",
+			Default: true,
+			Writes:  []port.Setting{setting(AgentAt, agent.UseClaude)},
 		},
 		{
-			NamedAt: AgentAt,
-			Title:   "Nothing answers",
-			Writes:  []port.Setting{setting(AgentAt, "")},
+			Path:   AgentAt,
+			Title:  "Nothing answers",
+			Writes: []port.Setting{setting(AgentAt, "")},
 		},
 	}
 }
@@ -207,7 +207,7 @@ func setting(at []string, value any) port.Setting {
 	if err != nil {
 		panic("settings: " + err.Error())
 	}
-	return port.Setting{At: at, Value: string(said)}
+	return port.Setting{Path: at, JSON: string(said)}
 }
 
 // Written is settings as JSON. What is handed in is what is written out, so a

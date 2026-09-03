@@ -151,7 +151,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		res := out{
 			Held:        len(read.Deck.Cards),
 			Faults:      faults(read.Deck.Problems),
-			Fingerprint: fingerprintOf(read.Ref),
+			Fingerprint: fingerprintOf(read.Fingerprint),
 		}
 		for _, s := range read.Deck.Sections {
 			res.Sections = append(res.Sections, s.Name)
@@ -464,7 +464,7 @@ func changing(
 		return Written{}, nil, err
 	}
 	return Written{
-		Path: path, Fingerprint: fingerprintOf(wrote.At), Cards: len(held.Cards),
+		Path: path, Fingerprint: fingerprintOf(wrote.Fingerprint), Cards: len(held.Cards),
 	}, wrote.Minted, nil
 }
 
@@ -546,7 +546,7 @@ func whyNotADeck(read cards.Deck) string {
 		return ""
 	case note.TooLarge:
 		return fmt.Sprintf("it is %d bytes, larger than the %d a deck is read at; open the file instead",
-			read.Ref.Size, cards.MaxBytes)
+			read.Fingerprint.Size, cards.MaxBytes)
 	case note.Missing:
 		return "there is no note at this path"
 	case note.NotANote:

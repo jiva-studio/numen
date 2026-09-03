@@ -13,9 +13,9 @@ import (
 // produced the source's chunks. Both are empty on a source nothing has taken
 // text out of yet.
 type Source struct {
-	Ref    domain.Fingerprint
-	Hash   string
-	Recipe string
+	Fingerprint domain.Fingerprint
+	Hash        string
+	Recipe      string
 
 	// TextFrom names the producer of the text this source's chunks are places
 	// in. Empty where the source's own bytes are the text, which is the

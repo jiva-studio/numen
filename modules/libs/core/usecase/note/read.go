@@ -50,9 +50,9 @@ type Contents struct {
 	// Body is the prose below the frontmatter, with every line break written as
 	// one \n. It is empty for every outcome but Ok.
 	Body string
-	// Ref is what the file was when it was asked about, which is before its
-	// bytes were read. It is set for a path the vault holds as a note.
-	Ref domain.Fingerprint
+	// Fingerprint is what the file was when it was asked about, which is before
+	// its bytes were read. It is set for a path the vault holds as a note.
+	Fingerprint domain.Fingerprint
 }
 
 // Read hands over the prose of one note.
@@ -80,7 +80,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (Content
 	held := err == nil
 	switch {
 	case held:
-		out.Ref = ref
+		out.Fingerprint = ref
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote

@@ -177,9 +177,9 @@ func (a *API) Start(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 	over := flashcards.Over{
-		Deck:     r.Msg.GetDeck(),
-		Preset:   r.Msg.GetPreset(),
-		ByPreset: r.Msg.Preset != nil,
+		Deck:   r.Msg.GetDeck(),
+		Preset: r.Msg.GetPreset(),
+		Named:  r.Msg.Preset != nil,
 	}
 	sitting, err := a.Session.Execute(ctx, v, over)
 	if err != nil {

@@ -377,9 +377,9 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: 1},
-		Title: "Entropy",
-		Body:  "the first body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: 1},
+		Title:       "Entropy",
+		Body:        "the first body",
 	}
 	if err := db.Notes().Save(ctx, string(first.ID), []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -399,7 +399,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 		t.Fatal("the note was not embedded, so this test would pass either way")
 	}
 
-	note.Ref.Size = 23
+	note.Fingerprint.Size = 23
 	note.Body = "the second body, longer"
 	if err := db.Notes().Save(ctx, string(first.ID), []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -425,7 +425,7 @@ func TestResavingANoteTakesItsChunksWithIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) == 0 || found[0].Source != note.Ref.Path {
+	if len(found) == 0 || found[0].Source != note.Fingerprint.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
 	if stale, err := db.ChunkQueries().Lexical(ctx, string(first.ID), "first", nil, 10, false); err != nil {
@@ -447,9 +447,9 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: 1},
-		Title: "Entropy",
-		Body:  body,
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: 1},
+		Title:       "Entropy",
+		Body:        body,
 	}
 	if err := db.Notes().Save(ctx, string(first.ID), []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -464,7 +464,7 @@ func TestANoteIsCutIntoChunksThatCanCarryAVector(t *testing.T) {
 	}
 	// Every offset is into the file, so the text of a passage can be read back.
 	for _, p := range owing {
-		if p.Start < 0 || p.Start+p.Length > int(note.Ref.Size) {
+		if p.Start < 0 || p.Start+p.Length > int(note.Fingerprint.Size) {
 			t.Errorf("a chunk lies outside the file: %+v", p)
 		}
 	}
@@ -513,14 +513,14 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	db := opened(t)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: 1},
-		Title: "Entropy",
-		Body:  "a body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: 1},
+		Title:       "Entropy",
+		Body:        "a body",
 	}
 	if err := db.Notes().Save(ctx, string(first.ID), []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, string(first.ID), "note", note.Ref.Path, []chunk.Chunk{{
+	if err := db.Chunks().SaveChunks(ctx, string(first.ID), "note", note.Fingerprint.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
 		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
@@ -528,7 +528,7 @@ func TestRemovingANoteTakesItsIndexedRows(t *testing.T) {
 	}
 	vectorise(t, db, first, 0x00)
 
-	if err := db.Notes().Remove(ctx, string(first.ID), []string{note.Ref.Path}); err != nil {
+	if err := db.Notes().Remove(ctx, string(first.ID), []string{note.Fingerprint.Path}); err != nil {
 		t.Fatal(err)
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -551,9 +551,9 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	note := domain.Note{
-		Ref:   domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, ModTime: 1},
-		Title: "Entropy",
-		Body:  "a body",
+		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, ModTime: 1},
+		Title:       "Entropy",
+		Body:        "a body",
 	}
 	if err := db.Notes().Save(ctx, string(first.ID), []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -1417,7 +1417,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 
 	if err := db.Sources().SaveExtraction(ctx, string(first.ID), port.SourceChunks{
 		Source: port.Source{
-			Ref: domain.Fingerprint{
+			Fingerprint: domain.Fingerprint{
 				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, ModTime: 1,
 			},
 			Hash:   "hash",

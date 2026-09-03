@@ -196,7 +196,7 @@ type asking struct {
 // A sitting over a preset takes the cards of every deck pointing at it, so the
 // one budget spent is that preset's.
 func (b *budgets) holds(one Standing, over Over) bool {
-	if over.ByPreset {
+	if over.Named {
 		return b.under[one.CardFace] == over.Preset
 	}
 	return over.Deck == "" || one.Deck == over.Deck

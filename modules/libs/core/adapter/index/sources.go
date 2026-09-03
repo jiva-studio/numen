@@ -107,10 +107,10 @@ func (s queries) Unembedded(ctx context.Context, vaultID string, model port.Embe
 
 func stored(s port.Source) chunk.Source {
 	return chunk.Source{
-		Path:     s.Ref.Path,
-		Kind:     string(s.Ref.Kind),
-		Size:     s.Ref.Size,
-		MTime:    s.Ref.ModTime,
+		Path:     s.Fingerprint.Path,
+		Kind:     string(s.Fingerprint.Kind),
+		Size:     s.Fingerprint.Size,
+		MTime:    s.Fingerprint.ModTime,
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
 		TextFrom: s.TextFrom,

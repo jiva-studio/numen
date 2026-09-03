@@ -27,9 +27,9 @@ type Over struct {
 	// Deck is the path of one deck.
 	Deck string
 	// Preset is the note one preset stands in. The preset scheduling the decks
-	// naming none stands in no note, so ByPreset says a preset was named at all.
-	Preset   string
-	ByPreset bool
+	// naming none stands in no note, so Named says a preset was named at all.
+	Preset string
+	Named  bool
 }
 
 // OverDeck is a sitting over one deck.
@@ -37,7 +37,7 @@ func OverDeck(path string) Over { return Over{Deck: path} }
 
 // ByPreset is a sitting over the cards of every deck pointing at one preset,
 // held to that preset's budget.
-func ByPreset(preset string) Over { return Over{Preset: preset, ByPreset: true} }
+func ByPreset(preset string) Over { return Over{Preset: preset, Named: true} }
 
 // Asked is one card face as it is put to a person: where it stands, how it is laid
 // out, and where the answers so far have left it.
@@ -92,7 +92,7 @@ type Session struct {
 // ErrBothNamed, and a preset with nothing to ask today is ErrSchedulesNothing
 // with the reason.
 func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sitting, error) {
-	if over.ByPreset && over.Deck != "" {
+	if over.Named && over.Deck != "" {
 		return Sitting{}, ErrBothNamed
 	}
 	marked, err := u.Marking.Execute(ctx, v)
@@ -129,7 +129,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 		return Sitting{}, err
 	}
 	holds := day.asks(standing, schedules, u.Day, now, over)
-	if over.ByPreset && len(holds.seen)+len(holds.fresh) == 0 {
+	if over.Named && len(holds.seen)+len(holds.fresh) == 0 {
 		return Sitting{}, day.refuses(over.Preset)
 	}
 

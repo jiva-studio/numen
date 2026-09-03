@@ -115,7 +115,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 		Goal:      GoalOf(c.Goal),
 		Grid:      c.Grid,
 		Days:      c.Days,
-		At:        make([]*v1.Point, 0, len(c.At)),
+		At:        make([]*v1.Point, 0, len(c.Points)),
 		Now:       markOf(c.Now),
 		Suggested: markOf(c.Suggested),
 		Decks:     int32(c.Decks),
@@ -123,13 +123,13 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 		Overdue:   int32(c.Overdue),
 		Unbegun:   int32(c.Unbegun),
 	}
-	for _, one := range c.At {
+	for _, one := range c.Points {
 		out.At = append(out.At, &v1.Point{
 			Reviews:  one.Reviews,
 			Minutes:  one.Minutes,
 			Retained: one.Retained,
 			Owed:     int32(one.Owed),
-			Through:  one.Through,
+			Through:  one.Share,
 			Enough:   one.Enough,
 			Closed:   one.Closed.Names(),
 			Short:    int32(one.Short),
@@ -143,7 +143,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 }
 
 func markOf(m flashcards.Place) *v1.Mark {
-	return &v1.Mark{At: int32(m.At), Value: m.Value, Day: m.Day}
+	return &v1.Mark{At: int32(m.Index), Value: m.Value, Day: m.Day}
 }
 
 // GoalOf is which value the control steers, as the schema names it.

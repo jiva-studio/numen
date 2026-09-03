@@ -172,7 +172,7 @@ type holding struct {
 
 func (h *holding) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
 	for _, n := range notes {
-		h.hold(n.Ref.Path)
+		h.hold(n.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }
