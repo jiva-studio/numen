@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -247,4 +248,81 @@ func listed(t *testing.T, api *API, id string) *task.Task {
 		}
 	}
 	return nil
+}
+
+// TestIndexingIsNeverAWordWithNothingUnderIt. The row a person watches for
+// minutes must say what it is on. A pass that enters the list before it has
+// opened a source stands there as the word "Indexing" over an empty line, at a
+// share of nothing, for as long as the first vectors take to come back.
+func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
+	model := &asked{dims: 64}
+	cfg, db := reading(t)
+	if err := db.FitVectors(t.Context(), model.Model().Dimensions, model.Model().Recipe()); err != nil {
+		t.Fatal(err)
+	}
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	api := &API{
+		Tasking:  task.New(),
+		Progress: db.Progress(),
+	}
+	api.show(v)
+	api.Recipe.Store(model.Model().Recipe())
+	cut(t, db, api)
+
+	// A station that answers over a network is here the moment it is made, so
+	// there is no arrival to wait for and the pass begins at once.
+	over := &overheard{asked: model, tasks: api.Tasking}
+	held := embedding.Arriving(model.Model())
+	held.Landed(over, nil)
+
+	embedSources(t.Context(), cfg, db, api, v, filesystem.Readers{}, held.Filling())
+
+	for _, list := range over.lists() {
+		for _, at := range list {
+			if at.ID != makingVectors || at.Failed != "" {
+				continue
+			}
+			if at.About == "" {
+				t.Errorf("the pass stood in the list saying nothing but %q", at.Doing)
+			}
+			if at.Total > 0 && at.Done == 0 {
+				t.Errorf("the pass drew a share of nothing: %+v", at)
+			}
+		}
+	}
+}
+
+// overheard is a model that keeps the list of what is being done as it stood
+// every time it was asked anything, which is what a person watching the corner
+// would have read.
+type overheard struct {
+	*asked
+	tasks *task.Tasks
+
+	mu   sync.Mutex
+	seen [][]task.Task
+}
+
+// Model is asked at the head of every pass, before a source has been opened.
+func (o *overheard) Model() port.EmbeddingModel {
+	o.keep()
+	return o.asked.Model()
+}
+
+func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, error) {
+	o.keep()
+	return o.asked.Embed(ctx, texts)
+}
+
+func (o *overheard) keep() {
+	o.mu.Lock()
+	o.seen = append(o.seen, o.tasks.List())
+	o.mu.Unlock()
+}
+
+func (o *overheard) lists() [][]task.Task {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return o.seen
 }

@@ -370,3 +370,36 @@ func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 		t.Error("got something to close")
 	}
 }
+
+// An installation that says nothing about questions asks the way it indexed. A
+// vault indexed over a network prepares nothing on this machine, so no model
+// stands in the list of what is being done.
+func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
+	t.Setenv(embed.KeyEnvVar, "sk-test")
+
+	cfg := serving("baai/bge-m3")
+	cfg.Query.Use = ""
+
+	tasks := task.New()
+	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
+	if why != nil {
+		t.Fatal(why)
+	}
+	if close != nil {
+		defer func() { _ = close() }()
+	}
+	if indexing == nil || asking == nil {
+		t.Fatalf("got %v and %v", indexing, asking)
+	}
+	// Both halves are the station the settings named, and neither is this
+	// machine's own model.
+	if from := indexing.Model().From; from != cfg.Indexing.From() {
+		t.Errorf("the index is filled from %q", from)
+	}
+	if from := asking.Model().From; from != cfg.Indexing.From() {
+		t.Errorf("a question is embedded from %q", from)
+	}
+	if held := tasks.List(); len(held) != 0 {
+		t.Errorf("a vault indexed over a network is getting a model ready: %+v", held)
+	}
+}
