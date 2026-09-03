@@ -151,9 +151,9 @@ func fingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
 	return read.Notes[0].Fingerprint
 }
 
-// deckprint is what a deck is at this moment, as card_read gives it. Every tool
-// that writes a deck takes one.
-func deckprint(t *testing.T, s *sdk.ClientSession, path string) string {
+// deckFingerprint is what a deck is at this moment, as card_read gives it.
+// Every tool that writes a deck takes one.
+func deckFingerprint(t *testing.T, s *sdk.ClientSession, path string) string {
 	t.Helper()
 	return call[struct {
 		Fingerprint string `json:"fingerprint"`
