@@ -1,4 +1,4 @@
-name: docs
+name: Docs
 
 on:
   pull_request:
@@ -37,7 +37,8 @@ jobs:
   # The manual is markdown and carries no framework, so what there is to check
   # is that the site builds and that the keyboard page still says what the
   # window does.
-  manual:
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -68,8 +69,9 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the manual, and the manual has a storage zone of its own.
   deploy:
+    name: Deploy
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: manual
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: What this needs

@@ -1,0 +1,74 @@
+name: UI
+
+on:
+  pull_request:
+    paths:
+      - "modules/libs/ui/**"
+      - ".github/workflows/ui.yml"
+  push:
+    branches: [main]
+    paths:
+      - "modules/libs/ui/**"
+      - ".github/workflows/ui.yml"
+
+# One run at a time per branch, and the newest is the one that matters.
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # The shared components on their own: built into the shape a consumer sees,
+  # and asked what they draw in a document.
+  components:
+    name: "Components :: Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/ui/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules/libs/ui
+
+      - name: Build the components
+        run: npm run build --prefix modules/libs/ui
+
+      - name: Test
+        run: npm run test:unit --prefix modules/libs/ui -- --coverage
+
+  # A story runs in a real browser, and several of them are the only test of a
+  # thing a browser decides: what is clipped by an overflow, where a scroll
+  # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
+  # on Linux and Chromium on Windows, so both are fetched.
+  stories:
+    name: "Stories :: Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/libs/ui/package-lock.json
+
+      - name: Install
+        run: npm ci --prefix modules/libs/ui
+
+      # The engines are a download of their own and answer to the version in
+      # the lockfile. Whatever the cache does not hold is fetched below.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('modules/libs/ui/package-lock.json') }}
+          restore-keys: playwright-
+
+      - name: The browsers the stories run in
+        run: npx --prefix modules/libs/ui playwright install chromium webkit --with-deps
+
+      - name: Test
+        run: npm run test:stories --prefix modules/libs/ui
