@@ -393,26 +393,26 @@ func resampled(ctx context.Context, in []float32, from, to int) ([]float32, erro
 // the shape they are read from does not change between any two of them.
 const kernelSteps = 512
 
-// A weights is the windowed sinc, worked out once and read from.
-type weights struct {
+// A kernel is the windowed sinc, worked out once and read from.
+type kernel struct {
 	held []float64
 	step float64
 }
 
 // weighing works the kernel out over its whole reach.
-func weighing(cutoff, reach float64) weights {
+func weighing(cutoff, reach float64) kernel {
 	step := float64(kernelSteps)
 	held := make([]float64, int(reach*step)+2)
 	for i := range held {
 		d := float64(i) / step
 		held[i] = sinc(cutoff*d) * blackman(d/reach)
 	}
-	return weights{held: held, step: step}
+	return kernel{held: held, step: step}
 }
 
 // at is the kernel at a distance, between the two steps it falls between. The
 // kernel is even, so a distance either side of nothing reads the same.
-func (w weights) at(d float64) float64 {
+func (w kernel) at(d float64) float64 {
 	at := math.Abs(d) * w.step
 	i := int(at)
 	if i+1 >= len(w.held) {
