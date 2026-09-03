@@ -4,7 +4,9 @@ The words this product is written in: the domain, the storage, the wire between 
 
 The page is grouped by the context a word is spoken in, and a word spoken in two contexts has an entry in each.
 
-One concept has one name, and a name means one thing inside its context: [ADR-0026](adr/0026-one-name-per-concept.md). Where a field already names a thing, that is the name, and no word is coined to keep clear of one used in another context.
+A concept takes the name its field already gives it. Where a word exists for a thing — transcription, OCR, chunking, highlight, review — that word is the name, and nothing is coined beside it.
+
+A word means one thing inside its context, and the same word in two contexts is not a collision. Nothing is renamed to keep clear of a name another context already uses.
 
 ## The vault and what is written in it
 

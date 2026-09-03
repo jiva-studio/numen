@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core` — `adapter/mcp`
-- **Related:** ADR-0004, ADR-0005, ADR-0009, ADR-0017, ADR-0020, ADR-0022, ADR-0026
+- **Related:** ADR-0004, ADR-0005, ADR-0009, ADR-0017, ADR-0020, ADR-0022
 
 ## Context
 
@@ -63,7 +63,7 @@ Paths and links are written in a moment, so looking up twenty notes, moving twen
 
 ### A note has one address
 
-A tool names a note by its path relative to the vault root — the same address the schema and the command line use (ADR-0026). A note that can be named two ways is a note an agent has to keep two names for.
+A tool names a note by its path relative to the vault root — the same address the schema and the command line use. A note that can be named two ways is a note an agent has to keep two names for.
 
 ### One vault at a time, and the endpoint follows the window
 

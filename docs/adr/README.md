@@ -29,7 +29,6 @@ The numbers are identity, not order. This list is the order. A gap in the number
 - [ADR-0004 — A hexagonal core in Go](0004-a-hexagonal-core-in-go.md)
 - [ADR-0005 — A client is generated from the protocol](0005-a-client-is-generated-from-the-protocol.md)
 - [ADR-0025 — How this application is tested](0025-how-this-application-is-tested.md)
-- [ADR-0026 — One name per concept](0026-one-name-per-concept.md)
 
 ### The index
 

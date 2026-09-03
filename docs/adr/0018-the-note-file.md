@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** the vault format — every application that reads or writes one
-- **Related:** ADR-0001, ADR-0004, ADR-0017, ADR-0019, ADR-0026, ADR-0027
+- **Related:** ADR-0001, ADR-0004, ADR-0017, ADR-0019, ADR-0027
 
 ## Context
 

@@ -13,7 +13,7 @@ The core decides what is true about a vault. A window, a phone, a command line a
 
 ### The architecture has names, and they are these
 
-The application is **hexagonal architecture**: the domain declares ports, and adapters implement them. It follows the dependency rule of **clean architecture**: imports point inward only, and nothing under the core's own packages imports an adapter. It is organised by the tactical patterns of **domain-driven design**: aggregates, repositories, queries, and use cases named after the scenario, in the ubiquitous language of ADR-0026.
+The application is **hexagonal architecture**: the domain declares ports, and adapters implement them. It follows the dependency rule of **clean architecture**: imports point inward only, and nothing under the core's own packages imports an adapter. It is organised by the tactical patterns of **domain-driven design**: aggregates, repositories, queries, and use cases named after the scenario, in the ubiquitous language the [glossary](../glossary.md) holds.
 
 What a client says to the core is ADR-0005.
 

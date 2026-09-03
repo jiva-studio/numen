@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-01
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop`
-- **Related:** ADR-0010, ADR-0015, ADR-0026, ADR-0043, ADR-0044
+- **Related:** ADR-0010, ADR-0015, ADR-0043, ADR-0044
 
 ## Context
 

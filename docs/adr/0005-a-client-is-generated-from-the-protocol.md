@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/protocol`, `modules/apps/desktop`, `modules/libs/ui`
-- **Related:** ADR-0004, ADR-0009, ADR-0023, ADR-0026
+- **Related:** ADR-0004, ADR-0009, ADR-0023
 
 ## Context
 
@@ -62,9 +62,9 @@ A client is told when the vault changes, over a stream the schema declares. It d
 
 Lint on every change, a breaking-change check against the branch being merged into, and the generated output committed and regenerated in CI, so a schema and its output cannot disagree in a merge.
 
-### Two names change at this boundary, and they are listed
+### No name changes at this boundary
 
-`calling` in the core is `doing` on the wire, and ADR-0026 holds the rule that rename is the exception to. A stretch and a span are not that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
+A field carries the name it has in the core across the wire. A stretch and a span are not an exception to that: they are two things, they keep their own names on both sides, and the wire carries each under the name it has.
 
 ## Consequences
 

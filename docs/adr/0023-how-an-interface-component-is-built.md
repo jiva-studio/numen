@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/ui`
-- **Related:** ADR-0004, ADR-0005, ADR-0024, ADR-0025, ADR-0026
+- **Related:** ADR-0004, ADR-0005, ADR-0024, ADR-0025
 
 ## Context
 
