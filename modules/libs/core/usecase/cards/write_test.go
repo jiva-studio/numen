@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/mark"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // counted is a writer that says how many times a file was replaced, so a test
@@ -124,6 +125,25 @@ func held(t *testing.T, vs vaults, path string) format.Deck {
 		t.Fatalf("read: %v", err)
 	}
 	return got.Deck
+}
+
+// A deck goes to disk through the note writer, and is read at MaxBytes. The
+// writer carries that bound, so a deck larger than a note is written.
+func TestWritingADeckLargerThanANote(t *testing.T) {
+	vs := indexed(t)
+	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\n" +
+		strings.Repeat("Llama ", note.MaxBytes/6) + "\n"
+	if len(body) <= note.MaxBytes {
+		t.Fatalf("the deck is %d bytes, and a note is bounded at %d", len(body), note.MaxBytes)
+	}
+	w := laid(t, vs, "decks/Long.md", body)
+
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.FileRef{}); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	if deck := held(t, vs, "decks/Long.md"); len(deck.Cards) != 1 {
+		t.Errorf("cards = %d", len(deck.Cards))
+	}
 }
 
 // A card typed into a deck by hand carries no mark until the application next

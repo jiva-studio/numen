@@ -42,12 +42,13 @@ type Scan struct {
 // `Seen` counts notes and nothing else, and every other number here is about
 // those notes. What the walk found that is not a note is `Assets`.
 type ScanResult struct {
-	Seen      int // notes found in the vault
-	Assets    int // sources of another kind found in the vault
-	Indexed   int // parsed and written, because they were new or had changed
-	Unchanged int // skipped on size and modification time alone
-	Removed   int // in the index, no longer on disk
-	Vanished  int // walked, but gone by the time it was read
+	Seen       int // notes found in the vault
+	Assets     int // sources of another kind found in the vault
+	Indexed    int // parsed and written, because they were new or had changed
+	Unchanged  int // skipped on size and modification time alone
+	Removed    int // in the index, no longer on disk
+	Vanished   int // walked, but gone by the time it was read
+	Unreadable int // walked, still there, and the read refused
 }
 
 // Execute walks the vault once.
@@ -130,7 +131,11 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			continue
 		}
 		if err != nil {
-			return res, fmt.Errorf("read %s: %w", ref.Path, err)
+			// One file nobody can read — a permission, a broken link, a device
+			// that went away — must not cost the others. The path stays in
+			// `seen`: the file is there and its row is still about it.
+			res.Unreadable++
+			continue
 		}
 		if err := group.add(ctx, markdown.Parse(ref, raw), len(raw)); err != nil {
 			return res, err

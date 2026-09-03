@@ -118,8 +118,9 @@ func (unlisted) Walk(context.Context, func(domain.FileRef) error) error {
 	return errors.New("the vault cannot be listed")
 }
 
-// unreadable is a set of readers whose reads fail, which is what a permission
-// or a device that went away looks like from here.
+// unreadable is a set of readers whose walk fails, which is what a device that
+// went away looks like from here. A single file nobody can read is counted and
+// walked past, so it is the walk itself that has to go.
 type unreadable struct{ port.VaultReaders }
 
 func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
@@ -132,8 +133,8 @@ func (u unreadable) Open(v domain.Vault) (port.VaultReader, error) {
 
 type refuses struct{ port.VaultReader }
 
-func (refuses) Read(context.Context, string) ([]byte, error) {
-	return nil, errors.New("the note cannot be read")
+func (refuses) Walk(context.Context, func(domain.FileRef) error) error {
+	return errors.New("the vault cannot be read")
 }
 
 // behind is one vault with the work a window has running behind it: the index

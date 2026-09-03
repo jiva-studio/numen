@@ -12,9 +12,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrTooLarge is what a body over MaxBytes gets. Nothing is written. The bound
-// is measured against the body being written.
+// ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound
+// is measured against the whole file about to be stored, which is what a read
+// measures.
 var ErrTooLarge = errors.New("this is more text than a note is written with")
+
+// bounded holds a file to the most it may be: its frontmatter and its prose
+// together, as they are about to go to disk. Zero holds it to nothing.
+func bounded(path string, content []byte, bound int) error {
+	if bound <= 0 || len(content) <= bound {
+		return nil
+	}
+	return fmt.Errorf("write %s: %w: %d bytes, and %d is the most",
+		path, ErrTooLarge, len(content), bound)
+}
 
 // ErrBodyRefused is a body that opens with the frontmatter delimiter. It is a
 // whole note handed back as prose — a caller that read a file, changed it, and
@@ -49,6 +60,9 @@ type Write struct {
 	Writers port.VaultWriters
 	Index   func(ctx context.Context, v domain.Vault, paths []string) error
 	Now     func() time.Time
+	// Bound is the most the file may be, measured as it goes to disk. Zero is
+	// MaxBytes. A caller whose files are read at a bound of their own sets it.
+	Bound int
 	// Telling is told what a write is doing while it is being made. Nothing is
 	// told where nobody is drawing the note.
 	Telling Telling
@@ -73,7 +87,7 @@ func (u Write) Execute(
 
 	e := editing{
 		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
-		fingerprint: fingerprint,
+		fingerprint: fingerprint, bound: u.bound(),
 	}
 	ends := func() {}
 	defer func() { ends() }()
@@ -139,10 +153,6 @@ func (s *Seen) stale(on domain.FileRef, prose string) bool {
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, seen *Seen,
 ) (domain.FileRef, error) {
-	if len(body) > MaxBytes {
-		return domain.FileRef{}, fmt.Errorf(
-			"%w: %d bytes, and %d is the most", ErrTooLarge, len(body), MaxBytes)
-	}
 	// A body opening with the delimiter is read back as a frontmatter block, and
 	// then the prose it was is no longer the note's body.
 	if opening := strings.TrimPrefix(body, "\ufeff"); strings.HasPrefix(opening, "---\n") ||
@@ -153,9 +163,17 @@ func (u Write) Save(
 		readers: u.Readers, writers: u.Writers, index: u.Index,
 		overwrite: true,
 		seen:      seen,
+		bound:     u.bound(),
 	}
 	return e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)
 		return nil
 	})
+}
+
+func (u Write) bound() int {
+	if u.Bound == 0 {
+		return MaxBytes
+	}
+	return u.Bound
 }

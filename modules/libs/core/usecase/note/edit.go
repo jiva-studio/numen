@@ -56,6 +56,8 @@ type editing struct {
 	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
 	overwrite bool
+	// bound is the most the file may be. Zero holds it to nothing.
+	bound int
 	// seen is what the caller last saw of the note, and is what a file that is
 	// there is compared with. Nil for a caller that puts its text down whatever
 	// the note now holds.
@@ -156,9 +158,16 @@ func (e editing) splice(
 		}
 	}
 
+	// Every change to a note's contents comes through here, so the size it is
+	// written within is asked once, of the file the change came to.
+	content := doc.Bytes()
+	if err := bounded(path, content, e.bound); err != nil {
+		return domain.FileRef{}, err
+	}
+
 	writer, err := e.writers.Open(v)
 	if err != nil {
 		return domain.FileRef{}, err
 	}
-	return writer.Write(ctx, path, doc.Bytes(), against)
+	return writer.Write(ctx, path, content, against)
 }

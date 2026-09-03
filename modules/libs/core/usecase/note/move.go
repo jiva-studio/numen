@@ -21,6 +21,10 @@ type Move struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	Links   port.LinkQueries
+	// Names is asked how many notes are filed under a name, which is what says
+	// whether a link repaired to that name reaches this note or another one.
+	// Nothing there leaves a repair writing the bare name.
+	Names Names
 	// Sources is where the index files each file. A move tells it that what was
 	// at one path is at another.
 	Sources port.SourceRepository
@@ -95,7 +99,15 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		u.Moving(ctx, domain.Went{From: from, To: to})
 	}
 
-	name := domain.Basename(to)
+	// What a repaired link is pointed at: the name the note is filed under, or
+	// its path where that name is shared with another note.
+	var address string
+	if len(pointing) > 0 {
+		var err error
+		if address, err = u.addressed(ctx, v, to); err != nil {
+			return res, err
+		}
+	}
 	for _, was := range pointing {
 		lands, still, err := u.landsOn(ctx, v, was)
 		if err != nil {
@@ -110,7 +122,7 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		case to:
 			// It followed the note, which is what a name does.
 		case "":
-			repaired, err := u.repair(ctx, v, was.From, was.Target, name)
+			repaired, err := u.repair(ctx, v, was.From, was.Target, address)
 			if err != nil {
 				return res, err
 			}
@@ -128,6 +140,23 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 		}
 	}
 	return res, nil
+}
+
+// addressed is how a link reaches the note at this path, asked of the vault
+// now that the file is there. A name no link reaches comes back as it stands,
+// and the repair that writes it changes nothing.
+func (u Move) addressed(ctx context.Context, v domain.Vault, path string) (string, error) {
+	if u.Names == nil {
+		return domain.Basename(path), nil
+	}
+	to, err := Addressed(ctx, u.Names, v.ID, path)
+	if errors.Is(err, ErrUnaddressable) {
+		return domain.Basename(path), nil
+	}
+	if err != nil {
+		return "", err
+	}
+	return to.Value, nil
 }
 
 // landsOn is where one link goes now, asked of the note it is written in. A
@@ -149,12 +178,12 @@ func (u Move) landsOn(ctx context.Context, v domain.Vault, was domain.ResolvedLi
 	return "", false, nil
 }
 
-// repair writes the name in place of an address that no longer reaches
+// repair writes `reaches` in place of an address that no longer reaches
 // anything. Only the address changes, and only in the note that wrote it.
 //
 // It is a read and a write over a note somebody may have open, so it holds the
 // vault's write lock across both.
-func (u Move) repair(ctx context.Context, v domain.Vault, in string, address domain.Address, name string) (bool, error) {
+func (u Move) repair(ctx context.Context, v domain.Vault, in string, address domain.Address, reaches string) (bool, error) {
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
 		return false, err
@@ -181,11 +210,11 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 		// honest outcome.
 		return false, nil
 	}
-	inBlock, err := doc.PointLinksAt(address, name)
+	inBlock, err := doc.PointLinksAt(address, reaches)
 	if err != nil {
 		return false, err
 	}
-	moved := inBlock + doc.PointProseAt(address, name)
+	moved := inBlock + doc.PointProseAt(address, reaches)
 	if moved == 0 {
 		return false, nil
 	}

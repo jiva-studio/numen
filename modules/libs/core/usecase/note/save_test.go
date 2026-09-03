@@ -491,6 +491,89 @@ func TestSavingMoreTextThanANoteHolds(t *testing.T) {
 	}
 }
 
+// The save and the read hold the note to one bound, so a note the save
+// accepted is a note the read opens. The frontmatter is part of the file.
+func TestANoteIsWrittenNoLargerThanItCanBeRead(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, map[string]string{
+		"Entropy.md": "---\ntags: [physics, thermodynamics]\n---\n# Entropy\n",
+	})
+
+	body := strings.Repeat("x", note.MaxBytes-16)
+	seen := c.opened(t, "Entropy.md")
+	_, err := c.saving().Save(t.Context(), c.vault, "Entropy.md", body, seen)
+	if err != nil && !errors.Is(err, note.ErrTooLarge) {
+		t.Fatal(err)
+	}
+
+	found, err := (note.Read{Readers: filesystem.Readers{}}).Execute(t.Context(), c.vault, "Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found.Outcome != note.Ok {
+		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Ref.Size)
+	}
+}
+
+// A deck is a note file read at a bound of its own, and the writer it goes to
+// disk through carries that bound. One that carries none is held to MaxBytes.
+func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, map[string]string{"Mammals.md": "# Mammals\n"})
+
+	body := strings.Repeat("x", note.MaxBytes+1)
+
+	// A writer that names no bound is a writer of notes.
+	_, err := c.saving().Save(t.Context(), c.vault, "Mammals.md", body, nil)
+	if !errors.Is(err, note.ErrTooLarge) {
+		t.Fatalf("want ErrTooLarge, got %v", err)
+	}
+
+	writing := c.saving()
+	writing.Bound = 2 * note.MaxBytes
+	if _, err := writing.Save(t.Context(), c.vault, "Mammals.md", body, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {
+		t.Errorf("the file is %d bytes, and the body written was larger", got)
+	}
+}
+
+// An agent writes through Execute, and is held to the bound the person's own
+// save is held to.
+func TestWritingMoreTextThanANoteHolds(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
+
+	_, err := c.saving().Execute(
+		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.FileRef{})
+	if !errors.Is(err, note.ErrTooLarge) {
+		t.Fatalf("want ErrTooLarge, got %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
+		t.Errorf("a refused write wrote anyway:\n%s", body)
+	}
+}
+
+// Create writes a whole note in one go, and is held to the same bound.
+func TestCreatingMoreTextThanANoteHolds(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, nil)
+
+	made, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
+		Title: "Entropy", Body: strings.Repeat("x", note.MaxBytes+1),
+	})
+	if !errors.Is(err, note.ErrTooLarge) {
+		t.Fatalf("want ErrTooLarge, got %v", err)
+	}
+	if made.Path != "" {
+		t.Errorf("a refused creation reported a note at %s", made.Path)
+	}
+	if _, err := os.Stat(filepath.Join(c.vault.Path, "Entropy.md")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("a refused creation left a file: %v", err)
+	}
+}
+
 // A file the vault leaves alone and a path with nothing at it are two answers,
 // and a refresh acts on them differently. Neither is indexed and both leave the
 // index; only the second is a note somebody may be looking at.

@@ -88,7 +88,10 @@ func (u Replace) Execute(
 	ends := func() {}
 	defer func() { ends() }()
 
-	e := editing{readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now}
+	e := editing{
+		readers: u.Readers, writers: u.Writers, index: u.Index, now: u.Now,
+		bound: MaxBytes,
+	}
 	at, err := e.apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalised(doc.Body())
 
@@ -105,10 +108,6 @@ func (u Replace) Execute(
 
 		span := where[0]
 		written := body[:span.From] + becomes + body[span.To:]
-		if len(written) > MaxBytes {
-			return fmt.Errorf("%w: %d bytes, and %d is the most",
-				ErrTooLarge, len(written), MaxBytes)
-		}
 
 		// A client counts text its own way, and a stretch named in bytes lands
 		// somewhere else in prose that is not ASCII.

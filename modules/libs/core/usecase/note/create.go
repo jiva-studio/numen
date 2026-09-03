@@ -78,6 +78,10 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return Created{}, err
 	}
 
+	if err := bounded(path, content, MaxBytes); err != nil {
+		return Created{}, err
+	}
+
 	writer, err := u.Writers.Open(v)
 	if err != nil {
 		return Created{}, err
