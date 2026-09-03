@@ -499,6 +499,43 @@ export const Alone: Story = {
   },
 }
 
+/** What each row of the marks story is drawn as. The map is the caller's. */
+const MARKS: Record<string, Component> = {
+  note: FileText,
+  deck: Layers,
+  stencil: LayoutTemplate,
+  preset: Gauge,
+}
+
+/** A palette whose rows are marked, which is the caller filling the icon slot. */
+const marked = (args: Knobs) => ({
+  components: { Palette },
+  setup() {
+    const open = ref(true)
+    const typed = ref('ent')
+    return { args, open, typed, marks: MARKS }
+  },
+  template: `
+    <div class="numen" style="height:100vh;background:var(--numen-surface)">
+      <Palette
+        v-model="typed"
+        :bands="args.bands"
+        :open="open"
+        @choose="args.onChoose"
+        @dismiss="args.onDismiss"
+      >
+        <template #icon="{ id }">
+          <component :is="marks[id]" v-if="marks[id]" style="inline-size:100%;block-size:100%" />
+        </template>
+      </Palette>
+    </div>
+  `,
+})
+
+/** What a mark stands in, and what it draws, as the drawn rows report it. */
+const markOf = (row: Element | null | undefined): string =>
+  /lucide-([a-z-]+)-icon/.exec(row?.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ?? ''
+
 /**
  * A mark before every row, drawn by whoever offered the row: here a note, a
  * deck, a stencil and a preset, each drawn as itself. A row the caller has no
@@ -515,51 +552,60 @@ export const Marks: Story = {
           named('deck', 'Words to learn', ''),
           named('stencil', 'Animal', ''),
           named('preset', 'Every day', ''),
-          named('nothing', 'A book of the vault', ''),
+          named('nothing', 'A file of no kind', ''),
         ],
       },
     ],
   },
-  render: (args) => ({
-    components: { Palette },
-    setup() {
-      const open = ref(true)
-      const typed = ref('ent')
-      const marks: Record<string, Component> = {
-        note: FileText,
-        deck: Layers,
-        stencil: LayoutTemplate,
-        preset: Gauge,
-      }
-      return { args, open, typed, marks }
-    },
-    template: `
-      <div class="numen" style="height:100vh;background:var(--numen-surface)">
-        <Palette
-          v-model="typed"
-          :bands="args.bands"
-          :open="open"
-          @choose="args.onChoose"
-          @dismiss="args.onDismiss"
-        >
-          <template #icon="{ id }">
-            <component :is="marks[id]" v-if="marks[id]" style="inline-size:100%;block-size:100%" />
-          </template>
-        </Palette>
-      </div>
-    `,
-  }),
+  render: marked,
   play: async () => {
     await waitFor(() => expect(options()).toHaveLength(5))
 
-    const drawn = options().map(
-      (row) =>
-        /lucide-([a-z-]+)-icon/.exec(row.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ??
-        '',
-    )
-    await expect(drawn).toEqual(['file-text', 'layers', 'layout-template', 'gauge', ''])
+    await expect(options().map(markOf)).toEqual([
+      'file-text',
+      'layers',
+      'layout-template',
+      'gauge',
+      '',
+    ])
     // The row with no mark keeps the room for one, so the names line up.
     await expect(options()[4]?.querySelector('.palette__icon')).not.toBeNull()
+  },
+}
+
+/**
+ * Where a mark stands on a row carrying two lines: on the name, not between the
+ * two lines, so the marks read down the list beside the names.
+ */
+export const MarksOnTheName: Story = {
+  args: {
+    bands: [
+      {
+        id: 'names',
+        title: 'Names',
+        items: [
+          named('note', 'Entropy', 'ent'),
+          passage('deck', 'Words to learn', LONG, 'the'),
+        ],
+      },
+    ],
+  },
+  render: marked,
+  play: async () => {
+    await waitFor(() => expect(options()).toHaveLength(2))
+
+    for (const row of options()) {
+      const mark = row.querySelector('.palette__icon')!.getBoundingClientRect()
+      const name = row.querySelector('.palette__name')!.getBoundingClientRect()
+      const middle = (box: DOMRect) => box.top + box.height / 2
+      // Centred on the name's own line, within the rounding a layout leaves.
+      await expect(Math.abs(middle(mark) - middle(name))).toBeLessThan(1.5)
+    }
+
+    // The second row is the tall one, so a mark centred on the row would sit
+    // well below the name.
+    const rows = options().map((row) => row.getBoundingClientRect().height)
+    await expect(rows[1]).toBeGreaterThan(rows[0]! + 8)
   },
 }
 
