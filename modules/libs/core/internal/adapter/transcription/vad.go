@@ -65,8 +65,8 @@ func (t *Transcriber) stretches(ctx context.Context, sound []float32) ([]port.Au
 // A person pausing in the middle of a sentence closes a stretch, and what comes
 // back is a line holding one word. A line is a thing somebody reads, and the
 // model hears a sentence better than it hears a word out of one.
-func joined(found []run, least, longest int) []run {
-	out := make([]run, 0, len(found))
+func joined(found []stretch, least, longest int) []stretch {
+	out := make([]stretch, 0, len(found))
 	for _, one := range found {
 		if len(out) == 0 {
 			out = append(out, one)
@@ -168,9 +168,9 @@ func (t *Transcriber) listen(window, state []float32, rate []int64) (float32, []
 	return score[0], append([]float32(nil), raw...), nil
 }
 
-// A run is a stretch of the recording, counted in windows: from the first, up
+// A stretch is a run of the recording, counted in windows: from the first, up
 // to but not including the last.
-type run struct {
+type stretch struct {
 	from, to int
 }
 
@@ -180,8 +180,8 @@ type run struct {
 // quiet windows enough after it, so that the pause between two words does not
 // cut a sentence in half. Each is then widened by pad at both ends, and two
 // that now meet are one.
-func runs(scores []float32, threshold float32, quiet, pad, longest, shortest int) []run {
-	var out []run
+func runs(scores []float32, threshold float32, quiet, pad, longest, shortest int) []stretch {
+	var out []stretch
 	open, last := -1, -1
 	for i, score := range scores {
 		if score >= threshold {
@@ -192,15 +192,15 @@ func runs(scores []float32, threshold float32, quiet, pad, longest, shortest int
 			continue
 		}
 		if open >= 0 && i-last > quiet {
-			out = append(out, run{open, last + 1})
+			out = append(out, stretch{open, last + 1})
 			open = -1
 		}
 	}
 	if open >= 0 {
-		out = append(out, run{open, last + 1})
+		out = append(out, stretch{open, last + 1})
 	}
 
-	var wider []run
+	var wider []stretch
 	for _, one := range out {
 		one.from = max(one.from-pad, 0)
 		one.to = min(one.to+pad, len(scores))
@@ -211,7 +211,7 @@ func runs(scores []float32, threshold float32, quiet, pad, longest, shortest int
 		wider = append(wider, one)
 	}
 
-	var cut []run
+	var cut []stretch
 	for _, one := range wider {
 		cut = append(cut, divided(one, scores, longest)...)
 	}
@@ -228,14 +228,14 @@ func runs(scores []float32, threshold float32, quiet, pad, longest, shortest int
 // divided cuts a stretch that runs on too long into pieces the model is given
 // one at a time. Each cut falls on the quietest window of the second half of
 // what is left, so that a sentence is broken where the speaker paused.
-func divided(one run, scores []float32, longest int) []run {
+func divided(one stretch, scores []float32, longest int) []stretch {
 	if longest <= 1 {
-		return []run{one}
+		return []stretch{one}
 	}
-	var out []run
+	var out []stretch
 	for one.to-one.from > longest {
 		at := quietest(scores, one.from+longest/2, one.from+longest)
-		out = append(out, run{one.from, at})
+		out = append(out, stretch{one.from, at})
 		one.from = at
 	}
 	return append(out, one)
