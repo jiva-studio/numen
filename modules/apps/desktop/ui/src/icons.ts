@@ -15,6 +15,7 @@ import {
   AudioLines,
   BookOpen,
   Bot,
+  Braces,
   Captions,
   CaptionsOff,
   Command,
@@ -54,6 +55,7 @@ import {
 import type { NoteType } from './core'
 import {
   AGENT,
+  CONFIGURATION,
   DECK,
   DOCUMENT,
   FILES,
@@ -137,6 +139,7 @@ const KINDS: ReadonlyMap<string, LucideIcon> = new Map([
   [STENCIL, LayoutTemplate],
   [PRESET, Gauge],
   [SETTINGS, SlidersHorizontal],
+  [CONFIGURATION, Braces],
 ])
 
 /** The icon for a kind of tab, and nothing for a kind that has none. */

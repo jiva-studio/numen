@@ -80,7 +80,7 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
 <template>
   <p
     v-if="shown.state !== 'quiet'"
-    class="activity numen flex items-start gap-2 font-sans text-small"
+    class="activity numen flex items-center gap-2 font-sans text-small"
     :class="strength"
     :data-state="shown.state"
     :data-tone="tone"
@@ -117,8 +117,8 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
   min-block-size: calc(var(--numen-line-height) * 1em);
 }
 
-/* How far and how long stand beside the top line, and the words are what gives
-   way. */
+/* How far and how long stand across from the words, and the words are what
+   gives way. */
 .activity__count {
   flex: none;
 }
