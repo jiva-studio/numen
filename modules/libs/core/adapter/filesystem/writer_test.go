@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -521,5 +522,78 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	}
 	if len(entries) != 2 {
 		t.Errorf("the vault holds %d files, want the note and the attachment", len(entries))
+	}
+}
+
+// Correcting a note's capitalisation, or the spelling of an accent in it, is a
+// move onto a name a filesystem that tells neither apart already answers with
+// the note itself. What the writer sees is two names for one file, which is
+// what a filesystem that does tell them apart is given a link to make.
+func TestANameThatIsAlreadyThisFileIsNotTaken(t *testing.T) {
+	w, root := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "note.md", []byte("# Note\n")); err != nil {
+		t.Fatal(err)
+	}
+	if !sameFile(t, filepath.Join(root, "note.md"), filepath.Join(root, "Note.md")) {
+		if err := os.Link(filepath.Join(root, "note.md"), filepath.Join(root, "Note.md")); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := w.Move(ctx, "note.md", "Note.md"); err != nil {
+		t.Fatalf("the note could not be renamed onto its own file: %v", err)
+	}
+	body, err := os.ReadFile(filepath.Join(root, "Note.md"))
+	if err != nil {
+		t.Fatalf("the note is not at the name it was given: %v", err)
+	}
+	if string(body) != "# Note\n" {
+		t.Errorf("the note holds %q", body)
+	}
+	// A filesystem that tells the two names apart is asked which of them it
+	// wrote down: opening the note by either name says nothing about that.
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(entries, func(e os.DirEntry) bool { return e.Name() == "Note.md" }) {
+		t.Errorf("the vault holds %v, and the note is filed under none of it", entries)
+	}
+}
+
+// sameFile says whether two names are already one file. A filesystem that tells
+// capitalisation apart answers no for two spellings of a name it has one of.
+func sameFile(t *testing.T, one, other string) bool {
+	t.Helper()
+	first, err := os.Lstat(one)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := os.Lstat(other)
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	return os.SameFile(first, second)
+}
+
+// A name another file stands at is taken, whatever the filesystem does with
+// case.
+func TestANameAnotherFileStandsAtIsRefused(t *testing.T) {
+	w, _ := writing(t)
+	ctx := t.Context()
+
+	if err := w.Create(ctx, "Note.md", []byte("# Note\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Create(ctx, "Other.md", []byte("# Other\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Move(ctx, "Note.md", "Other.md"); !errors.Is(err, port.ErrOccupied) {
+		t.Errorf("want ErrOccupied, got %v", err)
 	}
 }

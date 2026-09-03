@@ -105,10 +105,9 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 // filesystem a vault is kept on.
 const nameMax = 255
 
-// beside is the pattern a temporary file is created next to a target under. The
-// note's name is cut on a rune boundary, leaving room for the leading dot and
-// for the digits CreateTemp puts where the star is. The rename lands on the
-// full name.
+// beside is the pattern a temporary file next to a target is created under. The
+// name is cut on a rune boundary, leaving room for the leading dot and for the
+// digits CreateTemp puts where the star is; the rename lands on the full name.
 func beside(name string) string {
 	const room = len(".") + len(".") + 10
 	for len(name)+room > nameMax {
@@ -211,9 +210,18 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
 
-	switch _, err := os.Lstat(target); {
+	switch standing, err := os.Lstat(target); {
 	case err == nil:
-		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+		// A file already at the name is the name being taken, unless it is this
+		// file: a filesystem that tells neither capitalisation nor the spelling
+		// of an accent apart answers the new name with the file being renamed.
+		here, err := os.Lstat(source)
+		if err != nil {
+			return err
+		}
+		if !os.SameFile(here, standing) {
+			return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
+		}
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
