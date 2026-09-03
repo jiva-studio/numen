@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -93,9 +92,8 @@ func (c Config) Flashcards(
 	kept, err := c.Kept()
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
-		// at every launch. That is slower and no less correct, and it is said
-		// once here so the slowness is not a mystery.
-		fmt.Fprintln(os.Stderr, "numen: the schedules are worked out at every launch:", err)
+		// at every launch. That is slower and no less correct.
+		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
 	standing := flashcards.Standings{Readers: c.VaultReaders(), Notes: notes, Links: links}
@@ -107,7 +105,7 @@ func (c Config) Flashcards(
 
 	counting, err := c.Counting()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "numen: the days are counted again at every launch:", err)
+		c.trouble(fmt.Errorf("the days are counted again at every launch: %w", err))
 	}
 
 	presets := flashcards.Presets{

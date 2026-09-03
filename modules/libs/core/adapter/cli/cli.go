@@ -46,7 +46,7 @@ options:
 func Main(ctx context.Context, out, errOut io.Writer, args []string,
 	indexing settings.Indexing, platform container.Config,
 ) int {
-	if err := Run(ctx, out, args, indexing, platform); err != nil {
+	if err := Run(ctx, out, errOut, args, indexing, platform); err != nil {
 		fmt.Fprintln(errOut, "numen-cli:", err)
 		return 1
 	}
@@ -54,8 +54,8 @@ func Main(ctx context.Context, out, errOut io.Writer, args []string,
 }
 
 // Run is Main with its output injected and errors returned, so what the person
-// sees is testable.
-func Run(ctx context.Context, out io.Writer, args []string,
+// sees is testable. errOut carries what a command says beside its answer.
+func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	indexing settings.Indexing, platform container.Config,
 ) error {
 	cfg := platform.Indexing(indexing)
@@ -90,7 +90,7 @@ func Run(ctx context.Context, out io.Writer, args []string,
 	case "transcribe":
 		return transcribeCommand(ctx, out, cfg, rest[1:])
 	case "search":
-		return searchCommand(ctx, out, cfg, rest[1:])
+		return searchCommand(ctx, out, errOut, cfg, rest[1:])
 	case "links":
 		return linksCommand(ctx, out, cfg, rest[1:])
 	case "problems":

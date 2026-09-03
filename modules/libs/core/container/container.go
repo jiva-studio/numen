@@ -97,6 +97,17 @@ type Config struct {
 	// person with a vault restored from an archive is not asked which binary they
 	// are holding.
 	RebuildIndex bool
+
+	// Trouble is where what is assembled here says what went wrong in work it
+	// carries on past. An installation that sets none is told nothing.
+	Trouble port.Trouble
+}
+
+// trouble says what went wrong to whoever asked to be told.
+func (c Config) trouble(err error) {
+	if c.Trouble != nil {
+		c.Trouble(err)
+	}
 }
 
 // Indexing is this configuration carrying what a settings file says about
