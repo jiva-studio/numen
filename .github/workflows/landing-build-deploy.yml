@@ -28,7 +28,7 @@ jobs:
   # that its markup typechecks and that the site builds — pictures included,
   # which is where a missing asset turns up.
   build:
-    name: Build
+    name: Build the page
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -58,7 +58,7 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the page, and the page has a storage zone of its own.
   deploy:
-    name: Deploy
+    name: Deploy the page
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest

@@ -38,7 +38,7 @@ jobs:
   # is that the site builds and that the keyboard page still says what the
   # window does.
   build:
-    name: Build
+    name: Build the manual
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -69,7 +69,7 @@ jobs:
   # readable without its password: the pull zone in front of it is what serves
   # the manual, and the manual has a storage zone of its own.
   deploy:
-    name: Deploy
+    name: Deploy the manual
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
