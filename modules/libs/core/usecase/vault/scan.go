@@ -35,14 +35,14 @@ type Scan struct {
 	// OnProgress, if set, is called each time a group of notes is written. A
 	// scan of a large vault takes a minute, and something has to be able to say
 	// so while it happens. What is done with that is the caller's business.
-	OnProgress func(Scanned)
+	OnProgress func(ScanResult)
 }
 
-// Scanned reports what a scan did, in the terms the user cares about.
+// ScanResult reports what a scan did, in the terms the user cares about.
 //
 // `Seen` counts notes and nothing else, and every other number here is about
 // those notes. What the walk found that is not a note is `Assets`.
-type Scanned struct {
+type ScanResult struct {
 	Seen       int // notes found in the vault
 	Assets     int // sources of another kind found in the vault
 	Indexed    int // parsed and written, because they were new or had changed
@@ -80,8 +80,8 @@ func oneWalk(ctx context.Context, vaultID string) (func(), error) {
 // One walk of a vault runs at a time in this process. A walk writes in groups
 // from what it read, so its copy of a note lands last however early the note
 // was read.
-func (u Scan) Execute(ctx context.Context, v domain.Vault) (Scanned, error) {
-	var res Scanned
+func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
+	var res ScanResult
 
 	over, err := oneWalk(ctx, v.ID)
 	if err != nil {

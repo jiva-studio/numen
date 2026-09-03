@@ -25,9 +25,9 @@ type Searchable struct {
 // SearchableResult is what each pass did. A pass that did not run is a zero
 // value, and Read says which of them were reached.
 type SearchableResult struct {
-	Notes   Scanned
-	Books   source.Extracted
-	Vectors source.Embedded
+	Notes   ScanResult
+	Books   source.ExtractResult
+	Vectors source.EmbedResult
 }
 
 // Execute reads the whole vault, in the order the three passes stand in.
@@ -59,7 +59,7 @@ func (u Searchable) Execute(ctx context.Context, v domain.Vault) (SearchableResu
 }
 
 // ReadBooks takes the text out of every book the vault holds and cuts it.
-func (u Searchable) ReadBooks(ctx context.Context, v domain.Vault) (source.Extracted, error) {
+func (u Searchable) ReadBooks(ctx context.Context, v domain.Vault) (source.ExtractResult, error) {
 	res, err := u.Books.Execute(ctx, v)
 	if err != nil {
 		return res, fmt.Errorf("reading the books of %s: %w", v.Name, err)
@@ -68,7 +68,7 @@ func (u Searchable) ReadBooks(ctx context.Context, v domain.Vault) (source.Extra
 }
 
 // MakeVectors gives every chunk that owes a vector one.
-func (u Searchable) MakeVectors(ctx context.Context, v domain.Vault) (source.Embedded, error) {
+func (u Searchable) MakeVectors(ctx context.Context, v domain.Vault) (source.EmbedResult, error) {
 	res, err := u.Vectors.Execute(ctx, v)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)

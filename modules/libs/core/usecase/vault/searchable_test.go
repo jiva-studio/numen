@@ -52,9 +52,9 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	var order []string
 	making := searchable(readers, db)
 	making.Vectors.Embedder = pointing{}
-	making.Notes.OnProgress = func(usecase.Scanned) { order = append(order, "notes") }
-	making.Books.OnProgress = func(source.Extracted) { order = append(order, "books") }
-	making.Vectors.OnProgress = func(source.Embedded) { order = append(order, "vectors") }
+	making.Notes.OnProgress = func(usecase.ScanResult) { order = append(order, "notes") }
+	making.Books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
+	making.Vectors.OnProgress = func(source.EmbedResult) { order = append(order, "vectors") }
 
 	if _, err := making.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)

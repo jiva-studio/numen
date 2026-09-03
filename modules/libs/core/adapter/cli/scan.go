@@ -53,15 +53,15 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
-	making.Notes.OnProgress = func(res usecase.Scanned) {
+	making.Notes.OnProgress = func(res usecase.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
-	making.Books.OnProgress = func(res source.Extracted) {
+	making.Books.OnProgress = func(res source.ExtractResult) {
 		if res.Reading != "" {
 			fmt.Fprintf(out, "  reading %s\r", res.Reading)
 		}
 	}
-	making.Vectors.OnProgress = func(res source.Embedded) {
+	making.Vectors.OnProgress = func(res source.EmbedResult) {
 		fmt.Fprintf(out, "  %d embedded\r", res.Embedded)
 	}
 
@@ -103,7 +103,7 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 // describeSources puts the reading of what nobody typed here into words: the
 // books of a vault and the recordings in it. Nothing is said about a vault
 // holding none.
-func describeSources(r source.Extracted) string {
+func describeSources(r source.ExtractResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
 	if r.Unreadable > 0 {
@@ -118,7 +118,7 @@ func describeSources(r source.Extracted) string {
 // describe puts a scan into words. The use case counts; how that is said to a
 // person belongs to this adapter, and a graphical shell will say it differently
 // or not at all.
-func describe(r usecase.Scanned) string {
+func describe(r usecase.ScanResult) string {
 	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
 		r.Seen, r.Indexed, r.Unchanged, r.Removed)
 	if r.Vanished > 0 {
