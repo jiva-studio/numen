@@ -77,43 +77,43 @@ import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
 
-const listing = createClient(VaultsService, transport)
+const vaultsService = createClient(VaultsService, transport)
 
-const cutting = createClient(CardsService, transport)
+const cardsService = createClient(CardsService, transport)
 
 /** The vaults this installation holds, in the shape the window asks about them. */
 export const vaults: Vaults = {
   list: async () => {
-    const answer = await listing.list({})
+    const answer = await vaultsService.list({})
     return { vaults: answer.vaults.map(held), showing: answer.showing }
   },
   choose: async (title) => {
-    const answer = await listing.choose({ title, startingAt: '' })
+    const answer = await vaultsService.choose({ title, startingAt: '' })
     return answer.chose ? answer.path : ''
   },
-  add: async (path, name) => added(await listing.add({ path, name })),
-  rename: async (id, name) => added(await listing.rename({ id, name })),
-  forget: async (id) => turnedDown(await listing.forget({ id })),
-  erase: async (id) => turnedDown(await listing.erase({ id })),
-  open: async (id) => turnedDown(await listing.open({ id })),
+  add: async (path, name) => added(await vaultsService.add({ path, name })),
+  rename: async (id, name) => added(await vaultsService.rename({ id, name })),
+  forget: async (id) => turnedDown(await vaultsService.forget({ id })),
+  erase: async (id) => turnedDown(await vaultsService.erase({ id })),
+  open: async (id) => turnedDown(await vaultsService.open({ id })),
 }
 
 /** The stencils and the decks of that vault, in the shape the window asks about them. */
 export const cards: Cards = {
   stencils: async (limit) => {
-    const answer = await cutting.stencils({ limit: limit ?? 0 })
+    const answer = await cardsService.stencils({ limit: limit ?? 0 })
     return { stencils: answer.stencils.map(offered), held: answer.held }
   },
   makeDeck: async (title, folder) => {
-    const answer = await cutting.makeDeck({ title, folder })
+    const answer = await cardsService.makeDeck({ title, folder })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   makeStencil: async (title, folder, fields) => {
-    const answer = await cutting.makeStencil({ title, folder, fields: [...fields] })
+    const answer = await cardsService.makeStencil({ title, folder, fields: [...fields] })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   renameField: async (path, from, to, seen) => {
-    const answer = await cutting.renameField({
+    const answer = await cardsService.renameField({
       path,
       from,
       to,
@@ -132,7 +132,7 @@ export const cards: Cards = {
     }
   },
   readDeck: async (path) => {
-    const answer = await cutting.readDeck({ path })
+    const answer = await cardsService.readDeck({ path })
     return {
       deck: answer.deck ? decked(answer.deck) : null,
       refusal: refusalIn(answer),
@@ -141,7 +141,7 @@ export const cards: Cards = {
     }
   },
   writeDeck: async (path, deck, seen) => {
-    const answer = await cutting.writeDeck({
+    const answer = await cardsService.writeDeck({
       path,
       preamble: deck.preamble,
       cards: deck.cards.map(carding),
@@ -157,7 +157,7 @@ export const cards: Cards = {
     }
   },
   readStencil: async (path) => {
-    const answer = await cutting.readStencil({ path })
+    const answer = await cardsService.readStencil({ path })
     return {
       stencil: answer.stencil ? stencilled(answer.stencil) : null,
       refusal: refusalIn(answer),
@@ -165,7 +165,7 @@ export const cards: Cards = {
     }
   },
   writeStencil: async (path, fields, stencil, seen) => {
-    const answer = await cutting.writeStencil({
+    const answer = await cardsService.writeStencil({
       path,
       fields: [...fields],
       preamble: stencil.preamble,

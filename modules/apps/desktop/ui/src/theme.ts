@@ -10,7 +10,7 @@ import { createClient } from '@connectrpc/connect'
 import { Mode as Modes, Shelf, ThemeService } from '@numen/protocol'
 import { transport } from './transport'
 
-export const dressing = createClient(ThemeService, transport)
+const theme = createClient(ThemeService, transport)
 
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'
@@ -77,7 +77,7 @@ export interface Themes {
 /** The same questions, in the shape the window asks them. */
 export const themes: Themes = {
   catalogue: async () => {
-    const answer = await dressing.themes({})
+    const answer = await theme.themes({})
     return {
       themes: answer.themes.map((one) => ({
         name: one.name,
@@ -94,10 +94,10 @@ export const themes: Themes = {
       },
     }
   },
-  text: async (name) => (await dressing.theme({ name })).css,
+  text: async (name) => (await theme.theme({ name })).css,
   chooses: async (name, mode, sizes) =>
     (
-      await dressing.choose({
+      await theme.choose({
         name,
         mode: ASKED[mode],
         interfaceScale: sizes.interfaceScale,
@@ -105,7 +105,7 @@ export const themes: Themes = {
       })
     ).failed,
   changed: async function* (signal) {
-    for await (const said of dressing.changed({}, { signal })) yield said.names
+    for await (const said of theme.changed({}, { signal })) yield said.names
   },
 }
 
