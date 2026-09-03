@@ -11,7 +11,7 @@ import (
 // Noted is what parsing each file turned up. The wording is the parser's and is
 // carried through as it was written.
 func (q *Queries) Noted(ctx context.Context, vaultID string) ([]domain.VaultProblem, error) {
-	return q.said(ctx, vaultID, "noted")
+	return q.said(ctx, vaultID, "problems")
 }
 
 // Unreadable is the notes whose frontmatter is not YAML.
