@@ -80,7 +80,13 @@ func Open() (Catalogue, error) {
 
 // At is Open with an explicit path.
 func At(dir string) (Catalogue, error) {
-	return Catalogue{dir: dir}, os.MkdirAll(dir, 0o755)
+	made := os.MkdirAll(dir, 0o755)
+	// The folder is where the links lead. The paths the operating system
+	// reports changes at are resolved, and they are named against this.
+	if real, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = real
+	}
+	return Catalogue{dir: dir}, made
 }
 
 // Dir is the folder the person's themes are read from.

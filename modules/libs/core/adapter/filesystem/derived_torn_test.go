@@ -13,6 +13,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 )
 
+// fileCap is the length every file this process writes is held to while the
+// torn append is made. It stands above anything else the run has open.
+const fileCap = 1 << 20
+
 // capped holds every file this process writes to a length, and hands back what
 // lifts it again. It is what a full disk and a quota both do to one append.
 func capped(t *testing.T, to int64) func() {
@@ -52,16 +56,23 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	ctx := t.Context()
 	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir, "run.txt")
 
-	// The cap is on every file this process writes, so what stands under it is
-	// larger than anything else the run has open.
-	first := strings.Repeat("a", 1<<20) + "\n"
+	first := strings.Repeat("a", 40) + "\n"
 	if err := derived.Append(ctx, "ocr/run.txt", []byte(first)); err != nil {
 		t.Fatal(err)
 	}
 
-	lift := capped(t, int64(len(first))+10)
-	if err := derived.Append(ctx, "ocr/run.txt", []byte(strings.Repeat("b", 4096)+"\n")); err == nil {
+	// The one call has to ask for more than the cap allows. Darwin weighs the
+	// cap against the offset the file was opened at, so the length of the
+	// append is what reaches past it.
+	lift := capped(t, fileCap)
+	torn := strings.Repeat("b", 4*fileCap) + "\n"
+	err := derived.Append(ctx, "ocr/run.txt", []byte(torn))
+	if err == nil {
 		t.Fatal("an append that could not land said it had")
+	}
+	// Bytes have to have landed for the cut to be the thing under test.
+	if strings.Contains(err.Error(), " 0 of ") {
+		t.Fatalf("the append landed nothing, so nothing was taken back: %v", err)
 	}
 	if got, err := os.ReadFile(at); err != nil || string(got) != first {
 		t.Fatalf("the file holds %q, want what stood there before the append: %v", got, err)

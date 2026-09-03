@@ -246,10 +246,12 @@ func (f *folders) forget(path string) {
 // this vault that it names. What the vault holds is asked of the reader, so the
 // watcher and the walk answer alike.
 //
-// A file is itself, when the vault holds it. A folder is everything under it:
-// a folder arrives with its contents already in place — copied, restored,
-// checked out — and where the system has no recursion of its own the watch on
-// it is established after the fact. A folder the walk stops at names nothing,
+// A file is itself, when the vault holds it. A folder new to the watch is
+// everything under it: such a folder arrives with its contents already in place
+// — copied, restored, checked out — and where the system has no recursion of
+// its own the watch on it is established after the fact. A folder already known
+// names nothing: it is named because something inside it changed, and that
+// something arrives as its own event. A folder the walk stops at names nothing,
 // and neither does anything under it.
 //
 // `whole` is set when the answer cannot be worked out from the disk: a folder
@@ -266,6 +268,9 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool) {
 	switch {
 	case err == nil && info.IsDir():
 		if path != "." && f.reader.skipped(path, filepath.Base(absolute)) {
+			return nil, false
+		}
+		if f.are[path] {
 			return nil, false
 		}
 		f.are[path] = true
