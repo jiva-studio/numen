@@ -228,7 +228,7 @@ func vaultRefusedBy(err error) (v1.VaultsRefusal, bool) {
 		return v1.VaultsRefusal_VAULTS_REFUSAL_UNREADABLE, true
 	case errors.Is(err, usecase.ErrCopy):
 		return v1.VaultsRefusal_VAULTS_REFUSAL_COPY, true
-	case errors.Is(err, usecase.ErrOverlaps):
+	case errors.Is(err, domain.ErrOverlaps):
 		return v1.VaultsRefusal_VAULTS_REFUSAL_OVERLAPS, true
 	case errors.Is(err, usecase.ErrNameTaken):
 		return v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN, true

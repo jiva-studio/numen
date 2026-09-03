@@ -10,6 +10,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -97,7 +98,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if err := os.MkdirAll(inner, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(inner, ""); !errors.Is(err, usecase.ErrOverlaps) {
+	if _, err := add.Execute(inner, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
 	if _, carriesOne, err := (filesystem.VaultIdentity{}).Of(inner); err != nil || carriesOne {
@@ -116,7 +117,7 @@ func TestAVaultHoldingAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(outer, ""); !errors.Is(err, usecase.ErrOverlaps) {
+	if _, err := add.Execute(outer, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder holding a vault was answered %v", err)
 	}
 }
