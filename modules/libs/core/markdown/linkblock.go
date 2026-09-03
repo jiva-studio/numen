@@ -237,14 +237,19 @@ func (d *Document) SetLinkOfType(of string, to domain.Address, role domain.LinkR
 }
 
 // UpdateLink changes what an entry says about itself without moving where it
-// goes. An entry carrying anything the application does not own is refused.
+// goes. An entry carrying anything the application does not own is refused,
+// and a refusal is the whole change refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
 	b, err := d.block()
 	if err != nil {
 		return 0, err
 	}
 
-	changed := 0
+	type edit struct {
+		start, end int
+		rendered   []byte
+	}
+	var edits []edit
 	for i := len(b.entries) - 1; i >= 0; i-- {
 		e := b.entries[i]
 		if e.link.Target != to {
@@ -272,10 +277,13 @@ func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error
 		if err != nil {
 			return 0, err
 		}
-		d.splice(e.start, e.end, rendered)
-		changed++
+		edits = append(edits, edit{start: e.start, end: e.end, rendered: rendered})
 	}
-	return changed, nil
+
+	for _, e := range edits {
+		d.splice(e.start, e.end, e.rendered)
+	}
+	return len(edits), nil
 }
 
 // PointLinksAt sends every entry that goes to one address to another, changing

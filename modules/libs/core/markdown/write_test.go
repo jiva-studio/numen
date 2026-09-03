@@ -267,6 +267,33 @@ func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	}
 }
 
+// A refusal is the whole change refused. Two entries go to the same place, the
+// application owns the second and not the first, and the note comes out of the
+// call as every byte it went in.
+func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {
+	raw := "---\nlinks:\n" +
+		"  - to: Entropy\n    role: parent\n    mine: keep me\n" +
+		"  - to: Entropy\n    role: ref\n" +
+		"---\nbody\n"
+	d, err := Open([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	changed, err := d.UpdateLink(
+		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
+		domain.Link{Role: domain.RoleChild},
+	)
+	if !errors.Is(err, ErrNotOurs) {
+		t.Fatalf("want ErrNotOurs, got %v", err)
+	}
+	if changed != 0 {
+		t.Errorf("changed = %d", changed)
+	}
+	if got := string(d.Bytes()); got != raw {
+		t.Errorf("a refused change was written\n want %q\n  got %q", raw, got)
+	}
+}
+
 // Repairing an address changes the address and nothing else on the line, nor
 // anything around it.
 func TestPointingALinkSomewhereElseChangesOnlyTheAddress(t *testing.T) {
