@@ -75,7 +75,14 @@ jobs:
       # none of this, which is why it is a separate binary.
       - name: Webview
         if: matrix.webview
-        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            -o Dpkg::Options::=--force-unsafe-io \
+            libgtk-4-dev libwebkitgtk-6.0-dev
 
       - name: Formatting
         run: |
