@@ -42,7 +42,7 @@ func (c Config) Cards(
 			Readers: readers, Writers: writers, Links: links, Index: index, Now: time.Now,
 		},
 		Create: cards.Create{
-			Writers: writers, Index: index, Extension: c.NoteExtension(), Now: time.Now,
+			Writers: writers, Index: index, Now: time.Now,
 		},
 		Rename: cards.RenameField{
 			Readers: readers, Writers: writers, Notes: notes, Links: links, Index: index,
@@ -82,13 +82,4 @@ func below(raw []byte) (string, error) {
 		return "", err
 	}
 	return doc.Body(), nil
-}
-
-// NoteExtension is what a note this vault holds is filed under. Empty is
-// markdown.
-func (c Config) NoteExtension() string {
-	if len(c.Extensions) > 0 {
-		return c.Extensions[0]
-	}
-	return ""
 }

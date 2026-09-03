@@ -32,8 +32,6 @@ type Create struct {
 	// Index brings the new file up to date, so that a caller which makes a deck
 	// and lists the vault's decks in the next breath finds it.
 	Index func(ctx context.Context, v domain.Vault, paths []string) error
-	// Extension is what a new file is filed under. Empty means markdown.
-	Extension string
 	// Now is when this is happening. An identifier carries it.
 	Now func() time.Time
 }
@@ -93,7 +91,7 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	case strings.ContainsAny(title, "\n\r"):
 		return Made{}, fmt.Errorf("%w: %q is more than one line", note.ErrUnnameable, title)
 	}
-	path := pathpkg.Join(in.Folder, name+u.extension())
+	path := pathpkg.Join(in.Folder, name+domain.NoteExtension)
 
 	identifier, err := ulid.New(u.now())
 	if err != nil {
@@ -136,13 +134,6 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 		return made, nil
 	}
 	return made, u.Index(ctx, v, []string{path})
-}
-
-func (u Create) extension() string {
-	if u.Extension == "" {
-		return ".md"
-	}
-	return u.Extension
 }
 
 func (u Create) now() time.Time {

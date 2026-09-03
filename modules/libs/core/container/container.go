@@ -46,9 +46,6 @@ type Config struct {
 	// the settings file until a person chooses that size themselves, and zero is
 	// not said.
 	InterfaceScale, TextScale float64
-	// Extensions are the file extensions treated as notes. Empty means the
-	// default, which is markdown alone.
-	Extensions []string
 
 	// BookExtensions are the file extensions treated as books. Empty means the
 	// default, which is every format a reader takes text out of.
@@ -394,11 +391,10 @@ func (c Config) VaultIdentity() port.VaultIdentity {
 func (c Config) Trash() port.Trash { return trash.New() }
 
 // VaultOptions is how a vault on disk is read: which folder is ours, and which
-// files count as notes and as books. The same answer for whatever looks at it.
+// files count as books. The same answer for whatever looks at it.
 func (c Config) VaultOptions() filesystem.Options {
 	return filesystem.Options{
 		ServiceDir:     c.ServiceDir,
-		Extensions:     c.Extensions,
 		BookExtensions: c.BookExtensions,
 	}
 }
