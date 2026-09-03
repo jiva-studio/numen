@@ -30,30 +30,36 @@ type Bounds struct{ Least, Most float64 }
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
 
+// Appearances is where what the window wears is kept. Where a choice is
+// written down is not this adapter's to know, so the settings arrive as what it
+// does with them.
+type Appearances interface {
+	// Read is what the settings say the window wears.
+	Read() (Appearance, error)
+
+	// Write puts a dress into the settings, and leaves the rest of them as they
+	// are. A number outside the bounds of the size it is written into is
+	// refused and nothing is written.
+	Write(Appearance) error
+
+	// Warn is where a person is told what this could not do: a theme named in
+	// the settings that is not in the catalogue, and settings that could not be
+	// read.
+	Warn(string)
+}
+
 // Service answers what a client may ask about themes.
 //
-// The catalogue is the files. Where a choice is written down is not this
-// adapter's to know, so the settings arrive as the two things it does with
-// them.
+// The catalogue is the files, and Settings is where a choice out of them is
+// kept. A build with no settings behind it offers what it ships and writes
+// nothing.
 type Service struct {
 	Catalogue Catalogue
-
-	// Dressed is what the settings say the window wears.
-	Dressed func() (Appearance, error)
-
-	// Wear writes a dress into the settings, and leaves the rest of them as
-	// they are. A number outside the bounds of the size it is written into is
-	// refused and nothing is written.
-	Wear func(Appearance) error
+	Settings  Appearances
 
 	// InterfaceScaleBounds and TextScaleBounds are how far each of the two sizes
 	// goes.
 	InterfaceScaleBounds, TextScaleBounds Bounds
-
-	// Say is where a person is told what this could not do: a theme named in
-	// the settings that is not in the catalogue, and settings that could not be
-	// read.
-	Say func(string)
 
 	// Hold is how long a change to the themes folder is kept before it is
 	// reported. Zero is DefaultHold.
@@ -130,7 +136,7 @@ func (s *Service) Choose(
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
 		return failed(fmt.Sprintf("%s: which half of a pair to read was not said", name))
 	}
-	if s.Wear == nil {
+	if s.Settings == nil {
 		return failed("this build writes no settings")
 	}
 	chosen := Appearance{
@@ -139,7 +145,7 @@ func (s *Service) Choose(
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
 	}
-	if err := s.Wear(chosen); err != nil {
+	if err := s.Settings.Write(chosen); err != nil {
 		return failed(err.Error())
 	}
 	return connect.NewResponse(&v1.ChooseResponse{}), nil
@@ -181,10 +187,10 @@ func (s *Service) worn() Appearance {
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
 	}
-	if s.Dressed == nil {
+	if s.Settings == nil {
 		return worn
 	}
-	said, err := s.Dressed()
+	said, err := s.Settings.Read()
 	if err != nil {
 		s.say(fmt.Sprintf("the settings could not be read, so the window wears %s: %v", Default, err))
 		return worn
@@ -205,8 +211,8 @@ func (s *Service) worn() Appearance {
 }
 
 func (s *Service) say(why string) {
-	if s.Say != nil {
-		s.Say(why)
+	if s.Settings != nil {
+		s.Settings.Warn(why)
 	}
 }
 

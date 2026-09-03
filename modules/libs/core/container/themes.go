@@ -17,12 +17,13 @@ import (
 // offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.catalogue()
-	said := &scales{drawn: c.InterfaceScale, set: c.TextScale}
 	return &theme.Service{
 		Catalogue: catalogue,
-		Say:       say,
-		Dressed:   func() (theme.Appearance, error) { return c.dressed(said) },
-		Wear:      func(chosen theme.Appearance) error { return c.wear(chosen, said) },
+		Settings: appearances{
+			cfg:  c,
+			said: &scales{drawn: c.InterfaceScale, set: c.TextScale},
+			say:  say,
+		},
 		InterfaceScaleBounds: theme.Bounds{
 			Least: settings.InterfaceScaleBounds.Least, Most: settings.InterfaceScaleBounds.Most,
 		},
@@ -30,6 +31,24 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 			Least: settings.TextScaleBounds.Least, Most: settings.TextScaleBounds.Most,
 		},
 	}, err
+}
+
+// appearances is the settings file as the themes reach it, with what the
+// command line said about size standing over what the file holds.
+type appearances struct {
+	cfg  Config
+	said *scales
+	say  func(string)
+}
+
+func (a appearances) Read() (theme.Appearance, error) { return a.cfg.dressed(a.said) }
+
+func (a appearances) Write(chosen theme.Appearance) error { return a.cfg.wear(chosen, a.said) }
+
+func (a appearances) Warn(why string) {
+	if a.say != nil {
+		a.say(why)
+	}
 }
 
 // scales is what the command line said about size. Each stands over the file

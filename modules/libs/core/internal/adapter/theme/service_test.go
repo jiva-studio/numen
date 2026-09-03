@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
 )
 
-// dressing is a service over a themes folder, with the settings behind it as
-// the two functions it is given.
+// dressing is a service over a themes folder, and the settings behind it, held
+// in memory.
 type dressing struct {
 	service *theme.Service
 	worn    theme.Appearance
@@ -22,23 +22,27 @@ type dressing struct {
 	refuses error
 }
 
+func (d *dressing) Read() (theme.Appearance, error) { return d.worn, nil }
+
+func (d *dressing) Write(one theme.Appearance) error {
+	if d.refuses != nil {
+		return d.refuses
+	}
+	d.written = append(d.written, one)
+	d.worn = one
+	return nil
+}
+
+func (d *dressing) Warn(said string) { d.said = append(d.said, said) }
+
 func dressed(t *testing.T, worn theme.Appearance) *dressing {
 	t.Helper()
 	kept := &dressing{worn: worn}
 	kept.service = &theme.Service{
 		Catalogue:            folder(t),
+		Settings:             kept,
 		InterfaceScaleBounds: theme.Bounds{Least: 0.8, Most: 2},
 		TextScaleBounds:      theme.Bounds{Least: 0.8, Most: 1.75},
-		Dressed:              func() (theme.Appearance, error) { return kept.worn, nil },
-		Wear: func(one theme.Appearance) error {
-			if kept.refuses != nil {
-				return kept.refuses
-			}
-			kept.written = append(kept.written, one)
-			kept.worn = one
-			return nil
-		},
-		Say: func(said string) { kept.said = append(kept.said, said) },
 	}
 	return kept
 }
