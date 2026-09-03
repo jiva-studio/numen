@@ -88,6 +88,18 @@ Run the check by hand against the last commit:
 cd modules/tools/git-hooks && npx commitlint --last --verbose
 ```
 
+## Checks on other platforms
+
+The core suite runs on Linux for every pull request. A Windows runner costs twice a Linux one and a macOS runner ten times, so those two run only when a commit in the branch carries a `Run-On:` trailer, or when the **Core** workflow is started by hand with the platform ticked. Every commit in the branch is read for the trailer, so it goes on the commit that needed the platform.
+
+```
+fix(core): an append that lands short is taken back
+
+Run-On: macos
+```
+
+The values are `windows`, `macos`, the two of them separated by a comma, or `all`. What Windows and macOS say is reported and does not hold the pull request.
+
 ## Architecture decisions
 
 Decisions live in [`docs/adr/`](docs/adr/README.md) — the index has the reading
