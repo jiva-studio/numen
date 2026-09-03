@@ -35,14 +35,14 @@ type Stencil struct {
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	Mark    string  `json:"mark" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
-	Section int     `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
-	Stencil string  `json:"stencil,omitempty" jsonschema:"the stencil this card is cut by, as the wikilink beneath its heading names it"`
-	Values  []Value `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
+	Mark    string       `json:"mark" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
+	Section int          `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
+	Stencil string       `json:"stencil,omitempty" jsonschema:"the stencil this card is cut by, as the wikilink beneath its heading names it"`
+	Values  []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
 }
 
-// Value is what somebody wrote under one of a card's fields.
-type Value struct {
+// FieldValue is what somebody wrote under one of a card's fields.
+type FieldValue struct {
 	Field string `json:"field" jsonschema:"the field's name, spelled as the stencil declares it"`
 	Text  string `json:"text" jsonschema:"the markdown under that heading"`
 }
@@ -194,11 +194,11 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			"comes back under `mark`. The fingerprint from `card_read` is required, and a " +
 			"write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path        string  `json:"path" jsonschema:"the deck to write into"`
-		Stencil     string  `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
-		Values      []Value `json:"values" jsonschema:"what the card holds, in the order to write it"`
-		Section     *int    `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
-		Fingerprint string  `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+		Path        string       `json:"path" jsonschema:"the deck to write into"`
+		Stencil     string       `json:"stencil" jsonschema:"the stencil it is cut by, by the name card_stencils gave under name"`
+		Values      []FieldValue `json:"values" jsonschema:"what the card holds, in the order to write it"`
+		Section     *int         `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
+		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
 			return nil, Written{}, fmt.Errorf(
@@ -241,11 +241,11 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 			"other, and the card's heading follows it. The fingerprint from `card_read` is " +
 			"required, and a write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		Path        string  `json:"path" jsonschema:"the deck the card is in"`
-		Card        string  `json:"card" jsonschema:"the card's mark, as card_read gives it"`
-		Values      []Value `json:"values" jsonschema:"the fields to write, and what to put under each"`
-		Stencil     string  `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencils gave under name; left out, the card keeps the one it names"`
-		Fingerprint string  `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+		Path        string       `json:"path" jsonschema:"the deck the card is in"`
+		Card        string       `json:"card" jsonschema:"the card's mark, as card_read gives it"`
+		Values      []FieldValue `json:"values" jsonschema:"the fields to write, and what to put under each"`
+		Stencil     string       `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencils gave under name; left out, the card keeps the one it names"`
+		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		if size := carries(in.Values); size > maxBytes {
 			return nil, Written{}, fmt.Errorf(
@@ -524,7 +524,7 @@ func placed(d format.Deck, section *int) (at, under int, err error) {
 
 // holding is the card with one value written into it. A field the card carries
 // is replaced where it stands, and one it does not is added at the end.
-func filled(card format.Card, v Value) format.Card {
+func filled(card format.Card, v FieldValue) format.Card {
 	for at, held := range card.Values {
 		if held.Field == v.Field {
 			card.Values[at].Text = v.Text
@@ -562,7 +562,7 @@ func whyNotADeck(read cards.Deck) string {
 func carded(card format.Card) Card {
 	out := Card{Mark: card.Mark, Section: card.Section, Stencil: card.Stencil}
 	for _, v := range card.Values {
-		out.Values = append(out.Values, Value{Field: v.Field, Text: v.Text})
+		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
 	return out
 }
@@ -585,7 +585,7 @@ func only(card Card, fields []string) Card {
 	return kept
 }
 
-func values(vs []Value) []format.Value {
+func values(vs []FieldValue) []format.Value {
 	out := make([]format.Value, 0, len(vs))
 	for _, v := range vs {
 		out = append(out, format.Value{Field: v.Field, Text: v.Text})
@@ -617,7 +617,7 @@ func faults(problems []format.Problem) []Fault {
 
 // carries is how many bytes a call will put in a deck. A field's name lands in
 // the file beside its value, so both are measured.
-func carries(vs []Value) int {
+func carries(vs []FieldValue) int {
 	size := 0
 	for _, v := range vs {
 		size += len(v.Field) + len(v.Text)
