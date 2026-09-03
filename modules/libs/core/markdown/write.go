@@ -431,22 +431,37 @@ func (d *Document) set(key string, rendered []byte) error {
 		if len(rendered) == 0 {
 			return nil
 		}
+		front := append([]byte(nil), d.front...)
+		if len(front) > 0 && !bytes.HasSuffix(front, []byte("\n")) {
+			front = append(front, d.eol...)
+		}
+		if err := d.commit(append(front, rendered...)); err != nil {
+			return err
+		}
 		if node == nil && len(d.open) == 0 {
 			// A note with no frontmatter grows one.
 			d.open = []byte("---" + d.eol)
 			d.shut = []byte("---" + d.eol)
 		}
-		if len(d.front) > 0 && !bytes.HasSuffix(d.front, []byte("\n")) {
-			d.front = append(d.front, []byte(d.eol)...)
-		}
-		d.front = append(append([]byte(nil), d.front...), rendered...)
 		return nil
 	}
 
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
 	front = append(front, rendered...)
-	d.front = append(front, d.front[end:]...)
+	return d.commit(append(front, d.front[end:]...))
+}
+
+// commit puts a frontmatter block in place of the one standing. A block that
+// comes out of a splice unreadable is not written, and the note keeps the bytes
+// it arrived as.
+func (d *Document) commit(front []byte) error {
+	was := d.front
+	d.front = front
+	if _, err := d.mapping(); err != nil {
+		d.front = was
+		return err
+	}
 	return nil
 }
 
