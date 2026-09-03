@@ -1,17 +1,62 @@
 package testsupport
 
 import (
+	"os"
 	"testing"
 
 	"golang.org/x/sys/windows"
 )
 
 // Shut makes a file nobody may open, and opens it again when the test ends.
-// Here that is another program holding the file with no share at all, which is
-// how a file arrives closed on Windows.
+// Here that is an entry on the file refusing everyone every right to it.
 func Shut(tb testing.TB, path string) {
 	tb.Helper()
-	tb.Cleanup(closing(tb, hold(tb, path, 0)))
+
+	everyone, err := windows.CreateWellKnownSid(windows.WinWorldSid)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	refusing, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
+		AccessPermissions: windows.GENERIC_ALL,
+		AccessMode:        windows.DENY_ACCESS,
+		Inheritance:       windows.NO_INHERITANCE,
+		Trustee: windows.TRUSTEE{
+			TrusteeForm:  windows.TRUSTEE_IS_SID,
+			TrusteeType:  windows.TRUSTEE_IS_WELL_KNOWN_GROUP,
+			TrusteeValue: windows.TrusteeValueFromSID(everyone),
+		},
+	}}, nil)
+	if err != nil {
+		tb.Fatal(err)
+	}
+	if err := windows.SetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION|windows.PROTECTED_DACL_SECURITY_INFORMATION,
+		nil, nil, refusing, nil,
+	); err != nil {
+		tb.Fatal(err)
+	}
+	tb.Cleanup(func() { opening(tb, path) })
+
+	// The fixture is only worth having if the file is closed by it.
+	if _, err := os.ReadFile(path); err == nil {
+		opening(tb, path)
+		tb.Fatalf("%s is still open to this test", path)
+	}
+}
+
+// opening gives the file back the rights its folder hands down, so what removes
+// the folder may remove it.
+func opening(tb testing.TB, path string) {
+	if err := windows.SetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION|windows.UNPROTECTED_DACL_SECURITY_INFORMATION,
+		nil, nil, nil, nil,
+	); err != nil {
+		tb.Error(err)
+	}
 }
 
 // Unwritable makes a file nothing may save over, and lets it be saved again
@@ -20,12 +65,7 @@ func Shut(tb testing.TB, path string) {
 // refused for as long as the handle stands.
 func Unwritable(tb testing.TB, path string) {
 	tb.Helper()
-	tb.Cleanup(closing(tb, hold(tb, path, windows.FILE_SHARE_READ)))
-}
 
-// hold opens a file for reading under the share given and keeps it open.
-func hold(tb testing.TB, path string, share uint32) windows.Handle {
-	tb.Helper()
 	name, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		tb.Fatal(err)
@@ -33,7 +73,7 @@ func hold(tb testing.TB, path string, share uint32) windows.Handle {
 	handle, err := windows.CreateFile(
 		name,
 		windows.GENERIC_READ,
-		share,
+		windows.FILE_SHARE_READ,
 		nil,
 		windows.OPEN_EXISTING,
 		windows.FILE_ATTRIBUTE_NORMAL,
@@ -42,13 +82,9 @@ func hold(tb testing.TB, path string, share uint32) windows.Handle {
 	if err != nil {
 		tb.Fatal(err)
 	}
-	return handle
-}
-
-func closing(tb testing.TB, handle windows.Handle) func() {
-	return func() {
+	tb.Cleanup(func() {
 		if err := windows.CloseHandle(handle); err != nil {
 			tb.Error(err)
 		}
-	}
+	})
 }

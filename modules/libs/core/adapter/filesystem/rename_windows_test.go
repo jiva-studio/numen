@@ -47,8 +47,8 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 	}
 }
 
-// A handle held on a file that nothing may move over: Windows refuses a rename
-// over a file opened without FILE_SHARE_DELETE.
+// opened holds a file the way another program does. The share leaves out
+// deletion, and Windows refuses a rename over the file while the handle stands.
 func opened(t *testing.T, path string) windows.Handle {
 	t.Helper()
 
