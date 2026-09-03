@@ -486,8 +486,9 @@ func (c *Config) say(said string, about ...any) {
 	c.Said = append(c.Said, fmt.Sprintf(said, about...))
 }
 
-// write puts the settings where they are read from. The key is not among what
-// is written: rewriting the file is not how one is set.
+// write puts the settings where they are read from, beside the file and
+// renamed over the top. The key is not among what is written: rewriting the
+// file is not how one is set.
 func write(path string, cfg Config) error {
 	raw, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
@@ -496,5 +497,5 @@ func write(path string, cfg Config) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(raw, '\n'), 0o600)
+	return replace(path, append(raw, '\n'))
 }

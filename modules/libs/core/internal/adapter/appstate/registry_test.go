@@ -358,6 +358,30 @@ func TestWriteDoesNotLeaveATemporaryFileBehind(t *testing.T) {
 	}
 }
 
+// Two processes hold the registry at one path, so one temporary name shared
+// between them is one process renaming the other's half-written bytes over the
+// list. Each write takes a name of its own.
+func TestTheRegistryTakesATemporaryNameOfItsOwn(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "vaults.json")
+	// The name a shared temporary would take, occupied by another writer.
+	if err := os.Mkdir(path+".tmp", 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	r := appstate.At(path)
+	if err := r.Save(domain.Vault{ID: "01AAA", Name: "personal", Path: "/notes"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := r.All()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != "01AAA" {
+		t.Errorf("the list holds %+v", got)
+	}
+}
+
 func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
 	// The registry is the one thing here whose loss costs the user manual work,
 	// so a half-written file is the failure worth defending against. The write
@@ -372,11 +396,17 @@ func TestAFailedSaveLeavesTheOldRegistryIntact(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A directory where the temporary file wants to be: the write fails, the
-	// rename never happens.
-	if err := os.Mkdir(path+".tmp", 0o755); err != nil {
+	// A folder nothing may be written into: the temporary file is never made
+	// and the rename never happens.
+	if err := os.Chmod(dir, 0o500); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o700) })
+	if probe, err := os.CreateTemp(dir, "probe"); err == nil {
+		probe.Close()
+		t.Skip("this account writes into a folder it has no leave to write into")
+	}
+
 	if err := r.Save(domain.Vault{ID: "01BBB", Name: "work", Path: "/work"}); err == nil {
 		t.Fatal("a save that could not write reported success")
 	}

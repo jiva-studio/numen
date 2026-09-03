@@ -399,5 +399,23 @@ func replace(path string, content []byte) error {
 	if err := os.Chmod(tmp.Name(), 0o600); err != nil {
 		return err
 	}
-	return os.Rename(tmp.Name(), path)
+	if err := os.Rename(tmp.Name(), path); err != nil {
+		return err
+	}
+	return settle(filepath.Dir(path))
+}
+
+// settle flushes the folder the rename was recorded in. Flushing the file is
+// what keeps its contents; flushing the folder is what keeps the rename.
+//
+// Not every filesystem lets a folder be opened for this, and the ones that
+// refuse are the ones that did not need it.
+func settle(dir string) error {
+	folder, err := os.Open(dir)
+	if err != nil {
+		return nil
+	}
+	defer folder.Close()
+	_ = folder.Sync()
+	return nil
 }
