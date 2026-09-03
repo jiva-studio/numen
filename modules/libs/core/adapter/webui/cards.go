@@ -138,7 +138,7 @@ func (a *API) RenameField(
 	}
 	defer a.Writing.done()
 
-	renamed, err := a.RenamesField.Execute(ctx, showing, cards.Field{
+	renamed, err := a.RenamesField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
 		At: refOf(r.Msg.GetSeen()),
 	})
@@ -327,7 +327,7 @@ func (a *API) titled(ctx context.Context, showing domain.Vault, path string) str
 
 // refusedDeck is why a deck was not read. What holds for a note holds here, and
 // a deck read at a bound of its own is refused at that bound.
-func refusedDeck(o note.Outcome, is domain.NoteType) (v1.Refusal, bool) {
+func refusedDeck(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.TooLarge {
 		return v1.Refusal_REFUSAL_DECK_TOO_LARGE, true
 	}
@@ -338,7 +338,7 @@ func refusedDeck(o note.Outcome, is domain.NoteType) (v1.Refusal, bool) {
 }
 
 // refusedStencil is why a stencil was not read.
-func refusedStencil(o note.Outcome, is domain.NoteType) (v1.Refusal, bool) {
+func refusedStencil(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.Ok && is != domain.TypeStencil {
 		return v1.Refusal_REFUSAL_NOT_A_STENCIL, true
 	}

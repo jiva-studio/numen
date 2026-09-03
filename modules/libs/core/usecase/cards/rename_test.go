@@ -33,7 +33,7 @@ func renaming(t *testing.T, vs vaults) cards.RenameField {
 func TestAFieldRenamedInAStencilIsRenamedInEveryCardItCuts(t *testing.T) {
 	vs := indexed(t)
 
-	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err != nil {
@@ -87,7 +87,7 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "cards/Bird.md", From: "Height", To: "Wingspan",
 	})
 	if err != nil {
@@ -107,7 +107,7 @@ func TestARenameReachesACardWhoseLinkNamesThePath(t *testing.T) {
 func TestRenamingTheFirstFieldReachesEveryDeckThatStencilCuts(t *testing.T) {
 	vs := indexed(t)
 
-	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Name", To: "Species",
 	})
 	if err != nil {
@@ -149,7 +149,7 @@ func TestARenameStaysInItsOwnVault(t *testing.T) {
 	vs := indexed(t)
 	quartz := read(t, vs.second, "decks/Quartz.md")
 
-	if _, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	if _, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
 		t.Fatalf("rename: %v", err)
@@ -161,7 +161,7 @@ func TestARenameStaysInItsOwnVault(t *testing.T) {
 	// And the other way round: the second vault's own stencil reaches its own
 	// deck, and nothing of the first's.
 	mammals := read(t, vs.first, "decks/Mammals.md")
-	if _, err := renaming(t, vs).Execute(t.Context(), vs.second, cards.Field{
+	if _, err := renaming(t, vs).Execute(t.Context(), vs.second, cards.Rename{
 		Stencil: "Mineral.md", From: "Height", To: "Crystal habit",
 	}); err != nil {
 		t.Fatalf("rename: %v", err)
@@ -187,7 +187,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	u := renaming(t, vs)
 	u.Writers = refusing{VaultWriters: filesystem.Writers{}, path: "decks/Birds.md"}
 
-	got, err := u.Execute(t.Context(), vs.first, cards.Field{
+	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err != nil {
@@ -221,7 +221,7 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	if _, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
 		t.Fatalf("rename: %v", err)
@@ -244,7 +244,7 @@ func TestARenameTheStencilRefusedReachesNoDeck(t *testing.T) {
 	vs := indexed(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
-	_, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	_, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Girth", To: "Waist",
 	})
 	if !errors.Is(err, format.ErrNoSuchField) {
@@ -263,7 +263,7 @@ func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Field{
+	got, err := renaming(t, vs).Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err != nil {
@@ -304,7 +304,7 @@ func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	u := renaming(t, vs)
 	u.Notes = byType{NoteQueries: vs.db.NoteQueries(), t: t}
 
-	got, err := u.Execute(t.Context(), vs.first, cards.Field{
+	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err != nil {

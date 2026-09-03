@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Field is which field of which stencil is being renamed, and to what.
-type Field struct {
+// Rename is which field of which stencil is being renamed, and to what.
+type Rename struct {
 	// Stencil is where the stencil is filed.
 	Stencil string
 	From    string
@@ -80,7 +80,7 @@ func (u RenameField) stamp() (string, error) {
 // The stencil leads: a rename the stencil refused reaches no deck. A deck it
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
-func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Field) (Renamed, error) {
+func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Renamed, error) {
 	if in.From == in.To {
 		return Renamed{Stencil: in.At}, nil
 	}
@@ -94,7 +94,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Field) (Ren
 
 // rename is the whole of the writing, under this vault's write lock from before
 // the stencil is read until after the last deck is replaced.
-func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Renamed, error) {
+func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Renamed, error) {
 	release, err := u.Writers.Hold(ctx, v)
 	if err != nil {
 		return Renamed{}, err
@@ -148,7 +148,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Field) (Rena
 
 // stencil writes the new name where the stencil declares the field.
 func (u RenameField) stencil(
-	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Field,
+	ctx context.Context, reader port.VaultReader, writer port.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
 	against := in.At
 	if against == (domain.Fingerprint{}) {
@@ -218,7 +218,7 @@ type deck struct {
 // This is the application writing the file, so the deck it leaves behind is
 // whole: it is stamped with an identifier where it carried none, and every card
 // of it is given its mark and its heading.
-func (d deck) rename(ctx context.Context, path string, in Field) (int, error) {
+func (d deck) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.Stat(ctx, path)
 	if err != nil {
 		return 0, err

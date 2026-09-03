@@ -398,7 +398,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			Cards      int      `json:"cards" jsonschema:"how many headings were rewritten"`
 			NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 		}
-		renamed, err := core.FieldRename.Execute(ctx, core.shown().Vault, cards.Field{
+		renamed, err := core.FieldRename.Execute(ctx, core.shown().Vault, cards.Rename{
 			Stencil: in.Path, From: in.From, To: in.To,
 		})
 		if err != nil {
