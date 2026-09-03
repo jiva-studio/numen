@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -21,7 +21,7 @@ func TestASmallChunkIsCutUnderTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		chunks := cut(n, outline(n), cutting.Sizes{Limit: limit})
+		chunks := cut(n, outline(n), chunking.Sizes{Limit: limit})
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
 		}

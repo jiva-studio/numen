@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -38,7 +38,7 @@ type Document struct {
 
 	// Parts are where the source names something, and are what chunks are cut
 	// inside so that one never runs across a part into the next.
-	Parts []cutting.PartStart
+	Parts []chunking.PartStart
 
 	// named and paged are what the source calls the place an offset falls in,
 	// in the vocabulary of its own format. Both ascend by offset, and either may
@@ -167,7 +167,7 @@ func fromEPUB(raw []byte) (*Document, error) {
 	}
 	doc := &Document{Text: book.Text}
 	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, cutting.PartStart{Title: p.Title, Offset: p.Offset})
+		doc.Parts = append(doc.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
 		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	// A book made for a screen has no pages of its own, and those it names are

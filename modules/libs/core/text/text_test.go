@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
 )
@@ -94,7 +94,7 @@ func TestAReadingWithPartsNamesThem(t *testing.T) {
 	raw, parts := written(t)
 	doc := text.Recognised(raw, parts, nil, nil)
 
-	want := []cutting.PartStart{
+	want := []chunking.PartStart{
 		{Title: docTitle, Offset: at(t, doc, docTitle)},
 		{Title: sectionOne, Offset: at(t, doc, sectionOne)},
 		{Title: sectionTwo, Offset: at(t, doc, sectionTwo)},

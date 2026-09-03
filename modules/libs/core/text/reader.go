@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/fixes"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/ocr"
@@ -175,15 +175,15 @@ func Transcribed(raw []byte) *Document {
 // The parts of one artifact begin in the order the prose is read and end within
 // it. A sidecar that says otherwise was written for other bytes, and none of it
 // is used.
-func divided(prose string, parts []ocr.Part) []cutting.PartStart {
-	out := make([]cutting.PartStart, 0, len(parts))
+func divided(prose string, parts []ocr.Part) []chunking.PartStart {
+	out := make([]chunking.PartStart, 0, len(parts))
 	at := 0
 	for _, p := range parts {
 		if p.Start < at || p.Length <= 0 || p.Start+p.Length > len(prose) {
 			return nil
 		}
 		at = p.Start
-		out = append(out, cutting.PartStart{
+		out = append(out, chunking.PartStart{
 			Title:  prose[p.Start : p.Start+p.Length],
 			Offset: p.Start,
 		})

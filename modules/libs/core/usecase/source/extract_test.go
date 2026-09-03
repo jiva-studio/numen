@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/epub"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -19,10 +19,10 @@ const bookPath = "library/book.epub"
 func TestABookIsCutIntoChunksRecordedWithTheRecipeThatCutThem(t *testing.T) {
 	cases := []struct {
 		name  string
-		sizes cutting.Sizes
+		sizes chunking.Sizes
 	}{
-		{"at the sizes configuration names none for", cutting.Sizes{}},
-		{"at sizes of its own", cutting.Sizes{Large: 60, LargeOverlap: 10, Small: 20, SmallOverlap: 5}},
+		{"at the sizes configuration names none for", chunking.Sizes{}},
+		{"at sizes of its own", chunking.Sizes{Large: 60, LargeOverlap: 10, Small: 20, SmallOverlap: 5}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -174,7 +174,7 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 
 func TestTheRecipeFollowsTheCutSizesAndStalenessFollowsTheRecipe(t *testing.T) {
 	ctx := t.Context()
-	one := cutting.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
+	one := chunking.Sizes{Large: 100, LargeOverlap: 20, Small: 20, SmallOverlap: 5}
 	other := one
 	other.Small = 21
 

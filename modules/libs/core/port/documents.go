@@ -5,7 +5,7 @@ import (
 	"errors"
 	"image"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
@@ -36,7 +36,7 @@ type Reading struct {
 	// stream. Every offset below is an offset into it.
 	Text string
 	// Parts are the names the document gives divisions of itself.
-	Parts []cutting.PartStart
+	Parts []chunking.PartStart
 	// Pages is where each page begins.
 	Pages []int
 }

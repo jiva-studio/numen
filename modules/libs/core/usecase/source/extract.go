@@ -7,7 +7,7 @@ import (
 	"io/fs"
 	"slices"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/text"
@@ -46,7 +46,7 @@ type Extract struct {
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
-	Sizes cutting.Sizes
+	Sizes chunking.Sizes
 
 	// RebuildIndex reads every file and puts it in the index again, whatever the
 	// index remembers about it.
@@ -365,7 +365,7 @@ func (u Extract) source(
 	v domain.Vault,
 	reader port.VaultReader,
 	path string,
-	sizes cutting.Sizes,
+	sizes chunking.Sizes,
 	res *ExtractResult,
 ) error {
 	res.Reading = path
@@ -436,9 +436,9 @@ func (u Extract) source(
 
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
-func chunksOf(doc *text.Document, sizes cutting.Sizes) []port.Chunk {
+func chunksOf(doc *text.Document, sizes chunking.Sizes) []port.Chunk {
 	var out []port.Chunk
-	for _, large := range cutting.Cut(doc.Text, doc.Parts, sizes) {
+	for _, large := range chunking.Cut(doc.Text, doc.Parts, sizes) {
 		c := chunkAt(doc, large)
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only: a small chunk standing at the same offset is inside it, and
@@ -454,7 +454,7 @@ func chunksOf(doc *text.Document, sizes cutting.Sizes) []port.Chunk {
 
 // chunkAt is one chunk with what it holds and where the source says it is. The
 // text goes with it to be indexed for its words and is not kept.
-func chunkAt(doc *text.Document, c cutting.Chunk) port.Chunk {
+func chunkAt(doc *text.Document, c chunking.Chunk) port.Chunk {
 	return port.Chunk{
 		Start:    c.Start,
 		Length:   c.Length,
@@ -475,14 +475,14 @@ func counted(chunks []port.Chunk) int {
 // recipe names what produced a source's text: the reader that took it out, and
 // the sizes it was cut into. Both are asked as one question — a source whose
 // recipe is not this one owes its text again.
-func recipe(reader string, s cutting.Sizes) string {
+func recipe(reader string, s chunking.Sizes) string {
 	return fmt.Sprintf("%s/large=%d+%d/small=%d+%d/limit=%d",
 		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
 }
 
 // recipes are what every reader would produce at these sizes. A source carrying
 // none of them owes its text: its own reader has changed, or the sizes have.
-func recipes(s cutting.Sizes) []string {
+func recipes(s chunking.Sizes) []string {
 	named := []string{text.ReaderEPUB, text.ReaderPDF, text.ReaderRecording}
 	out := make([]string, 0, len(named))
 	for _, reader := range named {
@@ -493,22 +493,22 @@ func recipes(s cutting.Sizes) []string {
 
 // sizes fills in what configuration left unset with the defaults the cut applies,
 // so that the recipe names the sizes the text was cut into.
-func (u Extract) sizes() cutting.Sizes {
+func (u Extract) sizes() chunking.Sizes {
 	s := u.Sizes
 	if s.Large == 0 {
-		s.Large = cutting.DefaultLarge
+		s.Large = chunking.DefaultLarge
 	}
 	if s.Small <= 0 {
-		s.Small = cutting.DefaultSmall
+		s.Small = chunking.DefaultSmall
 	}
 	if s.LargeOverlap == 0 {
-		s.LargeOverlap = cutting.DefaultLargeOverlap
+		s.LargeOverlap = chunking.DefaultLargeOverlap
 	}
 	if s.SmallOverlap == 0 {
-		s.SmallOverlap = cutting.DefaultSmallOverlap
+		s.SmallOverlap = chunking.DefaultSmallOverlap
 	}
 	if s.Limit <= 0 {
-		s.Limit = cutting.DefaultLimit
+		s.Limit = chunking.DefaultLimit
 	}
 	return s
 }

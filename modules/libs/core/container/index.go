@@ -40,7 +40,7 @@ func (i *Index) Close() error { return i.db.Close() }
 func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
 	refresh := vault.Refresh{
 		Readers: c.VaultReaders(),
-		Notes:   db.NotesCutAt(c.Cutting()),
+		Notes:   db.NotesCutAt(c.Chunking()),
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
 	}
@@ -74,7 +74,7 @@ func (i *Index) Queries() port.NoteQueries    { return i.db.NoteQueries() }
 // while a scan is still writing.
 func (i *Index) Passages() port.PassageQueries { return i.db.ChunkQueries() }
 
-// Progress is how far cutting and embedding have got, for a window to say so.
+// Progress is how far chunking and embedding have got, for a window to say so.
 func (i *Index) Progress() port.IndexProgress { return i.db.ChunkQueries() }
 
 // Sources holds what has text and what was made from it. One type answers all

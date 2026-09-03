@@ -45,7 +45,7 @@ func (c Config) OpeningWith(
 	scan := c.Scan(db)
 	scan.Readers = walking
 
-	held := &holding{NoteRepository: db.NotesCutAt(c.Cutting())}
+	held := &holding{NoteRepository: db.NotesCutAt(c.Chunking())}
 	return &Opening{
 		watcher: watcher,
 		scan:    scan,

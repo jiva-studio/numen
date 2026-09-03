@@ -1,4 +1,4 @@
-package cutting
+package chunking
 
 import "testing"
 

@@ -3,30 +3,30 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Cutting is how a source's text is cut into chunks.
+// Chunking is how a source's text is cut into chunks.
 //
 // It is a fact about the settings and not about what is loaded: the sizes are
 // part of what a chunk is kept under, and a chunk cut one way in a window and
 // another way in a terminal is a source cut again every time the two take
 // turns. This is where the number comes from, and there is nowhere else to
 // take it from.
-func (c Config) Cutting() cutting.Sizes {
+func (c Config) Chunking() chunking.Sizes {
 	if c.Embedding.Indexing.Use == "" {
-		return cutting.Sizes{}
+		return chunking.Sizes{}
 	}
-	return cutting.Sizes{Limit: cutting.Under(c.Embedding.Model.MaxTokens)}
+	return chunking.Sizes{Limit: chunking.Under(c.Embedding.Model.MaxTokens)}
 }
 
 // NotesCutAt is the note repository, told the sizes a note is cut at. A note is
 // cut in the adapter that stores it, and the sizes reach that adapter from here.
-func (i *Index) NotesCutAt(sizes cutting.Sizes) port.NoteRepository {
+func (i *Index) NotesCutAt(sizes chunking.Sizes) port.NoteRepository {
 	return i.db.Notes().Cut(sizes)
 }
 
@@ -36,7 +36,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 	return vault.Scan{
 		Readers:      c.VaultReaders(),
 		Vaults:       db.Vaults(),
-		Notes:        db.NotesCutAt(c.Cutting()),
+		Notes:        db.NotesCutAt(c.Chunking()),
 		Known:        db.Queries(),
 		Maintenance:  db.Maintenance(),
 		RebuildIndex: c.RebuildIndex,
@@ -101,7 +101,7 @@ func (c Config) Extract(sources port.SourceRepository, owing port.SourceQueries,
 		Owing:        owing,
 		Derived:      derived,
 		Documents:    c.Documents(),
-		Sizes:        c.Cutting(),
+		Sizes:        c.Chunking(),
 		RebuildIndex: c.RebuildIndex,
 	}, nil
 }

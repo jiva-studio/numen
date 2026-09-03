@@ -640,7 +640,7 @@ func (o *Opened) Refresh() usecase.Refresh {
 	}
 	return usecase.Refresh{
 		Readers: o.cfg.VaultReaders(),
-		Notes:   o.Index.NotesCutAt(o.cfg.Cutting()),
+		Notes:   o.Index.NotesCutAt(o.cfg.Chunking()),
 		Known:   o.Index.SourcesKnown(),
 		Sources: o.Index.Sources(),
 	}

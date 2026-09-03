@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -25,7 +25,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 	}
 	out := port.Reading{Text: book.Text}
 	for _, p := range book.Parts {
-		out.Parts = append(out.Parts, cutting.PartStart{Title: p.Title, Offset: p.Offset})
+		out.Parts = append(out.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
 	}
 	for _, p := range book.Pages {
 		out.Pages = append(out.Pages, p.Offset)

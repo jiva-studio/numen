@@ -1,6 +1,6 @@
-// Package cutting cuts a source's text into the chunks the index holds: a small
-// chunk that carries a vector, and the large chunk enclosing it that a result
-// shows.
+// Package chunking cuts a source's text into the chunks the index holds: a
+// small chunk that carries a vector, and the large chunk enclosing it that a
+// result shows.
 //
 // It is pure: no filesystem, no clock, no database. The same text and the same
 // parts give the same offsets, which is what lets a chunk keep an offset and
@@ -17,7 +17,7 @@
 // Sizes.Limit is characters, and the caller sets it under the input limit of the
 // model that will embed a small chunk. What a word costs in tokens differs by
 // script and is recorded in docs/performance.md.
-package cutting
+package chunking
 
 import (
 	"sort"

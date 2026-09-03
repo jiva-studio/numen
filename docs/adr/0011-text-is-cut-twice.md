@@ -42,7 +42,7 @@ A note is cut into the same small chunks as a book, and a note's large chunk is 
 
 A file that puts a whole book on four lines is cut like any other. The small chunk is checked against the model's input limit and stays under it with margin.
 
-The word counts, the two overlaps and the legibility thresholds are constants in `cutting`. The character limit is the one value settings reach, and it is derived from the model's input limit.
+The word counts, the two overlaps and the legibility thresholds are constants in `chunking`. The character limit is the one value settings reach, and it is derived from the model's input limit.
 
 ## Consequences
 

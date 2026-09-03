@@ -560,7 +560,7 @@ The recogniser is chosen for what it keeps rather than for its size. Measured ov
 
 No model in the family can write a consonant with a dot below it. Small and medium delete the letter they cannot spell — `ṭuṭaba hṛdayaka` becomes `uaba hdayaka` — and one Sanskrit word in five loses a letter. Tiny writes the plain letter instead, so the word keeps its length and a search still reaches it. The smallest is also the fastest and, on this book, the best.
 
-A recogniser that cannot spell a script at all writes plausible nonsense: the same models over a Russian document return Latin gibberish, and what keeps most of it out of the index is `cutting.legible` refusing to cut it.
+A recogniser that cannot spell a script at all writes plausible nonsense: the same models over a Russian document return Latin gibberish, and what keeps most of it out of the index is `chunking.legible` refusing to cut it.
 
 ## Where a document's own words sit
 

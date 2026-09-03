@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -28,15 +28,15 @@ func TestTheCutAssembledCarriesTheSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cut.Sizes != held.Cutting() {
-		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.Cutting())
+	if cut.Sizes != held.Chunking() {
+		t.Errorf("cut at %+v, and the settings say %+v", cut.Sizes, held.Chunking())
 	}
 }
 
 func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).Cutting(); got != (cutting.Sizes{}) {
+	if got := (container.Config{Embedding: cfg}).Chunking(); got != (chunking.Sizes{}) {
 		t.Errorf("got %+v", got)
 	}
 }
@@ -44,8 +44,8 @@ func TestAVaultWithNoModelIsCutAtTheDefaultBound(t *testing.T) {
 func TestTheModelSaidIsWhatAChunkIsCutUnder(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Model.MaxTokens = 512
-	if got := (container.Config{Embedding: cfg}).Cutting().Limit; got != cutting.Under(512) {
-		t.Errorf("cut at %d, under %d", got, cutting.Under(512))
+	if got := (container.Config{Embedding: cfg}).Chunking().Limit; got != chunking.Under(512) {
+		t.Errorf("cut at %d, under %d", got, chunking.Under(512))
 	}
 }
 
@@ -89,7 +89,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	if len(owing) == 0 {
 		t.Fatal("a note of a hundred lines owes no vector")
 	}
-	limit := cutting.Under(cfg.Model.MaxTokens)
+	limit := chunking.Under(cfg.Model.MaxTokens)
 	for _, p := range owing {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)
@@ -131,7 +131,7 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a source.Extract or a cutting.Sizes of its
+// Nothing outside this package builds a source.Extract or a chunking.Sizes of its
 // own. The sizes decide what a chunk is kept under, and a second assembly is a
 // second answer for one settings file.
 func TestNothingElseAssemblesACut(t *testing.T) {
@@ -177,7 +177,7 @@ func TestNothingElseAssemblesACut(t *testing.T) {
 			switch {
 			case pkg.Name == "source" && named.Sel.Name == "Extract" && !within(path, "usecase/source"):
 				built = append(built, path)
-			case pkg.Name == "cutting" && named.Sel.Name == "Sizes":
+			case pkg.Name == "chunking" && named.Sel.Name == "Sizes":
 				sized = append(sized, path)
 			}
 			return true

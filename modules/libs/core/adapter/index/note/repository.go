@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/modules/libs/core/cards"
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -36,14 +36,14 @@ type Repository struct {
 
 	// sizes are what a note is cut at. A repository told none cuts at the sizes
 	// the cutting package names.
-	sizes cutting.Sizes
+	sizes chunking.Sizes
 }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // Cut is the repository, cutting a note at the sizes given. The settings decide
 // them, and what has read the settings passes them in here.
-func (r *Repository) Cut(sizes cutting.Sizes) *Repository {
+func (r *Repository) Cut(sizes chunking.Sizes) *Repository {
 	return &Repository{db: r.db, sizes: sizes}
 }
 
@@ -86,7 +86,7 @@ func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.No
 	return nil
 }
 
-func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes cutting.Sizes) error {
+func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes chunking.Sizes) error {
 	frontmatter, storeErr := encodeFrontmatter(n)
 	problem := n.FrontmatterErr
 	if storeErr != "" {
@@ -179,7 +179,7 @@ func saveNote(ctx context.Context, tx *sql.Tx, vault int64, n domain.Note, sizes
 // A deck and a stencil are cut into nothing. A card is found by its heading,
 // which is its question, and a stencil by its title, which is its file name.
 // The vectors hang off the chunks, so neither is embedded either.
-func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.Chunk {
+func cut(n domain.Note, headings []domain.Heading, sizes chunking.Sizes) []chunk.Chunk {
 	if n.Type == domain.TypeDeck || n.Type == domain.TypeStencil {
 		return nil
 	}
@@ -188,10 +188,10 @@ func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.
 	if at < 0 {
 		at = 0
 	}
-	sizes.Large = cutting.Whole
+	sizes.Large = chunking.Whole
 
 	out := make([]chunk.Chunk, 0, 1)
-	for _, large := range cutting.Cut(n.Body, parts(headings), sizes) {
+	for _, large := range chunking.Cut(n.Body, parts(headings), sizes) {
 		// The title is searched together with the body: a note is looked for by
 		// the name it was given.
 		c := chunk.Chunk{
@@ -223,13 +223,13 @@ func cut(n domain.Note, headings []domain.Heading, sizes cutting.Sizes) []chunk.
 //
 // They are the headings the index keeps, so a passage is announced under a name
 // somebody wrote.
-func parts(headings []domain.Heading) []cutting.PartStart {
+func parts(headings []domain.Heading) []chunking.PartStart {
 	if len(headings) == 0 {
 		return nil
 	}
-	out := make([]cutting.PartStart, 0, len(headings))
+	out := make([]chunking.PartStart, 0, len(headings))
 	for _, h := range headings {
-		out = append(out, cutting.PartStart{Title: h.Text, Offset: h.Offset})
+		out = append(out, chunking.PartStart{Title: h.Text, Offset: h.Offset})
 	}
 	return out
 }

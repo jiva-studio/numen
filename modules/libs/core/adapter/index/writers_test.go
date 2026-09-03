@@ -7,14 +7,14 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cutting"
+	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // writing saves one note of a title of its own through the opening given.
 func writing(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
-	return db.Notes().Cut(cutting.Sizes{}).Save(t.Context(), string(v.ID), []domain.Note{{
+	return db.Notes().Cut(chunking.Sizes{}).Save(t.Context(), string(v.ID), []domain.Note{{
 		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: 1},
 		Title:       title,
 		Type:        domain.TypeNote,
