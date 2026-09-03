@@ -62,6 +62,30 @@ describe('prose', () => {
     expect(prose.text()).toContain('alert(1)')
   })
 
+  it('draws a wikilink as a link to the note it names', () => {
+    expect(drawn('Under [[Entropy]] it sits.').find('a').attributes('href')).toBe('name://Entropy')
+  })
+
+  it('holds a wikilink to what every other link is held to', () => {
+    for (const address of [
+      'javascript://%0Aalert(1)',
+      'JavaScript://%0Aalert(1)',
+      'vbscript://alert(1)',
+      'file://etc/passwd',
+      'data://text/html,<script>alert(1)</script>',
+    ]) {
+      const prose = drawn(`[[${address}|Click]]`)
+      expect(prose.find('a').exists()).toBe(false)
+      expect(prose.text()).toContain('Click')
+    }
+  })
+
+  it('reads a colon that begins no scheme as part of a name', () => {
+    expect(drawn('[[javascript:alert(1)|Click]]').find('a').attributes('href')).toBe(
+      'name://javascript:alert(1)',
+    )
+  })
+
   it('has nothing to draw for nothing', () => {
     expect(render('')).toEqual([])
   })
