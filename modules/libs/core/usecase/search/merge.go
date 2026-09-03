@@ -51,9 +51,9 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 	return fused
 }
 
-// where is one place in one file. A hit and the chunk enclosing it are two
+// passageID is one place in one file. A hit and the chunk enclosing it are two
 // rows standing in the same place, and one place is one passage.
-type where struct {
+type passageID struct {
 	source        string
 	start, length int
 }
@@ -75,10 +75,10 @@ func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	out := make([]domain.Passage, 0, min(limit, len(fused)))
 	taken := map[string]int{}
 	opened := map[string]bool{}
-	held := map[where]bool{}
+	held := map[passageID]bool{}
 
 	keep := func(p domain.Passage) bool {
-		at := where{p.Source, p.Start, p.Length}
+		at := passageID{p.Source, p.Start, p.Length}
 		if held[at] || taken[p.Source] >= each {
 			return true
 		}

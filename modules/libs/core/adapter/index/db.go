@@ -107,7 +107,7 @@ func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
 func (d *DB) Sources() sources {
-	return sources{known: known{read: d.ChunkQueries()}, write: d.Chunks()}
+	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks()}
 }
 
 func dsn(path string) string { return dsnOf(path, pragmas) }

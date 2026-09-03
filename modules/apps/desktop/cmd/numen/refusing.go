@@ -99,7 +99,7 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 // stopped is the state the application is in, said in its own words: what it
 // could not open, what it found, and what a person can do about it.
 func stopped(cfg container.Config, why error) refusal {
-	var ahead *index.Ahead
+	var ahead *index.NewerSchema
 	if errors.As(why, &ahead) {
 		return refusal{
 			Head: openingTheIndex,

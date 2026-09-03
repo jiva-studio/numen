@@ -169,7 +169,7 @@ func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
 		again.Close()
 		t.Fatal("an index from a later build was opened")
 	}
-	var ahead *Ahead
+	var ahead *NewerSchema
 	if !errors.As(err, &ahead) {
 		t.Fatalf("the error is %v, which does not say the index is ahead", err)
 	}

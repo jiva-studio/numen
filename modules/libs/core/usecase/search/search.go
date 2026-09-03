@@ -307,13 +307,13 @@ func proseOpens(raw string) int {
 	return len(raw) - len(doc.Body())
 }
 
-// Way is how a search is asked. Each way is an order of its own, and a search
-// asked every way fuses them into one.
-type Way int
+// SearchWay is how a search is asked. Each way is an order of its own, and a
+// search asked every way fuses them into one.
+type SearchWay int
 
 const (
 	// EveryWay: all of them, fused into one ranking.
-	EveryWay Way = iota
+	EveryWay SearchWay = iota
 	// Lexical: what is written, matched as words.
 	Lexical
 	// Dense: what the query means, against the vectors the index holds.
@@ -328,7 +328,7 @@ const (
 // A way that is not wanted keeps no candidates, which is how a way is told not
 // to run. Every way but the one named is silenced, so a caller drawing the ways
 // apart is shown one of them and not one and a half.
-func Typing(way Way, limit int) Parameters {
+func Typing(way SearchWay, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.filled()
 	switch way {
 	case Lexical:

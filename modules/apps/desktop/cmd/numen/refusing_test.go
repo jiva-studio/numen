@@ -18,7 +18,7 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
 
-	page, err := refusal{}.page(cfg, &index.Ahead{Held: 9, Known: 1})
+	page, err := refusal{}.page(cfg, &index.NewerSchema{Held: 9, Known: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func stoppings(t *testing.T) []stopping {
 		{
 			name: "an index a later build wrote",
 			cfg:  container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-			why:  &index.Ahead{Held: 9, Known: 1},
+			why:  &index.NewerSchema{Held: 9, Known: 1},
 		},
 		{
 			name: "an index that is not a database",

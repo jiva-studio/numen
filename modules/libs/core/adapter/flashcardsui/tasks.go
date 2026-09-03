@@ -78,7 +78,7 @@ func doing(list []task.Task) []*v1.Task {
 }
 
 // countedIn is what a task counts, as the schema says it.
-func countedIn(in task.Counting) v1.Counting {
+func countedIn(in task.Unit) v1.Counting {
 	switch in {
 	case task.Bytes:
 		return v1.Counting_COUNTING_BYTES

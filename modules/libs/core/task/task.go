@@ -43,15 +43,15 @@ type Task struct {
 	Asked bool
 
 	// Counting is what Done and Total are counted in.
-	Counting Counting
+	Counting Unit
 }
 
-// Counting is what a piece of work counts. Bytes are read out in the sizes a
+// Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, and everything else is counted one by one.
-type Counting int
+type Unit int
 
 const (
-	Things Counting = iota
+	Things Unit = iota
 	Bytes
 	// Seconds are a stretch of a recording, read out as a length of time.
 	Seconds

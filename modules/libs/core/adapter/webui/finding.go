@@ -150,7 +150,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 }
 
 // wayOf is the way the client named, as the use case names it.
-func wayOf(way v1.Way) search.Way {
+func wayOf(way v1.Way) search.SearchWay {
 	switch way {
 	case v1.Way_WAY_WORDS:
 		return search.Lexical

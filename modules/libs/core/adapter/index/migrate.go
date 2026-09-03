@@ -58,7 +58,7 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		newest = available[len(available)-1].version
 	}
 	if current > newest {
-		return &Ahead{Held: current, Known: newest}
+		return &NewerSchema{Held: current, Known: newest}
 	}
 
 	for _, m := range available {
@@ -72,15 +72,15 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// Ahead is an index a later build wrote. Nothing is done to it: the schema it
+// NewerSchema is an index a later build wrote. Nothing is done to it: the schema it
 // holds is one this build cannot read, and the way out is the build that made
 // it.
-type Ahead struct {
+type NewerSchema struct {
 	Held  int
 	Known int
 }
 
-func (e *Ahead) Error() string {
+func (e *NewerSchema) Error() string {
 	return fmt.Sprintf(
 		"this index was written by a later version of numen: it is at schema %d and this build knows %d",
 		e.Held, e.Known)
