@@ -154,6 +154,16 @@ describe('a read answers missing', () => {
     expect(stateOf(next.tab)).toBe('gone')
     expect(next.effects).toEqual([])
   })
+
+  it('leaves a tab standing on a live file alone where the read was overtaken', () => {
+    // The note moved, the tab followed it and asked again. The read left behind
+    // answers about the name the tab has left, and the file it is on is there.
+    const reading = tab({ reading: 3 })
+    const next = tabAfter(reading, { kind: 'read', generation: 2, answer: { kind: 'missing' } })
+
+    expect(next).toEqual({ tab: reading, effects: [] })
+    expect(stateOf(next.tab)).toBe('clean')
+  })
 })
 
 describe('a read answers a refusal', () => {
@@ -167,6 +177,18 @@ describe('a read answers a refusal', () => {
     expect(next.tab.refused).toBe('notText')
     expect(stateOf(next.tab)).toBe('stuck')
     expect(next.effects).toEqual([])
+  })
+
+  it('leaves a loading tab alone where the read was overtaken', () => {
+    const reading = tab({ written: null, shown: '', reading: 2 })
+    const next = tabAfter(reading, {
+      kind: 'read',
+      generation: 1,
+      answer: { kind: 'refused', refusal: 'notText' },
+    })
+
+    expect(next).toEqual({ tab: reading, effects: [] })
+    expect(stateOf(next.tab)).toBe('loading')
   })
 
   it('strands nothing: a tab that never read its note is not mended by typing', () => {

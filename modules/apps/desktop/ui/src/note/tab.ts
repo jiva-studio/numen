@@ -274,20 +274,24 @@ const begins = (tab: Tab, seen: Seen | null): Next => ({
 const answered = (tab: Tab, generation: number, answer: Read): Next => {
   const state = stateOf(tab)
   const loading = state === 'loading'
+  // A read the tab has since replaced answers about the file it stood on then,
+  // and says nothing about the one it stands on now.
+  const stale = generation !== tab.reading
   if (answer.kind === 'refused') {
-    return loading ? { tab: { ...tab, refused: answer.refusal }, effects: [] } : still(tab)
+    return loading && !stale ? { tab: { ...tab, refused: answer.refusal }, effects: [] } : still(tab)
   }
   // Missing out of the first read empties the buffer, and the next write makes
   // the file. Missing out of a re-read is a note that is no longer there: what
   // the person has stays on the screen, and nothing of it is written anywhere
   // until they say so.
   if (answer.kind === 'missing') {
+    if (stale) return still(tab)
     return loading ? shows(tab, '', null) : still({ ...tab, gone: true })
   }
   if (loading) return shows(tab, answer.body, answer.at)
   // The note came back, at this name or another.
   if (state === 'gone') return shows({ ...tab, gone: false }, answer.body, answer.at)
-  if (generation !== tab.reading) return still(tab)
+  if (stale) return still(tab)
   if (state === 'overtaken') return shows({ ...tab, overtaken: false }, answer.body, answer.at)
   if (dirty(tab)) return still(tab)
   return shows(tab, answer.body, answer.at)
