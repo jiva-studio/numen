@@ -68,7 +68,7 @@ type Transcriber struct {
 	speech  *ort.Session
 	cutting SegmenterModel
 
-	named port.Transcription
+	named port.TranscriptionModel
 
 	// One set of sessions, one stretch at a time. The library is safe to call
 	// from several goroutines, and a stretch is heard start to finish.
@@ -103,7 +103,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		pieces:  said,
 		blank:   blank,
 		cutting: cfg.Speech,
-		named: port.Transcription{
+		named: port.TranscriptionModel{
 			Model:     named(cfg.Model.Name, found.encoder),
 			Segmenter: named(cfg.Speech.Name, found.speech),
 			Cutting:   cfg.Speech.cutting(),
@@ -131,7 +131,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 }
 
 // Transcription is what every recording this transcriber hears was heard by.
-func (t *Transcriber) Transcription() port.Transcription { return t.named }
+func (t *Transcriber) Transcription() port.TranscriptionModel { return t.named }
 
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.
