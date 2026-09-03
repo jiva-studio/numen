@@ -101,6 +101,31 @@ func TestAFolderThatGoesAwayCannotBeAnsweredFromDisk(t *testing.T) {
 	}
 }
 
+// TestAFolderAlreadyThereIsNotItsWholeContents. A folder is named in its own
+// right when something inside it changes, and that something is named too. The
+// folder is known, so it adds nothing to what its own contents already said.
+func TestAFolderAlreadyThereIsNotItsWholeContents(t *testing.T) {
+	root := vaultOf(t, map[string]string{
+		"Note.md":      "# Note\n",
+		"Untouched.md": "# Untouched\n",
+		"Aside.md":     "# Aside\n",
+	}, nil)
+	// A watch opened on a folder written a moment ago is told what was already
+	// in it, and one of those cannot be told from a file that has just arrived.
+	time.Sleep(500 * time.Millisecond)
+	next := watching(t, root)
+
+	now := time.Now()
+	if err := os.Chtimes(root, now, now); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, "Note.md", "# Note\n\nedited\n")
+
+	if got := next(); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("reported %v, want only the note that changed", got)
+	}
+}
+
 // TestAFolderWithADotInItsNameIsStillAFolder. A name says nothing about what a
 // path was: `2026.archive` is a folder and `Note.md.tmp` is not, and only one of
 // them takes notes with it.
@@ -155,9 +180,19 @@ func TestFoldingGoesOnWhileNobodyIsListening(t *testing.T) {
 
 	select {
 	case paths := <-changes:
-		slices.Sort(paths)
-		if !slices.Equal(paths, []string{"First.md", "Second.md"}) {
-			t.Fatalf("the first batch was %v — the second change was not folded into it", paths)
+		// Both changes stand in the one batch, and each path stands in it once.
+		// A batch may name more than was changed: a watch just opened on a vault
+		// is told about files that were already there, and one of those cannot
+		// be told from a file that has just arrived.
+		for _, want := range []string{"First.md", "Second.md"} {
+			if !slices.Contains(paths, want) {
+				t.Fatalf("the first batch was %v — %s was not folded into it", paths, want)
+			}
+		}
+		sorted := slices.Clone(paths)
+		slices.Sort(sorted)
+		if len(slices.Compact(sorted)) != len(paths) {
+			t.Fatalf("the batch was %v — a path was named twice", paths)
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("nothing was reported")
