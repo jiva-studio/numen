@@ -19,7 +19,7 @@ func note(t *testing.T, raw string) domain.Note {
 
 // filed is the one problem of a check, and it fails the test where there is
 // none or more than one.
-func filed(t *testing.T, problems []cards.Problem, check cards.Check) cards.Problem {
+func filed(t *testing.T, problems []cards.Problem, check cards.Fault) cards.Problem {
 	t.Helper()
 	var found []cards.Problem
 	for _, p := range problems {

@@ -155,7 +155,7 @@ func position(at int) *int32 {
 
 // faultOf is what a problem is, as the schema names it, and whether the schema
 // names it at all.
-func faultOf(check format.Check) (v1.Fault, bool) {
+func faultOf(check format.Fault) (v1.Fault, bool) {
 	switch check {
 	case format.CheckTwoFields:
 		return v1.Fault_FAULT_FIELD_DECLARED_TWICE, true
