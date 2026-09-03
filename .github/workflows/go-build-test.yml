@@ -1,4 +1,4 @@
-name: go
+name: (Go) Build and test
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - "modules/apps/mobile/**"
       - "modules/libs/protocol/**"
       - "tests/**"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/go-build-test.yml"
   push:
     branches: [main]
     paths:
@@ -17,7 +17,7 @@ on:
       - "modules/apps/mobile/**"
       - "modules/libs/protocol/**"
       - "tests/**"
-      - ".github/workflows/go.yml"
+      - ".github/workflows/go-build-test.yml"
 
 # One run at a time per branch, and on a pull request the newest is the one that
 # matters. A run on main is left to finish: it fills the cache the branches read.
@@ -29,18 +29,22 @@ jobs:
   # Three Go modules, checked the same way. The desktop module holds its Go
   # under cmd and internal, the phone's under bind; the core module is Go
   # throughout.
-  go:
+  build-and-test:
+    name: ${{ matrix.title }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - module: modules/libs/core
+          - title: Core
+            module: modules/libs/core
             sources: "."
-          - module: modules/apps/desktop
+          - title: Desktop
+            module: modules/apps/desktop
             sources: "./cmd ./internal"
             webview: true
-          - module: modules/apps/mobile
+          - title: Mobile
+            module: modules/apps/mobile
             sources: "./bind"
     defaults:
       run:
@@ -111,7 +115,8 @@ jobs:
 
   # The other half of the promise the two binaries make: this one is built for
   # a machine it is not being built on.
-  portable:
+  cross-compile:
+    name: Cross-compile
     runs-on: ubuntu-latest
     defaults:
       run:

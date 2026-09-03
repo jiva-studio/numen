@@ -1,22 +1,23 @@
-name: protocol
+name: (Protocol) Check schema
 
 on:
   pull_request:
     paths:
       - "modules/libs/protocol/**"
-      - ".github/workflows/protocol.yml"
+      - ".github/workflows/protocol-check.yml"
   push:
     branches: [main]
     paths:
       - "modules/libs/protocol/**"
-      - ".github/workflows/protocol.yml"
+      - ".github/workflows/protocol-check.yml"
 
 defaults:
   run:
     working-directory: modules/libs/protocol
 
 jobs:
-  schema:
+  check:
+    name: Check
     runs-on: ubuntu-latest
     steps:
       # The breaking-change check reads the schema as it stands on the base

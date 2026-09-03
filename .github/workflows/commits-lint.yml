@@ -1,4 +1,4 @@
-name: commitlint
+name: (Commits) Lint
 
 on:
   pull_request:
@@ -14,6 +14,7 @@ defaults:
     working-directory: modules/tools/git-hooks
 
 jobs:
+  # The job keeps its name: it is the check the default branch is protected by.
   commitlint:
     runs-on: ubuntu-latest
     steps:

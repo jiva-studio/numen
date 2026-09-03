@@ -1,4 +1,4 @@
-name: interface
+name: (Interface) Build and test
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
       - "modules/apps/mobile/package.json"
       - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
-      - ".github/workflows/interface.yml"
+      - ".github/workflows/interface-build-test.yml"
   push:
     branches: [main]
     paths:
@@ -21,7 +21,7 @@ on:
       - "modules/apps/mobile/package.json"
       - "modules/apps/mobile/vitest.config.ts"
       - "modules/libs/protocol/**"
-      - ".github/workflows/interface.yml"
+      - ".github/workflows/interface-build-test.yml"
 
 # One run at a time per branch, and the newest is the one that matters.
 concurrency:
@@ -32,6 +32,7 @@ jobs:
   # The shared components on their own: built into the shape a consumer sees,
   # and asked what they draw in a document.
   components:
+    name: Components
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -56,6 +57,7 @@ jobs:
   # lands, whether a key reaches an SVG group. The window is WebKit on a mac and
   # on Linux and Chromium on Windows, so both are fetched.
   stories:
+    name: Stories
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -86,6 +88,7 @@ jobs:
   # The screens that arrange the components. All are typed against the schema,
   # so a change to it fails here rather than on screen.
   windows:
+    name: Windows
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

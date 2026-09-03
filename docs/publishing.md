@@ -106,17 +106,17 @@ one is reported by name rather than as a refusal further down.
 
 ## How it happens
 
-**The page.** `landing.yml` builds it on every pull request. On the default
+**The page.** `landing-build-deploy.yml` builds it on every pull request. On the default
 branch it also uploads what was built, takes down anything in the store that
 this build did not write, purges the edge, and then fetches the page over the
 public address to prove a stranger can read it.
 
-**The manual.** `docs.yml` does the same for `modules/apps/docs`, and checks
+**The manual.** `docs-build-deploy.yml` does the same for `modules/apps/docs`, and checks
 one thing more before it builds: that the keyboard page still says what the
 window does. It runs on a pull request touching the manual and on the three
 files the keyboard page is written from.
 
-**The builds.** `package.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/` and `builds/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
+**The builds.** `release-package-publish.yml` runs on a tag beginning with `v` and builds every platform, and it runs when it is asked for by hand and builds what it was asked for. A tag is named by the tag and goes into `latest/` and `releases/`; a run asked for by hand is named by what it was asked for, goes into `dev/` and `builds/`, and publishes only when it was told to. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the size of what went up.
 
 `latest/latest.json` is the one file asked for over and over by machines that already hold the rest, and the pull zone has to be told to hold it no longer than a minute — today it says thirty days. Everything under `releases/` and `builds/` is written once, and the zone can hold it for as long as it likes.
 
