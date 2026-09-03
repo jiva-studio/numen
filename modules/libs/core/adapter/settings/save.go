@@ -89,12 +89,19 @@ func takes(raw []byte, wrote []Setting) error {
 	}
 	for _, outside := range held.Appearance.Outsides() {
 		for _, setting := range wrote {
-			if strings.Join(setting.At, ".") == outside.At {
+			if covers(setting.At, outside.At) {
 				return outside
 			}
 		}
 	}
 	return nil
+}
+
+// covers is whether a setting handed in at one name wrote the field at another:
+// the field itself, or a field inside the section named.
+func covers(at []string, field string) bool {
+	name := strings.Join(at, ".")
+	return field == name || strings.HasPrefix(field, name+".")
 }
 
 // rename gives one field of the file another name. Its value, its place among

@@ -455,8 +455,31 @@ func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
 	}
 }
 
+// A setting is handed in at whatever name it is written under, and a section
+// written whole carries the numbers inside it.
+func TestASectionHandedInIsCheckedAtTheNumbersItHolds(t *testing.T) {
+	path := write(t, `{"appearance":{"theme":"preset:numen"}}`)
+	err := settings.Save(path, settings.Setting{
+		At:    []string{"appearance"},
+		Value: map[string]any{"theme": "preset:nord", "text_scale": 9},
+	})
+	if err == nil {
+		t.Fatal("a section carrying a size out of its band was written")
+	}
+	if !strings.Contains(err.Error(), "appearance.text_scale") {
+		t.Errorf("said %q, wanted it to name the setting", err)
+	}
+	raw, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(raw) != `{"appearance":{"theme":"preset:numen"}}` {
+		t.Errorf("the file is now:\n%s", raw)
+	}
+}
+
 // A name written twice is read from the last of the two and patched at the
-// first, so a save that landed would be read back as the value it replaced.
+// first. One section holds one of a name, and a file holding two is refused.
 func TestASectionHoldsOneOfAName(t *testing.T) {
 	for what, body := range map[string]string{
 		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,
