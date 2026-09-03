@@ -82,7 +82,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
 	reading := note.Read{Readers: cfg.VaultReaders()}
 	return claudecode.Drafting{
-		Tell: func(ctx context.Context, said domain.Editing) {
+		Tell: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.Viewing().Editing(ctx, said)
 		},
 		Where: func(ctx context.Context, path, stood string) (int, int, bool) {
@@ -114,13 +114,13 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 	viewing := opened.API.Viewing()
 	// What a write is doing reaches the window the way a note put in front of
 	// the person does. A build with no window draws nothing and is told nothing.
-	tells := note.TellEditing(func(ctx context.Context, said domain.Editing) {
+	tells := note.TellEditing(func(ctx context.Context, said domain.Edit) {
 		if viewing == nil {
 			return
 		}
 		_ = viewing.Editing(ctx, said)
 	})
-	went := note.TellMove(func(ctx context.Context, gone domain.Went) {
+	went := note.TellMove(func(ctx context.Context, gone domain.Move) {
 		if viewing == nil {
 			return
 		}

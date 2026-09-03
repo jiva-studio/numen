@@ -15,7 +15,7 @@ import (
 // drawn is a window that keeps what it was told about a change being made, and
 // a vault that says one stretch stands in one place.
 type drawn struct {
-	said  []domain.Editing
+	said  []domain.Edit
 	at    time.Time
 	found bool
 	asked []string
@@ -23,7 +23,7 @@ type drawn struct {
 
 func (d *drawn) drafting() claudecode.Drafting {
 	return claudecode.Drafting{
-		Tell: func(_ context.Context, said domain.Editing) { d.said = append(d.said, said) },
+		Tell: func(_ context.Context, said domain.Edit) { d.said = append(d.said, said) },
 		Where: func(_ context.Context, path, stood string) (int, int, bool) {
 			d.asked = append(d.asked, stood)
 			return 3, 9, d.found

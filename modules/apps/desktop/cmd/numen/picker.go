@@ -20,7 +20,7 @@ type picker struct {
 	up bool
 }
 
-var _ port.Folders = (*picker)(nil)
+var _ port.FolderDialog = (*picker)(nil)
 
 // Choose answers with the folder the person chose, and with false where they
 // closed the picker. A picker ends when the person answers it, and that wait is
@@ -34,7 +34,7 @@ func (p *picker) Choose(_ context.Context, title, startingAt string) (string, bo
 	// holds no settings for it to read, taking the window and whatever a person
 	// had not written down with it.
 	if !settled() {
-		return "", false, port.ErrNoPicker
+		return "", false, port.ErrNoFolderDialog
 	}
 	if !p.alone() {
 		return "", false, port.ErrChoosing

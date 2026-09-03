@@ -605,7 +605,7 @@ func lastLine(said string) string {
 // only says what is on its way.
 type Drafting struct {
 	// Tell is told each time more of the change has arrived.
-	Tell func(ctx context.Context, said domain.Editing)
+	Tell func(ctx context.Context, said domain.Edit)
 	// Where says where a stretch stands in a note, and whether it stands in
 	// exactly one place. A stretch that stands nowhere or twice is not drawn.
 	Where func(ctx context.Context, path, stood string) (from, to int, one bool)

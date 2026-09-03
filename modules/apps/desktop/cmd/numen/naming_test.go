@@ -37,7 +37,7 @@ func indexed(t *testing.T, opened *webui.Opened, v domain.Vault, path string) {
 // case the window does, and the tools carry the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync note.Sync
+		sync note.SyncTitleAndFilename
 		at   string
 	}{
 		"one name":   {sync: true, at: "Disorder.md"},

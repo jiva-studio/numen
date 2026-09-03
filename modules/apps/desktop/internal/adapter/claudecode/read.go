@@ -521,7 +521,7 @@ func (rd *reader) draw(ctx context.Context) {
 		return
 	}
 	rd.at = now
-	rd.draft.Tell(ctx, domain.Editing{
+	rd.draft.Tell(ctx, domain.Edit{
 		Change: rd.call,
 		Path:   rd.path,
 		From:   rd.from,
