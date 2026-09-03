@@ -326,7 +326,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 		t.Errorf("a card being learned was counted: %+v", got["2026-08-01"])
 	}
 	// The second is one learned card asked and recalled, and one being met.
-	if want := (flashcards.Retention{Asked: 1, Recalled: 1}); got["2026-08-08"] != want {
+	if want := (flashcards.RecallTally{Asked: 1, Recalled: 1}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
 	}
 }
@@ -342,7 +342,7 @@ func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
 		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: flashcards.Again},
 	})
 
-	if want := (flashcards.Retention{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
+	if want := (flashcards.RecallTally{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
 	}
 }

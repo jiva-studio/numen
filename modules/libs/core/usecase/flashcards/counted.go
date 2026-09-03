@@ -43,7 +43,7 @@ type Reviewed struct {
 	Due map[string]int
 	// Retained is how much of what came round in days came back on each day. A
 	// card face the scheduler is still putting into memory is not in it.
-	Retained map[string]history.Retention
+	Retained map[string]history.RecallTally
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
 	// Answered is how many answers the vault holds altogether.
@@ -213,7 +213,7 @@ func given(answers []history.Answer, seen map[string]bool) []history.Answer {
 // so the day it shows is the day it would be asked on.
 func (u Counted) ahead(
 	ctx context.Context, v domain.Vault, held Held,
-) (map[string]int, map[string]history.Retention, error) {
+) (map[string]int, map[string]history.RecallTally, error) {
 	falls := make(map[string]int)
 	if u.Schedules.By == nil {
 		return falls, nil, nil

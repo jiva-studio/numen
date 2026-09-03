@@ -73,14 +73,14 @@ func (g Given) Replay(d Day, by Under) map[CardFace]Schedule {
 	return out
 }
 
-// Retention is how much of what came round in days came back, over one day:
+// RecallTally is how much of what came round in days came back, over one day:
 // the answers given to spaced card faces, and how many of those came back at
 // all.
 //
 // A card face the scheduler is still putting into memory is in neither. What is
 // asked of one is whether it comes back after ten minutes, which says nothing
 // about memory.
-type Retention struct {
+type RecallTally struct {
 	// Asked is the answers given to spaced card faces, and Recalled the ones
 	// among them that were not Again.
 	Asked    int
@@ -91,13 +91,13 @@ type Retention struct {
 //
 // It is worked out with the replay: whether a card face was spaced is a thing
 // only the answers before it can say.
-func Retained(by Scheduler, d Day, answers []Answer) map[string]Retention {
+func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
 	return Give(answers).Retained(by, d)
 }
 
 // Retained is the same over a history already in order.
-func (g Given) Retained(by Scheduler, d Day) map[string]Retention {
-	out := make(map[string]Retention)
+func (g Given) Retained(by Scheduler, d Day) map[string]RecallTally {
+	out := make(map[string]RecallTally)
 	g.replayed(by, func(before Schedule, a Answer) {
 		if !by.Spaced(before) {
 			return
