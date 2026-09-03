@@ -475,13 +475,18 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	// Every vault this installation holds is asked after.
 	transcribing.TakingUp(watching, o.Index.SourcesKnown(), known...)
 
+	// Reading every file again belongs to the vault this window was opened on,
+	// and to nothing built for a vault that arrives later.
+	cfg := o.cfg
+	cfg.RebuildIndex = rebuild
+
 	// Opening a vault is the same act in both windows, so it is one thing in the
 	// container. What this window says about it while it runs is below.
-	opening := o.cfg.Opening(o.Index)
+	opening := cfg.Opening(o.Index)
 	opening.Rebuild = rebuild
 
-	ended := begin(watching, v, o.cfg, o.Index, o.API, opening,
-		o.cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
+	ended := begin(watching, v, cfg, o.Index, o.API, opening,
+		cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
 	return &showing{
 		opening:      opening,
@@ -946,6 +951,17 @@ func begin(
 		return true
 	}
 
+	// Reading every file again is what this launch was asked for, and one pass
+	// makes it. Every pass after it reads what changed. The ask is spent on the
+	// one goroutine below, so it is read and written in one place.
+	rebuild := cfg.RebuildIndex
+	cfg.RebuildIndex = false
+	reading := func() {
+		asked := cfg
+		asked.RebuildIndex, rebuild = rebuild, false
+		readSources(ctx, asked, db, api, v, readers, embedder, out)
+	}
+
 	running.Add(1)
 	go func() {
 		defer running.Done()
@@ -955,7 +971,7 @@ func begin(
 		// to embed. Neither stops the window, and neither has to finish: an
 		// index is a cache.
 		if first() {
-			readSources(ctx, cfg, db, api, v, readers, embedder, out)
+			reading()
 		}
 
 		// What arrives while the window is open is read where the first reading
@@ -968,7 +984,7 @@ func begin(
 			case <-ctx.Done():
 				return
 			case <-wake.sources:
-				readSources(ctx, cfg, db, api, v, readers, embedder, out)
+				reading()
 			case <-wake.read:
 				// A batch of pages is on disk. What has been read of the
 				// document is cut and embedded while the rest of it is still
