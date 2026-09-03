@@ -79,6 +79,8 @@ export const WORDS = {
   /** The two runs over the file in front: a recording transcribed, a scan recognised. */
   transcribe: 'Transcribe this recording',
   recognise: 'Recognise the text of this document',
+  /** The transcript of the recording in front, put right by a proofreader. */
+  proofread: 'Proofread the transcript of this recording',
   /** The transcript of the recording in front, taken away, and the two answers. */
   dropTranscript: 'Delete the transcript of this recording',
   keepsTranscript: 'Keep the transcript',

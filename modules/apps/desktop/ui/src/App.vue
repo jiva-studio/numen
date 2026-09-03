@@ -573,6 +573,7 @@ const doing: Doing = {
   makesFolder: (path) => core.makeFolder(path),
   transcribes: (path) => running.transcribes(path),
   recognises: (path) => running.recognises(path),
+  proofreads: (path) => running.proofreads(path),
   drops: async (path) => {
     const able = await running.drops(path)
     if (able) heard.dropped(path)

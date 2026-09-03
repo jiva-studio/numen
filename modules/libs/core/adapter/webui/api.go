@@ -105,6 +105,10 @@ type API struct {
 	// answers that it cannot do that run.
 	Recognises  Run
 	Transcribes Run
+	// Proofreads puts a recording's transcript right, for whoever asks. An
+	// installation naming nothing to put one right with answers that it cannot
+	// do that run.
+	Proofreads Proofreading
 	// Cut asks for a source to be cut again from whatever its text now says. A
 	// window that put a transcript right calls it, so search answers with the
 	// words as they now read. Nil for a build with nothing cutting behind it,

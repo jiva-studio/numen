@@ -527,10 +527,14 @@ const scanned: Partial<Where> = {
 }
 
 describe('the runs over the file in front', () => {
-  it('offers a recording to be transcribed and its transcript dropped, and nothing to recognise', () => {
+  it('offers a recording to be transcribed, put right and dropped, and nothing to recognise', () => {
     const { commands } = asking(heard)
 
-    expect(drawn(commands.bands).file).toStrictEqual(['transcribe', 'dropTranscript'])
+    expect(drawn(commands.bands).file).toStrictEqual([
+      'transcribe',
+      'proofread',
+      'dropTranscript',
+    ])
   })
 
   it('offers a scan to be recognised, and nothing to transcribe', () => {
@@ -561,6 +565,7 @@ describe('the runs over the file in front', () => {
 
   it('is offered nowhere once this build has said it cannot do it at all', () => {
     cannotRun('transcribe')
+    cannotRun('proofread')
     cannotRun('dropTranscript')
     try {
       expect(drawn(asking(heard).commands.bands).file).toBeUndefined()

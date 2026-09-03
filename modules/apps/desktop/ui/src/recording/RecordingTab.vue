@@ -17,7 +17,7 @@ import { Editor, Menu, Player, timing } from '@numen/ui'
 import type { Point } from '@numen/ui'
 import { iconFor } from '../icons'
 import { WORDS as words } from './words'
-import { DROP, type Held } from './kind'
+import { DROP, PROOFREAD, type Held } from './kind'
 
 const props = defineProps<{ held: Held }>()
 
@@ -40,10 +40,14 @@ const follows = computed(() => props.held.following.value)
 /** Whether this recording has no transcript, which decides what stands below the player. */
 const empty = computed(() => props.held.times.value.length === 0)
 
-/** What the menu offers over this recording: each item only where it applies. */
-const offered = computed(() =>
-  props.held.droppable.value ? [{ id: DROP, text: words.drop }] : [],
-)
+/**
+ * What the menu offers over this recording: each item only where it applies,
+ * and the one that takes the words away last.
+ */
+const offered = computed(() => [
+  ...(props.held.proofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
+  ...(props.held.droppable.value ? [{ id: DROP, text: words.drop }] : []),
+])
 
 /** Where the menu was asked for, and nothing while it is not open. */
 const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
@@ -57,6 +61,7 @@ const asks = (event: Event) => {
 
 const chose = (id: string) => {
   asking.value = null
+  if (id === PROOFREAD) props.held.proofreads()
   if (id === DROP) props.held.drops()
 }
 </script>

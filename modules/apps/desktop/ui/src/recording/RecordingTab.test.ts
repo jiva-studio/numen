@@ -244,7 +244,9 @@ describe('the menu at the end of the player strip', () => {
   const offered = () =>
     [...document.body.querySelectorAll('.menu__item')].map((one) => one.textContent?.trim() ?? '')
 
-  it('offers the words taken away where they already stand', async () => {
+  // Putting the words right stands above taking them away, so the one that
+  // cannot be undone is last.
+  it('offers the words put right and taken away where they already stand', async () => {
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
 
@@ -258,26 +260,34 @@ describe('the menu at the end of the player strip', () => {
 
     await more.trigger('click')
 
-    expect(offered()).toStrictEqual([WORDS.drop])
+    expect(offered()).toStrictEqual([WORDS.proofread, WORDS.drop])
 
     drawn.unmount()
   })
 
-  it('asks the window for the words to be taken away when that is chosen', async () => {
+  it('asks the window for the run behind whichever item is chosen', async () => {
     const { held, asked } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
     await settled()
     await drawn.vm.$nextTick()
     await settled()
 
-    await drawn.get('.recording__more').trigger('click')
-    const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
-      (one) => one.textContent?.trim() === WORDS.drop,
-    )
-    chosen?.click()
-    await drawn.vm.$nextTick()
+    const chooses = async (text: string) => {
+      await drawn.get('.recording__more').trigger('click')
+      const chosen = [...document.body.querySelectorAll<HTMLElement>('.menu__item')].find(
+        (one) => one.textContent?.trim() === text,
+      )
+      chosen?.click()
+      await drawn.vm.$nextTick()
+    }
 
-    expect(asked).toStrictEqual(['dropTranscript talks/Ants.mp3 Ants.mp3'])
+    await chooses(WORDS.proofread)
+    await chooses(WORDS.drop)
+
+    expect(asked).toStrictEqual([
+      'proofread talks/Ants.mp3 Ants.mp3',
+      'dropTranscript talks/Ants.mp3 Ants.mp3',
+    ])
     expect(offered()).toStrictEqual([])
 
     drawn.unmount()
@@ -301,7 +311,9 @@ describe('the menu at the end of the player strip', () => {
     drawn.unmount()
   })
 
-  it('is not drawn where this build cannot take a transcript away at all', async () => {
+  // Each item stands only where this build can do the run behind it, and the
+  // menu itself only where an item stands.
+  it('drops an item this build cannot do at all, and goes where none is left', async () => {
     cannotRun('dropTranscript')
     const { held } = tab()
     const drawn = mount(RecordingTab, { props: { held }, attachTo: document.body })
@@ -309,6 +321,12 @@ describe('the menu at the end of the player strip', () => {
     await settled()
     await drawn.vm.$nextTick()
     await settled()
+
+    await drawn.get('.recording__more').trigger('click')
+    expect(offered()).toStrictEqual([WORDS.proofread])
+
+    cannotRun('proofread')
+    await drawn.vm.$nextTick()
 
     expect(drawn.find('.recording__more').exists()).toBe(false)
 

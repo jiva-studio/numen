@@ -211,6 +211,8 @@ export interface Words extends Silences {
   /** The two runs a person asks for over the file in front. */
   readonly transcribe: string
   readonly recognise: string
+  /** The transcript of the recording in front, put right by a proofreader. */
+  readonly proofread: string
   /** The transcript of the recording in front, taken away, and the two answers. */
   readonly dropTranscript: string
   readonly keepsTranscript: string
@@ -423,6 +425,12 @@ export const commandsOf = (
     text: words.transcribe,
     band: 'file',
     where: onSource('transcribe', 'recording'),
+  },
+  {
+    id: 'proofread',
+    text: words.proofread,
+    band: 'file',
+    where: onSource('proofread', 'recording'),
   },
   {
     id: 'dropTranscript',

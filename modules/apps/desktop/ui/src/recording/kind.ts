@@ -16,9 +16,10 @@ import RecordingTab from './RecordingTab.vue'
 
 /**
  * What a recording tab asks for, under the identities the commands give them:
- * the words written down, and the words taken away.
+ * the words written down, the words put right, and the words taken away.
  */
 export const TRANSCRIBE = 'transcribe'
+export const PROOFREAD = 'proofread'
 export const DROP = 'dropTranscript'
 
 /** What a recording tab asks of the window it is drawn in. */
@@ -36,20 +37,32 @@ export type Held = ReturnType<typeof transcribed>
 
 /**
  * One recording, with what can be asked about its words: writing them down
- * where there are none, and taking them away where there are. Neither is
- * offered while a run is going, or where this build cannot do it at all.
+ * where there are none, and putting them right or taking them away where there
+ * are. None is offered while a run is going, or where this build cannot do it
+ * at all.
  */
 export function transcribed(listen: Listening, asks: Hearing) {
   const heard = computed(() => listen.times.value.length > 0)
 
   const transcribable = computed(() => !heard.value && !listen.working.value && canRun(TRANSCRIBE))
+  const proofreadable = computed(() => heard.value && !listen.working.value && canRun(PROOFREAD))
   const droppable = computed(() => heard.value && !listen.working.value && canRun(DROP))
 
   const called = listen.path.split('/').pop() ?? listen.path
   const transcribes = () => asks.runs(TRANSCRIBE, listen.path, called)
+  const proofreads = () => asks.runs(PROOFREAD, listen.path, called)
   const drops = () => asks.runs(DROP, listen.path, called)
 
-  return { ...listen, called, transcribable, transcribes, droppable, drops }
+  return {
+    ...listen,
+    called,
+    transcribable,
+    transcribes,
+    proofreadable,
+    proofreads,
+    droppable,
+    drops,
+  }
 }
 
 /**

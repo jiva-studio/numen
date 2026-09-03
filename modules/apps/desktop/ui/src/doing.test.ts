@@ -134,6 +134,10 @@ const window = (
       done.push(`recognises ${path}`)
       return answers.outcome ?? outcome('started', '')
     },
+    proofreads: async (path) => {
+      done.push(`proofreads ${path}`)
+      return answers.outcome ?? outcome('started', '')
+    },
     drops: async (path) => {
       done.push(`drops ${path}`)
       if (answers.dropRefused) throw new Error(answers.dropRefused)
@@ -353,6 +357,7 @@ const WHY: Record<Answer, string> = {
   running: 'This recording is being transcribed now.',
   done: 'This recording has already been transcribed.',
   unfit: 'Only a recording is transcribed, and this file is not one.',
+  unheard: 'Nothing has been transcribed here, so there is nothing to proofread.',
   answered:
     'Nothing came of transcribing this recording: unopened: the mp3 recording: mp3: MPEG version 2.5 is not supported',
 }
