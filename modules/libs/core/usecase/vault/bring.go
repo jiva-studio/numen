@@ -12,9 +12,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Refused is one file that stayed outside the vault, by the name it carries on
+// Refusal is one file that stayed outside the vault, by the name it carries on
 // this machine and by what stopped it.
-type Refused struct {
+type Refusal struct {
 	Name string
 	Why  error
 }
@@ -26,7 +26,7 @@ type Brought struct {
 	// it under.
 	Landed []string
 	// Refused is each file that stayed where it was.
-	Refused []Refused
+	Refused []Refusal
 }
 
 // Bring copies files from this machine into a folder of the vault.
@@ -66,7 +66,7 @@ func (u Bring) Execute(
 		}
 		name := filepath.Base(path)
 		if err := u.bring(ctx, writer, v, path, filed(into, name), &brought); err != nil {
-			brought.Refused = append(brought.Refused, Refused{Name: name, Why: err})
+			brought.Refused = append(brought.Refused, Refusal{Name: name, Why: err})
 		}
 	}
 	return brought, nil
@@ -106,7 +106,7 @@ func (u Bring) bring(
 		for _, one := range held {
 			inside := filepath.Join(from, one.Name())
 			if err := u.bring(ctx, writer, v, inside, filed(to, one.Name()), brought); err != nil {
-				brought.Refused = append(brought.Refused, Refused{Name: one.Name(), Why: err})
+				brought.Refused = append(brought.Refused, Refusal{Name: one.Name(), Why: err})
 			}
 		}
 		return nil
