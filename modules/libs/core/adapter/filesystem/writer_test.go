@@ -446,3 +446,37 @@ func TestAFolderMovesBesideOneWhoseNameItBegins(t *testing.T) {
 		t.Errorf("the folder did not arrive: %v", err)
 	}
 }
+
+// A vault may be reached through a link: a home folder on another disk, a
+// synced folder, a temporary folder on a machine that keeps them elsewhere.
+// Every rule the writer applies is applied to the name on the other side of it.
+func TestAVaultReachedThroughALinkIsWrittenLikeAnyOther(t *testing.T) {
+	physical := filepath.Join(t.TempDir(), "physical")
+	if err := os.Mkdir(physical, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "vault")
+	if err := os.Symlink(physical, link); err != nil {
+		t.Fatal(err)
+	}
+
+	w, err := filesystem.Writers{}.Open(domain.Vault{Path: link})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+
+	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.FileRef{}); err != nil {
+		t.Fatalf("the note could not be written: %v", err)
+	}
+	if err := w.Move(ctx, "Note.md", "Renamed.md"); err != nil {
+		t.Fatalf("the note could not be renamed: %v", err)
+	}
+	body, err := os.ReadFile(filepath.Join(physical, "Renamed.md"))
+	if err != nil {
+		t.Fatalf("the note did not land in the vault: %v", err)
+	}
+	if string(body) != "# Note\n" {
+		t.Errorf("the note holds %q", body)
+	}
+}

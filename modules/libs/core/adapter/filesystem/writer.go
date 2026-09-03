@@ -35,6 +35,11 @@ func OpenForWriting(root string, opts Options) (*VaultWriter, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The vault is where the links lead. A write lands at the resolved path, and
+	// the rules about what the vault holds are asked of a name relative to it.
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = real
+	}
 	info, err := os.Stat(abs)
 	if err != nil {
 		return nil, err
