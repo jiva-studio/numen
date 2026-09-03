@@ -215,7 +215,6 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		vectors:      why,
 		stopEmbedder: closeEmbedder,
 	}
-	api.Scan = opened.scanning
 
 	api.Makes = &note.Create{
 		Writers: cfg.VaultWriters(),
@@ -674,15 +673,6 @@ func (o *Opened) Transcribing() *container.Transcribing {
 func (o *Opened) level(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
-}
-
-// scanning reads the whole vault.
-func (o *Opened) scanning(ctx context.Context, v domain.Vault) (usecase.ScanResult, error) {
-	on := o.API.on.Load()
-	if on == nil {
-		return usecase.ScanResult{}, errNoVault
-	}
-	return on.opening.Scanning().Execute(ctx, v)
 }
 
 // readable is the vault being one this window can show: the folder reads as a

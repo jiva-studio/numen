@@ -51,9 +51,6 @@ type API struct {
 	Notes port.NoteQueries
 	Links port.LinkQueries
 
-	// Scan reads the whole vault. Keeping it level afterwards is a use case,
-	// and what it produces arrives here through Listeners.
-	Scan      func(context.Context, domain.Vault) (usecase.ScanResult, error)
 	Listeners audience[changed]
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
