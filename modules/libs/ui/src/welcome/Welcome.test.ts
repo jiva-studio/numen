@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import KeyCap from '../palette/KeyCap.vue'
 import Welcome from './Welcome.vue'
 import { VAULT_LETTERS } from './picking'
-import type { Held, Offer } from './welcome'
+import type { Held, Offer, Way } from './welcome'
 
 const vault = (id: string): Held => ({ id, name: id, path: `/vaults/${id}` })
 
@@ -168,5 +168,64 @@ describe('the screen drawn narrow', () => {
 
     expect(path.text()).toBe('/vaults/physics')
     expect(path.attributes('title')).toBe('/vaults/physics')
+  })
+})
+
+/**
+ * Short of the height the one column takes, the ways in and the vaults stand
+ * side by side, which the stylesheet does. What is asked here is that they are
+ * two regions to begin with, so that each of them can be a column, and that
+ * every row of both is drawn and pressed wherever they stand.
+ */
+describe('the screen drawn short', () => {
+  const WAYS: readonly Way[] = [
+    { id: 'find', text: 'Search the vault', keys: { marks: ['control'], letter: 'K' } },
+    { id: 'commands', text: 'Show the commands' },
+    { id: 'note', text: 'New note' },
+    { id: 'plex', text: 'Open plex' },
+    { id: 'agent', text: 'New agent' },
+    { id: 'settings', text: 'Settings' },
+  ]
+
+  const drawBoth = () =>
+    mount(Welcome, {
+      props: {
+        vaults: [vault('physics'), vault('heat'), vault('optics')],
+        heading: 'Vaults',
+        ways: WAYS,
+        offer,
+      },
+    })
+
+  it('holds the ways in and the vaults in regions of their own', () => {
+    const screen = drawBoth()
+
+    expect(screen.get('.welcome__lead').findAll('.welcome__row')).toHaveLength(WAYS.length)
+    expect(screen.get('.welcome__vaults').findAll('.welcome__row--vault')).toHaveLength(3)
+  })
+
+  it('keeps the mark and the name with the ways in', () => {
+    const screen = drawBoth()
+
+    expect(screen.get('.welcome__lead').find('.welcome__head').exists()).toBe(true)
+  })
+
+  it('drops no row from either region', () => {
+    const screen = drawBoth()
+    const rows = screen.findAll('.welcome__row').map((row) => row.text())
+
+    expect(rows).toHaveLength(WAYS.length + 4)
+    expect(rows[0]).toContain('Search the vault')
+    expect(rows.at(-1)).toContain('New vault')
+  })
+
+  it('presses a row of each region', async () => {
+    const screen = drawBoth()
+
+    await screen.get('.welcome__lead').findAll('.welcome__row')[5]!.trigger('click')
+    await screen.get('.welcome__vaults').findAll('.welcome__row--vault')[2]!.trigger('click')
+
+    expect(screen.emitted('runs')).toStrictEqual([['settings']])
+    expect(screen.emitted('opens')).toStrictEqual([['optics']])
   })
 })

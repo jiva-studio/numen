@@ -45,20 +45,22 @@ defineEmits<{
 <template>
   <div class="welcome">
     <div class="welcome__column">
-      <div class="welcome__head">
-        <Mark class="welcome__mark" />
-        <h1 class="welcome__name">{{ name }}</h1>
-      </div>
+      <div class="welcome__lead">
+        <div class="welcome__head">
+          <Mark class="welcome__mark" />
+          <h1 class="welcome__name">{{ name }}</h1>
+        </div>
 
-      <ul v-if="ways.length" class="welcome__ways">
-        <li v-for="one in ways" :key="one.id">
-          <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
-            <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
-            <span class="welcome__what">{{ one.text }}</span>
-            <KeyCap v-if="one.keys" class="welcome__keys" :keys="one.keys" />
-          </button>
-        </li>
-      </ul>
+        <ul v-if="ways.length" class="welcome__ways">
+          <li v-for="one in ways" :key="one.id">
+            <button type="button" class="welcome__row" @click="$emit('runs', one.id)">
+              <component :is="one.icon" v-if="one.icon" class="welcome__icon" />
+              <span class="welcome__what">{{ one.text }}</span>
+              <KeyCap v-if="one.keys" class="welcome__keys" :keys="one.keys" />
+            </button>
+          </li>
+        </ul>
+      </div>
 
       <section class="welcome__vaults">
         <h2 class="welcome__heading">{{ heading }}</h2>
@@ -114,7 +116,8 @@ defineEmits<{
 
 <style scoped>
 /* One column in the middle of the window, held to the width of a short line so
-   the rows read as a list and not as a page. */
+   the rows read as a list and not as a page. Short of the height that column
+   needs, it stands as two. */
 .welcome {
   /* How tall the glyph stands over the name. */
   --mark: 5.4rem;
@@ -123,7 +126,7 @@ defineEmits<{
   display: flex;
   block-size: 100%;
   overflow: auto;
-  container-type: inline-size;
+  container-type: size;
   padding: var(--numen-gutter);
   color: var(--numen-node-fg);
   font-family: var(--numen-font-sans);
@@ -149,6 +152,14 @@ defineEmits<{
   margin: auto;
   inline-size: 100%;
   max-inline-size: 22rem;
+}
+
+/* The mark, the name and the ways in stand together, and take a column of their
+   own where the screen has two. */
+.welcome__lead {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
 }
 
 .welcome__head {
@@ -287,6 +298,43 @@ defineEmits<{
 @container (max-width: 18rem) {
   .welcome__aside {
     display: none;
+  }
+}
+
+/* Short of the height the one column takes — the mark over the name, six ways
+   in, the heading and two vaults, inside the screen's own gutters — the ways in
+   and the vaults stand side by side, each column the width of a short line and
+   scrolled on its own. */
+@container (max-height: 30rem) and (min-width: 45.4rem) {
+  .welcome__column {
+    flex-direction: row;
+    max-inline-size: 45.4rem;
+    max-block-size: 100%;
+  }
+
+  .welcome__lead,
+  .welcome__vaults {
+    flex: 1;
+    min-inline-size: 0;
+    min-block-size: 0;
+  }
+
+  .welcome__lead {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The heading holds its place at the head of the column and the offer holds
+     its place at the foot; the rows between them are scrolled. */
+  .welcome__vaults {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .welcome__list {
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 
