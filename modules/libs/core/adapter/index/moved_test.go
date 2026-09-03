@@ -152,3 +152,27 @@ func TestAMoveOntoItsOwnPathKeepsTheNote(t *testing.T) {
 		t.Errorf("the note's chunks are %v, and were %v", got, held)
 	}
 }
+
+// A note called by its filename is searched by the name it now carries.
+func TestARenamedNoteIsFoundByTheNameItLandsUnder(t *testing.T) {
+	db := opened(t)
+	noted(t, db, first, "Torpor.md", "Torpor")
+
+	if err := db.Sources().MoveSources(t.Context(), first.ID, "Torpor.md", "Hibernation.md"); err != nil {
+		t.Fatal(err)
+	}
+
+	found := named(t, db, first, "Hibernation")
+	if len(found) != 1 {
+		t.Fatalf("the name it landed under found %d notes: %+v", len(found), found)
+	}
+	if found[0].Path != "Hibernation.md" || found[0].Title != "Hibernation" {
+		t.Errorf("found %+v, want the note under its new name", found[0])
+	}
+	if got := marked(found[0]); got != "[Hibernation]" {
+		t.Errorf("marked %q, want %q", got, "[Hibernation]")
+	}
+	if stale := named(t, db, first, "Torpor"); len(stale) != 0 {
+		t.Errorf("the name it left still answers with %+v", stale)
+	}
+}

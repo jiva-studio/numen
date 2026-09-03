@@ -85,6 +85,39 @@ func TestATitleThatCannotBeAFilenameIsNoFilename(t *testing.T) {
 	}
 }
 
+// Windows keeps a handful of names for its devices, and a file carrying one
+// cannot be created there. The desktop client ships on Windows.
+func TestATitleThatNamesAWindowsDeviceIsFiledBeside(t *testing.T) {
+	for _, title := range []string{
+		"CON", "PRN", "AUX", "NUL", "COM1", "COM9", "LPT1", "LPT9",
+		"con", "Nul", "lpt4",
+		// The name is the device whatever follows the first dot.
+		"CON.txt", "aux.notes.md",
+	} {
+		name, exact := domain.Filename(title)
+		if name == title || exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+		if !strings.HasPrefix(name, title) {
+			t.Errorf("%q was filed as %q, which is not the title with a suffix", title, name)
+		}
+		if !domain.Nameable(name) {
+			t.Errorf("%q is filed as %q, and no link can be written by that", title, name)
+		}
+	}
+}
+
+// A name that only begins like a device is a name.
+func TestATitleThatMerelyLooksLikeADeviceIsFiledUnderItself(t *testing.T) {
+	for _, title := range []string{
+		"CONSOLE", "Conference", "COM", "COM0", "COM10", "LPT", "NULL", "AUXILIARY",
+	} {
+		if name, exact := domain.Filename(title); name != title || !exact {
+			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
+		}
+	}
+}
+
 // A note is reached by a link written by its name, so every filename a title
 // reduces to is one a link can be written by.
 func TestEveryFilenameATitleReducesToCanBeWrittenAsALink(t *testing.T) {

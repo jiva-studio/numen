@@ -336,6 +336,9 @@ func displace(ctx context.Context, tx *sql.Tx, vault int64, from, to string) err
 // of the file it lands under where the file carries no key, and where that
 // filename is the one its own title is filed under; otherwise it carries the
 // name it has.
+//
+// The name goes into the title index with it: that is what a search by name
+// ranks and highlights against.
 func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error {
 	name := domain.Basename(to)
 	if name == domain.Basename(from) {
@@ -351,13 +354,16 @@ func rename(ctx context.Context, tx *sql.Tx, vault int64, from, to string) error
 	if err != nil {
 		return fmt.Errorf("note_naming %s: %w", from, err)
 	}
+	shown := title
 	if !named {
-		return exec(ctx, tx, "rename_note", name, name, vault, from)
-	}
-	if filed, _ := domain.Filename(title); !strings.EqualFold(filed, name) {
+		shown = name
+	} else if filed, _ := domain.Filename(title); !strings.EqualFold(filed, name) {
 		return nil
 	}
-	return exec(ctx, tx, "rename_note", name, title, vault, from)
+	if err := exec(ctx, tx, "rename_note", name, shown, vault, from); err != nil {
+		return err
+	}
+	return exec(ctx, tx, "rename_title", vault, from, shown)
 }
 
 // under is the range every path a folder holds falls in: from the folder's
@@ -368,11 +374,11 @@ func under(folder string) (first, past string) {
 
 // Clear takes out the chunks of one source, and everything indexed over them.
 //
-// The rows in the two virtual tables go first, by the chunk's own number.
-// Nothing cascades into a virtual table, and a row left in either answers a
-// search with a chunk that no longer exists.
+// The rows in the three virtual tables go first, by the chunk's own number.
+// Nothing cascades into a virtual table, and a chunk's number is handed to the
+// next chunk that wants one, so a row left behind answers for that one.
 func Clear(ctx context.Context, tx *sql.Tx, source int64) error {
-	for _, name := range []string{"clear_fts", "clear_vec"} {
+	for _, name := range []string{"clear_fts", "clear_vec", "clear_parts"} {
 		if err := exec(ctx, tx, name, source); err != nil {
 			return err
 		}

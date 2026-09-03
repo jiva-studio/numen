@@ -2,8 +2,9 @@
 -- segment is this note's filename.
 --
 -- Each branch of the union is one index lookup, narrowed afterwards to the vault
--- by the source the link belongs to. An empty identifier is filtered out by the
--- caller rather than by a term here, which the planner could not fold.
+-- by the source the link belongs to. A note carrying no identifier is asked for
+-- by the empty string, and what that turns up leaves the same way every other
+-- candidate does.
 --
 -- "Could" is the word. Whether a name means this note depends on where the link
 -- was written and what else answers to it, so every candidate goes through the

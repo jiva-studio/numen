@@ -1333,6 +1333,54 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	}
 }
 
+func TestASectionNameLeavesWithTheSourceItCameFrom(t *testing.T) {
+	// A chunk's number is handed to the next chunk that wants one, so a name
+	// left behind by a source that is gone answers for whatever takes it.
+	ctx := t.Context()
+	db := opened(t)
+	chunks := db.Chunks()
+
+	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+		Path: "library/gone.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-gone", Recipe: "pdf",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/gone.pdf", []chunk.Chunk{{
+		Start: 0, Length: 100, Location: "Thermodynamics",
+		Opens: []string{"Thermodynamics"},
+		Text:  "Heat moves one way.",
+		Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "Heat moves one way."}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.RemoveSources(ctx, first.ID, "book", []string{"library/gone.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// The next book's chunks take the numbers the first one left, and this book
+	// names no section of its own to write over them.
+	if err := chunks.SaveSource(ctx, first.ID, chunk.Source{
+		Path: "library/next.pdf", Kind: "book", Size: 1000, MTime: 1, Hash: "hash-next", Recipe: "pdf",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := chunks.SaveChunks(ctx, first.ID, "book", "library/next.pdf", []chunk.Chunk{{
+		Start: 0, Length: 100, Location: "Whales",
+		Text:  "A whale breathes air.",
+		Small: []chunk.Chunk{{Start: 0, Length: 100, Text: "A whale breathes air."}},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	named, err := db.ChunkQueries().Named(ctx, first.ID, "Thermodynamics", nil, 10, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(named) != 0 {
+		t.Errorf("a name of a source that is gone answers with %+v", named)
+	}
+}
+
 func TestASectionCutAwayIsNotFoundByItsName(t *testing.T) {
 	// A chunk keeps its row through a cut when it says the same thing, so a
 	// name is not dropped with the chunk. A section that is no longer there
