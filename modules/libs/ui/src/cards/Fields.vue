@@ -9,7 +9,7 @@
  */
 import { computed, useId } from 'vue'
 import Amiss from './Amiss.vue'
-import Glyph from './Glyph.vue'
+import Icon from './Icon.vue'
 import NameBox from './NameBox.vue'
 import Rule from '../rule/Rule.vue'
 import Slab from './Slab.vue'
@@ -144,7 +144,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             @dragend="release"
             @keydown="onGripKey($event, row.field)"
           >
-            <Glyph shows="grip" />
+            <Icon shows="grip" />
           </span>
 
           <NameBox
@@ -164,7 +164,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
             :aria-label="`${words.remove}: ${row.field}`"
             @click="emit('remove', row.field)"
           >
-            <Glyph shows="cross" />
+            <Icon shows="cross" />
           </Button>
         </Slab>
 
@@ -190,7 +190,7 @@ const onGripKey = (event: KeyboardEvent, field: string): void => {
 
     <Rule>
       <Button variant="ghost" size="small" @click="add">
-        <Glyph shows="plus" />
+        <Icon shows="plus" />
         {{ words.addField }}
       </Button>
     </Rule>

@@ -26,17 +26,17 @@ export interface PaletteAction {
 }
 
 /**
- * A key that is held rather than typed. A cap draws each of these as a mark and
- * the letter as type.
+ * A key that is held rather than typed. A cap draws each of these as an icon
+ * and the letter as type.
  */
-export type PaletteMark = 'control' | 'shift' | 'command' | 'option' | 'return'
+export type PaletteIcon = 'control' | 'shift' | 'command' | 'option' | 'return'
 
 /**
  * One keystroke as it is drawn: the keys held, in the order they are read, and
- * the letter held with them. A keystroke that is marks alone carries no letter.
+ * the letter held with them. A keystroke that is icons alone carries no letter.
  */
 export interface PaletteKeys {
-  readonly marks: readonly PaletteMark[]
+  readonly icons: readonly PaletteIcon[]
   readonly letter: string
 }
 
@@ -160,8 +160,8 @@ export const keptAt = (places: readonly PalettePlace[], was: string): number => 
 
 /** The keys that reach an item's actions, in the order the actions are offered. */
 export const PALETTE_KEYS: readonly PaletteKeys[] = [
-  { marks: ['return'], letter: '' },
-  { marks: ['shift', 'return'], letter: '' },
+  { icons: ['return'], letter: '' },
+  { icons: ['shift', 'return'], letter: '' },
 ]
 
 /** One action, and the key that reaches it straight from the list. */
@@ -200,7 +200,7 @@ export const opensActions = (event: {
  * The key beside the space bar on the keyboard a browser says it is running
  * on: Command on Apple keyboards, Control everywhere else.
  */
-export const overlayMark = (agent: string): PaletteMark =>
+export const overlayIcon = (agent: string): PaletteIcon =>
   /mac|iphone|ipad|ipod/i.test(agent) ? 'command' : 'control'
 
 /**
@@ -208,7 +208,7 @@ export const overlayMark = (agent: string): PaletteMark =>
  * Shift stands between that key and the letter.
  */
 export const keyChord = (letter: string, agent: string, shift = false): PaletteKeys => ({
-  marks: shift ? [overlayMark(agent), 'shift'] : [overlayMark(agent)],
+  icons: shift ? [overlayIcon(agent), 'shift'] : [overlayIcon(agent)],
   letter: letter.toUpperCase(),
 })
 

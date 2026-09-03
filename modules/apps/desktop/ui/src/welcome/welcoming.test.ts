@@ -109,8 +109,8 @@ describe('the keystroke drawn on a way', () => {
   })
 
   it('is the key the keyboard in hand holds', () => {
-    expect(keysOn('note', LINUX)).toStrictEqual({ marks: ['control'], letter: 'N' })
-    expect(keysOn('agent', LINUX)).toStrictEqual({ marks: ['control', 'shift'], letter: 'A' })
+    expect(keysOn('note', LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
+    expect(keysOn('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
   })
 
   it('is the two the window keeps for itself, as the window hands them over', () => {

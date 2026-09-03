@@ -1,26 +1,26 @@
 <script setup lang="ts">
-/** One of the marks a stencil and a deck are drawn with. */
-import { MARKS, type Mark } from './marks'
+/** One of the icons a stencil and a deck are drawn with. */
+import { ICONS, type Icon } from './icons'
 
-defineProps<{ shows: Mark }>()
+defineProps<{ shows: Icon }>()
 </script>
 
 <template>
   <svg
-    class="glyph"
+    class="icon"
     viewBox="0 0 12 12"
-    :data-filled="MARKS[shows].filled || undefined"
+    :data-filled="ICONS[shows].filled || undefined"
     aria-hidden="true"
     focusable="false"
   >
-    <path :d="MARKS[shows].path" />
+    <path :d="ICONS[shows].path" />
   </svg>
 </template>
 
 <style scoped>
-/* A mark stands at about the height of the letter beside it, in its ink. It is
+/* An icon stands at about the height of the letter beside it, in its ink. It is
    drawn for the eye, so a press on it lands on whatever it stands in. */
-.glyph {
+.icon {
   flex: none;
   pointer-events: none;
   inline-size: 0.875em;
@@ -32,7 +32,7 @@ defineProps<{ shows: Mark }>()
   stroke-linejoin: round;
 }
 
-.glyph[data-filled] {
+.icon[data-filled] {
   fill: currentColor;
   stroke: none;
 }

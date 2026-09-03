@@ -70,14 +70,14 @@ export type { Held, Offer, Way } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
-export { commandKeyChord, keyChord, overlayMark, ACTION_WORDS } from './palette/model'
+export { commandKeyChord, keyChord, overlayIcon, ACTION_WORDS } from './palette/model'
 export type {
   ActionWords,
   PaletteAction,
   PaletteItem,
   PaletteKeys,
   PaletteLit,
-  PaletteMark,
+  PaletteIcon,
   PalettePart,
   PaletteBand,
   PaletteSpan,

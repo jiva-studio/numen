@@ -53,7 +53,7 @@ defineEmits<{
            done with. They stand at the end of the line that says where the card
            is from. -->
       <Button variant="ghost" size="small" :disabled="!takenBack" @click="$emit('takeBack')">
-        <KeyCap :keys="{ marks: [], letter: 'u' }" />
+        <KeyCap :keys="{ icons: [], letter: 'u' }" />
         Undo
       </Button>
       <!-- The two panels stand in the order they stand in the strip: what is
@@ -67,7 +67,7 @@ defineEmits<{
         Ask
       </Button>
       <Button variant="ghost" size="small" @click="$emit('leave')">
-        <KeyCap :keys="{ marks: [], letter: 'esc' }" />
+        <KeyCap :keys="{ icons: [], letter: 'esc' }" />
         Leave
       </Button>
     </header>
@@ -100,7 +100,7 @@ defineEmits<{
           class="session__answer"
           @click="$emit('answer', how)"
         >
-          <KeyCap :keys="{ marks: [], letter: String(i + 1) }" />
+          <KeyCap :keys="{ icons: [], letter: String(i + 1) }" />
           {{ called[how] }}
           <!-- What the answer does to the card, said where the answer is
                chosen: a person picking between the four is picking between
@@ -112,7 +112,7 @@ defineEmits<{
         </Button>
       </template>
       <Button v-else variant="outline" class="session__answer" @click="$emit('show')">
-        <KeyCap :keys="{ marks: [], letter: 'space' }" />
+        <KeyCap :keys="{ icons: [], letter: 'space' }" />
         Show the answer
       </Button>
     </footer>

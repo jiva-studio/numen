@@ -101,7 +101,7 @@ const share = (deck: DeckOwing): string => {
           <KeyCap
             v-if="letterOf(at)"
             class="decks__key"
-            :keys="{ marks: [], letter: letterOf(at) }"
+            :keys="{ icons: [], letter: letterOf(at) }"
           />
           <span class="decks__name">
             {{ deckName(deck.deck) }}
@@ -134,11 +134,11 @@ const share = (deck: DeckOwing): string => {
          they read: sit down to the whole vault, or go and pick another. -->
     <footer class="decks__deeds">
       <Button variant="ghost" @click="$emit('back')">
-        <KeyCap :keys="{ marks: [], letter: 'esc' }" />
+        <KeyCap :keys="{ icons: [], letter: 'esc' }" />
         Another vault
       </Button>
       <Button class="decks__all" :disabled="owed === 0" @click="$emit('start', '')">
-        <KeyCap :keys="{ marks: [], letter: 'enter' }" />
+        <KeyCap :keys="{ icons: [], letter: 'enter' }" />
         Review
         <Owed :waiting="owed" bare over />
       </Button>

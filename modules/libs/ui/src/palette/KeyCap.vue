@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * A key cap: the keys held drawn as marks, and the letter held with them set in
+ * A key cap: the keys held drawn as icons, and the letter held with them set in
  * type.
  *
  * A cap is one height whatever it holds, and every clearance in it is in `em`
@@ -8,7 +8,7 @@
  * is drawn at.
  */
 import { computed } from 'vue'
-import { MARKS } from './marks'
+import { ICONS } from './icons'
 import type { PaletteKeys } from './model'
 
 const props = defineProps<{ keys: PaletteKeys }>()
@@ -18,7 +18,7 @@ const props = defineProps<{ keys: PaletteKeys }>()
  * reader who is listening is told, and everything drawn is hidden from them.
  */
 const spoken = computed(() =>
-  [...props.keys.marks.map((mark) => MARKS[mark].said), props.keys.letter]
+  [...props.keys.icons.map((icon) => ICONS[icon].said), props.keys.letter]
     .filter((word) => word !== '')
     .join(' '),
 )
@@ -28,12 +28,12 @@ const spoken = computed(() =>
   <kbd class="cap">
     <span class="sr-only">{{ spoken }}</span>
     <component
-      :is="MARKS[mark].icon"
-      v-for="mark in keys.marks"
-      :key="mark"
-      class="cap__mark"
-      :style="{ '--fills': MARKS[mark].fills }"
-      :stroke-width="MARKS[mark].stroke"
+      :is="ICONS[icon].icon"
+      v-for="icon in keys.icons"
+      :key="icon"
+      class="cap__icon"
+      :style="{ '--fills': ICONS[icon].fills }"
+      :stroke-width="ICONS[icon].stroke"
       aria-hidden="true"
       focusable="false"
     />
@@ -48,9 +48,9 @@ const spoken = computed(() =>
 .cap {
   /* The corner of a key cap, which is tighter than the corner of a node. */
   --cap-radius: 0.25rem;
-  /* How wide a mark filling the cap is drawn: the height of the letter beside
+  /* How wide an icon filling the cap is drawn: the height of the letter beside
      it. */
-  --cap-mark: 0.85em;
+  --cap-icon: 0.85em;
 
   display: inline-flex;
   align-items: center;
@@ -69,14 +69,14 @@ const spoken = computed(() =>
   line-height: 1;
 }
 
-/* Lucide draws every mark centred on its own grid, so one box and one middle
-   put every mark and the letter on one line. A mark drawn larger than the box
+/* Lucide draws every icon centred on its own grid, so one box and one middle
+   put every icon and the letter on one line. An icon drawn larger than the box
    is drawn over the air its own grid leaves at the sides, and the clearance
-   between marks stays the box's. */
-.cap__mark {
+   between icons stays the box's. */
+.cap__icon {
   flex: none;
-  inline-size: var(--cap-mark);
-  block-size: var(--cap-mark);
+  inline-size: var(--cap-icon);
+  block-size: var(--cap-icon);
   transform: scale(var(--fills));
 }
 </style>

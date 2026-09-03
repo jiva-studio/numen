@@ -169,7 +169,7 @@ describe('the vault offered below the list', () => {
     const window = await drawn()
 
     expect(window.findComponent(Welcome).props('offer')).toMatchObject({
-      keys: { marks: ['control', 'shift'], letter: 'N' },
+      keys: { icons: ['control', 'shift'], letter: 'N' },
     })
   })
 

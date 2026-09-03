@@ -10,7 +10,7 @@
 import { computed, shallowRef } from 'vue'
 import Band from './Band.vue'
 import Card from './Card.vue'
-import Glyph from './Glyph.vue'
+import Icon from './Icon.vue'
 import Rule from '../rule/Rule.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
@@ -200,7 +200,7 @@ const addSection = (): void => {
             :title="words.add"
             @click="asking = run.id"
           >
-            <Glyph shows="plus" />
+            <Icon shows="plus" />
           </Button>
 
           <div v-else class="deck__asking flex flex-col items-center">
@@ -223,7 +223,7 @@ const addSection = (): void => {
 
     <Rule>
       <Button variant="ghost" size="small" data-add-section @click="addSection">
-        <Glyph shows="plus" />
+        <Icon shows="plus" />
         {{ words.addSection }}
       </Button>
     </Rule>

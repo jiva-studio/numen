@@ -10,7 +10,7 @@
 import { computed } from 'vue'
 import Block from './Block.vue'
 import Fields from './Fields.vue'
-import Glyph from './Glyph.vue'
+import Icon from './Icon.vue'
 import Rule from '../rule/Rule.vue'
 import { useCarry } from './carry'
 import { Button } from '../components/ui/button'
@@ -155,7 +155,7 @@ const addFace = (): void => {
 
       <Rule>
         <Button variant="ghost" size="small" @click="addFace">
-          <Glyph shows="plus" />
+          <Icon shows="plus" />
           {{ words.addFace }}
         </Button>
       </Rule>

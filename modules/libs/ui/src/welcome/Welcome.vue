@@ -94,7 +94,7 @@ defineEmits<{
               <KeyCap
                 v-if="vaultLetter(at) && !one.waiting"
                 class="welcome__keys"
-                :keys="{ marks: [], letter: vaultLetter(at) }"
+                :keys="{ icons: [], letter: vaultLetter(at) }"
               />
             </button>
           </li>

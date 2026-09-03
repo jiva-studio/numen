@@ -19,7 +19,7 @@ import {
   keyChord,
   opensActions,
   ordered,
-  overlayMark,
+  overlayIcon,
   partsOf,
   placeActions,
   placePalette,
@@ -185,8 +185,8 @@ describe('what a key reaches', () => {
 
   it('hands out a key each, in the order the actions are offered', () => {
     expect(keyed(item('one', { actions: BOTH }))).toEqual([
-      { action: BOTH[0], key: { marks: ['return'], letter: '' } },
-      { action: BOTH[1], key: { marks: ['shift', 'return'], letter: '' } },
+      { action: BOTH[0], key: { icons: ['return'], letter: '' } },
+      { action: BOTH[1], key: { icons: ['shift', 'return'], letter: '' } },
     ])
   })
 
@@ -234,34 +234,34 @@ describe('the keystroke that opens the action panel', () => {
   })
 
   it('is held with the key the keyboard in hand puts beside the space bar', () => {
-    expect(commandKeyChord('MacIntel')).toEqual({ marks: ['command'], letter: 'K' })
+    expect(commandKeyChord('MacIntel')).toEqual({ icons: ['command'], letter: 'K' })
     expect(commandKeyChord('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)')).toEqual({
-      marks: ['command'],
+      icons: ['command'],
       letter: 'K',
     })
-    expect(commandKeyChord('Linux x86_64')).toEqual({ marks: ['control'], letter: 'K' })
+    expect(commandKeyChord('Linux x86_64')).toEqual({ icons: ['control'], letter: 'K' })
   })
 })
 
 describe('a keystroke of one letter and the key beside the space bar', () => {
   it('is held with the key the keyboard in hand puts there', () => {
-    expect(overlayMark('MacIntel')).toBe('command')
-    expect(overlayMark('Linux x86_64')).toBe('control')
-    expect(keyChord('g', 'MacIntel')).toEqual({ marks: ['command'], letter: 'G' })
-    expect(keyChord('g', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'G' })
+    expect(overlayIcon('MacIntel')).toBe('command')
+    expect(overlayIcon('Linux x86_64')).toBe('control')
+    expect(keyChord('g', 'MacIntel')).toEqual({ icons: ['command'], letter: 'G' })
+    expect(keyChord('g', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('is drawn in capitals, whichever case it was named in', () => {
-    expect(keyChord('G', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'G' })
+    expect(keyChord('G', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('carries Shift between the two where the chord holds it', () => {
     expect(keyChord('p', 'MacIntel', true)).toEqual({
-      marks: ['command', 'shift'],
+      icons: ['command', 'shift'],
       letter: 'P',
     })
     expect(keyChord('p', 'Linux x86_64', true)).toEqual({
-      marks: ['control', 'shift'],
+      icons: ['control', 'shift'],
       letter: 'P',
     })
   })
@@ -317,8 +317,8 @@ describe('the actions the panel draws', () => {
 
   it('carries the key of an action a key reaches, and nothing for the rest', () => {
     expect(placeActions(MANY).map((one) => one.key)).toEqual([
-      { marks: ['return'], letter: '' },
-      { marks: ['shift', 'return'], letter: '' },
+      { icons: ['return'], letter: '' },
+      { icons: ['shift', 'return'], letter: '' },
       null,
       null,
       null,
@@ -327,7 +327,7 @@ describe('the actions the panel draws', () => {
 
   it('leaves an action its key wherever the words put it', () => {
     expect(placeActions(MANY, 'open')).toMatchObject([
-      { action: { id: 'open' }, at: 0, key: { marks: ['shift', 'return'] } },
+      { action: { id: 'open' }, at: 0, key: { icons: ['shift', 'return'] } },
       { action: { id: 'beside' }, at: 1, key: null },
     ])
   })

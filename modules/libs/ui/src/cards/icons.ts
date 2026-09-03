@@ -1,19 +1,19 @@
 /**
- * The few marks a stencil and a deck are drawn with, declared once.
+ * The few icons a stencil and a deck are drawn with, declared once.
  *
  * Each is drawn on twelve units and takes the ink of whatever holds it.
  */
 
-/** What a mark shows. */
-export type Mark = 'grip' | 'cross' | 'plus' | 'bin'
+/** What an icon shows. */
+export type Icon = 'grip' | 'cross' | 'plus' | 'bin'
 
-/** One mark: what it is drawn from, and whether it is filled or stroked. */
+/** One icon: what it is drawn from, and whether it is filled or stroked. */
 export interface Drawing {
   readonly path: string
   readonly filled: boolean
 }
 
-export const MARKS: Readonly<Record<Mark, Drawing>> = {
+export const ICONS: Readonly<Record<Icon, Drawing>> = {
   grip: {
     path:
       'M3.2 1.8h1.6v1.6H3.2z M7.2 1.8h1.6v1.6H7.2z' +

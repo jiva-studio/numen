@@ -15,7 +15,7 @@ import type { PaletteBand, PaletteKeys } from './model'
 import { MANY } from './fixtures/actions'
 
 /** A keystroke that reaches an item away from the palette. */
-const OPTION_1: PaletteKeys = { marks: ['option'], letter: '1' }
+const OPTION_1: PaletteKeys = { icons: ['option'], letter: '1' }
 
 const OPEN = [{ id: 'open', text: 'Open the note' }]
 const BOTH = [

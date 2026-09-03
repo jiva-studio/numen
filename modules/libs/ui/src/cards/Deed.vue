@@ -6,7 +6,7 @@
  * It carries no ground and no shape of its own, and comes up to the ink of what
  * it stands on under the hand about to press it.
  */
-import Glyph from './Glyph.vue'
+import Icon from './Icon.vue'
 
 defineProps<{
   /** What it is called, read aloud and shown on hovering. */
@@ -25,7 +25,7 @@ const emit = defineEmits<{ (event: 'press'): void }>()
     :title="label"
     @click="emit('press')"
   >
-    <Glyph shows="bin" />
+    <Icon shows="bin" />
   </button>
 </template>
 

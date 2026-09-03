@@ -70,14 +70,14 @@ describe('the command a letter asks for', () => {
 
 describe('how a keystroke is drawn on the row that names it', () => {
   it('is the key the keyboard in hand holds, and the letter in capitals', () => {
-    expect(keyOf('note', 'MacIntel')).toEqual({ marks: ['command'], letter: 'N' })
-    expect(keyOf('note', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'N' })
-    expect(keyOf('goto', 'Linux x86_64')).toEqual({ marks: ['control'], letter: 'G' })
+    expect(keyOf('note', 'MacIntel')).toEqual({ icons: ['command'], letter: 'N' })
+    expect(keyOf('note', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'N' })
+    expect(keyOf('goto', 'Linux x86_64')).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(keyOf('travel', 'MacIntel')).toEqual({ marks: ['command', 'shift'], letter: 'P' })
-    expect(keyOf('close', 'Linux x86_64')).toEqual({ marks: ['control', 'shift'], letter: 'W' })
+    expect(keyOf('travel', 'MacIntel')).toEqual({ icons: ['command', 'shift'], letter: 'P' })
+    expect(keyOf('close', 'Linux x86_64')).toEqual({ icons: ['control', 'shift'], letter: 'W' })
   })
 
   it('is nothing for a command no keystroke reaches', () => {

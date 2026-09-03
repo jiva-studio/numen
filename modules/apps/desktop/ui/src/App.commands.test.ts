@@ -298,8 +298,8 @@ describe('a command reached by its own keystroke', () => {
     pressed('p')
     await settles()
 
-    expect(rowOf(window, 'note')?.keys).toEqual({ marks: ['control'], letter: 'N' })
-    expect(rowOf(window, 'goto')?.keys).toEqual({ marks: ['control'], letter: 'G' })
+    expect(rowOf(window, 'note')?.keys).toEqual({ icons: ['control'], letter: 'N' })
+    expect(rowOf(window, 'goto')?.keys).toEqual({ icons: ['control'], letter: 'G' })
   })
 
   it('draws no keystroke on the rows no keystroke reaches', async () => {
@@ -558,10 +558,10 @@ describe('a command reached by a keystroke holding Shift', () => {
     const drawnKeys = Object.fromEntries(
       bands.flatMap((band) => band.items).map((one) => [one.id, one.keys]),
     )
-    expect(drawnKeys['travel']).toEqual({ marks: ['control', 'shift'], letter: 'P' })
-    expect(drawnKeys['child']).toEqual({ marks: ['control', 'shift'], letter: 'C' })
-    expect(drawnKeys['agent']).toEqual({ marks: ['control', 'shift'], letter: 'A' })
-    expect(drawnKeys['close']).toEqual({ marks: ['control', 'shift'], letter: 'W' })
+    expect(drawnKeys['travel']).toEqual({ icons: ['control', 'shift'], letter: 'P' })
+    expect(drawnKeys['child']).toEqual({ icons: ['control', 'shift'], letter: 'C' })
+    expect(drawnKeys['agent']).toEqual({ icons: ['control', 'shift'], letter: 'A' })
+    expect(drawnKeys['close']).toEqual({ icons: ['control', 'shift'], letter: 'W' })
   })
 })
 

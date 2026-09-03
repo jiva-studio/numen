@@ -18,7 +18,7 @@ const vault = (id: string): Held => ({ id, name: id, path: `/vaults/${id}` })
 const offer: Offer = {
   text: 'New vault',
   detail: 'Choose a folder',
-  keys: { marks: ['control', 'shift'], letter: 'N' },
+  keys: { icons: ['control', 'shift'], letter: 'N' },
 }
 
 const draw = (vaults: readonly Held[]) => mount(Welcome, { props: { vaults, heading: 'Vaults' } })
@@ -144,7 +144,7 @@ describe('the screen drawn narrow', () => {
         vaults: [vault('physics')],
         heading: 'Vaults',
         offer: one,
-        ways: [{ id: 'find', text: 'Search', keys: { marks: ['control'], letter: 'K' } }],
+        ways: [{ id: 'find', text: 'Search', keys: { icons: ['control'], letter: 'K' } }],
       },
     })
 
@@ -181,7 +181,7 @@ describe('the screen drawn narrow', () => {
  */
 describe('the screen drawn short', () => {
   const WAYS: readonly Way[] = [
-    { id: 'find', text: 'Search the vault', keys: { marks: ['control'], letter: 'K' } },
+    { id: 'find', text: 'Search the vault', keys: { icons: ['control'], letter: 'K' } },
     { id: 'commands', text: 'Show the commands' },
     { id: 'note', text: 'New note' },
     { id: 'plex', text: 'Open plex' },

@@ -958,11 +958,11 @@ export const KeyHints: Story = {
           { id: 'plex', title: 'Show the plex', keys: keyChord('p', APPLE, true), actions: RUN },
           { id: 'close', title: 'Close this tab', keys: keyChord('w', OTHER, true), actions: RUN },
           { id: 'goto', title: 'Go to a note', keys: keyChord('g', OTHER), actions: RUN },
-          { id: 'run', title: 'Run it', keys: { marks: ['return'], letter: '' }, actions: RUN },
+          { id: 'run', title: 'Run it', keys: { icons: ['return'], letter: '' }, actions: RUN },
           {
             id: 'long',
             title: LONG,
-            keys: { marks: ['command', 'option', 'shift'], letter: 'L' },
+            keys: { icons: ['command', 'option', 'shift'], letter: 'L' },
             actions: RUN,
           },
           { id: 'none', title: 'Reload the vault', actions: RUN },

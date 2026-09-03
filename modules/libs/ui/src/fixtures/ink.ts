@@ -3,7 +3,7 @@
  * Storybook's furniture; it ships to nobody.
  *
  * A story that asks whether two drawings are drawn alike cannot ask the DOM: a
- * box is not ink, and a mark can sit anywhere inside its box. So the drawing is
+ * box is not ink, and a drawing can sit anywhere inside its box. So it is
  * painted again onto a canvas, large, and read back a pixel at a time.
  *
  * Thickness is the middle, over the ink, of the shortest run through a pixel in
@@ -77,9 +77,9 @@ const painted = (ctx: CanvasRenderingContext2D): { top: number; bottom: number; 
 }
 
 /** The ink of a drawing, painted again large and read back into the box it fills. */
-export const markInk = async (mark: SVGElement): Promise<Ink> => {
-  const box = mark.getBoundingClientRect()
-  const copy = mark.cloneNode(true) as SVGElement
+export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
+  const box = drawing.getBoundingClientRect()
+  const copy = drawing.cloneNode(true) as SVGElement
   copy.setAttribute('width', String(GRAIN))
   copy.setAttribute('height', String(GRAIN))
   copy.setAttribute('stroke', '#000')

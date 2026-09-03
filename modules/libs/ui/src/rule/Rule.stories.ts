@@ -9,7 +9,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Rule from './Rule.vue'
-import Glyph from '../cards/Glyph.vue'
+import Icon from '../cards/Icon.vue'
 import { Button } from '../components/ui/button'
 
 const UNBROKEN =
@@ -35,13 +35,13 @@ const meta: Meta<Knobs> = {
   },
   args: { said: 'Add a field', at: 'middle', width: '100%' },
   render: (args) => ({
-    components: { Rule, Button, Glyph },
+    components: { Rule, Button, Icon },
     setup: () => ({ args }),
     template: `
       <div :style="{ padding: '2rem', width: args.width }">
         <Rule :at="args.at">
           <Button variant="outline" size="small">
-            <Glyph shows="plus" />
+            <Icon shows="plus" />
             {{ args.said }}
           </Button>
         </Rule>
