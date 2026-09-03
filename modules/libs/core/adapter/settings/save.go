@@ -165,9 +165,26 @@ func named(object []byte, at []string, to string) ([]byte, bool) {
 var errNotASection = errors.New("a setting goes inside a section")
 
 // errRepeated is a name written twice in one section. The settings are read
-// from the last of them and a span is replaced at the first, so the file is
-// left alone and the person is told which name to settle.
+// from the last of the two, and a span is replaced at the first.
 var errRepeated = errors.New("a section holds one of a name")
+
+// distinct says which name a section of the file holds twice, and nothing where
+// every section holds one of each. A value that is not a section holds no names.
+func distinct(object []byte) error {
+	held, err := members(object)
+	if errors.Is(err, errNotASection) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	for _, one := range held.pairs {
+		if err := distinct(object[one.from:one.to]); err != nil {
+			return fmt.Errorf("%s: %w", one.key, err)
+		}
+	}
+	return nil
+}
 
 func set(raw []byte, setting Setting) ([]byte, error) {
 	if len(setting.At) == 0 {

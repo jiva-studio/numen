@@ -40,6 +40,9 @@ func Write(path string, raw []byte) error {
 	if whole == nil {
 		return fmt.Errorf("%w: the settings are the fields of one object", port.ErrNotASetting)
 	}
+	if err := distinct(raw); err != nil {
+		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
+	}
 	if err := holds(raw); err != nil {
 		return fmt.Errorf("%w: %s", port.ErrNotASetting, where(err))
 	}
