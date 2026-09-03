@@ -57,6 +57,9 @@ The title matters because merges are squash-only: the title becomes the subject
 of the single commit that lands in `main`. A tidy branch behind a sloppy title
 still produces a sloppy history.
 
+**A title has 64 characters.** The squash appends ` (#123)` to it, and the
+header the hook measures is what that comes to.
+
 ```
 <type>(<scope>): <subject>
 
