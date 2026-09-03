@@ -314,10 +314,10 @@ type Way int
 const (
 	// EveryWay: all of them, fused into one ranking.
 	EveryWay Way = iota
-	// ByWords: what is written, matched as words.
-	ByWords
-	// ByMeaning: what the query means, against the vectors the index holds.
-	ByMeaning
+	// Lexical: what is written, matched as words.
+	Lexical
+	// Dense: what the query means, against the vectors the index holds.
+	Dense
 	// ByName: the names of the sections a source divides into.
 	ByName
 )
@@ -331,9 +331,9 @@ const (
 func Typing(way Way, limit int) Parameters {
 	p := Parameters{Limit: limit, Growing: true}.filled()
 	switch way {
-	case ByWords:
+	case Lexical:
 		p.Dense, p.Named = 0, 0
-	case ByMeaning:
+	case Dense:
 		p.Lexical, p.Named = 0, 0
 	case ByName:
 		p.Lexical, p.Dense = 0, 0

@@ -153,9 +153,9 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 func wayOf(way v1.Way) search.Way {
 	switch way {
 	case v1.Way_WAY_WORDS:
-		return search.ByWords
+		return search.Lexical
 	case v1.Way_WAY_MEANING:
-		return search.ByMeaning
+		return search.Dense
 	case v1.Way_WAY_NAMES:
 		return search.ByName
 	case v1.Way_WAY_UNSPECIFIED:
