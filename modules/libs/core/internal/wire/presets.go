@@ -142,7 +142,7 @@ func CurveOf(c flashcards.Curve) *v1.Curve {
 	return out
 }
 
-func markOf(m flashcards.Mark) *v1.Mark {
+func markOf(m flashcards.Place) *v1.Mark {
 	return &v1.Mark{At: int32(m.At), Value: m.Value, Day: m.Day}
 }
 

@@ -38,12 +38,12 @@ type Curve struct {
 	// At is what the preset comes to at each place of the grid.
 	At []Point
 	// Now is where the preset stands.
-	Now Mark
+	Now Place
 	// Suggested is the place worth pointing at: under a goal of minutes the
 	// shortest day the clock no longer cuts short, and under a goal of a date
 	// the soonest day the material is learned by at a cost the minutes the
 	// preset keeps allow. A goal of retention has none, and stands at Nowhere.
-	Suggested Mark
+	Suggested Place
 	// Stops is why the settings this curve was drawn under schedule nothing,
 	// and is empty where they schedule something. It is asked of the settings
 	// the request carried.
@@ -112,8 +112,8 @@ type Point struct {
 	Backlog []int
 }
 
-// Mark is one place on the curve worth pointing at.
-type Mark struct {
+// Place is one place on the curve worth pointing at.
+type Place struct {
 	// At is the place of the grid, and is -1 when the value falls outside it.
 	At int
 	// Value is the goal's value at the mark, in the units of the grid. What the
@@ -124,7 +124,7 @@ type Mark struct {
 }
 
 // Nowhere is a mark that falls outside the grid.
-var Nowhere = Mark{At: -1}
+var Nowhere = Place{At: -1}
 
 // Curves is the simulator behind the one control of a preset.
 //
@@ -367,14 +367,14 @@ func (u Curves) minutes(
 		return Curve{}, err
 	}
 
-	out.Now = Mark{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
+	out.Now = Place{At: nearest(out.Grid, float64(p.MinutesADay)), Value: float64(p.MinutesADay)}
 	// What is suggested is the shortest day that asks everything the day holds:
 	// the minutes stop closing it, and the material is what runs out. A load
 	// nothing on the grid carries is suggested at the longest day on it.
-	out.Suggested = Mark{At: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
+	out.Suggested = Place{At: len(out.Grid) - 1, Value: out.Grid[len(out.Grid)-1]}
 	for i, one := range out.At {
 		if len(one.Closed) == 0 {
-			out.Suggested = Mark{At: i, Value: out.Grid[i]}
+			out.Suggested = Place{At: i, Value: out.Grid[i]}
 			break
 		}
 	}
@@ -425,7 +425,7 @@ func (u Curves) retention(
 		return Curve{}, err
 	}
 
-	out.Now = Mark{At: nearest(out.Grid, p.Retention), Value: p.Retention}
+	out.Now = Place{At: nearest(out.Grid, p.Retention), Value: p.Retention}
 	// A goal of retention suggests nothing, and its mark stands at Nowhere.
 	return out, nil
 }
@@ -527,7 +527,7 @@ func (u Curves) date(
 	// The day the file names is a place of the grid, so what stands under the
 	// mark is worked out for that day.
 	if named >= 0 {
-		out.Now = Mark{
+		out.Now = Place{
 			At:    nearest(out.Grid, float64(named)),
 			Value: float64(named),
 			Day:   u.Day.Names(open.AddDate(0, 0, named)),
@@ -539,7 +539,7 @@ func (u Curves) date(
 	if p.MinutesADay > 0 {
 		for i, one := range out.At {
 			if learns(one) && one.Minutes <= float64(p.MinutesADay) {
-				out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
+				out.Suggested = Place{At: i, Value: out.Grid[i], Day: out.Days[i]}
 				return out, nil
 			}
 		}
@@ -549,7 +549,7 @@ func (u Curves) date(
 	// day of which gets there points at none.
 	for i, one := range out.At {
 		if learns(one) {
-			out.Suggested = Mark{At: i, Value: out.Grid[i], Day: out.Days[i]}
+			out.Suggested = Place{At: i, Value: out.Grid[i], Day: out.Days[i]}
 			return out, nil
 		}
 	}

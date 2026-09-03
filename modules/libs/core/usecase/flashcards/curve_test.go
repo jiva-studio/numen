@@ -132,7 +132,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	want := flashcards.Nowhere
 	for i, one := range got.At {
 		if len(one.Closed) == 0 {
-			want = flashcards.Mark{At: i, Value: got.Grid[i]}
+			want = flashcards.Place{At: i, Value: got.Grid[i]}
 			break
 		}
 	}
@@ -461,7 +461,7 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 // stands on it at all.
 func inRange(t *testing.T, c flashcards.Curve, stands ...string) {
 	t.Helper()
-	marks := map[string]flashcards.Mark{"now": c.Now, "suggested": c.Suggested}
+	marks := map[string]flashcards.Place{"now": c.Now, "suggested": c.Suggested}
 	for _, name := range stands {
 		if marks[name] == flashcards.Nowhere {
 			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
