@@ -7,10 +7,9 @@
  * that; every other setting is the person's own and stands as they left it,
  * whatever the picture says it comes to.
  */
-import { computed, ref } from 'vue'
-import { Days, Menu, NumberField, Segmented, Slider, Switch, WEEK } from '@numen/ui'
-import type { Day, Point } from '@numen/ui'
-import { ChevronDown } from '@lucide/vue'
+import { computed } from 'vue'
+import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@numen/ui'
+import type { Day } from '@numen/ui'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
 import { BOUNDS, COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
@@ -57,20 +56,6 @@ const levels = LOADS.map((one) => one / WHOLE_LOAD)
 /** One day of the week put at a share of a day's load. */
 const loads = (day: string, level: number) => {
   chose('load', loaded(settings.value.load, day, Math.round(level * WHOLE_LOAD)))
-}
-
-/**
- * Where the rules were asked for and what asked for them, and nothing while
- * they are not. What asked takes the focus back when the menu closes.
- */
-const asking = ref<{ at: Point; from: HTMLElement } | null>(null)
-
-/** The line the row stands on opens the rules under itself. */
-const asks = (event: Event) => {
-  const line = event.currentTarget
-  if (!(line instanceof HTMLElement)) return
-  const box = line.getBoundingClientRect()
-  asking.value = { at: { x: box.left, y: box.bottom }, from: line }
 }
 
 const ruled = (said: string) => {
@@ -214,19 +199,15 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
                 :aria-labelledby="`preset-${field}`"
                 @change="dated"
               />
-              <!-- One line saying what the rule is, and the rules under it
-                   when it is asked. -->
-              <button
+              <Select
                 v-else-if="field === 'learned'"
-                type="button"
-                class="preset__choice"
-                aria-haspopup="menu"
+                :model-value="settings.learned"
+                :choices="rules"
+                :name="words.fieldName('learned')"
                 :aria-labelledby="`preset-${field}`"
-                @click="asks"
-              >
-                {{ words.ruleName(settings.learned) }}
-                <ChevronDown class="preset__icon" aria-hidden="true" />
-              </button>
+                class="preset__choice"
+                @update:model-value="ruled"
+              />
               <Segmented
                 v-else-if="field === 'counts'"
                 :model-value="settings.counts"
@@ -279,18 +260,6 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
       </div>
     </div>
 
-    <Menu
-      v-if="asking"
-      :items="rules"
-      :at="asking.at"
-      :from="asking.from"
-      :current="settings.learned"
-      open
-      opening="keyboard"
-      :name="words.fieldName('learned')"
-      @choose="ruled"
-      @dismiss="asking = null"
-    />
   </div>
 </template>
 
@@ -300,17 +269,13 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
   --preset-measure: 46rem;
   /* The step every gap down the column is set by. */
   --preset-step: 1.25rem;
-  /* One row of the receipt: the box a number is typed into, the air around the
-     row, and the space between what it is called and what it means. */
+  /* One row of the receipt: the box a number is typed into, the list a rule is
+     taken from, the air around the row, and the space between what it is
+     called and what it means. */
   --preset-value: 6rem;
+  --preset-choice: 10rem;
   --preset-row-air: 0.5rem;
   --preset-said-gap: 0.125rem;
-  /* The clearance typing keeps from the edges of its box. A field keeps a line
-     box taller than the digits in it, so the block clearance is set under the
-     inline one by that difference and the four gaps read alike. */
-  --preset-field-inset: var(--numen-field-padding) var(--numen-inset);
-  /* The mark a row carries beside its small print. */
-  --preset-icon: 0.875rem;
   /* The track a share is moved along, and the room the figure beside it takes. */
   --preset-track: 9rem;
   --preset-percent: 2.25rem;
@@ -437,38 +402,35 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
   text-align: end;
 }
 
-/* The rule stands on a line of its own, drawn as the boxes a value is typed
-   into are, with the mark that says it opens. */
-/* A line of text stands shorter than a field a number is typed into, so this
-   one is held to the height every control on a row shares. */
+/* The rule is taken from a list, and the list is as wide as the rules are. */
 .preset__choice {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--numen-node-gap);
-  min-block-size: var(--numen-action-size);
-  padding: var(--preset-field-inset);
+  inline-size: var(--preset-choice);
+}
+
+/* The same box the numbers of the receipt are typed into, one row tall with
+   the day centred in it. */
+.preset__day {
+  block-size: var(--numen-action-size);
+  padding-inline: var(--numen-inset);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius-tight);
   background: var(--numen-field-bg);
   color: inherit;
   font: inherit;
   line-height: 1;
-  cursor: pointer;
 }
 
-.preset__choice:focus-visible {
-  outline: var(--numen-ring-width) solid var(--numen-ring);
-  outline-offset: var(--numen-stroke);
+/* The calendar the machine draws inside the field comes with a spinner and a
+   cross of its own. */
+.preset__day::-webkit-inner-spin-button,
+.preset__day::-webkit-clear-button {
+  display: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-/* The same box the numbers of the receipt are typed into. */
-.preset__day {
-  padding: var(--preset-field-inset);
-  border: var(--numen-stroke) solid var(--numen-field-border);
-  border-radius: var(--numen-radius-tight);
-  background: var(--numen-field-bg);
-  color: inherit;
-  font: inherit;
+.preset__day::-webkit-datetime-edit {
+  padding: 0;
   line-height: 1;
 }
 
@@ -479,13 +441,6 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
 
 .preset__detail {
   color: var(--numen-hushed);
-}
-
-/* Lucide draws on a 24 grid, and the stroke is given in those units. */
-.preset__icon {
-  inline-size: var(--preset-icon);
-  block-size: var(--preset-icon);
-  stroke-width: 1.875;
 }
 
 .preset__warning {

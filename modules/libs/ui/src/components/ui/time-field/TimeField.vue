@@ -59,10 +59,9 @@ defineExpose({
     :max="max || undefined"
     :class="
       cn(
-        'w-full rounded-tight border border-field-rule bg-field',
-        // The gaps are measured to the ink the screen paints, which is what a
-        // field of typing beside it is measured to.
-        'px-2 py-1.5',
+        'time-field w-full rounded-tight border border-field-rule bg-field',
+        // One row tall, which every control standing on a row is drawn at.
+        'h-action px-2',
         'font-sans text-base leading-none text-ink tabular-nums',
         'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
         'disabled:cursor-not-allowed disabled:opacity-50',
@@ -72,3 +71,27 @@ defineExpose({
     @change="took"
   />
 </template>
+
+<style scoped>
+/*
+ * The clock the machine draws inside the field. It comes with a spinner and a
+ * cross of its own, and with a line box set from the browser's own chrome, and
+ * the field is one row tall with the hour centred in it.
+ */
+.time-field::-webkit-inner-spin-button,
+.time-field::-webkit-clear-button,
+.time-field::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.time-field::-webkit-datetime-edit {
+  padding: 0;
+  line-height: 1;
+}
+
+.time-field::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+</style>

@@ -182,10 +182,8 @@ defineExpose({
     :class="
       cn(
         'w-full rounded-tight border border-field-rule bg-field',
-        // The gaps are measured to the ink the screen paints. A field keeps a
-        // line box of its own, taller than the digits in it, so the block
-        // padding is set under the inline one and the box is one row tall.
-        'px-2 py-1.5',
+        // One row tall, which every control standing on a row is drawn at.
+        'h-action px-2',
         'font-sans text-base leading-none text-ink tabular-nums placeholder:text-hushed',
         'outline-none focus-visible:ring-(length:--numen-ring-width) focus-visible:ring-ring',
         'aria-invalid:border-alarm aria-invalid:text-alarm',
