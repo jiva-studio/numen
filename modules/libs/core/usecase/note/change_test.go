@@ -54,7 +54,8 @@ func (c changing) create() note.Create {
 func (c changing) move() note.Move {
 	return note.Move{
 		Readers: filesystem.Readers{}, Writers: filesystem.Writers{},
-		Links: c.db.Links(), Sources: c.db.Sources(), Index: c.index,
+		Links: c.db.Links(), Names: c.db.Queries(),
+		Sources: c.db.Sources(), Index: c.index,
 	}
 }
 
@@ -329,6 +330,29 @@ func TestMovingLeavesALinkThatNowMeansAnotherNote(t *testing.T) {
 	}
 	if to := links(t, c.db, c.vault, "chemistry/Heat.md").Links[0].To; to != "chemistry/Entropy.md" {
 		t.Errorf("the link reaches %q", to)
+	}
+}
+
+// The note lands under a name another note is already filed under, and a name
+// is read back as an exact path from the root before anything else. The repair
+// writes the path, which is what reaches the note that moved.
+func TestRepairingALinkWritesThePathWhereTheNameIsShared(t *testing.T) {
+	t.Parallel()
+	c := changeable(t, map[string]string{
+		"Entropy.md":      "# Entropy\n",
+		"physics/Heat.md": "# Heat\n",
+		"Ref.md":          "---\nlinks:\n  - to: physics/Heat.md\n    role: parent\n---\n# Ref\n",
+	})
+
+	moved, err := c.move().Execute(t.Context(), c.vault, "physics/Heat.md", "archive/Entropy.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(moved.Repaired) != 1 || moved.Repaired[0] != "Ref.md" {
+		t.Fatalf("want the note whose link broke, got %+v", moved)
+	}
+	if to := links(t, c.db, c.vault, "Ref.md").Links[0].To; to != "archive/Entropy.md" {
+		t.Errorf("the repaired link reaches %q", to)
 	}
 }
 
