@@ -112,11 +112,12 @@ type telling struct {
 
 // Recognise begins reading the scan at a path.
 func (a *API) Recognise(w http.ResponseWriter, r *http.Request, path string) {
-	if a.Recognises == nil {
+	reads := a.recognises()
+	if reads == nil {
 		http.Error(w, errNoReading.Error(), http.StatusNotImplemented)
 		return
 	}
-	a.begin(w, r, path, domain.KindBook, a.Recognises, telling{
+	a.begin(w, r, path, domain.KindBook, reads, telling{
 		unfit:    notAScan,
 		done:     readAlready,
 		running:  readingNow,
@@ -128,11 +129,12 @@ func (a *API) Recognise(w http.ResponseWriter, r *http.Request, path string) {
 
 // Transcribe begins listening to the recording at a path.
 func (a *API) Transcribe(w http.ResponseWriter, r *http.Request, path string) {
-	if a.Transcribes == nil {
+	hears := a.transcribes()
+	if hears == nil {
 		http.Error(w, errNoListening.Error(), http.StatusNotImplemented)
 		return
 	}
-	a.begin(w, r, path, domain.KindRecording, a.Transcribes, telling{
+	a.begin(w, r, path, domain.KindRecording, hears, telling{
 		unfit:    notARecording,
 		done:     heardAlready,
 		running:  hearingNow,

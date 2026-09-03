@@ -430,3 +430,14 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 		return text(&f.api.Unwatched) != ""
 	})
 }
+
+// runningBehind publishes the passes a request is answered through, the way a
+// vault arriving in the window does.
+func runningBehind(api *API, change func(*showing)) {
+	on := showing{}
+	if held := api.on.Load(); held != nil {
+		on = *held
+	}
+	change(&on)
+	api.runs(&on)
+}

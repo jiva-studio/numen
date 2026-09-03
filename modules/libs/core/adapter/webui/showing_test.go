@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -519,4 +521,40 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 	if got := f.opened.Showing(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
+}
+
+// TestARunReachesTheVaultTheWindowIsShowing. The passes behind a vault are
+// taken down and built again while requests are being served, so a handler that
+// reads one reads it where the swap publishes it. A request that arrives in the
+// middle is answered by a vault or refused, and never by a pass that stopped.
+func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
+	f := swapping(t)
+
+	asking, stop := context.WithCancel(t.Context())
+	var asked sync.WaitGroup
+	for _, facet := range []string{"proofread", "recognise", "transcribe"} {
+		asked.Add(1)
+		go func() {
+			defer asked.Done()
+			for asking.Err() == nil {
+				at := "/assets/" + url.PathEscape(entropy) + "/" + facet
+				r := httptest.NewRequest(http.MethodPost, at, nil).WithContext(asking)
+				f.opened.API.Asset(httptest.NewRecorder(), r)
+			}
+		}()
+	}
+
+	for range 4 {
+		if err := f.opened.Show(t.Context(), f.second); err != nil {
+			t.Errorf("the second vault would not open: %v", err)
+			break
+		}
+		if err := f.opened.Show(t.Context(), f.first); err != nil {
+			t.Errorf("the first vault would not open again: %v", err)
+			break
+		}
+	}
+
+	stop()
+	asked.Wait()
 }

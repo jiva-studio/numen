@@ -390,10 +390,12 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	api, handler := listeningTo(t, whole(spoke()))
 
 	var asked []string
-	api.Cut = func(_ context.Context, _ domain.Vault, path string) error {
-		asked = append(asked, path)
-		return nil
-	}
+	runningBehind(api, func(on *showing) {
+		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
+			asked = append(asked, path)
+			return nil
+		}
+	})
 
 	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
 	if out.Code != http.StatusOK {
@@ -409,9 +411,11 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	held := whole(spoke())
 	api, handler := listeningTo(t, held)
-	api.Cut = func(context.Context, domain.Vault, string) error {
-		return errors.New("nothing is cutting")
-	}
+	runningBehind(api, func(on *showing) {
+		on.cut = func(context.Context, domain.Vault, string) error {
+			return errors.New("nothing is cutting")
+		}
+	})
 
 	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
 	if out.Code != http.StatusOK {
@@ -629,10 +633,12 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	api.Readers = swapping{VaultReaders: filesystem.Readers{}, then: func() { api.show(elsewhere) }}
 
 	var cutIn []domain.Vault
-	api.Cut = func(_ context.Context, v domain.Vault, _ string) error {
-		cutIn = append(cutIn, v)
-		return nil
-	}
+	runningBehind(api, func(on *showing) {
+		on.cut = func(_ context.Context, v domain.Vault, _ string) error {
+			cutIn = append(cutIn, v)
+			return nil
+		}
+	})
 
 	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
 	if out.Code != http.StatusOK {
@@ -668,10 +674,12 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	api, handler := windowOn(t, held)
 
 	var asked []string
-	api.Cut = func(_ context.Context, _ domain.Vault, path string) error {
-		asked = append(asked, path)
-		return nil
-	}
+	runningBehind(api, func(on *showing) {
+		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
+			asked = append(asked, path)
+			return nil
+		}
+	})
 
 	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
 	if out.Code == http.StatusOK {

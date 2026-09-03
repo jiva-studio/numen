@@ -238,8 +238,8 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 	// The chunks in the index hold the words as they were heard, so the source
 	// is cut again from what it now says. A write that landed is not refused
 	// for a cut that could not be asked for.
-	if a.Cut != nil {
-		if err := a.Cut(ctx, showing, ref.Path); err != nil {
+	if cut := a.cuts(); cut != nil {
+		if err := cut(ctx, showing, ref.Path); err != nil {
 			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Failed: err.Error()})
 		}
 	}
@@ -274,7 +274,12 @@ func (a *API) Drop(w http.ResponseWriter, r *http.Request, path string) {
 		return
 	}
 
-	res, err := a.Drops.Execute(ctx, showing, ref.Path)
+	// The queue told about it is the one behind the vault the recording was
+	// found in.
+	drops := *a.Drops
+	drops.Forgets = a.forgets()
+
+	res, err := drops.Execute(ctx, showing, ref.Path)
 	if err != nil {
 		refuse(w, err)
 		return
