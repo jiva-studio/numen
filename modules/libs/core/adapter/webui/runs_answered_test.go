@@ -151,7 +151,7 @@ func (deaf) Close() error                                           { return nil
 type unrecorded struct{}
 
 func (unrecorded) SaveSource(context.Context, string, port.Source) error         { return nil }
-func (unrecorded) SaveExtraction(context.Context, string, port.Extraction) error { return nil }
+func (unrecorded) SaveExtraction(context.Context, string, port.SourceChunks) error { return nil }
 
 func (unrecorded) RemoveSources(context.Context, string, domain.SourceKind, []string) error {
 	return nil
@@ -167,7 +167,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	stores := filesystem.DerivedStores{Area: filesystem.SpeechDir}
 
 	run := source.Transcribe{
-		Readers: filesystem.Readers{},
+		Readers: filesystem.VaultReaders{},
 		Sources: unrecorded{},
 		Derived: stores,
 		By:      deaf{},
@@ -182,7 +182,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 
 	talks := willRun()
 	api := &API{
-		Readers:   filesystem.Readers{},
+		Readers:   filesystem.VaultReaders{},
 		Highlight: &source.Highlight{Sources: nothingRead(), Derived: stores},
 	}
 	api.show(vault)

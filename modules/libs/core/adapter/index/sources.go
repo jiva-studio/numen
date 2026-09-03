@@ -35,7 +35,7 @@ func (s sources) SaveSource(ctx context.Context, vaultID string, src port.Source
 
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
-func (s sources) SaveExtraction(ctx context.Context, vaultID string, e port.Extraction) error {
+func (s sources) SaveExtraction(ctx context.Context, vaultID string, e port.SourceChunks) error {
 	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
 }
 

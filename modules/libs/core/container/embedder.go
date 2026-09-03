@@ -98,7 +98,7 @@ func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder
 //
 // Whichever it is, it answers under the identity the index is filled with, and
 // the two stations are held to it by being compared as one model.
-func (c Config) placed(ctx context.Context, where embed.Station, role string, tasks *task.Tasks) (*embedding.Embedding, error) {
+func (c Config) placed(ctx context.Context, where embed.Station, role string, tasks *task.Tasks) (*embedding.Embedder, error) {
 	is := c.Embedding.Stored()
 	switch where.Use {
 	case embed.UseService:
@@ -142,7 +142,7 @@ func (c Config) placed(ctx context.Context, where embed.Station, role string, ta
 // nothing in a settings file shows that two stations are one model. A
 // comparison that did not happen is not agreement, and only a context that
 // ended excuses one.
-func agreeing(ctx context.Context, first, second *embedding.Embedding) error {
+func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
 	// unchecked is a comparison nobody got an answer out of. A run somebody
 	// stopped is owed no answer.
 	unchecked := func(why error) error {

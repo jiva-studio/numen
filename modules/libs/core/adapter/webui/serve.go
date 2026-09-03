@@ -1122,7 +1122,7 @@ func embedSources(
 	// Fetching the model and preparing it is a step of its own, and it stands in
 	// the list under its own name. Nothing is indexed until it is over, and a
 	// model that never arrived is said under that name.
-	if arrival, ok := embedder.(embedding.Arrival); ok {
+	if arrival, ok := embedder.(embedding.WaitingEmbedder); ok {
 		if err := arrival.Wait(ctx); err != nil {
 			return
 		}

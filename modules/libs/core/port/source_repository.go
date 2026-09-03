@@ -48,9 +48,9 @@ type Chunk struct {
 	Small []Chunk
 }
 
-// An Extraction is one source as reading it left it: the file, the recipe that
+// SourceChunks is one source as reading it left it: the file, the recipe that
 // read it, and the chunks its text was cut into.
-type Extraction struct {
+type SourceChunks struct {
 	Source Source
 	Chunks []Chunk
 }
@@ -66,7 +66,7 @@ type SourceRepository interface {
 	// SaveExtraction records a source and replaces its chunks with the ones its
 	// text was cut into. Both arrive in one write, so a recipe is never
 	// recorded for chunks that are not there.
-	SaveExtraction(ctx context.Context, vaultID string, e Extraction) error
+	SaveExtraction(ctx context.Context, vaultID string, e SourceChunks) error
 
 	// RemoveSources takes out the sources of one kind at the paths given, and
 	// everything derived from them. A source the vault no longer holds cannot be

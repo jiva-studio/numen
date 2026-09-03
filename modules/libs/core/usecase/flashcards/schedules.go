@@ -60,7 +60,7 @@ type Schedules struct {
 	Logs port.DerivedStores
 	// Kept is where the working out is remembered. A build holding none works
 	// it out at every launch.
-	Kept port.Schedules
+	Kept port.ScheduleStore
 	By   history.Scheduler
 	// Day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.

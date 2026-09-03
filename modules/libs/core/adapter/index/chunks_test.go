@@ -1415,7 +1415,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	ctx := t.Context()
 	db := opened(t)
 
-	if err := db.Sources().SaveExtraction(ctx, first.ID, port.Extraction{
+	if err := db.Sources().SaveExtraction(ctx, first.ID, port.SourceChunks{
 		Source: port.Source{
 			Ref: domain.Fingerprint{
 				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, MTime: 1,

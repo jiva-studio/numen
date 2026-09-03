@@ -60,7 +60,7 @@ func (c Config) DayStarts() time.Duration {
 
 // Kept is where the working out is remembered between launches: the folder the
 // configuration names, or the platform's cache location.
-func (c Config) Kept() (port.Schedules, error) {
+func (c Config) Kept() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(c.SchedulesPath), nil
 	}
@@ -71,7 +71,7 @@ func (c Config) Kept() (port.Schedules, error) {
 // schedules and not in them, because the two go out of date by different rules:
 // a schedule is the whole history read again, and a day is a sum one file at a
 // time.
-func (c Config) Counting() (port.Schedules, error) {
+func (c Config) Counting() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(filepath.Join(c.SchedulesPath, "days")), nil
 	}

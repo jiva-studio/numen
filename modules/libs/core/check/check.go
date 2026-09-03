@@ -47,10 +47,10 @@ type Checks struct {
 // Standard is the set of checks a vault is held to.
 func Standard(queries port.ProblemQueries) Checks {
 	return Checks{Checks: []Checker{
-		parse{queries},
-		frontmatter{queries},
-		ambiguous{queries},
-		dangling{queries},
+		parseCheck{queries},
+		frontmatterCheck{queries},
+		ambiguousCheck{queries},
+		danglingCheck{queries},
 	}}
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// dangling is a link that reaches nothing.
+// danglingCheck is a link that reaches nothing.
 //
 // It is quiet, and that is the whole design of it. Writing `[[Entropy]]` before
 // the note exists is how people work — the link is a note to themselves that
@@ -18,12 +18,12 @@ import (
 //
 // Adding the missing note repairs it, without anyone touching the link: what a
 // name reaches is worked out at the moment it is asked.
-type dangling struct{ queries port.ProblemQueries }
+type danglingCheck struct{ queries port.ProblemQueries }
 
-func (dangling) Name() domain.Check { return domain.CheckDangling }
-func (dangling) Quiet() bool        { return true }
+func (danglingCheck) Name() domain.Check { return domain.CheckDangling }
+func (danglingCheck) Quiet() bool        { return true }
 
-func (c dangling) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c danglingCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	found, err := c.queries.Dangling(ctx, v.ID)
 	if err != nil {
 		return nil, err

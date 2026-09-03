@@ -65,7 +65,7 @@ type Counted struct {
 	Logs port.DerivedStores
 	// Kept is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
-	Kept port.Schedules
+	Kept port.ScheduleStore
 	// Schedules is where the answers have left every card face, which is what
 	// says how much falls on each day still to come.
 	Schedules Schedules

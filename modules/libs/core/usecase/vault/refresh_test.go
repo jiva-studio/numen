@@ -150,7 +150,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.Extraction{
+	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.SourceChunks{
 		Source: port.Source{
 			Ref:    domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, MTime: 1},
 			Hash:   "a-hash",

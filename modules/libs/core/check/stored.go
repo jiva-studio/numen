@@ -7,18 +7,18 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// parse is what reading one file turned up, and the scan already knows it: a
-// link with no role, a role nobody decided on, an identifier that is not one.
+// parseCheck is what reading one file turned up, and the scan already knows it:
+// a link with no role, a role nobody decided on, an identifier that is not one.
 //
 // Nothing is worked out here. The rule that decided these ran when the note was
 // parsed, which is the only place that can see what the file says without
 // reading it again.
-type parse struct{ queries port.ProblemQueries }
+type parseCheck struct{ queries port.ProblemQueries }
 
-func (parse) Name() domain.Check { return domain.CheckParse }
-func (parse) Quiet() bool        { return false }
+func (parseCheck) Name() domain.Check { return domain.CheckParse }
+func (parseCheck) Quiet() bool        { return false }
 
-func (c parse) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c parseCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	noted, err := c.queries.Noted(ctx, v.ID)
 	if err != nil {
 		return nil, err
@@ -32,17 +32,17 @@ func (c parse) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem,
 	return out, nil
 }
 
-// frontmatter is a block between the delimiters that is not YAML.
+// frontmatterCheck is a block between the delimiters that is not YAML.
 //
 // The note is indexed anyway — its text is readable either way — but nothing
 // may write to it: changing a key in a block the application could not read
 // means guessing at the rest of it.
-type frontmatter struct{ queries port.ProblemQueries }
+type frontmatterCheck struct{ queries port.ProblemQueries }
 
-func (frontmatter) Name() domain.Check { return domain.CheckFrontmatter }
-func (frontmatter) Quiet() bool        { return false }
+func (frontmatterCheck) Name() domain.Check { return domain.CheckFrontmatter }
+func (frontmatterCheck) Quiet() bool        { return false }
 
-func (c frontmatter) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c frontmatterCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	unreadable, err := c.queries.Unreadable(ctx, v.ID)
 	if err != nil {
 		return nil, err

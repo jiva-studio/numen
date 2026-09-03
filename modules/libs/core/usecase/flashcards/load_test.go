@@ -79,7 +79,7 @@ func (s countingStore) Claim(ctx context.Context, name string) (func() error, er
 
 // countingKept counts what a use case asks of the cache.
 type countingKept struct {
-	inner port.Schedules
+	inner port.ScheduleStore
 	on    *loadCounts
 }
 

@@ -16,10 +16,10 @@ import (
 // noting is an index that holds on to what a drop wrote to it.
 type noting struct {
 	unrecorded
-	written []port.Extraction
+	written []port.SourceChunks
 }
 
-func (n *noting) SaveExtraction(_ context.Context, _ string, e port.Extraction) error {
+func (n *noting) SaveExtraction(_ context.Context, _ string, e port.SourceChunks) error {
 	n.written = append(n.written, e)
 	return nil
 }
@@ -32,10 +32,10 @@ func dropper(t *testing.T, held port.DerivedStores, known indexed) (*API, *notin
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	index := &noting{}
 	api := &API{
-		Readers:   filesystem.Readers{},
+		Readers:   filesystem.VaultReaders{},
 		Highlight: &source.Highlight{Sources: known, Derived: held},
 		Drops: &source.DropTranscript{
-			Readers: filesystem.Readers{},
+			Readers: filesystem.VaultReaders{},
 			Sources: index,
 			Owing:   known,
 			Derived: held,

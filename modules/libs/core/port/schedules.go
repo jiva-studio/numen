@@ -2,8 +2,8 @@ package port
 
 import "context"
 
-// Schedules is where what a replay of the answers worked out about one vault is
-// kept between launches.
+// ScheduleStore is where what a replay of the answers worked out about one
+// vault is kept between launches.
 //
 // It is a cache and belongs to the installation, never to the vault: what is in
 // it is computed from the answers, and the answers are the vault's. It is also
@@ -12,7 +12,7 @@ import "context"
 //
 // A vault with nothing kept for it gets fs.ErrNotExist, which is the answer that
 // nothing has been worked out yet.
-type Schedules interface {
+type ScheduleStore interface {
 	Read(ctx context.Context, vaultID string) ([]byte, error)
 	Write(ctx context.Context, vaultID string, content []byte) error
 }

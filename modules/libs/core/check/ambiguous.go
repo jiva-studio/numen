@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ambiguous is a link that reaches more than one note.
+// ambiguousCheck is a link that reaches more than one note.
 //
 // It is not broken: it reaches the nearest of them, and that is a defined
 // answer. What makes it worth showing is that "the nearest" is a fact about
@@ -19,12 +19,12 @@ import (
 // The problem belongs to the note that wrote the link. That is the file
 // somebody opens to settle it, by naming which note they meant. Neither of the
 // notes it could mean has anything to answer for.
-type ambiguous struct{ queries port.ProblemQueries }
+type ambiguousCheck struct{ queries port.ProblemQueries }
 
-func (ambiguous) Name() domain.Check { return domain.CheckAmbiguous }
-func (ambiguous) Quiet() bool        { return false }
+func (ambiguousCheck) Name() domain.Check { return domain.CheckAmbiguous }
+func (ambiguousCheck) Quiet() bool        { return false }
 
-func (c ambiguous) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
+func (c ambiguousCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
 	found, err := c.queries.Ambiguous(ctx, v.ID)
 	if err != nil {
 		return nil, err
