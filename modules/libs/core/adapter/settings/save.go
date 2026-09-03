@@ -346,6 +346,24 @@ func indentOf(object []byte, first int) string {
 	return string(rest[:len(rest)-len(bytes.TrimLeft(rest, " \t"))])
 }
 
+// resolved is where the bytes of the settings are, with every link on the way
+// followed. A path that leads nowhere yet is resolved as far as its folder, and
+// one that cannot be resolved at all is its own answer.
+func resolved(path string) string {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		return real
+	}
+	dir, err := filepath.EvalSymlinks(filepath.Dir(abs))
+	if err != nil {
+		return abs
+	}
+	return filepath.Join(dir, filepath.Base(abs))
+}
+
 func spliced(raw []byte, from, to int, with []byte) []byte {
 	patched := make([]byte, 0, len(raw)-(to-from)+len(with))
 	patched = append(patched, raw[:from]...)
@@ -356,7 +374,11 @@ func spliced(raw []byte, from, to int, with []byte) []byte {
 // replace writes the file beside itself and renames it over the top, so a
 // machine that dies mid-write leaves the settings whole. The mode is the
 // person's alone: they type their service keys into this file.
+//
+// The rename lands on the file the path leads to, so a settings file kept in a
+// dotfiles repository and linked into place is written where it is kept.
 func replace(path string, content []byte) error {
+	path = resolved(path)
 	tmp, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
 	if err != nil {
 		return err

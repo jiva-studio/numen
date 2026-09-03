@@ -357,6 +357,41 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	}
 }
 
+// Keeping the settings in a dotfiles repository and linking them into place is
+// an ordinary arrangement, and a save that replaced the link with a file of its
+// own would leave every later edit in the repository unread.
+func TestASaveLandsOnTheFileALinkLeadsTo(t *testing.T) {
+	dir := t.TempDir()
+	kept := filepath.Join(dir, "dotfiles", "numen.json")
+	if err := os.MkdirAll(filepath.Dir(kept), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(kept, []byte(`{"appearance":{"theme":"preset:numen"}}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "numen.json")
+	if err := os.Symlink(kept, link); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := settings.Save(link, theme("preset:nord")); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(link); err != nil {
+		t.Fatal(err)
+	} else if info.Mode()&os.ModeSymlink == 0 {
+		t.Error("the link is now a file of its own")
+	}
+	raw, err := os.ReadFile(kept)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "preset:nord") {
+		t.Errorf("the file the link leads to holds:\n%s", raw)
+	}
+}
+
 // A number a setting does not take is refused where it is handed in. One the
 // file already held is the person's to put right, and every other setting stays
 // reachable while they do.
