@@ -34,6 +34,11 @@ func Open(root string, opts Options) (*VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The vault is where the links lead. The paths the operating system reports
+	// changes at are resolved, and they are named against this.
+	if real, err := filepath.EvalSymlinks(abs); err == nil {
+		abs = real
+	}
 	info, err := os.Stat(abs)
 	if err != nil {
 		return nil, err

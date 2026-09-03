@@ -404,3 +404,31 @@ func TestAFolderTheVaultIgnoresArrivingIsNotRemembered(t *testing.T) {
 		}
 	}
 }
+
+// TestAVaultReachedThroughALinkIsFollowedLikeAnyOther. The operating system
+// names the file it saw change, and what it names is the path with every link
+// resolved. A vault in a synced folder is reached through one.
+func TestAVaultReachedThroughALinkIsFollowedLikeAnyOther(t *testing.T) {
+	physical := vaultOf(t, map[string]string{"Note.md": "# Note\n"}, nil)
+	link := filepath.Join(t.TempDir(), "vault")
+	if err := os.Symlink(physical, link); err != nil {
+		t.Fatal(err)
+	}
+
+	changes, lost, err := filesystem.Watcher{}.Watch(t.Context(), domain.Vault{Path: link})
+	if err != nil {
+		t.Fatal(err)
+	}
+	write(t, physical, "Note.md", "# Note\n\nedited\n")
+
+	select {
+	case paths := <-changes:
+		if !slices.Equal(paths, []string{"Note.md"}) {
+			t.Errorf("reported %v, want the note it named", paths)
+		}
+	case <-lost:
+		t.Fatal("the whole vault was read again — the path the system named was taken for one outside it")
+	case <-time.After(5 * time.Second):
+		t.Fatal("the note was written and nothing was said")
+	}
+}
