@@ -712,12 +712,17 @@ jobs:
           KEY: ${{ secrets.BUNNY_STORAGE_KEY }}
         run: |
           set -euo pipefail
+          # The key is handed over in a file. A command line is read by anything
+          # on the machine and is what an error prints.
+          umask 077
+          printf 'AccessKey: %s\n' "$KEY" > "$RUNNER_TEMP/storage.header"
+
           cd "$RUNNER_TEMP/upload"
           mapfile -t paths < <(find . -type f -printf '%P\n' | sort)
           for at in "${paths[@]}"; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' \
               -X PUT "https://$ENDPOINT/$ZONE/$at" \
-              -H "AccessKey: $KEY" \
+              -H @"$RUNNER_TEMP/storage.header" \
               -H 'Content-Type: application/octet-stream' \
               --data-binary "@$at")
             echo "$code  $at"
@@ -732,9 +737,12 @@ jobs:
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           set -euo pipefail
+          umask 077
+          printf 'AccessKey: %s\n' "$API_KEY" > "$RUNNER_TEMP/api.header"
+
           code=$(curl -sS -o /dev/null -w '%{http_code}' \
             -X POST "https://api.bunny.net/pullzone/$PULL_ZONE/purgeCache" \
-            -H "AccessKey: $API_KEY" -H 'Content-Length: 0')
+            -H @"$RUNNER_TEMP/api.header" -H 'Content-Length: 0')
           echo "purge $code"
           case "$code" in 20*) ;; *) echo "::error::the cache was not purged: $code"; exit 1 ;; esac
 
