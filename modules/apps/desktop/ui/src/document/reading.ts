@@ -18,7 +18,7 @@ export interface Rect {
 }
 
 /** One page and what is highlighted on it. */
-export interface Highlight {
+export interface Page {
   readonly page: number
   readonly rects: readonly Rect[]
 }
@@ -62,7 +62,7 @@ export interface Documents {
   highlights(
     path: string,
     stretches: readonly Stretch[],
-  ): Promise<readonly (readonly Highlight[])[]>
+  ): Promise<readonly (readonly Page[])[]>
 }
 
 /** The widest a page is drawn, in device pixels, which is as wide as one is drawn. */
@@ -79,12 +79,12 @@ export function reading(documents: Documents, path: string) {
   /** How wide the page is drawn, in device pixels. */
   const wide = ref(0)
   /** What is highlighted, page by page: the place the tab turned to. */
-  const highlights = ref<readonly Highlight[]>([])
+  const highlights = ref<readonly Page[]>([])
   /**
    * The other places asked for, page by page. They are somewhere else to look
    * and not where the person was taken.
    */
-  const others = ref<readonly (readonly Highlight[])[]>([])
+  const others = ref<readonly (readonly Page[])[]>([])
   /** What this document could not do, in words the window puts up for it. */
   const trouble = ref('')
 
@@ -155,7 +155,7 @@ export function reading(documents: Documents, path: string) {
    * place the person was sent to: the tab turns to its first page, and the rest
    * are highlighted where they fall.
    */
-  const highlight = async (where: readonly (readonly Highlight[])[]) => {
+  const highlight = async (where: readonly (readonly Page[])[]) => {
     const [front = [], ...rest] = where
     highlights.value = front
     others.value = rest

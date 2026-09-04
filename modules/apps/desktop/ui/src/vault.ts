@@ -51,7 +51,7 @@ import { standing as settingAt } from './settings/configuring'
 import { write } from './settings/json5'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
-import type { Documents, Highlight, Sheet } from './document/reading'
+import type { Documents, Page, Sheet } from './document/reading'
 import type { Cue, Recordings } from './recording/transcript'
 import type {
   Added,
@@ -483,7 +483,7 @@ export const documents: Documents = {
 }
 
 /** One page of a highlight, as the window carries it. */
-const highlighted = (one: PageMessage): Highlight => ({
+const highlighted = (one: PageMessage): Page => ({
   page: one.index,
   rects: one.rects.map((box) => ({
     minX: box.minX,
