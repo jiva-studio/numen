@@ -15,6 +15,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -31,7 +32,7 @@ import (
 )
 
 func main() {
-	var cfg container.Config
+	cfg := configured(os.Stderr)
 	var telling, noAgent bool
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
@@ -47,6 +48,15 @@ func main() {
 	if err := run(cfg, noAgent); err != nil {
 		fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
 		os.Exit(1)
+	}
+}
+
+// configured is what this binary starts from: where the core says what it went
+// wrong at and carried on past, which is the same place everything else this
+// binary could not do is said.
+func configured(out io.Writer) container.Config {
+	return container.Config{
+		Trouble: func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) },
 	}
 }
 

@@ -61,12 +61,7 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	cfg := container.Config{
-		IndexPath:    filepath.Join(dir, "index.db"),
-		RegistryPath: filepath.Join(dir, "vaults.json"),
-		SettingsPath: filepath.Join(dir, "settings.yaml"),
-		ThemesPath:   filepath.Join(dir, "themes"),
-	}
+	cfg := configured(dir, os.Stderr)
 
 	if err := seed(root); err != nil {
 		return 0, err
@@ -130,6 +125,20 @@ func Port() int {
 		return 0
 	}
 	return running.port
+}
+
+// configured is what this installation starts from: everything it keeps sits
+// under the folder the platform gave it, and what the core went wrong at and
+// carried on past goes where this process's own errors go, which is the log the
+// platform collects.
+func configured(dir string, out io.Writer) container.Config {
+	return container.Config{
+		IndexPath:    filepath.Join(dir, "index.db"),
+		RegistryPath: filepath.Join(dir, "vaults.json"),
+		SettingsPath: filepath.Join(dir, "settings.yaml"),
+		ThemesPath:   filepath.Join(dir, "themes"),
+		Trouble:      func(err error) { fmt.Fprintln(out, "numen:", err) },
+	}
 }
 
 // known puts the vault on this installation's list, and answers with the path

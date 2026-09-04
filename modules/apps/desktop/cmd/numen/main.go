@@ -13,6 +13,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"sync"
@@ -31,7 +32,7 @@ import (
 )
 
 func main() {
-	cfg := platform.Config()
+	cfg := configured(os.Stderr)
 	var letting agentOptions
 	var said sizes
 	var vault string
@@ -62,6 +63,15 @@ func main() {
 		refuse(cfg, err)
 		os.Exit(1)
 	}
+}
+
+// configured is what this binary starts from: what the machine supplies the
+// core, and where the core says what it went wrong at and carried on past. That
+// is the same place everything else this binary could not do is said.
+func configured(out io.Writer) container.Config {
+	cfg := platform.Config()
+	cfg.Trouble = func(err error) { fmt.Fprintln(out, "numen:", err) }
+	return cfg
 }
 
 // sizes are what the command line said about size: how large the interface is
