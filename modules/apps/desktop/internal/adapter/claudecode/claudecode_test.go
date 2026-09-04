@@ -44,7 +44,7 @@ func started(t *testing.T, prints string) port.Work {
 				Title:     "Create a note",
 				Arguments: claudecode.Arguments{About: "notes", Element: "title"},
 			},
-			claudecode.Tool("note_write"): {
+			claudecode.Tool("note_rewrite"): {
 				Title:     "Write a note",
 				Kind:      port.StepEdit,
 				Arguments: claudecode.Arguments{About: "path"},
@@ -534,7 +534,7 @@ func delta(partial string) string {
 // wrote is one message carrying a call that writes a note and a call that looks
 // for one.
 var wrote = `{"type":"assistant","message":{"content":[` +
-	`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_write") + `",` +
+	`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_rewrite") + `",` +
 	`"input":{"path":"physics/entropy.md","body":"Two words."}},` +
 	`{"type":"tool_use","id":"toolu_8","name":"` + claudecode.Tool("note_search") + `",` +
 	`"input":{"query":"entropy"}}]}}`
@@ -547,7 +547,7 @@ func TestEveryReportOfOneCallCarriesTheNameTheAgentGaveIt(t *testing.T) {
 	lines := []string{
 		connected,
 		`{"type":"stream_event","event":{"type":"content_block_start","content_block":` +
-			`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_write") + `"}}}`,
+			`{"type":"tool_use","id":"toolu_7","name":"` + claudecode.Tool("note_rewrite") + `"}}}`,
 		delta(`{"path":"physics/entropy.md","body":"` + body),
 		delta(`"}`),
 		`{"type":"stream_event","event":{"type":"content_block_stop"}}`,

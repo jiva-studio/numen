@@ -468,10 +468,10 @@ func manners(task port.Task) string {
 
 	// The path is not written here. A note in a synced vault is named by
 	// whoever synced it, and a name in the system prompt is read as
-	// instruction. `window_tabs` names it as a tool's answer, which is data.
+	// instruction. `window_tab_list` names it as a tool's answer, which is data.
 	if task.Focus != "" {
 		b.WriteString("\nA task that says \"this note\" means the one they are looking at, ")
-		b.WriteString("which `window_tabs` names.\n")
+		b.WriteString("which `window_tab_list` names.\n")
 	}
 	return b.String()
 }
