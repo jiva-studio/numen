@@ -130,7 +130,7 @@ var Nowhere = Place{Index: -1}
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
 type ProjectCurve struct {
-	Standings ListCardFaces
+	CardFaces ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links projects every deck of the vault.
@@ -185,7 +185,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
-	standing := u.Standings.Of(ctx, v, scheduled)
+	standing := u.CardFaces.Of(ctx, v, scheduled)
 	held, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
 		return Curve{}, err
@@ -278,7 +278,7 @@ func (u ProjectCurve) Execute(
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
 func (u ProjectCurve) scheduled(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	decks, err := u.Standings.Decks(ctx, v)
+	decks, err := u.CardFaces.Decks(ctx, v)
 	if err != nil || path == "" || u.Presets.Links == nil {
 		return decks, err
 	}

@@ -17,7 +17,7 @@ func (s vaulted) over(
 ) (flashcards.Sitting, error) {
 	t.Helper()
 	return flashcards.Session{
-		Marking: s.marking, Standings: s.standings, Schedules: s.kept,
+		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept,
 		Presets: s.presets, Day: day, Now: func() time.Time { return now },
 	}.Execute(t.Context(), s.vault, at)
 }

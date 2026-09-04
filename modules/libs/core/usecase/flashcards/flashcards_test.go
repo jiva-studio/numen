@@ -89,7 +89,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
 		By:        review.NewFSRS(),
 		Day:       today,
-		Standings: standings,
+		CardFaces: standings,
 		Presets:   presets,
 	}
 
@@ -177,13 +177,13 @@ func (s vaulted) owed(day review.Day) flashcards.CountCardsDue {
 
 func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
 	return flashcards.CountCardsDue{
-		Standings: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
+		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
 	}
 }
 
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.Session{
-		Marking: s.marking, Standings: s.standings, Schedules: s.kept, Day: day, Now: time.Now,
+		Marking: s.marking, CardFaces: s.standings, Schedules: s.kept, Day: day, Now: time.Now,
 	}
 }
 

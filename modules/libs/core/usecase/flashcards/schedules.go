@@ -65,10 +65,10 @@ type Schedules struct {
 	// Day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
 	Day review.Day
-	// Standings and Presets say which preset schedules each card face, so a
+	// CardFaces and Presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
-	Standings ListCardFaces
+	CardFaces ListCardFaces
 	Presets   Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
@@ -113,10 +113,10 @@ func (u Schedules) opening() string {
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
 func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, error) {
-	if u.Presets.Links == nil || u.Standings.Notes == nil {
+	if u.Presets.Links == nil || u.CardFaces.Notes == nil {
 		return u.plain(), nil
 	}
-	standing, err := u.Standings.Execute(ctx, v)
+	standing, err := u.CardFaces.Execute(ctx, v)
 	if errors.Is(err, ErrUnread) {
 		return u.plain(), nil
 	}

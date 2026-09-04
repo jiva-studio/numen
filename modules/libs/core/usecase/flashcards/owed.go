@@ -83,7 +83,7 @@ type PresetCardsDue struct {
 
 // CountCardsDue is what a vault owes, which is what its front door shows.
 type CountCardsDue struct {
-	Standings ListCardFaces
+	CardFaces ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
@@ -106,7 +106,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err := ctx.Err(); err != nil {
 		return CardsDue{}, err
 	}
-	standing, err := u.Standings.Execute(ctx, v)
+	standing, err := u.CardFaces.Execute(ctx, v)
 	if err != nil {
 		return CardsDue{}, err
 	}
@@ -202,11 +202,11 @@ func (u CountCardsDue) presets(
 	due, fresh map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.owing(due, fresh)
-	if u.Standings.Notes == nil {
+	if u.CardFaces.Notes == nil {
 		return out, nil
 	}
 
-	decks, err := u.Standings.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
+	decks, err := u.CardFaces.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (u CountCardsDue) presets(
 		pointed[out[at].Preset] = true
 	}
 
-	paths, err := u.Standings.Notes.OfType(ctx, string(v.ID), domain.TypePreset)
+	paths, err := u.CardFaces.Notes.OfType(ctx, string(v.ID), domain.TypePreset)
 	if err != nil {
 		return nil, err
 	}

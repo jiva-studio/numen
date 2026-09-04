@@ -93,7 +93,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	presets.Links = lookups{LinkQueries: presets.Links, looks: looks}
 
 	owed := s.owedAt(today, func() time.Time { return saturday })
-	owed.Standings = standings
+	owed.CardFaces = standings
 	owed.Presets = presets
 
 	if _, err := owed.Execute(t.Context(), s.vault); err != nil {

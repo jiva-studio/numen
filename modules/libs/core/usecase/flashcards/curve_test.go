@@ -60,7 +60,7 @@ func answering(t *testing.T, cards int) vaulted {
 // curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	return flashcards.ProjectCurve{
-		Standings: s.standings, Schedules: s.kept, Presets: s.presets,
+		CardFaces: s.standings, Schedules: s.kept, Presets: s.presets,
 		Day: today, Now: func() time.Time { return now },
 		Cores: runtime.GOMAXPROCS(0),
 	}
@@ -1191,7 +1191,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 4)
 	u := s.curves(noon)
-	u.Standings.Notes = nil
+	u.CardFaces.Notes = nil
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,

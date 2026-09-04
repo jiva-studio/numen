@@ -44,7 +44,7 @@ func TestACurveRefusesARequestThatIsGone(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	curves := s.curves(noon)
-	curves.Standings.Readers = closing{inner: curves.Standings.Readers, at: cancel}
+	curves.CardFaces.Readers = closing{inner: curves.CardFaces.Readers, at: cancel}
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)

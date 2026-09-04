@@ -77,7 +77,7 @@ type Session struct {
 	// what is asked can be answered. It is the one write flashcards makes, and it
 	// is made when a person sits down to a vault.
 	Marking   Marking
-	Standings ListCardFaces
+	CardFaces ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
@@ -99,7 +99,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	if err != nil {
 		return Sitting{}, err
 	}
-	standing, err := u.Standings.Execute(ctx, v)
+	standing, err := u.CardFaces.Execute(ctx, v)
 	if err != nil {
 		return Sitting{}, err
 	}

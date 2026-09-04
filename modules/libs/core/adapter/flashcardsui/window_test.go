@@ -196,7 +196,7 @@ func pictured(t *testing.T, api *API, v domain.Vault, path string, p review.Pres
 // day the window stands on.
 func curves(api *API) flashcards.ProjectCurve {
 	return flashcards.ProjectCurve{
-		Standings: api.Schedules.Standings,
+		CardFaces: api.Schedules.CardFaces,
 		Schedules: api.Schedules,
 		Presets:   api.Presets,
 		Day:       api.Day,

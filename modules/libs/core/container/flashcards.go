@@ -19,7 +19,7 @@ import (
 // Flashcards is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Flashcards struct {
-	Standings flashcards.ListCardFaces
+	CardFaces flashcards.ListCardFaces
 	Marking   flashcards.Marking
 	Schedules flashcards.Schedules
 	Owed      flashcards.CountCardsDue
@@ -123,18 +123,18 @@ func (c Config) Flashcards(
 	// for, which is what says which preset a card face stands under.
 	schedules := flashcards.Schedules{
 		Logs: logs, Kept: kept, By: review.NewFSRS(), Day: day,
-		Standings: standing, Presets: presets,
+		CardFaces: standing, Presets: presets,
 	}
 
 	return Flashcards{
-		Standings: standing,
+		CardFaces: standing,
 		Marking:   marking,
 		Schedules: schedules,
 		Owed: flashcards.CountCardsDue{
-			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
 		},
 		Session: flashcards.Session{
-			Marking: marking, Standings: standing, Schedules: schedules,
+			Marking: marking, CardFaces: standing, Schedules: schedules,
 			Presets: presets, Day: day, Now: time.Now,
 		},
 		Log: flashcards.Log{Stores: logs},
@@ -145,7 +145,7 @@ func (c Config) Flashcards(
 		// How many places of a curve run at once is what this machine can run
 		// at once, which is a fact only here is allowed to read.
 		Curves: flashcards.ProjectCurve{
-			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+			CardFaces: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
 			Cores: runtime.GOMAXPROCS(0),
 		},
 		Day: day,
