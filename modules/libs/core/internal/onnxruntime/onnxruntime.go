@@ -1,5 +1,5 @@
 // Package onnxruntime is the ONNX Runtime this process runs on: where it is
-// found, where it is fetched from, and the one engine every model reads
+// found, where it is fetched from, and the engine every model here reads
 // through.
 package onnxruntime
 
@@ -34,9 +34,10 @@ func (s Settings) say(what string, done, total int64) {
 	}
 }
 
-// Open is the ONNX Runtime this machine runs, opened. One engine serves the
-// whole process: the binding builds every tensor through the engine constructed
-// last and stamps that engine onto the tensor for its life.
+// Open is the ONNX Runtime this machine runs, opened. One engine serves every
+// caller here, and every library that makes an engine of its own makes it in the
+// same breath, so which engine a tensor is built through is settled once and
+// stands for the life of the process.
 //
 // A path in the settings is used as given. Otherwise what the machine already
 // holds is tried, and only a machine holding none fetches one.
@@ -89,15 +90,33 @@ var held struct {
 	sync.Mutex
 	engine *ort.Engine
 	at     string
+	also   []func(at string)
+}
+
+// Alongside is a library that makes an engine of its own, made where this
+// process settles its runtime and given the library it opened. It is registered
+// from an init, so that it stands before anything opens one.
+//
+// The binding gives every tensor to the engine made last and stamps it on for
+// that tensor's life, so one made on a library's first use moves what everything
+// already running was building its tensors through.
+func Alongside(also func(at string)) {
+	held.Lock()
+	defer held.Unlock()
+	held.also = append(held.also, also)
 }
 
 // here says whether this process has its runtime. It is read without the lock,
 // so it is answered while another caller is opening one.
 var here atomic.Bool
 
-// keep is the runtime this process has settled on. The lock is the caller's.
+// keep is the runtime this process has settled on, and the one moment every
+// library that makes an engine of its own makes it. The lock is the caller's.
 func keep(engine *ort.Engine, at string) (*ort.Engine, string, error) {
 	held.engine, held.at = engine, at
+	for _, also := range held.also {
+		also(at)
+	}
 	here.Store(true)
 	return engine, at, nil
 }
