@@ -1288,7 +1288,7 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 			}
 			given := s.run(t, saturday.Add(spent))
 			for _, one := range sat.Asked {
-				again(t, given, one.CardFace.Card, 6*time.Second)
+				again(t, given, one.ID.Card, 6*time.Second)
 				spent += 6 * time.Second
 				asked++
 			}
@@ -1321,8 +1321,8 @@ func (s vaulted) through(t *testing.T, day review.Day, now time.Time) int {
 			if !one.Schedule.Seen() {
 				took = review.DefaultCost.New
 			}
-			faces[one.CardFace] = true
-			answer(t, record, one.CardFace.Card, took)
+			faces[one.ID] = true
+			answer(t, record, one.ID.Card, took)
 		}
 	}
 	t.Fatal("the day went on asking and never ran out")

@@ -42,7 +42,7 @@ func ByPreset(preset string) Scope { return Scope{Preset: preset, Named: true} }
 // Asked is one card face as it is put to a person: where it stands, how it is laid
 // out, and where the answers so far have left it.
 type Asked struct {
-	Standing
+	CardFace
 	Schedule review.Schedule
 	// Ahead is how long each of the four answers would leave this card, from
 	// the moment it is asked. A person choosing between them is choosing
@@ -77,7 +77,7 @@ type Session struct {
 	// what is asked can be answered. It is the one write flashcards makes, and it
 	// is made when a person sits down to a vault.
 	Marking   Marking
-	Standings Standings
+	Standings ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
@@ -143,15 +143,15 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitti
 	out := Sitting{Unwritten: marked.Unwritten, Skipped: held.Skipped}
 	out.Asked = make([]Asked, 0, len(holds.seen)+len(holds.fresh))
 	for _, one := range holds.seen {
-		s := schedules[one.CardFace]
+		s := schedules[one.ID]
 		out.Asked = append(out.Asked, Asked{
-			Standing: one, Schedule: s, Ahead: ahead(asks.under, on, one.CardFace, s, now),
+			CardFace: one, Schedule: s, Ahead: ahead(asks.under, on, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.fresh {
 		out.Asked = append(out.Asked, Asked{
-			Standing: one,
-			Ahead:    ahead(asks.under, on, one.CardFace, review.Schedule{}, now),
+			CardFace: one,
+			Ahead:    ahead(asks.under, on, one.ID, review.Schedule{}, now),
 		})
 	}
 	return out, nil

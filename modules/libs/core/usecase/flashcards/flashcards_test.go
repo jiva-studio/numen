@@ -40,7 +40,7 @@ var vault = map[string]string{
 // vaulted is one vault on disk, scanned, and the scenarios built over it.
 type vaulted struct {
 	vault     domain.Vault
-	standings flashcards.Standings
+	standings flashcards.ListCardFaces
 	presets   flashcards.Presets
 	marking   flashcards.Marking
 	kept      flashcards.Schedules
@@ -74,7 +74,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := filesystem.DerivedStores{Area: filesystem.FlashcardsDir}
-	standings := flashcards.Standings{
+	standings := flashcards.ListCardFaces{
 		Readers: filesystem.VaultReaders{}, Notes: db.NoteQueries(), Links: db.NoteQueries(),
 	}
 	presets := flashcards.Presets{
@@ -206,10 +206,10 @@ func TestACardStandsOnceForEachFaceOfItsStencil(t *testing.T) {
 
 	faces := map[string]int{}
 	for _, one := range stood {
-		faces[one.CardFace.Face]++
+		faces[one.ID.Face]++
 		front, back := one.Lay()
-		if one.CardFace.Card == "" || front == "" || back == "" {
-			t.Errorf("nothing laid out for %+v", one.CardFace)
+		if one.ID.Card == "" || front == "" || back == "" {
+			t.Errorf("nothing laid out for %+v", one.ID)
 		}
 	}
 	for face, want := range map[string]int{"Recognise": 2, "Name it": 2, "Say it": 1} {
@@ -230,7 +230,7 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range stood {
-		if one.CardFace.Card != "k7m2xq9fzp" || one.CardFace.Face != "Name it" {
+		if one.ID.Card != "k7m2xq9fzp" || one.ID.Face != "Name it" {
 			continue
 		}
 		front, back := one.Lay()
@@ -370,7 +370,7 @@ func TestSittingDownToAVaultMarksItsCards(t *testing.T) {
 	if len(stood) != 1 {
 		t.Fatalf("one card of a one-faced stencil stands once, got %d", len(stood))
 	}
-	if stood[0].CardFace.Card == "" {
+	if stood[0].ID.Card == "" {
 		t.Error("the card came back with no mark to record an answer against")
 	}
 }
@@ -407,7 +407,7 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].CardFace.Card != "3f4g5h6j7k" {
+	if len(stood) != 1 || stood[0].ID.Card != "3f4g5h6j7k" {
 		t.Errorf("stands = %+v, want the one card whose stencil is one", stood)
 	}
 }
@@ -430,7 +430,7 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(stood) != 1 || stood[0].CardFace.Face != "Say it" {
+	if len(stood) != 1 || stood[0].ID.Face != "Say it" {
 		t.Errorf("stands = %+v, want the one face with both its sides", stood)
 	}
 }
@@ -505,7 +505,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range sitting.Asked {
-		if one.CardFace == on {
+		if one.ID == on {
 			t.Error("the card is days away and was asked today")
 		}
 	}
@@ -645,8 +645,8 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	if len(asked) < 2 {
 		t.Fatalf("asked %d", len(asked))
 	}
-	if asked[0].CardFace != waited {
-		t.Errorf("asked %+v first, want the one waiting longest", asked[0].CardFace)
+	if asked[0].ID != waited {
+		t.Errorf("asked %+v first, want the one waiting longest", asked[0].ID)
 	}
 	for i, one := range asked {
 		if one.Schedule.Seen() {

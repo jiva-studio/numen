@@ -19,7 +19,7 @@ import (
 // Flashcards is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Flashcards struct {
-	Standings flashcards.Standings
+	Standings flashcards.ListCardFaces
 	Marking   flashcards.Marking
 	Schedules flashcards.Schedules
 	Owed      flashcards.CountCardsDue
@@ -97,7 +97,7 @@ func (c Config) Flashcards(
 		c.trouble(fmt.Errorf("the schedules are worked out at every launch: %w", err))
 	}
 
-	standing := flashcards.Standings{Readers: c.VaultReaders(), Notes: notes, Links: links}
+	standing := flashcards.ListCardFaces{Readers: c.VaultReaders(), Notes: notes, Links: links}
 	marking := flashcards.Marking{
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: time.Now,

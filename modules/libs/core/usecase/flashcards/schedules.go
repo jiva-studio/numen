@@ -68,7 +68,7 @@ type Schedules struct {
 	// Standings and Presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
-	Standings Standings
+	Standings ListCardFaces
 	Presets   Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
@@ -129,7 +129,7 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, erro
 // under is the same, from the cards and the reading of the presets a caller
 // already holds.
 func (u Schedules) under(
-	ctx context.Context, v domain.Vault, reading *PresetReads, standing []Standing,
+	ctx context.Context, v domain.Vault, reading *PresetReads, standing []CardFace,
 ) (assignment, error) {
 	out := u.plain()
 	if reading == nil || reading.Links == nil {
@@ -152,7 +152,7 @@ func (u Schedules) under(
 				by[path] = review.Scheduling{By: u.at(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
-		under[one.CardFace] = by[path]
+		under[one.ID] = by[path]
 	}
 
 	marks := make([]string, 0, len(under)+2)

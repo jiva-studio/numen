@@ -63,7 +63,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 				cost = review.DefaultCost.New
 			}
 			out += cost
-			answer(t, record, one.CardFace.Card, cost)
+			answer(t, record, one.ID.Card, cost)
 		}
 	}
 	t.Fatal("the day never ran out")
@@ -108,7 +108,7 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 					cost = review.DefaultCost.New
 				}
 				out += cost
-				answer(t, record, one.CardFace.Card, cost)
+				answer(t, record, one.ID.Card, cost)
 			}
 		}
 		if out > theCeiling {

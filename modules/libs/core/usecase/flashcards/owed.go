@@ -83,7 +83,7 @@ type PresetCardsDue struct {
 
 // CountCardsDue is what a vault owes, which is what its front door shows.
 type CountCardsDue struct {
-	Standings Standings
+	Standings ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
@@ -154,10 +154,10 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for _, one := range standing {
 		row := at(one.Deck)
 		row.Faces++
-		if !schedules[one.CardFace].Seen() {
+		if !schedules[one.ID].Seen() {
 			row.Unbegun++
 		}
-		if asks.under(one.CardFace).Preset.Learned(schedules[one.CardFace], now) {
+		if asks.under(one.ID).Preset.Learned(schedules[one.ID], now) {
 			row.Learned++
 		}
 	}
@@ -170,12 +170,12 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	for _, one := range holds.seen {
 		out.Due++
 		at(one.Deck).Due++
-		due[day.under[one.CardFace]]++
+		due[day.under[one.ID]]++
 	}
 	for _, one := range holds.fresh {
 		out.New++
 		at(one.Deck).New++
-		fresh[day.under[one.CardFace]]++
+		fresh[day.under[one.ID]]++
 	}
 
 	for _, deck := range decks {

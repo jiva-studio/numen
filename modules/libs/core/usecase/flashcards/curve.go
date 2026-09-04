@@ -130,7 +130,7 @@ var Nowhere = Place{Index: -1}
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
 type ProjectCurve struct {
-	Standings Standings
+	Standings ListCardFaces
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links projects every deck of the vault.
@@ -217,13 +217,13 @@ func (u ProjectCurve) Execute(
 		if !mine {
 			continue
 		}
-		under[one.CardFace] = path
-		s, answered := schedules[one.CardFace]
+		under[one.ID] = path
+		s, answered := schedules[one.ID]
 		if !answered {
 			unseen++
 			continue
 		}
-		at[one.CardFace] = s
+		at[one.ID] = s
 	}
 
 	// How many decks this preset schedules, counted over every deck that could

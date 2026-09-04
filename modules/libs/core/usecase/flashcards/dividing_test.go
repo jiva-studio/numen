@@ -73,8 +73,8 @@ func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 			if !one.Schedule.Seen() {
 				took = review.DefaultCost.New
 			}
-			faces[one.CardFace] = true
-			answer(t, record, one.CardFace.Card, took)
+			faces[one.ID] = true
+			answer(t, record, one.ID.Card, took)
 		}
 	}
 	t.Fatal("the deck went on asking and never ran out")

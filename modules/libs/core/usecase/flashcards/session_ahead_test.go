@@ -111,7 +111,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
 			}
 			if _, err := s.run(t, at).Answer(
-				t.Context(), card.CardFace, review.Good, 0,
+				t.Context(), card.ID, review.Good, 0,
 			); err != nil {
 				t.Fatal(err)
 			}
@@ -120,7 +120,7 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				t.Fatal(err)
 			}
 			asked++
-			came, names := schedules[card.CardFace].Due, at.Add(said)
+			came, names := schedules[card.ID].Due, at.Add(said)
 			if today.Names(came) != today.Names(names) {
 				differ++
 				if off := came.Sub(names); off > worst || -off > worst {

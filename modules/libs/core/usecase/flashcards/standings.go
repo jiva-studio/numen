@@ -12,17 +12,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Standing is one card face as the vault holds it: a card, shown through one
+// CardFace is one card face as the vault holds it: a card, shown through one
 // face of the stencil that cuts it, and where both of them are written.
-type Standing struct {
+type CardFace struct {
 	// Deck is the path of the file the card stands in, and Section the name of
 	// the section it stands under. A card standing before the first section has
 	// none.
 	Deck    string
 	Section string
-	// CardFace is what a schedule belongs to: the card's mark and the face's
-	// name.
-	CardFace review.CardFaceID
+	// ID is what a schedule belongs to: the card's mark and the face's name.
+	ID review.CardFaceID
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string
@@ -37,14 +36,14 @@ type Standing struct {
 
 // Lay is the face filled with this card's values: what stands before the answer
 // and what stands after it, as HTML.
-func (s Standing) Lay() (front, back string) { return format.Lay(s.stencil, s.face, s.card) }
+func (s CardFace) Lay() (front, back string) { return format.Lay(s.stencil, s.face, s.card) }
 
-// Standings is every card face a vault holds, read out of its files.
+// ListCardFaces is every card face a vault holds, read out of its files.
 //
 // Nothing here writes. A card carrying no mark cannot be answered and is left
 // out; giving it one is Marking, which a person's own vault has done to it
 // before they are asked anything.
-type Standings struct {
+type ListCardFaces struct {
 	Readers port.VaultReaders
 	Notes   port.NoteQueries
 	Links   port.LinkQueries
@@ -56,7 +55,7 @@ var ErrUnread = errors.New("the index does not carry this vault yet")
 
 // Execute reads every deck the vault holds and says what stands in it. A vault
 // the index does not carry gets ErrUnread.
-func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, error) {
+func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace, error) {
 	paths, err := u.Decks(ctx, v)
 	if err != nil {
 		return nil, err
@@ -68,7 +67,7 @@ func (u Standings) Execute(ctx context.Context, v domain.Vault) ([]Standing, err
 //
 // A vault the index does not carry gets ErrUnread. The list of decks is the
 // index's answer, and a vault absent from it is not a vault holding no cards.
-func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
+func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, error) {
 	if u.Notes == nil {
 		return nil, ErrUnread
 	}
@@ -89,10 +88,10 @@ func (u Standings) Decks(ctx context.Context, v domain.Vault) ([]string, error) 
 // A deck that cannot be read contributes no card face and is not an error. What
 // was wrong with it is the deck's own problem, and the editor is where it is
 // settled.
-func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Standing {
+func (u ListCardFaces) Of(ctx context.Context, v domain.Vault, paths []string) []CardFace {
 	read := cards.Read{Readers: u.Readers, Links: u.Links}
 	stencils := make(map[string]format.Stencil)
-	var out []Standing
+	var out []CardFace
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
 		if err != nil || deck.Outcome != note.Ok {
@@ -105,11 +104,11 @@ func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Sta
 
 // standing is the card faces one deck holds: every card of a mark, through every
 // face of the stencil it names that lays anything out.
-func (u Standings) standing(
+func (u ListCardFaces) standing(
 	ctx context.Context, v domain.Vault, read cards.Read,
 	deck cards.DeckContents, stencils map[string]format.Stencil,
-) []Standing {
-	var out []Standing
+) []CardFace {
+	var out []CardFace
 	for _, card := range deck.Body.Cards {
 		if card.Mark == "" {
 			continue
@@ -137,14 +136,14 @@ func (u Standings) standing(
 			if face.Front == "" || face.Back == "" {
 				continue
 			}
-			out = append(out, Standing{
-				Deck:     deck.Path,
-				Section:  section(deck.Body, card),
-				CardFace: review.CardFaceID{Card: string(card.Mark), Face: face.Name},
-				Heading:  card.Heading,
-				stencil:  stencil,
-				face:     face,
-				card:     card,
+			out = append(out, CardFace{
+				Deck:    deck.Path,
+				Section: section(deck.Body, card),
+				ID:      review.CardFaceID{Card: string(card.Mark), Face: face.Name},
+				Heading: card.Heading,
+				stencil: stencil,
+				face:    face,
+				card:    card,
 			})
 		}
 	}

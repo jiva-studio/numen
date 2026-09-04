@@ -13,7 +13,7 @@ import (
 func faces(sat flashcards.Sitting) []review.CardFaceID {
 	out := make([]review.CardFaceID, 0, len(sat.Asked))
 	for _, one := range sat.Asked {
-		out = append(out, one.CardFace)
+		out = append(out, one.ID)
 	}
 	return out
 }

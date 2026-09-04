@@ -214,8 +214,8 @@ func askedOf(one flashcards.Asked) *v1.Asked {
 	return &v1.Asked{
 		Deck:    one.Deck,
 		Section: one.Section,
-		Card:    one.CardFace.Card,
-		Face:    one.CardFace.Face,
+		Card:    one.ID.Card,
+		Face:    one.ID.Face,
 		Heading: one.Heading,
 		Front:   front,
 		Back:    back,
