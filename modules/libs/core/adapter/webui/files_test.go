@@ -401,15 +401,15 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 }
 
 // stands is what the vault says it holds at each of those paths, by path.
-func stands(t *testing.T, f *going, paths ...string) map[string]*v1.Standing {
+func stands(t *testing.T, f *going, paths ...string) map[string]*v1.FileKind {
 	t.Helper()
 	answer, err := f.client.ListFileKinds(t.Context(),
 		connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := map[string]*v1.Standing{}
-	for _, one := range answer.Msg.GetFound() {
+	out := map[string]*v1.FileKind{}
+	for _, one := range answer.Msg.GetKinds() {
 		out[one.GetPath()] = one
 	}
 	return out

@@ -343,7 +343,7 @@ message RenameNoteResponse {
   Naming by = 3;
 
   // What the file did. Absent when it stayed where it was.
-  optional Moved moved = 4;
+  optional MoveResult moved = 4;
 
   // Set when the rename did not finish, and why. The note may already have been
   // written: `path`, `title` and `by` say what stands. A note holding prose the

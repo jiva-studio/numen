@@ -89,11 +89,11 @@ message ListFileKindsRequest {
 }
 
 message ListFileKindsResponse {
-  repeated Standing found = 1;
+  repeated FileKind kinds = 1;
 }
 
-// Standing is what the vault holds at one path.
-message Standing {
+// FileKind is what the vault holds at one path.
+message FileKind {
   string path = 1;
 
   // What the vault holds here. A file it holds no source for — a picture, an
@@ -114,15 +114,15 @@ message MoveFileRequest {
 
 message MoveFileResponse {
   // What the file did. Absent when nothing was moved.
-  optional Moved moved = 1;
+  optional MoveResult moved = 1;
 
   // Set when nothing was moved, and why.
   optional Refusal refusal = 2;
 }
 
-// Moved is a file under a different name, and what that did to the links
+// MoveResult is a file under a different name, and what that did to the links
 // written by the name it had.
-message Moved {
+message MoveResult {
   // Where the file was.
   string from = 1;
 

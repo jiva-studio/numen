@@ -1575,7 +1575,7 @@ type RenameNoteResponse struct {
 	// line. NAMING_UNSPECIFIED when the note was never opened.
 	By Naming `protobuf:"varint,3,opt,name=by,proto3,enum=numen.v1.Naming" json:"by,omitempty"`
 	// What the file did. Absent when it stayed where it was.
-	Moved *Moved `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
 	// caller never saw is REFUSAL_STALE, and nothing was written at all.
@@ -1635,7 +1635,7 @@ func (x *RenameNoteResponse) GetBy() Naming {
 	return Naming_NAMING_UNSPECIFIED
 }
 
-func (x *RenameNoteResponse) GetMoved() *Moved {
+func (x *RenameNoteResponse) GetMoved() *MoveResult {
 	if x != nil {
 		return x.Moved
 	}
@@ -1873,12 +1873,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xe3\x01\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xe8\x01\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\x02by\x18\x03 \x01(\x0e2\x10.numen.v1.NamingR\x02by\x12*\n" +
-	"\x05moved\x18\x04 \x01(\v2\x0f.numen.v1.MovedH\x00R\x05moved\x88\x01\x01\x120\n" +
+	"\x02by\x18\x03 \x01(\x0e2\x10.numen.v1.NamingR\x02by\x12/\n" +
+	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
@@ -1974,7 +1974,7 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(NoteType)(0),                    // 30: numen.v1.NoteType
 	(Refusal)(0),                     // 31: numen.v1.Refusal
 	(*Fingerprint)(nil),              // 32: numen.v1.Fingerprint
-	(*Moved)(nil),                    // 33: numen.v1.Moved
+	(*MoveResult)(nil),               // 33: numen.v1.MoveResult
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
@@ -1999,7 +1999,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.NewLink
 	31, // 20: numen.v1.WriteLinkResponse.refusal:type_name -> numen.v1.Refusal
 	2,  // 21: numen.v1.RenameNoteResponse.by:type_name -> numen.v1.Naming
-	33, // 22: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.Moved
+	33, // 22: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
 	31, // 23: numen.v1.RenameNoteResponse.refusal:type_name -> numen.v1.Refusal
 	4,  // 24: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
 	6,  // 25: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest

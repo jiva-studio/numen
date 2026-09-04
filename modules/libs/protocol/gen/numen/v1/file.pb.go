@@ -305,7 +305,7 @@ func (x *ListFileKindsRequest) GetPaths() []string {
 
 type ListFileKindsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Found         []*Standing            `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Kinds         []*FileKind            `protobuf:"bytes,1,rep,name=kinds,proto3" json:"kinds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -340,15 +340,15 @@ func (*ListFileKindsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ListFileKindsResponse) GetFound() []*Standing {
+func (x *ListFileKindsResponse) GetKinds() []*FileKind {
 	if x != nil {
-		return x.Found
+		return x.Kinds
 	}
 	return nil
 }
 
-// Standing is what the vault holds at one path.
-type Standing struct {
+// FileKind is what the vault holds at one path.
+type FileKind struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the vault holds here. A file it holds no source for — a picture, an
@@ -360,20 +360,20 @@ type Standing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Standing) Reset() {
-	*x = Standing{}
+func (x *FileKind) Reset() {
+	*x = FileKind{}
 	mi := &file_numen_v1_file_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Standing) String() string {
+func (x *FileKind) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Standing) ProtoMessage() {}
+func (*FileKind) ProtoMessage() {}
 
-func (x *Standing) ProtoReflect() protoreflect.Message {
+func (x *FileKind) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_file_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -385,26 +385,26 @@ func (x *Standing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Standing.ProtoReflect.Descriptor instead.
-func (*Standing) Descriptor() ([]byte, []int) {
+// Deprecated: Use FileKind.ProtoReflect.Descriptor instead.
+func (*FileKind) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *Standing) GetPath() string {
+func (x *FileKind) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Standing) GetKind() SourceKind {
+func (x *FileKind) GetKind() SourceKind {
 	if x != nil {
 		return x.Kind
 	}
 	return SourceKind_SOURCE_KIND_UNSPECIFIED
 }
 
-func (x *Standing) GetType() NoteType {
+func (x *FileKind) GetType() NoteType {
 	if x != nil {
 		return x.Type
 	}
@@ -468,7 +468,7 @@ func (x *MoveFileRequest) GetTo() string {
 type MoveFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the file did. Absent when nothing was moved.
-	Moved *Moved `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
 	Refusal       *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -505,7 +505,7 @@ func (*MoveFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *MoveFileResponse) GetMoved() *Moved {
+func (x *MoveFileResponse) GetMoved() *MoveResult {
 	if x != nil {
 		return x.Moved
 	}
@@ -519,9 +519,9 @@ func (x *MoveFileResponse) GetRefusal() Refusal {
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-// Moved is a file under a different name, and what that did to the links
+// MoveResult is a file under a different name, and what that did to the links
 // written by the name it had.
-type Moved struct {
+type MoveResult struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the file was.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
@@ -533,20 +533,20 @@ type Moved struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Moved) Reset() {
-	*x = Moved{}
+func (x *MoveResult) Reset() {
+	*x = MoveResult{}
 	mi := &file_numen_v1_file_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Moved) String() string {
+func (x *MoveResult) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Moved) ProtoMessage() {}
+func (*MoveResult) ProtoMessage() {}
 
-func (x *Moved) ProtoReflect() protoreflect.Message {
+func (x *MoveResult) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_file_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -558,26 +558,26 @@ func (x *Moved) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Moved.ProtoReflect.Descriptor instead.
-func (*Moved) Descriptor() ([]byte, []int) {
+// Deprecated: Use MoveResult.ProtoReflect.Descriptor instead.
+func (*MoveResult) Descriptor() ([]byte, []int) {
 	return file_numen_v1_file_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *Moved) GetFrom() string {
+func (x *MoveResult) GetFrom() string {
 	if x != nil {
 		return x.From
 	}
 	return ""
 }
 
-func (x *Moved) GetTo() string {
+func (x *MoveResult) GetTo() string {
 	if x != nil {
 		return x.To
 	}
 	return ""
 }
 
-func (x *Moved) GetRepaired() []string {
+func (x *MoveResult) GetRepaired() []string {
 	if x != nil {
 		return x.Repaired
 	}
@@ -812,21 +812,22 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
-	"\x05found\x18\x01 \x03(\v2\x12.numen.v1.StandingR\x05found\"p\n" +
-	"\bStanding\x12\x12\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"p\n" +
+	"\bFileKind\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
 	"\x04type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\x86\x01\n" +
-	"\x10MoveFileResponse\x12*\n" +
-	"\x05moved\x18\x01 \x01(\v2\x0f.numen.v1.MovedH\x00R\x05moved\x88\x01\x01\x120\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\x8b\x01\n" +
+	"\x10MoveFileResponse\x12/\n" +
+	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusal\"Y\n" +
-	"\x05Moved\x12\x12\n" +
+	"\b_refusal\"^\n" +
+	"\n" +
+	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x1a\n" +
 	"\brepaired\x18\x03 \x03(\tR\brepairedJ\x04\b\x04\x10\x05R\n" +
@@ -881,10 +882,10 @@ var file_numen_v1_file_proto_goTypes = []any{
 	(*Entry)(nil),                 // 3: numen.v1.Entry
 	(*ListFileKindsRequest)(nil),  // 4: numen.v1.ListFileKindsRequest
 	(*ListFileKindsResponse)(nil), // 5: numen.v1.ListFileKindsResponse
-	(*Standing)(nil),              // 6: numen.v1.Standing
+	(*FileKind)(nil),              // 6: numen.v1.FileKind
 	(*MoveFileRequest)(nil),       // 7: numen.v1.MoveFileRequest
 	(*MoveFileResponse)(nil),      // 8: numen.v1.MoveFileResponse
-	(*Moved)(nil),                 // 9: numen.v1.Moved
+	(*MoveResult)(nil),            // 9: numen.v1.MoveResult
 	(*RemoveFileRequest)(nil),     // 10: numen.v1.RemoveFileRequest
 	(*RemoveFileResponse)(nil),    // 11: numen.v1.RemoveFileResponse
 	(*CreateFolderRequest)(nil),   // 12: numen.v1.CreateFolderRequest
@@ -896,10 +897,10 @@ var file_numen_v1_file_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
 	0,  // 1: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
 	14, // 2: numen.v1.Entry.type:type_name -> numen.v1.NoteType
-	6,  // 3: numen.v1.ListFileKindsResponse.found:type_name -> numen.v1.Standing
-	0,  // 4: numen.v1.Standing.kind:type_name -> numen.v1.SourceKind
-	14, // 5: numen.v1.Standing.type:type_name -> numen.v1.NoteType
-	9,  // 6: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.Moved
+	6,  // 3: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
+	0,  // 4: numen.v1.FileKind.kind:type_name -> numen.v1.SourceKind
+	14, // 5: numen.v1.FileKind.type:type_name -> numen.v1.NoteType
+	9,  // 6: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
 	15, // 7: numen.v1.MoveFileResponse.refusal:type_name -> numen.v1.Refusal
 	15, // 8: numen.v1.RemoveFileResponse.refusal:type_name -> numen.v1.Refusal
 	15, // 9: numen.v1.CreateFolderResponse.refusal:type_name -> numen.v1.Refusal

@@ -111,6 +111,6 @@ func namingOf(by note.NamedBy) v1.Naming {
 }
 
 // movedOf is what the file did, as the schema carries it.
-func movedOf(moved note.MoveResult) *v1.Moved {
-	return &v1.Moved{From: moved.From, To: moved.To, Repaired: moved.Repaired}
+func movedOf(moved note.MoveResult) *v1.MoveResult {
+	return &v1.MoveResult{From: moved.From, To: moved.To, Repaired: moved.Repaired}
 }

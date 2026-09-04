@@ -36,7 +36,7 @@ import type {
   Deck as DeckMessage,
   Entry as EntryMessage,
   Known as KnownMessage,
-  Moved as MovedMessage,
+  MoveResult as MovedMessage,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
   Page as PageMessage,
   Problem as ProblemMessage,
@@ -416,7 +416,7 @@ export const core: Core & Asking & Commanding = {
   standing: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
-      answer.found.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
+      answer.kinds.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
     )
   },
   /**

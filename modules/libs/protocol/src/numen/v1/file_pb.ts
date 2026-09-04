@@ -19,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIiChBMaXN0RmlsZXNSZXF1ZXN0Eg4KBmZvbGRlchgBIAEoCSI1ChFMaXN0RmlsZXNSZXNwb25zZRIgCgdlbnRyaWVzGAEgAygLMg8ubnVtZW4udjEuRW50cnkijQEKBUVudHJ5EgwKBHBhdGgYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmZvbGRlchgDIAEoCBIiCgRraW5kGAQgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGVKBAgFEAZSBHNpemUiJQoUTGlzdEZpbGVLaW5kc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiOgoVTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEiEKBWZvdW5kGAEgAygLMhIubnVtZW4udjEuU3RhbmRpbmciXgoIU3RhbmRpbmcSDAoEcGF0aBgBIAEoCRIiCgRraW5kGAIgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiKwoPTW92ZUZpbGVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkidgoQTW92ZUZpbGVSZXNwb25zZRIjCgVtb3ZlZBgBIAEoCzIPLm51bWVuLnYxLk1vdmVkSACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIICgZfbW92ZWRCCgoIX3JlZnVzYWwiRQoFTW92ZWQSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIQCghyZXBhaXJlZBgDIAMoCUoECAQQBVIKcmV0YXJnZXRlZCIyChFSZW1vdmVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2Rlc3Ryb3kYAiABKAgibAoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiSwoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCpwCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAhIZChVTT1VSQ0VfS0lORF9SRUNPUkRJTkcQAzKAAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIiChBMaXN0RmlsZXNSZXF1ZXN0Eg4KBmZvbGRlchgBIAEoCSI1ChFMaXN0RmlsZXNSZXNwb25zZRIgCgdlbnRyaWVzGAEgAygLMg8ubnVtZW4udjEuRW50cnkijQEKBUVudHJ5EgwKBHBhdGgYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmZvbGRlchgDIAEoCBIiCgRraW5kGAQgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGVKBAgFEAZSBHNpemUiJQoUTGlzdEZpbGVLaW5kc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiOgoVTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEiEKBWtpbmRzGAEgAygLMhIubnVtZW4udjEuRmlsZUtpbmQiXgoIRmlsZUtpbmQSDAoEcGF0aBgBIAEoCRIiCgRraW5kGAIgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiKwoPTW92ZUZpbGVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiewoQTW92ZUZpbGVSZXNwb25zZRIoCgVtb3ZlZBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQggKBl9tb3ZlZEIKCghfcmVmdXNhbCJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAlKBAgEEAVSCnJldGFyZ2V0ZWQiMgoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIImwKElJlbW92ZUZpbGVSZXNwb25zZRIPCgd0cmFzaGVkGAEgASgJEhAKCGRhbmdsaW5nGAIgAygJEicKB3JlZnVzYWwYAyABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiIwoTQ3JlYXRlRm9sZGVyUmVxdWVzdBIMCgRwYXRoGAEgASgJIksKFENyZWF0ZUZvbGRlclJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwqcAoKU291cmNlS2luZBIbChdTT1VSQ0VfS0lORF9VTlNQRUNJRklFRBAAEhQKEFNPVVJDRV9LSU5EX05PVEUQARIUChBTT1VSQ0VfS0lORF9CT09LEAISGQoVU09VUkNFX0tJTkRfUkVDT1JESU5HEAMygAMKC0ZpbGVTZXJ2aWNlEkQKCUxpc3RGaWxlcxIaLm51bWVuLnYxLkxpc3RGaWxlc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0RmlsZXNSZXNwb25zZRJQCg1MaXN0RmlsZUtpbmRzEh4ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1JlcXVlc3QaHy5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVzcG9uc2USQQoITW92ZUZpbGUSGS5udW1lbi52MS5Nb3ZlRmlsZVJlcXVlc3QaGi5udW1lbi52MS5Nb3ZlRmlsZVJlc3BvbnNlEkcKClJlbW92ZUZpbGUSGy5udW1lbi52MS5SZW1vdmVGaWxlUmVxdWVzdBocLm51bWVuLnYxLlJlbW92ZUZpbGVSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -135,9 +135,9 @@ export const ListFileKindsRequestSchema: GenMessage<ListFileKindsRequest> = /*@_
  */
 export type ListFileKindsResponse = Message<"numen.v1.ListFileKindsResponse"> & {
   /**
-   * @generated from field: repeated numen.v1.Standing found = 1;
+   * @generated from field: repeated numen.v1.FileKind kinds = 1;
    */
-  found: Standing[];
+  kinds: FileKind[];
 };
 
 /**
@@ -148,11 +148,11 @@ export const ListFileKindsResponseSchema: GenMessage<ListFileKindsResponse> = /*
   messageDesc(file_numen_v1_file, 4);
 
 /**
- * Standing is what the vault holds at one path.
+ * FileKind is what the vault holds at one path.
  *
- * @generated from message numen.v1.Standing
+ * @generated from message numen.v1.FileKind
  */
-export type Standing = Message<"numen.v1.Standing"> & {
+export type FileKind = Message<"numen.v1.FileKind"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -175,10 +175,10 @@ export type Standing = Message<"numen.v1.Standing"> & {
 };
 
 /**
- * Describes the message numen.v1.Standing.
- * Use `create(StandingSchema)` to create a new message.
+ * Describes the message numen.v1.FileKind.
+ * Use `create(FileKindSchema)` to create a new message.
  */
-export const StandingSchema: GenMessage<Standing> = /*@__PURE__*/
+export const FileKindSchema: GenMessage<FileKind> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 5);
 
 /**
@@ -214,9 +214,9 @@ export type MoveFileResponse = Message<"numen.v1.MoveFileResponse"> & {
   /**
    * What the file did. Absent when nothing was moved.
    *
-   * @generated from field: optional numen.v1.Moved moved = 1;
+   * @generated from field: optional numen.v1.MoveResult moved = 1;
    */
-  moved?: Moved | undefined;
+  moved?: MoveResult | undefined;
 
   /**
    * Set when nothing was moved, and why.
@@ -234,12 +234,12 @@ export const MoveFileResponseSchema: GenMessage<MoveFileResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_file, 7);
 
 /**
- * Moved is a file under a different name, and what that did to the links
+ * MoveResult is a file under a different name, and what that did to the links
  * written by the name it had.
  *
- * @generated from message numen.v1.Moved
+ * @generated from message numen.v1.MoveResult
  */
-export type Moved = Message<"numen.v1.Moved"> & {
+export type MoveResult = Message<"numen.v1.MoveResult"> & {
   /**
    * Where the file was.
    *
@@ -263,10 +263,10 @@ export type Moved = Message<"numen.v1.Moved"> & {
 };
 
 /**
- * Describes the message numen.v1.Moved.
- * Use `create(MovedSchema)` to create a new message.
+ * Describes the message numen.v1.MoveResult.
+ * Use `create(MoveResultSchema)` to create a new message.
  */
-export const MovedSchema: GenMessage<Moved> = /*@__PURE__*/
+export const MoveResultSchema: GenMessage<MoveResult> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 8);
 
 /**

@@ -99,7 +99,7 @@ func (a *API) ListFileKinds(
 	if err != nil {
 		return nil, err
 	}
-	out := &v1.ListFileKindsResponse{Found: make([]*v1.Standing, 0, len(paths))}
+	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(paths))}
 	notes := make([]string, 0, len(paths))
 	for _, path := range paths {
 		ref, err := reader.Stat(ctx, path)
@@ -111,7 +111,7 @@ func (a *API) ListFileKinds(
 		if err != nil && !errors.Is(err, port.ErrNotANote) {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Found = append(out.Found, &v1.Standing{Path: path, Kind: kindOf(ref.Kind)})
+		out.Kinds = append(out.Kinds, &v1.FileKind{Path: path, Kind: kindOf(ref.Kind)})
 		if ref.Kind == domain.KindNote {
 			notes = append(notes, path)
 		}
@@ -121,7 +121,7 @@ func (a *API) ListFileKinds(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	for _, one := range out.GetFound() {
+	for _, one := range out.GetKinds() {
 		one.Type = typeOf(types[one.GetPath()])
 	}
 	return connect.NewResponse(out), nil
