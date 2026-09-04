@@ -6,7 +6,7 @@
  * taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import type { HeatmapTally } from '@numen/ui'
 import { h, type VNode } from 'vue'
 import Decks from './Decks.vue'

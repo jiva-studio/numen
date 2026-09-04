@@ -201,7 +201,7 @@ message PresetCardsDue {
   // Why the preset schedules nothing on this day: whatever stops it at all, and
   // a day of the week carrying none of the load. It is the core's own verdict,
   // so a window says of a preset what the sitting hands its cards out by.
-  Stopped stops_on = 16;
+  StopReason stops_on = 16;
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds

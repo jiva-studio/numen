@@ -258,30 +258,30 @@ func doing(list []task.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, at := range list {
 		out = append(out, &v1.Task{
-			Id:       at.ID,
-			Doing:    at.Doing,
-			About:    at.About,
-			Done:     at.Count,
-			Total:    at.Total,
-			Failed:   at.Failed,
-			Asked:    at.Asked,
-			Counting: counted(at.Unit),
+			Id:     at.ID,
+			Doing:  at.Doing,
+			About:  at.About,
+			Done:   at.Count,
+			Total:  at.Total,
+			Failed: at.Failed,
+			Asked:  at.Asked,
+			Unit:   unitOf(at.Unit),
 		})
 	}
 	return out
 }
 
-// counted is what a task counts, as the schema says it.
-func counted(in task.Unit) v1.Counting {
+// unitOf is what a task counts, as the schema says it.
+func unitOf(in task.Unit) v1.Unit {
 	switch in {
 	case task.Bytes:
-		return v1.Counting_COUNTING_BYTES
+		return v1.Unit_UNIT_BYTES
 	case task.Seconds:
-		return v1.Counting_COUNTING_SECONDS
+		return v1.Unit_UNIT_SECONDS
 	case task.Things:
-		return v1.Counting_COUNTING_THINGS
+		return v1.Unit_UNIT_THINGS
 	}
-	return v1.Counting_COUNTING_THINGS
+	return v1.Unit_UNIT_THINGS
 }
 
 // owed is what a page has left when it answers.

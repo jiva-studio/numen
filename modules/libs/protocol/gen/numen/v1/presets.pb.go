@@ -198,79 +198,79 @@ func (Counts) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{2}
 }
 
-// Stopped is why a preset schedules nothing. The list is closed, and a client
-// maps a value to a sentence.
-type Stopped int32
+// StopReason is why a preset schedules nothing. The list is closed, and a
+// client maps a value to a sentence.
+type StopReason int32
 
 const (
-	Stopped_STOPPED_UNSPECIFIED Stopped = 0
+	StopReason_STOP_REASON_UNSPECIFIED StopReason = 0
 	// The preset schedules: its decks are handed a day of review.
-	Stopped_STOPPED_NOTHING Stopped = 1
+	StopReason_STOP_REASON_NOTHING StopReason = 1
 	// A goal of minutes with the minutes at zero.
-	Stopped_STOPPED_NO_MINUTES Stopped = 2
+	StopReason_STOP_REASON_NO_MINUTES StopReason = 2
 	// A goal of retention with both card counts at zero.
-	Stopped_STOPPED_NO_CARDS Stopped = 3
+	StopReason_STOP_REASON_NO_CARDS StopReason = 3
 	// A goal of a date naming no day. The budget the goal names is the day, and
 	// a goal that cannot read its own budget schedules nothing.
-	Stopped_STOPPED_NO_DAY Stopped = 4
+	StopReason_STOP_REASON_NO_DAY StopReason = 4
 	// A goal of a date whose day is behind us.
-	Stopped_STOPPED_PAST_DAY Stopped = 5
+	StopReason_STOP_REASON_PAST_DAY StopReason = 5
 	// A day of the week carrying none of the load. It is a fact about one day,
 	// so only `stops_on` ever carries it.
-	Stopped_STOPPED_NO_LOAD Stopped = 6
+	StopReason_STOP_REASON_NO_LOAD StopReason = 6
 	// A week carrying none of the load: every day of it stands at nothing, so
 	// there is no next day to pick the cards up.
-	Stopped_STOPPED_NO_WEEK Stopped = 7
+	StopReason_STOP_REASON_NO_WEEK StopReason = 7
 )
 
-// Enum value maps for Stopped.
+// Enum value maps for StopReason.
 var (
-	Stopped_name = map[int32]string{
-		0: "STOPPED_UNSPECIFIED",
-		1: "STOPPED_NOTHING",
-		2: "STOPPED_NO_MINUTES",
-		3: "STOPPED_NO_CARDS",
-		4: "STOPPED_NO_DAY",
-		5: "STOPPED_PAST_DAY",
-		6: "STOPPED_NO_LOAD",
-		7: "STOPPED_NO_WEEK",
+	StopReason_name = map[int32]string{
+		0: "STOP_REASON_UNSPECIFIED",
+		1: "STOP_REASON_NOTHING",
+		2: "STOP_REASON_NO_MINUTES",
+		3: "STOP_REASON_NO_CARDS",
+		4: "STOP_REASON_NO_DAY",
+		5: "STOP_REASON_PAST_DAY",
+		6: "STOP_REASON_NO_LOAD",
+		7: "STOP_REASON_NO_WEEK",
 	}
-	Stopped_value = map[string]int32{
-		"STOPPED_UNSPECIFIED": 0,
-		"STOPPED_NOTHING":     1,
-		"STOPPED_NO_MINUTES":  2,
-		"STOPPED_NO_CARDS":    3,
-		"STOPPED_NO_DAY":      4,
-		"STOPPED_PAST_DAY":    5,
-		"STOPPED_NO_LOAD":     6,
-		"STOPPED_NO_WEEK":     7,
+	StopReason_value = map[string]int32{
+		"STOP_REASON_UNSPECIFIED": 0,
+		"STOP_REASON_NOTHING":     1,
+		"STOP_REASON_NO_MINUTES":  2,
+		"STOP_REASON_NO_CARDS":    3,
+		"STOP_REASON_NO_DAY":      4,
+		"STOP_REASON_PAST_DAY":    5,
+		"STOP_REASON_NO_LOAD":     6,
+		"STOP_REASON_NO_WEEK":     7,
 	}
 )
 
-func (x Stopped) Enum() *Stopped {
-	p := new(Stopped)
+func (x StopReason) Enum() *StopReason {
+	p := new(StopReason)
 	*p = x
 	return p
 }
 
-func (x Stopped) String() string {
+func (x StopReason) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Stopped) Descriptor() protoreflect.EnumDescriptor {
+func (StopReason) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_presets_proto_enumTypes[3].Descriptor()
 }
 
-func (Stopped) Type() protoreflect.EnumType {
+func (StopReason) Type() protoreflect.EnumType {
 	return &file_numen_v1_presets_proto_enumTypes[3]
 }
 
-func (x Stopped) Number() protoreflect.EnumNumber {
+func (x StopReason) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Stopped.Descriptor instead.
-func (Stopped) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use StopReason.Descriptor instead.
+func (StopReason) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{3}
 }
 
@@ -447,11 +447,11 @@ type Preset struct {
 	// Why the preset schedules nothing, asked against the day holding now: a goal
 	// of a date stops once the day it names is behind that one. It is the answer
 	// a window has before any curve exists.
-	Stops Stopped `protobuf:"varint,5,opt,name=stops,proto3,enum=numen.v1.Stopped" json:"stops,omitempty"`
+	Stops StopReason `protobuf:"varint,5,opt,name=stops,proto3,enum=numen.v1.StopReason" json:"stops,omitempty"`
 	// The same asked of the day holding now: whatever stops the preset at all,
 	// and a day of the week carrying none of the load. A preset with a light
 	// Sunday is not a stopped preset; it is a preset with a stopped Sunday.
-	StopsOn       Stopped `protobuf:"varint,6,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.Stopped" json:"stops_on,omitempty"`
+	StopsOn       StopReason `protobuf:"varint,6,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -514,18 +514,18 @@ func (x *Preset) GetProblems() []string {
 	return nil
 }
 
-func (x *Preset) GetStops() Stopped {
+func (x *Preset) GetStops() StopReason {
 	if x != nil {
 		return x.Stops
 	}
-	return Stopped_STOPPED_UNSPECIFIED
+	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
-func (x *Preset) GetStopsOn() Stopped {
+func (x *Preset) GetStopsOn() StopReason {
 	if x != nil {
 		return x.StopsOn
 	}
-	return Stopped_STOPPED_UNSPECIFIED
+	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
 // Curve is what the one control comes to over the whole range of its goal.
@@ -1851,14 +1851,14 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\tLoadEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01J\x04\b\a\x10\bR\n" +
-	"light_days\"\xd5\x01\n" +
+	"light_days\"\xdb\x01\n" +
 	"\x06Preset\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12.\n" +
 	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12\x1a\n" +
-	"\bproblems\x18\x04 \x03(\tR\bproblems\x12'\n" +
-	"\x05stops\x18\x05 \x01(\x0e2\x11.numen.v1.StoppedR\x05stops\x12,\n" +
-	"\bstops_on\x18\x06 \x01(\x0e2\x11.numen.v1.StoppedR\astopsOn\"\xa4\x02\n" +
+	"\bproblems\x18\x04 \x03(\tR\bproblems\x12*\n" +
+	"\x05stops\x18\x05 \x01(\x0e2\x14.numen.v1.StopReasonR\x05stops\x12/\n" +
+	"\bstops_on\x18\x06 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"\xa4\x02\n" +
 	"\x05Curve\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x12\n" +
 	"\x04grid\x18\x02 \x03(\x01R\x04grid\x12\x12\n" +
@@ -1973,16 +1973,17 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x06Counts\x12\x16\n" +
 	"\x12COUNTS_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fCOUNTS_CARDS\x10\x01\x12\x10\n" +
-	"\fCOUNTS_SHOWS\x10\x02*\xb9\x01\n" +
-	"\aStopped\x12\x17\n" +
-	"\x13STOPPED_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fSTOPPED_NOTHING\x10\x01\x12\x16\n" +
-	"\x12STOPPED_NO_MINUTES\x10\x02\x12\x14\n" +
-	"\x10STOPPED_NO_CARDS\x10\x03\x12\x12\n" +
-	"\x0eSTOPPED_NO_DAY\x10\x04\x12\x14\n" +
-	"\x10STOPPED_PAST_DAY\x10\x05\x12\x13\n" +
-	"\x0fSTOPPED_NO_LOAD\x10\x06\x12\x13\n" +
-	"\x0fSTOPPED_NO_WEEK\x10\a2\xb0\x04\n" +
+	"\fCOUNTS_SHOWS\x10\x02*\xdc\x01\n" +
+	"\n" +
+	"StopReason\x12\x1b\n" +
+	"\x17STOP_REASON_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13STOP_REASON_NOTHING\x10\x01\x12\x1a\n" +
+	"\x16STOP_REASON_NO_MINUTES\x10\x02\x12\x18\n" +
+	"\x14STOP_REASON_NO_CARDS\x10\x03\x12\x16\n" +
+	"\x12STOP_REASON_NO_DAY\x10\x04\x12\x18\n" +
+	"\x14STOP_REASON_PAST_DAY\x10\x05\x12\x17\n" +
+	"\x13STOP_REASON_NO_LOAD\x10\x06\x12\x17\n" +
+	"\x13STOP_REASON_NO_WEEK\x10\a2\xb0\x04\n" +
 	"\x0ePresetsService\x12P\n" +
 	"\rGetDeckPreset\x12\x1e.numen.v1.GetDeckPresetRequest\x1a\x1f.numen.v1.GetDeckPresetResponse\x12J\n" +
 	"\vListPresets\x12\x1c.numen.v1.ListPresetsRequest\x1a\x1d.numen.v1.ListPresetsResponse\x12M\n" +
@@ -2011,7 +2012,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                     // 0: numen.v1.Goal
 	(Rule)(0),                     // 1: numen.v1.Rule
 	(Counts)(0),                   // 2: numen.v1.Counts
-	(Stopped)(0),                  // 3: numen.v1.Stopped
+	(StopReason)(0),               // 3: numen.v1.StopReason
 	(*Settings)(nil),              // 4: numen.v1.Settings
 	(*Preset)(nil),                // 5: numen.v1.Preset
 	(*Curve)(nil),                 // 6: numen.v1.Curve
@@ -2044,8 +2045,8 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	25, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
 	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
 	4,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
-	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.Stopped
-	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.Stopped
+	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.StopReason
+	3,  // 6: numen.v1.Preset.stops_on:type_name -> numen.v1.StopReason
 	0,  // 7: numen.v1.Curve.goal:type_name -> numen.v1.Goal
 	7,  // 8: numen.v1.Curve.at:type_name -> numen.v1.Point
 	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Mark

@@ -6,7 +6,7 @@
  * and the decks of one preset are counted together however many there are.
  */
 import { computed, ref } from 'vue'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import type { Goal as Goals, Refusal } from '@numen/protocol'
 
 import { deckName, goalOf } from './core'
@@ -61,7 +61,7 @@ export interface Asks {
           settings?: SettingsMessage | undefined
           problems: readonly string[]
           /** Why it schedules nothing on the day it was read in. */
-          stopsOn: Stopped
+          stopsOn: StopReason
         }
       | undefined
     refusal?: Refusal | undefined
@@ -174,7 +174,7 @@ interface Answered {
     name: string
     settings: Settings
     problems: readonly string[]
-    stopsOn: Stopped
+    stopsOn: StopReason
   } | null
   /** Why it was not read, in the words to show, and empty where it was. */
   readonly refused: string
@@ -212,7 +212,7 @@ interface Gathering {
   path: string
   name: string
   settings: Settings
-  stopsOn: Stopped
+  stopsOn: StopReason
   decks: string[]
   due: number
   fresh: number
@@ -429,16 +429,16 @@ export const leftWords = (one: Preset): string => {
  * something says nothing. Every value stands here, so a verdict added to the
  * schema is one this window is made to answer.
  */
-const WHY: Record<Stopped, (settings: Settings | null, today: string) => string> = {
-  [Stopped.UNSPECIFIED]: () => '',
-  [Stopped.NOTHING]: () => '',
-  [Stopped.NO_MINUTES]: () => STOPPED.noMinutes,
-  [Stopped.NO_CARDS]: () => STOPPED.noCards,
-  [Stopped.NO_DAY]: () => STOPPED.noDay,
-  [Stopped.PAST_DAY]: (settings) =>
+const WHY: Record<StopReason, (settings: Settings | null, today: string) => string> = {
+  [StopReason.UNSPECIFIED]: () => '',
+  [StopReason.NOTHING]: () => '',
+  [StopReason.NO_MINUTES]: () => STOPPED.noMinutes,
+  [StopReason.NO_CARDS]: () => STOPPED.noCards,
+  [StopReason.NO_DAY]: () => STOPPED.noDay,
+  [StopReason.PAST_DAY]: (settings) =>
     settings?.byDate ? STOPPED.passed(settings.byDate) : STOPPED.pastDay,
-  [Stopped.NO_LOAD]: (settings, today) => STOPPED.noLoad(today),
-  [Stopped.NO_WEEK]: () => STOPPED.noWeek,
+  [StopReason.NO_LOAD]: (settings, today) => STOPPED.noLoad(today),
+  [StopReason.NO_WEEK]: () => STOPPED.noWeek,
 }
 
 /**
@@ -448,7 +448,7 @@ const WHY: Record<Stopped, (settings: Settings | null, today: string) => string>
  * The verdict is the core's: it is what the sitting hands its cards out by. Two
  * of the reasons name a day, and the settings carry the one a date aimed at.
  */
-export const stoppedWords = (why: Stopped, settings: Settings | null, today: string): string =>
+export const stoppedWords = (why: StopReason, settings: Settings | null, today: string): string =>
   WHY[why](settings, today)
 
 /**

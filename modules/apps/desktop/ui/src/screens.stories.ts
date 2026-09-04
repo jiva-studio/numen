@@ -8,7 +8,7 @@
  * piece is drawn in the state it settles in and a picture can be taken of it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import { Workspace, branch, pane } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
 import { computed, nextTick, onMounted, ref, type Component } from 'vue'
@@ -216,7 +216,7 @@ const PRESET_HELD: PresetHeld = {
   waiting: () => false,
   bounds: () => BOUNDS,
   problems: () => [],
-  stopped: () => Stopped.NOTHING,
+  stopped: () => StopReason.NOTHING,
   saying: () => '',
   changed: () => false,
   again: () => {},
@@ -690,7 +690,11 @@ const overLine = (at: number, ends: number) => ({
 const HIGHLIGHTS = [overLine(10, 396), overLine(11, 412), overLine(12, 372)]
 
 const BOOK: Documents = {
-  shape: async () => ({ pages: LEAVES, sheets: Array.from({ length: LEAVES }, () => PAGE) }),
+  shape: async () => ({
+    pages: LEAVES,
+    sheets: Array.from({ length: LEAVES }, () => PAGE),
+    at: '1024 1700000000000000000 book.pdf',
+  }),
   page: (_path, at) => pageAt(at),
   highlights: async () => [[{ page: OPENS_AT, rects: HIGHLIGHTS }]],
 }

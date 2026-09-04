@@ -7,7 +7,7 @@
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 
 import PresetTab from '../preset/PresetTab.vue'
 import {
@@ -121,7 +121,7 @@ const tabAt = (
     waiting: () => waiting,
     bounds: () => BOUNDS,
     problems: () => [],
-    stopped: () => Stopped.NOTHING,
+    stopped: () => StopReason.NOTHING,
     saying: () => '',
     changed: () => false,
     again: () => void done.push('again'),

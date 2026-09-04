@@ -3,7 +3,7 @@
  * back, and what it does when the file moved past what it read.
  */
 import { describe, expect, it } from 'vitest'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import type { Cards, Carded, Problem, Refused } from '../core'
 import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
@@ -13,7 +13,7 @@ import { decking, type Held } from './deck'
 import { WORDS as words } from './words'
 
 /** A preset that schedules, which is what every preset here is. */
-const SCHEDULING = { stops: Stopped.NOTHING, stopsOn: Stopped.NOTHING }
+const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }
 
 /** The one place a file is opened from. Nothing here opens one. */
 const puts = () => putting({ fileKinds: async () => new Map() })

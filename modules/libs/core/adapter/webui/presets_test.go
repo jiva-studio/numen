@@ -374,7 +374,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
 		t.Errorf("the preset just made stands against %v", problems)
 	}
-	if stops := read.Msg.GetPreset().GetStops(); stops != v1.Stopped_STOPPED_NOTHING {
+	if stops := read.Msg.GetPreset().GetStops(); stops != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)
 	}
 	settled := read.Msg.GetPreset().GetSettings()

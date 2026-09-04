@@ -371,7 +371,7 @@ type PresetCardsDue struct {
 	// Why the preset schedules nothing on this day: whatever stops it at all, and
 	// a day of the week carrying none of the load. It is the core's own verdict,
 	// so a window says of a preset what the sitting hands its cards out by.
-	StopsOn       Stopped `protobuf:"varint,16,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.Stopped" json:"stops_on,omitempty"`
+	StopsOn       StopReason `protobuf:"varint,16,opt,name=stops_on,json=stopsOn,proto3,enum=numen.v1.StopReason" json:"stops_on,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -525,11 +525,11 @@ func (x *PresetCardsDue) GetClosesBacklog() string {
 	return ""
 }
 
-func (x *PresetCardsDue) GetStopsOn() Stopped {
+func (x *PresetCardsDue) GetStopsOn() StopReason {
 	if x != nil {
 		return x.StopsOn
 	}
-	return Stopped_STOPPED_UNSPECIFIED
+	return StopReason_STOP_REASON_UNSPECIFIED
 }
 
 // Ahead is how long each of the four answers would leave this card, in seconds
@@ -1957,7 +1957,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
 	"\banswered\x18\x05 \x01(\x05R\banswered\x12\x18\n" +
 	"\alearned\x18\x06 \x01(\x05R\alearned\x12\x18\n" +
-	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xab\x04\n" +
+	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xae\x04\n" +
 	"\x0ePresetCardsDue\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
@@ -1977,8 +1977,8 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"closes_new\x18\f \x01(\tR\tclosesNew\x12%\n" +
 	"\x0ecloses_reviews\x18\r \x01(\tR\rclosesReviews\x12%\n" +
 	"\x0ecloses_minutes\x18\x0e \x01(\tR\rclosesMinutes\x12%\n" +
-	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\x12,\n" +
-	"\bstops_on\x18\x10 \x01(\x0e2\x11.numen.v1.StoppedR\astopsOn\"Y\n" +
+	"\x0ecloses_backlog\x18\x0f \x01(\tR\rclosesBacklog\x12/\n" +
+	"\bstops_on\x18\x10 \x01(\x0e2\x14.numen.v1.StopReasonR\astopsOn\"Y\n" +
 	"\x05Ahead\x12\x14\n" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
@@ -2132,14 +2132,14 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*WatchReloadsResponse)(nil),         // 23: numen.v1.WatchReloadsResponse
 	(*GetVaultDeckPresetRequest)(nil),    // 24: numen.v1.GetVaultDeckPresetRequest
 	(*GetVaultDeckPresetResponse)(nil),   // 25: numen.v1.GetVaultDeckPresetResponse
-	(Stopped)(0),                         // 26: numen.v1.Stopped
+	(StopReason)(0),                      // 26: numen.v1.StopReason
 	(Refusal)(0),                         // 27: numen.v1.Refusal
 	(*Preset)(nil),                       // 28: numen.v1.Preset
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.VaultCardsDue.decks:type_name -> numen.v1.DeckCardsDue
 	3,  // 1: numen.v1.VaultCardsDue.presets:type_name -> numen.v1.PresetCardsDue
-	26, // 2: numen.v1.PresetCardsDue.stops_on:type_name -> numen.v1.Stopped
+	26, // 2: numen.v1.PresetCardsDue.stops_on:type_name -> numen.v1.StopReason
 	4,  // 3: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
 	1,  // 4: numen.v1.WatchCardsDueResponse.vaults:type_name -> numen.v1.VaultCardsDue
 	1,  // 5: numen.v1.WatchCardsDueResponse.counted:type_name -> numen.v1.VaultCardsDue

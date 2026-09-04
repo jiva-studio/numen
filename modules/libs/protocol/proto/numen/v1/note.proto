@@ -303,20 +303,20 @@ message WriteLinkResponse {
   optional Refusal refusal = 1;
 }
 
-// Naming is which of the three a note is shown by, and so which one a rename
+// NamedBy is which of the three a note is shown by, and so which one a rename
 // brings into line.
-enum Naming {
+enum NamedBy {
   // Nothing named the note.
-  NAMING_UNSPECIFIED = 0;
+  NAMED_BY_UNSPECIFIED = 0;
 
   // The `title` key of the frontmatter.
-  NAMING_FRONTMATTER = 1;
+  NAMED_BY_FRONTMATTER = 1;
 
   // The first level-one heading of the prose.
-  NAMING_HEADING = 2;
+  NAMED_BY_HEADING = 2;
 
   // The filename, which a rename moves and does not write.
-  NAMING_FILENAME = 3;
+  NAMED_BY_FILENAME = 3;
 }
 
 message RenameNoteRequest {
@@ -340,8 +340,8 @@ message RenameNoteResponse {
   string title = 2;
 
   // Which of the three names the note, and so which the rename brought into
-  // line. NAMING_UNSPECIFIED when the note was never opened.
-  Naming by = 3;
+  // line. NAMED_BY_UNSPECIFIED when the note was never opened.
+  NamedBy by = 3;
 
   // What the file did. Absent when it stayed where it was.
   optional MoveResult moved = 4;

@@ -158,7 +158,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
 			ClosesReviews:   string(preset.Closes.Reviews),
 			ClosesMinutes:   string(preset.Closes.Minutes),
 			ClosesBacklog:   string(preset.Closes.Backlog),
-			StopsOn:         wire.StoppedOf(preset.Stops),
+			StopsOn:         wire.StopReasonOf(preset.Stops),
 		})
 	}
 	return one

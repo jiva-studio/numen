@@ -82,20 +82,20 @@ message Task {
   // before that.
   bool asked = 7;
 
-  // Counting is what done and total are counted in.
-  Counting counting = 8;
+  // Unit is what done and total are counted in.
+  Unit unit = 8;
 }
 
-// Counting is what a piece of work counts. Bytes are read out in the sizes a
+// Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, seconds as a length of time, and everything else is
 // counted one by one.
-enum Counting {
-  COUNTING_UNSPECIFIED = 0;
-  COUNTING_THINGS = 1;
-  COUNTING_BYTES = 2;
+enum Unit {
+  UNIT_UNSPECIFIED = 0;
+  UNIT_THINGS = 1;
+  UNIT_BYTES = 2;
 
   // A stretch of a recording, read out as a length of time.
-  COUNTING_SECONDS = 3;
+  UNIT_SECONDS = 3;
 }
 
 message WatchQuitRequest {

@@ -8,7 +8,7 @@
 import { createClient } from '@connectrpc/connect'
 import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
 import type {
-  Stopped,
+  StopReason,
   Bounds as BoundsMessage,
   Curve as CurveMessage,
   Mark as PlaceMessage,
@@ -156,12 +156,12 @@ export interface Preset {
   /** What was wrong in the file and was not guessed at, in the words to show. */
   readonly problems: readonly string[]
   /** Why it schedules nothing at all, which holds on every day. */
-  readonly stops: Stopped
+  readonly stops: StopReason
   /**
    * The same asked of the day holding now. A day of the week carrying none of
    * the load is said here alone.
    */
-  readonly stopsOn: Stopped
+  readonly stopsOn: StopReason
 }
 
 /** What reading a preset came back with. */

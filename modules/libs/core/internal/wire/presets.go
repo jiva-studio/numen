@@ -45,28 +45,28 @@ func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
 		Title:    title,
 		Settings: SettingsOf(p.Settings),
 		Problems: p.Problems,
-		Stops:    StoppedOf(p.Stops),
-		StopsOn:  StoppedOf(p.StopsToday),
+		Stops:    StopReasonOf(p.Stops),
+		StopsOn:  StopReasonOf(p.StopsToday),
 	}
 }
 
-// StoppedOf is why a preset schedules nothing, as the schema names it.
-func StoppedOf(s review.StopReason) v1.Stopped {
+// StopReasonOf is why a preset schedules nothing, as the schema names it.
+func StopReasonOf(s review.StopReason) v1.StopReason {
 	switch s {
 	case review.StoppedNoMinutes:
-		return v1.Stopped_STOPPED_NO_MINUTES
+		return v1.StopReason_STOP_REASON_NO_MINUTES
 	case review.StoppedNoCards:
-		return v1.Stopped_STOPPED_NO_CARDS
+		return v1.StopReason_STOP_REASON_NO_CARDS
 	case review.StoppedNoDay:
-		return v1.Stopped_STOPPED_NO_DAY
+		return v1.StopReason_STOP_REASON_NO_DAY
 	case review.StoppedPastDay:
-		return v1.Stopped_STOPPED_PAST_DAY
+		return v1.StopReason_STOP_REASON_PAST_DAY
 	case review.StoppedNoLoad:
-		return v1.Stopped_STOPPED_NO_LOAD
+		return v1.StopReason_STOP_REASON_NO_LOAD
 	case review.StoppedNoWeek:
-		return v1.Stopped_STOPPED_NO_WEEK
+		return v1.StopReason_STOP_REASON_NO_WEEK
 	}
-	return v1.Stopped_STOPPED_NOTHING
+	return v1.StopReason_STOP_REASON_NOTHING
 }
 
 // SettingsOf is how a preset schedules, as the schema carries it.

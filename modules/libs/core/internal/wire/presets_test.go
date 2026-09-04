@@ -203,22 +203,22 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
 		why  review.StopReason
-		said v1.Stopped
+		said v1.StopReason
 	}{
-		{review.StoppedNothing, v1.Stopped_STOPPED_NOTHING},
-		{review.StoppedNoMinutes, v1.Stopped_STOPPED_NO_MINUTES},
-		{review.StoppedNoCards, v1.Stopped_STOPPED_NO_CARDS},
-		{review.StoppedNoDay, v1.Stopped_STOPPED_NO_DAY},
-		{review.StoppedPastDay, v1.Stopped_STOPPED_PAST_DAY},
-		{review.StoppedNoLoad, v1.Stopped_STOPPED_NO_LOAD},
-		{review.StoppedNoWeek, v1.Stopped_STOPPED_NO_WEEK},
+		{review.StoppedNothing, v1.StopReason_STOP_REASON_NOTHING},
+		{review.StoppedNoMinutes, v1.StopReason_STOP_REASON_NO_MINUTES},
+		{review.StoppedNoCards, v1.StopReason_STOP_REASON_NO_CARDS},
+		{review.StoppedNoDay, v1.StopReason_STOP_REASON_NO_DAY},
+		{review.StoppedPastDay, v1.StopReason_STOP_REASON_PAST_DAY},
+		{review.StoppedNoLoad, v1.StopReason_STOP_REASON_NO_LOAD},
+		{review.StoppedNoWeek, v1.StopReason_STOP_REASON_NO_WEEK},
 	} {
-		if got := StoppedOf(one.why); got != one.said {
+		if got := StopReasonOf(one.why); got != one.said {
 			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)
 		}
 	}
 
-	if got := StoppedOf(review.StopReason("sideways")); got != v1.Stopped_STOPPED_NOTHING {
+	if got := StopReasonOf(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }

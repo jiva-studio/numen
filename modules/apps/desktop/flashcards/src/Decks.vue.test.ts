@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 
 import Decks from './Decks.vue'
 import Presets from './Presets.vue'
@@ -69,7 +69,7 @@ const vault: Owing = {
       reviews: 45,
       minutes: 20,
       closes,
-      stopsOn: Stopped.NOTHING,
+      stopsOn: StopReason.NOTHING,
     },
   ],
   unread: '',

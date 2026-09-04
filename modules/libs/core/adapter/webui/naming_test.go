@@ -58,7 +58,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	if title := answer.Msg.GetTitle(); title != "Entropy" {
 		t.Errorf("the note is called %q", title)
 	}
-	if by := answer.Msg.GetBy(); by != v1.Naming_NAMING_FRONTMATTER {
+	if by := answer.Msg.GetBy(); by != v1.NamedBy_NAMED_BY_FRONTMATTER {
 		t.Errorf("the frontmatter named the note and the answer says %v", by)
 	}
 	moved := answer.Msg.GetMoved()
@@ -250,7 +250,7 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Old.md" {
 		t.Errorf("the note is filed at %q", path)
 	}
-	if by := answer.Msg.GetBy(); by != v1.Naming_NAMING_FILENAME {
+	if by := answer.Msg.GetBy(); by != v1.NamedBy_NAMED_BY_FILENAME {
 		t.Errorf("the filename names the note and the answer says %v", by)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {

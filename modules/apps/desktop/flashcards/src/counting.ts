@@ -10,7 +10,7 @@
  * with nothing said about what it holds.
  */
 import { ref } from 'vue'
-import type { Stopped } from '@numen/protocol'
+import type { StopReason } from '@numen/protocol'
 
 import type { Owing } from './core'
 
@@ -52,7 +52,7 @@ export interface Vaulted {
     closesNew: string
     closesReviews: string
     closesMinutes: string
-    stopsOn: Stopped
+    stopsOn: StopReason
   }[]
   unread: string
   reading: boolean

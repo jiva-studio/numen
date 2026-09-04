@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpIBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDgoGZmFpbGVkGAYgASgJEg0KBWFza2VkGAcgASgIEiQKCGNvdW50aW5nGAggASgOMhIubnVtZW4udjEuQ291bnRpbmciIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqYwoIQ291bnRpbmcSGAoUQ09VTlRJTkdfVU5TUEVDSUZJRUQQABITCg9DT1VOVElOR19USElOR1MQARISCg5DT1VOVElOR19CWVRFUxACEhQKEENPVU5USU5HX1NFQ09ORFMQAyp4CgtGbHVzaFJlc3VsdBIcChhGTFVTSF9SRVNVTFRfVU5TUEVDSUZJRUQQABIYChRGTFVTSF9SRVNVTFRfTk9USElORxADEhgKFEZMVVNIX1JFU1VMVF9XUklUVEVOEAESFwoTRkxVU0hfUkVTVUxUX0FTS0lORxACMsACCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJQCg1HZXRTaG93blZhdWx0Eh4ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlcXVlc3QaHy5udW1lbi52MS5HZXRTaG93blZhdWx0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIooBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDgoGZmFpbGVkGAYgASgJEg0KBWFza2VkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0IiIKEFdhdGNoUXVpdFJlcXVlc3QSDgoGd2luZG93GAEgASgJIjEKEVdhdGNoUXVpdFJlc3BvbnNlEg0KBXRva2VuGAEgASgJEg0KBWZsdXNoGAIgASgIIloKElJlcG9ydEZsdXNoUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkSDQoFdG9rZW4YAiABKAkSJQoGcmVzdWx0GAMgASgOMhUubnVtZW4udjEuRmx1c2hSZXN1bHQiFQoTUmVwb3J0Rmx1c2hSZXNwb25zZSImChRHZXRTaG93blZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiJgoVR2V0U2hvd25WYXVsdFJlc3BvbnNlEg0KBXZhdWx0GAEgASgJKk8KBFVuaXQSFAoQVU5JVF9VTlNQRUNJRklFRBAAEg8KC1VOSVRfVEhJTkdTEAESDgoKVU5JVF9CWVRFUxACEhAKDFVOSVRfU0VDT05EUxADKngKC0ZsdXNoUmVzdWx0EhwKGEZMVVNIX1JFU1VMVF9VTlNQRUNJRklFRBAAEhgKFEZMVVNIX1JFU1VMVF9OT1RISU5HEAMSGAoURkxVU0hfUkVTVUxUX1dSSVRURU4QARIXChNGTFVTSF9SRVNVTFRfQVNLSU5HEAIywAIKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESRgoJV2F0Y2hRdWl0EhoubnVtZW4udjEuV2F0Y2hRdWl0UmVxdWVzdBobLm51bWVuLnYxLldhdGNoUXVpdFJlc3BvbnNlMAESSgoLUmVwb3J0Rmx1c2gSHC5udW1lbi52MS5SZXBvcnRGbHVzaFJlcXVlc3QaHS5udW1lbi52MS5SZXBvcnRGbHVzaFJlc3BvbnNlElAKDUdldFNob3duVmF1bHQSHi5udW1lbi52MS5HZXRTaG93blZhdWx0UmVxdWVzdBofLm51bWVuLnYxLkdldFNob3duVmF1bHRSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -122,11 +122,11 @@ export type Task = Message<"numen.v1.Task"> & {
   asked: boolean;
 
   /**
-   * Counting is what done and total are counted in.
+   * Unit is what done and total are counted in.
    *
-   * @generated from field: numen.v1.Counting counting = 8;
+   * @generated from field: numen.v1.Unit unit = 8;
    */
-  counting: Counting;
+  unit: Unit;
 };
 
 /**
@@ -273,40 +273,40 @@ export const GetShownVaultResponseSchema: GenMessage<GetShownVaultResponse> = /*
   messageDesc(file_numen_v1_window, 8);
 
 /**
- * Counting is what a piece of work counts. Bytes are read out in the sizes a
+ * Unit is what a piece of work counts. Bytes are read out in the sizes a
  * person reads them in, seconds as a length of time, and everything else is
  * counted one by one.
  *
- * @generated from enum numen.v1.Counting
+ * @generated from enum numen.v1.Unit
  */
-export enum Counting {
+export enum Unit {
   /**
-   * @generated from enum value: COUNTING_UNSPECIFIED = 0;
+   * @generated from enum value: UNIT_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
-   * @generated from enum value: COUNTING_THINGS = 1;
+   * @generated from enum value: UNIT_THINGS = 1;
    */
   THINGS = 1,
 
   /**
-   * @generated from enum value: COUNTING_BYTES = 2;
+   * @generated from enum value: UNIT_BYTES = 2;
    */
   BYTES = 2,
 
   /**
    * A stretch of a recording, read out as a length of time.
    *
-   * @generated from enum value: COUNTING_SECONDS = 3;
+   * @generated from enum value: UNIT_SECONDS = 3;
    */
   SECONDS = 3,
 }
 
 /**
- * Describes the enum numen.v1.Counting.
+ * Describes the enum numen.v1.Unit.
  */
-export const CountingSchema: GenEnum<Counting> = /*@__PURE__*/
+export const UnitSchema: GenEnum<Unit> = /*@__PURE__*/
   enumDesc(file_numen_v1_window, 0);
 
 /**

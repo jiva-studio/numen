@@ -165,34 +165,34 @@ message Settings {
   int32 interval = 13;
 }
 
-// Stopped is why a preset schedules nothing. The list is closed, and a client
-// maps a value to a sentence.
-enum Stopped {
-  STOPPED_UNSPECIFIED = 0;
+// StopReason is why a preset schedules nothing. The list is closed, and a
+// client maps a value to a sentence.
+enum StopReason {
+  STOP_REASON_UNSPECIFIED = 0;
 
   // The preset schedules: its decks are handed a day of review.
-  STOPPED_NOTHING = 1;
+  STOP_REASON_NOTHING = 1;
 
   // A goal of minutes with the minutes at zero.
-  STOPPED_NO_MINUTES = 2;
+  STOP_REASON_NO_MINUTES = 2;
 
   // A goal of retention with both card counts at zero.
-  STOPPED_NO_CARDS = 3;
+  STOP_REASON_NO_CARDS = 3;
 
   // A goal of a date naming no day. The budget the goal names is the day, and
   // a goal that cannot read its own budget schedules nothing.
-  STOPPED_NO_DAY = 4;
+  STOP_REASON_NO_DAY = 4;
 
   // A goal of a date whose day is behind us.
-  STOPPED_PAST_DAY = 5;
+  STOP_REASON_PAST_DAY = 5;
 
   // A day of the week carrying none of the load. It is a fact about one day,
   // so only `stops_on` ever carries it.
-  STOPPED_NO_LOAD = 6;
+  STOP_REASON_NO_LOAD = 6;
 
   // A week carrying none of the load: every day of it stands at nothing, so
   // there is no next day to pick the cards up.
-  STOPPED_NO_WEEK = 7;
+  STOP_REASON_NO_WEEK = 7;
 }
 
 // Preset is one preset as a read hands it over.
@@ -212,12 +212,12 @@ message Preset {
   // Why the preset schedules nothing, asked against the day holding now: a goal
   // of a date stops once the day it names is behind that one. It is the answer
   // a window has before any curve exists.
-  Stopped stops = 5;
+  StopReason stops = 5;
 
   // The same asked of the day holding now: whatever stops the preset at all,
   // and a day of the week carrying none of the load. A preset with a light
   // Sunday is not a stopped preset; it is a preset with a stopped Sunday.
-  Stopped stops_on = 6;
+  StopReason stops_on = 6;
 }
 
 // Curve is what the one control comes to over the whole range of its goal.

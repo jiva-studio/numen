@@ -7,7 +7,7 @@
  * overwritten.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import { asking, type Asking } from '../asking'
 import type { PlexShowing } from '@numen/ui'
 import type { Move, Refused } from '../core'
@@ -100,7 +100,7 @@ export interface Held {
    * Why it schedules nothing on the day it was read in, as the vault says it.
    * The rule is the core's, and it is the rule a sitting hands its cards out by.
    */
-  stopped(): Stopped
+  stopped(): StopReason
   /** What the file was refused for, in words a person reads, or nothing. */
   saying(): string
   /** The file moved under the window and nothing was written. */
@@ -149,7 +149,7 @@ export function presetting(
     readonly place: Ref<number>
     readonly problems: Ref<readonly string[]>
     /** Why it schedules nothing on the day the last read was answered in. */
-    readonly stopped: Ref<Stopped>
+    readonly stopped: Ref<StopReason>
     readonly changed: Ref<boolean>
     readonly saying: Ref<string>
     /** An answer to the picture is on its way, and the tab says it is reading. */
@@ -190,7 +190,7 @@ export function presetting(
     material: shallowRef<Material | null>(null),
     place: ref(0),
     problems: shallowRef<readonly string[]>([]),
-    stopped: ref(Stopped.NOTHING),
+    stopped: ref(StopReason.NOTHING),
     changed: ref(false),
     saying: ref(''),
     // A tab opens by reading the file the picture is worked out over.
@@ -233,7 +233,7 @@ export function presetting(
     one.answers.clear()
     if (!answer.preset) {
       one.problems.value = []
-      one.stopped.value = Stopped.NOTHING
+      one.stopped.value = StopReason.NOTHING
       one.waiting.value = false
       return
     }

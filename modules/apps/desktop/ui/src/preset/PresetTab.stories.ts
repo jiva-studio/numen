@@ -11,7 +11,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
@@ -100,7 +100,7 @@ const holding = (args: Knobs): Held => {
     waiting: () => args.waiting,
     bounds: () => BOUNDS,
     problems: () => [],
-    stopped: () => Stopped.NOTHING,
+    stopped: () => StopReason.NOTHING,
     saying: () => '',
     changed: () => false,
     again: fn(),

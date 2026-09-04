@@ -5,7 +5,7 @@
  */
 import { createClient } from '@connectrpc/connect'
 import { Goal as Goals, Rating, FlashcardsService, WindowService } from '@numen/protocol'
-import type { Stopped } from '@numen/protocol'
+import type { StopReason } from '@numen/protocol'
 import { transport } from './transport'
 
 /**
@@ -110,7 +110,7 @@ export interface PresetOwing {
    * Why it schedules nothing on this day, as the core says it. A preset no deck
    * points at is answered here and nowhere else.
    */
-  readonly stopsOn: Stopped
+  readonly stopsOn: StopReason
 }
 
 /**

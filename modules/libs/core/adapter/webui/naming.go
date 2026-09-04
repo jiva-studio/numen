@@ -29,7 +29,7 @@ func (a *API) RenameNote(
 	out := &v1.RenameNoteResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
-		By:    namingOf(renamed.By),
+		By:    namedByOf(renamed.By),
 	}
 	if renamed.Moved != nil {
 		out.Moved = movedOf(*renamed.Moved)
@@ -88,15 +88,15 @@ func (a *API) removal(
 	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
-// namingOf is which of the three a rename wrote, as the schema carries it.
-func namingOf(by note.NamedBy) v1.Naming {
+// namedByOf is which of the three a rename wrote, as the schema carries it.
+func namedByOf(by note.NamedBy) v1.NamedBy {
 	switch by {
 	case note.ByFrontmatter:
-		return v1.Naming_NAMING_FRONTMATTER
+		return v1.NamedBy_NAMED_BY_FRONTMATTER
 	case note.ByFilename:
-		return v1.Naming_NAMING_FILENAME
+		return v1.NamedBy_NAMED_BY_FILENAME
 	default:
-		return v1.Naming_NAMING_UNSPECIFIED
+		return v1.NamedBy_NAMED_BY_UNSPECIFIED
 	}
 }
 

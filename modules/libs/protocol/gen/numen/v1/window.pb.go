@@ -28,59 +28,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Counting is what a piece of work counts. Bytes are read out in the sizes a
+// Unit is what a piece of work counts. Bytes are read out in the sizes a
 // person reads them in, seconds as a length of time, and everything else is
 // counted one by one.
-type Counting int32
+type Unit int32
 
 const (
-	Counting_COUNTING_UNSPECIFIED Counting = 0
-	Counting_COUNTING_THINGS      Counting = 1
-	Counting_COUNTING_BYTES       Counting = 2
+	Unit_UNIT_UNSPECIFIED Unit = 0
+	Unit_UNIT_THINGS      Unit = 1
+	Unit_UNIT_BYTES       Unit = 2
 	// A stretch of a recording, read out as a length of time.
-	Counting_COUNTING_SECONDS Counting = 3
+	Unit_UNIT_SECONDS Unit = 3
 )
 
-// Enum value maps for Counting.
+// Enum value maps for Unit.
 var (
-	Counting_name = map[int32]string{
-		0: "COUNTING_UNSPECIFIED",
-		1: "COUNTING_THINGS",
-		2: "COUNTING_BYTES",
-		3: "COUNTING_SECONDS",
+	Unit_name = map[int32]string{
+		0: "UNIT_UNSPECIFIED",
+		1: "UNIT_THINGS",
+		2: "UNIT_BYTES",
+		3: "UNIT_SECONDS",
 	}
-	Counting_value = map[string]int32{
-		"COUNTING_UNSPECIFIED": 0,
-		"COUNTING_THINGS":      1,
-		"COUNTING_BYTES":       2,
-		"COUNTING_SECONDS":     3,
+	Unit_value = map[string]int32{
+		"UNIT_UNSPECIFIED": 0,
+		"UNIT_THINGS":      1,
+		"UNIT_BYTES":       2,
+		"UNIT_SECONDS":     3,
 	}
 )
 
-func (x Counting) Enum() *Counting {
-	p := new(Counting)
+func (x Unit) Enum() *Unit {
+	p := new(Unit)
 	*p = x
 	return p
 }
 
-func (x Counting) String() string {
+func (x Unit) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Counting) Descriptor() protoreflect.EnumDescriptor {
+func (Unit) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_window_proto_enumTypes[0].Descriptor()
 }
 
-func (Counting) Type() protoreflect.EnumType {
+func (Unit) Type() protoreflect.EnumType {
 	return &file_numen_v1_window_proto_enumTypes[0]
 }
 
-func (x Counting) Number() protoreflect.EnumNumber {
+func (x Unit) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Counting.Descriptor instead.
-func (Counting) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use Unit.Descriptor instead.
+func (Unit) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
 }
 
@@ -259,8 +259,8 @@ type Task struct {
 	// Work nobody asked for is drawn once it has lasted, and most of it is over
 	// before that.
 	Asked bool `protobuf:"varint,7,opt,name=asked,proto3" json:"asked,omitempty"`
-	// Counting is what done and total are counted in.
-	Counting      Counting `protobuf:"varint,8,opt,name=counting,proto3,enum=numen.v1.Counting" json:"counting,omitempty"`
+	// Unit is what done and total are counted in.
+	Unit          Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -344,11 +344,11 @@ func (x *Task) GetAsked() bool {
 	return false
 }
 
-func (x *Task) GetCounting() Counting {
+func (x *Task) GetUnit() Unit {
 	if x != nil {
-		return x.Counting
+		return x.Unit
 	}
-	return Counting_COUNTING_UNSPECIFIED
+	return Unit_UNIT_UNSPECIFIED
 }
 
 type WatchQuitRequest struct {
@@ -654,7 +654,7 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xca\x01\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xbe\x01\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05doing\x18\x02 \x01(\tR\x05doing\x12\x14\n" +
@@ -662,8 +662,8 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x16\n" +
 	"\x06failed\x18\x06 \x01(\tR\x06failed\x12\x14\n" +
-	"\x05asked\x18\a \x01(\bR\x05asked\x12.\n" +
-	"\bcounting\x18\b \x01(\x0e2\x12.numen.v1.CountingR\bcounting\"*\n" +
+	"\x05asked\x18\a \x01(\bR\x05asked\x12\"\n" +
+	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
@@ -677,12 +677,13 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x14GetShownVaultRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"-\n" +
 	"\x15GetShownVaultResponse\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault*c\n" +
-	"\bCounting\x12\x18\n" +
-	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fCOUNTING_THINGS\x10\x01\x12\x12\n" +
-	"\x0eCOUNTING_BYTES\x10\x02\x12\x14\n" +
-	"\x10COUNTING_SECONDS\x10\x03*x\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault*O\n" +
+	"\x04Unit\x12\x14\n" +
+	"\x10UNIT_UNSPECIFIED\x10\x00\x12\x0f\n" +
+	"\vUNIT_THINGS\x10\x01\x12\x0e\n" +
+	"\n" +
+	"UNIT_BYTES\x10\x02\x12\x10\n" +
+	"\fUNIT_SECONDS\x10\x03*x\n" +
 	"\vFlushResult\x12\x1c\n" +
 	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14FLUSH_RESULT_NOTHING\x10\x03\x12\x18\n" +
@@ -710,7 +711,7 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_window_proto_goTypes = []any{
-	(Counting)(0),                 // 0: numen.v1.Counting
+	(Unit)(0),                     // 0: numen.v1.Unit
 	(FlushResult)(0),              // 1: numen.v1.FlushResult
 	(*WatchTasksRequest)(nil),     // 2: numen.v1.WatchTasksRequest
 	(*WatchTasksResponse)(nil),    // 3: numen.v1.WatchTasksResponse
@@ -724,7 +725,7 @@ var file_numen_v1_window_proto_goTypes = []any{
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
-	0,  // 1: numen.v1.Task.counting:type_name -> numen.v1.Counting
+	0,  // 1: numen.v1.Task.unit:type_name -> numen.v1.Unit
 	1,  // 2: numen.v1.ReportFlushRequest.result:type_name -> numen.v1.FlushResult
 	2,  // 3: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
 	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest

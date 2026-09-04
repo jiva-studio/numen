@@ -10,11 +10,10 @@ import {
   ArtifactService,
   AssetService,
   CardsService,
-  Counting as Countings,
   Fault as Faults,
   FileService,
   FlushResult,
-  Naming,
+  NamedBy,
   NoteService,
   NoteType as NoteTypes,
   Presence as Presences,
@@ -24,6 +23,7 @@ import {
   SettingsService,
   SourceKind,
   State as States,
+  Unit as Units,
   VaultService,
   VaultsRefusal,
   VaultsService,
@@ -174,8 +174,7 @@ export const vaults: Vaults = {
   add: async (path, called) => added(await vaultsService.addVault({ path, displayName: called })),
   rename: async (id, called) =>
     added(await vaultsService.renameVault({ name: id, displayName: called })),
-  forget: async (id) => turnedDown(await vaultsService.forgetVault({ name: id })),
-  erase: async (id) => turnedDown(await vaultsService.eraseVault({ name: id })),
+  remove: async (id, trash) => turnedDown(await vaultsService.removeVault({ name: id, trash })),
   open: async (id) => turnedDown(await vaultsService.openVault({ name: id })),
 }
 
@@ -295,7 +294,7 @@ export const core: Core & Asking & Commanding = {
         about: at.about,
         done: Number(at.done),
         total: Number(at.total),
-        counting: counted[at.counting] ?? 'things',
+        counting: counted[at.unit] ?? 'things',
         failed: at.failed,
         asked: at.asked,
       }))
@@ -318,7 +317,7 @@ export const core: Core & Asking & Commanding = {
     return {
       path: answer.path,
       title: answer.title,
-      frontmatter: answer.by === Naming.FRONTMATTER,
+      frontmatter: answer.by === NamedBy.FRONTMATTER,
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
       changed: staleIn(answer),
@@ -474,9 +473,11 @@ export const documents: Documents = {
     return {
       pages: answer.pages,
       sheets: answer.sheets.map((one) => ({ wide: one.wide, high: one.high })),
+      at: stamp(answer.fingerprint) ?? '',
     }
   },
-  page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
+  page: (path, at, wide, seen) =>
+    `${asset(path)}/pages/${at}?wide=${wide}&${named(seen)}`,
   highlights: async (path, stretches) => {
     const answer = await waiting(() => assets.listHighlights({ path, at: [...stretches] }))
     return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
@@ -602,6 +603,16 @@ const reached = (state: States | undefined): Reached =>
  */
 const asset = (path: string): string => `/assets/${encodeURIComponent(path)}`
 
+/**
+ * Which bytes an address is about, as the address writes them. The path is a
+ * part of the address already, so what is written here is the rest of what says
+ * which file it is.
+ */
+const named = (seen: string): string => {
+  const at = fingerprint(seen)
+  return `size=${at.size}&mtime=${at.mtime}`
+}
+
 /** How often a document that is busy is waited out before it is a refusal. */
 const PATIENCE = 3
 
@@ -629,11 +640,11 @@ const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
  * What a piece of work counts, in the words the window uses. One it has no word
  * for is counted one by one.
  */
-const counted: Record<Countings, Counting> = {
-  [Countings.UNSPECIFIED]: 'things',
-  [Countings.THINGS]: 'things',
-  [Countings.BYTES]: 'bytes',
-  [Countings.SECONDS]: 'seconds',
+const counted: Record<Units, Counting> = {
+  [Units.UNSPECIFIED]: 'things',
+  [Units.THINGS]: 'things',
+  [Units.BYTES]: 'bytes',
+  [Units.SECONDS]: 'seconds',
 }
 
 /** How a search is asked, in the words the window uses. */

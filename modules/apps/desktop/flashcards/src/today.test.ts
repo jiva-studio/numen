@@ -5,7 +5,7 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Goal, Stopped } from '@numen/protocol'
+import { Goal, StopReason } from '@numen/protocol'
 
 import { counting } from './counting'
 import type { Counts } from './counting'
@@ -46,7 +46,7 @@ const answering = (settings: SettingsMessage): Asks => ({
         title: 'Sanskrit',
         settings,
         problems: [],
-        stopsOn: Stopped.NOTHING,
+        stopsOn: StopReason.NOTHING,
       },
     }
   },

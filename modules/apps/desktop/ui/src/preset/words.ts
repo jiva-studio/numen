@@ -1,5 +1,5 @@
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 import type { Refused } from '../core'
 import type { Counts, Goal, Rule } from './core'
 import type { Field } from './curve'
@@ -116,22 +116,22 @@ const UNWRITTEN =
  * hand over. A verdict scheduling something says nothing. Every value stands
  * here, so a verdict added to the schema is one this window is made to answer.
  */
-const STOPPED: Record<Stopped, string> = {
-  [Stopped.UNSPECIFIED]: '',
-  [Stopped.NOTHING]: '',
-  [Stopped.NO_MINUTES]:
+const STOPPED: Record<StopReason, string> = {
+  [StopReason.UNSPECIFIED]: '',
+  [StopReason.NOTHING]: '',
+  [StopReason.NO_MINUTES]:
     'No minutes a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [Stopped.NO_CARDS]:
+  [StopReason.NO_CARDS]:
     'No cards a day: this preset schedules nothing, and every deck pointing at it stops.',
-  [Stopped.NO_DAY]:
+  [StopReason.NO_DAY]:
     'This preset aims at no day, so it schedules nothing. ' +
     'Name the day the material is to be in the head.',
-  [Stopped.PAST_DAY]:
+  [StopReason.PAST_DAY]:
     'This preset is past the day it aimed at. Its budget is spent, and it schedules nothing.',
-  [Stopped.NO_LOAD]:
+  [StopReason.NO_LOAD]:
     'Today carries none of this load, so this preset schedules nothing today. ' +
     'The next day that carries some picks its cards up.',
-  [Stopped.NO_WEEK]:
+  [StopReason.NO_WEEK]:
     'No day of the week carries any of this load, so this preset schedules ' +
     'nothing on any of them, and every deck pointing at it stops.',
 }
@@ -289,7 +289,7 @@ export const WORDS = {
     'so it has nothing to schedule. Raise the new cards a day and its goal has ' +
     'cards to work on.',
   /** Why the preset schedules nothing on the day it was read in. */
-  stopped: (why: Stopped) => STOPPED[why],
+  stopped: (why: StopReason) => STOPPED[why],
   /** What is wrong with the file, said above the control. */
   problems: 'What is wrong with this preset',
   /** The file moved under the window, and the two answers to that. */

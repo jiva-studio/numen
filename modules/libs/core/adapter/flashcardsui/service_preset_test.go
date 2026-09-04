@@ -102,14 +102,14 @@ func TestEachPresetOnTheFrontDoorSaysWhyItSchedulesNothing(t *testing.T) {
 	}
 	api, _ := windowed(t, stopped)
 
-	got := make(map[string]v1.Stopped)
+	got := make(map[string]v1.StopReason)
 	for _, one := range front(t, api).GetVaults()[0].GetPresets() {
 		got[one.GetPreset()] = one.GetStopsOn()
 	}
-	want := map[string]v1.Stopped{
-		"Steady.md": v1.Stopped_STOPPED_NOTHING,
-		"Quiet.md":  v1.Stopped_STOPPED_NO_MINUTES,
-		"Lonely.md": v1.Stopped_STOPPED_NO_CARDS,
+	want := map[string]v1.StopReason{
+		"Steady.md": v1.StopReason_STOP_REASON_NOTHING,
+		"Quiet.md":  v1.StopReason_STOP_REASON_NO_MINUTES,
+		"Lonely.md": v1.StopReason_STOP_REASON_NO_CARDS,
 	}
 	for path, why := range want {
 		if got[path] != why {
@@ -136,10 +136,10 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	one := out.Msg.GetPreset()
-	if got := one.GetStops(); got != v1.Stopped_STOPPED_NO_MINUTES {
+	if got := one.GetStops(); got != v1.StopReason_STOP_REASON_NO_MINUTES {
 		t.Errorf("the preset schedules nothing for %v", got)
 	}
-	if got := one.GetStopsOn(); got != v1.Stopped_STOPPED_NO_MINUTES {
+	if got := one.GetStopsOn(); got != v1.StopReason_STOP_REASON_NO_MINUTES {
 		t.Errorf("the day schedules nothing for %v", got)
 	}
 }

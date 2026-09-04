@@ -6,7 +6,7 @@
  * views of it. Every other field is a person's to take out of the goal's hands.
  */
 import { describe, expect, it } from 'vitest'
-import { Stopped } from '@numen/protocol'
+import { StopReason } from '@numen/protocol'
 
 import { presetting, type Said } from './kind'
 import { fieldsUnder, goalValue, nearest, steers, type Field } from './curve'
@@ -95,8 +95,8 @@ const opened = async (
         title: 'Steady',
         settings: { ...STEADY, ...settings },
         problems: [],
-        stops: Stopped.NOTHING,
-        stopsOn: Stopped.NOTHING,
+        stops: StopReason.NOTHING,
+        stopsOn: StopReason.NOTHING,
       },
       refusal: null,
       at: 'one',
@@ -159,8 +159,8 @@ const opening = async (file: Partial<Settings>) => {
           title: 'Steady',
           settings: { ...STEADY, ...file },
           problems: [],
-          stops: Stopped.NOTHING,
-          stopsOn: Stopped.NOTHING,
+          stops: StopReason.NOTHING,
+          stopsOn: StopReason.NOTHING,
         },
         refusal: null,
         at: 'one',
@@ -595,8 +595,8 @@ describe('a file read again', () => {
               title: 'Steady',
               settings: { ...STEADY, newADay: 7, reviewsADay: 33, interval: 40 },
               problems: [],
-              stops: Stopped.NOTHING,
-              stopsOn: Stopped.NOTHING,
+              stops: StopReason.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           },
     )
@@ -618,8 +618,8 @@ describe('a file read again', () => {
               title: 'Steady',
               settings: STEADY,
               problems: ['a line nobody could read'],
-              stops: Stopped.NOTHING,
-              stopsOn: Stopped.NOTHING,
+              stops: StopReason.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           }
         : { preset: null, refusal: 'notAPreset' },

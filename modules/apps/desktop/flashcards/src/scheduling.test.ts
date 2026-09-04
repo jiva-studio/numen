@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal as Goals, Refusal, Stopped } from '@numen/protocol'
+import { Goal as Goals, Refusal, StopReason } from '@numen/protocol'
 
 import {
   CLOSES_NOTHING,
@@ -86,7 +86,7 @@ const owing = (said: Partial<PresetOwing> = {}): PresetOwing => ({
   reviews: 200,
   minutes: 20,
   closes: byMinutes,
-  stopsOn: Stopped.NOTHING,
+  stopsOn: StopReason.NOTHING,
   ...said,
 })
 
@@ -116,7 +116,7 @@ const vault = (
 
 /** An application answering one preset for each deck named here. */
 const answering = (
-  by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: Stopped }>,
+  by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: StopReason }>,
 ): Asks => ({
   async getVaultDeckPreset({ deck }) {
     const one = by[deck]
@@ -127,7 +127,7 @@ const answering = (
         title: one.title,
         settings: carried(one.settings),
         problems: [],
-        stopsOn: one.stopsOn ?? Stopped.NOTHING,
+        stopsOn: one.stopsOn ?? StopReason.NOTHING,
       },
     }
   },
@@ -147,34 +147,34 @@ describe('why a preset schedules nothing, in words', () => {
   const on = '2026-09-05'
 
   it('says nothing at all of a preset that schedules', () => {
-    expect(stoppedWords(Stopped.NOTHING, settings(), on)).toBe('')
+    expect(stoppedWords(StopReason.NOTHING, settings(), on)).toBe('')
     // A build that said nothing about it is read as scheduling.
-    expect(stoppedWords(Stopped.UNSPECIFIED, settings(), on)).toBe('')
+    expect(stoppedWords(StopReason.UNSPECIFIED, settings(), on)).toBe('')
   })
 
   it('says which budget stands at nothing', () => {
-    expect(stoppedWords(Stopped.NO_MINUTES, settings(), on)).toBe('no budget in time')
-    expect(stoppedWords(Stopped.NO_CARDS, settings(), on)).toBe('no cards a day')
-    expect(stoppedWords(Stopped.NO_DAY, settings(), on)).toBe('by no day')
+    expect(stoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no budget in time')
+    expect(stoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards a day')
+    expect(stoppedWords(StopReason.NO_DAY, settings(), on)).toBe('by no day')
   })
 
   it('names the day a goal aimed at, where the settings carry one', () => {
     const by = settings({ goal: 'date', byDate: '2026-08-31' })
 
-    expect(stoppedWords(Stopped.PAST_DAY, by, on)).toMatch(/has passed$/)
+    expect(stoppedWords(StopReason.PAST_DAY, by, on)).toMatch(/has passed$/)
     // A preset counted with no settings on hand still says what stopped it.
-    expect(stoppedWords(Stopped.PAST_DAY, null, on)).toBe('the day has passed')
+    expect(stoppedWords(StopReason.PAST_DAY, null, on)).toBe('the day has passed')
   })
 
   // The fifth of September in 2026 is a Saturday.
   it('names the day of the week carrying none of the load', () => {
-    expect(stoppedWords(Stopped.NO_LOAD, settings(), on)).toBe('no load on Saturday')
+    expect(stoppedWords(StopReason.NO_LOAD, settings(), on)).toBe('no load on Saturday')
   })
 
   // A week at nothing names no day: there is no next one to name.
   it('names no day for a week carrying none of the load', () => {
-    expect(stoppedWords(Stopped.NO_WEEK, settings(), on)).toBe('no load on any day')
-    expect(stoppedWords(Stopped.NO_WEEK, null, on)).toBe('no load on any day')
+    expect(stoppedWords(StopReason.NO_WEEK, settings(), on)).toBe('no load on any day')
+    expect(stoppedWords(StopReason.NO_WEEK, null, on)).toBe('no load on any day')
   })
 })
 
@@ -452,7 +452,7 @@ describe('which preset schedules each deck', () => {
           path: 'Stopped.md',
           title: 'Stopped',
           settings: settings({ goal: 'retention', newADay: 0, reviewsADay: 0 }),
-          stopsOn: Stopped.NO_CARDS,
+          stopsOn: StopReason.NO_CARDS,
         },
       }),
     })
@@ -541,7 +541,7 @@ describe('which preset schedules each deck', () => {
             title: 'Quiet',
             decks: 0,
             cards: 0,
-            stopsOn: Stopped.NO_MINUTES,
+            stopsOn: StopReason.NO_MINUTES,
           }),
         ],
       ),
@@ -661,7 +661,7 @@ describe('which preset schedules each deck', () => {
               title: 'Sanskrit',
               settings: carried(settings()),
               problems: ['`new_a_day` is not a number'],
-              stopsOn: Stopped.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           }
         },
@@ -714,7 +714,7 @@ describe('which preset schedules each deck', () => {
               title: 'Sanskrit',
               settings: carried(settings()),
               problems: [],
-              stopsOn: Stopped.NOTHING,
+              stopsOn: StopReason.NOTHING,
             },
           }
         },
