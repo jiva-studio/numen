@@ -83,7 +83,7 @@ func (f filing) moving(kept note.SyncTitleAndFilename) usecase.Move {
 // resolves is where the one link written in a note reaches.
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.Links().Links(t.Context(), string(f.vault.ID), in)
+	found, err := f.db.Links().Links(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestAFolderMovesWithTheNotesUnderIt(t *testing.T) {
 // sources is what the index holds at a path and beneath it, by path.
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.SourcesKnown().Under(t.Context(), string(f.vault.ID), path)
+	found, err := f.db.SourcesKnown().Under(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -467,7 +467,7 @@ func (r *Recognising) collect(
 	queue port.ProofreadQueue,
 	v domain.Vault,
 ) {
-	recognised, err := known.Recognised(ctx, string(v.ID), domain.KindBook)
+	recognised, err := known.Recognised(ctx, v.ID, domain.KindBook)
 	if err != nil {
 		return
 	}

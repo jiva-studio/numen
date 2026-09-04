@@ -36,7 +36,7 @@ var (
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
 type store struct {
-	sources map[string]map[string]port.Source // vault, then path
+	sources map[domain.VaultID]map[string]port.Source // vault, then path
 	chunks  []storedChunk
 	vectors map[int64][]port.Vector // by chunk, appended, so a second write shows
 	groups  [][]port.Vector         // every write of vectors, in order
@@ -49,7 +49,7 @@ type store struct {
 // storedChunk is one row of chunks. `parent` is zero for a large chunk.
 type storedChunk struct {
 	id       int64
-	vault    string
+	vault    domain.VaultID
 	path     string
 	kind     domain.SourceKind
 	start    int
@@ -61,18 +61,18 @@ type storedChunk struct {
 
 func newStore() *store {
 	return &store{
-		sources: map[string]map[string]port.Source{},
+		sources: map[domain.VaultID]map[string]port.Source{},
 		vectors: map[int64][]port.Vector{},
 		written: map[string]int{},
 	}
 }
 
-func (s *store) SaveSource(_ context.Context, vaultID string, src port.Source) error {
+func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src port.Source) error {
 	s.put(vaultID, src)
 	return nil
 }
 
-func (s *store) SaveExtraction(_ context.Context, vaultID string, e port.SourceChunks) error {
+func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e port.SourceChunks) error {
 	s.written[e.Source.Fingerprint.Path]++
 	s.put(vaultID, e.Source)
 	s.clear(vaultID, e.Source.Fingerprint.Path)
@@ -112,7 +112,7 @@ func (s *store) Kept(_ context.Context, recipe string, of [][]byte) (map[string]
 	return out, nil
 }
 
-func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
+func (s *store) Fingerprints(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind != kind {
@@ -124,19 +124,19 @@ func (s *store) Fingerprints(_ context.Context, vaultID string, kind domain.Sour
 	return out, nil
 }
 
-func (s *store) Unchunked(_ context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error) {
+func (s *store) Unchunked(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
 		return !s.cut(vaultID, src.Fingerprint.Path)
 	})
 }
 
-func (s *store) ByOtherRecipe(_ context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+func (s *store) ByOtherRecipe(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src port.Source) bool {
 		return !slices.Contains(recipes, src.Recipe)
 	})
 }
 
-func (s *store) Unembedded(_ context.Context, vaultID string, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
+func (s *store) Unembedded(_ context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -169,7 +169,7 @@ func hashOf(text string) string {
 
 // put records a source as it arrived, the recipe included: a source recorded
 // without one owes its text.
-func (s *store) put(vaultID string, src port.Source) {
+func (s *store) put(vaultID domain.VaultID, src port.Source) {
 	if s.sources[vaultID] == nil {
 		s.sources[vaultID] = map[string]port.Source{}
 	}
@@ -179,7 +179,7 @@ func (s *store) put(vaultID string, src port.Source) {
 // clear takes out the chunks of one source, and the vectors made from them.
 // RemoveSources takes the sources out, and their chunks and vectors with them,
 // the way a foreign key does in the database.
-func (s *store) RemoveSources(_ context.Context, vaultID string, kind domain.SourceKind, paths []string) error {
+func (s *store) RemoveSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error {
 	held := s.sources[vaultID]
 	for _, path := range paths {
 		if src, ok := held[path]; ok && src.Fingerprint.Kind == kind {
@@ -192,7 +192,7 @@ func (s *store) RemoveSources(_ context.Context, vaultID string, kind domain.Sou
 
 // MoveSources files what was at one path, and everything under it, where it now
 // is. The chunks travel with the source, as they do in the database.
-func (s *store) MoveSources(_ context.Context, vaultID, from, to string) error {
+func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to string) error {
 	held := s.sources[vaultID]
 	for path, src := range held {
 		if path != from && !strings.HasPrefix(path, from+"/") {
@@ -212,7 +212,7 @@ func (s *store) MoveSources(_ context.Context, vaultID, from, to string) error {
 }
 
 // Under is every source the store holds at a path and beneath it.
-func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
+func (s *store) Under(_ context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	var out []domain.Fingerprint
 	for held, src := range s.sources[vaultID] {
 		if held == path || strings.HasPrefix(held, path+"/") {
@@ -223,7 +223,7 @@ func (s *store) Under(_ context.Context, vaultID, path string) ([]domain.Fingerp
 	return out, nil
 }
 
-func (s *store) clear(vaultID, path string) {
+func (s *store) clear(vaultID domain.VaultID, path string) {
 	kept := s.chunks[:0]
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path {
@@ -235,7 +235,7 @@ func (s *store) clear(vaultID, path string) {
 	s.chunks = kept
 }
 
-func (s *store) insert(vaultID string, ref domain.Fingerprint, c port.Chunk, parent int64) int64 {
+func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c port.Chunk, parent int64) int64 {
 	s.next++
 	s.chunks = append(s.chunks, storedChunk{
 		id: s.next, vault: vaultID, path: ref.Path, kind: ref.Kind,
@@ -246,7 +246,7 @@ func (s *store) insert(vaultID string, ref domain.Fingerprint, c port.Chunk, par
 
 // paths answers a question about sources as the paths that satisfy it, ordered
 // and bounded the way the index orders and bounds them.
-func (s *store) paths(vaultID string, kind domain.SourceKind, limit int, owing func(port.Source) bool) ([]string, error) {
+func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int, owing func(port.Source) bool) ([]string, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a question about sources needs a positive limit, got %d", limit)
 	}
@@ -265,7 +265,7 @@ func (s *store) paths(vaultID string, kind domain.SourceKind, limit int, owing f
 
 // cut says whether a source has a small chunk, which is what having been cut
 // means.
-func (s *store) cut(vaultID, path string) bool {
+func (s *store) cut(vaultID domain.VaultID, path string) bool {
 	for _, c := range s.chunks {
 		if c.vault == vaultID && c.path == path && c.parent != 0 {
 			return true
@@ -303,7 +303,7 @@ func (s *store) ordered() []storedChunk {
 
 // small is the chunks of one vault that carry a vector: the chunks a search
 // runs over.
-func (s *store) small(vaultID string) []storedChunk {
+func (s *store) small(vaultID domain.VaultID) []storedChunk {
 	var out []storedChunk
 	for _, c := range s.ordered() {
 		if c.vault == vaultID && c.parent != 0 {
@@ -369,12 +369,12 @@ func (l *library) ref(path string) domain.Fingerprint {
 }
 
 // vaults opens the reader of each vault a test set up.
-type vaults map[string]*library
+type vaults map[domain.VaultID]*library
 
 func (v vaults) Open(vault domain.Vault) (port.VaultReader, error) {
-	reader, ok := v[string(vault.ID)]
+	reader, ok := v[vault.ID]
 	if !ok {
-		return nil, fmt.Errorf("no vault %s", string(vault.ID))
+		return nil, fmt.Errorf("no vault %s", vault.ID)
 	}
 	return reader, nil
 }
@@ -484,7 +484,7 @@ func words(vocabulary []string, n int) string {
 	return strings.Join(out, " ")
 }
 
-func (s *store) Reading(_ context.Context, vaultID, path string) (port.SourceText, bool, error) {
+func (s *store) Reading(_ context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
 	src, held := s.sources[vaultID][path]
 	if !held {
 		return port.SourceText{}, false, nil
@@ -496,7 +496,7 @@ func (s *store) Reading(_ context.Context, vaultID, path string) (port.SourceTex
 	}, true, nil
 }
 
-func (s *store) Recognised(_ context.Context, vaultID string, kind domain.SourceKind) ([]port.SourceText, error) {
+func (s *store) Recognised(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
 	var out []port.SourceText
 	for path, src := range s.sources[vaultID] {
 		if src.Fingerprint.Kind == kind && src.TextFrom != "" {

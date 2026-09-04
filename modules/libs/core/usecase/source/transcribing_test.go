@@ -105,7 +105,7 @@ type unheard struct {
 }
 
 func (h unheard) Fingerprints(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
 	for _, path := range h.recordings {
@@ -115,7 +115,7 @@ func (h unheard) Fingerprints(
 }
 
 func (h unheard) Recognised(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil
 }
@@ -197,32 +197,32 @@ func TestARecordingStandingOnATextIsNotOwed(t *testing.T) {
 type recognised struct{ path string }
 
 func (h recognised) Fingerprints(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	return map[string]domain.Fingerprint{h.path: {Path: h.path}}, nil
 }
 
 func (h recognised) Recognised(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{Path: h.path, Producer: "asr", Hash: "x"}}, nil
 }
 
-func (h recognised) Under(context.Context, string, string) ([]domain.Fingerprint, error) {
+func (h recognised) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 
-func (h recognised) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
+func (h recognised) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
 func (h recognised) ByOtherRecipe(
-	context.Context, string, domain.SourceKind, []string, int,
+	context.Context, domain.VaultID, domain.SourceKind, []string, int,
 ) ([]string, error) {
 	return nil, nil
 }
 
-func (h recognised) Reading(context.Context, string, string) (port.SourceText, bool, error) {
+func (h recognised) Reading(context.Context, domain.VaultID, string) (port.SourceText, bool, error) {
 	return port.SourceText{}, false, nil
 }
 
@@ -376,7 +376,7 @@ type sized struct {
 }
 
 func (s sized) Fingerprints(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	out := map[string]domain.Fingerprint{}
 	for path, size := range s.recordings {
@@ -386,7 +386,7 @@ func (s sized) Fingerprints(
 }
 
 func (sized) Recognised(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return nil, nil
 }

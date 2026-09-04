@@ -18,7 +18,7 @@ import (
 // rather than of the file: it is the answer the person sees.
 func (f filing) title(t *testing.T, path string) string {
 	t.Helper()
-	shown, err := f.db.Queries().Notes(t.Context(), string(f.vault.ID), []string{path})
+	shown, err := f.db.Queries().Notes(t.Context(), f.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

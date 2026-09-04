@@ -23,7 +23,7 @@ type groupedWrites struct {
 	fail   error
 }
 
-func (g *groupedWrites) Save(_ context.Context, _ string, notes []domain.Note) error {
+func (g *groupedWrites) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	if g.fail != nil {
 		return g.fail
 	}
@@ -35,7 +35,7 @@ func (g *groupedWrites) Save(_ context.Context, _ string, notes []domain.Note) e
 	return nil
 }
 
-func (g *groupedWrites) Remove(context.Context, string, []string) error { return nil }
+func (g *groupedWrites) Remove(context.Context, domain.VaultID, []string) error { return nil }
 
 type countedMeasurements struct{ n int }
 

@@ -267,11 +267,11 @@ func (t *Transcribing) owing(ctx context.Context, known port.SourceQueries, v do
 	if known == nil {
 		return nil
 	}
-	held, err := known.Fingerprints(ctx, string(v.ID), domain.KindRecording)
+	held, err := known.Fingerprints(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
-	recognised, err := known.Recognised(ctx, string(v.ID), domain.KindRecording)
+	recognised, err := known.Recognised(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -520,7 +520,7 @@ func (t *Transcribing) TakingUp(
 	go func() {
 		defer t.going.Done()
 		for _, v := range vaults {
-			recognised, err := known.Recognised(ctx, string(v.ID), domain.KindRecording)
+			recognised, err := known.Recognised(ctx, v.ID, domain.KindRecording)
 			if err != nil {
 				continue
 			}

@@ -31,7 +31,7 @@ func hearing(t *testing.T, says map[int]string, words ...string) (PutRight, doma
 	}
 	by := &corrector{says: says}
 	return PutRight{
-		Readers:   vaults{string(first.ID): shelved},
+		Readers:   vaults{first.ID: shelved},
 		Derived:   kept,
 		By:        by,
 		BatchSize: 1,

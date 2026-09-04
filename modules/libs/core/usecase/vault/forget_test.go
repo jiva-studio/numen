@@ -17,8 +17,8 @@ import (
 // keeps the row it has.
 type indexRows struct {
 	saved  []domain.VaultID
-	rows   map[string]bool
-	forgot []string
+	rows   map[domain.VaultID]bool
+	forgot []domain.VaultID
 	fails  error
 	steps  *[]string
 }
@@ -27,17 +27,17 @@ func (r *indexRows) Register(_ context.Context, id domain.VaultID) error {
 	if r.fails != nil {
 		return r.fails
 	}
-	if !r.rows[string(id)] {
+	if !r.rows[id] {
 		r.saved = append(r.saved, id)
 		if r.rows == nil {
-			r.rows = map[string]bool{}
+			r.rows = map[domain.VaultID]bool{}
 		}
-		r.rows[string(id)] = true
+		r.rows[id] = true
 	}
 	return nil
 }
 
-func (r *indexRows) Forget(_ context.Context, vaultID string) error {
+func (r *indexRows) Forget(_ context.Context, vaultID domain.VaultID) error {
 	r.forgot = append(r.forgot, vaultID)
 	if r.steps != nil {
 		*r.steps = append(*r.steps, "forget")
@@ -81,8 +81,8 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	if len(known) != 1 || known[0].ID != kept.ID {
 		t.Errorf("the list holds %v, want only %s", known, kept.Name)
 	}
-	if len(index.forgot) != 1 || index.forgot[0] != string(gone.ID) {
-		t.Errorf("the index was told to forget %v, want %s", index.forgot, string(gone.ID))
+	if len(index.forgot) != 1 || index.forgot[0] != gone.ID {
+		t.Errorf("the index was told to forget %v, want %s", index.forgot, gone.ID)
 	}
 }
 

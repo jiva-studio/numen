@@ -119,7 +119,7 @@ func (u Extract) discover(
 ) error {
 	known := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Fingerprints(ctx, string(v.ID), kind)
+		held, err := u.Owing.Fingerprints(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -138,7 +138,7 @@ func (u Extract) discover(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Fingerprint: ref}); err != nil {
+		if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -170,7 +170,7 @@ func (u Extract) discover(
 			return err
 		}
 		*swept = append(*swept, went...)
-		if err := u.Sources.RemoveSources(ctx, string(v.ID), kind, gone); err != nil {
+		if err := u.Sources.RemoveSources(ctx, v.ID, kind, gone); err != nil {
 			return fmt.Errorf("remove: %w", err)
 		}
 		res.Removed += len(gone)
@@ -189,7 +189,7 @@ func (u Extract) standing(
 	if u.Derived == nil {
 		return nil, nil
 	}
-	held, err := u.Owing.Recognised(ctx, string(v.ID), kind)
+	held, err := u.Owing.Recognised(ctx, v.ID, kind)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -221,7 +221,7 @@ func (u Extract) sweep(ctx context.Context, v domain.Vault, went []port.SourceTe
 	}
 	stood := make(map[port.SourceText]bool)
 	for _, kind := range u.kinds() {
-		held, err := u.Owing.Recognised(ctx, string(v.ID), kind)
+		held, err := u.Owing.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -254,7 +254,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 		return nil
 	}
 	for _, kind := range u.kinds() {
-		standing, err := u.Owing.Recognised(ctx, string(v.ID), kind)
+		standing, err := u.Owing.Recognised(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
@@ -272,7 +272,7 @@ func (u Extract) forgotten(ctx context.Context, v domain.Vault, reader port.Vaul
 			if err != nil {
 				return fmt.Errorf("stat %s: %w", r.Path, err)
 			}
-			if err := u.Sources.SaveSource(ctx, string(v.ID), port.Source{Fingerprint: ref}); err != nil {
+			if err := u.Sources.SaveSource(ctx, v.ID, port.Source{Fingerprint: ref}); err != nil {
 				return fmt.Errorf("record %s: %w", r.Path, err)
 			}
 			res.Forgotten++
@@ -308,10 +308,10 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader port.VaultReade
 	for _, kind := range u.kinds() {
 		questions = append(questions,
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.Unchunked(ctx, string(v.ID), kind, sourcesPerQuery)
+				return u.Owing.Unchunked(ctx, v.ID, kind, sourcesPerQuery)
 			},
 			func(ctx context.Context) ([]string, error) {
-				return u.Owing.ByOtherRecipe(ctx, string(v.ID), kind, known, sourcesPerQuery)
+				return u.Owing.ByOtherRecipe(ctx, v.ID, kind, known, sourcesPerQuery)
 			},
 		)
 	}
@@ -429,7 +429,7 @@ func (u Extract) source(
 		},
 		Chunks: chunks,
 	}
-	if err := u.Sources.SaveExtraction(ctx, string(v.ID), extraction); err != nil {
+	if err := u.Sources.SaveExtraction(ctx, v.ID, extraction); err != nil {
 		return fmt.Errorf("write the chunks of %s: %w", path, err)
 	}
 	res.Extracted++

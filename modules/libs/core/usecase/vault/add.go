@@ -68,7 +68,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	//
 	// They are told apart by looking: if the old location still carries this
 	// identity, both exist and it is a copy.
-	existing, found, err := u.Registry.Find(id)
+	existing, found, err := u.Registry.Find(string(id))
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -88,7 +88,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		// moved, and the registry is what has to catch up.
 	}
 
-	v := domain.Vault{ID: domain.VaultID(id), Name: name, Path: root}
+	v := domain.Vault{ID: id, Name: name, Path: root}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
 		v.Name = filepath.Base(root)

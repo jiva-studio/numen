@@ -107,7 +107,7 @@ func halted(
 type books struct{ port.SourceQueries }
 
 func (books) Recognised(
-	_ context.Context, _ string, _ domain.SourceKind,
+	_ context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	return []port.SourceText{{Path: scan, Producer: "ocr", Hash: "x"}}, nil
 }

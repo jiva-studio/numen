@@ -44,7 +44,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, nil
 	}
 
-	travelling, err := u.Known.Under(ctx, string(v.ID), from)
+	travelling, err := u.Known.Under(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -56,7 +56,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.Links.Backlinks(ctx, string(v.ID), source.Path)
+		links, err := u.Links.Backlinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return res, err
 		}
@@ -78,7 +78,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 
 	// Notes and books alike are filed under their new paths in one write, and
 	// what was derived from each of them travels with it.
-	if err := u.Sources.MoveSources(ctx, string(v.ID), from, to); err != nil {
+	if err := u.Sources.MoveSources(ctx, v.ID, from, to); err != nil {
 		return res, err
 	}
 

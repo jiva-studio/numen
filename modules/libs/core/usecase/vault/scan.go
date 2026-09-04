@@ -110,7 +110,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 
-	known, err := u.Known.Fingerprints(ctx, string(v.ID))
+	known, err := u.Known.Fingerprints(ctx, v.ID)
 	if err != nil {
 		return res, fmt.Errorf("read index: %w", err)
 	}
@@ -129,7 +129,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return cmp.Compare(b.ModTime, a.ModTime) })
 
 	group := grouping{write: func(ctx context.Context, notes []domain.Note) error {
-		if err := u.Notes.Save(ctx, string(v.ID), notes); err != nil {
+		if err := u.Notes.Save(ctx, v.ID, notes); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
 				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
@@ -194,7 +194,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 			gone = append(gone, path)
 		}
 	}
-	if err := u.Notes.Remove(ctx, string(v.ID), gone); err != nil {
+	if err := u.Notes.Remove(ctx, v.ID, gone); err != nil {
 		return res, fmt.Errorf("remove deleted notes: %w", err)
 	}
 	res.Removed = len(gone)

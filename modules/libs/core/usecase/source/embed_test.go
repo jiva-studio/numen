@@ -17,10 +17,10 @@ const dimensions = 32
 // cutBooks extracts one vault's books and answers with the chunks that owe a vector.
 func cutBooks(t *testing.T, index *store, shelf *library, v domain.Vault) []storedChunk {
 	t.Helper()
-	if _, err := (Extract{Readers: vaults{string(v.ID): shelf}, Sources: index, Owing: index}).Execute(t.Context(), v); err != nil {
+	if _, err := (Extract{Readers: vaults{v.ID: shelf}, Sources: index, Owing: index}).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	small := index.small(string(v.ID))
+	small := index.small(v.ID)
 	if len(small) == 0 {
 		t.Fatal("the book was not cut into anything that carries a vector")
 	}
@@ -42,7 +42,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 
 	stopped := &embedder{dims: dimensions, refuse: 3}
 	embed := Embed{
-		Readers: vaults{string(first.ID): shelf}, Chunks: index, Vectors: index,
+		Readers: vaults{first.ID: shelf}, Chunks: index, Vectors: index,
 		Embedder: stopped, BatchCharacters: 4000,
 	}
 	if _, err := embed.Execute(ctx, first); err == nil {
@@ -104,7 +104,7 @@ func TestBothRepresentationsOfAVectorAreWrittenTogether(t *testing.T) {
 	var progress []EmbedResult
 	model := &embedder{dims: dimensions}
 	res, err := (Embed{
-		Readers: vaults{string(first.ID): shelf}, Chunks: index, Vectors: index,
+		Readers: vaults{first.ID: shelf}, Chunks: index, Vectors: index,
 		Embedder: model, BatchCharacters: 2000,
 		OnProgress: func(r EmbedResult) { progress = append(progress, r) },
 	}).Execute(ctx, first)
@@ -154,7 +154,7 @@ func TestWithNoEmbedderTheTextIsCutAndNothingFails(t *testing.T) {
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	res, err := (Embed{Readers: vaults{string(first.ID): shelf}, Chunks: index, Vectors: index}).Execute(ctx, first)
+	res, err := (Embed{Readers: vaults{first.ID: shelf}, Chunks: index, Vectors: index}).Execute(ctx, first)
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
@@ -220,7 +220,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			c.replace(t, shelf)
 
 			res, err := (Embed{
-				Readers: vaults{string(first.ID): shelf}, Chunks: index, Vectors: index,
+				Readers: vaults{first.ID: shelf}, Chunks: index, Vectors: index,
 				Embedder: &embedder{dims: dimensions},
 			}).Execute(ctx, first)
 			if err != nil {
@@ -240,10 +240,10 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	index := newStore()
-	shelves := vaults{string(first.ID): newLibrary(), string(second.ID): newLibrary()}
-	shelves[string(first.ID)].hold("library/sanskrit.epub", domain.KindBook,
+	shelves := vaults{first.ID: newLibrary(), second.ID: newLibrary()}
+	shelves[first.ID].hold("library/sanskrit.epub", domain.KindBook,
 		bookOf(t, "Sanskrit", words(sanskrit, 400)), 1)
-	shelves[string(second.ID)].hold("library/latin.epub", domain.KindBook,
+	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
 		bookOf(t, "Latin", words(latin, 400)), 1)
 
 	extract := Extract{Readers: shelves, Sources: index, Owing: index}
@@ -252,7 +252,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	mine, theirs := index.small(string(first.ID)), index.small(string(second.ID))
+	mine, theirs := index.small(first.ID), index.small(second.ID)
 	if len(mine) == 0 || len(theirs) == 0 {
 		t.Fatal("both vaults have to hold chunks for this to say anything")
 	}
@@ -297,20 +297,20 @@ func TestASourceStandingOnAReadingIsEmbeddedFromIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	extract := Extract{Readers: vaults{string(first.ID): shelf}, Sources: index, Owing: index, Derived: made}
+	extract := Extract{Readers: vaults{first.ID: shelf}, Sources: index, Owing: index, Derived: made}
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	if index.sources[string(first.ID)][bookPath].TextFrom == "" {
+	if index.sources[first.ID][bookPath].TextFrom == "" {
 		t.Fatal("the source does not stand on a reading, so embedding it proves nothing")
 	}
-	small := index.small(string(first.ID))
+	small := index.small(first.ID)
 	if len(small) == 0 {
 		t.Fatal("the book was not cut into anything that carries a vector")
 	}
 
 	embed := Embed{
-		Readers: vaults{string(first.ID): shelf}, Derived: made, Chunks: index, Vectors: index,
+		Readers: vaults{first.ID: shelf}, Derived: made, Chunks: index, Vectors: index,
 		Embedder: &embedder{dims: dimensions}, BatchCharacters: 4000,
 	}
 	if _, err := embed.Execute(ctx, first); err != nil {

@@ -39,7 +39,7 @@ func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *contai
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().Lexical(
-		t.Context(), string(v.ID), query, []domain.SourceKind{domain.KindBook}, 10, false,
+		t.Context(), v.ID, query, []domain.SourceKind{domain.KindBook}, 10, false,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +49,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	matches, err := db.Queries().Search(t.Context(), string(v.ID), query, 10)
+	matches, err := db.Queries().Search(t.Context(), v.ID, query, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	})
 	const book = "library/A Book.epub"
 	testsupport.WriteBook(t, v.Path, book)
-	if err := db.Sources().SaveExtraction(t.Context(), string(v.ID), port.SourceChunks{
+	if err := db.Sources().SaveExtraction(t.Context(), v.ID, port.SourceChunks{
 		Source: port.Source{
 			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: 1},
 			Hash:        "a-hash",
@@ -174,7 +174,7 @@ func TestABookThatWentLeavesTheIndex(t *testing.T) {
 	if found := passages(t, db, v, "reversible"); len(found) != 0 {
 		t.Errorf("the index answers with %d passages of a book the vault does not hold", len(found))
 	}
-	held, err := db.SourcesKnown().Under(t.Context(), string(v.ID), "library")
+	held, err := db.SourcesKnown().Under(t.Context(), v.ID, "library")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,14 +303,14 @@ type countingNotes struct {
 	sizes  []int
 }
 
-func (c *countingNotes) Save(_ context.Context, _ string, notes []domain.Note) error {
+func (c *countingNotes) Save(_ context.Context, _ domain.VaultID, notes []domain.Note) error {
 	c.groups++
 	c.notes += len(notes)
 	c.sizes = append(c.sizes, len(notes))
 	return nil
 }
 
-func (c *countingNotes) Remove(context.Context, string, []string) error { return nil }
+func (c *countingNotes) Remove(context.Context, domain.VaultID, []string) error { return nil }
 
 // TestANoteThatVanishesMidReadKeepsItsRow. A file that is briefly absent is
 // what an editor saving through a temporary file looks like, and the save that

@@ -19,7 +19,7 @@ type holding struct {
 }
 
 func (h *holding) Fingerprints(
-	ctx context.Context, _ string, _ domain.SourceKind,
+	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	select {
 	case h.asked <- struct{}{}:
@@ -35,7 +35,7 @@ func (h *holding) Fingerprints(
 }
 
 func (h *holding) Recognised(
-	ctx context.Context, _ string, _ domain.SourceKind,
+	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	select {
 	case h.asked <- struct{}{}:

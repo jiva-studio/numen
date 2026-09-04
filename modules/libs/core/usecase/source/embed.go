@@ -81,7 +81,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 		if err := ctx.Err(); err != nil {
 			return res, err
 		}
-		owing, err := u.Chunks.Unembedded(ctx, string(v.ID), model, after, chunksPerQuery)
+		owing, err := u.Chunks.Unembedded(ctx, v.ID, model, after, chunksPerQuery)
 		if err != nil {
 			return res, fmt.Errorf("what owes a vector from %s: %w", model, err)
 		}

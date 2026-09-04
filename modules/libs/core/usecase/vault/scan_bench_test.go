@@ -142,7 +142,7 @@ func BenchmarkSearch(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				if _, err := queries.Search(b.Context(), string(v.ID), "entropy observer", 20); err != nil {
+				if _, err := queries.Search(b.Context(), v.ID, "entropy observer", 20); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -206,7 +206,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 	queries := db.Queries()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := queries.Search(ctx, string(v.ID), "entropy observer", 20); err != nil {
+		if _, err := queries.Search(ctx, v.ID, "entropy observer", 20); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -242,7 +242,7 @@ func BenchmarkLinks(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				resolved, err := links.Links(b.Context(), string(v.ID), of)
+				resolved, err := links.Links(b.Context(), v.ID, of)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -269,7 +269,7 @@ func BenchmarkBacklinks(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				if _, err := links.Backlinks(b.Context(), string(v.ID), to); err != nil {
+				if _, err := links.Backlinks(b.Context(), v.ID, to); err != nil {
 					b.Fatal(err)
 				}
 			}
