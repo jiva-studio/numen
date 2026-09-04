@@ -14,10 +14,10 @@ vi.mock('@connectrpc/connect-web', () => ({ createConnectTransport: () => ({}) }
 vi.mock('@connectrpc/connect', () => ({ createClient: () => asked }))
 
 const asked = {
-  read: vi.fn(),
-  write: vi.fn(),
-  create: vi.fn(),
-  join: vi.fn(),
+  readNote: vi.fn(),
+  writeNote: vi.fn(),
+  createNote: vi.fn(),
+  writeLink: vi.fn(),
 }
 
 const { core } = await import('./vault')
@@ -25,13 +25,13 @@ const { core } = await import('./vault')
 describe('the file a save presents', () => {
   it('comes back as the file it was, through a path that holds spaces', async () => {
     const at = { path: 'mahabharata/The aggressor.md', size: 4096n, mtime: 1_700_000_000_123n }
-    asked.read.mockResolvedValue({ body: 'prose', at })
-    asked.write.mockResolvedValue({})
+    asked.readNote.mockResolvedValue({ body: 'prose', at })
+    asked.writeNote.mockResolvedValue({})
 
     const read = await core.read(at.path)
     await core.write(at.path, 'prose and more', { prose: read.body, at: read.at ?? '' })
 
-    expect(asked.write.mock.calls[0]?.[0]).toEqual({
+    expect(asked.writeNote.mock.calls[0]?.[0]).toEqual({
       path: at.path,
       body: 'prose and more',
       seen: { prose: 'prose', at },
@@ -39,17 +39,17 @@ describe('the file a save presents', () => {
   })
 
   it('is left out of a save that presents nothing', async () => {
-    asked.write.mockResolvedValue({})
+    asked.writeNote.mockResolvedValue({})
 
     await core.write('Heat.md', 'mine', null)
 
-    expect(asked.write.mock.calls.at(-1)?.[0]).toEqual({ path: 'Heat.md', body: 'mine' })
+    expect(asked.writeNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Heat.md', body: 'mine' })
   })
 })
 
 describe('the role a link carries', () => {
   it('goes to the schema under the word the vault uses for it', async () => {
-    asked.create.mockResolvedValue({ path: 'Entropy.md' })
+    asked.createNote.mockResolvedValue({ path: 'Entropy.md' })
 
     await core.create({
       title: 'Entropy',
@@ -57,7 +57,7 @@ describe('the role a link carries', () => {
       links: [{ to: 'Ontology.md', role: 'jump', label: 'see also' }],
     })
 
-    expect(asked.create.mock.calls[0]?.[0].links).toEqual([
+    expect(asked.createNote.mock.calls[0]?.[0].links).toEqual([
       { to: 'Ontology.md', role: Role.JUMP, label: 'see also' },
     ])
   })
@@ -70,11 +70,11 @@ describe('the role a link carries', () => {
       ['ref', Role.REF],
       ['attachment', Role.ATTACHMENT],
     ] as const) {
-      asked.join.mockResolvedValue({})
+      asked.writeLink.mockResolvedValue({})
 
       await core.join('Ontology.md', { to: 'Entropy.md', role })
 
-      expect(asked.join.mock.calls.at(-1)?.[0].link).toEqual({
+      expect(asked.writeLink.mock.calls.at(-1)?.[0].link).toEqual({
         to: 'Entropy.md',
         role: named,
         label: '',
