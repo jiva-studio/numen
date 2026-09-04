@@ -72,7 +72,8 @@ func TestStartAnswers(t *testing.T) {
 	seats := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
 		seats = map[string]int{}
-		around, _ := ask("NoteService", "Neighbourhood", map[string]any{"path": bind.Seeded})["related"].([]any)
+		around, _ := ask("NoteService", "GetNeighbourhood",
+			map[string]any{"path": bind.Seeded})["related"].([]any)
 		for _, one := range around {
 			seats[one.(map[string]any)["seat"].(string)]++
 		}
@@ -87,7 +88,7 @@ func TestStartAnswers(t *testing.T) {
 		}
 	}
 
-	made := ask("NoteService", "Create", map[string]any{"title": "Anemone", "folder": ""})
+	made := ask("NoteService", "CreateNote", map[string]any{"title": "Anemone", "folder": ""})
 	if made["path"] != "Anemone.md" {
 		t.Fatalf("made %v, want Anemone.md", made)
 	}
