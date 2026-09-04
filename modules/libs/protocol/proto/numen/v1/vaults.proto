@@ -135,7 +135,7 @@ message VaultsServiceAddRequest {
 
   // What to call the vault. Empty takes the folder's own name, and a name
   // another vault has gets a number appended.
-  string name = 2;
+  string display_name = 2;
 }
 
 message VaultsServiceAddResponse {
@@ -148,10 +148,10 @@ message VaultsServiceAddResponse {
 
 message VaultsServiceRenameRequest {
   // The vault to rename, by its identity.
-  string id = 1;
+  string name = 1;
 
   // What the vault is called from now on.
-  string name = 2;
+  string display_name = 2;
 }
 
 message VaultsServiceRenameResponse {
@@ -165,7 +165,7 @@ message VaultsServiceRenameResponse {
 
 message VaultsServiceForgetRequest {
   // The vault to forget, by its identity.
-  string id = 1;
+  string name = 1;
 }
 
 message VaultsServiceForgetResponse {
@@ -175,7 +175,7 @@ message VaultsServiceForgetResponse {
 
 message VaultsServiceEraseRequest {
   // The vault to erase, by its identity.
-  string id = 1;
+  string name = 1;
 }
 
 message VaultsServiceEraseResponse {
@@ -186,7 +186,7 @@ message VaultsServiceEraseResponse {
 
 message VaultsServiceOpenRequest {
   // The vault to show, by its identity.
-  string id = 1;
+  string name = 1;
 }
 
 message VaultsServiceOpenResponse {

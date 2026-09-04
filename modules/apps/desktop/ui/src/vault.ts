@@ -154,11 +154,11 @@ export const vaults: Vaults = {
     const answer = await vaultsService.choose({ title, startingAt: '' })
     return answer.chose ? answer.path : ''
   },
-  add: async (path, name) => added(await vaultsService.add({ path, name })),
-  rename: async (id, name) => added(await vaultsService.rename({ id, name })),
-  forget: async (id) => turnedDown(await vaultsService.forget({ id })),
-  erase: async (id) => turnedDown(await vaultsService.erase({ id })),
-  open: async (id) => turnedDown(await vaultsService.open({ id })),
+  add: async (path, called) => added(await vaultsService.add({ path, displayName: called })),
+  rename: async (id, called) => added(await vaultsService.rename({ name: id, displayName: called })),
+  forget: async (id) => turnedDown(await vaultsService.forget({ name: id })),
+  erase: async (id) => turnedDown(await vaultsService.erase({ name: id })),
+  open: async (id) => turnedDown(await vaultsService.open({ name: id })),
 }
 
 /** The stencils and the decks of that vault, in the shape the window asks about them. */

@@ -391,7 +391,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	added, err := f.holds.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{
-		Path: root, Name: "the first one",
+		Path: root, DisplayName: "the first one",
 	}))
 	if err != nil {
 		t.Fatalf("a folder could not be added: %v", err)
@@ -401,7 +401,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	if _, err := f.holds.Open(t.Context(), connect.NewRequest(&v1.VaultsServiceOpenRequest{
-		Id: added.Msg.GetVault().GetName(),
+		Name: added.Msg.GetVault().GetName(),
 	})); err != nil {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}

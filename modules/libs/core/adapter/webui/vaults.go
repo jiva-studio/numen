@@ -83,7 +83,7 @@ func (s vaults) Add(
 	if s.api.Vaults.Add == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
-	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
+	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetDisplayName())
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
 		if !refused {
@@ -103,9 +103,9 @@ func (s vaults) Rename(
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Rename == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
-	v, err := s.found(r.Msg.GetId())
+	v, err := s.found(r.Msg.GetName())
 	if err == nil {
-		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
+		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetDisplayName())
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
@@ -126,7 +126,7 @@ func (s vaults) Forget(
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Forget == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
-	v, err := s.offTheList(r.Msg.GetId())
+	v, err := s.offTheList(r.Msg.GetName())
 	if err == nil {
 		err = s.api.Vaults.Forget.Execute(ctx, v)
 	}
@@ -149,7 +149,7 @@ func (s vaults) Erase(
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Erase == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
-	v, err := s.offTheList(r.Msg.GetId())
+	v, err := s.offTheList(r.Msg.GetName())
 	if err == nil {
 		err = s.api.Vaults.Erase.Execute(ctx, v)
 	}
@@ -171,7 +171,7 @@ func (s vaults) Open(
 	if s.api.Vaults.Registry == nil || s.api.Opens == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoOpening)
 	}
-	v, err := s.found(r.Msg.GetId())
+	v, err := s.found(r.Msg.GetName())
 	if err == nil {
 		err = s.api.Opens(ctx, v)
 	}

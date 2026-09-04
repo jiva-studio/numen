@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkoKBUtub3duEgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDwoHbWlzc2luZxgEIAEoCCIaChhWYXVsdHNTZXJ2aWNlTGlzdFJlcXVlc3QiTQoZVmF1bHRzU2VydmljZUxpc3RSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5Lbm93bhIPCgdzaG93aW5nGAIgASgJIkAKGlZhdWx0c1NlcnZpY2VDaG9vc2VSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjoKG1ZhdWx0c1NlcnZpY2VDaG9vc2VSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWNob3NlGAIgASgIIjUKF1ZhdWx0c1NlcnZpY2VBZGRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCSKEAQoYVmF1bHRzU2VydmljZUFkZFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuS25vd25IAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCI2ChpWYXVsdHNTZXJ2aWNlUmVuYW1lUmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJIocBChtWYXVsdHNTZXJ2aWNlUmVuYW1lUmVzcG9uc2USIwoFdmF1bHQYASABKAsyDy5udW1lbi52MS5Lbm93bkgAiAEBEi0KB3JlZnVzYWwYAiABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSAGIAQFCCAoGX3ZhdWx0QgoKCF9yZWZ1c2FsIigKGlZhdWx0c1NlcnZpY2VGb3JnZXRSZXF1ZXN0EgoKAmlkGAEgASgJIlgKG1ZhdWx0c1NlcnZpY2VGb3JnZXRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIicKGVZhdWx0c1NlcnZpY2VFcmFzZVJlcXVlc3QSCgoCaWQYASABKAkiVwoaVmF1bHRzU2VydmljZUVyYXNlUmVzcG9uc2USLQoHcmVmdXNhbBgBIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCImChhWYXVsdHNTZXJ2aWNlT3BlblJlcXVlc3QSCgoCaWQYASABKAkiVgoZVmF1bHRzU2VydmljZU9wZW5SZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKrICCg1WYXVsdHNSZWZ1c2FsEh4KGlZBVUxUU19SRUZVU0FMX1VOU1BFQ0lGSUVEEAASHQoZVkFVTFRTX1JFRlVTQUxfVU5SRUFEQUJMRRABEhcKE1ZBVUxUU19SRUZVU0FMX0NPUFkQAhIbChdWQVVMVFNfUkVGVVNBTF9PVkVSTEFQUxADEh0KGVZBVUxUU19SRUZVU0FMX05BTUVfVEFLRU4QBBIdChlWQVVMVFNfUkVGVVNBTF9MQVNUX1ZBVUxUEAUSGgoWVkFVTFRTX1JFRlVTQUxfU0hPV0lORxAGEhoKFlZBVUxUU19SRUZVU0FMX1VOS05PV04QBxIbChdWQVVMVFNfUkVGVVNBTF9OT19UUkFTSBAIEhkKFVZBVUxUU19SRUZVU0FMX0FTS0lORxAJMtgECg1WYXVsdHNTZXJ2aWNlEk8KBExpc3QSIi5udW1lbi52MS5WYXVsdHNTZXJ2aWNlTGlzdFJlcXVlc3QaIy5udW1lbi52MS5WYXVsdHNTZXJ2aWNlTGlzdFJlc3BvbnNlElUKBkNob29zZRIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VDaG9vc2VSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZUNob29zZVJlc3BvbnNlEkwKA0FkZBIhLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VBZGRSZXF1ZXN0GiIubnVtZW4udjEuVmF1bHRzU2VydmljZUFkZFJlc3BvbnNlElUKBlJlbmFtZRIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VSZW5hbWVSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZVJlbmFtZVJlc3BvbnNlElUKBkZvcmdldBIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VGb3JnZXRSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZUZvcmdldFJlc3BvbnNlElIKBUVyYXNlEiMubnVtZW4udjEuVmF1bHRzU2VydmljZUVyYXNlUmVxdWVzdBokLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VFcmFzZVJlc3BvbnNlEk8KBE9wZW4SIi5udW1lbi52MS5WYXVsdHNTZXJ2aWNlT3BlblJlcXVlc3QaIy5udW1lbi52MS5WYXVsdHNTZXJ2aWNlT3BlblJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkoKBUtub3duEgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDwoHbWlzc2luZxgEIAEoCCIaChhWYXVsdHNTZXJ2aWNlTGlzdFJlcXVlc3QiTQoZVmF1bHRzU2VydmljZUxpc3RSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5Lbm93bhIPCgdzaG93aW5nGAIgASgJIkAKGlZhdWx0c1NlcnZpY2VDaG9vc2VSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjoKG1ZhdWx0c1NlcnZpY2VDaG9vc2VSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWNob3NlGAIgASgIIj0KF1ZhdWx0c1NlcnZpY2VBZGRSZXF1ZXN0EgwKBHBhdGgYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJIoQBChhWYXVsdHNTZXJ2aWNlQWRkUmVzcG9uc2USIwoFdmF1bHQYASABKAsyDy5udW1lbi52MS5Lbm93bkgAiAEBEi0KB3JlZnVzYWwYAiABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSAGIAQFCCAoGX3ZhdWx0QgoKCF9yZWZ1c2FsIkAKGlZhdWx0c1NlcnZpY2VSZW5hbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJIocBChtWYXVsdHNTZXJ2aWNlUmVuYW1lUmVzcG9uc2USIwoFdmF1bHQYASABKAsyDy5udW1lbi52MS5Lbm93bkgAiAEBEi0KB3JlZnVzYWwYAiABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSAGIAQFCCAoGX3ZhdWx0QgoKCF9yZWZ1c2FsIioKGlZhdWx0c1NlcnZpY2VGb3JnZXRSZXF1ZXN0EgwKBG5hbWUYASABKAkiWAobVmF1bHRzU2VydmljZUZvcmdldFJlc3BvbnNlEi0KB3JlZnVzYWwYASABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiKQoZVmF1bHRzU2VydmljZUVyYXNlUmVxdWVzdBIMCgRuYW1lGAEgASgJIlcKGlZhdWx0c1NlcnZpY2VFcmFzZVJlc3BvbnNlEi0KB3JlZnVzYWwYASABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiKAoYVmF1bHRzU2VydmljZU9wZW5SZXF1ZXN0EgwKBG5hbWUYASABKAkiVgoZVmF1bHRzU2VydmljZU9wZW5SZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKrICCg1WYXVsdHNSZWZ1c2FsEh4KGlZBVUxUU19SRUZVU0FMX1VOU1BFQ0lGSUVEEAASHQoZVkFVTFRTX1JFRlVTQUxfVU5SRUFEQUJMRRABEhcKE1ZBVUxUU19SRUZVU0FMX0NPUFkQAhIbChdWQVVMVFNfUkVGVVNBTF9PVkVSTEFQUxADEh0KGVZBVUxUU19SRUZVU0FMX05BTUVfVEFLRU4QBBIdChlWQVVMVFNfUkVGVVNBTF9MQVNUX1ZBVUxUEAUSGgoWVkFVTFRTX1JFRlVTQUxfU0hPV0lORxAGEhoKFlZBVUxUU19SRUZVU0FMX1VOS05PV04QBxIbChdWQVVMVFNfUkVGVVNBTF9OT19UUkFTSBAIEhkKFVZBVUxUU19SRUZVU0FMX0FTS0lORxAJMtgECg1WYXVsdHNTZXJ2aWNlEk8KBExpc3QSIi5udW1lbi52MS5WYXVsdHNTZXJ2aWNlTGlzdFJlcXVlc3QaIy5udW1lbi52MS5WYXVsdHNTZXJ2aWNlTGlzdFJlc3BvbnNlElUKBkNob29zZRIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VDaG9vc2VSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZUNob29zZVJlc3BvbnNlEkwKA0FkZBIhLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VBZGRSZXF1ZXN0GiIubnVtZW4udjEuVmF1bHRzU2VydmljZUFkZFJlc3BvbnNlElUKBlJlbmFtZRIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VSZW5hbWVSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZVJlbmFtZVJlc3BvbnNlElUKBkZvcmdldBIkLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VGb3JnZXRSZXF1ZXN0GiUubnVtZW4udjEuVmF1bHRzU2VydmljZUZvcmdldFJlc3BvbnNlElIKBUVyYXNlEiMubnVtZW4udjEuVmF1bHRzU2VydmljZUVyYXNlUmVxdWVzdBokLm51bWVuLnYxLlZhdWx0c1NlcnZpY2VFcmFzZVJlc3BvbnNlEk8KBE9wZW4SIi5udW1lbi52MS5WYXVsdHNTZXJ2aWNlT3BlblJlcXVlc3QaIy5udW1lbi52MS5WYXVsdHNTZXJ2aWNlT3BlblJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Known is one vault the installation holds, as the list has it.
@@ -172,9 +172,9 @@ export type VaultsServiceAddRequest = Message<"numen.v1.VaultsServiceAddRequest"
    * What to call the vault. Empty takes the folder's own name, and a name
    * another vault has gets a number appended.
    *
-   * @generated from field: string name = 2;
+   * @generated from field: string display_name = 2;
    */
-  name: string;
+  displayName: string;
 };
 
 /**
@@ -217,16 +217,16 @@ export type VaultsServiceRenameRequest = Message<"numen.v1.VaultsServiceRenameRe
   /**
    * The vault to rename, by its identity.
    *
-   * @generated from field: string id = 1;
+   * @generated from field: string name = 1;
    */
-  id: string;
+  name: string;
 
   /**
    * What the vault is called from now on.
    *
-   * @generated from field: string name = 2;
+   * @generated from field: string display_name = 2;
    */
-  name: string;
+  displayName: string;
 };
 
 /**
@@ -270,9 +270,9 @@ export type VaultsServiceForgetRequest = Message<"numen.v1.VaultsServiceForgetRe
   /**
    * The vault to forget, by its identity.
    *
-   * @generated from field: string id = 1;
+   * @generated from field: string name = 1;
    */
-  id: string;
+  name: string;
 };
 
 /**
@@ -308,9 +308,9 @@ export type VaultsServiceEraseRequest = Message<"numen.v1.VaultsServiceEraseRequ
   /**
    * The vault to erase, by its identity.
    *
-   * @generated from field: string id = 1;
+   * @generated from field: string name = 1;
    */
-  id: string;
+  name: string;
 };
 
 /**
@@ -347,9 +347,9 @@ export type VaultsServiceOpenRequest = Message<"numen.v1.VaultsServiceOpenReques
   /**
    * The vault to show, by its identity.
    *
-   * @generated from field: string id = 1;
+   * @generated from field: string name = 1;
    */
-  id: string;
+  name: string;
 };
 
 /**

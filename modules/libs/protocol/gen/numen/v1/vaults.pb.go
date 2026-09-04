@@ -396,7 +396,7 @@ type VaultsServiceAddRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What to call the vault. Empty takes the folder's own name, and a name
 	// another vault has gets a number appended.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName   string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -438,9 +438,9 @@ func (x *VaultsServiceAddRequest) GetPath() string {
 	return ""
 }
 
-func (x *VaultsServiceAddRequest) GetName() string {
+func (x *VaultsServiceAddRequest) GetDisplayName() string {
 	if x != nil {
-		return x.Name
+		return x.DisplayName
 	}
 	return ""
 }
@@ -502,9 +502,9 @@ func (x *VaultsServiceAddResponse) GetRefusal() VaultsRefusal {
 type VaultsServiceRenameRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to rename, by its identity.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// What the vault is called from now on.
-	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName   string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -539,16 +539,16 @@ func (*VaultsServiceRenameRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *VaultsServiceRenameRequest) GetId() string {
+func (x *VaultsServiceRenameRequest) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
 	return ""
 }
 
-func (x *VaultsServiceRenameRequest) GetName() string {
+func (x *VaultsServiceRenameRequest) GetDisplayName() string {
 	if x != nil {
-		return x.Name
+		return x.DisplayName
 	}
 	return ""
 }
@@ -611,7 +611,7 @@ func (x *VaultsServiceRenameResponse) GetRefusal() VaultsRefusal {
 type VaultsServiceForgetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to forget, by its identity.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -646,9 +646,9 @@ func (*VaultsServiceForgetRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *VaultsServiceForgetRequest) GetId() string {
+func (x *VaultsServiceForgetRequest) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
 	return ""
 }
@@ -701,7 +701,7 @@ func (x *VaultsServiceForgetResponse) GetRefusal() VaultsRefusal {
 type VaultsServiceEraseRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to erase, by its identity.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -736,9 +736,9 @@ func (*VaultsServiceEraseRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *VaultsServiceEraseRequest) GetId() string {
+func (x *VaultsServiceEraseRequest) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
 	return ""
 }
@@ -792,7 +792,7 @@ func (x *VaultsServiceEraseResponse) GetRefusal() VaultsRefusal {
 type VaultsServiceOpenRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to show, by its identity.
-	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -827,9 +827,9 @@ func (*VaultsServiceOpenRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *VaultsServiceOpenRequest) GetId() string {
+func (x *VaultsServiceOpenRequest) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
 	return ""
 }
@@ -899,39 +899,39 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"startingAt\"G\n" +
 	"\x1bVaultsServiceChooseResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05chose\x18\x02 \x01(\bR\x05chose\"A\n" +
+	"\x05chose\x18\x02 \x01(\bR\x05chose\"P\n" +
 	"\x17VaultsServiceAddRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x94\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x94\x01\n" +
 	"\x18VaultsServiceAddResponse\x12*\n" +
 	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
-	"\b_refusal\"@\n" +
-	"\x1aVaultsServiceRenameRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x97\x01\n" +
+	"\b_refusal\"S\n" +
+	"\x1aVaultsServiceRenameRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x97\x01\n" +
 	"\x1bVaultsServiceRenameResponse\x12*\n" +
 	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
-	"\b_refusal\",\n" +
-	"\x1aVaultsServiceForgetRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"a\n" +
+	"\b_refusal\"0\n" +
+	"\x1aVaultsServiceForgetRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"a\n" +
 	"\x1bVaultsServiceForgetResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal\"+\n" +
-	"\x19VaultsServiceEraseRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"`\n" +
+	"\b_refusal\"/\n" +
+	"\x19VaultsServiceEraseRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"`\n" +
 	"\x1aVaultsServiceEraseResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal\"*\n" +
-	"\x18VaultsServiceOpenRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"_\n" +
+	"\b_refusal\".\n" +
+	"\x18VaultsServiceOpenRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"_\n" +
 	"\x19VaultsServiceOpenResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
