@@ -24,9 +24,9 @@ var errNoVaults = errors.New("this build holds no list of vaults")
 // errNoChanging is what a build that cannot change that list answers.
 var errNoChanging = errors.New("this build cannot change the vaults this installation holds")
 
-// errNoPicker is what a build with no window to put a picker in front of
-// answers.
-var errNoPicker = errors.New("this build has no folder picker")
+// errNoFolderDialog is what a build with no window to put a folder dialog in
+// front of answers.
+var errNoFolderDialog = errors.New("this build has no folder picker")
 
 // errNoOpening is what a build that cannot move the window to another vault
 // answers.
@@ -52,22 +52,22 @@ func (s vaultsService) List(
 	return connect.NewResponse(out), nil
 }
 
-// Choose puts this machine's own folder picker in front of the person.
+// Choose puts this machine's own folder dialog in front of the person.
 func (s vaultsService) Choose(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceChooseRequest],
 ) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
-	if s.api.Vaults.Picker == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoPicker)
+	if s.api.Vaults.FolderDialog == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoFolderDialog)
 	}
-	path, chose, err := s.api.Vaults.Picker.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	path, chose, err := s.api.Vaults.FolderDialog.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	// A person who closed the picker chose nothing, and that is an answer.
+	// A person who closed the dialog chose nothing, and that is an answer.
 	return connect.NewResponse(&v1.VaultsServiceChooseResponse{Path: path, Chose: chose}), nil
 }
 

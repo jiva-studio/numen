@@ -122,11 +122,11 @@ func addVaultAdd(server *sdk.Server, core Core) {
 		}
 		root := in.Path
 		if root == "" {
-			if core.Vaults.Picker == nil {
+			if core.Vaults.FolderDialog == nil {
 				return nil, out{}, errors.New(
 					"there is nobody here to pick a folder: name the one to add")
 			}
-			chosen, chose, err := core.Vaults.Picker.Choose(ctx, "Choose a folder for a vault", "")
+			chosen, chose, err := core.Vaults.FolderDialog.Choose(ctx, "Choose a folder for a vault", "")
 			if err != nil {
 				return nil, out{}, err
 			}

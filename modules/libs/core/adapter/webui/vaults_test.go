@@ -81,8 +81,8 @@ func (b *bin) trashed() []string {
 	return append([]string(nil), b.moved...)
 }
 
-// folders is the person picking a folder, as a test answers for them. The real
-// picker is this machine's own and needs a window.
+// folders is the person choosing a folder, as a test answers for them. The real
+// dialog is this machine's own and needs a window.
 type folders struct {
 	mu    sync.Mutex
 	pick  string
@@ -99,7 +99,7 @@ func (f *folders) Choose(_ context.Context, title, startingAt string) (string, b
 	return f.pick, f.chose, f.fails
 }
 
-// asked is what the picker was told to say and where to open.
+// asked is what the dialog was told to say and where to open.
 func (f *folders) asked() (string, string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -114,7 +114,7 @@ type onTheList struct {
 	registry port.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
-	picker   *folders
+	dialog   *folders
 	first    domain.Vault
 	second   domain.Vault
 
@@ -138,18 +138,18 @@ func onAList(t *testing.T) *onTheList {
 		registry: registry,
 		rows:     rows,
 		bin:      &bin{},
-		picker:   &folders{},
+		dialog:   &folders{},
 		first:    added(t, adding, "one"),
 		second:   added(t, adding, "two"),
 	}
 	f.api = &API{
 		Vaults: Vaults{
-			Registry: registry,
-			Picker:   f.picker,
-			Add:      &adding,
-			Rename:   &usecase.Rename{Registry: registry, Index: rows},
-			Forget:   &forget,
-			Erase:    &usecase.Erase{Identity: identity, Trash: f.bin, Forget: forget},
+			Registry:     registry,
+			FolderDialog: f.dialog,
+			Add:          &adding,
+			Rename:       &usecase.Rename{Registry: registry, Index: rows},
+			Forget:       &forget,
+			Erase:        &usecase.Erase{Identity: identity, Trash: f.bin, Forget: forget},
 		},
 	}
 	f.api.Opens = func(_ context.Context, v domain.Vault) error {
@@ -565,8 +565,8 @@ func TestAWindowThatIsGoingIsNotARefusalAboutTheVault(t *testing.T) {
 	}
 }
 
-// TestAPersonWhoClosedThePickerChoseNothing, which is an ordinary answer.
-func TestAPersonWhoClosedThePickerChoseNothing(t *testing.T) {
+// TestAPersonWhoClosedTheFolderDialogChoseNothing, which is an ordinary answer.
+func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{
@@ -574,20 +574,20 @@ func TestAPersonWhoClosedThePickerChoseNothing(t *testing.T) {
 		StartingAt: f.first.Path,
 	}))
 	if err != nil {
-		t.Fatalf("a picker that was closed answered %v", err)
+		t.Fatalf("a dialog that was closed answered %v", err)
 	}
 	if out.Msg.GetChose() || out.Msg.GetPath() != "" {
 		t.Errorf("the answer is %v", out.Msg)
 	}
-	if title, from := f.picker.asked(); title != "Where are your notes?" || from != f.first.Path {
-		t.Errorf("the picker was titled %q and opened at %q", title, from)
+	if title, from := f.dialog.asked(); title != "Where are your notes?" || from != f.first.Path {
+		t.Errorf("the dialog was titled %q and opened at %q", title, from)
 	}
 }
 
 // TestTheFolderThePersonChoseIsAnswered.
 func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 	f := onAList(t)
-	f.picker.pick, f.picker.chose = f.second.Path, true
+	f.dialog.pick, f.dialog.chose = f.second.Path, true
 
 	out, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{}))
 	if err != nil {
@@ -598,14 +598,14 @@ func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 	}
 }
 
-// TestASecondPickerIsRefusedWhileOneIsUp. A person answers one at a time.
-func TestASecondPickerIsRefusedWhileOneIsUp(t *testing.T) {
+// TestASecondFolderDialogIsRefusedWhileOneIsUp. A person answers one at a time.
+func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
-	f.picker.fails = port.ErrChoosing
+	f.dialog.fails = port.ErrChoosing
 
 	_, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {
-		t.Errorf("a second picker answered %v, want %v", got, connect.CodeUnavailable)
+		t.Errorf("a second dialog answered %v, want %v", got, connect.CodeUnavailable)
 	}
 }
 

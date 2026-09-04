@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-// The folder picker is built on the desktop's settings, and the library that
+// The folder dialog is built on the desktop's settings, and the library that
 // puts it up ends the process where they are not installed. They ship with the
 // toolkit this binary is linked against, so where the machine does not put them
 // on the search path, the toolkit itself is asked where it keeps them.
 
-// findSchemas puts the settings a picker reads on the search path, where this
+// findSchemas puts the settings a dialog reads on the search path, where this
 // machine has not.
 //
 // It is called before anything draws: the search path is read once, the first
@@ -74,7 +74,7 @@ func schemasOf(prefix string) string {
 	return ""
 }
 
-// settled reports whether this machine holds the settings a folder picker
+// settled reports whether this machine holds the settings a folder dialog
 // reads. Compiled settings sit under `glib-2.0/schemas` of a data directory,
 // and the environment may name a folder of them outright.
 func settled() bool {

@@ -43,8 +43,8 @@ func (r *rows) forgotten() []string {
 	return append([]string(nil), r.forgot...)
 }
 
-// folders is the person picking a folder, as a test answers for them. The real
-// picker is this machine's own and needs a window.
+// folders is the person choosing a folder, as a test answers for them. The real
+// dialog is this machine's own and needs a window.
 type folders struct {
 	mu    sync.Mutex
 	pick  string
@@ -59,14 +59,14 @@ func (f *folders) Choose(_ context.Context, title, _ string) (string, bool, erro
 	return f.pick, f.chose, nil
 }
 
-// answers is what the picker hands back to the call that put it up.
+// answers is what the dialog hands back to the call that put it up.
 func (f *folders) answers(path string, chose bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.pick, f.chose = path, chose
 }
 
-// asked is what the person was told the picker was for.
+// asked is what the person was told the dialog was for.
 func (f *folders) asked() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -79,7 +79,7 @@ type installation struct {
 	core     mcp.Core
 	registry port.VaultRegistry
 	rows     *rows
-	picker   *folders
+	dialog   *folders
 	first    domain.Vault
 	second   domain.Vault
 
@@ -99,7 +99,7 @@ func onTheList(t *testing.T) *installation {
 	f := &installation{
 		registry: registry,
 		rows:     held,
-		picker:   &folders{},
+		dialog:   &folders{},
 		first:    joined(t, adding, "one"),
 		second:   joined(t, adding, "two"),
 		swapped:  make(chan domain.Vault, 1),
@@ -107,11 +107,11 @@ func onTheList(t *testing.T) *installation {
 	f.core = mcp.Core{
 		Showing: mcp.One(f.first, f.first.Path),
 		Vaults: mcp.Vaults{
-			Registry: registry,
-			Picker:   f.picker,
-			Add:      &adding,
-			Rename:   &usecase.Rename{Registry: registry, Index: held},
-			Forget:   &usecase.Forget{Registry: registry, Index: held},
+			Registry:     registry,
+			FolderDialog: f.dialog,
+			Add:          &adding,
+			Rename:       &usecase.Rename{Registry: registry, Index: held},
+			Forget:       &usecase.Forget{Registry: registry, Index: held},
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -228,15 +228,15 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 func TestAddingWithNoPathAsksThePersonAndAddsWhatTheyChose(t *testing.T) {
 	f := onTheList(t)
 	chosen := folderNamed(t, "three")
-	f.picker.answers(chosen, true)
+	f.dialog.answers(chosen, true)
 	session := connectedTo(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
 	if !out.Added || out.Folder != chosen || out.Name != "three" {
 		t.Fatalf("the vault added is %+v", out)
 	}
-	if f.picker.asked() == "" {
-		t.Error("the person was shown a picker with nothing on it")
+	if f.dialog.asked() == "" {
+		t.Error("the person was shown a dialog with nothing on it")
 	}
 	if _, found, err := f.registry.Find(out.ID); err != nil || !found {
 		t.Errorf("the vault added is not on the list: %v", err)
@@ -262,10 +262,10 @@ func TestAddingSaysTheIdentityIsWrittenIntoTheFolder(t *testing.T) {
 	}
 }
 
-// A person who closed the picker chose nothing, and that is an answer.
-func TestAPickerThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
+// A person who closed the dialog chose nothing, and that is an answer.
+func TestAFolderDialogThePersonClosedAddsNothingAndSaysSo(t *testing.T) {
 	f := onTheList(t)
-	f.picker.answers("", false)
+	f.dialog.answers("", false)
 	session := connectedTo(t, f.core)
 
 	out := call[joining](t, session, "vault_add", struct{}{})
@@ -501,11 +501,11 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 }
 
 // A vault is added by a person choosing a folder, and a build with nowhere to
-// put a picker takes the folder named.
-func TestAddingWithNoPathAndNoPickerSaysSo(t *testing.T) {
+// put a dialog takes the folder named.
+func TestAddingWithNoPathAndNoFolderDialogSaysSo(t *testing.T) {
 	f := onTheList(t)
 	core := f.core
-	core.Vaults.Picker = nil
+	core.Vaults.FolderDialog = nil
 	session := connectedTo(t, core)
 
 	if !offers(t, session, "vault_add") {
@@ -513,6 +513,6 @@ func TestAddingWithNoPathAndNoPickerSaysSo(t *testing.T) {
 	}
 	why := failing(t, session, "vault_add", struct{}{})
 	if !strings.Contains(why, "pick a folder") {
-		t.Errorf("a build with no picker refused with %q", why)
+		t.Errorf("a build with no dialog refused with %q", why)
 	}
 }

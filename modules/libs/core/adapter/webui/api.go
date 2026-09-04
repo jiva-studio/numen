@@ -195,10 +195,10 @@ type Files struct {
 type Vaults struct {
 	Registry port.VaultRegistry
 
-	// Picker puts this machine's own folder picker in front of the person. Only
-	// an application with a window has one, and a build without it answers that
-	// a folder cannot be picked here.
-	Picker port.FolderDialog
+	// FolderDialog puts this machine's own folder dialog in front of the person.
+	// Only an application with a window has one, and a build without it answers
+	// that a folder cannot be chosen here.
+	FolderDialog port.FolderDialog
 
 	Add    *usecase.Add
 	Rename *usecase.Rename

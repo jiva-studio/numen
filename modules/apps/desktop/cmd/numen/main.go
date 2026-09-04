@@ -97,7 +97,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		return err
 	}
 
-	// Before anything draws: the settings a folder picker reads are looked for
+	// Before anything draws: the settings a folder dialog reads are looked for
 	// once, the first time something asks for one.
 	findSchemas()
 
@@ -208,8 +208,8 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		EnableFileDrop: true,
 	})
 
-	// Picking a folder is the machine's own, and it opens over this window.
-	opened.API.Vaults.Picker = &picker{window: window}
+	// Choosing a folder is the machine's own, and it opens over this window.
+	opened.API.Vaults.FolderDialog = &folderDialog{window: window}
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
@@ -239,7 +239,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		return err
 	}
 
-	// A tool is served where what it works through is there, so the picker and
+	// A tool is served where what it works through is there, so the dialog and
 	// the swap above stand before the agents are let in.
 	//
 	// An agent nobody can reach is a panel that says so, not a window that does
