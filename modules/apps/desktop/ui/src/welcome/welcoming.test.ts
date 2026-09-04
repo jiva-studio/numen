@@ -39,8 +39,8 @@ const at = (over: Partial<Standing> = {}): Standing => ({
 })
 
 const vault = (id: string, name: string, missing = false): Known => ({
-  id,
-  name,
+  name: id,
+  displayName: name,
   path: `/vaults/${name}`,
   missing,
 })

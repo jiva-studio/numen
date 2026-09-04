@@ -216,7 +216,9 @@ func (s vaults) found(id string) (domain.Vault, error) {
 // be found is marked, and the vault stays on the list.
 func knownOf(v domain.Vault) *v1.Known {
 	_, err := os.Stat(v.Path)
-	return &v1.Known{Id: string(v.ID), Name: v.Name, Path: v.Path, Missing: err != nil}
+	return &v1.Known{
+		Name: string(v.ID), DisplayName: v.Name, Path: v.Path, Missing: err != nil,
+	}
 }
 
 // vaultRefusedBy says which refusal an error about the list is, and whether it

@@ -948,7 +948,7 @@ export function commanding(
    * is marked with nothing.
    */
   const aside = (one: Known): string =>
-    one.missing ? words.gone : one.id === showing.value ? words.current : ''
+    one.missing ? words.gone : one.name === showing.value ? words.current : ''
 
   /**
    * The vaults the installation holds. The two it will not take are marked
@@ -958,12 +958,12 @@ export function commanding(
   const listing = (text: string, step: Asked): PaletteBand => {
     const word = text.trim().toLowerCase()
     const items: PaletteItem[] = known.value
-      .filter((one) => word === '' || one.name.toLowerCase().includes(word))
+      .filter((one) => word === '' || one.displayName.toLowerCase().includes(word))
       .map((one) => {
         const why = aside(one)
         return {
-          id: one.id,
-          title: one.name,
+          id: one.name,
+          title: one.displayName,
           detail: why ? `${why} · ${one.path}` : one.path,
           ...(why ? { disabled: true } : {}),
           actions: [{ id: OPEN, text: step.command.text }],
@@ -1119,10 +1119,10 @@ export function commanding(
       return deed(step.command.id, { ...step.on, path: one.path, title: one.title || one.path })
     }
     if (step.step === 'vaults') {
-      const one = known.value.find((vault) => vault.id === item)
+      const one = known.value.find((vault) => vault.name === item)
       // The two the list draws and does not take are the ones it says so on.
       if (!one || aside(one)) return null
-      const on = { ...step.on, vault: { id: one.id, name: one.name } }
+      const on = { ...step.on, vault: { id: one.name, name: one.displayName } }
       if (!step.command.next) return deed(step.command.id, on)
       // The vault chosen is what the step after this one is over.
       puts({ step: step.command.next, command: step.command, on })

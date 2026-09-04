@@ -155,7 +155,7 @@ const { said, held, asked, listed, folders, cuts, stands, outside } = vi.hoisted
   },
   /** The vaults this installation holds, and the one the window is showing. */
   listed: {
-    vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }],
+    vaults: [{ name: 'physics', displayName: 'Physics', path: '/vaults/Physics', missing: false }],
     showing: 'physics',
   },
   /** What each folder of the vault holds, as a listing answers it. */
@@ -432,7 +432,7 @@ afterEach(() => {
   asked.opened = []
   asked.chose = 0
   asked.attending = []
-  listed.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', missing: false }]
+  listed.vaults = [{ name: 'physics', displayName: 'Physics', path: '/vaults/Physics', missing: false }]
   listed.showing = 'physics'
 })
 

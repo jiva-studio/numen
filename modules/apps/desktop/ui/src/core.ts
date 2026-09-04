@@ -765,9 +765,9 @@ export interface Cards {
 /** One vault the installation holds, as the list has it. */
 export interface Known {
   /** The identity the folder carries, and how the vault is asked for again. */
-  readonly id: string
-  /** What the person calls the collection. */
   readonly name: string
+  /** What the person calls the collection. */
+  readonly displayName: string
   /** The folder, absolute on this machine. */
   readonly path: string
   /** Whether nothing is at the path. The vault stays on the list. */

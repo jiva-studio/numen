@@ -765,8 +765,8 @@ const faulted: Record<Faults, Fault> = {
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 const held = (one: KnownMessage): Known => ({
-  id: one.id,
   name: one.name,
+  displayName: one.displayName,
   path: one.path,
   missing: one.missing,
 })

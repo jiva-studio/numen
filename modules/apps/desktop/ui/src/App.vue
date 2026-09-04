@@ -301,8 +301,8 @@ const listing = async () => {
   try {
     const answer = await core.vaults()
     listed.value = answer
-    const one = answer.vaults.find((vault) => vault.id === answer.showing)
-    shown.value = one ? { id: one.id, name: one.name } : { id: '', name: '' }
+    const one = answer.vaults.find((vault) => vault.name === answer.showing)
+    shown.value = one ? { id: one.name, name: one.displayName } : { id: '', name: '' }
   } catch {
     // The layout the window opens with is the one the list's answer decides.
     unlisted(words.unlistedVaults, 'refusal')

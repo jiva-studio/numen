@@ -52,8 +52,8 @@ const name = (path: string, title: string, heading = ''): Named => ({
 
 /** One vault as the list answers one. */
 const vault = (id: string, name: string, missing = false): Known => ({
-  id,
-  name,
+  name: id,
+  displayName: name,
   path: `/vaults/${name}`,
   missing,
 })

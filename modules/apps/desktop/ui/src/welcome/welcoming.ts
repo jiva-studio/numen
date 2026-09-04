@@ -75,6 +75,11 @@ export const waysIn = (at: Standing, words: Words, agent: string): readonly Way[
  */
 export const vaultsOn = (listed: Listed, words: Words): readonly Held[] =>
   listed.vaults.map((one) => {
-    const aside = one.missing ? words.gone : one.id === listed.showing ? words.current : ''
-    return { id: one.id, name: one.name, path: one.path, ...(aside ? { detail: aside } : {}) }
+    const aside = one.missing ? words.gone : one.name === listed.showing ? words.current : ''
+    return {
+      id: one.name,
+      name: one.displayName,
+      path: one.path,
+      ...(aside ? { detail: aside } : {}),
+    }
   })

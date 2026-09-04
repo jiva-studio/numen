@@ -116,12 +116,12 @@ func (VaultsRefusal) EnumDescriptor() ([]byte, []int) {
 // Known is one vault the installation holds, as the list has it.
 type Known struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id is the identity the folder carries, and how this vault is asked for
+	// Name is the identity the folder carries, and how this vault is asked for
 	// again. It survives the folder moving and the vault being renamed.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Name is what the person calls the collection. It lives on the list and not
-	// in the folder.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// DisplayName is what the person calls the collection. It lives on the list
+	// and not in the folder.
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	// Path is the folder, absolute on this machine.
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing is at the path. The vault stays on the list, and the
@@ -161,16 +161,16 @@ func (*Known) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Known) GetId() string {
+func (x *Known) GetName() string {
 	if x != nil {
-		return x.Id
+		return x.Name
 	}
 	return ""
 }
 
-func (x *Known) GetName() string {
+func (x *Known) GetDisplayName() string {
 	if x != nil {
-		return x.Name
+		return x.DisplayName
 	}
 	return ""
 }
@@ -883,10 +883,10 @@ var File_numen_v1_vaults_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"Y\n" +
-	"\x05Known\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"l\n" +
+	"\x05Known\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
 	"\amissing\x18\x04 \x01(\bR\amissing\"\x1a\n" +
 	"\x18VaultsServiceListRequest\"^\n" +

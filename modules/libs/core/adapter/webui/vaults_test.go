@@ -222,7 +222,7 @@ func entry(t *testing.T, list *v1.VaultsServiceListResponse, id string) *v1.Know
 	t.Helper()
 
 	for _, one := range list.GetVaults() {
-		if one.GetId() == id {
+		if one.GetName() == id {
 			return one
 		}
 	}
@@ -242,13 +242,15 @@ func TestTheListMarksAFolderThatIsGoneAndNamesTheVaultBeingShown(t *testing.T) {
 		t.Errorf("the window is showing %q, want %s", list.GetShowing(), string(f.first.ID))
 	}
 	if here := entry(t, list, string(f.first.ID)); here.GetMissing() {
-		t.Errorf("%s is marked missing, and its folder is at %s", here.GetName(), here.GetPath())
+		t.Errorf("%s is marked missing, and its folder is at %s",
+			here.GetDisplayName(), here.GetPath())
 	}
 	gone := entry(t, list, string(f.second.ID))
 	if !gone.GetMissing() {
-		t.Errorf("%s is not marked missing, and there is nothing at %s", gone.GetName(), gone.GetPath())
+		t.Errorf("%s is not marked missing, and there is nothing at %s",
+			gone.GetDisplayName(), gone.GetPath())
 	}
-	if gone.GetName() != f.second.Name || gone.GetPath() != f.second.Path {
+	if gone.GetDisplayName() != f.second.Name || gone.GetPath() != f.second.Path {
 		t.Errorf("the vault that is gone is answered as %v", gone)
 	}
 }
@@ -314,7 +316,7 @@ func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
 	if out.Msg.Refusal != nil {
 		t.Fatalf("the folder was refused: %v", out.Msg.GetRefusal())
 	}
-	if got := out.Msg.GetVault().GetName(); got != "one 2" {
+	if got := out.Msg.GetVault().GetDisplayName(); got != "one 2" {
 		t.Errorf("the vault that joined the list is called %q", got)
 	}
 	if len(f.held(t).GetVaults()) != 3 {
@@ -336,7 +338,7 @@ func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN {
 		t.Errorf("a name another vault has was answered %v", got)
 	}
-	if entry(t, f.held(t), string(f.second.ID)).GetName() != f.second.Name {
+	if entry(t, f.held(t), string(f.second.ID)).GetDisplayName() != f.second.Name {
 		t.Error("the vault was renamed all the same")
 	}
 }
@@ -355,10 +357,10 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	if out.Msg.Refusal != nil {
 		t.Fatalf("the vault was not renamed: %v", out.Msg.GetRefusal())
 	}
-	if got := out.Msg.GetVault().GetName(); got != "journal" {
+	if got := out.Msg.GetVault().GetDisplayName(); got != "journal" {
 		t.Errorf("the vault is called %q", got)
 	}
-	if got := entry(t, f.held(t), string(f.second.ID)).GetName(); got != "journal" {
+	if got := entry(t, f.held(t), string(f.second.ID)).GetDisplayName(); got != "journal" {
 		t.Errorf("the list calls it %q", got)
 	}
 }

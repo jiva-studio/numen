@@ -71,9 +71,9 @@ const welcoming = computed(
 
 /** A vault chosen on the welcome screen, shown in this window in place of none. */
 const opens = (id: string) => {
-  const one = props.listed.vaults.find((vault) => vault.id === id)
+  const one = props.listed.vaults.find((vault) => vault.name === id)
   if (!one) return
-  const vault: Shown = { id: one.id, name: one.name }
+  const vault: Shown = { id: one.name, name: one.displayName }
   void does(deedOf('openVault', { ...props.where(), vault }), props.doing, words)
 }
 

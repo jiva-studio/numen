@@ -373,12 +373,12 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	}
 
 	if _, err := f.holds.Open(t.Context(), connect.NewRequest(&v1.VaultsServiceOpenRequest{
-		Id: added.Msg.GetVault().GetId(),
+		Id: added.Msg.GetVault().GetName(),
 	})); err != nil {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.opened.Showing().ID); got != added.Msg.GetVault().GetName() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 
@@ -416,7 +416,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 	switch last, found, err := registry.Last(); {
 	case err != nil:
 		t.Fatal(err)
-	case !found || string(last.ID) != added.Msg.GetVault().GetId():
+	case !found || string(last.ID) != added.Msg.GetVault().GetName():
 		t.Errorf("the list says the vault opened last is %+v", last)
 	}
 }

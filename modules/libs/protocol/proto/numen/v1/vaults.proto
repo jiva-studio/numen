@@ -84,13 +84,13 @@ enum VaultsRefusal {
 
 // Known is one vault the installation holds, as the list has it.
 message Known {
-  // Id is the identity the folder carries, and how this vault is asked for
+  // Name is the identity the folder carries, and how this vault is asked for
   // again. It survives the folder moving and the vault being renamed.
-  string id = 1;
+  string name = 1;
 
-  // Name is what the person calls the collection. It lives on the list and not
-  // in the folder.
-  string name = 2;
+  // DisplayName is what the person calls the collection. It lives on the list
+  // and not in the folder.
+  string display_name = 2;
 
   // Path is the folder, absolute on this machine.
   string path = 3;

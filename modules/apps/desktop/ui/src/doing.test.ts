@@ -35,8 +35,8 @@ const front = (over: Partial<Where> = {}): Where => ({
 
 /** One vault as the list answers one. */
 const known = (id: string, name: string): Known => ({
-  id,
-  name,
+  name: id,
+  displayName: name,
   path: `/vaults/${name}`,
   missing: false,
 })
