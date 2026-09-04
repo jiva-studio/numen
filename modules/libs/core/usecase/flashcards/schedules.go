@@ -84,7 +84,7 @@ type Schedules struct {
 // depends on every answer before it, so nothing worked out under the old
 // assignment can be kept.
 type assignment struct {
-	under review.Under
+	under review.Assignment
 	mark  string
 }
 
