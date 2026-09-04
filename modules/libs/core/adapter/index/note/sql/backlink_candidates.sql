@@ -19,5 +19,5 @@ SELECT s.path, l.scheme, l.value, l.role,
        COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, ''), l.position
 FROM links l
 JOIN sources s ON s.id = l.note_id
-WHERE l.scheme = 'name' AND l.basename = ? AND s.vault_id = ?
+WHERE l.scheme = 'name' AND l.folded_name = ? AND s.vault_id = ?
 ORDER BY 1, 8;

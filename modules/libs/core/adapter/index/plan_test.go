@@ -25,7 +25,7 @@ var expectedPlans = []struct {
 	// itself, and the name changes when a constraint is added.
 	through []string
 }{
-	{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_basename"}},
+	{note.Statements(), "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
 	{note.Statements(), "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
 	{note.Statements(), "note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
 	{note.Statements(), "links_of", []any{1}, []string{"(note_id=?)"}},
@@ -168,12 +168,12 @@ func populated(t *testing.T) *DB {
 			if i%250 == 0 {
 				held = "stencil"
 			}
-			exec(`INSERT INTO notes (source_id, vault_id, basename, title, type, identifier)
+			exec(`INSERT INTO notes (source_id, vault_id, folded_name, title, type, identifier)
 			      VALUES (?, ?, ?, ?, ?, ?)`,
 				source, vault, name, name, held, fmt.Sprintf("01M%d%022d", vault, i))
 			for j := range 3 {
 				target := fmt.Sprintf("%s-%05d", prefix, (i+j+1)%notes)
-				exec(`INSERT INTO links (note_id, position, scheme, value, basename, role)
+				exec(`INSERT INTO links (note_id, position, scheme, value, folded_name, role)
 				      VALUES (?, ?, 'name', ?, ?, 'ref')`, source, j, target, target)
 			}
 			// Every second note is cut, so that a question about what is not cut

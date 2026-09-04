@@ -1,8 +1,8 @@
-INSERT INTO notes (source_id, vault_id, basename, title, type, identifier,
+INSERT INTO notes (source_id, vault_id, folded_name, title, type, identifier,
                    frontmatter, frontmatter_error)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (source_id) DO UPDATE SET
-    basename          = excluded.basename,
+    folded_name       = excluded.folded_name,
     title             = excluded.title,
     type              = excluded.type,
     identifier        = excluded.identifier,

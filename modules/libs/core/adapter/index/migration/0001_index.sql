@@ -72,11 +72,9 @@ CREATE TABLE notes (
     source_id         INTEGER PRIMARY KEY,
     vault_id          INTEGER NOT NULL,
 
-    -- The name a note is found by when a link is written by name, folded: a
-    -- name is one name whatever case and whatever composition it is written in,
-    -- and the comparison is plain equality on the key the scan computes with
-    -- domain.FoldName.
-    basename          TEXT NOT NULL,
+    -- The name a link written by name reaches this note by, as domain.FoldName
+    -- computes it: one name whatever case and composition it is written in.
+    folded_name       TEXT NOT NULL,
 
     title             TEXT NOT NULL,
     type              TEXT NOT NULL DEFAULT 'note',
@@ -90,7 +88,7 @@ CREATE TABLE notes (
 -- A name means something inside one vault, so the vault leads. The path a
 -- candidate is reported by comes from the source, which is one lookup by row
 -- number away.
-CREATE INDEX notes_by_basename ON notes (vault_id, basename);
+CREATE INDEX notes_by_folded_name ON notes (vault_id, folded_name);
 
 -- An identifier names one note in the world, and is looked up without a vault.
 CREATE INDEX notes_by_identifier ON notes (identifier);
@@ -117,21 +115,20 @@ CREATE TABLE headings (
 --
 -- `note` is what the person wrote about why the link exists.
 CREATE TABLE links (
-    note_id    INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
-    position   INTEGER NOT NULL,
-    scheme     TEXT NOT NULL,
-    value      TEXT NOT NULL,
+    note_id     INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
+    position    INTEGER NOT NULL,
+    scheme      TEXT NOT NULL,
+    value       TEXT NOT NULL,
 
-    -- The last segment of the address, without an extension and under the same
-    -- fold a note's basename is held to, which is what the two are compared on:
-    -- what [[notes/Entropy]], [[Entropy]] and [[entropy.MD]] have in common,
-    -- and what the backwards question is answered through.
-    basename   TEXT NOT NULL,
+    -- The last segment of the address under the same fold a note's name is
+    -- held to, which is what the two are compared on: what [[notes/Entropy]],
+    -- [[Entropy]] and [[entropy.MD]] have in common.
+    folded_name TEXT NOT NULL,
 
-    role       TEXT NOT NULL,
-    type       TEXT,
-    note       TEXT,
-    label      TEXT,
+    role        TEXT NOT NULL,
+    type        TEXT,
+    note        TEXT,
+    label       TEXT,
 
     PRIMARY KEY (note_id, position)
 );
@@ -139,7 +136,7 @@ CREATE TABLE links (
 -- A name and an identifier each find few links, which are then narrowed to a
 -- vault by the notes they belong to.
 CREATE INDEX links_by_target ON links (scheme, value);
-CREATE INDEX links_by_name ON links (basename);
+CREATE INDEX links_by_name ON links (folded_name);
 
 -- What could not be acted on and is worth showing: a link with no role, a
 -- target nothing understands. A frontmatter block that could not be read is not

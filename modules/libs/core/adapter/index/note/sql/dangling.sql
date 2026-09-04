@@ -6,7 +6,7 @@
 --
 -- A name is looked for as a path and as a filename, one index lookup each. The
 -- third shape resolution uses — the name with an extension added — needs no
--- branch here: a note it would find has that name as its basename, so the
+-- branch here: a note it would find has that name as its folded name, so the
 -- second condition already covers it.
 --
 -- Only names are asked about. An identifier no vault here holds is not
@@ -26,6 +26,6 @@ WHERE s.vault_id = ?
   )
   AND NOT EXISTS (
     SELECT 1 FROM notes tn
-    WHERE tn.vault_id = s.vault_id AND tn.basename = l.basename
+    WHERE tn.vault_id = s.vault_id AND tn.folded_name = l.folded_name
   )
 ORDER BY s.path, l.position;
