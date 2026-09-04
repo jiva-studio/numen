@@ -78,11 +78,11 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 		Title:       "Cut",
 		Body:        body,
 	}
-	if err := searchable.Notes.Notes.Save(t.Context(), string(v.ID), []domain.Note{n}); err != nil {
+	if err := searchable.Notes.Notes.Save(t.Context(), v.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 
-	owing, err := db.VectorsOwing().Unembedded(t.Context(), string(v.ID), wide{384}.Model(), 0, 1000)
+	owing, err := db.VectorsOwing().Unembedded(t.Context(), v.ID, wide{384}.Model(), 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -170,14 +170,14 @@ type holding struct {
 	over  bool
 }
 
-func (h *holding) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+func (h *holding) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	for _, n := range notes {
 		h.hold(n.Fingerprint.Path)
 	}
 	return h.NoteRepository.Save(ctx, vaultID, notes)
 }
 
-func (h *holding) Remove(ctx context.Context, vaultID string, paths []string) error {
+func (h *holding) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		h.hold(path)
 	}
