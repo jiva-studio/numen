@@ -191,12 +191,4 @@ const chose = (path: string) => {
   padding-inline-start: 1.1rem;
   list-style: disc;
 }
-
-/* The mark stands inside a tile, in the alarm the tile draws its own in. */
-.wrong--tile {
-  padding-block: 0;
-  color: var(--numen-alarm);
-  font-size: var(--numen-text-1);
-  overflow-wrap: anywhere;
-}
 </style>

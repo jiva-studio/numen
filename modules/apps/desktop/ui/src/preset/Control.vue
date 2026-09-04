@@ -514,7 +514,7 @@ const released = (event: KeyboardEvent) => {
 
     <!-- When the material is learned at the place the knob stands, read off
          the same run the picture is drawn from. -->
-    <div class="control__material control__learned" data-control="learned">
+    <div class="control__material" data-control="learned">
       <span
         v-for="one in honest ? learning : []"
         :key="one.name"
@@ -554,7 +554,6 @@ const released = (event: KeyboardEvent) => {
  * scanned, so each figure is a tile of its own and the tiles take an equal
  * share of the width the tab is read at.
  */
-/* The row of tiles draws a box, so its edge stands on the column's own. */
 .control__material {
   display: grid;
   grid-auto-flow: column;
@@ -679,7 +678,6 @@ const released = (event: KeyboardEvent) => {
   stroke-dasharray: var(--numen-thread-dash);
 }
 
-/* What stands overdue over the days ahead, in the colour a debt is said in. */
 /* What is suggested: the accent again, filled and lighter. */
 .control__suggested {
   fill: var(--numen-focus-bg);
@@ -767,6 +765,4 @@ const released = (event: KeyboardEvent) => {
   stroke: var(--numen-node-bg);
   stroke-width: 2;
 }
-
-/* The two ends of the range, at the ends of the bottom edge. */
 </style>
