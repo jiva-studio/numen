@@ -36,7 +36,10 @@ export function documentKind(host: Host, opens: (path: string) => Held, puts: Pu
       return true
     },
     at: (held) => ({ file: held.path, source: 'book' }),
-    attends: (held) => ({ path: held.path, at: held.at.value + 1, of: held.pages.value }),
+    attends: (held) => ({
+      path: held.path,
+      document: { page: held.at.value + 1, pages: held.pages.value },
+    }),
   }
 
   // The reader of documents. What stands at the stretches asked for is

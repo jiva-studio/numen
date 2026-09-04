@@ -560,13 +560,11 @@ type Tab struct {
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Title is what the tab is called, as the person reads it.
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	// At is where in what it holds the person stands, and of is how much there
-	// is of it, both counted in whatever that thing is measured in: a document
-	// in pages, counted from one, and a recording in milliseconds, where at is
-	// how much of it has been written down. Both zero is a tab that measures
-	// nothing.
-	At            int32 `protobuf:"varint,5,opt,name=at,proto3" json:"at,omitempty"`
-	Of            int32 `protobuf:"varint,6,opt,name=of,proto3" json:"of,omitempty"`
+	// Where the person stands in what the tab holds. A tab holding a document
+	// sets document, a tab holding a recording sets recording, and a tab of any
+	// other kind sets neither.
+	Document      *OpenDocument  `protobuf:"bytes,7,opt,name=document,proto3" json:"document,omitempty"`
+	Recording     *OpenRecording `protobuf:"bytes,8,opt,name=recording,proto3" json:"recording,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -629,16 +627,127 @@ func (x *Tab) GetTitle() string {
 	return ""
 }
 
-func (x *Tab) GetAt() int32 {
+func (x *Tab) GetDocument() *OpenDocument {
 	if x != nil {
-		return x.At
+		return x.Document
+	}
+	return nil
+}
+
+func (x *Tab) GetRecording() *OpenRecording {
+	if x != nil {
+		return x.Recording
+	}
+	return nil
+}
+
+// An OpenDocument is the document a tab holds, as the person is reading it.
+type OpenDocument struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Page is the page in front of them, counted from one.
+	Page int32 `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	// Pages is how many pages the document has.
+	Pages         int32 `protobuf:"varint,2,opt,name=pages,proto3" json:"pages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenDocument) Reset() {
+	*x = OpenDocument{}
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenDocument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenDocument) ProtoMessage() {}
+
+func (x *OpenDocument) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenDocument.ProtoReflect.Descriptor instead.
+func (*OpenDocument) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *OpenDocument) GetPage() int32 {
+	if x != nil {
+		return x.Page
 	}
 	return 0
 }
 
-func (x *Tab) GetOf() int32 {
+func (x *OpenDocument) GetPages() int32 {
 	if x != nil {
-		return x.Of
+		return x.Pages
+	}
+	return 0
+}
+
+// An OpenRecording is the recording a tab holds, as far as it has been written
+// down.
+type OpenRecording struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Heard is how much of it has been written down, in milliseconds.
+	Heard int32 `protobuf:"varint,1,opt,name=heard,proto3" json:"heard,omitempty"`
+	// Length is how long the recording is, in milliseconds.
+	Length        int32 `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OpenRecording) Reset() {
+	*x = OpenRecording{}
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OpenRecording) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OpenRecording) ProtoMessage() {}
+
+func (x *OpenRecording) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vault_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OpenRecording.ProtoReflect.Descriptor instead.
+func (*OpenRecording) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *OpenRecording) GetHeard() int32 {
+	if x != nil {
+		return x.Heard
+	}
+	return 0
+}
+
+func (x *OpenRecording) GetLength() int32 {
+	if x != nil {
+		return x.Length
 	}
 	return 0
 }
@@ -679,14 +788,20 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
-	"\x15WriteOpenTabsResponse\"s\n" +
+	"\x15WriteOpenTabsResponse\"\xca\x01\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x04 \x01(\tR\x05title\x12\x0e\n" +
-	"\x02at\x18\x05 \x01(\x05R\x02at\x12\x0e\n" +
-	"\x02of\x18\x06 \x01(\x05R\x02of2\xdd\x02\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x122\n" +
+	"\bdocument\x18\a \x01(\v2\x16.numen.v1.OpenDocumentR\bdocument\x125\n" +
+	"\trecording\x18\b \x01(\v2\x17.numen.v1.OpenRecordingR\trecordingJ\x04\b\x05\x10\x06J\x04\b\x06\x10\a\"8\n" +
+	"\fOpenDocument\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x14\n" +
+	"\x05pages\x18\x02 \x01(\x05R\x05pages\"=\n" +
+	"\rOpenRecording\x12\x14\n" +
+	"\x05heard\x18\x01 \x01(\x05R\x05heard\x12\x16\n" +
+	"\x06length\x18\x02 \x01(\x05R\x06length2\xdd\x02\n" +
 	"\fVaultService\x12P\n" +
 	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +
 	"\x11WatchVaultChanges\x12\".numen.v1.WatchVaultChangesRequest\x1a#.numen.v1.WatchVaultChangesResponse0\x01\x12I\n" +
@@ -706,7 +821,7 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_numen_v1_vault_proto_goTypes = []any{
 	(*GetVaultStateRequest)(nil),      // 0: numen.v1.GetVaultStateRequest
 	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
@@ -718,25 +833,29 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*WriteOpenTabsRequest)(nil),      // 7: numen.v1.WriteOpenTabsRequest
 	(*WriteOpenTabsResponse)(nil),     // 8: numen.v1.WriteOpenTabsResponse
 	(*Tab)(nil),                       // 9: numen.v1.Tab
-	(*Stretch)(nil),                   // 10: numen.v1.Stretch
+	(*OpenDocument)(nil),              // 10: numen.v1.OpenDocument
+	(*OpenRecording)(nil),             // 11: numen.v1.OpenRecording
+	(*Stretch)(nil),                   // 12: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
-	10, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
+	12, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
 	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
-	0,  // 3: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
-	2,  // 4: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
-	5,  // 5: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
-	7,  // 6: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
-	1,  // 7: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
-	3,  // 8: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
-	6,  // 9: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
-	8,  // 10: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
-	7,  // [7:11] is the sub-list for method output_type
-	3,  // [3:7] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	10, // 3: numen.v1.Tab.document:type_name -> numen.v1.OpenDocument
+	11, // 4: numen.v1.Tab.recording:type_name -> numen.v1.OpenRecording
+	0,  // 5: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
+	2,  // 6: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
+	5,  // 7: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	7,  // 8: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	1,  // 9: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
+	3,  // 10: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
+	6,  // 11: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	8,  // 12: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vault_proto_init() }
@@ -751,7 +870,7 @@ func file_numen_v1_vault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

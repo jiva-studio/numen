@@ -20,14 +20,19 @@ func (a *API) WriteOpenTabs(
 	told := r.Msg.GetTabs()
 	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
 	for _, one := range told {
-		open.Tabs = append(open.Tabs, domain.Tab{
+		tab := domain.Tab{
 			ID:    one.GetId(),
 			Kind:  one.GetKind(),
 			Path:  one.GetPath(),
 			Title: one.GetTitle(),
-			At:    int(one.GetAt()),
-			Of:    int(one.GetOf()),
-		})
+		}
+		if doc := one.GetDocument(); doc != nil {
+			tab.Document = &domain.OpenDocument{Page: int(doc.GetPage()), Pages: int(doc.GetPages())}
+		}
+		if rec := one.GetRecording(); rec != nil {
+			tab.Recording = &domain.OpenRecording{Heard: int(rec.GetHeard()), Length: int(rec.GetLength())}
+		}
+		open.Tabs = append(open.Tabs, tab)
 	}
 	a.openTabs.Store(&open)
 	if a.Attends != nil {

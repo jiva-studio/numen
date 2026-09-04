@@ -9,7 +9,7 @@
 import { computed, ref, shallowRef, type Component, type Ref } from 'vue'
 import { closeTab, openTab, openTabBeside, pane, paneById } from '@numen/ui'
 import type { Tab, WorkspaceLayout } from '@numen/ui'
-import type { Source } from './core'
+import type { OpenDocument, OpenRecording, Source } from './core'
 import { named } from './workspace'
 
 /**
@@ -25,12 +25,12 @@ export interface At {
 
 /**
  * What one tab holds, as whoever answers on the person's behalf is told it: the
- * file it stands at, where in it the person is, and how much of it there is.
+ * file it stands at, and the document or the recording it stands in.
  */
 export interface Attends {
   readonly path: string
-  readonly at?: number
-  readonly of?: number
+  readonly document?: OpenDocument
+  readonly recording?: OpenRecording
 }
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */

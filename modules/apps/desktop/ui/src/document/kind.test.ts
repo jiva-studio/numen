@@ -151,6 +151,9 @@ describe('what a document tab holds, as whoever answers for the person is told i
   it('is the file, the page in front of them, and how many pages there are', () => {
     const held = openedAt('Ants.epub', 3, 40)
 
-    expect(kindOver(held).attends!(held)).toStrictEqual({ path: 'Ants.epub', at: 4, of: 40 })
+    expect(kindOver(held).attends!(held)).toStrictEqual({
+      path: 'Ants.epub',
+      document: { page: 4, pages: 40 },
+    })
   })
 })

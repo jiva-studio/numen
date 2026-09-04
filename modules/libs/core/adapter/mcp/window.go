@@ -105,18 +105,22 @@ func called(t domain.Tab) string {
 func stands(t domain.Tab) string {
 	switch t.Kind {
 	case domain.TabDocument:
-		if t.Of <= 0 {
+		if t.Document == nil || t.Document.Pages <= 0 {
 			return ""
 		}
-		return fmt.Sprintf("page %d of %d", t.At, t.Of)
+		return fmt.Sprintf("page %d of %d", t.Document.Page, t.Document.Pages)
 	case domain.TabRecording:
-		switch {
-		case t.At <= 0:
-			return "none of it written down yet"
-		case t.Of <= 0:
-			return fmt.Sprintf("%s of it written down", transcript.Clock(t.At))
+		var heard, length int
+		if t.Recording != nil {
+			heard, length = t.Recording.Heard, t.Recording.Length
 		}
-		return fmt.Sprintf("%s of its %s written down", transcript.Clock(t.At), transcript.Clock(t.Of))
+		switch {
+		case heard <= 0:
+			return "none of it written down yet"
+		case length <= 0:
+			return fmt.Sprintf("%s of it written down", transcript.Clock(heard))
+		}
+		return fmt.Sprintf("%s of its %s written down", transcript.Clock(heard), transcript.Clock(length))
 	}
 	return ""
 }

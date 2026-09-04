@@ -405,8 +405,8 @@ const attends = (): Attention => ({
       kind: one?.kind.kind ?? '',
       title,
       path: said?.path ?? '',
-      at: said?.at ?? 0,
-      of: said?.of ?? 0,
+      ...(said?.document ? { document: said.document } : {}),
+      ...(said?.recording ? { recording: said.recording } : {}),
     }
   }),
 })

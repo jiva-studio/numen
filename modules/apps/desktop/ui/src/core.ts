@@ -255,14 +255,26 @@ export interface Tab {
   readonly path: string
   /** What the tab is called, as the person reads it. */
   readonly title: string
-  /**
-   * Where in what it holds the person stands, and how much there is of it,
-   * both in whatever that thing is measured in: a document in pages, counted
-   * from one, and a recording in milliseconds, where `at` is how much of it
-   * has been written down.
-   */
-  readonly at: number
-  readonly of: number
+  /** The document it holds, absent in a tab holding none. */
+  readonly document?: OpenDocument
+  /** The recording it holds, absent in a tab holding none. */
+  readonly recording?: OpenRecording
+}
+
+/** The document a tab holds, as the person is reading it. */
+export interface OpenDocument {
+  /** The page in front of them, counted from one. */
+  readonly page: number
+  /** How many pages the document has. */
+  readonly pages: number
+}
+
+/** The recording a tab holds, as far as it has been written down. */
+export interface OpenRecording {
+  /** How much of it has been written down, in milliseconds. */
+  readonly heard: number
+  /** How long the recording is, in milliseconds. */
+  readonly length: number
 }
 
 /** What the person has open: every tab, and which of them is in front. */

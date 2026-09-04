@@ -86,7 +86,10 @@ export function recordingKind(
       return true
     },
     at: (held) => ({ file: held.path, source: 'recording' }),
-    attends: (held) => ({ path: held.path, at: held.heard.value, of: held.length.value }),
+    attends: (held) => ({
+      path: held.path,
+      recording: { heard: held.heard.value, length: held.length.value },
+    }),
   }
 
   // The player of recordings. The person is taken to the moment the first of

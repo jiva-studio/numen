@@ -33,12 +33,29 @@ type Tab struct {
 	Path string
 	// Title is what the tab is called, as the person reads it.
 	Title string
-	// At is where in what the tab holds the person stands, and Of how much
-	// there is of it, both counted in whatever that thing is measured in: a
-	// document in pages, counted from one, and a recording in milliseconds,
-	// where At is how much of it has been written down.
-	At int
-	Of int
+	// Document is the document the tab holds, and nothing in a tab holding
+	// none.
+	Document *OpenDocument
+	// Recording is the recording the tab holds, and nothing in a tab holding
+	// none.
+	Recording *OpenRecording
+}
+
+// An OpenDocument is the document a tab holds, as the person is reading it.
+type OpenDocument struct {
+	// Page is the page in front of them, counted from one.
+	Page int
+	// Pages is how many pages the document has.
+	Pages int
+}
+
+// An OpenRecording is the recording a tab holds, as far as it has been written
+// down. Both are milliseconds.
+type OpenRecording struct {
+	// Heard is how much of it has been written down.
+	Heard int
+	// Length is how long the recording is.
+	Length int
 }
 
 // The kinds of tab this application has words for. A tab of any other kind is
