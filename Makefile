@@ -6,6 +6,8 @@
 
 CORE     := modules/libs/core
 DESKTOP  := modules/apps/desktop
+MOBILE   := modules/apps/mobile
+DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
 UI       := modules/libs/ui
@@ -40,6 +42,8 @@ install: ## fetch every module's dependencies
 	cd $(WIRE) && $(INSTALL)
 	cd $(DESKTOP)/ui && $(INSTALL)
 	cd $(DESKTOP)/flashcards && $(INSTALL)
+	cd $(MOBILE) && $(INSTALL)
+	cd $(DOCS) && $(INSTALL)
 	cd $(LANDING) && $(INSTALL)
 
 .PHONY: generate
@@ -109,17 +113,23 @@ icons: ## cut every platform's icon from the one drawing
 test: ## run every test
 	cd $(CORE) && go test ./... -race
 	cd $(DESKTOP) && go test ./... -race
+	cd $(MOBILE) && go test ./... -race
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
 	cd $(DESKTOP)/ui && npm test
 	cd $(DESKTOP)/flashcards && npm test
+	cd $(MOBILE) && npm test
 
 .PHONY: lint
 lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(CORE) && gofmt -l . && go vet ./...
 	cd $(DESKTOP) && gofmt -l ./cmd ./internal && go vet ./...
+	cd $(MOBILE) && gofmt -l ./bind && go vet ./...
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
+	cd $(MOBILE) && npm run typecheck
+	cd $(DOCS) && npm run manual:check
+	cd $(DOCS) && npm run typecheck
 	cd $(LANDING) && npm run typecheck
