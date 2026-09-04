@@ -34,7 +34,7 @@ export interface Question {
 }
 
 /** A question as the window draws it. */
-export interface Standing {
+export interface DrawnQuestion {
   readonly note: string
   readonly keep: () => Promise<unknown>
   readonly take: () => Promise<unknown>
@@ -66,7 +66,7 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
   /** The notes a person put off. They stand and are not drawn. */
   const put = new Set<string>()
   /** The questions to draw, which is everything standing bar what was put off. */
-  const questions = ref([]) as Ref<readonly Standing[]>
+  const questions = ref([]) as Ref<readonly DrawnQuestion[]>
 
   /** Something the quit waits for, until what this answers with is called. */
   const holds = (one: Owing) => {
@@ -109,22 +109,22 @@ export function leaving(core: Going, wait: (ms: number) => Promise<unknown> = sl
   async function say() {
     const token = under
     if (token === null) return
-    const standing = [...outstanding]
+    const all = [...outstanding]
     for (const note of [...put]) {
-      if (!standing.some((one) => one.note === note)) put.delete(note)
+      if (!all.some((one) => one.note === note)) put.delete(note)
     }
-    questions.value = standing.filter((one) => !put.has(one.note)).map(drawn)
+    questions.value = all.filter((one) => !put.has(one.note)).map(drawn)
     // A write still in the air is not something a person answers, and it is
     // not an answer either.
-    if (standing.length === 0 && writing !== null) return
-    const owed: Owed = standing.length > 0 ? 'asking' : 'written'
+    if (all.length === 0 && writing !== null) return
+    const owed: Owed = all.length > 0 ? 'asking' : 'written'
     if (owed === told) return
     told = owed
     await core.flushed(token, owed)
   }
 
   /** One question with the three ways out of it. */
-  const drawn = (one: Question): Standing => ({
+  const drawn = (one: Question): DrawnQuestion => ({
     note: one.note,
     keep: one.keep,
     take: one.take,

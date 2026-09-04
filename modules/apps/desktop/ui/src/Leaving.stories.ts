@@ -8,13 +8,13 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import Leaving from './Leaving.vue'
-import type { Standing } from './leaving'
+import type { DrawnQuestion } from './leaving'
 import { WORDS as note } from './note/words'
 
 const UNBROKEN = `${'A note whose name nobody shortened and which runs on past '.repeat(8)}.md`
 
 /** One note standing, with the three answers written down as they are given. */
-const standing = (path: string): Standing => ({
+const question = (path: string): DrawnQuestion => ({
   note: path,
   keep: fn(async () => {}),
   take: fn(async () => {}),
@@ -42,7 +42,7 @@ const answers = (canvas: HTMLElement) => within(canvas).getAllByRole('button')
 
 /** Two notes, each with the three ways out of it. */
 export const TwoNotes: Story = {
-  args: { questions: [standing('physics/Entropy.md'), standing('Heat.md')] },
+  args: { questions: [question('physics/Entropy.md'), question('Heat.md')] },
   play: async ({ canvasElement }) => {
     const said = notice(canvasElement)
     await expect(said).not.toBeNull()
@@ -64,7 +64,7 @@ export const TwoNotes: Story = {
 
 /** One note, answered. */
 export const AnsweredForOneNote: Story = {
-  args: { questions: [standing('physics/Entropy.md'), standing('Heat.md')] },
+  args: { questions: [question('physics/Entropy.md'), question('Heat.md')] },
   play: async ({ args, canvasElement }) => {
     const [first, second] = args.questions
 
@@ -80,7 +80,7 @@ export const AnsweredForOneNote: Story = {
 
 /** A name far longer than the row it stands in. */
 export const AnUnbrokenName: Story = {
-  args: { questions: [standing(UNBROKEN)] },
+  args: { questions: [question(UNBROKEN)] },
   play: async ({ canvasElement }) => {
     const row_ = notes(canvasElement)[0]!
     const title = within(row_).getByText(UNBROKEN.split('/').pop()!)

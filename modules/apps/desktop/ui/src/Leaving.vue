@@ -5,12 +5,12 @@
  * Each stands with the three ways out of it, and the window waits until every
  * one of them has been answered or put off.
  */
-import type { Standing } from './leaving'
+import type { DrawnQuestion } from './leaving'
 import { WORDS as note } from './note/words'
 import { WORDS as words } from './words'
 
 const props = defineProps<{
-  questions: readonly Standing[]
+  questions: readonly DrawnQuestion[]
   /** What each note is called, for a person to tell them apart by. */
   called: (note: string) => string
 }>()
