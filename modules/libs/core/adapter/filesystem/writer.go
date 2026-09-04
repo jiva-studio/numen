@@ -12,8 +12,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	ignore "github.com/sabhiram/go-gitignore"
-
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -26,7 +24,7 @@ import (
 type VaultWriter struct {
 	root    string
 	opts    Options
-	ignored *ignore.GitIgnore
+	ignored *ignoring
 }
 
 // OpenForWriting prepares a vault to be changed. The folder must already be

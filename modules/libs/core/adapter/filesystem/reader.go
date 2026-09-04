@@ -12,8 +12,6 @@ import (
 	"slices"
 	"strings"
 
-	ignore "github.com/sabhiram/go-gitignore"
-
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
@@ -23,7 +21,7 @@ type VaultReader struct {
 	opts Options
 	// ignored is compiled once: it is asked of every path of every event, and
 	// of every path component.
-	ignored *ignore.GitIgnore
+	ignored *ignoring
 }
 
 // Open prepares a vault for reading. It does not write anything: looking at a

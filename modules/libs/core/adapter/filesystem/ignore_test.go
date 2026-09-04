@@ -2,9 +2,11 @@ package filesystem_test
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,6 +78,50 @@ func TestAVaultSaysWhatToIgnore(t *testing.T) {
 	root := vaultOf(t, files, []string{"archive/", "*.tmp.md"})
 	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
 		t.Errorf("walked %v, want only the note that survives both rules", got)
+	}
+}
+
+// TestAVaultsRulesNarrowAndNeverWiden. A vault's configuration is written by
+// whoever synced the folder. It may ask for more to be left alone; it may not
+// take back what no vault has to ask for, or a line in a file would hand over
+// every dotfile folder in the vault to read from and write into.
+func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
+	root := vaultOf(t, map[string]string{
+		"Note.md":               "# Note\n",
+		".#Note.md":             "someone@somewhere.1234\n",
+		"backup/.git/config.md": "not a note\n",
+	}, []string{"!.*"})
+
+	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Note.md"}) {
+		t.Errorf("walked %v", got)
+	}
+
+	writer, err := filesystem.OpenForWriting(root, filesystem.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Nothing brought into the vault is held to an extension, so a dotfile
+	// folder let back in is somewhere a program's own file lands.
+	err = writer.Bring(t.Context(), ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh\n"))
+	if !errors.Is(err, filesystem.ErrNotANote) {
+		t.Errorf("bringing a file into .git answered %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".git", "hooks", "pre-commit")); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the file landed: %v", err)
+	}
+}
+
+// A vault's own negation reaches what the same vault asked to leave out, which
+// is what a negation is for.
+func TestAVaultTakesBackItsOwnRule(t *testing.T) {
+	root := vaultOf(t, map[string]string{
+		"Note.md":      "# Note\n",
+		"Old.tmp.md":   "# Old\n",
+		"Draft.tmp.md": "# Draft\n",
+	}, []string{"*.tmp.md", "!Draft.tmp.md"})
+
+	if got := walked(t, root, filesystem.Options{}); !slices.Equal(got, []string{"Draft.tmp.md", "Note.md"}) {
+		t.Errorf("walked %v", got)
 	}
 }
 

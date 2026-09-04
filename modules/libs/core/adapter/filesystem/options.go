@@ -35,13 +35,32 @@ type Options struct {
 // is several events, and the same path arrives more than once inside it.
 const DefaultHold = 50 * time.Millisecond
 
-// ignored answers for files and folders alike, against the path from the vault
-// root, which is what the patterns are written in terms of.
+// ignoring is what a vault leaves out: the rules no vault has to ask for, and
+// the rules the vault asked for beside them. A path either of them names is
+// left out.
 //
-// What a vault says is added to the defaults: a vault asking for its archive
-// to be left alone is not asking for an editor's lock files to be indexed.
-func (o Options) ignored() *ignore.GitIgnore {
-	return ignore.CompileIgnoreLines(append(append([]string(nil), DefaultIgnore...), o.Ignore...)...)
+// They are two matchers and not one list because a vault is data. A vault's
+// configuration is written by whoever synced it, and in one list the last
+// pattern wins: `!.*` there would hand the application every dotfile folder in
+// the vault to read from and write into. A vault narrows what is read and
+// written and never widens it, so a negation it writes reaches only what the
+// same vault asked to leave out.
+type ignoring struct {
+	standing *ignore.GitIgnore
+	vaults   *ignore.GitIgnore
+}
+
+// MatchesPath is asked for files and folders alike, against the path from the
+// vault root, which is what the patterns are written in terms of.
+func (i *ignoring) MatchesPath(path string) bool {
+	return i.standing.MatchesPath(path) || i.vaults.MatchesPath(path)
+}
+
+func (o Options) ignored() *ignoring {
+	return &ignoring{
+		standing: ignore.CompileIgnoreLines(DefaultIgnore...),
+		vaults:   ignore.CompileIgnoreLines(o.Ignore...),
+	}
 }
 
 // DefaultMaxNoteBytes is the most a note is read whole at. It stands above
