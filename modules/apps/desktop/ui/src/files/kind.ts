@@ -83,7 +83,7 @@ type Cut = (folder: string, name: string) => Promise<string>
  * file opens in is not decided here.
  */
 export const landingOf = (entry: Entry): Landing | null =>
-  entry.folder ? null : { at: 'file', path: entry.path, title: entry.name }
+  entry.folder ? null : { at: 'file', path: entry.path, title: entry.displayName }
 
 /** What a file is filed as, which is the last segment of the path. */
 const fileOf = (path: string): string => path.split('/').pop() ?? path
@@ -231,7 +231,7 @@ export function filing(list: Listing, deps: Filing) {
 
     const into = landedIn(at)
     await list.lists(into)
-    const taken = new Set(list.entriesIn(into).map((one) => one.name))
+    const taken = new Set(list.entriesIn(into).map((one) => one.displayName))
     const refused: string[] = []
 
     for (const path of paths) {
@@ -347,7 +347,7 @@ export function filing(list: Listing, deps: Filing) {
 
   /** What a file is called, which is the last segment of the path it is filed at. */
   const nameOf = (path: string): string =>
-    list.entryAt(path)?.name ?? (path.split('/').pop() ?? path)
+    list.entryAt(path)?.displayName ?? (path.split('/').pop() ?? path)
 
   /** What the vault holds at a row, and none of the three where it holds none. */
   const sourceOf = (path: string): Source => list.entryAt(path)?.kind ?? 'other'

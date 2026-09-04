@@ -515,7 +515,7 @@ export const Transcribing: Story = {
 
 const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
-  name: path.split('/').pop() ?? path,
+  displayName: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
   type: 'note',

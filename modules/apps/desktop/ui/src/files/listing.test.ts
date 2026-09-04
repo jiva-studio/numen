@@ -13,7 +13,7 @@ import { above, folderOf, freeName, landedIn, listing, ROOT, type Row } from './
 /** One row of a listing, under the folder it sits in. */
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
-  name: path.split('/').pop() ?? path,
+  displayName: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
   type: 'note',

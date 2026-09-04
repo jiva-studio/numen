@@ -14,7 +14,7 @@ import type { Entry } from '../core'
 
 const file = (path: string, over: Partial<Entry> = {}): Entry => ({
   path,
-  name: path.split('/').pop() ?? path,
+  displayName: path.split('/').pop() ?? path,
   folder: false,
   kind: 'note',
   type: 'note',

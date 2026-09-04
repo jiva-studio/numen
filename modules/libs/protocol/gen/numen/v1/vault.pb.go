@@ -3107,9 +3107,9 @@ type Entry struct {
 	// Path is what the vault calls it, relative to the root, with forward
 	// slashes.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The last segment of the path.
-	Name   string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Folder bool   `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
+	// The last segment of the path, which is what the row shows.
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Folder      bool   `protobuf:"varint,3,opt,name=folder,proto3" json:"folder,omitempty"`
 	// What the vault holds here.
 	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
 	// Which of three the note is. It says nothing about an entry that is not a
@@ -3156,9 +3156,9 @@ func (x *Entry) GetPath() string {
 	return ""
 }
 
-func (x *Entry) GetName() string {
+func (x *Entry) GetDisplayName() string {
 	if x != nil {
-		return x.Name
+		return x.DisplayName
 	}
 	return ""
 }
@@ -5231,10 +5231,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\vListRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\"9\n" +
 	"\fListResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xa5\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\xb4\x01\n" +
 	"\x05Entry\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x16\n" +
 	"\x06folder\x18\x03 \x01(\bR\x06folder\x12(\n" +
 	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12&\n" +
 	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeJ\x04\b\x05\x10\x06R\x04size\"!\n" +

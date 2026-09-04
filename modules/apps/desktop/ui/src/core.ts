@@ -102,8 +102,8 @@ export interface Standing {
 export interface Entry {
   /** What the vault calls it, relative to the root, with forward slashes. */
   readonly path: string
-  /** The last segment of the path. */
-  readonly name: string
+  /** The last segment of the path, which is what the row shows. */
+  readonly displayName: string
   readonly folder: boolean
   readonly kind: Source
   readonly type: NoteType
