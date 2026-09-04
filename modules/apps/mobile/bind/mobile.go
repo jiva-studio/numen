@@ -81,6 +81,11 @@ func Start(dir string) (int, error) {
 		stop()
 		return 0, err
 	}
+	// The settings file holds the keys this installation reaches models with,
+	// and what is served here is served to any origin at all. This build binds
+	// no setting to read or write, so every call about them is unanswered and
+	// the file never leaves the disk.
+	opened.API.Configuring = webui.Configuring{}
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

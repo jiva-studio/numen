@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -136,5 +138,60 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		if res.StatusCode != http.StatusNotFound {
 			t.Errorf("%s answered %s", at, res.Status)
 		}
+	}
+}
+
+// The file a person configures the installation in holds the keys it reaches
+// models with. This build binds no setting, so nothing here reads that file out
+// to a caller or writes another one in its place.
+func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
+	dir := t.TempDir()
+	secret := "sk-the-persons-own"
+	written := fmt.Sprintf(`{"indexing":{"proofreading":{"profiles":{
+		"openai": {"use":"service","name":"a-model","key":%q}
+	}}}}`, secret)
+	if err := os.WriteFile(filepath.Join(dir, "settings.yaml"), []byte(written), 0o600); err != nil {
+		t.Fatalf("writing the settings: %v", err)
+	}
+
+	port, err := bind.Start(dir)
+	if err != nil {
+		t.Fatalf("starting: %v", err)
+	}
+	t.Cleanup(func() { _ = bind.Stop() })
+
+	for _, at := range []string{
+		"/numen.v1.SettingsService/Settings",
+		"/numen.v1.SettingsService/SettingsFile",
+		"/numen.v1.SettingsService/ChooseSettings",
+		"/numen.v1.SettingsService/WriteSettingsFile",
+	} {
+		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, at)
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"written":"stolen: true\n"}`)))
+		if err != nil {
+			t.Fatalf("asking %s: %v", at, err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Connect-Protocol-Version", "1")
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("asking %s: %v", at, err)
+		}
+		said, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if res.StatusCode == http.StatusOK {
+			t.Errorf("%s answered %s: %s", at, res.Status, said)
+		}
+		if bytes.Contains(said, []byte(secret)) {
+			t.Errorf("%s gave the key away: %s", at, said)
+		}
+	}
+
+	held, err := os.ReadFile(filepath.Join(dir, "settings.yaml"))
+	if err != nil {
+		t.Fatalf("reading the settings back: %v", err)
+	}
+	if !bytes.Contains(held, []byte(secret)) {
+		t.Errorf("the settings file was written over: %s", held)
 	}
 }
