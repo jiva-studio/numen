@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rjeczalik/notify"
@@ -139,11 +140,28 @@ func fold(
 	var ready []string
 	inReady := map[string]bool{}
 	var hold <-chan time.Time
+	// queued is the folders new to the watch that are waiting to be walked, and
+	// walked is what a walk of one came to. A walk made here would stop the
+	// backlog emptying for as long as it took, which is the one thing this
+	// goroutine may never do.
+	var queued []string
+	asked := make(chan string)
+	walked := make(chan found)
+
+	going := make(chan struct{})
+	var walking sync.WaitGroup
+	walking.Add(1)
+	go func() {
+		defer walking.Done()
+		walks(ctx, shape, going, asked, walked)
+	}()
+	defer walking.Wait()
+	defer close(going)
 
 	forget := func() {
 		clear(pending)
 		clear(inReady)
-		ready, hold = nil, nil
+		ready, hold, queued = nil, nil, nil
 	}
 
 	rescan := func() {
@@ -156,10 +174,15 @@ func fold(
 
 	for {
 		// The delivery arm is only in the select when there is something to
-		// deliver; a nil channel is never chosen.
+		// deliver; a nil channel is never chosen. The walking arm the same.
 		var out chan<- []string
 		if len(ready) > 0 {
 			out = changes
+		}
+		var walk chan<- string
+		var next string
+		if len(queued) > 0 {
+			walk, next = asked, queued[0]
 		}
 
 		select {
@@ -169,6 +192,21 @@ func fold(
 		case out <- ready:
 			ready = nil
 			clear(inReady)
+
+		case walk <- next:
+			queued = queued[1:]
+
+		case one := <-walked:
+			if one.whole {
+				rescan()
+				continue
+			}
+			for _, path := range one.paths {
+				pending[path] = true
+			}
+			if hold == nil && len(pending) > 0 {
+				hold = time.After(opts.hold())
+			}
 
 		case event, open := <-raw:
 			if !open {
@@ -180,12 +218,15 @@ func fold(
 				rescan()
 				continue
 			}
-			paths, whole := shape.concerns(ctx, event.Path())
+			paths, whole, folder := shape.concerns(event.Path())
 			if whole {
 				// A folder that is gone takes sources with it, and their paths
 				// are known only to the index.
 				rescan()
 				continue
+			}
+			if folder != "" {
+				queued = append(queued, folder)
 			}
 			for _, path := range paths {
 				pending[path] = true
@@ -210,6 +251,42 @@ func fold(
 	}
 }
 
+// found is what a walk of one folder new to the watch came to.
+type found struct {
+	paths []string
+	whole bool
+}
+
+// walks walks the folders handed to it, one after another, and answers with
+// what each holds. It stands beside the fold rather than inside it, so a folder
+// that arrives with a thousand files in it is walked while the backlog goes on
+// emptying.
+func walks(
+	ctx context.Context,
+	shape *folders,
+	going <-chan struct{},
+	asked <-chan string,
+	walked chan<- found,
+) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-going:
+			return
+		case at := <-asked:
+			paths, whole := shape.inside(ctx, at)
+			select {
+			case <-ctx.Done():
+				return
+			case <-going:
+				return
+			case walked <- found{paths: paths, whole: whole}:
+			}
+		}
+	}
+}
+
 // folders remembers which paths in the vault are folders, so that a path which
 // has gone can still be told apart from a file that has.
 //
@@ -218,9 +295,29 @@ func fold(
 // answer it either — the thing that would say is the thing that no longer
 // exists. So it is remembered while it is there, which is the one moment the
 // question is answerable.
+// The shape is read by the goroutine that drains the events and written by the
+// one that walks a folder new to the watch, so what is remembered is held under
+// a lock.
 type folders struct {
 	reader *VaultReader
-	known  map[string]bool
+
+	mu    sync.Mutex
+	known map[string]bool
+}
+
+// knows is whether this path was a folder when it was last there.
+func (f *folders) knows(path string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.known[path]
+}
+
+// learn remembers a path as a folder, which is the one moment the question is
+// answerable.
+func (f *folders) learn(path string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.known[path] = true
 }
 
 // remembered walks the vault once for its shape, stopping where the vault's own
@@ -248,7 +345,7 @@ func remembered(reader *VaultReader) (*folders, error) {
 		if p != reader.Root() && reader.skipped(path, d.Name()) {
 			return fs.SkipDir
 		}
-		f.known[path] = true
+		f.learn(path)
 		return nil
 	})
 	if why == nil {
@@ -258,6 +355,8 @@ func remembered(reader *VaultReader) (*folders, error) {
 }
 
 func (f *folders) forget(path string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	delete(f.known, path)
 	for held := range f.known {
 		if strings.HasPrefix(held, path+"/") {
@@ -281,68 +380,81 @@ func (f *folders) forget(path string) {
 // `whole` is set when the answer cannot be worked out from the disk: a folder
 // that has gone took sources with it, and their paths are known only to the
 // index. A path outside the vault is that case too, and is what arrives when a
-// watched folder is renamed away. A folder holding more entries than Entries is
-// that case as well.
-func (f *folders) concerns(ctx context.Context, absolute string) (paths []string, whole bool) {
+// watched folder is renamed away.
+//
+// `walk` is a folder new to the watch, handed back rather than walked: the
+// walking is what takes the time, and this runs where nothing may take any.
+func (f *folders) concerns(absolute string) (paths []string, whole bool, walk string) {
 	path, inside := f.reader.relative(absolute)
 	if !inside {
-		return nil, true
+		return nil, true, ""
 	}
 
 	info, err := os.Stat(absolute)
 	switch {
 	case err == nil && info.IsDir():
 		if path != "." && f.reader.skipped(path, filepath.Base(absolute)) {
-			return nil, false
+			return nil, false, ""
 		}
-		if f.known[path] {
-			return nil, false
+		if f.knows(path) {
+			return nil, false, ""
 		}
-		f.known[path] = true
-		var found []string
-		seen, over := 0, false
-		_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
-			if ctx.Err() != nil {
-				return fs.SkipAll
-			}
-			if err != nil {
-				return nil
-			}
-			seen++
-			if seen > Entries {
-				over = true
-				return fs.SkipAll
-			}
-			held, inside := f.reader.relative(p)
-			if !inside {
-				return nil
-			}
-			if d.IsDir() {
-				if p != absolute && f.reader.skipped(held, d.Name()) {
-					return fs.SkipDir
-				}
-				f.known[held] = true
-				return nil
-			}
-			if _, holds := f.reader.holds(held); holds {
-				found = append(found, held)
-			}
-			return nil
-		})
-		if over {
-			return nil, true
-		}
-		return found, false
+		// Remembered before the walk, so a second event about the same folder
+		// does not ask for it a second time.
+		f.learn(path)
+		return nil, false, absolute
 
-	case err != nil && f.known[path]:
+	case err != nil && f.knows(path):
 		f.forget(path)
-		return nil, true
+		return nil, true, ""
 	}
 
 	if _, holds := f.reader.holds(path); !holds {
-		return nil, false
+		return nil, false, ""
 	}
-	return []string{path}, false
+	return []string{path}, false, ""
+}
+
+// inside is what the vault holds under a folder new to the watch, and the
+// folders under it remembered as it goes.
+//
+// A folder holding more entries than Entries is answered as the whole vault:
+// the rest of the walk costs more than reading the vault again.
+func (f *folders) inside(ctx context.Context, absolute string) (paths []string, whole bool) {
+	var held []string
+	seen, over := 0, false
+	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
+		if ctx.Err() != nil {
+			return fs.SkipAll
+		}
+		if err != nil {
+			return nil
+		}
+		seen++
+		if seen > Entries {
+			over = true
+			return fs.SkipAll
+		}
+		path, inside := f.reader.relative(p)
+		if !inside {
+			return nil
+		}
+		if d.IsDir() {
+			if p != absolute && f.reader.skipped(path, d.Name()) {
+				return fs.SkipDir
+			}
+			f.learn(path)
+			return nil
+		}
+		if _, holds := f.reader.holds(path); holds {
+			held = append(held, path)
+		}
+		return nil
+	})
+	if over {
+		return nil, true
+	}
+	return held, false
 }
 
 // relative names a path the way the vault does. Anything outside it is not the
