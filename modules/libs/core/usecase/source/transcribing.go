@@ -103,6 +103,10 @@ type Transcribing struct {
 	runs uint64
 	// queue is the recordings a person named that have not been transcribed yet.
 	queue queue
+	// idle is called where a run has found the line empty and is about to stop
+	// the running, under the lock both it and the running are held by. A test
+	// names a recording there, at the one instant the two could cross.
+	idle func()
 	// answered is every recording this run has had an answer about, by vault
 	// and path. Words, silence and a file that will not open are all answers,
 	// and a recording that has answered is not offered again.
@@ -316,6 +320,9 @@ func (t *Transcribing) drainAndRelease(ctx context.Context) {
 		t.drain(ctx)
 		t.mu.Lock()
 		if t.queue.waiting() == 0 || ctx.Err() != nil {
+			if t.idle != nil {
+				t.idle()
+			}
 			t.running = false
 			t.mu.Unlock()
 			return

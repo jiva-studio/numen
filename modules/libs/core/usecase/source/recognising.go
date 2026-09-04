@@ -82,7 +82,8 @@ type Recognising struct {
 	runs uint64
 	// queue is the documents a person named that have not been recognised yet.
 	queue queue
-	// idle is called where a run has found the line empty and stopped. A test
+	// idle is called where a run has found the line empty and is about to stop
+	// the running, under the lock both it and the running are held by. A test
 	// names a document there, at the one instant the two could cross.
 	idle func()
 	// last is what the recognition before this one was called. A recognition
@@ -161,11 +162,11 @@ func (r *Recognising) drain(ctx context.Context) {
 		r.mu.Lock()
 		one, waiting := r.queue.take()
 		if !waiting || ctx.Err() != nil {
-			r.running = false
-			r.mu.Unlock()
 			if r.idle != nil {
 				r.idle()
 			}
+			r.running = false
+			r.mu.Unlock()
 			return
 		}
 		r.mu.Unlock()
