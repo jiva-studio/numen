@@ -231,7 +231,7 @@ func (r *Recognising) context() context.Context {
 
 // recognise is the work itself: what is missing arrives, and then the document
 // is recognised.
-func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path string) error {
+func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path string) (err error) {
 	// One run holds the models on a machine: a recording being transcribed holds
 	// them, and this waits for it.
 	// A scan is recognised only where somebody asked for it.
@@ -246,7 +246,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.say(task.Task{ID: id, Doing: "Fetching models"})
-	by, close, err := r.with.Open(ctx, func(what string, done, total int64) {
+	by, letGo, err := r.with.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		r.say(task.Task{
@@ -257,7 +257,13 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	if err != nil {
 		return fmt.Errorf("nothing to recognise with: %w", err)
 	}
-	defer close()
+	// Letting the models go is what leaves the machine able to read again. A
+	// machine that will not is worth saying, and the pages read stand.
+	defer func() {
+		if why := letGo(); why != nil {
+			err = errors.Join(err, fmt.Errorf("letting the models go: %w", why))
+		}
+	}()
 
 	// Every page of this process is recognised through the runtime it made before
 	// its window, and a runtime this process fetched afterwards is not that one.

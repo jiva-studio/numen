@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -106,6 +107,21 @@ func TestAnArchiveThatIsNotTheOnePublishedIsRefused(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "libonnxruntime.dylib")); err == nil {
 		t.Error("a library was left behind")
+	}
+}
+
+// An archive read to its end and holding no such library says that, and not
+// that it is broken. The two send a person to different places.
+func TestAnArchiveHoldingNoSuchLibrarySaysSo(t *testing.T) {
+	dir := t.TempDir()
+	found := packed(t, dir)
+
+	_, err := unpack(found.archive, "libsomethingelse.dylib", found)
+	if err == nil {
+		t.Fatal("a library nothing published was taken out of the archive")
+	}
+	if !strings.Contains(err.Error(), "holds no libsomethingelse.dylib") {
+		t.Errorf("an archive holding no such library was refused as %v", err)
 	}
 }
 

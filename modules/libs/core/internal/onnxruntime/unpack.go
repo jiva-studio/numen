@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -88,7 +89,7 @@ func fromTgz(archive, name, at string) error {
 	held := tar.NewReader(unzipped)
 	for {
 		entry, err := held.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return fmt.Errorf("%s holds no %s", archive, name)
 		}
 		if err != nil {

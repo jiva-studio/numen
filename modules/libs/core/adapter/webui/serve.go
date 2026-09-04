@@ -361,7 +361,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// A recording is played over a socket of its own, opened once everything it
 	// answers through is in place. A machine that refuses one leaves the player
 	// with no address, and the words are still read.
-	if playing, why := Listen(api); why != nil {
+	stopped := func(why error) { fmt.Fprintf(out, "recordings will no longer play: %v\n", why) }
+	if playing, why := Listen(api, stopped); why != nil {
 		fmt.Fprintf(out, "recordings will not play: %v\n", why)
 	} else {
 		api.Playing = playing

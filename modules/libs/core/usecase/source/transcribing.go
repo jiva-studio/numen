@@ -541,9 +541,7 @@ func (t *Transcribing) transcribe(
 	v domain.Vault,
 	id, path string,
 	asked bool,
-) (TranscribeResult, error) {
-	var res TranscribeResult
-
+) (res TranscribeResult, err error) {
 	// One run holds the models on a machine: a scan being recognised holds them,
 	// and this waits for it.
 	release, err := models.acquire(ctx, asked, func() {
@@ -557,7 +555,7 @@ func (t *Transcribing) transcribe(
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.say(task.Task{ID: id, Doing: "Fetching models"}, asked)
-	by, close, err := t.with.Open(ctx, func(what string, done, total int64) {
+	by, letGo, err := t.with.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.say(task.Task{
@@ -568,7 +566,13 @@ func (t *Transcribing) transcribe(
 	if err != nil {
 		return res, fmt.Errorf("%w: %w", errNothingTranscribes, err)
 	}
-	defer close()
+	// Letting the models go is what leaves the machine able to transcribe again.
+	// A machine that will not is worth saying, and the transcript stands.
+	defer func() {
+		if why := letGo(); why != nil {
+			err = errors.Join(err, fmt.Errorf("letting the models go: %w", why))
+		}
+	}()
 
 	t.say(task.Task{ID: id, Doing: "Transcribing a recording", About: path}, asked)
 	return Transcribe{

@@ -1,11 +1,14 @@
 package webui
 
 import (
+	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -31,12 +34,52 @@ func (heldVaults) Opened(string) error { return nil }
 // played is the socket a player reaches this API over, closed with the test.
 func played(t *testing.T, api *API) (*Loopback, http.Handler) {
 	t.Helper()
-	back, err := Listen(api)
+	back, err := Listen(api, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { back.Close() })
 	return back, back.serving()
+}
+
+// takenAway is a socket that stops answering the moment it is asked to, as one
+// does where the machine takes it away.
+type takenAway struct {
+	net.Listener
+	why error
+}
+
+func (t takenAway) Accept() (net.Conn, error) { return nil, t.why }
+
+func (takenAway) Close() error { return nil }
+
+func (takenAway) Addr() net.Addr { return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)} }
+
+// A socket that stopped answering is said, and gives out no more addresses. An
+// address on a dead socket is a recording that will not play, with nothing
+// anywhere to say why.
+func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
+	api, _ := listeningTo(t, nil)
+
+	said := make(chan error, 1)
+	why := errors.New("the machine took the socket away")
+	back, err := answering(takenAway{why: why}, api, func(err error) { said <- err })
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer back.Close()
+
+	select {
+	case told := <-said:
+		if !errors.Is(told, why) {
+			t.Errorf("the socket stopping was said as %v", told)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the socket stopped answering and nobody was told")
+	}
+	if at := back.Address(api.Showing(), talk); at != "" {
+		t.Errorf("a socket that answers nothing gave out %s", at)
+	}
 }
 
 // The address is the whole of what tells this window's own asking from anybody
@@ -133,7 +176,7 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 // way in is what is asked here.
 func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	api, _ := listeningTo(t, nil)
-	back, err := Listen(api)
+	back, err := Listen(api, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +206,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 // socket a recording is played from is the one thing named beside it.
 func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	api, _ := listeningTo(t, nil)
-	back, err := Listen(api)
+	back, err := Listen(api, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -33,18 +35,34 @@ type Loopback struct {
 	// writing; the address is what tells this window's own asking from anybody
 	// else's. It is made afresh for each run and outlives none of them.
 	token string
+	// stopped is set where the socket stopped answering for any reason but this
+	// window closing. An address on a socket that answers nothing is a recording
+	// that will not play and nothing said about why.
+	stopped atomic.Bool
 }
 
 // Listen opens the socket. A machine that refuses one leaves whatever cannot
 // reach the window's own scheme with nothing.
-func Listen(api *API) (*Loopback, error) {
+//
+// stopped is told where the socket stops answering under the window, which is
+// nobody's doing and nothing anybody asked for.
+func Listen(api *API, stopped func(error)) (*Loopback, error) {
 	held, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
+	back, err := answering(held, api, stopped)
+	if err != nil {
+		held.Close()
+		return nil, err
+	}
+	return back, nil
+}
+
+// answering is the socket answering, whichever socket it is.
+func answering(held net.Listener, api *API, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
-		held.Close()
 		return nil, err
 	}
 
@@ -57,7 +75,16 @@ func Listen(api *API) (*Loopback, error) {
 		Handler:           back.serving(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
-	go back.server.Serve(held)
+	go func() {
+		err := back.server.Serve(held)
+		if errors.Is(err, http.ErrServerClosed) {
+			return
+		}
+		back.stopped.Store(true)
+		if stopped != nil {
+			stopped(err)
+		}
+	}()
 	return back, nil
 }
 
@@ -93,9 +120,10 @@ func (l *Loopback) serving() http.Handler {
 }
 
 // Address is where the file at a path in a vault is read from. A build that
-// opened no socket answers with nowhere.
+// opened no socket, and a socket that stopped answering, both answer with
+// nowhere.
 func (l *Loopback) Address(vault domain.Vault, path string) string {
-	if l == nil {
+	if l == nil || l.stopped.Load() {
 		return ""
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) + "/" + url.PathEscape(path)
