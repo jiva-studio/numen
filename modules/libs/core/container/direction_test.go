@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -57,6 +58,16 @@ func answering(path string) (refuses []string, named bool) {
 	return outward, false
 }
 
+// shipped are the platforms this product is built for. A file kept for one of
+// them is compiled nowhere else, so a listing read on the machine the test runs
+// on is a rule checked against one platform's files. Every platform is read.
+var shipped = []struct{ goos, goarch string }{
+	{"linux", "amd64"},
+	{"darwin", "arm64"},
+	{"windows", "amd64"},
+	{"android", "arm64"},
+}
+
 // Imports point inward. What the build resolved is what is read, so a package
 // the core reaches through another answers for it too, and answering says how
 // far each package is held to that.
@@ -64,8 +75,20 @@ func answering(path string) (refuses []string, named bool) {
 // A test file is left out: a test stands outside the package it exercises and
 // builds the adapters that stand in for the real ones.
 func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
+	for _, one := range shipped {
+		t.Run(one.goos+"/"+one.goarch, func(t *testing.T) {
+			inward(t, one.goos, one.goarch)
+		})
+	}
+}
+
+// inward reads the tree as one platform's build resolves it and holds every
+// package of it to what answering says it may be compiled from.
+func inward(t *testing.T, goos, goarch string) {
+	t.Helper()
 	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")
 	listing.Dir = ".."
+	listing.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch)
 	listed, err := listing.Output()
 	if err != nil {
 		var ran *exec.ExitError
