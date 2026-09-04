@@ -26,13 +26,17 @@ PROTOCOL := modules/libs/protocol
 help:
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t20
 
+# A build handed to somebody takes the lockfile and nothing else, which is what
+# `make install NPM_INSTALL=ci` fetches.
+NPM_INSTALL ?= install
+
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && npm install
-	cd $(UI) && npm install
-	cd $(DESKTOP)/ui && npm install
-	cd $(DESKTOP)/flashcards && npm install
-	cd $(LANDING) && npm install
+	cd $(PROTOCOL) && npm $(NPM_INSTALL)
+	cd $(UI) && npm $(NPM_INSTALL)
+	cd $(DESKTOP)/ui && npm $(NPM_INSTALL)
+	cd $(DESKTOP)/flashcards && npm $(NPM_INSTALL)
+	cd $(LANDING) && npm $(NPM_INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript

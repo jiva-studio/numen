@@ -199,7 +199,7 @@ jobs:
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install NPM_INSTALL=ci
           make interface
 
       # What the binary answers `--version` with is written in at the link.
@@ -306,7 +306,7 @@ jobs:
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install NPM_INSTALL=ci
           make interface
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
@@ -398,7 +398,7 @@ jobs:
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install NPM_INSTALL=ci
           make interface
 
       # Both architectures come off this one machine: the window links against

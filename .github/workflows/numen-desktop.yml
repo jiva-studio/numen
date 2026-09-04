@@ -143,10 +143,10 @@ jobs:
       # A window reaches the components through their build.
       - name: Install
         run: |
-          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/protocol
           npm ci --prefix modules/libs/ui
-          npm install --prefix modules/apps/desktop/ui
-          npm install --prefix modules/apps/desktop/flashcards
+          npm ci --prefix modules/apps/desktop/ui
+          npm ci --prefix modules/apps/desktop/flashcards
 
       # The engines are a download of their own and answer to the version in
       # the lockfile. Whatever the cache does not hold is fetched below.

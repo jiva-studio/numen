@@ -103,9 +103,9 @@ jobs:
       # A screen reaches the components through their build.
       - name: Install
         run: |
-          npm install --prefix modules/libs/protocol
+          npm ci --prefix modules/libs/protocol
           npm ci --prefix modules/libs/ui
-          npm install --prefix modules/apps/mobile
+          npm ci --prefix modules/apps/mobile
 
       - name: Build the components
         run: npm run build --prefix modules/libs/ui
