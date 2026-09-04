@@ -81,7 +81,7 @@ func running(
 		Highlight: &source.Highlight{Sources: read, Derived: held},
 	}
 	api.show(vault)
-	runningBehind(api, func(on *showing) { on.recognises, on.transcribes = scans, hears })
+	runningBehind(api, func(on *passes) { on.recognises, on.transcribes = scans, hears })
 	return api, api.Serving(http.NotFoundHandler())
 }
 

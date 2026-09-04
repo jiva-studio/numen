@@ -51,7 +51,7 @@ type API struct {
 	// published as one after the vault, so a run, a cut and a drop reach the
 	// vault the request was answered over. Nothing while the vault is being
 	// changed.
-	showing atomic.Pointer[showing]
+	showing atomic.Pointer[passes]
 
 	Listeners audience[changed]
 
@@ -266,7 +266,7 @@ func (a *API) show(v domain.Vault) { a.vault.Store(&v) }
 
 // runs is the passes a run, a cut and a drop are taken through from now on.
 // They arrive together, after the vault they belong to.
-func (a *API) runs(on *showing) { a.showing.Store(on) }
+func (a *API) runs(on *passes) { a.showing.Store(on) }
 
 // recognises reads a scanned document and transcribes hears a recording, each
 // for whoever asks. They are the jobs an agent asks through too, so what a

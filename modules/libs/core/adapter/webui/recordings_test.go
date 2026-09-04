@@ -366,7 +366,7 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 	api, _ := listeningTo(t, whole(spoke()))
 
 	var asked []string
-	runningBehind(api, func(on *showing) {
+	runningBehind(api, func(on *passes) {
 		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
 			asked = append(asked, path)
 			return nil
@@ -386,7 +386,7 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	held := whole(spoke())
 	api, _ := listeningTo(t, held)
-	runningBehind(api, func(on *showing) {
+	runningBehind(api, func(on *passes) {
 		on.cut = func(context.Context, domain.Vault, string) error {
 			return errors.New("nothing is cutting")
 		}
@@ -599,7 +599,7 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	api.Readers = swapping{VaultReaders: filesystem.VaultReaders{}, then: func() { api.show(elsewhere) }}
 
 	var cutIn []domain.Vault
-	runningBehind(api, func(on *showing) {
+	runningBehind(api, func(on *passes) {
 		on.cut = func(_ context.Context, v domain.Vault, _ string) error {
 			cutIn = append(cutIn, v)
 			return nil
@@ -639,7 +639,7 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	api, _ := windowOn(t, held)
 
 	var asked []string
-	runningBehind(api, func(on *showing) {
+	runningBehind(api, func(on *passes) {
 		on.cut = func(_ context.Context, _ domain.Vault, path string) error {
 			asked = append(asked, path)
 			return nil

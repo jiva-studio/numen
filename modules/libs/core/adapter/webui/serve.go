@@ -98,11 +98,11 @@ func (s *shutting) over(gone bool) {
 	s.going = gone
 }
 
-// showing is the half of the window that belongs to one vault: the passes
-// running behind it, what a request reaches them through, and what ends them.
+// passes is the half of the window that belongs to one vault: what runs behind
+// it, what a request reaches them through, and what ends them.
 //
 // It is published as one, through API.on, and every request reads it there.
-type showing struct {
+type passes struct {
 	opening      *container.VaultOpener
 	recognising  *source.Recognising
 	transcribing *source.Transcribing
@@ -474,7 +474,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 // begins builds the half of the window that belongs to one vault: the scan and
 // the watch behind it, the reading of the documents it holds, and the batches
 // left with a proofreader.
-func (o *Installation) begins(v domain.Vault, rebuild bool) (*showing, error) {
+func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 	known, err := usecase.List{Registry: o.registry}.Execute()
 	if err != nil {
 		return nil, err
@@ -529,7 +529,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	ended := begin(watching, v, cfg, o.Index, o.API, opening,
 		cfg.VaultReaders(), o.Embedder, o.wake, owed, o.out)
 
-	return &showing{
+	return &passes{
 		opening:      opening,
 		recognising:  recognising,
 		transcribing: transcribing,

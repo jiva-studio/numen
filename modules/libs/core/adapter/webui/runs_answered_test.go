@@ -187,7 +187,7 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 		Highlight: &source.Highlight{Sources: nothingRead(), Derived: stores},
 	}
 	api.show(vault)
-	runningBehind(api, func(on *showing) { on.transcribes = talks })
+	runningBehind(api, func(on *passes) { on.transcribes = talks })
 
 	made := making(t, api, talk, heardID)
 	if made.GetState() != v1.State_STATE_FAILED {
