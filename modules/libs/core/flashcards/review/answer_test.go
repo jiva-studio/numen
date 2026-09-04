@@ -3,7 +3,7 @@ package review_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // Each of the four is said in the word a person uses for it, which is what a

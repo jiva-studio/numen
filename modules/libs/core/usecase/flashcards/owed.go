@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // Owing is what one vault's cards come to today: what it holds, what is owed,

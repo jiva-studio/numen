@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // curveLoad is the vault the window's requests are measured on, with its decks

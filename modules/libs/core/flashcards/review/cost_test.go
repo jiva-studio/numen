@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // A projection walks day after day, and a caller that has given up on it is

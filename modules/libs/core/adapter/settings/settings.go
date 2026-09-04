@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
-	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // Config is this installation's settings, in sections named for what they are

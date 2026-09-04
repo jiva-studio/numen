@@ -8,7 +8,7 @@ import (
 
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // libraryNow is the instant the schedules of this file are answered at.

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // counting is a vault's files with a tally of what was opened, by path.

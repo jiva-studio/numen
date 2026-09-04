@@ -3,7 +3,7 @@ package flashcards
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/review"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
 // How far a curve of minutes runs is twice the longer of what carrying the
