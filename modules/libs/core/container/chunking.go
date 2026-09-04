@@ -55,25 +55,25 @@ func (c Config) Scan(db *Index) vault.Scan {
 // read, the books read, and the vectors made. Every entry point takes it from
 // here, so a vault made searchable in a terminal and a vault made searchable in
 // a window are the same vault.
-func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault) (vault.Searchable, error) {
+func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault) (vault.ReadWholeVault, error) {
 	// The coarse index is built for one width, and the width is the model's. A
 	// vault made searchable is a vault whose vector index holds what the model
 	// makes, whichever entry point is doing the making.
 	if embedder != nil {
 		model := embedder.Model()
 		if err := db.FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
-			return vault.Searchable{}, err
+			return vault.ReadWholeVault{}, err
 		}
 	}
 	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
-		return vault.Searchable{}, err
+		return vault.ReadWholeVault{}, err
 	}
 	vectors, err := c.Embed(db, embedder, v)
 	if err != nil {
-		return vault.Searchable{}, err
+		return vault.ReadWholeVault{}, err
 	}
-	return vault.Searchable{
+	return vault.ReadWholeVault{
 		Notes:   c.Scan(db),
 		Books:   books,
 		Vectors: vectors,

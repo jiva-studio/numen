@@ -243,8 +243,8 @@ func (c *counting) Open(v domain.Vault) (port.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func searchable(readers port.VaultReaders, db *container.Index) usecase.Searchable {
-	return usecase.Searchable{
+func searchable(readers port.VaultReaders, db *container.Index) usecase.ReadWholeVault {
+	return usecase.ReadWholeVault{
 		Notes: scanner(readers, db),
 		Books: source.Extract{
 			Readers: readers,
