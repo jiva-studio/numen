@@ -131,7 +131,11 @@ func (a *API) WriteLink(
 	}
 	defer a.Writing.done()
 
-	if err := a.Notes.Linking.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
+	// The request names no fingerprint, so the write is held to what the note is
+	// at the moment it is made.
+	if _, err := a.Notes.Linking.Add(
+		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
+	); err != nil {
 		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)

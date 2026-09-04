@@ -81,13 +81,14 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(readers, db.Notes(), db.SourcesKnown(), db.Sources())
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
 	queries := db.Queries()
 	cutting := cfg.Cards(queries, db.Links(), index)
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index)
 
 	core := mcp.Core{
 		Cards: mcp.Cards{
@@ -107,15 +108,13 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 			Links:         note.ShowLinks{Links: db.Links()},
 			Problems:      check.Standard(db.Problems()),
-			Create: note.Create{
-				Writers: writers, Names: queries, Index: index,
-			},
-			Write:   note.Write{Readers: readers, Writers: writers, Index: index},
-			Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
-			Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
-			Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
-			Remove:  note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-			Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
+			Create:        note.NewCreate(writers, queries, index),
+			Write:         note.NewWrite(readers, writers, index),
+			Replace:       note.NewReplace(readers, writers, index),
+			Move:          moving,
+			Rename:        note.NewRename(moving),
+			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
+			Linking:       note.NewEditLinks(readers, writers, index),
 		},
 	}
 	return v, core
@@ -603,8 +602,66 @@ func TestALinkTooLargeToWriteIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 	}
 }
 
+// Each of the three link writers reads a note's frontmatter, changes one entry
+// and puts the whole block back, so a write that says nothing about which note
+// it read lands on whatever arrived in between — a synchroniser's copy, the
+// person's own save. Each names it, and each is refused where the note moved
+// under it.
+func TestALinkWrittenOverAnEditNobodySawIsRefused(t *testing.T) {
+	session, _ := connected(t, map[string]string{
+		"Entropy.md": "# Entropy\n",
+		"Heat.md":    "# Heat\n",
+		"Work.md":    "# Work\n",
+	})
+	added(t, session, map[string]any{
+		"from": "Heat.md", "to": "Entropy", "role": "parent", "label": "follows from",
+	})
+
+	// What the caller read, and then the note changing under it.
+	stale := fingerprint(t, session, "Heat.md")
+	call[wrote](t, session, "note_rewrite", map[string]any{
+		"path": "Heat.md", "body": "# Heat\n\nWhat somebody else wrote.\n",
+		"fingerprint": stale,
+	})
+
+	out := added(t, session, map[string]any{
+		"from": "Heat.md", "to": "Work", "role": "jump", "fingerprint": stale,
+	})
+	if len(out) != 1 || !strings.Contains(out[0].Refused, "STALE") {
+		t.Errorf("link_add over an edit nobody saw: %+v", out)
+	}
+
+	for tool, args := range map[string]map[string]any{
+		"link_update": {
+			"from": "Heat.md", "to": "Entropy", "role": "jump", "fingerprint": stale,
+		},
+		"link_remove": {"from": "Heat.md", "to": "Entropy", "fingerprint": stale},
+	} {
+		if got := failing(t, session, tool, args); !strings.Contains(got, "changed") {
+			t.Errorf("%s over an edit nobody saw: %q", tool, got)
+		}
+	}
+
+	// Nothing landed: the link is the one it was, and no second one is there.
+	links := call[struct {
+		Links []mcp.Link `json:"links"`
+	}](t, session, "link_list", map[string]any{"path": "Heat.md"})
+	if len(links.Links) != 1 || links.Links[0].Role != "parent" ||
+		links.Links[0].Label != "follows from" {
+		t.Errorf("a refused write landed all the same: %+v", links.Links)
+	}
+}
+
+// added writes links through link_add. Every writer takes a fingerprint, so a
+// link a test wrote without naming one is written against the note as it
+// stands.
 func added(t *testing.T, session *sdk.ClientSession, links ...map[string]any) []mcp.AddOutcome {
 	t.Helper()
+	for _, link := range links {
+		if _, named := link["fingerprint"]; !named {
+			link["fingerprint"] = fingerprint(t, session, link["from"].(string))
+		}
+	}
 	return call[struct {
 		Added []mcp.AddOutcome `json:"added"`
 	}](t, session, "link_add", map[string]any{"links": links}).Added

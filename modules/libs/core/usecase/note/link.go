@@ -24,8 +24,17 @@ import (
 type EditLinks struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	Index   Levels
 	Now     func() time.Time
+}
+
+// NewEditLinks is what a note's relationships are written through: the vault it
+// is read and written through, and what brings it level in the index.
+//
+// All three are named here for the reason NewWrite names them: a link written
+// and not levelled is a relationship the vault cannot be asked about.
+func NewEditLinks(readers port.VaultReaders, writers port.VaultWriters, index Levels) EditLinks {
+	return EditLinks{Readers: readers, Writers: writers, Index: index}
 }
 
 // Add writes relationships into a note, in one read and one write. A link to
@@ -34,14 +43,24 @@ type EditLinks struct {
 //
 // One link is named on its own, so there is always at least one: no links is
 // still a read and a write, and stamps an identifier into a note without one.
-func (u EditLinks) Add(ctx context.Context, v domain.Vault, from string, add domain.Link, more ...domain.Link) error {
+//
+// Fingerprint is what the caller believes is on disk, and every one of these
+// takes it for the reason PointAt does: a note that changed since it was read
+// is left alone and port.ErrChanged comes back. The empty fingerprint is a
+// caller holding itself to whatever the note is at the moment of the write.
+func (u EditLinks) Add(
+	ctx context.Context, v domain.Vault, from string, fingerprint domain.Fingerprint,
+	add domain.Link, more ...domain.Link,
+) (domain.Fingerprint, error) {
 	links := append([]domain.Link{add}, more...)
 	for _, link := range links {
 		if err := Writable(link); err != nil {
-			return err
+			return domain.Fingerprint{}, err
 		}
 	}
-	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
+	e := u.editing()
+	e.Fingerprint = fingerprint
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		for _, link := range links {
 			if err := doc.AddLink(link); err != nil {
 				return err
@@ -49,16 +68,24 @@ func (u EditLinks) Add(ctx context.Context, v domain.Vault, from string, add dom
 		}
 		return nil
 	})
-	return err
 }
 
 // Update changes what an existing link says about itself — its role, its type,
 // its label, the reason it exists — without moving where it goes.
-func (u EditLinks) Update(ctx context.Context, v domain.Vault, from string, to domain.Address, change domain.Link) error {
+//
+// Every field left out is cleared, so what this writes is decided from what the
+// caller read. That is what the fingerprint is for here: the label a person
+// wrote in the meantime is not silently thrown away.
+func (u EditLinks) Update(
+	ctx context.Context, v domain.Vault, from string, to domain.Address,
+	change domain.Link, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
 	if change.Role != "" && !domain.KnownRole(change.Role) {
-		return fmt.Errorf("%q is not a role a link can carry", change.Role)
+		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
-	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
+	e := u.editing()
+	e.Fingerprint = fingerprint
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		changed, err := doc.UpdateLink(to, change)
 		if err != nil {
 			return err
@@ -68,7 +95,6 @@ func (u EditLinks) Update(ctx context.Context, v domain.Vault, from string, to d
 		}
 		return nil
 	})
-	return err
 }
 
 // PointAt makes a note name one place under a link `type`, in one read and one
@@ -102,8 +128,13 @@ func (u EditLinks) PointAt(
 // Remove takes a relationship out. The note at the other end is untouched: what
 // is removed is one end's account of the relationship, which is all a link ever
 // was.
-func (u EditLinks) Remove(ctx context.Context, v domain.Vault, from string, to domain.Address, role domain.LinkRole) error {
-	_, err := u.editing().Apply(ctx, v, from, func(doc *markdown.Document) error {
+func (u EditLinks) Remove(
+	ctx context.Context, v domain.Vault, from string, to domain.Address,
+	role domain.LinkRole, fingerprint domain.Fingerprint,
+) (domain.Fingerprint, error) {
+	e := u.editing()
+	e.Fingerprint = fingerprint
+	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
 		if err != nil {
 			return err
@@ -113,7 +144,6 @@ func (u EditLinks) Remove(ctx context.Context, v domain.Vault, from string, to d
 		}
 		return nil
 	})
-	return err
 }
 
 // NameQueries is the one question writing a link asks of the vault.

@@ -29,7 +29,8 @@ type changing struct {
 func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := indexed(t, notes)
-	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, db.Notes(), db.SourcesKnown(), db.Sources())
 	return changing{
 		db:    db,
 		vault: v,
@@ -46,30 +47,23 @@ func (c changing) search() search.Search {
 }
 
 func (c changing) create() note.Create {
-	return note.Create{
-		Writers: filesystem.VaultWriters{}, Names: c.db.Queries(), Index: c.index,
-	}
+	return note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), c.index)
 }
 
 func (c changing) move() note.Move {
-	return note.Move{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
-		Links: c.db.Links(), Names: c.db.Queries(),
-		Sources: c.db.Sources(), Index: c.index,
-	}
+	return note.NewMove(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index,
+	)
 }
 
 func (c changing) remove() note.Remove {
-	return note.Remove{
-		Writers: filesystem.VaultWriters{},
-		Links:   c.db.Links(), Known: c.db.SourcesKnown(), Index: c.index,
-	}
+	return note.NewRemove(
+		filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
 func (c changing) linking() note.EditLinks {
-	return note.EditLinks{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
-	}
+	return note.NewEditLinks(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -429,7 +423,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 		"Heat.md":    "# Heat\n",
 	})
 
-	if err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Link{
+	if _, err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 		Label:  "follows from",
@@ -508,8 +502,9 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 	})
 	before := c.read(t, "Entropy.md")
 
-	if err := c.linking().Remove(t.Context(), c.vault, "Heat.md",
-		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, ""); err != nil {
+	if _, err := c.linking().Remove(t.Context(), c.vault, "Heat.md",
+		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
+		domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -528,9 +523,7 @@ func TestRemovingALinkLeavesTheOtherNoteAlone(t *testing.T) {
 func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.Write{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
-	}
+	writing := note.NewWrite(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
 
 	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {
@@ -561,9 +554,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	writing := note.Write{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Index: c.index,
-	}
+	writing := note.NewWrite(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index)
 
 	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
 	if err != nil {

@@ -230,7 +230,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Link{
+	if _, err := c.linking().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 	}); err != nil {
@@ -323,10 +323,11 @@ func TestALinkWrittenWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	added := make(chan error, 1)
 	go func() {
-		added <- agent.Add(context.Background(), c.vault, "Heat.md", domain.Link{
+		_, err := agent.Add(context.Background(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 			Role:   domain.RoleParent,
 		})
+		added <- err
 	}()
 	<-agentRead
 
@@ -392,6 +393,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: filesystem.VaultWriters{},
 		Links:   c.db.Links(),
+		Names:   c.db.Queries(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
 	}
@@ -584,7 +586,8 @@ func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T
 		t.Fatal(err)
 	}
 
-	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: c.db.Notes()}
+	refresh := vaults.NewRefresh(
+		filesystem.VaultReaders{}, c.db.Notes(), c.db.SourcesKnown(), c.db.Sources())
 	res, err := refresh.Execute(t.Context(), c.vault, []string{"photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

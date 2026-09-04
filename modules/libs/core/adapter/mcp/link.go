@@ -48,8 +48,10 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 			"product draws; `jump` is a shortcut across it; `ref` is a plain mention. " +
 			"Write the target as the other note's name — a name follows a note that " +
 			"moves. Links going into the same note are written together, in one change " +
-			"the person sees once. A note being made takes its links in note_create " +
-			"instead, so that it never exists unjoined.",
+			"the person sees once, so every link of one note carries the same " +
+			"fingerprint. The fingerprint from `note_read` is required, and a write " +
+			"lands only on the note that fingerprint names. A note being made takes " +
+			"its links in note_create instead, so that it never exists unjoined.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Links []Addition `json:"links" jsonschema:"the relationships to write"`
 	}) (*sdk.CallToolResult, struct {
@@ -76,6 +78,7 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		// itself. What is left is grouped: links sharing a note share a write.
 		var order []string
 		batches := map[string][]domain.Link{}
+		held := map[string]domain.Fingerprint{}
 		at := map[string][]int{}
 		for i, add := range in.Links {
 			res.Added = append(res.Added, AddOutcome{From: add.From, To: add.To})
@@ -84,9 +87,22 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 				res.Added[i].Refused = refusing(err)
 				continue
 			}
-			if _, seen := batches[add.From]; !seen {
+			seen, err := parseFingerprint(add.Fingerprint)
+			if err != nil {
+				res.Added[i].Refused = refusing(err)
+				continue
+			}
+			// One note's links are one write, so the note they are written
+			// against is one note as one caller read it.
+			if standing, grouped := held[add.From]; grouped && standing != seen {
+				res.Added[i].Refused = "the links written into " + add.From +
+					" name two different fingerprints, and they are one write"
+				continue
+			}
+			if _, grouped := batches[add.From]; !grouped {
 				order = append(order, add.From)
 			}
+			held[add.From] = seen
 			batches[add.From] = append(batches[add.From], link)
 			at[add.From] = append(at[add.From], i)
 		}
@@ -98,12 +114,16 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 				return nil, out{}, err
 			}
 			group := batches[from]
-			err := core.Notes.Linking.Add(ctx, core.shown().Vault, from, group[0], group[1:]...)
-			if err == nil {
+			written, err := core.Notes.Linking.Add(
+				ctx, core.shown().Vault, from, held[from], group[0], group[1:]...)
+			if err != nil {
+				for _, i := range at[from] {
+					res.Added[i].Refused = refusing(err)
+				}
 				continue
 			}
 			for _, i := range at[from] {
-				res.Added[i].Refused = refusing(err)
+				res.Added[i].Fingerprint = fingerprintOf(written)
 			}
 		}
 		return nil, res, nil
@@ -114,37 +134,59 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		Title: "Change links",
 		Description: "Change what an existing link says about itself — its role, its " +
 			"type, its label, why it exists — without changing where it goes. Fields " +
-			"left out are cleared; role left out is kept.",
+			"left out are cleared; role left out is kept. Because a field left out is " +
+			"cleared, what this writes is decided from what you read: the fingerprint " +
+			"from `note_read` is required, and the change lands only on the note that " +
+			"fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		From  string `json:"from" jsonschema:"the path of the note the link is written in"`
-		To    string `json:"to" jsonschema:"the target as it is written now"`
-		Role  string `json:"role,omitempty" jsonschema:"the role it should carry: parent, child, jump, ref or attachment"`
-		Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
-		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
-		Why   string `json:"note,omitempty" jsonschema:"why the link exists"`
+		From        string `json:"from" jsonschema:"the path of the note the link is written in"`
+		To          string `json:"to" jsonschema:"the target as it is written now"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
+		Role        string `json:"role,omitempty" jsonschema:"the role it should carry: parent, child, jump, ref or attachment"`
+		Type        string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
+		Label       string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
+		Why         string `json:"note,omitempty" jsonschema:"why the link exists"`
 	}) (*sdk.CallToolResult, ChangeOutcome, error) {
-		err := core.Notes.Linking.Update(ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
-			Role:  domain.LinkRole(in.Role),
-			Type:  in.Type,
-			Label: in.Label,
-			Why:   in.Why,
-		})
-		return nil, ChangeOutcome{Path: in.From}, err
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return nil, ChangeOutcome{}, err
+		}
+		written, err := core.Notes.Linking.Update(
+			ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
+				Role:  domain.LinkRole(in.Role),
+				Type:  in.Type,
+				Label: in.Label,
+				Why:   in.Why,
+			}, seen)
+		if err != nil {
+			return nil, ChangeOutcome{}, err
+		}
+		return nil, ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "link_remove",
 		Title: "Remove links",
 		Description: "Take a link out of the note it is written in. The note at the " +
-			"other end is untouched: what goes is one end's account of the relationship.",
+			"other end is untouched: what goes is one end's account of the " +
+			"relationship. The fingerprint from `note_read` is required, and the " +
+			"removal lands only on the note that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
-		From string `json:"from" jsonschema:"the path of the note the link is written in"`
-		To   string `json:"to" jsonschema:"the target as it is written"`
-		Role string `json:"role,omitempty" jsonschema:"only remove the link carrying this role; every role by default"`
+		From        string `json:"from" jsonschema:"the path of the note the link is written in"`
+		To          string `json:"to" jsonschema:"the target as it is written"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit"`
+		Role        string `json:"role,omitempty" jsonschema:"only remove the link carrying this role; every role by default"`
 	}) (*sdk.CallToolResult, ChangeOutcome, error) {
-		err := core.Notes.Linking.Remove(ctx, core.shown().Vault, in.From,
-			domain.ParseAddress(in.To), domain.LinkRole(in.Role))
-		return nil, ChangeOutcome{Path: in.From}, err
+		seen, err := parseFingerprint(in.Fingerprint)
+		if err != nil {
+			return nil, ChangeOutcome{}, err
+		}
+		written, err := core.Notes.Linking.Remove(ctx, core.shown().Vault, in.From,
+			domain.ParseAddress(in.To), domain.LinkRole(in.Role), seen)
+		if err != nil {
+			return nil, ChangeOutcome{}, err
+		}
+		return nil, ChangeOutcome{Path: in.From, Fingerprint: fingerprintOf(written)}, nil
 	})
 }
 
@@ -179,21 +221,27 @@ func linksOf(links []domain.ResolvedLink) []Link {
 	return out
 }
 
-// ChangeOutcome is what a tool that changed one note says: which note it was.
+// ChangeOutcome is what a tool that changed one note says: which note it was,
+// and what to present at the next write of it.
 type ChangeOutcome struct {
-	Path string `json:"path"`
+	Path        string `json:"path"`
+	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this note without reading it back"`
 }
 
 // Addition is one relationship to write, and the note it is written in.
 type Addition struct {
 	From string `json:"from" jsonschema:"the path of the note the link is written in"`
+	// Fingerprint is that note as the caller read it. Links sharing a note are
+	// one write, so they name one fingerprint between them.
+	Fingerprint string `json:"fingerprint" jsonschema:"what note_read said the note was, which refuses a write over somebody else's edit; the same for every link written into one note"`
 	NewLink
 }
 
 // AddOutcome is what happened to one link in a batch. Refused is empty when it
 // was written.
 type AddOutcome struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Refused string `json:"refused,omitempty" jsonschema:"why this one was not written, empty when it was"`
+	From        string `json:"from"`
+	To          string `json:"to"`
+	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what the note became, to hand to its next write; absent for a link that was not written"`
+	Refused     string `json:"refused,omitempty" jsonschema:"why this one was not written, empty when it was"`
 }
