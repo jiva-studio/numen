@@ -21,7 +21,7 @@ func TestAttendingIsWhatTheWindowLastSaid(t *testing.T) {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
-	_, err := api.Attending(t.Context(), connect.NewRequest(&v1.AttendingRequest{
+	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		Front: "two",
 		Tabs: []*v1.Tab{
 			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
@@ -48,7 +48,7 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var heard []domain.OpenTabs
 	api := &API{Attends: func(open domain.OpenTabs) { heard = append(heard, open) }}
 
-	_, err := api.Attending(t.Context(), connect.NewRequest(&v1.AttendingRequest{
+	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		Front: "one",
 		Tabs:  []*v1.Tab{{Id: "one", Kind: "note", Path: "Entropy.md", Title: "Entropy"}},
 	}))

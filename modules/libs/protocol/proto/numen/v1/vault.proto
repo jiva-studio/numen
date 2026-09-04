@@ -14,29 +14,29 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // VaultService answers what the one vault a client is looking at is, and what
 // the person is at in it.
 service VaultService {
-  // State is what the vault is and how far reading it has got.
-  rpc State(StateRequest) returns (StateResponse);
+  // GetVaultState is what the vault is and how far reading it has got.
+  rpc GetVaultState(GetVaultStateRequest) returns (GetVaultStateResponse);
 
-  // Changes reports the notes that changed on disk, for as long as the caller
-  // listens. It says which notes, and nothing about them: the caller knows
-  // what it is showing and asks for what it needs.
-  rpc Changes(ChangesRequest) returns (stream ChangesResponse);
+  // WatchVaultChanges reports the notes that changed on disk, for as long as
+  // the caller listens. It says which notes, and nothing about them: the caller
+  // knows what it is showing and asks for what it needs.
+  rpc WatchVaultChanges(WatchVaultChangesRequest) returns (stream WatchVaultChangesResponse);
 
-  // Focus reports the places something else asked to be put in front of the
-  // person — an agent working the vault beside them — for as long as the
+  // WatchFocus reports the places something else asked to be put in front of
+  // the person — an agent working the vault beside them — for as long as the
   // caller listens. What travelling there looks like is the client's.
-  rpc Focus(FocusRequest) returns (stream FocusResponse);
+  rpc WatchFocus(WatchFocusRequest) returns (stream WatchFocusResponse);
 
-  // Attending says what the person has open — every tab of the window, and
+  // WriteOpenTabs says what the person has open — every tab of the window, and
   // which of them is in front. The client says so again whenever any of it
   // changes, and an agent working the vault beside them reads what it last
   // said.
-  rpc Attending(AttendingRequest) returns (AttendingResponse);
+  rpc WriteOpenTabs(WriteOpenTabsRequest) returns (WriteOpenTabsResponse);
 }
 
-message StateRequest {}
+message GetVaultStateRequest {}
 
-message StateResponse {
+message GetVaultStateResponse {
   // What is being done behind the window is Tasks. What is here is what the
   // vault is.
   reserved 3, 9, 11 to 16;
@@ -72,9 +72,9 @@ message StateResponse {
   bool embedding = 10;
 }
 
-message ChangesRequest {}
+message WatchVaultChangesRequest {}
 
-message ChangesResponse {
+message WatchVaultChangesResponse {
   // Paths of the files that changed, notes and assets alike. One that was
   // removed is named here too: what changed about it is that it is gone.
   repeated string paths = 1;
@@ -99,9 +99,9 @@ message Went {
 }
 
 
-message FocusRequest {}
+message WatchFocusRequest {}
 
-message FocusResponse {
+message WatchFocusResponse {
   // The source to put in front of the person: a note to see the neighbourhood
   // from, or a document to open.
   string path = 1;
@@ -117,7 +117,7 @@ message FocusResponse {
   repeated Stretch also = 4;
 }
 
-message AttendingRequest {
+message WriteOpenTabsRequest {
   // Every tab the window has open, in the order the person was last in them.
   repeated Tab tabs = 1;
 
@@ -126,7 +126,7 @@ message AttendingRequest {
   string front = 2;
 }
 
-message AttendingResponse {}
+message WriteOpenTabsResponse {}
 
 // A Tab is one tab of the window: what kind it is, and what it holds.
 //

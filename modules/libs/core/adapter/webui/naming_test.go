@@ -393,7 +393,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

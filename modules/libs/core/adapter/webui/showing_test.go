@@ -141,10 +141,10 @@ func (f *showing) read(t *testing.T) {
 	t.Fatal("the vault in the window was never read")
 }
 
-func (f *showing) state(t *testing.T) *v1.StateResponse {
+func (f *showing) state(t *testing.T) *v1.GetVaultStateResponse {
 	t.Helper()
 
-	out, err := f.client.State(t.Context(), connect.NewRequest(&v1.StateRequest{}))
+	out, err := f.client.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := f.client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := f.client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +313,7 @@ func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := f.client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := f.client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

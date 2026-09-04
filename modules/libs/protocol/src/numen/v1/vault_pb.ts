@@ -18,25 +18,25 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiDgoMU3RhdGVSZXF1ZXN0IvsBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRINCgVyZWFkeRgEIAEoCBIOCgZmYWlsZWQYBSABKAkSEQoJdW53YXRjaGVkGAYgASgJEhMKC3VucmVhY2hhYmxlGBEgASgJEg4KBmNodW5rcxgHIAEoAxIQCghlbWJlZGRlZBgIIAEoAxIRCgllbWJlZGRpbmcYCiABKAhKBAgDEARKBAgJEApKBAgLEBFSBWJvb2tzUgpib29rc19yZWFkUgRidXN5UgdpbmRleGVkUghsZWFybmluZ1IEbWFkZVIFb3dpbmdSB3JlYWRpbmciEAoOQ2hhbmdlc1JlcXVlc3QiUQoPQ2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuV2VudCIgCgRXZW50EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiDgoMRm9jdXNSZXF1ZXN0Il0KDUZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoBRIOCgZsZW5ndGgYAyABKAUSHwoEYWxzbxgEIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giPgoQQXR0ZW5kaW5nUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhMKEUF0dGVuZGluZ1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUyjAIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAESOgoFRm9jdXMSFi5udW1lbi52MS5Gb2N1c1JlcXVlc3QaFy5udW1lbi52MS5Gb2N1c1Jlc3BvbnNlMAESRAoJQXR0ZW5kaW5nEhoubnVtZW4udjEuQXR0ZW5kaW5nUmVxdWVzdBobLm51bWVuLnYxLkF0dGVuZGluZ1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QigwIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuV2VudCIgCgRXZW50EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.StateRequest
+ * @generated from message numen.v1.GetVaultStateRequest
  */
-export type StateRequest = Message<"numen.v1.StateRequest"> & {
+export type GetVaultStateRequest = Message<"numen.v1.GetVaultStateRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.StateRequest.
- * Use `create(StateRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetVaultStateRequest.
+ * Use `create(GetVaultStateRequestSchema)` to create a new message.
  */
-export const StateRequestSchema: GenMessage<StateRequest> = /*@__PURE__*/
+export const GetVaultStateRequestSchema: GenMessage<GetVaultStateRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 0);
 
 /**
- * @generated from message numen.v1.StateResponse
+ * @generated from message numen.v1.GetVaultStateResponse
  */
-export type StateResponse = Message<"numen.v1.StateResponse"> & {
+export type GetVaultStateResponse = Message<"numen.v1.GetVaultStateResponse"> & {
   /**
    * @generated from field: string name = 1;
    */
@@ -104,29 +104,29 @@ export type StateResponse = Message<"numen.v1.StateResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.StateResponse.
- * Use `create(StateResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetVaultStateResponse.
+ * Use `create(GetVaultStateResponseSchema)` to create a new message.
  */
-export const StateResponseSchema: GenMessage<StateResponse> = /*@__PURE__*/
+export const GetVaultStateResponseSchema: GenMessage<GetVaultStateResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 1);
 
 /**
- * @generated from message numen.v1.ChangesRequest
+ * @generated from message numen.v1.WatchVaultChangesRequest
  */
-export type ChangesRequest = Message<"numen.v1.ChangesRequest"> & {
+export type WatchVaultChangesRequest = Message<"numen.v1.WatchVaultChangesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ChangesRequest.
- * Use `create(ChangesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchVaultChangesRequest.
+ * Use `create(WatchVaultChangesRequestSchema)` to create a new message.
  */
-export const ChangesRequestSchema: GenMessage<ChangesRequest> = /*@__PURE__*/
+export const WatchVaultChangesRequestSchema: GenMessage<WatchVaultChangesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 2);
 
 /**
- * @generated from message numen.v1.ChangesResponse
+ * @generated from message numen.v1.WatchVaultChangesResponse
  */
-export type ChangesResponse = Message<"numen.v1.ChangesResponse"> & {
+export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesResponse"> & {
   /**
    * Paths of the files that changed, notes and assets alike. One that was
    * removed is named here too: what changed about it is that it is gone.
@@ -153,10 +153,10 @@ export type ChangesResponse = Message<"numen.v1.ChangesResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ChangesResponse.
- * Use `create(ChangesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchVaultChangesResponse.
+ * Use `create(WatchVaultChangesResponseSchema)` to create a new message.
  */
-export const ChangesResponseSchema: GenMessage<ChangesResponse> = /*@__PURE__*/
+export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 3);
 
 /**
@@ -189,22 +189,22 @@ export const WentSchema: GenMessage<Went> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 4);
 
 /**
- * @generated from message numen.v1.FocusRequest
+ * @generated from message numen.v1.WatchFocusRequest
  */
-export type FocusRequest = Message<"numen.v1.FocusRequest"> & {
+export type WatchFocusRequest = Message<"numen.v1.WatchFocusRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.FocusRequest.
- * Use `create(FocusRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchFocusRequest.
+ * Use `create(WatchFocusRequestSchema)` to create a new message.
  */
-export const FocusRequestSchema: GenMessage<FocusRequest> = /*@__PURE__*/
+export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 5);
 
 /**
- * @generated from message numen.v1.FocusResponse
+ * @generated from message numen.v1.WatchFocusResponse
  */
-export type FocusResponse = Message<"numen.v1.FocusResponse"> & {
+export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
   /**
    * The source to put in front of the person: a note to see the neighbourhood
    * from, or a document to open.
@@ -237,16 +237,16 @@ export type FocusResponse = Message<"numen.v1.FocusResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.FocusResponse.
- * Use `create(FocusResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchFocusResponse.
+ * Use `create(WatchFocusResponseSchema)` to create a new message.
  */
-export const FocusResponseSchema: GenMessage<FocusResponse> = /*@__PURE__*/
+export const WatchFocusResponseSchema: GenMessage<WatchFocusResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 6);
 
 /**
- * @generated from message numen.v1.AttendingRequest
+ * @generated from message numen.v1.WriteOpenTabsRequest
  */
-export type AttendingRequest = Message<"numen.v1.AttendingRequest"> & {
+export type WriteOpenTabsRequest = Message<"numen.v1.WriteOpenTabsRequest"> & {
   /**
    * Every tab the window has open, in the order the person was last in them.
    *
@@ -264,23 +264,23 @@ export type AttendingRequest = Message<"numen.v1.AttendingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.AttendingRequest.
- * Use `create(AttendingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WriteOpenTabsRequest.
+ * Use `create(WriteOpenTabsRequestSchema)` to create a new message.
  */
-export const AttendingRequestSchema: GenMessage<AttendingRequest> = /*@__PURE__*/
+export const WriteOpenTabsRequestSchema: GenMessage<WriteOpenTabsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 7);
 
 /**
- * @generated from message numen.v1.AttendingResponse
+ * @generated from message numen.v1.WriteOpenTabsResponse
  */
-export type AttendingResponse = Message<"numen.v1.AttendingResponse"> & {
+export type WriteOpenTabsResponse = Message<"numen.v1.WriteOpenTabsResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.AttendingResponse.
- * Use `create(AttendingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WriteOpenTabsResponse.
+ * Use `create(WriteOpenTabsResponseSchema)` to create a new message.
  */
-export const AttendingResponseSchema: GenMessage<AttendingResponse> = /*@__PURE__*/
+export const WriteOpenTabsResponseSchema: GenMessage<WriteOpenTabsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 8);
 
 /**
@@ -353,51 +353,51 @@ export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
  */
 export const VaultService: GenService<{
   /**
-   * State is what the vault is and how far reading it has got.
+   * GetVaultState is what the vault is and how far reading it has got.
    *
-   * @generated from rpc numen.v1.VaultService.State
+   * @generated from rpc numen.v1.VaultService.GetVaultState
    */
-  state: {
+  getVaultState: {
     methodKind: "unary";
-    input: typeof StateRequestSchema;
-    output: typeof StateResponseSchema;
+    input: typeof GetVaultStateRequestSchema;
+    output: typeof GetVaultStateResponseSchema;
   },
   /**
-   * Changes reports the notes that changed on disk, for as long as the caller
-   * listens. It says which notes, and nothing about them: the caller knows
-   * what it is showing and asks for what it needs.
+   * WatchVaultChanges reports the notes that changed on disk, for as long as
+   * the caller listens. It says which notes, and nothing about them: the caller
+   * knows what it is showing and asks for what it needs.
    *
-   * @generated from rpc numen.v1.VaultService.Changes
+   * @generated from rpc numen.v1.VaultService.WatchVaultChanges
    */
-  changes: {
+  watchVaultChanges: {
     methodKind: "server_streaming";
-    input: typeof ChangesRequestSchema;
-    output: typeof ChangesResponseSchema;
+    input: typeof WatchVaultChangesRequestSchema;
+    output: typeof WatchVaultChangesResponseSchema;
   },
   /**
-   * Focus reports the places something else asked to be put in front of the
-   * person — an agent working the vault beside them — for as long as the
+   * WatchFocus reports the places something else asked to be put in front of
+   * the person — an agent working the vault beside them — for as long as the
    * caller listens. What travelling there looks like is the client's.
    *
-   * @generated from rpc numen.v1.VaultService.Focus
+   * @generated from rpc numen.v1.VaultService.WatchFocus
    */
-  focus: {
+  watchFocus: {
     methodKind: "server_streaming";
-    input: typeof FocusRequestSchema;
-    output: typeof FocusResponseSchema;
+    input: typeof WatchFocusRequestSchema;
+    output: typeof WatchFocusResponseSchema;
   },
   /**
-   * Attending says what the person has open — every tab of the window, and
+   * WriteOpenTabs says what the person has open — every tab of the window, and
    * which of them is in front. The client says so again whenever any of it
    * changes, and an agent working the vault beside them reads what it last
    * said.
    *
-   * @generated from rpc numen.v1.VaultService.Attending
+   * @generated from rpc numen.v1.VaultService.WriteOpenTabs
    */
-  attending: {
+  writeOpenTabs: {
     methodKind: "unary";
-    input: typeof AttendingRequestSchema;
-    output: typeof AttendingResponseSchema;
+    input: typeof WriteOpenTabsRequestSchema;
+    output: typeof WriteOpenTabsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_vault, 0);

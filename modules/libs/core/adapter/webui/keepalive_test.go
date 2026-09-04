@@ -25,7 +25,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	streams := map[string]func(context.Context, connect.HTTPClient, string) error{
 		"changes": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewVaultServiceClient(http, at).
-				Changes(ctx, connect.NewRequest(&v1.ChangesRequest{}))
+				WatchVaultChanges(ctx, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 			return err
 		},
 		"editing": func(ctx context.Context, http connect.HTTPClient, at string) error {
@@ -35,7 +35,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"focus": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewVaultServiceClient(http, at).
-				Focus(ctx, connect.NewRequest(&v1.FocusRequest{}))
+				WatchFocus(ctx, connect.NewRequest(&v1.WatchFocusRequest{}))
 			return err
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, at string) error {

@@ -38,33 +38,36 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// VaultServiceStateProcedure is the fully-qualified name of the VaultService's State RPC.
-	VaultServiceStateProcedure = "/numen.v1.VaultService/State"
-	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
-	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
-	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
-	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
-	// VaultServiceAttendingProcedure is the fully-qualified name of the VaultService's Attending RPC.
-	VaultServiceAttendingProcedure = "/numen.v1.VaultService/Attending"
+	// VaultServiceGetVaultStateProcedure is the fully-qualified name of the VaultService's
+	// GetVaultState RPC.
+	VaultServiceGetVaultStateProcedure = "/numen.v1.VaultService/GetVaultState"
+	// VaultServiceWatchVaultChangesProcedure is the fully-qualified name of the VaultService's
+	// WatchVaultChanges RPC.
+	VaultServiceWatchVaultChangesProcedure = "/numen.v1.VaultService/WatchVaultChanges"
+	// VaultServiceWatchFocusProcedure is the fully-qualified name of the VaultService's WatchFocus RPC.
+	VaultServiceWatchFocusProcedure = "/numen.v1.VaultService/WatchFocus"
+	// VaultServiceWriteOpenTabsProcedure is the fully-qualified name of the VaultService's
+	// WriteOpenTabs RPC.
+	VaultServiceWriteOpenTabsProcedure = "/numen.v1.VaultService/WriteOpenTabs"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
 type VaultServiceClient interface {
-	// State is what the vault is and how far reading it has got.
-	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
-	// Changes reports the notes that changed on disk, for as long as the caller
-	// listens. It says which notes, and nothing about them: the caller knows
-	// what it is showing and asks for what it needs.
-	Changes(context.Context, *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error)
-	// Focus reports the places something else asked to be put in front of the
-	// person — an agent working the vault beside them — for as long as the
+	// GetVaultState is what the vault is and how far reading it has got.
+	GetVaultState(context.Context, *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error)
+	// WatchVaultChanges reports the notes that changed on disk, for as long as
+	// the caller listens. It says which notes, and nothing about them: the caller
+	// knows what it is showing and asks for what it needs.
+	WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest]) (*connect.ServerStreamForClient[v1.WatchVaultChangesResponse], error)
+	// WatchFocus reports the places something else asked to be put in front of
+	// the person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
-	Focus(context.Context, *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error)
-	// Attending says what the person has open — every tab of the window, and
+	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error)
+	// WriteOpenTabs says what the person has open — every tab of the window, and
 	// which of them is in front. The client says so again whenever any of it
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
-	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
+	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -78,28 +81,28 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	vaultServiceMethods := v1.File_numen_v1_vault_proto.Services().ByName("VaultService").Methods()
 	return &vaultServiceClient{
-		state: connect.NewClient[v1.StateRequest, v1.StateResponse](
+		getVaultState: connect.NewClient[v1.GetVaultStateRequest, v1.GetVaultStateResponse](
 			httpClient,
-			baseURL+VaultServiceStateProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("State")),
+			baseURL+VaultServiceGetVaultStateProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("GetVaultState")),
 			connect.WithClientOptions(opts...),
 		),
-		changes: connect.NewClient[v1.ChangesRequest, v1.ChangesResponse](
+		watchVaultChanges: connect.NewClient[v1.WatchVaultChangesRequest, v1.WatchVaultChangesResponse](
 			httpClient,
-			baseURL+VaultServiceChangesProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Changes")),
+			baseURL+VaultServiceWatchVaultChangesProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("WatchVaultChanges")),
 			connect.WithClientOptions(opts...),
 		),
-		focus: connect.NewClient[v1.FocusRequest, v1.FocusResponse](
+		watchFocus: connect.NewClient[v1.WatchFocusRequest, v1.WatchFocusResponse](
 			httpClient,
-			baseURL+VaultServiceFocusProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Focus")),
+			baseURL+VaultServiceWatchFocusProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("WatchFocus")),
 			connect.WithClientOptions(opts...),
 		),
-		attending: connect.NewClient[v1.AttendingRequest, v1.AttendingResponse](
+		writeOpenTabs: connect.NewClient[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse](
 			httpClient,
-			baseURL+VaultServiceAttendingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Attending")),
+			baseURL+VaultServiceWriteOpenTabsProcedure,
+			connect.WithSchema(vaultServiceMethods.ByName("WriteOpenTabs")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -107,49 +110,49 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // vaultServiceClient implements VaultServiceClient.
 type vaultServiceClient struct {
-	state     *connect.Client[v1.StateRequest, v1.StateResponse]
-	changes   *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
-	focus     *connect.Client[v1.FocusRequest, v1.FocusResponse]
-	attending *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
+	getVaultState     *connect.Client[v1.GetVaultStateRequest, v1.GetVaultStateResponse]
+	watchVaultChanges *connect.Client[v1.WatchVaultChangesRequest, v1.WatchVaultChangesResponse]
+	watchFocus        *connect.Client[v1.WatchFocusRequest, v1.WatchFocusResponse]
+	writeOpenTabs     *connect.Client[v1.WriteOpenTabsRequest, v1.WriteOpenTabsResponse]
 }
 
-// State calls numen.v1.VaultService.State.
-func (c *vaultServiceClient) State(ctx context.Context, req *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
-	return c.state.CallUnary(ctx, req)
+// GetVaultState calls numen.v1.VaultService.GetVaultState.
+func (c *vaultServiceClient) GetVaultState(ctx context.Context, req *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error) {
+	return c.getVaultState.CallUnary(ctx, req)
 }
 
-// Changes calls numen.v1.VaultService.Changes.
-func (c *vaultServiceClient) Changes(ctx context.Context, req *connect.Request[v1.ChangesRequest]) (*connect.ServerStreamForClient[v1.ChangesResponse], error) {
-	return c.changes.CallServerStream(ctx, req)
+// WatchVaultChanges calls numen.v1.VaultService.WatchVaultChanges.
+func (c *vaultServiceClient) WatchVaultChanges(ctx context.Context, req *connect.Request[v1.WatchVaultChangesRequest]) (*connect.ServerStreamForClient[v1.WatchVaultChangesResponse], error) {
+	return c.watchVaultChanges.CallServerStream(ctx, req)
 }
 
-// Focus calls numen.v1.VaultService.Focus.
-func (c *vaultServiceClient) Focus(ctx context.Context, req *connect.Request[v1.FocusRequest]) (*connect.ServerStreamForClient[v1.FocusResponse], error) {
-	return c.focus.CallServerStream(ctx, req)
+// WatchFocus calls numen.v1.VaultService.WatchFocus.
+func (c *vaultServiceClient) WatchFocus(ctx context.Context, req *connect.Request[v1.WatchFocusRequest]) (*connect.ServerStreamForClient[v1.WatchFocusResponse], error) {
+	return c.watchFocus.CallServerStream(ctx, req)
 }
 
-// Attending calls numen.v1.VaultService.Attending.
-func (c *vaultServiceClient) Attending(ctx context.Context, req *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error) {
-	return c.attending.CallUnary(ctx, req)
+// WriteOpenTabs calls numen.v1.VaultService.WriteOpenTabs.
+func (c *vaultServiceClient) WriteOpenTabs(ctx context.Context, req *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
+	return c.writeOpenTabs.CallUnary(ctx, req)
 }
 
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
-	// State is what the vault is and how far reading it has got.
-	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
-	// Changes reports the notes that changed on disk, for as long as the caller
-	// listens. It says which notes, and nothing about them: the caller knows
-	// what it is showing and asks for what it needs.
-	Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error
-	// Focus reports the places something else asked to be put in front of the
-	// person — an agent working the vault beside them — for as long as the
+	// GetVaultState is what the vault is and how far reading it has got.
+	GetVaultState(context.Context, *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error)
+	// WatchVaultChanges reports the notes that changed on disk, for as long as
+	// the caller listens. It says which notes, and nothing about them: the caller
+	// knows what it is showing and asks for what it needs.
+	WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest], *connect.ServerStream[v1.WatchVaultChangesResponse]) error
+	// WatchFocus reports the places something else asked to be put in front of
+	// the person — an agent working the vault beside them — for as long as the
 	// caller listens. What travelling there looks like is the client's.
-	Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error
-	// Attending says what the person has open — every tab of the window, and
+	WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error
+	// WriteOpenTabs says what the person has open — every tab of the window, and
 	// which of them is in front. The client says so again whenever any of it
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
-	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
+	WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error)
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -159,40 +162,40 @@ type VaultServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	vaultServiceMethods := v1.File_numen_v1_vault_proto.Services().ByName("VaultService").Methods()
-	vaultServiceStateHandler := connect.NewUnaryHandler(
-		VaultServiceStateProcedure,
-		svc.State,
-		connect.WithSchema(vaultServiceMethods.ByName("State")),
+	vaultServiceGetVaultStateHandler := connect.NewUnaryHandler(
+		VaultServiceGetVaultStateProcedure,
+		svc.GetVaultState,
+		connect.WithSchema(vaultServiceMethods.ByName("GetVaultState")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceChangesHandler := connect.NewServerStreamHandler(
-		VaultServiceChangesProcedure,
-		svc.Changes,
-		connect.WithSchema(vaultServiceMethods.ByName("Changes")),
+	vaultServiceWatchVaultChangesHandler := connect.NewServerStreamHandler(
+		VaultServiceWatchVaultChangesProcedure,
+		svc.WatchVaultChanges,
+		connect.WithSchema(vaultServiceMethods.ByName("WatchVaultChanges")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceFocusHandler := connect.NewServerStreamHandler(
-		VaultServiceFocusProcedure,
-		svc.Focus,
-		connect.WithSchema(vaultServiceMethods.ByName("Focus")),
+	vaultServiceWatchFocusHandler := connect.NewServerStreamHandler(
+		VaultServiceWatchFocusProcedure,
+		svc.WatchFocus,
+		connect.WithSchema(vaultServiceMethods.ByName("WatchFocus")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceAttendingHandler := connect.NewUnaryHandler(
-		VaultServiceAttendingProcedure,
-		svc.Attending,
-		connect.WithSchema(vaultServiceMethods.ByName("Attending")),
+	vaultServiceWriteOpenTabsHandler := connect.NewUnaryHandler(
+		VaultServiceWriteOpenTabsProcedure,
+		svc.WriteOpenTabs,
+		connect.WithSchema(vaultServiceMethods.ByName("WriteOpenTabs")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case VaultServiceStateProcedure:
-			vaultServiceStateHandler.ServeHTTP(w, r)
-		case VaultServiceChangesProcedure:
-			vaultServiceChangesHandler.ServeHTTP(w, r)
-		case VaultServiceFocusProcedure:
-			vaultServiceFocusHandler.ServeHTTP(w, r)
-		case VaultServiceAttendingProcedure:
-			vaultServiceAttendingHandler.ServeHTTP(w, r)
+		case VaultServiceGetVaultStateProcedure:
+			vaultServiceGetVaultStateHandler.ServeHTTP(w, r)
+		case VaultServiceWatchVaultChangesProcedure:
+			vaultServiceWatchVaultChangesHandler.ServeHTTP(w, r)
+		case VaultServiceWatchFocusProcedure:
+			vaultServiceWatchFocusHandler.ServeHTTP(w, r)
+		case VaultServiceWriteOpenTabsProcedure:
+			vaultServiceWriteOpenTabsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -202,18 +205,18 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedVaultServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedVaultServiceHandler struct{}
 
-func (UnimplementedVaultServiceHandler) State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.State is not implemented"))
+func (UnimplementedVaultServiceHandler) GetVaultState(context.Context, *connect.Request[v1.GetVaultStateRequest]) (*connect.Response[v1.GetVaultStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.GetVaultState is not implemented"))
 }
 
-func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Changes is not implemented"))
+func (UnimplementedVaultServiceHandler) WatchVaultChanges(context.Context, *connect.Request[v1.WatchVaultChangesRequest], *connect.ServerStream[v1.WatchVaultChangesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WatchVaultChanges is not implemented"))
 }
 
-func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[v1.FocusRequest], *connect.ServerStream[v1.FocusResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Focus is not implemented"))
+func (UnimplementedVaultServiceHandler) WatchFocus(context.Context, *connect.Request[v1.WatchFocusRequest], *connect.ServerStream[v1.WatchFocusResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WatchFocus is not implemented"))
 }
 
-func (UnimplementedVaultServiceHandler) Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Attending is not implemented"))
+func (UnimplementedVaultServiceHandler) WriteOpenTabs(context.Context, *connect.Request[v1.WriteOpenTabsRequest]) (*connect.Response[v1.WriteOpenTabsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.WriteOpenTabs is not implemented"))
 }

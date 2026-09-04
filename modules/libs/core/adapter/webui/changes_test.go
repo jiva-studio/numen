@@ -93,7 +93,7 @@ func serving(t *testing.T, notes map[string]string) (
 	// The window opens on what the first scan stored; the watcher reports only
 	// what happens after it.
 	for range 200 {
-		state, err := client.State(t.Context(), connect.NewRequest(&v1.StateRequest{}))
+		state, err := client.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,7 +122,7 @@ func TestAnEditReachesAListener(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +181,7 @@ func TestABookDroppedInReachesAListener(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := client.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := client.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

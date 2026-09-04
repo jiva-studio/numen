@@ -271,9 +271,9 @@ export const core: Core & Asking & Commanding = {
   vaults: () => vaults.list(),
   neighbourhood: async (path) => around(await notes.neighbourhood({ path })),
   opening: async () => (await notes.opening({})).note ?? null,
-  state: () => vault.state({}),
+  state: () => vault.getVaultState({}),
   changes: async function* (signal) {
-    for await (const change of vault.changes({}, { signal })) {
+    for await (const change of vault.watchVaultChanges({}, { signal })) {
       yield {
         paths: change.paths,
         reload: change.reload,
@@ -281,9 +281,9 @@ export const core: Core & Asking & Commanding = {
       }
     }
   },
-  focus: (signal) => vault.focus({}, { signal }),
+  focus: (signal) => vault.watchFocus({}, { signal }),
   attending: async (open) => {
-    await vault.attending({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
+    await vault.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
   editing: (signal) => notes.editing({}, { signal }),
   async *tasks(signal) {

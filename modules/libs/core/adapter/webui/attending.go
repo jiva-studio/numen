@@ -10,13 +10,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// Attending takes what the person has open, as the window last said it.
+// WriteOpenTabs takes what the person has open, as the window last said it.
 //
-// It is the other direction to Focus: a place is put in front of the person
-// there, and here the window says what is in front of them now.
-func (a *API) Attending(
-	_ context.Context, r *connect.Request[v1.AttendingRequest],
-) (*connect.Response[v1.AttendingResponse], error) {
+// It is the other direction to WatchFocus: a place is put in front of the
+// person there, and here the window says what is in front of them now.
+func (a *API) WriteOpenTabs(
+	_ context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
+) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	told := r.Msg.GetTabs()
 	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
 	for _, one := range told {
@@ -33,7 +33,7 @@ func (a *API) Attending(
 	if a.Attends != nil {
 		a.Attends(open)
 	}
-	return connect.NewResponse(&v1.AttendingResponse{}), nil
+	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
 }
 
 // Attended is what the person has open, as the window last said. A window that

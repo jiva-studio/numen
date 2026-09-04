@@ -115,7 +115,7 @@ func TestAnInstallationHoldingNoVaultOpensAWindowStandingOnNothing(t *testing.T)
 func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	f := standingOnNothing(t)
 
-	state, err := f.vault.State(t.Context(), connect.NewRequest(&v1.StateRequest{}))
+	state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 	if err != nil {
 		t.Fatalf("the window cannot say what it is showing: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	changes, err := f.vault.Changes(listening, connect.NewRequest(&v1.ChangesRequest{}))
+	changes, err := f.vault.WatchVaultChanges(listening, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	waiting, spent := context.WithTimeout(listening, 5*time.Second)
 	defer spent()
 
-	focus, err := f.vault.Focus(waiting, connect.NewRequest(&v1.FocusRequest{}))
+	focus, err := f.vault.WatchFocus(waiting, connect.NewRequest(&v1.WatchFocusRequest{}))
 	if err != nil {
 		t.Fatalf("the focus stream never opened: %v", err)
 	}
@@ -418,7 +418,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 
 	// The vault is read, and answers about the note it holds.
 	for range 400 {
-		state, err := f.vault.State(t.Context(), connect.NewRequest(&v1.StateRequest{}))
+		state, err := f.vault.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
 		if err != nil {
 			t.Fatal(err)
 		}

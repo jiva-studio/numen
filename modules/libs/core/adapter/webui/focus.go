@@ -27,12 +27,12 @@ func (v view) Focus(_ context.Context, at domain.Place) error {
 	return nil
 }
 
-// Focus reports what something else asked to be put in front of the person,
-// for as long as the client listens.
-func (a *API) Focus(
+// WatchFocus reports what something else asked to be put in front of the
+// person, for as long as the client listens.
+func (a *API) WatchFocus(
 	ctx context.Context,
-	_ *connect.Request[v1.FocusRequest],
-	out *connect.ServerStream[v1.FocusResponse],
+	_ *connect.Request[v1.WatchFocusRequest],
+	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
 	line, done := a.Places.listen()
 	defer done()
@@ -47,7 +47,7 @@ func (a *API) Focus(
 		case <-repeat.C:
 			// A place nobody asked for names nothing, and is here to fail when
 			// the client has gone.
-			if err := out.Send(&v1.FocusResponse{}); err != nil {
+			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
 				return err
 			}
 		case at, open := <-line:
@@ -58,7 +58,7 @@ func (a *API) Focus(
 			for _, one := range at.Stretches {
 				also = append(also, &v1.Stretch{Start: int32(one.Start), Length: int32(one.Length)})
 			}
-			if err := out.Send(&v1.FocusResponse{
+			if err := out.Send(&v1.WatchFocusResponse{
 				Path:   at.Path,
 				Start:  int32(at.Start),
 				Length: int32(at.Length),

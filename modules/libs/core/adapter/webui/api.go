@@ -368,9 +368,11 @@ func text(v *atomic.Value) string {
 	return s
 }
 
-func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
+func (a *API) GetVaultState(
+	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
+) (*connect.Response[v1.GetVaultStateResponse], error) {
 	showing := a.Showing()
-	out := &v1.StateResponse{
+	out := &v1.GetVaultStateResponse{
 		Name:        showing.Name,
 		Path:        showing.Path,
 		Ready:       a.Ready.Load(),
@@ -481,11 +483,11 @@ func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]
 	return connect.NewResponse(out), nil
 }
 
-// Changes reports what moved, for as long as the caller listens.
-func (a *API) Changes(
+// WatchVaultChanges reports what moved, for as long as the caller listens.
+func (a *API) WatchVaultChanges(
 	ctx context.Context,
-	_ *connect.Request[v1.ChangesRequest],
-	out *connect.ServerStream[v1.ChangesResponse],
+	_ *connect.Request[v1.WatchVaultChangesRequest],
+	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
 	line, done := a.Listeners.listen()
 	defer done()
@@ -493,7 +495,7 @@ func (a *API) Changes(
 	// Named as following before anything has changed. A stream that says
 	// nothing until the vault moves is indistinguishable from one that never
 	// opened, and a caller waiting on its first message waits for an edit.
-	if err := out.Send(&v1.ChangesResponse{}); err != nil {
+	if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
 		return err
 	}
 
@@ -505,7 +507,7 @@ func (a *API) Changes(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			if err := out.Send(&v1.ChangesResponse{}); err != nil {
+			if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
 				return err
 			}
 		case what, open := <-line:
@@ -516,7 +518,7 @@ func (a *API) Changes(
 			for _, went := range what.renamed {
 				renamed = append(renamed, &v1.Went{From: went.From, To: went.To})
 			}
-			if err := out.Send(&v1.ChangesResponse{
+			if err := out.Send(&v1.WatchVaultChangesResponse{
 				Paths: what.paths, Reload: what.reload, Renamed: renamed,
 			}); err != nil {
 				return err

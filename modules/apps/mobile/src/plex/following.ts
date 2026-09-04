@@ -20,7 +20,7 @@ export function follow(core: Reached, again: () => void): void {
 
   void (async () => {
     try {
-      for await (const _ of core.vault.changes({}, { signal: stop.signal })) {
+      for await (const _ of core.vault.watchVaultChanges({}, { signal: stop.signal })) {
         again()
       }
     } catch {

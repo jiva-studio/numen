@@ -27,26 +27,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type StateRequest struct {
+type GetVaultStateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StateRequest) Reset() {
-	*x = StateRequest{}
+func (x *GetVaultStateRequest) Reset() {
+	*x = GetVaultStateRequest{}
 	mi := &file_numen_v1_vault_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StateRequest) String() string {
+func (x *GetVaultStateRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StateRequest) ProtoMessage() {}
+func (*GetVaultStateRequest) ProtoMessage() {}
 
-func (x *StateRequest) ProtoReflect() protoreflect.Message {
+func (x *GetVaultStateRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -58,12 +58,12 @@ func (x *StateRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StateRequest.ProtoReflect.Descriptor instead.
-func (*StateRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVaultStateRequest.ProtoReflect.Descriptor instead.
+func (*GetVaultStateRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{0}
 }
 
-type StateResponse struct {
+type GetVaultStateResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Path  string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
@@ -92,20 +92,20 @@ type StateResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *StateResponse) Reset() {
-	*x = StateResponse{}
+func (x *GetVaultStateResponse) Reset() {
+	*x = GetVaultStateResponse{}
 	mi := &file_numen_v1_vault_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StateResponse) String() string {
+func (x *GetVaultStateResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StateResponse) ProtoMessage() {}
+func (*GetVaultStateResponse) ProtoMessage() {}
 
-func (x *StateResponse) ProtoReflect() protoreflect.Message {
+func (x *GetVaultStateResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -117,94 +117,94 @@ func (x *StateResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StateResponse.ProtoReflect.Descriptor instead.
-func (*StateResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetVaultStateResponse.ProtoReflect.Descriptor instead.
+func (*GetVaultStateResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *StateResponse) GetName() string {
+func (x *GetVaultStateResponse) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *StateResponse) GetPath() string {
+func (x *GetVaultStateResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *StateResponse) GetReady() bool {
+func (x *GetVaultStateResponse) GetReady() bool {
 	if x != nil {
 		return x.Ready
 	}
 	return false
 }
 
-func (x *StateResponse) GetFailed() string {
+func (x *GetVaultStateResponse) GetFailed() string {
 	if x != nil {
 		return x.Failed
 	}
 	return ""
 }
 
-func (x *StateResponse) GetUnwatched() string {
+func (x *GetVaultStateResponse) GetUnwatched() string {
 	if x != nil {
 		return x.Unwatched
 	}
 	return ""
 }
 
-func (x *StateResponse) GetUnreachable() string {
+func (x *GetVaultStateResponse) GetUnreachable() string {
 	if x != nil {
 		return x.Unreachable
 	}
 	return ""
 }
 
-func (x *StateResponse) GetChunks() int64 {
+func (x *GetVaultStateResponse) GetChunks() int64 {
 	if x != nil {
 		return x.Chunks
 	}
 	return 0
 }
 
-func (x *StateResponse) GetEmbedded() int64 {
+func (x *GetVaultStateResponse) GetEmbedded() int64 {
 	if x != nil {
 		return x.Embedded
 	}
 	return 0
 }
 
-func (x *StateResponse) GetEmbedding() bool {
+func (x *GetVaultStateResponse) GetEmbedding() bool {
 	if x != nil {
 		return x.Embedding
 	}
 	return false
 }
 
-type ChangesRequest struct {
+type WatchVaultChangesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangesRequest) Reset() {
-	*x = ChangesRequest{}
+func (x *WatchVaultChangesRequest) Reset() {
+	*x = WatchVaultChangesRequest{}
 	mi := &file_numen_v1_vault_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangesRequest) String() string {
+func (x *WatchVaultChangesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangesRequest) ProtoMessage() {}
+func (*WatchVaultChangesRequest) ProtoMessage() {}
 
-func (x *ChangesRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchVaultChangesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -216,12 +216,12 @@ func (x *ChangesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangesRequest.ProtoReflect.Descriptor instead.
-func (*ChangesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchVaultChangesRequest.ProtoReflect.Descriptor instead.
+func (*WatchVaultChangesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{2}
 }
 
-type ChangesResponse struct {
+type WatchVaultChangesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Paths of the files that changed, notes and assets alike. One that was
 	// removed is named here too: what changed about it is that it is gone.
@@ -236,20 +236,20 @@ type ChangesResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangesResponse) Reset() {
-	*x = ChangesResponse{}
+func (x *WatchVaultChangesResponse) Reset() {
+	*x = WatchVaultChangesResponse{}
 	mi := &file_numen_v1_vault_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangesResponse) String() string {
+func (x *WatchVaultChangesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangesResponse) ProtoMessage() {}
+func (*WatchVaultChangesResponse) ProtoMessage() {}
 
-func (x *ChangesResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchVaultChangesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -261,26 +261,26 @@ func (x *ChangesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangesResponse.ProtoReflect.Descriptor instead.
-func (*ChangesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchVaultChangesResponse.ProtoReflect.Descriptor instead.
+func (*WatchVaultChangesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ChangesResponse) GetPaths() []string {
+func (x *WatchVaultChangesResponse) GetPaths() []string {
 	if x != nil {
 		return x.Paths
 	}
 	return nil
 }
 
-func (x *ChangesResponse) GetReload() bool {
+func (x *WatchVaultChangesResponse) GetReload() bool {
 	if x != nil {
 		return x.Reload
 	}
 	return false
 }
 
-func (x *ChangesResponse) GetRenamed() []*Went {
+func (x *WatchVaultChangesResponse) GetRenamed() []*Went {
 	if x != nil {
 		return x.Renamed
 	}
@@ -343,26 +343,26 @@ func (x *Went) GetTo() string {
 	return ""
 }
 
-type FocusRequest struct {
+type WatchFocusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FocusRequest) Reset() {
-	*x = FocusRequest{}
+func (x *WatchFocusRequest) Reset() {
+	*x = WatchFocusRequest{}
 	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FocusRequest) String() string {
+func (x *WatchFocusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FocusRequest) ProtoMessage() {}
+func (*WatchFocusRequest) ProtoMessage() {}
 
-func (x *FocusRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchFocusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -374,12 +374,12 @@ func (x *FocusRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FocusRequest.ProtoReflect.Descriptor instead.
-func (*FocusRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchFocusRequest.ProtoReflect.Descriptor instead.
+func (*WatchFocusRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{5}
 }
 
-type FocusResponse struct {
+type WatchFocusResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The source to put in front of the person: a note to see the neighbourhood
 	// from, or a document to open.
@@ -396,20 +396,20 @@ type FocusResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FocusResponse) Reset() {
-	*x = FocusResponse{}
+func (x *WatchFocusResponse) Reset() {
+	*x = WatchFocusResponse{}
 	mi := &file_numen_v1_vault_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FocusResponse) String() string {
+func (x *WatchFocusResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FocusResponse) ProtoMessage() {}
+func (*WatchFocusResponse) ProtoMessage() {}
 
-func (x *FocusResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchFocusResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -421,40 +421,40 @@ func (x *FocusResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FocusResponse.ProtoReflect.Descriptor instead.
-func (*FocusResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchFocusResponse.ProtoReflect.Descriptor instead.
+func (*WatchFocusResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *FocusResponse) GetPath() string {
+func (x *WatchFocusResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *FocusResponse) GetStart() int32 {
+func (x *WatchFocusResponse) GetStart() int32 {
 	if x != nil {
 		return x.Start
 	}
 	return 0
 }
 
-func (x *FocusResponse) GetLength() int32 {
+func (x *WatchFocusResponse) GetLength() int32 {
 	if x != nil {
 		return x.Length
 	}
 	return 0
 }
 
-func (x *FocusResponse) GetAlso() []*Stretch {
+func (x *WatchFocusResponse) GetAlso() []*Stretch {
 	if x != nil {
 		return x.Also
 	}
 	return nil
 }
 
-type AttendingRequest struct {
+type WriteOpenTabsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every tab the window has open, in the order the person was last in them.
 	Tabs []*Tab `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
@@ -465,20 +465,20 @@ type AttendingRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AttendingRequest) Reset() {
-	*x = AttendingRequest{}
+func (x *WriteOpenTabsRequest) Reset() {
+	*x = WriteOpenTabsRequest{}
 	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AttendingRequest) String() string {
+func (x *WriteOpenTabsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttendingRequest) ProtoMessage() {}
+func (*WriteOpenTabsRequest) ProtoMessage() {}
 
-func (x *AttendingRequest) ProtoReflect() protoreflect.Message {
+func (x *WriteOpenTabsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -490,45 +490,45 @@ func (x *AttendingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttendingRequest.ProtoReflect.Descriptor instead.
-func (*AttendingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteOpenTabsRequest.ProtoReflect.Descriptor instead.
+func (*WriteOpenTabsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *AttendingRequest) GetTabs() []*Tab {
+func (x *WriteOpenTabsRequest) GetTabs() []*Tab {
 	if x != nil {
 		return x.Tabs
 	}
 	return nil
 }
 
-func (x *AttendingRequest) GetFront() string {
+func (x *WriteOpenTabsRequest) GetFront() string {
 	if x != nil {
 		return x.Front
 	}
 	return ""
 }
 
-type AttendingResponse struct {
+type WriteOpenTabsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AttendingResponse) Reset() {
-	*x = AttendingResponse{}
+func (x *WriteOpenTabsResponse) Reset() {
+	*x = WriteOpenTabsResponse{}
 	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AttendingResponse) String() string {
+func (x *WriteOpenTabsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AttendingResponse) ProtoMessage() {}
+func (*WriteOpenTabsResponse) ProtoMessage() {}
 
-func (x *AttendingResponse) ProtoReflect() protoreflect.Message {
+func (x *WriteOpenTabsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -540,8 +540,8 @@ func (x *AttendingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AttendingResponse.ProtoReflect.Descriptor instead.
-func (*AttendingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteOpenTabsResponse.ProtoReflect.Descriptor instead.
+func (*WriteOpenTabsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
 }
 
@@ -647,9 +647,9 @@ var File_numen_v1_vault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x0e\n" +
-	"\fStateRequest\"\xcb\x02\n" +
-	"\rStateResponse\x12\x12\n" +
+	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
+	"\x14GetVaultStateRequest\"\xd3\x02\n" +
+	"\x15GetVaultStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05ready\x18\x04 \x01(\bR\x05ready\x12\x16\n" +
@@ -661,37 +661,38 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\tembedding\x18\n" +
 	" \x01(\bR\tembeddingJ\x04\b\x03\x10\x04J\x04\b\t\x10\n" +
 	"J\x04\b\v\x10\x11R\x05booksR\n" +
-	"books_readR\x04busyR\aindexedR\blearningR\x04madeR\x05owingR\areading\"\x10\n" +
-	"\x0eChangesRequest\"i\n" +
-	"\x0fChangesResponse\x12\x14\n" +
+	"books_readR\x04busyR\aindexedR\blearningR\x04madeR\x05owingR\areading\"\x1a\n" +
+	"\x18WatchVaultChangesRequest\"s\n" +
+	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
 	"\x06reload\x18\x02 \x01(\bR\x06reload\x12(\n" +
 	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.WentR\arenamed\"*\n" +
 	"\x04Went\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\x0e\n" +
-	"\fFocusRequest\"x\n" +
-	"\rFocusResponse\x12\x12\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\x13\n" +
+	"\x11WatchFocusRequest\"}\n" +
+	"\x12WatchFocusResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05start\x18\x02 \x01(\x05R\x05start\x12\x16\n" +
 	"\x06length\x18\x03 \x01(\x05R\x06length\x12%\n" +
-	"\x04also\x18\x04 \x03(\v2\x11.numen.v1.StretchR\x04also\"K\n" +
-	"\x10AttendingRequest\x12!\n" +
+	"\x04also\x18\x04 \x03(\v2\x11.numen.v1.StretchR\x04also\"O\n" +
+	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
-	"\x05front\x18\x02 \x01(\tR\x05front\"\x13\n" +
-	"\x11AttendingResponse\"s\n" +
+	"\x05front\x18\x02 \x01(\tR\x05front\"\x17\n" +
+	"\x15WriteOpenTabsResponse\"s\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12\x0e\n" +
 	"\x02at\x18\x05 \x01(\x05R\x02at\x12\x0e\n" +
-	"\x02of\x18\x06 \x01(\x05R\x02of2\x8c\x02\n" +
-	"\fVaultService\x128\n" +
-	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12@\n" +
-	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01\x12:\n" +
-	"\x05Focus\x12\x16.numen.v1.FocusRequest\x1a\x17.numen.v1.FocusResponse0\x01\x12D\n" +
-	"\tAttending\x12\x1a.numen.v1.AttendingRequest\x1a\x1b.numen.v1.AttendingResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x02of\x18\x06 \x01(\x05R\x02of2\xdd\x02\n" +
+	"\fVaultService\x12P\n" +
+	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +
+	"\x11WatchVaultChanges\x12\".numen.v1.WatchVaultChangesRequest\x1a#.numen.v1.WatchVaultChangesResponse0\x01\x12I\n" +
+	"\n" +
+	"WatchFocus\x12\x1b.numen.v1.WatchFocusRequest\x1a\x1c.numen.v1.WatchFocusResponse0\x01\x12P\n" +
+	"\rWriteOpenTabs\x12\x1e.numen.v1.WriteOpenTabsRequest\x1a\x1f.numen.v1.WriteOpenTabsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_vault_proto_rawDescOnce sync.Once
@@ -707,30 +708,30 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_vault_proto_goTypes = []any{
-	(*StateRequest)(nil),      // 0: numen.v1.StateRequest
-	(*StateResponse)(nil),     // 1: numen.v1.StateResponse
-	(*ChangesRequest)(nil),    // 2: numen.v1.ChangesRequest
-	(*ChangesResponse)(nil),   // 3: numen.v1.ChangesResponse
-	(*Went)(nil),              // 4: numen.v1.Went
-	(*FocusRequest)(nil),      // 5: numen.v1.FocusRequest
-	(*FocusResponse)(nil),     // 6: numen.v1.FocusResponse
-	(*AttendingRequest)(nil),  // 7: numen.v1.AttendingRequest
-	(*AttendingResponse)(nil), // 8: numen.v1.AttendingResponse
-	(*Tab)(nil),               // 9: numen.v1.Tab
-	(*Stretch)(nil),           // 10: numen.v1.Stretch
+	(*GetVaultStateRequest)(nil),      // 0: numen.v1.GetVaultStateRequest
+	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
+	(*WatchVaultChangesRequest)(nil),  // 2: numen.v1.WatchVaultChangesRequest
+	(*WatchVaultChangesResponse)(nil), // 3: numen.v1.WatchVaultChangesResponse
+	(*Went)(nil),                      // 4: numen.v1.Went
+	(*WatchFocusRequest)(nil),         // 5: numen.v1.WatchFocusRequest
+	(*WatchFocusResponse)(nil),        // 6: numen.v1.WatchFocusResponse
+	(*WriteOpenTabsRequest)(nil),      // 7: numen.v1.WriteOpenTabsRequest
+	(*WriteOpenTabsResponse)(nil),     // 8: numen.v1.WriteOpenTabsResponse
+	(*Tab)(nil),                       // 9: numen.v1.Tab
+	(*Stretch)(nil),                   // 10: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
-	10, // 1: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
-	9,  // 2: numen.v1.AttendingRequest.tabs:type_name -> numen.v1.Tab
-	0,  // 3: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
-	2,  // 4: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	5,  // 5: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
-	7,  // 6: numen.v1.VaultService.Attending:input_type -> numen.v1.AttendingRequest
-	1,  // 7: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	3,  // 8: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	6,  // 9: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
-	8,  // 10: numen.v1.VaultService.Attending:output_type -> numen.v1.AttendingResponse
+	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Went
+	10, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
+	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
+	0,  // 3: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
+	2,  // 4: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
+	5,  // 5: numen.v1.VaultService.WatchFocus:input_type -> numen.v1.WatchFocusRequest
+	7,  // 6: numen.v1.VaultService.WriteOpenTabs:input_type -> numen.v1.WriteOpenTabsRequest
+	1,  // 7: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse
+	3,  // 8: numen.v1.VaultService.WatchVaultChanges:output_type -> numen.v1.WatchVaultChangesResponse
+	6,  // 9: numen.v1.VaultService.WatchFocus:output_type -> numen.v1.WatchFocusResponse
+	8,  // 10: numen.v1.VaultService.WriteOpenTabs:output_type -> numen.v1.WriteOpenTabsResponse
 	7,  // [7:11] is the sub-list for method output_type
 	3,  // [3:7] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
