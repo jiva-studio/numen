@@ -58,6 +58,29 @@ func addCardTools(server *sdk.Server, core Core) {
 	addCardWritingTools(server, core)
 }
 
+// addCardShowing tells an agent which card the person is looking at.
+//
+// It is added only where a window says. A binary nobody is sitting at answers
+// about a vault and about nothing in front of anybody.
+func addCardShowing(server *sdk.Server, core Core) {
+	if core.Reviewing == nil {
+		return
+	}
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_showing",
+		Title: "What card the person is looking at",
+		Description: "The card in front of the person: the deck it stands in, the mark " +
+			"`card_read` addresses it by, and the face it is being shown through. Ask it " +
+			"before saying anything about the card they are on — a person answers one " +
+			"card and moves to the next while you work — and read the card itself with " +
+			"`card_read`. Nothing is in front of them between cards, and the deck comes " +
+			"back empty.",
+	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, Asked, error) {
+		return nil, core.Reviewing(), nil
+	})
+}
+
 func addCardReadingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "card_stencil_list",

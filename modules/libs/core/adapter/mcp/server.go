@@ -45,7 +45,12 @@ type Core struct {
 	// Attending is what the person has open, asked at every call so that an
 	// agent reads the window as it stands. Without it an agent is told nothing
 	// of what is in front of anybody.
-	Attending func() domain.Attention
+	Attending func() domain.OpenTabs
+
+	// Reviewing is the card the person is looking at, asked at every call for
+	// the same reason. Without it an agent is told nothing of what card anybody
+	// is on.
+	Reviewing func() Asked
 
 	Notes   Notes
 	Vaults  Vaults
@@ -75,10 +80,10 @@ type Notes struct {
 // no other, and each tool is served where what it works through is here.
 type Vaults struct {
 	Registry port.VaultRegistry
-	// Picker puts this machine's own folder picker in front of the person, for
-	// a vault added without a path. Without it a folder is named or nothing is
-	// added.
-	Picker port.FolderDialog
+	// FolderDialog puts this machine's own folder dialog in front of the person,
+	// for a vault added without a path. Without it a folder is named or nothing
+	// is added.
+	FolderDialog port.FolderDialog
 	// Add turns a folder into a vault, Rename is what a person calls one, and
 	// Forget takes one off the list.
 	Add    *usecase.Add
@@ -120,6 +125,15 @@ type Sources struct {
 	// Documents reads a format that needs a library, for a document standing on
 	// its own bytes.
 	Documents port.Documents
+}
+
+// Asked is the card in front of the person, as an agent is told about it. The
+// deck is the file it stands in and the mark is what every card tool addresses
+// it by.
+type Asked struct {
+	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
+	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
+	Face string `json:"face,omitempty" jsonschema:"the face it is being shown through, spelled as the stencil writes it"`
 }
 
 // Shown is the vault a call is answered about: the vault itself, and where it
@@ -208,6 +222,7 @@ func NewReviewing(core Core) *sdk.Server {
 	addNoteReadingTools(server, core)
 	addCardReadingTools(server, core)
 	addCardEditingTools(server, core)
+	addCardShowing(server, core)
 	addLinkReadingTools(server, core)
 	addSourceReadingTools(server, core)
 	addVaultGet(server, core)
@@ -324,6 +339,12 @@ func reviewingInstructions(core Core) string {
 	b.WriteString("reads: you write the cards of a deck, and nothing you can call writes a ")
 	b.WriteString("note, a link or a document, makes a deck or a stencil, or moves the ")
 	b.WriteString("person's window.\n\n")
+
+	if core.Reviewing != nil {
+		b.WriteString("Which card they are on is `card_showing`: the deck, the card's mark ")
+		b.WriteString("and the face it is shown through. A question that says \"this card\" ")
+		b.WriteString("means the one it names, and nothing else here says which that is.\n\n")
+	}
 
 	b.WriteString("A card is written into a deck that is already there, cut by a stencil ")
 	b.WriteString("that already exists. Read the deck with `card_read` before changing it, ")

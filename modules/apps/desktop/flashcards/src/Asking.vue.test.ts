@@ -36,7 +36,7 @@ const holding = (unreachable = ''): Held => {
   // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
   return asking({
-    agent,
+    agent: () => agent,
     card: () => card,
     unreachable: () => unreachable,
     open: () => open.value,

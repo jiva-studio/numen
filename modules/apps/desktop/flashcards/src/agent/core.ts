@@ -11,14 +11,19 @@ import { agentPort } from '@numen/wire'
 import { transport } from '../transport'
 import type { Asked } from '../core'
 
-export const core = agentPort(createClient(AgentService, transport))
+const service = createClient(AgentService, transport)
 
 /**
- * The card a question is about, written where the agent will read it.
+ * The agent a conversation about one card is held with.
  *
- * The deck is the file in front of the person and goes as the focus; the card
- * is a mark inside that file, and the tools address it by that mark.
+ * Which card that is travels beside the question and never inside it. A deck in
+ * a synced vault is named by whoever synced it, and a name in the question is
+ * read as instruction; `card_showing` gives the agent the same name as a tool's
+ * answer, which is data.
  */
-export const standing = (card: Asked): string =>
-  `The card is \`${card.card}\` in \`${card.deck}\`, shown through its ${card.face} face. ` +
-  `Read it with card_read before answering.`
+export const core = (card: Asked) =>
+  agentPort({
+    ask: (request, options) =>
+      service.ask({ ...request, card: card.card, face: card.face }, options),
+    finish: (request) => service.finish(request),
+  })

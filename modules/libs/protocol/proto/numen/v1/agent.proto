@@ -32,6 +32,11 @@ message AskRequest {
   // given to a second one for as long as the application is running. Empty is
   // no conversation, and a question asked under it is answered on its own.
   string conversation = 3;
+  // The card in focus, for a window that asks about one: the mark its deck
+  // writes it under, and the face it is being shown through. The deck is the
+  // note in focus. Both empty in a window that asks about notes.
+  string card = 4;
+  string face = 5;
 }
 
 message FinishRequest {

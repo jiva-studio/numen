@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiQAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkiJQoNRmluaXNoUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiEAoORmluaXNoUmVzcG9uc2UisQEKC0Fza1Jlc3BvbnNlEg4KBHNhaWQYASABKAlIABInCgl0b29sX2NhbGwYAiABKAsyEi5udW1lbi52MS5Ub29sQ2FsbEgAEhEKB3N0b3BwZWQYAyABKAlIABImCghhbnN3ZXJlZBgEIAEoCzISLm51bWVuLnYxLkFuc3dlcmVkSAASJgoIdGhpbmtpbmcYBSABKAsyEi5udW1lbi52MS5UaGlua2luZ0gAQgYKBHN0ZXAiCgoIQW5zd2VyZWQiCgoIVGhpbmtpbmciZQoIVG9vbENhbGwSDAoEdG9vbBgBIAEoCRINCgVhYm91dBgCIAEoCRIPCgd3cml0dGVuGAMgASgFEgwKBHBhdGgYBCABKAkSDQoFc3RhcnQYBSABKAUSDgoGbGVuZ3RoGAYgASgFMoEBCgxBZ2VudFNlcnZpY2USNAoDQXNrEhQubnVtZW4udjEuQXNrUmVxdWVzdBoVLm51bWVuLnYxLkFza1Jlc3BvbnNlMAESOwoGRmluaXNoEhcubnVtZW4udjEuRmluaXNoUmVxdWVzdBoYLm51bWVuLnYxLkZpbmlzaFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiXAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEY2FyZBgEIAEoCRIMCgRmYWNlGAUgASgJIiUKDUZpbmlzaFJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhAKDkZpbmlzaFJlc3BvbnNlIrEBCgtBc2tSZXNwb25zZRIOCgRzYWlkGAEgASgJSAASJwoJdG9vbF9jYWxsGAIgASgLMhIubnVtZW4udjEuVG9vbENhbGxIABIRCgdzdG9wcGVkGAMgASgJSAASJgoIYW5zd2VyZWQYBCABKAsyEi5udW1lbi52MS5BbnN3ZXJlZEgAEiYKCHRoaW5raW5nGAUgASgLMhIubnVtZW4udjEuVGhpbmtpbmdIAEIGCgRzdGVwIgoKCEFuc3dlcmVkIgoKCFRoaW5raW5nImUKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEg0KBXN0YXJ0GAUgASgFEg4KBmxlbmd0aBgGIAEoBTKBAQoMQWdlbnRTZXJ2aWNlEjQKA0FzaxIULm51bWVuLnYxLkFza1JlcXVlc3QaFS5udW1lbi52MS5Bc2tSZXNwb25zZTABEjsKBkZpbmlzaBIXLm51bWVuLnYxLkZpbmlzaFJlcXVlc3QaGC5udW1lbi52MS5GaW5pc2hSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.AskRequest
@@ -47,6 +47,20 @@ export type AskRequest = Message<"numen.v1.AskRequest"> & {
    * @generated from field: string conversation = 3;
    */
   conversation: string;
+
+  /**
+   * The card in focus, for a window that asks about one: the mark its deck
+   * writes it under, and the face it is being shown through. The deck is the
+   * note in focus. Both empty in a window that asks about notes.
+   *
+   * @generated from field: string card = 4;
+   */
+  card: string;
+
+  /**
+   * @generated from field: string face = 5;
+   */
+  face: string;
 };
 
 /**

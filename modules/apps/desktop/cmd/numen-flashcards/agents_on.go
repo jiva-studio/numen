@@ -101,7 +101,7 @@ func serveAgents(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, vaults, v, root, out),
+				Core:    reviewing(cfg, db, vaults, api, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -140,6 +140,7 @@ func reviewing(
 	cfg container.Config,
 	db *container.Index,
 	vaults *openVaults,
+	api *flashcardsui.API,
 	v domain.Vault,
 	root string,
 	out io.Writer,
@@ -152,6 +153,13 @@ func reviewing(
 	return mcp.Core{
 		Showing: mcp.One(v, root),
 		Readers: cfg.VaultReaders(),
+		// Which card the person is on is a tool's answer and never part of the
+		// question, so a deck named by whoever synced it is data and not
+		// instruction.
+		Reviewing: func() mcp.Asked {
+			on := api.Showing()
+			return mcp.Asked{Deck: on.Deck, Card: on.Card, Face: on.Face}
+		},
 
 		Notes: mcp.Notes{
 			Queries:       queries,

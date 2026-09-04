@@ -39,7 +39,12 @@ type AskRequest struct {
 	// client's alone: unique among the conversations it has open, and never
 	// given to a second one for as long as the application is running. Empty is
 	// no conversation, and a question asked under it is answered on its own.
-	Conversation  string `protobuf:"bytes,3,opt,name=conversation,proto3" json:"conversation,omitempty"`
+	Conversation string `protobuf:"bytes,3,opt,name=conversation,proto3" json:"conversation,omitempty"`
+	// The card in focus, for a window that asks about one: the mark its deck
+	// writes it under, and the face it is being shown through. The deck is the
+	// note in focus. Both empty in a window that asks about notes.
+	Card          string `protobuf:"bytes,4,opt,name=card,proto3" json:"card,omitempty"`
+	Face          string `protobuf:"bytes,5,opt,name=face,proto3" json:"face,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -91,6 +96,20 @@ func (x *AskRequest) GetFocus() string {
 func (x *AskRequest) GetConversation() string {
 	if x != nil {
 		return x.Conversation
+	}
+	return ""
+}
+
+func (x *AskRequest) GetCard() string {
+	if x != nil {
+		return x.Card
+	}
+	return ""
+}
+
+func (x *AskRequest) GetFace() string {
+	if x != nil {
+		return x.Face
 	}
 	return ""
 }
@@ -493,12 +512,14 @@ var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\\\n" +
+	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x84\x01\n" +
 	"\n" +
 	"AskRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
-	"\fconversation\x18\x03 \x01(\tR\fconversation\"3\n" +
+	"\fconversation\x18\x03 \x01(\tR\fconversation\x12\x12\n" +
+	"\x04card\x18\x04 \x01(\tR\x04card\x12\x12\n" +
+	"\x04face\x18\x05 \x01(\tR\x04face\"3\n" +
 	"\rFinishRequest\x12\"\n" +
 	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x10\n" +
 	"\x0eFinishResponse\"\xde\x01\n" +

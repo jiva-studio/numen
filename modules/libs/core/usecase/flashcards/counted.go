@@ -32,8 +32,8 @@ type cachedRun struct {
 	IDs []string `json:"ids"`
 }
 
-// Reviewed is how much of a vault was answered, and when.
-type Reviewed struct {
+// ReviewCounts is how much of a vault was answered, and when.
+type ReviewCounts struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
 	Days map[string]review.Tally
@@ -74,20 +74,20 @@ type CountReviews struct {
 }
 
 // Execute counts one vault.
-func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) {
+func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts, error) {
 	log := Log{Stores: u.Logs}
 	files, err := log.Files(ctx, v)
 	if err != nil {
-		return Reviewed{}, err
+		return ReviewCounts{}, err
 	}
 
 	was := u.remembered(ctx, v)
 	now := countCache{V: countedVersion}
-	out := Reviewed{Days: make(map[string]review.Tally)}
+	out := ReviewCounts{Days: make(map[string]review.Tally)}
 
 	store, err := u.Logs.Open(v)
 	if err != nil {
-		return Reviewed{}, err
+		return ReviewCounts{}, err
 	}
 	// One identifier is one answer over the whole log, so a line another run
 	// was counted for is not counted again.
@@ -104,7 +104,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 		if stale || coming {
 			ran, err = log.Run(ctx, store, file)
 			if err != nil {
-				return Reviewed{}, err
+				return ReviewCounts{}, err
 			}
 			opened = true
 		}
@@ -129,7 +129,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 			if !opened {
 				ran, err = log.Run(ctx, store, file)
 				if err != nil {
-					return Reviewed{}, err
+					return ReviewCounts{}, err
 				}
 			}
 			days = review.Counted(u.Day, given(ran.Answers, seen))
@@ -151,7 +151,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 	// the answers in the order they were given, so they are asked for together.
 	due, retained, err := u.ahead(ctx, v, held)
 	if err != nil {
-		return Reviewed{}, err
+		return ReviewCounts{}, err
 	}
 	out.Due = due
 	out.Retained = retained

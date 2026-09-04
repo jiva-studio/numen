@@ -14,13 +14,16 @@ import { conversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'
 
 import { WORDS as words } from './agent/words'
-import { standing } from './agent/core'
 import type { Asked } from './core'
 
 /** What the panel asks of the window it is drawn in. */
 export interface Talking {
-  /** What answers a question about a card. */
-  readonly agent: AgentPort
+  /**
+   * What answers a question about a card, asked for the card it is about. The
+   * card travels beside every question of that conversation and never inside
+   * one, so the agent reads its name as a tool's answer.
+   */
+  readonly agent: (card: Asked) => AgentPort
   /** The card in front of the person, and nothing between cards. */
   readonly card: () => Asked | null
   /** Why nothing can be asked here, empty while something can. */
@@ -61,7 +64,7 @@ export function asking(deps: Talking) {
     if (talk.value && about.value?.card === card.card && about.value?.face === card.face) return
     ends()
     about.value = card
-    talk.value = conversation(deps.agent, words, `card-${opened++}`, deps.paint)
+    talk.value = conversation(deps.agent(card), words, `card-${opened++}`, deps.paint)
   }
 
   /**
@@ -90,17 +93,18 @@ export function asking(deps: Talking) {
   }
 
   /**
-   * A question sent about the card the panel stands on. The first of a
-   * conversation carries which card that is; the rest are answered in the
-   * thread it opened.
+   * A question sent about the card the panel stands on.
+   *
+   * What goes is what the person wrote and nothing else. Which card they are on
+   * is the agent's to ask for: the deck, the mark and the face are named by a
+   * vault that may have been synced from anywhere, and a name written into the
+   * question is read as instruction.
    */
   const send = async (text: string) => {
     const card = about.value
     if (!card || !text) return
     written.value = ''
-    const first = turns.value.length === 0
-    const asked = first ? `${standing(card)}\n\n${text}` : text
-    await talk.value?.ask(asked, card.deck)
+    await talk.value?.ask(text, card.deck)
   }
 
   const stop = () => talk.value?.stop()
