@@ -2,7 +2,6 @@ package webui
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"connectrpc.com/connect"
@@ -13,18 +12,12 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
 )
 
-// errNoHighlight is what a build with nothing to place a passage with answers.
-var errNoHighlight = errors.New("this build cannot say where a passage is")
-
 // ListHighlights answers where runs of a source's text sit: the pages each
 // falls on and, on each, the rectangles covering it.
 func (a *API) ListHighlights(
 	ctx context.Context,
 	r *connect.Request[v1.ListHighlightsRequest],
 ) (*connect.Response[v1.ListHighlightsResponse], error) {
-	if a.Highlight == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoHighlight)
-	}
 	showing := a.Showing()
 	if showing.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)

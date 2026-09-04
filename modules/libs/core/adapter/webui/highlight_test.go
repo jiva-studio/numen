@@ -180,15 +180,3 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		})
 	}
 }
-
-// A build with nothing to place a passage with says so, and the rest of the
-// window works as it did.
-func TestABuildThatCannotPlaceAPassageSaysSo(t *testing.T) {
-	api, _, doc := placing(t)
-	api.Highlight = nil
-
-	_, err := highlights(api, book, where(t, doc, "Delta"))
-	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("a build with nothing to place a passage with was refused %v", err)
-	}
-}

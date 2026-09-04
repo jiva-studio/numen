@@ -42,9 +42,6 @@ const quality = 82
 // errNoPage is a page the document does not have.
 var errNoPage = errors.New("no such page in this document")
 
-// errNoDrawing is what a build with nothing to draw a document with answers.
-var errNoDrawing = errors.New("this build cannot draw a document")
-
 // viewer holds what the window is looking at: the documents open and the pages
 // already drawn.
 //
@@ -136,9 +133,6 @@ func (a *API) GetDocument(
 	ctx context.Context,
 	r *connect.Request[v1.GetDocumentRequest],
 ) (*connect.Response[v1.GetDocumentResponse], error) {
-	if a.Viewer == nil || a.Readers == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoDrawing)
-	}
 	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
@@ -174,10 +168,6 @@ func (a *API) GetDocument(
 
 // Page answers with one page of a document, drawn as wide as was asked for.
 func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
-	if a.Viewer == nil || a.Readers == nil {
-		refuse(w, errNoDrawing)
-		return
-	}
 	at, wide, err := wanted(page, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -387,8 +377,6 @@ func refusedDrawing(err error) connect.Code {
 		return connect.CodeNotFound
 	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
 		return connect.CodeFailedPrecondition
-	case errors.Is(err, errNoDrawing):
-		return connect.CodeUnimplemented
 	default:
 		return reaching(err)
 	}
@@ -407,8 +395,6 @@ func refuse(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
 		http.Error(w, err.Error(), http.StatusUnsupportedMediaType)
-	case errors.Is(err, errNoDrawing):
-		http.Error(w, err.Error(), http.StatusNotImplemented)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)
 	default:
