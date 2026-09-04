@@ -123,7 +123,7 @@ func chosen(
 	if themes == nil {
 		return Settings{}, false
 	}
-	worn, err := themes.Themes(ctx, connect.NewRequest(&v1.ThemesRequest{}))
+	worn, err := themes.ListThemes(ctx, connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		return Settings{}, false
 	}
@@ -132,7 +132,7 @@ func chosen(
 		InterfaceScale: worn.Msg.GetInterfaceScale(),
 		TextScale:      worn.Msg.GetTextScale(),
 	}
-	text, err := themes.Theme(ctx, connect.NewRequest(&v1.ThemeRequest{Name: worn.Msg.GetApplied()}))
+	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: worn.Msg.GetApplied()}))
 	if err == nil {
 		out.Theme = text.Msg.GetCss()
 	}

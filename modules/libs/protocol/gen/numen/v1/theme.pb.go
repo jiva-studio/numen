@@ -265,26 +265,26 @@ func (x *Bounds) GetMost() float64 {
 	return 0
 }
 
-type ThemesRequest struct {
+type ListThemesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ThemesRequest) Reset() {
-	*x = ThemesRequest{}
+func (x *ListThemesRequest) Reset() {
+	*x = ListThemesRequest{}
 	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ThemesRequest) String() string {
+func (x *ListThemesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ThemesRequest) ProtoMessage() {}
+func (*ListThemesRequest) ProtoMessage() {}
 
-func (x *ThemesRequest) ProtoReflect() protoreflect.Message {
+func (x *ListThemesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -296,12 +296,12 @@ func (x *ThemesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ThemesRequest.ProtoReflect.Descriptor instead.
-func (*ThemesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListThemesRequest.ProtoReflect.Descriptor instead.
+func (*ListThemesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{2}
 }
 
-type ThemesResponse struct {
+type ListThemesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every theme, the shipped ones first and each shelf by name.
 	Themes []*Theme `protobuf:"bytes,1,rep,name=themes,proto3" json:"themes,omitempty"`
@@ -321,20 +321,20 @@ type ThemesResponse struct {
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *ThemesResponse) Reset() {
-	*x = ThemesResponse{}
+func (x *ListThemesResponse) Reset() {
+	*x = ListThemesResponse{}
 	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ThemesResponse) String() string {
+func (x *ListThemesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ThemesResponse) ProtoMessage() {}
+func (*ListThemesResponse) ProtoMessage() {}
 
-func (x *ThemesResponse) ProtoReflect() protoreflect.Message {
+func (x *ListThemesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -346,61 +346,61 @@ func (x *ThemesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ThemesResponse.ProtoReflect.Descriptor instead.
-func (*ThemesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListThemesResponse.ProtoReflect.Descriptor instead.
+func (*ListThemesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ThemesResponse) GetThemes() []*Theme {
+func (x *ListThemesResponse) GetThemes() []*Theme {
 	if x != nil {
 		return x.Themes
 	}
 	return nil
 }
 
-func (x *ThemesResponse) GetApplied() string {
+func (x *ListThemesResponse) GetApplied() string {
 	if x != nil {
 		return x.Applied
 	}
 	return ""
 }
 
-func (x *ThemesResponse) GetMode() Mode {
+func (x *ListThemesResponse) GetMode() Mode {
 	if x != nil {
 		return x.Mode
 	}
 	return Mode_MODE_UNSPECIFIED
 }
 
-func (x *ThemesResponse) GetInterfaceScale() float64 {
+func (x *ListThemesResponse) GetInterfaceScale() float64 {
 	if x != nil {
 		return x.InterfaceScale
 	}
 	return 0
 }
 
-func (x *ThemesResponse) GetTextScale() float64 {
+func (x *ListThemesResponse) GetTextScale() float64 {
 	if x != nil {
 		return x.TextScale
 	}
 	return 0
 }
 
-func (x *ThemesResponse) GetInterfaceScaleBounds() *Bounds {
+func (x *ListThemesResponse) GetInterfaceScaleBounds() *Bounds {
 	if x != nil {
 		return x.InterfaceScaleBounds
 	}
 	return nil
 }
 
-func (x *ThemesResponse) GetTextScaleBounds() *Bounds {
+func (x *ListThemesResponse) GetTextScaleBounds() *Bounds {
 	if x != nil {
 		return x.TextScaleBounds
 	}
 	return nil
 }
 
-type ThemeRequest struct {
+type ReadThemeRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The theme, by its name.
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -408,20 +408,20 @@ type ThemeRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ThemeRequest) Reset() {
-	*x = ThemeRequest{}
+func (x *ReadThemeRequest) Reset() {
+	*x = ReadThemeRequest{}
 	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ThemeRequest) String() string {
+func (x *ReadThemeRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ThemeRequest) ProtoMessage() {}
+func (*ReadThemeRequest) ProtoMessage() {}
 
-func (x *ThemeRequest) ProtoReflect() protoreflect.Message {
+func (x *ReadThemeRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -433,19 +433,19 @@ func (x *ThemeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ThemeRequest.ProtoReflect.Descriptor instead.
-func (*ThemeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadThemeRequest.ProtoReflect.Descriptor instead.
+func (*ReadThemeRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ThemeRequest) GetName() string {
+func (x *ReadThemeRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type ThemeResponse struct {
+type ReadThemeResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The stylesheet, whole and as it is written. Empty for a name that matches
 	// no theme.
@@ -454,20 +454,20 @@ type ThemeResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ThemeResponse) Reset() {
-	*x = ThemeResponse{}
+func (x *ReadThemeResponse) Reset() {
+	*x = ReadThemeResponse{}
 	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ThemeResponse) String() string {
+func (x *ReadThemeResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ThemeResponse) ProtoMessage() {}
+func (*ReadThemeResponse) ProtoMessage() {}
 
-func (x *ThemeResponse) ProtoReflect() protoreflect.Message {
+func (x *ReadThemeResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -479,19 +479,19 @@ func (x *ThemeResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ThemeResponse.ProtoReflect.Descriptor instead.
-func (*ThemeResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadThemeResponse.ProtoReflect.Descriptor instead.
+func (*ReadThemeResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ThemeResponse) GetCss() string {
+func (x *ReadThemeResponse) GetCss() string {
 	if x != nil {
 		return x.Css
 	}
 	return ""
 }
 
-type ChooseRequest struct {
+type WriteAppearanceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The theme to apply, by its name. A name matching no theme is refused and
 	// the settings are left as they are.
@@ -507,20 +507,20 @@ type ChooseRequest struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *ChooseRequest) Reset() {
-	*x = ChooseRequest{}
+func (x *WriteAppearanceRequest) Reset() {
+	*x = WriteAppearanceRequest{}
 	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChooseRequest) String() string {
+func (x *WriteAppearanceRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChooseRequest) ProtoMessage() {}
+func (*WriteAppearanceRequest) ProtoMessage() {}
 
-func (x *ChooseRequest) ProtoReflect() protoreflect.Message {
+func (x *WriteAppearanceRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -532,40 +532,40 @@ func (x *ChooseRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChooseRequest.ProtoReflect.Descriptor instead.
-func (*ChooseRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteAppearanceRequest.ProtoReflect.Descriptor instead.
+func (*WriteAppearanceRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ChooseRequest) GetName() string {
+func (x *WriteAppearanceRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *ChooseRequest) GetMode() Mode {
+func (x *WriteAppearanceRequest) GetMode() Mode {
 	if x != nil {
 		return x.Mode
 	}
 	return Mode_MODE_UNSPECIFIED
 }
 
-func (x *ChooseRequest) GetInterfaceScale() float64 {
+func (x *WriteAppearanceRequest) GetInterfaceScale() float64 {
 	if x != nil && x.InterfaceScale != nil {
 		return *x.InterfaceScale
 	}
 	return 0
 }
 
-func (x *ChooseRequest) GetTextScale() float64 {
+func (x *WriteAppearanceRequest) GetTextScale() float64 {
 	if x != nil && x.TextScale != nil {
 		return *x.TextScale
 	}
 	return 0
 }
 
-type ChooseResponse struct {
+type WriteAppearanceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Why the settings were not written, when they were not.
 	Failed        string `protobuf:"bytes,1,opt,name=failed,proto3" json:"failed,omitempty"`
@@ -573,20 +573,20 @@ type ChooseResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChooseResponse) Reset() {
-	*x = ChooseResponse{}
+func (x *WriteAppearanceResponse) Reset() {
+	*x = WriteAppearanceResponse{}
 	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChooseResponse) String() string {
+func (x *WriteAppearanceResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChooseResponse) ProtoMessage() {}
+func (*WriteAppearanceResponse) ProtoMessage() {}
 
-func (x *ChooseResponse) ProtoReflect() protoreflect.Message {
+func (x *WriteAppearanceResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -598,38 +598,38 @@ func (x *ChooseResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChooseResponse.ProtoReflect.Descriptor instead.
-func (*ChooseResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteAppearanceResponse.ProtoReflect.Descriptor instead.
+func (*WriteAppearanceResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ChooseResponse) GetFailed() string {
+func (x *WriteAppearanceResponse) GetFailed() string {
 	if x != nil {
 		return x.Failed
 	}
 	return ""
 }
 
-type ChangedRequest struct {
+type WatchThemesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangedRequest) Reset() {
-	*x = ChangedRequest{}
+func (x *WatchThemesRequest) Reset() {
+	*x = WatchThemesRequest{}
 	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangedRequest) String() string {
+func (x *WatchThemesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangedRequest) ProtoMessage() {}
+func (*WatchThemesRequest) ProtoMessage() {}
 
-func (x *ChangedRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchThemesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -641,12 +641,12 @@ func (x *ChangedRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangedRequest.ProtoReflect.Descriptor instead.
-func (*ChangedRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchThemesRequest.ProtoReflect.Descriptor instead.
+func (*WatchThemesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{8}
 }
 
-type ChangedResponse struct {
+type WatchThemesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The themes that changed, by their name. A theme whose file is gone is
 	// named here too: what changed about it is that it is gone.
@@ -655,20 +655,20 @@ type ChangedResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChangedResponse) Reset() {
-	*x = ChangedResponse{}
+func (x *WatchThemesResponse) Reset() {
+	*x = WatchThemesResponse{}
 	mi := &file_numen_v1_theme_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChangedResponse) String() string {
+func (x *WatchThemesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangedResponse) ProtoMessage() {}
+func (*WatchThemesResponse) ProtoMessage() {}
 
-func (x *ChangedResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchThemesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_theme_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -680,12 +680,12 @@ func (x *ChangedResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangedResponse.ProtoReflect.Descriptor instead.
-func (*ChangedResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchThemesResponse.ProtoReflect.Descriptor instead.
+func (*WatchThemesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_theme_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ChangedResponse) GetNames() []string {
+func (x *WatchThemesResponse) GetNames() []string {
 	if x != nil {
 		return x.Names
 	}
@@ -704,9 +704,9 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\x06pinned\x18\x04 \x01(\bR\x06pinned\"2\n" +
 	"\x06Bounds\x12\x14\n" +
 	"\x05least\x18\x01 \x01(\x01R\x05least\x12\x12\n" +
-	"\x04most\x18\x02 \x01(\x01R\x04most\"\x0f\n" +
-	"\rThemesRequest\"\xc5\x02\n" +
-	"\x0eThemesResponse\x12'\n" +
+	"\x04most\x18\x02 \x01(\x01R\x04most\"\x13\n" +
+	"\x11ListThemesRequest\"\xc9\x02\n" +
+	"\x12ListThemesResponse\x12'\n" +
 	"\x06themes\x18\x01 \x03(\v2\x0f.numen.v1.ThemeR\x06themes\x12\x18\n" +
 	"\aapplied\x18\x02 \x01(\tR\aapplied\x12\"\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12'\n" +
@@ -714,23 +714,23 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\n" +
 	"text_scale\x18\x05 \x01(\x01R\ttextScale\x12F\n" +
 	"\x16interface_scale_bounds\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\x14interfaceScaleBounds\x12<\n" +
-	"\x11text_scale_bounds\x18\a \x01(\v2\x10.numen.v1.BoundsR\x0ftextScaleBounds\"\"\n" +
-	"\fThemeRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"!\n" +
-	"\rThemeResponse\x12\x10\n" +
-	"\x03css\x18\x01 \x01(\tR\x03css\"\xbc\x01\n" +
-	"\rChooseRequest\x12\x12\n" +
+	"\x11text_scale_bounds\x18\a \x01(\v2\x10.numen.v1.BoundsR\x0ftextScaleBounds\"&\n" +
+	"\x10ReadThemeRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"%\n" +
+	"\x11ReadThemeResponse\x12\x10\n" +
+	"\x03css\x18\x01 \x01(\tR\x03css\"\xc5\x01\n" +
+	"\x16WriteAppearanceRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x04mode\x18\x02 \x01(\x0e2\x0e.numen.v1.ModeR\x04mode\x12,\n" +
 	"\x0finterface_scale\x18\x03 \x01(\x01H\x00R\x0einterfaceScale\x88\x01\x01\x12\"\n" +
 	"\n" +
 	"text_scale\x18\x04 \x01(\x01H\x01R\ttextScale\x88\x01\x01B\x12\n" +
 	"\x10_interface_scaleB\r\n" +
-	"\v_text_scale\"(\n" +
-	"\x0eChooseResponse\x12\x16\n" +
-	"\x06failed\x18\x01 \x01(\tR\x06failed\"\x10\n" +
-	"\x0eChangedRequest\"'\n" +
-	"\x0fChangedResponse\x12\x14\n" +
+	"\v_text_scale\"1\n" +
+	"\x17WriteAppearanceResponse\x12\x16\n" +
+	"\x06failed\x18\x01 \x01(\tR\x06failed\"\x14\n" +
+	"\x12WatchThemesRequest\"+\n" +
+	"\x13WatchThemesResponse\x12\x14\n" +
 	"\x05names\x18\x01 \x03(\tR\x05names*@\n" +
 	"\x05Shelf\x12\x15\n" +
 	"\x11SHELF_UNSPECIFIED\x10\x00\x12\x10\n" +
@@ -742,12 +742,13 @@ const file_numen_v1_theme_proto_rawDesc = "" +
 	"\vMODE_SYSTEM\x10\x01\x12\x0e\n" +
 	"\n" +
 	"MODE_LIGHT\x10\x02\x12\r\n" +
-	"\tMODE_DARK\x10\x032\x84\x02\n" +
-	"\fThemeService\x12;\n" +
-	"\x06Themes\x12\x17.numen.v1.ThemesRequest\x1a\x18.numen.v1.ThemesResponse\x128\n" +
-	"\x05Theme\x12\x16.numen.v1.ThemeRequest\x1a\x17.numen.v1.ThemeResponse\x12;\n" +
-	"\x06Choose\x12\x17.numen.v1.ChooseRequest\x1a\x18.numen.v1.ChooseResponse\x12@\n" +
-	"\aChanged\x12\x18.numen.v1.ChangedRequest\x1a\x19.numen.v1.ChangedResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tMODE_DARK\x10\x032\xc3\x02\n" +
+	"\fThemeService\x12G\n" +
+	"\n" +
+	"ListThemes\x12\x1b.numen.v1.ListThemesRequest\x1a\x1c.numen.v1.ListThemesResponse\x12D\n" +
+	"\tReadTheme\x12\x1a.numen.v1.ReadThemeRequest\x1a\x1b.numen.v1.ReadThemeResponse\x12V\n" +
+	"\x0fWriteAppearance\x12 .numen.v1.WriteAppearanceRequest\x1a!.numen.v1.WriteAppearanceResponse\x12L\n" +
+	"\vWatchThemes\x12\x1c.numen.v1.WatchThemesRequest\x1a\x1d.numen.v1.WatchThemesResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_theme_proto_rawDescOnce sync.Once
@@ -764,34 +765,34 @@ func file_numen_v1_theme_proto_rawDescGZIP() []byte {
 var file_numen_v1_theme_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_theme_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_theme_proto_goTypes = []any{
-	(Shelf)(0),              // 0: numen.v1.Shelf
-	(Mode)(0),               // 1: numen.v1.Mode
-	(*Theme)(nil),           // 2: numen.v1.Theme
-	(*Bounds)(nil),          // 3: numen.v1.Bounds
-	(*ThemesRequest)(nil),   // 4: numen.v1.ThemesRequest
-	(*ThemesResponse)(nil),  // 5: numen.v1.ThemesResponse
-	(*ThemeRequest)(nil),    // 6: numen.v1.ThemeRequest
-	(*ThemeResponse)(nil),   // 7: numen.v1.ThemeResponse
-	(*ChooseRequest)(nil),   // 8: numen.v1.ChooseRequest
-	(*ChooseResponse)(nil),  // 9: numen.v1.ChooseResponse
-	(*ChangedRequest)(nil),  // 10: numen.v1.ChangedRequest
-	(*ChangedResponse)(nil), // 11: numen.v1.ChangedResponse
+	(Shelf)(0),                      // 0: numen.v1.Shelf
+	(Mode)(0),                       // 1: numen.v1.Mode
+	(*Theme)(nil),                   // 2: numen.v1.Theme
+	(*Bounds)(nil),                  // 3: numen.v1.Bounds
+	(*ListThemesRequest)(nil),       // 4: numen.v1.ListThemesRequest
+	(*ListThemesResponse)(nil),      // 5: numen.v1.ListThemesResponse
+	(*ReadThemeRequest)(nil),        // 6: numen.v1.ReadThemeRequest
+	(*ReadThemeResponse)(nil),       // 7: numen.v1.ReadThemeResponse
+	(*WriteAppearanceRequest)(nil),  // 8: numen.v1.WriteAppearanceRequest
+	(*WriteAppearanceResponse)(nil), // 9: numen.v1.WriteAppearanceResponse
+	(*WatchThemesRequest)(nil),      // 10: numen.v1.WatchThemesRequest
+	(*WatchThemesResponse)(nil),     // 11: numen.v1.WatchThemesResponse
 }
 var file_numen_v1_theme_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Theme.shelf:type_name -> numen.v1.Shelf
-	2,  // 1: numen.v1.ThemesResponse.themes:type_name -> numen.v1.Theme
-	1,  // 2: numen.v1.ThemesResponse.mode:type_name -> numen.v1.Mode
-	3,  // 3: numen.v1.ThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
-	3,  // 4: numen.v1.ThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
-	1,  // 5: numen.v1.ChooseRequest.mode:type_name -> numen.v1.Mode
-	4,  // 6: numen.v1.ThemeService.Themes:input_type -> numen.v1.ThemesRequest
-	6,  // 7: numen.v1.ThemeService.Theme:input_type -> numen.v1.ThemeRequest
-	8,  // 8: numen.v1.ThemeService.Choose:input_type -> numen.v1.ChooseRequest
-	10, // 9: numen.v1.ThemeService.Changed:input_type -> numen.v1.ChangedRequest
-	5,  // 10: numen.v1.ThemeService.Themes:output_type -> numen.v1.ThemesResponse
-	7,  // 11: numen.v1.ThemeService.Theme:output_type -> numen.v1.ThemeResponse
-	9,  // 12: numen.v1.ThemeService.Choose:output_type -> numen.v1.ChooseResponse
-	11, // 13: numen.v1.ThemeService.Changed:output_type -> numen.v1.ChangedResponse
+	2,  // 1: numen.v1.ListThemesResponse.themes:type_name -> numen.v1.Theme
+	1,  // 2: numen.v1.ListThemesResponse.mode:type_name -> numen.v1.Mode
+	3,  // 3: numen.v1.ListThemesResponse.interface_scale_bounds:type_name -> numen.v1.Bounds
+	3,  // 4: numen.v1.ListThemesResponse.text_scale_bounds:type_name -> numen.v1.Bounds
+	1,  // 5: numen.v1.WriteAppearanceRequest.mode:type_name -> numen.v1.Mode
+	4,  // 6: numen.v1.ThemeService.ListThemes:input_type -> numen.v1.ListThemesRequest
+	6,  // 7: numen.v1.ThemeService.ReadTheme:input_type -> numen.v1.ReadThemeRequest
+	8,  // 8: numen.v1.ThemeService.WriteAppearance:input_type -> numen.v1.WriteAppearanceRequest
+	10, // 9: numen.v1.ThemeService.WatchThemes:input_type -> numen.v1.WatchThemesRequest
+	5,  // 10: numen.v1.ThemeService.ListThemes:output_type -> numen.v1.ListThemesResponse
+	7,  // 11: numen.v1.ThemeService.ReadTheme:output_type -> numen.v1.ReadThemeResponse
+	9,  // 12: numen.v1.ThemeService.WriteAppearance:output_type -> numen.v1.WriteAppearanceResponse
+	11, // 13: numen.v1.ThemeService.WatchThemes:output_type -> numen.v1.WatchThemesResponse
 	10, // [10:14] is the sub-list for method output_type
 	6,  // [6:10] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name

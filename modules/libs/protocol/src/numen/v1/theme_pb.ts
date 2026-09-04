@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/theme.proto.
  */
 export const file_numen_v1_theme: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASIPCg1UaGVtZXNSZXF1ZXN0IuwBCg5UaGVtZXNSZXNwb25zZRIfCgZ0aGVtZXMYASADKAsyDy5udW1lbi52MS5UaGVtZRIPCgdhcHBsaWVkGAIgASgJEhwKBG1vZGUYAyABKA4yDi5udW1lbi52MS5Nb2RlEhcKD2ludGVyZmFjZV9zY2FsZRgEIAEoARISCgp0ZXh0X3NjYWxlGAUgASgBEjAKFmludGVyZmFjZV9zY2FsZV9ib3VuZHMYBiABKAsyEC5udW1lbi52MS5Cb3VuZHMSKwoRdGV4dF9zY2FsZV9ib3VuZHMYByABKAsyEC5udW1lbi52MS5Cb3VuZHMiHAoMVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiHAoNVGhlbWVSZXNwb25zZRILCgNjc3MYASABKAkilQEKDUNob29zZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIcCgRtb2RlGAIgASgOMg4ubnVtZW4udjEuTW9kZRIcCg9pbnRlcmZhY2Vfc2NhbGUYAyABKAFIAIgBARIXCgp0ZXh0X3NjYWxlGAQgASgBSAGIAQFCEgoQX2ludGVyZmFjZV9zY2FsZUINCgtfdGV4dF9zY2FsZSIgCg5DaG9vc2VSZXNwb25zZRIOCgZmYWlsZWQYASABKAkiEAoOQ2hhbmdlZFJlcXVlc3QiIAoPQ2hhbmdlZFJlc3BvbnNlEg0KBW5hbWVzGAEgAygJKkAKBVNoZWxmEhUKEVNIRUxGX1VOU1BFQ0lGSUVEEAASEAoMU0hFTEZfUFJFU0VUEAESDgoKU0hFTEZfTUlORRACKkwKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEg8KC01PREVfU1lTVEVNEAESDgoKTU9ERV9MSUdIVBACEg0KCU1PREVfREFSSxADMoQCCgxUaGVtZVNlcnZpY2USOwoGVGhlbWVzEhcubnVtZW4udjEuVGhlbWVzUmVxdWVzdBoYLm51bWVuLnYxLlRoZW1lc1Jlc3BvbnNlEjgKBVRoZW1lEhYubnVtZW4udjEuVGhlbWVSZXF1ZXN0GhcubnVtZW4udjEuVGhlbWVSZXNwb25zZRI7CgZDaG9vc2USFy5udW1lbi52MS5DaG9vc2VSZXF1ZXN0GhgubnVtZW4udjEuQ2hvb3NlUmVzcG9uc2USQAoHQ2hhbmdlZBIYLm51bWVuLnYxLkNoYW5nZWRSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlZFJlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS90aGVtZS5wcm90bxIIbnVtZW4udjEiVAoFVGhlbWUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIeCgVzaGVsZhgDIAEoDjIPLm51bWVuLnYxLlNoZWxmEg4KBnBpbm5lZBgEIAEoCCIlCgZCb3VuZHMSDQoFbGVhc3QYASABKAESDAoEbW9zdBgCIAEoASITChFMaXN0VGhlbWVzUmVxdWVzdCLwAQoSTGlzdFRoZW1lc1Jlc3BvbnNlEh8KBnRoZW1lcxgBIAMoCzIPLm51bWVuLnYxLlRoZW1lEg8KB2FwcGxpZWQYAiABKAkSHAoEbW9kZRgDIAEoDjIOLm51bWVuLnYxLk1vZGUSFwoPaW50ZXJmYWNlX3NjYWxlGAQgASgBEhIKCnRleHRfc2NhbGUYBSABKAESMAoWaW50ZXJmYWNlX3NjYWxlX2JvdW5kcxgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIrChF0ZXh0X3NjYWxlX2JvdW5kcxgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyIgChBSZWFkVGhlbWVSZXF1ZXN0EgwKBG5hbWUYASABKAkiIAoRUmVhZFRoZW1lUmVzcG9uc2USCwoDY3NzGAEgASgJIp4BChZXcml0ZUFwcGVhcmFuY2VSZXF1ZXN0EgwKBG5hbWUYASABKAkSHAoEbW9kZRgCIAEoDjIOLm51bWVuLnYxLk1vZGUSHAoPaW50ZXJmYWNlX3NjYWxlGAMgASgBSACIAQESFwoKdGV4dF9zY2FsZRgEIAEoAUgBiAEBQhIKEF9pbnRlcmZhY2Vfc2NhbGVCDQoLX3RleHRfc2NhbGUiKQoXV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USDgoGZmFpbGVkGAEgASgJIhQKEldhdGNoVGhlbWVzUmVxdWVzdCIkChNXYXRjaFRoZW1lc1Jlc3BvbnNlEg0KBW5hbWVzGAEgAygJKkAKBVNoZWxmEhUKEVNIRUxGX1VOU1BFQ0lGSUVEEAASEAoMU0hFTEZfUFJFU0VUEAESDgoKU0hFTEZfTUlORRACKkwKBE1vZGUSFAoQTU9ERV9VTlNQRUNJRklFRBAAEg8KC01PREVfU1lTVEVNEAESDgoKTU9ERV9MSUdIVBACEg0KCU1PREVfREFSSxADMsMCCgxUaGVtZVNlcnZpY2USRwoKTGlzdFRoZW1lcxIbLm51bWVuLnYxLkxpc3RUaGVtZXNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdFRoZW1lc1Jlc3BvbnNlEkQKCVJlYWRUaGVtZRIaLm51bWVuLnYxLlJlYWRUaGVtZVJlcXVlc3QaGy5udW1lbi52MS5SZWFkVGhlbWVSZXNwb25zZRJWCg9Xcml0ZUFwcGVhcmFuY2USIC5udW1lbi52MS5Xcml0ZUFwcGVhcmFuY2VSZXF1ZXN0GiEubnVtZW4udjEuV3JpdGVBcHBlYXJhbmNlUmVzcG9uc2USTAoLV2F0Y2hUaGVtZXMSHC5udW1lbi52MS5XYXRjaFRoZW1lc1JlcXVlc3QaHS5udW1lbi52MS5XYXRjaFRoZW1lc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * Theme is one theme as the list refers to it. Its text is asked for by the
@@ -88,22 +88,22 @@ export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 1);
 
 /**
- * @generated from message numen.v1.ThemesRequest
+ * @generated from message numen.v1.ListThemesRequest
  */
-export type ThemesRequest = Message<"numen.v1.ThemesRequest"> & {
+export type ListThemesRequest = Message<"numen.v1.ListThemesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ThemesRequest.
- * Use `create(ThemesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListThemesRequest.
+ * Use `create(ListThemesRequestSchema)` to create a new message.
  */
-export const ThemesRequestSchema: GenMessage<ThemesRequest> = /*@__PURE__*/
+export const ListThemesRequestSchema: GenMessage<ListThemesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 2);
 
 /**
- * @generated from message numen.v1.ThemesResponse
+ * @generated from message numen.v1.ListThemesResponse
  */
-export type ThemesResponse = Message<"numen.v1.ThemesResponse"> & {
+export type ListThemesResponse = Message<"numen.v1.ListThemesResponse"> & {
   /**
    * Every theme, the shipped ones first and each shelf by name.
    *
@@ -153,16 +153,16 @@ export type ThemesResponse = Message<"numen.v1.ThemesResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ThemesResponse.
- * Use `create(ThemesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListThemesResponse.
+ * Use `create(ListThemesResponseSchema)` to create a new message.
  */
-export const ThemesResponseSchema: GenMessage<ThemesResponse> = /*@__PURE__*/
+export const ListThemesResponseSchema: GenMessage<ListThemesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 3);
 
 /**
- * @generated from message numen.v1.ThemeRequest
+ * @generated from message numen.v1.ReadThemeRequest
  */
-export type ThemeRequest = Message<"numen.v1.ThemeRequest"> & {
+export type ReadThemeRequest = Message<"numen.v1.ReadThemeRequest"> & {
   /**
    * The theme, by its name.
    *
@@ -172,16 +172,16 @@ export type ThemeRequest = Message<"numen.v1.ThemeRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ThemeRequest.
- * Use `create(ThemeRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReadThemeRequest.
+ * Use `create(ReadThemeRequestSchema)` to create a new message.
  */
-export const ThemeRequestSchema: GenMessage<ThemeRequest> = /*@__PURE__*/
+export const ReadThemeRequestSchema: GenMessage<ReadThemeRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 4);
 
 /**
- * @generated from message numen.v1.ThemeResponse
+ * @generated from message numen.v1.ReadThemeResponse
  */
-export type ThemeResponse = Message<"numen.v1.ThemeResponse"> & {
+export type ReadThemeResponse = Message<"numen.v1.ReadThemeResponse"> & {
   /**
    * The stylesheet, whole and as it is written. Empty for a name that matches
    * no theme.
@@ -192,16 +192,16 @@ export type ThemeResponse = Message<"numen.v1.ThemeResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ThemeResponse.
- * Use `create(ThemeResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReadThemeResponse.
+ * Use `create(ReadThemeResponseSchema)` to create a new message.
  */
-export const ThemeResponseSchema: GenMessage<ThemeResponse> = /*@__PURE__*/
+export const ReadThemeResponseSchema: GenMessage<ReadThemeResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 5);
 
 /**
- * @generated from message numen.v1.ChooseRequest
+ * @generated from message numen.v1.WriteAppearanceRequest
  */
-export type ChooseRequest = Message<"numen.v1.ChooseRequest"> & {
+export type WriteAppearanceRequest = Message<"numen.v1.WriteAppearanceRequest"> & {
   /**
    * The theme to apply, by its name. A name matching no theme is refused and
    * the settings are left as they are.
@@ -233,16 +233,16 @@ export type ChooseRequest = Message<"numen.v1.ChooseRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ChooseRequest.
- * Use `create(ChooseRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WriteAppearanceRequest.
+ * Use `create(WriteAppearanceRequestSchema)` to create a new message.
  */
-export const ChooseRequestSchema: GenMessage<ChooseRequest> = /*@__PURE__*/
+export const WriteAppearanceRequestSchema: GenMessage<WriteAppearanceRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 6);
 
 /**
- * @generated from message numen.v1.ChooseResponse
+ * @generated from message numen.v1.WriteAppearanceResponse
  */
-export type ChooseResponse = Message<"numen.v1.ChooseResponse"> & {
+export type WriteAppearanceResponse = Message<"numen.v1.WriteAppearanceResponse"> & {
   /**
    * Why the settings were not written, when they were not.
    *
@@ -252,29 +252,29 @@ export type ChooseResponse = Message<"numen.v1.ChooseResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ChooseResponse.
- * Use `create(ChooseResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WriteAppearanceResponse.
+ * Use `create(WriteAppearanceResponseSchema)` to create a new message.
  */
-export const ChooseResponseSchema: GenMessage<ChooseResponse> = /*@__PURE__*/
+export const WriteAppearanceResponseSchema: GenMessage<WriteAppearanceResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 7);
 
 /**
- * @generated from message numen.v1.ChangedRequest
+ * @generated from message numen.v1.WatchThemesRequest
  */
-export type ChangedRequest = Message<"numen.v1.ChangedRequest"> & {
+export type WatchThemesRequest = Message<"numen.v1.WatchThemesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ChangedRequest.
- * Use `create(ChangedRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchThemesRequest.
+ * Use `create(WatchThemesRequestSchema)` to create a new message.
  */
-export const ChangedRequestSchema: GenMessage<ChangedRequest> = /*@__PURE__*/
+export const WatchThemesRequestSchema: GenMessage<WatchThemesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 8);
 
 /**
- * @generated from message numen.v1.ChangedResponse
+ * @generated from message numen.v1.WatchThemesResponse
  */
-export type ChangedResponse = Message<"numen.v1.ChangedResponse"> & {
+export type WatchThemesResponse = Message<"numen.v1.WatchThemesResponse"> & {
   /**
    * The themes that changed, by their name. A theme whose file is gone is
    * named here too: what changed about it is that it is gone.
@@ -285,10 +285,10 @@ export type ChangedResponse = Message<"numen.v1.ChangedResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ChangedResponse.
- * Use `create(ChangedResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchThemesResponse.
+ * Use `create(WatchThemesResponseSchema)` to create a new message.
  */
-export const ChangedResponseSchema: GenMessage<ChangedResponse> = /*@__PURE__*/
+export const WatchThemesResponseSchema: GenMessage<WatchThemesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_theme, 9);
 
 /**
@@ -368,53 +368,53 @@ export const ModeSchema: GenEnum<Mode> = /*@__PURE__*/
  */
 export const ThemeService: GenService<{
   /**
-   * Themes is every theme there is — the ones this application ships and the
-   * ones in the person's themes folder — which of them is applied, and the two
-   * sizes the window is drawn at.
+   * ListThemes is every theme there is — the ones this application ships and
+   * the ones in the person's themes folder — which of them is applied, and the
+   * two sizes the window is drawn at.
    *
-   * @generated from rpc numen.v1.ThemeService.Themes
+   * @generated from rpc numen.v1.ThemeService.ListThemes
    */
-  themes: {
+  listThemes: {
     methodKind: "unary";
-    input: typeof ThemesRequestSchema;
-    output: typeof ThemesResponseSchema;
+    input: typeof ListThemesRequestSchema;
+    output: typeof ListThemesResponseSchema;
   },
   /**
-   * Theme is the text of one theme's file, as the file stands when it is
+   * ReadTheme is the text of one theme's file, as the file stands when it is
    * asked for. It is asked once for each theme that is tried on, and again
    * when that theme's file changes.
    *
-   * @generated from rpc numen.v1.ThemeService.Theme
+   * @generated from rpc numen.v1.ThemeService.ReadTheme
    */
-  theme: {
+  readTheme: {
     methodKind: "unary";
-    input: typeof ThemeRequestSchema;
-    output: typeof ThemeResponseSchema;
+    input: typeof ReadThemeRequestSchema;
+    output: typeof ReadThemeResponseSchema;
   },
   /**
-   * Choose writes the theme, the mode and the two sizes into the settings. The
-   * file is patched as an object, so every key a person typed stays where it
-   * was. A size outside its bounds is refused and the settings are left as
-   * they are.
+   * WriteAppearance writes the theme, the mode and the two sizes into the
+   * settings. The file is patched as an object, so every key a person typed
+   * stays where it was. A size outside its bounds is refused and the settings
+   * are left as they are.
    *
-   * @generated from rpc numen.v1.ThemeService.Choose
+   * @generated from rpc numen.v1.ThemeService.WriteAppearance
    */
-  choose: {
+  writeAppearance: {
     methodKind: "unary";
-    input: typeof ChooseRequestSchema;
-    output: typeof ChooseResponseSchema;
+    input: typeof WriteAppearanceRequestSchema;
+    output: typeof WriteAppearanceResponseSchema;
   },
   /**
-   * Changed reports the person's themes folder having changed, for as long as
-   * the caller listens. It says which themes, and nothing about them: the
+   * WatchThemes reports the person's themes folder having changed, for as long
+   * as the caller listens. It says which themes, and nothing about them: the
    * caller knows what it is showing and asks for what it needs.
    *
-   * @generated from rpc numen.v1.ThemeService.Changed
+   * @generated from rpc numen.v1.ThemeService.WatchThemes
    */
-  changed: {
+  watchThemes: {
     methodKind: "server_streaming";
-    input: typeof ChangedRequestSchema;
-    output: typeof ChangedResponseSchema;
+    input: typeof WatchThemesRequestSchema;
+    output: typeof WatchThemesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_theme, 0);

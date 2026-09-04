@@ -30,7 +30,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
-	if _, err := client.Changed(t.Context(), connect.NewRequest(&v1.ChangedRequest{})); err != nil {
+	if _, err := client.WatchThemes(t.Context(), connect.NewRequest(&v1.WatchThemesRequest{})); err != nil {
 		t.Fatal(err)
 	}
 

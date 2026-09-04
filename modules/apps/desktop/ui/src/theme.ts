@@ -77,7 +77,7 @@ export interface Themes {
 /** The same questions, in the shape the window asks them. */
 export const themes: Themes = {
   catalogue: async () => {
-    const answer = await theme.themes({})
+    const answer = await theme.listThemes({})
     return {
       themes: answer.themes.map((one) => ({
         name: one.name,
@@ -94,10 +94,10 @@ export const themes: Themes = {
       },
     }
   },
-  text: async (name) => (await theme.theme({ name })).css,
+  text: async (name) => (await theme.readTheme({ name })).css,
   chooses: async (name, mode, sizes) =>
     (
-      await theme.choose({
+      await theme.writeAppearance({
         name,
         mode: ASKED[mode],
         interfaceScale: sizes.interfaceScale,
@@ -105,7 +105,7 @@ export const themes: Themes = {
       })
     ).failed,
   changed: async function* (signal) {
-    for await (const said of theme.changed({}, { signal })) yield said.names
+    for await (const said of theme.watchThemes({}, { signal })) yield said.names
   },
 }
 

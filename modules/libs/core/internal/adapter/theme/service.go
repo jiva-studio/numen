@@ -66,11 +66,11 @@ type Service struct {
 	Hold time.Duration
 }
 
-// Themes is every theme there is, and what the window is wearing out of it.
-func (s *Service) Themes(
+// ListThemes is every theme there is, and what the window is wearing out of it.
+func (s *Service) ListThemes(
 	_ context.Context,
-	_ *connect.Request[v1.ThemesRequest],
-) (*connect.Response[v1.ThemesResponse], error) {
+	_ *connect.Request[v1.ListThemesRequest],
+) (*connect.Response[v1.ListThemesResponse], error) {
 	worn := s.worn()
 	applied, missing := s.Catalogue.Applied(worn.ThemeName)
 	if missing != "" {
@@ -87,7 +87,7 @@ func (s *Service) Themes(
 			Pinned: one.Pinned,
 		})
 	}
-	return connect.NewResponse(&v1.ThemesResponse{
+	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               listed,
 		Applied:              applied,
 		Mode:                 worn.Mode,
@@ -103,30 +103,31 @@ func bounded(held Bounds) *v1.Bounds {
 	return &v1.Bounds{Least: held.Least, Most: held.Most}
 }
 
-// Theme is one theme's file, as the file stands.
-func (s *Service) Theme(
+// ReadTheme is one theme's file, as the file stands.
+func (s *Service) ReadTheme(
 	_ context.Context,
-	req *connect.Request[v1.ThemeRequest],
-) (*connect.Response[v1.ThemeResponse], error) {
+	req *connect.Request[v1.ReadThemeRequest],
+) (*connect.Response[v1.ReadThemeResponse], error) {
 	text, err := s.Catalogue.Text(req.Msg.GetName())
 	if err != nil {
-		return connect.NewResponse(&v1.ThemeResponse{}), nil
+		return connect.NewResponse(&v1.ReadThemeResponse{}), nil
 	}
-	return connect.NewResponse(&v1.ThemeResponse{Css: text}), nil
+	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil
 }
 
-// Choose writes the theme, the mode and the two sizes into the settings.
+// WriteAppearance writes the theme, the mode and the two sizes into the
+// settings.
 //
 // A theme that is not there, a mode that was not said and a size outside what
 // it goes to are all refused, and the settings are left as they are. What
 // stopped the write is answered with: the person is standing in front of the
 // list they chose from. A size the choice does not name stands as it is.
-func (s *Service) Choose(
+func (s *Service) WriteAppearance(
 	_ context.Context,
-	req *connect.Request[v1.ChooseRequest],
-) (*connect.Response[v1.ChooseResponse], error) {
-	failed := func(why string) (*connect.Response[v1.ChooseResponse], error) {
-		return connect.NewResponse(&v1.ChooseResponse{Failed: why}), nil
+	req *connect.Request[v1.WriteAppearanceRequest],
+) (*connect.Response[v1.WriteAppearanceResponse], error) {
+	failed := func(why string) (*connect.Response[v1.WriteAppearanceResponse], error) {
+		return connect.NewResponse(&v1.WriteAppearanceResponse{Failed: why}), nil
 	}
 
 	name := req.Msg.GetName()
@@ -148,15 +149,15 @@ func (s *Service) Choose(
 	if err := s.Settings.Write(chosen); err != nil {
 		return failed(err.Error())
 	}
-	return connect.NewResponse(&v1.ChooseResponse{}), nil
+	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-// Changed reports the themes folder having changed for as long as the caller
-// listens.
-func (s *Service) Changed(
+// WatchThemes reports the themes folder having changed for as long as the
+// caller listens.
+func (s *Service) WatchThemes(
 	ctx context.Context,
-	_ *connect.Request[v1.ChangedRequest],
-	stream *connect.ServerStream[v1.ChangedResponse],
+	_ *connect.Request[v1.WatchThemesRequest],
+	stream *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
 	changed, err := s.Catalogue.Watching(ctx, s.Hold)
 	if err != nil {
@@ -174,14 +175,14 @@ func (s *Service) Changed(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			if err := stream.Send(&v1.ChangedResponse{}); err != nil {
+			if err := stream.Send(&v1.WatchThemesResponse{}); err != nil {
 				return err
 			}
 		case names, open := <-changed:
 			if !open {
 				return nil
 			}
-			if err := stream.Send(&v1.ChangedResponse{Names: names}); err != nil {
+			if err := stream.Send(&v1.WatchThemesResponse{Names: names}); err != nil {
 				return err
 			}
 		}

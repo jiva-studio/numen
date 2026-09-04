@@ -16,26 +16,26 @@ import (
 // dressing is the themes an installation holds, as this window asks for them.
 type dressing struct{ wearing string }
 
-func (d dressing) Themes(
-	context.Context, *connect.Request[v1.ThemesRequest],
-) (*connect.Response[v1.ThemesResponse], error) {
-	return connect.NewResponse(&v1.ThemesResponse{Applied: d.wearing}), nil
+func (d dressing) ListThemes(
+	context.Context, *connect.Request[v1.ListThemesRequest],
+) (*connect.Response[v1.ListThemesResponse], error) {
+	return connect.NewResponse(&v1.ListThemesResponse{Applied: d.wearing}), nil
 }
 
-func (dressing) Theme(
-	context.Context, *connect.Request[v1.ThemeRequest],
-) (*connect.Response[v1.ThemeResponse], error) {
-	return connect.NewResponse(&v1.ThemeResponse{}), nil
+func (dressing) ReadTheme(
+	context.Context, *connect.Request[v1.ReadThemeRequest],
+) (*connect.Response[v1.ReadThemeResponse], error) {
+	return connect.NewResponse(&v1.ReadThemeResponse{}), nil
 }
 
-func (dressing) Choose(
-	context.Context, *connect.Request[v1.ChooseRequest],
-) (*connect.Response[v1.ChooseResponse], error) {
-	return connect.NewResponse(&v1.ChooseResponse{}), nil
+func (dressing) WriteAppearance(
+	context.Context, *connect.Request[v1.WriteAppearanceRequest],
+) (*connect.Response[v1.WriteAppearanceResponse], error) {
+	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
-func (dressing) Changed(
-	context.Context, *connect.Request[v1.ChangedRequest], *connect.ServerStream[v1.ChangedResponse],
+func (dressing) WatchThemes(
+	context.Context, *connect.Request[v1.WatchThemesRequest], *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
 	return nil
 }
@@ -49,7 +49,7 @@ func TestTheWindowIsDressedFromTheInstallationsThemes(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
-	out, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	out, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestAWindowWithNoThemesStillServesItsPage(t *testing.T) {
 	}
 
 	themes := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
-	if _, err := themes.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{})); err == nil {
+	if _, err := themes.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
 		t.Error("a window with no themes answered about them")
 	}
 }

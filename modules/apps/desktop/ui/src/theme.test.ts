@@ -14,10 +14,10 @@ vi.mock('@connectrpc/connect-web', () => ({ createConnectTransport: () => ({}) }
 vi.mock('@connectrpc/connect', () => ({ createClient: () => asked }))
 
 const asked = {
-  themes: vi.fn(),
-  theme: vi.fn(),
-  choose: vi.fn(),
-  changed: vi.fn(),
+  listThemes: vi.fn(),
+  readTheme: vi.fn(),
+  writeAppearance: vi.fn(),
+  watchThemes: vi.fn(),
 }
 
 const { themes } = await import('./theme')
@@ -36,7 +36,7 @@ const answering = (over: Record<string, unknown> = {}) => ({
 
 describe('every theme there is', () => {
   it('says which ship inside the application and which are the person’s own', async () => {
-    asked.themes.mockResolvedValue(
+    asked.listThemes.mockResolvedValue(
       answering({
         themes: [
           { name: 'preset/Numen.css', title: 'Numen', shelf: Shelf.PRESET, pinned: false },
@@ -60,7 +60,7 @@ describe('which half of a colour pair is read', () => {
       [Modes.DARK, 'dark'],
       [Modes.SYSTEM, 'system'],
     ] as const) {
-      asked.themes.mockResolvedValue(answering({ mode: said }))
+      asked.listThemes.mockResolvedValue(answering({ mode: said }))
       expect((await themes.catalogue()).mode).toBe(word)
     }
   })
@@ -68,15 +68,15 @@ describe('which half of a colour pair is read', () => {
   // A mode the window has no word for is one the machine decides, which is what
   // a window that was never told anything is drawn as.
   it('is the system’s where the window has no word for what was said', async () => {
-    asked.themes.mockResolvedValue(answering({ mode: 99 }))
+    asked.listThemes.mockResolvedValue(answering({ mode: 99 }))
     expect((await themes.catalogue()).mode).toBe('system')
   })
 
   it('is carried back to the application as the schema names it', async () => {
-    asked.choose.mockResolvedValue({ failed: '' })
+    asked.writeAppearance.mockResolvedValue({ failed: '' })
     await themes.chooses('own/Dusk.css', 'dark', { interfaceScale: 1.25, textScale: 1.5 })
 
-    expect(asked.choose.mock.calls[0]?.[0]).toEqual({
+    expect(asked.writeAppearance.mock.calls[0]?.[0]).toEqual({
       name: 'own/Dusk.css',
       mode: Modes.DARK,
       interfaceScale: 1.25,
@@ -87,7 +87,7 @@ describe('which half of a colour pair is read', () => {
 
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
-    asked.themes.mockResolvedValue(answering())
+    asked.listThemes.mockResolvedValue(answering())
     const { sizes, bounds } = await themes.catalogue()
 
     expect(sizes).toEqual({ interfaceScale: 1, textScale: 1 })
@@ -100,7 +100,7 @@ describe('how far a size goes', () => {
   // A bound the application left out is no bound at all, and not a bound of
   // some number the window made up.
   it('is nothing at either end where the application named neither', async () => {
-    asked.themes.mockResolvedValue(
+    asked.listThemes.mockResolvedValue(
       answering({ interfaceScaleBounds: undefined, textScaleBounds: undefined }),
     )
 
@@ -113,25 +113,25 @@ describe('how far a size goes', () => {
 
 describe('the rest of what is asked', () => {
   it('hands back the text of a theme’s file as it stands', async () => {
-    asked.theme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
+    asked.readTheme.mockResolvedValue({ css: ':root { --numen-surface: black }' })
     expect(await themes.text('own/Dusk.css')).toBe(':root { --numen-surface: black }')
-    expect(asked.theme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
+    expect(asked.readTheme.mock.calls[0]?.[0]).toEqual({ name: 'own/Dusk.css' })
   })
 
   it('says why a choice was refused, and says nothing where it was not', async () => {
-    asked.choose.mockResolvedValue({ failed: 'that size is outside its bounds' })
+    asked.writeAppearance.mockResolvedValue({ failed: 'that size is outside its bounds' })
     expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 9, textScale: 1 })).toBe(
       'that size is outside its bounds',
     )
 
-    asked.choose.mockResolvedValue({ failed: '' })
+    asked.writeAppearance.mockResolvedValue({ failed: '' })
     expect(await themes.chooses('preset/Numen.css', 'light', { interfaceScale: 1, textScale: 1 })).toBe(
       '',
     )
   })
 
   it('names the themes the person’s folder changed, as they land', async () => {
-    asked.changed.mockImplementation(async function* () {
+    asked.watchThemes.mockImplementation(async function* () {
       yield { names: ['own/Dusk.css'] }
       yield { names: ['own/Dusk.css', 'own/Dawn.css'] }
     })

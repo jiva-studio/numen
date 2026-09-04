@@ -47,9 +47,9 @@ func dressed(t *testing.T, worn theme.Appearance) *dressing {
 	return kept
 }
 
-func (d *dressing) themes(t *testing.T) *v1.ThemesResponse {
+func (d *dressing) themes(t *testing.T) *v1.ListThemesResponse {
 	t.Helper()
-	answer, err := d.service.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := d.service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +58,8 @@ func (d *dressing) themes(t *testing.T) *v1.ThemesResponse {
 
 func (d *dressing) choose(t *testing.T, name string, mode v1.Mode) string {
 	t.Helper()
-	answer, err := d.service.Choose(t.Context(),
-		connect.NewRequest(&v1.ChooseRequest{Name: name, Mode: mode}))
+	answer, err := d.service.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: name, Mode: mode}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,8 +102,8 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 		"mine:../../../.ssh/id_rsa": "",
 		"mine:gone":                 "",
 	} {
-		answer, err := worn.service.Theme(t.Context(),
-			connect.NewRequest(&v1.ThemeRequest{Name: name}))
+		answer, err := worn.service.ReadTheme(t.Context(),
+			connect.NewRequest(&v1.ReadThemeRequest{Name: name}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,8 +117,8 @@ func TestAThemeIsAskedForByNameAndAnyOtherNameIsNothing(t *testing.T) {
 
 	// This product's own palette names no token: what `tokens.css` holds is
 	// what it is. It answers with its file all the same.
-	answer, err := worn.service.Theme(t.Context(),
-		connect.NewRequest(&v1.ThemeRequest{Name: theme.Default}))
+	answer, err := worn.service.ReadTheme(t.Context(),
+		connect.NewRequest(&v1.ReadThemeRequest{Name: theme.Default}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestChoosingOneSizeLeavesTheOtherAsItStands(t *testing.T) {
 	})
 
 	drawn := 1.75
-	answer, err := worn.service.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+	answer, err := worn.service.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           "preset:nord",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: &drawn,
@@ -250,7 +250,7 @@ func TestAThemeTheSettingsNameThatIsGoneIsSaidAndTheDefaultWorn(t *testing.T) {
 // A build with no settings behind it still lists what it ships.
 func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
 	service := &theme.Service{Catalogue: folder(t)}
-	answer, err := service.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,8 +258,8 @@ func TestAServiceGivenNoSettingsWearsThisProductsPalette(t *testing.T) {
 		t.Errorf("wears %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
 	}
 
-	chosen, err := service.Choose(t.Context(),
-		connect.NewRequest(&v1.ChooseRequest{Name: theme.Default, Mode: v1.Mode_MODE_DARK}))
+	chosen, err := service.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: theme.Default, Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -42,7 +42,7 @@ func installed(t *testing.T) container.Config {
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 	client := themed(t, installed(t))
 
-	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,8 +53,8 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 		t.Error("nothing to wear")
 	}
 
-	text, err := client.Theme(t.Context(),
-		connect.NewRequest(&v1.ThemeRequest{Name: answer.Msg.GetApplied()}))
+	text, err := client.ReadTheme(t.Context(),
+		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetApplied()}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,8 +74,8 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	}
 
 	client := themed(t, cfg)
-	chosen, err := client.Choose(t.Context(),
-		connect.NewRequest(&v1.ChooseRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
+	chosen, err := client.WriteAppearance(t.Context(),
+		connect.NewRequest(&v1.WriteAppearanceRequest{Name: "preset:nord", Mode: v1.Mode_MODE_DARK}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,7 +100,7 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Errorf("the file came back as %s", raw)
 	}
 
-	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	client := themed(t, cfg)
 
 	drawn := 1.5
-	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
 		InterfaceScale: &drawn,
@@ -136,7 +136,7 @@ func TestASizeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 		t.Errorf("the file says %+v", said.Appearance)
 	}
 
-	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsWritten(t *testing.T) {
 
 	client := themed(t, cfg)
 	set := 4.0
-	chosen, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+	chosen, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:      settings.DefaultTheme,
 		Mode:      v1.Mode_MODE_LIGHT,
 		TextScale: &set,
@@ -184,7 +184,7 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	cfg.InterfaceScale = 1.25
 	client := themed(t, cfg)
 
-	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 	}
 
 	drawn := 1.5
-	if _, err := client.Choose(t.Context(), connect.NewRequest(&v1.ChooseRequest{
+	if _, err := client.WriteAppearance(t.Context(), connect.NewRequest(&v1.WriteAppearanceRequest{
 		Name:           settings.DefaultTheme,
 		Mode:           v1.Mode_MODE_LIGHT,
 		InterfaceScale: &drawn,
@@ -201,7 +201,7 @@ func TestASizeSaidForOneLaunchStandsUntilAPersonChoosesOne(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err = client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))
+	answer, err = client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,7 +217,7 @@ func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
-	if _, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{})); err == nil {
+	if _, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
 		t.Error("a build with no catalogue listed themes")
 	}
 }

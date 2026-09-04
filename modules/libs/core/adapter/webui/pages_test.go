@@ -56,13 +56,13 @@ func puts(t *testing.T, cfg container.Config, name, body string) {
 
 func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string, mode v1.Mode) {
 	t.Helper()
-	chose(t, themes, &v1.ChooseRequest{Name: name, Mode: mode})
+	chose(t, themes, &v1.WriteAppearanceRequest{Name: name, Mode: mode})
 }
 
 // chose is one choice as a client makes it, whatever of it the client names.
-func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.ChooseRequest) {
+func chose(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.WriteAppearanceRequest) {
 	t.Helper()
-	out, err := themes.Choose(t.Context(), connect.NewRequest(asked))
+	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(asked))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,7 +186,7 @@ func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := installed(t)
 	handler, themes := drawn(t, cfg)
 	puts(t, cfg, "sea.css", mine)
-	chose(t, themes, &v1.ChooseRequest{
+	chose(t, themes, &v1.WriteAppearanceRequest{
 		Name:           "mine:sea",
 		Mode:           v1.Mode_MODE_DARK,
 		InterfaceScale: size(1.25),
