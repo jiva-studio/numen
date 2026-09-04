@@ -87,7 +87,9 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	server := &http.Server{Handler: allowing(opened.API.Serving(http.NotFoundHandler()))}
+	server := &http.Server{
+		Handler: allowing(withoutAssets(opened.API.Serving(http.NotFoundHandler()))),
+	}
 	go func() { _ = server.Serve(listener) }()
 
 	running = &held{
@@ -206,6 +208,18 @@ func seed(root string) error {
 		}
 	}
 	return nil
+}
+
+// withoutAssets keeps the files of the vault off this server. Nothing the phone
+// draws asks for one, and what is served here is served to any origin at all.
+func withoutAssets(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.EscapedPath(), "/assets/") {
+			http.NotFound(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // allowing lets the page the platform serves ask this server, which sits on
