@@ -367,7 +367,7 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 // Many asks for a whole document at once open it once.
 func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 	from := sheets(4)
-	api, handler := drawnFrom(t, from)
+	api, _ := drawnFrom(t, from)
 	alone(api)
 
 	var asking sync.WaitGroup
@@ -375,8 +375,9 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			if out := ask(handler, assetOf(book)); out.Code != http.StatusOK {
-				t.Errorf("asked what the document is and got %d", out.Code)
+			_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+			if err != nil {
+				t.Errorf("asked what the document is and was refused: %v", err)
 			}
 		}()
 	}
@@ -420,24 +421,26 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	letIn := sync.OnceFunc(func() { close(from.gate) })
 	t.Cleanup(letIn)
 
-	for _, url := range []string{
-		assetOf(book),
-		pageOf(book, 0, 400),
-	} {
-		out := ask(handler, url)
-		if out.Code != http.StatusServiceUnavailable {
-			t.Errorf("%s was answered %d, not that the document is busy", url, out.Code)
-		}
-		if out.Header().Get("Retry-After") == "" {
-			t.Errorf("%s was not told when to ask again", url)
-		}
+	// What a document is is asked of the schema and a page of a URL, and both
+	// say the document is busy rather than holding the caller.
+	_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Errorf("what the document is was refused %v, not that it is busy", err)
+	}
+	out := ask(handler, pageOf(book, 0, 400))
+	if out.Code != http.StatusServiceUnavailable {
+		t.Errorf("a page was answered %d, not that the document is busy", out.Code)
+	}
+	if out.Header().Get("Retry-After") == "" {
+		t.Error("a page was not told when to ask again")
 	}
 
 	// The opening went on, so the ask after it finds the document open.
 	letIn()
 	api.Viewer.patience = patience
 	eventually(t, "the document never opened", func() bool {
-		return ask(handler, assetOf(book)).Code == http.StatusOK
+		_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+		return err == nil
 	})
 	if opens, _, _ := from.counted(); opens != 1 {
 		t.Errorf("the document was opened %d times", opens)
@@ -514,11 +517,11 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 
 // A file that is not a document is refused, and says so.
 func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
-	_, handler := fromTheLibrary(t, "not a PDF at all")
+	api, _ := fromTheLibrary(t, "not a PDF at all")
 
-	out := ask(handler, assetOf(book))
-	if out.Code != http.StatusUnsupportedMediaType {
-		t.Errorf("a file that is not a document was answered %d", out.Code)
+	_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Errorf("a file that is not a document was refused %v", err)
 	}
 }
 

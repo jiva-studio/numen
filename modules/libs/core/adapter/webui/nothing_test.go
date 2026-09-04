@@ -335,19 +335,42 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 
 	// A file of the folder this process is standing in, which is what a path
 	// with no vault under it reaches.
-	asked := []string{
-		"/assets/serve.go",
-		"/assets/serve.go/pages/0?wide=800",
-		"/assets/serve.go/marks?start=0&length=1",
+	const standing = "serve.go"
+
+	answer, err := f.server.Client().Get(f.server.URL + "/assets/" + standing + "/pages/0?wide=800")
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, at := range asked {
-		answer, err := f.server.Client().Get(f.server.URL + at)
-		if err != nil {
-			t.Fatal(err)
-		}
-		answer.Body.Close()
-		if answer.StatusCode != http.StatusConflict {
-			t.Errorf("%s was answered %s, and the window has no vault", at, answer.Status)
+	answer.Body.Close()
+	if answer.StatusCode != http.StatusConflict {
+		t.Errorf("a page was answered %s, and the window has no vault", answer.Status)
+	}
+
+	files := numenv1connect.NewAssetServiceClient(f.server.Client(), f.server.URL)
+	asked := map[string]func() error{
+		"what a document is": func() error {
+			_, err := files.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{
+				Path: standing,
+			}))
+			return err
+		},
+		"what a recording is": func() error {
+			_, err := files.Recording(t.Context(), connect.NewRequest(&v1.RecordingRequest{
+				Path: standing,
+			}))
+			return err
+		},
+		"where a run of the text sits": func() error {
+			_, err := files.Marks(t.Context(), connect.NewRequest(&v1.MarksRequest{
+				Path: standing,
+				At:   []*v1.Stretch{{Start: 0, Length: 1}},
+			}))
+			return err
+		},
+	}
+	for what, asking := range asked {
+		if code := connect.CodeOf(asking()); code != connect.CodeFailedPrecondition {
+			t.Errorf("%s was refused %s, and the window has no vault", what, code)
 		}
 	}
 }

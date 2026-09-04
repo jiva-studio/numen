@@ -342,8 +342,10 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 		until:        make(chan struct{}),
 	}
 	// A page is the one thing left under this route, and drawing one looks the
-	// file up before anything else.
+	// file up before anything else. That look is where the door stands; what
+	// the page would have been drawn from is never opened.
 	api := &API{Readers: readers, Viewer: looking(nil)}
+	api.Viewer.open = func([]byte) (drawable, error) { return nil, errNoDrawing }
 	api.show(testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"}))
 	handler := api.Serving(http.NotFoundHandler())
 
