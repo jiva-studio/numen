@@ -24,7 +24,7 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			want:  []domain.Span{{From: 3, To: 9}, {From: 29, To: 35}},
 		},
 		{
-			name:  "each word typed, in the order the runs stand",
+			name:  "each word typed, in the order the spans stand",
 			text:  "heat and work",
 			query: "work heat",
 			want:  []domain.Span{{From: 0, To: 4}, {From: 9, To: 13}},
@@ -58,13 +58,13 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 			want:  []domain.Span{{From: 13, To: 19}},
 		},
 		{
-			name:  "two words naming the same characters come back as one run",
+			name:  "two words naming the same characters come back as one span",
 			text:  "entropy again",
 			query: "ent entropy",
 			want:  []domain.Span{{From: 0, To: 7}},
 		},
 		{
-			name:  "the runs come back in the order they stand",
+			name:  "the spans come back in the order they stand",
 			text:  "engine and entropy",
 			query: "entropy engine",
 			want:  []domain.Span{{From: 0, To: 6}, {From: 11, To: 18}},
@@ -127,7 +127,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 		}
 	})
 
-	t.Run("a long passage opens on the words about the first run", func(t *testing.T) {
+	t.Run("a long passage opens on the words about the first span", func(t *testing.T) {
 		text := long(500) + " engine " + long(500)
 		cut, kept := around(text, spans(text, "engine"), 0)
 
@@ -136,10 +136,10 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 				len([]rune(cut)), glancing)
 		}
 		if len(kept) != 1 {
-			t.Fatalf("kept %+v runs, want the one that is inside the window", kept)
+			t.Fatalf("kept %+v spans, want the one that is inside the window", kept)
 		}
 		if got := string([]rune(cut)[kept[0].From:kept[0].To]); got != "engine" {
-			t.Errorf("the run stands on %q, want it still on the word", got)
+			t.Errorf("the span stands on %q, want it still on the word", got)
 		}
 		if !strings.HasPrefix(cut, "…") || !strings.HasSuffix(cut, "…") {
 			t.Errorf("cut %q…%q, want it to say it was cut at both ends",
@@ -162,63 +162,63 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 		}
 	})
 
-	t.Run("a run near the end of a passage opens the window all the same", func(t *testing.T) {
+	t.Run("a span near the end of a passage opens the window all the same", func(t *testing.T) {
 		text := long(500) + " engine ends here"
 		cut, kept := around(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
-			t.Fatalf("kept %+v runs, want the one that matched", kept)
+			t.Fatalf("kept %+v spans, want the one that matched", kept)
 		}
-		// The mark for what was left off stands before the text, so the run
+		// The mark for what was left off stands before the text, so the span
 		// begins one unit further along than the words before it.
 		if kept[0].From > leading+1 {
-			t.Errorf("the run opens %d units in, want no more than %d",
+			t.Errorf("the span opens %d units in, want no more than %d",
 				kept[0].From, leading+1)
 		}
 		if got := string([]rune(cut)[kept[0].From:kept[0].To]); got != "engine" {
-			t.Errorf("the run stands on %q, want it still on the word", got)
+			t.Errorf("the span stands on %q, want it still on the word", got)
 		}
 		if !strings.HasSuffix(cut, "ends here") {
 			t.Errorf("cut ends on %q, want the end of the passage", cut[len(cut)-12:])
 		}
 	})
 
-	t.Run("a run near the end of a passage of two bytes a character", func(t *testing.T) {
+	t.Run("a span near the end of a passage of two bytes a character", func(t *testing.T) {
 		text := strings.Repeat("слово ", 200) + "дышать не можем"
 		cut, kept := around(text, spans(text, "дышать"), 0)
 
 		if len(kept) != 1 {
-			t.Fatalf("kept %+v runs, want the one that matched", kept)
+			t.Fatalf("kept %+v spans, want the one that matched", kept)
 		}
 		if got := string([]rune(cut)[kept[0].From:kept[0].To]); got != "дышать" {
-			t.Errorf("the run stands on %q, want it still on the word", got)
+			t.Errorf("the span stands on %q, want it still on the word", got)
 		}
 	})
 
-	t.Run("a run left outside the window is dropped", func(t *testing.T) {
+	t.Run("a span left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
 		at := spans(text, "engine")
 		if len(at) != 2 {
-			t.Fatalf("the passage holds %d runs, want 2", len(at))
+			t.Fatalf("the passage holds %d spans, want 2", len(at))
 		}
 
 		_, kept := around(text, at, 0)
 		if len(kept) != 1 {
-			t.Errorf("kept %+v, want only the run the window holds", kept)
+			t.Errorf("kept %+v, want only the span the window holds", kept)
 		}
 	})
 
-	t.Run("runs stay counted the way a client counts text", func(t *testing.T) {
+	t.Run("spans stay counted the way a client counts text", func(t *testing.T) {
 		text := "👋 " + long(400) + " engine " + long(400)
 		cut, kept := around(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
-			t.Fatalf("kept %+v runs, want 1", kept)
+			t.Fatalf("kept %+v spans, want 1", kept)
 		}
 		// Read back through UTF-16, which is what the client slices with.
 		units := utf16.Encode([]rune(cut))
 		if got := string(utf16.Decode(units[kept[0].From:kept[0].To])); got != "engine" {
-			t.Errorf("the run reads %q through UTF-16, want %q", got, "engine")
+			t.Errorf("the span reads %q through UTF-16, want %q", got, "engine")
 		}
 	})
 }

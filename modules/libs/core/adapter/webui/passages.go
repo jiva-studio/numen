@@ -10,9 +10,10 @@ import (
 )
 
 // spans is where each word typed stands in a passage, counted the way a client
-// counts text: in UTF-16 code units. The runs come in order and do not overlap.
+// counts text: in UTF-16 code units. The spans come in order and do not
+// overlap.
 //
-// Case is folded and nothing else is. A run begins where a word begins, and
+// Case is folded and nothing else is. A span begins where a word begins, and
 // ends where one ends; the last word typed may still be growing, so it matches
 // a word by its opening, which is the rule the index matched it by.
 func spans(text, query string) []domain.Span {
@@ -47,13 +48,13 @@ func spans(text, query string) []domain.Span {
 // what tells a word from a run of letters inside one.
 func wordly(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }
 
-// opens and closes say whether a run beginning or ending here is a whole word's
-// beginning or end. The ends of the text are both.
+// opens and closes say whether a span beginning or ending here is a whole
+// word's beginning or end. The ends of the text are both.
 func opens(runes []rune, at int) bool { return at == 0 || !wordly(runes[at-1]) }
 
 func closes(runes []rune, at int) bool { return at == len(runes) || !wordly(runes[at]) }
 
-// merged is the runs in the order they stand, with ones that touch or overlap
+// merged is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
 func merged(at []domain.Span) []domain.Span {
 	if len(at) < 2 {
@@ -96,21 +97,21 @@ func folding(text string) ([]rune, []int) {
 }
 
 // How much of a passage is drawn at most, and how much of that stands before
-// the run that matched, both counted in UTF-16 code units. The words a hit sits
+// the span that matched, both counted in UTF-16 code units. The words a hit sits
 // among are read from their own beginning and not from the middle of one.
 const (
 	glancing = 240
 	leading  = 60
 )
 
-// around is the part of a passage worth drawing: the words about the first run
+// around is the part of a passage worth drawing: the words about the first span
 // that matched, or about the hit itself when no word matched at all.
 //
 // A passage is the whole of the window enclosing its hit, which for a note is
 // the whole note. A hit by meaning stands on no word, so `from` is where the
 // chunk that matched begins and is what the window opens near.
 //
-// The runs move with the text and the ones left outside are dropped, so what
+// The spans move with the text and the ones left outside are dropped, so what
 // comes back addresses what comes back.
 func around(text string, spans []domain.Span, from int) (string, []domain.Span) {
 	runes, units := counting(text)
@@ -119,7 +120,7 @@ func around(text string, spans []domain.Span, from int) (string, []domain.Span) 
 		return text, spans
 	}
 
-	// Where the window opens on: the first run that matched, and where the hit
+	// Where the window opens on: the first span that matched, and where the hit
 	// itself stands when no word matched at all.
 	point := from
 	if len(spans) > 0 {
