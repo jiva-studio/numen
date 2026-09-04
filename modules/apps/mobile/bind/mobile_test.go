@@ -104,10 +104,47 @@ func TestStartAnswers(t *testing.T) {
 	}
 }
 
-// The files of the vault and what is made from them are not served here. What
-// this server answers is answered to any origin at all, so a caller that
-// reached it must not be able to read a book off the disk or set a model
-// running over one.
+// The three services this mounts read and write the person's notes, and the
+// socket they stand on is one every process on the phone reaches. So the one
+// origin it answers is the page the platform serves: a page in the person's own
+// browser asks the same address and is refused by the browser before the ask
+// leaves it.
+func TestTheSocketAnswersThePagesOwnOriginAndNoOther(t *testing.T) {
+	port, err := bind.Start(t.TempDir())
+	if err != nil {
+		t.Fatalf("starting: %v", err)
+	}
+	t.Cleanup(func() { _ = bind.Stop() })
+
+	url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.NoteService/CreateNote", port)
+	for _, origin := range []string{bind.Page, "https://a-page-somebody-opened.example"} {
+		for _, method := range []string{http.MethodOptions, http.MethodPost} {
+			req, err := http.NewRequest(method, url, bytes.NewReader([]byte(`{"title":"Anemone"}`)))
+			if err != nil {
+				t.Fatalf("asking as %s: %v", origin, err)
+			}
+			req.Header.Set("Origin", origin)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Connect-Protocol-Version", "1")
+			if method == http.MethodOptions {
+				req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+			}
+			res, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Fatalf("asking as %s: %v", origin, err)
+			}
+			res.Body.Close()
+			if got := res.Header.Get("Access-Control-Allow-Origin"); got != bind.Page {
+				t.Errorf("a %s from %s is allowed %q", method, origin, got)
+			}
+		}
+	}
+}
+
+// The files of the vault and what is made from them are not served here. Every
+// process on the phone reaches this socket and a program speaking for itself is
+// held to no origin, so a caller that reached it must not be able to read a book
+// off the disk or set a model running over one.
 func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	port, err := bind.Start(t.TempDir())
 	if err != nil {

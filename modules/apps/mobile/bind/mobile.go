@@ -90,7 +90,7 @@ func Start(dir string) (int, error) {
 
 	// The phone draws the vault it is showing, the notes in it and the tree they
 	// are filed in, and asks the core nothing else. What is served here is
-	// served over a socket answering any origin at all, so it mounts those three
+	// served on a socket every process on the phone reaches, so it mounts those three
 	// and no other service: not the settings file, which holds the keys this
 	// installation reaches models with, and not the files of the person's disk
 	// beside the notes, which is a book read off the disk and a model set
@@ -223,12 +223,23 @@ func seed(root string) error {
 	return nil
 }
 
+// Page is the origin the platform serves this application's own page from:
+// `androidScheme` in capacitor.config.ts, and no port. The core listens on the
+// loopback, so the page is asking across origins and says so.
+const Page = "http://localhost"
+
 // allowing lets the page the platform serves ask this server, which sits on
 // another origin than the one the webview loaded.
+//
+// It names that one origin. The socket is on the loopback and every process on
+// the phone reaches it, so a page in the person's own browser could ask it as
+// well; naming the origin is what makes a browser refuse to send that ask and
+// refuse to hand back what came of it. Nothing here is authentication: a
+// program that speaks for itself sends no origin and is not held to one.
 func allowing(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		head := w.Header()
-		head.Set("Access-Control-Allow-Origin", "*")
+		head.Set("Access-Control-Allow-Origin", Page)
 		head.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
 		head.Set("Access-Control-Allow-Headers", strings.Join([]string{
 			"Content-Type", "Connect-Protocol-Version", "Connect-Timeout-Ms",
