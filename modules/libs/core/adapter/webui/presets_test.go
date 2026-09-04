@@ -139,7 +139,7 @@ func TestWritingAPresetLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 func TestADeckNamingNoPresetIsScheduledByTheDefaults(t *testing.T) {
 	f := steering(t, pointed)
 
-	answer, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+	answer, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	}))
 	if err != nil {
@@ -173,7 +173,7 @@ func TestADeckWhosePresetLinkHasNoRoleIsToldSo(t *testing.T) {
 			"## Root ^k7m2xq9fzp\n",
 	})
 
-	answer, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+	answer, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
 		Deck: "decks/Roots.md",
 	}))
 	if err != nil {
@@ -278,7 +278,7 @@ func TestAClientNamingNoCountsIsRefused(t *testing.T) {
 func TestACurveComesBackWithItsTwoMarks(t *testing.T) {
 	f := steering(t, pointed)
 
-	answer, err := f.client.Curve(t.Context(), connect.NewRequest(&v1.CurveRequest{
+	answer, err := f.client.ComputeCurve(t.Context(), connect.NewRequest(&v1.ComputeCurveRequest{
 		Path: "Sanskrit.md", Settings: settings(),
 	}))
 	if err != nil {
@@ -340,7 +340,7 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := steering(t, pointed)
 
-	made, err := f.client.MakePreset(t.Context(), connect.NewRequest(&v1.MakePresetRequest{
+	made, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
 		Title: "Prosody", Folder: "presets",
 	}))
 	if err != nil {
@@ -403,7 +403,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 	f := steering(t, pointed)
 
-	if _, err := f.client.MakePreset(t.Context(), connect.NewRequest(&v1.MakePresetRequest{
+	if _, err := f.client.CreatePreset(t.Context(), connect.NewRequest(&v1.CreatePresetRequest{
 		Title: "Prosody", Folder: "presets",
 	})); err != nil {
 		t.Fatal(err)
@@ -427,7 +427,7 @@ func TestAPresetMadeIsOneTheVaultLists(t *testing.T) {
 func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	f := steering(t, pointed)
 
-	put, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	put, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Sanskrit.md",
 	}))
 	if err != nil {
@@ -440,7 +440,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Error("the write says nothing about the file it made")
 	}
 
-	read, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+	read, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	}))
 	if err != nil {
@@ -454,7 +454,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 	}
 
 	// The fingerprint the write answered with is what the next write presents.
-	off, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Seen: put.Msg.GetAt(),
 	}))
 	if err != nil {
@@ -467,7 +467,7 @@ func TestADeckIsPutOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Errorf("the deck still names a preset: %q", held)
 	}
 
-	again, err := f.client.Scheduling(t.Context(), connect.NewRequest(&v1.SchedulingRequest{
+	again, err := f.client.GetDeckPreset(t.Context(), connect.NewRequest(&v1.GetDeckPresetRequest{
 		Deck: "decks/Terms.md",
 	}))
 	if err != nil {
@@ -487,7 +487,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 		"decks/Terms.md": terms,
 	})
 
-	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Grammar.md",
 	}))
 	if err != nil {
@@ -506,7 +506,7 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	f := steering(t, pointed)
 
-	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Preset: "Pali.md",
 	}))
 	if err != nil {
@@ -525,7 +525,7 @@ func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 	f := steering(t, pointed)
 
-	read, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	read, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Preset: "Sanskrit.md",
 	}))
 	if err != nil {
@@ -537,7 +537,7 @@ func TestSchedulingLeavesAloneADeckThatChangedSinceItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.Schedule(t.Context(), connect.NewRequest(&v1.ScheduleRequest{
+	answer, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&v1.ScheduleDeckRequest{
 		Deck: "decks/Roots.md", Seen: read.Msg.GetAt(),
 	}))
 	if err != nil {

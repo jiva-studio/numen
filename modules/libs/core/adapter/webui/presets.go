@@ -19,11 +19,11 @@ import (
 // errNoPresets is what a build with no path to the presets of a vault answers.
 var errNoPresets = errors.New("this build cannot work the presets of a vault")
 
-// Scheduling is the preset a deck is scheduled by. A deck naming none is
+// GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 // answered with the defaults under no path.
-func (a *API) Scheduling(
-	ctx context.Context, r *connect.Request[v1.SchedulingRequest],
-) (*connect.Response[v1.SchedulingResponse], error) {
+func (a *API) GetDeckPreset(
+	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
+) (*connect.Response[v1.GetDeckPresetResponse], error) {
 	if a.Presets == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
 	}
@@ -36,7 +36,7 @@ func (a *API) Scheduling(
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
-	out := &v1.SchedulingResponse{}
+	out := &v1.GetDeckPresetResponse{}
 	if reason, refused := refusal.Of(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
@@ -73,26 +73,26 @@ func (a *API) ListPresets(
 	return connect.NewResponse(out), nil
 }
 
-// MakePreset puts a preset naming none of its settings in the vault. A key the
-// file does not carry stands at the default.
-func (a *API) MakePreset(
-	ctx context.Context, r *connect.Request[v1.MakePresetRequest],
-) (*connect.Response[v1.MakePresetResponse], error) {
+// CreatePreset puts a preset naming none of its settings in the vault. A key
+// the file does not carry stands at the default.
+func (a *API) CreatePreset(
+	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
+) (*connect.Response[v1.CreatePresetResponse], error) {
 	made, refused, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.MakePresetResponse{Path: made.Path, Refusal: refused}), nil
+	return connect.NewResponse(&v1.CreatePresetResponse{Path: made.Path, Refusal: refused}), nil
 }
 
-// Schedule puts a deck on a preset. A deck still holding what the client read
-// is written; one holding something else is left alone and the client is told
-// the deck changed.
-func (a *API) Schedule(
-	ctx context.Context, r *connect.Request[v1.ScheduleRequest],
-) (*connect.Response[v1.ScheduleResponse], error) {
+// ScheduleDeck puts a deck on a preset. A deck still holding what the client
+// read is written; one holding something else is left alone and the client is
+// told the deck changed.
+func (a *API) ScheduleDeck(
+	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
+) (*connect.Response[v1.ScheduleDeckResponse], error) {
 	if a.Presets == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
 	}
@@ -113,17 +113,17 @@ func (a *API) Schedule(
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.ScheduleResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.ScheduleDeckResponse{At: fingerprintOf(at)}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
-		return connect.NewResponse(&v1.ScheduleResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
 	}
 	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.ScheduleResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
 }
 
 // ReadPreset is the settings of one preset.
@@ -198,12 +198,12 @@ func (a *API) WritePreset(
 	return connect.NewResponse(&v1.WritePresetResponse{Refusal: &reason}), nil
 }
 
-// Curve is what these settings come to over the whole range of the goal they
-// name. Nothing is written: what a curve is asked for is the value a person is
-// moving and has not settled.
-func (a *API) Curve(
-	ctx context.Context, r *connect.Request[v1.CurveRequest],
-) (*connect.Response[v1.CurveResponse], error) {
+// ComputeCurve is what these settings come to over the whole range of the goal
+// they name. Nothing is written: what a curve is asked for is the value a
+// person is moving and has not settled.
+func (a *API) ComputeCurve(
+	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
+) (*connect.Response[v1.ComputeCurveResponse], error) {
 	if a.Curves == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPresets)
 	}
@@ -219,5 +219,5 @@ func (a *API) Curve(
 	if err != nil {
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.CurveResponse{Curve: wire.CurveOf(held)}), nil
+	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: wire.CurveOf(held)}), nil
 }

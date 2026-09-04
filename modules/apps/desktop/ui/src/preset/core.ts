@@ -317,16 +317,16 @@ const asking = createClient(PresetsService, transport)
 /** The same questions, in the shape the window asks them. */
 export const presets: Presets = {
   read: async (path) => took(await asking.readPreset({ path })),
-  scheduling: async (deck) => took(await asking.scheduling({ deck })),
+  scheduling: async (deck) => took(await asking.getDeckPreset({ deck })),
   list: async () => (await asking.listPresets({})).presets.map(
     (one) => ({ path: one.path, title: one.title }),
   ),
   makes: async (title, folder) => {
-    const answer = await asking.makePreset({ title, folder })
+    const answer = await asking.createPreset({ title, folder })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   schedules: async (deck, preset, seen) => {
-    const answer = await asking.schedule({
+    const answer = await asking.scheduleDeck({
       deck,
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
@@ -342,7 +342,7 @@ export const presets: Presets = {
     return { refusal: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
-    const answer = await asking.curve({ path, settings: sent(settings) })
+    const answer = await asking.computeCurve({ path, settings: sent(settings) })
     return curved(answer.curve)
   },
 }

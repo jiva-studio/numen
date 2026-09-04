@@ -20,10 +20,10 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // PresetsService answers about the presets of the one vault a client is looking
 // at.
 service PresetsService {
-  // Scheduling is the preset a deck is scheduled by. A deck naming none is
+  // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
   // answered with the defaults under no path, and a deck whose link reaches
   // something that is not a preset is answered with the defaults and told so.
-  rpc Scheduling(SchedulingRequest) returns (SchedulingResponse);
+  rpc GetDeckPreset(GetDeckPresetRequest) returns (GetDeckPresetResponse);
 
   // ListPresets is every preset the vault holds, by path and by what it is
   // called. It is the list a deck's preset is chosen from, and the defaults are
@@ -31,15 +31,15 @@ service PresetsService {
   // holds them.
   rpc ListPresets(ListPresetsRequest) returns (ListPresetsResponse);
 
-  // MakePreset puts a preset naming none of its settings in the vault. The
+  // CreatePreset puts a preset naming none of its settings in the vault. The
   // file says it is a preset from the moment it exists, so it is one to
   // everything that reads the vault before a setting has been chosen.
   //
   // A key the file does not carry stands at the default, so the decks pointed
   // at it are scheduled by the defaults until the person moves one.
-  rpc MakePreset(MakePresetRequest) returns (MakePresetResponse);
+  rpc CreatePreset(CreatePresetRequest) returns (CreatePresetResponse);
 
-  // Schedule puts a deck on a preset, by writing the entry of its `links:`
+  // ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
   // block that carries `type: preset`. The entry keeps the role and the words
   // the person wrote on it, and every other entry of the block is left as the
   // bytes it was. An empty preset takes the entry out, and the deck is
@@ -48,7 +48,7 @@ service PresetsService {
   // A preset the vault holds no note at is refused `missing`, and a preset
   // naming a note that is not one is refused `not_a_preset`. A deck that no
   // longer holds what the caller read is left alone and refused `stale`.
-  rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
+  rpc ScheduleDeck(ScheduleDeckRequest) returns (ScheduleDeckResponse);
 
   // ReadPreset is the settings of one preset. A note that is not a preset is
   // answered with the defaults and a problem: what is wrong with the file is
@@ -64,9 +64,9 @@ service PresetsService {
   // caller read is left alone and refused `stale`.
   rpc WritePreset(WritePresetRequest) returns (WritePresetResponse);
 
-  // Curve is what the settings come to over the whole range of the goal they
-  // name. The whole range is worked out in one pass.
-  rpc Curve(CurveRequest) returns (CurveResponse);
+  // ComputeCurve is what the settings come to over the whole range of the goal
+  // they name. The whole range is worked out in one pass.
+  rpc ComputeCurve(ComputeCurveRequest) returns (ComputeCurveResponse);
 }
 
 // Goal is which value the one control steers. The value itself stands in the
@@ -346,12 +346,12 @@ message Mark {
   string day = 3;
 }
 
-message SchedulingRequest {
+message GetDeckPresetRequest {
   // The deck whose preset this is, by the path it is filed under.
   string deck = 1;
 }
 
-message SchedulingResponse {
+message GetDeckPresetResponse {
   // Absent when the preset was refused.
   optional Preset preset = 1;
 
@@ -379,7 +379,7 @@ message Listed {
   string title = 2;
 }
 
-message MakePresetRequest {
+message CreatePresetRequest {
   // What the preset is called. The file is named after it.
   string title = 1;
 
@@ -387,7 +387,7 @@ message MakePresetRequest {
   string folder = 2;
 }
 
-message MakePresetResponse {
+message CreatePresetResponse {
   // Where the preset is filed. Empty when nothing was made.
   string path = 1;
 
@@ -395,7 +395,7 @@ message MakePresetResponse {
   optional Refusal refusal = 2;
 }
 
-message ScheduleRequest {
+message ScheduleDeckRequest {
   // The deck to schedule, by the path it is filed under.
   string deck = 1;
 
@@ -408,7 +408,7 @@ message ScheduleRequest {
   optional Fingerprint seen = 3;
 }
 
-message ScheduleResponse {
+message ScheduleDeckResponse {
   reserved 2;
   reserved "changed";
 
@@ -464,7 +464,7 @@ message WritePresetResponse {
   optional Fingerprint at = 3;
 }
 
-message CurveRequest {
+message ComputeCurveRequest {
   // The note the preset stands in, which names the decks it schedules. Empty
   // is the preset that schedules the decks naming none.
   string path = 1;
@@ -474,6 +474,6 @@ message CurveRequest {
   Settings settings = 2;
 }
 
-message CurveResponse {
+message ComputeCurveResponse {
   Curve curve = 1;
 }

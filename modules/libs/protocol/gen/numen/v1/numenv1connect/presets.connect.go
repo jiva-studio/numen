@@ -44,46 +44,48 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// PresetsServiceSchedulingProcedure is the fully-qualified name of the PresetsService's Scheduling
-	// RPC.
-	PresetsServiceSchedulingProcedure = "/numen.v1.PresetsService/Scheduling"
+	// PresetsServiceGetDeckPresetProcedure is the fully-qualified name of the PresetsService's
+	// GetDeckPreset RPC.
+	PresetsServiceGetDeckPresetProcedure = "/numen.v1.PresetsService/GetDeckPreset"
 	// PresetsServiceListPresetsProcedure is the fully-qualified name of the PresetsService's
 	// ListPresets RPC.
 	PresetsServiceListPresetsProcedure = "/numen.v1.PresetsService/ListPresets"
-	// PresetsServiceMakePresetProcedure is the fully-qualified name of the PresetsService's MakePreset
-	// RPC.
-	PresetsServiceMakePresetProcedure = "/numen.v1.PresetsService/MakePreset"
-	// PresetsServiceScheduleProcedure is the fully-qualified name of the PresetsService's Schedule RPC.
-	PresetsServiceScheduleProcedure = "/numen.v1.PresetsService/Schedule"
+	// PresetsServiceCreatePresetProcedure is the fully-qualified name of the PresetsService's
+	// CreatePreset RPC.
+	PresetsServiceCreatePresetProcedure = "/numen.v1.PresetsService/CreatePreset"
+	// PresetsServiceScheduleDeckProcedure is the fully-qualified name of the PresetsService's
+	// ScheduleDeck RPC.
+	PresetsServiceScheduleDeckProcedure = "/numen.v1.PresetsService/ScheduleDeck"
 	// PresetsServiceReadPresetProcedure is the fully-qualified name of the PresetsService's ReadPreset
 	// RPC.
 	PresetsServiceReadPresetProcedure = "/numen.v1.PresetsService/ReadPreset"
 	// PresetsServiceWritePresetProcedure is the fully-qualified name of the PresetsService's
 	// WritePreset RPC.
 	PresetsServiceWritePresetProcedure = "/numen.v1.PresetsService/WritePreset"
-	// PresetsServiceCurveProcedure is the fully-qualified name of the PresetsService's Curve RPC.
-	PresetsServiceCurveProcedure = "/numen.v1.PresetsService/Curve"
+	// PresetsServiceComputeCurveProcedure is the fully-qualified name of the PresetsService's
+	// ComputeCurve RPC.
+	PresetsServiceComputeCurveProcedure = "/numen.v1.PresetsService/ComputeCurve"
 )
 
 // PresetsServiceClient is a client for the numen.v1.PresetsService service.
 type PresetsServiceClient interface {
-	// Scheduling is the preset a deck is scheduled by. A deck naming none is
+	// GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 	// answered with the defaults under no path, and a deck whose link reaches
 	// something that is not a preset is answered with the defaults and told so.
-	Scheduling(context.Context, *connect.Request[v1.SchedulingRequest]) (*connect.Response[v1.SchedulingResponse], error)
+	GetDeckPreset(context.Context, *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error)
 	// ListPresets is every preset the vault holds, by path and by what it is
 	// called. It is the list a deck's preset is chosen from, and the defaults are
 	// not in it: they are what schedules a deck naming no preset, and no note
 	// holds them.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
-	// MakePreset puts a preset naming none of its settings in the vault. The
+	// CreatePreset puts a preset naming none of its settings in the vault. The
 	// file says it is a preset from the moment it exists, so it is one to
 	// everything that reads the vault before a setting has been chosen.
 	//
 	// A key the file does not carry stands at the default, so the decks pointed
 	// at it are scheduled by the defaults until the person moves one.
-	MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error)
-	// Schedule puts a deck on a preset, by writing the entry of its `links:`
+	CreatePreset(context.Context, *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error)
+	// ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
 	// block that carries `type: preset`. The entry keeps the role and the words
 	// the person wrote on it, and every other entry of the block is left as the
 	// bytes it was. An empty preset takes the entry out, and the deck is
@@ -92,7 +94,7 @@ type PresetsServiceClient interface {
 	// A preset the vault holds no note at is refused `missing`, and a preset
 	// naming a note that is not one is refused `not_a_preset`. A deck that no
 	// longer holds what the caller read is left alone and refused `stale`.
-	Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error)
+	ScheduleDeck(context.Context, *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error)
 	// ReadPreset is the settings of one preset. A note that is not a preset is
 	// answered with the defaults and a problem: what is wrong with the file is
 	// settled in the editor, and nothing is guessed at here.
@@ -105,9 +107,9 @@ type PresetsServiceClient interface {
 	// a preset is refused `not_a_preset`, and one that no longer holds what the
 	// caller read is left alone and refused `stale`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
-	// Curve is what the settings come to over the whole range of the goal they
-	// name. The whole range is worked out in one pass.
-	Curve(context.Context, *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error)
+	// ComputeCurve is what the settings come to over the whole range of the goal
+	// they name. The whole range is worked out in one pass.
+	ComputeCurve(context.Context, *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error)
 }
 
 // NewPresetsServiceClient constructs a client for the numen.v1.PresetsService service. By default,
@@ -121,10 +123,10 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 	baseURL = strings.TrimRight(baseURL, "/")
 	presetsServiceMethods := v1.File_numen_v1_presets_proto.Services().ByName("PresetsService").Methods()
 	return &presetsServiceClient{
-		scheduling: connect.NewClient[v1.SchedulingRequest, v1.SchedulingResponse](
+		getDeckPreset: connect.NewClient[v1.GetDeckPresetRequest, v1.GetDeckPresetResponse](
 			httpClient,
-			baseURL+PresetsServiceSchedulingProcedure,
-			connect.WithSchema(presetsServiceMethods.ByName("Scheduling")),
+			baseURL+PresetsServiceGetDeckPresetProcedure,
+			connect.WithSchema(presetsServiceMethods.ByName("GetDeckPreset")),
 			connect.WithClientOptions(opts...),
 		),
 		listPresets: connect.NewClient[v1.ListPresetsRequest, v1.ListPresetsResponse](
@@ -133,16 +135,16 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(presetsServiceMethods.ByName("ListPresets")),
 			connect.WithClientOptions(opts...),
 		),
-		makePreset: connect.NewClient[v1.MakePresetRequest, v1.MakePresetResponse](
+		createPreset: connect.NewClient[v1.CreatePresetRequest, v1.CreatePresetResponse](
 			httpClient,
-			baseURL+PresetsServiceMakePresetProcedure,
-			connect.WithSchema(presetsServiceMethods.ByName("MakePreset")),
+			baseURL+PresetsServiceCreatePresetProcedure,
+			connect.WithSchema(presetsServiceMethods.ByName("CreatePreset")),
 			connect.WithClientOptions(opts...),
 		),
-		schedule: connect.NewClient[v1.ScheduleRequest, v1.ScheduleResponse](
+		scheduleDeck: connect.NewClient[v1.ScheduleDeckRequest, v1.ScheduleDeckResponse](
 			httpClient,
-			baseURL+PresetsServiceScheduleProcedure,
-			connect.WithSchema(presetsServiceMethods.ByName("Schedule")),
+			baseURL+PresetsServiceScheduleDeckProcedure,
+			connect.WithSchema(presetsServiceMethods.ByName("ScheduleDeck")),
 			connect.WithClientOptions(opts...),
 		),
 		readPreset: connect.NewClient[v1.ReadPresetRequest, v1.ReadPresetResponse](
@@ -157,10 +159,10 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(presetsServiceMethods.ByName("WritePreset")),
 			connect.WithClientOptions(opts...),
 		),
-		curve: connect.NewClient[v1.CurveRequest, v1.CurveResponse](
+		computeCurve: connect.NewClient[v1.ComputeCurveRequest, v1.ComputeCurveResponse](
 			httpClient,
-			baseURL+PresetsServiceCurveProcedure,
-			connect.WithSchema(presetsServiceMethods.ByName("Curve")),
+			baseURL+PresetsServiceComputeCurveProcedure,
+			connect.WithSchema(presetsServiceMethods.ByName("ComputeCurve")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -168,18 +170,18 @@ func NewPresetsServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // presetsServiceClient implements PresetsServiceClient.
 type presetsServiceClient struct {
-	scheduling  *connect.Client[v1.SchedulingRequest, v1.SchedulingResponse]
-	listPresets *connect.Client[v1.ListPresetsRequest, v1.ListPresetsResponse]
-	makePreset  *connect.Client[v1.MakePresetRequest, v1.MakePresetResponse]
-	schedule    *connect.Client[v1.ScheduleRequest, v1.ScheduleResponse]
-	readPreset  *connect.Client[v1.ReadPresetRequest, v1.ReadPresetResponse]
-	writePreset *connect.Client[v1.WritePresetRequest, v1.WritePresetResponse]
-	curve       *connect.Client[v1.CurveRequest, v1.CurveResponse]
+	getDeckPreset *connect.Client[v1.GetDeckPresetRequest, v1.GetDeckPresetResponse]
+	listPresets   *connect.Client[v1.ListPresetsRequest, v1.ListPresetsResponse]
+	createPreset  *connect.Client[v1.CreatePresetRequest, v1.CreatePresetResponse]
+	scheduleDeck  *connect.Client[v1.ScheduleDeckRequest, v1.ScheduleDeckResponse]
+	readPreset    *connect.Client[v1.ReadPresetRequest, v1.ReadPresetResponse]
+	writePreset   *connect.Client[v1.WritePresetRequest, v1.WritePresetResponse]
+	computeCurve  *connect.Client[v1.ComputeCurveRequest, v1.ComputeCurveResponse]
 }
 
-// Scheduling calls numen.v1.PresetsService.Scheduling.
-func (c *presetsServiceClient) Scheduling(ctx context.Context, req *connect.Request[v1.SchedulingRequest]) (*connect.Response[v1.SchedulingResponse], error) {
-	return c.scheduling.CallUnary(ctx, req)
+// GetDeckPreset calls numen.v1.PresetsService.GetDeckPreset.
+func (c *presetsServiceClient) GetDeckPreset(ctx context.Context, req *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error) {
+	return c.getDeckPreset.CallUnary(ctx, req)
 }
 
 // ListPresets calls numen.v1.PresetsService.ListPresets.
@@ -187,14 +189,14 @@ func (c *presetsServiceClient) ListPresets(ctx context.Context, req *connect.Req
 	return c.listPresets.CallUnary(ctx, req)
 }
 
-// MakePreset calls numen.v1.PresetsService.MakePreset.
-func (c *presetsServiceClient) MakePreset(ctx context.Context, req *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error) {
-	return c.makePreset.CallUnary(ctx, req)
+// CreatePreset calls numen.v1.PresetsService.CreatePreset.
+func (c *presetsServiceClient) CreatePreset(ctx context.Context, req *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error) {
+	return c.createPreset.CallUnary(ctx, req)
 }
 
-// Schedule calls numen.v1.PresetsService.Schedule.
-func (c *presetsServiceClient) Schedule(ctx context.Context, req *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error) {
-	return c.schedule.CallUnary(ctx, req)
+// ScheduleDeck calls numen.v1.PresetsService.ScheduleDeck.
+func (c *presetsServiceClient) ScheduleDeck(ctx context.Context, req *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error) {
+	return c.scheduleDeck.CallUnary(ctx, req)
 }
 
 // ReadPreset calls numen.v1.PresetsService.ReadPreset.
@@ -207,30 +209,30 @@ func (c *presetsServiceClient) WritePreset(ctx context.Context, req *connect.Req
 	return c.writePreset.CallUnary(ctx, req)
 }
 
-// Curve calls numen.v1.PresetsService.Curve.
-func (c *presetsServiceClient) Curve(ctx context.Context, req *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error) {
-	return c.curve.CallUnary(ctx, req)
+// ComputeCurve calls numen.v1.PresetsService.ComputeCurve.
+func (c *presetsServiceClient) ComputeCurve(ctx context.Context, req *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error) {
+	return c.computeCurve.CallUnary(ctx, req)
 }
 
 // PresetsServiceHandler is an implementation of the numen.v1.PresetsService service.
 type PresetsServiceHandler interface {
-	// Scheduling is the preset a deck is scheduled by. A deck naming none is
+	// GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 	// answered with the defaults under no path, and a deck whose link reaches
 	// something that is not a preset is answered with the defaults and told so.
-	Scheduling(context.Context, *connect.Request[v1.SchedulingRequest]) (*connect.Response[v1.SchedulingResponse], error)
+	GetDeckPreset(context.Context, *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error)
 	// ListPresets is every preset the vault holds, by path and by what it is
 	// called. It is the list a deck's preset is chosen from, and the defaults are
 	// not in it: they are what schedules a deck naming no preset, and no note
 	// holds them.
 	ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error)
-	// MakePreset puts a preset naming none of its settings in the vault. The
+	// CreatePreset puts a preset naming none of its settings in the vault. The
 	// file says it is a preset from the moment it exists, so it is one to
 	// everything that reads the vault before a setting has been chosen.
 	//
 	// A key the file does not carry stands at the default, so the decks pointed
 	// at it are scheduled by the defaults until the person moves one.
-	MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error)
-	// Schedule puts a deck on a preset, by writing the entry of its `links:`
+	CreatePreset(context.Context, *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error)
+	// ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
 	// block that carries `type: preset`. The entry keeps the role and the words
 	// the person wrote on it, and every other entry of the block is left as the
 	// bytes it was. An empty preset takes the entry out, and the deck is
@@ -239,7 +241,7 @@ type PresetsServiceHandler interface {
 	// A preset the vault holds no note at is refused `missing`, and a preset
 	// naming a note that is not one is refused `not_a_preset`. A deck that no
 	// longer holds what the caller read is left alone and refused `stale`.
-	Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error)
+	ScheduleDeck(context.Context, *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error)
 	// ReadPreset is the settings of one preset. A note that is not a preset is
 	// answered with the defaults and a problem: what is wrong with the file is
 	// settled in the editor, and nothing is guessed at here.
@@ -252,9 +254,9 @@ type PresetsServiceHandler interface {
 	// a preset is refused `not_a_preset`, and one that no longer holds what the
 	// caller read is left alone and refused `stale`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
-	// Curve is what the settings come to over the whole range of the goal they
-	// name. The whole range is worked out in one pass.
-	Curve(context.Context, *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error)
+	// ComputeCurve is what the settings come to over the whole range of the goal
+	// they name. The whole range is worked out in one pass.
+	ComputeCurve(context.Context, *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error)
 }
 
 // NewPresetsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -264,10 +266,10 @@ type PresetsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	presetsServiceMethods := v1.File_numen_v1_presets_proto.Services().ByName("PresetsService").Methods()
-	presetsServiceSchedulingHandler := connect.NewUnaryHandler(
-		PresetsServiceSchedulingProcedure,
-		svc.Scheduling,
-		connect.WithSchema(presetsServiceMethods.ByName("Scheduling")),
+	presetsServiceGetDeckPresetHandler := connect.NewUnaryHandler(
+		PresetsServiceGetDeckPresetProcedure,
+		svc.GetDeckPreset,
+		connect.WithSchema(presetsServiceMethods.ByName("GetDeckPreset")),
 		connect.WithHandlerOptions(opts...),
 	)
 	presetsServiceListPresetsHandler := connect.NewUnaryHandler(
@@ -276,16 +278,16 @@ func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.Handler
 		connect.WithSchema(presetsServiceMethods.ByName("ListPresets")),
 		connect.WithHandlerOptions(opts...),
 	)
-	presetsServiceMakePresetHandler := connect.NewUnaryHandler(
-		PresetsServiceMakePresetProcedure,
-		svc.MakePreset,
-		connect.WithSchema(presetsServiceMethods.ByName("MakePreset")),
+	presetsServiceCreatePresetHandler := connect.NewUnaryHandler(
+		PresetsServiceCreatePresetProcedure,
+		svc.CreatePreset,
+		connect.WithSchema(presetsServiceMethods.ByName("CreatePreset")),
 		connect.WithHandlerOptions(opts...),
 	)
-	presetsServiceScheduleHandler := connect.NewUnaryHandler(
-		PresetsServiceScheduleProcedure,
-		svc.Schedule,
-		connect.WithSchema(presetsServiceMethods.ByName("Schedule")),
+	presetsServiceScheduleDeckHandler := connect.NewUnaryHandler(
+		PresetsServiceScheduleDeckProcedure,
+		svc.ScheduleDeck,
+		connect.WithSchema(presetsServiceMethods.ByName("ScheduleDeck")),
 		connect.WithHandlerOptions(opts...),
 	)
 	presetsServiceReadPresetHandler := connect.NewUnaryHandler(
@@ -300,28 +302,28 @@ func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.Handler
 		connect.WithSchema(presetsServiceMethods.ByName("WritePreset")),
 		connect.WithHandlerOptions(opts...),
 	)
-	presetsServiceCurveHandler := connect.NewUnaryHandler(
-		PresetsServiceCurveProcedure,
-		svc.Curve,
-		connect.WithSchema(presetsServiceMethods.ByName("Curve")),
+	presetsServiceComputeCurveHandler := connect.NewUnaryHandler(
+		PresetsServiceComputeCurveProcedure,
+		svc.ComputeCurve,
+		connect.WithSchema(presetsServiceMethods.ByName("ComputeCurve")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.PresetsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case PresetsServiceSchedulingProcedure:
-			presetsServiceSchedulingHandler.ServeHTTP(w, r)
+		case PresetsServiceGetDeckPresetProcedure:
+			presetsServiceGetDeckPresetHandler.ServeHTTP(w, r)
 		case PresetsServiceListPresetsProcedure:
 			presetsServiceListPresetsHandler.ServeHTTP(w, r)
-		case PresetsServiceMakePresetProcedure:
-			presetsServiceMakePresetHandler.ServeHTTP(w, r)
-		case PresetsServiceScheduleProcedure:
-			presetsServiceScheduleHandler.ServeHTTP(w, r)
+		case PresetsServiceCreatePresetProcedure:
+			presetsServiceCreatePresetHandler.ServeHTTP(w, r)
+		case PresetsServiceScheduleDeckProcedure:
+			presetsServiceScheduleDeckHandler.ServeHTTP(w, r)
 		case PresetsServiceReadPresetProcedure:
 			presetsServiceReadPresetHandler.ServeHTTP(w, r)
 		case PresetsServiceWritePresetProcedure:
 			presetsServiceWritePresetHandler.ServeHTTP(w, r)
-		case PresetsServiceCurveProcedure:
-			presetsServiceCurveHandler.ServeHTTP(w, r)
+		case PresetsServiceComputeCurveProcedure:
+			presetsServiceComputeCurveHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -331,20 +333,20 @@ func NewPresetsServiceHandler(svc PresetsServiceHandler, opts ...connect.Handler
 // UnimplementedPresetsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedPresetsServiceHandler struct{}
 
-func (UnimplementedPresetsServiceHandler) Scheduling(context.Context, *connect.Request[v1.SchedulingRequest]) (*connect.Response[v1.SchedulingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.Scheduling is not implemented"))
+func (UnimplementedPresetsServiceHandler) GetDeckPreset(context.Context, *connect.Request[v1.GetDeckPresetRequest]) (*connect.Response[v1.GetDeckPresetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.GetDeckPreset is not implemented"))
 }
 
 func (UnimplementedPresetsServiceHandler) ListPresets(context.Context, *connect.Request[v1.ListPresetsRequest]) (*connect.Response[v1.ListPresetsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.ListPresets is not implemented"))
 }
 
-func (UnimplementedPresetsServiceHandler) MakePreset(context.Context, *connect.Request[v1.MakePresetRequest]) (*connect.Response[v1.MakePresetResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.MakePreset is not implemented"))
+func (UnimplementedPresetsServiceHandler) CreatePreset(context.Context, *connect.Request[v1.CreatePresetRequest]) (*connect.Response[v1.CreatePresetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.CreatePreset is not implemented"))
 }
 
-func (UnimplementedPresetsServiceHandler) Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.Schedule is not implemented"))
+func (UnimplementedPresetsServiceHandler) ScheduleDeck(context.Context, *connect.Request[v1.ScheduleDeckRequest]) (*connect.Response[v1.ScheduleDeckResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.ScheduleDeck is not implemented"))
 }
 
 func (UnimplementedPresetsServiceHandler) ReadPreset(context.Context, *connect.Request[v1.ReadPresetRequest]) (*connect.Response[v1.ReadPresetResponse], error) {
@@ -355,6 +357,6 @@ func (UnimplementedPresetsServiceHandler) WritePreset(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.WritePreset is not implemented"))
 }
 
-func (UnimplementedPresetsServiceHandler) Curve(context.Context, *connect.Request[v1.CurveRequest]) (*connect.Response[v1.CurveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.Curve is not implemented"))
+func (UnimplementedPresetsServiceHandler) ComputeCurve(context.Context, *connect.Request[v1.ComputeCurveRequest]) (*connect.Response[v1.ComputeCurveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PresetsService.ComputeCurve is not implemented"))
 }

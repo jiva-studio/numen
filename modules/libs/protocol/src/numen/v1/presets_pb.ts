@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/presets.proto.
  */
 export const file_numen_v1_presets: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyKkAQoGUHJlc2V0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSJAoIc2V0dGluZ3MYAyABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIQCghwcm9ibGVtcxgEIAMoCRIgCgVzdG9wcxgFIAEoDjIRLm51bWVuLnYxLlN0b3BwZWQSIwoIc3RvcHNfb24YBiABKA4yES5udW1lbi52MS5TdG9wcGVkIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIuYBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIOCgZjbG9zZWQYCCADKAkSDgoGY2xlYXJzGAkgASgFEg8KB2JhY2tsb2cYCiADKAUSDwoHbGVhcm5lZBgLIAEoBRITCgZsZWFybnMYDCABKAVIAIgBARINCgVzaG9ydBgNIAEoBUIJCgdfbGVhcm5zSgQIBxAIUgNtZXQiLgoETWFyaxIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiIQoRU2NoZWR1bGluZ1JlcXVlc3QSDAoEZGVjaxgBIAEoCSKqAQoSU2NoZWR1bGluZ1Jlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0IhQKEkxpc3RQcmVzZXRzUmVxdWVzdCI4ChNMaXN0UHJlc2V0c1Jlc3BvbnNlEiEKB3ByZXNldHMYASADKAsyEC5udW1lbi52MS5MaXN0ZWQiJQoGTGlzdGVkEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiMgoRTWFrZVByZXNldFJlcXVlc3QSDQoFdGl0bGUYASABKAkSDgoGZm9sZGVyGAIgASgJIlcKEk1ha2VQcmVzZXRSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiYgoPU2NoZWR1bGVSZXF1ZXN0EgwKBGRlY2sYASABKAkSDgoGcHJlc2V0GAIgASgJEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIoUBChBTY2hlZHVsZVJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJIqoBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiewoSV3JpdGVQcmVzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIoCgRzZWVuGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiKIAQoTV3JpdGVQcmVzZXRSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXRKBAgCEANSB2NoYW5nZWQiQgoMQ3VydmVSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncyIvCg1DdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipECgZDb3VudHMSFgoSQ09VTlRTX1VOU1BFQ0lGSUVEEAASEAoMQ09VTlRTX0NBUkRTEAESEAoMQ09VTlRTX1NIT1dTEAIquQEKB1N0b3BwZWQSFwoTU1RPUFBFRF9VTlNQRUNJRklFRBAAEhMKD1NUT1BQRURfTk9USElORxABEhYKElNUT1BQRURfTk9fTUlOVVRFUxACEhQKEFNUT1BQRURfTk9fQ0FSRFMQAxISCg5TVE9QUEVEX05PX0RBWRAEEhQKEFNUT1BQRURfUEFTVF9EQVkQBRITCg9TVE9QUEVEX05PX0xPQUQQBhITCg9TVE9QUEVEX05PX1dFRUsQBzKABAoOUHJlc2V0c1NlcnZpY2USRwoKU2NoZWR1bGluZxIbLm51bWVuLnYxLlNjaGVkdWxpbmdSZXF1ZXN0GhwubnVtZW4udjEuU2NoZWR1bGluZ1Jlc3BvbnNlEkoKC0xpc3RQcmVzZXRzEhwubnVtZW4udjEuTGlzdFByZXNldHNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdFByZXNldHNSZXNwb25zZRJHCgpNYWtlUHJlc2V0EhsubnVtZW4udjEuTWFrZVByZXNldFJlcXVlc3QaHC5udW1lbi52MS5NYWtlUHJlc2V0UmVzcG9uc2USQQoIU2NoZWR1bGUSGS5udW1lbi52MS5TY2hlZHVsZVJlcXVlc3QaGi5udW1lbi52MS5TY2hlZHVsZVJlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USOAoFQ3VydmUSFi5udW1lbi52MS5DdXJ2ZVJlcXVlc3QaFy5udW1lbi52MS5DdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyKkAQoGUHJlc2V0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSJAoIc2V0dGluZ3MYAyABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIQCghwcm9ibGVtcxgEIAMoCRIgCgVzdG9wcxgFIAEoDjIRLm51bWVuLnYxLlN0b3BwZWQSIwoIc3RvcHNfb24YBiABKA4yES5udW1lbi52MS5TdG9wcGVkIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIuYBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIOCgZjbG9zZWQYCCADKAkSDgoGY2xlYXJzGAkgASgFEg8KB2JhY2tsb2cYCiADKAUSDwoHbGVhcm5lZBgLIAEoBRITCgZsZWFybnMYDCABKAVIAIgBARINCgVzaG9ydBgNIAEoBUIJCgdfbGVhcm5zSgQIBxAIUgNtZXQiLgoETWFyaxIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiJAoUR2V0RGVja1ByZXNldFJlcXVlc3QSDAoEZGVjaxgBIAEoCSKtAQoVR2V0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0IhQKEkxpc3RQcmVzZXRzUmVxdWVzdCI4ChNMaXN0UHJlc2V0c1Jlc3BvbnNlEiEKB3ByZXNldHMYASADKAsyEC5udW1lbi52MS5MaXN0ZWQiJQoGTGlzdGVkEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiNAoTQ3JlYXRlUHJlc2V0UmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkiWQoUQ3JlYXRlUHJlc2V0UmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsImYKE1NjaGVkdWxlRGVja1JlcXVlc3QSDAoEZGVjaxgBIAEoCRIOCgZwcmVzZXQYAiABKAkSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iiQEKFFNjaGVkdWxlRGVja1Jlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJIqoBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiewoSV3JpdGVQcmVzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIoCgRzZWVuGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiKIAQoTV3JpdGVQcmVzZXRSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXRKBAgCEANSB2NoYW5nZWQiSQoTQ29tcHV0ZUN1cnZlUmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MiNgoUQ29tcHV0ZUN1cnZlUmVzcG9uc2USHgoFY3VydmUYASABKAsyDy5udW1lbi52MS5DdXJ2ZSpaCgRHb2FsEhQKEEdPQUxfVU5TUEVDSUZJRUQQABIWChJHT0FMX01JTlVURVNfQV9EQVkQARISCg5HT0FMX1JFVEVOVElPThACEhAKDEdPQUxfQllfREFURRADKkMKBFJ1bGUSFAoQUlVMRV9VTlNQRUNJRklFRBAAEhEKDVJVTEVfSU5URVJWQUwQARISCg5SVUxFX1JFVEVOVElPThACKkQKBkNvdW50cxIWChJDT1VOVFNfVU5TUEVDSUZJRUQQABIQCgxDT1VOVFNfQ0FSRFMQARIQCgxDT1VOVFNfU0hPV1MQAiq5AQoHU3RvcHBlZBIXChNTVE9QUEVEX1VOU1BFQ0lGSUVEEAASEwoPU1RPUFBFRF9OT1RISU5HEAESFgoSU1RPUFBFRF9OT19NSU5VVEVTEAISFAoQU1RPUFBFRF9OT19DQVJEUxADEhIKDlNUT1BQRURfTk9fREFZEAQSFAoQU1RPUFBFRF9QQVNUX0RBWRAFEhMKD1NUT1BQRURfTk9fTE9BRBAGEhMKD1NUT1BQRURfTk9fV0VFSxAHMrAECg5QcmVzZXRzU2VydmljZRJQCg1HZXREZWNrUHJlc2V0Eh4ubnVtZW4udjEuR2V0RGVja1ByZXNldFJlcXVlc3QaHy5udW1lbi52MS5HZXREZWNrUHJlc2V0UmVzcG9uc2USSgoLTGlzdFByZXNldHMSHC5udW1lbi52MS5MaXN0UHJlc2V0c1JlcXVlc3QaHS5udW1lbi52MS5MaXN0UHJlc2V0c1Jlc3BvbnNlEk0KDENyZWF0ZVByZXNldBIdLm51bWVuLnYxLkNyZWF0ZVByZXNldFJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVQcmVzZXRSZXNwb25zZRJNCgxTY2hlZHVsZURlY2sSHS5udW1lbi52MS5TY2hlZHVsZURlY2tSZXF1ZXN0Gh4ubnVtZW4udjEuU2NoZWR1bGVEZWNrUmVzcG9uc2USRwoKUmVhZFByZXNldBIbLm51bWVuLnYxLlJlYWRQcmVzZXRSZXF1ZXN0GhwubnVtZW4udjEuUmVhZFByZXNldFJlc3BvbnNlEkoKC1dyaXRlUHJlc2V0EhwubnVtZW4udjEuV3JpdGVQcmVzZXRSZXF1ZXN0Gh0ubnVtZW4udjEuV3JpdGVQcmVzZXRSZXNwb25zZRJNCgxDb21wdXRlQ3VydmUSHS5udW1lbi52MS5Db21wdXRlQ3VydmVSZXF1ZXN0Gh4ubnVtZW4udjEuQ29tcHV0ZUN1cnZlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * Settings are how the decks pointing at one preset are scheduled. A preset
@@ -451,9 +451,9 @@ export const MarkSchema: GenMessage<Mark> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 4);
 
 /**
- * @generated from message numen.v1.SchedulingRequest
+ * @generated from message numen.v1.GetDeckPresetRequest
  */
-export type SchedulingRequest = Message<"numen.v1.SchedulingRequest"> & {
+export type GetDeckPresetRequest = Message<"numen.v1.GetDeckPresetRequest"> & {
   /**
    * The deck whose preset this is, by the path it is filed under.
    *
@@ -463,16 +463,16 @@ export type SchedulingRequest = Message<"numen.v1.SchedulingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.SchedulingRequest.
- * Use `create(SchedulingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetDeckPresetRequest.
+ * Use `create(GetDeckPresetRequestSchema)` to create a new message.
  */
-export const SchedulingRequestSchema: GenMessage<SchedulingRequest> = /*@__PURE__*/
+export const GetDeckPresetRequestSchema: GenMessage<GetDeckPresetRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 5);
 
 /**
- * @generated from message numen.v1.SchedulingResponse
+ * @generated from message numen.v1.GetDeckPresetResponse
  */
-export type SchedulingResponse = Message<"numen.v1.SchedulingResponse"> & {
+export type GetDeckPresetResponse = Message<"numen.v1.GetDeckPresetResponse"> & {
   /**
    * Absent when the preset was refused.
    *
@@ -498,10 +498,10 @@ export type SchedulingResponse = Message<"numen.v1.SchedulingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.SchedulingResponse.
- * Use `create(SchedulingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetDeckPresetResponse.
+ * Use `create(GetDeckPresetResponseSchema)` to create a new message.
  */
-export const SchedulingResponseSchema: GenMessage<SchedulingResponse> = /*@__PURE__*/
+export const GetDeckPresetResponseSchema: GenMessage<GetDeckPresetResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 6);
 
 /**
@@ -562,9 +562,9 @@ export const ListedSchema: GenMessage<Listed> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 9);
 
 /**
- * @generated from message numen.v1.MakePresetRequest
+ * @generated from message numen.v1.CreatePresetRequest
  */
-export type MakePresetRequest = Message<"numen.v1.MakePresetRequest"> & {
+export type CreatePresetRequest = Message<"numen.v1.CreatePresetRequest"> & {
   /**
    * What the preset is called. The file is named after it.
    *
@@ -581,16 +581,16 @@ export type MakePresetRequest = Message<"numen.v1.MakePresetRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MakePresetRequest.
- * Use `create(MakePresetRequestSchema)` to create a new message.
+ * Describes the message numen.v1.CreatePresetRequest.
+ * Use `create(CreatePresetRequestSchema)` to create a new message.
  */
-export const MakePresetRequestSchema: GenMessage<MakePresetRequest> = /*@__PURE__*/
+export const CreatePresetRequestSchema: GenMessage<CreatePresetRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 10);
 
 /**
- * @generated from message numen.v1.MakePresetResponse
+ * @generated from message numen.v1.CreatePresetResponse
  */
-export type MakePresetResponse = Message<"numen.v1.MakePresetResponse"> & {
+export type CreatePresetResponse = Message<"numen.v1.CreatePresetResponse"> & {
   /**
    * Where the preset is filed. Empty when nothing was made.
    *
@@ -607,16 +607,16 @@ export type MakePresetResponse = Message<"numen.v1.MakePresetResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.MakePresetResponse.
- * Use `create(MakePresetResponseSchema)` to create a new message.
+ * Describes the message numen.v1.CreatePresetResponse.
+ * Use `create(CreatePresetResponseSchema)` to create a new message.
  */
-export const MakePresetResponseSchema: GenMessage<MakePresetResponse> = /*@__PURE__*/
+export const CreatePresetResponseSchema: GenMessage<CreatePresetResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 11);
 
 /**
- * @generated from message numen.v1.ScheduleRequest
+ * @generated from message numen.v1.ScheduleDeckRequest
  */
-export type ScheduleRequest = Message<"numen.v1.ScheduleRequest"> & {
+export type ScheduleDeckRequest = Message<"numen.v1.ScheduleDeckRequest"> & {
   /**
    * The deck to schedule, by the path it is filed under.
    *
@@ -642,16 +642,16 @@ export type ScheduleRequest = Message<"numen.v1.ScheduleRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ScheduleRequest.
- * Use `create(ScheduleRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ScheduleDeckRequest.
+ * Use `create(ScheduleDeckRequestSchema)` to create a new message.
  */
-export const ScheduleRequestSchema: GenMessage<ScheduleRequest> = /*@__PURE__*/
+export const ScheduleDeckRequestSchema: GenMessage<ScheduleDeckRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 12);
 
 /**
- * @generated from message numen.v1.ScheduleResponse
+ * @generated from message numen.v1.ScheduleDeckResponse
  */
-export type ScheduleResponse = Message<"numen.v1.ScheduleResponse"> & {
+export type ScheduleDeckResponse = Message<"numen.v1.ScheduleDeckResponse"> & {
   /**
    * Set when nothing was written, and why. A deck that is no longer the one
    * this caller read is REFUSAL_STALE, and the person chooses what happens
@@ -671,10 +671,10 @@ export type ScheduleResponse = Message<"numen.v1.ScheduleResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ScheduleResponse.
- * Use `create(ScheduleResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ScheduleDeckResponse.
+ * Use `create(ScheduleDeckResponseSchema)` to create a new message.
  */
-export const ScheduleResponseSchema: GenMessage<ScheduleResponse> = /*@__PURE__*/
+export const ScheduleDeckResponseSchema: GenMessage<ScheduleDeckResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 13);
 
 /**
@@ -791,9 +791,9 @@ export const WritePresetResponseSchema: GenMessage<WritePresetResponse> = /*@__P
   messageDesc(file_numen_v1_presets, 17);
 
 /**
- * @generated from message numen.v1.CurveRequest
+ * @generated from message numen.v1.ComputeCurveRequest
  */
-export type CurveRequest = Message<"numen.v1.CurveRequest"> & {
+export type ComputeCurveRequest = Message<"numen.v1.ComputeCurveRequest"> & {
   /**
    * The note the preset stands in, which names the decks it schedules. Empty
    * is the preset that schedules the decks naming none.
@@ -812,16 +812,16 @@ export type CurveRequest = Message<"numen.v1.CurveRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.CurveRequest.
- * Use `create(CurveRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ComputeCurveRequest.
+ * Use `create(ComputeCurveRequestSchema)` to create a new message.
  */
-export const CurveRequestSchema: GenMessage<CurveRequest> = /*@__PURE__*/
+export const ComputeCurveRequestSchema: GenMessage<ComputeCurveRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 18);
 
 /**
- * @generated from message numen.v1.CurveResponse
+ * @generated from message numen.v1.ComputeCurveResponse
  */
-export type CurveResponse = Message<"numen.v1.CurveResponse"> & {
+export type ComputeCurveResponse = Message<"numen.v1.ComputeCurveResponse"> & {
   /**
    * @generated from field: numen.v1.Curve curve = 1;
    */
@@ -829,10 +829,10 @@ export type CurveResponse = Message<"numen.v1.CurveResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.CurveResponse.
- * Use `create(CurveResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ComputeCurveResponse.
+ * Use `create(ComputeCurveResponseSchema)` to create a new message.
  */
-export const CurveResponseSchema: GenMessage<CurveResponse> = /*@__PURE__*/
+export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 19);
 
 /**
@@ -1022,16 +1022,16 @@ export const StoppedSchema: GenEnum<Stopped> = /*@__PURE__*/
  */
 export const PresetsService: GenService<{
   /**
-   * Scheduling is the preset a deck is scheduled by. A deck naming none is
+   * GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
    * answered with the defaults under no path, and a deck whose link reaches
    * something that is not a preset is answered with the defaults and told so.
    *
-   * @generated from rpc numen.v1.PresetsService.Scheduling
+   * @generated from rpc numen.v1.PresetsService.GetDeckPreset
    */
-  scheduling: {
+  getDeckPreset: {
     methodKind: "unary";
-    input: typeof SchedulingRequestSchema;
-    output: typeof SchedulingResponseSchema;
+    input: typeof GetDeckPresetRequestSchema;
+    output: typeof GetDeckPresetResponseSchema;
   },
   /**
    * ListPresets is every preset the vault holds, by path and by what it is
@@ -1047,22 +1047,22 @@ export const PresetsService: GenService<{
     output: typeof ListPresetsResponseSchema;
   },
   /**
-   * MakePreset puts a preset naming none of its settings in the vault. The
+   * CreatePreset puts a preset naming none of its settings in the vault. The
    * file says it is a preset from the moment it exists, so it is one to
    * everything that reads the vault before a setting has been chosen.
    *
    * A key the file does not carry stands at the default, so the decks pointed
    * at it are scheduled by the defaults until the person moves one.
    *
-   * @generated from rpc numen.v1.PresetsService.MakePreset
+   * @generated from rpc numen.v1.PresetsService.CreatePreset
    */
-  makePreset: {
+  createPreset: {
     methodKind: "unary";
-    input: typeof MakePresetRequestSchema;
-    output: typeof MakePresetResponseSchema;
+    input: typeof CreatePresetRequestSchema;
+    output: typeof CreatePresetResponseSchema;
   },
   /**
-   * Schedule puts a deck on a preset, by writing the entry of its `links:`
+   * ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
    * block that carries `type: preset`. The entry keeps the role and the words
    * the person wrote on it, and every other entry of the block is left as the
    * bytes it was. An empty preset takes the entry out, and the deck is
@@ -1072,12 +1072,12 @@ export const PresetsService: GenService<{
    * naming a note that is not one is refused `not_a_preset`. A deck that no
    * longer holds what the caller read is left alone and refused `stale`.
    *
-   * @generated from rpc numen.v1.PresetsService.Schedule
+   * @generated from rpc numen.v1.PresetsService.ScheduleDeck
    */
-  schedule: {
+  scheduleDeck: {
     methodKind: "unary";
-    input: typeof ScheduleRequestSchema;
-    output: typeof ScheduleResponseSchema;
+    input: typeof ScheduleDeckRequestSchema;
+    output: typeof ScheduleDeckResponseSchema;
   },
   /**
    * ReadPreset is the settings of one preset. A note that is not a preset is
@@ -1108,15 +1108,15 @@ export const PresetsService: GenService<{
     output: typeof WritePresetResponseSchema;
   },
   /**
-   * Curve is what the settings come to over the whole range of the goal they
-   * name. The whole range is worked out in one pass.
+   * ComputeCurve is what the settings come to over the whole range of the goal
+   * they name. The whole range is worked out in one pass.
    *
-   * @generated from rpc numen.v1.PresetsService.Curve
+   * @generated from rpc numen.v1.PresetsService.ComputeCurve
    */
-  curve: {
+  computeCurve: {
     methodKind: "unary";
-    input: typeof CurveRequestSchema;
-    output: typeof CurveResponseSchema;
+    input: typeof ComputeCurveRequestSchema;
+    output: typeof ComputeCurveResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_presets, 0);
