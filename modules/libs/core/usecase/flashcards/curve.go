@@ -25,8 +25,8 @@ const LeastCeiling = 60
 const MostAhead = 5 * 365
 
 // Curve is what the one control of a preset comes to over the whole range of
-// its goal. The grid, what stands at each place of it, and the two marks are
-// all here.
+// its goal. The grid, what stands at each place of it, and the two places
+// pointed at are all here.
 type Curve struct {
 	Goal review.Goal
 	// Grid is the value of the goal at each place: minutes for minutes_a_day, a
@@ -115,14 +115,14 @@ type Point struct {
 type Place struct {
 	// Index is the place of the grid, and is -1 when the value falls outside it.
 	Index int
-	// Value is the goal's value at the mark, in the units of the grid. What the
+	// Value is the goal's value at the place, in the units of the grid. What the
 	// preset stands at need not sit on the grid.
 	Value float64
-	// Day is the day at the mark, and is filled for a goal of a date.
+	// Day is the day at the place, and is filled for a goal of a date.
 	Day string
 }
 
-// Nowhere is a mark that falls outside the grid.
+// Nowhere is a place that falls outside the grid.
 var Nowhere = Place{Index: -1}
 
 // ProjectCurve is the simulator behind the one control of a preset.
@@ -429,7 +429,7 @@ func (u ProjectCurve) retention(
 	}
 
 	out.Now = Place{Index: nearest(out.Grid, p.Retention), Value: p.Retention}
-	// A goal of retention suggests nothing, and its mark stands at Nowhere.
+	// A goal of retention suggests nothing, and its place stands at Nowhere.
 	return out, nil
 }
 
@@ -528,7 +528,7 @@ func (u ProjectCurve) date(
 	}
 
 	// The day the file names is a place of the grid, so what stands under the
-	// mark is worked out for that day.
+	// place is worked out for that day.
 	if named >= 0 {
 		out.Now = Place{
 			Index: nearest(out.Grid, float64(named)),
@@ -695,7 +695,7 @@ func spread(days, places int) []int {
 // nearest it. The two ends stand: a range begins tomorrow and reaches as far as
 // it reaches, whatever day the file names.
 //
-// The point under the mark is worked out for the day the preset aims at.
+// The point under the place is worked out for the day the preset aims at.
 func naming(steps []int, at int) []int {
 	if at < 0 || len(steps) < 3 {
 		return steps
@@ -713,7 +713,7 @@ func naming(steps []int, at int) []int {
 }
 
 // standing puts the value the preset holds on the grid, in place of the place
-// of it nearest that value, so what is drawn under the mark is drawn for the
+// of it nearest that value, so what is drawn under the place is drawn for the
 // setting the person is standing at.
 //
 // First and last are the places a value may take: a range whose ends say what
