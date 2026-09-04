@@ -36,6 +36,13 @@ on:
         type: boolean
         default: true
 
+# Two runs at once would count the same version, push the same tag and write
+# over each other on the shelf. The second waits; neither is stopped, because a
+# run that has begun putting files up leaves the shelf half written if it is.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 # Building and putting the files on the shelf needs nothing of the repository
 # but the clone. The tag and the release are made by one job, and that job says
 # so for itself.

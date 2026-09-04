@@ -33,6 +33,14 @@ on:
       - "modules/libs/core/adapter/agent/config.go"
       - ".github/workflows/docs.yml"
 
+# Two deploys share one storage zone, and the second takes down what the first
+# has not finished putting up. A deploy that is overtaken is stopped: every
+# deploy writes the whole manual and then removes what it did not write, so the
+# one that follows leaves the zone whole.
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
 # The deploy goes to storage with a key of its own; nothing here writes to the
 # repository.
 permissions:
