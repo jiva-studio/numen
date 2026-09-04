@@ -19,31 +19,31 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // AssetService answers what a file of the vault is, for whatever opens it.
 service AssetService {
-  // Document is what a document is: how many pages it has and how large each of
-  // them is. A page itself is a picture at an address of its own, drawn to the
-  // width it is asked for.
+  // GetDocument is what a document is: how many pages it has and how large each
+  // of them is. A page itself is a picture at an address of its own, drawn to
+  // the width it is asked for.
   //
   // Opening a document holds a worker of the library's pool. A caller that
   // could not have one inside the wait is answered unavailable and asks again;
   // a held request is not an answer.
-  rpc Document(DocumentRequest) returns (DocumentResponse);
+  rpc GetDocument(GetDocumentRequest) returns (GetDocumentResponse);
 
-  // Recording is what a recording is: how long it runs, how much of it has been
-  // listened to, and where its bytes are played from.
-  rpc Recording(RecordingRequest) returns (RecordingResponse);
+  // GetRecording is what a recording is: how long it runs, how much of it has
+  // been listened to, and where its bytes are played from.
+  rpc GetRecording(GetRecordingRequest) returns (GetRecordingResponse);
 
-  // Highlights is where runs of a source's text sit on the pages it was read
-  // from. A source with no pages has nowhere to put them, and is answered with
-  // none.
-  rpc Highlights(HighlightsRequest) returns (HighlightsResponse);
+  // ListHighlights is where runs of a source's text sit on the pages it was
+  // read from. A source with no pages has nowhere to put them, and is answered
+  // with none.
+  rpc ListHighlights(ListHighlightsRequest) returns (ListHighlightsResponse);
 }
 
-message DocumentRequest {
+message GetDocumentRequest {
   // The file, as the vault holds it.
   string path = 1;
 }
 
-message DocumentResponse {
+message GetDocumentResponse {
   // How many pages it has.
   int32 pages = 1;
 
@@ -59,12 +59,12 @@ message Sheet {
   double high = 2;
 }
 
-message RecordingRequest {
+message GetRecordingRequest {
   // The file, as the vault holds it.
   string path = 1;
 }
 
-message RecordingResponse {
+message GetRecordingResponse {
   // How far the words reach, and how much of it a run has written down, both in
   // milliseconds. A recording nothing has listened to reaches nowhere, and the
   // player it is loaded into is what then says how long it runs.
@@ -79,7 +79,7 @@ message RecordingResponse {
   string type = 4;
 }
 
-message HighlightsRequest {
+message ListHighlightsRequest {
   // The file, as the vault holds it.
   string path = 1;
 
@@ -88,7 +88,7 @@ message HighlightsRequest {
   repeated Stretch at = 2;
 }
 
-message HighlightsResponse {
+message ListHighlightsResponse {
   // One entry per run asked about, in the order they were asked about.
   repeated Highlight runs = 1;
 }

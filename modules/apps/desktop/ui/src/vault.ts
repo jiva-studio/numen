@@ -469,7 +469,7 @@ export const core: Core & Asking & Commanding = {
  */
 export const documents: Documents = {
   shape: async (path) => {
-    const answer = await waiting(() => assets.document({ path }))
+    const answer = await waiting(() => assets.getDocument({ path }))
     return {
       pages: answer.pages,
       sheets: answer.sheets.map((one) => ({ wide: one.wide, high: one.high })),
@@ -477,7 +477,7 @@ export const documents: Documents = {
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
   highlights: async (path, stretches) => {
-    const answer = await waiting(() => assets.highlights({ path, at: [...stretches] }))
+    const answer = await waiting(() => assets.listHighlights({ path, at: [...stretches] }))
     return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
   },
 }
@@ -500,7 +500,7 @@ const highlighted = (one: PageMessage): Page => ({
  */
 export const recordings: Recordings = {
   listened: async (path) => {
-    const answer = await waiting(() => assets.recording({ path }))
+    const answer = await waiting(() => assets.getRecording({ path }))
     return {
       length: answer.length,
       heard: answer.heard,

@@ -33,7 +33,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type DocumentRequest struct {
+type GetDocumentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
 	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -41,20 +41,20 @@ type DocumentRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DocumentRequest) Reset() {
-	*x = DocumentRequest{}
+func (x *GetDocumentRequest) Reset() {
+	*x = GetDocumentRequest{}
 	mi := &file_numen_v1_asset_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DocumentRequest) String() string {
+func (x *GetDocumentRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DocumentRequest) ProtoMessage() {}
+func (*GetDocumentRequest) ProtoMessage() {}
 
-func (x *DocumentRequest) ProtoReflect() protoreflect.Message {
+func (x *GetDocumentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -66,19 +66,19 @@ func (x *DocumentRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DocumentRequest.ProtoReflect.Descriptor instead.
-func (*DocumentRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetDocumentRequest.ProtoReflect.Descriptor instead.
+func (*GetDocumentRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *DocumentRequest) GetPath() string {
+func (x *GetDocumentRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type DocumentResponse struct {
+type GetDocumentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// How many pages it has.
 	Pages int32 `protobuf:"varint,1,opt,name=pages,proto3" json:"pages,omitempty"`
@@ -89,20 +89,20 @@ type DocumentResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DocumentResponse) Reset() {
-	*x = DocumentResponse{}
+func (x *GetDocumentResponse) Reset() {
+	*x = GetDocumentResponse{}
 	mi := &file_numen_v1_asset_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DocumentResponse) String() string {
+func (x *GetDocumentResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DocumentResponse) ProtoMessage() {}
+func (*GetDocumentResponse) ProtoMessage() {}
 
-func (x *DocumentResponse) ProtoReflect() protoreflect.Message {
+func (x *GetDocumentResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -114,19 +114,19 @@ func (x *DocumentResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DocumentResponse.ProtoReflect.Descriptor instead.
-func (*DocumentResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetDocumentResponse.ProtoReflect.Descriptor instead.
+func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DocumentResponse) GetPages() int32 {
+func (x *GetDocumentResponse) GetPages() int32 {
 	if x != nil {
 		return x.Pages
 	}
 	return 0
 }
 
-func (x *DocumentResponse) GetSheets() []*Sheet {
+func (x *GetDocumentResponse) GetSheets() []*Sheet {
 	if x != nil {
 		return x.Sheets
 	}
@@ -187,7 +187,7 @@ func (x *Sheet) GetHigh() float64 {
 	return 0
 }
 
-type RecordingRequest struct {
+type GetRecordingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
 	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -195,20 +195,20 @@ type RecordingRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecordingRequest) Reset() {
-	*x = RecordingRequest{}
+func (x *GetRecordingRequest) Reset() {
+	*x = GetRecordingRequest{}
 	mi := &file_numen_v1_asset_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecordingRequest) String() string {
+func (x *GetRecordingRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecordingRequest) ProtoMessage() {}
+func (*GetRecordingRequest) ProtoMessage() {}
 
-func (x *RecordingRequest) ProtoReflect() protoreflect.Message {
+func (x *GetRecordingRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -220,19 +220,19 @@ func (x *RecordingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecordingRequest.ProtoReflect.Descriptor instead.
-func (*RecordingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetRecordingRequest.ProtoReflect.Descriptor instead.
+func (*GetRecordingRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *RecordingRequest) GetPath() string {
+func (x *GetRecordingRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type RecordingResponse struct {
+type GetRecordingResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// How far the words reach, and how much of it a run has written down, both in
 	// milliseconds. A recording nothing has listened to reaches nowhere, and the
@@ -249,20 +249,20 @@ type RecordingResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RecordingResponse) Reset() {
-	*x = RecordingResponse{}
+func (x *GetRecordingResponse) Reset() {
+	*x = GetRecordingResponse{}
 	mi := &file_numen_v1_asset_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RecordingResponse) String() string {
+func (x *GetRecordingResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RecordingResponse) ProtoMessage() {}
+func (*GetRecordingResponse) ProtoMessage() {}
 
-func (x *RecordingResponse) ProtoReflect() protoreflect.Message {
+func (x *GetRecordingResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -274,40 +274,40 @@ func (x *RecordingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RecordingResponse.ProtoReflect.Descriptor instead.
-func (*RecordingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetRecordingResponse.ProtoReflect.Descriptor instead.
+func (*GetRecordingResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RecordingResponse) GetLength() int32 {
+func (x *GetRecordingResponse) GetLength() int32 {
 	if x != nil {
 		return x.Length
 	}
 	return 0
 }
 
-func (x *RecordingResponse) GetHeard() int32 {
+func (x *GetRecordingResponse) GetHeard() int32 {
 	if x != nil {
 		return x.Heard
 	}
 	return 0
 }
 
-func (x *RecordingResponse) GetMedia() string {
+func (x *GetRecordingResponse) GetMedia() string {
 	if x != nil {
 		return x.Media
 	}
 	return ""
 }
 
-func (x *RecordingResponse) GetType() string {
+func (x *GetRecordingResponse) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-type HighlightsRequest struct {
+type ListHighlightsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -318,20 +318,20 @@ type HighlightsRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HighlightsRequest) Reset() {
-	*x = HighlightsRequest{}
+func (x *ListHighlightsRequest) Reset() {
+	*x = ListHighlightsRequest{}
 	mi := &file_numen_v1_asset_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HighlightsRequest) String() string {
+func (x *ListHighlightsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HighlightsRequest) ProtoMessage() {}
+func (*ListHighlightsRequest) ProtoMessage() {}
 
-func (x *HighlightsRequest) ProtoReflect() protoreflect.Message {
+func (x *ListHighlightsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -343,26 +343,26 @@ func (x *HighlightsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HighlightsRequest.ProtoReflect.Descriptor instead.
-func (*HighlightsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListHighlightsRequest.ProtoReflect.Descriptor instead.
+func (*ListHighlightsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *HighlightsRequest) GetPath() string {
+func (x *ListHighlightsRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *HighlightsRequest) GetAt() []*Stretch {
+func (x *ListHighlightsRequest) GetAt() []*Stretch {
 	if x != nil {
 		return x.At
 	}
 	return nil
 }
 
-type HighlightsResponse struct {
+type ListHighlightsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// One entry per run asked about, in the order they were asked about.
 	Runs          []*Highlight `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
@@ -370,20 +370,20 @@ type HighlightsResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HighlightsResponse) Reset() {
-	*x = HighlightsResponse{}
+func (x *ListHighlightsResponse) Reset() {
+	*x = ListHighlightsResponse{}
 	mi := &file_numen_v1_asset_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HighlightsResponse) String() string {
+func (x *ListHighlightsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HighlightsResponse) ProtoMessage() {}
+func (*ListHighlightsResponse) ProtoMessage() {}
 
-func (x *HighlightsResponse) ProtoReflect() protoreflect.Message {
+func (x *ListHighlightsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -395,12 +395,12 @@ func (x *HighlightsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HighlightsResponse.ProtoReflect.Descriptor instead.
-func (*HighlightsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListHighlightsResponse.ProtoReflect.Descriptor instead.
+func (*ListHighlightsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *HighlightsResponse) GetRuns() []*Highlight {
+func (x *ListHighlightsResponse) GetRuns() []*Highlight {
 	if x != nil {
 		return x.Runs
 	}
@@ -581,26 +581,26 @@ var File_numen_v1_asset_proto protoreflect.FileDescriptor
 
 const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"%\n" +
-	"\x0fDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"Q\n" +
-	"\x10DocumentResponse\x12\x14\n" +
+	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
+	"\x12GetDocumentRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"T\n" +
+	"\x13GetDocumentResponse\x12\x14\n" +
 	"\x05pages\x18\x01 \x01(\x05R\x05pages\x12'\n" +
 	"\x06sheets\x18\x02 \x03(\v2\x0f.numen.v1.SheetR\x06sheets\"/\n" +
 	"\x05Sheet\x12\x12\n" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
-	"\x04high\x18\x02 \x01(\x01R\x04high\"&\n" +
-	"\x10RecordingRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"k\n" +
-	"\x11RecordingResponse\x12\x16\n" +
+	"\x04high\x18\x02 \x01(\x01R\x04high\")\n" +
+	"\x13GetRecordingRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"n\n" +
+	"\x14GetRecordingResponse\x12\x16\n" +
 	"\x06length\x18\x01 \x01(\x05R\x06length\x12\x14\n" +
 	"\x05heard\x18\x02 \x01(\x05R\x05heard\x12\x14\n" +
 	"\x05media\x18\x03 \x01(\tR\x05media\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\"J\n" +
-	"\x11HighlightsRequest\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\"N\n" +
+	"\x15ListHighlightsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"=\n" +
-	"\x12HighlightsResponse\x12'\n" +
+	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"A\n" +
+	"\x16ListHighlightsResponse\x12'\n" +
 	"\x04runs\x18\x01 \x03(\v2\x13.numen.v1.HighlightR\x04runs\"1\n" +
 	"\tHighlight\x12$\n" +
 	"\x05pages\x18\x01 \x03(\v2\x0e.numen.v1.PageR\x05pages\"B\n" +
@@ -611,12 +611,11 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
 	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
 	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xe0\x01\n" +
-	"\fAssetService\x12A\n" +
-	"\bDocument\x12\x19.numen.v1.DocumentRequest\x1a\x1a.numen.v1.DocumentResponse\x12D\n" +
-	"\tRecording\x12\x1a.numen.v1.RecordingRequest\x1a\x1b.numen.v1.RecordingResponse\x12G\n" +
-	"\n" +
-	"Highlights\x12\x1b.numen.v1.HighlightsRequest\x1a\x1c.numen.v1.HighlightsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xfe\x01\n" +
+	"\fAssetService\x12J\n" +
+	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12M\n" +
+	"\fGetRecording\x12\x1d.numen.v1.GetRecordingRequest\x1a\x1e.numen.v1.GetRecordingResponse\x12S\n" +
+	"\x0eListHighlights\x12\x1f.numen.v1.ListHighlightsRequest\x1a .numen.v1.ListHighlightsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_asset_proto_rawDescOnce sync.Once
@@ -632,30 +631,30 @@ func file_numen_v1_asset_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_asset_proto_goTypes = []any{
-	(*DocumentRequest)(nil),    // 0: numen.v1.DocumentRequest
-	(*DocumentResponse)(nil),   // 1: numen.v1.DocumentResponse
-	(*Sheet)(nil),              // 2: numen.v1.Sheet
-	(*RecordingRequest)(nil),   // 3: numen.v1.RecordingRequest
-	(*RecordingResponse)(nil),  // 4: numen.v1.RecordingResponse
-	(*HighlightsRequest)(nil),  // 5: numen.v1.HighlightsRequest
-	(*HighlightsResponse)(nil), // 6: numen.v1.HighlightsResponse
-	(*Highlight)(nil),          // 7: numen.v1.Highlight
-	(*Page)(nil),               // 8: numen.v1.Page
-	(*Rect)(nil),               // 9: numen.v1.Rect
-	(*Stretch)(nil),            // 10: numen.v1.Stretch
+	(*GetDocumentRequest)(nil),     // 0: numen.v1.GetDocumentRequest
+	(*GetDocumentResponse)(nil),    // 1: numen.v1.GetDocumentResponse
+	(*Sheet)(nil),                  // 2: numen.v1.Sheet
+	(*GetRecordingRequest)(nil),    // 3: numen.v1.GetRecordingRequest
+	(*GetRecordingResponse)(nil),   // 4: numen.v1.GetRecordingResponse
+	(*ListHighlightsRequest)(nil),  // 5: numen.v1.ListHighlightsRequest
+	(*ListHighlightsResponse)(nil), // 6: numen.v1.ListHighlightsResponse
+	(*Highlight)(nil),              // 7: numen.v1.Highlight
+	(*Page)(nil),                   // 8: numen.v1.Page
+	(*Rect)(nil),                   // 9: numen.v1.Rect
+	(*Stretch)(nil),                // 10: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.DocumentResponse.sheets:type_name -> numen.v1.Sheet
-	10, // 1: numen.v1.HighlightsRequest.at:type_name -> numen.v1.Stretch
-	7,  // 2: numen.v1.HighlightsResponse.runs:type_name -> numen.v1.Highlight
+	2,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
+	10, // 1: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
+	7,  // 2: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
 	8,  // 3: numen.v1.Highlight.pages:type_name -> numen.v1.Page
 	9,  // 4: numen.v1.Page.rects:type_name -> numen.v1.Rect
-	0,  // 5: numen.v1.AssetService.Document:input_type -> numen.v1.DocumentRequest
-	3,  // 6: numen.v1.AssetService.Recording:input_type -> numen.v1.RecordingRequest
-	5,  // 7: numen.v1.AssetService.Highlights:input_type -> numen.v1.HighlightsRequest
-	1,  // 8: numen.v1.AssetService.Document:output_type -> numen.v1.DocumentResponse
-	4,  // 9: numen.v1.AssetService.Recording:output_type -> numen.v1.RecordingResponse
-	6,  // 10: numen.v1.AssetService.Highlights:output_type -> numen.v1.HighlightsResponse
+	0,  // 5: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	3,  // 6: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
+	5,  // 7: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
+	1,  // 8: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	4,  // 9: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
+	6,  // 10: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
 	8,  // [8:11] is the sub-list for method output_type
 	5,  // [5:8] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name

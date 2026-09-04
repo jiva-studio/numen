@@ -207,7 +207,7 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _ := listeningTo(t, one.held)
 
-			out, err := api.Recording(t.Context(), connect.NewRequest(&v1.RecordingRequest{
+			out, err := api.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: talk,
 			}))
 			if err != nil {

@@ -89,7 +89,7 @@ func where(t *testing.T, doc *pdf.Book, word string) *v1.Stretch {
 
 // highlights is where the runs of a source's text sit, as the window is told it.
 func highlights(api *API, path string, at ...*v1.Stretch) ([]*v1.Highlight, error) {
-	out, err := api.Highlights(context.Background(), connect.NewRequest(&v1.HighlightsRequest{
+	out, err := api.ListHighlights(context.Background(), connect.NewRequest(&v1.ListHighlightsRequest{
 		Path: path, At: at,
 	}))
 	if err != nil {

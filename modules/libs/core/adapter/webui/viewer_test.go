@@ -199,9 +199,9 @@ func TestWhatADocumentIsIsHowManyPagesAndWhatEachIsCalled(t *testing.T) {
 }
 
 // shaped is what a document is, as the window is told it.
-func shaped(t *testing.T, api *API) *v1.DocumentResponse {
+func shaped(t *testing.T, api *API) *v1.GetDocumentResponse {
 	t.Helper()
-	out, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	out, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if err != nil {
 		t.Fatalf("asked what the document is and was refused: %v", err)
 	}
@@ -375,7 +375,7 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+			_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 			if err != nil {
 				t.Errorf("asked what the document is and was refused: %v", err)
 			}
@@ -423,7 +423,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 
 	// What a document is is asked of the schema and a page of a URL, and both
 	// say the document is busy rather than holding the caller.
-	_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("what the document is was refused %v, not that it is busy", err)
 	}
@@ -439,7 +439,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	letIn()
 	api.Viewer.patience = patience
 	eventually(t, "the document never opened", func() bool {
-		_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+		_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 		return err == nil
 	})
 	if opens, _, _ := from.counted(); opens != 1 {
@@ -519,7 +519,7 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 func TestAFileThatIsNotADocumentIsRefused(t *testing.T) {
 	api, _ := fromTheLibrary(t, "not a PDF at all")
 
-	_, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	_, err := api.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{Path: book}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Errorf("a file that is not a document was refused %v", err)
 	}

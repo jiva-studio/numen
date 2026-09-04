@@ -44,31 +44,34 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AssetServiceDocumentProcedure is the fully-qualified name of the AssetService's Document RPC.
-	AssetServiceDocumentProcedure = "/numen.v1.AssetService/Document"
-	// AssetServiceRecordingProcedure is the fully-qualified name of the AssetService's Recording RPC.
-	AssetServiceRecordingProcedure = "/numen.v1.AssetService/Recording"
-	// AssetServiceHighlightsProcedure is the fully-qualified name of the AssetService's Highlights RPC.
-	AssetServiceHighlightsProcedure = "/numen.v1.AssetService/Highlights"
+	// AssetServiceGetDocumentProcedure is the fully-qualified name of the AssetService's GetDocument
+	// RPC.
+	AssetServiceGetDocumentProcedure = "/numen.v1.AssetService/GetDocument"
+	// AssetServiceGetRecordingProcedure is the fully-qualified name of the AssetService's GetRecording
+	// RPC.
+	AssetServiceGetRecordingProcedure = "/numen.v1.AssetService/GetRecording"
+	// AssetServiceListHighlightsProcedure is the fully-qualified name of the AssetService's
+	// ListHighlights RPC.
+	AssetServiceListHighlightsProcedure = "/numen.v1.AssetService/ListHighlights"
 )
 
 // AssetServiceClient is a client for the numen.v1.AssetService service.
 type AssetServiceClient interface {
-	// Document is what a document is: how many pages it has and how large each of
-	// them is. A page itself is a picture at an address of its own, drawn to the
-	// width it is asked for.
+	// GetDocument is what a document is: how many pages it has and how large each
+	// of them is. A page itself is a picture at an address of its own, drawn to
+	// the width it is asked for.
 	//
 	// Opening a document holds a worker of the library's pool. A caller that
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
-	Document(context.Context, *connect.Request[v1.DocumentRequest]) (*connect.Response[v1.DocumentResponse], error)
-	// Recording is what a recording is: how long it runs, how much of it has been
-	// listened to, and where its bytes are played from.
-	Recording(context.Context, *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error)
-	// Highlights is where runs of a source's text sit on the pages it was read
-	// from. A source with no pages has nowhere to put them, and is answered with
-	// none.
-	Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error)
+	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// GetRecording is what a recording is: how long it runs, how much of it has
+	// been listened to, and where its bytes are played from.
+	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
+	// ListHighlights is where runs of a source's text sit on the pages it was
+	// read from. A source with no pages has nowhere to put them, and is answered
+	// with none.
+	ListHighlights(context.Context, *connect.Request[v1.ListHighlightsRequest]) (*connect.Response[v1.ListHighlightsResponse], error)
 }
 
 // NewAssetServiceClient constructs a client for the numen.v1.AssetService service. By default, it
@@ -82,22 +85,22 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	assetServiceMethods := v1.File_numen_v1_asset_proto.Services().ByName("AssetService").Methods()
 	return &assetServiceClient{
-		document: connect.NewClient[v1.DocumentRequest, v1.DocumentResponse](
+		getDocument: connect.NewClient[v1.GetDocumentRequest, v1.GetDocumentResponse](
 			httpClient,
-			baseURL+AssetServiceDocumentProcedure,
-			connect.WithSchema(assetServiceMethods.ByName("Document")),
+			baseURL+AssetServiceGetDocumentProcedure,
+			connect.WithSchema(assetServiceMethods.ByName("GetDocument")),
 			connect.WithClientOptions(opts...),
 		),
-		recording: connect.NewClient[v1.RecordingRequest, v1.RecordingResponse](
+		getRecording: connect.NewClient[v1.GetRecordingRequest, v1.GetRecordingResponse](
 			httpClient,
-			baseURL+AssetServiceRecordingProcedure,
-			connect.WithSchema(assetServiceMethods.ByName("Recording")),
+			baseURL+AssetServiceGetRecordingProcedure,
+			connect.WithSchema(assetServiceMethods.ByName("GetRecording")),
 			connect.WithClientOptions(opts...),
 		),
-		highlights: connect.NewClient[v1.HighlightsRequest, v1.HighlightsResponse](
+		listHighlights: connect.NewClient[v1.ListHighlightsRequest, v1.ListHighlightsResponse](
 			httpClient,
-			baseURL+AssetServiceHighlightsProcedure,
-			connect.WithSchema(assetServiceMethods.ByName("Highlights")),
+			baseURL+AssetServiceListHighlightsProcedure,
+			connect.WithSchema(assetServiceMethods.ByName("ListHighlights")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -105,43 +108,43 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // assetServiceClient implements AssetServiceClient.
 type assetServiceClient struct {
-	document   *connect.Client[v1.DocumentRequest, v1.DocumentResponse]
-	recording  *connect.Client[v1.RecordingRequest, v1.RecordingResponse]
-	highlights *connect.Client[v1.HighlightsRequest, v1.HighlightsResponse]
+	getDocument    *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
+	getRecording   *connect.Client[v1.GetRecordingRequest, v1.GetRecordingResponse]
+	listHighlights *connect.Client[v1.ListHighlightsRequest, v1.ListHighlightsResponse]
 }
 
-// Document calls numen.v1.AssetService.Document.
-func (c *assetServiceClient) Document(ctx context.Context, req *connect.Request[v1.DocumentRequest]) (*connect.Response[v1.DocumentResponse], error) {
-	return c.document.CallUnary(ctx, req)
+// GetDocument calls numen.v1.AssetService.GetDocument.
+func (c *assetServiceClient) GetDocument(ctx context.Context, req *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
+	return c.getDocument.CallUnary(ctx, req)
 }
 
-// Recording calls numen.v1.AssetService.Recording.
-func (c *assetServiceClient) Recording(ctx context.Context, req *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error) {
-	return c.recording.CallUnary(ctx, req)
+// GetRecording calls numen.v1.AssetService.GetRecording.
+func (c *assetServiceClient) GetRecording(ctx context.Context, req *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error) {
+	return c.getRecording.CallUnary(ctx, req)
 }
 
-// Highlights calls numen.v1.AssetService.Highlights.
-func (c *assetServiceClient) Highlights(ctx context.Context, req *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error) {
-	return c.highlights.CallUnary(ctx, req)
+// ListHighlights calls numen.v1.AssetService.ListHighlights.
+func (c *assetServiceClient) ListHighlights(ctx context.Context, req *connect.Request[v1.ListHighlightsRequest]) (*connect.Response[v1.ListHighlightsResponse], error) {
+	return c.listHighlights.CallUnary(ctx, req)
 }
 
 // AssetServiceHandler is an implementation of the numen.v1.AssetService service.
 type AssetServiceHandler interface {
-	// Document is what a document is: how many pages it has and how large each of
-	// them is. A page itself is a picture at an address of its own, drawn to the
-	// width it is asked for.
+	// GetDocument is what a document is: how many pages it has and how large each
+	// of them is. A page itself is a picture at an address of its own, drawn to
+	// the width it is asked for.
 	//
 	// Opening a document holds a worker of the library's pool. A caller that
 	// could not have one inside the wait is answered unavailable and asks again;
 	// a held request is not an answer.
-	Document(context.Context, *connect.Request[v1.DocumentRequest]) (*connect.Response[v1.DocumentResponse], error)
-	// Recording is what a recording is: how long it runs, how much of it has been
-	// listened to, and where its bytes are played from.
-	Recording(context.Context, *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error)
-	// Highlights is where runs of a source's text sit on the pages it was read
-	// from. A source with no pages has nowhere to put them, and is answered with
-	// none.
-	Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error)
+	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
+	// GetRecording is what a recording is: how long it runs, how much of it has
+	// been listened to, and where its bytes are played from.
+	GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error)
+	// ListHighlights is where runs of a source's text sit on the pages it was
+	// read from. A source with no pages has nowhere to put them, and is answered
+	// with none.
+	ListHighlights(context.Context, *connect.Request[v1.ListHighlightsRequest]) (*connect.Response[v1.ListHighlightsResponse], error)
 }
 
 // NewAssetServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -151,32 +154,32 @@ type AssetServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	assetServiceMethods := v1.File_numen_v1_asset_proto.Services().ByName("AssetService").Methods()
-	assetServiceDocumentHandler := connect.NewUnaryHandler(
-		AssetServiceDocumentProcedure,
-		svc.Document,
-		connect.WithSchema(assetServiceMethods.ByName("Document")),
+	assetServiceGetDocumentHandler := connect.NewUnaryHandler(
+		AssetServiceGetDocumentProcedure,
+		svc.GetDocument,
+		connect.WithSchema(assetServiceMethods.ByName("GetDocument")),
 		connect.WithHandlerOptions(opts...),
 	)
-	assetServiceRecordingHandler := connect.NewUnaryHandler(
-		AssetServiceRecordingProcedure,
-		svc.Recording,
-		connect.WithSchema(assetServiceMethods.ByName("Recording")),
+	assetServiceGetRecordingHandler := connect.NewUnaryHandler(
+		AssetServiceGetRecordingProcedure,
+		svc.GetRecording,
+		connect.WithSchema(assetServiceMethods.ByName("GetRecording")),
 		connect.WithHandlerOptions(opts...),
 	)
-	assetServiceHighlightsHandler := connect.NewUnaryHandler(
-		AssetServiceHighlightsProcedure,
-		svc.Highlights,
-		connect.WithSchema(assetServiceMethods.ByName("Highlights")),
+	assetServiceListHighlightsHandler := connect.NewUnaryHandler(
+		AssetServiceListHighlightsProcedure,
+		svc.ListHighlights,
+		connect.WithSchema(assetServiceMethods.ByName("ListHighlights")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.AssetService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case AssetServiceDocumentProcedure:
-			assetServiceDocumentHandler.ServeHTTP(w, r)
-		case AssetServiceRecordingProcedure:
-			assetServiceRecordingHandler.ServeHTTP(w, r)
-		case AssetServiceHighlightsProcedure:
-			assetServiceHighlightsHandler.ServeHTTP(w, r)
+		case AssetServiceGetDocumentProcedure:
+			assetServiceGetDocumentHandler.ServeHTTP(w, r)
+		case AssetServiceGetRecordingProcedure:
+			assetServiceGetRecordingHandler.ServeHTTP(w, r)
+		case AssetServiceListHighlightsProcedure:
+			assetServiceListHighlightsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -186,14 +189,14 @@ func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedAssetServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAssetServiceHandler struct{}
 
-func (UnimplementedAssetServiceHandler) Document(context.Context, *connect.Request[v1.DocumentRequest]) (*connect.Response[v1.DocumentResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Document is not implemented"))
+func (UnimplementedAssetServiceHandler) GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.GetDocument is not implemented"))
 }
 
-func (UnimplementedAssetServiceHandler) Recording(context.Context, *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Recording is not implemented"))
+func (UnimplementedAssetServiceHandler) GetRecording(context.Context, *connect.Request[v1.GetRecordingRequest]) (*connect.Response[v1.GetRecordingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.GetRecording is not implemented"))
 }
 
-func (UnimplementedAssetServiceHandler) Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Highlights is not implemented"))
+func (UnimplementedAssetServiceHandler) ListHighlights(context.Context, *connect.Request[v1.ListHighlightsRequest]) (*connect.Response[v1.ListHighlightsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.ListHighlights is not implemented"))
 }

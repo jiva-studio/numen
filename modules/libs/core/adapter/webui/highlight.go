@@ -16,12 +16,12 @@ import (
 // errNoHighlight is what a build with nothing to place a passage with answers.
 var errNoHighlight = errors.New("this build cannot say where a passage is")
 
-// Highlights answers where runs of a source's text sit: the pages each falls on
-// and, on each, the rectangles covering it.
-func (a *API) Highlights(
+// ListHighlights answers where runs of a source's text sit: the pages each
+// falls on and, on each, the rectangles covering it.
+func (a *API) ListHighlights(
 	ctx context.Context,
-	r *connect.Request[v1.HighlightsRequest],
-) (*connect.Response[v1.HighlightsResponse], error) {
+	r *connect.Request[v1.ListHighlightsRequest],
+) (*connect.Response[v1.ListHighlightsResponse], error) {
 	if a.Highlight == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoHighlight)
 	}
@@ -45,7 +45,7 @@ func (a *API) Highlights(
 		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 
-	out := &v1.HighlightsResponse{Runs: make([]*v1.Highlight, 0, len(found))}
+	out := &v1.ListHighlightsResponse{Runs: make([]*v1.Highlight, 0, len(found))}
 	for _, pages := range found {
 		one := &v1.Highlight{Pages: make([]*v1.Page, 0, len(pages))}
 		for _, page := range pages {

@@ -355,19 +355,19 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	files := numenv1connect.NewAssetServiceClient(f.server.Client(), f.server.URL)
 	asked := map[string]func() error{
 		"what a document is": func() error {
-			_, err := files.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{
+			_, err := files.GetDocument(t.Context(), connect.NewRequest(&v1.GetDocumentRequest{
 				Path: standing,
 			}))
 			return err
 		},
 		"what a recording is": func() error {
-			_, err := files.Recording(t.Context(), connect.NewRequest(&v1.RecordingRequest{
+			_, err := files.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: standing,
 			}))
 			return err
 		},
 		"where a run of the text sits": func() error {
-			_, err := files.Highlights(t.Context(), connect.NewRequest(&v1.HighlightsRequest{
+			_, err := files.ListHighlights(t.Context(), connect.NewRequest(&v1.ListHighlightsRequest{
 				Path: standing,
 				At:   []*v1.Stretch{{Start: 0, Length: 1}},
 			}))

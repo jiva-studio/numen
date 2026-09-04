@@ -126,16 +126,16 @@ func (v *viewer) empty() {
 	v.drawn.Store(drawings())
 }
 
-// Document answers what the document at a path in the vault is: how many pages
-// it has, and how big each of them is in the page's own units.
+// GetDocument answers what the document at a path in the vault is: how many
+// pages it has, and how big each of them is in the page's own units.
 //
 // A window lays out the pages it has not drawn yet, so it needs their shape
 // before it has their pixels: a strip built on one guessed shape moves under
 // the hand as the real ones arrive.
-func (a *API) Document(
+func (a *API) GetDocument(
 	ctx context.Context,
-	r *connect.Request[v1.DocumentRequest],
-) (*connect.Response[v1.DocumentResponse], error) {
+	r *connect.Request[v1.GetDocumentRequest],
+) (*connect.Response[v1.GetDocumentResponse], error) {
 	if a.Viewer == nil || a.Readers == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDrawing)
 	}
@@ -155,7 +155,7 @@ func (a *API) Document(
 	if !doc.hold(ctx) {
 		return nil, connect.NewError(connect.CodeUnavailable, errBusy)
 	}
-	out := &v1.DocumentResponse{Pages: int32(doc.scan.Pages())}
+	out := &v1.GetDocumentResponse{Pages: int32(doc.scan.Pages())}
 	out.Sheets = make([]*v1.Sheet, out.Pages)
 	for i := range out.Sheets {
 		wide, high, err := doc.scan.Size(i)

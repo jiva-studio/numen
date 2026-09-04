@@ -24,12 +24,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiHwoPRG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiQgoQRG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldCIjCgVTaGVldBIMCgR3aWRlGAEgASgBEgwKBGhpZ2gYAiABKAEiIAoQUmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIk8KEVJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIkAKEUhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjcKEkhpZ2hsaWdodHNSZXNwb25zZRIhCgRydW5zGAEgAygLMhMubnVtZW4udjEuSGlnaGxpZ2h0IioKCUhpZ2hsaWdodBIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2UiNAoEUGFnZRINCgVpbmRleBgBIAEoBRIdCgVyZWN0cxgCIAMoCzIOLm51bWVuLnYxLlJlY3QiQgoEUmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjLgAQoMQXNzZXRTZXJ2aWNlEkEKCERvY3VtZW50EhkubnVtZW4udjEuRG9jdW1lbnRSZXF1ZXN0GhoubnVtZW4udjEuRG9jdW1lbnRSZXNwb25zZRJECglSZWNvcmRpbmcSGi5udW1lbi52MS5SZWNvcmRpbmdSZXF1ZXN0GhsubnVtZW4udjEuUmVjb3JkaW5nUmVzcG9uc2USRwoKSGlnaGxpZ2h0cxIbLm51bWVuLnYxLkhpZ2hsaWdodHNSZXF1ZXN0GhwubnVtZW4udjEuSGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiRQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldCIjCgVTaGVldBIMCgR3aWRlGAEgASgBEgwKBGhpZ2gYAiABKAEiIwoTR2V0UmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIlIKFEdldFJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIkQKFUxpc3RIaWdobGlnaHRzUmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgAygLMhEubnVtZW4udjEuU3RyZXRjaCI7ChZMaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlEiEKBHJ1bnMYASADKAsyEy5udW1lbi52MS5IaWdobGlnaHQiKgoJSGlnaGxpZ2h0Eh0KBXBhZ2VzGAEgAygLMg4ubnVtZW4udjEuUGFnZSI0CgRQYWdlEg0KBWluZGV4GAEgASgFEh0KBXJlY3RzGAIgAygLMg4ubnVtZW4udjEuUmVjdCJCCgRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMv4BCgxBc3NldFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlEk0KDEdldFJlY29yZGluZxIdLm51bWVuLnYxLkdldFJlY29yZGluZ1JlcXVlc3QaHi5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXNwb25zZRJTCg5MaXN0SGlnaGxpZ2h0cxIfLm51bWVuLnYxLkxpc3RIaWdobGlnaHRzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.DocumentRequest
+ * @generated from message numen.v1.GetDocumentRequest
  */
-export type DocumentRequest = Message<"numen.v1.DocumentRequest"> & {
+export type GetDocumentRequest = Message<"numen.v1.GetDocumentRequest"> & {
   /**
    * The file, as the vault holds it.
    *
@@ -39,16 +39,16 @@ export type DocumentRequest = Message<"numen.v1.DocumentRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.DocumentRequest.
- * Use `create(DocumentRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetDocumentRequest.
+ * Use `create(GetDocumentRequestSchema)` to create a new message.
  */
-export const DocumentRequestSchema: GenMessage<DocumentRequest> = /*@__PURE__*/
+export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 0);
 
 /**
- * @generated from message numen.v1.DocumentResponse
+ * @generated from message numen.v1.GetDocumentResponse
  */
-export type DocumentResponse = Message<"numen.v1.DocumentResponse"> & {
+export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
   /**
    * How many pages it has.
    *
@@ -66,10 +66,10 @@ export type DocumentResponse = Message<"numen.v1.DocumentResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.DocumentResponse.
- * Use `create(DocumentResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetDocumentResponse.
+ * Use `create(GetDocumentResponseSchema)` to create a new message.
  */
-export const DocumentResponseSchema: GenMessage<DocumentResponse> = /*@__PURE__*/
+export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 1);
 
 /**
@@ -98,9 +98,9 @@ export const SheetSchema: GenMessage<Sheet> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 2);
 
 /**
- * @generated from message numen.v1.RecordingRequest
+ * @generated from message numen.v1.GetRecordingRequest
  */
-export type RecordingRequest = Message<"numen.v1.RecordingRequest"> & {
+export type GetRecordingRequest = Message<"numen.v1.GetRecordingRequest"> & {
   /**
    * The file, as the vault holds it.
    *
@@ -110,16 +110,16 @@ export type RecordingRequest = Message<"numen.v1.RecordingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.RecordingRequest.
- * Use `create(RecordingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetRecordingRequest.
+ * Use `create(GetRecordingRequestSchema)` to create a new message.
  */
-export const RecordingRequestSchema: GenMessage<RecordingRequest> = /*@__PURE__*/
+export const GetRecordingRequestSchema: GenMessage<GetRecordingRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 3);
 
 /**
- * @generated from message numen.v1.RecordingResponse
+ * @generated from message numen.v1.GetRecordingResponse
  */
-export type RecordingResponse = Message<"numen.v1.RecordingResponse"> & {
+export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
   /**
    * How far the words reach, and how much of it a run has written down, both in
    * milliseconds. A recording nothing has listened to reaches nowhere, and the
@@ -151,16 +151,16 @@ export type RecordingResponse = Message<"numen.v1.RecordingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.RecordingResponse.
- * Use `create(RecordingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetRecordingResponse.
+ * Use `create(GetRecordingResponseSchema)` to create a new message.
  */
-export const RecordingResponseSchema: GenMessage<RecordingResponse> = /*@__PURE__*/
+export const GetRecordingResponseSchema: GenMessage<GetRecordingResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 4);
 
 /**
- * @generated from message numen.v1.HighlightsRequest
+ * @generated from message numen.v1.ListHighlightsRequest
  */
-export type HighlightsRequest = Message<"numen.v1.HighlightsRequest"> & {
+export type ListHighlightsRequest = Message<"numen.v1.ListHighlightsRequest"> & {
   /**
    * The file, as the vault holds it.
    *
@@ -178,16 +178,16 @@ export type HighlightsRequest = Message<"numen.v1.HighlightsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.HighlightsRequest.
- * Use `create(HighlightsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListHighlightsRequest.
+ * Use `create(ListHighlightsRequestSchema)` to create a new message.
  */
-export const HighlightsRequestSchema: GenMessage<HighlightsRequest> = /*@__PURE__*/
+export const ListHighlightsRequestSchema: GenMessage<ListHighlightsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 5);
 
 /**
- * @generated from message numen.v1.HighlightsResponse
+ * @generated from message numen.v1.ListHighlightsResponse
  */
-export type HighlightsResponse = Message<"numen.v1.HighlightsResponse"> & {
+export type ListHighlightsResponse = Message<"numen.v1.ListHighlightsResponse"> & {
   /**
    * One entry per run asked about, in the order they were asked about.
    *
@@ -197,10 +197,10 @@ export type HighlightsResponse = Message<"numen.v1.HighlightsResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.HighlightsResponse.
- * Use `create(HighlightsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListHighlightsResponse.
+ * Use `create(ListHighlightsResponseSchema)` to create a new message.
  */
-export const HighlightsResponseSchema: GenMessage<HighlightsResponse> = /*@__PURE__*/
+export const ListHighlightsResponseSchema: GenMessage<ListHighlightsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 6);
 
 /**
@@ -291,43 +291,43 @@ export const RectSchema: GenMessage<Rect> = /*@__PURE__*/
  */
 export const AssetService: GenService<{
   /**
-   * Document is what a document is: how many pages it has and how large each of
-   * them is. A page itself is a picture at an address of its own, drawn to the
-   * width it is asked for.
+   * GetDocument is what a document is: how many pages it has and how large each
+   * of them is. A page itself is a picture at an address of its own, drawn to
+   * the width it is asked for.
    *
    * Opening a document holds a worker of the library's pool. A caller that
    * could not have one inside the wait is answered unavailable and asks again;
    * a held request is not an answer.
    *
-   * @generated from rpc numen.v1.AssetService.Document
+   * @generated from rpc numen.v1.AssetService.GetDocument
    */
-  document: {
+  getDocument: {
     methodKind: "unary";
-    input: typeof DocumentRequestSchema;
-    output: typeof DocumentResponseSchema;
+    input: typeof GetDocumentRequestSchema;
+    output: typeof GetDocumentResponseSchema;
   },
   /**
-   * Recording is what a recording is: how long it runs, how much of it has been
-   * listened to, and where its bytes are played from.
+   * GetRecording is what a recording is: how long it runs, how much of it has
+   * been listened to, and where its bytes are played from.
    *
-   * @generated from rpc numen.v1.AssetService.Recording
+   * @generated from rpc numen.v1.AssetService.GetRecording
    */
-  recording: {
+  getRecording: {
     methodKind: "unary";
-    input: typeof RecordingRequestSchema;
-    output: typeof RecordingResponseSchema;
+    input: typeof GetRecordingRequestSchema;
+    output: typeof GetRecordingResponseSchema;
   },
   /**
-   * Highlights is where runs of a source's text sit on the pages it was read
-   * from. A source with no pages has nowhere to put them, and is answered with
-   * none.
+   * ListHighlights is where runs of a source's text sit on the pages it was
+   * read from. A source with no pages has nowhere to put them, and is answered
+   * with none.
    *
-   * @generated from rpc numen.v1.AssetService.Highlights
+   * @generated from rpc numen.v1.AssetService.ListHighlights
    */
-  highlights: {
+  listHighlights: {
     methodKind: "unary";
-    input: typeof HighlightsRequestSchema;
-    output: typeof HighlightsResponseSchema;
+    input: typeof ListHighlightsRequestSchema;
+    output: typeof ListHighlightsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_asset, 0);

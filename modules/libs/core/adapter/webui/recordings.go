@@ -37,15 +37,16 @@ var errNotHeard = errors.New("nothing has listened to this recording")
 // to the transcript, and what is being appended to is not edited underneath.
 var errBeingHeard = errors.New("this recording is being listened to")
 
-// Recording answers what the recording at a path is: how far the words reach,
-// how much of it a run has written down, and where its bytes are played from.
+// GetRecording answers what the recording at a path is: how far the words
+// reach, how much of it a run has written down, and where its bytes are played
+// from.
 //
 // A recording nothing has listened to reaches nowhere, and the player it is
 // loaded into is what then says how long it runs.
-func (a *API) Recording(
+func (a *API) GetRecording(
 	ctx context.Context,
-	r *connect.Request[v1.RecordingRequest],
-) (*connect.Response[v1.RecordingResponse], error) {
+	r *connect.Request[v1.GetRecordingRequest],
+) (*connect.Response[v1.GetRecordingResponse], error) {
 	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -59,7 +60,7 @@ func (a *API) Recording(
 	// Where a recording is played from and what it is played as are answered
 	// here: the socket is opened afresh for every run, and what counts as a
 	// recording is this application's to say.
-	out := &v1.RecordingResponse{
+	out := &v1.GetRecordingResponse{
 		Length: int32(heard),
 		Heard:  int32(heard),
 		Media:  a.Playing.Address(showing, ref.Path),
