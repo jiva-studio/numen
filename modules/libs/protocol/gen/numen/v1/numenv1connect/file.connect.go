@@ -60,7 +60,8 @@ type FileServiceClient interface {
 	// holding a path opens what stands there in the editor made for it. The kind
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
-	// answer.
+	// answer, and a path named twice is answered once. More paths than the vault
+	// answers at once are refused, so that an answer is never cut to fit.
 	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.
@@ -160,7 +161,8 @@ type FileServiceHandler interface {
 	// holding a path opens what stands there in the editor made for it. The kind
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
-	// answer.
+	// answer, and a path named twice is answered once. More paths than the vault
+	// answers at once are refused, so that an answer is never cut to fit.
 	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.

@@ -91,7 +91,10 @@ func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingReques
 
 	// In the order they were asked about, and the notes among them kept to ask
 	// the index about in one question.
-	paths := eachOnce(r.Msg.GetPaths())
+	paths, err := eachOnce(r.Msg.GetPaths())
+	if err != nil {
+		return nil, err
+	}
 	out := &v1.StandingResponse{Found: make([]*v1.Standing, 0, len(paths))}
 	notes := make([]string, 0, len(paths))
 	for _, path := range paths {

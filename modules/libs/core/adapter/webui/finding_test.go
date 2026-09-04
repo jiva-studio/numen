@@ -1,6 +1,7 @@
 package webui_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -368,6 +369,25 @@ func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
 
 	if found := answer.Msg.GetFound(); len(found) != 1 {
 		t.Errorf("found = %+v, want one entry for the one note", found)
+	}
+}
+
+// TestMorePathsThanAreAnsweredAtOnceAreRefused. A note carrying no headings is
+// absent from the answer, so an answer cut to fit the ceiling would be one a
+// caller cannot tell from a note with nothing in it.
+func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
+	client, _ := opened(t, map[string]string{
+		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
+	})
+
+	paths := make([]string, 0, 201)
+	for i := range 201 {
+		paths = append(paths, fmt.Sprintf("Note%03d.md", i))
+	}
+
+	_, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{Paths: paths}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("err = %v, want a refusal of the paths named", err)
 	}
 }
 

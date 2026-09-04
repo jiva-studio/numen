@@ -737,8 +737,8 @@ func (x *Reached) GetAmbiguous() bool {
 
 type HeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The notes to answer about, by the paths the vault files them under. The
-	// vault sets a ceiling on how many it answers at once.
+	// The notes to answer about, by the paths the vault files them under. More
+	// than the vault answers at once are refused.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

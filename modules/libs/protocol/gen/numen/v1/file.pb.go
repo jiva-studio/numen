@@ -259,7 +259,8 @@ func (x *Entry) GetType() NoteType {
 
 type StandingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The paths to answer about, as the vault files them.
+	// The paths to answer about, as the vault files them. More than the vault
+	// answers at once are refused.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

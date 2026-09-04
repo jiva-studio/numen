@@ -20,6 +20,11 @@ var errNoSearching = errors.New("this build cannot search the text of a vault")
 // errNoWay is a search that named no way to ask it.
 var errNoWay = errors.New("a search says how it is asked")
 
+// errTooManyPaths is a filter naming more paths than are answered at once. It
+// is refused rather than answered in part: an answer cut to fit is one a caller
+// cannot tell from an answer with nothing to say about the paths it left out.
+var errTooManyPaths = errors.New("that is more paths than are answered at once")
+
 // How many answers a client gets when it names no number, and the most it may
 // ask for. A window draws a list a person reads; a number past that is a
 // question about the corpus and is answered as the ceiling.
@@ -63,7 +68,10 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.HeadingsResponse{}), nil
 	}
-	paths := eachOnce(r.Msg.GetPaths())
+	paths, err := eachOnce(r.Msg.GetPaths())
+	if err != nil {
+		return nil, err
+	}
 	found, err := a.Notes.Queries.Headings(ctx, string(showing.ID), paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -181,23 +189,23 @@ func atMost(limit int32) int {
 	return min(int(limit), mostAsked)
 }
 
-// eachOnce is the paths a client asked about, each named once and no more of
-// them than the ceiling. Each costs a round trip of its own, and the answer
-// carries one entry per note.
-func eachOnce(paths []string) []string {
+// eachOnce is the paths a client asked about, each named once. A filter past
+// the ceiling is refused: each path costs a round trip of its own, and an
+// answer cut to fit says nothing about which paths were left out.
+func eachOnce(paths []string) ([]string, error) {
 	seen := make(map[string]bool, len(paths))
-	out := make([]string, 0, min(len(paths), mostAsked))
+	out := make([]string, 0, len(paths))
 	for _, path := range paths {
-		if len(out) == mostAsked {
-			break
-		}
 		if seen[path] {
 			continue
 		}
 		seen[path] = true
 		out = append(out, path)
 	}
-	return out
+	if len(out) > mostAsked {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
+	}
+	return out, nil
 }
 
 // sourcesOf is every file the passages came out of, each named once.

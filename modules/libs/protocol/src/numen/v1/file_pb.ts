@@ -115,7 +115,8 @@ export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
  */
 export type StandingRequest = Message<"numen.v1.StandingRequest"> & {
   /**
-   * The paths to answer about, as the vault files them.
+   * The paths to answer about, as the vault files them. More than the vault
+   * answers at once are refused.
    *
    * @generated from field: repeated string paths = 1;
    */
@@ -424,7 +425,8 @@ export const FileService: GenService<{
    * holding a path opens what stands there in the editor made for it. The kind
    * is read off the vault itself, so a path nothing has scanned is answered
    * with what stands there. A path with nothing at it is absent from the
-   * answer.
+   * answer, and a path named twice is answered once. More paths than the vault
+   * answers at once are refused, so that an answer is never cut to fit.
    *
    * @generated from rpc numen.v1.FileService.Standing
    */

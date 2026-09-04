@@ -297,8 +297,8 @@ export const ReachedSchema: GenMessage<Reached> = /*@__PURE__*/
  */
 export type HeadingsRequest = Message<"numen.v1.HeadingsRequest"> & {
   /**
-   * The notes to answer about, by the paths the vault files them under. The
-   * vault sets a ceiling on how many it answers at once.
+   * The notes to answer about, by the paths the vault files them under. More
+   * than the vault answers at once are refused.
    *
    * @generated from field: repeated string paths = 1;
    */
@@ -982,7 +982,8 @@ export const NoteService: GenService<{
    * headings, are both absent from the answer.
    *
    * The answer carries one entry per note, and a path named twice is answered
-   * once. A path past the ceiling the vault sets is not answered at all.
+   * once. More paths than the vault answers at once are refused, so that an
+   * answer is never cut to fit.
    *
    * @generated from rpc numen.v1.NoteService.Headings
    */

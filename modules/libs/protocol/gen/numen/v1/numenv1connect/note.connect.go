@@ -77,7 +77,8 @@ type NoteServiceClient interface {
 	// headings, are both absent from the answer.
 	//
 	// The answer carries one entry per note, and a path named twice is answered
-	// once. A path past the ceiling the vault sets is not answered at all.
+	// once. More paths than the vault answers at once are refused, so that an
+	// answer is never cut to fit.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
@@ -255,7 +256,8 @@ type NoteServiceHandler interface {
 	// headings, are both absent from the answer.
 	//
 	// The answer carries one entry per note, and a path named twice is answered
-	// once. A path past the ceiling the vault sets is not answered at all.
+	// once. More paths than the vault answers at once are refused, so that an
+	// answer is never cut to fit.
 	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)

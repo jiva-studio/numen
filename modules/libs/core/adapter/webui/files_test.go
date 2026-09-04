@@ -1,6 +1,7 @@
 package webui_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -377,6 +378,24 @@ func TestAListingSaysWhichOfFourEachNoteIs(t *testing.T) {
 		if got := held[name].GetType(); got != one {
 			t.Errorf("%s is drawn as %v, want %v", name, got, one)
 		}
+	}
+}
+
+// TestMorePathsThanStandingAnswersAtOnceAreRefused. A path with nothing at it
+// is absent from the answer, so an answer cut to fit the ceiling would be one a
+// caller cannot tell from a path holding nothing.
+func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
+	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
+	f.read(t)
+
+	paths := make([]string, 0, 201)
+	for i := range 201 {
+		paths = append(paths, fmt.Sprintf("Note%03d.md", i))
+	}
+
+	_, err := f.client.Standing(t.Context(), connect.NewRequest(&v1.StandingRequest{Paths: paths}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("err = %v, want a refusal of the paths named", err)
 	}
 }
 
