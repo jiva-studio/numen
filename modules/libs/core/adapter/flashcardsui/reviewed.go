@@ -9,13 +9,14 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Reviewed is how much of a vault was answered on each day it was reviewed.
+// ListReviewDays is how much of a vault was answered on each day it was
+// reviewed.
 //
 // The days come back in order, oldest first, because what draws them draws them
 // along a line of time.
-func (a *API) Reviewed(
-	ctx context.Context, r *connect.Request[v1.ReviewedRequest],
-) (*connect.Response[v1.ReviewedResponse], error) {
+func (a *API) ListReviewDays(
+	ctx context.Context, r *connect.Request[v1.ListReviewDaysRequest],
+) (*connect.Response[v1.ListReviewDaysResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -44,7 +45,7 @@ func (a *API) Reviewed(
 		due = append(due, &v1.Reviewing{Day: day, Answered: int32(falls)})
 	}
 
-	return connect.NewResponse(&v1.ReviewedResponse{
+	return connect.NewResponse(&v1.ListReviewDaysResponse{
 		Days:     inOrder(days),
 		Due:      inOrder(due),
 		Streak:   int32(said.Streak),

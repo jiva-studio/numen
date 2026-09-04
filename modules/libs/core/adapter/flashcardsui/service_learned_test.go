@@ -37,7 +37,7 @@ func TestTheCountCarriesHowMuchOfADeckStandsLearned(t *testing.T) {
 			continue
 		}
 		answered[one.GetDeck()] = true
-		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sitting.GetRun(),
 			Card: one.GetCard(), Face: one.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 5000,

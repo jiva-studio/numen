@@ -28,7 +28,7 @@ var joined = map[string]string{
 func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
 	api, _ := windowed(t, joined)
 
-	_, err := api.Around(t.Context(), connect.NewRequest(&v1.AroundRequest{
+	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
 		Vault: "no-vault-of-this-identity",
 		Deck:  "decks/Words.md",
 	}))
@@ -56,7 +56,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := api.Around(t.Context(), connect.NewRequest(&v1.AroundRequest{
+	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
 		Vault: string(v.ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {

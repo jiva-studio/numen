@@ -19,9 +19,9 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // FlashcardsService is the front door, a session, and the answers given in it.
 service FlashcardsService {
-  // Owing is what every vault the installation knows comes to today: how much
-  // it holds, how much is due, and how much has never been asked. It is what
-  // the application opens on.
+  // WatchCardsDue is what every vault the installation knows comes to today:
+  // how much it holds, how much is due, and how much has never been asked. It
+  // is what the application opens on.
   //
   // The first message is every vault as the registry holds it, with nothing
   // counted, and one message follows for each vault as it is worked out.
@@ -30,11 +30,11 @@ service FlashcardsService {
   //
   // A vault the index does not carry is read into it here, and its counts
   // follow when the reading is done. What that reading is doing is the window's
-  // own Tasks.
-  rpc Owing(OwingRequest) returns (stream OwingResponse);
+  // own WatchTasks.
+  rpc WatchCardsDue(WatchCardsDueRequest) returns (stream WatchCardsDueResponse);
 
-  // Start opens a run and hands over what to ask, in order. A run writes one
-  // file of its own in the vault and nothing else ever appends to it.
+  // StartSession opens a run and hands over what to ask, in order. A run writes
+  // one file of its own in the vault and nothing else ever appends to it.
   //
   // Naming a deck asks that deck alone. Naming a preset asks the cards of every
   // deck pointing at it, held to that preset's own budget. Naming neither asks
@@ -43,40 +43,40 @@ service FlashcardsService {
   // Naming both is refused. A preset with nothing to ask today is refused with
   // the reason, so a person pressing it is told why and not shown an empty
   // sitting.
-  rpc Start(StartRequest) returns (StartResponse);
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
 
-  // Answer writes down how a card came back. What comes back is the identifier
-  // of the line, which is what taking that answer back names.
-  rpc Answer(AnswerRequest) returns (AnswerResponse);
+  // AnswerCard writes down how a card came back. What comes back is the
+  // identifier of the line, which is what taking that answer back names.
+  rpc AnswerCard(AnswerCardRequest) returns (AnswerCardResponse);
 
-  // TakeBack writes down that an answer was taken back. Both lines stay in the
-  // file: nothing in a log is ever rewritten or removed.
-  rpc TakeBack(TakeBackRequest) returns (TakeBackResponse);
+  // TakeBackAnswer writes down that an answer was taken back. Both lines stay
+  // in the file: nothing in a log is ever rewritten or removed.
+  rpc TakeBackAnswer(TakeBackAnswerRequest) returns (TakeBackAnswerResponse);
 
-  // Moving says a vault moved underneath the window, for as long as the caller
-  // listens. Which files moved is not carried: what this application shows is
-  // counts, and they are asked for again whatever changed.
-  rpc Moving(MovingRequest) returns (stream MovingResponse);
+  // WatchReloads says a vault moved underneath the window, for as long as the
+  // caller listens. Which files moved is not carried: what this application
+  // shows is counts, and they are asked for again whatever changed.
+  rpc WatchReloads(WatchReloadsRequest) returns (stream WatchReloadsResponse);
 
-  // Reviewed is how much of a vault was answered on each day it was reviewed,
-  // and how many days up to now were reviewed without a gap.
-  rpc Reviewed(ReviewedRequest) returns (ReviewedResponse);
+  // ListReviewDays is how much of a vault was answered on each day it was
+  // reviewed, and how many days up to now were reviewed without a gap.
+  rpc ListReviewDays(ListReviewDaysRequest) returns (ListReviewDaysResponse);
 
-  // Asking is whether a card can be asked about here at all. The way in stands
-  // on every card, so nothing else has to be said about which.
-  rpc Asking(AskingRequest) returns (AskingResponse);
+  // GetAgentState is whether a card can be asked about here at all. The way in
+  // stands on every card, so nothing else has to be said about which.
+  rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
 
-  // Around is what the deck a person is sitting to is joined to: the notes it
-  // points at and the notes that point at it, with the text of each. A card is
-  // a line out of something longer, and what it was cut from is what a person
-  // reaches for when it will not come back to them.
-  rpc Around(AroundRequest) returns (AroundResponse);
+  // GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+  // the notes it points at and the notes that point at it, with the text of
+  // each. A card is a line out of something longer, and what it was cut from is
+  // what a person reaches for when it will not come back to them.
+  rpc GetDeckNeighbourhood(GetDeckNeighbourhoodRequest) returns (GetDeckNeighbourhoodResponse);
 
-  // Scheduling is the preset a deck of the named vault is scheduled by. A deck
-  // naming none is answered with the defaults under no path, and a deck whose
-  // link reaches something that is not a preset is answered with the defaults
-  // and told so.
-  rpc Scheduling(FlashcardsServiceSchedulingRequest) returns (FlashcardsServiceSchedulingResponse);
+  // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
+  // A deck naming none is answered with the defaults under no path, and a deck
+  // whose link reaches something that is not a preset is answered with the
+  // defaults and told so.
+  rpc GetVaultDeckPreset(GetVaultDeckPresetRequest) returns (GetVaultDeckPresetResponse);
 }
 
 // Rating is how well a card came back. A person says which of the four, and
@@ -245,9 +245,9 @@ message Asked {
   Ahead ahead = 10;
 }
 
-message OwingRequest {}
+message WatchCardsDueRequest {}
 
-message OwingResponse {
+message WatchCardsDueResponse {
   // Vaults is every vault the installation holds, by name and by where it is,
   // with nothing counted. It stands in the first message and in no other, and
   // it is what the list is drawn from.
@@ -265,7 +265,7 @@ message OwingResponse {
   VaultOwing counted = 3;
 }
 
-message StartRequest {
+message StartSessionRequest {
   string vault = 1;
   // Deck is the path of one deck, or empty for every deck the vault holds.
   string deck = 2;
@@ -277,9 +277,9 @@ message StartRequest {
   optional string preset = 3;
 }
 
-message StartResponse {
+message StartSessionResponse {
   // Run is what an answer given in this sitting is written to, and it is what
-  // an Answer names.
+  // an AnswerCard names.
   string run = 1;
   repeated Asked asked = 2;
 
@@ -292,7 +292,7 @@ message StartResponse {
   int32 skipped = 4;
 }
 
-message AnswerRequest {
+message AnswerCardRequest {
   string vault = 1;
   string run = 2;
   string card = 3;
@@ -303,26 +303,26 @@ message AnswerRequest {
   int64 took_ms = 6;
 }
 
-message AnswerResponse {
+message AnswerCardResponse {
   // Answer is the identifier of the line written, which is what taking it back
   // names.
   string answer = 1;
 }
 
-message TakeBackRequest {
+message TakeBackAnswerRequest {
   string vault = 1;
   string run = 2;
-  // Answer is the identifier a previous Answer came back with.
+  // Answer is the identifier a previous AnswerCard came back with.
   string answer = 3;
 }
 
-message TakeBackResponse {}
+message TakeBackAnswerResponse {}
 
-message ReviewedRequest {
+message ListReviewDaysRequest {
   string vault = 1;
 }
 
-message ReviewedResponse {
+message ListReviewDaysResponse {
   // Days is what each day a person answered on came to. A day nobody answered
   // on is not in it.
   repeated Reviewing days = 1;
@@ -364,22 +364,22 @@ message Reviewing {
   int32 recalled = 8;
 }
 
-message AskingRequest {}
+message GetAgentStateRequest {}
 
-message AskingResponse {
+message GetAgentStateResponse {
   // Set when no agent can be reached, and then nothing can be asked here. It
   // says why, in the person's own words.
   string unreachable = 1;
 }
 
-message AroundRequest {
+message GetDeckNeighbourhoodRequest {
   string vault = 1;
   // Deck is the path of the deck being sat to. One deck is asked about at a
   // time, because what a person is reading around is the deck in front of them.
   string deck = 2;
 }
 
-message AroundResponse {
+message GetDeckNeighbourhoodResponse {
   repeated Neighbour notes = 1;
 
   // Unread is how many at the end of the list came without their text. Reading
@@ -420,9 +420,9 @@ message Neighbour {
   optional Refusal refusal = 8;
 }
 
-message MovingRequest {}
+message WatchReloadsRequest {}
 
-message MovingResponse {
+message WatchReloadsResponse {
   // Reload says the vaults are to be counted again. It is false in the first
   // message, which says the window is listening and nothing has moved yet.
   bool reload = 1;
@@ -433,14 +433,14 @@ message MovingResponse {
 // The settings themselves, the curve and the refusals are presets.proto, which
 // the editor asks over the one vault its window shows.
 
-message FlashcardsServiceSchedulingRequest {
+message GetVaultDeckPresetRequest {
   string vault = 1;
 
   // The deck whose preset this is, by the path it is filed under.
   string deck = 2;
 }
 
-message FlashcardsServiceSchedulingResponse {
+message GetVaultDeckPresetResponse {
   // Absent when the preset was refused.
   optional Preset preset = 1;
 

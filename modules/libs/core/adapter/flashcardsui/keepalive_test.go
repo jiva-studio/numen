@@ -23,7 +23,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	streams := map[string]func(context.Context, connect.HTTPClient, string) error{
 		"moving": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewFlashcardsServiceClient(http, at).
-				Moving(ctx, connect.NewRequest(&v1.MovingRequest{}))
+				WatchReloads(ctx, connect.NewRequest(&v1.WatchReloadsRequest{}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, at string) error {

@@ -63,7 +63,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 
-	stream, err := client.Moving(t.Context(), connect.NewRequest(&v1.MovingRequest{}))
+	stream, err := client.WatchReloads(t.Context(), connect.NewRequest(&v1.WatchReloadsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

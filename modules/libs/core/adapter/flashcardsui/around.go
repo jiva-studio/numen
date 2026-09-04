@@ -9,13 +9,13 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-// Around hands over what the deck being sat to is joined to.
+// GetDeckNeighbourhood hands over what the deck being sat to is joined to.
 //
 // Nothing here writes and no run is named: a person may read around a deck
 // before they have started on it, and reading is not part of a sitting.
-func (a *API) Around(
-	ctx context.Context, r *connect.Request[v1.AroundRequest],
-) (*connect.Response[v1.AroundResponse], error) {
+func (a *API) GetDeckNeighbourhood(
+	ctx context.Context, r *connect.Request[v1.GetDeckNeighbourhoodRequest],
+) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -25,7 +25,7 @@ func (a *API) Around(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.AroundResponse{
+	out := &v1.GetDeckNeighbourhoodResponse{
 		Notes:  make([]*v1.Neighbour, 0, len(joined.Notes)),
 		Unread: int32(joined.Unread),
 	}

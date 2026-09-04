@@ -53,7 +53,7 @@ const feeding = () => {
   let wake: (() => void) | null = null
   let over = false
 
-  const owing = async function* (
+  const watchCardsDue = async function* (
     _said: Record<string, never>,
     how?: { signal?: AbortSignal },
   ): AsyncGenerator<Counted> {
@@ -74,7 +74,7 @@ const feeding = () => {
   }
 
   return {
-    cards: { owing } satisfies Counts,
+    cards: { watchCardsDue } satisfies Counts,
     says(one: Counted) {
       held.push(one)
       wake?.()
@@ -196,9 +196,9 @@ describe('counting what every vault owes', () => {
     let asked = 0
     const front = feeding()
     const cards: Counts = {
-      owing(said, how) {
+      watchCardsDue(said, how) {
         asked += 1
-        return front.cards.owing(said, how)
+        return front.cards.watchCardsDue(said, how)
       },
     }
     const one = counting({ cards, failed: () => {} })
@@ -223,9 +223,9 @@ describe('counting what every vault owes', () => {
     let asked = 0
     const front = feeding()
     const cards: Counts = {
-      owing(said, how) {
+      watchCardsDue(said, how) {
         asked += 1
-        return front.cards.owing(said, how)
+        return front.cards.watchCardsDue(said, how)
       },
     }
     const one = counting({ cards, failed: () => {} })
@@ -269,7 +269,7 @@ describe('counting what every vault owes', () => {
   it('says what went wrong and stops counting', async () => {
     const trouble: unknown[] = []
     const cards: Counts = {
-      owing: async function* (): AsyncGenerator<Counted> {
+      watchCardsDue: async function* (): AsyncGenerator<Counted> {
         throw new Error('no registry')
       },
     }

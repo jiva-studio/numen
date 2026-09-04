@@ -37,7 +37,7 @@ export interface Around {
 
 /** The notes one deck is joined to, in the order they are read. */
 export const around = async (vault: string, deck: string): Promise<Around> => {
-  const answer = await cards.around({ vault, deck })
+  const answer = await cards.getDeckNeighbourhood({ vault, deck })
   return {
     notes: answer.notes.map((one) => ({
       written: one.written,

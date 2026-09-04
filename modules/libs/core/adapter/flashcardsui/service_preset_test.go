@@ -49,7 +49,7 @@ func TestASittingIsOpenedOverOnePreset(t *testing.T) {
 	api, held := windowed(t, presetted)
 	v := held[0]
 
-	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: naming("Steady.md"),
 	}))
 	if err != nil {
@@ -71,7 +71,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 	api, held := windowed(t, presetted)
 	v := held[0]
 
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Deck: "decks/Birds.md", Preset: naming("Steady.md"),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -128,8 +128,8 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 		"decks/Birds.md": pointing("Quiet", 2, 0),
 	})
 
-	out, err := api.Scheduling(t.Context(), connect.NewRequest(
-		&v1.FlashcardsServiceSchedulingRequest{
+	out, err := api.GetVaultDeckPreset(t.Context(), connect.NewRequest(
+		&v1.GetVaultDeckPresetRequest{
 			Vault: string(held[0].ID), Deck: "decks/Birds.md",
 		}))
 	if err != nil {
@@ -150,7 +150,7 @@ func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
 	api, held := windowed(t, presetted)
 	v := held[0]
 
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+	_, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: naming("Lonely.md"),
 	}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {

@@ -12,11 +12,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
-// Scheduling is the preset a deck of the named vault is scheduled by. A deck
-// naming none is answered with the defaults under no path.
-func (a *API) Scheduling(
-	ctx context.Context, r *connect.Request[v1.FlashcardsServiceSchedulingRequest],
-) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
+// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A
+// deck naming none is answered with the defaults under no path.
+func (a *API) GetVaultDeckPreset(
+	ctx context.Context, r *connect.Request[v1.GetVaultDeckPresetRequest],
+) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -26,7 +26,7 @@ func (a *API) Scheduling(
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
-	out := &v1.FlashcardsServiceSchedulingResponse{}
+	out := &v1.GetVaultDeckPresetResponse{}
 	if reason, refused := refusal.Of(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil

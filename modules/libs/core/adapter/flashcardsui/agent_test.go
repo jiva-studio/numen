@@ -223,7 +223,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 	nothing := &API{}
 	nothing.Unreachable.Store("no agent is named in the settings")
-	said, err := nothing.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
+	said, err := nothing.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 
 	reachable := &API{}
 	reachable.Unreachable.Store("")
-	said, err = reachable.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
+	said, err = reachable.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,7 +249,7 @@ func TestAWindowAskedBeforeASittingIsNotSaidToHaveNoAgent(t *testing.T) {
 	api := &API{}
 	api.Unreachable.Store("")
 
-	said, err := api.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
+	said, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +264,7 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 	api := &API{}
 	api.Unreachable.Store("claude is not on this machine")
 
-	said, err := api.Asking(t.Context(), connect.NewRequest(&v1.AskingRequest{}))
+	said, err := api.GetAgentState(t.Context(), connect.NewRequest(&v1.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,8 +308,8 @@ func TestTheAgentIsToldWhichVaultTheSittingIsOn(t *testing.T) {
 
 	var opened []string
 	for _, v := range vaults {
-		if _, err := api.Start(t.Context(),
-			connect.NewRequest(&v1.StartRequest{Vault: string(v.ID)})); err != nil {
+		if _, err := api.StartSession(t.Context(),
+			connect.NewRequest(&v1.StartSessionRequest{Vault: string(v.ID)})); err != nil {
 			t.Fatal(err)
 		}
 		opened = append(opened, string(v.ID))

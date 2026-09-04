@@ -57,7 +57,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 
 	b.Run("TheListOnScreen", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.Owing(ctx, connect.NewRequest(&v1.OwingRequest{}))
+			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&v1.WatchCardsDueRequest{}))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -70,7 +70,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 
 	b.Run("EveryCountIn", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.Owing(ctx, connect.NewRequest(&v1.OwingRequest{}))
+			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&v1.WatchCardsDueRequest{}))
 			if err != nil {
 				b.Fatal(err)
 			}

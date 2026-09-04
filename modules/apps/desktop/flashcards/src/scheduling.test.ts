@@ -118,7 +118,7 @@ const vault = (
 const answering = (
   by: Record<string, { path: string; title: string; settings: Settings; stopsOn?: Stopped }>,
 ): Asks => ({
-  async scheduling({ deck }) {
+  async getVaultDeckPreset({ deck }) {
     const one = by[deck]
     if (!one) return {}
     return {
@@ -472,7 +472,7 @@ describe('which preset schedules each deck', () => {
   it('shows no preset where none could be read', async () => {
     const one = scheduling({
       presets: {
-        scheduling: () => Promise.reject(new Error('unimplemented')),
+        getVaultDeckPreset: () => Promise.reject(new Error('unimplemented')),
       },
     })
 
@@ -611,7 +611,7 @@ describe('which preset schedules each deck', () => {
   // at nothing beside them is a day drawn as unbegun.
   it('draws a preset it could not read from the figures the count gave', async () => {
     const one = scheduling({
-      presets: { scheduling: async () => ({ refusal: Refusal.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
     })
 
     await one.read(
@@ -633,7 +633,7 @@ describe('which preset schedules each deck', () => {
 
   it('says why a preset it could not read has no settings', async () => {
     const one = scheduling({
-      presets: { scheduling: async () => ({ refusal: Refusal.MISSING }) },
+      presets: { getVaultDeckPreset: async () => ({ refusal: Refusal.MISSING }) },
     })
 
     await one.read(vault([{ deck: 'decks/Words.md', due: 20, new: 2 }], [owing()]), '2026-09-05')
@@ -654,7 +654,7 @@ describe('which preset schedules each deck', () => {
   it('carries what was wrong in a preset it did read, once for all its decks', async () => {
     const one = scheduling({
       presets: {
-        async scheduling() {
+        async getVaultDeckPreset() {
           return {
             preset: {
               path: 'Sanskrit.md',
@@ -706,7 +706,7 @@ describe('which preset schedules each deck', () => {
     })
     const one = scheduling({
       presets: {
-        async scheduling() {
+        async getVaultDeckPreset() {
           await asked
           return {
             preset: {
@@ -753,9 +753,9 @@ describe('every question about a preset', () => {
     const one = scheduling({
       presets: {
         ...answers,
-        async scheduling(say) {
+        async getVaultDeckPreset(say) {
           named.push(say.vault)
-          return answers.scheduling(say)
+          return answers.getVaultDeckPreset(say)
         },
       },
     })

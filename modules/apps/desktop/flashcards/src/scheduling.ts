@@ -53,7 +53,7 @@ export interface Budget {
  * written to.
  */
 export interface Asks {
-  scheduling(said: { vault: string; deck: string }): Promise<{
+  getVaultDeckPreset(said: { vault: string; deck: string }): Promise<{
     preset?:
       | {
           path: string
@@ -186,7 +186,7 @@ const UNREAD = 'the settings of this preset could not be read'
 /** The preset one deck is scheduled by, or why it could not be read. */
 const scheduled = async (presets: Asks, vault: string, deck: string): Promise<Answered> => {
   try {
-    const answer = await presets.scheduling({ vault, deck })
+    const answer = await presets.getVaultDeckPreset({ vault, deck })
     const settings = answer.preset?.settings
     if (!answer.preset || !settings) {
       return { deck, held: null, refused: said(answer.refusal) || UNREAD }

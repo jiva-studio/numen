@@ -16,7 +16,7 @@ import type { Owing } from './core'
 
 /** What the front door of the application answers. */
 export interface Counts {
-  owing(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<Counted>
+  watchCardsDue(said: Record<string, never>, how?: { signal?: AbortSignal }): AsyncIterable<Counted>
 }
 
 /** One vault, as the count answers about it. */
@@ -218,7 +218,7 @@ export function counting(deps: Counting) {
     const ends = new AbortController()
     taking = ends
     try {
-      for await (const said of deps.cards.owing({}, { signal: ends.signal })) {
+      for await (const said of deps.cards.watchCardsDue({}, { signal: ends.signal })) {
         sampled = true
         if (said.counted) fills(said.counted)
         else {

@@ -18,8 +18,8 @@ export interface Asking {
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
    * to the decks one preset schedules, and to the budget that preset keeps.
    */
-  start(said: { vault: string; deck: string; preset?: string }): Promise<Opened>
-  answer(said: {
+  startSession(said: { vault: string; deck: string; preset?: string }): Promise<Opened>
+  answerCard(said: {
     vault: string
     run: string
     card: string
@@ -27,7 +27,7 @@ export interface Asking {
     rating: number
     tookMs: bigint
   }): Promise<{ answer: string }>
-  takeBack(said: { vault: string; run: string; answer: string }): Promise<unknown>
+  takeBackAnswer(said: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
 /** What opening a sitting comes back with. */
@@ -119,7 +119,7 @@ export function session(deps: Sits) {
     preset?: string,
   ): Promise<Report | null> => {
     try {
-      const opened = await deps.cards.start(
+      const opened = await deps.cards.startSession(
         preset === undefined
           ? { vault: named, deck }
           : { vault: named, deck, preset },
@@ -153,7 +153,7 @@ export function session(deps: Sits) {
     const took = now() - put
     writing.value = true
     try {
-      const given = await deps.cards.answer({
+      const given = await deps.cards.answerCard({
         vault: vault.value,
         run: run.value,
         card: one.card,
@@ -182,7 +182,7 @@ export function session(deps: Sits) {
     if (last === undefined || writing.value) return
     writing.value = true
     try {
-      await deps.cards.takeBack({ vault: vault.value, run: run.value, answer: last })
+      await deps.cards.takeBackAnswer({ vault: vault.value, run: run.value, answer: last })
     } catch (why) {
       deps.failed(why)
       return

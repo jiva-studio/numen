@@ -121,7 +121,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 			if (i+day)%7 == 0 {
 				rating = v1.Rating_RATING_AGAIN
 			}
-			_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 				Vault: string(v.ID), Run: sitting.GetRun(),
 				Card: one.GetCard(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
@@ -307,7 +307,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		due += int(one.GetDue())
 		fresh += int(one.GetNew())
 
-		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 			Vault: string(v.ID), Deck: one.GetDeck(),
 		}))
 		if err != nil {
@@ -353,7 +353,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	}
 
 	// One deck answered, and only that deck counts it.
-	sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+	sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Deck: "decks/Roots.md",
 	}))
 	if err != nil {
@@ -363,7 +363,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 		t.Fatalf("the deck offered %d card faces to answer", len(sat.Msg.GetAsked()))
 	}
 	for _, card := range sat.Msg.GetAsked()[:3] {
-		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sat.Msg.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 6000,

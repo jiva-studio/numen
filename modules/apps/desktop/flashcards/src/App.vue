@@ -293,7 +293,7 @@ onMounted(() => {
   // Whether a card can be asked about is the window's to know before a person
   // reaches for it, so it is asked once and the way in is drawn from it.
   void cards
-    .asking({})
+    .getAgentState({})
     .then((said) => {
       unreachable.value = said.unreachable
     })
@@ -304,7 +304,7 @@ onMounted(() => {
   // without a person asking. A sitting is left alone: its cards were laid out
   // when it opened, and what a deck says now is read at the next one.
   void follows(
-    () => cards.moving({}),
+    () => cards.watchReloads({}),
     async (said) => {
       // The stream says nothing on its own account so that a page that has gone
       // fails the write. Only a move is a move.

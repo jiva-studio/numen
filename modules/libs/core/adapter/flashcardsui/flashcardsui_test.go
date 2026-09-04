@@ -157,11 +157,11 @@ func watching(t *testing.T, api *API) numenv1connect.WindowServiceClient {
 //
 // A row saying it is being read is a row the page asks about again when the
 // reading wakes it, so the asking is done here until nothing is being read.
-func front(t *testing.T, api *API) *v1.OwingResponse {
+func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	t.Helper()
 	client := serving(t, api)
 
-	var out *v1.OwingResponse
+	var out *v1.WatchCardsDueResponse
 	for at := time.Now(); time.Since(at) < 30*time.Second; {
 		out = asked(t, client)
 		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultOwing).GetReading) {
@@ -175,15 +175,15 @@ func front(t *testing.T, api *API) *v1.OwingResponse {
 
 // asked is one opening of the front door, with each count filled into the row
 // it belongs to as it arrives.
-func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.OwingResponse {
+func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.WatchCardsDueResponse {
 	t.Helper()
-	stream, err := client.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stream.Close()
 
-	out, at, first := &v1.OwingResponse{}, map[string]int{}, true
+	out, at, first := &v1.WatchCardsDueResponse{}, map[string]int{}, true
 	for stream.Receive() {
 		said := stream.Msg()
 		if first {
@@ -208,9 +208,10 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Owin
 }
 
 // started is a sitting opened on one vault, and what it holds to ask.
-func started(t *testing.T, api *API, v domain.Vault) *v1.StartResponse {
+func started(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
 	t.Helper()
-	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: string(v.ID)}))
+	out, err := api.StartSession(t.Context(),
+		connect.NewRequest(&v1.StartSessionRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -229,7 +230,7 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	}
 	card := sitting.GetAsked()[0]
 
-	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(two.ID),
 		Run:    sitting.GetRun(),
 		Card:   card.GetCard(),
@@ -279,7 +280,7 @@ func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
 	}
 
 	card := now.GetAsked()[0]
-	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    was.GetRun(),
 		Card:   card.GetCard(),
@@ -305,7 +306,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 
 	sitting := started(t, api, one)
 	for _, card := range sitting.GetAsked() {
-		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 			Vault: string(one.ID), Run: sitting.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_EASY,
@@ -329,7 +330,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 }
 
 // counted is one vault out of what the front door answered.
-func counted(t *testing.T, said *v1.OwingResponse, id string) *v1.VaultOwing {
+func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultOwing {
 	t.Helper()
 	for _, one := range said.GetVaults() {
 		if one.GetName() == id {
@@ -349,7 +350,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	sitting := started(t, api, v)
 	card := sitting.GetAsked()[0]
 
-	given, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	given, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    sitting.GetRun(),
 		Card:   card.GetCard(),
@@ -364,7 +365,7 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 		t.Fatal("the answer came back with nothing to take it back by")
 	}
 
-	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
+	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault:  string(v.ID),
 		Run:    sitting.GetRun(),
 		Answer: given.Msg.GetAnswer(),
@@ -384,7 +385,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	sitting := started(t, api, v)
 	card := sitting.GetAsked()[0]
 
-	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_UNSPECIFIED,
@@ -469,7 +470,8 @@ func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: string(unread.ID)}))
+	_, err := api.StartSession(t.Context(),
+		connect.NewRequest(&v1.StartSessionRequest{Vault: string(unread.ID)}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
 	}
@@ -493,7 +495,8 @@ func waitFor(t *testing.T, so func() bool) {
 // A question about a vault the installation does not hold is refused.
 func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t)
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: "nothing"}))
+	_, err := api.StartSession(t.Context(),
+		connect.NewRequest(&v1.StartSessionRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
@@ -548,8 +551,8 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	// one of them: a procedure that fell through to the files would answer a
 	// page where the window expects an answer.
 	for _, procedure := range []string{
-		numenv1connect.FlashcardsServiceAroundProcedure,
-		numenv1connect.FlashcardsServiceOwingProcedure,
+		numenv1connect.FlashcardsServiceGetDeckNeighbourhoodProcedure,
+		numenv1connect.FlashcardsServiceWatchCardsDueProcedure,
 	} {
 		r := httptest.NewRequest(http.MethodGet, procedure, nil)
 		out := httptest.NewRecorder()
@@ -665,7 +668,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := sitting.GetAsked()[0]
-	if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
@@ -1060,7 +1063,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 			t.Errorf("the tile over %q offers nothing to compare", one.GetPreset())
 		}
 
-		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 			Vault: string(v.ID), Preset: naming(one.GetPreset()),
 		}))
 		if err != nil {
@@ -1277,7 +1280,7 @@ type sat struct{ asked, owed, fresh int }
 // sitting opens a sitting over one preset, the way pressing its tile does.
 func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	t.Helper()
-	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
+	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
 		Vault: string(v.ID), Preset: naming(preset),
 	}))
 	if err != nil {

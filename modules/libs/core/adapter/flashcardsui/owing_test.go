@@ -15,7 +15,7 @@ import (
 func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	api, held := windowed(t, deck, other)
 
-	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	// is what is under test here.
 	front(t, api)
 
-	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	stream, err := serving(t, api).WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

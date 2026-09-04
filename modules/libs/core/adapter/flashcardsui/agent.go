@@ -16,17 +16,17 @@ import (
 // ErrNoAgent is a question asked at a window that can reach none.
 var ErrNoAgent = errors.New("no agent is set up for this window")
 
-// Asking is whether a card can be asked about here, and on which cards the way
-// in is offered.
+// GetAgentState is whether a card can be asked about here, and on which cards
+// the way in is offered.
 //
 // It answers what this window can reach and not what it has reached: the page
 // asks as it opens, and the agent is started when a person sits down to a
 // vault.
-func (a *API) Asking(
-	_ context.Context, _ *connect.Request[v1.AskingRequest],
-) (*connect.Response[v1.AskingResponse], error) {
+func (a *API) GetAgentState(
+	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
+) (*connect.Response[v1.GetAgentStateResponse], error) {
 	why, _ := a.Unreachable.Load().(string)
-	return connect.NewResponse(&v1.AskingResponse{Unreachable: why}), nil
+	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: why}), nil
 }
 
 // AskAgent hands the person's question to the agent and reports what it does

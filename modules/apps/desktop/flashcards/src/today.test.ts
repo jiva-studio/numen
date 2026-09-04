@@ -39,7 +39,7 @@ const vault: Owing = {
 }
 
 const answering = (settings: SettingsMessage): Asks => ({
-  async scheduling() {
+  async getVaultDeckPreset() {
     return {
       preset: {
         path: 'Sanskrit.md',
@@ -59,7 +59,7 @@ afterEach(() => {
 describe('the day a goal is weighed against', () => {
   it('is the one the application counted', async () => {
     const cards: Counts = {
-      async *owing() {
+      async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },
     }
@@ -78,7 +78,7 @@ describe('the day a goal is weighed against', () => {
     expect(named(new Date())).toBe('2026-09-05')
 
     const cards: Counts = {
-      async *owing() {
+      async *watchCardsDue() {
         yield { day: '2026-09-04', vaults: [] }
       },
     }

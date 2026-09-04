@@ -58,20 +58,20 @@ vi.mock('./core', async (original) => ({
   ...(await original<typeof import('./core')>()),
   cards: {
     // The vaults, then each of their counts, the way the front door answers.
-    owing: async function* () {
+    watchCardsDue: async function* () {
       yield { day: counted.day, vaults: counted.vaults }
       for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
     },
-    moving: () => waits(),
-    asking: async () => ({ unreachable: '' }),
-    reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
-    scheduling: async () => ({ preset: undefined }),
-    start: async (said: { deck: string }) => {
+    watchReloads: () => waits(),
+    getAgentState: async () => ({ unreachable: '' }),
+    listReviewDays: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
+    getVaultDeckPreset: async () => ({ preset: undefined }),
+    startSession: async (said: { deck: string }) => {
       started.push(said)
       return { run: 'run', asked: [], unwritten: [], skipped: 0 }
     },
   },
-  itself: { tasks: () => waits() },
+  itself: { watchTasks: () => waits() },
 }))
 
 const { default: App } = await import('./App.vue')

@@ -23,15 +23,15 @@ import (
 // each of them holds a vault's worth of cards while it runs.
 const atOnce = 4
 
-// Owing counts every vault the installation knows.
+// WatchCardsDue counts every vault the installation knows.
 //
 // The vaults go first, by name and by where they are, and each count follows as
 // it is worked out. A vault that could not be counted arrives with nothing
 // counted and the reason on it. One vault the editor has never read is not a
 // reason to refuse a person the others.
-func (a *API) Owing(
-	ctx context.Context, _ *connect.Request[v1.OwingRequest],
-	out *connect.ServerStream[v1.OwingResponse],
+func (a *API) WatchCardsDue(
+	ctx context.Context, _ *connect.Request[v1.WatchCardsDueRequest],
+	out *connect.ServerStream[v1.WatchCardsDueResponse],
 ) error {
 	all, err := a.Registry.All()
 	if err != nil {
@@ -43,7 +43,7 @@ func (a *API) Owing(
 		listed = append(listed, &v1.VaultOwing{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
-	if err := out.Send(&v1.OwingResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
+	if err := out.Send(&v1.WatchCardsDueResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (a *API) Owing(
 	defer stop()
 
 	for one := range a.counting(ctx, a.wanted(all)) {
-		if err := out.Send(&v1.OwingResponse{Counted: one}); err != nil {
+		if err := out.Send(&v1.WatchCardsDueResponse{Counted: one}); err != nil {
 			return err
 		}
 	}
@@ -164,14 +164,14 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	return one
 }
 
-// Start opens a sitting and hands over what to ask, in order.
+// StartSession opens a sitting and hands over what to ask, in order.
 //
 // A sitting is opened over one deck, over one preset, or over the whole vault.
 // A refused sitting opens no run: the file a vault's answers go to is written
 // when there is something to answer.
-func (a *API) Start(
-	ctx context.Context, r *connect.Request[v1.StartRequest],
-) (*connect.Response[v1.StartResponse], error) {
+func (a *API) StartSession(
+	ctx context.Context, r *connect.Request[v1.StartSessionRequest],
+) (*connect.Response[v1.StartSessionResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -197,7 +197,7 @@ func (a *API) Start(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.StartResponse{
+	out := &v1.StartSessionResponse{
 		Run:       run.Name(),
 		Asked:     make([]*v1.Asked, 0, len(sitting.Asked)),
 		Unwritten: sitting.Unwritten,
@@ -238,10 +238,10 @@ func ahead(said map[review.Rating]time.Duration) *v1.Ahead {
 	}
 }
 
-// Answer writes down how a card came back.
-func (a *API) Answer(
-	ctx context.Context, r *connect.Request[v1.AnswerRequest],
-) (*connect.Response[v1.AnswerResponse], error) {
+// AnswerCard writes down how a card came back.
+func (a *API) AnswerCard(
+	ctx context.Context, r *connect.Request[v1.AnswerCardRequest],
+) (*connect.Response[v1.AnswerCardResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -262,7 +262,7 @@ func (a *API) Answer(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&v1.AnswerResponse{Answer: given.ID}), nil
+	return connect.NewResponse(&v1.AnswerCardResponse{Answer: given.ID}), nil
 }
 
 // rating is the four a person may say. Anything else is refused by the use case,
@@ -281,10 +281,10 @@ func rating(r v1.Rating) review.Rating {
 	return 0
 }
 
-// TakeBack writes down that an answer was taken back.
-func (a *API) TakeBack(
-	ctx context.Context, r *connect.Request[v1.TakeBackRequest],
-) (*connect.Response[v1.TakeBackResponse], error) {
+// TakeBackAnswer writes down that an answer was taken back.
+func (a *API) TakeBackAnswer(
+	ctx context.Context, r *connect.Request[v1.TakeBackAnswerRequest],
+) (*connect.Response[v1.TakeBackAnswerResponse], error) {
 	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
@@ -302,5 +302,5 @@ func (a *API) TakeBack(
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.TakeBackResponse{}), nil
+	return connect.NewResponse(&v1.TakeBackAnswerResponse{}), nil
 }

@@ -78,21 +78,21 @@ func (a *API) Follows(ctx context.Context, moved <-chan struct{}) {
 	}()
 }
 
-// Moving says something moved, for as long as the caller listens.
+// WatchReloads says something moved, for as long as the caller listens.
 //
 // What moved is not carried: what this window shows is counts and the cards
 // behind them, and they are asked for again whatever changed.
-func (a *API) Moving(
+func (a *API) WatchReloads(
 	ctx context.Context,
-	_ *connect.Request[v1.MovingRequest],
-	out *connect.ServerStream[v1.MovingResponse],
+	_ *connect.Request[v1.WatchReloadsRequest],
+	out *connect.ServerStream[v1.WatchReloadsResponse],
 ) error {
 	line, done := a.listeners.listen()
 	defer done()
 
 	// Named as listening before anything has moved. A stream that says nothing
 	// until a file changes cannot be told from one that never opened.
-	if err := out.Send(&v1.MovingResponse{}); err != nil {
+	if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
 		return err
 	}
 
@@ -106,14 +106,14 @@ func (a *API) Moving(
 		case <-repeat.C:
 			// Nothing moved, which is what the opening message says too. A page
 			// that has gone fails the write.
-			if err := out.Send(&v1.MovingResponse{}); err != nil {
+			if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
 				return err
 			}
 		case _, open := <-line:
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.MovingResponse{Reload: true}); err != nil {
+			if err := out.Send(&v1.WatchReloadsResponse{Reload: true}); err != nil {
 				return err
 			}
 		}

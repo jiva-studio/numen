@@ -13,13 +13,13 @@ import (
 )
 
 // answered is one card of a sitting answered, and the line that stands for it.
-func answered(t *testing.T, api *API, vault string, sitting *v1.StartResponse) string {
+func answered(t *testing.T, api *API, vault string, sitting *v1.StartSessionResponse) string {
 	t.Helper()
 	if len(sitting.GetAsked()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := sitting.GetAsked()[0]
-	out, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: vault, Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
@@ -72,13 +72,14 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	sitting := started(t, api, v)
 	given := answered(t, api, string(v.ID), sitting)
 
-	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
+	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(), Answer: given,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(v.ID)}))
+	out, err := api.ListReviewDays(t.Context(),
+		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +98,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	v := held[0]
 	sitting := started(t, api, v)
 
-	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: sitting.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -113,7 +114,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 	sitting := started(t, api, v)
 	given := answered(t, api, string(v.ID), sitting)
 
-	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: "nothing", Answer: given,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -126,7 +127,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, deck)
 
-	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
 		Vault: "nothing", Run: "nothing",
 		Card: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
 	}))
@@ -148,7 +149,8 @@ func (unreadable) All() ([]domain.Vault, error) {
 func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 	api := &API{Registry: unreadable{}, Now: time.Now}
 
-	stream, err := serving(t, api).Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	stream, err := serving(t, api).WatchCardsDue(t.Context(),
+		connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +167,7 @@ func TestAWindowThatCannotReadTheVaultsSaysSo(t *testing.T) {
 func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, deck)
 
-	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {

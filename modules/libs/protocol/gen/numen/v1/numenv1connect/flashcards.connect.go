@@ -43,38 +43,40 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// FlashcardsServiceOwingProcedure is the fully-qualified name of the FlashcardsService's Owing RPC.
-	FlashcardsServiceOwingProcedure = "/numen.v1.FlashcardsService/Owing"
-	// FlashcardsServiceStartProcedure is the fully-qualified name of the FlashcardsService's Start RPC.
-	FlashcardsServiceStartProcedure = "/numen.v1.FlashcardsService/Start"
-	// FlashcardsServiceAnswerProcedure is the fully-qualified name of the FlashcardsService's Answer
-	// RPC.
-	FlashcardsServiceAnswerProcedure = "/numen.v1.FlashcardsService/Answer"
-	// FlashcardsServiceTakeBackProcedure is the fully-qualified name of the FlashcardsService's
-	// TakeBack RPC.
-	FlashcardsServiceTakeBackProcedure = "/numen.v1.FlashcardsService/TakeBack"
-	// FlashcardsServiceMovingProcedure is the fully-qualified name of the FlashcardsService's Moving
-	// RPC.
-	FlashcardsServiceMovingProcedure = "/numen.v1.FlashcardsService/Moving"
-	// FlashcardsServiceReviewedProcedure is the fully-qualified name of the FlashcardsService's
-	// Reviewed RPC.
-	FlashcardsServiceReviewedProcedure = "/numen.v1.FlashcardsService/Reviewed"
-	// FlashcardsServiceAskingProcedure is the fully-qualified name of the FlashcardsService's Asking
-	// RPC.
-	FlashcardsServiceAskingProcedure = "/numen.v1.FlashcardsService/Asking"
-	// FlashcardsServiceAroundProcedure is the fully-qualified name of the FlashcardsService's Around
-	// RPC.
-	FlashcardsServiceAroundProcedure = "/numen.v1.FlashcardsService/Around"
-	// FlashcardsServiceSchedulingProcedure is the fully-qualified name of the FlashcardsService's
-	// Scheduling RPC.
-	FlashcardsServiceSchedulingProcedure = "/numen.v1.FlashcardsService/Scheduling"
+	// FlashcardsServiceWatchCardsDueProcedure is the fully-qualified name of the FlashcardsService's
+	// WatchCardsDue RPC.
+	FlashcardsServiceWatchCardsDueProcedure = "/numen.v1.FlashcardsService/WatchCardsDue"
+	// FlashcardsServiceStartSessionProcedure is the fully-qualified name of the FlashcardsService's
+	// StartSession RPC.
+	FlashcardsServiceStartSessionProcedure = "/numen.v1.FlashcardsService/StartSession"
+	// FlashcardsServiceAnswerCardProcedure is the fully-qualified name of the FlashcardsService's
+	// AnswerCard RPC.
+	FlashcardsServiceAnswerCardProcedure = "/numen.v1.FlashcardsService/AnswerCard"
+	// FlashcardsServiceTakeBackAnswerProcedure is the fully-qualified name of the FlashcardsService's
+	// TakeBackAnswer RPC.
+	FlashcardsServiceTakeBackAnswerProcedure = "/numen.v1.FlashcardsService/TakeBackAnswer"
+	// FlashcardsServiceWatchReloadsProcedure is the fully-qualified name of the FlashcardsService's
+	// WatchReloads RPC.
+	FlashcardsServiceWatchReloadsProcedure = "/numen.v1.FlashcardsService/WatchReloads"
+	// FlashcardsServiceListReviewDaysProcedure is the fully-qualified name of the FlashcardsService's
+	// ListReviewDays RPC.
+	FlashcardsServiceListReviewDaysProcedure = "/numen.v1.FlashcardsService/ListReviewDays"
+	// FlashcardsServiceGetAgentStateProcedure is the fully-qualified name of the FlashcardsService's
+	// GetAgentState RPC.
+	FlashcardsServiceGetAgentStateProcedure = "/numen.v1.FlashcardsService/GetAgentState"
+	// FlashcardsServiceGetDeckNeighbourhoodProcedure is the fully-qualified name of the
+	// FlashcardsService's GetDeckNeighbourhood RPC.
+	FlashcardsServiceGetDeckNeighbourhoodProcedure = "/numen.v1.FlashcardsService/GetDeckNeighbourhood"
+	// FlashcardsServiceGetVaultDeckPresetProcedure is the fully-qualified name of the
+	// FlashcardsService's GetVaultDeckPreset RPC.
+	FlashcardsServiceGetVaultDeckPresetProcedure = "/numen.v1.FlashcardsService/GetVaultDeckPreset"
 )
 
 // FlashcardsServiceClient is a client for the numen.v1.FlashcardsService service.
 type FlashcardsServiceClient interface {
-	// Owing is what every vault the installation knows comes to today: how much
-	// it holds, how much is due, and how much has never been asked. It is what
-	// the application opens on.
+	// WatchCardsDue is what every vault the installation knows comes to today:
+	// how much it holds, how much is due, and how much has never been asked. It
+	// is what the application opens on.
 	//
 	// The first message is every vault as the registry holds it, with nothing
 	// counted, and one message follows for each vault as it is worked out.
@@ -83,10 +85,10 @@ type FlashcardsServiceClient interface {
 	//
 	// A vault the index does not carry is read into it here, and its counts
 	// follow when the reading is done. What that reading is doing is the window's
-	// own Tasks.
-	Owing(context.Context, *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error)
-	// Start opens a run and hands over what to ask, in order. A run writes one
-	// file of its own in the vault and nothing else ever appends to it.
+	// own WatchTasks.
+	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest]) (*connect.ServerStreamForClient[v1.WatchCardsDueResponse], error)
+	// StartSession opens a run and hands over what to ask, in order. A run writes
+	// one file of its own in the vault and nothing else ever appends to it.
 	//
 	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
 	// deck pointing at it, held to that preset's own budget. Naming neither asks
@@ -95,33 +97,33 @@ type FlashcardsServiceClient interface {
 	// Naming both is refused. A preset with nothing to ask today is refused with
 	// the reason, so a person pressing it is told why and not shown an empty
 	// sitting.
-	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
-	// Answer writes down how a card came back. What comes back is the identifier
-	// of the line, which is what taking that answer back names.
-	Answer(context.Context, *connect.Request[v1.AnswerRequest]) (*connect.Response[v1.AnswerResponse], error)
-	// TakeBack writes down that an answer was taken back. Both lines stay in the
-	// file: nothing in a log is ever rewritten or removed.
-	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Moving says a vault moved underneath the window, for as long as the caller
-	// listens. Which files moved is not carried: what this application shows is
-	// counts, and they are asked for again whatever changed.
-	Moving(context.Context, *connect.Request[v1.MovingRequest]) (*connect.ServerStreamForClient[v1.MovingResponse], error)
-	// Reviewed is how much of a vault was answered on each day it was reviewed,
-	// and how many days up to now were reviewed without a gap.
-	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
-	// Asking is whether a card can be asked about here at all. The way in stands
-	// on every card, so nothing else has to be said about which.
-	Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error)
-	// Around is what the deck a person is sitting to is joined to: the notes it
-	// points at and the notes that point at it, with the text of each. A card is
-	// a line out of something longer, and what it was cut from is what a person
-	// reaches for when it will not come back to them.
-	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
-	// Scheduling is the preset a deck of the named vault is scheduled by. A deck
-	// naming none is answered with the defaults under no path, and a deck whose
-	// link reaches something that is not a preset is answered with the defaults
-	// and told so.
-	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
+	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
+	// AnswerCard writes down how a card came back. What comes back is the
+	// identifier of the line, which is what taking that answer back names.
+	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
+	// TakeBackAnswer writes down that an answer was taken back. Both lines stay
+	// in the file: nothing in a log is ever rewritten or removed.
+	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)
+	// WatchReloads says a vault moved underneath the window, for as long as the
+	// caller listens. Which files moved is not carried: what this application
+	// shows is counts, and they are asked for again whatever changed.
+	WatchReloads(context.Context, *connect.Request[v1.WatchReloadsRequest]) (*connect.ServerStreamForClient[v1.WatchReloadsResponse], error)
+	// ListReviewDays is how much of a vault was answered on each day it was
+	// reviewed, and how many days up to now were reviewed without a gap.
+	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
+	// GetAgentState is whether a card can be asked about here at all. The way in
+	// stands on every card, so nothing else has to be said about which.
+	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
+	// GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+	// the notes it points at and the notes that point at it, with the text of
+	// each. A card is a line out of something longer, and what it was cut from is
+	// what a person reaches for when it will not come back to them.
+	GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error)
+	// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
+	// A deck naming none is answered with the defaults under no path, and a deck
+	// whose link reaches something that is not a preset is answered with the
+	// defaults and told so.
+	GetVaultDeckPreset(context.Context, *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error)
 }
 
 // NewFlashcardsServiceClient constructs a client for the numen.v1.FlashcardsService service. By
@@ -135,58 +137,58 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 	baseURL = strings.TrimRight(baseURL, "/")
 	flashcardsServiceMethods := v1.File_numen_v1_flashcards_proto.Services().ByName("FlashcardsService").Methods()
 	return &flashcardsServiceClient{
-		owing: connect.NewClient[v1.OwingRequest, v1.OwingResponse](
+		watchCardsDue: connect.NewClient[v1.WatchCardsDueRequest, v1.WatchCardsDueResponse](
 			httpClient,
-			baseURL+FlashcardsServiceOwingProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Owing")),
+			baseURL+FlashcardsServiceWatchCardsDueProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("WatchCardsDue")),
 			connect.WithClientOptions(opts...),
 		),
-		start: connect.NewClient[v1.StartRequest, v1.StartResponse](
+		startSession: connect.NewClient[v1.StartSessionRequest, v1.StartSessionResponse](
 			httpClient,
-			baseURL+FlashcardsServiceStartProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Start")),
+			baseURL+FlashcardsServiceStartSessionProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("StartSession")),
 			connect.WithClientOptions(opts...),
 		),
-		answer: connect.NewClient[v1.AnswerRequest, v1.AnswerResponse](
+		answerCard: connect.NewClient[v1.AnswerCardRequest, v1.AnswerCardResponse](
 			httpClient,
-			baseURL+FlashcardsServiceAnswerProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Answer")),
+			baseURL+FlashcardsServiceAnswerCardProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("AnswerCard")),
 			connect.WithClientOptions(opts...),
 		),
-		takeBack: connect.NewClient[v1.TakeBackRequest, v1.TakeBackResponse](
+		takeBackAnswer: connect.NewClient[v1.TakeBackAnswerRequest, v1.TakeBackAnswerResponse](
 			httpClient,
-			baseURL+FlashcardsServiceTakeBackProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("TakeBack")),
+			baseURL+FlashcardsServiceTakeBackAnswerProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("TakeBackAnswer")),
 			connect.WithClientOptions(opts...),
 		),
-		moving: connect.NewClient[v1.MovingRequest, v1.MovingResponse](
+		watchReloads: connect.NewClient[v1.WatchReloadsRequest, v1.WatchReloadsResponse](
 			httpClient,
-			baseURL+FlashcardsServiceMovingProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Moving")),
+			baseURL+FlashcardsServiceWatchReloadsProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("WatchReloads")),
 			connect.WithClientOptions(opts...),
 		),
-		reviewed: connect.NewClient[v1.ReviewedRequest, v1.ReviewedResponse](
+		listReviewDays: connect.NewClient[v1.ListReviewDaysRequest, v1.ListReviewDaysResponse](
 			httpClient,
-			baseURL+FlashcardsServiceReviewedProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Reviewed")),
+			baseURL+FlashcardsServiceListReviewDaysProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("ListReviewDays")),
 			connect.WithClientOptions(opts...),
 		),
-		asking: connect.NewClient[v1.AskingRequest, v1.AskingResponse](
+		getAgentState: connect.NewClient[v1.GetAgentStateRequest, v1.GetAgentStateResponse](
 			httpClient,
-			baseURL+FlashcardsServiceAskingProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Asking")),
+			baseURL+FlashcardsServiceGetAgentStateProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("GetAgentState")),
 			connect.WithClientOptions(opts...),
 		),
-		around: connect.NewClient[v1.AroundRequest, v1.AroundResponse](
+		getDeckNeighbourhood: connect.NewClient[v1.GetDeckNeighbourhoodRequest, v1.GetDeckNeighbourhoodResponse](
 			httpClient,
-			baseURL+FlashcardsServiceAroundProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
+			baseURL+FlashcardsServiceGetDeckNeighbourhoodProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("GetDeckNeighbourhood")),
 			connect.WithClientOptions(opts...),
 		),
-		scheduling: connect.NewClient[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse](
+		getVaultDeckPreset: connect.NewClient[v1.GetVaultDeckPresetRequest, v1.GetVaultDeckPresetResponse](
 			httpClient,
-			baseURL+FlashcardsServiceSchedulingProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
+			baseURL+FlashcardsServiceGetVaultDeckPresetProcedure,
+			connect.WithSchema(flashcardsServiceMethods.ByName("GetVaultDeckPreset")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -194,67 +196,67 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 
 // flashcardsServiceClient implements FlashcardsServiceClient.
 type flashcardsServiceClient struct {
-	owing      *connect.Client[v1.OwingRequest, v1.OwingResponse]
-	start      *connect.Client[v1.StartRequest, v1.StartResponse]
-	answer     *connect.Client[v1.AnswerRequest, v1.AnswerResponse]
-	takeBack   *connect.Client[v1.TakeBackRequest, v1.TakeBackResponse]
-	moving     *connect.Client[v1.MovingRequest, v1.MovingResponse]
-	reviewed   *connect.Client[v1.ReviewedRequest, v1.ReviewedResponse]
-	asking     *connect.Client[v1.AskingRequest, v1.AskingResponse]
-	around     *connect.Client[v1.AroundRequest, v1.AroundResponse]
-	scheduling *connect.Client[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse]
+	watchCardsDue        *connect.Client[v1.WatchCardsDueRequest, v1.WatchCardsDueResponse]
+	startSession         *connect.Client[v1.StartSessionRequest, v1.StartSessionResponse]
+	answerCard           *connect.Client[v1.AnswerCardRequest, v1.AnswerCardResponse]
+	takeBackAnswer       *connect.Client[v1.TakeBackAnswerRequest, v1.TakeBackAnswerResponse]
+	watchReloads         *connect.Client[v1.WatchReloadsRequest, v1.WatchReloadsResponse]
+	listReviewDays       *connect.Client[v1.ListReviewDaysRequest, v1.ListReviewDaysResponse]
+	getAgentState        *connect.Client[v1.GetAgentStateRequest, v1.GetAgentStateResponse]
+	getDeckNeighbourhood *connect.Client[v1.GetDeckNeighbourhoodRequest, v1.GetDeckNeighbourhoodResponse]
+	getVaultDeckPreset   *connect.Client[v1.GetVaultDeckPresetRequest, v1.GetVaultDeckPresetResponse]
 }
 
-// Owing calls numen.v1.FlashcardsService.Owing.
-func (c *flashcardsServiceClient) Owing(ctx context.Context, req *connect.Request[v1.OwingRequest]) (*connect.ServerStreamForClient[v1.OwingResponse], error) {
-	return c.owing.CallServerStream(ctx, req)
+// WatchCardsDue calls numen.v1.FlashcardsService.WatchCardsDue.
+func (c *flashcardsServiceClient) WatchCardsDue(ctx context.Context, req *connect.Request[v1.WatchCardsDueRequest]) (*connect.ServerStreamForClient[v1.WatchCardsDueResponse], error) {
+	return c.watchCardsDue.CallServerStream(ctx, req)
 }
 
-// Start calls numen.v1.FlashcardsService.Start.
-func (c *flashcardsServiceClient) Start(ctx context.Context, req *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error) {
-	return c.start.CallUnary(ctx, req)
+// StartSession calls numen.v1.FlashcardsService.StartSession.
+func (c *flashcardsServiceClient) StartSession(ctx context.Context, req *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error) {
+	return c.startSession.CallUnary(ctx, req)
 }
 
-// Answer calls numen.v1.FlashcardsService.Answer.
-func (c *flashcardsServiceClient) Answer(ctx context.Context, req *connect.Request[v1.AnswerRequest]) (*connect.Response[v1.AnswerResponse], error) {
-	return c.answer.CallUnary(ctx, req)
+// AnswerCard calls numen.v1.FlashcardsService.AnswerCard.
+func (c *flashcardsServiceClient) AnswerCard(ctx context.Context, req *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error) {
+	return c.answerCard.CallUnary(ctx, req)
 }
 
-// TakeBack calls numen.v1.FlashcardsService.TakeBack.
-func (c *flashcardsServiceClient) TakeBack(ctx context.Context, req *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
-	return c.takeBack.CallUnary(ctx, req)
+// TakeBackAnswer calls numen.v1.FlashcardsService.TakeBackAnswer.
+func (c *flashcardsServiceClient) TakeBackAnswer(ctx context.Context, req *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error) {
+	return c.takeBackAnswer.CallUnary(ctx, req)
 }
 
-// Moving calls numen.v1.FlashcardsService.Moving.
-func (c *flashcardsServiceClient) Moving(ctx context.Context, req *connect.Request[v1.MovingRequest]) (*connect.ServerStreamForClient[v1.MovingResponse], error) {
-	return c.moving.CallServerStream(ctx, req)
+// WatchReloads calls numen.v1.FlashcardsService.WatchReloads.
+func (c *flashcardsServiceClient) WatchReloads(ctx context.Context, req *connect.Request[v1.WatchReloadsRequest]) (*connect.ServerStreamForClient[v1.WatchReloadsResponse], error) {
+	return c.watchReloads.CallServerStream(ctx, req)
 }
 
-// Reviewed calls numen.v1.FlashcardsService.Reviewed.
-func (c *flashcardsServiceClient) Reviewed(ctx context.Context, req *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error) {
-	return c.reviewed.CallUnary(ctx, req)
+// ListReviewDays calls numen.v1.FlashcardsService.ListReviewDays.
+func (c *flashcardsServiceClient) ListReviewDays(ctx context.Context, req *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error) {
+	return c.listReviewDays.CallUnary(ctx, req)
 }
 
-// Asking calls numen.v1.FlashcardsService.Asking.
-func (c *flashcardsServiceClient) Asking(ctx context.Context, req *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error) {
-	return c.asking.CallUnary(ctx, req)
+// GetAgentState calls numen.v1.FlashcardsService.GetAgentState.
+func (c *flashcardsServiceClient) GetAgentState(ctx context.Context, req *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
+	return c.getAgentState.CallUnary(ctx, req)
 }
 
-// Around calls numen.v1.FlashcardsService.Around.
-func (c *flashcardsServiceClient) Around(ctx context.Context, req *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error) {
-	return c.around.CallUnary(ctx, req)
+// GetDeckNeighbourhood calls numen.v1.FlashcardsService.GetDeckNeighbourhood.
+func (c *flashcardsServiceClient) GetDeckNeighbourhood(ctx context.Context, req *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
+	return c.getDeckNeighbourhood.CallUnary(ctx, req)
 }
 
-// Scheduling calls numen.v1.FlashcardsService.Scheduling.
-func (c *flashcardsServiceClient) Scheduling(ctx context.Context, req *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
-	return c.scheduling.CallUnary(ctx, req)
+// GetVaultDeckPreset calls numen.v1.FlashcardsService.GetVaultDeckPreset.
+func (c *flashcardsServiceClient) GetVaultDeckPreset(ctx context.Context, req *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
+	return c.getVaultDeckPreset.CallUnary(ctx, req)
 }
 
 // FlashcardsServiceHandler is an implementation of the numen.v1.FlashcardsService service.
 type FlashcardsServiceHandler interface {
-	// Owing is what every vault the installation knows comes to today: how much
-	// it holds, how much is due, and how much has never been asked. It is what
-	// the application opens on.
+	// WatchCardsDue is what every vault the installation knows comes to today:
+	// how much it holds, how much is due, and how much has never been asked. It
+	// is what the application opens on.
 	//
 	// The first message is every vault as the registry holds it, with nothing
 	// counted, and one message follows for each vault as it is worked out.
@@ -263,10 +265,10 @@ type FlashcardsServiceHandler interface {
 	//
 	// A vault the index does not carry is read into it here, and its counts
 	// follow when the reading is done. What that reading is doing is the window's
-	// own Tasks.
-	Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error
-	// Start opens a run and hands over what to ask, in order. A run writes one
-	// file of its own in the vault and nothing else ever appends to it.
+	// own WatchTasks.
+	WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest], *connect.ServerStream[v1.WatchCardsDueResponse]) error
+	// StartSession opens a run and hands over what to ask, in order. A run writes
+	// one file of its own in the vault and nothing else ever appends to it.
 	//
 	// Naming a deck asks that deck alone. Naming a preset asks the cards of every
 	// deck pointing at it, held to that preset's own budget. Naming neither asks
@@ -275,33 +277,33 @@ type FlashcardsServiceHandler interface {
 	// Naming both is refused. A preset with nothing to ask today is refused with
 	// the reason, so a person pressing it is told why and not shown an empty
 	// sitting.
-	Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error)
-	// Answer writes down how a card came back. What comes back is the identifier
-	// of the line, which is what taking that answer back names.
-	Answer(context.Context, *connect.Request[v1.AnswerRequest]) (*connect.Response[v1.AnswerResponse], error)
-	// TakeBack writes down that an answer was taken back. Both lines stay in the
-	// file: nothing in a log is ever rewritten or removed.
-	TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error)
-	// Moving says a vault moved underneath the window, for as long as the caller
-	// listens. Which files moved is not carried: what this application shows is
-	// counts, and they are asked for again whatever changed.
-	Moving(context.Context, *connect.Request[v1.MovingRequest], *connect.ServerStream[v1.MovingResponse]) error
-	// Reviewed is how much of a vault was answered on each day it was reviewed,
-	// and how many days up to now were reviewed without a gap.
-	Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error)
-	// Asking is whether a card can be asked about here at all. The way in stands
-	// on every card, so nothing else has to be said about which.
-	Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error)
-	// Around is what the deck a person is sitting to is joined to: the notes it
-	// points at and the notes that point at it, with the text of each. A card is
-	// a line out of something longer, and what it was cut from is what a person
-	// reaches for when it will not come back to them.
-	Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error)
-	// Scheduling is the preset a deck of the named vault is scheduled by. A deck
-	// naming none is answered with the defaults under no path, and a deck whose
-	// link reaches something that is not a preset is answered with the defaults
-	// and told so.
-	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
+	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
+	// AnswerCard writes down how a card came back. What comes back is the
+	// identifier of the line, which is what taking that answer back names.
+	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
+	// TakeBackAnswer writes down that an answer was taken back. Both lines stay
+	// in the file: nothing in a log is ever rewritten or removed.
+	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)
+	// WatchReloads says a vault moved underneath the window, for as long as the
+	// caller listens. Which files moved is not carried: what this application
+	// shows is counts, and they are asked for again whatever changed.
+	WatchReloads(context.Context, *connect.Request[v1.WatchReloadsRequest], *connect.ServerStream[v1.WatchReloadsResponse]) error
+	// ListReviewDays is how much of a vault was answered on each day it was
+	// reviewed, and how many days up to now were reviewed without a gap.
+	ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error)
+	// GetAgentState is whether a card can be asked about here at all. The way in
+	// stands on every card, so nothing else has to be said about which.
+	GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error)
+	// GetDeckNeighbourhood is what the deck a person is sitting to is joined to:
+	// the notes it points at and the notes that point at it, with the text of
+	// each. A card is a line out of something longer, and what it was cut from is
+	// what a person reaches for when it will not come back to them.
+	GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error)
+	// GetVaultDeckPreset is the preset a deck of the named vault is scheduled by.
+	// A deck naming none is answered with the defaults under no path, and a deck
+	// whose link reaches something that is not a preset is answered with the
+	// defaults and told so.
+	GetVaultDeckPreset(context.Context, *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error)
 }
 
 // NewFlashcardsServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -311,80 +313,80 @@ type FlashcardsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	flashcardsServiceMethods := v1.File_numen_v1_flashcards_proto.Services().ByName("FlashcardsService").Methods()
-	flashcardsServiceOwingHandler := connect.NewServerStreamHandler(
-		FlashcardsServiceOwingProcedure,
-		svc.Owing,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Owing")),
+	flashcardsServiceWatchCardsDueHandler := connect.NewServerStreamHandler(
+		FlashcardsServiceWatchCardsDueProcedure,
+		svc.WatchCardsDue,
+		connect.WithSchema(flashcardsServiceMethods.ByName("WatchCardsDue")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceStartHandler := connect.NewUnaryHandler(
-		FlashcardsServiceStartProcedure,
-		svc.Start,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Start")),
+	flashcardsServiceStartSessionHandler := connect.NewUnaryHandler(
+		FlashcardsServiceStartSessionProcedure,
+		svc.StartSession,
+		connect.WithSchema(flashcardsServiceMethods.ByName("StartSession")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceAnswerHandler := connect.NewUnaryHandler(
-		FlashcardsServiceAnswerProcedure,
-		svc.Answer,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Answer")),
+	flashcardsServiceAnswerCardHandler := connect.NewUnaryHandler(
+		FlashcardsServiceAnswerCardProcedure,
+		svc.AnswerCard,
+		connect.WithSchema(flashcardsServiceMethods.ByName("AnswerCard")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceTakeBackHandler := connect.NewUnaryHandler(
-		FlashcardsServiceTakeBackProcedure,
-		svc.TakeBack,
-		connect.WithSchema(flashcardsServiceMethods.ByName("TakeBack")),
+	flashcardsServiceTakeBackAnswerHandler := connect.NewUnaryHandler(
+		FlashcardsServiceTakeBackAnswerProcedure,
+		svc.TakeBackAnswer,
+		connect.WithSchema(flashcardsServiceMethods.ByName("TakeBackAnswer")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceMovingHandler := connect.NewServerStreamHandler(
-		FlashcardsServiceMovingProcedure,
-		svc.Moving,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Moving")),
+	flashcardsServiceWatchReloadsHandler := connect.NewServerStreamHandler(
+		FlashcardsServiceWatchReloadsProcedure,
+		svc.WatchReloads,
+		connect.WithSchema(flashcardsServiceMethods.ByName("WatchReloads")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceReviewedHandler := connect.NewUnaryHandler(
-		FlashcardsServiceReviewedProcedure,
-		svc.Reviewed,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Reviewed")),
+	flashcardsServiceListReviewDaysHandler := connect.NewUnaryHandler(
+		FlashcardsServiceListReviewDaysProcedure,
+		svc.ListReviewDays,
+		connect.WithSchema(flashcardsServiceMethods.ByName("ListReviewDays")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceAskingHandler := connect.NewUnaryHandler(
-		FlashcardsServiceAskingProcedure,
-		svc.Asking,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Asking")),
+	flashcardsServiceGetAgentStateHandler := connect.NewUnaryHandler(
+		FlashcardsServiceGetAgentStateProcedure,
+		svc.GetAgentState,
+		connect.WithSchema(flashcardsServiceMethods.ByName("GetAgentState")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceAroundHandler := connect.NewUnaryHandler(
-		FlashcardsServiceAroundProcedure,
-		svc.Around,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Around")),
+	flashcardsServiceGetDeckNeighbourhoodHandler := connect.NewUnaryHandler(
+		FlashcardsServiceGetDeckNeighbourhoodProcedure,
+		svc.GetDeckNeighbourhood,
+		connect.WithSchema(flashcardsServiceMethods.ByName("GetDeckNeighbourhood")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceSchedulingHandler := connect.NewUnaryHandler(
-		FlashcardsServiceSchedulingProcedure,
-		svc.Scheduling,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
+	flashcardsServiceGetVaultDeckPresetHandler := connect.NewUnaryHandler(
+		FlashcardsServiceGetVaultDeckPresetProcedure,
+		svc.GetVaultDeckPreset,
+		connect.WithSchema(flashcardsServiceMethods.ByName("GetVaultDeckPreset")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.FlashcardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case FlashcardsServiceOwingProcedure:
-			flashcardsServiceOwingHandler.ServeHTTP(w, r)
-		case FlashcardsServiceStartProcedure:
-			flashcardsServiceStartHandler.ServeHTTP(w, r)
-		case FlashcardsServiceAnswerProcedure:
-			flashcardsServiceAnswerHandler.ServeHTTP(w, r)
-		case FlashcardsServiceTakeBackProcedure:
-			flashcardsServiceTakeBackHandler.ServeHTTP(w, r)
-		case FlashcardsServiceMovingProcedure:
-			flashcardsServiceMovingHandler.ServeHTTP(w, r)
-		case FlashcardsServiceReviewedProcedure:
-			flashcardsServiceReviewedHandler.ServeHTTP(w, r)
-		case FlashcardsServiceAskingProcedure:
-			flashcardsServiceAskingHandler.ServeHTTP(w, r)
-		case FlashcardsServiceAroundProcedure:
-			flashcardsServiceAroundHandler.ServeHTTP(w, r)
-		case FlashcardsServiceSchedulingProcedure:
-			flashcardsServiceSchedulingHandler.ServeHTTP(w, r)
+		case FlashcardsServiceWatchCardsDueProcedure:
+			flashcardsServiceWatchCardsDueHandler.ServeHTTP(w, r)
+		case FlashcardsServiceStartSessionProcedure:
+			flashcardsServiceStartSessionHandler.ServeHTTP(w, r)
+		case FlashcardsServiceAnswerCardProcedure:
+			flashcardsServiceAnswerCardHandler.ServeHTTP(w, r)
+		case FlashcardsServiceTakeBackAnswerProcedure:
+			flashcardsServiceTakeBackAnswerHandler.ServeHTTP(w, r)
+		case FlashcardsServiceWatchReloadsProcedure:
+			flashcardsServiceWatchReloadsHandler.ServeHTTP(w, r)
+		case FlashcardsServiceListReviewDaysProcedure:
+			flashcardsServiceListReviewDaysHandler.ServeHTTP(w, r)
+		case FlashcardsServiceGetAgentStateProcedure:
+			flashcardsServiceGetAgentStateHandler.ServeHTTP(w, r)
+		case FlashcardsServiceGetDeckNeighbourhoodProcedure:
+			flashcardsServiceGetDeckNeighbourhoodHandler.ServeHTTP(w, r)
+		case FlashcardsServiceGetVaultDeckPresetProcedure:
+			flashcardsServiceGetVaultDeckPresetHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -394,38 +396,38 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 // UnimplementedFlashcardsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedFlashcardsServiceHandler struct{}
 
-func (UnimplementedFlashcardsServiceHandler) Owing(context.Context, *connect.Request[v1.OwingRequest], *connect.ServerStream[v1.OwingResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Owing is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) WatchCardsDue(context.Context, *connect.Request[v1.WatchCardsDueRequest], *connect.ServerStream[v1.WatchCardsDueResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.WatchCardsDue is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Start(context.Context, *connect.Request[v1.StartRequest]) (*connect.Response[v1.StartResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Start is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.StartSession is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Answer(context.Context, *connect.Request[v1.AnswerRequest]) (*connect.Response[v1.AnswerResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Answer is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.AnswerCard is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) TakeBack(context.Context, *connect.Request[v1.TakeBackRequest]) (*connect.Response[v1.TakeBackResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.TakeBack is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.TakeBackAnswer is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Moving(context.Context, *connect.Request[v1.MovingRequest], *connect.ServerStream[v1.MovingResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Moving is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) WatchReloads(context.Context, *connect.Request[v1.WatchReloadsRequest], *connect.ServerStream[v1.WatchReloadsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.WatchReloads is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Reviewed(context.Context, *connect.Request[v1.ReviewedRequest]) (*connect.Response[v1.ReviewedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Reviewed is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) ListReviewDays(context.Context, *connect.Request[v1.ListReviewDaysRequest]) (*connect.Response[v1.ListReviewDaysResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.ListReviewDays is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Asking(context.Context, *connect.Request[v1.AskingRequest]) (*connect.Response[v1.AskingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Asking is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) GetAgentState(context.Context, *connect.Request[v1.GetAgentStateRequest]) (*connect.Response[v1.GetAgentStateResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.GetAgentState is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Around(context.Context, *connect.Request[v1.AroundRequest]) (*connect.Response[v1.AroundResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Around is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) GetDeckNeighbourhood(context.Context, *connect.Request[v1.GetDeckNeighbourhoodRequest]) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.GetDeckNeighbourhood is not implemented"))
 }
 
-func (UnimplementedFlashcardsServiceHandler) Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Scheduling is not implemented"))
+func (UnimplementedFlashcardsServiceHandler) GetVaultDeckPreset(context.Context, *connect.Request[v1.GetVaultDeckPresetRequest]) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.GetVaultDeckPreset is not implemented"))
 }

@@ -9,7 +9,7 @@ import type { HeatmapTally } from '@numen/ui'
 
 /** What the application answers about a vault's days. */
 export interface Asks {
-  reviewed(said: { vault: string }): Promise<Said>
+  listReviewDays(said: { vault: string }): Promise<Said>
 }
 
 export interface Said {
@@ -63,7 +63,7 @@ export function reviewed(deps: Reviewing) {
     }
     of.value = vault
     try {
-      const said = await deps.cards.reviewed({ vault })
+      const said = await deps.cards.listReviewDays({ vault })
       // A person who moved to another vault while this was on its way is
       // looking at that one, and these days are not its days.
       if (of.value !== vault) return

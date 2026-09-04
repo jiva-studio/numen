@@ -67,7 +67,7 @@ func TestAWindowWithNoThemesStillServesItsPage(t *testing.T) {
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
-	stream, err := client.Owing(t.Context(), connect.NewRequest(&v1.OwingRequest{}))
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatalf("a window with no themes answers nothing: %v", err)
 	}
