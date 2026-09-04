@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI1ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEh4KBWZvdW5kGAEgAygLMg8ubnVtZW4udjEuTmFtZWQimAEKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuEiAKBHR5cGUYBCABKA4yEi5udW1lbi52MS5Ob3RlVHlwZUIKCghfaGVhZGluZyJRChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSGgoDd2F5GAMgASgOMg0ubnVtZW4udjEuV2F5IjoKFlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIvIBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEhoKAmF0GAQgAygLMg4ubnVtZW4udjEuU3BhbhIQCghsb2NhdGlvbhgFIAEoCRINCgVzdGFydBgGIAEoBRIOCgZsZW5ndGgYByABKAUSDAoEbGluZRgIIAEoBRIgCgR0eXBlGAkgASgOMhIubnVtZW4udjEuTm90ZVR5cGUSIgoEa2luZBgKIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRCBwoFX25vdGUiIAoEU3BhbhIMCgRmcm9tGAEgASgFEgoKAnRvGAIgASgFKlgKA1dheRITCg9XQVlfVU5TUEVDSUZJRUQQABINCglXQVlfV09SRFMQARIPCgtXQVlfTUVBTklORxACEg0KCVdBWV9OQU1FUxADEg0KCVdBWV9FVkVSWRAEMrABCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIpwBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIaCgJhdBgDIAMoCzIOLm51bWVuLnYxLlNwYW4SIAoEdHlwZRgEIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlQgoKCF9oZWFkaW5nIlEKFVNlYXJjaFBhc3NhZ2VzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBRIaCgN3YXkYAyABKA4yDS5udW1lbi52MS5XYXkiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui8gEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBRIMCgRsaW5lGAggASgFEiAKBHR5cGUYCSABKA4yEi5udW1lbi52MS5Ob3RlVHlwZRIiCgRraW5kGAogASgOMhQubnVtZW4udjEuU291cmNlS2luZEIHCgVfbm90ZSIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqWAoDV2F5EhMKD1dBWV9VTlNQRUNJRklFRBAAEg0KCVdBWV9XT1JEUxABEg8KC1dBWV9NRUFOSU5HEAISDQoJV0FZX05BTUVTEAMSDQoJV0FZX0VWRVJZEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -59,9 +59,9 @@ export type SearchNamesResponse = Message<"numen.v1.SearchNamesResponse"> & {
    * The names that matched, best first, with a note's own title before a
    * heading inside one.
    *
-   * @generated from field: repeated numen.v1.Named found = 1;
+   * @generated from field: repeated numen.v1.NameMatch found = 1;
    */
-  found: Named[];
+  found: NameMatch[];
 };
 
 /**
@@ -72,13 +72,13 @@ export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__P
   messageDesc(file_numen_v1_search, 1);
 
 /**
- * Named is one name that matched, and the note it stands for. A note's own
+ * NameMatch is one name that matched, and the note it stands for. A note's own
  * title matched when there is no heading here; otherwise the note is what the
  * heading stands in.
  *
- * @generated from message numen.v1.Named
+ * @generated from message numen.v1.NameMatch
  */
-export type Named = Message<"numen.v1.Named"> & {
+export type NameMatch = Message<"numen.v1.NameMatch"> & {
   /**
    * @generated from field: numen.v1.Note note = 1;
    */
@@ -110,10 +110,10 @@ export type Named = Message<"numen.v1.Named"> & {
 };
 
 /**
- * Describes the message numen.v1.Named.
- * Use `create(NamedSchema)` to create a new message.
+ * Describes the message numen.v1.NameMatch.
+ * Use `create(NameMatchSchema)` to create a new message.
  */
-export const NamedSchema: GenMessage<Named> = /*@__PURE__*/
+export const NameMatchSchema: GenMessage<NameMatch> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 2);
 
 /**

@@ -42,13 +42,13 @@ message SearchNamesRequest {
 message SearchNamesResponse {
   // The names that matched, best first, with a note's own title before a
   // heading inside one.
-  repeated Named found = 1;
+  repeated NameMatch found = 1;
 }
 
-// Named is one name that matched, and the note it stands for. A note's own
+// NameMatch is one name that matched, and the note it stands for. A note's own
 // title matched when there is no heading here; otherwise the note is what the
 // heading stands in.
-message Named {
+message NameMatch {
   Note note = 1;
 
   // The heading that matched, absent when the note's own title did.

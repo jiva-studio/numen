@@ -48,9 +48,9 @@ func (a *API) SearchNames(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.SearchNamesResponse{Found: make([]*v1.Named, 0, len(found))}
+	out := &v1.SearchNamesResponse{Found: make([]*v1.NameMatch, 0, len(found))}
 	for _, m := range found {
-		titled := &v1.Named{
+		titled := &v1.NameMatch{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
 			At:   spansOf(m.Spans),
 			Type: typeOf(m.Type),

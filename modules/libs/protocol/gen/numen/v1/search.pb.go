@@ -149,7 +149,7 @@ type SearchNamesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The names that matched, best first, with a note's own title before a
 	// heading inside one.
-	Found         []*Named `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Found         []*NameMatch `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,17 +184,17 @@ func (*SearchNamesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *SearchNamesResponse) GetFound() []*Named {
+func (x *SearchNamesResponse) GetFound() []*NameMatch {
 	if x != nil {
 		return x.Found
 	}
 	return nil
 }
 
-// Named is one name that matched, and the note it stands for. A note's own
+// NameMatch is one name that matched, and the note it stands for. A note's own
 // title matched when there is no heading here; otherwise the note is what the
 // heading stands in.
-type Named struct {
+type NameMatch struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
 	// The heading that matched, absent when the note's own title did.
@@ -210,20 +210,20 @@ type Named struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Named) Reset() {
-	*x = Named{}
+func (x *NameMatch) Reset() {
+	*x = NameMatch{}
 	mi := &file_numen_v1_search_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Named) String() string {
+func (x *NameMatch) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Named) ProtoMessage() {}
+func (*NameMatch) ProtoMessage() {}
 
-func (x *Named) ProtoReflect() protoreflect.Message {
+func (x *NameMatch) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -235,33 +235,33 @@ func (x *Named) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Named.ProtoReflect.Descriptor instead.
-func (*Named) Descriptor() ([]byte, []int) {
+// Deprecated: Use NameMatch.ProtoReflect.Descriptor instead.
+func (*NameMatch) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Named) GetNote() *Note {
+func (x *NameMatch) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-func (x *Named) GetHeading() *Heading {
+func (x *NameMatch) GetHeading() *Heading {
 	if x != nil {
 		return x.Heading
 	}
 	return nil
 }
 
-func (x *Named) GetAt() []*Span {
+func (x *NameMatch) GetAt() []*Span {
 	if x != nil {
 		return x.At
 	}
 	return nil
 }
 
-func (x *Named) GetType() NoteType {
+func (x *NameMatch) GetType() NoteType {
 	if x != nil {
 		return x.Type
 	}
@@ -570,10 +570,10 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"@\n" +
 	"\x12SearchNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"<\n" +
-	"\x13SearchNamesResponse\x12%\n" +
-	"\x05found\x18\x01 \x03(\v2\x0f.numen.v1.NamedR\x05found\"\xb1\x01\n" +
-	"\x05Named\x12\"\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"@\n" +
+	"\x13SearchNamesResponse\x12)\n" +
+	"\x05found\x18\x01 \x03(\v2\x13.numen.v1.NameMatchR\x05found\"\xb5\x01\n" +
+	"\tNameMatch\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
 	"\aheading\x18\x02 \x01(\v2\x11.numen.v1.HeadingH\x00R\aheading\x88\x01\x01\x12\x1e\n" +
 	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12&\n" +
@@ -630,7 +630,7 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(Way)(0),                       // 0: numen.v1.Way
 	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
 	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
-	(*Named)(nil),                  // 3: numen.v1.Named
+	(*NameMatch)(nil),              // 3: numen.v1.NameMatch
 	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
 	(*SearchPassagesResponse)(nil), // 5: numen.v1.SearchPassagesResponse
 	(*Passage)(nil),                // 6: numen.v1.Passage
@@ -641,11 +641,11 @@ var file_numen_v1_search_proto_goTypes = []any{
 	(SourceKind)(0),                // 11: numen.v1.SourceKind
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.Named
-	8,  // 1: numen.v1.Named.note:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.Named.heading:type_name -> numen.v1.Heading
-	7,  // 3: numen.v1.Named.at:type_name -> numen.v1.Span
-	10, // 4: numen.v1.Named.type:type_name -> numen.v1.NoteType
+	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.NameMatch
+	8,  // 1: numen.v1.NameMatch.note:type_name -> numen.v1.Note
+	9,  // 2: numen.v1.NameMatch.heading:type_name -> numen.v1.Heading
+	7,  // 3: numen.v1.NameMatch.at:type_name -> numen.v1.Span
+	10, // 4: numen.v1.NameMatch.type:type_name -> numen.v1.NoteType
 	0,  // 5: numen.v1.SearchPassagesRequest.way:type_name -> numen.v1.Way
 	6,  // 6: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
 	8,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
