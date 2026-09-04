@@ -12,7 +12,7 @@ const core = (changes: () => AsyncGenerator<unknown>) => {
   const asked: { signal?: AbortSignal } = {}
   const reached = {
     vault: {
-      changes: (_request: unknown, options: { signal: AbortSignal }) => {
+      watchVaultChanges: (_request: unknown, options: { signal: AbortSignal }) => {
         asked.signal = options.signal
         return changes()
       },
