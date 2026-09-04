@@ -352,24 +352,25 @@ func carried(root, serviceDir string) (string, *fileInfo, error) {
 	return cfg.ID, was, nil
 }
 
-// holds says whether a cleaned name is in one of this store's areas.
-func (d *DerivedStore) holds(clean string) bool {
+// area is the one of this store's areas a cleaned name is in, and whether it is
+// in any of them.
+func (d *DerivedStore) area(clean string) (string, bool) {
 	for _, area := range d.areas {
 		if clean == area || strings.HasPrefix(clean, area+"/") {
-			return true
+			return area, true
 		}
 	}
-	return false
+	return "", false
 }
 
 // at is where one name lands on this machine. Every name is answered where the
 // vault still is, so nothing here reads or writes a folder that is no longer
 // the one this store was opened on.
 //
-// The name is joined under the store's own root and checked against it with
-// every link on the way resolved. Without that check a name stored here could
-// be a link to a note, and a recognition would be read back as what a person
-// wrote — or would be written over it.
+// The name is joined under the area it names and checked against it with every
+// link on the way resolved. Without that check a name stored here could be a
+// link to a note, and a recognition would be read back as what a person wrote —
+// or would be written over it.
 //
 // The store's folder need not exist: as much of each path as does exist is
 // resolved, which is the same rule a write into the vault is judged by.
@@ -384,7 +385,8 @@ func (d *DerivedStore) at(name string) (string, error) {
 	// A name says which area it belongs to, and a store answers for its own
 	// only. That is what keeps the vault's identity out of reach: `config.json`
 	// is in the folder and in no area, so no name can express it.
-	if !d.holds(clean) {
+	area, held := d.area(clean)
+	if !held {
 		return "", fmt.Errorf("%s is not in the %s store: %w", name, d.Area(), ErrOutside)
 	}
 	target := filepath.Join(d.root, filepath.FromSlash(clean))
@@ -393,11 +395,17 @@ func (d *DerivedStore) at(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// The area itself, as it is on this machine. A link stays inside the area
+	// it was written into, so what no name expresses no link expresses either.
+	bound, err := deepest(filepath.Join(d.root, area))
+	if err != nil {
+		return "", err
+	}
 	root, err := deepest(d.root)
 	if err != nil {
 		return "", err
 	}
-	if real != root && !strings.HasPrefix(real, root+string(filepath.Separator)) {
+	if !under(bound, root) || !under(real, bound) {
 		return "", fmt.Errorf("%s: %w", name, ErrOutside)
 	}
 	return target, nil

@@ -244,6 +244,38 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
 	}
 }
 
+func TestTheStoreDoesNotWriteThroughALinkOutOfItsArea(t *testing.T) {
+	// The vault's identity is in the service folder and in no area, so no name
+	// says it. A link put in an area says it all the same, and a transcript
+	// appended down that link is the identity gone.
+	derived, root := store(t)
+	identity := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
+	before, err := os.ReadFile(identity)
+	if err != nil {
+		t.Fatal(err)
+	}
+	area := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)
+	if err := os.MkdirAll(area, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join("..", "config.json"), filepath.Join(area, "run.txt")); err != nil {
+		t.Skipf("this filesystem has no links: %v", err)
+	}
+
+	if err := derived.Append(t.Context(), "ocr/run.txt", []byte("transcript\n")); err == nil {
+		t.Error("the store appended through a link out of its area")
+	}
+	if err := derived.Write(t.Context(), "ocr/run.txt", []byte("transcript\n")); err == nil {
+		t.Error("the store wrote through a link out of its area")
+	}
+	if _, err := derived.Read(t.Context(), "ocr/run.txt"); err == nil {
+		t.Error("the store read the vault's identity back as a recognition")
+	}
+	if got, _ := os.ReadFile(identity); string(got) != string(before) {
+		t.Errorf("the vault's identity is now %q", got)
+	}
+}
+
 func TestAStoreIsOneFolder(t *testing.T) {
 	root := t.TempDir()
 	for _, area := range []string{"a/b", "..", ".", `a\b`} {

@@ -117,10 +117,15 @@ func contained(root, clean string) (target, real string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	if real != root && !strings.HasPrefix(real, root+string(filepath.Separator)) {
+	if !under(real, root) {
 		return "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
 	}
 	return target, real, nil
+}
+
+// under says whether a resolved path is a root or lies inside it.
+func under(real, root string) bool {
+	return real == root || strings.HasPrefix(real, root+string(filepath.Separator))
 }
 
 // deepest resolves as much of a path as exists, so that a file about to be
