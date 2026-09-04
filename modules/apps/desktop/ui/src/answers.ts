@@ -19,8 +19,14 @@ export const fingerprint = (at: string) => {
   return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }
 
-/** What each refusal the schema carries is called in the window's own words. */
-export const REFUSAL: Record<Refusal, Refused> = {
+/**
+ * What each refusal the schema carries is called in the window's own words.
+ *
+ * A file that moved past what the caller read is not among them: that one is a
+ * question for the person and not a message, and the window carries it as
+ * `changed`.
+ */
+export const REFUSAL: Partial<Record<Refusal, Refused>> = {
   [Refusal.UNSPECIFIED]: 'unreadable',
   [Refusal.MISSING]: 'missing',
   [Refusal.NOT_A_NOTE]: 'notANote',
@@ -38,4 +44,8 @@ export const REFUSAL: Record<Refusal, Refused> = {
 
 /** What one answer was refused for, and nothing where it was not refused. */
 export const refusalIn = (from: { refusal?: Refusal | undefined }): Refused | null =>
-  from.refusal === undefined ? null : REFUSAL[from.refusal]
+  from.refusal === undefined ? null : (REFUSAL[from.refusal] ?? null)
+
+/** Whether the file an answer is about had moved past what the caller read. */
+export const staleIn = (from: { refusal?: Refusal | undefined }): boolean =>
+  from.refusal === Refusal.STALE

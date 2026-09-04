@@ -1328,11 +1328,10 @@ func (x *ScheduleRequest) GetSeen() *Fingerprint {
 
 type ScheduleResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A deck that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens
+	// next.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the deck is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens next.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1375,13 +1374,6 @@ func (x *ScheduleResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
-}
-
-func (x *ScheduleResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
 }
 
 func (x *ScheduleResponse) GetAt() *Fingerprint {
@@ -1565,11 +1557,10 @@ func (x *WritePresetRequest) GetSeen() *Fingerprint {
 
 type WritePresetResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A file that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens to
+	// their settings.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the file is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens to their settings.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1612,13 +1603,6 @@ func (x *WritePresetResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
-}
-
-func (x *WritePresetResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
 }
 
 func (x *WritePresetResponse) GetAt() *Fingerprint {
@@ -1817,14 +1801,13 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
 	"\x06preset\x18\x02 \x01(\tR\x06preset\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x9d\x01\n" +
+	"\x05_seen\"\x92\x01\n" +
 	"\x10ScheduleResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"'\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xbf\x01\n" +
 	"\x12ReadPresetResponse\x12-\n" +
@@ -1839,14 +1822,13 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
 	"\x04seen\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xa0\x01\n" +
+	"\x05_seen\"\x95\x01\n" +
 	"\x13WritePresetResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"R\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"R\n" +
 	"\fCurveRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\"6\n" +

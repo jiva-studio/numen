@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Refusal } from '@numen/protocol'
-import { fingerprint, REFUSAL, refusalIn, stamp } from './answers'
+import { fingerprint, REFUSAL, refusalIn, staleIn, stamp } from './answers'
 
 describe('the file an answer came out of', () => {
   it('comes back out as it went in', () => {
@@ -32,11 +32,20 @@ describe('the file an answer came out of', () => {
 })
 
 describe('what a refusal is called', () => {
-  it('has a word for every refusal the schema carries', () => {
+  // A file that moved past what the caller read is the one refusal with no
+  // word: the window puts that question to the person and shows no message.
+  it('has a word for every refusal the schema carries but the stale one', () => {
     for (const refusal of Object.values(Refusal)) {
-      if (typeof refusal !== 'number') continue
+      if (typeof refusal !== 'number' || refusal === Refusal.STALE) continue
       expect(REFUSAL[refusal as Refusal], String(refusal)).toBeDefined()
     }
+    expect(REFUSAL[Refusal.STALE]).toBeUndefined()
+  })
+
+  it('reads a file that moved past the caller off the answer that says so', () => {
+    expect(staleIn({ refusal: Refusal.STALE })).toBe(true)
+    expect(staleIn({ refusal: Refusal.MISSING })).toBe(false)
+    expect(staleIn({})).toBe(false)
   })
 
   it('reads a refusal off an answer that carries one', () => {

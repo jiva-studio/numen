@@ -230,8 +230,8 @@ func TestWritingADeckLeavesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !answer.Msg.GetChanged() {
-		t.Error("a write over a deck the person had edited was not answered as changed")
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
+		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); held != theirs {
 		t.Errorf("the deck on disk is now %q", held)
@@ -259,7 +259,7 @@ func TestADeckWrittenBackKeepsTheCardsItHeld(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, dividedRun) {
@@ -291,7 +291,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing the deck answered %+v", answer.Msg)
 	}
 
@@ -356,7 +356,7 @@ func TestACardWithNoStencilKeepsTheHeadingItStandsUnder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(held, cardRun) {
@@ -506,7 +506,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("the rename answered %+v", answer.Msg)
 	}
 
@@ -562,7 +562,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !answer.Msg.GetChanged() {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
 		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {

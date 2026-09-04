@@ -47,7 +47,7 @@ func TestAStencilIsWrittenWithItsFacesAndItsFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -82,7 +82,7 @@ func TestAStencilIsWrittenWithTheFieldsItNowDeclares(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -124,7 +124,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !answer.Msg.GetChanged() {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
 		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if held := onDisk(t, f.root, "cards/Animal.md"); held != theirs {

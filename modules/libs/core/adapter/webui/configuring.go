@@ -74,8 +74,8 @@ func (a *API) SettingsFile(
 // read out of is the client's to correct, and the file is left as it was.
 //
 // The client presents the file it last read. A file holding bytes it has not
-// read is left alone and answered `changed`: this one is a question, and the
-// person answers it.
+// read is left alone and refused `stale`: the person chooses what happens to
+// their text.
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
@@ -84,7 +84,8 @@ func (a *API) WriteSettingsFile(
 	}
 	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
 		if errors.Is(err, port.ErrChanged) {
-			return connect.NewResponse(&v1.WriteSettingsFileResponse{Changed: true}), nil
+			stale := v1.Refusal_REFUSAL_STALE
+			return connect.NewResponse(&v1.WriteSettingsFileResponse{Refusal: &stale}), nil
 		}
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)

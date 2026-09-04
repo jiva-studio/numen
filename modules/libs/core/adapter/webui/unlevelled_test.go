@@ -61,7 +61,7 @@ func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("saving answered %+v", answer.Msg)
 	}
 	// Without it the next save has nothing to present and is answered as a note
@@ -92,7 +92,7 @@ func TestADeckWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing the deck answered %+v", answer.Msg)
 	}
 	if answer.Msg.GetAt() == nil {
@@ -121,7 +121,7 @@ func TestAStencilWrittenWhenTheIndexWouldNotComeLevelIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetChanged() || answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
+	if answer.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatalf("writing the stencil answered %+v", answer.Msg)
 	}
 	if answer.Msg.GetAt() == nil {

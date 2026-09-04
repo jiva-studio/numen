@@ -173,8 +173,8 @@ type VaultServiceClient interface {
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
 	// write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and answered
-	// `changed`.
+	// longer holds the prose the caller read is left alone and refused
+	// `stale`.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
 	// Create makes a note. The file is named after the title, and the links the
 	// note carries are written into it as it is made, so it arrives joined.
@@ -203,7 +203,7 @@ type VaultServiceClient interface {
 	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
 	// standing at anything other than what the caller presents is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were
@@ -645,8 +645,8 @@ type VaultServiceHandler interface {
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
 	// write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and answered
-	// `changed`.
+	// longer holds the prose the caller read is left alone and refused
+	// `stale`.
 	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
 	// Create makes a note. The file is named after the title, and the links the
 	// note carries are written into it as it is made, so it arrives joined.
@@ -675,7 +675,7 @@ type VaultServiceHandler interface {
 	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
 	// standing at anything other than what the caller presents is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// Remove takes a file or a folder out of the vault, into the trash it can be
 	// brought back from. The links that pointed at it are left as they were

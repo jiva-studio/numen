@@ -14,7 +14,7 @@ import type {
   Preset as PresetMessage,
   Settings as SettingsMessage,
 } from '@numen/protocol'
-import { fingerprint, refusalIn, stamp } from '../answers'
+import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { Refused } from '../core'
 import { transport } from '../transport'
 
@@ -331,7 +331,7 @@ export const presets: Presets = {
       preset,
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { refusal: refusalIn(answer), changed: answer.changed, at: stamp(answer.at) ?? '' }
+    return { refusal: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   write: async (path, settings, seen) => {
     const answer = await asking.writePreset({
@@ -339,7 +339,7 @@ export const presets: Presets = {
       settings: sent(settings),
       ...(seen === '' ? {} : { seen: fingerprint(seen) }),
     })
-    return { refusal: refusalIn(answer), changed: answer.changed, at: stamp(answer.at) ?? '' }
+    return { refusal: refusalIn(answer), changed: staleIn(answer), at: stamp(answer.at) ?? '' }
   },
   curve: async (path, settings) => {
     const answer = await asking.curve({ path, settings: sent(settings) })

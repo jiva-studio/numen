@@ -41,7 +41,7 @@ service CardsService {
   // no note at is refused `missing`; MakeStencil is what puts a stencil in the
   // vault. Every frontmatter key but `fields` stays as the person wrote it, and
   // a stencil that no longer holds what the caller read is left alone and
-  // answered `changed`.
+  // refused `stale`.
   //
   // The preamble, the tail and each face's lead are written back as they
   // arrive, so the parts of the file a client did not touch come out as the
@@ -59,7 +59,7 @@ service CardsService {
   // heading and comes back under `not_written`.
   //
   // A stencil that no longer holds what the caller read is left alone and
-  // answered `changed`, and then no deck is written either.
+  // refused `stale`, and then no deck is written either.
   rpc RenameField(RenameFieldRequest) returns (RenameFieldResponse);
 
   // MakeDeck puts a deck of no cards in the vault. The file says it is a deck
@@ -75,7 +75,7 @@ service CardsService {
   // given. A path the vault holds no note at is refused `missing`; MakeDeck is
   // what puts a deck in the vault. The frontmatter stays as the person wrote
   // it, and a deck that no longer holds what the caller read is left alone and
-  // answered `changed`.
+  // refused `stale`.
   //
   // A card carrying no section stands before the first one, and a section no
   // card stands under is written where the cards around it put it.
@@ -367,12 +367,13 @@ message WriteStencilRequest {
 }
 
 message WriteStencilResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the file is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 2;
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens to
+  // their text.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
@@ -393,6 +394,9 @@ message RenameFieldRequest {
 }
 
 message RenameFieldResponse {
+  reserved 5;
+  reserved "changed";
+
   // The decks a heading was rewritten in, by path.
   repeated string decks = 1;
 
@@ -404,12 +408,9 @@ message RenameFieldResponse {
   repeated NotWritten not_written = 3;
 
   // Set when the field was not renamed at all, and why. No deck is written
-  // where the stencil refused the rename.
+  // where the stencil refused the rename, and a stencil that is no longer the
+  // one this caller read is REFUSAL_STALE.
   optional Refusal refusal = 4;
-
-  // Set when the stencil is no longer the one this caller read. Nothing was
-  // renamed.
-  bool changed = 5;
 
   // The stencil the rename produced, for the caller to present at its next
   // write. Absent when nothing was renamed.
@@ -485,12 +486,13 @@ message WriteDeckRequest {
 }
 
 message WriteDeckResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the file is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 2;
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens to
+  // their text.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.

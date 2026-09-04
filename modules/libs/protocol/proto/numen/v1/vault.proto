@@ -97,8 +97,8 @@ service VaultService {
 
   // Write puts prose into a note, keeping the frontmatter the file has when the
   // write lands and creating the file where there is none. A note that no
-  // longer holds the prose the caller read is left alone and answered
-  // `changed`.
+  // longer holds the prose the caller read is left alone and refused
+  // `stale`.
   rpc Write(WriteRequest) returns (WriteResponse);
 
   // Create makes a note. The file is named after the title, and the links the
@@ -135,7 +135,7 @@ service VaultService {
   // typed. A file the settings cannot be read out of is refused and the file is
   // left as it was; what is said names where in the file the trouble is. A file
   // standing at anything other than what the caller presents is left alone and
-  // answered `changed`.
+  // refused `stale`.
   rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
 
   // Remove takes a file or a folder out of the vault, into the trash it can be
@@ -202,6 +202,10 @@ enum Refusal {
 
   // The note at the path is not a preset, and a preset was asked for.
   REFUSAL_NOT_A_PRESET = 12;
+
+  // The file is no longer the one this caller read. Nothing was written, and
+  // the person chooses what happens to what they have.
+  REFUSAL_STALE = 13;
 }
 
 // Note is a note as something else refers to it.
@@ -778,12 +782,11 @@ message WriteRequest {
 }
 
 message WriteResponse {
+  reserved 2;
+  reserved "changed";
+
   // Set when nothing was written, and why.
   optional Refusal refusal = 1;
-
-  // Set when the note holds prose this caller has not read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 2;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
@@ -838,12 +841,13 @@ message JoinRequest {
 }
 
 message JoinResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the note changed between being read and being written. Nothing
-  // was written, and the caller reads the note again before asking for this.
-  bool changed = 2;
+  // Set when nothing was written, and why. A note that moved between being
+  // read and being written is REFUSAL_STALE, and the caller reads it again
+  // before asking for this.
+  optional Refusal refusal = 1;
 }
 
 // Naming is which of the three a note is shown by, and so which one a rename
@@ -871,6 +875,9 @@ message RenameRequest {
 }
 
 message RenameResponse {
+  reserved 6;
+  reserved "changed";
+
   // Where the note is filed. Empty when the note was never opened. The note is
   // brought into line before the file is, so a refused move answers with the
   // path the note still has.
@@ -887,12 +894,9 @@ message RenameResponse {
   optional Moved moved = 4;
 
   // Set when the rename did not finish, and why. The note may already have been
-  // written: `path`, `title` and `by` say what stands.
+  // written: `path`, `title` and `by` say what stands. A note holding prose the
+  // caller never saw is REFUSAL_STALE, and nothing was written at all.
   optional Refusal refusal = 5;
-
-  // The note holds prose the caller never saw, so nothing was written. Read it
-  // again and ask again.
-  bool changed = 6;
 }
 
 // Moved is a file under a different name, and what that did to the links
@@ -1004,9 +1008,13 @@ message WriteSettingsFileRequest {
 }
 
 message WriteSettingsFileResponse {
-  // Set when the file holds bytes this caller has not read. Nothing was
-  // written, and the person chooses what happens to their text.
-  bool changed = 1;
+  reserved 1;
+  reserved "changed";
+
+  // Set when nothing was written, and why. A file holding bytes this caller
+  // has not read is REFUSAL_STALE, and the person chooses what happens to
+  // their text.
+  optional Refusal refusal = 2;
 }
 
 message MoveRequest {

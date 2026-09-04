@@ -11,7 +11,6 @@ import (
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -148,9 +147,6 @@ func (a *API) RenameField(
 		}
 		return connect.NewResponse(renamedOf(renamed)), nil
 	}
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.RenameFieldResponse{Changed: true}), nil
-	}
 	// The name a rename is given is the client's: one the stencil does not
 	// declare, and one it already declares, are both a name to correct.
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
@@ -253,9 +249,6 @@ func (a *API) WriteDeck(
 		}
 		return connect.NewResponse(&v1.WriteDeckResponse{At: fingerprintOf(wrote.Fingerprint)}), nil
 	}
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.WriteDeckResponse{Changed: true}), nil
-	}
 	if errors.Is(err, note.ErrTooLarge) {
 		refusal := v1.Refusal_REFUSAL_DECK_TOO_LARGE
 		return connect.NewResponse(&v1.WriteDeckResponse{
@@ -301,9 +294,6 @@ func (a *API) WriteStencil(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{At: fingerprintOf(at)}), nil
-	}
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.WriteStencilResponse{Changed: true}), nil
 	}
 	reason, refused := refusal.By(err)
 	if !refused {

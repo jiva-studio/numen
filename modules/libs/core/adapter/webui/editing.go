@@ -10,7 +10,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -69,12 +68,6 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WriteResponse{At: fingerprintOf(at)}), nil
-	}
-	// A note holding prose this client has not read is its own answer. A
-	// refusal is something the client can do nothing about; this one is a
-	// question, and the person answers it.
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.WriteResponse{Changed: true}), nil
 	}
 	reason, refused := refusal.By(err)
 	if !refused {
@@ -146,12 +139,6 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	defer a.Writing.done()
 
 	if err := a.Notes.Linking.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
-		// A join reads a note, splices its frontmatter and puts it back. A note
-		// that moved in between is left alone, and the client reads it again
-		// before it asks for this.
-		if errors.Is(err, port.ErrChanged) {
-			return connect.NewResponse(&v1.JoinResponse{Changed: true}), nil
-		}
 		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)

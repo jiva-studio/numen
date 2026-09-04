@@ -47,7 +47,7 @@ service PresetsService {
   //
   // A preset the vault holds no note at is refused `missing`, and a preset
   // naming a note that is not one is refused `not_a_preset`. A deck that no
-  // longer holds what the caller read is left alone and answered `changed`.
+  // longer holds what the caller read is left alone and refused `stale`.
   rpc Schedule(ScheduleRequest) returns (ScheduleResponse);
 
   // ReadPreset is the settings of one preset. A note that is not a preset is
@@ -61,7 +61,7 @@ service PresetsService {
   //
   // A path the vault holds no note at is refused `missing`. A note that is not
   // a preset is refused `not_a_preset`, and one that no longer holds what the
-  // caller read is left alone and answered `changed`.
+  // caller read is left alone and refused `stale`.
   rpc WritePreset(WritePresetRequest) returns (WritePresetResponse);
 
   // Curve is what the settings come to over the whole range of the goal they
@@ -410,12 +410,13 @@ message ScheduleRequest {
 }
 
 message ScheduleResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the deck is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens next.
-  bool changed = 2;
+  // Set when nothing was written, and why. A deck that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens
+  // next.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
@@ -451,12 +452,13 @@ message WritePresetRequest {
 }
 
 message WritePresetResponse {
-  // Set when nothing was written, and why.
-  optional Refusal refusal = 1;
+  reserved 2;
+  reserved "changed";
 
-  // Set when the file is no longer the one this caller read. Nothing was
-  // written, and the person chooses what happens to their settings.
-  bool changed = 2;
+  // Set when nothing was written, and why. A file that is no longer the one
+  // this caller read is REFUSAL_STALE, and the person chooses what happens to
+  // their settings.
+  optional Refusal refusal = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.

@@ -33,7 +33,7 @@ import type {
   Stencil as StencilMessage,
 } from '@numen/protocol'
 import type { Counting } from '@numen/ui'
-import { fingerprint, refusalIn, stamp } from './answers'
+import { fingerprint, refusalIn, staleIn, stamp } from './answers'
 import { DEFAULT_PARTS } from './hanging'
 import { DEFAULT_STARTS } from './reviewing'
 import { standing as settingAt } from './settings/configuring'
@@ -167,7 +167,7 @@ export const cards: Cards = {
         text: one.problem?.text ?? '',
       })),
       refusal: refusalIn(answer),
-      changed: answer.changed,
+      changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
     }
   },
@@ -191,7 +191,7 @@ export const cards: Cards = {
     })
     return {
       refusal: refusalIn(answer),
-      changed: answer.changed,
+      changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
       bound: Number(answer.bound),
     }
@@ -220,7 +220,7 @@ export const cards: Cards = {
     })
     return {
       refusal: refusalIn(answer),
-      changed: answer.changed,
+      changed: staleIn(answer),
       at: stamp(answer.at) ?? '',
     }
   },
@@ -280,7 +280,7 @@ export const core: Core & Asking & Commanding = {
       frontmatter: answer.by === Naming.FRONTMATTER,
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
-      changed: answer.changed,
+      changed: staleIn(answer),
     } satisfies Renamed
   },
   remove: async (path, destroy) => {
@@ -345,7 +345,7 @@ export const core: Core & Asking & Commanding = {
       written,
       ...(seen === null ? {} : { seen }),
     })
-    return { changed: answer.changed }
+    return { changed: staleIn(answer) }
   },
   reviewing: async () => {
     const hour = settingAt(await configured(), STARTS)
@@ -596,15 +596,14 @@ const seenOf = (seen: { prose: string; at: string }) => ({
 const answered = (from: {
   body?: string | undefined
   refusal?: Refusal | undefined
-  changed?: boolean | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
-}): Answered & { at?: string; changed?: boolean } => {
+}): Answered & { at?: string; changed: boolean } => {
   const at = stamp(from.at)
   return {
     body: from.body ?? '',
     refusal: refusalIn(from),
+    changed: staleIn(from),
     ...(at === undefined ? {} : { at }),
-    ...(from.changed === undefined ? {} : { changed: from.changed }),
   }
 }
 

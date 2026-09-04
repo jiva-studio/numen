@@ -598,11 +598,8 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note written elsewhere came back as an error: %v", err)
 	}
-	if !out.Msg.GetChanged() {
-		t.Error("the rename did not say the note changed")
-	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Errorf("a note that changed was answered as a refusal: %v", refusal)
+	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
+		t.Errorf("a note that changed was answered %v", refusal)
 	}
 	if gone(t, f.opened.API.Showing().Path, "Old.md") {
 		t.Error("the file moved for a rename that wrote nothing")

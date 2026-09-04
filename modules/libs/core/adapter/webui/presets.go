@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -116,9 +115,6 @@ func (a *API) Schedule(
 		}
 		return connect.NewResponse(&v1.ScheduleResponse{At: fingerprintOf(at)}), nil
 	}
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.ScheduleResponse{Changed: true}), nil
-	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
 		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
 		return connect.NewResponse(&v1.ScheduleResponse{Refusal: &reason}), nil
@@ -186,9 +182,6 @@ func (a *API) WritePreset(
 			a.Wrote()
 		}
 		return connect.NewResponse(&v1.WritePresetResponse{At: fingerprintOf(at)}), nil
-	}
-	if errors.Is(err, port.ErrChanged) {
-		return connect.NewResponse(&v1.WritePresetResponse{Changed: true}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.
 	if errors.Is(err, flashcards.ErrOutOfBounds) {

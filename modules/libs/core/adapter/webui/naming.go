@@ -9,7 +9,6 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -36,10 +35,6 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	}
 	if renamed.Moved != nil {
 		out.Moved = movedOf(*renamed.Moved)
-	}
-	if errors.Is(err, port.ErrChanged) {
-		out.Changed = true
-		return connect.NewResponse(out), nil
 	}
 	if err != nil {
 		reason, refused := refusal.By(err)

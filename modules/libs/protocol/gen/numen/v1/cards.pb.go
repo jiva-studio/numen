@@ -1205,11 +1205,10 @@ func (x *WriteStencilRequest) GetTail() string {
 
 type WriteStencilResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A file that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens to
+	// their text.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the file is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens to their text.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1252,13 +1251,6 @@ func (x *WriteStencilResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
-}
-
-func (x *WriteStencilResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
 }
 
 func (x *WriteStencilResponse) GetAt() *Fingerprint {
@@ -1350,11 +1342,9 @@ type RenameFieldResponse struct {
 	// the old heading.
 	NotWritten []*NotWritten `protobuf:"bytes,3,rep,name=not_written,json=notWritten,proto3" json:"not_written,omitempty"`
 	// Set when the field was not renamed at all, and why. No deck is written
-	// where the stencil refused the rename.
+	// where the stencil refused the rename, and a stencil that is no longer the
+	// one this caller read is REFUSAL_STALE.
 	Refusal *Refusal `protobuf:"varint,4,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the stencil is no longer the one this caller read. Nothing was
-	// renamed.
-	Changed bool `protobuf:"varint,5,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The stencil the rename produced, for the caller to present at its next
 	// write. Absent when nothing was renamed.
 	At            *Fingerprint `protobuf:"bytes,6,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1418,13 +1408,6 @@ func (x *RenameFieldResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
-}
-
-func (x *RenameFieldResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
 }
 
 func (x *RenameFieldResponse) GetAt() *Fingerprint {
@@ -1810,11 +1793,10 @@ func (x *WriteDeckRequest) GetTail() string {
 
 type WriteDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when nothing was written, and why.
+	// Set when nothing was written, and why. A file that is no longer the one
+	// this caller read is REFUSAL_STALE, and the person chooses what happens to
+	// their text.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
-	// Set when the file is no longer the one this caller read. Nothing was
-	// written, and the person chooses what happens to their text.
-	Changed bool `protobuf:"varint,2,opt,name=changed,proto3" json:"changed,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1861,13 +1843,6 @@ func (x *WriteDeckResponse) GetRefusal() Refusal {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
-}
-
-func (x *WriteDeckResponse) GetChanged() bool {
-	if x != nil {
-		return x.Changed
-	}
-	return false
 }
 
 func (x *WriteDeckResponse) GetAt() *Fingerprint {
@@ -1971,31 +1946,29 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xa1\x01\n" +
+	"\x05_seen\"\x96\x01\n" +
 	"\x14WriteStencilResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"\x85\x01\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"\x85\x01\n" +
 	"\x12RenameFieldRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x83\x02\n" +
+	"\x05_seen\"\xf8\x01\n" +
 	"\x13RenameFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x125\n" +
 	"\vnot_written\x18\x03 \x03(\v2\x14.numen.v1.NotWrittenR\n" +
 	"notWritten\x120\n" +
-	"\arefusal\x18\x04 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x05 \x01(\bR\achanged\x12*\n" +
+	"\arefusal\x18\x04 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x06 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"M\n" +
+	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"M\n" +
 	"\n" +
 	"NotWritten\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12+\n" +
@@ -2026,15 +1999,14 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\bsections\x18\x06 \x03(\v2\x11.numen.v1.SectionR\bsections\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01\x12\x12\n" +
 	"\x04tail\x18\x05 \x01(\tR\x04tailB\a\n" +
-	"\x05_seen\"\xb4\x01\n" +
+	"\x05_seen\"\xa9\x01\n" +
 	"\x11WriteDeckResponse\x120\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12\x18\n" +
-	"\achanged\x18\x02 \x01(\bR\achanged\x12*\n" +
+	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01\x12\x14\n" +
 	"\x05bound\x18\x04 \x01(\x03R\x05boundB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at*\xbb\x02\n" +
+	"\x03_atJ\x04\b\x02\x10\x03R\achanged*\xbb\x02\n" +
 	"\x05Fault\x12\x15\n" +
 	"\x11FAULT_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aFAULT_FIELD_DECLARED_TWICE\x10\x01\x12 \n" +

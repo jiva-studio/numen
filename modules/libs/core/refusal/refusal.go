@@ -38,12 +38,10 @@ func Of(o note.ReadOutcome) (v1.Refusal, bool) {
 
 // By says which refusal a write's error is, and whether it is one at all.
 // Anything else is the vault being out of reach.
-//
-// A note that changed is not among them. It is answered on its own, because a
-// refusal is something the client can do nothing about and that one is a
-// question for the person.
 func By(err error) (v1.Refusal, bool) {
 	switch {
+	case errors.Is(err, port.ErrChanged):
+		return v1.Refusal_REFUSAL_STALE, true
 	case errors.Is(err, note.ErrNoNote):
 		return v1.Refusal_REFUSAL_MISSING, true
 	case errors.Is(err, note.ErrTooLarge):

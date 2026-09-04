@@ -66,11 +66,8 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if !out.Msg.GetChanged() {
-		t.Error("the write did not say the note changed")
-	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Errorf("a note that changed was answered as a refusal: %v", refusal)
+	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
+		t.Errorf("a note that changed was answered %v", refusal)
 	}
 	if out.Msg.GetAt() != nil {
 		t.Error("a write that wrote nothing answered with a fingerprint")
@@ -99,7 +96,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Msg.GetChanged() {
+	if first.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
 		t.Fatal("the first write said the note changed")
 	}
 	if first.Msg.GetAt() == nil {
@@ -114,7 +111,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Msg.GetChanged() {
+	if second.Msg.GetRefusal() == v1.Refusal_REFUSAL_STALE {
 		t.Error("the write after a write said the note changed")
 	}
 
@@ -186,11 +183,8 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a note that changed came back as an error: %v", err)
 	}
-	if !out.Msg.GetChanged() {
-		t.Error("the join did not say the note changed")
-	}
-	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Errorf("a note that changed was answered as a refusal: %v", refusal)
+	if refusal := out.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_STALE {
+		t.Errorf("a note that changed was answered %v", refusal)
 	}
 
 	raw, err := os.ReadFile(on)

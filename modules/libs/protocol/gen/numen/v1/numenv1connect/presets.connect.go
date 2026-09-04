@@ -91,7 +91,7 @@ type PresetsServiceClient interface {
 	//
 	// A preset the vault holds no note at is refused `missing`, and a preset
 	// naming a note that is not one is refused `not_a_preset`. A deck that no
-	// longer holds what the caller read is left alone and answered `changed`.
+	// longer holds what the caller read is left alone and refused `stale`.
 	Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error)
 	// ReadPreset is the settings of one preset. A note that is not a preset is
 	// answered with the defaults and a problem: what is wrong with the file is
@@ -103,7 +103,7 @@ type PresetsServiceClient interface {
 	//
 	// A path the vault holds no note at is refused `missing`. A note that is not
 	// a preset is refused `not_a_preset`, and one that no longer holds what the
-	// caller read is left alone and answered `changed`.
+	// caller read is left alone and refused `stale`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
 	// Curve is what the settings come to over the whole range of the goal they
 	// name. The whole range is worked out in one pass.
@@ -238,7 +238,7 @@ type PresetsServiceHandler interface {
 	//
 	// A preset the vault holds no note at is refused `missing`, and a preset
 	// naming a note that is not one is refused `not_a_preset`. A deck that no
-	// longer holds what the caller read is left alone and answered `changed`.
+	// longer holds what the caller read is left alone and refused `stale`.
 	Schedule(context.Context, *connect.Request[v1.ScheduleRequest]) (*connect.Response[v1.ScheduleResponse], error)
 	// ReadPreset is the settings of one preset. A note that is not a preset is
 	// answered with the defaults and a problem: what is wrong with the file is
@@ -250,7 +250,7 @@ type PresetsServiceHandler interface {
 	//
 	// A path the vault holds no note at is refused `missing`. A note that is not
 	// a preset is refused `not_a_preset`, and one that no longer holds what the
-	// caller read is left alone and answered `changed`.
+	// caller read is left alone and refused `stale`.
 	WritePreset(context.Context, *connect.Request[v1.WritePresetRequest]) (*connect.Response[v1.WritePresetResponse], error)
 	// Curve is what the settings come to over the whole range of the goal they
 	// name. The whole range is worked out in one pass.

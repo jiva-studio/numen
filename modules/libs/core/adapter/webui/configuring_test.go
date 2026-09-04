@@ -289,7 +289,7 @@ func TestAFileThatMovedPastWhatTheClientReadIsAnswered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !said.Msg.GetChanged() {
+	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_STALE {
 		t.Error("the write landed, wanted the question put to the person")
 	}
 
@@ -317,7 +317,7 @@ func TestAFileStandingAtWhatTheClientReadIsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if said.Msg.GetChanged() {
+	if said.Msg.GetRefusal() != v1.Refusal_REFUSAL_UNSPECIFIED {
 		t.Fatal("the write was answered the question, wanted it to land")
 	}
 

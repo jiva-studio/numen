@@ -86,7 +86,7 @@ type CardsServiceClient interface {
 	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
 	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
 	// a stencil that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -103,7 +103,7 @@ type CardsServiceClient interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// answered `changed`, and then no deck is written either.
+	// refused `stale`, and then no deck is written either.
 	RenameField(context.Context, *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error)
 	// MakeDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
@@ -116,7 +116,7 @@ type CardsServiceClient interface {
 	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
 	// what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card stands under is written where the cards around it put it.
@@ -263,7 +263,7 @@ type CardsServiceHandler interface {
 	// no note at is refused `missing`; MakeStencil is what puts a stencil in the
 	// vault. Every frontmatter key but `fields` stays as the person wrote it, and
 	// a stencil that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// The preamble, the tail and each face's lead are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -280,7 +280,7 @@ type CardsServiceHandler interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// answered `changed`, and then no deck is written either.
+	// refused `stale`, and then no deck is written either.
 	RenameField(context.Context, *connect.Request[v1.RenameFieldRequest]) (*connect.Response[v1.RenameFieldResponse], error)
 	// MakeDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
@@ -293,7 +293,7 @@ type CardsServiceHandler interface {
 	// given. A path the vault holds no note at is refused `missing`; MakeDeck is
 	// what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// answered `changed`.
+	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card stands under is written where the cards around it put it.
