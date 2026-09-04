@@ -45,9 +45,9 @@ func (s vaultsService) ListVaults(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Known, 0, len(held))}
+	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(held))}
 	for _, v := range held {
-		out.Vaults = append(out.Vaults, knownOf(v))
+		out.Vaults = append(out.Vaults, vaultOf(v))
 	}
 	return connect.NewResponse(out), nil
 }
@@ -88,7 +88,7 @@ func (s vaultsService) AddVault(
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.AddVaultResponse{Vault: knownOf(added)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: vaultOf(added)}), nil
 }
 
 // RenameVault is what a person calls a vault. The folder keeps the name the
@@ -111,7 +111,7 @@ func (s vaultsService) RenameVault(
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.RenameVaultResponse{Vault: knownOf(v)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v)}), nil
 }
 
 // ForgetVault takes a vault off the list and out of the index. The folder stays
@@ -209,11 +209,11 @@ func (s vaultsService) found(id string) (domain.Vault, error) {
 	return usecase.Find{Registry: s.api.Vaults.Registry}.Execute(id)
 }
 
-// knownOf is one vault as the schema carries it. A folder that is not there to
+// vaultOf is one vault as the schema carries it. A folder that is not there to
 // be found is marked, and the vault stays on the list.
-func knownOf(v domain.Vault) *v1.Known {
+func vaultOf(v domain.Vault) *v1.Vault {
 	_, err := os.Stat(v.Path)
-	return &v1.Known{
+	return &v1.Vault{
 		Name: string(v.ID), DisplayName: v.Name, Path: v.Path, Missing: err != nil,
 	}
 }

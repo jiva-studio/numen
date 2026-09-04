@@ -113,8 +113,8 @@ func (VaultsRefusal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{0}
 }
 
-// Known is one vault the installation holds, as the list has it.
-type Known struct {
+// Vault is one vault the installation holds, as the list has it.
+type Vault struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Name is the identity the folder carries, and how this vault is asked for
 	// again. It survives the folder moving and the vault being renamed.
@@ -131,20 +131,20 @@ type Known struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Known) Reset() {
-	*x = Known{}
+func (x *Vault) Reset() {
+	*x = Vault{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Known) String() string {
+func (x *Vault) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Known) ProtoMessage() {}
+func (*Vault) ProtoMessage() {}
 
-func (x *Known) ProtoReflect() protoreflect.Message {
+func (x *Vault) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -156,33 +156,33 @@ func (x *Known) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Known.ProtoReflect.Descriptor instead.
-func (*Known) Descriptor() ([]byte, []int) {
+// Deprecated: Use Vault.ProtoReflect.Descriptor instead.
+func (*Vault) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Known) GetName() string {
+func (x *Vault) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *Known) GetDisplayName() string {
+func (x *Vault) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-func (x *Known) GetPath() string {
+func (x *Vault) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Known) GetMissing() bool {
+func (x *Vault) GetMissing() bool {
 	if x != nil {
 		return x.Missing
 	}
@@ -228,7 +228,7 @@ func (*ListVaultsRequest) Descriptor() ([]byte, []int) {
 type ListVaultsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every vault the installation holds.
-	Vaults        []*Known `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	Vaults        []*Vault `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -263,7 +263,7 @@ func (*ListVaultsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListVaultsResponse) GetVaults() []*Known {
+func (x *ListVaultsResponse) GetVaults() []*Vault {
 	if x != nil {
 		return x.Vaults
 	}
@@ -438,7 +438,7 @@ func (x *AddVaultRequest) GetDisplayName() string {
 type AddVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault that joined the list. Absent when nothing was added.
-	Vault *Known `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
+	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	// Set when nothing was added, and why.
 	Refusal       *VaultsRefusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -475,7 +475,7 @@ func (*AddVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *AddVaultResponse) GetVault() *Known {
+func (x *AddVaultResponse) GetVault() *Vault {
 	if x != nil {
 		return x.Vault
 	}
@@ -547,7 +547,7 @@ type RenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault under its new name. Absent when it was not renamed. The name a
 	// vault already has is not a change and answers with the vault as it stands.
-	Vault *Known `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
+	Vault *Vault `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
 	// Set when the vault was not renamed, and why.
 	Refusal       *VaultsRefusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -584,7 +584,7 @@ func (*RenameVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *RenameVaultResponse) GetVault() *Known {
+func (x *RenameVaultResponse) GetVault() *Vault {
 	if x != nil {
 		return x.Vault
 	}
@@ -874,14 +874,14 @@ var File_numen_v1_vaults_proto protoreflect.FileDescriptor
 const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\n" +
 	"\x15numen/v1/vaults.proto\x12\bnumen.v1\"l\n" +
-	"\x05Known\x12\x12\n" +
+	"\x05Vault\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
 	"\amissing\x18\x04 \x01(\bR\amissing\"\x13\n" +
 	"\x11ListVaultsRequest\"L\n" +
 	"\x12ListVaultsResponse\x12'\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.KnownR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"L\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.VaultR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"L\n" +
 	"\x13ChooseFolderRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
 	"\vstarting_at\x18\x02 \x01(\tR\n" +
@@ -893,7 +893,7 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x8c\x01\n" +
 	"\x10AddVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
@@ -902,7 +902,7 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x8f\x01\n" +
 	"\x13RenameVaultResponse\x12*\n" +
-	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
+	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.VaultH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
@@ -963,7 +963,7 @@ var file_numen_v1_vaults_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_vaults_proto_goTypes = []any{
 	(VaultsRefusal)(0),           // 0: numen.v1.VaultsRefusal
-	(*Known)(nil),                // 1: numen.v1.Known
+	(*Vault)(nil),                // 1: numen.v1.Vault
 	(*ListVaultsRequest)(nil),    // 2: numen.v1.ListVaultsRequest
 	(*ListVaultsResponse)(nil),   // 3: numen.v1.ListVaultsResponse
 	(*ChooseFolderRequest)(nil),  // 4: numen.v1.ChooseFolderRequest
@@ -980,10 +980,10 @@ var file_numen_v1_vaults_proto_goTypes = []any{
 	(*OpenVaultResponse)(nil),    // 15: numen.v1.OpenVaultResponse
 }
 var file_numen_v1_vaults_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Known
-	1,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Known
+	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Vault
+	1,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Vault
 	0,  // 2: numen.v1.AddVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Known
+	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Vault
 	0,  // 4: numen.v1.RenameVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
 	0,  // 5: numen.v1.ForgetVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
 	0,  // 6: numen.v1.EraseVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal

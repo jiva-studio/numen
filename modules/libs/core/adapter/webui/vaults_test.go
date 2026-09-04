@@ -218,7 +218,7 @@ func (f *onTheList) held(t *testing.T) *v1.ListVaultsResponse {
 }
 
 // onList is the vault of that identity on the list the client was answered with.
-func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Known {
+func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Vault {
 	t.Helper()
 
 	for _, one := range list.GetVaults() {

@@ -35,13 +35,13 @@ import type {
   Cue as CueMessage,
   Deck as DeckMessage,
   Entry as EntryMessage,
-  Known as KnownMessage,
   MoveResult as MovedMessage,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
   Page as PageMessage,
   Problem as ProblemMessage,
   Refusal,
   Stencil as StencilMessage,
+  Vault as VaultMessage,
 } from '@numen/protocol'
 import type { Counting } from '@numen/ui'
 import { fingerprint, refusalIn, staleIn, stamp } from './answers'
@@ -843,7 +843,7 @@ const faulted: Record<Faults, Fault> = {
 }
 
 /** One vault of the list, kept as the plain value the window carries it as. */
-const held = (one: KnownMessage): Known => ({
+const held = (one: VaultMessage): Known => ({
   name: one.name,
   displayName: one.displayName,
   path: one.path,
@@ -851,7 +851,7 @@ const held = (one: KnownMessage): Known => ({
 })
 
 const added = (from: {
-  vault?: KnownMessage | undefined
+  vault?: VaultMessage | undefined
   refusal?: VaultsRefusal | undefined
 }): Added => ({
   vault: from.vault ? held(from.vault) : null,

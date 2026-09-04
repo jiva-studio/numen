@@ -82,8 +82,8 @@ enum VaultsRefusal {
   VAULTS_REFUSAL_ASKING = 9;
 }
 
-// Known is one vault the installation holds, as the list has it.
-message Known {
+// Vault is one vault the installation holds, as the list has it.
+message Vault {
   // Name is the identity the folder carries, and how this vault is asked for
   // again. It survives the folder moving and the vault being renamed.
   string name = 1;
@@ -108,7 +108,7 @@ message ListVaultsResponse {
   reserved "showing";
 
   // Every vault the installation holds.
-  repeated Known vaults = 1;
+  repeated Vault vaults = 1;
 }
 
 message ChooseFolderRequest {
@@ -140,7 +140,7 @@ message AddVaultRequest {
 
 message AddVaultResponse {
   // The vault that joined the list. Absent when nothing was added.
-  optional Known vault = 1;
+  optional Vault vault = 1;
 
   // Set when nothing was added, and why.
   optional VaultsRefusal refusal = 2;
@@ -157,7 +157,7 @@ message RenameVaultRequest {
 message RenameVaultResponse {
   // The vault under its new name. Absent when it was not renamed. The name a
   // vault already has is not a change and answers with the vault as it stands.
-  optional Known vault = 1;
+  optional Vault vault = 1;
 
   // Set when the vault was not renamed, and why.
   optional VaultsRefusal refusal = 2;
