@@ -14,7 +14,7 @@ import (
 )
 
 // windowOn is a window open on a vault of this test's own.
-func windowOn(t *testing.T) (*webui.Opened, container.Config) {
+func windowOn(t *testing.T) (*webui.Installation, container.Config) {
 	t.Helper()
 
 	cfg := container.Config{

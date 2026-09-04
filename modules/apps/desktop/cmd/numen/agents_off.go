@@ -16,6 +16,6 @@ import (
 
 const defaultAgentAddr = ""
 
-func serveAgents(context.Context, container.Config, *webui.Opened, agentOptions, io.Writer) (func() error, error) {
+func serveAgents(context.Context, container.Config, *webui.Installation, agentOptions, io.Writer) (func() error, error) {
 	return func() error { return nil }, nil
 }

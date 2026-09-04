@@ -42,7 +42,7 @@ type showing struct {
 	// drawn is the window itself, which the drain that holds it back is asked
 	// of.
 	drawn  numenv1connect.WindowServiceClient
-	opened *webui.Opened
+	opened *webui.Installation
 	cfg    container.Config
 	first  domain.Vault
 	second domain.Vault

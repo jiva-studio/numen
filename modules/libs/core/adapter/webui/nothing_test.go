@@ -25,7 +25,7 @@ import (
 // nothing is an installation holding no vault, the window it opens, and a
 // client asking about it the way the window does.
 type nothing struct {
-	opened    *webui.Opened
+	opened    *webui.Installation
 	vault     questions
 	drawn     numenv1connect.WindowServiceClient
 	holds     numenv1connect.VaultsServiceClient

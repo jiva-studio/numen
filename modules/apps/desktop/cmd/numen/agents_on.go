@@ -29,7 +29,7 @@ const defaultAgentAddr = mcp.DefaultAddr
 // unnamed is what the panel is told where the settings name no agent.
 const unnamed = "no agent is named in the settings"
 
-func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened, opts agentOptions, out io.Writer) (func() error, error) {
+func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Installation, opts agentOptions, out io.Writer) (func() error, error) {
 	if opts.off {
 		return func() error { return nil }, nil
 	}
@@ -79,7 +79,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Opened
 
 // drafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
+func drafting(cfg container.Config, opened *webui.Installation) claudecode.Drafting {
 	reading := note.Read{Readers: cfg.VaultReaders()}
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {
@@ -103,7 +103,7 @@ func drafting(cfg container.Config, opened *webui.Opened) claudecode.Drafting {
 // agentCore wires the tools to the same use cases everything else uses. The
 // index is brought level by the same refresh the watcher drives, so a tool that
 // writes a note leaves it findable.
-func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.Writer) mcp.Core {
+func agentCore(cfg container.Config, opened *webui.Installation, root string, out io.Writer) mcp.Core {
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := opened.Refresh().Execute(ctx, v, paths)
 		return err
@@ -193,7 +193,7 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 // The session that asked is served for the vault that is going and ends with
 // it, so what went wrong is said here. A window that cannot be moved serves no
 // tool that would move it.
-func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.Vault) error {
+func opening(opened *webui.Installation, out io.Writer) func(context.Context, domain.Vault) error {
 	if opened.API.Opens == nil {
 		return nil
 	}
@@ -211,6 +211,6 @@ func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.V
 // It is always served, even on a machine holding none of the models: what is
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
-func recogniser(opened *webui.Opened) mcp.Recogniser {
+func recogniser(opened *webui.Installation) mcp.Recogniser {
 	return opened.Recognising()
 }

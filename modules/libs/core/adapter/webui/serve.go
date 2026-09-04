@@ -20,13 +20,13 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Opened is a window put together and running: the questions a client may ask,
-// and the pieces anything else working the same vault needs.
+// Installation is a window put together and running: the questions a client
+// may ask, and the pieces anything else working the same vault needs.
 //
 // The index and the embedder belong to the installation and are made once. The
 // passes behind a vault belong to that vault, and are taken down and built
 // again when another is opened.
-type Opened struct {
+type Installation struct {
 	API   *API
 	Index *container.Index
 
@@ -151,7 +151,7 @@ var errNoVault = errors.New("the window has no vault")
 // clients write what only they hold and the writes in the air land. Closing
 // then stops the scan, waits for it, and closes the database — in that order,
 // because the database is what the scan writes to.
-func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer) (*Opened, error) {
+func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer) (*Installation, error) {
 	registry, err := cfg.Registry()
 	if err != nil {
 		return nil, err
@@ -245,7 +245,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	})
 	api.Finds = &finds
 
-	opened := &Opened{
+	opened := &Installation{
 		API:          api,
 		Index:        db,
 		Embedder:     embedder,
@@ -400,7 +400,7 @@ func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 //
 // A vault that will not come up leaves the window on the one it was showing. A
 // window neither of them comes up in stands on nothing and says so.
-func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
+func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	if v.ID == o.API.Showing().ID {
 		return nil
 	}
@@ -449,7 +449,7 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 //
 // The zero vault is a window standing on nothing: it shows no vault, and no
 // pass runs behind it.
-func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
+func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 	o.API.show(v)
 	if v.ID == "" {
 		// Nothing is being read, so nothing is waited for.
@@ -474,7 +474,7 @@ func (o *Opened) arrive(v domain.Vault, rebuild bool) error {
 // begins builds the half of the window that belongs to one vault: the scan and
 // the watch behind it, the reading of the documents it holds, and the batches
 // left with a proofreader.
-func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
+func (o *Installation) begins(v domain.Vault, rebuild bool) (*showing, error) {
 	known, err := usecase.List{Registry: o.registry}.Execute()
 	if err != nil {
 		return nil, err
@@ -554,7 +554,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 
 // leave takes down the half of the window that belongs to the vault it is
 // showing.
-func (o *Opened) leave() {
+func (o *Installation) leave() {
 	on := o.API.showing.Swap(nil)
 	if on == nil {
 		return
@@ -578,7 +578,7 @@ func (o *Opened) leave() {
 //
 // What stopped this installation from embedding at all is put back. It stands
 // for as long as the window is open.
-func (o *Opened) forget() {
+func (o *Installation) forget() {
 	o.API.Ready.Store(false)
 	o.API.Failed.Store("")
 	o.API.Unwatched.Store("")
@@ -598,7 +598,7 @@ func (o *Opened) forget() {
 //
 // A vault being opened settles too, and the close that arrives while it is
 // running is answered false: the window stays, and the next ask settles again.
-func (o *Opened) Settle(ctx context.Context) bool {
+func (o *Installation) Settle(ctx context.Context) bool {
 	switch err := o.shutting.alone(); {
 	case errors.Is(err, errGoing):
 		return true
@@ -615,11 +615,11 @@ func (o *Opened) Settle(ctx context.Context) bool {
 // waits on while a person answers a question, and that wait is on a person and
 // is not measured. It answers false where ctx ended or the vault was asked
 // again.
-func (o *Opened) Answered(ctx context.Context) bool { return o.API.Window.Answered(ctx) }
+func (o *Installation) Answered(ctx context.Context) bool { return o.API.Window.Answered(ctx) }
 
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes the index.
-func (o *Opened) Close() error {
+func (o *Installation) Close() error {
 	// First: a search, a note and a link are answered straight from the index,
 	// and the index closes here. This stands until the last of them is off it.
 	o.API.Shut()
@@ -640,11 +640,11 @@ func (o *Opened) Close() error {
 }
 
 // Showing is the vault the window has open.
-func (o *Opened) Showing() domain.Vault { return o.API.Showing() }
+func (o *Installation) Showing() domain.Vault { return o.API.Showing() }
 
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
-func (o *Opened) Refresh() usecase.Refresh {
+func (o *Installation) Refresh() usecase.Refresh {
 	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
@@ -659,7 +659,7 @@ func (o *Opened) Refresh() usecase.Refresh {
 // Recognising reads a scanned document for whoever asks. It is one job for the
 // window and for an agent alike, so that what a person started through one of
 // them is shown by the other. Nothing while the window has no vault.
-func (o *Opened) Recognising() *source.Recognising {
+func (o *Installation) Recognising() *source.Recognising {
 	if on := o.API.showing.Load(); on != nil {
 		return on.recognising
 	}
@@ -670,7 +670,7 @@ func (o *Opened) Recognising() *source.Recognising {
 // vault. It is one job for the window and for an agent alike, so that what a
 // person started through one of them is shown by the other. Nothing while the
 // window has no vault.
-func (o *Opened) Transcribing() *source.Transcribing {
+func (o *Installation) Transcribing() *source.Transcribing {
 	if on := o.API.showing.Load(); on != nil {
 		return on.transcribing
 	}
@@ -680,7 +680,7 @@ func (o *Opened) Transcribing() *source.Transcribing {
 // level brings named notes up to date in the index, through whatever is
 // following the vault they are in. A note the window makes is level before the
 // answer comes back, so it is drawn as soon as it exists.
-func (o *Opened) level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
 }
@@ -738,7 +738,7 @@ const (
 
 // Says puts what reading the settings had to tell a person in the list of what
 // is being done, which is where a person is.
-func (o *Opened) Says(said []string) {
+func (o *Installation) Says(said []string) {
 	for at, one := range said {
 		o.API.say(task.Task{
 			ID:     fmt.Sprintf("%s %d", readingTheSettings, at),

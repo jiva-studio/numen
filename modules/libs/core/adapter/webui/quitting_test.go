@@ -36,7 +36,7 @@ type going struct {
 	// drawn is the window itself: what is being done behind it, and the drain
 	// that holds it back when it goes.
 	drawn  numenv1connect.WindowServiceClient
-	opened *webui.Opened
+	opened *webui.Installation
 	root   string
 	// settings is the vault list this window keeps, which is the folder its
 	// settings file sits in.

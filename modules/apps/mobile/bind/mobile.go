@@ -34,7 +34,7 @@ var (
 type held struct {
 	port   int
 	stop   context.CancelFunc
-	opened *webui.Opened
+	opened *webui.Installation
 	server *http.Server
 }
 

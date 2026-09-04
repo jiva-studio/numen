@@ -18,7 +18,7 @@ import (
 
 // indexed waits until the vault holds the note at this path, which is what says
 // the walk that reads a file it has just been given is over.
-func indexed(t *testing.T, opened *webui.Opened, v domain.Vault, path string) {
+func indexed(t *testing.T, opened *webui.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
 		shown, err := opened.Index.Queries().Notes(t.Context(), string(v.ID), []string{path})

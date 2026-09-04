@@ -26,7 +26,7 @@ const namedInARefusal = 3
 //
 // The watcher reports a picture or an archive to nobody, so what arrived is
 // named to the listeners here.
-func (o *Opened) Brings(ctx context.Context, into string, paths []string) {
+func (o *Installation) Brings(ctx context.Context, into string, paths []string) {
 	api := o.API
 	if api.Files.Bring == nil || len(paths) == 0 {
 		return

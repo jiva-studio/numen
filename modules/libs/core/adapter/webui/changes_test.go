@@ -38,7 +38,7 @@ func opened(t *testing.T, notes map[string]string) (questions, string) {
 // serving is that same vault, with the window's half of it as well, for a test
 // asking what something the window does reaches the client as.
 func serving(t *testing.T, notes map[string]string) (
-	questions, numenv1connect.WindowServiceClient, string, *webui.Opened,
+	questions, numenv1connect.WindowServiceClient, string, *webui.Installation,
 ) {
 	t.Helper()
 	root := t.TempDir()
