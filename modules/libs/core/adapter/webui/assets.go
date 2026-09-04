@@ -13,7 +13,6 @@ import (
 //	GET /assets/<id>                          what it is
 //	GET /assets/<id>/pages/<n>?wide=W         one page, where it has any
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
-//	GET /assets/<id>/media                    its own bytes, where it is sound
 //	GET /assets/<id>/cues                     the words heard in it
 //	DELETE /assets/<id>/cues                  take the transcript away
 //	POST /assets/<id>/recognise               read the scan
@@ -108,8 +107,5 @@ func pageOf(path string, at, wide int) string {
 func marksOf(path string, start, length int) string {
 	return fmt.Sprintf("%s/%s?start=%d&length=%d", assetOf(path), marksFacet, start, length)
 }
-
-// mediaOf is where a recording is played from, and cuesOf where the words heard
-// in it are read.
 
 func cuesOf(path string) string { return assetOf(path) + "/" + cuesFacet }
