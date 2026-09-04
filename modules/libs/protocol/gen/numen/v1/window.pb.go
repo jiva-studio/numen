@@ -7,9 +7,9 @@
 // What a client may ask about the window it is drawn in.
 //
 // A window is not a vault: the editor and the window a person runs their cards
-// in are open on the same vault at once, and what each of them is doing behind
-// itself, and what has to land before it goes, are its own. Every question
-// here names the window it is about.
+// in are open at once, and which vault each has in front of the person, what
+// each is doing behind itself, and what has to land before it goes, are its
+// own. Every question here names the window it is about.
 
 package numenv1
 
@@ -553,6 +553,99 @@ func (*FlushedResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{6}
 }
 
+type ShowingRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The window this is asked of. A question naming another window than the one
+	// answering it is not answered.
+	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShowingRequest) Reset() {
+	*x = ShowingRequest{}
+	mi := &file_numen_v1_window_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShowingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShowingRequest) ProtoMessage() {}
+
+func (x *ShowingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_window_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShowingRequest.ProtoReflect.Descriptor instead.
+func (*ShowingRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ShowingRequest) GetWindow() string {
+	if x != nil {
+		return x.Window
+	}
+	return ""
+}
+
+type ShowingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The identity the list of vaults holds that vault under. Empty in a window
+	// showing none, and in one that is open on the installation rather than on
+	// any one vault.
+	Vault         string `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ShowingResponse) Reset() {
+	*x = ShowingResponse{}
+	mi := &file_numen_v1_window_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ShowingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ShowingResponse) ProtoMessage() {}
+
+func (x *ShowingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_window_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ShowingResponse.ProtoReflect.Descriptor instead.
+func (*ShowingResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_window_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ShowingResponse) GetVault() string {
+	if x != nil {
+		return x.Vault
+	}
+	return ""
+}
+
 var File_numen_v1_window_proto protoreflect.FileDescriptor
 
 const file_numen_v1_window_proto_rawDesc = "" +
@@ -580,7 +673,11 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\"\n" +
 	"\x04owed\x18\x03 \x01(\x0e2\x0e.numen.v1.OwedR\x04owed\"\x11\n" +
-	"\x0fFlushedResponse*c\n" +
+	"\x0fFlushedResponse\"(\n" +
+	"\x0eShowingRequest\x12\x16\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"'\n" +
+	"\x0fShowingResponse\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault*c\n" +
 	"\bCounting\x12\x18\n" +
 	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fCOUNTING_THINGS\x10\x01\x12\x12\n" +
@@ -590,11 +687,12 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fOWED_NOTHING\x10\x03\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
-	"\vOWED_ASKING\x10\x022\xd0\x01\n" +
+	"\vOWED_ASKING\x10\x022\x90\x02\n" +
 	"\rWindowService\x12:\n" +
 	"\x05Tasks\x12\x16.numen.v1.TasksRequest\x1a\x17.numen.v1.TasksResponse0\x01\x12C\n" +
 	"\bQuitting\x12\x19.numen.v1.QuittingRequest\x1a\x1a.numen.v1.QuittingResponse0\x01\x12>\n" +
-	"\aFlushed\x12\x18.numen.v1.FlushedRequest\x1a\x19.numen.v1.FlushedResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\aFlushed\x12\x18.numen.v1.FlushedRequest\x1a\x19.numen.v1.FlushedResponse\x12>\n" +
+	"\aShowing\x12\x18.numen.v1.ShowingRequest\x1a\x19.numen.v1.ShowingResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_window_proto_rawDescOnce sync.Once
@@ -609,7 +707,7 @@ func file_numen_v1_window_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_window_proto_goTypes = []any{
 	(Counting)(0),            // 0: numen.v1.Counting
 	(Owed)(0),                // 1: numen.v1.Owed
@@ -620,22 +718,26 @@ var file_numen_v1_window_proto_goTypes = []any{
 	(*QuittingResponse)(nil), // 6: numen.v1.QuittingResponse
 	(*FlushedRequest)(nil),   // 7: numen.v1.FlushedRequest
 	(*FlushedResponse)(nil),  // 8: numen.v1.FlushedResponse
+	(*ShowingRequest)(nil),   // 9: numen.v1.ShowingRequest
+	(*ShowingResponse)(nil),  // 10: numen.v1.ShowingResponse
 }
 var file_numen_v1_window_proto_depIdxs = []int32{
-	4, // 0: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
-	0, // 1: numen.v1.Task.counting:type_name -> numen.v1.Counting
-	1, // 2: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
-	2, // 3: numen.v1.WindowService.Tasks:input_type -> numen.v1.TasksRequest
-	5, // 4: numen.v1.WindowService.Quitting:input_type -> numen.v1.QuittingRequest
-	7, // 5: numen.v1.WindowService.Flushed:input_type -> numen.v1.FlushedRequest
-	3, // 6: numen.v1.WindowService.Tasks:output_type -> numen.v1.TasksResponse
-	6, // 7: numen.v1.WindowService.Quitting:output_type -> numen.v1.QuittingResponse
-	8, // 8: numen.v1.WindowService.Flushed:output_type -> numen.v1.FlushedResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4,  // 0: numen.v1.TasksResponse.tasks:type_name -> numen.v1.Task
+	0,  // 1: numen.v1.Task.counting:type_name -> numen.v1.Counting
+	1,  // 2: numen.v1.FlushedRequest.owed:type_name -> numen.v1.Owed
+	2,  // 3: numen.v1.WindowService.Tasks:input_type -> numen.v1.TasksRequest
+	5,  // 4: numen.v1.WindowService.Quitting:input_type -> numen.v1.QuittingRequest
+	7,  // 5: numen.v1.WindowService.Flushed:input_type -> numen.v1.FlushedRequest
+	9,  // 6: numen.v1.WindowService.Showing:input_type -> numen.v1.ShowingRequest
+	3,  // 7: numen.v1.WindowService.Tasks:output_type -> numen.v1.TasksResponse
+	6,  // 8: numen.v1.WindowService.Quitting:output_type -> numen.v1.QuittingResponse
+	8,  // 9: numen.v1.WindowService.Flushed:output_type -> numen.v1.FlushedResponse
+	10, // 10: numen.v1.WindowService.Showing:output_type -> numen.v1.ShowingResponse
+	7,  // [7:11] is the sub-list for method output_type
+	3,  // [3:7] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_window_proto_init() }
@@ -649,7 +751,7 @@ func file_numen_v1_window_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_window_proto_rawDesc), len(file_numen_v1_window_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

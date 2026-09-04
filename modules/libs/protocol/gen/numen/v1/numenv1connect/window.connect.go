@@ -5,9 +5,9 @@
 // What a client may ask about the window it is drawn in.
 //
 // A window is not a vault: the editor and the window a person runs their cards
-// in are open on the same vault at once, and what each of them is doing behind
-// itself, and what has to land before it goes, are its own. Every question
-// here names the window it is about.
+// in are open at once, and which vault each has in front of the person, what
+// each is doing behind itself, and what has to land before it goes, are its
+// own. Every question here names the window it is about.
 package numenv1connect
 
 import (
@@ -45,6 +45,8 @@ const (
 	WindowServiceQuittingProcedure = "/numen.v1.WindowService/Quitting"
 	// WindowServiceFlushedProcedure is the fully-qualified name of the WindowService's Flushed RPC.
 	WindowServiceFlushedProcedure = "/numen.v1.WindowService/Flushed"
+	// WindowServiceShowingProcedure is the fully-qualified name of the WindowService's Showing RPC.
+	WindowServiceShowingProcedure = "/numen.v1.WindowService/Showing"
 )
 
 // WindowServiceClient is a client for the numen.v1.WindowService service.
@@ -67,6 +69,10 @@ type WindowServiceClient interface {
 	// a person is being asked about keeps it open. A caller that never says it is
 	// waited for and then left behind.
 	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
+	// Showing is which vault this window has in front of the person. Two windows
+	// are open on one installation and each shows what it shows, so it is the
+	// window that is asked and not the list of vaults.
+	Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error)
 }
 
 // NewWindowServiceClient constructs a client for the numen.v1.WindowService service. By default, it
@@ -98,6 +104,12 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(windowServiceMethods.ByName("Flushed")),
 			connect.WithClientOptions(opts...),
 		),
+		showing: connect.NewClient[v1.ShowingRequest, v1.ShowingResponse](
+			httpClient,
+			baseURL+WindowServiceShowingProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("Showing")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -106,6 +118,7 @@ type windowServiceClient struct {
 	tasks    *connect.Client[v1.TasksRequest, v1.TasksResponse]
 	quitting *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
 	flushed  *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
+	showing  *connect.Client[v1.ShowingRequest, v1.ShowingResponse]
 }
 
 // Tasks calls numen.v1.WindowService.Tasks.
@@ -121,6 +134,11 @@ func (c *windowServiceClient) Quitting(ctx context.Context, req *connect.Request
 // Flushed calls numen.v1.WindowService.Flushed.
 func (c *windowServiceClient) Flushed(ctx context.Context, req *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
 	return c.flushed.CallUnary(ctx, req)
+}
+
+// Showing calls numen.v1.WindowService.Showing.
+func (c *windowServiceClient) Showing(ctx context.Context, req *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error) {
+	return c.showing.CallUnary(ctx, req)
 }
 
 // WindowServiceHandler is an implementation of the numen.v1.WindowService service.
@@ -143,6 +161,10 @@ type WindowServiceHandler interface {
 	// a person is being asked about keeps it open. A caller that never says it is
 	// waited for and then left behind.
 	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
+	// Showing is which vault this window has in front of the person. Two windows
+	// are open on one installation and each shows what it shows, so it is the
+	// window that is asked and not the list of vaults.
+	Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error)
 }
 
 // NewWindowServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -170,6 +192,12 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(windowServiceMethods.ByName("Flushed")),
 		connect.WithHandlerOptions(opts...),
 	)
+	windowServiceShowingHandler := connect.NewUnaryHandler(
+		WindowServiceShowingProcedure,
+		svc.Showing,
+		connect.WithSchema(windowServiceMethods.ByName("Showing")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.WindowService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case WindowServiceTasksProcedure:
@@ -178,6 +206,8 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 			windowServiceQuittingHandler.ServeHTTP(w, r)
 		case WindowServiceFlushedProcedure:
 			windowServiceFlushedHandler.ServeHTTP(w, r)
+		case WindowServiceShowingProcedure:
+			windowServiceShowingHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -197,4 +227,8 @@ func (UnimplementedWindowServiceHandler) Quitting(context.Context, *connect.Requ
 
 func (UnimplementedWindowServiceHandler) Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Flushed is not implemented"))
+}
+
+func (UnimplementedWindowServiceHandler) Showing(context.Context, *connect.Request[v1.ShowingRequest]) (*connect.Response[v1.ShowingResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.Showing is not implemented"))
 }

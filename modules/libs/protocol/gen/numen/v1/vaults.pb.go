@@ -228,10 +228,7 @@ func (*VaultsServiceListRequest) Descriptor() ([]byte, []int) {
 type VaultsServiceListResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every vault the installation holds.
-	Vaults []*Known `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
-	// The identity of the vault this window is showing, empty in a window that
-	// is showing none.
-	Showing       string `protobuf:"bytes,2,opt,name=showing,proto3" json:"showing,omitempty"`
+	Vaults        []*Known `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -271,13 +268,6 @@ func (x *VaultsServiceListResponse) GetVaults() []*Known {
 		return x.Vaults
 	}
 	return nil
-}
-
-func (x *VaultsServiceListResponse) GetShowing() string {
-	if x != nil {
-		return x.Showing
-	}
-	return ""
 }
 
 type VaultsServiceChooseRequest struct {
@@ -889,10 +879,9 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
 	"\amissing\x18\x04 \x01(\bR\amissing\"\x1a\n" +
-	"\x18VaultsServiceListRequest\"^\n" +
+	"\x18VaultsServiceListRequest\"S\n" +
 	"\x19VaultsServiceListResponse\x12'\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.KnownR\x06vaults\x12\x18\n" +
-	"\ashowing\x18\x02 \x01(\tR\ashowing\"S\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.KnownR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"S\n" +
 	"\x1aVaultsServiceChooseRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
 	"\vstarting_at\x18\x02 \x01(\tR\n" +

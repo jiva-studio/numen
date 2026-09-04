@@ -17,7 +17,7 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 - `FileService` — the tree that vault is filed in: what a folder holds, what stands at a path, and moving one, removing one, making one.
 - `NoteService` — a note of that vault: its prose, its headings, its neighbourhood, the addresses written in it, and every way of writing one.
 - `SearchService` — what that vault holds that answers what a person typed: its names, and the passages of its text.
-- `VaultsService` — the vaults the installation holds, and which one a window shows.
+- `VaultsService` — the vaults the installation holds, and putting another one in front of the person.
 - `CardsService` — the stencils and decks a vault is arranged into.
 - `PresetsService` — the presets that schedule them, and the curve of one.
 - `FlashcardsService` — a sitting: what is owed, what is asked, what was answered.
@@ -25,7 +25,7 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 - `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing the words a recording was heard as.
 - `SettingsService` — the file a person configures the installation in.
 - `ThemeService` — what the window is dressed in.
-- `WindowService` — one window: what is being done behind it, and what has to land before it goes.
+- `WindowService` — one window: which vault it has in front of the person, what is being done behind it, and what has to land before it goes.
 - `AgentService` — the conversation in the panel.
 
 ### A binary mounts a service whole
@@ -38,7 +38,9 @@ The files of the vault are the other. The phone serves the vault's notes to a ne
 
 ### A window is a scope
 
-Every call of `WindowService` names the window it is about, and one that names another window than the one answering is not answered. Two windows are open on one vault at once, and what each is doing behind itself, and what it is owed before it can go, are the window's and not the vault's.
+Every call of `WindowService` names the window it is about, and one that names another window than the one answering is not answered. Two windows are open on one installation at once, and which vault each has in front of the person, what each is doing behind itself, and what it is owed before it can go, are the window's and not the installation's. That is why the list of vaults no longer says which one is being shown: the list is the same for both windows and the answer is not.
+
+The review window is open on the installation rather than on any one vault — it says what is owed across all of them and names a vault in every call — so it answers `Showing` with none. That is the answer, not a stub: a window standing on nothing gives the same one.
 
 ### A type is shared once three services hold it
 

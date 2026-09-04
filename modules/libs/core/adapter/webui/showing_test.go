@@ -166,6 +166,46 @@ func (f *showing) named(t *testing.T, query string) []string {
 	return out
 }
 
+// TestTheWindowSaysWhichVaultItIsShowing. Two windows are open on one
+// installation, so the identity of the vault in front of the person is the
+// window's answer and not the list's.
+func TestTheWindowSaysWhichVaultItIsShowing(t *testing.T) {
+	f := swapping(t)
+
+	if got := f.shows(t, wire.Editor); got != string(f.first.ID) {
+		t.Errorf("the window says it is showing %q, want %s", got, string(f.first.ID))
+	}
+
+	if err := f.opened.Show(t.Context(), f.second); err != nil {
+		t.Fatalf("the second vault would not open: %v", err)
+	}
+	f.read(t)
+
+	if got := f.shows(t, wire.Editor); got != string(f.second.ID) {
+		t.Errorf("after the swap it says %q, want %s", got, string(f.second.ID))
+	}
+
+	// And the question is the window's, so another window's name reaches
+	// nothing here.
+	_, err := f.drawn.Showing(t.Context(),
+		connect.NewRequest(&v1.ShowingRequest{Window: wire.Review}))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("err = %v, want the question about another window turned away", err)
+	}
+}
+
+// shows is the identity of the vault the named window says it is showing.
+func (f *showing) shows(t *testing.T, window string) string {
+	t.Helper()
+
+	out, err := f.drawn.Showing(t.Context(),
+		connect.NewRequest(&v1.ShowingRequest{Window: window}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out.Msg.GetVault()
+}
+
 // TestAnotherVaultOpensInTheWindowThatIsOpen. What the window answers about
 // afterwards is the vault that arrived and nothing of the one that went, and
 // every page is told that what it holds was read somewhere else.

@@ -41,6 +41,11 @@ type Window struct {
 	// says there is nothing.
 	Tasking *task.Tasks
 
+	// Vault is the identity of the vault this window has in front of the
+	// person. Nil is a window open on the installation rather than on any one
+	// vault, which answers with none.
+	Vault func() string
+
 	clients leaving
 }
 
@@ -157,6 +162,21 @@ func (w *Window) Flushed(
 	}
 	w.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetOwed()))
 	return connect.NewResponse(&v1.FlushedResponse{}), nil
+}
+
+// Showing is the vault this window has in front of the person.
+func (w *Window) Showing(
+	_ context.Context,
+	r *connect.Request[v1.ShowingRequest],
+) (*connect.Response[v1.ShowingResponse], error) {
+	if err := w.answers(r.Msg.GetWindow()); err != nil {
+		return nil, err
+	}
+	out := &v1.ShowingResponse{}
+	if w.Vault != nil {
+		out.Vault = w.Vault()
+	}
+	return connect.NewResponse(out), nil
 }
 
 // answers says whether a question reached the window it names.

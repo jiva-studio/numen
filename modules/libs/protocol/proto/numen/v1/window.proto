@@ -3,15 +3,15 @@ syntax = "proto3";
 // What a client may ask about the window it is drawn in.
 //
 // A window is not a vault: the editor and the window a person runs their cards
-// in are open on the same vault at once, and what each of them is doing behind
-// itself, and what has to land before it goes, are its own. Every question
-// here names the window it is about.
+// in are open at once, and which vault each has in front of the person, what
+// each is doing behind itself, and what has to land before it goes, are its
+// own. Every question here names the window it is about.
 package numen.v1;
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
-// WindowService answers about one window: what is being done behind it, and
-// what a caller has left when it goes.
+// WindowService answers about one window: what it has in front of the person,
+// what is being done behind it, and what a caller has left when it goes.
 service WindowService {
   // Tasks reports everything being done behind the window, for as long as the
   // caller listens: what it is, what it is on, and how far it has got.
@@ -33,6 +33,11 @@ service WindowService {
   // a person is being asked about keeps it open. A caller that never says it is
   // waited for and then left behind.
   rpc Flushed(FlushedRequest) returns (FlushedResponse);
+
+  // Showing is which vault this window has in front of the person. Two windows
+  // are open on one installation and each shows what it shows, so it is the
+  // window that is asked and not the list of vaults.
+  rpc Showing(ShowingRequest) returns (ShowingResponse);
 }
 
 message TasksRequest {
@@ -137,3 +142,16 @@ message FlushedRequest {
 }
 
 message FlushedResponse {}
+
+message ShowingRequest {
+  // The window this is asked of. A question naming another window than the one
+  // answering it is not answered.
+  string window = 1;
+}
+
+message ShowingResponse {
+  // The identity the list of vaults holds that vault under. Empty in a window
+  // showing none, and in one that is open on the installation rather than on
+  // any one vault.
+  string vault = 1;
+}

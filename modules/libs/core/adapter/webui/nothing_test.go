@@ -141,12 +141,18 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
 	}
 
+	shown, err := f.drawn.Showing(t.Context(),
+		connect.NewRequest(&v1.ShowingRequest{Window: wire.Editor}))
+	if err != nil {
+		t.Fatalf("the window cannot say which vault it is showing: %v", err)
+	}
+	if got := shown.Msg.GetVault(); got != "" {
+		t.Errorf("the window says it is showing %q", got)
+	}
+
 	listed, err := f.holds.List(t.Context(), connect.NewRequest(&v1.VaultsServiceListRequest{}))
 	if err != nil {
 		t.Fatalf("the window cannot list the vaults this installation holds: %v", err)
-	}
-	if got := listed.Msg.GetShowing(); got != "" {
-		t.Errorf("the list says the window is showing %q", got)
 	}
 	if got := listed.Msg.GetVaults(); len(got) != 0 {
 		t.Errorf("the list holds %d vaults, and none were added", len(got))

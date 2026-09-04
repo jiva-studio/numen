@@ -158,9 +158,14 @@ const puts = async (
 
 /** The vaults this installation holds, in the shape the window asks about them. */
 export const vaults: Vaults = {
+  // The list is the installation's and what is in front of the person is this
+  // window's, so the two are asked of the two and put together here.
   list: async () => {
-    const answer = await vaultsService.list({})
-    return { vaults: answer.vaults.map(held), showing: answer.showing }
+    const [answer, shown] = await Promise.all([
+      vaultsService.list({}),
+      windowService.showing({ window: WINDOW }),
+    ])
+    return { vaults: answer.vaults.map(held), showing: shown.vault }
   },
   choose: async (title) => {
     const answer = await vaultsService.choose({ title, startingAt: '' })

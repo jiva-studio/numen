@@ -56,8 +56,8 @@ const (
 
 // VaultsServiceClient is a client for the numen.v1.VaultsService service.
 type VaultsServiceClient interface {
-	// List is every vault the installation holds, and which of them this window
-	// is showing.
+	// List is every vault the installation holds. Which of them a window is
+	// showing is asked of that window.
 	List(context.Context, *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error)
 	// Choose puts this machine's own folder picker in front of the person and
 	// answers with the folder they chose. A person who closes the picker has
@@ -186,8 +186,8 @@ func (c *vaultsServiceClient) Open(ctx context.Context, req *connect.Request[v1.
 
 // VaultsServiceHandler is an implementation of the numen.v1.VaultsService service.
 type VaultsServiceHandler interface {
-	// List is every vault the installation holds, and which of them this window
-	// is showing.
+	// List is every vault the installation holds. Which of them a window is
+	// showing is asked of that window.
 	List(context.Context, *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error)
 	// Choose puts this machine's own folder picker in front of the person and
 	// answers with the folder they chose. A person who closes the picker has

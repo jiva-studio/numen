@@ -32,8 +32,8 @@ var errNoPicker = errors.New("this build has no folder picker")
 // answers.
 var errNoOpening = errors.New("this build cannot show another vault")
 
-// List is every vault the installation holds, and which of them the window has
-// in front of the person.
+// List is every vault the installation holds. Which of them the window has in
+// front of the person is asked of the window.
 func (s vaults) List(
 	_ context.Context,
 	_ *connect.Request[v1.VaultsServiceListRequest],
@@ -45,10 +45,7 @@ func (s vaults) List(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.VaultsServiceListResponse{
-		Vaults:  make([]*v1.Known, 0, len(held)),
-		Showing: string(s.api.Showing().ID),
-	}
+	out := &v1.VaultsServiceListResponse{Vaults: make([]*v1.Known, 0, len(held))}
 	for _, v := range held {
 		out.Vaults = append(out.Vaults, knownOf(v))
 	}

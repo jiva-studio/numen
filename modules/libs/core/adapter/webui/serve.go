@@ -212,6 +212,8 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		},
 		Files: Files{Writers: cfg.VaultWriters()},
 	}
+	// The editor is open on one vault, and answers which as itself.
+	api.Window.Vault = func() string { return string(api.Showing().ID) }
 	api.Indexing.Progress = db.Progress()
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to

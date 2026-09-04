@@ -230,17 +230,14 @@ func entry(t *testing.T, list *v1.VaultsServiceListResponse, id string) *v1.Know
 	return nil
 }
 
-// TestTheListMarksAFolderThatIsGoneAndNamesTheVaultBeingShown.
-func TestTheListMarksAFolderThatIsGoneAndNamesTheVaultBeingShown(t *testing.T) {
+// TestTheListMarksAFolderThatIsGone.
+func TestTheListMarksAFolderThatIsGone(t *testing.T) {
 	f := onAList(t)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
 	}
 
 	list := f.held(t)
-	if list.GetShowing() != string(f.first.ID) {
-		t.Errorf("the window is showing %q, want %s", list.GetShowing(), string(f.first.ID))
-	}
 	if here := entry(t, list, string(f.first.ID)); here.GetMissing() {
 		t.Errorf("%s is marked missing, and its folder is at %s",
 			here.GetDisplayName(), here.GetPath())

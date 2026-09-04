@@ -5,9 +5,9 @@
 // What a client may ask about the window it is drawn in.
 //
 // A window is not a vault: the editor and the window a person runs their cards
-// in are open on the same vault at once, and what each of them is doing behind
-// itself, and what has to land before it goes, are its own. Every question
-// here names the window it is about.
+// in are open at once, and which vault each has in front of the person, what
+// each is doing behind itself, and what has to land before it goes, are its
+// own. Every question here names the window it is about.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIh4KDFRhc2tzUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiLgoNVGFza3NSZXNwb25zZRIdCgV0YXNrcxgBIAMoCzIOLm51bWVuLnYxLlRhc2sikgEKBFRhc2sSCgoCaWQYASABKAkSDQoFZG9pbmcYAiABKAkSDQoFYWJvdXQYAyABKAkSDAoEZG9uZRgEIAEoAxINCgV0b3RhbBgFIAEoAxIOCgZmYWlsZWQYBiABKAkSDQoFYXNrZWQYByABKAgSJAoIY291bnRpbmcYCCABKA4yEi5udW1lbi52MS5Db3VudGluZyIhCg9RdWl0dGluZ1JlcXVlc3QSDgoGd2luZG93GAEgASgJIjAKEFF1aXR0aW5nUmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiTQoORmx1c2hlZFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEhwKBG93ZWQYAyABKA4yDi5udW1lbi52MS5Pd2VkIhEKD0ZsdXNoZWRSZXNwb25zZSpjCghDb3VudGluZxIYChRDT1VOVElOR19VTlNQRUNJRklFRBAAEhMKD0NPVU5USU5HX1RISU5HUxABEhIKDkNPVU5USU5HX0JZVEVTEAISFAoQQ09VTlRJTkdfU0VDT05EUxADKlEKBE93ZWQSFAoQT1dFRF9VTlNQRUNJRklFRBAAEhAKDE9XRURfTk9USElORxADEhAKDE9XRURfV1JJVFRFThABEg8KC09XRURfQVNLSU5HEAIy0AEKDVdpbmRvd1NlcnZpY2USOgoFVGFza3MSFi5udW1lbi52MS5UYXNrc1JlcXVlc3QaFy5udW1lbi52MS5UYXNrc1Jlc3BvbnNlMAESQwoIUXVpdHRpbmcSGS5udW1lbi52MS5RdWl0dGluZ1JlcXVlc3QaGi5udW1lbi52MS5RdWl0dGluZ1Jlc3BvbnNlMAESPgoHRmx1c2hlZBIYLm51bWVuLnYxLkZsdXNoZWRSZXF1ZXN0GhkubnVtZW4udjEuRmx1c2hlZFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIh4KDFRhc2tzUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiLgoNVGFza3NSZXNwb25zZRIdCgV0YXNrcxgBIAMoCzIOLm51bWVuLnYxLlRhc2sikgEKBFRhc2sSCgoCaWQYASABKAkSDQoFZG9pbmcYAiABKAkSDQoFYWJvdXQYAyABKAkSDAoEZG9uZRgEIAEoAxINCgV0b3RhbBgFIAEoAxIOCgZmYWlsZWQYBiABKAkSDQoFYXNrZWQYByABKAgSJAoIY291bnRpbmcYCCABKA4yEi5udW1lbi52MS5Db3VudGluZyIhCg9RdWl0dGluZ1JlcXVlc3QSDgoGd2luZG93GAEgASgJIjAKEFF1aXR0aW5nUmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiTQoORmx1c2hlZFJlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEhwKBG93ZWQYAyABKA4yDi5udW1lbi52MS5Pd2VkIhEKD0ZsdXNoZWRSZXNwb25zZSIgCg5TaG93aW5nUmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiIAoPU2hvd2luZ1Jlc3BvbnNlEg0KBXZhdWx0GAEgASgJKmMKCENvdW50aW5nEhgKFENPVU5USU5HX1VOU1BFQ0lGSUVEEAASEwoPQ09VTlRJTkdfVEhJTkdTEAESEgoOQ09VTlRJTkdfQllURVMQAhIUChBDT1VOVElOR19TRUNPTkRTEAMqUQoET3dlZBIUChBPV0VEX1VOU1BFQ0lGSUVEEAASEAoMT1dFRF9OT1RISU5HEAMSEAoMT1dFRF9XUklUVEVOEAESDwoLT1dFRF9BU0tJTkcQAjKQAgoNV2luZG93U2VydmljZRI6CgVUYXNrcxIWLm51bWVuLnYxLlRhc2tzUmVxdWVzdBoXLm51bWVuLnYxLlRhc2tzUmVzcG9uc2UwARJDCghRdWl0dGluZxIZLm51bWVuLnYxLlF1aXR0aW5nUmVxdWVzdBoaLm51bWVuLnYxLlF1aXR0aW5nUmVzcG9uc2UwARI+CgdGbHVzaGVkEhgubnVtZW4udjEuRmx1c2hlZFJlcXVlc3QaGS5udW1lbi52MS5GbHVzaGVkUmVzcG9uc2USPgoHU2hvd2luZxIYLm51bWVuLnYxLlNob3dpbmdSZXF1ZXN0GhkubnVtZW4udjEuU2hvd2luZ1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.TasksRequest
@@ -232,6 +232,47 @@ export const FlushedResponseSchema: GenMessage<FlushedResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_window, 6);
 
 /**
+ * @generated from message numen.v1.ShowingRequest
+ */
+export type ShowingRequest = Message<"numen.v1.ShowingRequest"> & {
+  /**
+   * The window this is asked of. A question naming another window than the one
+   * answering it is not answered.
+   *
+   * @generated from field: string window = 1;
+   */
+  window: string;
+};
+
+/**
+ * Describes the message numen.v1.ShowingRequest.
+ * Use `create(ShowingRequestSchema)` to create a new message.
+ */
+export const ShowingRequestSchema: GenMessage<ShowingRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 7);
+
+/**
+ * @generated from message numen.v1.ShowingResponse
+ */
+export type ShowingResponse = Message<"numen.v1.ShowingResponse"> & {
+  /**
+   * The identity the list of vaults holds that vault under. Empty in a window
+   * showing none, and in one that is open on the installation rather than on
+   * any one vault.
+   *
+   * @generated from field: string vault = 1;
+   */
+  vault: string;
+};
+
+/**
+ * Describes the message numen.v1.ShowingResponse.
+ * Use `create(ShowingResponseSchema)` to create a new message.
+ */
+export const ShowingResponseSchema: GenMessage<ShowingResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_window, 8);
+
+/**
  * Counting is what a piece of work counts. Bytes are read out in the sizes a
  * person reads them in, seconds as a length of time, and everything else is
  * counted one by one.
@@ -309,8 +350,8 @@ export const OwedSchema: GenEnum<Owed> = /*@__PURE__*/
   enumDesc(file_numen_v1_window, 1);
 
 /**
- * WindowService answers about one window: what is being done behind it, and
- * what a caller has left when it goes.
+ * WindowService answers about one window: what it has in front of the person,
+ * what is being done behind it, and what a caller has left when it goes.
  *
  * @generated from service numen.v1.WindowService
  */
@@ -356,6 +397,18 @@ export const WindowService: GenService<{
     methodKind: "unary";
     input: typeof FlushedRequestSchema;
     output: typeof FlushedResponseSchema;
+  },
+  /**
+   * Showing is which vault this window has in front of the person. Two windows
+   * are open on one installation and each shows what it shows, so it is the
+   * window that is asked and not the list of vaults.
+   *
+   * @generated from rpc numen.v1.WindowService.Showing
+   */
+  showing: {
+    methodKind: "unary";
+    input: typeof ShowingRequestSchema;
+    output: typeof ShowingResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_window, 0);

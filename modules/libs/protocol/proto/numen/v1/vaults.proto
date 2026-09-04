@@ -12,8 +12,8 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // VaultsService answers about the vaults this installation holds, and changes
 // which of them a window is showing.
 service VaultsService {
-  // List is every vault the installation holds, and which of them this window
-  // is showing.
+  // List is every vault the installation holds. Which of them a window is
+  // showing is asked of that window.
   rpc List(VaultsServiceListRequest) returns (VaultsServiceListResponse);
 
   // Choose puts this machine's own folder picker in front of the person and
@@ -103,12 +103,12 @@ message Known {
 message VaultsServiceListRequest {}
 
 message VaultsServiceListResponse {
+  // Which vault a window is showing is asked of that window.
+  reserved 2;
+  reserved "showing";
+
   // Every vault the installation holds.
   repeated Known vaults = 1;
-
-  // The identity of the vault this window is showing, empty in a window that
-  // is showing none.
-  string showing = 2;
 }
 
 message VaultsServiceChooseRequest {
