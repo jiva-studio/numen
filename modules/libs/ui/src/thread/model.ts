@@ -23,8 +23,6 @@ export const VOICES = {
 
 export type Voice = keyof typeof VOICES
 
-export const VOICE_NAMES = Object.keys(VOICES) as readonly Voice[]
-
 /** How far along a turn is. Settled unless it says otherwise. */
 export type TurnState = 'settled' | 'arriving' | 'failed'
 

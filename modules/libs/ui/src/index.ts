@@ -136,7 +136,7 @@ export { default as Waiting } from './waiting/Waiting.vue'
 export { default as Coming } from './waiting/Coming.vue'
 
 export { default as Thread } from './thread/Thread.vue'
-export { VOICES, VOICE_NAMES, charsWord, placeTurns } from './thread/model'
+export { VOICES, charsWord, placeTurns } from './thread/model'
 export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
 export { conversation } from './thread/conversation'
 export type { Conversation, Wording } from './thread/conversation'

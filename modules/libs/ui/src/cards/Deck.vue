@@ -295,7 +295,6 @@ const addSection = (): void => {
 .deck__plus {
   --plus: 2.5rem;
 
-  display: grid;
   place-items: center;
   min-block-size: 12rem;
   padding: var(--numen-box-air);

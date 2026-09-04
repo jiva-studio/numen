@@ -36,7 +36,6 @@ const emit = defineEmits<{
 const uid = useId()
 const actionName = (at: number): string => `${uid}-action-${at}`
 
-const sheet = useTemplateRef<HTMLElement>('sheet')
 const hunt = useTemplateRef<HTMLInputElement>('hunt')
 
 /** What is typed here, which narrows the actions and nothing else. */
@@ -129,13 +128,10 @@ const onKey = (event: KeyboardEvent) => {
   // The keyboard stays in this field for as long as the panel stands.
   else if (event.key === 'Tab') event.preventDefault()
 }
-
-defineExpose({ sheet })
 </script>
 
 <template>
   <div
-    ref="sheet"
     class="actions panel-numen flex flex-col"
     data-actions="panel"
     role="dialog"

@@ -77,10 +77,7 @@ const props = withDefaults(
     name?: string
     /** The words the action panel is drawn with. */
     actionWords?: ActionWords
-    /**
-     * The keystroke that opens the action panel. The one this machine's browser
-     * reports by default; a test hands in its own.
-     */
+    /** The keystroke that opens the action panel, as this machine reports it. */
     actionKey?: PaletteKeys
   }>(),
   {
@@ -389,7 +386,6 @@ onBeforeUnmount(() => {
         <div
           v-if="placed.length"
           :id="`${uid}-list`"
-          ref="list"
           class="palette__list min-h-0 flex-1"
           data-palette="list"
           role="listbox"
