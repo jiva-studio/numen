@@ -21,7 +21,7 @@ import (
 // measurements, in docs/performance.md, so that one place says what fast enough
 // means.
 //
-//	go test ./internal/core/usecase/vault/ -run XXX -bench . -benchtime 1x
+//	go test ./usecase/vault/ -run XXX -bench . -benchtime 1x
 
 func openIndexFor(b *testing.B) *container.Index {
 	b.Helper()

@@ -23,7 +23,7 @@ import (
 // putting that in the ordinary suite would make everyone wait for something
 // almost nobody needs.
 //
-//	NUMEN_LOAD=1 go test ./internal/core/usecase/vault/ -run TestLoad -v -timeout 40m
+//	NUMEN_LOAD=1 go test ./usecase/vault/ -run TestLoad -v -timeout 40m
 //	NUMEN_LOAD=1 NUMEN_LOAD_NOTES=10000 go test ...   # a smaller rehearsal
 //
 // It reports rather than asserts. A threshold that fails on a slower laptop
