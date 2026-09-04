@@ -274,20 +274,20 @@ type RetentionByDay struct{ on map[int]float64 }
 // On is the share of the material that came back at the end of this day of the
 // run, counting the day the run opens as none, and whether the run answers for
 // that day.
-func (k RetentionByDay) On(day int) (float64, bool) {
-	share, answers := k.on[day]
+func (r RetentionByDay) On(day int) (float64, bool) {
+	share, answers := r.on[day]
 	return share, answers
 }
 
 // Days is every day this answers for, in order.
-func (k RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(k.on)) }
+func (r RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(r.on)) }
 
 // holds the share one day came to.
-func (k *RetentionByDay) holds(day int, share float64) {
-	if k.on == nil {
-		k.on = make(map[int]float64)
+func (r *RetentionByDay) holds(day int, share float64) {
+	if r.on == nil {
+		r.on = make(map[int]float64)
 	}
-	k.on[day] = share
+	r.on[day] = share
 }
 
 // NeverClears is a pace that leaves something overdue on every day projected.

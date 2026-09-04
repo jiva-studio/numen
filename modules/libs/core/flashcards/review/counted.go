@@ -102,17 +102,17 @@ func Sat(
 }
 
 // Sat is the same over a history already in order.
-func (g ReviewHistory) Sat(
+func (h ReviewHistory) Sat(
 	d Day, day string, under map[CardFaceID]string, counts map[string]Counts,
 ) map[string]Spent {
 	// Which card faces have been answered before the answer in hand, over the
 	// whole history and not this day alone.
-	before := make(map[CardFaceID]bool, len(g))
+	before := make(map[CardFaceID]bool, len(h))
 	// Which card faces the day has already counted, so a card that comes round
 	// again in it is still the one card.
 	counted := make(map[CardFaceID]bool)
 	out := make(map[string]Spent)
-	for _, a := range g {
+	for _, a := range h {
 		first := !before[a.CardFace]
 		before[a.CardFace] = true
 		if d.Names(a.At) != day {
@@ -147,9 +147,9 @@ func Faced(d Day, day string, answers []Answer) map[CardFaceID]bool {
 }
 
 // Faced is the same over a history already in order.
-func (g ReviewHistory) Faced(d Day, day string) map[CardFaceID]bool {
+func (h ReviewHistory) Faced(d Day, day string) map[CardFaceID]bool {
 	out := make(map[CardFaceID]bool)
-	for _, a := range g {
+	for _, a := range h {
 		if d.Names(a.At) == day {
 			out[a.CardFace] = true
 		}

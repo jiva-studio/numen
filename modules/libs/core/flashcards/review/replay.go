@@ -61,10 +61,10 @@ func Give(answers []Answer) ReviewHistory { return given(answers) }
 //
 // The days the answers have already filled are what the next card is placed
 // against.
-func (g ReviewHistory) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
+func (h ReviewHistory) Replay(d Day, by Assignment) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
 	on := Spreading(d)
-	for _, a := range g {
+	for _, a := range h {
 		one := by(a.CardFace)
 		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
 		next.Due = one.Preset.Places(on, a.At, next.Due)
@@ -96,9 +96,9 @@ func Retained(by Scheduler, d Day, answers []Answer) map[string]RecallTally {
 }
 
 // Retained is the same over a history already in order.
-func (g ReviewHistory) Retained(by Scheduler, d Day) map[string]RecallTally {
+func (h ReviewHistory) Retained(by Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
-	g.replayed(by, func(before Schedule, a Answer) {
+	h.replayed(by, func(before Schedule, a Answer) {
 		if !by.Spaced(before) {
 			return
 		}
@@ -121,11 +121,11 @@ func replayed(
 	return Give(answers).replayed(by, each)
 }
 
-func (g ReviewHistory) replayed(
+func (h ReviewHistory) replayed(
 	by Scheduler, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
-	for _, a := range g {
+	for _, a := range h {
 		before := out[a.CardFace]
 		if each != nil {
 			each(before, a)
