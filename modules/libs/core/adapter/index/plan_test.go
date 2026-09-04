@@ -153,8 +153,8 @@ func populated(t *testing.T) *DB {
 		return row
 	}
 
-	exec(`INSERT INTO vaults (id, identifier, name, path)
-	      VALUES (1, 'first', 'first', '/first'), (2, 'second', 'second', '/second')`)
+	exec(`INSERT INTO vaults (id, identifier)
+	      VALUES (1, 'first'), (2, 'second')`)
 
 	const notes = 1500
 	for vault, prefix := range map[int]string{1: "note", 2: "quasar"} {

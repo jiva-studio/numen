@@ -5,9 +5,7 @@
 -- other row here carries.
 CREATE TABLE vaults (
     id         INTEGER PRIMARY KEY,
-    identifier TEXT NOT NULL UNIQUE,
-    name       TEXT NOT NULL,
-    path       TEXT NOT NULL
+    identifier TEXT NOT NULL UNIQUE
 );
 
 -- A file the index has read, and what a scan knows about it. `kind` says what

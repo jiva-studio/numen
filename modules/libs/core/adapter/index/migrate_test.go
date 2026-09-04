@@ -81,7 +81,7 @@ func TestReopeningAppliesNothingAndKeepsData(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := first.write.ExecContext(ctx,
-		`INSERT INTO vaults (identifier, name, path) VALUES ('01AAA', 'x', '/tmp/x')`); err != nil {
+		`INSERT INTO vaults (identifier) VALUES ('01AAA')`); err != nil {
 		t.Fatal(err)
 	}
 	if err := first.Close(); err != nil {
