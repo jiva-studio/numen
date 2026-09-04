@@ -75,13 +75,13 @@ const refused = computed(() => {
 const saying = computed(() => (refused.value ? typed.value.trim() : undefined))
 
 /** The number in force, which is a number the bounds hold. */
-const standing = computed(() =>
+const inForce = computed(() =>
   model.value === null ? null : clamped(model.value, bounds.value),
 )
 
 /** A number the bounds no longer hold is brought in, and stands there written out. */
 watch(
-  standing,
+  inForce,
   (now) => {
     if (now === model.value) return
     model.value = now

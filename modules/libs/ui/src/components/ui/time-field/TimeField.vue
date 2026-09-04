@@ -30,7 +30,7 @@ const raises = defineEmits<{
 }>()
 
 /** What stands in the field, which is an hour of the day or nothing at all. */
-const standing = computed(() => (onTheClock(model.value) ? model.value : ''))
+const inForce = computed(() => (onTheClock(model.value) ? model.value : ''))
 
 const element = useTemplateRef<HTMLInputElement>('element')
 
@@ -53,7 +53,7 @@ defineExpose({
     ref="element"
     type="time"
     data-slot="time-field"
-    :value="standing"
+    :value="inForce"
     :disabled="disabled"
     :min="min || undefined"
     :max="max || undefined"

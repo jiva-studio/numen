@@ -52,15 +52,15 @@ export const percent = (level: number): string => `${Math.round(filled(level) * 
 /**
  * The levels on offer, holding the one a day stands at. A level the offer does
  * not name is added where it stands among them, so a day is never asked to
- * choose without its own level among the choices. Nothing standing leaves the
+ * choose without its own level among the choices. No level in force leaves the
  * offer as it is.
  */
 export const offering = (
   levels: readonly number[],
-  standing: number | null,
+  inForce: number | null,
 ): readonly number[] => {
-  if (standing === null || levels.includes(standing)) return levels
-  const at = levels.findIndex((one) => one > standing)
-  if (at < 0) return [...levels, standing]
-  return [...levels.slice(0, at), standing, ...levels.slice(at)]
+  if (inForce === null || levels.includes(inForce)) return levels
+  const at = levels.findIndex((one) => one > inForce)
+  if (at < 0) return [...levels, inForce]
+  return [...levels.slice(0, at), inForce, ...levels.slice(at)]
 }

@@ -30,7 +30,7 @@ const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 
 interface Knobs {
   /** The level each day stands at, by its identifier. A day not named is full. */
-  standing: Readonly<Record<string, number>>
+  levelOf: Readonly<Record<string, number>>
   /** Which day the week is turned to start on. */
   startsOn: string
   /** Which names the days are drawn under. */
@@ -47,7 +47,7 @@ const meta: Meta<Knobs> = {
   component: Days,
   parameters: { layout: 'centered' },
   argTypes: {
-    standing: { control: 'object' },
+    levelOf: { control: 'object' },
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     levels: { control: 'object' },
@@ -55,7 +55,7 @@ const meta: Meta<Knobs> = {
     named: { table: { disable: true } },
   },
   args: {
-    standing: { sat: 0.5 },
+    levelOf: { sat: 0.5 },
     startsOn: 'mon',
     names: 'English',
     levels: LEVELS,
@@ -64,14 +64,14 @@ const meta: Meta<Knobs> = {
   render: (args) => ({
     components: { Days },
     setup: () => {
-      const standing = ref<Record<string, number>>({ ...args.standing })
+      const levelOf = ref<Record<string, number>>({ ...args.levelOf })
       const days = computed(() => {
         const named =
           args.named ?? weekFrom(args.startsOn, args.names === 'Russian' ? RUSSIAN : WEEK)
-        return named.map((one) => ({ ...one, level: standing.value[one.id] ?? 1 }))
+        return named.map((one) => ({ ...one, level: levelOf.value[one.id] ?? 1 }))
       })
       const chose = (day: string, level: number) => {
-        standing.value = { ...standing.value, [day]: level }
+        levelOf.value = { ...levelOf.value, [day]: level }
       }
       return { args, days, chose }
     },
@@ -107,15 +107,15 @@ const offered = (): readonly string[] =>
 export const TheDaysOfTheWeek: Story = {}
 
 /** Every day at the whole of it, which is a week nothing was said about. */
-export const NoneAtAll: Story = { args: { standing: {} } }
+export const NoneAtAll: Story = { args: { levelOf: {} } }
 
 /** A day at nothing. */
-export const ADayAtNothing: Story = { args: { standing: { sun: 0 } } }
+export const ADayAtNothing: Story = { args: { levelOf: { sun: 0 } } }
 
 /** Every day cut, each to a different level. */
 export const AllOfThem: Story = {
   args: {
-    standing: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
+    levelOf: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
   },
 }
 
@@ -128,7 +128,7 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
  * hold the one the day stands at.
  */
 export const ALevelNotOnOffer: Story = {
-  args: { standing: { sat: 0.37, sun: 4 } },
+  args: { levelOf: { sat: 0.37, sun: 4 } },
   play: async ({ canvasElement }) => {
     expect(said(canvasElement)[5]).toBe('Saturday, 37%')
     expect(said(canvasElement)[6]).toBe('Sunday, 100%')
@@ -142,7 +142,7 @@ export const ALevelNotOnOffer: Story = {
 
 /** Names that are not Latin, in chips the same size. */
 export const OtherScripts: Story = {
-  args: { names: 'Russian', standing: { sat: 0.5, sun: 0 } },
+  args: { names: 'Russian', levelOf: { sat: 0.5, sun: 0 } },
 }
 
 /** No days at all: a row holding nothing, which the keyboard passes over. */
@@ -158,7 +158,7 @@ export const NoDaysAtAll: Story = {
 
 /** One day, which the arrows leave where it is. */
 export const OneDay: Story = {
-  args: { named: [{ id: 'wed', short: 'W', long: 'Wednesday' }], standing: { wed: 0.25 } },
+  args: { named: [{ id: 'wed', short: 'W', long: 'Wednesday' }], levelOf: { wed: 0.25 } },
   play: async ({ canvasElement }) => {
     expect(said(canvasElement)).toEqual(['Wednesday, 25%'])
 
@@ -170,7 +170,7 @@ export const OneDay: Story = {
 
 /** No levels at all, so a chip is pressed and there is nothing to choose from. */
 export const NoLevelsAtAll: Story = {
-  args: { levels: [], standing: {} },
+  args: { levels: [], levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
     // The level the day stands at is on offer wherever it is asked for, so a
@@ -214,7 +214,7 @@ export const AwkwardNames: Story = {
       { id: 'wed', short: 'W', long: 'Wednesday' },
       { id: 'thu', short: 'Четв', long: 'Четверг' },
     ],
-    standing: { tue: 0.25 },
+    levelOf: { tue: 0.25 },
   },
   play: async ({ canvasElement }) => {
     const all = chips(canvasElement)
@@ -263,7 +263,7 @@ export const EachChipSaysWhereItStands: Story = {
 
 /** Pressing a day offers the levels, and the day it was chosen for comes back with it. */
 export const PressingADayOffersTheLevels: Story = {
-  args: { standing: {} },
+  args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[5] as HTMLElement)
     await waitFor(() => expect(offered()).toEqual(['0%', '10%', '25%', '50%', '75%', '90%', '100%']))
@@ -334,7 +334,7 @@ export const TheKeyboardComesBack: Story = {
 export const Dark: Story = {
   globals: DARK,
   args: {
-    standing: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
+    levelOf: { mon: 0.9, tue: 0.75, wed: 0.5, thu: 0.25, fri: 0.1, sat: 0, sun: 0.9 },
   },
   play: async ({ canvasElement }) => {
     await drawnDark(canvasElement)
@@ -359,7 +359,7 @@ export const Dark: Story = {
 
 /** The arrows walk the row, and the space bar offers the levels of the day on. */
 export const TheKeyboardWalksAndOffers: Story = {
-  args: { standing: {} },
+  args: { levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.tab()
     expect(document.activeElement).toBe(chips(canvasElement)[0])
