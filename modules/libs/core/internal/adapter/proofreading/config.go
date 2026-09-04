@@ -51,14 +51,14 @@ type Config struct {
 	// profile, being a property of the text and not of a transport.
 	MaxEditDistance float64 `json:"max_edit_distance"`
 
-	// Profiles are the stations a reading is put right at, by the name a
+	// Profiles are the places a reading is put right at, by the name a
 	// consumer asks for one under. An installation naming none proofreads
 	// nothing.
 	Profiles map[string]Profile `json:"profiles"`
 }
 
-// Profile is one station. Every key stands at this level and Use says which of
-// them apply; a key Use does not apply to is ignored.
+// Profile is one such place. Every key stands at this level and Use says
+// which of them apply; a key Use does not apply to is ignored.
 type Profile struct {
 	// Use is `service` or `agent`.
 	Use string `json:"use"`

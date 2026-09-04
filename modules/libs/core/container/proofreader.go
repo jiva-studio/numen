@@ -18,7 +18,7 @@ type AgentProofreading struct {
 	InFlight    int
 }
 
-// Profile is the station a reading is put right at, by the name a consumer
+// Profile is the place a reading is put right at, by the name a consumer
 // names it under. A name no profile carries is an error: a person who named one
 // is owed the news that it is not there.
 func (c Config) Profile(name string) (proofreading.Profile, error) {
