@@ -159,7 +159,7 @@ func replace(target string, content []byte, mode fs.FileMode) (domain.Fingerprin
 	if err := os.Chmod(tmp.Name(), mode); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	if err := os.Rename(tmp.Name(), target); err != nil {
+	if err := rename(tmp.Name(), target); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime().UnixNano()}
@@ -229,7 +229,7 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 		return err
 	}
-	return os.Rename(source, target)
+	return rename(source, target)
 }
 
 func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
@@ -479,7 +479,7 @@ func arrive(target string, content io.Reader) error {
 	if err := os.Chmod(tmp.Name(), newFileMode); err != nil {
 		return err
 	}
-	if err := os.Rename(tmp.Name(), target); err != nil {
+	if err := rename(tmp.Name(), target); err != nil {
 		return err
 	}
 	return settle(dir)

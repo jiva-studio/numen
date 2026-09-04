@@ -17,8 +17,14 @@ import (
 
 // Backlog is how many events are held while they are being folded. Past it the
 // vault is read from scratch, which is cheaper than working out what was
-// missed.
-const Backlog = 4096
+// missed. A checkout of a large repository fits inside it; an archive unpacked
+// over a whole vault does not, and that is the case the bound is for.
+const Backlog = 65536
+
+// handover is how many events the channel the watcher writes into can hold. A
+// reader that does nothing else empties it, so what stands in it is a moment of
+// scheduling; the bound that decides anything is Backlog.
+const handover = 1024
 
 // Entries is how many entries a folder that arrives is followed through. Past
 // it the vault is read from scratch, which is cheaper than the rest of the
@@ -49,7 +55,7 @@ func (w Watcher) Watch(
 	// a folder leaving: what it was can only be known from before it went.
 	shape, why := remembered(reader)
 
-	raw := make(chan notify.EventInfo, Backlog)
+	raw := make(chan notify.EventInfo, handover)
 	tree := filepath.Join(reader.Root(), "...")
 	if err := notify.Watch(tree, raw, notify.All); err != nil {
 		return nil, nil, fmt.Errorf("watch %s: %w", v.Path, err)
@@ -67,7 +73,9 @@ func (w Watcher) Watch(
 	go func() {
 		defer notify.Stop(raw)
 		defer close(folded)
-		fold(ctx, shape, opts, raw, folded, gone)
+		waiting := newQueue(Backlog)
+		go drain(ctx, raw, waiting)
+		fold(ctx, shape, opts, waiting, folded, gone)
 	}()
 
 	return folded, gone, nil
@@ -87,7 +95,7 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	}
 	name := filepath.Base(at)
 
-	raw := make(chan notify.EventInfo, Backlog)
+	raw := make(chan notify.EventInfo, handover)
 	if err := notify.Watch(filepath.Dir(at), raw, notify.All); err != nil {
 		return nil, fmt.Errorf("watch %s: %w", path, err)
 	}
@@ -119,18 +127,92 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	return moved, nil
 }
 
+// queue holds the events between the goroutine that reads them from the
+// watcher and the goroutine that folds them. It is bounded at `bound` events:
+// at that many waiting, what is held is dropped and the overflow is
+// remembered, and a caller of take is told of it exactly.
+//
+// The watcher discards an event that finds its channel full and says nothing,
+// so the channel it writes into is read by a goroutine that only reads.
+type queue struct {
+	bound  int
+	woke   chan struct{}
+	mu     sync.Mutex
+	events []notify.EventInfo
+	over   bool
+	done   bool
+}
+
+func newQueue(bound int) *queue {
+	return &queue{bound: bound, woke: make(chan struct{}, 1)}
+}
+
+// put takes one event. At the bound the events waiting are dropped and the
+// overflow remembered: a rescan answers for all of them and for the event that
+// did not fit.
+func (q *queue) put(event notify.EventInfo) {
+	q.mu.Lock()
+	if len(q.events) >= q.bound {
+		q.events, q.over = nil, true
+	} else {
+		q.events = append(q.events, event)
+	}
+	q.mu.Unlock()
+	q.wake()
+}
+
+// stop says the watcher's channel is closed and nothing more is coming.
+func (q *queue) stop() {
+	q.mu.Lock()
+	q.done = true
+	q.mu.Unlock()
+	q.wake()
+}
+
+// wake carries one edge: whoever is woken empties the queue, so a wake that
+// does not fit is a wake already about to happen.
+func (q *queue) wake() {
+	select {
+	case q.woke <- struct{}{}:
+	default:
+	}
+}
+
+// take empties the queue and says whether it overflowed since the last take.
+func (q *queue) take() (events []notify.EventInfo, over, done bool) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	events, over, done = q.events, q.over, q.done
+	q.events, q.over = nil, false
+	return events, over, done
+}
+
+// drain moves events out of the watcher's channel as fast as they arrive.
+func drain(ctx context.Context, raw <-chan notify.EventInfo, into *queue) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, open := <-raw:
+			if !open {
+				into.stop()
+				return
+			}
+			into.put(event)
+		}
+	}
+}
+
 // fold collects events for a hold and reports each path once.
 //
 // Reading the events and delivering them are kept apart. Whoever listens takes
 // as long as it takes to refresh what it was told about, and the operating
-// system goes on producing events meanwhile: a fold that waited for its listener
-// would stop emptying the backlog, and everything past the end of it is dropped
-// by the watcher with nothing said.
+// system goes on producing events meanwhile.
 func fold(
 	ctx context.Context,
 	shape *folders,
 	opts Options,
-	raw <-chan notify.EventInfo,
+	waiting *queue,
 	changes chan<- []string,
 	lost chan<- struct{},
 ) {
@@ -208,34 +290,39 @@ func fold(
 				hold = time.After(opts.hold())
 			}
 
-		case event, open := <-raw:
-			if !open {
-				return
-			}
-			// A full backlog means events were dropped. What was missed is
-			// unknowable, so the vault is read again.
-			if len(raw) == cap(raw) {
+		case <-waiting.woke:
+			events, over, done := waiting.take()
+			if over {
+				// The backlog filled and what stood in it was dropped. Which
+				// paths those were is unknowable, so the vault is read again,
+				// and the shape with it: an event that made a folder is among
+				// what went.
 				rescan()
-				continue
+				shape.again()
 			}
-			paths, whole, folder := shape.concerns(event.Path())
-			if whole {
-				// A folder that is gone takes sources with it, and their paths
-				// are known only to the index.
-				rescan()
-				continue
-			}
-			if folder != "" {
-				queued = append(queued, folder)
-			}
-			for _, path := range paths {
-				pending[path] = true
+			for _, event := range events {
+				paths, whole, folder := shape.concerns(event.Path())
+				if whole {
+					// A folder that is gone takes sources with it, and their
+					// paths are known only to the index.
+					rescan()
+					continue
+				}
+				if folder != "" {
+					queued = append(queued, folder)
+				}
+				for _, path := range paths {
+					pending[path] = true
+				}
 			}
 			// Measured from the first event of a batch, not the last. A vault
 			// being written to continuously — a sync client, a checkout — never
 			// stops long enough for a deadline that moves with it.
 			if hold == nil && len(pending) > 0 {
 				hold = time.After(opts.hold())
+			}
+			if done {
+				return
 			}
 
 		case <-hold:
@@ -352,6 +439,17 @@ func remembered(reader *VaultReader) (*folders, error) {
 		why = walk
 	}
 	return f, why
+}
+
+// again reads the shape from the vault as it stands now. It answers for events
+// that were dropped, some of which may have made folders or taken them away.
+// A folder the walk could not enter is missing from the shape it returns; the
+// rescan that goes with this call already answers for it.
+func (f *folders) again() {
+	fresh, _ := remembered(f.reader)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.known = fresh.known
 }
 
 func (f *folders) forget(path string) {

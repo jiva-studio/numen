@@ -23,13 +23,76 @@ installed.
 
 ## Linux
 
-A `.deb` for Debian and Ubuntu, an `.rpm` for Fedora and openSUSE, and a `.tar.gz` holding the
-program alone.
+Take the package your system installs. Where none of them fits, the flatpak runs anywhere.
+
+### Debian, Ubuntu, Fedora, openSUSE
 
 ```sh
 sudo apt install ./numen-linux-amd64.deb     # or
 sudo dnf install ./numen-linux-amd64.rpm
 ```
+
+### Flatpak
+
+One file for any machine that has flatpak on it, bringing along everything it needs to draw. This is the one to take where the `.deb` or the `.rpm` refuses to install.
+
+```sh
+flatpak install --user ./numen-linux-amd64.flatpak
+flatpak run md.numen.Numen
+```
+
+The cards run in a window of their own: `flatpak run --command=numen-flashcards md.numen.Numen`.
+
+A vault under `/media` or `/run/media` is reached as it is; a vault anywhere else outside your home folder is not, until you say so:
+
+```sh
+flatpak override --user --filesystem=/where/the/vault/is md.numen.Numen
+```
+
+### Snap
+
+```sh
+sudo snap install --dangerous ./numen-linux-amd64.snap
+```
+
+A snap reaches your home folder and, once you allow it, a disk you plug in:
+
+```sh
+sudo snap connect numen:removable-media
+```
+
+### Arch
+
+From the AUR:
+
+```sh
+paru -S numen-bin        # or: yay -S numen-bin
+```
+
+### Nix, NixOS
+
+The flake stands beside the builds.
+
+```sh
+nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz
+```
+
+On NixOS, name it as an input and take the package from it:
+
+```nix
+{
+  inputs.numen.url = "tarball+https://dl.numen.md/latest/numen-nix.tar.gz";
+
+  # in the configuration:
+  environment.systemPackages = [ inputs.numen.packages.x86_64-linux.numen ];
+}
+```
+
+`latest/` is whatever release is newest, and your lock file holds the one you took; `nix flake update numen` moves to the newest. One release and no other is named by its own version, as `https://dl.numen.md/releases/<version>/numen-nix.tar.gz`.
+
+### Anything else
+
+A `.tar.gz` holding the program alone. Unpack it wherever you keep such things and run `numen`.
 
 ## Updating
 
@@ -42,8 +105,14 @@ outside the application and survives it.
 | | |
 | --- | --- |
 | Linux | `~/.config/numen/` |
+| Linux, the flatpak | `~/.var/app/md.numen.Numen/config/numen/` |
+| Linux, the snap | `~/snap/numen/current/.config/numen/` |
 | macOS | `~/Library/Application Support/numen/` |
 | Windows | `%AppData%\numen\` |
+
+A sandbox keeps its own folder, so a flatpak or a snap installed beside a `.deb` does not see the
+vaults that one knows. Your notes are untouched by any of it: add the folder again and the same
+vault comes back.
 
 What is in it:
 

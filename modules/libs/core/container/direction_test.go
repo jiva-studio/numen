@@ -48,7 +48,7 @@ func inward(path string) bool {
 	case held == "container",
 		strings.HasPrefix(held, "adapter/"),
 		strings.HasPrefix(held, "internal/adapter/"),
-		held == "internal/testsupport":
+		strings.HasPrefix(held, "internal/testsupport"):
 		return false
 	}
 	return true

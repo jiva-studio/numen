@@ -37,7 +37,7 @@ inside. Nothing has to be configured for that.
 | `beta/` | The newest beta, under names that carry no version |
 | `builds/<stamp>/` | That beta under names that carry the stamp, kept |
 
-Six builds in each and what they hold beside them, one name each in `latest/` and `beta/`:
+Eight builds in each and what they hold beside them, one name each in `latest/` and `beta/`:
 
 | File | What it is |
 | --- | --- |
@@ -46,12 +46,22 @@ Six builds in each and what they hold beside them, one name each in `latest/` an
 | `numen-windows-amd64.zip` | The window on its own |
 | `numen-linux-amd64.deb` | Debian and Ubuntu |
 | `numen-linux-amd64.rpm` | Fedora and RHEL |
-| `numen-linux-amd64.tar.gz` | The window on its own |
+| `numen-linux-amd64.flatpak` | Any distribution with flatpak on it, the browser coming from the GNOME runtime |
+| `numen-linux-amd64.snap` | Ubuntu, the browser carried inside |
+| `numen-linux-amd64.tar.gz` | The two windows and the marks a desktop shows them under |
+| `PKGBUILD` | What an Arch machine builds the archive into a package with |
+| `numen-nix.tar.gz` | The flake a Nix machine reads, naming the archive above |
 | `notes.md` | What this release holds that the last one did not |
+
+The `PKGBUILD` and the flake are recipes: they are read rather than fetched by a machine, so they stand on the shelf under their own names and are not in the manifest. Each is written by the run that made the build it names, and carries that build's address and hash.
+
+The repository is closed, which is why the flake is handed out as a file at all — `nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz` is what a stranger has instead of a git address. It holds `flake.nix`, `nix/numen.nix`, the desktop entries and the icons, a `nix/release.json` written by the run, and the lock: a flake taken as a file cannot write itself one.
+
+What an Arch user installs is the AUR package `numen-bin`. Pushing the `PKGBUILD` to the AUR is a person's own doing; the AUR repository holds this file and nothing else of ours.
 
 A name in `latest/` or `beta/` never carries a version, so a link written on the page once goes on working after every release, and each run writes over the same names. Every file is put up a second time under a name carrying the stamp — `numen-2026.9.1-beta.884-884-283d1d5-macos.dmg` — and what is written under that name is written once and kept.
 
-Beside the six, `latest.json` says the version, the build number, the commit, the stamp, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the stamped copy. That last one is what a machine asking what is newest is sent to fetch, and it is what the page moves its links to, so a file taken from the page says in its own name which build it is.
+Beside the eight, `latest.json` says the version, the build number, the commit, the stamp, the channel, when it was released, and for each file its platform, architecture, kind, size, SHA-256, and the address of the stamped copy. That last one is what a machine asking what is newest is sent to fetch, and it is what the page moves its links to, so a file taken from the page says in its own name which build it is.
 
 A platform that was not built in a run leaves its files alone: the run writes what it made and nothing else.
 
@@ -70,6 +80,8 @@ The three written with dashes between them are the stamp, `0.4.0-alpha.1-364-283
 | macOS `CFBundleVersion` | The build number, which is what macOS orders two builds of one version by |
 | Windows `VIProductVersion` | `0.4.0.364` — four numbers, the last of them the build |
 | The deb and the rpm | `0.4.0~alpha.1`, a tilde being where both managers sort a prerelease before the release it leads to |
+| The snap | The version as it is written |
+| The `PKGBUILD` | `0.4.0_alpha.1`, a pkgver holding no dash |
 | `latest.json` | The version, the build number, the commit and the stamp, as four fields |
 
 The version, the build number and the commit go into the binary at the link, and a name the linker does not find is one it passes over in silence, so the Linux job asks the binary it just built what it calls itself and stops if the answer does not carry all three. It goes into the page as `VITE_NUMEN_VERSION` while the page is built, which is where the welcome screen reads it from.
@@ -118,6 +130,8 @@ window does. It runs on a pull request touching the manual and on the three
 files the keyboard page is written from.
 
 **The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
+
+The flatpak and the snap are made from what the Linux job built, each in a job of its own, and the Linux checkbox is what asks for all three. The flatpak is installed from its own bundle before the run goes on and asked for its version, which is what says the GNOME runtime holds the browser the window is linked against.
 
 What has landed since the last stable release is worked out before anything is uploaded, and goes up beside the builds as `notes.md`, which is the address `latest.json` carries. The repository is closed, so that copy is the one a reader of the page can reach.
 

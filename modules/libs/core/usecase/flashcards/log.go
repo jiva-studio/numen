@@ -112,9 +112,10 @@ type Ran struct {
 	// Gone is a file listed and then taken away by another machine's
 	// synchroniser before it could be read.
 	Gone bool
-	// Shut is a file the permissions on it keep closed. It is counted among
-	// the lines that could not be acted on and left out of the files the
-	// history was read from, so a schedule worked out without it says so.
+	// Shut is a file that could not be opened: the permissions on it keep it
+	// closed, or another program holds it. It is counted among the lines that
+	// could not be acted on and left out of the files the history was read
+	// from, so a schedule worked out without it says so.
 	Shut bool
 }
 
@@ -124,7 +125,7 @@ func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Entry) 
 	if errors.Is(err, fs.ErrNotExist) {
 		return Ran{Gone: true}, nil
 	}
-	if errors.Is(err, fs.ErrPermission) {
+	if errors.Is(err, fs.ErrPermission) || locked(err) {
 		return Ran{Shut: true, Skipped: 1}, nil
 	}
 	if err != nil {

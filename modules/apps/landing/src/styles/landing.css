@@ -708,6 +708,11 @@ svg {
   background: color-mix(in oklab, var(--ink) 7%, transparent);
 }
 
+/* A build the shelf does not hold stands on no line of its own. */
+.take[hidden] {
+  display: none;
+}
+
 .take svg {
   align-self: center;
   inline-size: 1.05rem;

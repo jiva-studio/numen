@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -53,7 +54,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, filepath.Join(t.TempDir(), "index.db"))
+	db, err := index.Open(ctx, indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

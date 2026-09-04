@@ -341,8 +341,8 @@ func (d *Document) scalarSpan(node *yaml.Node) (start, end int, ok bool) {
 	if node.Line < 1 || node.Line >= len(lines) || node.Column < 1 {
 		return 0, 0, false
 	}
-	start = lines[node.Line-1] + node.Column - 1
-	if start < 0 || start >= len(d.front) {
+	start = columnOffset(d.front, lines, node.Line, node.Column)
+	if start >= len(d.front) {
 		return 0, 0, false
 	}
 

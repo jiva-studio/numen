@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -47,6 +48,7 @@ func TestLoad(t *testing.T) {
 	v := testsupport.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, took(generating))
 
+	indexfile.AsShipped()
 	db, err := container.Config{
 		IndexPath: filepath.Join(t.TempDir(), "index.db"),
 	}.OpenIndex(ctx)

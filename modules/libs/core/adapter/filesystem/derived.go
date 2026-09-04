@@ -192,6 +192,9 @@ func short(name string, written, wanted int, why error) error {
 // back cuts the bytes an append left behind and closes the file. What it wrote
 // ends where the offset now stands, so the cut is that offset less what
 // landed, and a write that landed nothing leaves the file as it found it.
+//
+// The cut is made by name, once the file is closed: a file opened to append
+// carries the right to add to the end and not the right to move it.
 func back(file *os.File, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
@@ -200,8 +203,26 @@ func back(file *os.File, wrote int) error {
 	if err != nil {
 		return errors.Join(err, file.Close())
 	}
-	cut := errors.Join(file.Truncate(at-int64(wrote)), file.Sync())
-	return errors.Join(cut, file.Close())
+	name := file.Name()
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return cut(name, at-int64(wrote))
+}
+
+// cut takes a file back to a length and flushes it there.
+func cut(name string, to int64) error {
+	file, err := os.OpenFile(name, os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	if err := file.Truncate(to); err != nil {
+		return errors.Join(err, file.Close())
+	}
+	if err := file.Sync(); err != nil {
+		return errors.Join(err, file.Close())
+	}
+	return file.Close()
 }
 
 // claimSuffix names the file a claim on a name is held on. It outlives the

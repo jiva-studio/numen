@@ -87,7 +87,8 @@ func cleaned(path string) (string, error) {
 		return "", fmt.Errorf("%w: it is empty", ErrOutside)
 	}
 	// filepath.IsLocal refuses a path that is absolute or that climbs out, and
-	// on Windows one that is drive-relative or names a reserved device.
+	// on Windows one that is rooted, drive-relative, or names a reserved
+	// device.
 	if !filepath.IsLocal(path) || strings.ContainsRune(path, 0) {
 		return "", fmt.Errorf("%s: %w", path, ErrOutside)
 	}

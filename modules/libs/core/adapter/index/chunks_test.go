@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
@@ -61,6 +62,16 @@ func precise(v []float32) []byte {
 	return out
 }
 
+// migrated is the schema, built once for this binary. A test that only needs an
+// index to exist is handed a copy of the file.
+var migrated = testsupport.NewTemplate(func(ctx context.Context, path string) error {
+	db, err := Open(ctx, path)
+	if err != nil {
+		return err
+	}
+	return db.Close()
+})
+
 func opened(t *testing.T) *DB {
 	t.Helper()
 	return openedAt(t, filepath.Join(t.TempDir(), "index.db"))
@@ -69,6 +80,7 @@ func opened(t *testing.T) *DB {
 // openedAt is an index at the path given, holding both vaults and nothing else.
 func openedAt(t *testing.T, path string) *DB {
 	t.Helper()
+	migrated.CopyTo(t, path)
 	db, err := Open(t.Context(), path)
 	if err != nil {
 		t.Fatal(err)

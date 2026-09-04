@@ -198,6 +198,13 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
@@ -209,7 +216,7 @@ jobs:
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install NPM_INSTALL=ci
+          make install INSTALL="npm ci"
           make interface
 
       # What the binary answers `--version` with is written in at the link.
@@ -242,12 +249,39 @@ jobs:
             *) echo "::error::the binary calls itself $said"; exit 1 ;;
           esac
 
+      # The two binaries and the marks a desktop shows them under, in the
+      # places a machine keeps such things. What the other packages are built
+      # from is gathered here once.
+      - name: Gather
+        run: |
+          set -euo pipefail
+          tree="$RUNNER_TEMP/tree"
+          at=modules/apps/desktop/build/linux
+
+          install -Dm755 "$RUNNER_TEMP/numen" "$tree/numen"
+          install -Dm755 "$RUNNER_TEMP/numen-flashcards" "$tree/numen-flashcards"
+
+          install -Dm644 "$at/numen.desktop" -t "$tree/share/applications"
+          install -Dm644 "$at/numen-flashcards.desktop" -t "$tree/share/applications"
+
+          install -Dm644 "$at/numen.svg" \
+            "$tree/share/icons/hicolor/scalable/apps/numen.svg"
+          install -Dm644 "$at/numen-flashcards.svg" \
+            "$tree/share/icons/hicolor/scalable/apps/numen-flashcards.svg"
+
+          for size in 16 24 32 48 64 128 256 512; do
+            install -Dm644 "$at/icons/$size.png" \
+              "$tree/share/icons/hicolor/${size}x${size}/apps/numen.png"
+            install -Dm644 "$at/icons/flashcards/$size.png" \
+              "$tree/share/icons/hicolor/${size}x${size}/apps/numen-flashcards.png"
+          done
+
       - name: Archive
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
           tar czf "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz" \
-            -C "$RUNNER_TEMP" numen numen-flashcards
+            -C "$RUNNER_TEMP/tree" numen numen-flashcards share
 
       # One description, both package managers. What goes into a package is
       # gathered beside it first, because the paths in it are read from
@@ -278,6 +312,98 @@ jobs:
           done
           ls -la "$RUNNER_TEMP"/*.deb "$RUNNER_TEMP"/*.rpm
 
+      # What an Arch machine builds from. It names the archive at the address
+      # this run is about to put it at, and the sum of the file itself, so the
+      # recipe is finished before the file it names is up.
+      - name: The Arch recipe
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          recipe="$RUNNER_TEMP/arch"
+          mkdir -p "$recipe"
+
+          archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
+          sum=$(sha256sum "$archive" | cut -d' ' -f1)
+
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+          url="$SERVED_FROM/$kept/numen-$STAMP-linux-amd64.tar.gz"
+
+          # A pkgver holds no dash.
+          pkgver=${VERSION//-/_}
+
+          sed -e "s|@PKGVER@|$pkgver|" -e "s|@URL@|$url|" -e "s|@SHA256@|$sum|" \
+            modules/apps/desktop/build/linux/arch/PKGBUILD.in > "$recipe/PKGBUILD"
+
+          # What the AUR reads instead of running the recipe. Every line under
+          # the first is indented with a tab.
+          {
+            printf 'pkgbase = numen-bin\n'
+            printf '\tpkgdesc = %s\n' "Notes, a hierarchy with several parents, and the sources under them"
+            printf '\tpkgver = %s\n' "$pkgver"
+            printf '\tpkgrel = 1\n'
+            printf '\turl = https://numen.md\n'
+            printf '\tarch = x86_64\n'
+            printf '\tlicense = LicenseRef-proprietary\n'
+            for one in gtk4 webkitgtk-6.0 libsoup3 graphene pango cairo harfbuzz gdk-pixbuf2 libx11 vulkan-icd-loader; do
+              printf '\tdepends = %s\n' "$one"
+            done
+            printf '\tprovides = numen\n'
+            printf '\tconflicts = numen\n'
+            printf '\toptions = !strip\n'
+            printf '\tsource = numen-bin-%s.tar.gz::%s\n' "$pkgver" "$url"
+            printf '\tsha256sums = %s\n' "$sum"
+            printf '\npkgname = numen-bin\n'
+          } > "$recipe/.SRCINFO"
+
+          cat "$recipe/PKGBUILD"
+
+      # What a Nix machine reads. The repository is closed, so the flake is
+      # handed out as a file of its own, carrying the address and the hash of
+      # the archive this run is about to put up.
+      - name: The flake
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+          STAMP: ${{ needs.naming.outputs.stamp }}
+          SHELF: ${{ needs.naming.outputs.shelf }}
+          SERVED_FROM: ${{ vars.BUNNY_SERVED_FROM }}
+        run: |
+          set -euo pipefail
+          flake="$RUNNER_TEMP/flake"
+          mkdir -p "$flake/nix" "$flake/modules/apps/desktop/build"
+
+          archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
+          if [ "$SHELF" = latest ]; then
+            kept="releases/$VERSION"
+          else
+            kept="builds/$STAMP"
+          fi
+          url="$SERVED_FROM/$kept/numen-$STAMP-linux-amd64.tar.gz"
+
+          # Nix says a hash in base64, under the name of what made it.
+          hash="sha256-$(sha256sum "$archive" | cut -d' ' -f1 | xxd -r -p | base64)"
+
+          # A flake handed over as a file cannot write itself a lock, so it
+          # carries the one this tree holds.
+          cp flake.nix flake.lock "$flake/"
+          cp nix/numen.nix "$flake/nix/"
+          # The desktop entries and the icons are read from the tree the flake
+          # stands in, so they come along at the path it reads them from.
+          cp -r modules/apps/desktop/build/linux "$flake/modules/apps/desktop/build/"
+
+          printf '{\n  "version": "%s",\n  "url": "%s",\n  "hash": "%s"\n}\n' \
+            "$VERSION" "$url" "$hash" > "$flake/nix/release.json"
+          cat "$flake/nix/release.json"
+
+          tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
+
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: numen-linux-amd64
@@ -285,6 +411,159 @@ jobs:
             ${{ runner.temp }}/numen_*_linux_amd64.tar.gz
             ${{ runner.temp }}/*.deb
             ${{ runner.temp }}/*.rpm
+          if-no-files-found: error
+
+      # The two recipes stand on their own: they are read rather than run, and
+      # they go on the shelf under names with no version in them.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-recipes
+          path: |
+            ${{ runner.temp }}/arch/PKGBUILD
+            ${{ runner.temp }}/arch/.SRCINFO
+            ${{ runner.temp }}/numen-nix.tar.gz
+          include-hidden-files: true
+          if-no-files-found: error
+
+  # One file for every machine that has flatpak on it, whatever its own
+  # packages hold. The toolkit and the browser come from the GNOME runtime, so
+  # what is put inside is the two binaries and the marks beside them.
+  flatpak:
+    name: "Package :: Flatpak"
+    needs: [naming, linux]
+    if: needs.naming.outputs.linux == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: numen-linux-amd64
+          path: ${{ runner.temp }}/built
+
+      - name: Flatpak
+        run: |
+          sudo apt-get update
+          # The builder hands what the desktop shows the window as to
+          # appstream, which reads the drawing through a loader of its own.
+          sudo apt-get install -y flatpak flatpak-builder appstream librsvg2-common
+          flatpak remote-add --user --if-not-exists \
+            flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      # What goes in stands beside the manifest, which is what its own sources
+      # are read from.
+      - name: Gather
+        run: |
+          set -euo pipefail
+          staged="$RUNNER_TEMP/staged"
+          at=modules/apps/desktop/build/linux
+          mkdir -p "$staged"
+
+          tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz \
+            -C "$staged" numen numen-flashcards
+          cp -r "$at/icons" "$staged/"
+          cp "$at"/flatpak/* "$staged/"
+
+      - name: Bundle
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          flatpak-builder --user --install-deps-from=flathub --force-clean \
+            --repo="$RUNNER_TEMP/repo" \
+            "$RUNNER_TEMP/build" "$RUNNER_TEMP/staged/md.numen.Numen.yml"
+
+          flatpak build-bundle "$RUNNER_TEMP/repo" \
+            "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.flatpak" md.numen.Numen
+
+      # The runtime has to hold the browser the window is linked against. A
+      # name the loader cannot find stops the binary here, where it is asked
+      # for its version and nothing draws.
+      - name: Sandbox
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          # A sandbox is built out of a namespace this machine hands out only
+          # after it is told to.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+          flatpak install --user --noninteractive --bundle \
+            "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.flatpak"
+          said=$(flatpak run --command=numen md.numen.Numen --version)
+          echo "$said"
+          case "$said" in
+            *"$VERSION"*) ;;
+            *) echo "::error::the sandboxed window calls itself $said"; exit 1 ;;
+          esac
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-amd64-flatpak
+          path: ${{ runner.temp }}/numen_*_linux_amd64.flatpak
+          if-no-files-found: error
+
+  # What the Ubuntu store hands out. The desktop platform behind it carries the
+  # toolkit; the browser is carried here, so a machine whose platform holds
+  # another one runs this build all the same.
+  snap:
+    name: "Package :: Snap"
+    needs: [naming, linux]
+    if: needs.naming.outputs.linux == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: numen-linux-amd64
+          path: ${{ runner.temp }}/built
+
+      # A snap holds what it runs under `bin` and `share`, and it is told its
+      # version by a file the recipe reads.
+      - name: Gather
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/work"
+          staged="$work/staged"
+          mkdir -p "$staged/bin" "$work/snap"
+
+          at=modules/apps/desktop/build/linux/snap
+
+          tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz -C "$staged"
+          mv "$staged/numen" "$staged/numen-flashcards" "$staged/bin/"
+          printf '%s' "$VERSION" > "$staged/version"
+
+          cp "$at/numen.desktop" "$at/numen-flashcards.desktop" \
+            "$staged/share/applications/"
+          cp "$at/snapcraft.yaml" "$work/snap/"
+          find "$staged" -type f -printf '%P\n' | sort
+
+      - uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1.3.0
+        with:
+          path: ${{ runner.temp }}/work
+
+      - name: Name it
+        env:
+          VERSION: ${{ needs.naming.outputs.version }}
+        run: |
+          set -euo pipefail
+          built=$(find "$RUNNER_TEMP/work" -maxdepth 1 -name '*.snap' -print -quit)
+          if [ -z "$built" ]; then
+            echo "::error::the run made no snap"
+            exit 1
+          fi
+          mv "$built" "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
+          ls -la "$RUNNER_TEMP/numen_${VERSION}_linux_amd64.snap"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: numen-linux-amd64-snap
+          path: ${{ runner.temp }}/numen_*_linux_amd64.snap
           if-no-files-found: error
 
   # Windows reaches the system's browser through a component written in Go, so
@@ -311,13 +590,20 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install NPM_INSTALL=ci
+          make install INSTALL="npm ci"
           make interface
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
@@ -406,13 +692,20 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install NPM_INSTALL=ci
+          make install INSTALL="npm ci"
           make interface
 
       # Both architectures come off this one machine: the window links against
@@ -583,9 +876,11 @@ jobs:
       ${{ needs.naming.outputs.publish == 'true'
       && needs.notes.result == 'success'
       && (needs.linux.result == 'success' || needs.linux.result == 'skipped')
+      && (needs.flatpak.result == 'success' || needs.flatpak.result == 'skipped')
+      && (needs.snap.result == 'success' || needs.snap.result == 'skipped')
       && (needs.windows.result == 'success' || needs.windows.result == 'skipped')
       && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
-    needs: [naming, notes, linux, windows, macos]
+    needs: [naming, notes, linux, flatpak, snap, windows, macos]
     runs-on: ubuntu-24.04
     # Fetching every path back can wait eight times ten seconds on each of
     # them, which after a purge is twenty minutes of sleeping alone.
@@ -656,6 +951,8 @@ jobs:
             "numen_*_linux_amd64.tar.gz|numen-linux-amd64.tar.gz|linux|amd64|tar.gz"
             "*.deb|numen-linux-amd64.deb|linux|amd64|deb"
             "*.rpm|numen-linux-amd64.rpm|linux|amd64|rpm"
+            "*.flatpak|numen-linux-amd64.flatpak|linux|amd64|flatpak"
+            "*.snap|numen-linux-amd64.snap|linux|amd64|snap"
           )
 
           for row in "${builds[@]}"; do
@@ -673,6 +970,16 @@ jobs:
 
             echo "  $at <- $(basename "$found")"
             printf '%s|%s|%s|%s|%s\n' "$stable" "$platform" "$arch" "$kind" "$at" >> "$made"
+          done
+
+          # A recipe is read rather than fetched by a machine, so it stands on
+          # the shelf under its own name and is not in the manifest.
+          for name in PKGBUILD numen-nix.tar.gz; do
+            found=$(find "$built" -name "$name" -print -quit)
+            [ -n "$found" ] || continue
+            cp "$found" "$upload/$SHELF/$name"
+            cp "$found" "$upload/$kept/$name"
+            echo "  $kept/$name"
           done
 
           # What the release holds goes up beside it. The repository is closed,

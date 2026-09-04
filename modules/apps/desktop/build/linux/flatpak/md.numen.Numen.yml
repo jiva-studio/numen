@@ -1,0 +1,49 @@
+# What a machine with flatpak on it installs. The toolkit and the browser the
+# window draws through are the runtime's, so nothing of them is carried here:
+# what goes in is the two binaries and the marks beside them, gathered into
+# this file's own directory by the packaging workflow.
+app-id: md.numen.Numen
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+command: numen
+
+finish-args:
+  # The window, and the card of the machine that draws it.
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  # Recordings are played through the browser.
+  - --socket=pulseaudio
+  # A vault is a folder the person names, and the models are fetched.
+  - --filesystem=home
+  - --filesystem=/media
+  - --filesystem=/run/media
+  - --share=network
+
+modules:
+  - name: numen
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 numen /app/bin/numen
+      - install -Dm755 numen-flashcards /app/bin/numen-flashcards
+
+      # A file a flatpak hands to the desktop is named for the application it
+      # belongs to, and only such a file is handed over at all.
+      - install -Dm644 md.numen.Numen.desktop -t /app/share/applications
+      - install -Dm644 md.numen.Numen.Flashcards.desktop -t /app/share/applications
+      - install -Dm644 md.numen.Numen.metainfo.xml -t /app/share/metainfo
+
+      # The rasters and no drawing: a flatpak reads every icon it exports, and
+      # it reads a drawing through a loader the machine may not hold.
+      - |
+        for size in 16 24 32 48 64 128 256 512; do
+          install -Dm644 "icons/$size.png" \
+            "/app/share/icons/hicolor/${size}x${size}/apps/md.numen.Numen.png"
+          install -Dm644 "icons/flashcards/$size.png" \
+            "/app/share/icons/hicolor/${size}x${size}/apps/md.numen.Numen.Flashcards.png"
+        done
+    sources:
+      - type: dir
+        path: .

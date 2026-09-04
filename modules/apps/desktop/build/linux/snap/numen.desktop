@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Numen
+Comment=Notes, a hierarchy with several parents, and the sources under them
+Exec=numen %F
+Icon=${SNAP}/share/icons/hicolor/512x512/apps/numen.png
+Terminal=false
+Categories=Office;Utility;
+Keywords=notes;markdown;vault;
+StartupWMClass=numen

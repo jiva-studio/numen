@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -74,7 +75,7 @@ func indexed(t *testing.T) vaults {
 	t.Helper()
 	ctx := t.Context()
 
-	db, err := index.Open(ctx, filepath.Join(t.TempDir(), "index.db"))
+	db, err := index.Open(ctx, indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

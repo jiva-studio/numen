@@ -291,9 +291,13 @@ func TestAFilesystemRootAndAHomeDirectoryAreRefused(t *testing.T) {
 	f := onTheList(t)
 	session := connectedTo(t, f.core)
 
+	// The root of the volume the home directory is on, which is the whole of a
+	// path on a machine that names no volume.
+	top := filepath.VolumeName(home) + string(filepath.Separator)
+
 	for root, said := range map[string]string{
-		string(filepath.Separator): "root of this filesystem",
-		home:                       "home directory",
+		top:  "root of this filesystem",
+		home: "home directory",
 	} {
 		why := failing(t, session, "vault_add", map[string]any{"path": root})
 		if !strings.Contains(why, said) {

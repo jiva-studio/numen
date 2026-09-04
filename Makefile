@@ -26,17 +26,19 @@ PROTOCOL := modules/libs/protocol
 help:
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t20
 
-# A build handed to somebody takes the lockfile and nothing else, which is what
-# `make install NPM_INSTALL=ci` fetches.
-NPM_INSTALL ?= install
+# Somebody adding a dependency writes the lock; a machine building from one
+# does not: `make install INSTALL="npm ci"`.
+INSTALL ?= npm install
 
+# The schema's compiler is on PATH and what it produces is committed, so the
+# copy of it npm offers is a download nothing here reads.
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && npm $(NPM_INSTALL)
-	cd $(UI) && npm $(NPM_INSTALL)
-	cd $(DESKTOP)/ui && npm $(NPM_INSTALL)
-	cd $(DESKTOP)/flashcards && npm $(NPM_INSTALL)
-	cd $(LANDING) && npm $(NPM_INSTALL)
+	cd $(PROTOCOL) && $(INSTALL) --omit=dev
+	cd $(UI) && $(INSTALL)
+	cd $(DESKTOP)/ui && $(INSTALL)
+	cd $(DESKTOP)/flashcards && $(INSTALL)
+	cd $(LANDING) && $(INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript

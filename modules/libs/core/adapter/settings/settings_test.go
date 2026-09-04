@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 )
 
 // A file naming no size is drawn at what the desktop asks for, so the session
@@ -224,7 +225,7 @@ func TestAFileNamingBothIsDrawnAtTheOneThisBuildReads(t *testing.T) {
 	}
 }
 
-// A folder nothing may be written into is a window that opens, drawn at the
+// A file nothing may be written over is a window that opens, drawn at the
 // size the file names under the name it names it by.
 func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 	folder := t.TempDir()
@@ -232,10 +233,7 @@ func TestAFileThatCannotBeWrittenIsReadAndDrawnAtTheSizeItNames(t *testing.T) {
 	if err := os.WriteFile(path, []byte(arranged), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(folder, 0o555); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(folder, 0o700) })
+	testsupport.Unwritable(t, path)
 
 	for launch := range 2 {
 		cfg, err := settings.At(path)

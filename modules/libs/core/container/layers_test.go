@@ -105,7 +105,7 @@ func refused(from, to string) string {
 			return "the composition root assembles the core and does none of its work"
 		}
 	// Fixtures build the real adapters, and only a test is compiled from them.
-	case from == "testsupport":
+	case from == "testsupport", strings.HasPrefix(from, "testsupport/"):
 	default:
 		if strings.HasPrefix(to, "adapter/") || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"

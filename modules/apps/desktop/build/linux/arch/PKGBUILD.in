@@ -1,0 +1,47 @@
+# Maintainer: Jiva Studio <contact@akdasa.studio>
+#
+# What an Arch machine builds from the AUR. The packaging workflow writes the
+# version, the address and the sum of the archive into this and puts the result
+# up beside the builds; pushing it to the AUR is a person's own doing.
+#
+# A pkgver holds no dash, so a prerelease carries an underscore where its
+# version has one.
+pkgname=numen-bin
+pkgver=@PKGVER@
+pkgrel=1
+pkgdesc="Notes, a hierarchy with several parents, and the sources under them"
+arch=('x86_64')
+url="https://numen.md"
+license=('LicenseRef-proprietary')
+
+# The window draws through the system's own browser.
+depends=(
+  'gtk4'
+  'webkitgtk-6.0'
+  'libsoup3'
+  'graphene'
+  'pango'
+  'cairo'
+  'harfbuzz'
+  'gdk-pixbuf2'
+  'libx11'
+  'vulkan-icd-loader'
+)
+optdepends=(
+  'gst-plugins-good: sound and video in the sources under a note'
+  'gst-libav: the formats the others do not carry'
+)
+
+provides=('numen')
+conflicts=('numen')
+options=('!strip')
+
+source=("$pkgname-$pkgver.tar.gz::@URL@")
+sha256sums=('@SHA256@')
+
+package() {
+  install -Dm755 numen "$pkgdir/usr/bin/numen"
+  install -Dm755 numen-flashcards "$pkgdir/usr/bin/numen-flashcards"
+  install -d "$pkgdir/usr/share"
+  cp -r share/. "$pkgdir/usr/share/"
+}

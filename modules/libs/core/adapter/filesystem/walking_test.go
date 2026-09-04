@@ -100,7 +100,9 @@ func TestAFolderThatArrivesIsReportedThroughTheFold(t *testing.T) {
 	lost := make(chan struct{}, 1)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	go fold(ctx, shape, Options{Hold: 10 * time.Millisecond}, raw, changes, lost)
+	waiting := newQueue(64)
+	go drain(ctx, raw, waiting)
+	go fold(ctx, shape, Options{Hold: 10 * time.Millisecond}, waiting, changes, lost)
 
 	raw <- event{path: at}
 
