@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -26,9 +25,6 @@ func windowOn(t *testing.T) (*webui.Installation, container.Config) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
-		t.Fatal(err)
-	}
 	add := vaults.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)

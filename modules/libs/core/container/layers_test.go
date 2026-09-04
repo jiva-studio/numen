@@ -205,6 +205,37 @@ func family(pkg string) string {
 	return held[0] + "/" + held[1]
 }
 
+// public are the adapters an application names for itself: the four it serves
+// something through, and the three it composes or configures.
+var public = []string{
+	"agent", "cli", "flashcardsui", "index", "mcp", "settings", "webui",
+}
+
+// The core's surface is these adapters and no others. A driven adapter nothing
+// outside composes sits under internal/adapter, where the compiler holds it, so
+// binding it to a port stays this package's work.
+func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
+	held, err := os.ReadDir(filepath.Join("..", "adapter"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	standing := make(map[string]bool, len(held))
+	for _, one := range held {
+		if !one.IsDir() {
+			continue
+		}
+		standing[one.Name()] = true
+		if !holds(public, one.Name()) {
+			t.Errorf("adapter/%s is public and nothing outside composes it", one.Name())
+		}
+	}
+	for _, one := range public {
+		if !standing[one] {
+			t.Errorf("adapter/%s is named here and is not there", one)
+		}
+	}
+}
+
 // Reading the tree is what the rules are checked against, so the tree has to be
 // where this expects it.
 func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {

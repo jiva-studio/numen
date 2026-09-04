@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
 // fileCap is the length every file this process writes is held to while the

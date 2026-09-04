@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/apps/desktop/internal/agents"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/flashcardsui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -47,8 +46,8 @@ func built(
 	t.Cleanup(func() { db.Close() })
 
 	held := []domain.Vault{
-		{ID: "one", Name: "One", Path: vaultOf(t)},
-		{ID: "two", Name: "Two", Path: vaultOf(t)},
+		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
+		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
 	vaults := &openVaults{cfg: cfg, db: db, ctx: t.Context(), record: func(domain.Vault) {}, out: io.Discard}
 	t.Cleanup(vaults.wait)
@@ -56,11 +55,11 @@ func built(
 }
 
 // vaultOf is a folder holding one stencil and one deck, as a vault.
-func vaultOf(t *testing.T) string {
+func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := cfg.VaultIdentity().Ensure(root, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range deck {
