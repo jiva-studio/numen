@@ -30,6 +30,7 @@ jobs:
   go:
     name: "Test :: Go"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: modules/apps/desktop
@@ -100,6 +101,7 @@ jobs:
   cli:
     name: "Cross-compile :: Command line tool"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: modules/apps/desktop
@@ -125,6 +127,7 @@ jobs:
   windows:
     name: "Test :: Windows"
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -22,6 +22,7 @@ jobs:
   schema:
     name: "Check :: Schema"
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       # The breaking-change check reads the schema as it stands on the base
       # branch, so that commit has to be in the clone.

@@ -56,6 +56,7 @@ jobs:
   naming:
     name: Version
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       version: ${{ steps.said.outputs.version }}
       build: ${{ steps.said.outputs.build }}
@@ -135,6 +136,7 @@ jobs:
     name: Notes
     needs: [naming]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -179,6 +181,7 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.linux == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -291,6 +294,7 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.windows == 'true'
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -383,6 +387,9 @@ jobs:
     needs: [naming]
     if: needs.naming.outputs.macos == 'true'
     runs-on: macos-15
+    # Notarizing gives itself half an hour and fails on its own; the rest is
+    # what two universal builds, an image and a mac runner cost.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -580,6 +587,9 @@ jobs:
       && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     needs: [naming, notes, linux, windows, macos]
     runs-on: ubuntu-24.04
+    # Fetching every path back can wait eight times ten seconds on each of
+    # them, which after a purge is twenty minutes of sleeping alone.
+    timeout-minutes: 60
     steps:
       # Every one of these has to be set before a build can go anywhere, and a
       # missing one is worth saying by name rather than as a 401 further down.
@@ -810,6 +820,7 @@ jobs:
     if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' && needs.publish.result == 'success' }}
     needs: [naming, notes, publish]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     # The tag is pushed and the release is made from here, and nowhere else.
     permissions:
       contents: write
