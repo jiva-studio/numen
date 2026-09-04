@@ -14,5 +14,5 @@ type VaultRepository interface {
 	Register(ctx context.Context, vaultID domain.VaultID) error
 	// Forget takes everything the index holds for one vault, and the vault's own
 	// row with it.
-	Forget(ctx context.Context, vaultID string) error
+	Forget(ctx context.Context, vaultID domain.VaultID) error
 }

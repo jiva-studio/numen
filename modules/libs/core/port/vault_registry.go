@@ -10,10 +10,10 @@ type VaultRegistry interface {
 	Find(nameOrPath string) (domain.Vault, bool, error)
 	// Remove takes a vault off the list. The folder and the identity inside it
 	// stay as they are, so the same folder can be added again.
-	Remove(id string) error
+	Remove(id domain.VaultID) error
 	// Opened records the vault a window is showing. An identity that is not on
 	// the list is refused.
-	Opened(id string) error
+	Opened(id domain.VaultID) error
 	// Last is the vault opened most recently, and nothing until one has been.
 	Last() (domain.Vault, bool, error)
 }

@@ -61,18 +61,18 @@ type SourceChunks struct {
 type SourceRepository interface {
 	// SaveSource records what a file is now. A source saved with no recipe owes
 	// its text: the file it names has changed, or nothing has read it yet.
-	SaveSource(ctx context.Context, vaultID string, s Source) error
+	SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error
 
 	// SaveExtraction records a source and replaces its chunks with the ones its
 	// text was cut into. Both arrive in one write, so a recipe is never
 	// recorded for chunks that are not there.
-	SaveExtraction(ctx context.Context, vaultID string, e SourceChunks) error
+	SaveExtraction(ctx context.Context, vaultID domain.VaultID, e SourceChunks) error
 
 	// RemoveSources takes out the sources of one kind at the paths given, and
 	// everything derived from them. A source the vault no longer holds cannot be
 	// read, so a passage naming it can never be shown: leaving it in the index
 	// leaves a row that answers a search and then cannot be looked at.
-	RemoveSources(ctx context.Context, vaultID string, kind domain.SourceKind, paths []string) error
+	RemoveSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error
 
 	// MoveSources files what the vault held at one path under another, with
 	// everything under it. The path of a source is this port's, whatever kind of
@@ -82,5 +82,5 @@ type SourceRepository interface {
 	// file names it, and where the new filename is the name its own title is
 	// filed under. A note carrying a name the filename is not takes that name
 	// with it.
-	MoveSources(ctx context.Context, vaultID, from, to string) error
+	MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error
 }

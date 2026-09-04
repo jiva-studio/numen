@@ -16,5 +16,5 @@ type VectorQueries interface {
 	//
 	// A large chunk carries no vector and is never in the answer. Neither is
 	// the text: a chunk is a place in a file, and the file holds the words.
-	Unembedded(ctx context.Context, vaultID string, model EmbeddingModel, after int64, limit int) ([]domain.Passage, error)
+	Unembedded(ctx context.Context, vaultID domain.VaultID, model EmbeddingModel, after int64, limit int) ([]domain.Passage, error)
 }
