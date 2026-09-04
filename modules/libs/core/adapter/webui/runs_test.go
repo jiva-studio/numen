@@ -68,7 +68,7 @@ func running(
 	t *testing.T,
 	held port.DerivedStores,
 	read indexed,
-	scans, hears Run,
+	scans, hears Runner,
 ) (*API, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{

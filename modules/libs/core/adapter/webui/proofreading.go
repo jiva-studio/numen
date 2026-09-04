@@ -12,9 +12,9 @@ import (
 // corrections that stand beside the recording. The work carries on behind the
 // answer, and the answer says what those corrections now are.
 
-// Proofreading puts the transcript of a recording right, for a person who asked
+// Proofreader puts the transcript of a recording right, for a person who asked
 // for it.
-type Proofreading interface {
+type Proofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a
 	// transcript right with.
 	ProofreaderReady() bool

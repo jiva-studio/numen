@@ -109,9 +109,9 @@ type passes struct {
 
 	// recognises reads a scanned document, transcribes hears a recording, and
 	// proofreads puts a transcript right, each for whoever asks.
-	recognises  Run
-	transcribes Run
-	proofreads  Proofreading
+	recognises  Runner
+	transcribes Runner
+	proofreads  Proofreader
 	// cut asks for a source to be cut again from what its text now says, and
 	// forgets takes a recording out of what the queue has had an answer about.
 	cut     func(context.Context, domain.Vault, string) error

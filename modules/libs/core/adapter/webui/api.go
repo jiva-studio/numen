@@ -272,14 +272,14 @@ func (a *API) runs(on *passes) { a.showing.Store(on) }
 // for whoever asks. They are the jobs an agent asks through too, so what a
 // person started in the window is shown to both. Nothing where the window has
 // no vault, and where this build does no such run.
-func (a *API) recognises() Run {
+func (a *API) recognises() Runner {
 	if on := a.showing.Load(); on != nil {
 		return on.recognises
 	}
 	return nil
 }
 
-func (a *API) transcribes() Run {
+func (a *API) transcribes() Runner {
 	if on := a.showing.Load(); on != nil {
 		return on.transcribes
 	}
@@ -287,7 +287,7 @@ func (a *API) transcribes() Run {
 }
 
 // proofreads puts a recording's transcript right, for whoever asks.
-func (a *API) proofreads() Proofreading {
+func (a *API) proofreads() Proofreader {
 	if on := a.showing.Load(); on != nil {
 		return on.proofreads
 	}

@@ -203,7 +203,7 @@ func (a *API) run(
 
 // runner is what reads a scan or hears a recording, and why a build has
 // neither.
-func (a *API) runner(id string) (Run, error) {
+func (a *API) runner(id string) (Runner, error) {
 	if id == readingID {
 		return a.recognises(), errNoReading
 	}

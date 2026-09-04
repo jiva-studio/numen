@@ -17,9 +17,9 @@ import (
 // A source a person named is never turned away for want of a turn. It waits in
 // line and is taken up before anything the vault set itself.
 
-// A Run reads a source a model has to produce the text of. Reading a scan and
-// hearing a recording are one shape here, and one at a time of each.
-type Run interface {
+// A Runner reads a source a model has to produce the text of. Reading a scan
+// and hearing a recording are one shape here, and one at a time of each.
+type Runner interface {
 	// Start takes on one source a person named, and says whether it began now
 	// or waits its turn. It runs under the application, so whoever asked is
 	// answered at once.
