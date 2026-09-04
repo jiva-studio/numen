@@ -7,8 +7,8 @@
 // What a client may ask of a vault by typing into it.
 //
 // Two questions are asked as a person types, and they answer with different
-// things: Names answers with names, and Search with the passages of text a
-// vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchPassages with the passages
+// of text a vault holds. A client drawing them apart asks each of them.
 
 package numenv1
 
@@ -90,7 +90,7 @@ func (Way) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{0}
 }
 
-type NamesRequest struct {
+type SearchNamesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What was typed, as it was typed. Words are matched together, and the last
 	// of them on its prefix.
@@ -101,20 +101,20 @@ type NamesRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NamesRequest) Reset() {
-	*x = NamesRequest{}
+func (x *SearchNamesRequest) Reset() {
+	*x = SearchNamesRequest{}
 	mi := &file_numen_v1_search_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NamesRequest) String() string {
+func (x *SearchNamesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NamesRequest) ProtoMessage() {}
+func (*SearchNamesRequest) ProtoMessage() {}
 
-func (x *NamesRequest) ProtoReflect() protoreflect.Message {
+func (x *SearchNamesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -126,26 +126,26 @@ func (x *NamesRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NamesRequest.ProtoReflect.Descriptor instead.
-func (*NamesRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchNamesRequest.ProtoReflect.Descriptor instead.
+func (*SearchNamesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *NamesRequest) GetQuery() string {
+func (x *SearchNamesRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *NamesRequest) GetLimit() int32 {
+func (x *SearchNamesRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-type NamesResponse struct {
+type SearchNamesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The names that matched, best first, with a note's own title before a
 	// heading inside one.
@@ -154,20 +154,20 @@ type NamesResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NamesResponse) Reset() {
-	*x = NamesResponse{}
+func (x *SearchNamesResponse) Reset() {
+	*x = SearchNamesResponse{}
 	mi := &file_numen_v1_search_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NamesResponse) String() string {
+func (x *SearchNamesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NamesResponse) ProtoMessage() {}
+func (*SearchNamesResponse) ProtoMessage() {}
 
-func (x *NamesResponse) ProtoReflect() protoreflect.Message {
+func (x *SearchNamesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,12 +179,12 @@ func (x *NamesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NamesResponse.ProtoReflect.Descriptor instead.
-func (*NamesResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchNamesResponse.ProtoReflect.Descriptor instead.
+func (*SearchNamesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *NamesResponse) GetFound() []*Named {
+func (x *SearchNamesResponse) GetFound() []*Named {
 	if x != nil {
 		return x.Found
 	}
@@ -268,7 +268,7 @@ func (x *Named) GetType() NoteType {
 	return NoteType_NOTE_TYPE_UNSPECIFIED
 }
 
-type SearchRequest struct {
+type SearchPassagesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
@@ -279,20 +279,20 @@ type SearchRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchRequest) Reset() {
-	*x = SearchRequest{}
+func (x *SearchPassagesRequest) Reset() {
+	*x = SearchPassagesRequest{}
 	mi := &file_numen_v1_search_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchRequest) String() string {
+func (x *SearchPassagesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchRequest) ProtoMessage() {}
+func (*SearchPassagesRequest) ProtoMessage() {}
 
-func (x *SearchRequest) ProtoReflect() protoreflect.Message {
+func (x *SearchPassagesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -304,33 +304,33 @@ func (x *SearchRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchRequest.ProtoReflect.Descriptor instead.
-func (*SearchRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchPassagesRequest.ProtoReflect.Descriptor instead.
+func (*SearchPassagesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SearchRequest) GetQuery() string {
+func (x *SearchPassagesRequest) GetQuery() string {
 	if x != nil {
 		return x.Query
 	}
 	return ""
 }
 
-func (x *SearchRequest) GetLimit() int32 {
+func (x *SearchPassagesRequest) GetLimit() int32 {
 	if x != nil {
 		return x.Limit
 	}
 	return 0
 }
 
-func (x *SearchRequest) GetWay() Way {
+func (x *SearchPassagesRequest) GetWay() Way {
 	if x != nil {
 		return x.Way
 	}
 	return Way_WAY_UNSPECIFIED
 }
 
-type SearchResponse struct {
+type SearchPassagesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The passages that answer, best first, one per source.
 	Found         []*Passage `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
@@ -338,20 +338,20 @@ type SearchResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SearchResponse) Reset() {
-	*x = SearchResponse{}
+func (x *SearchPassagesResponse) Reset() {
+	*x = SearchPassagesResponse{}
 	mi := &file_numen_v1_search_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SearchResponse) String() string {
+func (x *SearchPassagesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SearchResponse) ProtoMessage() {}
+func (*SearchPassagesResponse) ProtoMessage() {}
 
-func (x *SearchResponse) ProtoReflect() protoreflect.Message {
+func (x *SearchPassagesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_search_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -363,12 +363,12 @@ func (x *SearchResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SearchResponse.ProtoReflect.Descriptor instead.
-func (*SearchResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use SearchPassagesResponse.ProtoReflect.Descriptor instead.
+func (*SearchPassagesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_search_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SearchResponse) GetFound() []*Passage {
+func (x *SearchPassagesResponse) GetFound() []*Passage {
 	if x != nil {
 		return x.Found
 	}
@@ -567,11 +567,11 @@ var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\":\n" +
-	"\fNamesRequest\x12\x14\n" +
+	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"@\n" +
+	"\x12SearchNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"6\n" +
-	"\rNamesResponse\x12%\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"<\n" +
+	"\x13SearchNamesResponse\x12%\n" +
 	"\x05found\x18\x01 \x03(\v2\x0f.numen.v1.NamedR\x05found\"\xb1\x01\n" +
 	"\x05Named\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x120\n" +
@@ -579,12 +579,12 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x02at\x18\x03 \x03(\v2\x0e.numen.v1.SpanR\x02at\x12&\n" +
 	"\x04type\x18\x04 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04typeB\n" +
 	"\n" +
-	"\b_heading\"\\\n" +
-	"\rSearchRequest\x12\x14\n" +
+	"\b_heading\"d\n" +
+	"\x15SearchPassagesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1f\n" +
-	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"9\n" +
-	"\x0eSearchResponse\x12'\n" +
+	"\x03way\x18\x03 \x01(\x0e2\r.numen.v1.WayR\x03way\"A\n" +
+	"\x16SearchPassagesResponse\x12'\n" +
 	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xb3\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
@@ -607,10 +607,10 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
 	"\vWAY_MEANING\x10\x02\x12\r\n" +
 	"\tWAY_NAMES\x10\x03\x12\r\n" +
-	"\tWAY_EVERY\x10\x042\x86\x01\n" +
-	"\rSearchService\x128\n" +
-	"\x05Names\x12\x16.numen.v1.NamesRequest\x1a\x17.numen.v1.NamesResponse\x12;\n" +
-	"\x06Search\x12\x17.numen.v1.SearchRequest\x1a\x18.numen.v1.SearchResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tWAY_EVERY\x10\x042\xb0\x01\n" +
+	"\rSearchService\x12J\n" +
+	"\vSearchNames\x12\x1c.numen.v1.SearchNamesRequest\x1a\x1d.numen.v1.SearchNamesResponse\x12S\n" +
+	"\x0eSearchPassages\x12\x1f.numen.v1.SearchPassagesRequest\x1a .numen.v1.SearchPassagesResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_search_proto_rawDescOnce sync.Once
@@ -627,35 +627,35 @@ func file_numen_v1_search_proto_rawDescGZIP() []byte {
 var file_numen_v1_search_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_search_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_search_proto_goTypes = []any{
-	(Way)(0),               // 0: numen.v1.Way
-	(*NamesRequest)(nil),   // 1: numen.v1.NamesRequest
-	(*NamesResponse)(nil),  // 2: numen.v1.NamesResponse
-	(*Named)(nil),          // 3: numen.v1.Named
-	(*SearchRequest)(nil),  // 4: numen.v1.SearchRequest
-	(*SearchResponse)(nil), // 5: numen.v1.SearchResponse
-	(*Passage)(nil),        // 6: numen.v1.Passage
-	(*Span)(nil),           // 7: numen.v1.Span
-	(*Note)(nil),           // 8: numen.v1.Note
-	(*Heading)(nil),        // 9: numen.v1.Heading
-	(NoteType)(0),          // 10: numen.v1.NoteType
-	(SourceKind)(0),        // 11: numen.v1.SourceKind
+	(Way)(0),                       // 0: numen.v1.Way
+	(*SearchNamesRequest)(nil),     // 1: numen.v1.SearchNamesRequest
+	(*SearchNamesResponse)(nil),    // 2: numen.v1.SearchNamesResponse
+	(*Named)(nil),                  // 3: numen.v1.Named
+	(*SearchPassagesRequest)(nil),  // 4: numen.v1.SearchPassagesRequest
+	(*SearchPassagesResponse)(nil), // 5: numen.v1.SearchPassagesResponse
+	(*Passage)(nil),                // 6: numen.v1.Passage
+	(*Span)(nil),                   // 7: numen.v1.Span
+	(*Note)(nil),                   // 8: numen.v1.Note
+	(*Heading)(nil),                // 9: numen.v1.Heading
+	(NoteType)(0),                  // 10: numen.v1.NoteType
+	(SourceKind)(0),                // 11: numen.v1.SourceKind
 }
 var file_numen_v1_search_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.NamesResponse.found:type_name -> numen.v1.Named
+	3,  // 0: numen.v1.SearchNamesResponse.found:type_name -> numen.v1.Named
 	8,  // 1: numen.v1.Named.note:type_name -> numen.v1.Note
 	9,  // 2: numen.v1.Named.heading:type_name -> numen.v1.Heading
 	7,  // 3: numen.v1.Named.at:type_name -> numen.v1.Span
 	10, // 4: numen.v1.Named.type:type_name -> numen.v1.NoteType
-	0,  // 5: numen.v1.SearchRequest.way:type_name -> numen.v1.Way
-	6,  // 6: numen.v1.SearchResponse.found:type_name -> numen.v1.Passage
+	0,  // 5: numen.v1.SearchPassagesRequest.way:type_name -> numen.v1.Way
+	6,  // 6: numen.v1.SearchPassagesResponse.found:type_name -> numen.v1.Passage
 	8,  // 7: numen.v1.Passage.note:type_name -> numen.v1.Note
 	7,  // 8: numen.v1.Passage.at:type_name -> numen.v1.Span
 	10, // 9: numen.v1.Passage.type:type_name -> numen.v1.NoteType
 	11, // 10: numen.v1.Passage.kind:type_name -> numen.v1.SourceKind
-	1,  // 11: numen.v1.SearchService.Names:input_type -> numen.v1.NamesRequest
-	4,  // 12: numen.v1.SearchService.Search:input_type -> numen.v1.SearchRequest
-	2,  // 13: numen.v1.SearchService.Names:output_type -> numen.v1.NamesResponse
-	5,  // 14: numen.v1.SearchService.Search:output_type -> numen.v1.SearchResponse
+	1,  // 11: numen.v1.SearchService.SearchNames:input_type -> numen.v1.SearchNamesRequest
+	4,  // 12: numen.v1.SearchService.SearchPassages:input_type -> numen.v1.SearchPassagesRequest
+	2,  // 13: numen.v1.SearchService.SearchNames:output_type -> numen.v1.SearchNamesResponse
+	5,  // 14: numen.v1.SearchService.SearchPassages:output_type -> numen.v1.SearchPassagesResponse
 	13, // [13:15] is the sub-list for method output_type
 	11, // [11:13] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name

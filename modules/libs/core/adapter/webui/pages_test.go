@@ -115,7 +115,7 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 		numenv1connect.VaultServiceStateProcedure,
 		numenv1connect.FileServiceListProcedure,
 		numenv1connect.NoteServiceReadProcedure,
-		numenv1connect.SearchServiceNamesProcedure,
+		numenv1connect.SearchServiceSearchNamesProcedure,
 	} {
 		if code := handed(handler, route).Code; code != http.StatusMethodNotAllowed {
 			t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)

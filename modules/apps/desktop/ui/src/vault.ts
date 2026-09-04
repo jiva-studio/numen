@@ -431,7 +431,7 @@ export const core: Core & Asking & Commanding = {
   },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
-    const answer = await finding.names({ query, limit })
+    const answer = await finding.searchNames({ query, limit })
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',
@@ -444,7 +444,7 @@ export const core: Core & Asking & Commanding = {
   },
   /** The text the vault holds that answers what is typed, asked one way. */
   search: async (query, way, limit) => {
-    const answer = await finding.search({ query, limit, way: ways[way] })
+    const answer = await finding.searchPassages({ query, limit, way: ways[way] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',

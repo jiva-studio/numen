@@ -3,8 +3,8 @@ syntax = "proto3";
 // What a client may ask of a vault by typing into it.
 //
 // Two questions are asked as a person types, and they answer with different
-// things: Names answers with names, and Search with the passages of text a
-// vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchPassages with the passages
+// of text a vault holds. A client drawing them apart asks each of them.
 package numen.v1;
 
 import "numen/v1/file.proto";
@@ -15,21 +15,22 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // SearchService answers what a vault holds that matches what was typed.
 service SearchService {
-  // Names is the names in a vault that match what was typed: a note's own
+  // SearchNames is the names in a vault that match what was typed: a note's own
   // title, and the headings inside notes. It is asked as a person types, and
   // the last word matches on its prefix.
   //
   // It reads names and nothing else. Searching the text a vault holds is
-  // Search, and that answers with passages.
-  rpc Names(NamesRequest) returns (NamesResponse);
+  // SearchPassages, and that answers with passages.
+  rpc SearchNames(SearchNamesRequest) returns (SearchNamesResponse);
 
-  // Search is the text a vault holds that answers what was typed, by the words
-  // in it or by what it means or by what a section is called. The caller says
-  // which way it is asked, so a client drawing them apart asks once for each.
-  rpc Search(SearchRequest) returns (SearchResponse);
+  // SearchPassages is the text a vault holds that answers what was typed, by
+  // the words in it or by what it means or by what a section is called. The
+  // caller says which way it is asked, so a client drawing them apart asks once
+  // for each.
+  rpc SearchPassages(SearchPassagesRequest) returns (SearchPassagesResponse);
 }
 
-message NamesRequest {
+message SearchNamesRequest {
   // What was typed, as it was typed. Words are matched together, and the last
   // of them on its prefix.
   string query = 1;
@@ -38,7 +39,7 @@ message NamesRequest {
   int32 limit = 2;
 }
 
-message NamesResponse {
+message SearchNamesResponse {
   // The names that matched, best first, with a note's own title before a
   // heading inside one.
   repeated Named found = 1;
@@ -83,7 +84,7 @@ enum Way {
   WAY_EVERY = 4;
 }
 
-message SearchRequest {
+message SearchPassagesRequest {
   string query = 1;
 
   // How many passages to answer with. Zero takes the number the vault chooses.
@@ -93,7 +94,7 @@ message SearchRequest {
   Way way = 3;
 }
 
-message SearchResponse {
+message SearchPassagesResponse {
   // The passages that answer, best first, one per source.
   repeated Passage found = 1;
 }

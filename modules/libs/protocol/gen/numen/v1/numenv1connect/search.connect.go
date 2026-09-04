@@ -5,8 +5,8 @@
 // What a client may ask of a vault by typing into it.
 //
 // Two questions are asked as a person types, and they answer with different
-// things: Names answers with names, and Search with the passages of text a
-// vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchPassages with the passages
+// of text a vault holds. A client drawing them apart asks each of them.
 package numenv1connect
 
 import (
@@ -38,25 +38,28 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// SearchServiceNamesProcedure is the fully-qualified name of the SearchService's Names RPC.
-	SearchServiceNamesProcedure = "/numen.v1.SearchService/Names"
-	// SearchServiceSearchProcedure is the fully-qualified name of the SearchService's Search RPC.
-	SearchServiceSearchProcedure = "/numen.v1.SearchService/Search"
+	// SearchServiceSearchNamesProcedure is the fully-qualified name of the SearchService's SearchNames
+	// RPC.
+	SearchServiceSearchNamesProcedure = "/numen.v1.SearchService/SearchNames"
+	// SearchServiceSearchPassagesProcedure is the fully-qualified name of the SearchService's
+	// SearchPassages RPC.
+	SearchServiceSearchPassagesProcedure = "/numen.v1.SearchService/SearchPassages"
 )
 
 // SearchServiceClient is a client for the numen.v1.SearchService service.
 type SearchServiceClient interface {
-	// Names is the names in a vault that match what was typed: a note's own
+	// SearchNames is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
 	// the last word matches on its prefix.
 	//
 	// It reads names and nothing else. Searching the text a vault holds is
-	// Search, and that answers with passages.
-	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
-	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means or by what a section is called. The caller says
-	// which way it is asked, so a client drawing them apart asks once for each.
-	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
+	// SearchPassages, and that answers with passages.
+	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
+	// SearchPassages is the text a vault holds that answers what was typed, by
+	// the words in it or by what it means or by what a section is called. The
+	// caller says which way it is asked, so a client drawing them apart asks once
+	// for each.
+	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
 }
 
 // NewSearchServiceClient constructs a client for the numen.v1.SearchService service. By default, it
@@ -70,16 +73,16 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 	baseURL = strings.TrimRight(baseURL, "/")
 	searchServiceMethods := v1.File_numen_v1_search_proto.Services().ByName("SearchService").Methods()
 	return &searchServiceClient{
-		names: connect.NewClient[v1.NamesRequest, v1.NamesResponse](
+		searchNames: connect.NewClient[v1.SearchNamesRequest, v1.SearchNamesResponse](
 			httpClient,
-			baseURL+SearchServiceNamesProcedure,
-			connect.WithSchema(searchServiceMethods.ByName("Names")),
+			baseURL+SearchServiceSearchNamesProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("SearchNames")),
 			connect.WithClientOptions(opts...),
 		),
-		search: connect.NewClient[v1.SearchRequest, v1.SearchResponse](
+		searchPassages: connect.NewClient[v1.SearchPassagesRequest, v1.SearchPassagesResponse](
 			httpClient,
-			baseURL+SearchServiceSearchProcedure,
-			connect.WithSchema(searchServiceMethods.ByName("Search")),
+			baseURL+SearchServiceSearchPassagesProcedure,
+			connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -87,33 +90,34 @@ func NewSearchServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // searchServiceClient implements SearchServiceClient.
 type searchServiceClient struct {
-	names  *connect.Client[v1.NamesRequest, v1.NamesResponse]
-	search *connect.Client[v1.SearchRequest, v1.SearchResponse]
+	searchNames    *connect.Client[v1.SearchNamesRequest, v1.SearchNamesResponse]
+	searchPassages *connect.Client[v1.SearchPassagesRequest, v1.SearchPassagesResponse]
 }
 
-// Names calls numen.v1.SearchService.Names.
-func (c *searchServiceClient) Names(ctx context.Context, req *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
-	return c.names.CallUnary(ctx, req)
+// SearchNames calls numen.v1.SearchService.SearchNames.
+func (c *searchServiceClient) SearchNames(ctx context.Context, req *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error) {
+	return c.searchNames.CallUnary(ctx, req)
 }
 
-// Search calls numen.v1.SearchService.Search.
-func (c *searchServiceClient) Search(ctx context.Context, req *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
-	return c.search.CallUnary(ctx, req)
+// SearchPassages calls numen.v1.SearchService.SearchPassages.
+func (c *searchServiceClient) SearchPassages(ctx context.Context, req *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
+	return c.searchPassages.CallUnary(ctx, req)
 }
 
 // SearchServiceHandler is an implementation of the numen.v1.SearchService service.
 type SearchServiceHandler interface {
-	// Names is the names in a vault that match what was typed: a note's own
+	// SearchNames is the names in a vault that match what was typed: a note's own
 	// title, and the headings inside notes. It is asked as a person types, and
 	// the last word matches on its prefix.
 	//
 	// It reads names and nothing else. Searching the text a vault holds is
-	// Search, and that answers with passages.
-	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
-	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means or by what a section is called. The caller says
-	// which way it is asked, so a client drawing them apart asks once for each.
-	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
+	// SearchPassages, and that answers with passages.
+	SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error)
+	// SearchPassages is the text a vault holds that answers what was typed, by
+	// the words in it or by what it means or by what a section is called. The
+	// caller says which way it is asked, so a client drawing them apart asks once
+	// for each.
+	SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error)
 }
 
 // NewSearchServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -123,24 +127,24 @@ type SearchServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	searchServiceMethods := v1.File_numen_v1_search_proto.Services().ByName("SearchService").Methods()
-	searchServiceNamesHandler := connect.NewUnaryHandler(
-		SearchServiceNamesProcedure,
-		svc.Names,
-		connect.WithSchema(searchServiceMethods.ByName("Names")),
+	searchServiceSearchNamesHandler := connect.NewUnaryHandler(
+		SearchServiceSearchNamesProcedure,
+		svc.SearchNames,
+		connect.WithSchema(searchServiceMethods.ByName("SearchNames")),
 		connect.WithHandlerOptions(opts...),
 	)
-	searchServiceSearchHandler := connect.NewUnaryHandler(
-		SearchServiceSearchProcedure,
-		svc.Search,
-		connect.WithSchema(searchServiceMethods.ByName("Search")),
+	searchServiceSearchPassagesHandler := connect.NewUnaryHandler(
+		SearchServiceSearchPassagesProcedure,
+		svc.SearchPassages,
+		connect.WithSchema(searchServiceMethods.ByName("SearchPassages")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.SearchService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case SearchServiceNamesProcedure:
-			searchServiceNamesHandler.ServeHTTP(w, r)
-		case SearchServiceSearchProcedure:
-			searchServiceSearchHandler.ServeHTTP(w, r)
+		case SearchServiceSearchNamesProcedure:
+			searchServiceSearchNamesHandler.ServeHTTP(w, r)
+		case SearchServiceSearchPassagesProcedure:
+			searchServiceSearchPassagesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -150,10 +154,10 @@ func NewSearchServiceHandler(svc SearchServiceHandler, opts ...connect.HandlerOp
 // UnimplementedSearchServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedSearchServiceHandler struct{}
 
-func (UnimplementedSearchServiceHandler) Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.Names is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchNames(context.Context, *connect.Request[v1.SearchNamesRequest]) (*connect.Response[v1.SearchNamesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchNames is not implemented"))
 }
 
-func (UnimplementedSearchServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.Search is not implemented"))
+func (UnimplementedSearchServiceHandler) SearchPassages(context.Context, *connect.Request[v1.SearchPassagesRequest]) (*connect.Response[v1.SearchPassagesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SearchService.SearchPassages is not implemented"))
 }

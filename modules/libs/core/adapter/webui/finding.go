@@ -33,20 +33,22 @@ const (
 	mostAsked = 200
 )
 
-// Names hands the client the names in the vault that match what was typed: a
-// note's own title, and the headings inside notes. A window standing on nothing
-// holds no names.
-func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
+// SearchNames hands the client the names in the vault that match what was
+// typed: a note's own title, and the headings inside notes. A window standing
+// on nothing holds no names.
+func (a *API) SearchNames(
+	ctx context.Context, r *connect.Request[v1.SearchNamesRequest],
+) (*connect.Response[v1.SearchNamesResponse], error) {
 	showing := a.Showing()
 	if showing.ID == "" {
-		return connect.NewResponse(&v1.NamesResponse{}), nil
+		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
 	found, err := a.Notes.Queries.Names(ctx, string(showing.ID), r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.NamesResponse{Found: make([]*v1.Named, 0, len(found))}
+	out := &v1.SearchNamesResponse{Found: make([]*v1.Named, 0, len(found))}
 	for _, m := range found {
 		titled := &v1.Named{
 			Note: &v1.Note{Path: m.Path, Title: m.Title},
@@ -100,20 +102,23 @@ func (a *API) ListHeadings(
 	return connect.NewResponse(out), nil
 }
 
-// Search hands the client the text the vault holds that answers what was typed.
+// SearchPassages hands the client the text the vault holds that answers what
+// was typed.
 //
 // Which way it is asked is the client's, so a client drawing what is written apart
 // from what it means asks twice and each answer fills its own list.
 //
 // A window standing on nothing holds no text.
-func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
+func (a *API) SearchPassages(
+	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
+) (*connect.Response[v1.SearchPassagesResponse], error) {
 	if a.Finds == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSearching)
 	}
 	query := r.Msg.GetQuery()
 	showing := a.Showing()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
-		return connect.NewResponse(&v1.SearchResponse{}), nil
+		return connect.NewResponse(&v1.SearchPassagesResponse{}), nil
 	}
 
 	way, named := wayOf(r.Msg.GetWay())
@@ -142,7 +147,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.SearchResponse{Found: make([]*v1.Passage, 0, len(found))}
+	out := &v1.SearchPassagesResponse{Found: make([]*v1.Passage, 0, len(found))}
 	for _, p := range found {
 		// A passage is the whole window enclosing its hit, so what is drawn is the
 		// words about the first run that matched. A hit by meaning stands on no

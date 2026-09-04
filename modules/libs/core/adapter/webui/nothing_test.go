@@ -315,7 +315,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 	f := standingOnNothing(t)
 
-	named, err := f.vault.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "one"}))
+	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "one"}))
 	if err != nil {
 		t.Fatalf("the palette cannot be typed in: %v", err)
 	}
@@ -323,7 +323,7 @@ func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
-	found, err := f.vault.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	found, err := f.vault.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "one", Way: v1.Way_WAY_EVERY,
 	}))
 	if err != nil {
@@ -434,7 +434,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	named, err := f.vault.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "Entropy"}))
+	named, err := f.vault.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "Entropy"}))
 	if err != nil {
 		t.Fatal(err)
 	}

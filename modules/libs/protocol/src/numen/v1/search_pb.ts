@@ -5,8 +5,8 @@
 // What a client may ask of a vault by typing into it.
 //
 // Two questions are asked as a person types, and they answer with different
-// things: Names answers with names, and Search with the passages of text a
-// vault holds. A client drawing them apart asks each of them.
+// things: SearchNames answers with names, and SearchPassages with the passages
+// of text a vault holds. A client drawing them apart asks each of them.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -22,12 +22,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIiwKDE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSIvCg1OYW1lc1Jlc3BvbnNlEh4KBWZvdW5kGAEgAygLMg8ubnVtZW4udjEuTmFtZWQimAEKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuEiAKBHR5cGUYBCABKA4yEi5udW1lbi52MS5Ob3RlVHlwZUIKCghfaGVhZGluZyJJCg1TZWFyY2hSZXF1ZXN0Eg0KBXF1ZXJ5GAEgASgJEg0KBWxpbWl0GAIgASgFEhoKA3dheRgDIAEoDjINLm51bWVuLnYxLldheSIyCg5TZWFyY2hSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui8gEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSGgoCYXQYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEg0KBXN0YXJ0GAYgASgFEg4KBmxlbmd0aBgHIAEoBRIMCgRsaW5lGAggASgFEiAKBHR5cGUYCSABKA4yEi5udW1lbi52MS5Ob3RlVHlwZRIiCgRraW5kGAogASgOMhQubnVtZW4udjEuU291cmNlS2luZEIHCgVfbm90ZSIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUqWAoDV2F5EhMKD1dBWV9VTlNQRUNJRklFRBAAEg0KCVdBWV9XT1JEUxABEg8KC1dBWV9NRUFOSU5HEAISDQoJV0FZX05BTUVTEAMSDQoJV0FZX0VWRVJZEAQyhgEKDVNlYXJjaFNlcnZpY2USOAoFTmFtZXMSFi5udW1lbi52MS5OYW1lc1JlcXVlc3QaFy5udW1lbi52MS5OYW1lc1Jlc3BvbnNlEjsKBlNlYXJjaBIXLm51bWVuLnYxLlNlYXJjaFJlcXVlc3QaGC5udW1lbi52MS5TZWFyY2hSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI1ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEh4KBWZvdW5kGAEgAygLMg8ubnVtZW4udjEuTmFtZWQimAEKBU5hbWVkEhwKBG5vdGUYASABKAsyDi5udW1lbi52MS5Ob3RlEicKB2hlYWRpbmcYAiABKAsyES5udW1lbi52MS5IZWFkaW5nSACIAQESGgoCYXQYAyADKAsyDi5udW1lbi52MS5TcGFuEiAKBHR5cGUYBCABKA4yEi5udW1lbi52MS5Ob3RlVHlwZUIKCghfaGVhZGluZyJRChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSGgoDd2F5GAMgASgOMg0ubnVtZW4udjEuV2F5IjoKFlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2USIAoFZm91bmQYASADKAsyES5udW1lbi52MS5QYXNzYWdlIvIBCgdQYXNzYWdlEgwKBHBhdGgYASABKAkSIQoEbm90ZRgCIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBARIMCgR0ZXh0GAMgASgJEhoKAmF0GAQgAygLMg4ubnVtZW4udjEuU3BhbhIQCghsb2NhdGlvbhgFIAEoCRINCgVzdGFydBgGIAEoBRIOCgZsZW5ndGgYByABKAUSDAoEbGluZRgIIAEoBRIgCgR0eXBlGAkgASgOMhIubnVtZW4udjEuTm90ZVR5cGUSIgoEa2luZBgKIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmRCBwoFX25vdGUiIAoEU3BhbhIMCgRmcm9tGAEgASgFEgoKAnRvGAIgASgFKlgKA1dheRITCg9XQVlfVU5TUEVDSUZJRUQQABINCglXQVlfV09SRFMQARIPCgtXQVlfTUVBTklORxACEg0KCVdBWV9OQU1FUxADEg0KCVdBWV9FVkVSWRAEMrABCg1TZWFyY2hTZXJ2aWNlEkoKC1NlYXJjaE5hbWVzEhwubnVtZW4udjEuU2VhcmNoTmFtZXNSZXF1ZXN0Gh0ubnVtZW4udjEuU2VhcmNoTmFtZXNSZXNwb25zZRJTCg5TZWFyY2hQYXNzYWdlcxIfLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVxdWVzdBogLm51bWVuLnYxLlNlYXJjaFBhc3NhZ2VzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.NamesRequest
+ * @generated from message numen.v1.SearchNamesRequest
  */
-export type NamesRequest = Message<"numen.v1.NamesRequest"> & {
+export type SearchNamesRequest = Message<"numen.v1.SearchNamesRequest"> & {
   /**
    * What was typed, as it was typed. Words are matched together, and the last
    * of them on its prefix.
@@ -45,16 +45,16 @@ export type NamesRequest = Message<"numen.v1.NamesRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.NamesRequest.
- * Use `create(NamesRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SearchNamesRequest.
+ * Use `create(SearchNamesRequestSchema)` to create a new message.
  */
-export const NamesRequestSchema: GenMessage<NamesRequest> = /*@__PURE__*/
+export const SearchNamesRequestSchema: GenMessage<SearchNamesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 0);
 
 /**
- * @generated from message numen.v1.NamesResponse
+ * @generated from message numen.v1.SearchNamesResponse
  */
-export type NamesResponse = Message<"numen.v1.NamesResponse"> & {
+export type SearchNamesResponse = Message<"numen.v1.SearchNamesResponse"> & {
   /**
    * The names that matched, best first, with a note's own title before a
    * heading inside one.
@@ -65,10 +65,10 @@ export type NamesResponse = Message<"numen.v1.NamesResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.NamesResponse.
- * Use `create(NamesResponseSchema)` to create a new message.
+ * Describes the message numen.v1.SearchNamesResponse.
+ * Use `create(SearchNamesResponseSchema)` to create a new message.
  */
-export const NamesResponseSchema: GenMessage<NamesResponse> = /*@__PURE__*/
+export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 1);
 
 /**
@@ -117,9 +117,9 @@ export const NamedSchema: GenMessage<Named> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 2);
 
 /**
- * @generated from message numen.v1.SearchRequest
+ * @generated from message numen.v1.SearchPassagesRequest
  */
-export type SearchRequest = Message<"numen.v1.SearchRequest"> & {
+export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & {
   /**
    * @generated from field: string query = 1;
    */
@@ -141,16 +141,16 @@ export type SearchRequest = Message<"numen.v1.SearchRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.SearchRequest.
- * Use `create(SearchRequestSchema)` to create a new message.
+ * Describes the message numen.v1.SearchPassagesRequest.
+ * Use `create(SearchPassagesRequestSchema)` to create a new message.
  */
-export const SearchRequestSchema: GenMessage<SearchRequest> = /*@__PURE__*/
+export const SearchPassagesRequestSchema: GenMessage<SearchPassagesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 3);
 
 /**
- * @generated from message numen.v1.SearchResponse
+ * @generated from message numen.v1.SearchPassagesResponse
  */
-export type SearchResponse = Message<"numen.v1.SearchResponse"> & {
+export type SearchPassagesResponse = Message<"numen.v1.SearchPassagesResponse"> & {
   /**
    * The passages that answer, best first, one per source.
    *
@@ -160,10 +160,10 @@ export type SearchResponse = Message<"numen.v1.SearchResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.SearchResponse.
- * Use `create(SearchResponseSchema)` to create a new message.
+ * Describes the message numen.v1.SearchPassagesResponse.
+ * Use `create(SearchPassagesResponseSchema)` to create a new message.
  */
-export const SearchResponseSchema: GenMessage<SearchResponse> = /*@__PURE__*/
+export const SearchPassagesResponseSchema: GenMessage<SearchPassagesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_search, 4);
 
 /**
@@ -336,31 +336,32 @@ export const WaySchema: GenEnum<Way> = /*@__PURE__*/
  */
 export const SearchService: GenService<{
   /**
-   * Names is the names in a vault that match what was typed: a note's own
+   * SearchNames is the names in a vault that match what was typed: a note's own
    * title, and the headings inside notes. It is asked as a person types, and
    * the last word matches on its prefix.
    *
    * It reads names and nothing else. Searching the text a vault holds is
-   * Search, and that answers with passages.
+   * SearchPassages, and that answers with passages.
    *
-   * @generated from rpc numen.v1.SearchService.Names
+   * @generated from rpc numen.v1.SearchService.SearchNames
    */
-  names: {
+  searchNames: {
     methodKind: "unary";
-    input: typeof NamesRequestSchema;
-    output: typeof NamesResponseSchema;
+    input: typeof SearchNamesRequestSchema;
+    output: typeof SearchNamesResponseSchema;
   },
   /**
-   * Search is the text a vault holds that answers what was typed, by the words
-   * in it or by what it means or by what a section is called. The caller says
-   * which way it is asked, so a client drawing them apart asks once for each.
+   * SearchPassages is the text a vault holds that answers what was typed, by
+   * the words in it or by what it means or by what a section is called. The
+   * caller says which way it is asked, so a client drawing them apart asks once
+   * for each.
    *
-   * @generated from rpc numen.v1.SearchService.Search
+   * @generated from rpc numen.v1.SearchService.SearchPassages
    */
-  search: {
+  searchPassages: {
     methodKind: "unary";
-    input: typeof SearchRequestSchema;
-    output: typeof SearchResponseSchema;
+    input: typeof SearchPassagesRequestSchema;
+    output: typeof SearchPassagesResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_search, 0);

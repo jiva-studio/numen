@@ -155,7 +155,7 @@ func (f *showing) state(t *testing.T) *v1.StateResponse {
 func (f *showing) named(t *testing.T, query string) []string {
 	t.Helper()
 
-	found, err := f.client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: query}))
+	found, err := f.client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: query}))
 	if err != nil {
 		t.Fatal(err)
 	}

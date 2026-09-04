@@ -25,7 +25,7 @@ func TestANoteIsFoundByName(t *testing.T) {
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n",
 	})
 
-	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "entro"}))
+	answer, err := client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "entro"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestAHeadingIsFoundWithTheLineItStandsOn(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
 
-	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "heat"}))
+	answer, err := client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "heat"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestANameSaysWhichOfFourTheNoteIs(t *testing.T) {
 		"Animals.md": "---\ntype: deck\ntitle: Animals\n---\n\n## Entropy of a llama\n",
 	})
 
-	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{Query: "entropy"}))
+	answer, err := client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{Query: "entropy"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestAPassageSaysWhichOfFourItsNoteIs(t *testing.T) {
 		"Daily.md": "---\ntype: preset\ntitle: Daily\n---\n\n# Daily\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
@@ -132,7 +132,7 @@ func TestAPassageSaysWhatTheVaultHoldsAtItsPath(t *testing.T) {
 	// reaches it once that has finished.
 	kinds := map[string]v1.SourceKind{}
 	for range 500 {
-		answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 			Query: "book", Way: v1.Way_WAY_WORDS,
 		}))
 		if err != nil {
@@ -167,7 +167,7 @@ func TestEachWayIsAskedByItself(t *testing.T) {
 	// No model is set here, so the meaning half has nothing to answer with and
 	// the words half answers on its own. Which is which is the handler's to get
 	// right: both halves answer with the same shape.
-	words, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	words, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
@@ -177,7 +177,7 @@ func TestEachWayIsAskedByItself(t *testing.T) {
 		t.Fatal("the words half found nothing for a word that is written")
 	}
 
-	meaning, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	meaning, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Way: v1.Way_WAY_MEANING,
 	}))
 	if err != nil {
@@ -193,7 +193,7 @@ func TestAPassageSaysWhichNoteItCameOutOf(t *testing.T) {
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
@@ -223,7 +223,7 @@ func TestAPassageSaysWhereInItsSourceItStands(t *testing.T) {
 		"Engines.md": "---\ntitle: Engines\n---\n\n# Engines\n\nNo engine beats a reversible engine.\n",
 	})
 
-	answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+	answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 		Query: "reversible", Way: v1.Way_WAY_WORDS,
 	}))
 	if err != nil {
@@ -251,7 +251,7 @@ func TestAnAnswerIsCutToWhatWasAskedFor(t *testing.T) {
 		"c.md": "# Entropy three\n",
 	})
 
-	answer, err := client.Names(t.Context(), connect.NewRequest(&v1.NamesRequest{
+	answer, err := client.SearchNames(t.Context(), connect.NewRequest(&v1.SearchNamesRequest{
 		Query: "entropy", Limit: 2,
 	}))
 	if err != nil {
@@ -266,7 +266,7 @@ func TestNothingTypedIsAnsweredWithNothing(t *testing.T) {
 	client, _ := opened(t, map[string]string{"a.md": "# Entropy\n"})
 
 	for _, query := range []string{"", "   "} {
-		answer, err := client.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{Query: query}))
+		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{Query: query}))
 		if err != nil {
 			t.Fatalf("%q: %v", query, err)
 		}
