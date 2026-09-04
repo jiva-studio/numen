@@ -199,7 +199,7 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	if len(got.NotWritten) != 1 || got.NotWritten[0].Path != "decks/Birds.md" {
 		t.Fatalf("not written = %+v", got.NotWritten)
 	}
-	if got.NotWritten[0].Problem.Check != format.CheckNotWritten {
+	if got.NotWritten[0].Problem.Fault != format.FaultNotWritten {
 		t.Errorf("problem = %+v", got.NotWritten[0].Problem)
 	}
 	if after := read(t, vs.first, "decks/Birds.md"); after != before {

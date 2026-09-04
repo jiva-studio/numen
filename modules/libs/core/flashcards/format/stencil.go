@@ -113,7 +113,7 @@ func ReadStencil(n domain.Note) Stencil {
 			if has[frontHeading] {
 				missing = backHeading
 			}
-			s.Problems = append(s.Problems, onFace(at, CheckFaceSide,
+			s.Problems = append(s.Problems, onFace(at, FaultFaceSide,
 				"this face has no "+missing+", and lays out nothing"))
 			continue
 		}
@@ -122,7 +122,7 @@ func ReadStencil(n domain.Note) Stencil {
 			if declared[name] {
 				continue
 			}
-			problem := onFace(at, CheckPlaceholder, "this face places "+name+", which the stencil does not declare")
+			problem := onFace(at, FaultPlaceholder, "this face places "+name+", which the stencil does not declare")
 			problem.Field = name
 			s.Problems = append(s.Problems, problem)
 		}
@@ -152,7 +152,7 @@ func fields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 		switch {
 		case seen[name]:
-			problems = append(problems, onField(name, CheckTwoFields,
+			problems = append(problems, onField(name, FaultTwoFields,
 				"two fields are called "+name+", and the first stands"))
 		default:
 			seen[name] = true
@@ -160,7 +160,7 @@ func fields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 	}
 	if len(out) == 0 {
-		problems = append(problems, OnFile(CheckNoFields,
+		problems = append(problems, OnFile(FaultNoFields,
 			"this stencil declares no field, so a card cut by it has nothing to be named by"))
 	}
 	return out, problems

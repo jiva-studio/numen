@@ -128,10 +128,10 @@ func problemsOf(problems []format.Problem) []*v1.Problem {
 	return out
 }
 
-// problemOf is one problem as the schema carries it, and nothing for a check
-// the schema names no fault for.
+// problemOf is one problem as the schema carries it, and nothing for a fault
+// the schema does not name.
 func problemOf(p format.Problem) *v1.Problem {
-	fault, named := faultOf(p.Check)
+	fault, named := faultOf(p.Fault)
 	if !named {
 		return nil
 	}
@@ -156,25 +156,25 @@ func position(at int) *int32 {
 
 // faultOf is what a problem is, as the schema names it, and whether the schema
 // names it at all.
-func faultOf(check format.Fault) (v1.Fault, bool) {
-	switch check {
-	case format.CheckTwoFields:
+func faultOf(fault format.Fault) (v1.Fault, bool) {
+	switch fault {
+	case format.FaultTwoFields:
 		return v1.Fault_FAULT_FIELD_DECLARED_TWICE, true
-	case format.CheckNoFields:
+	case format.FaultNoFields:
 		return v1.Fault_FAULT_STENCIL_WITHOUT_FIELDS, true
-	case format.CheckFaceSide:
+	case format.FaultFaceSide:
 		return v1.Fault_FAULT_FACE_MISSING_A_SIDE, true
-	case format.CheckPlaceholder:
+	case format.FaultPlaceholder:
 		return v1.Fault_FAULT_PLACEHOLDER_UNDECLARED, true
-	case format.CheckNoStencil:
+	case format.FaultNoStencil:
 		return v1.Fault_FAULT_CARD_WITHOUT_A_STENCIL, true
-	case format.CheckNotAStencil:
+	case format.FaultNotAStencil:
 		return v1.Fault_FAULT_STENCIL_IS_NOT_ONE, true
-	case format.CheckTwoMarks:
+	case format.FaultTwoMarks:
 		return v1.Fault_FAULT_MARK_CARRIED_TWICE, true
-	case format.CheckTwoValues:
+	case format.FaultTwoValues:
 		return v1.Fault_FAULT_FIELD_WRITTEN_TWICE, true
-	case format.CheckNotWritten:
+	case format.FaultNotWritten:
 		return v1.Fault_FAULT_FIELD_NOT_RENAMED, true
 	default:
 		return v1.Fault_FAULT_UNSPECIFIED, false

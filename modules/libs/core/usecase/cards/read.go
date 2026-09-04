@@ -90,7 +90,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 		out.Body.Problems = append(out.Body.Problems, notStencils(out.Body, ordinary)...)
 	case note.TooLarge:
 		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
-			format.CheckTooLarge,
+			format.FaultTooLarge,
 			fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, MaxBytes),
 		)}}
 	}
@@ -188,7 +188,7 @@ func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
 		if !ordinary[card.Stencil] {
 			continue
 		}
-		out = append(out, format.OnCard(at, format.CheckNotAStencil,
+		out = append(out, format.OnCard(at, format.FaultNotAStencil,
 			card.Stencil+" is a note and not a stencil, so this card is shown by no face"))
 	}
 	return out

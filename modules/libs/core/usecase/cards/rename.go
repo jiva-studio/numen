@@ -133,7 +133,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 		cards, err := one.rename(ctx, path, in)
 		if err != nil {
 			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.OnFile(
-				format.CheckNotWritten,
+				format.FaultNotWritten,
 				"a field renamed in "+named+" did not reach this deck: "+err.Error(),
 			)})
 			continue

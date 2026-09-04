@@ -112,7 +112,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 			if s.First() != "" {
 				t.Errorf("first = %q, want no name at all", s.First())
 			}
-			if got := filed(t, s.Problems, format.CheckNoFields); got.Card != format.NoPosition {
+			if got := filed(t, s.Problems, format.FaultNoFields); got.Card != format.NoPosition {
 				t.Errorf("problem = %+v, want it against the file", got)
 			}
 			// The rest of it is read, and a face placing anything at all places
@@ -120,7 +120,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 			if len(s.Faces) != 1 {
 				t.Fatalf("faces = %v, the rest of the stencil is read", s.Faces)
 			}
-			if got := filed(t, s.Problems, format.CheckPlaceholder).Field; got != "Height" {
+			if got := filed(t, s.Problems, format.FaultPlaceholder).Field; got != "Height" {
 				t.Errorf("field = %q", got)
 			}
 		})
@@ -133,7 +133,7 @@ func TestTwoFieldsOfOneNameInAStencil(t *testing.T) {
 	if got := s.Fields; !slices.Equal(got, []string{"Height"}) {
 		t.Errorf("fields = %v", got)
 	}
-	if got := filed(t, s.Problems, format.CheckTwoFields).Field; got != "Height" {
+	if got := filed(t, s.Problems, format.FaultTwoFields).Field; got != "Height" {
 		t.Errorf("field = %q", got)
 	}
 }
@@ -157,7 +157,7 @@ fields:
 {{Height}} and {{Weight}}
 `))
 
-	if got := filed(t, s.Problems, format.CheckPlaceholder); got.Face != 0 || got.Field != "Weight" {
+	if got := filed(t, s.Problems, format.FaultPlaceholder); got.Face != 0 || got.Field != "Weight" {
 		t.Errorf("problem = %+v, want it against the first face and Weight", got)
 	}
 	// The rest of it is read as usual.
@@ -181,7 +181,7 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 			if got := faceNames(s); !slices.Equal(got, []string{"Broken", "Recognise"}) {
 				t.Fatalf("faces = %v, want both, so a problem can address one", got)
 			}
-			if got := filed(t, s.Problems, format.CheckFaceSide).Face; got != 0 {
+			if got := filed(t, s.Problems, format.FaultFaceSide).Face; got != 0 {
 				t.Errorf("face = %d, want the broken one", got)
 			}
 			front, back := format.Lay(s, s.Faces[0], format.Card{Heading: "Llama"})

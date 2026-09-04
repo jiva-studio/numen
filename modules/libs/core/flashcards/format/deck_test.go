@@ -17,18 +17,18 @@ func note(t *testing.T, raw string) domain.Note {
 	return markdown.Parse(domain.Fingerprint{Path: "Animals.md", Size: int64(len(raw))}, []byte(raw))
 }
 
-// filed is the one problem of a check, and it fails the test where there is
+// filed is the one problem of a fault, and it fails the test where there is
 // none or more than one.
-func filed(t *testing.T, problems []format.Problem, check format.Fault) format.Problem {
+func filed(t *testing.T, problems []format.Problem, fault format.Fault) format.Problem {
 	t.Helper()
 	var found []format.Problem
 	for _, p := range problems {
-		if p.Check == check {
+		if p.Fault == fault {
 			found = append(found, p)
 		}
 	}
 	if len(found) != 1 {
-		t.Fatalf("problems of %q = %d, want one\n%+v", check, len(found), problems)
+		t.Fatalf("problems of %q = %d, want one\n%+v", fault, len(found), problems)
 	}
 	if found[0].Detail == "" {
 		t.Errorf("the problem says nothing to the person: %+v", found[0])
@@ -183,7 +183,7 @@ about 30"
 
 	var against []int
 	for _, p := range deck.Problems {
-		if p.Check == format.CheckTwoMarks {
+		if p.Fault == format.FaultTwoMarks {
 			against = append(against, p.Card)
 		}
 	}
@@ -253,7 +253,7 @@ about 46"
 `))
 
 	card := deck.Cards[0]
-	if got := filed(t, deck.Problems, format.CheckTwoValues); got.Card != 0 || got.Field != "Height" {
+	if got := filed(t, deck.Problems, format.FaultTwoValues); got.Card != 0 || got.Field != "Height" {
 		t.Errorf("problem = %+v, want it against the first card and its Height", got)
 	}
 	if got, ok := card.Value("Height"); !ok || got != `about 45"` {
@@ -282,7 +282,7 @@ func TestACardNamesNoStencil(t *testing.T) {
 			if card.Stencil != "" {
 				t.Errorf("stencil = %q, want none", card.Stencil)
 			}
-			if got := filed(t, deck.Problems, format.CheckNoStencil).Card; got != 0 {
+			if got := filed(t, deck.Problems, format.FaultNoStencil).Card; got != 0 {
 				t.Errorf("card = %d", got)
 			}
 			if got, ok := card.Value("Height"); !ok || got != `about 45"` {
