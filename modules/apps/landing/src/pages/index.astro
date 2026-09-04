@@ -68,6 +68,8 @@ const BUILDS = [
     takes: [
       { name: 'Debian, Ubuntu', note: 'x64 · deb', file: 'numen-linux-amd64.deb' },
       { name: 'Fedora, RHEL', note: 'x64 · rpm', file: 'numen-linux-amd64.rpm' },
+      { name: 'Any distribution', note: 'x64 · flatpak', file: 'numen-linux-amd64.flatpak' },
+      { name: 'Snap', note: 'x64 · snap', file: 'numen-linux-amd64.snap' },
       { name: 'Anything else', note: 'x64 · tar.gz', file: 'numen-linux-amd64.tar.gz' },
     ],
   },
@@ -765,7 +767,11 @@ const description =
 
         for (const take of takes) {
           const file = shelf.files?.find((one) => one.name === take.dataset['file'])
-          if (!file?.url) continue
+          // What the shelf does not hold is not offered.
+          if (!file?.url) {
+            take.hidden = true
+            continue
+          }
           take.href = file.url
           const weight = take.querySelector('.take__weight')
           if (weight && file.size) weight.textContent = `${Math.round(file.size / 1e6)} MB`
