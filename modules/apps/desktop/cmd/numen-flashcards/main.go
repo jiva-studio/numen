@@ -104,7 +104,7 @@ func run(cfg container.Config, noAgent bool) error {
 		},
 		Presets: running.Presets,
 		Notes:   db.Queries(),
-		Tasking: task.New(),
+		Window:  flashcardsui.Watching(task.New()),
 		Day:     running.Day,
 		Now:     time.Now,
 	}

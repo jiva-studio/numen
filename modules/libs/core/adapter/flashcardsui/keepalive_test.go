@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -26,8 +27,13 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewFlashcardsServiceClient(http, at).
-				Tasks(ctx, connect.NewRequest(&v1.FlashcardsServiceTasksRequest{}))
+			_, err := numenv1connect.NewWindowServiceClient(http, at).
+				Tasks(ctx, connect.NewRequest(&v1.TasksRequest{Window: wire.Review}))
+			return err
+		},
+		"quitting": func(ctx context.Context, http connect.HTTPClient, at string) error {
+			_, err := numenv1connect.NewWindowServiceClient(http, at).
+				Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{Window: wire.Review}))
 			return err
 		},
 		"ask": func(ctx context.Context, http connect.HTTPClient, at string) error {
@@ -39,7 +45,11 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
-			api := &API{Registry: registry{}, Now: time.Now, Tasking: task.New()}
+			api := &API{
+				Registry: registry{},
+				Now:      time.Now,
+				Window:   Watching(task.New()),
+			}
 			api.Answers(silentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
@@ -48,6 +58,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			mux.Handle(cards, rooted(decks, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)
 			mux.Handle(agent, rooted(agents, entered, returned))
+			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
+			mux.Handle(drawn, rooted(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

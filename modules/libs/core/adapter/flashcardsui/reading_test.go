@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -31,7 +32,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 		t.Fatalf("the vault came back %+v", one)
 	}
 	waitFor(t, func() bool {
-		for _, at := range api.Tasking.List() {
+		for _, at := range api.Window.Tasking.List() {
 			if at.Doing == "Reading the vault" && at.About == "Sanskrit" && at.Asked {
 				return true
 			}
@@ -41,7 +42,7 @@ func TestReadingAVaultIsReportedAsWork(t *testing.T) {
 
 	// The reading ends, and the work goes with it.
 	close(holding)
-	waitFor(t, func() bool { return len(api.Tasking.List()) == 0 })
+	waitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
 }
 
 // A vault the index already carries is drawn from what it holds, so reading it
@@ -56,9 +57,9 @@ func TestReadingAVaultTheIndexCarriesIsNotWorkAPersonAskedFor(t *testing.T) {
 	})
 
 	api.counted(t.Context(), held[0])
-	waitFor(t, func() bool { return len(api.Tasking.List()) == 1 })
+	waitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
 
-	if at := api.Tasking.List()[0]; at.Asked {
+	if at := api.Window.Tasking.List()[0]; at.Asked {
 		t.Errorf("reading a vault the index carries came back as work asked for: %+v", at)
 	}
 	close(holding)
@@ -96,10 +97,10 @@ func TestAVaultThatCouldNotBeReadSaysWhyAndIsLetAlone(t *testing.T) {
 // has one thing to listen to.
 func TestAWindowDoingNothingBehindItselfStillAnswers(t *testing.T) {
 	api, _ := windowed(t)
-	api.Tasking = nil
+	api.Window.Tasking = nil
 
-	stream, err := serving(t, api).Tasks(
-		t.Context(), connect.NewRequest(&v1.FlashcardsServiceTasksRequest{}),
+	stream, err := watching(t, api).Tasks(
+		t.Context(), connect.NewRequest(&v1.TasksRequest{Window: wire.Review}),
 	)
 	if err != nil {
 		t.Fatal(err)

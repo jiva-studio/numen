@@ -8,7 +8,7 @@ import (
 
 // A vault is walked once however many counts ask for it at the same moment.
 func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
-	_, _, vaults, _, held := window(t)
+	_, _, vaults, _, held := built(t)
 	v := held[0]
 
 	var walks sync.WaitGroup
@@ -32,7 +32,7 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 // Nothing begins writing once the window has begun closing: the index is
 // waited for, and a walk asked for after that is refused.
 func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
-	_, _, vaults, _, held := window(t)
+	_, _, vaults, _, held := built(t)
 
 	vaults.wait()
 
@@ -44,7 +44,7 @@ func TestAWindowThatIsGoingWalksNothing(t *testing.T) {
 // A vault is levelled through the opening it was opened with, so a card written
 // while its walk is running is read again after the walk.
 func TestLevellingGoesThroughTheVaultsOwnOpening(t *testing.T) {
-	_, _, vaults, _, held := window(t)
+	_, _, vaults, _, held := built(t)
 	v := held[0]
 
 	if err := vaults.reads(t.Context(), v, func(int64) {}); err != nil {

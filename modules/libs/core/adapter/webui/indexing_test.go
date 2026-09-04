@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -31,7 +32,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
@@ -58,7 +59,7 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
@@ -82,12 +83,12 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
-	watching.tasks = api.Tasking
+	watching.tasks = api.Window.Tasking
 
 	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, watching)
 
@@ -111,7 +112,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	// The notes are on disk and nothing has cut them, so the index holds no
 	// chunk and owes no vector.
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
@@ -143,7 +144,7 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
@@ -211,7 +212,7 @@ func (p *peeking) opening(id string) (task.Task, bool) {
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 	cfg, db := reading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.show(v)
 	// The index the pass asks what owes its text is gone, which is what it
 	// looks like from here when the answer cannot be had.
@@ -266,7 +267,7 @@ func cut(t *testing.T, db *container.Index, api *API) {
 func listed(t *testing.T, api *API, id string) *task.Task {
 	t.Helper()
 
-	for _, at := range api.Tasking.List() {
+	for _, at := range api.Window.Tasking.List() {
 		if at.ID == id {
 			return &at
 		}
@@ -286,7 +287,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{Tasking: task.New()}
+	api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	api.Indexing.Recipe.Store(model.Model().Recipe())
@@ -294,7 +295,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
-	over := &overheard{asked: model, tasks: api.Tasking}
+	over := &overheard{asked: model, tasks: api.Window.Tasking}
 	held := embedding.Arriving(model.Model())
 	held.Landed(over, nil)
 

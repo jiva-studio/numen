@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
@@ -58,9 +59,9 @@ type API struct {
 	// Themes are the stylesheets the window may be dressed in, and the sizes it
 	// is drawn and set at. They belong to the installation and not to a vault.
 	Themes numenv1connect.ThemeServiceHandler
-	// Tasking is everything being done behind the window. A build holding none
-	// says there is nothing.
-	Tasking *task.Tasks
+	// Window is this window itself: everything being done behind it, and
+	// everyone drawing it for the moment it goes.
+	Window *wire.Window
 	// Day is where one day of review gives way to the next. A build holding none
 	// counts the day from midnight.
 	Day history.Day
@@ -167,6 +168,20 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, erro
 	}
 	return run, nil
 }
+
+// Watching is this window as the schema answers about it, over the list a build
+// keeps of what it is doing. It is what the API's Window is built from, which
+// is the whole of how a window outside this module names itself.
+func Watching(tasks *task.Tasks) *wire.Window {
+	return &wire.Window{Named: wire.Review, Tasking: tasks}
+}
+
+// say puts one piece of work in the list of what is being done behind the
+// window, for a window that keeps one.
+func (a *API) say(at task.Task) { a.Window.Say(at) }
+
+// finished takes one piece of work out of that list.
+func (a *API) finished(id string) { a.Window.Finished(id) }
 
 func (a *API) now() time.Time {
 	if a.Now == nil {

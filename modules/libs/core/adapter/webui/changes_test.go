@@ -31,16 +31,15 @@ import (
 // the use case, where no server is needed to ask it.
 func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
 	t.Helper()
-	client, root, _ := serving(t, notes)
+	client, _, root, _ := serving(t, notes)
 	return client, root
 }
 
 // serving is that same vault, with the window's half of it as well, for a test
 // asking what something the window does reaches the client as.
-func serving(
-	t *testing.T,
-	notes map[string]string,
-) (numenv1connect.VaultServiceClient, string, *webui.Opened) {
+func serving(t *testing.T, notes map[string]string) (
+	numenv1connect.VaultServiceClient, numenv1connect.WindowServiceClient, string, *webui.Opened,
+) {
 	t.Helper()
 	root := t.TempDir()
 	for name, body := range notes {
@@ -79,8 +78,10 @@ func serving(
 	t.Cleanup(func() { opened.Close() })
 
 	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
+	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -88,6 +89,7 @@ func serving(
 	t.Cleanup(server.Close)
 
 	client := numenv1connect.NewVaultServiceClient(server.Client(), server.URL)
+	watching := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 
 	// The window opens on what the first scan stored; the watcher reports only
 	// what happens after it.
@@ -97,7 +99,7 @@ func serving(
 			t.Fatal(err)
 		}
 		if state.Msg.GetReady() {
-			return client, root, opened
+			return client, watching, root, opened
 		}
 		if reason := state.Msg.GetFailed(); reason != "" {
 			t.Fatalf("the first scan failed: %s", reason)
@@ -105,7 +107,7 @@ func serving(
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal("the first scan did not finish")
-	return nil, "", nil
+	return nil, nil, "", nil
 }
 
 // TestAnEditReachesAListener is the whole path: a file on disk, the watcher,

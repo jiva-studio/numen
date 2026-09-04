@@ -8,6 +8,8 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // following is everyone listening for something moving underneath the window.
@@ -94,7 +96,7 @@ func (a *API) Moving(
 		return err
 	}
 
-	repeat := time.NewTicker(again)
+	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
 	for {

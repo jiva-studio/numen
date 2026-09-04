@@ -4,7 +4,7 @@
  * Nothing here draws: it is the client, and the words the answers arrive in.
  */
 import { createClient } from '@connectrpc/connect'
-import { Goal as Goals, Rating, FlashcardsService } from '@numen/protocol'
+import { Goal as Goals, Rating, FlashcardsService, WindowService } from '@numen/protocol'
 import type { Stopped } from '@numen/protocol'
 import { transport } from './transport'
 
@@ -13,6 +13,12 @@ import { transport } from './transport'
  * about: this window is over all of them at once.
  */
 export const cards = createClient(FlashcardsService, transport)
+
+/** This window itself, which is the one cards are run in and not the editor. */
+export const itself = createClient(WindowService, transport)
+
+/** The window every question about a window names. */
+export const WINDOW = 'review'
 
 /** How well a card came back. A person says which of the four. */
 export type Said = 'again' | 'hard' | 'good' | 'easy'

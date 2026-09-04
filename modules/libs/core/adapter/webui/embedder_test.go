@@ -94,7 +94,7 @@ func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Said before the reading goroutine starts, so a window that opens on a
 	// fresh vault is shown the walk from its first moment.
-	list := opened.API.Tasking.List()
+	list := opened.API.Window.Tasking.List()
 	if len(list) != 1 {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
@@ -107,7 +107,7 @@ func TestAVaultSaysWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Each pass takes itself out when it ends, so a vault that has been read
 	// says it is doing nothing.
-	waitFor(t, func() bool { return len(opened.API.Tasking.List()) == 0 })
+	waitFor(t, func() bool { return len(opened.API.Window.Tasking.List()) == 0 })
 }
 
 // waitFor gives a background reading its time and says what it was waiting for.

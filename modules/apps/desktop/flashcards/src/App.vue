@@ -22,7 +22,7 @@ import Asking from './Asking.vue'
 import Reading from './Reading.vue'
 import type { Where } from './Beside.vue'
 import { VERSION } from './version'
-import { cards, deckName } from './core'
+import { WINDOW, cards, deckName, itself } from './core'
 import { counting } from './counting'
 import { asks, picks, swallows } from './keying'
 import { raising } from './notices'
@@ -319,7 +319,7 @@ onMounted(() => {
   // What is being done behind the window, which is a vault read into the index.
   // It is a stream because a reading begins without the page asking for one.
   void follows(
-    () => cards.tasks({}),
+    () => itself.tasks({ window: WINDOW }),
     (said) => {
       doing(
         said.tasks.map((at) => ({

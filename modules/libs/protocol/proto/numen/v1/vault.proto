@@ -76,18 +76,6 @@ service VaultService {
   // note is shown; the note itself arrives the way every other change does.
   rpc Editing(EditingRequest) returns (stream EditingResponse);
 
-  // Tasks reports everything the application is doing behind the window, for as
-  // long as the caller listens: what it is, what it is on, and how far it has
-  // got.
-  //
-  // The whole list arrives every time any of it changes, and the first arrives
-  // at once, so a window that opened while work was running is told about it.
-  // It is a stream rather than a question asked over and over, because what is
-  // being done is known here the moment it changes and work can begin without
-  // the window asking for it — an agent is told to read a document, and this is
-  // where the person watching sees it happen.
-  rpc Tasks(TasksRequest) returns (stream TasksResponse);
-
   // List is what one folder of the vault holds. A tree asks for a folder as it
   // is opened, one folder to a request.
   rpc List(ListRequest) returns (ListResponse);
@@ -126,16 +114,6 @@ service VaultService {
 
   // MakeFolder makes an empty folder. The folders above it are made with it.
   rpc MakeFolder(MakeFolderRequest) returns (MakeFolderResponse);
-
-  // Quitting says the window is going, for as long as the caller listens. A
-  // caller holding work that is only in its own memory writes it now and
-  // answers with Flushed.
-  rpc Quitting(QuittingRequest) returns (stream QuittingResponse);
-
-  // Flushed says what a caller has left. Nothing left lets the window go; work
-  // a person is being asked about keeps it open. A caller that never says it is
-  // waited for and then left behind.
-  rpc Flushed(FlushedRequest) returns (FlushedResponse);
 }
 
 // Refusal is why a note could not be read or written.
@@ -265,60 +243,6 @@ message StateResponse {
   // False for an installation with no model, where `embedded` stays where it is
   // and the vault is searched by its words.
   bool embedding = 10;
-}
-
-message TasksRequest {}
-
-message TasksResponse {
-  // Everything being done now, in the order the work began. The list arrives
-  // whole, because what is being done is a list and not a set of differences to
-  // apply.
-  repeated Task tasks = 1;
-}
-
-// A Task is one piece of work the application is doing behind the window.
-//
-// Every kind of work is one of these. That is the point: the next kind is an
-// entry in a list rather than another field on the state, another thing for the
-// window to poll, and another branch in what draws it.
-message Task {
-  // Id is what this work is called, so that the same work reported again
-  // replaces itself rather than appearing twice.
-  string id = 1;
-
-  // Doing is the work, in the words to show. About is what it is on, and is
-  // empty for work that is on nothing in particular.
-  string doing = 2;
-  string about = 3;
-
-  // Done and total are how far it has got, when there is a total to count
-  // against. Both zero is work running with nothing to count, which is an
-  // ordinary state and not an unknown one.
-  int64 done = 4;
-  int64 total = 5;
-
-  // Failed is why the work stopped, when it stopped badly.
-  string failed = 6;
-
-  // Asked is set for work a person started and is waiting to be told about.
-  // Work nobody asked for is drawn once it has lasted, and most of it is over
-  // before that.
-  bool asked = 7;
-
-  // Counting is what done and total are counted in.
-  Counting counting = 8;
-}
-
-// Counting is what a piece of work counts. Bytes are read out in the sizes a
-// person reads them in, seconds as a length of time, and everything else is
-// counted one by one.
-enum Counting {
-  COUNTING_UNSPECIFIED = 0;
-  COUNTING_THINGS = 1;
-  COUNTING_BYTES = 2;
-
-  // A stretch of a recording, read out as a length of time.
-  COUNTING_SECONDS = 3;
 }
 
 message OpeningRequest {}
@@ -946,40 +870,3 @@ message RemoveResponse {
   // Set when nothing was removed, and why.
   optional Refusal refusal = 3;
 }
-
-message QuittingRequest {}
-
-message QuittingResponse {
-  // What this caller answers Flushed with. The stream opens by saying it, so
-  // a caller knows it is listening before anything is asked of it.
-  string token = 1;
-
-  // Set when the window is going and this caller's unwritten work has to land.
-  bool flush = 2;
-}
-
-// Owed is what a caller has left when it answers.
-enum Owed {
-  OWED_UNSPECIFIED = 0;
-
-  // Nothing is left. The caller held nothing of its own.
-  OWED_NOTHING = 3;
-
-  // Everything this caller held is written.
-  OWED_WRITTEN = 1;
-
-  // Something this caller holds could not be written, and a person is being
-  // asked what to do with it. The window stays until they answer.
-  OWED_ASKING = 2;
-}
-
-message FlushedRequest {
-  // The token this caller was given when it began listening.
-  string token = 1;
-
-  // What this caller has left. A request naming none has said nothing, and is
-  // waited for the way one that never answered is waited for.
-  Owed owed = 2;
-}
-
-message FlushedResponse {}

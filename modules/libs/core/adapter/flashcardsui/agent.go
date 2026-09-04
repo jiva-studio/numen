@@ -9,6 +9,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -56,7 +57,7 @@ func (a *API) Ask(
 	// A model thinking for a minute writes nothing, and a stream that writes
 	// nothing never learns its client has gone. A step naming nothing is one a
 	// client ignores and a write that fails ends the work.
-	repeat := time.NewTicker(again)
+	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
 	for {
@@ -71,7 +72,7 @@ func (a *API) Ask(
 			if !working {
 				return nil
 			}
-			for _, out := range stepsOf(step) {
+			for _, out := range wire.StepsOf(step) {
 				if err := stream.Send(out); err != nil {
 					return err
 				}
@@ -96,33 +97,4 @@ func (a *API) Finish(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.FinishResponse{}), nil
-}
-
-// stepsOf says a step in the schema's words.
-//
-// Every kind that names a tool is drawn as one, and carries where in the vault
-// it is working.
-func stepsOf(step port.Step) []*v1.AskResponse {
-	switch step.Kind {
-	case port.StepToolCall, port.StepRead, port.StepEdit,
-		port.StepRemove, port.StepMove, port.StepSearch:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_ToolCall{
-			ToolCall: &v1.ToolCall{
-				Tool:    step.Tool,
-				About:   step.About,
-				Written: int32(step.Count),
-				Path:    step.Place.Path,
-				Start:   int32(step.Place.Start),
-				Length:  int32(step.Place.Length),
-			},
-		}}}
-	case port.StepAnswered:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Answered{Answered: &v1.Answered{}}}}
-	case port.StepThinking:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Thinking{Thinking: &v1.Thinking{}}}}
-	case port.StepStopped:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Detail}}}
-	default:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Said{Said: step.Text}}}
-	}
 }

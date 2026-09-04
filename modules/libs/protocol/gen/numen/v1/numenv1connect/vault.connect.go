@@ -66,8 +66,6 @@ const (
 	VaultServiceAttendingProcedure = "/numen.v1.VaultService/Attending"
 	// VaultServiceEditingProcedure is the fully-qualified name of the VaultService's Editing RPC.
 	VaultServiceEditingProcedure = "/numen.v1.VaultService/Editing"
-	// VaultServiceTasksProcedure is the fully-qualified name of the VaultService's Tasks RPC.
-	VaultServiceTasksProcedure = "/numen.v1.VaultService/Tasks"
 	// VaultServiceListProcedure is the fully-qualified name of the VaultService's List RPC.
 	VaultServiceListProcedure = "/numen.v1.VaultService/List"
 	// VaultServiceReadProcedure is the fully-qualified name of the VaultService's Read RPC.
@@ -86,10 +84,6 @@ const (
 	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
 	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
 	VaultServiceMakeFolderProcedure = "/numen.v1.VaultService/MakeFolder"
-	// VaultServiceQuittingProcedure is the fully-qualified name of the VaultService's Quitting RPC.
-	VaultServiceQuittingProcedure = "/numen.v1.VaultService/Quitting"
-	// VaultServiceFlushedProcedure is the fully-qualified name of the VaultService's Flushed RPC.
-	VaultServiceFlushedProcedure = "/numen.v1.VaultService/Flushed"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
@@ -144,17 +138,6 @@ type VaultServiceClient interface {
 	// made, for as long as the caller listens. It is what a person reading that
 	// note is shown; the note itself arrives the way every other change does.
 	Editing(context.Context, *connect.Request[v1.EditingRequest]) (*connect.ServerStreamForClient[v1.EditingResponse], error)
-	// Tasks reports everything the application is doing behind the window, for as
-	// long as the caller listens: what it is, what it is on, and how far it has
-	// got.
-	//
-	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is told about it.
-	// It is a stream rather than a question asked over and over, because what is
-	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is told to read a document, and this is
-	// where the person watching sees it happen.
-	Tasks(context.Context, *connect.Request[v1.TasksRequest]) (*connect.ServerStreamForClient[v1.TasksResponse], error)
 	// List is what one folder of the vault holds. A tree asks for a folder as it
 	// is opened, one folder to a request.
 	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
@@ -185,14 +168,6 @@ type VaultServiceClient interface {
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
 	// MakeFolder makes an empty folder. The folders above it are made with it.
 	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
-	// Quitting says the window is going, for as long as the caller listens. A
-	// caller holding work that is only in its own memory writes it now and
-	// answers with Flushed.
-	Quitting(context.Context, *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error)
-	// Flushed says what a caller has left. Nothing left lets the window go; work
-	// a person is being asked about keeps it open. A caller that never says it is
-	// waited for and then left behind.
-	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -278,12 +253,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Editing")),
 			connect.WithClientOptions(opts...),
 		),
-		tasks: connect.NewClient[v1.TasksRequest, v1.TasksResponse](
-			httpClient,
-			baseURL+VaultServiceTasksProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Tasks")),
-			connect.WithClientOptions(opts...),
-		),
 		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
 			httpClient,
 			baseURL+VaultServiceListProcedure,
@@ -338,18 +307,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
 			connect.WithClientOptions(opts...),
 		),
-		quitting: connect.NewClient[v1.QuittingRequest, v1.QuittingResponse](
-			httpClient,
-			baseURL+VaultServiceQuittingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Quitting")),
-			connect.WithClientOptions(opts...),
-		),
-		flushed: connect.NewClient[v1.FlushedRequest, v1.FlushedResponse](
-			httpClient,
-			baseURL+VaultServiceFlushedProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Flushed")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -367,7 +324,6 @@ type vaultServiceClient struct {
 	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
 	attending     *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
 	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
-	tasks         *connect.Client[v1.TasksRequest, v1.TasksResponse]
 	list          *connect.Client[v1.ListRequest, v1.ListResponse]
 	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
@@ -377,8 +333,6 @@ type vaultServiceClient struct {
 	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
 	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
 	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
-	quitting      *connect.Client[v1.QuittingRequest, v1.QuittingResponse]
-	flushed       *connect.Client[v1.FlushedRequest, v1.FlushedResponse]
 }
 
 // State calls numen.v1.VaultService.State.
@@ -441,11 +395,6 @@ func (c *vaultServiceClient) Editing(ctx context.Context, req *connect.Request[v
 	return c.editing.CallServerStream(ctx, req)
 }
 
-// Tasks calls numen.v1.VaultService.Tasks.
-func (c *vaultServiceClient) Tasks(ctx context.Context, req *connect.Request[v1.TasksRequest]) (*connect.ServerStreamForClient[v1.TasksResponse], error) {
-	return c.tasks.CallServerStream(ctx, req)
-}
-
 // List calls numen.v1.VaultService.List.
 func (c *vaultServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
 	return c.list.CallUnary(ctx, req)
@@ -489,16 +438,6 @@ func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1
 // MakeFolder calls numen.v1.VaultService.MakeFolder.
 func (c *vaultServiceClient) MakeFolder(ctx context.Context, req *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
 	return c.makeFolder.CallUnary(ctx, req)
-}
-
-// Quitting calls numen.v1.VaultService.Quitting.
-func (c *vaultServiceClient) Quitting(ctx context.Context, req *connect.Request[v1.QuittingRequest]) (*connect.ServerStreamForClient[v1.QuittingResponse], error) {
-	return c.quitting.CallServerStream(ctx, req)
-}
-
-// Flushed calls numen.v1.VaultService.Flushed.
-func (c *vaultServiceClient) Flushed(ctx context.Context, req *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
-	return c.flushed.CallUnary(ctx, req)
 }
 
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
@@ -553,17 +492,6 @@ type VaultServiceHandler interface {
 	// made, for as long as the caller listens. It is what a person reading that
 	// note is shown; the note itself arrives the way every other change does.
 	Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error
-	// Tasks reports everything the application is doing behind the window, for as
-	// long as the caller listens: what it is, what it is on, and how far it has
-	// got.
-	//
-	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is told about it.
-	// It is a stream rather than a question asked over and over, because what is
-	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is told to read a document, and this is
-	// where the person watching sees it happen.
-	Tasks(context.Context, *connect.Request[v1.TasksRequest], *connect.ServerStream[v1.TasksResponse]) error
 	// List is what one folder of the vault holds. A tree asks for a folder as it
 	// is opened, one folder to a request.
 	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
@@ -594,14 +522,6 @@ type VaultServiceHandler interface {
 	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
 	// MakeFolder makes an empty folder. The folders above it are made with it.
 	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
-	// Quitting says the window is going, for as long as the caller listens. A
-	// caller holding work that is only in its own memory writes it now and
-	// answers with Flushed.
-	Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error
-	// Flushed says what a caller has left. Nothing left lets the window go; work
-	// a person is being asked about keeps it open. A caller that never says it is
-	// waited for and then left behind.
-	Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error)
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -683,12 +603,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Editing")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceTasksHandler := connect.NewServerStreamHandler(
-		VaultServiceTasksProcedure,
-		svc.Tasks,
-		connect.WithSchema(vaultServiceMethods.ByName("Tasks")),
-		connect.WithHandlerOptions(opts...),
-	)
 	vaultServiceListHandler := connect.NewUnaryHandler(
 		VaultServiceListProcedure,
 		svc.List,
@@ -743,18 +657,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceQuittingHandler := connect.NewServerStreamHandler(
-		VaultServiceQuittingProcedure,
-		svc.Quitting,
-		connect.WithSchema(vaultServiceMethods.ByName("Quitting")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceFlushedHandler := connect.NewUnaryHandler(
-		VaultServiceFlushedProcedure,
-		svc.Flushed,
-		connect.WithSchema(vaultServiceMethods.ByName("Flushed")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceStateProcedure:
@@ -781,8 +683,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceAttendingHandler.ServeHTTP(w, r)
 		case VaultServiceEditingProcedure:
 			vaultServiceEditingHandler.ServeHTTP(w, r)
-		case VaultServiceTasksProcedure:
-			vaultServiceTasksHandler.ServeHTTP(w, r)
 		case VaultServiceListProcedure:
 			vaultServiceListHandler.ServeHTTP(w, r)
 		case VaultServiceReadProcedure:
@@ -801,10 +701,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceRemoveHandler.ServeHTTP(w, r)
 		case VaultServiceMakeFolderProcedure:
 			vaultServiceMakeFolderHandler.ServeHTTP(w, r)
-		case VaultServiceQuittingProcedure:
-			vaultServiceQuittingHandler.ServeHTTP(w, r)
-		case VaultServiceFlushedProcedure:
-			vaultServiceFlushedHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -862,10 +758,6 @@ func (UnimplementedVaultServiceHandler) Editing(context.Context, *connect.Reques
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Editing is not implemented"))
 }
 
-func (UnimplementedVaultServiceHandler) Tasks(context.Context, *connect.Request[v1.TasksRequest], *connect.ServerStream[v1.TasksResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Tasks is not implemented"))
-}
-
 func (UnimplementedVaultServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.List is not implemented"))
 }
@@ -900,12 +792,4 @@ func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request
 
 func (UnimplementedVaultServiceHandler) MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.MakeFolder is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Quitting(context.Context, *connect.Request[v1.QuittingRequest], *connect.ServerStream[v1.QuittingResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Quitting is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Flushed(context.Context, *connect.Request[v1.FlushedRequest]) (*connect.Response[v1.FlushedResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Flushed is not implemented"))
 }

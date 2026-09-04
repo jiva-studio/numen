@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -32,8 +33,11 @@ type going struct {
 	// configuring is the file a person configures this installation in, which
 	// is a service of its own beside the vault.
 	configuring numenv1connect.SettingsServiceClient
-	opened      *webui.Opened
-	root        string
+	// drawn is the window itself: what is being done behind it, and the drain
+	// that holds it back when it goes.
+	drawn  numenv1connect.WindowServiceClient
+	opened *webui.Opened
+	root   string
 	// settings is the vault list this window keeps, which is the folder its
 	// settings file sits in.
 	settings string
@@ -129,9 +133,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 
 	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
 	turning, settings := numenv1connect.NewSettingsServiceHandler(opened.API)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	mux.Handle(turning, settings)
+	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -141,6 +147,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	return &going{
 		client:      numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
 		configuring: numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
+		drawn:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		opened:      opened,
 		root:        root,
 		settings:    cfg.RegistryPath,
@@ -293,7 +300,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 	listening, hangUp := context.WithCancel(context.Background())
 	defer hangUp()
 
-	stream, err := f.client.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{}))
+	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,9 +331,10 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if _, err := f.client.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
-				Token: stream.Msg().GetToken(),
-				Owed:  v1.Owed_OWED_WRITTEN,
+			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+				Window: wire.Editor,
+				Token:  stream.Msg().GetToken(),
+				Owed:   v1.Owed_OWED_WRITTEN,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -371,7 +379,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(context.Background())
 	defer hangUp()
 
-	stream, err := f.client.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{}))
+	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,7 +428,7 @@ func listening(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(context.Background())
-	stream, err := f.client.Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{}))
+	stream, err := f.drawn.Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -459,9 +467,10 @@ func (p *speaking) answering(doing func(token string) v1.Owed) {
 
 // says is the page telling the application what it has left.
 func (p *speaking) says(token string, said v1.Owed) {
-	_, _ = p.f.client.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
-		Token: token,
-		Owed:  said,
+	_, _ = p.f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+		Window: wire.Editor,
+		Token:  token,
+		Owed:   said,
 	}))
 }
 

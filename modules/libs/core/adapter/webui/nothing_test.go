@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // nothing is an installation holding no vault, the window it opens, and a
@@ -26,6 +27,7 @@ import (
 type nothing struct {
 	opened    *webui.Opened
 	vault     numenv1connect.VaultServiceClient
+	drawn     numenv1connect.WindowServiceClient
 	holds     numenv1connect.VaultsServiceClient
 	server    *httptest.Server
 	cfg       container.Config
@@ -66,6 +68,7 @@ func standingOnNothing(t *testing.T) *nothing {
 	return &nothing{
 		opened:    opened,
 		vault:     numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		drawn:     numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		holds:     numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
 		server:    server,
 		cfg:       cfg,
@@ -177,7 +180,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
 
-	tasks, err := f.vault.Tasks(listening, connect.NewRequest(&v1.TasksRequest{}))
+	tasks, err := f.drawn.Tasks(listening, connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}

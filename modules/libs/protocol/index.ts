@@ -7,6 +7,7 @@
 export * from './src/numen/v1/vault_pb.js'
 export * from './src/numen/v1/vaults_pb.js'
 export * from './src/numen/v1/settings_pb.js'
+export * from './src/numen/v1/window_pb.js'
 export * from './src/numen/v1/cards_pb.js'
 export * from './src/numen/v1/flashcards_pb.js'
 export * from './src/numen/v1/presets_pb.js'

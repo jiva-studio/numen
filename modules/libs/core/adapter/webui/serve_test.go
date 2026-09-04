@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -515,7 +516,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api := &API{
 		Listeners: following(),
 		Places:    focusing(),
-		Tasking:   task.New(),
+		Window:    &wire.Window{Named: wire.Editor, Tasking: task.New()},
 		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
 	}
 	api.show(v)

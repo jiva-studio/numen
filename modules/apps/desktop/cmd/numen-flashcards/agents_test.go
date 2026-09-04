@@ -28,9 +28,9 @@ var deck = map[string]string{
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
-// window is this window as the binary builds it: an installation of its own, an
+// built is this window as the binary builds it: an installation of its own, an
 // index it may write, and two vaults to sit down to.
-func window(
+func built(
 	t *testing.T,
 ) (container.Config, *container.Index, *openVaults, *flashcardsui.API, []domain.Vault) {
 	t.Helper()
@@ -96,7 +96,7 @@ func kept(t *testing.T, cfg container.Config) (token bool, announcement bool) {
 
 // An installation that names no agent lets nothing be asked, and says so.
 func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
-	cfg, db, opening, api, _ := window(t)
+	cfg, db, opening, api, _ := built(t)
 	cfg.Agent = agent.Config{}
 
 	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
@@ -112,7 +112,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 
 // The flag shuts it for one launch, whatever the settings name.
 func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
-	cfg, db, opening, api, _ := window(t)
+	cfg, db, opening, api, _ := built(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, opening, api, true, io.Discard)
@@ -127,7 +127,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, opening, api, vaults := window(t)
+	cfg, db, opening, api, vaults := built(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
@@ -147,7 +147,7 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person sat down to. Sitting to another vault
 // starts it again there; sitting to the same one leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
-	cfg, db, opening, api, vaults := window(t)
+	cfg, db, opening, api, vaults := built(t)
 	cfg.Agent = agent.Defaults()
 
 	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)

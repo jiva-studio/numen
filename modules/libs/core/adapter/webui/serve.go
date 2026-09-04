@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/embedding"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -191,7 +192,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Listeners: following(),
 		Places:    focusing(),
 		Edits:     drawing(),
-		Tasking:   tasks,
+		Window:    &wire.Window{Named: wire.Editor, Tasking: tasks},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
 		Viewer:    keepingDrawings(cfg.Documents()),
@@ -413,7 +414,7 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	held, spent := context.WithTimeout(ctx, HandedOverIn)
 	defer spent()
 
-	if !settling(held, &o.API.clients, &o.API.Writing) {
+	if !settling(held, o.API.Window, &o.API.Writing) {
 		return errAsking
 	}
 
@@ -435,7 +436,7 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Writing.open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	o.API.clients.over()
+	o.API.Window.Over()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
 	o.API.Listeners.tell(changed{reload: true})
@@ -603,7 +604,7 @@ func (o *Opened) Settle(ctx context.Context) bool {
 		return false
 	}
 
-	settled := settling(ctx, &o.API.clients, &o.API.Writing)
+	settled := settling(ctx, o.API.Window, &o.API.Writing)
 	o.shutting.over(settled)
 	return settled
 }
@@ -612,7 +613,7 @@ func (o *Opened) Settle(ctx context.Context) bool {
 // waits on while a person answers a question, and that wait is on a person and
 // is not measured. It answers false where ctx ended or the vault was asked
 // again.
-func (o *Opened) Answered(ctx context.Context) bool { return answering(ctx, &o.API.clients) }
+func (o *Opened) Answered(ctx context.Context) bool { return o.API.Window.Answered(ctx) }
 
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes the index.
@@ -710,36 +711,12 @@ func readable(cfg container.Config, v domain.Vault) error {
 //
 // The writes are not bounded, because the door is shut first and what is left
 // is a fixed set of filesystem operations.
-func settling(ctx context.Context, pages *leaving, writes *inflight) bool {
-	round := pages.ask()
-	select {
-	case <-round.written:
-	case <-round.questions:
-	case <-round.over:
-	case <-ctx.Done():
-	}
-	if round.standing() || pages.current() != round {
+func settling(ctx context.Context, pages *wire.Window, writes *inflight) bool {
+	if !pages.Settling(ctx) {
 		return false
 	}
 	<-writes.seal()
 	return true
-}
-
-// answering waits for the round in progress to end with every page having
-// written what it owes.
-func answering(ctx context.Context, pages *leaving) bool {
-	round := pages.current()
-	if round == nil {
-		return false
-	}
-	select {
-	case <-round.written:
-		return true
-	case <-round.over:
-		return false
-	case <-ctx.Done():
-		return false
-	}
 }
 
 // What each pass behind the window is called in the list of what is being done.

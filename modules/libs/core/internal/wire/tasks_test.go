@@ -1,4 +1,4 @@
-package webui
+package wire
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v1.TasksResponse] {
 	t.Helper()
 
-	route, handler := numenv1connect.NewVaultServiceHandler(&API{Tasking: tasks})
+	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewServer(mux)
@@ -27,8 +27,8 @@ func listening(t *testing.T, tasks *task.Tasks) *connect.ServerStreamForClient[v
 	ctx, stop := context.WithTimeout(t.Context(), 10*time.Second)
 	t.Cleanup(stop)
 
-	client := numenv1connect.NewVaultServiceClient(server.Client(), server.URL)
-	stream, err := client.Tasks(ctx, connect.NewRequest(&v1.TasksRequest{}))
+	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
+	stream, err := client.Tasks(ctx, connect.NewRequest(&v1.TasksRequest{Window: Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,5 +69,39 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 		if list := told(t, stream); len(list) != 0 {
 			t.Fatalf("telling %d said %v, and the work had ended", telling+1, list)
 		}
+	}
+}
+
+// The editor and the window a person runs their cards in are open on the same
+// vault, so a question about a window says which. One naming the other window
+// is not answered with this one's.
+func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
+	route, handler := numenv1connect.NewWindowServiceHandler(
+		&Window{Named: Review, Tasking: task.New()},
+	)
+	mux := http.NewServeMux()
+	mux.Handle(route, handler)
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
+	stream, err := client.Tasks(t.Context(), connect.NewRequest(&v1.TasksRequest{Window: Editor}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = stream.Close() })
+	if stream.Receive() {
+		t.Fatalf("the review window answered for the editor: %v", stream.Msg().GetTasks())
+	}
+	if connect.CodeOf(stream.Err()) != connect.CodeNotFound {
+		t.Errorf("the answer was %v", stream.Err())
+	}
+
+	if _, err := client.Flushed(t.Context(), connect.NewRequest(&v1.FlushedRequest{
+		Window: Editor,
+		Token:  "0",
+		Owed:   v1.Owed_OWED_WRITTEN,
+	})); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("a flush for the editor was answered %v", err)
 	}
 }

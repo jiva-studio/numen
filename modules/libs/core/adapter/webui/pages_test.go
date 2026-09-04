@@ -30,9 +30,9 @@ import (
 // pinning the dark half.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
-// window is the whole handler as the application hands it over: the questions,
+// drawn is the whole handler as the application hands it over: the questions,
 // the themes, and the built page behind them.
-func window(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
+func drawn(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
 	files, err := Pages()
@@ -132,7 +132,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 // The page arrives wearing the theme, at every address it is asked for under.
 func TestThePageOpensWearingTheTheme(t *testing.T) {
 	cfg := installed(t)
-	handler, themes := window(t, cfg)
+	handler, themes := drawn(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 	choose(t, themes, "mine:sea", v1.Mode_MODE_DARK)
 
@@ -166,7 +166,7 @@ func TestThePageOpensWearingTheTheme(t *testing.T) {
 // each goes to, and the window is drawn at what they say.
 func TestTheStyleElementsAreTheLastThingInTheHead(t *testing.T) {
 	cfg := installed(t)
-	handler, themes := window(t, cfg)
+	handler, themes := drawn(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 	chose(t, themes, &v1.ChooseRequest{
 		Name:           "mine:sea",
@@ -207,7 +207,7 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 	if err := os.WriteFile(file, []byte(`{"appearance":{"zoom":1.5}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	handler, _ := window(t, cfg)
+	handler, _ := drawn(t, cfg)
 
 	if !strings.Contains(handed(handler, "/").Body.String(), "--numen-interface-scale: 1.5") {
 		t.Error("the page is not drawn at what the file says")
@@ -243,7 +243,7 @@ func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
 // The head is read for each request: a theme chosen is worn by the next reload.
 func TestTheHeadIsReadForEachRequest(t *testing.T) {
 	cfg := installed(t)
-	handler, themes := window(t, cfg)
+	handler, themes := drawn(t, cfg)
 	puts(t, cfg, "sea.css", mine)
 
 	if strings.Contains(handed(handler, "/").Body.String(), mine) {
@@ -281,7 +281,7 @@ func TestAPageThatCannotSayWhatItWearsIsServedAsItWasBuilt(t *testing.T) {
 // A theme naming the end of the element it is spliced into does not end it.
 func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 	cfg := installed(t)
-	handler, themes := window(t, cfg)
+	handler, themes := drawn(t, cfg)
 	puts(t, cfg, "loud.css", ":root{--numen-surface:#010203}</STYLE><b>out here</b>")
 	choose(t, themes, "mine:loud", v1.Mode_MODE_SYSTEM)
 

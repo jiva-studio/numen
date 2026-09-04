@@ -21,6 +21,7 @@ import {
   VaultsRefusal,
   VaultsService,
   Way as Ways,
+  WindowService,
 } from '@numen/protocol'
 import type {
   Card as CardMessage,
@@ -88,6 +89,12 @@ const cardsService = createClient(CardsService, transport)
 
 /** The file this installation is configured in, which is no vault's. */
 const settingsService = createClient(SettingsService, transport)
+
+/** This window itself, which is the editor and not the one cards are run in. */
+const windowService = createClient(WindowService, transport)
+
+/** The window every question about a window names. */
+const WINDOW = 'editor'
 
 /**
  * The settings the window turns by name, each where it sits in the file.
@@ -251,7 +258,7 @@ export const core: Core & Asking & Commanding = {
   },
   editing: (signal) => vault.editing({}, { signal }),
   async *tasks(signal) {
-    for await (const said of vault.tasks({}, { signal })) {
+    for await (const said of windowService.tasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
         id: at.id,
         doing: at.doing,
@@ -357,9 +364,9 @@ export const core: Core & Asking & Commanding = {
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
-  quitting: (signal) => vault.quitting({}, { signal }),
+  quitting: (signal) => windowService.quitting({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
-    await vault.flushed({ token, owed: owing[owed ?? 'nothing'] })
+    await windowService.flushed({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
   },
   /** What each of the notes asked about is divided into. */
   headings: async (paths) => {

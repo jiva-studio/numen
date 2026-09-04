@@ -117,7 +117,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 		},
 		Presets: running.Presets,
 		Notes:   db.Queries(),
-		Tasking: task.New(),
+		Window:  Watching(task.New()),
 		Day:     running.Day,
 		Now:     time.Now,
 	}
@@ -140,6 +140,14 @@ func serving(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
 	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+}
+
+// watching is the window itself, over that same handler.
+func watching(t *testing.T, api *API) numenv1connect.WindowServiceClient {
+	t.Helper()
+	server := httptest.NewServer(api.Serving(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+	return numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 }
 
 // front is the whole front door as a person comes to see it: the vaults it

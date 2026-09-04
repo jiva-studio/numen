@@ -12,6 +12,8 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // TestAFileLetGoOfOverTheTreeArrivesAndIsSaid is the path a drop takes: the
@@ -21,7 +23,7 @@ import (
 // A picture is what the watcher reports to nobody, so the stream is the only
 // way the tree finds out about one.
 func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
-	client, root, opened := serving(t, map[string]string{
+	client, _, root, opened := serving(t, map[string]string{
 		"physics/Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 
@@ -78,7 +80,7 @@ func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
 // A file that is already there stays as it is, and what stopped the drop stands
 // in the list of what the window is doing.
 func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
-	client, root, opened := serving(t, map[string]string{"Entropy.md": "# Mine\n"})
+	_, drawn, root, opened := serving(t, map[string]string{"Entropy.md": "# Mine\n"})
 
 	outside := t.TempDir()
 	theirs := filepath.Join(outside, "Entropy.md")
@@ -96,7 +98,7 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 		t.Errorf("the note that was there is now %q", held)
 	}
 
-	answer, err := client.Tasks(t.Context(), connect.NewRequest(&v1.TasksRequest{}))
+	answer, err := drawn.Tasks(t.Context(), connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
@@ -121,9 +122,6 @@ type API struct {
 	// nobody.
 	Attends func(domain.Attention)
 
-	// clients is everyone drawing this vault, for the moment the window goes:
-	// each is asked to write what only it holds, and answers when it has.
-	clients leaving
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
@@ -137,10 +135,10 @@ type API struct {
 	// Unreachable is why an agent cannot be reached, when one cannot.
 	Unreachable atomic.Value
 
-	// Tasking is everything being done behind the window. Whatever does work
-	// puts itself there and the window reads the list, so a new kind of work is
-	// an entry rather than another field here.
-	Tasking *task.Tasks
+	// Window is this window itself: everything being done behind it, which
+	// whatever does work puts itself into, and everyone drawing it for the
+	// moment it goes.
+	Window *wire.Window
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
@@ -315,6 +313,13 @@ func (a *API) forgets() func(domain.Vault, string) {
 	}
 	return nil
 }
+
+// say puts one piece of work in the list of what is being done behind the
+// window, for a build that keeps one.
+func (a *API) say(at task.Task) { a.Window.Say(at) }
+
+// finished takes one piece of work out of that list.
+func (a *API) finished(id string) { a.Window.Finished(id) }
 
 // Shut refuses every question from now on, and there is no opening it again. It
 // answers once the questions already taken have been answered, so everything an
@@ -492,7 +497,7 @@ func (a *API) Changes(
 		return err
 	}
 
-	repeat := time.NewTicker(again)
+	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
 	for {

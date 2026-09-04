@@ -17,7 +17,7 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Preset, Stopped } from "./presets_pb.js";
 import { file_numen_v1_presets } from "./presets_pb.js";
-import type { Refusal, Task } from "./vault_pb.js";
+import type { Refusal } from "./vault_pb.js";
 import { file_numen_v1_vault } from "./vault_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -25,41 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("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ASABKAkSEAoIYW5zd2VyZWQYAiABKAUSDQoFYWdhaW4YAyABKAUSDAoEaGFyZBgEIAEoBRIMCgRnb29kGAUgASgFEgwKBGVhc3kYBiABKAUSDQoFYXNrZWQYByABKAUSEAoIcmVjYWxsZWQYCCABKAUiDwoNQXNraW5nUmVxdWVzdCIlCg5Bc2tpbmdSZXNwb25zZRITCgt1bnJlYWNoYWJsZRgBIAEoCSIsCg1Bcm91bmRSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkiRAoOQXJvdW5kUmVzcG9uc2USIgoFbm90ZXMYASADKAsyEy5udW1lbi52MS5OZWlnaGJvdXISDgoGdW5yZWFkGAIgASgFIq4BCglOZWlnaGJvdXISDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXRpdGxlGAMgASgJEgwKBGJvZHkYBCABKAkSDQoFbGFiZWwYBSABKAkSDgoGcG9pbnRzGAYgASgIEhEKCWFtYmlndW91cxgHIAEoCBInCgdyZWZ1c2FsGAggASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIg8KDU1vdmluZ1JlcXVlc3QiIAoOTW92aW5nUmVzcG9uc2USDgoGcmVsb2FkGAEgASgIIkEKIkZsYXNoY2FyZHNTZXJ2aWNlU2NoZWR1bGluZ1JlcXVlc3QSDQoFdmF1bHQYASABKAkSDAoEZGVjaxgCIAEoCSKMAQojRmxhc2hjYXJkc1NlcnZpY2VTY2hlZHVsaW5nUmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIJCgdfcHJlc2V0QgoKCF9yZWZ1c2FsKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDLOBQoRRmxhc2hjYXJkc1NlcnZpY2USOgoFT3dpbmcSFi5udW1lbi52MS5Pd2luZ1JlcXVlc3QaFy5udW1lbi52MS5Pd2luZ1Jlc3BvbnNlMAESOAoFU3RhcnQSFi5udW1lbi52MS5TdGFydFJlcXVlc3QaFy5udW1lbi52MS5TdGFydFJlc3BvbnNlEjsKBkFuc3dlchIXLm51bWVuLnYxLkFuc3dlclJlcXVlc3QaGC5udW1lbi52MS5BbnN3ZXJSZXNwb25zZRJBCghUYWtlQmFjaxIZLm51bWVuLnYxLlRha2VCYWNrUmVxdWVzdBoaLm51bWVuLnYxLlRha2VCYWNrUmVzcG9uc2USPQoGTW92aW5nEhcubnVtZW4udjEuTW92aW5nUmVxdWVzdBoYLm51bWVuLnYxLk1vdmluZ1Jlc3BvbnNlMAESQQoIUmV2aWV3ZWQSGS5udW1lbi52MS5SZXZpZXdlZFJlcXVlc3QaGi5udW1lbi52MS5SZXZpZXdlZFJlc3BvbnNlEjsKBkFza2luZxIXLm51bWVuLnYxLkFza2luZ1JlcXVlc3QaGC5udW1lbi52MS5Bc2tpbmdSZXNwb25zZRI7CgZBcm91bmQSFy5udW1lbi52MS5Bcm91bmRSZXF1ZXN0GhgubnVtZW4udjEuQXJvdW5kUmVzcG9uc2USaQoKU2NoZWR1bGluZxIsLm51bWVuLnYxLkZsYXNoY2FyZHNTZXJ2aWNlU2NoZWR1bGluZ1JlcXVlc3QaLS5udW1lbi52MS5GbGFzaGNhcmRzU2VydmljZVNjaGVkdWxpbmdSZXNwb25zZRJcCgVUYXNrcxInLm51bWVuLnYxLkZsYXNoY2FyZHNTZXJ2aWNlVGFza3NSZXF1ZXN0GigubnVtZW4udjEuRmxhc2hjYXJkc1NlcnZpY2VUYXNrc1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_vault]);
-
-/**
- * @generated from message numen.v1.FlashcardsServiceTasksRequest
- */
-export type FlashcardsServiceTasksRequest = Message<"numen.v1.FlashcardsServiceTasksRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.FlashcardsServiceTasksRequest.
- * Use `create(FlashcardsServiceTasksRequestSchema)` to create a new message.
- */
-export const FlashcardsServiceTasksRequestSchema: GenMessage<FlashcardsServiceTasksRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 0);
-
-/**
- * @generated from message numen.v1.FlashcardsServiceTasksResponse
- */
-export type FlashcardsServiceTasksResponse = Message<"numen.v1.FlashcardsServiceTasksResponse"> & {
-  /**
-   * Everything being done now, in the order the work began. The list arrives
-   * whole, because what is being done is a list and not a set of differences to
-   * apply.
-   *
-   * @generated from field: repeated numen.v1.Task tasks = 1;
-   */
-  tasks: Task[];
-};
-
-/**
- * Describes the message numen.v1.FlashcardsServiceTasksResponse.
- * Use `create(FlashcardsServiceTasksResponseSchema)` to create a new message.
- */
-export const FlashcardsServiceTasksResponseSchema: GenMessage<FlashcardsServiceTasksResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 1);
+  fileDesc("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CHJlY2FsbGVkGAggASgFIg8KDUFza2luZ1JlcXVlc3QiJQoOQXNraW5nUmVzcG9uc2USEwoLdW5yZWFjaGFibGUYASABKAkiLAoNQXJvdW5kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIkQKDkFyb3VuZFJlc3BvbnNlEiIKBW5vdGVzGAEgAygLMhMubnVtZW4udjEuTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSKuAQoJTmVpZ2hib3VyEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCRIMCgRib2R5GAQgASgJEg0KBWxhYmVsGAUgASgJEg4KBnBvaW50cxgGIAEoCBIRCglhbWJpZ3VvdXMYByABKAgSJwoHcmVmdXNhbBgIIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIPCg1Nb3ZpbmdSZXF1ZXN0IiAKDk1vdmluZ1Jlc3BvbnNlEg4KBnJlbG9hZBgBIAEoCCJBCiJGbGFzaGNhcmRzU2VydmljZVNjaGVkdWxpbmdSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkijAEKI0ZsYXNoY2FyZHNTZXJ2aWNlU2NoZWR1bGluZ1Jlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbCplCgZSYXRpbmcSFgoSUkFUSU5HX1VOU1BFQ0lGSUVEEAASEAoMUkFUSU5HX0FHQUlOEAESDwoLUkFUSU5HX0hBUkQQAhIPCgtSQVRJTkdfR09PRBADEg8KC1JBVElOR19FQVNZEAQy8AQKEUZsYXNoY2FyZHNTZXJ2aWNlEjoKBU93aW5nEhYubnVtZW4udjEuT3dpbmdSZXF1ZXN0GhcubnVtZW4udjEuT3dpbmdSZXNwb25zZTABEjgKBVN0YXJ0EhYubnVtZW4udjEuU3RhcnRSZXF1ZXN0GhcubnVtZW4udjEuU3RhcnRSZXNwb25zZRI7CgZBbnN3ZXISFy5udW1lbi52MS5BbnN3ZXJSZXF1ZXN0GhgubnVtZW4udjEuQW5zd2VyUmVzcG9uc2USQQoIVGFrZUJhY2sSGS5udW1lbi52MS5UYWtlQmFja1JlcXVlc3QaGi5udW1lbi52MS5UYWtlQmFja1Jlc3BvbnNlEj0KBk1vdmluZxIXLm51bWVuLnYxLk1vdmluZ1JlcXVlc3QaGC5udW1lbi52MS5Nb3ZpbmdSZXNwb25zZTABEkEKCFJldmlld2VkEhkubnVtZW4udjEuUmV2aWV3ZWRSZXF1ZXN0GhoubnVtZW4udjEuUmV2aWV3ZWRSZXNwb25zZRI7CgZBc2tpbmcSFy5udW1lbi52MS5Bc2tpbmdSZXF1ZXN0GhgubnVtZW4udjEuQXNraW5nUmVzcG9uc2USOwoGQXJvdW5kEhcubnVtZW4udjEuQXJvdW5kUmVxdWVzdBoYLm51bWVuLnYxLkFyb3VuZFJlc3BvbnNlEmkKClNjaGVkdWxpbmcSLC5udW1lbi52MS5GbGFzaGNhcmRzU2VydmljZVNjaGVkdWxpbmdSZXF1ZXN0Gi0ubnVtZW4udjEuRmxhc2hjYXJkc1NlcnZpY2VTY2hlZHVsaW5nUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_vault]);
 
 /**
  * VaultOwing is one vault, and what its cards come to today.
@@ -142,7 +108,7 @@ export type VaultOwing = Message<"numen.v1.VaultOwing"> & {
  * Use `create(VaultOwingSchema)` to create a new message.
  */
 export const VaultOwingSchema: GenMessage<VaultOwing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 2);
+  messageDesc(file_numen_v1_flashcards, 0);
 
 /**
  * @generated from message numen.v1.DeckOwing
@@ -201,7 +167,7 @@ export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
  * Use `create(DeckOwingSchema)` to create a new message.
  */
 export const DeckOwingSchema: GenMessage<DeckOwing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 3);
+  messageDesc(file_numen_v1_flashcards, 1);
 
 /**
  * PresetOwing is one preset of a vault, and what the day comes to under it.
@@ -341,7 +307,7 @@ export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
  * Use `create(PresetOwingSchema)` to create a new message.
  */
 export const PresetOwingSchema: GenMessage<PresetOwing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 4);
+  messageDesc(file_numen_v1_flashcards, 2);
 
 /**
  * Ahead is how long each of the four answers would leave this card, in seconds
@@ -377,7 +343,7 @@ export type Ahead = Message<"numen.v1.Ahead"> & {
  * Use `create(AheadSchema)` to create a new message.
  */
 export const AheadSchema: GenMessage<Ahead> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 5);
+  messageDesc(file_numen_v1_flashcards, 3);
 
 /**
  * Asked is one card face as it is put to a person.
@@ -459,7 +425,7 @@ export type Asked = Message<"numen.v1.Asked"> & {
  * Use `create(AskedSchema)` to create a new message.
  */
 export const AskedSchema: GenMessage<Asked> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 6);
+  messageDesc(file_numen_v1_flashcards, 4);
 
 /**
  * @generated from message numen.v1.OwingRequest
@@ -472,7 +438,7 @@ export type OwingRequest = Message<"numen.v1.OwingRequest"> & {
  * Use `create(OwingRequestSchema)` to create a new message.
  */
 export const OwingRequestSchema: GenMessage<OwingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 7);
+  messageDesc(file_numen_v1_flashcards, 5);
 
 /**
  * @generated from message numen.v1.OwingResponse
@@ -512,7 +478,7 @@ export type OwingResponse = Message<"numen.v1.OwingResponse"> & {
  * Use `create(OwingResponseSchema)` to create a new message.
  */
 export const OwingResponseSchema: GenMessage<OwingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 8);
+  messageDesc(file_numen_v1_flashcards, 6);
 
 /**
  * @generated from message numen.v1.StartRequest
@@ -546,7 +512,7 @@ export type StartRequest = Message<"numen.v1.StartRequest"> & {
  * Use `create(StartRequestSchema)` to create a new message.
  */
 export const StartRequestSchema: GenMessage<StartRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 9);
+  messageDesc(file_numen_v1_flashcards, 7);
 
 /**
  * @generated from message numen.v1.StartResponse
@@ -587,7 +553,7 @@ export type StartResponse = Message<"numen.v1.StartResponse"> & {
  * Use `create(StartResponseSchema)` to create a new message.
  */
 export const StartResponseSchema: GenMessage<StartResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 10);
+  messageDesc(file_numen_v1_flashcards, 8);
 
 /**
  * @generated from message numen.v1.AnswerRequest
@@ -632,7 +598,7 @@ export type AnswerRequest = Message<"numen.v1.AnswerRequest"> & {
  * Use `create(AnswerRequestSchema)` to create a new message.
  */
 export const AnswerRequestSchema: GenMessage<AnswerRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 11);
+  messageDesc(file_numen_v1_flashcards, 9);
 
 /**
  * @generated from message numen.v1.AnswerResponse
@@ -652,7 +618,7 @@ export type AnswerResponse = Message<"numen.v1.AnswerResponse"> & {
  * Use `create(AnswerResponseSchema)` to create a new message.
  */
 export const AnswerResponseSchema: GenMessage<AnswerResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 12);
+  messageDesc(file_numen_v1_flashcards, 10);
 
 /**
  * @generated from message numen.v1.TakeBackRequest
@@ -681,7 +647,7 @@ export type TakeBackRequest = Message<"numen.v1.TakeBackRequest"> & {
  * Use `create(TakeBackRequestSchema)` to create a new message.
  */
 export const TakeBackRequestSchema: GenMessage<TakeBackRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 13);
+  messageDesc(file_numen_v1_flashcards, 11);
 
 /**
  * @generated from message numen.v1.TakeBackResponse
@@ -694,7 +660,7 @@ export type TakeBackResponse = Message<"numen.v1.TakeBackResponse"> & {
  * Use `create(TakeBackResponseSchema)` to create a new message.
  */
 export const TakeBackResponseSchema: GenMessage<TakeBackResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 14);
+  messageDesc(file_numen_v1_flashcards, 12);
 
 /**
  * @generated from message numen.v1.ReviewedRequest
@@ -711,7 +677,7 @@ export type ReviewedRequest = Message<"numen.v1.ReviewedRequest"> & {
  * Use `create(ReviewedRequestSchema)` to create a new message.
  */
 export const ReviewedRequestSchema: GenMessage<ReviewedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 15);
+  messageDesc(file_numen_v1_flashcards, 13);
 
 /**
  * @generated from message numen.v1.ReviewedResponse
@@ -755,7 +721,7 @@ export type ReviewedResponse = Message<"numen.v1.ReviewedResponse"> & {
  * Use `create(ReviewedResponseSchema)` to create a new message.
  */
 export const ReviewedResponseSchema: GenMessage<ReviewedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 16);
+  messageDesc(file_numen_v1_flashcards, 14);
 
 /**
  * Reviewing is one day, and what was answered on it.
@@ -822,7 +788,7 @@ export type Reviewing = Message<"numen.v1.Reviewing"> & {
  * Use `create(ReviewingSchema)` to create a new message.
  */
 export const ReviewingSchema: GenMessage<Reviewing> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 17);
+  messageDesc(file_numen_v1_flashcards, 15);
 
 /**
  * @generated from message numen.v1.AskingRequest
@@ -835,7 +801,7 @@ export type AskingRequest = Message<"numen.v1.AskingRequest"> & {
  * Use `create(AskingRequestSchema)` to create a new message.
  */
 export const AskingRequestSchema: GenMessage<AskingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 18);
+  messageDesc(file_numen_v1_flashcards, 16);
 
 /**
  * @generated from message numen.v1.AskingResponse
@@ -855,7 +821,7 @@ export type AskingResponse = Message<"numen.v1.AskingResponse"> & {
  * Use `create(AskingResponseSchema)` to create a new message.
  */
 export const AskingResponseSchema: GenMessage<AskingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 19);
+  messageDesc(file_numen_v1_flashcards, 17);
 
 /**
  * @generated from message numen.v1.AroundRequest
@@ -880,7 +846,7 @@ export type AroundRequest = Message<"numen.v1.AroundRequest"> & {
  * Use `create(AroundRequestSchema)` to create a new message.
  */
 export const AroundRequestSchema: GenMessage<AroundRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 20);
+  messageDesc(file_numen_v1_flashcards, 18);
 
 /**
  * @generated from message numen.v1.AroundResponse
@@ -906,7 +872,7 @@ export type AroundResponse = Message<"numen.v1.AroundResponse"> & {
  * Use `create(AroundResponseSchema)` to create a new message.
  */
 export const AroundResponseSchema: GenMessage<AroundResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 21);
+  messageDesc(file_numen_v1_flashcards, 19);
 
 /**
  * Neighbour is one note the deck stands next to.
@@ -981,7 +947,7 @@ export type Neighbour = Message<"numen.v1.Neighbour"> & {
  * Use `create(NeighbourSchema)` to create a new message.
  */
 export const NeighbourSchema: GenMessage<Neighbour> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 22);
+  messageDesc(file_numen_v1_flashcards, 20);
 
 /**
  * @generated from message numen.v1.MovingRequest
@@ -994,7 +960,7 @@ export type MovingRequest = Message<"numen.v1.MovingRequest"> & {
  * Use `create(MovingRequestSchema)` to create a new message.
  */
 export const MovingRequestSchema: GenMessage<MovingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 23);
+  messageDesc(file_numen_v1_flashcards, 21);
 
 /**
  * @generated from message numen.v1.MovingResponse
@@ -1014,7 +980,7 @@ export type MovingResponse = Message<"numen.v1.MovingResponse"> & {
  * Use `create(MovingResponseSchema)` to create a new message.
  */
 export const MovingResponseSchema: GenMessage<MovingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 24);
+  messageDesc(file_numen_v1_flashcards, 22);
 
 /**
  * @generated from message numen.v1.FlashcardsServiceSchedulingRequest
@@ -1038,7 +1004,7 @@ export type FlashcardsServiceSchedulingRequest = Message<"numen.v1.FlashcardsSer
  * Use `create(FlashcardsServiceSchedulingRequestSchema)` to create a new message.
  */
 export const FlashcardsServiceSchedulingRequestSchema: GenMessage<FlashcardsServiceSchedulingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 25);
+  messageDesc(file_numen_v1_flashcards, 23);
 
 /**
  * @generated from message numen.v1.FlashcardsServiceSchedulingResponse
@@ -1064,7 +1030,7 @@ export type FlashcardsServiceSchedulingResponse = Message<"numen.v1.FlashcardsSe
  * Use `create(FlashcardsServiceSchedulingResponseSchema)` to create a new message.
  */
 export const FlashcardsServiceSchedulingResponseSchema: GenMessage<FlashcardsServiceSchedulingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_flashcards, 26);
+  messageDesc(file_numen_v1_flashcards, 24);
 
 /**
  * Rating is how well a card came back. A person says which of the four, and
@@ -1130,7 +1096,8 @@ export const FlashcardsService: GenService<{
    * so the list stands while that runs.
    *
    * A vault the index does not carry is read into it here, and its counts
-   * follow when the reading is done. What that reading is doing is Tasks.
+   * follow when the reading is done. What that reading is doing is the window's
+   * own Tasks.
    *
    * @generated from rpc numen.v1.FlashcardsService.Owing
    */
@@ -1239,19 +1206,6 @@ export const FlashcardsService: GenService<{
     methodKind: "unary";
     input: typeof FlashcardsServiceSchedulingRequestSchema;
     output: typeof FlashcardsServiceSchedulingResponseSchema;
-  },
-  /**
-   * Tasks is everything this window is doing behind itself, for as long as the
-   * caller listens. Reading a vault is the work it reports, and a vault is read
-   * without anyone asking, so the whole list arrives at once and again whenever
-   * any of it changes.
-   *
-   * @generated from rpc numen.v1.FlashcardsService.Tasks
-   */
-  tasks: {
-    methodKind: "server_streaming";
-    input: typeof FlashcardsServiceTasksRequestSchema;
-    output: typeof FlashcardsServiceTasksResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_flashcards, 0);

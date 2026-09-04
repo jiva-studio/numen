@@ -26,11 +26,12 @@ var policy = appearance.Policy(appearance.Sources{Images: []string{"data:"}})
 func Pages() (http.Handler, error) { return appearance.Serving(pages) }
 
 // Serving is the whole of what this window answers: the flashcards service, the
-// agent a card is asked about through, the themes it is dressed from, and the
-// files the page is made of.
+// agent a card is asked about through, the window itself, the themes it is
+// dressed from, and the files the page is made of.
 func (a *API) Serving(files http.Handler) http.Handler {
 	route, questions := numenv1connect.NewFlashcardsServiceHandler(a)
 	asking, agent := numenv1connect.NewAgentServiceHandler(a)
+	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window)
 	var dressing string
 	var themes http.Handler
 	if a.Themes != nil {
@@ -44,6 +45,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			questions.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):
 			agent.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, drawn):
+			itself.ServeHTTP(w, r)
 		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
 			themes.ServeHTTP(w, r)
 		case slices.Contains(appearance.OpenedAt, r.URL.Path):

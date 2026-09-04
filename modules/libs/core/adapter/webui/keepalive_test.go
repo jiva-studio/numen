@@ -13,6 +13,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // TestAStreamWhoseClientWentAwayEnds. The window roots every request at the
@@ -37,13 +39,13 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			return err
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewVaultServiceClient(http, at).
-				Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{}))
+			_, err := numenv1connect.NewWindowServiceClient(http, at).
+				Quitting(ctx, connect.NewRequest(&v1.QuittingRequest{Window: wire.Editor}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewVaultServiceClient(http, at).
-				Tasks(ctx, connect.NewRequest(&v1.TasksRequest{}))
+			_, err := numenv1connect.NewWindowServiceClient(http, at).
+				Tasks(ctx, connect.NewRequest(&v1.TasksRequest{Window: wire.Editor}))
 			return err
 		},
 		"ask": func(ctx context.Context, http connect.HTTPClient, at string) error {
@@ -55,7 +57,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
-			api := &API{Tasking: task.New()}
+			api := &API{Window: &wire.Window{Named: wire.Editor, Tasking: task.New()}}
 			api.Answers(silentAgent{})
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
@@ -64,6 +66,8 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 			mux.Handle(vault, rooted(vaults, entered, returned))
 			agent, agents := numenv1connect.NewAgentServiceHandler(api)
 			mux.Handle(agent, rooted(agents, entered, returned))
+			drawn, itself := numenv1connect.NewWindowServiceHandler(api.Window)
+			mux.Handle(drawn, rooted(itself, entered, returned))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 

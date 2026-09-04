@@ -63,7 +63,6 @@ vi.mock('./core', async (original) => ({
       for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
     },
     moving: () => waits(),
-    tasks: () => waits(),
     asking: async () => ({ unreachable: '' }),
     reviewed: async () => ({ days: [], due: [], streak: 0, answered: 0 }),
     scheduling: async () => ({ preset: undefined }),
@@ -72,6 +71,7 @@ vi.mock('./core', async (original) => ({
       return { run: 'run', asked: [], unwritten: [], skipped: 0 }
     },
   },
+  itself: { tasks: () => waits() },
 }))
 
 const { default: App } = await import('./App.vue')

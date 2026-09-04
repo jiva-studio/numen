@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -39,6 +40,9 @@ func noteNamed(title string) string {
 // first and a client talking to it the way the window does.
 type showing struct {
 	client numenv1connect.VaultServiceClient
+	// drawn is the window itself, which the drain that holds it back is asked
+	// of.
+	drawn  numenv1connect.WindowServiceClient
 	opened *webui.Opened
 	cfg    container.Config
 	first  domain.Vault
@@ -68,8 +72,10 @@ func swapping(t *testing.T) *showing {
 	t.Cleanup(func() { opened.Close() })
 
 	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
+	going, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
+	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -78,6 +84,7 @@ func swapping(t *testing.T) *showing {
 
 	f := &showing{
 		client: numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		drawn:  numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		opened: opened,
 		cfg:    cfg,
 		first:  first,
@@ -373,7 +380,9 @@ func (f *showing) listens(t *testing.T) (*connect.ServerStreamForClient[v1.Quitt
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(context.Background())
-	stream, err := f.client.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{}))
+	stream, err := f.drawn.Quitting(listening, connect.NewRequest(&v1.QuittingRequest{
+		Window: wire.Editor,
+	}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -430,9 +439,10 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			if _, err := f.client.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
-				Token: stream.Msg().GetToken(),
-				Owed:  v1.Owed_OWED_ASKING,
+			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+				Window: wire.Editor,
+				Token:  stream.Msg().GetToken(),
+				Owed:   v1.Owed_OWED_ASKING,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -478,9 +488,10 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			}
 			close(told)
 			<-release
-			if _, err := f.client.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
-				Token: stream.Msg().GetToken(),
-				Owed:  v1.Owed_OWED_NOTHING,
+			if _, err := f.drawn.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
+				Window: wire.Editor,
+				Token:  stream.Msg().GetToken(),
+				Owed:   v1.Owed_OWED_NOTHING,
 			})); err != nil {
 				t.Error(err)
 			}
