@@ -22,6 +22,10 @@ node_modules/
 /Numen.app/
 /Numen Flashcards.app/
 
+# where a nix build puts what it made
+/result
+/result-*
+
 # A spike-only workspace pointing outside the tree.
 go.work
 go.work.sum
