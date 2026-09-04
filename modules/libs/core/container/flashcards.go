@@ -26,13 +26,13 @@ type Flashcards struct {
 	Session   flashcards.Session
 	Log       flashcards.Log
 	// Counted is how much of a vault was answered on each day it was reviewed.
-	Counted flashcards.Counted
+	Counted flashcards.CountReviews
 	// Presets is which preset each deck is scheduled by, and how one is read,
 	// written and made.
 	Presets flashcards.Presets
 	// Curves is what the one control of a preset comes to over the whole range
 	// of its goal.
-	Curves flashcards.Curves
+	Curves flashcards.ProjectCurve
 	// Day is where one day of review gives way to the next.
 	Day history.Day
 }
@@ -138,13 +138,13 @@ func (c Config) Flashcards(
 			Presets: presets, Day: day, Now: time.Now,
 		},
 		Log: flashcards.Log{Stores: logs},
-		Counted: flashcards.Counted{
+		Counted: flashcards.CountReviews{
 			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
 		},
 		Presets: presets,
 		// How many places of a curve run at once is what this machine can run
 		// at once, which is a fact only here is allowed to read.
-		Curves: flashcards.Curves{
+		Curves: flashcards.ProjectCurve{
 			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
 			Cores: runtime.GOMAXPROCS(0),
 		},

@@ -97,7 +97,7 @@ func run(cfg container.Config, noAgent bool) error {
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Neighbourhood: flashcards.Around{
+		Neighbourhood: flashcards.ShowNeighbourhood{
 			Linked: note.ShowLinks{Links: db.Links()},
 			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: cfg.VaultReaders()},

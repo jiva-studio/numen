@@ -34,7 +34,7 @@ type Preset struct {
 	// Rule is what counts as a card face the person has learned, written under
 	// `learned`. The value it reads stands in the field the rule names:
 	// Interval under RuleInterval, Retention under RuleRetention.
-	Rule Rule
+	Rule LearnedRule
 	// Interval is how long a card face is sent away for before it is learned, in
 	// days, and is read under RuleInterval.
 	Interval int
@@ -112,21 +112,21 @@ func KnownGoal(g Goal) bool {
 	return false
 }
 
-// Rule is what a preset counts as learned. The value it reads stands under the
-// key it names, and the other rule keeps its value and takes no part.
-type Rule string
+// LearnedRule is what a preset counts as learned. The value it reads stands
+// under the key it names, and the other rule keeps its value and takes no part.
+type LearnedRule string
 
 const (
 	// RuleInterval learns a card face once it is sent away for the preset's
 	// interval or longer.
-	RuleInterval Rule = "interval"
+	RuleInterval LearnedRule = "interval"
 	// RuleRetention learns a card face once the chance of recalling it today is
 	// at or above the preset's retention.
-	RuleRetention Rule = "retention"
+	RuleRetention LearnedRule = "retention"
 )
 
 // KnownRule reports whether a rule is one of the two.
-func KnownRule(r Rule) bool {
+func KnownRule(r LearnedRule) bool {
 	switch r {
 	case RuleInterval, RuleRetention:
 		return true
@@ -157,7 +157,7 @@ func (p Preset) Learned(s Schedule, at time.Time) bool {
 // A preset naming no rule counts by the default rule, and a value the rule
 // cannot hold stands at the default. A preset that says nothing holds its cards
 // to the threshold in Defaults.
-func (p Preset) counting() (Rule, int, float64) {
+func (p Preset) counting() (LearnedRule, int, float64) {
 	standing := Defaults()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
 	if !KnownRule(rule) {
@@ -248,15 +248,15 @@ func Defaults() Preset {
 type Closes struct {
 	// New, Reviews and Minutes are the budgets. The goal names the one that
 	// closes the day, and the others take no part.
-	New     Closed
-	Reviews Closed
-	Minutes Closed
+	New     BudgetName
+	Reviews BudgetName
+	Minutes BudgetName
 	// Backlog is the share of the day that goes to the debt. It closes nothing:
 	// it says what the day is spent on, and it is empty under a goal whose day
 	// is not one pot spent between the two. A goal of a date carries the whole
 	// material by its own reckoning, and a goal of retention holds each side to
 	// a count of its own.
-	Backlog Closed
+	Backlog BudgetName
 }
 
 // Allowance is what one day of a preset admits: how many cards of each kind it
@@ -281,7 +281,7 @@ type Allowance struct {
 	Backlog int
 	// Stops is why this day schedules nothing, and empty where it schedules
 	// something.
-	Stops Stopped
+	Stops StopReason
 }
 
 // Paused reports whether this day schedules nothing.
@@ -359,29 +359,29 @@ func (p Preset) closing() Closes {
 	}
 }
 
-// Stopped is why a preset schedules nothing, and empty where it schedules
+// StopReason is why a preset schedules nothing, and empty where it schedules
 // something. The list is closed, and a caller maps a value to a sentence.
-type Stopped string
+type StopReason string
 
 const (
 	// StoppedNothing is a preset that schedules: its decks are handed a day of
 	// review.
-	StoppedNothing Stopped = ""
+	StoppedNothing StopReason = ""
 	// StoppedNoMinutes is a goal of minutes with the minutes at zero.
-	StoppedNoMinutes Stopped = "no_minutes"
+	StoppedNoMinutes StopReason = "no_minutes"
 	// StoppedNoCards is a goal of retention with both card counts at zero.
-	StoppedNoCards Stopped = "no_cards"
+	StoppedNoCards StopReason = "no_cards"
 	// StoppedNoDay is a goal of a date naming no day. The budget the goal names
 	// is the day, and a goal that cannot read its own budget schedules nothing.
-	StoppedNoDay Stopped = "no_day"
+	StoppedNoDay StopReason = "no_day"
 	// StoppedPastDay is a goal of a date whose day is behind us.
-	StoppedPastDay Stopped = "past_day"
+	StoppedPastDay StopReason = "past_day"
 	// StoppedNoLoad is a day of the week carrying none of the load. It is a
 	// fact about one day: the preset schedules on the days that carry some.
-	StoppedNoLoad Stopped = "no_load"
+	StoppedNoLoad StopReason = "no_load"
 	// StoppedNoWeek is a week carrying none of the load. Every day of it stands
 	// at nothing, so there is no day for the cards to be picked up on.
-	StoppedNoWeek Stopped = "no_week"
+	StoppedNoWeek StopReason = "no_week"
 )
 
 // Stops is why this preset schedules nothing, and StoppedNothing where it
@@ -391,7 +391,7 @@ const (
 // day holding now, and stops once the day it names is behind that one. A week
 // every day of which carries none of the load is read whatever the goal, since
 // no budget is spent on a day that schedules nothing.
-func (p Preset) Stops(d Day, now time.Time) Stopped {
+func (p Preset) Stops(d Day, now time.Time) StopReason {
 	switch p.Goal {
 	case GoalRetention:
 		if p.NewADay == 0 && p.ReviewsADay == 0 {
@@ -429,7 +429,7 @@ func (p Preset) Week() float64 {
 // stops the preset at all, and a day of the week carrying none of the load. A
 // week with no day carrying any stops the preset itself, so this day is one of
 // the quiet days of a week that has loud ones.
-func (p Preset) StopsOn(d Day, now time.Time) Stopped {
+func (p Preset) StopsOn(d Day, now time.Time) StopReason {
 	if why := p.Stops(d, now); why != StoppedNothing {
 		return why
 	}
@@ -560,8 +560,8 @@ func ReadPreset(front map[string]any) (Preset, []string) {
 		switch {
 		case !isText:
 			problems = append(problems, "learned is not text")
-		case KnownRule(Rule(name)):
-			p.Rule = Rule(name)
+		case KnownRule(LearnedRule(name)):
+			p.Rule = LearnedRule(name)
 		default:
 			problems = append(problems, "learned "+name+" is not interval or retention")
 		}

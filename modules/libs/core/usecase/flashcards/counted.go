@@ -14,15 +14,15 @@ import (
 // thrown away and worked out again, which costs a reading of the answers.
 const countedVersion = 2
 
-type counted struct {
+type countCache struct {
 	V int `json:"v"`
 	// Runs are the log files this was worked out from, each with the length it
 	// had and what it came to. A run is appended to and never rewritten, so a
 	// file of the same name and length holds the same answers.
-	Runs []countedRun `json:"runs"`
+	Runs []cachedRun `json:"runs"`
 }
 
-type countedRun struct {
+type cachedRun struct {
 	Name string `json:"name"`
 	Size int    `json:"size"`
 	// Days is what this run alone came to.
@@ -50,7 +50,7 @@ type Reviewed struct {
 	Answered int
 }
 
-// Counted is how much of a vault was answered on each day it was reviewed.
+// CountReviews is how much of a vault was answered on each day it was reviewed.
 //
 // What a day came to is a sum, and a sum is worked out one file at a time: a
 // run arriving from another machine adds to the days it holds and disturbs
@@ -61,7 +61,7 @@ type Reviewed struct {
 // This is what a schedule cannot do. Where an answer leaves a card depends on
 // the order of every answer before it, so a schedule arriving late is the whole
 // history read again.
-type Counted struct {
+type CountReviews struct {
 	Logs port.DerivedStores
 	// Kept is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
@@ -74,7 +74,7 @@ type Counted struct {
 }
 
 // Execute counts one vault.
-func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) {
+func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) {
 	log := Log{Stores: u.Logs}
 	files, err := log.Files(ctx, v)
 	if err != nil {
@@ -82,7 +82,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 	}
 
 	was := u.remembered(ctx, v)
-	now := counted{V: countedVersion}
+	now := countCache{V: countedVersion}
 	out := Reviewed{Days: make(map[string]history.Tally)}
 
 	store, err := u.Logs.Open(v)
@@ -109,7 +109,7 @@ func (u Counted) Execute(ctx context.Context, v domain.Vault) (Reviewed, error) 
 			opened = true
 		}
 		if stale {
-			one = countedRun{
+			one = cachedRun{
 				Name: file.Name,
 				Size: ran.Size,
 				Days: history.Counted(u.Day, ran.Answers),
@@ -211,7 +211,7 @@ func given(answers []history.Answer, seen map[string]bool) []history.Answer {
 // owes now is what the front door counts, and this says what is coming after
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
-func (u Counted) ahead(
+func (u CountReviews) ahead(
 	ctx context.Context, v domain.Vault, held Held,
 ) (map[string]int, map[string]history.RecallTally, error) {
 	falls := make(map[string]int)
@@ -237,7 +237,7 @@ func (u Counted) ahead(
 
 // remembered is what was counted last time, by the name of the run it was
 // counted from. A cache of another shape is nothing remembered.
-func (u Counted) remembered(ctx context.Context, v domain.Vault) map[string]countedRun {
+func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
 	if u.Kept == nil {
 		return nil
 	}
@@ -245,11 +245,11 @@ func (u Counted) remembered(ctx context.Context, v domain.Vault) map[string]coun
 	if err != nil {
 		return nil
 	}
-	var was counted
+	var was countCache
 	if err := json.Unmarshal(raw, &was); err != nil || was.V != countedVersion {
 		return nil
 	}
-	out := make(map[string]countedRun, len(was.Runs))
+	out := make(map[string]cachedRun, len(was.Runs))
 	for _, one := range was.Runs {
 		out[one.Name] = one
 	}
@@ -258,7 +258,7 @@ func (u Counted) remembered(ctx context.Context, v domain.Vault) map[string]coun
 
 // remember puts the counting where the next launch will find it. A cache that
 // could not be written is a launch that counts again, so nothing is reported.
-func (u Counted) remember(ctx context.Context, v domain.Vault, now counted) {
+func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
 	if u.Kept == nil {
 		return
 	}
@@ -269,7 +269,7 @@ func (u Counted) remember(ctx context.Context, v domain.Vault, now counted) {
 	_ = u.Kept.Write(ctx, string(v.ID), raw)
 }
 
-func (u Counted) now() time.Time {
+func (u CountReviews) now() time.Time {
 	if u.Now == nil {
 		return time.Now()
 	}

@@ -78,7 +78,7 @@ type PresetOwing struct {
 	Closes history.Closes
 	// Stops is why the preset schedules nothing on this day, and empty where it
 	// schedules something.
-	Stops history.Stopped
+	Stops history.StopReason
 }
 
 // Owed is what a vault owes, which is what its front door shows.
@@ -198,7 +198,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 // deck of no cards points at its preset like any other. A preset no deck names
 // stands at nothing.
 func (u Owed) presets(
-	ctx context.Context, v domain.Vault, reading *Reading, day *budgets,
+	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
 	due, fresh map[string]int,
 ) ([]PresetOwing, error) {
 	out := day.owing(due, fresh)

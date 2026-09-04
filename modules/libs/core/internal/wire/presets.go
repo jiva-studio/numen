@@ -31,7 +31,7 @@ func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
 }
 
 // StoppedOf is why a preset schedules nothing, as the schema names it.
-func StoppedOf(s history.Stopped) v1.Stopped {
+func StoppedOf(s history.StopReason) v1.Stopped {
 	switch s {
 	case history.StoppedNoMinutes:
 		return v1.Stopped_STOPPED_NO_MINUTES
@@ -176,7 +176,7 @@ func GoalIn(g v1.Goal) history.Goal {
 }
 
 // RuleOf is what counts as learned, as the schema names it.
-func RuleOf(r history.Rule) v1.Rule {
+func RuleOf(r history.LearnedRule) v1.Rule {
 	switch r {
 	case history.RuleInterval:
 		return v1.Rule_RULE_INTERVAL
@@ -189,7 +189,7 @@ func RuleOf(r history.Rule) v1.Rule {
 
 // RuleIn is the rule a client named, in the words the core holds it in. A rule
 // the schema does not name is refused where the settings are weighed.
-func RuleIn(r v1.Rule) history.Rule {
+func RuleIn(r v1.Rule) history.LearnedRule {
 	switch r {
 	case v1.Rule_RULE_INTERVAL:
 		return history.RuleInterval

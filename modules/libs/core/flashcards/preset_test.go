@@ -249,7 +249,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 // What counts as learned is read from the file, and a preset saying nothing
 // learns a card face by the interval it is sent away for.
 func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
-	for written, want := range map[string]flashcards.Rule{
+	for written, want := range map[string]flashcards.LearnedRule{
 		"":                     flashcards.RuleInterval,
 		"learned: interval\n":  flashcards.RuleInterval,
 		"learned: retention\n": flashcards.RuleRetention,
@@ -438,7 +438,7 @@ func TestWhatAPresetSchedules(t *testing.T) {
 	for _, one := range []struct {
 		what string
 		p    flashcards.Preset
-		want flashcards.Stopped
+		want flashcards.StopReason
 	}{
 		{
 			what: "minutes, and the minutes it names",

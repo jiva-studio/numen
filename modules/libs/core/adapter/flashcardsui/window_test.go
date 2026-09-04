@@ -194,8 +194,8 @@ func pictured(t *testing.T, api *API, v domain.Vault, path string, p history.Pre
 
 // curves is the simulator behind the one control of a preset, standing on the
 // day the window stands on.
-func curves(api *API) flashcards.Curves {
-	return flashcards.Curves{
+func curves(api *API) flashcards.ProjectCurve {
+	return flashcards.ProjectCurve{
 		Standings: api.Schedules.Standings,
 		Schedules: api.Schedules,
 		Presets:   api.Presets,

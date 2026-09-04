@@ -89,7 +89,7 @@ func TestASizeOutsideWhatItGoesToIsRefused(t *testing.T) {
 	}
 
 	_, err := settings.At(write(t, `{"appearance":{"text_scale":3}}`))
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}
@@ -993,7 +993,7 @@ func TestACountOfPartsOutsideWhatItGoesToIsRefused(t *testing.T) {
 	}
 
 	_, err := settings.At(write(t, `{"appearance":{"parts_under_a_node":20}}`))
-	var outside *settings.Outside
+	var outside *settings.OutsideBounds
 	if !errors.As(err, &outside) {
 		t.Fatalf("refused with %v", err)
 	}

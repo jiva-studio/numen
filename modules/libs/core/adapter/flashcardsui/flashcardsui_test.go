@@ -110,7 +110,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 		Schedules: running.Schedules,
 		Log:       running.Log,
 		Counted:   running.Counted,
-		Neighbourhood: flashcards.Around{
+		Neighbourhood: flashcards.ShowNeighbourhood{
 			Linked: note.ShowLinks{Links: db.Links()},
 			Notes:  db.Queries(),
 			Reads:  note.Read{Readers: filesystem.VaultReaders{}},
@@ -807,13 +807,13 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		what   string
 		goal   history.Goal
 		by     time.Time
-		closed history.Closed
-		never  []history.Closed
+		closed history.BudgetName
+		never  []history.BudgetName
 		// learned is the rule the goal is worked out against, where the goal
 		// reads one. Six days are too few to carry a card past an interval of
 		// three weeks, and a date paces the day for the cards that can get
 		// there.
-		learned history.Rule
+		learned history.LearnedRule
 		// sameDay is whether the control moves today, so that what the tab
 		// draws where it stands is the day the deck screen offers.
 		sameDay bool
@@ -821,19 +821,19 @@ func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 		{
 			what: "minutes", goal: history.GoalMinutes,
 			closed: history.ClosedMinutes, sameDay: true,
-			never: []history.Closed{
+			never: []history.BudgetName{
 				history.ClosedNew, history.ClosedReviews, history.ClosedDate,
 			},
 		},
 		{
 			what: "retention", goal: history.GoalRetention,
 			closed: history.ClosedNew,
-			never:  []history.Closed{history.ClosedMinutes, history.ClosedDate},
+			never:  []history.BudgetName{history.ClosedMinutes, history.ClosedDate},
 		},
 		{
 			what: "a date", goal: history.GoalDate, learned: history.RuleRetention,
 			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate, sameDay: true,
-			never: []history.Closed{
+			never: []history.BudgetName{
 				history.ClosedNew, history.ClosedReviews, history.ClosedMinutes,
 			},
 		},

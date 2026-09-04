@@ -184,23 +184,23 @@ const (
 	forQuery    = "query"
 )
 
-// listing is one provider's arrival in the list of what is being done: what
-// that line is called, and the name to show on it.
-type listing struct {
+// line is one provider's arrival in the list of what is being done: what that
+// line is called, and the name to show on it.
+type line struct {
 	id, name string
 }
 
 // arriving is how one provider appears while it is on its way. A model on this
 // machine is named by its repository and a service by the model it is asked
 // for.
-func arriving(role string, where embed.Provider) listing {
+func arriving(role string, where embed.Provider) line {
 	name := ""
 	if local, ok := where.Local(); ok {
 		name = local.Name
 	} else if service, ok := where.Service(); ok {
 		name = service.Name
 	}
-	return listing{id: "getting ready: " + role + ": " + name, name: name}
+	return line{id: "getting ready: " + role + ": " + name, name: name}
 }
 
 // preparing tells the list how far the model has got, counted in the bytes of
@@ -213,7 +213,7 @@ func arriving(role string, where embed.Provider) listing {
 // A run with no list to tell is told nothing and still asks: what says how far
 // the work has got is called wherever the work is, and a run in a terminal
 // takes the same road as a window.
-func preparing(tasks *task.Tasks, at listing) onnx.FetchProgress {
+func preparing(tasks *task.Tasks, at line) onnx.FetchProgress {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
@@ -226,14 +226,14 @@ func preparing(tasks *task.Tasks, at listing) onnx.FetchProgress {
 	}
 }
 
-func ready(tasks *task.Tasks, at listing) {
+func ready(tasks *task.Tasks, at line) {
 	if tasks != nil {
 		tasks.Done(at.id)
 	}
 }
 
 // failed leaves the model in the list under what stopped it.
-func failed(tasks *task.Tasks, at listing, why error) {
+func failed(tasks *task.Tasks, at line, why error) {
 	if tasks != nil {
 		tasks.Set(task.Task{
 			ID: at.id, Doing: "Preparing the model", About: at.name,

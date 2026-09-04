@@ -25,7 +25,7 @@ var note = map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"}
 // its copy of a note lands whenever the group does.
 func TestANoteWrittenUnderTheWalkIsReadAgain(t *testing.T) {
 	cfg, db, v := opened(t, note)
-	opening := cfg.Opening(db)
+	opening := cfg.VaultOpener(db)
 	open := opening.Begin(t.Context(), v)
 
 	// Written through the levelling while the walk is running, which is what the
@@ -51,7 +51,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 	cfg, db, v := opened(t, note)
 
 	held := gated()
-	opening := cfg.OpeningWith(db, held, cfg.VaultWatcher())
+	opening := cfg.VaultOpenerWith(db, held, cfg.VaultWatcher())
 	open := opening.Begin(t.Context(), v)
 
 	// The first walk goes through, and the second is held with the note's old
@@ -92,7 +92,7 @@ func TestASecondWalkHoldsWhatIsWrittenUnderIt(t *testing.T) {
 // A vault that cannot be watched is opened all the same, and says why.
 func TestAVaultThatCannotBeWatchedIsOpenedAndSaysSo(t *testing.T) {
 	cfg, db, v := opened(t, note)
-	open := cfg.OpeningWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
+	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
 
 	if open.Unwatched() == nil {
 		t.Fatal("a vault nobody can follow says nothing about it")
@@ -114,7 +114,7 @@ func TestARescanDoesNotRunBesideTheFirstWalk(t *testing.T) {
 
 	watcher := waved()
 	readers := staging()
-	opening := cfg.OpeningWith(db, readers, watcher)
+	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
 	told := make(chan usecase.VaultChanges, 8)
 	opening.Told = func(m usecase.VaultChanges) { told <- m }

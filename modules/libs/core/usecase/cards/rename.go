@@ -23,8 +23,8 @@ type Rename struct {
 	Fingerprint domain.Fingerprint
 }
 
-// NotWritten is one deck a rename did not reach. It keeps the old heading.
-type NotWritten struct {
+// UnwrittenDeck is one deck a rename did not reach. It keeps the old heading.
+type UnwrittenDeck struct {
 	Path    string
 	Problem format.Problem
 }
@@ -39,7 +39,7 @@ type RenameResult struct {
 	Decks []string
 	Cards int
 	// NotWritten is one entry per deck the rename could not be written to.
-	NotWritten []NotWritten
+	NotWritten []UnwrittenDeck
 }
 
 // RenameField gives one of a stencil's fields a different name.
@@ -122,7 +122,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	}
 	// The name the cards write is the name the stencil is linked by.
 	named := domain.Basename(in.Stencil)
-	one := deck{
+	one := deckWriter{
 		reader: reader, writer: writer, links: u.Links, vault: v,
 		read: Read{Readers: u.Readers, Links: u.Links}, stamp: u.stamped,
 	}
@@ -132,7 +132,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 		}
 		cards, err := one.rename(ctx, path, in)
 		if err != nil {
-			out.NotWritten = append(out.NotWritten, NotWritten{Path: path, Problem: format.OnFile(
+			out.NotWritten = append(out.NotWritten, UnwrittenDeck{Path: path, Problem: format.OnFile(
 				format.CheckNotWritten,
 				"a field renamed in "+named+" did not reach this deck: "+err.Error(),
 			)})
@@ -196,9 +196,9 @@ func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error
 	return u.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
 }
 
-// deck is one deck's read and write, so that what could not be done to it is
-// one error and the decks after it are written all the same.
-type deck struct {
+// deckWriter is one deck's read and write, so that what could not be done to it
+// is one error and the decks after it are written all the same.
+type deckWriter struct {
 	reader port.VaultReader
 	writer port.VaultWriter
 	links  port.LinkQueries
@@ -218,7 +218,7 @@ type deck struct {
 // This is the application writing the file, so the deck it leaves behind is
 // whole: it is stamped with an identifier where it carried none, and every card
 // of it is given its mark and its heading.
-func (d deck) rename(ctx context.Context, path string, in Rename) (int, error) {
+func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.Stat(ctx, path)
 	if err != nil {
 		return 0, err

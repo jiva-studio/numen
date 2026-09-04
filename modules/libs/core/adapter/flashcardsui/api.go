@@ -49,8 +49,8 @@ type API struct {
 	Session       flashcards.Session
 	Schedules     flashcards.Schedules
 	Log           flashcards.Log
-	Counted       flashcards.Counted
-	Neighbourhood flashcards.Around
+	Counted       flashcards.CountReviews
+	Neighbourhood flashcards.ShowNeighbourhood
 	// Presets is which preset each deck of a vault is scheduled by.
 	Presets flashcards.Presets
 	// Notes is what a vault calls the note a preset stands in. A build with none

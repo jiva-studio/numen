@@ -9,13 +9,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// Opening is how this installation opens a vault: the walk that brings the
+// VaultOpener is how this installation opens a vault: the walk that brings the
 // index level with it, the watch that keeps it level while it is open, and the
 // levelling a write asks for.
 //
 // Both windows open a vault through this, so a vault opened in one is a vault
 // opened in the other. What each says about it while it runs is its own.
-type Opening struct {
+type VaultOpener struct {
 	// Told, if set, is called each time the index and the vault are level again.
 	Told func(vault.VaultChanges)
 	// Trouble, if set, is called with what went wrong, and with nil when a later
@@ -30,23 +30,23 @@ type Opening struct {
 	refresh vault.Refresh
 }
 
-// Opening is how this installation opens a vault, the way the settings say one
-// is read and watched.
-func (c Config) Opening(db *Index) *Opening {
-	return c.OpeningWith(db, c.VaultReaders(), c.VaultWatcher())
+// VaultOpener is how this installation opens a vault, the way the settings say
+// one is read and watched.
+func (c Config) VaultOpener(db *Index) *VaultOpener {
+	return c.VaultOpenerWith(db, c.VaultReaders(), c.VaultWatcher())
 }
 
-// OpeningWith is the same, with the watcher, and the readers the walk reads the
-// vault through, in place of the installation's own. A note brought up to date
-// after the walk is read through the installation's.
-func (c Config) OpeningWith(
+// VaultOpenerWith is the same, with the watcher, and the readers the walk reads
+// the vault through, in place of the installation's own. A note brought up to
+// date after the walk is read through the installation's.
+func (c Config) VaultOpenerWith(
 	db *Index, walking port.VaultReaders, watcher port.VaultWatcher,
-) *Opening {
+) *VaultOpener {
 	scan := c.Scan(db)
 	scan.Readers = walking
 
 	held := &holding{NoteRepository: db.NotesCutAt(c.Chunking(), c.Legibility())}
-	return &Opening{
+	return &VaultOpener{
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
@@ -62,11 +62,11 @@ func (c Config) OpeningWith(
 // Refreshing brings named notes up to date, through whatever is following the
 // vault they are in. Whatever changes a note calls it, so what changed is
 // findable before the change is reported done.
-func (o *Opening) Refreshing() vault.Refresh { return o.refresh }
+func (o *VaultOpener) Refreshing() vault.Refresh { return o.refresh }
 
-// Scanning is the walk this opening makes, for a caller asked to read the vault
+// Scanning is the walk this opener makes, for a caller asked to read the vault
 // again.
-func (o *Opening) Scanning() vault.Scan {
+func (o *VaultOpener) Scanning() vault.Scan {
 	scan := o.scan
 	scan.RebuildIndex = o.Rebuild
 	return scan
@@ -74,7 +74,7 @@ func (o *Opening) Scanning() vault.Scan {
 
 // Level brings named notes up to date. A note a window writes is level before
 // the answer comes back, so it is drawn as soon as it exists.
-func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *VaultOpener) Level(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.refresh.Execute(ctx, v, paths)
 	return err
 }
@@ -82,7 +82,7 @@ func (o *Opening) Level(ctx context.Context, v domain.Vault, paths []string) err
 // Begin opens the vault: the watch is started, and Read is the walk beside it.
 //
 // A vault that cannot be watched is opened all the same, and Unwatched says why.
-func (o *Opening) Begin(ctx context.Context, v domain.Vault) *OpenVault {
+func (o *VaultOpener) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 	scan := o.Scanning()
 	follow := vault.Follow{
 		Watcher: o.watcher,
@@ -104,7 +104,7 @@ func (o *Opening) Begin(ctx context.Context, v domain.Vault) *OpenVault {
 
 // OpenVault is one vault an application has opened.
 type OpenVault struct {
-	opening   *Opening
+	opening   *VaultOpener
 	vault     domain.Vault
 	scan      vault.Scan
 	follow    vault.Follow

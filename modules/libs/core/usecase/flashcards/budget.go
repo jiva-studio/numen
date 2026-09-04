@@ -35,7 +35,7 @@ type budgets struct {
 // costs, how it counts, and what has gone on it already.
 type allowance struct {
 	admits history.Allowance
-	cost   history.Cost
+	cost   history.AnswerCost
 	counts history.Counts
 	spent  history.Spent
 }
@@ -45,7 +45,7 @@ type allowance struct {
 // What has been answered since the day opened is off it, so a second sitting
 // takes up where the first left off.
 func budgeted(
-	ctx context.Context, v domain.Vault, reading *Reading, day history.Day,
+	ctx context.Context, v domain.Vault, reading *PresetReads, day history.Day,
 	standing []Standing, schedules map[history.CardFaceID]history.Schedule,
 	log Held, by history.Scheduler, at func(retention float64) history.Scheduler,
 	now time.Time,
@@ -263,12 +263,12 @@ func (b *budgets) asks(
 	return out
 }
 
-// spending is which of the cards put to a preset its day took.
-type spending struct{ owed, fresh []bool }
+// taken is which of the cards put to a preset its day took.
+type taken struct{ owed, fresh []bool }
 
-// dealt is one deck's cards under one preset, in the order they stand, and how
-// far its share of the day has been walked through them.
-type dealt struct {
+// deckShare is one deck's cards under one preset, in the order they stand, and
+// how far its share of the day has been walked through them.
+type deckShare struct {
 	deck        string
 	owed, fresh []int
 	// seen and unseen are how far each side has been walked, and debt and begun
@@ -287,21 +287,21 @@ type dealt struct {
 // goes to the debt, so a share holding one card spends it on what is already
 // begun. What no deck could use out of its own share is offered round again, so
 // the day spends what it holds.
-func (b *budgets) spends(owed, fresh []Standing) spending {
-	out := spending{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
+func (b *budgets) spends(owed, fresh []Standing) taken {
+	out := taken{owed: make([]bool, len(owed)), fresh: make([]bool, len(fresh))}
 
-	at := make(map[string]map[string]*dealt)
+	at := make(map[string]map[string]*deckShare)
 	var order []string
-	into := func(path, deck string) *dealt {
+	into := func(path, deck string) *deckShare {
 		decks, held := at[path]
 		if !held {
-			decks = make(map[string]*dealt)
+			decks = make(map[string]*deckShare)
 			at[path] = decks
 			order = append(order, path)
 		}
 		one, held := decks[deck]
 		if !held {
-			one = &dealt{deck: deck}
+			one = &deckShare{deck: deck}
 			decks[deck] = one
 		}
 		return one
@@ -332,11 +332,11 @@ func (b *budgets) spends(owed, fresh []Standing) spending {
 		}
 		// The decks are handed their shares in the order their paths stand, so
 		// the division does not turn on the order the vault was walked in.
-		decks := make([]*dealt, 0, len(at[path]))
+		decks := make([]*deckShare, 0, len(at[path]))
 		for _, q := range at[path] {
 			decks = append(decks, q)
 		}
-		slices.SortFunc(decks, func(a, b *dealt) int {
+		slices.SortFunc(decks, func(a, b *deckShare) int {
 			return strings.Compare(a.deck, b.deck)
 		})
 
@@ -360,7 +360,7 @@ func (b *budgets) spends(owed, fresh []Standing) spending {
 // The whole day is handed out in proportion to what each deck owes of it, and
 // what a deck has already answered today comes off that deck's own share, so a
 // deck sat first spends its share and no other deck's.
-func (b *budgets) divides(one *allowance, decks []*dealt) []allowance {
+func (b *budgets) divides(one *allowance, decks []*deckShare) []allowance {
 	reviews := make([]float64, len(decks))
 	begun := make([]float64, len(decks))
 	minutes := make([]float64, len(decks))
@@ -428,7 +428,7 @@ func divided(budget float64, owes []float64) []float64 {
 // deals is what one deck's share of the day takes of the debt before it and the
 // material it has not begun. A card another share has already taken is passed
 // over, and the deck picks up where its share left off.
-func (b *budgets) deals(share *allowance, q *dealt, owed, fresh []Standing, out *spending) {
+func (b *budgets) deals(share *allowance, q *deckShare, owed, fresh []Standing, out *taken) {
 	for {
 		for q.seen < len(q.owed) && out.owed[q.owed[q.seen]] {
 			q.seen++

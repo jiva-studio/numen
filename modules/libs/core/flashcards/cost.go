@@ -48,25 +48,25 @@ const MostShowings = 8
 // default.
 const LeastAnswers = 10
 
-// Cost is how long an answer takes: one of a card the scheduler is still
+// AnswerCost is how long an answer takes: one of a card the scheduler is still
 // putting into memory, and one of a card that comes round in days.
 //
 // ReadNew and ReadReview say which halves the history answered. A half it does
 // not answer stands at the default, and a caller putting the number in front of
 // a person says which of the two it is showing.
-type Cost struct {
+type AnswerCost struct {
 	New, Review         time.Duration
 	ReadNew, ReadReview bool
 }
 
 // DefaultCost is what a vault holding no answer times is projected at.
-var DefaultCost = Cost{New: 20 * time.Second, Review: 8 * time.Second}
+var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 
 // Costed is how long an answer takes in this history, from the times the
 // answers themselves carry. A kind of answer the history holds too few of
 // stands at the default.
-func Costed(by Scheduler, answers []Answer) Cost {
-	var took taking
+func Costed(by Scheduler, answers []Answer) AnswerCost {
+	var took answerTimes
 	replayed(by, answers, func(before Schedule, a Answer) {
 		took.holds(by.Spaced(before), a.Took)
 	})
@@ -80,8 +80,8 @@ func Costed(by Scheduler, answers []Answer) Cost {
 // cards and one of short cards turn the same minutes into different counts. A
 // card face nothing groups is left out, and a kind of answer a preset holds too
 // few of stands at the default.
-func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]Cost {
-	held := make(map[string]*taking)
+func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
+	held := make(map[string]*answerTimes)
 	replayed(by, answers, func(before Schedule, a Answer) {
 		path, groups := under[a.CardFace]
 		if !groups {
@@ -89,25 +89,25 @@ func CostedUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) ma
 		}
 		one := held[path]
 		if one == nil {
-			one = &taking{}
+			one = &answerTimes{}
 			held[path] = one
 		}
 		one.holds(by.Spaced(before), a.Took)
 	})
 
-	out := make(map[string]Cost, len(held))
+	out := make(map[string]AnswerCost, len(held))
 	for path, one := range held {
 		out[path] = one.cost()
 	}
 	return out
 }
 
-// taking is how long the answers of each kind took, one entry an answer.
-type taking struct{ begun, spaced []time.Duration }
+// answerTimes is how long the answers of each kind took, one entry an answer.
+type answerTimes struct{ begun, spaced []time.Duration }
 
 // holds counts one answer, capped at LongestAnswer. An answer carrying no time
 // at all says nothing about how long its kind takes.
-func (t *taking) holds(spaced bool, took time.Duration) {
+func (t *answerTimes) holds(spaced bool, took time.Duration) {
 	took = min(took, LongestAnswer)
 	if took <= 0 {
 		return
@@ -121,7 +121,7 @@ func (t *taking) holds(spaced bool, took time.Duration) {
 
 // cost is what these answers say a kind of answer takes, each half standing at
 // the default where the history is too short to say.
-func (t *taking) cost() Cost {
+func (t *answerTimes) cost() AnswerCost {
 	out := DefaultCost
 	if middle, read := middling(t.begun); read {
 		out.New, out.ReadNew = middle, true
@@ -166,14 +166,14 @@ func Recall(away time.Duration, stability float64) float64 {
 	return math.Pow(1+recallFactor*days/stability, recallDecay)
 }
 
-// Recalling is what a projection assumes about coming back: how likely a card
-// face standing here is to be recalled when it is asked at this instant.
+// RecallChance is what a projection assumes about coming back: how likely a
+// card face standing here is to be recalled when it is asked at this instant.
 //
 // A projection follows one card down the middle of what it may do, weighing the
 // ending where it came back against the ending where it did not, and this is
 // the weight. Every figure a run draws is drawn under the assumption it was
 // given, so a caller naming one says which.
-type Recalling func(Schedule, time.Time) float64
+type RecallChance func(Schedule, time.Time) float64
 
 // AsModelled is the chance the scheduler's own forgetting curve gives a card
 // face, and is what a run not told otherwise reads.
@@ -255,7 +255,7 @@ type Projection struct {
 	Admitted []bool
 	// Closed is every budget that stopped each day projected asking for more,
 	// one entry a day.
-	Closed []Closing
+	Closed []BudgetNames
 	// Backlog is how many card faces stood overdue at the end of each day
 	// projected: their day had passed and that day did not get to them. It is
 	// the pile a person watches shrink, and it begins where Overdue stands now.
@@ -347,48 +347,48 @@ func Overdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
 	return out
 }
 
-// Closed is one budget a day of review may be stopped by, in the words the
+// BudgetName is one budget a day of review may be stopped by, in the words the
 // preset writes the key in. A budget the goal does not name is never one of
 // them, and a day that asked for everything there was is closed by nothing:
 // the material ran out.
-type Closed string
+type BudgetName string
 
 const (
-	ClosedNothing Closed = ""
-	ClosedMinutes Closed = "minutes_a_day"
-	ClosedNew     Closed = "new_a_day"
-	ClosedReviews Closed = "reviews_a_day"
+	ClosedNothing BudgetName = ""
+	ClosedMinutes BudgetName = "minutes_a_day"
+	ClosedNew     BudgetName = "new_a_day"
+	ClosedReviews BudgetName = "reviews_a_day"
 	// ClosedDate is a day paced by the day the preset aims at.
-	ClosedDate Closed = "by_date"
+	ClosedDate BudgetName = "by_date"
 	// ClosedBacklog is the share of a day that goes to the debt. It closes
 	// nothing, and stands in this vocabulary because it is a key of a preset
 	// that a goal either reads or leaves idle.
-	ClosedBacklog Closed = "backlog"
+	ClosedBacklog BudgetName = "backlog"
 	// ClosedPaused is a preset scheduling nothing at all.
-	ClosedPaused Closed = "paused"
+	ClosedPaused BudgetName = "paused"
 )
 
-// Closing is every budget that closed one day of review.
+// BudgetNames is every budget that closed one day of review.
 //
 // A goal of retention holds a day to both card counts, and a day that ran out
 // of new cards and of reviews names both: a person raising one of them and
 // finding nothing changed is reading a day the other closed too.
-type Closing []Closed
+type BudgetNames []BudgetName
 
 // closers is every budget a day may be closed by, in the order a closing names
 // them.
-var closers = []Closed{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
+var closers = []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
 
 // Holds reports whether this budget is one of those that closed the day.
-func (c Closing) Holds(one Closed) bool { return slices.Contains(c, one) }
+func (c BudgetNames) Holds(one BudgetName) bool { return slices.Contains(c, one) }
 
 // with is this closing and one budget more, named once and in the order closers
 // stands in.
-func (c Closing) with(one Closed) Closing {
+func (c BudgetNames) with(one BudgetName) BudgetNames {
 	if !slices.Contains(closers, one) || c.Holds(one) {
 		return c
 	}
-	out := make(Closing, 0, len(c)+1)
+	out := make(BudgetNames, 0, len(c)+1)
 	for _, each := range closers {
 		if each == one || c.Holds(each) {
 			out = append(out, each)
@@ -399,7 +399,7 @@ func (c Closing) with(one Closed) Closing {
 
 // Names is every budget that closed the day, each in the words the preset
 // writes the key in.
-func (c Closing) Names() []string {
+func (c BudgetNames) Names() []string {
 	out := make([]string, 0, len(c))
 	for _, one := range c {
 		out = append(out, string(one))
@@ -409,7 +409,7 @@ func (c Closing) Names() []string {
 
 // Name is the key one budget is written under, and empty where the day was
 // closed by none or by more than one.
-func (c Closing) Name() string {
+func (c BudgetNames) Name() string {
 	if len(c) != 1 {
 		return ""
 	}
@@ -425,7 +425,7 @@ func (c Closing) Name() string {
 type Simulation struct {
 	By   Scheduler
 	Day  Day
-	Cost Cost
+	Cost AnswerCost
 	// Days is how far ahead it runs, and runs Ahead days when it is zero.
 	Days int
 	// Retains is the days of the run whose returning share it works out, counting
@@ -437,7 +437,7 @@ type Simulation struct {
 	Retains []int
 	// Recalls is what this run assumes about coming back. A run holding none
 	// reads AsModelled.
-	Recalls Recalling
+	Recalls RecallChance
 	// Spent is what the day holding now has already gone through under this
 	// preset. The first day of a run is a real day a person may be halfway
 	// through, and what it has left is what a sitting opened now would offer.
@@ -569,7 +569,7 @@ func (s Simulation) Run(
 
 		// What closed the day is every budget that turned a card away. A day
 		// that asked for every card there was is closed by nothing.
-		var closed Closing
+		var closed BudgetNames
 		if admits.Paused() {
 			closed = closed.with(ClosedPaused)
 		}
@@ -750,14 +750,14 @@ func merges(into, carried, fell []int, cards []Schedule) []int {
 	return append(into, fell[b:]...)
 }
 
-// reckoning is how much of the material stands learned and how much of it comes
-// back, at the close of a day.
+// learnedCount is how much of the material stands learned and how much of it
+// comes back, at the close of a day.
 //
 // Under a rule of an interval what stands learned is a fact about a card face's
 // schedule: the count is carried from day to day and asked again only of a card
 // face the day answered. Under a rule of a chance of recall it is a fact about
 // the instant, and is read off the same number as the share that comes back.
-type reckoning struct {
+type learnedCount struct {
 	preset  Preset
 	carried bool
 	target  float64
@@ -767,9 +767,9 @@ type reckoning struct {
 
 // reckons opens the count over the card faces a run begins with, at the instant
 // it opens on.
-func reckons(p Preset, cards []Schedule, at time.Time) *reckoning {
+func reckons(p Preset, cards []Schedule, at time.Time) *learnedCount {
 	rule, _, retention := p.counting()
-	out := &reckoning{preset: p, carried: rule == RuleInterval, target: retention}
+	out := &learnedCount{preset: p, carried: rule == RuleInterval, target: retention}
 	if out.carried {
 		out.learned = make([]bool, len(cards))
 	}
@@ -786,7 +786,7 @@ func reckons(p Preset, cards []Schedule, at time.Time) *reckoning {
 }
 
 // answered carries one card face the day has answered.
-func (r *reckoning) answered(card int, c Schedule, at time.Time) {
+func (r *learnedCount) answered(card int, c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}
@@ -803,7 +803,7 @@ func (r *reckoning) answered(card int, c Schedule, at time.Time) {
 }
 
 // begun carries one card face the day has begun.
-func (r *reckoning) begun(c Schedule, at time.Time) {
+func (r *learnedCount) begun(c Schedule, at time.Time) {
 	if !r.carried {
 		return
 	}
@@ -821,7 +821,7 @@ func (r *reckoning) begun(c Schedule, at time.Time) {
 // A carried count is a fact about a card face's schedule, so the walk over the
 // whole material is made on the days the share is wanted. A count read off the
 // chance of recall is the same walk, and the share falls out of it.
-func (r *reckoning) closes(
+func (r *learnedCount) closes(
 	cards []Schedule, at time.Time, faces int, wanted bool,
 ) (int, float64) {
 	if r.carried {
@@ -909,7 +909,7 @@ func (s Simulation) ripens(p Preset, open time.Time) int {
 
 // answers is where one showing leaves a card face, at the hour the day opens. A
 // card face the day is not asking for stands where it is.
-func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *Spread) Schedule {
+func (s Simulation) answers(c Schedule, open, ends time.Time, p Preset, on *DueByDay) Schedule {
 	if c.Seen() && !c.Due.Before(ends) {
 		return c
 	}
@@ -983,7 +983,7 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 // back, which is the run's own assumption, so a projection follows one card
 // down the middle of what it may do. The phase is the one a card that came back
 // is left in.
-func (s Simulation) step(c Schedule, at time.Time, p Preset, on *Spread) Schedule {
+func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Schedule {
 	if c.Seen() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
@@ -1033,27 +1033,28 @@ func (p Preset) on(day time.Weekday) Budget {
 	}
 }
 
-// Spread is how loaded each day of review is: how many card faces fall on each.
+// DueByDay is how loaded each day of review is: how many card faces fall on
+// each.
 //
 // It is one table over every preset, and the answers replayed and the
 // projection ahead of them both read it.
-type Spread struct {
+type DueByDay struct {
 	day Day
 	on  map[int]int
 }
 
 // Spreading opens a table counting the days as this day of review divides them.
-func Spreading(d Day) *Spread { return &Spread{day: d, on: make(map[int]int)} }
+func Spreading(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
 
 // Holds counts one card face against the day its schedule falls in.
-func (s *Spread) Holds(due time.Time) {
+func (s *DueByDay) Holds(due time.Time) {
 	if s != nil {
 		s.on[s.number(due)]++
 	}
 }
 
 // On is how many card faces fall on the day of review holding this instant.
-func (s *Spread) On(at time.Time) int {
+func (s *DueByDay) On(at time.Time) int {
 	if s == nil {
 		return 0
 	}
@@ -1063,7 +1064,7 @@ func (s *Spread) On(at time.Time) int {
 // number is the day of review holding an instant, as a whole number counted
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
-func (s *Spread) number(at time.Time) int {
+func (s *DueByDay) number(at time.Time) int {
 	return int(s.day.Opened(at).Unix() / int64(24*time.Hour/time.Second))
 }
 
@@ -1092,7 +1093,7 @@ func weekday(number int) time.Weekday {
 //
 // It is the one place a day is chosen. A sitting and a projection of it both
 // come here.
-func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
+func (p Preset) Places(s *DueByDay, at, due time.Time) time.Time {
 	out := p.lands(s, at, due)
 	s.Holds(out)
 	return out
@@ -1104,12 +1105,12 @@ func (p Preset) Places(s *Spread, at, due time.Time) time.Time {
 // The four windows put to a person are four askings of one card, and one of
 // them is answered. The day each of them names is chosen by Places' own
 // arithmetic, so the button names the day the card lands on.
-func (p Preset) Lands(s *Spread, at, due time.Time) time.Time {
+func (p Preset) Lands(s *DueByDay, at, due time.Time) time.Time {
 	return p.lands(s, at, due)
 }
 
 // lands is where the day is chosen.
-func (p Preset) lands(s *Spread, at, due time.Time) time.Time {
+func (p Preset) lands(s *DueByDay, at, due time.Time) time.Time {
 	if s == nil {
 		return due
 	}
@@ -1141,7 +1142,7 @@ func (p Preset) lands(s *Spread, at, due time.Time) time.Time {
 
 // weighs is how much a numbered day of review wants another card: the share of
 // the load its day of the week keeps, over what already falls on it.
-func (p Preset) weighs(s *Spread, day int) float64 {
+func (p Preset) weighs(s *DueByDay, day int) float64 {
 	return p.Share(weekday(day)) / float64(1+s.on[day])
 }
 

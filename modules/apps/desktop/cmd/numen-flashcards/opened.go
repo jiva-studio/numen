@@ -42,7 +42,7 @@ type openVaults struct {
 // vaultOpening is one vault's opening, made once however many ask for it.
 type vaultOpening struct {
 	once    sync.Once
-	opening *container.Opening
+	opening *container.VaultOpener
 	open    *container.OpenVault
 }
 
@@ -88,7 +88,7 @@ func (o *openVaults) of(v domain.Vault) *vaultOpening {
 
 // opens starts one vault's watch and leaves it running.
 func (o *openVaults) opens(v domain.Vault, one *vaultOpening) {
-	opening := o.cfg.Opening(o.db)
+	opening := o.cfg.VaultOpener(o.db)
 	opening.Told = func(vault.VaultChanges) { o.record(v) }
 	opening.Trouble = func(err error) {
 		if err != nil {

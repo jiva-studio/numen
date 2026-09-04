@@ -43,7 +43,7 @@ type vaulted struct {
 	presets   flashcards.Presets
 	marking   flashcards.Marking
 	kept      flashcards.Schedules
-	counted   flashcards.Counted
+	counted   flashcards.CountReviews
 	logs      filesystem.DerivedStores
 	// scan brings the index level with what the vault now holds.
 	scan func(ctx context.Context, v domain.Vault, paths []string) error
@@ -102,7 +102,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 			Index: scanned, Now: time.Now,
 		},
 		kept: schedules,
-		counted: flashcards.Counted{
+		counted: flashcards.CountReviews{
 			Logs:      logs,
 			Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
 			Schedules: schedules,

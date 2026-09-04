@@ -86,10 +86,10 @@ func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
 	}
 }
 
-// opened is a card face at the instant it is answered: the phase the answer
+// atAnswer is a card face at the instant it is answered: the phase the answer
 // finds it in, how many whole days it stood away, and where the answer leaves
 // what no rating decides.
-type opened struct {
+type atAnswer struct {
 	phase fsrs.State
 	// away is how many whole days the card face stood away, and is none for one
 	// nobody has answered.
@@ -103,8 +103,8 @@ type opened struct {
 // opens reads a card face at the instant it is answered. One nobody has
 // answered opens at the phase the scheduler begins a card in, at no stability
 // and no difficulty.
-func (f FSRS) opens(s Schedule, at time.Time) opened {
-	one := opened{phase: fsrs.New}
+func (f FSRS) opens(s Schedule, at time.Time) atAnswer {
+	one := atAnswer{phase: fsrs.New}
 	if s.Seen() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
@@ -120,7 +120,7 @@ func (f FSRS) opens(s Schedule, at time.Time) opened {
 
 // begun is where an answer leaves a card face nobody had answered. Three of the
 // four put it into memory over minutes, and the fourth sends it away in days.
-func (f FSRS) begun(one opened, at time.Time, r fsrs.Rating) Schedule {
+func (f FSRS) begun(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.first(r)
 	out.Stability = math.Max(f.p.W[r-1], 0.1)
@@ -142,7 +142,7 @@ func (f FSRS) begun(one opened, at time.Time, r fsrs.Rating) Schedule {
 // learning is where an answer leaves a card face the scheduler is still putting
 // into memory. The two lower ratings leave it where it was and ask again in
 // minutes; the two higher send it away in days and put it into review.
-func (f FSRS) learning(one opened, at time.Time, r fsrs.Rating) Schedule {
+func (f FSRS) learning(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.harder(one.last.Difficulty, r)
 	out.Stability = f.shortly(one.last.Stability, r)
@@ -168,7 +168,7 @@ func (f FSRS) learning(one opened, at time.Time, r fsrs.Rating) Schedule {
 //
 // Each interval is held past the one below it, so the day an answer names is
 // worked out from the endings under it and not from its own stability alone.
-func (f FSRS) reviewed(one opened, at time.Time, back float64, r fsrs.Rating) Schedule {
+func (f FSRS) reviewed(one atAnswer, at time.Time, back float64, r fsrs.Rating) Schedule {
 	d, s := one.last.Difficulty, one.last.Stability
 	out := one.out
 	out.Difficulty = f.harder(d, r)
@@ -197,7 +197,7 @@ func (f FSRS) reviewed(one opened, at time.Time, back float64, r fsrs.Rating) Sc
 
 // recalled is how likely a card face was to come back at the instant it was
 // answered, on the scheduler's own forgetting curve.
-func (f FSRS) recalled(one opened) float64 {
+func (f FSRS) recalled(one atAnswer) float64 {
 	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
 }
 

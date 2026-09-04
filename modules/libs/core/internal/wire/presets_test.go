@@ -203,7 +203,7 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 // front of the person.
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
-		why  history.Stopped
+		why  history.StopReason
 		said v1.Stopped
 	}{
 		{history.StoppedNothing, v1.Stopped_STOPPED_NOTHING},
@@ -219,7 +219,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		}
 	}
 
-	if got := StoppedOf(history.Stopped("sideways")); got != v1.Stopped_STOPPED_NOTHING {
+	if got := StoppedOf(history.StopReason("sideways")); got != v1.Stopped_STOPPED_NOTHING {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
@@ -232,7 +232,7 @@ func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 	if got := GoalOf(history.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
 		t.Errorf("a goal the schema does not name crosses as %v", got)
 	}
-	if got := RuleOf(history.Rule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
+	if got := RuleOf(history.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
 		t.Errorf("a rule the schema does not name crosses as %v", got)
 	}
 	if got := CountsOf(history.Counts("sideways")); got != v1.Counts_COUNTS_UNSPECIFIED {

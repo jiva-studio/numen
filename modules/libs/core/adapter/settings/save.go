@@ -243,9 +243,9 @@ func put(object []byte, at []string, value []byte, outer string) ([]byte, error)
 	return held.appending(object, at, value, outer), nil
 }
 
-// pair is one member of an object: its name, where that name is written, and
+// member is one member of an object: its name, where that name is written, and
 // where its value sits in the bytes the object was read from.
-type pair struct {
+type member struct {
 	key string
 	// nameFrom and nameTo are the name as the file has it, quotes and all. Both
 	// are nought for a name written with escapes in it, which is a name this
@@ -258,7 +258,7 @@ type pair struct {
 // written, where another one would go, and the indentation they are laid out
 // with.
 type shape struct {
-	pairs []pair
+	pairs []member
 	// last is where the final member's value ends, and where a comma and
 	// another member go. An object holding nothing has it just past the brace.
 	last int
@@ -294,7 +294,7 @@ func members(object []byte) (shape, error) {
 		if held.holds(key) {
 			return shape{}, fmt.Errorf("%s: %w", key, errRepeated)
 		}
-		one := pair{key: key}
+		one := member{key: key}
 		quoted, err := json.Marshal(key)
 		if err != nil {
 			return shape{}, err

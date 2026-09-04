@@ -20,7 +20,9 @@ import (
 // reading opens one index and hands back the use case that reads it, together
 // with a way to write another vault into it. One index for every vault is what
 // the application runs, so a scoping test has somewhere to leak to.
-func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) domain.Vault) {
+func reading(
+	t *testing.T,
+) (flashcards.ShowNeighbourhood, func(notes map[string]string) domain.Vault) {
 	t.Helper()
 
 	db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
@@ -42,7 +44,7 @@ func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) dom
 		return v
 	}
 
-	return flashcards.Around{
+	return flashcards.ShowNeighbourhood{
 		Linked: note.ShowLinks{Links: db.NoteQueries()},
 		Notes:  db.NoteQueries(),
 		Reads:  note.Read{Readers: filesystem.VaultReaders{}},
@@ -50,13 +52,15 @@ func reading(t *testing.T) (flashcards.Around, func(notes map[string]string) dom
 }
 
 // around is one vault of notes, and what its deck turns out to be joined to.
-func around(t *testing.T, notes map[string]string, deck string) flashcards.Joined {
+func around(t *testing.T, notes map[string]string, deck string) flashcards.Neighbourhood {
 	t.Helper()
 	u, add := reading(t)
 	return joined(t, u, add(notes), deck)
 }
 
-func joined(t *testing.T, u flashcards.Around, v domain.Vault, deck string) flashcards.Joined {
+func joined(
+	t *testing.T, u flashcards.ShowNeighbourhood, v domain.Vault, deck string,
+) flashcards.Neighbourhood {
 	t.Helper()
 	out, err := u.Execute(t.Context(), v, deck)
 	if err != nil {
@@ -67,7 +71,7 @@ func joined(t *testing.T, u flashcards.Around, v domain.Vault, deck string) flas
 
 // written is how each entry was addressed, which is all a link that reached no
 // note ever has.
-func written(j flashcards.Joined) []string {
+func written(j flashcards.Neighbourhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Written)
@@ -75,7 +79,7 @@ func written(j flashcards.Joined) []string {
 	return out
 }
 
-func paths(j flashcards.Joined) []string {
+func paths(j flashcards.Neighbourhood) []string {
 	out := make([]string, 0, len(j.Notes))
 	for _, one := range j.Notes {
 		out = append(out, one.Path)

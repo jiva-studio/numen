@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 )
 
-// Read is a vault walked into the index. It is handed how far it has got as it
-// goes, counted in the notes written.
-type Read func(ctx context.Context, v domain.Vault, progress func(notes int64)) error
+// ReadVault is a vault walked into the index. It is handed how far it has got
+// as it goes, counted in the notes written.
+type ReadVault func(ctx context.Context, v domain.Vault, progress func(notes int64)) error
 
 // readings is which vaults this window has read into the index: the ones read
 // since it opened, the ones being read now, and why the last reading of one
@@ -20,7 +20,7 @@ type readings struct {
 
 	// read is how a vault is brought up to date in the index, and under is the
 	// life those readings run for.
-	read  Read
+	read  ReadVault
 	under context.Context
 
 	done     map[domain.VaultID]bool
@@ -29,7 +29,7 @@ type readings struct {
 }
 
 // on is how a vault is read from now on, and the life those readings run for.
-func (r *readings) on(ctx context.Context, read Read) {
+func (r *readings) on(ctx context.Context, read ReadVault) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.under, r.read = ctx, read
@@ -46,7 +46,9 @@ func (r *readings) forget(id domain.VaultID) {
 // run it under where this call is the one that begins it, and no reader where
 // the vault has been read, is being read, could not be read, or where this
 // window reads nothing.
-func (r *readings) begins(v domain.Vault) (read Read, under context.Context, underway bool, failed string) {
+func (r *readings) begins(
+	v domain.Vault,
+) (read ReadVault, under context.Context, underway bool, failed string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.done[v.ID] {
@@ -89,7 +91,7 @@ func (r *readings) ended(v domain.Vault, err error) {
 // Reading is how a vault is brought up to date in the index, and the life those
 // readings run for. A window naming none counts a vault from the index as it
 // stands.
-func (a *API) Reading(ctx context.Context, read Read) {
+func (a *API) Reading(ctx context.Context, read ReadVault) {
 	a.readings.on(ctx, read)
 }
 
@@ -125,7 +127,7 @@ func (a *API) carries(ctx context.Context, v domain.Vault) bool {
 // nothing to show until this is done and the person is waiting on it, so that
 // work is drawn the moment it begins; a vault it carries is work drawn once it
 // has lasted.
-func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
+func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held bool) {
 	at := task.Task{
 		ID:    "reading\t" + string(v.ID),
 		Doing: "Reading the vault",

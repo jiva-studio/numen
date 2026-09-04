@@ -11,7 +11,7 @@ import (
 // of a download, which says less than a ring that turns.
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 	tasks := task.New()
-	tell := preparing(tasks, listing{id: "getting ready: indexing: a/model", name: "a/model"})
+	tell := preparing(tasks, line{id: "getting ready: indexing: a/model", name: "a/model"})
 
 	// Nothing is known yet: the step is in the list from the moment it starts.
 	tell(0, 0)

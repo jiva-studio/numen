@@ -8,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Listed is one stencil as somebody choosing between them sees it: where the
-// file is, what it is called, and what a card cut by it is asked for.
-type Listed struct {
+// StencilSummary is one stencil as somebody choosing between them sees it:
+// where the file is, what it is called, and what a card cut by it is asked for.
+type StencilSummary struct {
 	Path   string
 	Title  string
 	Fields []string
@@ -31,7 +31,9 @@ type List struct {
 // Limit is how many of them are read, and zero or less is all of them. The
 // index says how many there are, so the count stands above the list without a
 // file being opened for the stencils left out.
-func (u List) Execute(ctx context.Context, v domain.Vault, limit int) ([]Listed, int, error) {
+func (u List) Execute(
+	ctx context.Context, v domain.Vault, limit int,
+) ([]StencilSummary, int, error) {
 	all, err := u.Notes.Stencils(ctx, string(v.ID))
 	if err != nil {
 		return nil, 0, err
@@ -42,9 +44,9 @@ func (u List) Execute(ctx context.Context, v domain.Vault, limit int) ([]Listed,
 	}
 
 	read := Read{Readers: u.Readers}
-	out := make([]Listed, 0, len(held))
+	out := make([]StencilSummary, 0, len(held))
 	for _, s := range held {
-		listed := Listed{Path: s.Path, Title: s.Title}
+		listed := StencilSummary{Path: s.Path, Title: s.Title}
 		stencil, err := read.Stencil(ctx, v, s.Path)
 		if err != nil {
 			return nil, 0, err

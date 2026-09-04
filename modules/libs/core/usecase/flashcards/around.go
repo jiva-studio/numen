@@ -15,8 +15,8 @@ import (
 // named and unread, and are read when somebody asks for one.
 const MostRead = 30
 
-// Joined is what a deck is joined to.
-type Joined struct {
+// Neighbourhood is what a deck is joined to.
+type Neighbourhood struct {
 	Notes []Neighbour
 	// Unread is how many at the end came without their text.
 	Unread int
@@ -46,11 +46,12 @@ type Neighbour struct {
 	Outcome note.ReadOutcome
 }
 
-// Around is what the deck being reviewed is joined to, with the text of each.
+// ShowNeighbourhood is what the deck being reviewed is joined to, with the text
+// of each.
 //
 // A card's links are written in the deck's file, so a deck already points at
 // everything its cards name: this is the reading beside the review.
-type Around struct {
+type ShowNeighbourhood struct {
 	Linked note.ShowLinks
 	Notes  port.NoteQueries
 	Reads  note.Read
@@ -62,10 +63,12 @@ type Around struct {
 // An error is the vault or the index being out of reach. What is wrong with one
 // note — gone, too long, not a note at all — is an outcome on that note's own
 // entry, and the rest of them are still read.
-func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joined, error) {
+func (u ShowNeighbourhood) Execute(
+	ctx context.Context, v domain.Vault, deck string,
+) (Neighbourhood, error) {
 	linked, err := u.Linked.Execute(ctx, v, deck)
 	if err != nil {
-		return Joined{}, err
+		return Neighbourhood{}, err
 	}
 
 	// A deck naming itself, and a card naming the deck it stands in, are not
@@ -117,14 +120,14 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 	}
 	notes, err := u.Notes.Notes(ctx, string(v.ID), paths)
 	if err != nil {
-		return Joined{}, err
+		return Neighbourhood{}, err
 	}
 	kinds, err := u.Notes.Types(ctx, string(v.ID), paths)
 	if err != nil {
-		return Joined{}, err
+		return Neighbourhood{}, err
 	}
 
-	var out Joined
+	var out Neighbourhood
 	for _, one := range found {
 		if one.Path != "" {
 			ref, isNote := notes[one.Path]
@@ -168,7 +171,7 @@ func (u Around) Execute(ctx context.Context, v domain.Vault, deck string) (Joine
 			// A read fails when the vault itself is out of reach, and a panel
 			// of titles with no prose under any of them would say nothing about
 			// why. What is wrong with one note is an outcome, not an error.
-			return Joined{}, err
+			return Neighbourhood{}, err
 		}
 		out.Notes[i].Outcome = contents.Outcome
 		out.Notes[i].Body = contents.Body

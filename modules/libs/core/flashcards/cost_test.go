@@ -78,7 +78,7 @@ func learned(by history.Scheduler, at time.Time, faces int) map[history.CardFace
 func TestMinutesADayCountedOneCardAtATime(t *testing.T) {
 	by := history.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	cost := history.Cost{New: 20 * time.Second, Review: 9 * time.Second}
+	cost := history.AnswerCost{New: 20 * time.Second, Review: 9 * time.Second}
 	days := 60
 
 	at := learned(by, now, 40)
@@ -697,7 +697,7 @@ func TestWhatStandsLearnedToday(t *testing.T) {
 	}
 
 	for _, one := range []struct {
-		rule      history.Rule
+		rule      history.LearnedRule
 		interval  int
 		retention float64
 		learned   int
@@ -1187,7 +1187,7 @@ func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 
 	// The day the scheduler named already carries cards, so the placement moves
 	// the card and the arithmetic that adds days is reached.
-	loaded := func(on time.Time) *history.Spread {
+	loaded := func(on time.Time) *history.DueByDay {
 		s := history.Spreading(day)
 		for range 9 {
 			s.Holds(on)
@@ -1231,19 +1231,19 @@ func TestADayTwoBudgetsClosedNamesBoth(t *testing.T) {
 	for _, one := range []struct {
 		what        string
 		new, review int
-		want        history.Closing
+		want        history.BudgetNames
 	}{
 		{
 			what: "both counts spent", new: 12, review: 5,
-			want: history.Closing{history.ClosedNew, history.ClosedReviews},
+			want: history.BudgetNames{history.ClosedNew, history.ClosedReviews},
 		},
 		{
 			what: "the reviews over", new: 12, review: 500,
-			want: history.Closing{history.ClosedNew},
+			want: history.BudgetNames{history.ClosedNew},
 		},
 		{
 			what: "the new cards over", new: 500, review: 5,
-			want: history.Closing{history.ClosedReviews},
+			want: history.BudgetNames{history.ClosedReviews},
 		},
 		{
 			what: "both over", new: 500, review: 500,

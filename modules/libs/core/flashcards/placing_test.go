@@ -9,7 +9,7 @@ import (
 
 // counted is a table of the days of review, loaded with as many card faces on
 // each of these many days past an instant.
-func counted(d history.Day, at time.Time, on map[int]int) *history.Spread {
+func counted(d history.Day, at time.Time, on map[int]int) *history.DueByDay {
 	out := history.Spreading(d)
 	for day, cards := range on {
 		for range cards {

@@ -165,7 +165,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 // its own preset's, so the window under each button is the day the card will
 // come back on.
 func ahead(
-	under history.Under, on *history.Spread, face history.CardFaceID,
+	under history.Under, on *history.DueByDay, face history.CardFaceID,
 	s history.Schedule, now time.Time,
 ) map[history.Rating]time.Duration {
 	if under == nil {

@@ -58,8 +58,8 @@ func answering(t *testing.T, cards int) vaulted {
 }
 
 // curves is the simulator over one vault, on a named day.
-func (s vaulted) curves(now time.Time) flashcards.Curves {
-	return flashcards.Curves{
+func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
+	return flashcards.ProjectCurve{
 		Standings: s.standings, Schedules: s.kept, Presets: s.presets,
 		Day: today, Now: func() time.Time { return now },
 		Cores: runtime.GOMAXPROCS(0),
@@ -1101,7 +1101,7 @@ func TestACurveCarriesTheVerdictOnTheSettingsItWasDrawnUnder(t *testing.T) {
 	t.Parallel()
 	s := answering(t, 30)
 	for _, one := range []struct {
-		why history.Stopped
+		why history.StopReason
 		p   history.Preset
 	}{
 		{history.StoppedNothing, history.Preset{

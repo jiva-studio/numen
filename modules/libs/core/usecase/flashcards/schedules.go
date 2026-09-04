@@ -18,7 +18,7 @@ import (
 // thrown away and worked out again, which costs a replay and nothing else.
 const keptVersion = 2
 
-type kept struct {
+type scheduleCache struct {
 	V int `json:"v"`
 	// By is the assignment this was worked out under: which card face stood
 	// under which target. A schedule worked out under one assignment is not read
@@ -27,16 +27,16 @@ type kept struct {
 	// Files are the log files this was worked out from, each with the length it
 	// had. A run is appended to under one name, so a name alone would call a
 	// cache current while the answers written after it were never counted.
-	Files []keptFile     `json:"files"`
-	Faces []keptSchedule `json:"faces"`
+	Files []cachedFile     `json:"files"`
+	Faces []cachedSchedule `json:"faces"`
 }
 
-type keptFile struct {
+type cachedFile struct {
 	Name string `json:"name"`
 	Size int    `json:"size"`
 }
 
-type keptSchedule struct {
+type cachedSchedule struct {
 	Card       string  `json:"card"`
 	Face       string  `json:"face"`
 	Due        string  `json:"due"`
@@ -75,7 +75,7 @@ type Schedules struct {
 	At func(retention float64) history.Scheduler
 }
 
-// scheduling is which scheduler each card face is worked out by, and what that
+// assignment is which scheduler each card face is worked out by, and what that
 // assignment comes to.
 //
 // The mark is what says a cache is out of date. A target moving, a deck
@@ -83,15 +83,15 @@ type Schedules struct {
 // differently all move it, and the whole cache is thrown away: a schedule
 // depends on every answer before it, so nothing worked out under the old
 // assignment can be kept.
-type scheduling struct {
+type assignment struct {
 	under history.Under
 	mark  string
 }
 
 // plain is every card face on the one scheduler, at the preset a deck naming
 // none is scheduled by.
-func (u Schedules) plain() scheduling {
-	return scheduling{
+func (u Schedules) plain() assignment {
+	return assignment{
 		under: history.By(u.By),
 		mark:  marked([]string{u.By.Name(), u.opening(), history.Defaults().Placing()}),
 	}
@@ -112,7 +112,7 @@ func (u Schedules) opening() string {
 //
 // A card face whose deck names no preset is worked out at the defaults, and so
 // is every card of a vault nothing has read yet.
-func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, error) {
+func (u Schedules) asking(ctx context.Context, v domain.Vault) (assignment, error) {
 	if u.Presets.Links == nil || u.Standings.Notes == nil {
 		return u.plain(), nil
 	}
@@ -121,7 +121,7 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, erro
 		return u.plain(), nil
 	}
 	if err != nil {
-		return scheduling{}, err
+		return assignment{}, err
 	}
 	return u.under(ctx, v, u.Presets.Reading(), standing)
 }
@@ -129,8 +129,8 @@ func (u Schedules) asking(ctx context.Context, v domain.Vault) (scheduling, erro
 // under is the same, from the cards and the reading of the presets a caller
 // already holds.
 func (u Schedules) under(
-	ctx context.Context, v domain.Vault, reading *Reading, standing []Standing,
-) (scheduling, error) {
+	ctx context.Context, v domain.Vault, reading *PresetReads, standing []Standing,
+) (assignment, error) {
 	out := u.plain()
 	if reading == nil || reading.Links == nil {
 		return out, nil
@@ -144,7 +144,7 @@ func (u Schedules) under(
 		if !known {
 			p, err := reading.Of(ctx, v, one.Deck)
 			if err != nil {
-				return scheduling{}, err
+				return assignment{}, err
 			}
 			path = p.Path
 			asked[one.Deck] = path
@@ -238,7 +238,7 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held Held, asks scheduling) map[history.CardFaceID]history.Schedule {
+func (u Schedules) worked(held Held, asks assignment) map[history.CardFaceID]history.Schedule {
 	return projected(u.Day, held, asks)
 }
 
@@ -248,7 +248,7 @@ func (u Schedules) worked(held Held, asks scheduling) map[history.CardFaceID]his
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
 func (u Schedules) replayed(
-	ctx context.Context, v domain.Vault, held Held, asks scheduling,
+	ctx context.Context, v domain.Vault, held Held, asks assignment,
 ) map[history.CardFaceID]history.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
@@ -259,7 +259,7 @@ func (u Schedules) replayed(
 // filled works the answers out and remembers what they came to. It is what a
 // caller that has already found the cache out of date asks for.
 func (u Schedules) filled(
-	ctx context.Context, v domain.Vault, held Held, asks scheduling,
+	ctx context.Context, v domain.Vault, held Held, asks assignment,
 ) map[history.CardFaceID]history.Schedule {
 	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
@@ -269,7 +269,7 @@ func (u Schedules) filled(
 // projected is where the answers leave every card face, and is what a caller
 // that only reads them asks for.
 func projected(
-	d history.Day, held Held, asks scheduling,
+	d history.Day, held Held, asks assignment,
 ) map[history.CardFaceID]history.Schedule {
 	return held.Given().Replay(d, asks.under)
 }
@@ -286,7 +286,7 @@ func (u Schedules) remembered(
 	if err != nil {
 		return nil, false
 	}
-	var was kept
+	var was scheduleCache
 	if err := json.Unmarshal(raw, &was); err != nil {
 		return nil, false
 	}
@@ -314,7 +314,7 @@ func (u Schedules) remembered(
 
 // read reports whether a cache was worked out from exactly the log that now
 // stands: the same files, each the length it was read at.
-func read(was []keptFile, files []port.Entry) bool {
+func read(was []cachedFile, files []port.Entry) bool {
 	if len(was) != len(files) {
 		return false
 	}
@@ -336,12 +336,12 @@ func (u Schedules) remember(
 	if u.Kept == nil {
 		return
 	}
-	now := kept{V: keptVersion, By: mark}
+	now := scheduleCache{V: keptVersion, By: mark}
 	for _, one := range files {
-		now.Files = append(now.Files, keptFile{Name: one.Name, Size: one.Size})
+		now.Files = append(now.Files, cachedFile{Name: one.Name, Size: one.Size})
 	}
 	for on, s := range out {
-		now.Faces = append(now.Faces, keptSchedule{
+		now.Faces = append(now.Faces, cachedSchedule{
 			Card: on.Card, Face: on.Face,
 			Due:  s.Due.UTC().Format(history.Stamp),
 			Last: s.Last.UTC().Format(history.Stamp),
@@ -349,7 +349,7 @@ func (u Schedules) remember(
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})
 	}
-	slices.SortFunc(now.Faces, func(a, b keptSchedule) int {
+	slices.SortFunc(now.Faces, func(a, b cachedSchedule) int {
 		if a.Card != b.Card {
 			return strings.Compare(a.Card, b.Card)
 		}

@@ -74,7 +74,7 @@ func projections(t *testing.T) string {
 		for _, p := range goldenPresets() {
 			run := history.Simulation{
 				By: by, Day: goldenDay, Days: 60, Retains: goldenDays(60),
-				Cost: history.Cost{New: 19 * time.Second, Review: 7 * time.Second},
+				Cost: history.AnswerCost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: history.Spent{
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
 				},
@@ -168,7 +168,7 @@ func admitted(one []bool) string {
 	return out.String()
 }
 
-func closed(one []history.Closing) string {
+func closed(one []history.BudgetNames) string {
 	out := make([]string, len(one))
 	for i, each := range one {
 		out[i] = strings.Join(each.Names(), "+")

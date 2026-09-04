@@ -120,7 +120,7 @@ type loaded struct {
 	on     *loadCounts
 	owed   flashcards.Owed
 	sat    flashcards.Session
-	review flashcards.Counted
+	review flashcards.CountReviews
 	faces  int
 }
 
@@ -152,7 +152,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 			Marking: s.marking, Standings: s.standings, Schedules: schedules,
 			Presets: s.presets, Day: today, Now: time.Now,
 		},
-		review: flashcards.Counted{
+		review: flashcards.CountReviews{
 			Logs:      logs,
 			Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
 			Schedules: schedules,

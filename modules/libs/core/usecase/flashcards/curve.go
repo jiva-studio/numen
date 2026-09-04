@@ -46,7 +46,7 @@ type Curve struct {
 	// Stops is why the settings this curve was drawn under schedule nothing,
 	// and is empty where they schedule something. It is asked of the settings
 	// the request carried.
-	Stops history.Stopped
+	Stops history.StopReason
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
 	Decks int
@@ -94,7 +94,7 @@ type Point struct {
 	Short int
 	// Closed is every budget that closed the day here, in the words the preset
 	// writes them in, and is empty where the material itself ran out.
-	Closed history.Closing
+	Closed history.BudgetNames
 	// Clears is how many days of review at this place it takes before nothing
 	// is overdue. A curve standing over nothing overdue clears in none, and a
 	// place whose pace never gets there is history.NeverClears.
@@ -125,11 +125,11 @@ type Place struct {
 // Nowhere is a mark that falls outside the grid.
 var Nowhere = Place{Index: -1}
 
-// Curves is the simulator behind the one control of a preset.
+// ProjectCurve is the simulator behind the one control of a preset.
 //
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
-type Curves struct {
+type ProjectCurve struct {
 	Standings Standings
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
@@ -173,7 +173,7 @@ func steered(p history.Preset) error {
 // note holds. Path is the note the preset stands in and names the decks it
 // schedules, and a preset standing in no note schedules the decks that name
 // none.
-func (u Curves) Execute(
+func (u ProjectCurve) Execute(
 	ctx context.Context, v domain.Vault, path string, p history.Preset,
 ) (Curve, error) {
 	// The value the goal steers is written into the grid, and a grid runs only
@@ -277,7 +277,7 @@ func (u Curves) Execute(
 // The decks they schedule are the decks naming no preset, which is a question
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
-func (u Curves) scheduled(ctx context.Context, v domain.Vault, path string) ([]string, error) {
+func (u ProjectCurve) scheduled(ctx context.Context, v domain.Vault, path string) ([]string, error) {
 	decks, err := u.Standings.Decks(ctx, v)
 	if err != nil || path == "" || u.Presets.Links == nil {
 		return decks, err
@@ -305,8 +305,8 @@ func (u Curves) scheduled(ctx context.Context, v domain.Vault, path string) ([]s
 
 // pointing is how many of these decks name the preset at path. Asked is what
 // has already been worked out from the cards standing.
-func (u Curves) pointing(
-	ctx context.Context, v domain.Vault, reading *Reading, path string,
+func (u ProjectCurve) pointing(
+	ctx context.Context, v domain.Vault, reading *PresetReads, path string,
 	decks []string, asked map[string]bool,
 ) (int, error) {
 	out := 0
@@ -331,7 +331,7 @@ func (u Curves) pointing(
 // It runs from a short day to twice what carrying the whole load costs, so the
 // place where the load is carried stands inside it. Each place is the sitting a
 // person would sit down to now, which is the day the deck screen offers.
-func (u Curves) minutes(
+func (u ProjectCurve) minutes(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
@@ -393,7 +393,7 @@ func (u Curves) minutes(
 // week after week. Today is no part of it: the schedules a day opens with are
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
-func (u Curves) retention(
+func (u ProjectCurve) retention(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
@@ -443,7 +443,7 @@ func (u Curves) retention(
 // a date of today is no period at all, and reaches whichever is further off:
 // twice as far as the day named, or the day the material would be through at
 // one card a day, which is the slowest a day of review goes.
-func (u Curves) date(
+func (u ProjectCurve) date(
 	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
 	at map[history.CardFaceID]history.Schedule, unseen int,
 ) (Curve, error) {
@@ -512,7 +512,7 @@ func (u Curves) date(
 			Share:    ran.Through[day],
 			Enough:   reached(ran, day, ran.Short),
 			Short:    ran.Short,
-			Closed:   history.Closing{history.ClosedPaused},
+			Closed:   history.BudgetNames{history.ClosedPaused},
 			Clears:   ran.Clears,
 			Learned:  ran.Learned,
 			Learns:   ran.Learns,
@@ -568,7 +568,7 @@ func (u Curves) date(
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
 // of each place reading the context it was given.
-func (u Curves) places(count int, each func(at int) error) error {
+func (u ProjectCurve) places(count int, each func(at int) error) error {
 	failed := make([]error, count)
 	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup
@@ -650,10 +650,10 @@ func point(p history.Projection) Point {
 
 // closing is what closed the first day the preset admits. A preset admitting no
 // day is closed by the pause.
-func closing(p history.Projection) history.Closing {
+func closing(p history.Projection) history.BudgetNames {
 	day, any := p.Sitting()
 	if !any {
-		return history.Closing{history.ClosedPaused}
+		return history.BudgetNames{history.ClosedPaused}
 	}
 	return p.Closed[day]
 }
@@ -772,14 +772,14 @@ func nearest(grid []float64, value float64) int {
 }
 
 // at is the scheduler asking for a share of the cards to come back.
-func (u Curves) at(retention float64) history.Scheduler {
+func (u ProjectCurve) at(retention float64) history.Scheduler {
 	if u.By != nil {
 		return u.By(retention)
 	}
 	return history.NewFSRSAt(retention)
 }
 
-func (u Curves) now() time.Time {
+func (u ProjectCurve) now() time.Time {
 	if u.Now == nil {
 		return time.Now()
 	}

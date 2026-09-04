@@ -143,32 +143,32 @@ func (b Bounds) Check(at string, value float64) error {
 	if b.Holds(value) {
 		return nil
 	}
-	return &Outside{At: at, Number: value, Bounds: b}
+	return &OutsideBounds{At: at, Number: value, Bounds: b}
 }
 
-// Outside is a number a setting does not take, and how far that setting goes.
-// The number is left as the person wrote it and nothing is drawn at it.
-type Outside struct {
+// OutsideBounds is a number a setting does not take, and how far that setting
+// goes. The number is left as the person wrote it and nothing is drawn at it.
+type OutsideBounds struct {
 	// At is where the number sits in the file: `appearance.text_scale`.
 	At     string
 	Number float64
 	Bounds
 }
 
-func (o *Outside) Error() string {
+func (o *OutsideBounds) Error() string {
 	return fmt.Sprintf("%s is %v, and goes from %v to %v", o.At, o.Number, o.Least, o.Most)
 }
 
 // Outsides is every number the section holds that its setting does not take,
 // in the order the section names them.
-func (a Appearance) Outsides() []*Outside {
-	var found []*Outside
+func (a Appearance) Outsides() []*OutsideBounds {
+	var found []*OutsideBounds
 	for _, err := range []error{
 		InterfaceScaleBounds.Check("appearance.interface_scale", a.InterfaceScale),
 		TextScaleBounds.Check("appearance.text_scale", a.TextScale),
 		PartsUnderANodeBounds.Check("appearance.parts_under_a_node", float64(a.PartsUnderANode)),
 	} {
-		var outside *Outside
+		var outside *OutsideBounds
 		if errors.As(err, &outside) {
 			found = append(found, outside)
 		}
