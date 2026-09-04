@@ -176,12 +176,15 @@ func (t *Transcribing) drain(ctx context.Context) {
 }
 
 // Queue transcribes every recording this vault holds no transcript for, one
-// after another, until the context ends.
+// after another, until the context ends, behind the caller.
 //
 // The queue is not stored: which recordings owe their text is a question the
 // index already answers, so a round interrupted by the application closing is
 // taken up when it opens. It is asked again every so often, because a recording
 // dropped into a folder is one the last round did not see.
+//
+// The count is taken here and not in the goroutine it counts, so a wait that
+// begins the instant this returns covers the rounds behind it.
 func (t *Transcribing) Queue(
 	ctx context.Context,
 	known port.SourceQueries,
@@ -189,7 +192,19 @@ func (t *Transcribing) Queue(
 	v domain.Vault,
 ) {
 	t.going.Add(1)
-	defer t.going.Done()
+	go func() {
+		defer t.going.Done()
+		t.queueing(ctx, known, every, v)
+	}()
+}
+
+// queueing is the round, and the wait between rounds.
+func (t *Transcribing) queueing(
+	ctx context.Context,
+	known port.SourceQueries,
+	every time.Duration,
+	v domain.Vault,
+) {
 	for {
 		t.round(ctx, known, v)
 		select {

@@ -364,10 +364,13 @@ func (r *Recognising) done(id string) {
 }
 
 // Collecting asks after the batches left with a proofreader, until the context
-// is done. A batch outlives the run that left it, so one left before the
-// application closed is collected when it opens.
+// is done, behind the caller. A batch outlives the run that left it, so one
+// left before the application closed is collected when it opens.
 //
 // Nothing here is done unless a person configured a proofreader with a queue.
+//
+// The count is taken here and not in the goroutine it counts, so a wait that
+// begins the instant this returns covers the rounds behind it.
 func (r *Recognising) Collecting(
 	ctx context.Context,
 	known port.SourceQueries,
@@ -379,7 +382,20 @@ func (r *Recognising) Collecting(
 		return
 	}
 	r.going.Add(1)
-	defer r.going.Done()
+	go func() {
+		defer r.going.Done()
+		r.collecting(ctx, known, queue, every, vaults)
+	}()
+}
+
+// collecting is the round over every vault, and the wait between rounds.
+func (r *Recognising) collecting(
+	ctx context.Context,
+	known port.SourceQueries,
+	queue port.ProofreadQueue,
+	every time.Duration,
+	vaults []domain.Vault,
+) {
 	for {
 		for _, v := range vaults {
 			r.collect(ctx, known, queue, queue, v)
