@@ -51,7 +51,8 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 	onlyOffers(t, tools.Tools, "the reviewing port", []string{
 		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
 		"source_list", "source_read", "card_stencil_list", "card_read", "vault_get",
-		"card_add", "card_edit", "card_remove", "card_section_add",
+		"card_add", "card_edit", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove",
 	})
 }
 

@@ -114,6 +114,15 @@ func lineAt(body []byte, at, to int) (string, int) {
 	return strings.TrimRight(string(body[at:to]), "\r"), to
 }
 
+// lineFrom is the byte the line holding at begins at, looked for no further
+// back than from.
+func lineFrom(body []byte, from, at int) int {
+	if i := bytes.LastIndexByte(body[from:at], '\n'); i >= 0 {
+		return from + i + 1
+	}
+	return from
+}
+
 // trimBlankLines drops the lines at either end that hold nothing but
 // whitespace. What a line begins with is the person's, so an indented block
 // arrives indented.

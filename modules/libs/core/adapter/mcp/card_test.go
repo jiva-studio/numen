@@ -749,3 +749,112 @@ func TestRenamingTheFirstFieldReachesTheDecks(t *testing.T) {
 		t.Errorf("the card cut by that stencil came back as %q", written)
 	}
 }
+
+// roughDeck is a deck as a person leaves one: blank lines doubled where they
+// felt like it, and whitespace at the ends of their lines. None of it is what
+// the format would write, and all of it is theirs.
+const roughDeck = "---\ntype: deck\n---\n\n" +
+	"# Camelids\n\n\n" +
+	"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
+	roughAlpaca +
+	"## Vicuna ^9wq2ktr5bd\n\n[[Animal]]\n\n### Name\n\nVicuna\n"
+
+// roughAlpaca is the card no call below names, as its bytes stand.
+const roughAlpaca = "## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n\nsomebody's prose   \n   \n\n" +
+	"### Name\n\n\nAlpaca  \n\n\n### Height\n\nabout 36\"   \n\n\n"
+
+func roughVault() map[string]string {
+	return map[string]string{"Animal.md": stencil, "Animals.md": roughDeck}
+}
+
+// A deck is a file somebody writes by hand beside the tools, so a call that
+// names one card leaves every card it did not name the bytes it was.
+func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
+	for name, args := range map[string]map[string]any{
+		"card_add": {
+			"stencil": "Animal",
+			"values":  []map[string]string{{"field": "Name", "text": "Guanaco"}},
+		},
+		"card_edit": {
+			"mark":   llama,
+			"values": []map[string]string{{"field": "Height", "text": "about 46\""}},
+		},
+		"card_remove":         {"mark": llama},
+		"card_section_add":    {"name": "Others"},
+		"card_section_rename": {"section": 0, "name": "The ones with fur"},
+		"card_section_remove": {"section": 0},
+	} {
+		t.Run(name, func(t *testing.T) {
+			session, v := connected(t, roughVault())
+			call[map[string]any](t, session, name, with(args, map[string]any{
+				"path": "Animals.md", "fingerprint": deckFingerprint(t, session, "Animals.md"),
+			}))
+			if written := held(t, v, "Animals.md"); !strings.Contains(written, roughAlpaca) {
+				t.Errorf("the card the call did not name was rewritten:\n%q", written)
+			}
+		})
+	}
+}
+
+// with is one call's arguments beside the ones every call takes.
+func with(args, every map[string]any) map[string]any {
+	out := make(map[string]any, len(args)+len(every))
+	for k, v := range args {
+		out[k] = v
+	}
+	for k, v := range every {
+		out[k] = v
+	}
+	return out
+}
+
+// A person divides a deck and thinks better of the name, so a section is
+// renamed without the cards under it moving or being rewritten.
+func TestASectionIsRenamedAndTheCardsUnderItStay(t *testing.T) {
+	session, v := connected(t, vault())
+
+	call[map[string]any](t, session, "card_section_rename", map[string]any{
+		"path": "Animals.md", "section": 0, "name": "The ones with fur",
+		"fingerprint": deckFingerprint(t, session, "Animals.md"),
+	})
+
+	written := held(t, v, "Animals.md")
+	if !strings.Contains(written, "# The ones with fur\n") || strings.Contains(written, "# Camelids") {
+		t.Errorf("the heading was written as %q", written)
+	}
+	read := dealt(t, session, map[string]any{"path": "Animals.md"})
+	if len(read.Sections) != 1 || read.Sections[0] != "The ones with fur" {
+		t.Errorf("the deck came back with the sections %+v", read.Sections)
+	}
+	if read.Total != 2 || read.Cards[0].Mark != llama {
+		t.Errorf("renaming a section moved cards: %+v", read.Cards)
+	}
+}
+
+// A section is a name and nothing else, so taking one away takes the name and
+// leaves every card that stood under it where it was.
+func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
+	session, v := connected(t, vault())
+
+	call[map[string]any](t, session, "card_section_remove", map[string]any{
+		"path": "Animals.md", "section": 0,
+		"fingerprint": deckFingerprint(t, session, "Animals.md"),
+	})
+
+	if written := held(t, v, "Animals.md"); strings.Contains(written, "# Camelids") {
+		t.Errorf("the heading is still in the file: %q", written)
+	}
+	read := dealt(t, session, map[string]any{"path": "Animals.md"})
+	if len(read.Sections) != 0 {
+		t.Errorf("the deck came back with the sections %+v", read.Sections)
+	}
+	if read.Total != 2 {
+		t.Errorf("removing a section removed cards: the deck holds %d", read.Total)
+	}
+	if said := failing(t, session, "card_section_remove", map[string]any{
+		"path": "Animals.md", "section": 0,
+		"fingerprint": deckFingerprint(t, session, "Animals.md"),
+	}); !strings.Contains(said, "no section") {
+		t.Errorf("removing a section twice was answered %q", said)
+	}
+}

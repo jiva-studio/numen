@@ -231,18 +231,18 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		// answers with.
 		stands := 0
 		written, minted, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.DeckContents) (format.Deck, error) {
-				held := read.Body
-				at, under, err := placed(held, in.Section)
+			func(read cards.DeckContents, file *format.DeckFile) error {
+				card := format.Card{Stencil: in.Stencil, Values: values(in.Values)}
+				if in.Section == nil {
+					stands = len(read.Body.Cards)
+					return file.AddCard(card)
+				}
+				at, err := placed(read.Body, *in.Section)
 				if err != nil {
-					return format.Deck{}, err
+					return err
 				}
-				card := format.Card{
-					Stencil: in.Stencil, Section: under, Values: values(in.Values),
-				}
-				held.Cards = slices.Insert(held.Cards, at, card)
 				stands = at
-				return held, nil
+				return file.AddCardUnder(*in.Section, card)
 			})
 		if err != nil {
 			return nil, WriteOutcome{}, err
@@ -275,19 +275,24 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.DeckContents) (format.Deck, error) {
-				held := read.Body
-				at, err := standing(held.Cards, in.Mark)
-				if err != nil {
-					return format.Deck{}, err
+			func(read cards.DeckContents, file *format.DeckFile) error {
+				card := domain.CardID(in.Mark)
+				// A call writing nothing still says whether the deck holds the
+				// card it was addressed to.
+				if _, err := standing(read.Body.Cards, in.Mark); err != nil {
+					return err
 				}
 				if in.Stencil != "" {
-					held.Cards[at].Stencil = in.Stencil
+					if err := file.SetStencil(card, in.Stencil); err != nil {
+						return err
+					}
 				}
 				for _, v := range in.Values {
-					held.Cards[at] = filled(held.Cards[at], v)
+					if err := file.SetValue(card, v.Field, v.Text); err != nil {
+						return err
+					}
 				}
-				return held, nil
+				return nil
 			})
 		return nil, written, err
 	})
@@ -296,8 +301,11 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Name:  "card_remove",
 		Title: "Take a card out of a deck",
 		Description: "Remove one card from a deck: its heading, the stencil it named and " +
-			"every value under it. The rest of the file is left the bytes it was. " +
-			"Nothing brings it back, so read the deck before removing from it. The " +
+			"every value under it. The rest of the file is left the bytes it was, down to " +
+			"the blank lines and the whitespace at the ends of the lines; what every " +
+			"write of a deck puts right is the mark of a card carrying none and the " +
+			"heading of a card that has fallen out of step with its first field. " +
+			"Nothing brings the card back, so read the deck before removing from it. The " +
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
@@ -306,14 +314,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.DeckContents) (format.Deck, error) {
-				held := read.Body
-				at, err := standing(held.Cards, in.Mark)
-				if err != nil {
-					return format.Deck{}, err
-				}
-				held.Cards = slices.Delete(held.Cards, at, at+1)
-				return held, nil
+			func(_ cards.DeckContents, file *format.DeckFile) error {
+				return file.RemoveCard(domain.CardID(in.Mark))
 			})
 		return nil, written, err
 	})
@@ -333,14 +335,57 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.DeckContents) (format.Deck, error) {
-				held := read.Body
-				held.Sections = append(held.Sections, format.Section{Name: in.Name})
-				return held, nil
+			func(_ cards.DeckContents, file *format.DeckFile) error {
+				return file.AddSection(format.Section{Name: in.Name})
 			})
 		return nil, written, err
 	})
 
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_section_rename",
+		Title: "Rename a section of a deck",
+		Description: "Give one of a deck's sections a different name. Only the heading " +
+			"line is written: the cards standing under it stay where they are, keep their " +
+			"marks and keep what they hold, and what a person wrote beneath the heading is " +
+			"left as it stands. The section is named by where it stands in the deck, " +
+			"counted from the first, which is what `card_read` gives under `sections`. The " +
+			"fingerprint from `card_read` is required, and a write lands only on the deck " +
+			"that fingerprint names.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path        string `json:"path" jsonschema:"the deck the section is in"`
+		Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
+		Name        string `json:"name" jsonschema:"what it is called from now on"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+			func(_ cards.DeckContents, file *format.DeckFile) error {
+				return file.RenameSection(in.Section, in.Name)
+			})
+		return nil, written, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_section_remove",
+		Title: "Take a section out of a deck",
+		Description: "Remove the heading of one of a deck's sections. A section is a name " +
+			"and nothing else, so this takes away the name alone: no card is removed, and " +
+			"the cards that stood under the heading stay in the file, in the order they " +
+			"were, under whatever section now stands above them. What a person wrote " +
+			"beneath the heading stays there too. The section is named by where it stands " +
+			"in the deck, counted from the first, which is what `card_read` gives under " +
+			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
+			"only on the deck that fingerprint names.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path        string `json:"path" jsonschema:"the deck the section is in"`
+		Section     int    `json:"section" jsonschema:"where the section stands in the deck's sections, counted from the first, as card_read gives them"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+			func(_ cards.DeckContents, file *format.DeckFile) error {
+				return file.RemoveSection(in.Section)
+			})
+		return nil, written, err
+	})
 }
 
 // addCardMakingTools are what a vault is arranged into: a deck, a stencil, and
@@ -451,13 +496,17 @@ type WriteOutcome struct {
 	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
 }
 
-// changing reads a deck, hands it to change, and puts back what comes out, with
-// the mark every card that carried none was given. The preamble, the tail,
-// every section and every card change did not touch are written as the bytes
-// they arrived as.
+// changing reads a deck, opens its body for splicing, hands it to change, and
+// puts back what comes out, with the mark every card that carried none was
+// given.
+//
+// A change is a splice: the run one card, one value or one heading occupies is
+// replaced. The preamble, the tail, and every section and card the change did
+// not name are written as the bytes they arrived as, down to the blank lines
+// and the whitespace the person left at the ends of their lines.
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
-	change func(cards.DeckContents) (format.Deck, error),
+	change func(read cards.DeckContents, file *format.DeckFile) error,
 ) (WriteOutcome, []format.Minted, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
@@ -472,14 +521,11 @@ func changing(
 		return WriteOutcome{}, nil, fmt.Errorf("%s: %s", path, why)
 	}
 
-	held, err := change(read)
-	if err != nil {
+	file := core.Cards.DeckEdit(read.Raw)
+	if err := change(read, file); err != nil {
 		return WriteOutcome{}, nil, err
 	}
-	body, err := core.Cards.DeckBody(held)
-	if err != nil {
-		return WriteOutcome{}, nil, err
-	}
+	body := file.Body()
 	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, seen)
 	// A write that reached the vault is a write that happened, so the caller is
 	// handed the fingerprint it presents at its next write.
@@ -487,7 +533,9 @@ func changing(
 		return WriteOutcome{}, nil, err
 	}
 	return WriteOutcome{
-		Path: path, Fingerprint: fingerprintOf(wrote.Fingerprint), Cards: len(held.Cards),
+		Path:        path,
+		Fingerprint: fingerprintOf(wrote.Fingerprint),
+		Cards:       len(file.Deck(domain.Fingerprint{}).Cards),
 	}, wrote.Minted, nil
 }
 
@@ -526,36 +574,20 @@ func markOf(minted []format.Minted, at int) string {
 	return ""
 }
 
-// placed is where a card being written goes in a deck, and which section it
-// stands under. A call naming no section writes at the end of the deck, under
-// whatever section stands last.
-func placed(d format.Deck, section *int) (at, under int, err error) {
-	if section == nil {
-		return len(d.Cards), len(d.Sections) - 1, nil
-	}
-	if *section < 0 || *section >= len(d.Sections) {
-		return 0, 0, fmt.Errorf(
-			"this deck has %d sections, so there is none standing at %d", len(d.Sections), *section)
+// placed is where a card written at the end of one of a deck's sections stands,
+// counted from the deck's first card. A card goes at the end of its section,
+// which is in front of the first card of a later one.
+func placed(d format.Deck, section int) (int, error) {
+	if section < 0 || section >= len(d.Sections) {
+		return 0, fmt.Errorf(
+			"this deck has %d sections, so there is none standing at %d", len(d.Sections), section)
 	}
 	for i, card := range d.Cards {
-		if card.Section > *section {
-			return i, *section, nil
+		if card.Section > section {
+			return i, nil
 		}
 	}
-	return len(d.Cards), *section, nil
-}
-
-// holding is the card with one value written into it. A field the card carries
-// is replaced where it stands, and one it does not is added at the end.
-func filled(card format.Card, v FieldValue) format.Card {
-	for at, held := range card.Values {
-		if held.Field == v.Field {
-			card.Values[at].Text = v.Text
-			return card
-		}
-	}
-	card.Values = append(card.Values, format.Value{Field: v.Field, Text: v.Text})
-	return card
+	return len(d.Cards), nil
 }
 
 // whyNotADeck says why a path is no deck to write cards into, and nothing where

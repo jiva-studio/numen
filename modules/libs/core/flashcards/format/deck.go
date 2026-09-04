@@ -53,10 +53,15 @@ type cardSpan struct {
 	// head is the byte the heading line begins at and from is the byte after
 	// it, which is the run the first field's value occupies. end is where the
 	// card stops: the next card, or the end of the file.
-	head   int
-	from   int
-	end    int
-	values []valueSpan
+	head int
+	from int
+	end  int
+	// linkFrom and linkTo are the run the wikilink naming the stencil occupies,
+	// without the break it ends on. A card naming no stencil holds an empty run
+	// at the byte one would be written at.
+	linkFrom int
+	linkTo   int
+	values   []valueSpan
 }
 
 // valueSpan is where one field of a card stands: its heading line, and the
@@ -112,13 +117,17 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 		at := len(d.Cards)
 		heading, carried := ReadHeading(s.name)
 		card := Card{Heading: heading, Mark: carried, Section: under}
-		span := cardSpan{name: s.name, mark: carried, head: s.head, from: s.from, end: end}
+		span := cardSpan{
+			name: s.name, mark: carried, head: s.head, from: s.from, end: end,
+			linkFrom: s.from, linkTo: s.from,
+		}
 
 		target, leadFrom := stencil(body, s.from, s.to)
 		card.Stencil = target
 		read = trimmedEnd(body, s.head, s.from)
 		if target != "" {
 			read = trimmedEnd(body, s.from, leadFrom)
+			span.linkFrom, span.linkTo = lineFrom(body, s.from, read), read
 		}
 		lead, leadEnd := run(body, leadFrom, s.to)
 		card.Lead = lead

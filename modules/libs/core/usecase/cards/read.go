@@ -33,6 +33,9 @@ type DeckContents struct {
 	// Body is what the file says. It holds no cards for any outcome but Ok, and
 	// a deck over the bound carries the problem that says why.
 	Body format.Deck
+	// Raw is the prose of the file as it stands, which is what a caller changing
+	// one card splices. It is empty for any outcome but Ok.
+	Raw string
 	// Stencils is where the wikilink under each card's heading lands, keyed by
 	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
@@ -76,7 +79,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	switch outcome {
 	case note.Ok:
-		out.Body = format.ReadDeck(n)
+		out.Body, out.Raw = format.ReadDeck(n), n.Body
 		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Body)
 		if err != nil {
 			return DeckContents{}, err

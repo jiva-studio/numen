@@ -96,7 +96,7 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 			Write:       cutting.Write,
 			Create:      cutting.Create,
 			RenameField: cutting.Rename,
-			DeckBody:    format.DeckBody,
+			DeckEdit:    format.OpenDeckBody,
 			StencilBody: container.StencilBody,
 		},
 
@@ -228,7 +228,8 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
 		"card_stencil_list", "card_read", "card_add", "card_edit", "card_remove",
-		"card_section_add", "card_deck_create", "card_stencil_create", "card_field_rename",
+		"card_section_add", "card_section_rename", "card_section_remove",
+		"card_deck_create", "card_stencil_create", "card_field_rename",
 		"vault_get", "vault_problems",
 		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})

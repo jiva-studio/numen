@@ -688,3 +688,139 @@ func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
 		t.Errorf("body = %v, want ErrNoSuchSection", err)
 	}
 }
+
+// rough is a deck body as a person leaves one: CRLF endings, blank lines
+// doubled where they felt like it, and whitespace at the ends of their lines.
+// None of it is what the format would write, and all of it is theirs.
+var rough = strings.ReplaceAll(
+	"Cards I am learning.\n\n\n"+
+		"# The ones with fur\n\n"+
+		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n"+
+		"## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n\nsomebody's prose   \n   \n\n"+
+		"### Name\n\n\nAlpaca  \n\n\n### Height\n\nabout 36\"   \n\n\n"+
+		"## Vicuna ^9wq2ktr5bd\n\n[[Animal]]\n\n### Name\n\nVicuna \n\n\n### Height\n\nabout 34\"\n\n"+
+		"## Guanaco ^5xz1hbn7ty\n\n[[Animal]]\n\n### Name\n\nGuanaco\n\n"+
+		"# The ones without\n",
+	"\n", "\r\n")
+
+// The marks of the two cards no change below names.
+const (
+	alpaca = "3n8vr4tqch"
+	vicuna = "9wq2ktr5bd"
+)
+
+// A deck is a file somebody writes by hand beside the tools, so a change that
+// names one card leaves every other card the bytes it was — the blank lines
+// they doubled, the whitespace at the ends of their lines, and the endings the
+// file carries.
+func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
+	for name, change := range map[string]func(*format.DeckFile) error{
+		"a value written": func(f *format.DeckFile) error {
+			return f.SetValue(llama, "Height", "about 46\"")
+		},
+		"a field the card did not carry": func(f *format.DeckFile) error {
+			return f.SetValue(llama, "Life span", "about 20 years")
+		},
+		"a stencil written": func(f *format.DeckFile) error {
+			return f.SetStencil(llama, "Beast")
+		},
+		"a card removed": func(f *format.DeckFile) error {
+			return f.RemoveCard(llama)
+		},
+		"a card added": func(f *format.DeckFile) error {
+			return f.AddCard(format.Card{Heading: "Camel", Stencil: "Animal"})
+		},
+		"a card added under a section": func(f *format.DeckFile) error {
+			return f.AddCardUnder(0, format.Card{Heading: "Camel", Stencil: "Animal"})
+		},
+		"a section added": func(f *format.DeckFile) error {
+			return f.AddSection(format.Section{Name: "The ones without"})
+		},
+		"a section renamed": func(f *format.DeckFile) error {
+			return f.RenameSection(0, "Furry")
+		},
+		"a section removed": func(f *format.DeckFile) error {
+			return f.RemoveSection(0)
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			file := format.OpenDeckBody(rough)
+			if err := change(file); err != nil {
+				t.Fatalf("change: %v", err)
+			}
+			written := file.Body()
+			for _, mark := range []domain.CardID{alpaca, vicuna} {
+				was := cardRun(t, rough, mark)
+				if !strings.Contains(written, was) {
+					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
+						mark, was, cardRun(t, written, mark))
+				}
+			}
+		})
+	}
+}
+
+// cardRun is the bytes one card of a body occupies, from its heading to the
+// heading of the card below it. Neither card it is asked about stands last, so
+// what follows one is always another card's heading.
+func cardRun(t *testing.T, body string, card domain.CardID) string {
+	t.Helper()
+	from := strings.Index(body, "## "+opened(t, body, card))
+	if from < 0 {
+		t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
+	}
+	rest := body[from:]
+	if at := strings.Index(rest[1:], "\n## "); at >= 0 {
+		return rest[:at+2]
+	}
+	return rest
+}
+
+// opened is the heading line of the card of a mark, without its hashes.
+func opened(t *testing.T, body string, card domain.CardID) string {
+	t.Helper()
+	for _, line := range strings.Split(markdown.Normalised(body), "\n") {
+		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {
+			return strings.TrimPrefix(line, "## ")
+		}
+	}
+	t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
+	return ""
+}
+
+// A card of a deck that never held one is given the wikilink under its heading,
+// and the values it already holds stay where they stand.
+func TestSetStencilOnACardThatNamedNone(t *testing.T) {
+	file := format.OpenDeckBody("## Llama ^k7m2xq9fzp\n\nsomebody's prose\n\n### Name\n\nLlama\n")
+	if err := file.SetStencil(llama, "Animal"); err != nil {
+		t.Fatalf("set the stencil: %v", err)
+	}
+	want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\nsomebody's prose\n\n### Name\n\nLlama\n"
+	if got := file.Body(); got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// Removing the last card of a deck leaves what is above it ending on the one
+// break a file ends with.
+func TestRemovingTheLastCardLeavesNoBlankLine(t *testing.T) {
+	file := format.OpenDeckBody(
+		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
+			"## Alpaca ^3n8vr4tqch\n\n[[Animal]]\n\n### Name\n\nAlpaca\n")
+	if err := file.RemoveCard(alpaca); err != nil {
+		t.Fatalf("remove: %v", err)
+	}
+	want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n"
+	if got := file.Body(); got != want {
+		t.Errorf("body\n want %q\n  got %q", want, got)
+	}
+}
+
+// A card asked into a section the deck does not hold is refused, the way a card
+// written under one is.
+func TestAddCardUnderASectionTheDeckDoesNotHold(t *testing.T) {
+	file := format.OpenDeckBody(rough)
+	if err := file.AddCardUnder(9, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
+		t.Errorf("add = %v, want ErrNoSuchSection", err)
+	}
+}

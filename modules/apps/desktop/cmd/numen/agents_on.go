@@ -170,7 +170,7 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 			Write:       cutting.Write,
 			Create:      cutting.Create,
 			RenameField: cutting.Rename,
-			DeckBody:    format.DeckBody,
+			DeckEdit:    format.OpenDeckBody,
 			StencilBody: container.StencilBody,
 		},
 

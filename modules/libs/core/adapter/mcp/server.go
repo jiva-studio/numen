@@ -104,10 +104,10 @@ type Cards struct {
 	Write       cards.Write
 	Create      cards.Create
 	RenameField cards.RenameField
-	// DeckBody is the markdown a deck of cards is written as, and StencilBody
-	// the markdown a stencil's faces are. A tool changes cards and hands them
-	// back; what the file then reads as is the format's.
-	DeckBody    func(d format.Deck) (string, error)
+	// DeckEdit holds a deck's body open so that one card can be changed and every
+	// other byte left as it arrived, and StencilBody is the markdown a stencil's
+	// faces are written as.
+	DeckEdit    func(body string) *format.DeckFile
 	StencilBody func(preamble string, faces []format.FaceTemplate, tail string) (string, error)
 }
 

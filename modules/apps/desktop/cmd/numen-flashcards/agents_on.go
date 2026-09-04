@@ -179,7 +179,7 @@ func reviewing(
 			Read:     cutting.Read,
 			List:     cutting.List,
 			Write:    cutting.Write,
-			DeckBody: format.DeckBody,
+			DeckEdit: format.OpenDeckBody,
 		},
 	}
 }

@@ -56,6 +56,8 @@ var doing = map[string]Tool{
 	"card_edit":           {Kind: port.StepEdit},
 	"card_remove":         {Kind: port.StepRemove},
 	"card_section_add":    {Kind: port.StepEdit},
+	"card_section_rename": {Kind: port.StepMove},
+	"card_section_remove": {Kind: port.StepRemove},
 	"card_deck_create":    {Kind: port.StepEdit},
 	"card_stencil_create": {Kind: port.StepEdit},
 	// A field's name stands in the stencil that declares it and in every card

@@ -48,6 +48,12 @@ type Document struct {
 	unterminated bool
 }
 
+// OpenBody holds prose alone open for changing. There is no frontmatter to
+// read, so the whole of it is body, and the line ending is the prose's own.
+func OpenBody(body []byte) *Document {
+	return &Document{eol: lineEnding(body), body: body}
+}
+
 // Open reads a note for changing.
 func Open(raw []byte) (*Document, error) {
 	d := &Document{eol: lineEnding(raw)}
