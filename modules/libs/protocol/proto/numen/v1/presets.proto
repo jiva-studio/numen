@@ -14,6 +14,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/shared.proto";
+import "numen/v1/theme.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
@@ -362,6 +363,10 @@ message GetDeckPresetResponse {
   // write. Absent for a deck naming no preset, and when the preset was
   // refused.
   optional Fingerprint at = 3;
+
+  // How far each setting goes. A client asking a person for a number says
+  // these, and a number outside them is refused here.
+  SettingsBounds bounds = 4;
 }
 
 message ListPresetsRequest {}
@@ -436,6 +441,27 @@ message ReadPresetResponse {
   // The file the settings came out of, for the caller to present at its next
   // write. Absent when the preset was refused.
   optional Fingerprint at = 3;
+
+  // How far each setting goes. A client asking a person for a number says
+  // these, and a number outside them is refused here.
+  SettingsBounds bounds = 4;
+}
+
+// SettingsBounds is how far each setting of a preset may go. They are the
+// application's and not the preset's: the same bounds answer every read, and a
+// number outside the one it belongs to is refused where it is written.
+//
+// A setting no bound is given for goes as far as its type does.
+message SettingsBounds {
+  Bounds minutes_a_day = 1;
+  Bounds new_a_day = 2;
+  Bounds reviews_a_day = 3;
+  Bounds retention = 4;
+  Bounds backlog = 5;
+  Bounds interval = 6;
+
+  // How much of a day's load one day of the week may carry, in per cent.
+  Bounds load = 7;
 }
 
 message WritePresetRequest {

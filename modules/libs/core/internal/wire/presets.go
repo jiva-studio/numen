@@ -18,6 +18,26 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
+// SettingsBounds is how far each setting of a preset goes, as the schema
+// carries it. They are the domain's own, so a client draws the field a person
+// types into from what the write is held to.
+func SettingsBounds() *v1.SettingsBounds {
+	return &v1.SettingsBounds{
+		MinutesADay: bounded(review.MinutesADayBounds),
+		NewADay:     bounded(review.NewADayBounds),
+		ReviewsADay: bounded(review.ReviewsADayBounds),
+		Retention:   bounded(review.RetentionBounds),
+		Backlog:     bounded(review.BacklogBounds),
+		Interval:    bounded(review.IntervalBounds),
+		Load:        bounded(review.LoadBounds),
+	}
+}
+
+// bounded is one pair of bounds as the schema carries it.
+func bounded(b review.Bounds) *v1.Bounds {
+	return &v1.Bounds{Least: b.Least, Most: b.Most}
+}
+
 // PresetOf is one preset as the schema carries it.
 func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
 	return &v1.Preset{

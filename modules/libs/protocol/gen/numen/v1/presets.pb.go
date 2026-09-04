@@ -961,7 +961,10 @@ type GetDeckPresetResponse struct {
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent for a deck naming no preset, and when the preset was
 	// refused.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// How far each setting goes. A client asking a person for a number says
+	// these, and a number outside them is refused here.
+	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1013,6 +1016,13 @@ func (x *GetDeckPresetResponse) GetRefusal() Refusal {
 func (x *GetDeckPresetResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
+	}
+	return nil
+}
+
+func (x *GetDeckPresetResponse) GetBounds() *SettingsBounds {
+	if x != nil {
+		return x.Bounds
 	}
 	return nil
 }
@@ -1434,7 +1444,10 @@ type ReadPresetResponse struct {
 	Refusal *Refusal `protobuf:"varint,2,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
 	// The file the settings came out of, for the caller to present at its next
 	// write. Absent when the preset was refused.
-	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	// How far each setting goes. A client asking a person for a number says
+	// these, and a number outside them is refused here.
+	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1490,6 +1503,111 @@ func (x *ReadPresetResponse) GetAt() *Fingerprint {
 	return nil
 }
 
+func (x *ReadPresetResponse) GetBounds() *SettingsBounds {
+	if x != nil {
+		return x.Bounds
+	}
+	return nil
+}
+
+// SettingsBounds is how far each setting of a preset may go. They are the
+// application's and not the preset's: the same bounds answer every read, and a
+// number outside the one it belongs to is refused where it is written.
+//
+// A setting no bound is given for goes as far as its type does.
+type SettingsBounds struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	MinutesADay *Bounds                `protobuf:"bytes,1,opt,name=minutes_a_day,json=minutesADay,proto3" json:"minutes_a_day,omitempty"`
+	NewADay     *Bounds                `protobuf:"bytes,2,opt,name=new_a_day,json=newADay,proto3" json:"new_a_day,omitempty"`
+	ReviewsADay *Bounds                `protobuf:"bytes,3,opt,name=reviews_a_day,json=reviewsADay,proto3" json:"reviews_a_day,omitempty"`
+	Retention   *Bounds                `protobuf:"bytes,4,opt,name=retention,proto3" json:"retention,omitempty"`
+	Backlog     *Bounds                `protobuf:"bytes,5,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	Interval    *Bounds                `protobuf:"bytes,6,opt,name=interval,proto3" json:"interval,omitempty"`
+	// How much of a day's load one day of the week may carry, in per cent.
+	Load          *Bounds `protobuf:"bytes,7,opt,name=load,proto3" json:"load,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SettingsBounds) Reset() {
+	*x = SettingsBounds{}
+	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SettingsBounds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SettingsBounds) ProtoMessage() {}
+
+func (x *SettingsBounds) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SettingsBounds.ProtoReflect.Descriptor instead.
+func (*SettingsBounds) Descriptor() ([]byte, []int) {
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SettingsBounds) GetMinutesADay() *Bounds {
+	if x != nil {
+		return x.MinutesADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetNewADay() *Bounds {
+	if x != nil {
+		return x.NewADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetReviewsADay() *Bounds {
+	if x != nil {
+		return x.ReviewsADay
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetRetention() *Bounds {
+	if x != nil {
+		return x.Retention
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetBacklog() *Bounds {
+	if x != nil {
+		return x.Backlog
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetInterval() *Bounds {
+	if x != nil {
+		return x.Interval
+	}
+	return nil
+}
+
+func (x *SettingsBounds) GetLoad() *Bounds {
+	if x != nil {
+		return x.Load
+	}
+	return nil
+}
+
 type WritePresetRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -1505,7 +1623,7 @@ type WritePresetRequest struct {
 
 func (x *WritePresetRequest) Reset() {
 	*x = WritePresetRequest{}
-	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	mi := &file_numen_v1_presets_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1517,7 +1635,7 @@ func (x *WritePresetRequest) String() string {
 func (*WritePresetRequest) ProtoMessage() {}
 
 func (x *WritePresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[16]
+	mi := &file_numen_v1_presets_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1530,7 +1648,7 @@ func (x *WritePresetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WritePresetRequest.ProtoReflect.Descriptor instead.
 func (*WritePresetRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *WritePresetRequest) GetPath() string {
@@ -1569,7 +1687,7 @@ type WritePresetResponse struct {
 
 func (x *WritePresetResponse) Reset() {
 	*x = WritePresetResponse{}
-	mi := &file_numen_v1_presets_proto_msgTypes[17]
+	mi := &file_numen_v1_presets_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1581,7 +1699,7 @@ func (x *WritePresetResponse) String() string {
 func (*WritePresetResponse) ProtoMessage() {}
 
 func (x *WritePresetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[17]
+	mi := &file_numen_v1_presets_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1594,7 +1712,7 @@ func (x *WritePresetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WritePresetResponse.ProtoReflect.Descriptor instead.
 func (*WritePresetResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *WritePresetResponse) GetRefusal() Refusal {
@@ -1625,7 +1743,7 @@ type ComputeCurveRequest struct {
 
 func (x *ComputeCurveRequest) Reset() {
 	*x = ComputeCurveRequest{}
-	mi := &file_numen_v1_presets_proto_msgTypes[18]
+	mi := &file_numen_v1_presets_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1637,7 +1755,7 @@ func (x *ComputeCurveRequest) String() string {
 func (*ComputeCurveRequest) ProtoMessage() {}
 
 func (x *ComputeCurveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[18]
+	mi := &file_numen_v1_presets_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1650,7 +1768,7 @@ func (x *ComputeCurveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComputeCurveRequest.ProtoReflect.Descriptor instead.
 func (*ComputeCurveRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ComputeCurveRequest) GetPath() string {
@@ -1676,7 +1794,7 @@ type ComputeCurveResponse struct {
 
 func (x *ComputeCurveResponse) Reset() {
 	*x = ComputeCurveResponse{}
-	mi := &file_numen_v1_presets_proto_msgTypes[19]
+	mi := &file_numen_v1_presets_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1688,7 +1806,7 @@ func (x *ComputeCurveResponse) String() string {
 func (*ComputeCurveResponse) ProtoMessage() {}
 
 func (x *ComputeCurveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_presets_proto_msgTypes[19]
+	mi := &file_numen_v1_presets_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1701,7 +1819,7 @@ func (x *ComputeCurveResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComputeCurveResponse.ProtoReflect.Descriptor instead.
 func (*ComputeCurveResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_presets_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_presets_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ComputeCurveResponse) GetCurve() *Curve {
@@ -1715,7 +1833,7 @@ var File_numen_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xed\x03\n" +
+	"\x16numen/v1/presets.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x14numen/v1/theme.proto\"\xed\x03\n" +
 	"\bSettings\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x0e.numen.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1773,11 +1891,12 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
 	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
 	"\x14GetDeckPresetRequest\x12\x12\n" +
-	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xc2\x01\n" +
+	"\x04deck\x18\x01 \x01(\tR\x04deck\"\xf4\x01\n" +
 	"\x15GetDeckPresetResponse\x12-\n" +
 	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01B\t\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
+	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
@@ -1808,15 +1927,24 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\b_refusalB\x05\n" +
 	"\x03_atJ\x04\b\x02\x10\x03R\achanged\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xbf\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xf1\x01\n" +
 	"\x12ReadPresetResponse\x12-\n" +
 	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01\x12*\n" +
-	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01B\t\n" +
+	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x02R\x02at\x88\x01\x01\x120\n" +
+	"\x06bounds\x18\x04 \x01(\v2\x18.numen.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"\x91\x01\n" +
+	"\x03_at\"\xda\x02\n" +
+	"\x0eSettingsBounds\x124\n" +
+	"\rminutes_a_day\x18\x01 \x01(\v2\x10.numen.v1.BoundsR\vminutesADay\x12,\n" +
+	"\tnew_a_day\x18\x02 \x01(\v2\x10.numen.v1.BoundsR\anewADay\x124\n" +
+	"\rreviews_a_day\x18\x03 \x01(\v2\x10.numen.v1.BoundsR\vreviewsADay\x12.\n" +
+	"\tretention\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\tretention\x12*\n" +
+	"\abacklog\x18\x05 \x01(\v2\x10.numen.v1.BoundsR\abacklog\x12,\n" +
+	"\binterval\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\binterval\x12$\n" +
+	"\x04load\x18\a \x01(\v2\x10.numen.v1.BoundsR\x04load\"\x91\x01\n" +
 	"\x12WritePresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
 	"\bsettings\x18\x02 \x01(\v2\x12.numen.v1.SettingsR\bsettings\x12.\n" +
@@ -1878,7 +2006,7 @@ func file_numen_v1_presets_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_presets_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_numen_v1_presets_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_numen_v1_presets_proto_goTypes = []any{
 	(Goal)(0),                     // 0: numen.v1.Goal
 	(Rule)(0),                     // 1: numen.v1.Rule
@@ -1900,18 +2028,20 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*ScheduleDeckResponse)(nil),  // 17: numen.v1.ScheduleDeckResponse
 	(*ReadPresetRequest)(nil),     // 18: numen.v1.ReadPresetRequest
 	(*ReadPresetResponse)(nil),    // 19: numen.v1.ReadPresetResponse
-	(*WritePresetRequest)(nil),    // 20: numen.v1.WritePresetRequest
-	(*WritePresetResponse)(nil),   // 21: numen.v1.WritePresetResponse
-	(*ComputeCurveRequest)(nil),   // 22: numen.v1.ComputeCurveRequest
-	(*ComputeCurveResponse)(nil),  // 23: numen.v1.ComputeCurveResponse
-	nil,                           // 24: numen.v1.Settings.LoadEntry
-	(Refusal)(0),                  // 25: numen.v1.Refusal
-	(*Fingerprint)(nil),           // 26: numen.v1.Fingerprint
+	(*SettingsBounds)(nil),        // 20: numen.v1.SettingsBounds
+	(*WritePresetRequest)(nil),    // 21: numen.v1.WritePresetRequest
+	(*WritePresetResponse)(nil),   // 22: numen.v1.WritePresetResponse
+	(*ComputeCurveRequest)(nil),   // 23: numen.v1.ComputeCurveRequest
+	(*ComputeCurveResponse)(nil),  // 24: numen.v1.ComputeCurveResponse
+	nil,                           // 25: numen.v1.Settings.LoadEntry
+	(Refusal)(0),                  // 26: numen.v1.Refusal
+	(*Fingerprint)(nil),           // 27: numen.v1.Fingerprint
+	(*Bounds)(nil),                // 28: numen.v1.Bounds
 }
 var file_numen_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.Settings.goal:type_name -> numen.v1.Goal
 	2,  // 1: numen.v1.Settings.counts:type_name -> numen.v1.Counts
-	24, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
+	25, // 2: numen.v1.Settings.load:type_name -> numen.v1.Settings.LoadEntry
 	1,  // 3: numen.v1.Settings.learned:type_name -> numen.v1.Rule
 	4,  // 4: numen.v1.Preset.settings:type_name -> numen.v1.Settings
 	3,  // 5: numen.v1.Preset.stops:type_name -> numen.v1.Stopped
@@ -1921,41 +2051,50 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	8,  // 9: numen.v1.Curve.now:type_name -> numen.v1.Mark
 	8,  // 10: numen.v1.Curve.suggested:type_name -> numen.v1.Mark
 	5,  // 11: numen.v1.GetDeckPresetResponse.preset:type_name -> numen.v1.Preset
-	25, // 12: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 13: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
-	13, // 14: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.Listed
-	25, // 15: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 16: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 17: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 18: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
-	5,  // 19: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
-	25, // 20: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 21: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 22: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
-	26, // 23: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
-	25, // 24: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
-	26, // 25: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
-	4,  // 26: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
-	6,  // 27: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve
-	9,  // 28: numen.v1.PresetsService.GetDeckPreset:input_type -> numen.v1.GetDeckPresetRequest
-	11, // 29: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
-	14, // 30: numen.v1.PresetsService.CreatePreset:input_type -> numen.v1.CreatePresetRequest
-	16, // 31: numen.v1.PresetsService.ScheduleDeck:input_type -> numen.v1.ScheduleDeckRequest
-	18, // 32: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
-	20, // 33: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
-	22, // 34: numen.v1.PresetsService.ComputeCurve:input_type -> numen.v1.ComputeCurveRequest
-	10, // 35: numen.v1.PresetsService.GetDeckPreset:output_type -> numen.v1.GetDeckPresetResponse
-	12, // 36: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
-	15, // 37: numen.v1.PresetsService.CreatePreset:output_type -> numen.v1.CreatePresetResponse
-	17, // 38: numen.v1.PresetsService.ScheduleDeck:output_type -> numen.v1.ScheduleDeckResponse
-	19, // 39: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
-	21, // 40: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
-	23, // 41: numen.v1.PresetsService.ComputeCurve:output_type -> numen.v1.ComputeCurveResponse
-	35, // [35:42] is the sub-list for method output_type
-	28, // [28:35] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	26, // 12: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 13: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
+	20, // 14: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	13, // 15: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.Listed
+	26, // 16: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 17: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
+	26, // 18: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 19: numen.v1.ScheduleDeckResponse.at:type_name -> numen.v1.Fingerprint
+	5,  // 20: numen.v1.ReadPresetResponse.preset:type_name -> numen.v1.Preset
+	26, // 21: numen.v1.ReadPresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 22: numen.v1.ReadPresetResponse.at:type_name -> numen.v1.Fingerprint
+	20, // 23: numen.v1.ReadPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
+	28, // 24: numen.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
+	28, // 25: numen.v1.SettingsBounds.new_a_day:type_name -> numen.v1.Bounds
+	28, // 26: numen.v1.SettingsBounds.reviews_a_day:type_name -> numen.v1.Bounds
+	28, // 27: numen.v1.SettingsBounds.retention:type_name -> numen.v1.Bounds
+	28, // 28: numen.v1.SettingsBounds.backlog:type_name -> numen.v1.Bounds
+	28, // 29: numen.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
+	28, // 30: numen.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
+	4,  // 31: numen.v1.WritePresetRequest.settings:type_name -> numen.v1.Settings
+	27, // 32: numen.v1.WritePresetRequest.seen:type_name -> numen.v1.Fingerprint
+	26, // 33: numen.v1.WritePresetResponse.refusal:type_name -> numen.v1.Refusal
+	27, // 34: numen.v1.WritePresetResponse.at:type_name -> numen.v1.Fingerprint
+	4,  // 35: numen.v1.ComputeCurveRequest.settings:type_name -> numen.v1.Settings
+	6,  // 36: numen.v1.ComputeCurveResponse.curve:type_name -> numen.v1.Curve
+	9,  // 37: numen.v1.PresetsService.GetDeckPreset:input_type -> numen.v1.GetDeckPresetRequest
+	11, // 38: numen.v1.PresetsService.ListPresets:input_type -> numen.v1.ListPresetsRequest
+	14, // 39: numen.v1.PresetsService.CreatePreset:input_type -> numen.v1.CreatePresetRequest
+	16, // 40: numen.v1.PresetsService.ScheduleDeck:input_type -> numen.v1.ScheduleDeckRequest
+	18, // 41: numen.v1.PresetsService.ReadPreset:input_type -> numen.v1.ReadPresetRequest
+	21, // 42: numen.v1.PresetsService.WritePreset:input_type -> numen.v1.WritePresetRequest
+	23, // 43: numen.v1.PresetsService.ComputeCurve:input_type -> numen.v1.ComputeCurveRequest
+	10, // 44: numen.v1.PresetsService.GetDeckPreset:output_type -> numen.v1.GetDeckPresetResponse
+	12, // 45: numen.v1.PresetsService.ListPresets:output_type -> numen.v1.ListPresetsResponse
+	15, // 46: numen.v1.PresetsService.CreatePreset:output_type -> numen.v1.CreatePresetResponse
+	17, // 47: numen.v1.PresetsService.ScheduleDeck:output_type -> numen.v1.ScheduleDeckResponse
+	19, // 48: numen.v1.PresetsService.ReadPreset:output_type -> numen.v1.ReadPresetResponse
+	22, // 49: numen.v1.PresetsService.WritePreset:output_type -> numen.v1.WritePresetResponse
+	24, // 50: numen.v1.PresetsService.ComputeCurve:output_type -> numen.v1.ComputeCurveResponse
+	44, // [44:51] is the sub-list for method output_type
+	37, // [37:44] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_presets_proto_init() }
@@ -1964,21 +2103,22 @@ func file_numen_v1_presets_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
+	file_numen_v1_theme_proto_init()
 	file_numen_v1_presets_proto_msgTypes[3].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[11].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[12].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[13].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[15].OneofWrappers = []any{}
-	file_numen_v1_presets_proto_msgTypes[16].OneofWrappers = []any{}
 	file_numen_v1_presets_proto_msgTypes[17].OneofWrappers = []any{}
+	file_numen_v1_presets_proto_msgTypes[18].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_presets_proto_rawDesc), len(file_numen_v1_presets_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   21,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

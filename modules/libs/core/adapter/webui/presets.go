@@ -36,7 +36,7 @@ func (a *API) GetDeckPreset(
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
-	out := &v1.GetDeckPresetResponse{}
+	out := &v1.GetDeckPresetResponse{Bounds: wire.SettingsBounds()}
 	if reason, refused := refusal.Of(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
@@ -142,7 +142,7 @@ func (a *API) ReadPreset(
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
-	out := &v1.ReadPresetResponse{}
+	out := &v1.ReadPresetResponse{Bounds: wire.SettingsBounds()}
 	if reason, refused := refusal.Of(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil

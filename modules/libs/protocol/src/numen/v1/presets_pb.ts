@@ -18,13 +18,15 @@ import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobu
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Fingerprint, Refusal } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
+import type { Bounds } from "./theme_pb.js";
+import { file_numen_v1_theme } from "./theme_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/presets.proto.
  */
 export const file_numen_v1_presets: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyKkAQoGUHJlc2V0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSJAoIc2V0dGluZ3MYAyABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIQCghwcm9ibGVtcxgEIAMoCRIgCgVzdG9wcxgFIAEoDjIRLm51bWVuLnYxLlN0b3BwZWQSIwoIc3RvcHNfb24YBiABKA4yES5udW1lbi52MS5TdG9wcGVkIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIuYBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIOCgZjbG9zZWQYCCADKAkSDgoGY2xlYXJzGAkgASgFEg8KB2JhY2tsb2cYCiADKAUSDwoHbGVhcm5lZBgLIAEoBRITCgZsZWFybnMYDCABKAVIAIgBARINCgVzaG9ydBgNIAEoBUIJCgdfbGVhcm5zSgQIBxAIUgNtZXQiLgoETWFyaxIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiJAoUR2V0RGVja1ByZXNldFJlcXVlc3QSDAoEZGVjaxgBIAEoCSKtAQoVR2V0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0IhQKEkxpc3RQcmVzZXRzUmVxdWVzdCI4ChNMaXN0UHJlc2V0c1Jlc3BvbnNlEiEKB3ByZXNldHMYASADKAsyEC5udW1lbi52MS5MaXN0ZWQiJQoGTGlzdGVkEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiNAoTQ3JlYXRlUHJlc2V0UmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkiWQoUQ3JlYXRlUHJlc2V0UmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsImYKE1NjaGVkdWxlRGVja1JlcXVlc3QSDAoEZGVjaxgBIAEoCRIOCgZwcmVzZXQYAiABKAkSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iiQEKFFNjaGVkdWxlRGVja1Jlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJIqoBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQiewoSV3JpdGVQcmVzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIoCgRzZWVuGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiKIAQoTV3JpdGVQcmVzZXRSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXRKBAgCEANSB2NoYW5nZWQiSQoTQ29tcHV0ZUN1cnZlUmVxdWVzdBIMCgRwYXRoGAEgASgJEiQKCHNldHRpbmdzGAIgASgLMhIubnVtZW4udjEuU2V0dGluZ3MiNgoUQ29tcHV0ZUN1cnZlUmVzcG9uc2USHgoFY3VydmUYASABKAsyDy5udW1lbi52MS5DdXJ2ZSpaCgRHb2FsEhQKEEdPQUxfVU5TUEVDSUZJRUQQABIWChJHT0FMX01JTlVURVNfQV9EQVkQARISCg5HT0FMX1JFVEVOVElPThACEhAKDEdPQUxfQllfREFURRADKkMKBFJ1bGUSFAoQUlVMRV9VTlNQRUNJRklFRBAAEhEKDVJVTEVfSU5URVJWQUwQARISCg5SVUxFX1JFVEVOVElPThACKkQKBkNvdW50cxIWChJDT1VOVFNfVU5TUEVDSUZJRUQQABIQCgxDT1VOVFNfQ0FSRFMQARIQCgxDT1VOVFNfU0hPV1MQAiq5AQoHU3RvcHBlZBIXChNTVE9QUEVEX1VOU1BFQ0lGSUVEEAASEwoPU1RPUFBFRF9OT1RISU5HEAESFgoSU1RPUFBFRF9OT19NSU5VVEVTEAISFAoQU1RPUFBFRF9OT19DQVJEUxADEhIKDlNUT1BQRURfTk9fREFZEAQSFAoQU1RPUFBFRF9QQVNUX0RBWRAFEhMKD1NUT1BQRURfTk9fTE9BRBAGEhMKD1NUT1BQRURfTk9fV0VFSxAHMrAECg5QcmVzZXRzU2VydmljZRJQCg1HZXREZWNrUHJlc2V0Eh4ubnVtZW4udjEuR2V0RGVja1ByZXNldFJlcXVlc3QaHy5udW1lbi52MS5HZXREZWNrUHJlc2V0UmVzcG9uc2USSgoLTGlzdFByZXNldHMSHC5udW1lbi52MS5MaXN0UHJlc2V0c1JlcXVlc3QaHS5udW1lbi52MS5MaXN0UHJlc2V0c1Jlc3BvbnNlEk0KDENyZWF0ZVByZXNldBIdLm51bWVuLnYxLkNyZWF0ZVByZXNldFJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVQcmVzZXRSZXNwb25zZRJNCgxTY2hlZHVsZURlY2sSHS5udW1lbi52MS5TY2hlZHVsZURlY2tSZXF1ZXN0Gh4ubnVtZW4udjEuU2NoZWR1bGVEZWNrUmVzcG9uc2USRwoKUmVhZFByZXNldBIbLm51bWVuLnYxLlJlYWRQcmVzZXRSZXF1ZXN0GhwubnVtZW4udjEuUmVhZFByZXNldFJlc3BvbnNlEkoKC1dyaXRlUHJlc2V0EhwubnVtZW4udjEuV3JpdGVQcmVzZXRSZXF1ZXN0Gh0ubnVtZW4udjEuV3JpdGVQcmVzZXRSZXNwb25zZRJNCgxDb21wdXRlQ3VydmUSHS5udW1lbi52MS5Db21wdXRlQ3VydmVSZXF1ZXN0Gh4ubnVtZW4udjEuQ29tcHV0ZUN1cnZlUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLxAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIRCglldmVuX2xvYWQYCCABKAgSIAoGY291bnRzGAkgASgOMhAubnVtZW4udjEuQ291bnRzEg8KB2JhY2tsb2cYCiABKAUSKgoEbG9hZBgLIAMoCzIcLm51bWVuLnYxLlNldHRpbmdzLkxvYWRFbnRyeRIfCgdsZWFybmVkGAwgASgOMg4ubnVtZW4udjEuUnVsZRIQCghpbnRlcnZhbBgNIAEoBRorCglMb2FkRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgFOgI4AUoECAcQCFIKbGlnaHRfZGF5cyKkAQoGUHJlc2V0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSJAoIc2V0dGluZ3MYAyABKAsyEi5udW1lbi52MS5TZXR0aW5ncxIQCghwcm9ibGVtcxgEIAMoCRIgCgVzdG9wcxgFIAEoDjIRLm51bWVuLnYxLlN0b3BwZWQSIwoIc3RvcHNfb24YBiABKA4yES5udW1lbi52MS5TdG9wcGVkIt4BCgVDdXJ2ZRIcCgRnb2FsGAEgASgOMg4ubnVtZW4udjEuR29hbBIMCgRncmlkGAIgAygBEgwKBGRheXMYAyADKAkSGwoCYXQYBCADKAsyDy5udW1lbi52MS5Qb2ludBIbCgNub3cYBSABKAsyDi5udW1lbi52MS5NYXJrEiEKCXN1Z2dlc3RlZBgGIAEoCzIOLm51bWVuLnYxLk1hcmsSDQoFZGVja3MYByABKAUSDQoFY2FyZHMYCCABKAUSDwoHb3ZlcmR1ZRgJIAEoBRIPCgd1bmJlZ3VuGAogASgFIuYBCgVQb2ludBIPCgdyZXZpZXdzGAEgASgBEg8KB21pbnV0ZXMYAiABKAESEAoIcmV0YWluZWQYAyABKAESDAoEb3dlZBgEIAEoBRIPCgd0aHJvdWdoGAUgASgBEg4KBmVub3VnaBgGIAEoCBIOCgZjbG9zZWQYCCADKAkSDgoGY2xlYXJzGAkgASgFEg8KB2JhY2tsb2cYCiADKAUSDwoHbGVhcm5lZBgLIAEoBRITCgZsZWFybnMYDCABKAVIAIgBARINCgVzaG9ydBgNIAEoBUIJCgdfbGVhcm5zSgQIBxAIUgNtZXQiLgoETWFyaxIKCgJhdBgBIAEoBRINCgV2YWx1ZRgCIAEoARILCgNkYXkYAyABKAkiJAoUR2V0RGVja1ByZXNldFJlcXVlc3QSDAoEZGVjaxgBIAEoCSLXAQoVR2V0RGVja1ByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCgoIX3JlZnVzYWxCBQoDX2F0IhQKEkxpc3RQcmVzZXRzUmVxdWVzdCI4ChNMaXN0UHJlc2V0c1Jlc3BvbnNlEiEKB3ByZXNldHMYASADKAsyEC5udW1lbi52MS5MaXN0ZWQiJQoGTGlzdGVkEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiNAoTQ3JlYXRlUHJlc2V0UmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkiWQoUQ3JlYXRlUHJlc2V0UmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsImYKE1NjaGVkdWxlRGVja1JlcXVlc3QSDAoEZGVjaxgBIAEoCRIOCgZwcmVzZXQYAiABKAkSKAoEc2VlbhgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCBwoFX3NlZW4iiQEKFFNjaGVkdWxlRGVja1Jlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCIhChFSZWFkUHJlc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJItQBChJSZWFkUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQESKAoGYm91bmRzGAQgASgLMhgubnVtZW4udjEuU2V0dGluZ3NCb3VuZHNCCQoHX3ByZXNldEIKCghfcmVmdXNhbEIFCgNfYXQikwIKDlNldHRpbmdzQm91bmRzEicKDW1pbnV0ZXNfYV9kYXkYASABKAsyEC5udW1lbi52MS5Cb3VuZHMSIwoJbmV3X2FfZGF5GAIgASgLMhAubnVtZW4udjEuQm91bmRzEicKDXJldmlld3NfYV9kYXkYAyABKAsyEC5udW1lbi52MS5Cb3VuZHMSIwoJcmV0ZW50aW9uGAQgASgLMhAubnVtZW4udjEuQm91bmRzEiEKB2JhY2tsb2cYBSABKAsyEC5udW1lbi52MS5Cb3VuZHMSIgoIaW50ZXJ2YWwYBiABKAsyEC5udW1lbi52MS5Cb3VuZHMSHgoEbG9hZBgHIAEoCzIQLm51bWVuLnYxLkJvdW5kcyJ7ChJXcml0ZVByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEigKBHNlZW4YAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuIogBChNXcml0ZVByZXNldFJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCJJChNDb21wdXRlQ3VydmVSZXF1ZXN0EgwKBHBhdGgYASABKAkSJAoIc2V0dGluZ3MYAiABKAsyEi5udW1lbi52MS5TZXR0aW5ncyI2ChRDb21wdXRlQ3VydmVSZXNwb25zZRIeCgVjdXJ2ZRgBIAEoCzIPLm51bWVuLnYxLkN1cnZlKloKBEdvYWwSFAoQR09BTF9VTlNQRUNJRklFRBAAEhYKEkdPQUxfTUlOVVRFU19BX0RBWRABEhIKDkdPQUxfUkVURU5USU9OEAISEAoMR09BTF9CWV9EQVRFEAMqQwoEUnVsZRIUChBSVUxFX1VOU1BFQ0lGSUVEEAASEQoNUlVMRV9JTlRFUlZBTBABEhIKDlJVTEVfUkVURU5USU9OEAIqRAoGQ291bnRzEhYKEkNPVU5UU19VTlNQRUNJRklFRBAAEhAKDENPVU5UU19DQVJEUxABEhAKDENPVU5UU19TSE9XUxACKrkBCgdTdG9wcGVkEhcKE1NUT1BQRURfVU5TUEVDSUZJRUQQABITCg9TVE9QUEVEX05PVEhJTkcQARIWChJTVE9QUEVEX05PX01JTlVURVMQAhIUChBTVE9QUEVEX05PX0NBUkRTEAMSEgoOU1RPUFBFRF9OT19EQVkQBBIUChBTVE9QUEVEX1BBU1RfREFZEAUSEwoPU1RPUFBFRF9OT19MT0FEEAYSEwoPU1RPUFBFRF9OT19XRUVLEAcysAQKDlByZXNldHNTZXJ2aWNlElAKDUdldERlY2tQcmVzZXQSHi5udW1lbi52MS5HZXREZWNrUHJlc2V0UmVxdWVzdBofLm51bWVuLnYxLkdldERlY2tQcmVzZXRSZXNwb25zZRJKCgtMaXN0UHJlc2V0cxIcLm51bWVuLnYxLkxpc3RQcmVzZXRzUmVxdWVzdBodLm51bWVuLnYxLkxpc3RQcmVzZXRzUmVzcG9uc2USTQoMQ3JlYXRlUHJlc2V0Eh0ubnVtZW4udjEuQ3JlYXRlUHJlc2V0UmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZVByZXNldFJlc3BvbnNlEk0KDFNjaGVkdWxlRGVjaxIdLm51bWVuLnYxLlNjaGVkdWxlRGVja1JlcXVlc3QaHi5udW1lbi52MS5TY2hlZHVsZURlY2tSZXNwb25zZRJHCgpSZWFkUHJlc2V0EhsubnVtZW4udjEuUmVhZFByZXNldFJlcXVlc3QaHC5udW1lbi52MS5SZWFkUHJlc2V0UmVzcG9uc2USSgoLV3JpdGVQcmVzZXQSHC5udW1lbi52MS5Xcml0ZVByZXNldFJlcXVlc3QaHS5udW1lbi52MS5Xcml0ZVByZXNldFJlc3BvbnNlEk0KDENvbXB1dGVDdXJ2ZRIdLm51bWVuLnYxLkNvbXB1dGVDdXJ2ZVJlcXVlc3QaHi5udW1lbi52MS5Db21wdXRlQ3VydmVSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared, file_numen_v1_theme]);
 
 /**
  * Settings are how the decks pointing at one preset are scheduled. A preset
@@ -495,6 +497,14 @@ export type GetDeckPresetResponse = Message<"numen.v1.GetDeckPresetResponse"> & 
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
   at?: Fingerprint | undefined;
+
+  /**
+   * How far each setting goes. A client asking a person for a number says
+   * these, and a number outside them is refused here.
+   *
+   * @generated from field: numen.v1.SettingsBounds bounds = 4;
+   */
+  bounds?: SettingsBounds | undefined;
 };
 
 /**
@@ -719,6 +729,14 @@ export type ReadPresetResponse = Message<"numen.v1.ReadPresetResponse"> & {
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
   at?: Fingerprint | undefined;
+
+  /**
+   * How far each setting goes. A client asking a person for a number says
+   * these, and a number outside them is refused here.
+   *
+   * @generated from field: numen.v1.SettingsBounds bounds = 4;
+   */
+  bounds?: SettingsBounds | undefined;
 };
 
 /**
@@ -727,6 +745,61 @@ export type ReadPresetResponse = Message<"numen.v1.ReadPresetResponse"> & {
  */
 export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 15);
+
+/**
+ * SettingsBounds is how far each setting of a preset may go. They are the
+ * application's and not the preset's: the same bounds answer every read, and a
+ * number outside the one it belongs to is refused where it is written.
+ *
+ * A setting no bound is given for goes as far as its type does.
+ *
+ * @generated from message numen.v1.SettingsBounds
+ */
+export type SettingsBounds = Message<"numen.v1.SettingsBounds"> & {
+  /**
+   * @generated from field: numen.v1.Bounds minutes_a_day = 1;
+   */
+  minutesADay?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds new_a_day = 2;
+   */
+  newADay?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds reviews_a_day = 3;
+   */
+  reviewsADay?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds retention = 4;
+   */
+  retention?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds backlog = 5;
+   */
+  backlog?: Bounds | undefined;
+
+  /**
+   * @generated from field: numen.v1.Bounds interval = 6;
+   */
+  interval?: Bounds | undefined;
+
+  /**
+   * How much of a day's load one day of the week may carry, in per cent.
+   *
+   * @generated from field: numen.v1.Bounds load = 7;
+   */
+  load?: Bounds | undefined;
+};
+
+/**
+ * Describes the message numen.v1.SettingsBounds.
+ * Use `create(SettingsBoundsSchema)` to create a new message.
+ */
+export const SettingsBoundsSchema: GenMessage<SettingsBounds> = /*@__PURE__*/
+  messageDesc(file_numen_v1_presets, 16);
 
 /**
  * @generated from message numen.v1.WritePresetRequest
@@ -759,7 +832,7 @@ export type WritePresetRequest = Message<"numen.v1.WritePresetRequest"> & {
  * Use `create(WritePresetRequestSchema)` to create a new message.
  */
 export const WritePresetRequestSchema: GenMessage<WritePresetRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 16);
+  messageDesc(file_numen_v1_presets, 17);
 
 /**
  * @generated from message numen.v1.WritePresetResponse
@@ -788,7 +861,7 @@ export type WritePresetResponse = Message<"numen.v1.WritePresetResponse"> & {
  * Use `create(WritePresetResponseSchema)` to create a new message.
  */
 export const WritePresetResponseSchema: GenMessage<WritePresetResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 17);
+  messageDesc(file_numen_v1_presets, 18);
 
 /**
  * @generated from message numen.v1.ComputeCurveRequest
@@ -816,7 +889,7 @@ export type ComputeCurveRequest = Message<"numen.v1.ComputeCurveRequest"> & {
  * Use `create(ComputeCurveRequestSchema)` to create a new message.
  */
 export const ComputeCurveRequestSchema: GenMessage<ComputeCurveRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 18);
+  messageDesc(file_numen_v1_presets, 19);
 
 /**
  * @generated from message numen.v1.ComputeCurveResponse
@@ -833,7 +906,7 @@ export type ComputeCurveResponse = Message<"numen.v1.ComputeCurveResponse"> & {
  * Use `create(ComputeCurveResponseSchema)` to create a new message.
  */
 export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_presets, 19);
+  messageDesc(file_numen_v1_presets, 20);
 
 /**
  * Goal is which value the one control steers. The value itself stands in the
