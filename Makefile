@@ -30,9 +30,11 @@ help:
 # does not: `make install INSTALL="npm ci"`.
 INSTALL ?= npm install
 
+# The schema's compiler is on PATH and what it produces is committed, so the
+# copy of it npm offers is a download nothing here reads.
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && $(INSTALL)
+	cd $(PROTOCOL) && $(INSTALL) --omit=dev
 	cd $(UI) && $(INSTALL)
 	cd $(DESKTOP)/ui && $(INSTALL)
 	cd $(DESKTOP)/flashcards && $(INSTALL)
