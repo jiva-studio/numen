@@ -33,7 +33,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	index.kept = map[string][]byte{}
 	for _, held := range index.vectors {
 		for _, v := range held {
-			print := hex.EncodeToString(v.Text)
+			print := hex.EncodeToString(v.Fingerprint)
 			bought[print] = v
 			index.kept[v.Model.Recipe()+"/"+print] = v.Value
 		}
@@ -55,7 +55,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	var read int
 	for _, group := range index.groups {
 		for _, v := range group {
-			was, held := bought[hex.EncodeToString(v.Text)]
+			was, held := bought[hex.EncodeToString(v.Fingerprint)]
 			if !held {
 				continue
 			}

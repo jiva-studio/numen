@@ -36,8 +36,8 @@ type Passage struct {
 	// Hash addresses the content of the source, and is what the files of a
 	// reading of it are kept under.
 	Hash string
-	// Fingerprint is the text this chunk holds, as the index recorded it.
-	Fingerprint string
+	// ChunkHash addresses the text this chunk held when the index cut it.
+	ChunkHash string
 }
 
 // Fingerprints is what the index believes about each file of one kind, keyed by
@@ -357,7 +357,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after 
 	var out []Passage
 	for rows.Next() {
 		var p Passage
-		if err := rows.Scan(&p.Chunk, &p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.Fingerprint); err != nil {
+		if err := rows.Scan(&p.Chunk, &p.Path, &p.TextFrom, &p.Hash, &p.Start, &p.Length, &p.Location, &p.Parent, &p.ChunkHash); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

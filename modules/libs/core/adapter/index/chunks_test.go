@@ -133,9 +133,9 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	}
 }
 
-// fingerprintOf is the text one chunk holds, as the vector made from it is
-// addressed. The real path hashes what it is about to send; a fixture reads
-// what the cut already recorded.
+// fingerprintOf addresses the text one chunk holds, which is what the vector
+// made from it is kept under. The real path hashes what it is about to send; a
+// fixture reads what the cut already recorded.
 func fingerprintOf(t *testing.T, db *DB, chunk int64) []byte {
 	t.Helper()
 

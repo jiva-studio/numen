@@ -112,7 +112,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		raw, err := hex.DecodeString(p.Fingerprint)
+		raw, err := hex.DecodeString(p.ChunkHash)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -43,9 +43,9 @@ type Passage struct {
 	// counted.
 	Line int
 
-	// Fingerprint is the text this chunk holds, as the index recorded it. It is
-	// what a vector made from that text is found by.
-	Fingerprint string
+	// ChunkHash addresses the text this chunk held when the index cut it. It is
+	// what a vector made from that text is kept under and found by.
+	ChunkHash string
 
 	Text string
 }

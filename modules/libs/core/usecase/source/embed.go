@@ -151,12 +151,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	}
 	recipe := model.Recipe()
 
-	// The text each chunk holds, as the index recorded it when the source was
-	// cut. That record is what a chunk is identified by, and what every
-	// question about what still owes a vector is asked against.
+	// The address of the text each chunk held when the source was cut. It is
+	// what a chunk is identified by, what a vector is kept under, and what
+	// every question about what still owes a vector is asked against.
 	prints := make([][]byte, len(texts))
 	for i := range texts {
-		raw, err := hex.DecodeString(owing[i].Fingerprint)
+		raw, err := hex.DecodeString(owing[i].ChunkHash)
 		if err != nil || len(raw) == 0 {
 			continue
 		}
@@ -179,12 +179,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 		}
 		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			ChunkID: owing[i].ChunkID,
-			Text:    prints[i],
-			Model:   model,
-			Kind:    port.QuantisedInt8,
-			Value:   value,
-			Coarse:  embedding.Coarse(unsigned(value)),
+			ChunkID:     owing[i].ChunkID,
+			Fingerprint: prints[i],
+			Model:       model,
+			Kind:        port.QuantisedInt8,
+			Value:       value,
+			Coarse:      embedding.Coarse(unsigned(value)),
 		})
 		res.Reused++
 	}
@@ -207,12 +207,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			at := askingFor[i]
 			quantised := embedding.Bytes(v)
 			out = append(out, port.Vector{
-				ChunkID: owing[at].ChunkID,
-				Text:    prints[at],
-				Model:   model,
-				Kind:    port.QuantisedInt8,
-				Value:   signed(quantised),
-				Coarse:  embedding.Coarse(quantised),
+				ChunkID:     owing[at].ChunkID,
+				Fingerprint: prints[at],
+				Model:       model,
+				Kind:        port.QuantisedInt8,
+				Value:       signed(quantised),
+				Coarse:      embedding.Coarse(quantised),
 			})
 		}
 	}

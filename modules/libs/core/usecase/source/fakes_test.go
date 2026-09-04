@@ -151,7 +151,7 @@ func (s *store) Unembedded(_ context.Context, vaultID string, model port.Embeddi
 		src := s.sources[c.vault][c.path]
 		out = append(out, domain.Passage{
 			ChunkID: c.id, Source: c.path, Start: c.start, Length: c.length, Location: c.location,
-			TextFrom: src.TextFrom, Hash: src.Hash, Fingerprint: fingerprintOf(c.text),
+			TextFrom: src.TextFrom, Hash: src.Hash, ChunkHash: hashOf(c.text),
 		})
 		if len(out) == limit {
 			break
@@ -160,9 +160,9 @@ func (s *store) Unembedded(_ context.Context, vaultID string, model port.Embeddi
 	return out, nil
 }
 
-// fingerprintOf is what an index records a chunk's text as, and what a vector
+// hashOf is the address an index gives a chunk's text, and what a vector
 // already bought is reclaimed by.
-func fingerprintOf(text string) string {
+func hashOf(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:])
 }

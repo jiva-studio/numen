@@ -196,11 +196,11 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	}
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
-		// A vector is found by the text the chunk holds, which is the chunk's
-		// own hash.
-		print, err := hex.DecodeString(p.Fingerprint)
+		// A vector is found by the address of the text the chunk holds, which
+		// is the chunk's own hash.
+		print, err := hex.DecodeString(p.ChunkHash)
 		if err != nil || len(print) == 0 {
-			t.Fatalf("chunk %d owes a vector under fingerprint %q", p.Chunk, p.Fingerprint)
+			t.Fatalf("chunk %d owes a vector under fingerprint %q", p.Chunk, p.ChunkHash)
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Fingerprint: print, Recipe: narrowRecipe(dims),
