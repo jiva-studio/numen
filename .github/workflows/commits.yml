@@ -35,12 +35,13 @@ jobs:
 
       # PR: validate every commit in the range. Push: validate the last one.
       - name: Validate commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            npx commitlint \
-              --from "${{ github.event.pull_request.base.sha }}" \
-              --to   "${{ github.event.pull_request.head.sha }}" \
-              --verbose
+          if [ "$EVENT" = "pull_request" ]; then
+            npx commitlint --from "$BASE" --to "$HEAD" --verbose
           else
             npx commitlint --last --verbose
           fi
