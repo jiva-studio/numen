@@ -37,12 +37,12 @@ type Stretch struct {
 	Length int
 }
 
-// Marks is where a run of the prose sits: the pages it falls on and, on each,
+// Pages is where a run of the prose sits: the pages it falls on and, on each,
 // the rectangles covering it.
 //
 // The boxes are in the order they were read, so the run is found by halving and
 // then walked to its end. A run crossing a page is on both of them.
-func Marks(boxes []Box, start, length int) []Page {
+func Pages(boxes []Box, start, length int) []Page {
 	if length <= 0 || len(boxes) == 0 {
 		return nil
 	}

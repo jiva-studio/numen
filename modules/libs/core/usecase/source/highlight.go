@@ -83,7 +83,7 @@ func (u Highlight) Execute(
 func over(boxes []highlight.Box, runs []highlight.Stretch) [][]highlight.Page {
 	out := make([][]highlight.Page, 0, len(runs))
 	for _, one := range runs {
-		out = append(out, highlight.Marks(boxes, one.Start, one.Length))
+		out = append(out, highlight.Pages(boxes, one.Start, one.Length))
 	}
 	return out
 }
