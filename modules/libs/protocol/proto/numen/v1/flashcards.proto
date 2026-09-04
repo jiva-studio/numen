@@ -93,8 +93,8 @@ enum Rating {
   RATING_EASY = 4;
 }
 
-// VaultOwing is one vault, and what its cards come to today.
-message VaultOwing {
+// VaultCardsDue is one vault, and what its cards come to today.
+message VaultCardsDue {
   // Name is the identity the folder carries, and how this vault is asked for
   // again. DisplayName is what the person calls the collection.
   string name = 1;
@@ -109,11 +109,11 @@ message VaultOwing {
   int32 new = 6;
 
   // Decks is the same three numbers for each deck, by the path of its file.
-  repeated DeckOwing decks = 7;
+  repeated DeckCardsDue decks = 7;
 
   // Presets is what the day comes to under each preset the vault's decks are
   // scheduled by.
-  repeated PresetOwing presets = 9;
+  repeated PresetCardsDue presets = 9;
 
   // Set when the vault could not be counted: its files could not be reached, or
   // reading it into the index failed. The three numbers are then zero and this
@@ -125,7 +125,7 @@ message VaultOwing {
   bool reading = 10;
 }
 
-message DeckOwing {
+message DeckCardsDue {
   string deck = 1;
   int32 faces = 2;
   int32 due = 3;
@@ -147,8 +147,8 @@ message DeckOwing {
   int32 unbegun = 7;
 }
 
-// PresetOwing is one preset of a vault, and what the day comes to under it.
-message PresetOwing {
+// PresetCardsDue is one preset of a vault, and what the day comes to under it.
+message PresetCardsDue {
   // The note the settings were read from, and empty for the decks naming no
   // preset.
   string preset = 1;
@@ -251,7 +251,7 @@ message WatchCardsDueResponse {
   // Vaults is every vault the installation holds, by name and by where it is,
   // with nothing counted. It stands in the first message and in no other, and
   // it is what the list is drawn from.
-  repeated VaultOwing vaults = 1;
+  repeated VaultCardsDue vaults = 1;
 
   // Day is the review day these counts stand in, written as the year, the month
   // and the day. A day of review begins at the hour the settings name, so an
@@ -262,7 +262,7 @@ message WatchCardsDueResponse {
   // Counted is one vault worked out, and stands in every message after the
   // first. Until one arrives for a vault, nothing is known about what that
   // vault owes.
-  VaultOwing counted = 3;
+  VaultCardsDue counted = 3;
 }
 
 message StartSessionRequest {
@@ -325,12 +325,12 @@ message ListReviewDaysRequest {
 message ListReviewDaysResponse {
   // Days is what each day a person answered on came to. A day nobody answered
   // on is not in it.
-  repeated Reviewing days = 1;
+  repeated ReviewDay days = 1;
 
   // Due is how many card faces fall on each day still to come. A card owed
   // today, or owed and late, is not in it: what a person owes now is what the
   // front door counts, and this is what is after it.
-  repeated Reviewing due = 4;
+  repeated ReviewDay due = 4;
 
   // Streak is how many days up to now were reviewed without a gap. A day
   // nobody has answered on yet does not end one.
@@ -340,8 +340,8 @@ message ListReviewDaysResponse {
   int32 answered = 3;
 }
 
-// Reviewing is one day, and what was answered on it.
-message Reviewing {
+// ReviewDay is one day, and what was answered on it.
+message ReviewDay {
   // Day is the day it began on, as the year, the month and the day: an answer
   // given in the small hours belongs to the day before, and is named for it.
   string day = 1;
@@ -380,7 +380,7 @@ message GetDeckNeighbourhoodRequest {
 }
 
 message GetDeckNeighbourhoodResponse {
-  repeated Neighbour notes = 1;
+  repeated DeckNeighbour notes = 1;
 
   // Unread is how many at the end of the list came without their text. Reading
   // stops once a sitting's worth has been gathered, so a deck at the centre of
@@ -388,8 +388,8 @@ message GetDeckNeighbourhoodResponse {
   int32 unread = 2;
 }
 
-// Neighbour is one note the deck stands next to.
-message Neighbour {
+// DeckNeighbour is one note the deck stands next to.
+message DeckNeighbour {
   // Written is the address as the deck wrote it, and all a link resolving to
   // nothing ever has. It is empty for a note that points at the deck, which
   // wrote the deck's name and not its own. Path is where the link landed, and

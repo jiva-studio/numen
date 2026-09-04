@@ -26,10 +26,10 @@ func (a *API) ListReviewDays(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	days := make([]*v1.Reviewing, 0, len(said.Days))
+	days := make([]*v1.ReviewDay, 0, len(said.Days))
 	for day, one := range said.Days {
 		came := said.Retained[day]
-		days = append(days, &v1.Reviewing{
+		days = append(days, &v1.ReviewDay{
 			Day:      day,
 			Answered: int32(one.Answered),
 			Again:    int32(one.Again),
@@ -40,9 +40,9 @@ func (a *API) ListReviewDays(
 			Recalled: int32(came.Recalled),
 		})
 	}
-	due := make([]*v1.Reviewing, 0, len(said.Due))
+	due := make([]*v1.ReviewDay, 0, len(said.Due))
 	for day, falls := range said.Due {
-		due = append(due, &v1.Reviewing{Day: day, Answered: int32(falls)})
+		due = append(due, &v1.ReviewDay{Day: day, Answered: int32(falls)})
 	}
 
 	return connect.NewResponse(&v1.ListReviewDaysResponse{
@@ -54,8 +54,8 @@ func (a *API) ListReviewDays(
 }
 
 // inOrder puts the days oldest first.
-func inOrder(days []*v1.Reviewing) []*v1.Reviewing {
-	slices.SortFunc(days, func(one, other *v1.Reviewing) int {
+func inOrder(days []*v1.ReviewDay) []*v1.ReviewDay {
+	slices.SortFunc(days, func(one, other *v1.ReviewDay) int {
 		return cmpDay(one.GetDay(), other.GetDay())
 	})
 	return days

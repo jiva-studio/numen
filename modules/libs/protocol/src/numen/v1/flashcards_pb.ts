@@ -25,14 +25,14 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/flashcards.proto.
  */
 export const file_numen_v1_flashcards: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSLUAQoKVmF1bHRPd2luZxIMCgRuYW1lGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBWZhY2VzGAQgASgFEgsKA2R1ZRgFIAEoBRILCgNuZXcYBiABKAUSIgoFZGVja3MYByADKAsyEy5udW1lbi52MS5EZWNrT3dpbmcSJgoHcHJlc2V0cxgJIAMoCzIVLm51bWVuLnYxLlByZXNldE93aW5nEg4KBnVucmVhZBgIIAEoCRIPCgdyZWFkaW5nGAogASgIInYKCURlY2tPd2luZxIMCgRkZWNrGAEgASgJEg0KBWZhY2VzGAIgASgFEgsKA2R1ZRgDIAEoBRILCgNuZXcYBCABKAUSEAoIYW5zd2VyZWQYBSABKAUSDwoHbGVhcm5lZBgGIAEoBRIPCgd1bmJlZ3VuGAcgASgFIvECCgtQcmVzZXRPd2luZxIOCgZwcmVzZXQYASABKAkSDQoFdGl0bGUYByABKAkSDQoFZGVja3MYCCABKAUSDQoFY2FyZHMYCSABKAUSEAoIb3dlZF9kdWUYCiABKAUSEAoIb3dlZF9uZXcYCyABKAUSEAoIYW5zd2VyZWQYAiABKAUSDwoHdG9va19tcxgDIAEoAxIUCgxhbnN3ZXJlZF9uZXcYESABKAUSGAoQYW5zd2VyZWRfcmV2aWV3cxgSIAEoBRILCgNuZXcYBCABKAUSDwoHcmV2aWV3cxgFIAEoBRIPCgdtaW51dGVzGAYgASgBEhIKCmNsb3Nlc19uZXcYDCABKAkSFgoOY2xvc2VzX3Jldmlld3MYDSABKAkSFgoOY2xvc2VzX21pbnV0ZXMYDiABKAkSFgoOY2xvc2VzX2JhY2tsb2cYDyABKAkSIwoIc3RvcHNfb24YECABKA4yES5udW1lbi52MS5TdG9wcGVkIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIhYKFFdhdGNoQ2FyZHNEdWVSZXF1ZXN0InEKFVdhdGNoQ2FyZHNEdWVSZXNwb25zZRIkCgZ2YXVsdHMYASADKAsyFC5udW1lbi52MS5WYXVsdE93aW5nEgsKA2RheRgCIAEoCRIlCgdjb3VudGVkGAMgASgLMhQubnVtZW4udjEuVmF1bHRPd2luZyJSChNTdGFydFNlc3Npb25SZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkSEwoGcHJlc2V0GAMgASgJSACIAQFCCQoHX3ByZXNldCJnChRTdGFydFNlc3Npb25SZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZBIRCgl1bndyaXR0ZW4YAyADKAkSDwoHc2tpcHBlZBgEIAEoBSJ+ChFBbnN3ZXJDYXJkUmVxdWVzdBINCgV2YXVsdBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiQKEkFuc3dlckNhcmRSZXNwb25zZRIOCgZhbnN3ZXIYASABKAkiQwoVVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiGAoWVGFrZUJhY2tBbnN3ZXJSZXNwb25zZSImChVMaXN0UmV2aWV3RGF5c1JlcXVlc3QSDQoFdmF1bHQYASABKAkifwoWTGlzdFJldmlld0RheXNSZXNwb25zZRIhCgRkYXlzGAEgAygLMhMubnVtZW4udjEuUmV2aWV3aW5nEiAKA2R1ZRgEIAMoCzITLm51bWVuLnYxLlJldmlld2luZxIOCgZzdHJlYWsYAiABKAUSEAoIYW5zd2VyZWQYAyABKAUihAEKCVJldmlld2luZxILCgNkYXkYASABKAkSEAoIYW5zd2VyZWQYAiABKAUSDQoFYWdhaW4YAyABKAUSDAoEaGFyZBgEIAEoBRIMCgRnb29kGAUgASgFEgwKBGVhc3kYBiABKAUSDQoFYXNrZWQYByABKAUSEAoIcmVjYWxsZWQYCCABKAUiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIjoKG0dldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIlIKHEdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USIgoFbm90ZXMYASADKAsyEy5udW1lbi52MS5OZWlnaGJvdXISDgoGdW5yZWFkGAIgASgFIq4BCglOZWlnaGJvdXISDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJEg0KBXRpdGxlGAMgASgJEgwKBGJvZHkYBCABKAkSDQoFbGFiZWwYBSABKAkSDgoGcG9pbnRzGAYgASgIEhEKCWFtYmlndW91cxgHIAEoCBInCgdyZWZ1c2FsGAggASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIhUKE1dhdGNoUmVsb2Fkc1JlcXVlc3QiJgoUV2F0Y2hSZWxvYWRzUmVzcG9uc2USDgoGcmVsb2FkGAEgASgIIjgKGUdldFZhdWx0RGVja1ByZXNldFJlcXVlc3QSDQoFdmF1bHQYASABKAkSDAoEZGVjaxgCIAEoCSKDAQoaR2V0VmF1bHREZWNrUHJlc2V0UmVzcG9uc2USJQoGcHJlc2V0GAEgASgLMhAubnVtZW4udjEuUHJlc2V0SACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIJCgdfcHJlc2V0QgoKCF9yZWZ1c2FsKmUKBlJhdGluZxIWChJSQVRJTkdfVU5TUEVDSUZJRUQQABIQCgxSQVRJTkdfQUdBSU4QARIPCgtSQVRJTkdfSEFSRBACEg8KC1JBVElOR19HT09EEAMSDwoLUkFUSU5HX0VBU1kQBDKUBgoRRmxhc2hjYXJkc1NlcnZpY2USUgoNV2F0Y2hDYXJkc0R1ZRIeLm51bWVuLnYxLldhdGNoQ2FyZHNEdWVSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hDYXJkc0R1ZVJlc3BvbnNlMAESTQoMU3RhcnRTZXNzaW9uEh0ubnVtZW4udjEuU3RhcnRTZXNzaW9uUmVxdWVzdBoeLm51bWVuLnYxLlN0YXJ0U2Vzc2lvblJlc3BvbnNlEkcKCkFuc3dlckNhcmQSGy5udW1lbi52MS5BbnN3ZXJDYXJkUmVxdWVzdBocLm51bWVuLnYxLkFuc3dlckNhcmRSZXNwb25zZRJTCg5UYWtlQmFja0Fuc3dlchIfLm51bWVuLnYxLlRha2VCYWNrQW5zd2VyUmVxdWVzdBogLm51bWVuLnYxLlRha2VCYWNrQW5zd2VyUmVzcG9uc2USTwoMV2F0Y2hSZWxvYWRzEh0ubnVtZW4udjEuV2F0Y2hSZWxvYWRzUmVxdWVzdBoeLm51bWVuLnYxLldhdGNoUmVsb2Fkc1Jlc3BvbnNlMAESUwoOTGlzdFJldmlld0RheXMSHy5udW1lbi52MS5MaXN0UmV2aWV3RGF5c1JlcXVlc3QaIC5udW1lbi52MS5MaXN0UmV2aWV3RGF5c1Jlc3BvbnNlElAKDUdldEFnZW50U3RhdGUSHi5udW1lbi52MS5HZXRBZ2VudFN0YXRlUmVxdWVzdBofLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXNwb25zZRJlChRHZXREZWNrTmVpZ2hib3VyaG9vZBIlLm51bWVuLnYxLkdldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBomLm51bWVuLnYxLkdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USXwoSR2V0VmF1bHREZWNrUHJlc2V0EiMubnVtZW4udjEuR2V0VmF1bHREZWNrUHJlc2V0UmVxdWVzdBokLm51bWVuLnYxLkdldFZhdWx0RGVja1ByZXNldFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_presets, file_numen_v1_shared]);
+  fileDesc("ChludW1lbi92MS9mbGFzaGNhcmRzLnByb3RvEghudW1lbi52MSLdAQoNVmF1bHRDYXJkc0R1ZRIMCgRuYW1lGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBWZhY2VzGAQgASgFEgsKA2R1ZRgFIAEoBRILCgNuZXcYBiABKAUSJQoFZGVja3MYByADKAsyFi5udW1lbi52MS5EZWNrQ2FyZHNEdWUSKQoHcHJlc2V0cxgJIAMoCzIYLm51bWVuLnYxLlByZXNldENhcmRzRHVlEg4KBnVucmVhZBgIIAEoCRIPCgdyZWFkaW5nGAogASgIInkKDERlY2tDYXJkc0R1ZRIMCgRkZWNrGAEgASgJEg0KBWZhY2VzGAIgASgFEgsKA2R1ZRgDIAEoBRILCgNuZXcYBCABKAUSEAoIYW5zd2VyZWQYBSABKAUSDwoHbGVhcm5lZBgGIAEoBRIPCgd1bmJlZ3VuGAcgASgFIvQCCg5QcmVzZXRDYXJkc0R1ZRIOCgZwcmVzZXQYASABKAkSDQoFdGl0bGUYByABKAkSDQoFZGVja3MYCCABKAUSDQoFY2FyZHMYCSABKAUSEAoIb3dlZF9kdWUYCiABKAUSEAoIb3dlZF9uZXcYCyABKAUSEAoIYW5zd2VyZWQYAiABKAUSDwoHdG9va19tcxgDIAEoAxIUCgxhbnN3ZXJlZF9uZXcYESABKAUSGAoQYW5zd2VyZWRfcmV2aWV3cxgSIAEoBRILCgNuZXcYBCABKAUSDwoHcmV2aWV3cxgFIAEoBRIPCgdtaW51dGVzGAYgASgBEhIKCmNsb3Nlc19uZXcYDCABKAkSFgoOY2xvc2VzX3Jldmlld3MYDSABKAkSFgoOY2xvc2VzX21pbnV0ZXMYDiABKAkSFgoOY2xvc2VzX2JhY2tsb2cYDyABKAkSIwoIc3RvcHNfb24YECABKA4yES5udW1lbi52MS5TdG9wcGVkIkAKBUFoZWFkEg0KBWFnYWluGAEgASgDEgwKBGhhcmQYAiABKAMSDAoEZ29vZBgDIAEoAxIMCgRlYXN5GAQgASgDIqsBCgVBc2tlZBIMCgRkZWNrGAEgASgJEg8KB3NlY3Rpb24YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEg8KB2hlYWRpbmcYBSABKAkSDQoFZnJvbnQYBiABKAkSDAoEYmFjaxgHIAEoCRIMCgRzZWVuGAggASgIEgsKA2R1ZRgJIAEoCRIeCgVhaGVhZBgKIAEoCzIPLm51bWVuLnYxLkFoZWFkIhYKFFdhdGNoQ2FyZHNEdWVSZXF1ZXN0IncKFVdhdGNoQ2FyZHNEdWVSZXNwb25zZRInCgZ2YXVsdHMYASADKAsyFy5udW1lbi52MS5WYXVsdENhcmRzRHVlEgsKA2RheRgCIAEoCRIoCgdjb3VudGVkGAMgASgLMhcubnVtZW4udjEuVmF1bHRDYXJkc0R1ZSJSChNTdGFydFNlc3Npb25SZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgwKBGRlY2sYAiABKAkSEwoGcHJlc2V0GAMgASgJSACIAQFCCQoHX3ByZXNldCJnChRTdGFydFNlc3Npb25SZXNwb25zZRILCgNydW4YASABKAkSHgoFYXNrZWQYAiADKAsyDy5udW1lbi52MS5Bc2tlZBIRCgl1bndyaXR0ZW4YAyADKAkSDwoHc2tpcHBlZBgEIAEoBSJ+ChFBbnN3ZXJDYXJkUmVxdWVzdBINCgV2YXVsdBgBIAEoCRILCgNydW4YAiABKAkSDAoEY2FyZBgDIAEoCRIMCgRmYWNlGAQgASgJEiAKBnJhdGluZxgFIAEoDjIQLm51bWVuLnYxLlJhdGluZxIPCgd0b29rX21zGAYgASgDIiQKEkFuc3dlckNhcmRSZXNwb25zZRIOCgZhbnN3ZXIYASABKAkiQwoVVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0Eg0KBXZhdWx0GAEgASgJEgsKA3J1bhgCIAEoCRIOCgZhbnN3ZXIYAyABKAkiGAoWVGFrZUJhY2tBbnN3ZXJSZXNwb25zZSImChVMaXN0UmV2aWV3RGF5c1JlcXVlc3QSDQoFdmF1bHQYASABKAkifwoWTGlzdFJldmlld0RheXNSZXNwb25zZRIhCgRkYXlzGAEgAygLMhMubnVtZW4udjEuUmV2aWV3RGF5EiAKA2R1ZRgEIAMoCzITLm51bWVuLnYxLlJldmlld0RheRIOCgZzdHJlYWsYAiABKAUSEAoIYW5zd2VyZWQYAyABKAUihAEKCVJldmlld0RheRILCgNkYXkYASABKAkSEAoIYW5zd2VyZWQYAiABKAUSDQoFYWdhaW4YAyABKAUSDAoEaGFyZBgEIAEoBRIMCgRnb29kGAUgASgFEgwKBGVhc3kYBiABKAUSDQoFYXNrZWQYByABKAUSEAoIcmVjYWxsZWQYCCABKAUiFgoUR2V0QWdlbnRTdGF0ZVJlcXVlc3QiLAoVR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEhMKC3VucmVhY2hhYmxlGAEgASgJIjoKG0dldERlY2tOZWlnaGJvdXJob29kUmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIlYKHEdldERlY2tOZWlnaGJvdXJob29kUmVzcG9uc2USJgoFbm90ZXMYASADKAsyFy5udW1lbi52MS5EZWNrTmVpZ2hib3VyEg4KBnVucmVhZBgCIAEoBSKyAQoNRGVja05laWdoYm91chIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSDAoEYm9keRgEIAEoCRINCgVsYWJlbBgFIAEoCRIOCgZwb2ludHMYBiABKAgSEQoJYW1iaWd1b3VzGAcgASgIEicKB3JlZnVzYWwYCCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiFQoTV2F0Y2hSZWxvYWRzUmVxdWVzdCImChRXYXRjaFJlbG9hZHNSZXNwb25zZRIOCgZyZWxvYWQYASABKAgiOAoZR2V0VmF1bHREZWNrUHJlc2V0UmVxdWVzdBINCgV2YXVsdBgBIAEoCRIMCgRkZWNrGAIgASgJIoMBChpHZXRWYXVsdERlY2tQcmVzZXRSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQgkKB19wcmVzZXRCCgoIX3JlZnVzYWwqZQoGUmF0aW5nEhYKElJBVElOR19VTlNQRUNJRklFRBAAEhAKDFJBVElOR19BR0FJThABEg8KC1JBVElOR19IQVJEEAISDwoLUkFUSU5HX0dPT0QQAxIPCgtSQVRJTkdfRUFTWRAEMpQGChFGbGFzaGNhcmRzU2VydmljZRJSCg1XYXRjaENhcmRzRHVlEh4ubnVtZW4udjEuV2F0Y2hDYXJkc0R1ZVJlcXVlc3QaHy5udW1lbi52MS5XYXRjaENhcmRzRHVlUmVzcG9uc2UwARJNCgxTdGFydFNlc3Npb24SHS5udW1lbi52MS5TdGFydFNlc3Npb25SZXF1ZXN0Gh4ubnVtZW4udjEuU3RhcnRTZXNzaW9uUmVzcG9uc2USRwoKQW5zd2VyQ2FyZBIbLm51bWVuLnYxLkFuc3dlckNhcmRSZXF1ZXN0GhwubnVtZW4udjEuQW5zd2VyQ2FyZFJlc3BvbnNlElMKDlRha2VCYWNrQW5zd2VyEh8ubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXF1ZXN0GiAubnVtZW4udjEuVGFrZUJhY2tBbnN3ZXJSZXNwb25zZRJPCgxXYXRjaFJlbG9hZHMSHS5udW1lbi52MS5XYXRjaFJlbG9hZHNSZXF1ZXN0Gh4ubnVtZW4udjEuV2F0Y2hSZWxvYWRzUmVzcG9uc2UwARJTCg5MaXN0UmV2aWV3RGF5cxIfLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RSZXZpZXdEYXlzUmVzcG9uc2USUAoNR2V0QWdlbnRTdGF0ZRIeLm51bWVuLnYxLkdldEFnZW50U3RhdGVSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0QWdlbnRTdGF0ZVJlc3BvbnNlEmUKFEdldERlY2tOZWlnaGJvdXJob29kEiUubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXF1ZXN0GiYubnVtZW4udjEuR2V0RGVja05laWdoYm91cmhvb2RSZXNwb25zZRJfChJHZXRWYXVsdERlY2tQcmVzZXQSIy5udW1lbi52MS5HZXRWYXVsdERlY2tQcmVzZXRSZXF1ZXN0GiQubnVtZW4udjEuR2V0VmF1bHREZWNrUHJlc2V0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_presets, file_numen_v1_shared]);
 
 /**
- * VaultOwing is one vault, and what its cards come to today.
+ * VaultCardsDue is one vault, and what its cards come to today.
  *
- * @generated from message numen.v1.VaultOwing
+ * @generated from message numen.v1.VaultCardsDue
  */
-export type VaultOwing = Message<"numen.v1.VaultOwing"> & {
+export type VaultCardsDue = Message<"numen.v1.VaultCardsDue"> & {
   /**
    * Name is the identity the folder carries, and how this vault is asked for
    * again. DisplayName is what the person calls the collection.
@@ -73,17 +73,17 @@ export type VaultOwing = Message<"numen.v1.VaultOwing"> & {
   /**
    * Decks is the same three numbers for each deck, by the path of its file.
    *
-   * @generated from field: repeated numen.v1.DeckOwing decks = 7;
+   * @generated from field: repeated numen.v1.DeckCardsDue decks = 7;
    */
-  decks: DeckOwing[];
+  decks: DeckCardsDue[];
 
   /**
    * Presets is what the day comes to under each preset the vault's decks are
    * scheduled by.
    *
-   * @generated from field: repeated numen.v1.PresetOwing presets = 9;
+   * @generated from field: repeated numen.v1.PresetCardsDue presets = 9;
    */
-  presets: PresetOwing[];
+  presets: PresetCardsDue[];
 
   /**
    * Set when the vault could not be counted: its files could not be reached, or
@@ -104,16 +104,16 @@ export type VaultOwing = Message<"numen.v1.VaultOwing"> & {
 };
 
 /**
- * Describes the message numen.v1.VaultOwing.
- * Use `create(VaultOwingSchema)` to create a new message.
+ * Describes the message numen.v1.VaultCardsDue.
+ * Use `create(VaultCardsDueSchema)` to create a new message.
  */
-export const VaultOwingSchema: GenMessage<VaultOwing> = /*@__PURE__*/
+export const VaultCardsDueSchema: GenMessage<VaultCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 0);
 
 /**
- * @generated from message numen.v1.DeckOwing
+ * @generated from message numen.v1.DeckCardsDue
  */
-export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
+export type DeckCardsDue = Message<"numen.v1.DeckCardsDue"> & {
   /**
    * @generated from field: string deck = 1;
    */
@@ -163,18 +163,18 @@ export type DeckOwing = Message<"numen.v1.DeckOwing"> & {
 };
 
 /**
- * Describes the message numen.v1.DeckOwing.
- * Use `create(DeckOwingSchema)` to create a new message.
+ * Describes the message numen.v1.DeckCardsDue.
+ * Use `create(DeckCardsDueSchema)` to create a new message.
  */
-export const DeckOwingSchema: GenMessage<DeckOwing> = /*@__PURE__*/
+export const DeckCardsDueSchema: GenMessage<DeckCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 1);
 
 /**
- * PresetOwing is one preset of a vault, and what the day comes to under it.
+ * PresetCardsDue is one preset of a vault, and what the day comes to under it.
  *
- * @generated from message numen.v1.PresetOwing
+ * @generated from message numen.v1.PresetCardsDue
  */
-export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
+export type PresetCardsDue = Message<"numen.v1.PresetCardsDue"> & {
   /**
    * The note the settings were read from, and empty for the decks naming no
    * preset.
@@ -303,10 +303,10 @@ export type PresetOwing = Message<"numen.v1.PresetOwing"> & {
 };
 
 /**
- * Describes the message numen.v1.PresetOwing.
- * Use `create(PresetOwingSchema)` to create a new message.
+ * Describes the message numen.v1.PresetCardsDue.
+ * Use `create(PresetCardsDueSchema)` to create a new message.
  */
-export const PresetOwingSchema: GenMessage<PresetOwing> = /*@__PURE__*/
+export const PresetCardsDueSchema: GenMessage<PresetCardsDue> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 2);
 
 /**
@@ -449,9 +449,9 @@ export type WatchCardsDueResponse = Message<"numen.v1.WatchCardsDueResponse"> & 
    * with nothing counted. It stands in the first message and in no other, and
    * it is what the list is drawn from.
    *
-   * @generated from field: repeated numen.v1.VaultOwing vaults = 1;
+   * @generated from field: repeated numen.v1.VaultCardsDue vaults = 1;
    */
-  vaults: VaultOwing[];
+  vaults: VaultCardsDue[];
 
   /**
    * Day is the review day these counts stand in, written as the year, the month
@@ -468,9 +468,9 @@ export type WatchCardsDueResponse = Message<"numen.v1.WatchCardsDueResponse"> & 
    * first. Until one arrives for a vault, nothing is known about what that
    * vault owes.
    *
-   * @generated from field: numen.v1.VaultOwing counted = 3;
+   * @generated from field: numen.v1.VaultCardsDue counted = 3;
    */
-  counted?: VaultOwing | undefined;
+  counted?: VaultCardsDue | undefined;
 };
 
 /**
@@ -687,18 +687,18 @@ export type ListReviewDaysResponse = Message<"numen.v1.ListReviewDaysResponse"> 
    * Days is what each day a person answered on came to. A day nobody answered
    * on is not in it.
    *
-   * @generated from field: repeated numen.v1.Reviewing days = 1;
+   * @generated from field: repeated numen.v1.ReviewDay days = 1;
    */
-  days: Reviewing[];
+  days: ReviewDay[];
 
   /**
    * Due is how many card faces fall on each day still to come. A card owed
    * today, or owed and late, is not in it: what a person owes now is what the
    * front door counts, and this is what is after it.
    *
-   * @generated from field: repeated numen.v1.Reviewing due = 4;
+   * @generated from field: repeated numen.v1.ReviewDay due = 4;
    */
-  due: Reviewing[];
+  due: ReviewDay[];
 
   /**
    * Streak is how many days up to now were reviewed without a gap. A day
@@ -724,11 +724,11 @@ export const ListReviewDaysResponseSchema: GenMessage<ListReviewDaysResponse> = 
   messageDesc(file_numen_v1_flashcards, 14);
 
 /**
- * Reviewing is one day, and what was answered on it.
+ * ReviewDay is one day, and what was answered on it.
  *
- * @generated from message numen.v1.Reviewing
+ * @generated from message numen.v1.ReviewDay
  */
-export type Reviewing = Message<"numen.v1.Reviewing"> & {
+export type ReviewDay = Message<"numen.v1.ReviewDay"> & {
   /**
    * Day is the day it began on, as the year, the month and the day: an answer
    * given in the small hours belongs to the day before, and is named for it.
@@ -784,10 +784,10 @@ export type Reviewing = Message<"numen.v1.Reviewing"> & {
 };
 
 /**
- * Describes the message numen.v1.Reviewing.
- * Use `create(ReviewingSchema)` to create a new message.
+ * Describes the message numen.v1.ReviewDay.
+ * Use `create(ReviewDaySchema)` to create a new message.
  */
-export const ReviewingSchema: GenMessage<Reviewing> = /*@__PURE__*/
+export const ReviewDaySchema: GenMessage<ReviewDay> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 15);
 
 /**
@@ -853,9 +853,9 @@ export const GetDeckNeighbourhoodRequestSchema: GenMessage<GetDeckNeighbourhoodR
  */
 export type GetDeckNeighbourhoodResponse = Message<"numen.v1.GetDeckNeighbourhoodResponse"> & {
   /**
-   * @generated from field: repeated numen.v1.Neighbour notes = 1;
+   * @generated from field: repeated numen.v1.DeckNeighbour notes = 1;
    */
-  notes: Neighbour[];
+  notes: DeckNeighbour[];
 
   /**
    * Unread is how many at the end of the list came without their text. Reading
@@ -875,11 +875,11 @@ export const GetDeckNeighbourhoodResponseSchema: GenMessage<GetDeckNeighbourhood
   messageDesc(file_numen_v1_flashcards, 19);
 
 /**
- * Neighbour is one note the deck stands next to.
+ * DeckNeighbour is one note the deck stands next to.
  *
- * @generated from message numen.v1.Neighbour
+ * @generated from message numen.v1.DeckNeighbour
  */
-export type Neighbour = Message<"numen.v1.Neighbour"> & {
+export type DeckNeighbour = Message<"numen.v1.DeckNeighbour"> & {
   /**
    * Written is the address as the deck wrote it, and all a link resolving to
    * nothing ever has. It is empty for a note that points at the deck, which
@@ -943,10 +943,10 @@ export type Neighbour = Message<"numen.v1.Neighbour"> & {
 };
 
 /**
- * Describes the message numen.v1.Neighbour.
- * Use `create(NeighbourSchema)` to create a new message.
+ * Describes the message numen.v1.DeckNeighbour.
+ * Use `create(DeckNeighbourSchema)` to create a new message.
  */
-export const NeighbourSchema: GenMessage<Neighbour> = /*@__PURE__*/
+export const DeckNeighbourSchema: GenMessage<DeckNeighbour> = /*@__PURE__*/
   messageDesc(file_numen_v1_flashcards, 20);
 
 /**

@@ -93,8 +93,8 @@ func (Rating) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{0}
 }
 
-// VaultOwing is one vault, and what its cards come to today.
-type VaultOwing struct {
+// VaultCardsDue is one vault, and what its cards come to today.
+type VaultCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Name is the identity the folder carries, and how this vault is asked for
 	// again. DisplayName is what the person calls the collection.
@@ -108,10 +108,10 @@ type VaultOwing struct {
 	Due   int32 `protobuf:"varint,5,opt,name=due,proto3" json:"due,omitempty"`
 	New   int32 `protobuf:"varint,6,opt,name=new,proto3" json:"new,omitempty"`
 	// Decks is the same three numbers for each deck, by the path of its file.
-	Decks []*DeckOwing `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
+	Decks []*DeckCardsDue `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
 	// Presets is what the day comes to under each preset the vault's decks are
 	// scheduled by.
-	Presets []*PresetOwing `protobuf:"bytes,9,rep,name=presets,proto3" json:"presets,omitempty"`
+	Presets []*PresetCardsDue `protobuf:"bytes,9,rep,name=presets,proto3" json:"presets,omitempty"`
 	// Set when the vault could not be counted: its files could not be reached, or
 	// reading it into the index failed. The three numbers are then zero and this
 	// says why, in the person's own words.
@@ -123,20 +123,20 @@ type VaultOwing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultOwing) Reset() {
-	*x = VaultOwing{}
+func (x *VaultCardsDue) Reset() {
+	*x = VaultCardsDue{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultOwing) String() string {
+func (x *VaultCardsDue) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultOwing) ProtoMessage() {}
+func (*VaultCardsDue) ProtoMessage() {}
 
-func (x *VaultOwing) ProtoReflect() protoreflect.Message {
+func (x *VaultCardsDue) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -148,82 +148,82 @@ func (x *VaultOwing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultOwing.ProtoReflect.Descriptor instead.
-func (*VaultOwing) Descriptor() ([]byte, []int) {
+// Deprecated: Use VaultCardsDue.ProtoReflect.Descriptor instead.
+func (*VaultCardsDue) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *VaultOwing) GetName() string {
+func (x *VaultCardsDue) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *VaultOwing) GetDisplayName() string {
+func (x *VaultCardsDue) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-func (x *VaultOwing) GetPath() string {
+func (x *VaultCardsDue) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *VaultOwing) GetFaces() int32 {
+func (x *VaultCardsDue) GetFaces() int32 {
 	if x != nil {
 		return x.Faces
 	}
 	return 0
 }
 
-func (x *VaultOwing) GetDue() int32 {
+func (x *VaultCardsDue) GetDue() int32 {
 	if x != nil {
 		return x.Due
 	}
 	return 0
 }
 
-func (x *VaultOwing) GetNew() int32 {
+func (x *VaultCardsDue) GetNew() int32 {
 	if x != nil {
 		return x.New
 	}
 	return 0
 }
 
-func (x *VaultOwing) GetDecks() []*DeckOwing {
+func (x *VaultCardsDue) GetDecks() []*DeckCardsDue {
 	if x != nil {
 		return x.Decks
 	}
 	return nil
 }
 
-func (x *VaultOwing) GetPresets() []*PresetOwing {
+func (x *VaultCardsDue) GetPresets() []*PresetCardsDue {
 	if x != nil {
 		return x.Presets
 	}
 	return nil
 }
 
-func (x *VaultOwing) GetUnread() string {
+func (x *VaultCardsDue) GetUnread() string {
 	if x != nil {
 		return x.Unread
 	}
 	return ""
 }
 
-func (x *VaultOwing) GetReading() bool {
+func (x *VaultCardsDue) GetReading() bool {
 	if x != nil {
 		return x.Reading
 	}
 	return false
 }
 
-type DeckOwing struct {
+type DeckCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Deck  string                 `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
 	Faces int32                  `protobuf:"varint,2,opt,name=faces,proto3" json:"faces,omitempty"`
@@ -245,20 +245,20 @@ type DeckOwing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeckOwing) Reset() {
-	*x = DeckOwing{}
+func (x *DeckCardsDue) Reset() {
+	*x = DeckCardsDue{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeckOwing) String() string {
+func (x *DeckCardsDue) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeckOwing) ProtoMessage() {}
+func (*DeckCardsDue) ProtoMessage() {}
 
-func (x *DeckOwing) ProtoReflect() protoreflect.Message {
+func (x *DeckCardsDue) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -270,62 +270,62 @@ func (x *DeckOwing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeckOwing.ProtoReflect.Descriptor instead.
-func (*DeckOwing) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeckCardsDue.ProtoReflect.Descriptor instead.
+func (*DeckCardsDue) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *DeckOwing) GetDeck() string {
+func (x *DeckCardsDue) GetDeck() string {
 	if x != nil {
 		return x.Deck
 	}
 	return ""
 }
 
-func (x *DeckOwing) GetFaces() int32 {
+func (x *DeckCardsDue) GetFaces() int32 {
 	if x != nil {
 		return x.Faces
 	}
 	return 0
 }
 
-func (x *DeckOwing) GetDue() int32 {
+func (x *DeckCardsDue) GetDue() int32 {
 	if x != nil {
 		return x.Due
 	}
 	return 0
 }
 
-func (x *DeckOwing) GetNew() int32 {
+func (x *DeckCardsDue) GetNew() int32 {
 	if x != nil {
 		return x.New
 	}
 	return 0
 }
 
-func (x *DeckOwing) GetAnswered() int32 {
+func (x *DeckCardsDue) GetAnswered() int32 {
 	if x != nil {
 		return x.Answered
 	}
 	return 0
 }
 
-func (x *DeckOwing) GetLearned() int32 {
+func (x *DeckCardsDue) GetLearned() int32 {
 	if x != nil {
 		return x.Learned
 	}
 	return 0
 }
 
-func (x *DeckOwing) GetUnbegun() int32 {
+func (x *DeckCardsDue) GetUnbegun() int32 {
 	if x != nil {
 		return x.Unbegun
 	}
 	return 0
 }
 
-// PresetOwing is one preset of a vault, and what the day comes to under it.
-type PresetOwing struct {
+// PresetCardsDue is one preset of a vault, and what the day comes to under it.
+type PresetCardsDue struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the settings were read from, and empty for the decks naming no
 	// preset.
@@ -376,20 +376,20 @@ type PresetOwing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PresetOwing) Reset() {
-	*x = PresetOwing{}
+func (x *PresetCardsDue) Reset() {
+	*x = PresetCardsDue{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PresetOwing) String() string {
+func (x *PresetCardsDue) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PresetOwing) ProtoMessage() {}
+func (*PresetCardsDue) ProtoMessage() {}
 
-func (x *PresetOwing) ProtoReflect() protoreflect.Message {
+func (x *PresetCardsDue) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -401,131 +401,131 @@ func (x *PresetOwing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PresetOwing.ProtoReflect.Descriptor instead.
-func (*PresetOwing) Descriptor() ([]byte, []int) {
+// Deprecated: Use PresetCardsDue.ProtoReflect.Descriptor instead.
+func (*PresetCardsDue) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *PresetOwing) GetPreset() string {
+func (x *PresetCardsDue) GetPreset() string {
 	if x != nil {
 		return x.Preset
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetTitle() string {
+func (x *PresetCardsDue) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetDecks() int32 {
+func (x *PresetCardsDue) GetDecks() int32 {
 	if x != nil {
 		return x.Decks
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetCards() int32 {
+func (x *PresetCardsDue) GetCards() int32 {
 	if x != nil {
 		return x.Cards
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetOwedDue() int32 {
+func (x *PresetCardsDue) GetOwedDue() int32 {
 	if x != nil {
 		return x.OwedDue
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetOwedNew() int32 {
+func (x *PresetCardsDue) GetOwedNew() int32 {
 	if x != nil {
 		return x.OwedNew
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetAnswered() int32 {
+func (x *PresetCardsDue) GetAnswered() int32 {
 	if x != nil {
 		return x.Answered
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetTookMs() int64 {
+func (x *PresetCardsDue) GetTookMs() int64 {
 	if x != nil {
 		return x.TookMs
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetAnsweredNew() int32 {
+func (x *PresetCardsDue) GetAnsweredNew() int32 {
 	if x != nil {
 		return x.AnsweredNew
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetAnsweredReviews() int32 {
+func (x *PresetCardsDue) GetAnsweredReviews() int32 {
 	if x != nil {
 		return x.AnsweredReviews
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetNew() int32 {
+func (x *PresetCardsDue) GetNew() int32 {
 	if x != nil {
 		return x.New
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetReviews() int32 {
+func (x *PresetCardsDue) GetReviews() int32 {
 	if x != nil {
 		return x.Reviews
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetMinutes() float64 {
+func (x *PresetCardsDue) GetMinutes() float64 {
 	if x != nil {
 		return x.Minutes
 	}
 	return 0
 }
 
-func (x *PresetOwing) GetClosesNew() string {
+func (x *PresetCardsDue) GetClosesNew() string {
 	if x != nil {
 		return x.ClosesNew
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetClosesReviews() string {
+func (x *PresetCardsDue) GetClosesReviews() string {
 	if x != nil {
 		return x.ClosesReviews
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetClosesMinutes() string {
+func (x *PresetCardsDue) GetClosesMinutes() string {
 	if x != nil {
 		return x.ClosesMinutes
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetClosesBacklog() string {
+func (x *PresetCardsDue) GetClosesBacklog() string {
 	if x != nil {
 		return x.ClosesBacklog
 	}
 	return ""
 }
 
-func (x *PresetOwing) GetStopsOn() Stopped {
+func (x *PresetCardsDue) GetStopsOn() Stopped {
 	if x != nil {
 		return x.StopsOn
 	}
@@ -773,7 +773,7 @@ type WatchCardsDueResponse struct {
 	// Vaults is every vault the installation holds, by name and by where it is,
 	// with nothing counted. It stands in the first message and in no other, and
 	// it is what the list is drawn from.
-	Vaults []*VaultOwing `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
+	Vaults []*VaultCardsDue `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
 	// Day is the review day these counts stand in, written as the year, the month
 	// and the day. A day of review begins at the hour the settings name, so an
 	// hour past midnight is still the day before. It stands in the first message
@@ -782,7 +782,7 @@ type WatchCardsDueResponse struct {
 	// Counted is one vault worked out, and stands in every message after the
 	// first. Until one arrives for a vault, nothing is known about what that
 	// vault owes.
-	Counted       *VaultOwing `protobuf:"bytes,3,opt,name=counted,proto3" json:"counted,omitempty"`
+	Counted       *VaultCardsDue `protobuf:"bytes,3,opt,name=counted,proto3" json:"counted,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -817,7 +817,7 @@ func (*WatchCardsDueResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *WatchCardsDueResponse) GetVaults() []*VaultOwing {
+func (x *WatchCardsDueResponse) GetVaults() []*VaultCardsDue {
 	if x != nil {
 		return x.Vaults
 	}
@@ -831,7 +831,7 @@ func (x *WatchCardsDueResponse) GetDay() string {
 	return ""
 }
 
-func (x *WatchCardsDueResponse) GetCounted() *VaultOwing {
+func (x *WatchCardsDueResponse) GetCounted() *VaultCardsDue {
 	if x != nil {
 		return x.Counted
 	}
@@ -1254,11 +1254,11 @@ type ListReviewDaysResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Days is what each day a person answered on came to. A day nobody answered
 	// on is not in it.
-	Days []*Reviewing `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
+	Days []*ReviewDay `protobuf:"bytes,1,rep,name=days,proto3" json:"days,omitempty"`
 	// Due is how many card faces fall on each day still to come. A card owed
 	// today, or owed and late, is not in it: what a person owes now is what the
 	// front door counts, and this is what is after it.
-	Due []*Reviewing `protobuf:"bytes,4,rep,name=due,proto3" json:"due,omitempty"`
+	Due []*ReviewDay `protobuf:"bytes,4,rep,name=due,proto3" json:"due,omitempty"`
 	// Streak is how many days up to now were reviewed without a gap. A day
 	// nobody has answered on yet does not end one.
 	Streak int32 `protobuf:"varint,2,opt,name=streak,proto3" json:"streak,omitempty"`
@@ -1298,14 +1298,14 @@ func (*ListReviewDaysResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *ListReviewDaysResponse) GetDays() []*Reviewing {
+func (x *ListReviewDaysResponse) GetDays() []*ReviewDay {
 	if x != nil {
 		return x.Days
 	}
 	return nil
 }
 
-func (x *ListReviewDaysResponse) GetDue() []*Reviewing {
+func (x *ListReviewDaysResponse) GetDue() []*ReviewDay {
 	if x != nil {
 		return x.Due
 	}
@@ -1326,8 +1326,8 @@ func (x *ListReviewDaysResponse) GetAnswered() int32 {
 	return 0
 }
 
-// Reviewing is one day, and what was answered on it.
-type Reviewing struct {
+// ReviewDay is one day, and what was answered on it.
+type ReviewDay struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Day is the day it began on, as the year, the month and the day: an answer
 	// given in the small hours belongs to the day before, and is named for it.
@@ -1351,20 +1351,20 @@ type Reviewing struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Reviewing) Reset() {
-	*x = Reviewing{}
+func (x *ReviewDay) Reset() {
+	*x = ReviewDay{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Reviewing) String() string {
+func (x *ReviewDay) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Reviewing) ProtoMessage() {}
+func (*ReviewDay) ProtoMessage() {}
 
-func (x *Reviewing) ProtoReflect() protoreflect.Message {
+func (x *ReviewDay) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1376,61 +1376,61 @@ func (x *Reviewing) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Reviewing.ProtoReflect.Descriptor instead.
-func (*Reviewing) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReviewDay.ProtoReflect.Descriptor instead.
+func (*ReviewDay) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *Reviewing) GetDay() string {
+func (x *ReviewDay) GetDay() string {
 	if x != nil {
 		return x.Day
 	}
 	return ""
 }
 
-func (x *Reviewing) GetAnswered() int32 {
+func (x *ReviewDay) GetAnswered() int32 {
 	if x != nil {
 		return x.Answered
 	}
 	return 0
 }
 
-func (x *Reviewing) GetAgain() int32 {
+func (x *ReviewDay) GetAgain() int32 {
 	if x != nil {
 		return x.Again
 	}
 	return 0
 }
 
-func (x *Reviewing) GetHard() int32 {
+func (x *ReviewDay) GetHard() int32 {
 	if x != nil {
 		return x.Hard
 	}
 	return 0
 }
 
-func (x *Reviewing) GetGood() int32 {
+func (x *ReviewDay) GetGood() int32 {
 	if x != nil {
 		return x.Good
 	}
 	return 0
 }
 
-func (x *Reviewing) GetEasy() int32 {
+func (x *ReviewDay) GetEasy() int32 {
 	if x != nil {
 		return x.Easy
 	}
 	return 0
 }
 
-func (x *Reviewing) GetAsked() int32 {
+func (x *ReviewDay) GetAsked() int32 {
 	if x != nil {
 		return x.Asked
 	}
 	return 0
 }
 
-func (x *Reviewing) GetRecalled() int32 {
+func (x *ReviewDay) GetRecalled() int32 {
 	if x != nil {
 		return x.Recalled
 	}
@@ -1575,7 +1575,7 @@ func (x *GetDeckNeighbourhoodRequest) GetDeck() string {
 
 type GetDeckNeighbourhoodResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Notes []*Neighbour           `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
+	Notes []*DeckNeighbour       `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
 	// Unread is how many at the end of the list came without their text. Reading
 	// stops once a sitting's worth has been gathered, so a deck at the centre of
 	// a vault is still answered promptly and says how much it left.
@@ -1614,7 +1614,7 @@ func (*GetDeckNeighbourhoodResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *GetDeckNeighbourhoodResponse) GetNotes() []*Neighbour {
+func (x *GetDeckNeighbourhoodResponse) GetNotes() []*DeckNeighbour {
 	if x != nil {
 		return x.Notes
 	}
@@ -1628,8 +1628,8 @@ func (x *GetDeckNeighbourhoodResponse) GetUnread() int32 {
 	return 0
 }
 
-// Neighbour is one note the deck stands next to.
-type Neighbour struct {
+// DeckNeighbour is one note the deck stands next to.
+type DeckNeighbour struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Written is the address as the deck wrote it, and all a link resolving to
 	// nothing ever has. It is empty for a note that points at the deck, which
@@ -1658,20 +1658,20 @@ type Neighbour struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Neighbour) Reset() {
-	*x = Neighbour{}
+func (x *DeckNeighbour) Reset() {
+	*x = DeckNeighbour{}
 	mi := &file_numen_v1_flashcards_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Neighbour) String() string {
+func (x *DeckNeighbour) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Neighbour) ProtoMessage() {}
+func (*DeckNeighbour) ProtoMessage() {}
 
-func (x *Neighbour) ProtoReflect() protoreflect.Message {
+func (x *DeckNeighbour) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_flashcards_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1683,61 +1683,61 @@ func (x *Neighbour) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Neighbour.ProtoReflect.Descriptor instead.
-func (*Neighbour) Descriptor() ([]byte, []int) {
+// Deprecated: Use DeckNeighbour.ProtoReflect.Descriptor instead.
+func (*DeckNeighbour) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *Neighbour) GetWritten() string {
+func (x *DeckNeighbour) GetWritten() string {
 	if x != nil {
 		return x.Written
 	}
 	return ""
 }
 
-func (x *Neighbour) GetPath() string {
+func (x *DeckNeighbour) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Neighbour) GetTitle() string {
+func (x *DeckNeighbour) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Neighbour) GetBody() string {
+func (x *DeckNeighbour) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *Neighbour) GetLabel() string {
+func (x *DeckNeighbour) GetLabel() string {
 	if x != nil {
 		return x.Label
 	}
 	return ""
 }
 
-func (x *Neighbour) GetPoints() bool {
+func (x *DeckNeighbour) GetPoints() bool {
 	if x != nil {
 		return x.Points
 	}
 	return false
 }
 
-func (x *Neighbour) GetAmbiguous() bool {
+func (x *DeckNeighbour) GetAmbiguous() bool {
 	if x != nil {
 		return x.Ambiguous
 	}
 	return false
 }
 
-func (x *Neighbour) GetRefusal() Refusal {
+func (x *DeckNeighbour) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
@@ -1937,29 +1937,28 @@ var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x9f\x02\n" +
-	"\n" +
-	"VaultOwing\x12\x12\n" +
+	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\xa8\x02\n" +
+	"\rVaultCardsDue\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05faces\x18\x04 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x05 \x01(\x05R\x03due\x12\x10\n" +
-	"\x03new\x18\x06 \x01(\x05R\x03new\x12)\n" +
-	"\x05decks\x18\a \x03(\v2\x13.numen.v1.DeckOwingR\x05decks\x12/\n" +
-	"\apresets\x18\t \x03(\v2\x15.numen.v1.PresetOwingR\apresets\x12\x16\n" +
+	"\x03new\x18\x06 \x01(\x05R\x03new\x12,\n" +
+	"\x05decks\x18\a \x03(\v2\x16.numen.v1.DeckCardsDueR\x05decks\x122\n" +
+	"\apresets\x18\t \x03(\v2\x18.numen.v1.PresetCardsDueR\apresets\x12\x16\n" +
 	"\x06unread\x18\b \x01(\tR\x06unread\x12\x18\n" +
 	"\areading\x18\n" +
-	" \x01(\bR\areading\"\xa9\x01\n" +
-	"\tDeckOwing\x12\x12\n" +
+	" \x01(\bR\areading\"\xac\x01\n" +
+	"\fDeckCardsDue\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
 	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
 	"\banswered\x18\x05 \x01(\x05R\banswered\x12\x18\n" +
 	"\alearned\x18\x06 \x01(\x05R\alearned\x12\x18\n" +
-	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xa8\x04\n" +
-	"\vPresetOwing\x12\x16\n" +
+	"\aunbegun\x18\a \x01(\x05R\aunbegun\"\xab\x04\n" +
+	"\x0ePresetCardsDue\x12\x16\n" +
 	"\x06preset\x18\x01 \x01(\tR\x06preset\x12\x14\n" +
 	"\x05title\x18\a \x01(\tR\x05title\x12\x14\n" +
 	"\x05decks\x18\b \x01(\x05R\x05decks\x12\x14\n" +
@@ -1997,11 +1996,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03due\x18\t \x01(\tR\x03due\x12%\n" +
 	"\x05ahead\x18\n" +
 	" \x01(\v2\x0f.numen.v1.AheadR\x05ahead\"\x16\n" +
-	"\x14WatchCardsDueRequest\"\x87\x01\n" +
-	"\x15WatchCardsDueResponse\x12,\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\x12\x10\n" +
-	"\x03day\x18\x02 \x01(\tR\x03day\x12.\n" +
-	"\acounted\x18\x03 \x01(\v2\x14.numen.v1.VaultOwingR\acounted\"g\n" +
+	"\x14WatchCardsDueRequest\"\x8d\x01\n" +
+	"\x15WatchCardsDueResponse\x12/\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x17.numen.v1.VaultCardsDueR\x06vaults\x12\x10\n" +
+	"\x03day\x18\x02 \x01(\tR\x03day\x121\n" +
+	"\acounted\x18\x03 \x01(\v2\x17.numen.v1.VaultCardsDueR\acounted\"g\n" +
 	"\x13StartSessionRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x1b\n" +
@@ -2029,11 +2028,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x15ListReviewDaysRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\"\x9c\x01\n" +
 	"\x16ListReviewDaysResponse\x12'\n" +
-	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewingR\x04days\x12%\n" +
-	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewingR\x03due\x12\x16\n" +
+	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewDayR\x04days\x12%\n" +
+	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewDayR\x03due\x12\x16\n" +
 	"\x06streak\x18\x02 \x01(\x05R\x06streak\x12\x1a\n" +
 	"\banswered\x18\x03 \x01(\x05R\banswered\"\xbd\x01\n" +
-	"\tReviewing\x12\x10\n" +
+	"\tReviewDay\x12\x10\n" +
 	"\x03day\x18\x01 \x01(\tR\x03day\x12\x1a\n" +
 	"\banswered\x18\x02 \x01(\x05R\banswered\x12\x14\n" +
 	"\x05again\x18\x03 \x01(\x05R\x05again\x12\x12\n" +
@@ -2047,11 +2046,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"G\n" +
 	"\x1bGetDeckNeighbourhoodRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
-	"\x04deck\x18\x02 \x01(\tR\x04deck\"a\n" +
-	"\x1cGetDeckNeighbourhoodResponse\x12)\n" +
-	"\x05notes\x18\x01 \x03(\v2\x13.numen.v1.NeighbourR\x05notes\x12\x16\n" +
-	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xed\x01\n" +
-	"\tNeighbour\x12\x18\n" +
+	"\x04deck\x18\x02 \x01(\tR\x04deck\"e\n" +
+	"\x1cGetDeckNeighbourhoodResponse\x12-\n" +
+	"\x05notes\x18\x01 \x03(\v2\x17.numen.v1.DeckNeighbourR\x05notes\x12\x16\n" +
+	"\x06unread\x18\x02 \x01(\x05R\x06unread\"\xf1\x01\n" +
+	"\rDeckNeighbour\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
@@ -2108,9 +2107,9 @@ var file_numen_v1_flashcards_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_flashcards_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_flashcards_proto_goTypes = []any{
 	(Rating)(0),                          // 0: numen.v1.Rating
-	(*VaultOwing)(nil),                   // 1: numen.v1.VaultOwing
-	(*DeckOwing)(nil),                    // 2: numen.v1.DeckOwing
-	(*PresetOwing)(nil),                  // 3: numen.v1.PresetOwing
+	(*VaultCardsDue)(nil),                // 1: numen.v1.VaultCardsDue
+	(*DeckCardsDue)(nil),                 // 2: numen.v1.DeckCardsDue
+	(*PresetCardsDue)(nil),               // 3: numen.v1.PresetCardsDue
 	(*Ahead)(nil),                        // 4: numen.v1.Ahead
 	(*Asked)(nil),                        // 5: numen.v1.Asked
 	(*WatchCardsDueRequest)(nil),         // 6: numen.v1.WatchCardsDueRequest
@@ -2123,12 +2122,12 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*TakeBackAnswerResponse)(nil),       // 13: numen.v1.TakeBackAnswerResponse
 	(*ListReviewDaysRequest)(nil),        // 14: numen.v1.ListReviewDaysRequest
 	(*ListReviewDaysResponse)(nil),       // 15: numen.v1.ListReviewDaysResponse
-	(*Reviewing)(nil),                    // 16: numen.v1.Reviewing
+	(*ReviewDay)(nil),                    // 16: numen.v1.ReviewDay
 	(*GetAgentStateRequest)(nil),         // 17: numen.v1.GetAgentStateRequest
 	(*GetAgentStateResponse)(nil),        // 18: numen.v1.GetAgentStateResponse
 	(*GetDeckNeighbourhoodRequest)(nil),  // 19: numen.v1.GetDeckNeighbourhoodRequest
 	(*GetDeckNeighbourhoodResponse)(nil), // 20: numen.v1.GetDeckNeighbourhoodResponse
-	(*Neighbour)(nil),                    // 21: numen.v1.Neighbour
+	(*DeckNeighbour)(nil),                // 21: numen.v1.DeckNeighbour
 	(*WatchReloadsRequest)(nil),          // 22: numen.v1.WatchReloadsRequest
 	(*WatchReloadsResponse)(nil),         // 23: numen.v1.WatchReloadsResponse
 	(*GetVaultDeckPresetRequest)(nil),    // 24: numen.v1.GetVaultDeckPresetRequest
@@ -2138,18 +2137,18 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*Preset)(nil),                       // 28: numen.v1.Preset
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
-	3,  // 1: numen.v1.VaultOwing.presets:type_name -> numen.v1.PresetOwing
-	26, // 2: numen.v1.PresetOwing.stops_on:type_name -> numen.v1.Stopped
+	2,  // 0: numen.v1.VaultCardsDue.decks:type_name -> numen.v1.DeckCardsDue
+	3,  // 1: numen.v1.VaultCardsDue.presets:type_name -> numen.v1.PresetCardsDue
+	26, // 2: numen.v1.PresetCardsDue.stops_on:type_name -> numen.v1.Stopped
 	4,  // 3: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
-	1,  // 4: numen.v1.WatchCardsDueResponse.vaults:type_name -> numen.v1.VaultOwing
-	1,  // 5: numen.v1.WatchCardsDueResponse.counted:type_name -> numen.v1.VaultOwing
+	1,  // 4: numen.v1.WatchCardsDueResponse.vaults:type_name -> numen.v1.VaultCardsDue
+	1,  // 5: numen.v1.WatchCardsDueResponse.counted:type_name -> numen.v1.VaultCardsDue
 	5,  // 6: numen.v1.StartSessionResponse.asked:type_name -> numen.v1.Asked
 	0,  // 7: numen.v1.AnswerCardRequest.rating:type_name -> numen.v1.Rating
-	16, // 8: numen.v1.ListReviewDaysResponse.days:type_name -> numen.v1.Reviewing
-	16, // 9: numen.v1.ListReviewDaysResponse.due:type_name -> numen.v1.Reviewing
-	21, // 10: numen.v1.GetDeckNeighbourhoodResponse.notes:type_name -> numen.v1.Neighbour
-	27, // 11: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
+	16, // 8: numen.v1.ListReviewDaysResponse.days:type_name -> numen.v1.ReviewDay
+	16, // 9: numen.v1.ListReviewDaysResponse.due:type_name -> numen.v1.ReviewDay
+	21, // 10: numen.v1.GetDeckNeighbourhoodResponse.notes:type_name -> numen.v1.DeckNeighbour
+	27, // 11: numen.v1.DeckNeighbour.refusal:type_name -> numen.v1.Refusal
 	28, // 12: numen.v1.GetVaultDeckPresetResponse.preset:type_name -> numen.v1.Preset
 	27, // 13: numen.v1.GetVaultDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
 	6,  // 14: numen.v1.FlashcardsService.WatchCardsDue:input_type -> numen.v1.WatchCardsDueRequest

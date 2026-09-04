@@ -38,9 +38,9 @@ func (a *API) WatchCardsDue(
 		return connect.NewError(connect.CodeInternal, err)
 	}
 
-	listed := make([]*v1.VaultOwing, 0, len(all))
+	listed := make([]*v1.VaultCardsDue, 0, len(all))
 	for _, v := range all {
-		listed = append(listed, &v1.VaultOwing{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
+		listed = append(listed, &v1.VaultCardsDue{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	if err := out.Send(&v1.WatchCardsDueResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
@@ -81,8 +81,8 @@ func (a *API) wanted(all []domain.Vault) []domain.Vault {
 // counting works the vaults out, a few at a time, and hands each over as it
 // comes. A vault that takes a minute holds up nothing but the ones behind it in
 // the queue.
-func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.VaultOwing {
-	counted := make(chan *v1.VaultOwing)
+func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.VaultCardsDue {
+	counted := make(chan *v1.VaultCardsDue)
 	go func() {
 		defer close(counted)
 		var running sync.WaitGroup
@@ -109,8 +109,8 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 	return counted
 }
 
-func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
-	one := &v1.VaultOwing{Name: string(v.ID), DisplayName: v.Name, Path: v.Path}
+func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
+	one := &v1.VaultCardsDue{Name: string(v.ID), DisplayName: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the
@@ -129,7 +129,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 	one.Due = int32(owing.Due)
 	one.New = int32(owing.New)
 	for _, deck := range owing.Decks {
-		one.Decks = append(one.Decks, &v1.DeckOwing{
+		one.Decks = append(one.Decks, &v1.DeckCardsDue{
 			Deck:     deck.Deck,
 			Faces:    int32(deck.Faces),
 			Due:      int32(deck.Due),
@@ -140,7 +140,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 		})
 	}
 	for _, preset := range owing.Presets {
-		one.Presets = append(one.Presets, &v1.PresetOwing{
+		one.Presets = append(one.Presets, &v1.PresetCardsDue{
 			Preset:          preset.Preset,
 			Title:           a.titled(ctx, v, preset.Preset),
 			Decks:           int32(preset.Decks),

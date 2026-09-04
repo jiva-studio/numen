@@ -26,11 +26,11 @@ func (a *API) GetDeckNeighbourhood(
 	}
 
 	out := &v1.GetDeckNeighbourhoodResponse{
-		Notes:  make([]*v1.Neighbour, 0, len(joined.Notes)),
+		Notes:  make([]*v1.DeckNeighbour, 0, len(joined.Notes)),
 		Unread: int32(joined.Unread),
 	}
 	for _, one := range joined.Notes {
-		next := &v1.Neighbour{
+		next := &v1.DeckNeighbour{
 			Written:   one.Written,
 			Path:      one.Path,
 			Title:     one.Title,

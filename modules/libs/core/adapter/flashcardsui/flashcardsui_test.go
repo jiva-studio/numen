@@ -164,7 +164,7 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	var out *v1.WatchCardsDueResponse
 	for at := time.Now(); time.Since(at) < 30*time.Second; {
 		out = asked(t, client)
-		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultOwing).GetReading) {
+		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetReading) {
 			return out
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -330,7 +330,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 }
 
 // counted is one vault out of what the front door answered.
-func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultOwing {
+func counted(t *testing.T, said *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range said.GetVaults() {
 		if one.GetName() == id {
@@ -1042,7 +1042,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 	// Which decks each preset schedules, so what a sitting asks can be checked
 	// against the rows it was gathered from.
 	under := make(map[string][]string)
-	rows := make(map[string]*v1.DeckOwing, len(said.GetDecks()))
+	rows := make(map[string]*v1.DeckCardsDue, len(said.GetDecks()))
 	for _, one := range said.GetDecks() {
 		rows[one.GetDeck()] = one
 		p, err := api.Presets.Of(t.Context(), v, one.GetDeck())

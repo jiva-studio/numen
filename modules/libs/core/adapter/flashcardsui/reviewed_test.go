@@ -129,7 +129,7 @@ func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
 // The days are drawn along a line of time, so they are handed over along one,
 // whatever order they were counted in.
 func TestTheDaysComeBackOldestFirst(t *testing.T) {
-	said := inOrder([]*v1.Reviewing{
+	said := inOrder([]*v1.ReviewDay{
 		{Day: "2026-08-30"},
 		{Day: "2026-07-01"},
 		{Day: "2027-01-02"},

@@ -134,7 +134,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 }
 
 // owing is what the front door says about one vault.
-func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultOwing {
+func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
 		if one.GetName() == string(v.ID) {
@@ -150,7 +150,7 @@ func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultOwing {
 
 // offers is how many card faces the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
-func offers(said *v1.VaultOwing, decks []string) int {
+func offers(said *v1.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range said.GetDecks() {
 		for _, deck := range decks {
