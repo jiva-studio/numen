@@ -81,12 +81,6 @@ func Start(dir string) (int, error) {
 		stop()
 		return 0, err
 	}
-	// The settings file holds the keys this installation reaches models with,
-	// and what is served here is served to any origin at all. This build binds
-	// no setting to read or write, so every call about them is unanswered and
-	// the file never leaves the disk.
-	opened.API.Configuring = webui.Configuring{}
-
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		stop()
@@ -94,8 +88,20 @@ func Start(dir string) (int, error) {
 		return 0, err
 	}
 
+	// The phone draws the vault it is showing, the notes in it and the tree they
+	// are filed in, and asks the core nothing else. What is served here is
+	// served over a socket answering any origin at all, so it mounts those three
+	// and no other service: not the settings file, which holds the keys this
+	// installation reaches models with, and not the files of the person's disk
+	// beside the notes, which is a book read off the disk and a model set
+	// running over one.
 	server := &http.Server{
-		Handler: allowing(withoutFiles(opened.API.Serving(http.NotFoundHandler()))),
+		Handler: allowing(opened.API.Serving(
+			http.NotFoundHandler(),
+			numenv1connect.VaultServiceName,
+			numenv1connect.NoteServiceName,
+			numenv1connect.FileServiceName,
+		)),
 	}
 	go func() { _ = server.Serve(listener) }()
 
@@ -215,27 +221,6 @@ func seed(root string) error {
 		}
 	}
 	return nil
-}
-
-// withoutFiles keeps the files of the vault, and what is made from them, off
-// this server. Nothing the phone draws asks for either, and what is served here
-// is served to any origin at all: a caller that reached it could otherwise set
-// models running over the person's books and take a transcript away.
-func withoutFiles(next http.Handler) http.Handler {
-	kept := []string{
-		"/assets/",
-		"/" + numenv1connect.AssetServiceName + "/",
-		"/" + numenv1connect.ArtifactServiceName + "/",
-	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for _, one := range kept {
-			if strings.HasPrefix(r.URL.EscapedPath(), one) {
-				http.NotFound(w, r)
-				return
-			}
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 // allowing lets the page the platform serves ask this server, which sits on

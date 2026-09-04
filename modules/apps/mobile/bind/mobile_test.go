@@ -143,8 +143,8 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 }
 
 // The file a person configures the installation in holds the keys it reaches
-// models with. This build binds no setting, so nothing here reads that file out
-// to a caller or writes another one in its place.
+// models with. This build mounts no service about it, so nothing here reads that
+// file out to a caller or writes another one in its place.
 func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	dir := t.TempDir()
 	secret := "sk-the-persons-own"

@@ -28,23 +28,78 @@ var errGone = errors.New("this window is going")
 // the binary. A binary built without it says so.
 func Pages() (http.Handler, error) { return wire.Serving(pages) }
 
+// served is one service this build answers: where its calls arrive, and what
+// answers them.
+type served struct {
+	at string
+	to http.Handler
+}
+
+// mount takes a generated handler and the path it answers under as one.
+func mount(at string, to http.Handler) served { return served{at: at, to: to} }
+
 // Serving puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
-func (a *API) Serving(files http.Handler) http.Handler {
+//
+// named is the services this build answers, by the names the schema gives them.
+// A service left out is not mounted, and a call of one is unanswered because
+// nothing serves it — not because a handler standing there has nothing behind
+// it. Naming none is a build that answers the whole schema.
+func (a *API) Serving(files http.Handler, named ...string) http.Handler {
 	counted := a.counting()
-	route, questions := numenv1connect.NewVaultServiceHandler(a, counted)
-	filing, tree := numenv1connect.NewFileServiceHandler(a, counted)
-	writing, notes := numenv1connect.NewNoteServiceHandler(a, counted)
-	finding, found := numenv1connect.NewSearchServiceHandler(a, counted)
-	asking, tasks := numenv1connect.NewAgentServiceHandler(a, counted)
-	wearing, themes := numenv1connect.NewThemeServiceHandler(a.dressed(), counted)
-	listing, held := numenv1connect.NewVaultsServiceHandler(vaultsService{api: a}, counted)
-	cutting, decks := numenv1connect.NewCardsServiceHandler(a, counted)
-	scheduling, presets := numenv1connect.NewPresetsServiceHandler(a, counted)
-	configuring, settings := numenv1connect.NewSettingsServiceHandler(a, counted)
-	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window, counted)
-	making, artifacts := numenv1connect.NewArtifactServiceHandler(a, counted)
-	opening, assets := numenv1connect.NewAssetServiceHandler(a, counted)
+	serves := func(service string) bool {
+		return len(named) == 0 || slices.Contains(named, service)
+	}
+
+	var routes []served
+	if serves(numenv1connect.VaultServiceName) {
+		routes = append(routes, mount(numenv1connect.NewVaultServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.FileServiceName) {
+		routes = append(routes, mount(numenv1connect.NewFileServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.NoteServiceName) {
+		routes = append(routes, mount(numenv1connect.NewNoteServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.SearchServiceName) {
+		routes = append(routes, mount(numenv1connect.NewSearchServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.AgentServiceName) {
+		routes = append(routes, mount(numenv1connect.NewAgentServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.VaultsServiceName) {
+		routes = append(routes, mount(numenv1connect.NewVaultsServiceHandler(vaultsService{api: a}, counted)))
+	}
+	if serves(numenv1connect.CardsServiceName) {
+		routes = append(routes, mount(numenv1connect.NewCardsServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.PresetsServiceName) {
+		routes = append(routes, mount(numenv1connect.NewPresetsServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.SettingsServiceName) {
+		routes = append(routes, mount(numenv1connect.NewSettingsServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.WindowServiceName) {
+		routes = append(routes, mount(numenv1connect.NewWindowServiceHandler(a.Window, counted)))
+	}
+	if serves(numenv1connect.ArtifactServiceName) {
+		routes = append(routes, mount(numenv1connect.NewArtifactServiceHandler(a, counted)))
+	}
+	if serves(numenv1connect.AssetServiceName) {
+		routes = append(routes, mount(numenv1connect.NewAssetServiceHandler(a, counted)))
+	}
+	// The themes belong to the installation and arrive here from whatever put
+	// the window together, so a build put together without a catalogue serves
+	// none.
+	if a.Themes != nil && serves(numenv1connect.ThemeServiceName) {
+		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(a.Themes, counted)))
+	}
+
+	// A file's own bytes are what a browser's own elements speak, and they are
+	// the file, so they are served where the file is answered about and nowhere
+	// else.
+	bytes := serves(numenv1connect.AssetServiceName)
+
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
 	policy := appearance.Policy(appearance.Sources{Media: a.Playing.named()})
@@ -55,34 +110,14 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			http.Error(w, errGone.Error(), http.StatusServiceUnavailable)
 			return
 		}
+		for _, one := range routes {
+			if strings.HasPrefix(r.URL.Path, one.at) {
+				one.to.ServeHTTP(w, r)
+				return
+			}
+		}
 		switch {
-		case strings.HasPrefix(r.URL.Path, listing):
-			held.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, cutting):
-			decks.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, scheduling):
-			presets.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, configuring):
-			settings.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, drawn):
-			itself.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, making):
-			artifacts.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, opening):
-			assets.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, route):
-			questions.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, filing):
-			tree.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, writing):
-			notes.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, finding):
-			found.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, asking):
-			tasks.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, wearing):
-			themes.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
+		case bytes && strings.HasPrefix(r.URL.EscapedPath(), assetsRoute):
 			if !a.questions.begin() {
 				http.Error(w, errGone.Error(), http.StatusServiceUnavailable)
 				return
