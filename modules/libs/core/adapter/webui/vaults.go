@@ -32,12 +32,12 @@ var errNoFolderDialog = errors.New("this build has no folder picker")
 // answers.
 var errNoOpening = errors.New("this build cannot show another vault")
 
-// List is every vault the installation holds. Which of them the window has in
-// front of the person is asked of the window.
-func (s vaultsService) List(
+// ListVaults is every vault the installation holds. Which of them the window
+// has in front of the person is asked of the window.
+func (s vaultsService) ListVaults(
 	_ context.Context,
-	_ *connect.Request[v1.VaultsServiceListRequest],
-) (*connect.Response[v1.VaultsServiceListResponse], error) {
+	_ *connect.Request[v1.ListVaultsRequest],
+) (*connect.Response[v1.ListVaultsResponse], error) {
 	if s.api.Vaults.Registry == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
@@ -45,18 +45,18 @@ func (s vaultsService) List(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.VaultsServiceListResponse{Vaults: make([]*v1.Known, 0, len(held))}
+	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Known, 0, len(held))}
 	for _, v := range held {
 		out.Vaults = append(out.Vaults, knownOf(v))
 	}
 	return connect.NewResponse(out), nil
 }
 
-// Choose puts this machine's own folder dialog in front of the person.
-func (s vaultsService) Choose(
+// ChooseFolder puts this machine's own folder dialog in front of the person.
+func (s vaultsService) ChooseFolder(
 	ctx context.Context,
-	r *connect.Request[v1.VaultsServiceChooseRequest],
-) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
+	r *connect.Request[v1.ChooseFolderRequest],
+) (*connect.Response[v1.ChooseFolderResponse], error) {
 	if s.api.Vaults.FolderDialog == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoFolderDialog)
 	}
@@ -68,15 +68,15 @@ func (s vaultsService) Choose(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// A person who closed the dialog chose nothing, and that is an answer.
-	return connect.NewResponse(&v1.VaultsServiceChooseResponse{Path: path, Chose: chose}), nil
+	return connect.NewResponse(&v1.ChooseFolderResponse{Path: path, Chose: chose}), nil
 }
 
-// Add turns a folder into a vault on the list. A name another vault has gets a
-// number appended, and is not a refusal here.
-func (s vaultsService) Add(
+// AddVault turns a folder into a vault on the list. A name another vault has
+// gets a number appended, and is not a refusal here.
+func (s vaultsService) AddVault(
 	_ context.Context,
-	r *connect.Request[v1.VaultsServiceAddRequest],
-) (*connect.Response[v1.VaultsServiceAddResponse], error) {
+	r *connect.Request[v1.AddVaultRequest],
+) (*connect.Response[v1.AddVaultResponse], error) {
 	if s.api.Vaults.Add == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
@@ -86,17 +86,17 @@ func (s vaultsService) Add(
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.VaultsServiceAddResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.VaultsServiceAddResponse{Vault: knownOf(added)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: knownOf(added)}), nil
 }
 
-// Rename is what a person calls a vault. The folder keeps the name the
+// RenameVault is what a person calls a vault. The folder keeps the name the
 // filesystem gives it.
-func (s vaultsService) Rename(
+func (s vaultsService) RenameVault(
 	ctx context.Context,
-	r *connect.Request[v1.VaultsServiceRenameRequest],
-) (*connect.Response[v1.VaultsServiceRenameResponse], error) {
+	r *connect.Request[v1.RenameVaultRequest],
+) (*connect.Response[v1.RenameVaultResponse], error) {
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Rename == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
@@ -109,17 +109,17 @@ func (s vaultsService) Rename(
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.VaultsServiceRenameResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.VaultsServiceRenameResponse{Vault: knownOf(v)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: knownOf(v)}), nil
 }
 
-// Forget takes a vault off the list and out of the index. The folder stays
+// ForgetVault takes a vault off the list and out of the index. The folder stays
 // where it is.
-func (s vaultsService) Forget(
+func (s vaultsService) ForgetVault(
 	ctx context.Context,
-	r *connect.Request[v1.VaultsServiceForgetRequest],
-) (*connect.Response[v1.VaultsServiceForgetResponse], error) {
+	r *connect.Request[v1.ForgetVaultRequest],
+) (*connect.Response[v1.ForgetVaultResponse], error) {
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Forget == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
@@ -132,17 +132,17 @@ func (s vaultsService) Forget(
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.VaultsServiceForgetResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.ForgetVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.VaultsServiceForgetResponse{}), nil
+	return connect.NewResponse(&v1.ForgetVaultResponse{}), nil
 }
 
-// Erase is Forget, and the folder goes to the place this machine keeps what a
-// person deleted.
-func (s vaultsService) Erase(
+// EraseVault is ForgetVault, and the folder goes to the place this machine
+// keeps what a person deleted.
+func (s vaultsService) EraseVault(
 	ctx context.Context,
-	r *connect.Request[v1.VaultsServiceEraseRequest],
-) (*connect.Response[v1.VaultsServiceEraseResponse], error) {
+	r *connect.Request[v1.EraseVaultRequest],
+) (*connect.Response[v1.EraseVaultResponse], error) {
 	if s.api.Vaults.Registry == nil || s.api.Vaults.Erase == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
@@ -155,16 +155,16 @@ func (s vaultsService) Erase(
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.VaultsServiceEraseResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.EraseVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.VaultsServiceEraseResponse{}), nil
+	return connect.NewResponse(&v1.EraseVaultResponse{}), nil
 }
 
-// Open shows another vault in this window.
-func (s vaultsService) Open(
+// OpenVault shows another vault in this window.
+func (s vaultsService) OpenVault(
 	ctx context.Context,
-	r *connect.Request[v1.VaultsServiceOpenRequest],
-) (*connect.Response[v1.VaultsServiceOpenResponse], error) {
+	r *connect.Request[v1.OpenVaultRequest],
+) (*connect.Response[v1.OpenVaultResponse], error) {
 	if s.api.Vaults.Registry == nil || s.api.Opens == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoOpening)
 	}
@@ -173,7 +173,7 @@ func (s vaultsService) Open(
 		err = s.api.Opens(ctx, v)
 	}
 	if err == nil {
-		return connect.NewResponse(&v1.VaultsServiceOpenResponse{}), nil
+		return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 	}
 	// A window that is closing, or already settling what it owes, is what
 	// stopped this, and the vault asked for is as it was.
@@ -184,7 +184,7 @@ func (s vaultsService) Open(
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.VaultsServiceOpenResponse{Refusal: &refusal}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Refusal: &refusal}), nil
 }
 
 // offTheList is the vault an identity names, asked to leave. The vault the

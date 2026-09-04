@@ -150,7 +150,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window says it is showing %q", got)
 	}
 
-	listed, err := f.holds.List(t.Context(), connect.NewRequest(&v1.VaultsServiceListRequest{}))
+	listed, err := f.holds.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
 		t.Fatalf("the window cannot list the vaults this installation holds: %v", err)
 	}
@@ -396,7 +396,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	added, err := f.holds.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{
+	added, err := f.holds.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
 		Path: root, DisplayName: "the first one",
 	}))
 	if err != nil {
@@ -406,7 +406,7 @@ func TestAVaultAddedToAWindowStandingOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the folder was refused: %v", *refused)
 	}
 
-	if _, err := f.holds.Open(t.Context(), connect.NewRequest(&v1.VaultsServiceOpenRequest{
+	if _, err := f.holds.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{
 		Name: added.Msg.GetVault().GetName(),
 	})); err != nil {
 		t.Fatalf("the vault just added would not open: %v", err)

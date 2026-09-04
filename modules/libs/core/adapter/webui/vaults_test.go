@@ -207,10 +207,10 @@ func folderNamed(t *testing.T, name string) string {
 }
 
 // held is the list as the client is answered with it.
-func (f *onTheList) held(t *testing.T) *v1.VaultsServiceListResponse {
+func (f *onTheList) held(t *testing.T) *v1.ListVaultsResponse {
 	t.Helper()
 
-	out, err := f.client.List(t.Context(), connect.NewRequest(&v1.VaultsServiceListRequest{}))
+	out, err := f.client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func (f *onTheList) held(t *testing.T) *v1.VaultsServiceListResponse {
 }
 
 // onList is the vault of that identity on the list the client was answered with.
-func onList(t *testing.T, list *v1.VaultsServiceListResponse, id string) *v1.Known {
+func onList(t *testing.T, list *v1.ListVaultsResponse, id string) *v1.Known {
 	t.Helper()
 
 	for _, one := range list.GetVaults() {
@@ -260,7 +260,7 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := f.client.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{Path: inner}))
+	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: inner}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,7 +289,7 @@ func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := f.client.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{Path: copied}))
+	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: copied}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +303,7 @@ func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{
+	out, err := f.client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{
 		Path:        folderNamed(t, "three"),
 		DisplayName: "one",
 	}))
@@ -325,7 +325,7 @@ func TestAFolderJoinsTheListUnderANameAnotherVaultHas(t *testing.T) {
 func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.VaultsServiceRenameRequest{
+	out, err := f.client.RenameVault(t.Context(), connect.NewRequest(&v1.RenameVaultRequest{
 		Name:        string(f.second.ID),
 		DisplayName: "one",
 	}))
@@ -344,7 +344,7 @@ func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.VaultsServiceRenameRequest{
+	out, err := f.client.RenameVault(t.Context(), connect.NewRequest(&v1.RenameVaultRequest{
 		Name:        string(f.second.ID),
 		DisplayName: "journal",
 	}))
@@ -367,8 +367,8 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 
-	forgot, err := f.client.Forget(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceForgetRequest{Name: string(f.first.ID)}))
+	forgot, err := f.client.ForgetVault(t.Context(),
+		connect.NewRequest(&v1.ForgetVaultRequest{Name: string(f.first.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,8 +376,8 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 		t.Errorf("forgetting the vault being shown was answered %v", got)
 	}
 
-	erased, err := f.client.Erase(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceEraseRequest{Name: string(f.first.ID)}))
+	erased, err := f.client.EraseVault(t.Context(),
+		connect.NewRequest(&v1.EraseVaultRequest{Name: string(f.first.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -403,8 +403,8 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	// A window standing on nothing is not what keeps this vault: the list is.
 	f.api.show(domain.Vault{})
 
-	gone, err := f.client.Forget(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceForgetRequest{Name: string(f.second.ID)}))
+	gone, err := f.client.ForgetVault(t.Context(),
+		connect.NewRequest(&v1.ForgetVaultRequest{Name: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,8 +412,8 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 		t.Fatalf("the second vault was not forgotten: %v", gone.Msg.GetRefusal())
 	}
 
-	only, err := f.client.Forget(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceForgetRequest{Name: string(f.first.ID)}))
+	only, err := f.client.ForgetVault(t.Context(),
+		connect.NewRequest(&v1.ForgetVaultRequest{Name: string(f.first.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -428,23 +428,23 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 	f := onAList(t)
 	const nobody = "01JZZZZZZZZZZZZZZZZZZZZZZZ"
 
-	rename, err := f.client.Rename(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceRenameRequest{Name: nobody, DisplayName: "journal"}))
+	rename, err := f.client.RenameVault(t.Context(),
+		connect.NewRequest(&v1.RenameVaultRequest{Name: nobody, DisplayName: "journal"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	forget, err := f.client.Forget(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceForgetRequest{Name: nobody}))
+	forget, err := f.client.ForgetVault(t.Context(),
+		connect.NewRequest(&v1.ForgetVaultRequest{Name: nobody}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	erase, err := f.client.Erase(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceEraseRequest{Name: nobody}))
+	erase, err := f.client.EraseVault(t.Context(),
+		connect.NewRequest(&v1.EraseVaultRequest{Name: nobody}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	open, err := f.client.Open(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceOpenRequest{Name: nobody}))
+	open, err := f.client.OpenVault(t.Context(),
+		connect.NewRequest(&v1.OpenVaultRequest{Name: nobody}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -468,8 +468,8 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Erase(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceEraseRequest{Name: string(f.second.ID)}))
+	out, err := f.client.EraseVault(t.Context(),
+		connect.NewRequest(&v1.EraseVaultRequest{Name: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -492,8 +492,8 @@ func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
 	f := onAList(t)
 	f.bin.refuse(port.ErrNoTrash)
 
-	out, err := f.client.Erase(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceEraseRequest{Name: string(f.second.ID)}))
+	out, err := f.client.EraseVault(t.Context(),
+		connect.NewRequest(&v1.EraseVaultRequest{Name: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -513,8 +513,8 @@ func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
 func TestAnotherVaultIsPutInTheWindow(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Open(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceOpenRequest{Name: string(f.second.ID)}))
+	out, err := f.client.OpenVault(t.Context(),
+		connect.NewRequest(&v1.OpenVaultRequest{Name: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -531,8 +531,8 @@ func TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn(t *testing.T)
 	f := onAList(t)
 	f.opening(errAsking)
 
-	out, err := f.client.Open(t.Context(),
-		connect.NewRequest(&v1.VaultsServiceOpenRequest{Name: string(f.second.ID)}))
+	out, err := f.client.OpenVault(t.Context(),
+		connect.NewRequest(&v1.OpenVaultRequest{Name: string(f.second.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -556,8 +556,8 @@ func TestAWindowThatIsGoingIsNotARefusalAboutTheVault(t *testing.T) {
 			f := onAList(t)
 			f.opening(one.why)
 
-			_, err := f.client.Open(t.Context(),
-				connect.NewRequest(&v1.VaultsServiceOpenRequest{Name: string(f.second.ID)}))
+			_, err := f.client.OpenVault(t.Context(),
+				connect.NewRequest(&v1.OpenVaultRequest{Name: string(f.second.ID)}))
 			if got := connect.CodeOf(err); got != connect.CodeUnavailable {
 				t.Errorf("a window that is going answered %v, want %v", got, connect.CodeUnavailable)
 			}
@@ -569,7 +569,7 @@ func TestAWindowThatIsGoingIsNotARefusalAboutTheVault(t *testing.T) {
 func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{
+	out, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
 		Title:      "Where are your notes?",
 		StartingAt: f.first.Path,
 	}))
@@ -589,7 +589,7 @@ func TestTheFolderThePersonChoseIsAnswered(t *testing.T) {
 	f := onAList(t)
 	f.dialog.pick, f.dialog.chose = f.second.Path, true
 
-	out, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{}))
+	out, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -603,7 +603,7 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
 	f.dialog.fails = port.ErrChoosing
 
-	_, err := f.client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{}))
+	_, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {
 		t.Errorf("a second dialog answered %v, want %v", got, connect.CodeUnavailable)
 	}
@@ -622,31 +622,31 @@ func TestABuildWithoutThePieceSaysItCannotBeDoneHere(t *testing.T) {
 
 	asked := map[string]func() error{
 		"list": func() error {
-			_, err := client.List(t.Context(), connect.NewRequest(&v1.VaultsServiceListRequest{}))
+			_, err := client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 			return err
 		},
 		"choose": func() error {
-			_, err := client.Choose(t.Context(), connect.NewRequest(&v1.VaultsServiceChooseRequest{}))
+			_, err := client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 			return err
 		},
 		"add": func() error {
-			_, err := client.Add(t.Context(), connect.NewRequest(&v1.VaultsServiceAddRequest{Path: "/notes"}))
+			_, err := client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: "/notes"}))
 			return err
 		},
 		"rename": func() error {
-			_, err := client.Rename(t.Context(), connect.NewRequest(&v1.VaultsServiceRenameRequest{DisplayName: "journal"}))
+			_, err := client.RenameVault(t.Context(), connect.NewRequest(&v1.RenameVaultRequest{DisplayName: "journal"}))
 			return err
 		},
 		"forget": func() error {
-			_, err := client.Forget(t.Context(), connect.NewRequest(&v1.VaultsServiceForgetRequest{}))
+			_, err := client.ForgetVault(t.Context(), connect.NewRequest(&v1.ForgetVaultRequest{}))
 			return err
 		},
 		"erase": func() error {
-			_, err := client.Erase(t.Context(), connect.NewRequest(&v1.VaultsServiceEraseRequest{}))
+			_, err := client.EraseVault(t.Context(), connect.NewRequest(&v1.EraseVaultRequest{}))
 			return err
 		},
 		"open": func() error {
-			_, err := client.Open(t.Context(), connect.NewRequest(&v1.VaultsServiceOpenRequest{}))
+			_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{}))
 			return err
 		},
 	}

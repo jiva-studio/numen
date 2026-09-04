@@ -162,20 +162,21 @@ export const vaults: Vaults = {
   // window's, so the two are asked of the two and put together here.
   list: async () => {
     const [answer, shown] = await Promise.all([
-      vaultsService.list({}),
+      vaultsService.listVaults({}),
       windowService.getShownVault({ window: WINDOW }),
     ])
     return { vaults: answer.vaults.map(held), showing: shown.vault }
   },
   choose: async (title) => {
-    const answer = await vaultsService.choose({ title, startingAt: '' })
+    const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
     return answer.chose ? answer.path : ''
   },
-  add: async (path, called) => added(await vaultsService.add({ path, displayName: called })),
-  rename: async (id, called) => added(await vaultsService.rename({ name: id, displayName: called })),
-  forget: async (id) => turnedDown(await vaultsService.forget({ name: id })),
-  erase: async (id) => turnedDown(await vaultsService.erase({ name: id })),
-  open: async (id) => turnedDown(await vaultsService.open({ name: id })),
+  add: async (path, called) => added(await vaultsService.addVault({ path, displayName: called })),
+  rename: async (id, called) =>
+    added(await vaultsService.renameVault({ name: id, displayName: called })),
+  forget: async (id) => turnedDown(await vaultsService.forgetVault({ name: id })),
+  erase: async (id) => turnedDown(await vaultsService.eraseVault({ name: id })),
+  open: async (id) => turnedDown(await vaultsService.openVault({ name: id })),
 }
 
 /** The stencils and the decks of that vault, in the shape the window asks about them. */

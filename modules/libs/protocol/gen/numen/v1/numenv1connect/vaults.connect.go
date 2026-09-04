@@ -38,48 +38,53 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// VaultsServiceListProcedure is the fully-qualified name of the VaultsService's List RPC.
-	VaultsServiceListProcedure = "/numen.v1.VaultsService/List"
-	// VaultsServiceChooseProcedure is the fully-qualified name of the VaultsService's Choose RPC.
-	VaultsServiceChooseProcedure = "/numen.v1.VaultsService/Choose"
-	// VaultsServiceAddProcedure is the fully-qualified name of the VaultsService's Add RPC.
-	VaultsServiceAddProcedure = "/numen.v1.VaultsService/Add"
-	// VaultsServiceRenameProcedure is the fully-qualified name of the VaultsService's Rename RPC.
-	VaultsServiceRenameProcedure = "/numen.v1.VaultsService/Rename"
-	// VaultsServiceForgetProcedure is the fully-qualified name of the VaultsService's Forget RPC.
-	VaultsServiceForgetProcedure = "/numen.v1.VaultsService/Forget"
-	// VaultsServiceEraseProcedure is the fully-qualified name of the VaultsService's Erase RPC.
-	VaultsServiceEraseProcedure = "/numen.v1.VaultsService/Erase"
-	// VaultsServiceOpenProcedure is the fully-qualified name of the VaultsService's Open RPC.
-	VaultsServiceOpenProcedure = "/numen.v1.VaultsService/Open"
+	// VaultsServiceListVaultsProcedure is the fully-qualified name of the VaultsService's ListVaults
+	// RPC.
+	VaultsServiceListVaultsProcedure = "/numen.v1.VaultsService/ListVaults"
+	// VaultsServiceChooseFolderProcedure is the fully-qualified name of the VaultsService's
+	// ChooseFolder RPC.
+	VaultsServiceChooseFolderProcedure = "/numen.v1.VaultsService/ChooseFolder"
+	// VaultsServiceAddVaultProcedure is the fully-qualified name of the VaultsService's AddVault RPC.
+	VaultsServiceAddVaultProcedure = "/numen.v1.VaultsService/AddVault"
+	// VaultsServiceRenameVaultProcedure is the fully-qualified name of the VaultsService's RenameVault
+	// RPC.
+	VaultsServiceRenameVaultProcedure = "/numen.v1.VaultsService/RenameVault"
+	// VaultsServiceForgetVaultProcedure is the fully-qualified name of the VaultsService's ForgetVault
+	// RPC.
+	VaultsServiceForgetVaultProcedure = "/numen.v1.VaultsService/ForgetVault"
+	// VaultsServiceEraseVaultProcedure is the fully-qualified name of the VaultsService's EraseVault
+	// RPC.
+	VaultsServiceEraseVaultProcedure = "/numen.v1.VaultsService/EraseVault"
+	// VaultsServiceOpenVaultProcedure is the fully-qualified name of the VaultsService's OpenVault RPC.
+	VaultsServiceOpenVaultProcedure = "/numen.v1.VaultsService/OpenVault"
 )
 
 // VaultsServiceClient is a client for the numen.v1.VaultsService service.
 type VaultsServiceClient interface {
-	// List is every vault the installation holds. Which of them a window is
+	// ListVaults is every vault the installation holds. Which of them a window is
 	// showing is asked of that window.
-	List(context.Context, *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error)
-	// Choose puts this machine's own folder picker in front of the person and
-	// answers with the folder they chose. A person who closes the picker has
+	ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error)
+	// ChooseFolder puts this machine's own folder dialog in front of the person
+	// and answers with the folder they chose. A person who closes the dialog has
 	// chosen nothing, and the answer says so.
-	Choose(context.Context, *connect.Request[v1.VaultsServiceChooseRequest]) (*connect.Response[v1.VaultsServiceChooseResponse], error)
-	// Add turns a folder into a vault and puts it on the list. The folder is
+	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
+	// AddVault turns a folder into a vault and puts it on the list. The folder is
 	// given an identity that stays with it, and is the same vault wherever it
 	// moves to.
-	Add(context.Context, *connect.Request[v1.VaultsServiceAddRequest]) (*connect.Response[v1.VaultsServiceAddResponse], error)
-	// Rename is what a person calls a vault. The folder keeps the name the
+	AddVault(context.Context, *connect.Request[v1.AddVaultRequest]) (*connect.Response[v1.AddVaultResponse], error)
+	// RenameVault is what a person calls a vault. The folder keeps the name the
 	// filesystem gives it.
-	Rename(context.Context, *connect.Request[v1.VaultsServiceRenameRequest]) (*connect.Response[v1.VaultsServiceRenameResponse], error)
-	// Forget takes a vault off the list and out of the index. The folder stays
-	// where it is, and adding it again brings back the same vault.
-	Forget(context.Context, *connect.Request[v1.VaultsServiceForgetRequest]) (*connect.Response[v1.VaultsServiceForgetResponse], error)
-	// Erase is Forget, and the folder goes to the place this machine keeps what
-	// a person deleted.
-	Erase(context.Context, *connect.Request[v1.VaultsServiceEraseRequest]) (*connect.Response[v1.VaultsServiceEraseResponse], error)
-	// Open shows another vault in this window. What the window was showing is
-	// let go of, and everything a client asked about it is asked again of the
+	RenameVault(context.Context, *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error)
+	// ForgetVault takes a vault off the list and out of the index. The folder
+	// stays where it is, and adding it again brings back the same vault.
+	ForgetVault(context.Context, *connect.Request[v1.ForgetVaultRequest]) (*connect.Response[v1.ForgetVaultResponse], error)
+	// EraseVault is ForgetVault, and the folder goes to the place this machine
+	// keeps what a person deleted.
+	EraseVault(context.Context, *connect.Request[v1.EraseVaultRequest]) (*connect.Response[v1.EraseVaultResponse], error)
+	// OpenVault shows another vault in this window. What the window was showing
+	// is let go of, and everything a client asked about it is asked again of the
 	// vault that arrives.
-	Open(context.Context, *connect.Request[v1.VaultsServiceOpenRequest]) (*connect.Response[v1.VaultsServiceOpenResponse], error)
+	OpenVault(context.Context, *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error)
 }
 
 // NewVaultsServiceClient constructs a client for the numen.v1.VaultsService service. By default, it
@@ -93,46 +98,46 @@ func NewVaultsServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 	baseURL = strings.TrimRight(baseURL, "/")
 	vaultsServiceMethods := v1.File_numen_v1_vaults_proto.Services().ByName("VaultsService").Methods()
 	return &vaultsServiceClient{
-		list: connect.NewClient[v1.VaultsServiceListRequest, v1.VaultsServiceListResponse](
+		listVaults: connect.NewClient[v1.ListVaultsRequest, v1.ListVaultsResponse](
 			httpClient,
-			baseURL+VaultsServiceListProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("List")),
+			baseURL+VaultsServiceListVaultsProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("ListVaults")),
 			connect.WithClientOptions(opts...),
 		),
-		choose: connect.NewClient[v1.VaultsServiceChooseRequest, v1.VaultsServiceChooseResponse](
+		chooseFolder: connect.NewClient[v1.ChooseFolderRequest, v1.ChooseFolderResponse](
 			httpClient,
-			baseURL+VaultsServiceChooseProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Choose")),
+			baseURL+VaultsServiceChooseFolderProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("ChooseFolder")),
 			connect.WithClientOptions(opts...),
 		),
-		add: connect.NewClient[v1.VaultsServiceAddRequest, v1.VaultsServiceAddResponse](
+		addVault: connect.NewClient[v1.AddVaultRequest, v1.AddVaultResponse](
 			httpClient,
-			baseURL+VaultsServiceAddProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Add")),
+			baseURL+VaultsServiceAddVaultProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("AddVault")),
 			connect.WithClientOptions(opts...),
 		),
-		rename: connect.NewClient[v1.VaultsServiceRenameRequest, v1.VaultsServiceRenameResponse](
+		renameVault: connect.NewClient[v1.RenameVaultRequest, v1.RenameVaultResponse](
 			httpClient,
-			baseURL+VaultsServiceRenameProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Rename")),
+			baseURL+VaultsServiceRenameVaultProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("RenameVault")),
 			connect.WithClientOptions(opts...),
 		),
-		forget: connect.NewClient[v1.VaultsServiceForgetRequest, v1.VaultsServiceForgetResponse](
+		forgetVault: connect.NewClient[v1.ForgetVaultRequest, v1.ForgetVaultResponse](
 			httpClient,
-			baseURL+VaultsServiceForgetProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Forget")),
+			baseURL+VaultsServiceForgetVaultProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("ForgetVault")),
 			connect.WithClientOptions(opts...),
 		),
-		erase: connect.NewClient[v1.VaultsServiceEraseRequest, v1.VaultsServiceEraseResponse](
+		eraseVault: connect.NewClient[v1.EraseVaultRequest, v1.EraseVaultResponse](
 			httpClient,
-			baseURL+VaultsServiceEraseProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Erase")),
+			baseURL+VaultsServiceEraseVaultProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("EraseVault")),
 			connect.WithClientOptions(opts...),
 		),
-		open: connect.NewClient[v1.VaultsServiceOpenRequest, v1.VaultsServiceOpenResponse](
+		openVault: connect.NewClient[v1.OpenVaultRequest, v1.OpenVaultResponse](
 			httpClient,
-			baseURL+VaultsServiceOpenProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("Open")),
+			baseURL+VaultsServiceOpenVaultProcedure,
+			connect.WithSchema(vaultsServiceMethods.ByName("OpenVault")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -140,76 +145,76 @@ func NewVaultsServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // vaultsServiceClient implements VaultsServiceClient.
 type vaultsServiceClient struct {
-	list   *connect.Client[v1.VaultsServiceListRequest, v1.VaultsServiceListResponse]
-	choose *connect.Client[v1.VaultsServiceChooseRequest, v1.VaultsServiceChooseResponse]
-	add    *connect.Client[v1.VaultsServiceAddRequest, v1.VaultsServiceAddResponse]
-	rename *connect.Client[v1.VaultsServiceRenameRequest, v1.VaultsServiceRenameResponse]
-	forget *connect.Client[v1.VaultsServiceForgetRequest, v1.VaultsServiceForgetResponse]
-	erase  *connect.Client[v1.VaultsServiceEraseRequest, v1.VaultsServiceEraseResponse]
-	open   *connect.Client[v1.VaultsServiceOpenRequest, v1.VaultsServiceOpenResponse]
+	listVaults   *connect.Client[v1.ListVaultsRequest, v1.ListVaultsResponse]
+	chooseFolder *connect.Client[v1.ChooseFolderRequest, v1.ChooseFolderResponse]
+	addVault     *connect.Client[v1.AddVaultRequest, v1.AddVaultResponse]
+	renameVault  *connect.Client[v1.RenameVaultRequest, v1.RenameVaultResponse]
+	forgetVault  *connect.Client[v1.ForgetVaultRequest, v1.ForgetVaultResponse]
+	eraseVault   *connect.Client[v1.EraseVaultRequest, v1.EraseVaultResponse]
+	openVault    *connect.Client[v1.OpenVaultRequest, v1.OpenVaultResponse]
 }
 
-// List calls numen.v1.VaultsService.List.
-func (c *vaultsServiceClient) List(ctx context.Context, req *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error) {
-	return c.list.CallUnary(ctx, req)
+// ListVaults calls numen.v1.VaultsService.ListVaults.
+func (c *vaultsServiceClient) ListVaults(ctx context.Context, req *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
+	return c.listVaults.CallUnary(ctx, req)
 }
 
-// Choose calls numen.v1.VaultsService.Choose.
-func (c *vaultsServiceClient) Choose(ctx context.Context, req *connect.Request[v1.VaultsServiceChooseRequest]) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
-	return c.choose.CallUnary(ctx, req)
+// ChooseFolder calls numen.v1.VaultsService.ChooseFolder.
+func (c *vaultsServiceClient) ChooseFolder(ctx context.Context, req *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
+	return c.chooseFolder.CallUnary(ctx, req)
 }
 
-// Add calls numen.v1.VaultsService.Add.
-func (c *vaultsServiceClient) Add(ctx context.Context, req *connect.Request[v1.VaultsServiceAddRequest]) (*connect.Response[v1.VaultsServiceAddResponse], error) {
-	return c.add.CallUnary(ctx, req)
+// AddVault calls numen.v1.VaultsService.AddVault.
+func (c *vaultsServiceClient) AddVault(ctx context.Context, req *connect.Request[v1.AddVaultRequest]) (*connect.Response[v1.AddVaultResponse], error) {
+	return c.addVault.CallUnary(ctx, req)
 }
 
-// Rename calls numen.v1.VaultsService.Rename.
-func (c *vaultsServiceClient) Rename(ctx context.Context, req *connect.Request[v1.VaultsServiceRenameRequest]) (*connect.Response[v1.VaultsServiceRenameResponse], error) {
-	return c.rename.CallUnary(ctx, req)
+// RenameVault calls numen.v1.VaultsService.RenameVault.
+func (c *vaultsServiceClient) RenameVault(ctx context.Context, req *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error) {
+	return c.renameVault.CallUnary(ctx, req)
 }
 
-// Forget calls numen.v1.VaultsService.Forget.
-func (c *vaultsServiceClient) Forget(ctx context.Context, req *connect.Request[v1.VaultsServiceForgetRequest]) (*connect.Response[v1.VaultsServiceForgetResponse], error) {
-	return c.forget.CallUnary(ctx, req)
+// ForgetVault calls numen.v1.VaultsService.ForgetVault.
+func (c *vaultsServiceClient) ForgetVault(ctx context.Context, req *connect.Request[v1.ForgetVaultRequest]) (*connect.Response[v1.ForgetVaultResponse], error) {
+	return c.forgetVault.CallUnary(ctx, req)
 }
 
-// Erase calls numen.v1.VaultsService.Erase.
-func (c *vaultsServiceClient) Erase(ctx context.Context, req *connect.Request[v1.VaultsServiceEraseRequest]) (*connect.Response[v1.VaultsServiceEraseResponse], error) {
-	return c.erase.CallUnary(ctx, req)
+// EraseVault calls numen.v1.VaultsService.EraseVault.
+func (c *vaultsServiceClient) EraseVault(ctx context.Context, req *connect.Request[v1.EraseVaultRequest]) (*connect.Response[v1.EraseVaultResponse], error) {
+	return c.eraseVault.CallUnary(ctx, req)
 }
 
-// Open calls numen.v1.VaultsService.Open.
-func (c *vaultsServiceClient) Open(ctx context.Context, req *connect.Request[v1.VaultsServiceOpenRequest]) (*connect.Response[v1.VaultsServiceOpenResponse], error) {
-	return c.open.CallUnary(ctx, req)
+// OpenVault calls numen.v1.VaultsService.OpenVault.
+func (c *vaultsServiceClient) OpenVault(ctx context.Context, req *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error) {
+	return c.openVault.CallUnary(ctx, req)
 }
 
 // VaultsServiceHandler is an implementation of the numen.v1.VaultsService service.
 type VaultsServiceHandler interface {
-	// List is every vault the installation holds. Which of them a window is
+	// ListVaults is every vault the installation holds. Which of them a window is
 	// showing is asked of that window.
-	List(context.Context, *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error)
-	// Choose puts this machine's own folder picker in front of the person and
-	// answers with the folder they chose. A person who closes the picker has
+	ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error)
+	// ChooseFolder puts this machine's own folder dialog in front of the person
+	// and answers with the folder they chose. A person who closes the dialog has
 	// chosen nothing, and the answer says so.
-	Choose(context.Context, *connect.Request[v1.VaultsServiceChooseRequest]) (*connect.Response[v1.VaultsServiceChooseResponse], error)
-	// Add turns a folder into a vault and puts it on the list. The folder is
+	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
+	// AddVault turns a folder into a vault and puts it on the list. The folder is
 	// given an identity that stays with it, and is the same vault wherever it
 	// moves to.
-	Add(context.Context, *connect.Request[v1.VaultsServiceAddRequest]) (*connect.Response[v1.VaultsServiceAddResponse], error)
-	// Rename is what a person calls a vault. The folder keeps the name the
+	AddVault(context.Context, *connect.Request[v1.AddVaultRequest]) (*connect.Response[v1.AddVaultResponse], error)
+	// RenameVault is what a person calls a vault. The folder keeps the name the
 	// filesystem gives it.
-	Rename(context.Context, *connect.Request[v1.VaultsServiceRenameRequest]) (*connect.Response[v1.VaultsServiceRenameResponse], error)
-	// Forget takes a vault off the list and out of the index. The folder stays
-	// where it is, and adding it again brings back the same vault.
-	Forget(context.Context, *connect.Request[v1.VaultsServiceForgetRequest]) (*connect.Response[v1.VaultsServiceForgetResponse], error)
-	// Erase is Forget, and the folder goes to the place this machine keeps what
-	// a person deleted.
-	Erase(context.Context, *connect.Request[v1.VaultsServiceEraseRequest]) (*connect.Response[v1.VaultsServiceEraseResponse], error)
-	// Open shows another vault in this window. What the window was showing is
-	// let go of, and everything a client asked about it is asked again of the
+	RenameVault(context.Context, *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error)
+	// ForgetVault takes a vault off the list and out of the index. The folder
+	// stays where it is, and adding it again brings back the same vault.
+	ForgetVault(context.Context, *connect.Request[v1.ForgetVaultRequest]) (*connect.Response[v1.ForgetVaultResponse], error)
+	// EraseVault is ForgetVault, and the folder goes to the place this machine
+	// keeps what a person deleted.
+	EraseVault(context.Context, *connect.Request[v1.EraseVaultRequest]) (*connect.Response[v1.EraseVaultResponse], error)
+	// OpenVault shows another vault in this window. What the window was showing
+	// is let go of, and everything a client asked about it is asked again of the
 	// vault that arrives.
-	Open(context.Context, *connect.Request[v1.VaultsServiceOpenRequest]) (*connect.Response[v1.VaultsServiceOpenResponse], error)
+	OpenVault(context.Context, *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error)
 }
 
 // NewVaultsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -219,64 +224,64 @@ type VaultsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewVaultsServiceHandler(svc VaultsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	vaultsServiceMethods := v1.File_numen_v1_vaults_proto.Services().ByName("VaultsService").Methods()
-	vaultsServiceListHandler := connect.NewUnaryHandler(
-		VaultsServiceListProcedure,
-		svc.List,
-		connect.WithSchema(vaultsServiceMethods.ByName("List")),
+	vaultsServiceListVaultsHandler := connect.NewUnaryHandler(
+		VaultsServiceListVaultsProcedure,
+		svc.ListVaults,
+		connect.WithSchema(vaultsServiceMethods.ByName("ListVaults")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceChooseHandler := connect.NewUnaryHandler(
-		VaultsServiceChooseProcedure,
-		svc.Choose,
-		connect.WithSchema(vaultsServiceMethods.ByName("Choose")),
+	vaultsServiceChooseFolderHandler := connect.NewUnaryHandler(
+		VaultsServiceChooseFolderProcedure,
+		svc.ChooseFolder,
+		connect.WithSchema(vaultsServiceMethods.ByName("ChooseFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceAddHandler := connect.NewUnaryHandler(
-		VaultsServiceAddProcedure,
-		svc.Add,
-		connect.WithSchema(vaultsServiceMethods.ByName("Add")),
+	vaultsServiceAddVaultHandler := connect.NewUnaryHandler(
+		VaultsServiceAddVaultProcedure,
+		svc.AddVault,
+		connect.WithSchema(vaultsServiceMethods.ByName("AddVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceRenameHandler := connect.NewUnaryHandler(
-		VaultsServiceRenameProcedure,
-		svc.Rename,
-		connect.WithSchema(vaultsServiceMethods.ByName("Rename")),
+	vaultsServiceRenameVaultHandler := connect.NewUnaryHandler(
+		VaultsServiceRenameVaultProcedure,
+		svc.RenameVault,
+		connect.WithSchema(vaultsServiceMethods.ByName("RenameVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceForgetHandler := connect.NewUnaryHandler(
-		VaultsServiceForgetProcedure,
-		svc.Forget,
-		connect.WithSchema(vaultsServiceMethods.ByName("Forget")),
+	vaultsServiceForgetVaultHandler := connect.NewUnaryHandler(
+		VaultsServiceForgetVaultProcedure,
+		svc.ForgetVault,
+		connect.WithSchema(vaultsServiceMethods.ByName("ForgetVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceEraseHandler := connect.NewUnaryHandler(
-		VaultsServiceEraseProcedure,
-		svc.Erase,
-		connect.WithSchema(vaultsServiceMethods.ByName("Erase")),
+	vaultsServiceEraseVaultHandler := connect.NewUnaryHandler(
+		VaultsServiceEraseVaultProcedure,
+		svc.EraseVault,
+		connect.WithSchema(vaultsServiceMethods.ByName("EraseVault")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceOpenHandler := connect.NewUnaryHandler(
-		VaultsServiceOpenProcedure,
-		svc.Open,
-		connect.WithSchema(vaultsServiceMethods.ByName("Open")),
+	vaultsServiceOpenVaultHandler := connect.NewUnaryHandler(
+		VaultsServiceOpenVaultProcedure,
+		svc.OpenVault,
+		connect.WithSchema(vaultsServiceMethods.ByName("OpenVault")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.VaultsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case VaultsServiceListProcedure:
-			vaultsServiceListHandler.ServeHTTP(w, r)
-		case VaultsServiceChooseProcedure:
-			vaultsServiceChooseHandler.ServeHTTP(w, r)
-		case VaultsServiceAddProcedure:
-			vaultsServiceAddHandler.ServeHTTP(w, r)
-		case VaultsServiceRenameProcedure:
-			vaultsServiceRenameHandler.ServeHTTP(w, r)
-		case VaultsServiceForgetProcedure:
-			vaultsServiceForgetHandler.ServeHTTP(w, r)
-		case VaultsServiceEraseProcedure:
-			vaultsServiceEraseHandler.ServeHTTP(w, r)
-		case VaultsServiceOpenProcedure:
-			vaultsServiceOpenHandler.ServeHTTP(w, r)
+		case VaultsServiceListVaultsProcedure:
+			vaultsServiceListVaultsHandler.ServeHTTP(w, r)
+		case VaultsServiceChooseFolderProcedure:
+			vaultsServiceChooseFolderHandler.ServeHTTP(w, r)
+		case VaultsServiceAddVaultProcedure:
+			vaultsServiceAddVaultHandler.ServeHTTP(w, r)
+		case VaultsServiceRenameVaultProcedure:
+			vaultsServiceRenameVaultHandler.ServeHTTP(w, r)
+		case VaultsServiceForgetVaultProcedure:
+			vaultsServiceForgetVaultHandler.ServeHTTP(w, r)
+		case VaultsServiceEraseVaultProcedure:
+			vaultsServiceEraseVaultHandler.ServeHTTP(w, r)
+		case VaultsServiceOpenVaultProcedure:
+			vaultsServiceOpenVaultHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -286,30 +291,30 @@ func NewVaultsServiceHandler(svc VaultsServiceHandler, opts ...connect.HandlerOp
 // UnimplementedVaultsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedVaultsServiceHandler struct{}
 
-func (UnimplementedVaultsServiceHandler) List(context.Context, *connect.Request[v1.VaultsServiceListRequest]) (*connect.Response[v1.VaultsServiceListResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.List is not implemented"))
+func (UnimplementedVaultsServiceHandler) ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.ListVaults is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Choose(context.Context, *connect.Request[v1.VaultsServiceChooseRequest]) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Choose is not implemented"))
+func (UnimplementedVaultsServiceHandler) ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.ChooseFolder is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Add(context.Context, *connect.Request[v1.VaultsServiceAddRequest]) (*connect.Response[v1.VaultsServiceAddResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Add is not implemented"))
+func (UnimplementedVaultsServiceHandler) AddVault(context.Context, *connect.Request[v1.AddVaultRequest]) (*connect.Response[v1.AddVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.AddVault is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Rename(context.Context, *connect.Request[v1.VaultsServiceRenameRequest]) (*connect.Response[v1.VaultsServiceRenameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Rename is not implemented"))
+func (UnimplementedVaultsServiceHandler) RenameVault(context.Context, *connect.Request[v1.RenameVaultRequest]) (*connect.Response[v1.RenameVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.RenameVault is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Forget(context.Context, *connect.Request[v1.VaultsServiceForgetRequest]) (*connect.Response[v1.VaultsServiceForgetResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Forget is not implemented"))
+func (UnimplementedVaultsServiceHandler) ForgetVault(context.Context, *connect.Request[v1.ForgetVaultRequest]) (*connect.Response[v1.ForgetVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.ForgetVault is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Erase(context.Context, *connect.Request[v1.VaultsServiceEraseRequest]) (*connect.Response[v1.VaultsServiceEraseResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Erase is not implemented"))
+func (UnimplementedVaultsServiceHandler) EraseVault(context.Context, *connect.Request[v1.EraseVaultRequest]) (*connect.Response[v1.EraseVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.EraseVault is not implemented"))
 }
 
-func (UnimplementedVaultsServiceHandler) Open(context.Context, *connect.Request[v1.VaultsServiceOpenRequest]) (*connect.Response[v1.VaultsServiceOpenResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.Open is not implemented"))
+func (UnimplementedVaultsServiceHandler) OpenVault(context.Context, *connect.Request[v1.OpenVaultRequest]) (*connect.Response[v1.OpenVaultResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.OpenVault is not implemented"))
 }

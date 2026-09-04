@@ -41,8 +41,8 @@ const (
 	VaultsRefusal_VAULTS_REFUSAL_COPY VaultsRefusal = 2
 	// The folder lies inside a vault that is on the list, or holds one.
 	VaultsRefusal_VAULTS_REFUSAL_OVERLAPS VaultsRefusal = 3
-	// Another vault is called this. It reaches Rename; Add appends a number to a
-	// taken name.
+	// Another vault is called this. It reaches RenameVault; AddVault appends a
+	// number to a taken name.
 	VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN VaultsRefusal = 4
 	// It is the only vault this installation has.
 	VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT VaultsRefusal = 5
@@ -189,26 +189,26 @@ func (x *Known) GetMissing() bool {
 	return false
 }
 
-type VaultsServiceListRequest struct {
+type ListVaultsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceListRequest) Reset() {
-	*x = VaultsServiceListRequest{}
+func (x *ListVaultsRequest) Reset() {
+	*x = ListVaultsRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceListRequest) String() string {
+func (x *ListVaultsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceListRequest) ProtoMessage() {}
+func (*ListVaultsRequest) ProtoMessage() {}
 
-func (x *VaultsServiceListRequest) ProtoReflect() protoreflect.Message {
+func (x *ListVaultsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -220,12 +220,12 @@ func (x *VaultsServiceListRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceListRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceListRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListVaultsRequest.ProtoReflect.Descriptor instead.
+func (*ListVaultsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{1}
 }
 
-type VaultsServiceListResponse struct {
+type ListVaultsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every vault the installation holds.
 	Vaults        []*Known `protobuf:"bytes,1,rep,name=vaults,proto3" json:"vaults,omitempty"`
@@ -233,20 +233,20 @@ type VaultsServiceListResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceListResponse) Reset() {
-	*x = VaultsServiceListResponse{}
+func (x *ListVaultsResponse) Reset() {
+	*x = ListVaultsResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceListResponse) String() string {
+func (x *ListVaultsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceListResponse) ProtoMessage() {}
+func (*ListVaultsResponse) ProtoMessage() {}
 
-func (x *VaultsServiceListResponse) ProtoReflect() protoreflect.Message {
+func (x *ListVaultsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -258,43 +258,43 @@ func (x *VaultsServiceListResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceListResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceListResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListVaultsResponse.ProtoReflect.Descriptor instead.
+func (*ListVaultsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *VaultsServiceListResponse) GetVaults() []*Known {
+func (x *ListVaultsResponse) GetVaults() []*Known {
 	if x != nil {
 		return x.Vaults
 	}
 	return nil
 }
 
-type VaultsServiceChooseRequest struct {
+type ChooseFolderRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// What the picker is titled. Empty takes the words the application chooses.
+	// What the dialog is titled. Empty takes the words the application chooses.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
-	// The folder the picker opens in. Empty opens wherever this machine opens a
-	// picker that was told nothing.
+	// The folder the dialog opens in. Empty opens wherever this machine opens a
+	// dialog that was told nothing.
 	StartingAt    string `protobuf:"bytes,2,opt,name=starting_at,json=startingAt,proto3" json:"starting_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceChooseRequest) Reset() {
-	*x = VaultsServiceChooseRequest{}
+func (x *ChooseFolderRequest) Reset() {
+	*x = ChooseFolderRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceChooseRequest) String() string {
+func (x *ChooseFolderRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceChooseRequest) ProtoMessage() {}
+func (*ChooseFolderRequest) ProtoMessage() {}
 
-func (x *VaultsServiceChooseRequest) ProtoReflect() protoreflect.Message {
+func (x *ChooseFolderRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -306,50 +306,50 @@ func (x *VaultsServiceChooseRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceChooseRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceChooseRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChooseFolderRequest.ProtoReflect.Descriptor instead.
+func (*ChooseFolderRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *VaultsServiceChooseRequest) GetTitle() string {
+func (x *ChooseFolderRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *VaultsServiceChooseRequest) GetStartingAt() string {
+func (x *ChooseFolderRequest) GetStartingAt() string {
 	if x != nil {
 		return x.StartingAt
 	}
 	return ""
 }
 
-type VaultsServiceChooseResponse struct {
+type ChooseFolderResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The folder that was chosen, empty when none was.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// Set when the person chose a folder. False is a picker they closed, which
+	// Set when the person chose a folder. False is a dialog they closed, which
 	// is an ordinary answer.
 	Chose         bool `protobuf:"varint,2,opt,name=chose,proto3" json:"chose,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceChooseResponse) Reset() {
-	*x = VaultsServiceChooseResponse{}
+func (x *ChooseFolderResponse) Reset() {
+	*x = ChooseFolderResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceChooseResponse) String() string {
+func (x *ChooseFolderResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceChooseResponse) ProtoMessage() {}
+func (*ChooseFolderResponse) ProtoMessage() {}
 
-func (x *VaultsServiceChooseResponse) ProtoReflect() protoreflect.Message {
+func (x *ChooseFolderResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -361,26 +361,26 @@ func (x *VaultsServiceChooseResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceChooseResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceChooseResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ChooseFolderResponse.ProtoReflect.Descriptor instead.
+func (*ChooseFolderResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *VaultsServiceChooseResponse) GetPath() string {
+func (x *ChooseFolderResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *VaultsServiceChooseResponse) GetChose() bool {
+func (x *ChooseFolderResponse) GetChose() bool {
 	if x != nil {
 		return x.Chose
 	}
 	return false
 }
 
-type VaultsServiceAddRequest struct {
+type AddVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The folder to add, absolute on this machine.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -391,20 +391,20 @@ type VaultsServiceAddRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceAddRequest) Reset() {
-	*x = VaultsServiceAddRequest{}
+func (x *AddVaultRequest) Reset() {
+	*x = AddVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceAddRequest) String() string {
+func (x *AddVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceAddRequest) ProtoMessage() {}
+func (*AddVaultRequest) ProtoMessage() {}
 
-func (x *VaultsServiceAddRequest) ProtoReflect() protoreflect.Message {
+func (x *AddVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -416,26 +416,26 @@ func (x *VaultsServiceAddRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceAddRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceAddRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AddVaultRequest.ProtoReflect.Descriptor instead.
+func (*AddVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *VaultsServiceAddRequest) GetPath() string {
+func (x *AddVaultRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *VaultsServiceAddRequest) GetDisplayName() string {
+func (x *AddVaultRequest) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-type VaultsServiceAddResponse struct {
+type AddVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault that joined the list. Absent when nothing was added.
 	Vault *Known `protobuf:"bytes,1,opt,name=vault,proto3,oneof" json:"vault,omitempty"`
@@ -445,20 +445,20 @@ type VaultsServiceAddResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceAddResponse) Reset() {
-	*x = VaultsServiceAddResponse{}
+func (x *AddVaultResponse) Reset() {
+	*x = AddVaultResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceAddResponse) String() string {
+func (x *AddVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceAddResponse) ProtoMessage() {}
+func (*AddVaultResponse) ProtoMessage() {}
 
-func (x *VaultsServiceAddResponse) ProtoReflect() protoreflect.Message {
+func (x *AddVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -470,26 +470,26 @@ func (x *VaultsServiceAddResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceAddResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceAddResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AddVaultResponse.ProtoReflect.Descriptor instead.
+func (*AddVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *VaultsServiceAddResponse) GetVault() *Known {
+func (x *AddVaultResponse) GetVault() *Known {
 	if x != nil {
 		return x.Vault
 	}
 	return nil
 }
 
-func (x *VaultsServiceAddResponse) GetRefusal() VaultsRefusal {
+func (x *AddVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
 }
 
-type VaultsServiceRenameRequest struct {
+type RenameVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to rename, by its identity.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -499,20 +499,20 @@ type VaultsServiceRenameRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceRenameRequest) Reset() {
-	*x = VaultsServiceRenameRequest{}
+func (x *RenameVaultRequest) Reset() {
+	*x = RenameVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceRenameRequest) String() string {
+func (x *RenameVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceRenameRequest) ProtoMessage() {}
+func (*RenameVaultRequest) ProtoMessage() {}
 
-func (x *VaultsServiceRenameRequest) ProtoReflect() protoreflect.Message {
+func (x *RenameVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -524,26 +524,26 @@ func (x *VaultsServiceRenameRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceRenameRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceRenameRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenameVaultRequest.ProtoReflect.Descriptor instead.
+func (*RenameVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *VaultsServiceRenameRequest) GetName() string {
+func (x *RenameVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *VaultsServiceRenameRequest) GetDisplayName() string {
+func (x *RenameVaultRequest) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-type VaultsServiceRenameResponse struct {
+type RenameVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault under its new name. Absent when it was not renamed. The name a
 	// vault already has is not a change and answers with the vault as it stands.
@@ -554,20 +554,20 @@ type VaultsServiceRenameResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceRenameResponse) Reset() {
-	*x = VaultsServiceRenameResponse{}
+func (x *RenameVaultResponse) Reset() {
+	*x = RenameVaultResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceRenameResponse) String() string {
+func (x *RenameVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceRenameResponse) ProtoMessage() {}
+func (*RenameVaultResponse) ProtoMessage() {}
 
-func (x *VaultsServiceRenameResponse) ProtoReflect() protoreflect.Message {
+func (x *RenameVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -579,26 +579,26 @@ func (x *VaultsServiceRenameResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceRenameResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceRenameResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenameVaultResponse.ProtoReflect.Descriptor instead.
+func (*RenameVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *VaultsServiceRenameResponse) GetVault() *Known {
+func (x *RenameVaultResponse) GetVault() *Known {
 	if x != nil {
 		return x.Vault
 	}
 	return nil
 }
 
-func (x *VaultsServiceRenameResponse) GetRefusal() VaultsRefusal {
+func (x *RenameVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
 }
 
-type VaultsServiceForgetRequest struct {
+type ForgetVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to forget, by its identity.
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -606,20 +606,20 @@ type VaultsServiceForgetRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceForgetRequest) Reset() {
-	*x = VaultsServiceForgetRequest{}
+func (x *ForgetVaultRequest) Reset() {
+	*x = ForgetVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceForgetRequest) String() string {
+func (x *ForgetVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceForgetRequest) ProtoMessage() {}
+func (*ForgetVaultRequest) ProtoMessage() {}
 
-func (x *VaultsServiceForgetRequest) ProtoReflect() protoreflect.Message {
+func (x *ForgetVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,19 +631,19 @@ func (x *VaultsServiceForgetRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceForgetRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceForgetRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ForgetVaultRequest.ProtoReflect.Descriptor instead.
+func (*ForgetVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *VaultsServiceForgetRequest) GetName() string {
+func (x *ForgetVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type VaultsServiceForgetResponse struct {
+type ForgetVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the vault is still on the list, and why.
 	Refusal       *VaultsRefusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
@@ -651,20 +651,20 @@ type VaultsServiceForgetResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceForgetResponse) Reset() {
-	*x = VaultsServiceForgetResponse{}
+func (x *ForgetVaultResponse) Reset() {
+	*x = ForgetVaultResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceForgetResponse) String() string {
+func (x *ForgetVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceForgetResponse) ProtoMessage() {}
+func (*ForgetVaultResponse) ProtoMessage() {}
 
-func (x *VaultsServiceForgetResponse) ProtoReflect() protoreflect.Message {
+func (x *ForgetVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -676,19 +676,19 @@ func (x *VaultsServiceForgetResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceForgetResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceForgetResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ForgetVaultResponse.ProtoReflect.Descriptor instead.
+func (*ForgetVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *VaultsServiceForgetResponse) GetRefusal() VaultsRefusal {
+func (x *ForgetVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
 }
 
-type VaultsServiceEraseRequest struct {
+type EraseVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to erase, by its identity.
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -696,20 +696,20 @@ type VaultsServiceEraseRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceEraseRequest) Reset() {
-	*x = VaultsServiceEraseRequest{}
+func (x *EraseVaultRequest) Reset() {
+	*x = EraseVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceEraseRequest) String() string {
+func (x *EraseVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceEraseRequest) ProtoMessage() {}
+func (*EraseVaultRequest) ProtoMessage() {}
 
-func (x *VaultsServiceEraseRequest) ProtoReflect() protoreflect.Message {
+func (x *EraseVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -721,19 +721,19 @@ func (x *VaultsServiceEraseRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceEraseRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceEraseRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use EraseVaultRequest.ProtoReflect.Descriptor instead.
+func (*EraseVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *VaultsServiceEraseRequest) GetName() string {
+func (x *EraseVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type VaultsServiceEraseResponse struct {
+type EraseVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the vault is still on the list, and why. The folder is where it
 	// was.
@@ -742,20 +742,20 @@ type VaultsServiceEraseResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceEraseResponse) Reset() {
-	*x = VaultsServiceEraseResponse{}
+func (x *EraseVaultResponse) Reset() {
+	*x = EraseVaultResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceEraseResponse) String() string {
+func (x *EraseVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceEraseResponse) ProtoMessage() {}
+func (*EraseVaultResponse) ProtoMessage() {}
 
-func (x *VaultsServiceEraseResponse) ProtoReflect() protoreflect.Message {
+func (x *EraseVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -767,19 +767,19 @@ func (x *VaultsServiceEraseResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceEraseResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceEraseResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use EraseVaultResponse.ProtoReflect.Descriptor instead.
+func (*EraseVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *VaultsServiceEraseResponse) GetRefusal() VaultsRefusal {
+func (x *EraseVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
 }
 
-type VaultsServiceOpenRequest struct {
+type OpenVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The vault to show, by its identity.
 	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -787,20 +787,20 @@ type VaultsServiceOpenRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceOpenRequest) Reset() {
-	*x = VaultsServiceOpenRequest{}
+func (x *OpenVaultRequest) Reset() {
+	*x = OpenVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceOpenRequest) String() string {
+func (x *OpenVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceOpenRequest) ProtoMessage() {}
+func (*OpenVaultRequest) ProtoMessage() {}
 
-func (x *VaultsServiceOpenRequest) ProtoReflect() protoreflect.Message {
+func (x *OpenVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -812,19 +812,19 @@ func (x *VaultsServiceOpenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceOpenRequest.ProtoReflect.Descriptor instead.
-func (*VaultsServiceOpenRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use OpenVaultRequest.ProtoReflect.Descriptor instead.
+func (*OpenVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *VaultsServiceOpenRequest) GetName() string {
+func (x *OpenVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type VaultsServiceOpenResponse struct {
+type OpenVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the window is showing what it was, and why.
 	Refusal       *VaultsRefusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
@@ -832,20 +832,20 @@ type VaultsServiceOpenResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *VaultsServiceOpenResponse) Reset() {
-	*x = VaultsServiceOpenResponse{}
+func (x *OpenVaultResponse) Reset() {
+	*x = OpenVaultResponse{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VaultsServiceOpenResponse) String() string {
+func (x *OpenVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VaultsServiceOpenResponse) ProtoMessage() {}
+func (*OpenVaultResponse) ProtoMessage() {}
 
-func (x *VaultsServiceOpenResponse) ProtoReflect() protoreflect.Message {
+func (x *OpenVaultResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -857,12 +857,12 @@ func (x *VaultsServiceOpenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VaultsServiceOpenResponse.ProtoReflect.Descriptor instead.
-func (*VaultsServiceOpenResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use OpenVaultResponse.ProtoReflect.Descriptor instead.
+func (*OpenVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *VaultsServiceOpenResponse) GetRefusal() VaultsRefusal {
+func (x *OpenVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
@@ -878,50 +878,50 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x18\n" +
-	"\amissing\x18\x04 \x01(\bR\amissing\"\x1a\n" +
-	"\x18VaultsServiceListRequest\"S\n" +
-	"\x19VaultsServiceListResponse\x12'\n" +
-	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.KnownR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"S\n" +
-	"\x1aVaultsServiceChooseRequest\x12\x14\n" +
+	"\amissing\x18\x04 \x01(\bR\amissing\"\x13\n" +
+	"\x11ListVaultsRequest\"L\n" +
+	"\x12ListVaultsResponse\x12'\n" +
+	"\x06vaults\x18\x01 \x03(\v2\x0f.numen.v1.KnownR\x06vaultsJ\x04\b\x02\x10\x03R\ashowing\"L\n" +
+	"\x13ChooseFolderRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1f\n" +
 	"\vstarting_at\x18\x02 \x01(\tR\n" +
-	"startingAt\"G\n" +
-	"\x1bVaultsServiceChooseResponse\x12\x12\n" +
+	"startingAt\"@\n" +
+	"\x14ChooseFolderResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05chose\x18\x02 \x01(\bR\x05chose\"P\n" +
-	"\x17VaultsServiceAddRequest\x12\x12\n" +
+	"\x05chose\x18\x02 \x01(\bR\x05chose\"H\n" +
+	"\x0fAddVaultRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x94\x01\n" +
-	"\x18VaultsServiceAddResponse\x12*\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x8c\x01\n" +
+	"\x10AddVaultResponse\x12*\n" +
 	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
-	"\b_refusal\"S\n" +
-	"\x1aVaultsServiceRenameRequest\x12\x12\n" +
+	"\b_refusal\"K\n" +
+	"\x12RenameVaultRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
-	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x97\x01\n" +
-	"\x1bVaultsServiceRenameResponse\x12*\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\"\x8f\x01\n" +
+	"\x13RenameVaultResponse\x12*\n" +
 	"\x05vault\x18\x01 \x01(\v2\x0f.numen.v1.KnownH\x00R\x05vault\x88\x01\x01\x126\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
-	"\b_refusal\"0\n" +
-	"\x1aVaultsServiceForgetRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"a\n" +
-	"\x1bVaultsServiceForgetResponse\x126\n" +
+	"\b_refusal\"(\n" +
+	"\x12ForgetVaultRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"Y\n" +
+	"\x13ForgetVaultResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal\"/\n" +
-	"\x19VaultsServiceEraseRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"`\n" +
-	"\x1aVaultsServiceEraseResponse\x126\n" +
+	"\b_refusal\"'\n" +
+	"\x11EraseVaultRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"X\n" +
+	"\x12EraseVaultResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal\".\n" +
-	"\x18VaultsServiceOpenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"_\n" +
-	"\x19VaultsServiceOpenResponse\x126\n" +
+	"\b_refusal\"&\n" +
+	"\x10OpenVaultRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"W\n" +
+	"\x11OpenVaultResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusal*\xb2\x02\n" +
@@ -935,15 +935,17 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x16VAULTS_REFUSAL_SHOWING\x10\x06\x12\x1a\n" +
 	"\x16VAULTS_REFUSAL_UNKNOWN\x10\a\x12\x1b\n" +
 	"\x17VAULTS_REFUSAL_NO_TRASH\x10\b\x12\x19\n" +
-	"\x15VAULTS_REFUSAL_ASKING\x10\t2\xd8\x04\n" +
-	"\rVaultsService\x12O\n" +
-	"\x04List\x12\".numen.v1.VaultsServiceListRequest\x1a#.numen.v1.VaultsServiceListResponse\x12U\n" +
-	"\x06Choose\x12$.numen.v1.VaultsServiceChooseRequest\x1a%.numen.v1.VaultsServiceChooseResponse\x12L\n" +
-	"\x03Add\x12!.numen.v1.VaultsServiceAddRequest\x1a\".numen.v1.VaultsServiceAddResponse\x12U\n" +
-	"\x06Rename\x12$.numen.v1.VaultsServiceRenameRequest\x1a%.numen.v1.VaultsServiceRenameResponse\x12U\n" +
-	"\x06Forget\x12$.numen.v1.VaultsServiceForgetRequest\x1a%.numen.v1.VaultsServiceForgetResponse\x12R\n" +
-	"\x05Erase\x12#.numen.v1.VaultsServiceEraseRequest\x1a$.numen.v1.VaultsServiceEraseResponse\x12O\n" +
-	"\x04Open\x12\".numen.v1.VaultsServiceOpenRequest\x1a#.numen.v1.VaultsServiceOpenResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x15VAULTS_REFUSAL_ASKING\x10\t2\x91\x04\n" +
+	"\rVaultsService\x12G\n" +
+	"\n" +
+	"ListVaults\x12\x1b.numen.v1.ListVaultsRequest\x1a\x1c.numen.v1.ListVaultsResponse\x12M\n" +
+	"\fChooseFolder\x12\x1d.numen.v1.ChooseFolderRequest\x1a\x1e.numen.v1.ChooseFolderResponse\x12A\n" +
+	"\bAddVault\x12\x19.numen.v1.AddVaultRequest\x1a\x1a.numen.v1.AddVaultResponse\x12J\n" +
+	"\vRenameVault\x12\x1c.numen.v1.RenameVaultRequest\x1a\x1d.numen.v1.RenameVaultResponse\x12J\n" +
+	"\vForgetVault\x12\x1c.numen.v1.ForgetVaultRequest\x1a\x1d.numen.v1.ForgetVaultResponse\x12G\n" +
+	"\n" +
+	"EraseVault\x12\x1b.numen.v1.EraseVaultRequest\x1a\x1c.numen.v1.EraseVaultResponse\x12D\n" +
+	"\tOpenVault\x12\x1a.numen.v1.OpenVaultRequest\x1a\x1b.numen.v1.OpenVaultResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_vaults_proto_rawDescOnce sync.Once
@@ -960,46 +962,46 @@ func file_numen_v1_vaults_proto_rawDescGZIP() []byte {
 var file_numen_v1_vaults_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_numen_v1_vaults_proto_goTypes = []any{
-	(VaultsRefusal)(0),                  // 0: numen.v1.VaultsRefusal
-	(*Known)(nil),                       // 1: numen.v1.Known
-	(*VaultsServiceListRequest)(nil),    // 2: numen.v1.VaultsServiceListRequest
-	(*VaultsServiceListResponse)(nil),   // 3: numen.v1.VaultsServiceListResponse
-	(*VaultsServiceChooseRequest)(nil),  // 4: numen.v1.VaultsServiceChooseRequest
-	(*VaultsServiceChooseResponse)(nil), // 5: numen.v1.VaultsServiceChooseResponse
-	(*VaultsServiceAddRequest)(nil),     // 6: numen.v1.VaultsServiceAddRequest
-	(*VaultsServiceAddResponse)(nil),    // 7: numen.v1.VaultsServiceAddResponse
-	(*VaultsServiceRenameRequest)(nil),  // 8: numen.v1.VaultsServiceRenameRequest
-	(*VaultsServiceRenameResponse)(nil), // 9: numen.v1.VaultsServiceRenameResponse
-	(*VaultsServiceForgetRequest)(nil),  // 10: numen.v1.VaultsServiceForgetRequest
-	(*VaultsServiceForgetResponse)(nil), // 11: numen.v1.VaultsServiceForgetResponse
-	(*VaultsServiceEraseRequest)(nil),   // 12: numen.v1.VaultsServiceEraseRequest
-	(*VaultsServiceEraseResponse)(nil),  // 13: numen.v1.VaultsServiceEraseResponse
-	(*VaultsServiceOpenRequest)(nil),    // 14: numen.v1.VaultsServiceOpenRequest
-	(*VaultsServiceOpenResponse)(nil),   // 15: numen.v1.VaultsServiceOpenResponse
+	(VaultsRefusal)(0),           // 0: numen.v1.VaultsRefusal
+	(*Known)(nil),                // 1: numen.v1.Known
+	(*ListVaultsRequest)(nil),    // 2: numen.v1.ListVaultsRequest
+	(*ListVaultsResponse)(nil),   // 3: numen.v1.ListVaultsResponse
+	(*ChooseFolderRequest)(nil),  // 4: numen.v1.ChooseFolderRequest
+	(*ChooseFolderResponse)(nil), // 5: numen.v1.ChooseFolderResponse
+	(*AddVaultRequest)(nil),      // 6: numen.v1.AddVaultRequest
+	(*AddVaultResponse)(nil),     // 7: numen.v1.AddVaultResponse
+	(*RenameVaultRequest)(nil),   // 8: numen.v1.RenameVaultRequest
+	(*RenameVaultResponse)(nil),  // 9: numen.v1.RenameVaultResponse
+	(*ForgetVaultRequest)(nil),   // 10: numen.v1.ForgetVaultRequest
+	(*ForgetVaultResponse)(nil),  // 11: numen.v1.ForgetVaultResponse
+	(*EraseVaultRequest)(nil),    // 12: numen.v1.EraseVaultRequest
+	(*EraseVaultResponse)(nil),   // 13: numen.v1.EraseVaultResponse
+	(*OpenVaultRequest)(nil),     // 14: numen.v1.OpenVaultRequest
+	(*OpenVaultResponse)(nil),    // 15: numen.v1.OpenVaultResponse
 }
 var file_numen_v1_vaults_proto_depIdxs = []int32{
-	1,  // 0: numen.v1.VaultsServiceListResponse.vaults:type_name -> numen.v1.Known
-	1,  // 1: numen.v1.VaultsServiceAddResponse.vault:type_name -> numen.v1.Known
-	0,  // 2: numen.v1.VaultsServiceAddResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	1,  // 3: numen.v1.VaultsServiceRenameResponse.vault:type_name -> numen.v1.Known
-	0,  // 4: numen.v1.VaultsServiceRenameResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 5: numen.v1.VaultsServiceForgetResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 6: numen.v1.VaultsServiceEraseResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 7: numen.v1.VaultsServiceOpenResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	2,  // 8: numen.v1.VaultsService.List:input_type -> numen.v1.VaultsServiceListRequest
-	4,  // 9: numen.v1.VaultsService.Choose:input_type -> numen.v1.VaultsServiceChooseRequest
-	6,  // 10: numen.v1.VaultsService.Add:input_type -> numen.v1.VaultsServiceAddRequest
-	8,  // 11: numen.v1.VaultsService.Rename:input_type -> numen.v1.VaultsServiceRenameRequest
-	10, // 12: numen.v1.VaultsService.Forget:input_type -> numen.v1.VaultsServiceForgetRequest
-	12, // 13: numen.v1.VaultsService.Erase:input_type -> numen.v1.VaultsServiceEraseRequest
-	14, // 14: numen.v1.VaultsService.Open:input_type -> numen.v1.VaultsServiceOpenRequest
-	3,  // 15: numen.v1.VaultsService.List:output_type -> numen.v1.VaultsServiceListResponse
-	5,  // 16: numen.v1.VaultsService.Choose:output_type -> numen.v1.VaultsServiceChooseResponse
-	7,  // 17: numen.v1.VaultsService.Add:output_type -> numen.v1.VaultsServiceAddResponse
-	9,  // 18: numen.v1.VaultsService.Rename:output_type -> numen.v1.VaultsServiceRenameResponse
-	11, // 19: numen.v1.VaultsService.Forget:output_type -> numen.v1.VaultsServiceForgetResponse
-	13, // 20: numen.v1.VaultsService.Erase:output_type -> numen.v1.VaultsServiceEraseResponse
-	15, // 21: numen.v1.VaultsService.Open:output_type -> numen.v1.VaultsServiceOpenResponse
+	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Known
+	1,  // 1: numen.v1.AddVaultResponse.vault:type_name -> numen.v1.Known
+	0,  // 2: numen.v1.AddVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Known
+	0,  // 4: numen.v1.RenameVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 5: numen.v1.ForgetVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 6: numen.v1.EraseVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 7: numen.v1.OpenVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	2,  // 8: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
+	4,  // 9: numen.v1.VaultsService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
+	6,  // 10: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest
+	8,  // 11: numen.v1.VaultsService.RenameVault:input_type -> numen.v1.RenameVaultRequest
+	10, // 12: numen.v1.VaultsService.ForgetVault:input_type -> numen.v1.ForgetVaultRequest
+	12, // 13: numen.v1.VaultsService.EraseVault:input_type -> numen.v1.EraseVaultRequest
+	14, // 14: numen.v1.VaultsService.OpenVault:input_type -> numen.v1.OpenVaultRequest
+	3,  // 15: numen.v1.VaultsService.ListVaults:output_type -> numen.v1.ListVaultsResponse
+	5,  // 16: numen.v1.VaultsService.ChooseFolder:output_type -> numen.v1.ChooseFolderResponse
+	7,  // 17: numen.v1.VaultsService.AddVault:output_type -> numen.v1.AddVaultResponse
+	9,  // 18: numen.v1.VaultsService.RenameVault:output_type -> numen.v1.RenameVaultResponse
+	11, // 19: numen.v1.VaultsService.ForgetVault:output_type -> numen.v1.ForgetVaultResponse
+	13, // 20: numen.v1.VaultsService.EraseVault:output_type -> numen.v1.EraseVaultResponse
+	15, // 21: numen.v1.VaultsService.OpenVault:output_type -> numen.v1.OpenVaultResponse
 	15, // [15:22] is the sub-list for method output_type
 	8,  // [8:15] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
