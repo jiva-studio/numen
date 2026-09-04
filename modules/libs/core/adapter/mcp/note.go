@@ -452,7 +452,9 @@ func addNoteWritingTools(server *sdk.Server, core Core) {
 		Name:  "note_remove",
 		Title: "Remove a note",
 		Description: "Take notes out of the vault. They go to the vault's trash folder " +
-			"and can be put back. Links that pointed at them are left as they are and " +
+			"and can be put back — unless the call sets `destroy`, which takes the file " +
+			"off the disk and leaves nothing to put back. " +
+			"Links that pointed at them are left as they are and " +
 			"come back under `dangling`: a link is not wrong because its note is gone. " +
 			"This removes notes: a path naming a folder is refused, and the notes under " +
 			"one are removed by naming each of them.",

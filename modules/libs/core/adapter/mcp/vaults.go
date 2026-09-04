@@ -235,7 +235,9 @@ func addVaultOpen(server *sdk.Server, core Core) {
 		Name:  "vault_open",
 		Title: "Show another vault in the window",
 		Description: "Put another vault in front of the person, in the window they have " +
-			"open. Nothing on disk moves and nothing is written into either vault. Your " +
+			"open. Nothing on disk moves and nothing is written into either vault; the " +
+			"list of vaults records which one was opened last, and the window comes back " +
+			"to it the next time the application starts. Your " +
 			"session ends when the window turns: these tools are served for the vault " +
 			"that is going and they go with it — the folder you were told about, the " +
 			"notes you have looked up, this conversation. Whatever you were in the middle " +
