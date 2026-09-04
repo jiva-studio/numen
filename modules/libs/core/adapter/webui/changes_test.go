@@ -29,7 +29,7 @@ import (
 // What is asked here is the wire: that a change reaches a client over the
 // stream, in the shape the schema describes. What a change means is asked of
 // the use case, where no server is needed to ask it.
-func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceClient, string) {
+func opened(t *testing.T, notes map[string]string) (questions, string) {
 	t.Helper()
 	client, _, root, _ := serving(t, notes)
 	return client, root
@@ -38,7 +38,7 @@ func opened(t *testing.T, notes map[string]string) (numenv1connect.VaultServiceC
 // serving is that same vault, with the window's half of it as well, for a test
 // asking what something the window does reaches the client as.
 func serving(t *testing.T, notes map[string]string) (
-	numenv1connect.VaultServiceClient, numenv1connect.WindowServiceClient, string, *webui.Opened,
+	questions, numenv1connect.WindowServiceClient, string, *webui.Opened,
 ) {
 	t.Helper()
 	root := t.TempDir()
@@ -77,10 +77,9 @@ func serving(t *testing.T, notes map[string]string) (
 	}
 	t.Cleanup(func() { opened.Close() })
 
-	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
-	mux.Handle(route, handler)
+	answers(mux, opened.API)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -88,7 +87,7 @@ func serving(t *testing.T, notes map[string]string) (
 	t.Cleanup(server.CloseClientConnections)
 	t.Cleanup(server.Close)
 
-	client := numenv1connect.NewVaultServiceClient(server.Client(), server.URL)
+	client := asks(server.Client(), server.URL)
 	watching := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
 
 	// The window opens on what the first scan stored; the watcher reports only
@@ -107,7 +106,7 @@ func serving(t *testing.T, notes map[string]string) (
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatal("the first scan did not finish")
-	return nil, nil, "", nil
+	return questions{}, nil, "", nil
 }
 
 // TestAnEditReachesAListener is the whole path: a file on disk, the watcher,

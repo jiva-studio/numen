@@ -22,13 +22,13 @@ func TestStartAnswers(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = bind.Stop() })
 
-	ask := func(method string, body any) map[string]any {
+	ask := func(service, method string, body any) map[string]any {
 		t.Helper()
 		text, err := json.Marshal(body)
 		if err != nil {
 			t.Fatalf("asking %s: %v", method, err)
 		}
-		url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.VaultService/%s", port, method)
+		url := fmt.Sprintf("http://127.0.0.1:%d/numen.v1.%s/%s", port, service, method)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(text))
 		if err != nil {
 			t.Fatalf("asking %s: %v", method, err)
@@ -53,7 +53,7 @@ func TestStartAnswers(t *testing.T) {
 
 	names := func() []string {
 		var held []string
-		for _, entry := range ask("List", map[string]any{"folder": ""})["entries"].([]any) {
+		for _, entry := range ask("FileService", "List", map[string]any{"folder": ""})["entries"].([]any) {
 			held = append(held, entry.(map[string]any)["displayName"].(string))
 		}
 		return held
@@ -70,7 +70,7 @@ func TestStartAnswers(t *testing.T) {
 	seats := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
 		seats = map[string]int{}
-		around, _ := ask("Neighbourhood", map[string]any{"path": bind.Seeded})["related"].([]any)
+		around, _ := ask("NoteService", "Neighbourhood", map[string]any{"path": bind.Seeded})["related"].([]any)
 		for _, one := range around {
 			seats[one.(map[string]any)["seat"].(string)]++
 		}
@@ -85,7 +85,7 @@ func TestStartAnswers(t *testing.T) {
 		}
 	}
 
-	made := ask("Create", map[string]any{"title": "Anemone", "folder": ""})
+	made := ask("NoteService", "Create", map[string]any{"title": "Anemone", "folder": ""})
 	if made["path"] != "Anemone.md" {
 		t.Fatalf("made %v, want Anemone.md", made)
 	}

@@ -26,7 +26,7 @@ import (
 // client asking about it the way the window does.
 type nothing struct {
 	opened    *webui.Opened
-	vault     numenv1connect.VaultServiceClient
+	vault     questions
 	drawn     numenv1connect.WindowServiceClient
 	holds     numenv1connect.VaultsServiceClient
 	server    *httptest.Server
@@ -67,7 +67,7 @@ func standingOnNothing(t *testing.T) *nothing {
 
 	return &nothing{
 		opened:    opened,
-		vault:     numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		vault:     asks(server.Client(), server.URL),
 		drawn:     numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		holds:     numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
 		server:    server,

@@ -32,6 +32,9 @@ func Pages() (http.Handler, error) { return appearance.Serving(pages) }
 func (a *API) Serving(files http.Handler) http.Handler {
 	counted := a.counting()
 	route, questions := numenv1connect.NewVaultServiceHandler(a, counted)
+	filing, tree := numenv1connect.NewFileServiceHandler(a, counted)
+	writing, notes := numenv1connect.NewNoteServiceHandler(a, counted)
+	finding, found := numenv1connect.NewSearchServiceHandler(a, counted)
 	asking, tasks := numenv1connect.NewAgentServiceHandler(a, counted)
 	wearing, themes := numenv1connect.NewThemeServiceHandler(a.dressed(), counted)
 	listing, held := numenv1connect.NewVaultsServiceHandler(vaults{api: a}, counted)
@@ -40,7 +43,7 @@ func (a *API) Serving(files http.Handler) http.Handler {
 	configuring, settings := numenv1connect.NewSettingsServiceHandler(a, counted)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(a.Window, counted)
 	making, artifacts := numenv1connect.NewArtifactServiceHandler(a, counted)
-	opening, files := numenv1connect.NewAssetServiceHandler(a, counted)
+	opening, assets := numenv1connect.NewAssetServiceHandler(a, counted)
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
 	policy := appearance.Policy(appearance.Sources{Media: a.Playing.named()})
@@ -65,9 +68,15 @@ func (a *API) Serving(files http.Handler) http.Handler {
 		case strings.HasPrefix(r.URL.Path, making):
 			artifacts.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, opening):
-			files.ServeHTTP(w, r)
+			assets.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, route):
 			questions.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, filing):
+			tree.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, writing):
+			notes.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, finding):
+			found.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):
 			tasks.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, wearing):

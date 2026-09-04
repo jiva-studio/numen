@@ -39,7 +39,7 @@ GET /assets/<id>/pages/<n>?wide=W   one page drawn, where the asset has any
 
 **Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak (ADR-0005).
 
-`AssetService` is apart from `VaultService` for the reason a service is carved at all (ADR-0046): the phone serves the vault's notes to a network and must not serve its files, and a service is the unit of what a binary answers.
+`AssetService` is a service of its own for the reason a service is carved at all (ADR-0046): the phone serves the vault's notes to a network and must not serve what is in its files, and a service is the unit of what a binary answers.
 
 A recording's bytes are not here either. They are served ranged, from a loopback port, at an address `AssetService.Recording` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
 

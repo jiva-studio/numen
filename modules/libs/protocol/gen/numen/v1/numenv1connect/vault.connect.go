@@ -2,14 +2,14 @@
 //
 // Source: numen/v1/vault.proto
 
-// What a client may ask about a vault.
+// What a client may ask about the vault a window is showing, taken whole.
 //
-// This file is the contract, and the only place it is written down. The Go that
-// answers and the TypeScript that asks are both generated from it, so a field
-// that changes here fails to compile on the side that has not caught up.
+// What the vault is, what has changed in it, and where in it the person stands:
+// the questions that are about the vault itself and not about anything filed in
+// it. Its files are file.proto, its notes note.proto and its text search.proto.
 //
-// Nothing of the index is described here: a note is addressed by the path it is
-// filed under, which is what the vault calls it.
+// It is also the file those three import, and every other service's file with
+// them. A type stands here once three of them hold it, and not before.
 package numenv1connect
 
 import (
@@ -43,84 +43,18 @@ const (
 const (
 	// VaultServiceStateProcedure is the fully-qualified name of the VaultService's State RPC.
 	VaultServiceStateProcedure = "/numen.v1.VaultService/State"
-	// VaultServiceOpeningProcedure is the fully-qualified name of the VaultService's Opening RPC.
-	VaultServiceOpeningProcedure = "/numen.v1.VaultService/Opening"
-	// VaultServiceNeighbourhoodProcedure is the fully-qualified name of the VaultService's
-	// Neighbourhood RPC.
-	VaultServiceNeighbourhoodProcedure = "/numen.v1.VaultService/Neighbourhood"
-	// VaultServiceResolveProcedure is the fully-qualified name of the VaultService's Resolve RPC.
-	VaultServiceResolveProcedure = "/numen.v1.VaultService/Resolve"
-	// VaultServiceNamesProcedure is the fully-qualified name of the VaultService's Names RPC.
-	VaultServiceNamesProcedure = "/numen.v1.VaultService/Names"
-	// VaultServiceHeadingsProcedure is the fully-qualified name of the VaultService's Headings RPC.
-	VaultServiceHeadingsProcedure = "/numen.v1.VaultService/Headings"
-	// VaultServiceStandingProcedure is the fully-qualified name of the VaultService's Standing RPC.
-	VaultServiceStandingProcedure = "/numen.v1.VaultService/Standing"
-	// VaultServiceSearchProcedure is the fully-qualified name of the VaultService's Search RPC.
-	VaultServiceSearchProcedure = "/numen.v1.VaultService/Search"
 	// VaultServiceChangesProcedure is the fully-qualified name of the VaultService's Changes RPC.
 	VaultServiceChangesProcedure = "/numen.v1.VaultService/Changes"
 	// VaultServiceFocusProcedure is the fully-qualified name of the VaultService's Focus RPC.
 	VaultServiceFocusProcedure = "/numen.v1.VaultService/Focus"
 	// VaultServiceAttendingProcedure is the fully-qualified name of the VaultService's Attending RPC.
 	VaultServiceAttendingProcedure = "/numen.v1.VaultService/Attending"
-	// VaultServiceEditingProcedure is the fully-qualified name of the VaultService's Editing RPC.
-	VaultServiceEditingProcedure = "/numen.v1.VaultService/Editing"
-	// VaultServiceListProcedure is the fully-qualified name of the VaultService's List RPC.
-	VaultServiceListProcedure = "/numen.v1.VaultService/List"
-	// VaultServiceReadProcedure is the fully-qualified name of the VaultService's Read RPC.
-	VaultServiceReadProcedure = "/numen.v1.VaultService/Read"
-	// VaultServiceWriteProcedure is the fully-qualified name of the VaultService's Write RPC.
-	VaultServiceWriteProcedure = "/numen.v1.VaultService/Write"
-	// VaultServiceCreateProcedure is the fully-qualified name of the VaultService's Create RPC.
-	VaultServiceCreateProcedure = "/numen.v1.VaultService/Create"
-	// VaultServiceJoinProcedure is the fully-qualified name of the VaultService's Join RPC.
-	VaultServiceJoinProcedure = "/numen.v1.VaultService/Join"
-	// VaultServiceRenameProcedure is the fully-qualified name of the VaultService's Rename RPC.
-	VaultServiceRenameProcedure = "/numen.v1.VaultService/Rename"
-	// VaultServiceMoveProcedure is the fully-qualified name of the VaultService's Move RPC.
-	VaultServiceMoveProcedure = "/numen.v1.VaultService/Move"
-	// VaultServiceRemoveProcedure is the fully-qualified name of the VaultService's Remove RPC.
-	VaultServiceRemoveProcedure = "/numen.v1.VaultService/Remove"
-	// VaultServiceMakeFolderProcedure is the fully-qualified name of the VaultService's MakeFolder RPC.
-	VaultServiceMakeFolderProcedure = "/numen.v1.VaultService/MakeFolder"
 )
 
 // VaultServiceClient is a client for the numen.v1.VaultService service.
 type VaultServiceClient interface {
 	// State is what the vault is and how far reading it has got.
 	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
-	// Opening is the note to show when nothing else has been chosen. It answers
-	// with nothing until a scan has stored something.
-	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
-	// Neighbourhood is one note and everything joined to it.
-	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
-	// Resolve answers where addresses written in one note land.
-	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
-	// Names is the names in a vault that match what was typed: a note's own
-	// title, and the headings inside notes. It is asked as a person types, and
-	// the last word matches on its prefix.
-	//
-	// It reads names and nothing else. Searching the text a vault holds is
-	// Search, and that answers with passages.
-	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
-	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note, and a note carrying no
-	// headings, are both absent from the answer.
-	//
-	// The answer carries one entry per note, and a path named twice is answered
-	// once. A path past the ceiling the vault sets is not answered at all.
-	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
-	// Standing is what the vault holds at each of those paths, so a client
-	// holding a path opens what stands there in the editor made for it. The kind
-	// is read off the vault itself, so a path nothing has scanned is answered
-	// with what stands there. A path with nothing at it is absent from the
-	// answer.
-	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
-	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means or by what a section is called. The caller says
-	// which way it is asked, so a client drawing them apart asks once for each.
-	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
@@ -134,40 +68,6 @@ type VaultServiceClient interface {
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
-	// Editing reports a change being made to a note's prose while it is being
-	// made, for as long as the caller listens. It is what a person reading that
-	// note is shown; the note itself arrives the way every other change does.
-	Editing(context.Context, *connect.Request[v1.EditingRequest]) (*connect.ServerStreamForClient[v1.EditingResponse], error)
-	// List is what one folder of the vault holds. A tree asks for a folder as it
-	// is opened, one folder to a request.
-	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
-	// Read answers with the prose of a note, below its frontmatter.
-	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
-	// Write puts prose into a note, keeping the frontmatter the file has when the
-	// write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and refused
-	// `stale`.
-	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
-	// Create makes a note. The file is named after the title, and the links the
-	// note carries are written into it as it is made, so it arrives joined.
-	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
-	// Join writes a relationship into one note. The note at the other end is left
-	// alone: a link is one end's account of a relationship.
-	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
-	// Rename gives a note a different name. A note is shown by its title, else by
-	// its first level-one heading, else by its filename: whichever of the three
-	// names it is brought into line, and the file follows it where a title and a
-	// filename are kept as one name.
-	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
-	// Move puts a file or a folder somewhere else in the vault. Renaming a file
-	// is a move within one folder.
-	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Remove takes a file or a folder out of the vault, into the trash it can be
-	// brought back from. The links that pointed at it are left as they were
-	// written: a link is not wrong because the note it names is gone.
-	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	// MakeFolder makes an empty folder. The folders above it are made with it.
-	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
 }
 
 // NewVaultServiceClient constructs a client for the numen.v1.VaultService service. By default, it
@@ -185,48 +85,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+VaultServiceStateProcedure,
 			connect.WithSchema(vaultServiceMethods.ByName("State")),
-			connect.WithClientOptions(opts...),
-		),
-		opening: connect.NewClient[v1.OpeningRequest, v1.OpeningResponse](
-			httpClient,
-			baseURL+VaultServiceOpeningProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Opening")),
-			connect.WithClientOptions(opts...),
-		),
-		neighbourhood: connect.NewClient[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse](
-			httpClient,
-			baseURL+VaultServiceNeighbourhoodProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
-			connect.WithClientOptions(opts...),
-		),
-		resolve: connect.NewClient[v1.ResolveRequest, v1.ResolveResponse](
-			httpClient,
-			baseURL+VaultServiceResolveProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Resolve")),
-			connect.WithClientOptions(opts...),
-		),
-		names: connect.NewClient[v1.NamesRequest, v1.NamesResponse](
-			httpClient,
-			baseURL+VaultServiceNamesProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Names")),
-			connect.WithClientOptions(opts...),
-		),
-		headings: connect.NewClient[v1.HeadingsRequest, v1.HeadingsResponse](
-			httpClient,
-			baseURL+VaultServiceHeadingsProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Headings")),
-			connect.WithClientOptions(opts...),
-		),
-		standing: connect.NewClient[v1.StandingRequest, v1.StandingResponse](
-			httpClient,
-			baseURL+VaultServiceStandingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Standing")),
-			connect.WithClientOptions(opts...),
-		),
-		search: connect.NewClient[v1.SearchRequest, v1.SearchResponse](
-			httpClient,
-			baseURL+VaultServiceSearchProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Search")),
 			connect.WithClientOptions(opts...),
 		),
 		changes: connect.NewClient[v1.ChangesRequest, v1.ChangesResponse](
@@ -247,132 +105,20 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Attending")),
 			connect.WithClientOptions(opts...),
 		),
-		editing: connect.NewClient[v1.EditingRequest, v1.EditingResponse](
-			httpClient,
-			baseURL+VaultServiceEditingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Editing")),
-			connect.WithClientOptions(opts...),
-		),
-		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
-			httpClient,
-			baseURL+VaultServiceListProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("List")),
-			connect.WithClientOptions(opts...),
-		),
-		read: connect.NewClient[v1.ReadRequest, v1.ReadResponse](
-			httpClient,
-			baseURL+VaultServiceReadProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Read")),
-			connect.WithClientOptions(opts...),
-		),
-		write: connect.NewClient[v1.WriteRequest, v1.WriteResponse](
-			httpClient,
-			baseURL+VaultServiceWriteProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Write")),
-			connect.WithClientOptions(opts...),
-		),
-		create: connect.NewClient[v1.CreateRequest, v1.CreateResponse](
-			httpClient,
-			baseURL+VaultServiceCreateProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Create")),
-			connect.WithClientOptions(opts...),
-		),
-		join: connect.NewClient[v1.JoinRequest, v1.JoinResponse](
-			httpClient,
-			baseURL+VaultServiceJoinProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Join")),
-			connect.WithClientOptions(opts...),
-		),
-		rename: connect.NewClient[v1.RenameRequest, v1.RenameResponse](
-			httpClient,
-			baseURL+VaultServiceRenameProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Rename")),
-			connect.WithClientOptions(opts...),
-		),
-		move: connect.NewClient[v1.MoveRequest, v1.MoveResponse](
-			httpClient,
-			baseURL+VaultServiceMoveProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Move")),
-			connect.WithClientOptions(opts...),
-		),
-		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
-			httpClient,
-			baseURL+VaultServiceRemoveProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Remove")),
-			connect.WithClientOptions(opts...),
-		),
-		makeFolder: connect.NewClient[v1.MakeFolderRequest, v1.MakeFolderResponse](
-			httpClient,
-			baseURL+VaultServiceMakeFolderProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // vaultServiceClient implements VaultServiceClient.
 type vaultServiceClient struct {
-	state         *connect.Client[v1.StateRequest, v1.StateResponse]
-	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
-	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
-	resolve       *connect.Client[v1.ResolveRequest, v1.ResolveResponse]
-	names         *connect.Client[v1.NamesRequest, v1.NamesResponse]
-	headings      *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
-	standing      *connect.Client[v1.StandingRequest, v1.StandingResponse]
-	search        *connect.Client[v1.SearchRequest, v1.SearchResponse]
-	changes       *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
-	focus         *connect.Client[v1.FocusRequest, v1.FocusResponse]
-	attending     *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
-	editing       *connect.Client[v1.EditingRequest, v1.EditingResponse]
-	list          *connect.Client[v1.ListRequest, v1.ListResponse]
-	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
-	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
-	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
-	join          *connect.Client[v1.JoinRequest, v1.JoinResponse]
-	rename        *connect.Client[v1.RenameRequest, v1.RenameResponse]
-	move          *connect.Client[v1.MoveRequest, v1.MoveResponse]
-	remove        *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
-	makeFolder    *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
+	state     *connect.Client[v1.StateRequest, v1.StateResponse]
+	changes   *connect.Client[v1.ChangesRequest, v1.ChangesResponse]
+	focus     *connect.Client[v1.FocusRequest, v1.FocusResponse]
+	attending *connect.Client[v1.AttendingRequest, v1.AttendingResponse]
 }
 
 // State calls numen.v1.VaultService.State.
 func (c *vaultServiceClient) State(ctx context.Context, req *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error) {
 	return c.state.CallUnary(ctx, req)
-}
-
-// Opening calls numen.v1.VaultService.Opening.
-func (c *vaultServiceClient) Opening(ctx context.Context, req *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
-	return c.opening.CallUnary(ctx, req)
-}
-
-// Neighbourhood calls numen.v1.VaultService.Neighbourhood.
-func (c *vaultServiceClient) Neighbourhood(ctx context.Context, req *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
-	return c.neighbourhood.CallUnary(ctx, req)
-}
-
-// Resolve calls numen.v1.VaultService.Resolve.
-func (c *vaultServiceClient) Resolve(ctx context.Context, req *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
-	return c.resolve.CallUnary(ctx, req)
-}
-
-// Names calls numen.v1.VaultService.Names.
-func (c *vaultServiceClient) Names(ctx context.Context, req *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
-	return c.names.CallUnary(ctx, req)
-}
-
-// Headings calls numen.v1.VaultService.Headings.
-func (c *vaultServiceClient) Headings(ctx context.Context, req *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
-	return c.headings.CallUnary(ctx, req)
-}
-
-// Standing calls numen.v1.VaultService.Standing.
-func (c *vaultServiceClient) Standing(ctx context.Context, req *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
-	return c.standing.CallUnary(ctx, req)
-}
-
-// Search calls numen.v1.VaultService.Search.
-func (c *vaultServiceClient) Search(ctx context.Context, req *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
-	return c.search.CallUnary(ctx, req)
 }
 
 // Changes calls numen.v1.VaultService.Changes.
@@ -390,91 +136,10 @@ func (c *vaultServiceClient) Attending(ctx context.Context, req *connect.Request
 	return c.attending.CallUnary(ctx, req)
 }
 
-// Editing calls numen.v1.VaultService.Editing.
-func (c *vaultServiceClient) Editing(ctx context.Context, req *connect.Request[v1.EditingRequest]) (*connect.ServerStreamForClient[v1.EditingResponse], error) {
-	return c.editing.CallServerStream(ctx, req)
-}
-
-// List calls numen.v1.VaultService.List.
-func (c *vaultServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
-	return c.list.CallUnary(ctx, req)
-}
-
-// Read calls numen.v1.VaultService.Read.
-func (c *vaultServiceClient) Read(ctx context.Context, req *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
-	return c.read.CallUnary(ctx, req)
-}
-
-// Write calls numen.v1.VaultService.Write.
-func (c *vaultServiceClient) Write(ctx context.Context, req *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
-	return c.write.CallUnary(ctx, req)
-}
-
-// Create calls numen.v1.VaultService.Create.
-func (c *vaultServiceClient) Create(ctx context.Context, req *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
-	return c.create.CallUnary(ctx, req)
-}
-
-// Join calls numen.v1.VaultService.Join.
-func (c *vaultServiceClient) Join(ctx context.Context, req *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
-	return c.join.CallUnary(ctx, req)
-}
-
-// Rename calls numen.v1.VaultService.Rename.
-func (c *vaultServiceClient) Rename(ctx context.Context, req *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
-	return c.rename.CallUnary(ctx, req)
-}
-
-// Move calls numen.v1.VaultService.Move.
-func (c *vaultServiceClient) Move(ctx context.Context, req *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
-	return c.move.CallUnary(ctx, req)
-}
-
-// Remove calls numen.v1.VaultService.Remove.
-func (c *vaultServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
-	return c.remove.CallUnary(ctx, req)
-}
-
-// MakeFolder calls numen.v1.VaultService.MakeFolder.
-func (c *vaultServiceClient) MakeFolder(ctx context.Context, req *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
-	return c.makeFolder.CallUnary(ctx, req)
-}
-
 // VaultServiceHandler is an implementation of the numen.v1.VaultService service.
 type VaultServiceHandler interface {
 	// State is what the vault is and how far reading it has got.
 	State(context.Context, *connect.Request[v1.StateRequest]) (*connect.Response[v1.StateResponse], error)
-	// Opening is the note to show when nothing else has been chosen. It answers
-	// with nothing until a scan has stored something.
-	Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error)
-	// Neighbourhood is one note and everything joined to it.
-	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
-	// Resolve answers where addresses written in one note land.
-	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
-	// Names is the names in a vault that match what was typed: a note's own
-	// title, and the headings inside notes. It is asked as a person types, and
-	// the last word matches on its prefix.
-	//
-	// It reads names and nothing else. Searching the text a vault holds is
-	// Search, and that answers with passages.
-	Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error)
-	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note, and a note carrying no
-	// headings, are both absent from the answer.
-	//
-	// The answer carries one entry per note, and a path named twice is answered
-	// once. A path past the ceiling the vault sets is not answered at all.
-	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
-	// Standing is what the vault holds at each of those paths, so a client
-	// holding a path opens what stands there in the editor made for it. The kind
-	// is read off the vault itself, so a path nothing has scanned is answered
-	// with what stands there. A path with nothing at it is absent from the
-	// answer.
-	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
-	// Search is the text a vault holds that answers what was typed, by the words
-	// in it or by what it means or by what a section is called. The caller says
-	// which way it is asked, so a client drawing them apart asks once for each.
-	Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error)
 	// Changes reports the notes that changed on disk, for as long as the caller
 	// listens. It says which notes, and nothing about them: the caller knows
 	// what it is showing and asks for what it needs.
@@ -488,40 +153,6 @@ type VaultServiceHandler interface {
 	// changes, and an agent working the vault beside them reads what it last
 	// said.
 	Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error)
-	// Editing reports a change being made to a note's prose while it is being
-	// made, for as long as the caller listens. It is what a person reading that
-	// note is shown; the note itself arrives the way every other change does.
-	Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error
-	// List is what one folder of the vault holds. A tree asks for a folder as it
-	// is opened, one folder to a request.
-	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
-	// Read answers with the prose of a note, below its frontmatter.
-	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
-	// Write puts prose into a note, keeping the frontmatter the file has when the
-	// write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and refused
-	// `stale`.
-	Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error)
-	// Create makes a note. The file is named after the title, and the links the
-	// note carries are written into it as it is made, so it arrives joined.
-	Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error)
-	// Join writes a relationship into one note. The note at the other end is left
-	// alone: a link is one end's account of a relationship.
-	Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error)
-	// Rename gives a note a different name. A note is shown by its title, else by
-	// its first level-one heading, else by its filename: whichever of the three
-	// names it is brought into line, and the file follows it where a title and a
-	// filename are kept as one name.
-	Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error)
-	// Move puts a file or a folder somewhere else in the vault. Renaming a file
-	// is a move within one folder.
-	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Remove takes a file or a folder out of the vault, into the trash it can be
-	// brought back from. The links that pointed at it are left as they were
-	// written: a link is not wrong because the note it names is gone.
-	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	// MakeFolder makes an empty folder. The folders above it are made with it.
-	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
 }
 
 // NewVaultServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -535,48 +166,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		VaultServiceStateProcedure,
 		svc.State,
 		connect.WithSchema(vaultServiceMethods.ByName("State")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceOpeningHandler := connect.NewUnaryHandler(
-		VaultServiceOpeningProcedure,
-		svc.Opening,
-		connect.WithSchema(vaultServiceMethods.ByName("Opening")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceNeighbourhoodHandler := connect.NewUnaryHandler(
-		VaultServiceNeighbourhoodProcedure,
-		svc.Neighbourhood,
-		connect.WithSchema(vaultServiceMethods.ByName("Neighbourhood")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceResolveHandler := connect.NewUnaryHandler(
-		VaultServiceResolveProcedure,
-		svc.Resolve,
-		connect.WithSchema(vaultServiceMethods.ByName("Resolve")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceNamesHandler := connect.NewUnaryHandler(
-		VaultServiceNamesProcedure,
-		svc.Names,
-		connect.WithSchema(vaultServiceMethods.ByName("Names")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceHeadingsHandler := connect.NewUnaryHandler(
-		VaultServiceHeadingsProcedure,
-		svc.Headings,
-		connect.WithSchema(vaultServiceMethods.ByName("Headings")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceStandingHandler := connect.NewUnaryHandler(
-		VaultServiceStandingProcedure,
-		svc.Standing,
-		connect.WithSchema(vaultServiceMethods.ByName("Standing")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceSearchHandler := connect.NewUnaryHandler(
-		VaultServiceSearchProcedure,
-		svc.Search,
-		connect.WithSchema(vaultServiceMethods.ByName("Search")),
 		connect.WithHandlerOptions(opts...),
 	)
 	vaultServiceChangesHandler := connect.NewServerStreamHandler(
@@ -597,110 +186,16 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Attending")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceEditingHandler := connect.NewServerStreamHandler(
-		VaultServiceEditingProcedure,
-		svc.Editing,
-		connect.WithSchema(vaultServiceMethods.ByName("Editing")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceListHandler := connect.NewUnaryHandler(
-		VaultServiceListProcedure,
-		svc.List,
-		connect.WithSchema(vaultServiceMethods.ByName("List")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceReadHandler := connect.NewUnaryHandler(
-		VaultServiceReadProcedure,
-		svc.Read,
-		connect.WithSchema(vaultServiceMethods.ByName("Read")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceWriteHandler := connect.NewUnaryHandler(
-		VaultServiceWriteProcedure,
-		svc.Write,
-		connect.WithSchema(vaultServiceMethods.ByName("Write")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceCreateHandler := connect.NewUnaryHandler(
-		VaultServiceCreateProcedure,
-		svc.Create,
-		connect.WithSchema(vaultServiceMethods.ByName("Create")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceJoinHandler := connect.NewUnaryHandler(
-		VaultServiceJoinProcedure,
-		svc.Join,
-		connect.WithSchema(vaultServiceMethods.ByName("Join")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceRenameHandler := connect.NewUnaryHandler(
-		VaultServiceRenameProcedure,
-		svc.Rename,
-		connect.WithSchema(vaultServiceMethods.ByName("Rename")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceMoveHandler := connect.NewUnaryHandler(
-		VaultServiceMoveProcedure,
-		svc.Move,
-		connect.WithSchema(vaultServiceMethods.ByName("Move")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceRemoveHandler := connect.NewUnaryHandler(
-		VaultServiceRemoveProcedure,
-		svc.Remove,
-		connect.WithSchema(vaultServiceMethods.ByName("Remove")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceMakeFolderHandler := connect.NewUnaryHandler(
-		VaultServiceMakeFolderProcedure,
-		svc.MakeFolder,
-		connect.WithSchema(vaultServiceMethods.ByName("MakeFolder")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.VaultService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case VaultServiceStateProcedure:
 			vaultServiceStateHandler.ServeHTTP(w, r)
-		case VaultServiceOpeningProcedure:
-			vaultServiceOpeningHandler.ServeHTTP(w, r)
-		case VaultServiceNeighbourhoodProcedure:
-			vaultServiceNeighbourhoodHandler.ServeHTTP(w, r)
-		case VaultServiceResolveProcedure:
-			vaultServiceResolveHandler.ServeHTTP(w, r)
-		case VaultServiceNamesProcedure:
-			vaultServiceNamesHandler.ServeHTTP(w, r)
-		case VaultServiceHeadingsProcedure:
-			vaultServiceHeadingsHandler.ServeHTTP(w, r)
-		case VaultServiceStandingProcedure:
-			vaultServiceStandingHandler.ServeHTTP(w, r)
-		case VaultServiceSearchProcedure:
-			vaultServiceSearchHandler.ServeHTTP(w, r)
 		case VaultServiceChangesProcedure:
 			vaultServiceChangesHandler.ServeHTTP(w, r)
 		case VaultServiceFocusProcedure:
 			vaultServiceFocusHandler.ServeHTTP(w, r)
 		case VaultServiceAttendingProcedure:
 			vaultServiceAttendingHandler.ServeHTTP(w, r)
-		case VaultServiceEditingProcedure:
-			vaultServiceEditingHandler.ServeHTTP(w, r)
-		case VaultServiceListProcedure:
-			vaultServiceListHandler.ServeHTTP(w, r)
-		case VaultServiceReadProcedure:
-			vaultServiceReadHandler.ServeHTTP(w, r)
-		case VaultServiceWriteProcedure:
-			vaultServiceWriteHandler.ServeHTTP(w, r)
-		case VaultServiceCreateProcedure:
-			vaultServiceCreateHandler.ServeHTTP(w, r)
-		case VaultServiceJoinProcedure:
-			vaultServiceJoinHandler.ServeHTTP(w, r)
-		case VaultServiceRenameProcedure:
-			vaultServiceRenameHandler.ServeHTTP(w, r)
-		case VaultServiceMoveProcedure:
-			vaultServiceMoveHandler.ServeHTTP(w, r)
-		case VaultServiceRemoveProcedure:
-			vaultServiceRemoveHandler.ServeHTTP(w, r)
-		case VaultServiceMakeFolderProcedure:
-			vaultServiceMakeFolderHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -714,34 +209,6 @@ func (UnimplementedVaultServiceHandler) State(context.Context, *connect.Request[
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.State is not implemented"))
 }
 
-func (UnimplementedVaultServiceHandler) Opening(context.Context, *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Opening is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Neighbourhood is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Resolve is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Names(context.Context, *connect.Request[v1.NamesRequest]) (*connect.Response[v1.NamesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Names is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Headings is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Standing is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Search(context.Context, *connect.Request[v1.SearchRequest]) (*connect.Response[v1.SearchResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Search is not implemented"))
-}
-
 func (UnimplementedVaultServiceHandler) Changes(context.Context, *connect.Request[v1.ChangesRequest], *connect.ServerStream[v1.ChangesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Changes is not implemented"))
 }
@@ -752,44 +219,4 @@ func (UnimplementedVaultServiceHandler) Focus(context.Context, *connect.Request[
 
 func (UnimplementedVaultServiceHandler) Attending(context.Context, *connect.Request[v1.AttendingRequest]) (*connect.Response[v1.AttendingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Attending is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Editing(context.Context, *connect.Request[v1.EditingRequest], *connect.ServerStream[v1.EditingResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Editing is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.List is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Read is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Write(context.Context, *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Write is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Create(context.Context, *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Create is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Join(context.Context, *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Join is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Rename(context.Context, *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Rename is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Move is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Remove is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.MakeFolder is not implemented"))
 }

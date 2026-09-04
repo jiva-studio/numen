@@ -29,7 +29,7 @@ import (
 // going is one vault with everything a window has behind it, and a client
 // talking to it the way the window does.
 type going struct {
-	client numenv1connect.VaultServiceClient
+	client questions
 	// configuring is the file a person configures this installation in, which
 	// is a service of its own beside the vault.
 	configuring numenv1connect.SettingsServiceClient
@@ -131,11 +131,10 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 		Writers: recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
 	}
 
-	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
 	turning, settings := numenv1connect.NewSettingsServiceHandler(opened.API)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
-	mux.Handle(route, handler)
+	answers(mux, opened.API)
 	mux.Handle(turning, settings)
 	mux.Handle(drawn, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -145,7 +144,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(server.Close)
 
 	return &going{
-		client:      numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		client:      asks(server.Client(), server.URL),
 		configuring: numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
 		drawn:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		opened:      opened,

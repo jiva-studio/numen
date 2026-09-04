@@ -13,7 +13,10 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 
 ### A service is one subject, and every question about that subject is on it
 
-- `VaultService` — the vault a window is showing: its notes, its folders, its links, its searches.
+- `VaultService` — the vault a window is showing, taken whole: what it is, what has changed in it, and where in it the person stands.
+- `FileService` — the tree that vault is filed in: what a folder holds, what stands at a path, and moving one, removing one, making one.
+- `NoteService` — a note of that vault: its prose, its headings, its neighbourhood, the addresses written in it, and every way of writing one.
+- `SearchService` — what that vault holds that answers what a person typed: its names, and the passages of its text.
 - `VaultsService` — the vaults the installation holds, and which one a window shows.
 - `CardsService` — the stencils and decks a vault is arranged into.
 - `PresetsService` — the presets that schedule them, and the curve of one.
@@ -31,7 +34,7 @@ A window answers every call of a service it serves. A question one binary cannot
 
 The two calls that read a deck's preset are the case. The editor builds the use case that writes a preset and the review window does not, so folding the review window's call into `PresetsService` would put `MakePreset` in front of a binary that cannot answer it — or answer it unimplemented, which is the thing this split exists to take out. The two stay, and the whole of the duplication is one pair of messages.
 
-The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. That is why what a file is is `AssetService` and not more of `VaultService`, and why the phone declines both it and `ArtifactService` whole.
+The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. That is why what a file *is* is `AssetService`, and why the phone declines it and `ArtifactService` whole. `FileService` is the tree and not the bytes — what a folder holds and where a file is filed — and the phone draws its own tree out of it, so it mounts that one.
 
 ### A window is a scope
 
@@ -39,7 +42,7 @@ Every call of `WindowService` names the window it is about, and one that names a
 
 ### A type is shared once three services hold it
 
-A type moves into the file the other services import only when three of them already use it. Two services holding one type is a coincidence; three is a shape. `Refusal` and `Fingerprint` stand there on those terms; everything else stays in the file of the service that answers with it.
+A type moves into the file the other services import only when three of them already use it. Two services holding one type is a coincidence; three is a shape. `Refusal`, `Fingerprint`, `Stretch` and `NoteType` stand there on those terms; everything else stays in the file of the service that answers with it, and the service that wants it imports that file. `Note` and `Heading` are `NoteService`'s and `SearchService` imports them; `SourceKind` and `Moved` are `FileService`'s, and `NoteService` and `SearchService` import them.
 
 Under any looser rule the shared file admits whatever might be wanted twice and fills with types nothing in particular owns, and a type that arrives there early is one every service is written around afterwards.
 

@@ -12,11 +12,14 @@ import {
   CardsService,
   Counting as Countings,
   Fault as Faults,
+  FileService,
   Naming,
+  NoteService,
   NoteType as NoteTypes,
   Owed,
   Presence as Presences,
   Role as Roles,
+  SearchService,
   Seat as Seats,
   SettingsService,
   SourceKind,
@@ -88,6 +91,15 @@ import type {
 import { transport } from './transport'
 
 export const vault = createClient(VaultService, transport)
+
+/** The tree the vault is filed in: what stands where, and moving it about. */
+const files = createClient(FileService, transport)
+
+/** What a note holds, what it is joined to, and every way of writing one. */
+const notes = createClient(NoteService, transport)
+
+/** What the vault holds that answers what a person typed. */
+const finding = createClient(SearchService, transport)
 
 const vaultsService = createClient(VaultsService, transport)
 
@@ -252,8 +264,8 @@ export const cards: Cards = {
 /** The same questions, in the shape the window asks them. */
 export const core: Core & Asking & Commanding = {
   vaults: () => vaults.list(),
-  neighbourhood: async (path) => around(await vault.neighbourhood({ path })),
-  opening: async () => (await vault.opening({})).note ?? null,
+  neighbourhood: async (path) => around(await notes.neighbourhood({ path })),
+  opening: async () => (await notes.opening({})).note ?? null,
   state: () => vault.state({}),
   changes: async function* (signal) {
     for await (const change of vault.changes({}, { signal })) {
@@ -268,7 +280,7 @@ export const core: Core & Asking & Commanding = {
   attending: async (open) => {
     await vault.attending({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
-  editing: (signal) => vault.editing({}, { signal }),
+  editing: (signal) => notes.editing({}, { signal }),
   async *tasks(signal) {
     for await (const said of windowService.tasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
@@ -283,20 +295,20 @@ export const core: Core & Asking & Commanding = {
       }))
     }
   },
-  read: async (path) => answered(await vault.read({ path })),
+  read: async (path) => answered(await notes.read({ path })),
   write: async (path, body, seen) =>
-    answered(await vault.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
+    answered(await notes.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
   create: async (note) => {
-    const answer = await vault.create({
+    const answer = await notes.create({
       title: note.title,
       folder: note.folder,
       links: note.links.map(written),
     })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies Made
   },
-  join: async (path, link) => refusalIn(await vault.join({ path, link: written(link) })),
+  join: async (path, link) => refusalIn(await notes.join({ path, link: written(link) })),
   rename: async (path, title) => {
-    const answer = await vault.rename({ path, title })
+    const answer = await notes.rename({ path, title })
     return {
       path: answer.path,
       title: answer.title,
@@ -307,16 +319,16 @@ export const core: Core & Asking & Commanding = {
     } satisfies Renamed
   },
   remove: async (path, destroy) => {
-    const answer = await vault.remove({ path, destroy: destroy ?? false })
+    const answer = await files.remove({ path, destroy: destroy ?? false })
     return {
       trashed: answer.trashed,
       dangling: answer.dangling,
       refusal: refusalIn(answer),
     } satisfies Removed
   },
-  list: async (folder) => (await vault.list({ folder })).entries.map(listed),
+  list: async (folder) => (await files.list({ folder })).entries.map(listed),
   move: async (from, to) => {
-    const answer = await vault.move({ from, to })
+    const answer = await files.move({ from, to })
     return {
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
@@ -375,14 +387,14 @@ export const core: Core & Asking & Commanding = {
     return typeof hour === 'string' ? hour : DEFAULT_STARTS
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
-  makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
+  makeFolder: async (path) => refusalIn(await files.makeFolder({ path })),
   quitting: (signal) => windowService.quitting({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
     await windowService.flushed({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
   },
   /** What each of the notes asked about is divided into. */
   headings: async (paths) => {
-    const answer = await vault.headings({ paths: [...paths] })
+    const answer = await notes.headings({ paths: [...paths] })
     return new Map(
       answer.found.map((one) => [
         one.path,
@@ -396,7 +408,7 @@ export const core: Core & Asking & Commanding = {
   },
   /** What the vault holds at each of those paths. */
   standing: async (paths) => {
-    const answer = await vault.standing({ paths: [...paths] })
+    const answer = await files.standing({ paths: [...paths] })
     return new Map(
       answer.found.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
     )
@@ -407,14 +419,14 @@ export const core: Core & Asking & Commanding = {
    * the vault it is showing in its tabs.
    */
   resolve: async (from, written) => {
-    const answer = await vault.resolve({ from, written: [...written] })
+    const answer = await notes.resolve({ from, written: [...written] })
     return new Map(
       answer.reached.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
     )
   },
   /** The names in the vault that match what is typed. */
   names: async (query, limit) => {
-    const answer = await vault.names({ query, limit })
+    const answer = await finding.names({ query, limit })
     return answer.found.map((one) => ({
       path: one.note?.path ?? '',
       title: one.note?.title ?? '',
@@ -427,7 +439,7 @@ export const core: Core & Asking & Commanding = {
   },
   /** The text the vault holds that answers what is typed, asked one way. */
   search: async (query, way, limit) => {
-    const answer = await vault.search({ query, limit, way: ways[way] })
+    const answer = await finding.search({ query, limit, way: ways[way] })
     return answer.found.map((one) => ({
       path: one.path,
       title: one.note?.title ?? '',

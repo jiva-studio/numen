@@ -104,6 +104,25 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	}
 }
 
+// TestEveryServiceTheVaultIsAskedAboutIsMounted. Four services answer about the
+// vault a window is showing, and every one of them has to be behind the one
+// handler the application hands over. A route nothing is mounted at falls
+// through to the pages and is answered not found; a route a service holds
+// answers a GET as a method that call does not take.
+func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
+	handler := (&API{}).Serving(http.NotFoundHandler())
+	for _, route := range []string{
+		numenv1connect.VaultServiceStateProcedure,
+		numenv1connect.FileServiceListProcedure,
+		numenv1connect.NoteServiceReadProcedure,
+		numenv1connect.SearchServiceNamesProcedure,
+	} {
+		if code := handed(handler, route).Code; code != http.StatusMethodNotAllowed {
+			t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
+		}
+	}
+}
+
 // A search, a note and a link are read straight from the index, and the index
 // closes behind the door. Every question is refused at it, whatever it would
 // have reached into.

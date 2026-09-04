@@ -1,0 +1,369 @@
+syntax = "proto3";
+
+// What a client may ask about a note.
+//
+// A note is addressed by the path it is filed under, which is what the vault
+// calls it. What is here is what a note holds and what it is joined to: its
+// prose, its headings, its neighbourhood, the addresses written in it, and
+// every way of writing one. Where a note sits among the vault's other files is
+// file.proto.
+package numen.v1;
+
+import "numen/v1/file.proto";
+import "numen/v1/vault.proto";
+
+option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
+
+// NoteService answers what a note of the vault holds, and writes it.
+service NoteService {
+  // Opening is the note to show when nothing else has been chosen. It answers
+  // with nothing until a scan has stored something.
+  rpc Opening(OpeningRequest) returns (OpeningResponse);
+
+  // Neighbourhood is one note and everything joined to it.
+  rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
+
+  // Resolve answers where addresses written in one note land.
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+
+  // Headings is what each note asked about is divided into, in the order the
+  // headings stand in it. A path that names no note, and a note carrying no
+  // headings, are both absent from the answer.
+  //
+  // The answer carries one entry per note, and a path named twice is answered
+  // once. A path past the ceiling the vault sets is not answered at all.
+  rpc Headings(HeadingsRequest) returns (HeadingsResponse);
+
+  // Read answers with the prose of a note, below its frontmatter.
+  rpc Read(ReadRequest) returns (ReadResponse);
+
+  // Write puts prose into a note, keeping the frontmatter the file has when the
+  // write lands and creating the file where there is none. A note that no
+  // longer holds the prose the caller read is left alone and refused
+  // `stale`.
+  rpc Write(WriteRequest) returns (WriteResponse);
+
+  // Create makes a note. The file is named after the title, and the links the
+  // note carries are written into it as it is made, so it arrives joined.
+  rpc Create(CreateRequest) returns (CreateResponse);
+
+  // Join writes a relationship into one note. The note at the other end is left
+  // alone: a link is one end's account of a relationship.
+  rpc Join(JoinRequest) returns (JoinResponse);
+
+  // Rename gives a note a different name. A note is shown by its title, else by
+  // its first level-one heading, else by its filename: whichever of the three
+  // names it is brought into line, and the file follows it where a title and a
+  // filename are kept as one name.
+  rpc Rename(RenameRequest) returns (RenameResponse);
+
+  // Editing reports a change being made to a note's prose while it is being
+  // made, for as long as the caller listens. It is what a person reading that
+  // note is shown; the note itself arrives the way every other change does.
+  rpc Editing(EditingRequest) returns (stream EditingResponse);
+}
+
+// Note is a note as something else refers to it.
+message Note {
+  // Path is what the vault calls the note, and how it is asked for again.
+  string path = 1;
+  string title = 2;
+  // Identifier is what the file carries, empty for a note made outside the
+  // application.
+  string identifier = 3;
+}
+
+message OpeningRequest {}
+
+message OpeningResponse {
+  // Absent while a scan has stored nothing, and for a vault that holds no
+  // notes.
+  optional Note note = 1;
+}
+
+message NeighbourhoodRequest {
+  string path = 1;
+}
+
+message NeighbourhoodResponse {
+  Note focus = 1;
+  repeated Seated related = 2;
+
+  // Which of three the note in focus is, so a client draws a deck and a stencil
+  // as what they are.
+  NoteType focus_type = 3;
+}
+
+// Seat is where a note sits relative to the one in focus. A sibling is written
+// nowhere: it is another child of a shared parent.
+enum Seat {
+  SEAT_UNSPECIFIED = 0;
+  SEAT_PARENT = 1;
+  SEAT_CHILD = 2;
+  SEAT_JUMP = 3;
+  SEAT_SIBLING = 4;
+}
+
+message Seated {
+  Note note = 1;
+  Seat seat = 2;
+  // What the person wrote on the link, when they wrote anything.
+  string label = 3;
+
+  // The note the relationship runs from, when that is not the one in focus: a
+  // sibling is another child of a shared parent, and this is that parent.
+  string through = 4;
+
+  // Set when both notes name this relationship, each in its own words. The
+  // label is then the one the note in focus wrote, and the arrow drawn on the
+  // line points at the note it was written about.
+  bool mutual = 5;
+
+  // Which of three the note is, so a client draws a deck and a stencil as what
+  // they are.
+  NoteType type = 6;
+}
+
+message ResolveRequest {
+  // The note the addresses are written in. A name resolves by a path relative
+  // to it, so a caller with no note to name gets the priority that is left.
+  string from = 1;
+
+  // The addresses to answer about. A scheme written before `://` is read as
+  // one — `name://Entropy`, `note://<identifier>` — and everything else is a
+  // name, so what a file carries between its brackets is taken as it stands.
+  repeated string written = 2;
+}
+
+message ResolveResponse {
+  // Where each address lands, in the order they were asked about. One that
+  // reaches nothing is absent, and so is one asked about twice.
+  repeated Reached reached = 1;
+}
+
+// Reached is one address and the note it reaches now.
+message Reached {
+  // The address as it was asked about, which is how the caller finds its answer.
+  string written = 1;
+
+  // Where the note it reaches is filed.
+  string path = 2;
+
+  // The vault holding that note. An identifier names one note in the world, so
+  // an address may land outside the vault it was written in.
+  string vault = 3;
+
+  // Set where that vault is not the one this call was answered about.
+  bool crossed = 4;
+
+  // Set where several notes answer to the name. It reaches the nearest of them,
+  // which is a fact about where the notes currently sit.
+  bool ambiguous = 5;
+}
+
+message HeadingsRequest {
+  // The notes to answer about, by the paths the vault files them under. The
+  // vault sets a ceiling on how many it answers at once.
+  repeated string paths = 1;
+}
+
+message HeadingsResponse {
+  repeated NoteHeadings found = 1;
+}
+
+// NoteHeadings is what one note is divided into.
+message NoteHeadings {
+  string path = 1;
+
+  // In the order they stand in the note.
+  repeated Heading headings = 2;
+}
+
+// Heading is one line of a note that names what stands below it.
+message Heading {
+  string text = 1;
+
+  // The line it stands on, counted from the first line of the prose.
+  int32 line = 2;
+
+  // How deep it sits, from one for the shallowest a note can carry. Zero where
+  // the answer does not say: a name that matched carries the heading's words
+  // and where it stands, and nothing about its depth.
+  int32 level = 3;
+}
+
+message ReadRequest {
+  string path = 1;
+}
+
+message ReadResponse {
+  // The prose below the frontmatter, with line endings as LF. Empty when the
+  // note is refused.
+  string body = 1;
+
+  // Set when the note was not read, and why.
+  optional Refusal refusal = 2;
+
+  // The file this prose came out of. Absent when the note was refused.
+  optional Fingerprint at = 3;
+}
+
+// Seen is what a caller last saw of a note: the prose a read gave it, and the
+// file that read came out of. A note still holding either is the note this
+// caller read.
+message Seen {
+  // The prose below the frontmatter, with line endings as LF, as the read gave
+  // it.
+  string prose = 1;
+
+  // The file the prose came out of.
+  Fingerprint at = 2;
+}
+
+message WriteRequest {
+  string path = 1;
+
+  // The prose to put below the frontmatter, with line endings as LF.
+  string body = 2;
+
+  // What this caller last saw of the note. Absent for a write that lands on
+  // whatever the note now holds.
+  optional Seen seen = 3;
+}
+
+message WriteResponse {
+  reserved 2;
+  reserved "changed";
+
+  // Set when nothing was written, and why.
+  optional Refusal refusal = 1;
+
+  // The file the write produced, for the caller to present at its next write.
+  // Absent when nothing was written.
+  optional Fingerprint at = 3;
+}
+
+// Role is what kind of relationship a link is. The list is closed: navigation
+// and drawing read it, so a role nobody decided on has no behaviour.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_PARENT = 1;
+  ROLE_CHILD = 2;
+  ROLE_JUMP = 3;
+  ROLE_REF = 4;
+  ROLE_ATTACHMENT = 5;
+}
+
+// NewLink is one relationship as the note it is written in declares it: the
+// note at the other end, by the path it is filed under, and what kind of
+// relationship it is.
+message NewLink {
+  string to = 1;
+  Role role = 2;
+
+  // What the person calls this relationship, when they call it anything.
+  string label = 3;
+}
+
+message CreateRequest {
+  // What the note is called. The file is named after it.
+  string title = 1;
+
+  // Where in the vault it goes, relative to the root. Empty is the root.
+  string folder = 2;
+
+  // What the note is joined to, written into it as it is made.
+  repeated NewLink links = 3;
+}
+
+message CreateResponse {
+  // Where the note is filed. Empty when nothing was made.
+  string path = 1;
+
+  // Set when nothing was made, and why.
+  optional Refusal refusal = 2;
+}
+
+message JoinRequest {
+  // The note the link is written in.
+  string path = 1;
+  NewLink link = 2;
+}
+
+message JoinResponse {
+  reserved 2;
+  reserved "changed";
+
+  // Set when nothing was written, and why. A note that moved between being
+  // read and being written is REFUSAL_STALE, and the caller reads it again
+  // before asking for this.
+  optional Refusal refusal = 1;
+}
+
+// Naming is which of the three a note is shown by, and so which one a rename
+// brings into line.
+enum Naming {
+  // Nothing named the note.
+  NAMING_UNSPECIFIED = 0;
+
+  // The `title` key of the frontmatter.
+  NAMING_FRONTMATTER = 1;
+
+  // The first level-one heading of the prose.
+  NAMING_HEADING = 2;
+
+  // The filename, which a rename moves and does not write.
+  NAMING_FILENAME = 3;
+}
+
+message RenameRequest {
+  // The note to rename.
+  string path = 1;
+
+  // What the note is called from now on. The file is named after it.
+  string title = 2;
+}
+
+message RenameResponse {
+  reserved 6;
+  reserved "changed";
+
+  // Where the note is filed. Empty when the note was never opened. The note is
+  // brought into line before the file is, so a refused move answers with the
+  // path the note still has.
+  string path = 1;
+
+  // What the note is called. Empty when the note was never opened.
+  string title = 2;
+
+  // Which of the three names the note, and so which the rename brought into
+  // line. NAMING_UNSPECIFIED when the note was never opened.
+  Naming by = 3;
+
+  // What the file did. Absent when it stayed where it was.
+  optional Moved moved = 4;
+
+  // Set when the rename did not finish, and why. The note may already have been
+  // written: `path`, `title` and `by` say what stands. A note holding prose the
+  // caller never saw is REFUSAL_STALE, and nothing was written at all.
+  optional Refusal refusal = 5;
+}
+
+message EditingRequest {}
+
+message EditingResponse {
+  // The change this reports on. Every report of one change carries the same
+  // name, and no two changes carry one.
+  string change = 1;
+  // The note being changed.
+  string path = 2;
+  // The stretch being replaced, counted the way a client counts text: in UTF-16
+  // code units over the prose a read answers with.
+  int32 from = 3;
+  int32 to = 4;
+  // What is going in where that stretch stands.
+  string text = 5;
+  // The last report of this change, which arrives whether the change landed or
+  // was refused.
+  bool done = 6;
+}

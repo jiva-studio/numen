@@ -38,7 +38,7 @@ func noteNamed(title string) string {
 // showing is one installation holding two vaults, with a window open on the
 // first and a client talking to it the way the window does.
 type showing struct {
-	client numenv1connect.VaultServiceClient
+	client questions
 	// drawn is the window itself, which the drain that holds it back is asked
 	// of.
 	drawn  numenv1connect.WindowServiceClient
@@ -70,10 +70,9 @@ func swapping(t *testing.T) *showing {
 	}
 	t.Cleanup(func() { opened.Close() })
 
-	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
 	going, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)
 	mux := http.NewServeMux()
-	mux.Handle(route, handler)
+	answers(mux, opened.API)
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -82,7 +81,7 @@ func swapping(t *testing.T) *showing {
 	t.Cleanup(server.Close)
 
 	f := &showing{
-		client: numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		client: asks(server.Client(), server.URL),
 		drawn:  numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		opened: opened,
 		cfg:    cfg,
