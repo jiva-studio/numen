@@ -6,18 +6,18 @@
  * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
-import type { Refused, Standing } from './core'
+import type { FileKind, Refused } from './core'
 import { cutting, putting, type Asking, type Cuts } from './putting'
 import { voice } from './testing/voice'
 import { REFUSED } from './words'
 
 /** A vault that answers what it was told, and counts the questions. */
-const vault = (stands: Record<string, Standing> = {}) => {
+const vault = (stands: Record<string, FileKind> = {}) => {
   const asked: (readonly string[])[] = []
   const core: Asking = {
-    standing: async (paths) => {
+    fileKinds: async (paths) => {
       asked.push(paths)
-      const found = new Map<string, Standing>()
+      const found = new Map<string, FileKind>()
       for (const path of paths) {
         const one = stands[path]
         if (one) found.set(path, one)
@@ -29,16 +29,16 @@ const vault = (stands: Record<string, Standing> = {}) => {
 }
 
 /** A note of one of three, as the vault answers what stands at its path. */
-const note = (type: Standing['type']): Standing => ({ kind: 'note', type })
+const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
 /** A book, a recording, and a file the vault holds no source for. */
-const BOOK: Standing = { kind: 'book', type: 'note' }
-const TALK: Standing = { kind: 'recording', type: 'note' }
-const OTHER: Standing = { kind: 'other', type: 'note' }
+const BOOK: FileKind = { kind: 'book', type: 'note' }
+const TALK: FileKind = { kind: 'recording', type: 'note' }
+const OTHER: FileKind = { kind: 'other', type: 'note' }
 
 /** A vault that cannot answer at all. */
 const unreachable: Asking = {
-  standing: async () => {
+  fileKinds: async () => {
     throw new Error('the vault is not there')
   },
 }

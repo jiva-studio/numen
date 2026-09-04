@@ -23,7 +23,7 @@ import {
   type Runnable,
   type Where,
 } from './commanding'
-import type { Known, Listed } from './core'
+import type { Listed, Vault } from './core'
 import type { Named } from './finding'
 import { WORDS as words } from './words'
 
@@ -52,7 +52,7 @@ const name = (path: string, title: string, heading = ''): Named => ({
 })
 
 /** One vault as the list answers one. */
-const vault = (id: string, name: string, missing = false): Known => ({
+const vault = (id: string, name: string, missing = false): Vault => ({
   name: id,
   displayName: name,
   path: `/vaults/${name}`,
@@ -60,7 +60,7 @@ const vault = (id: string, name: string, missing = false): Known => ({
 })
 
 /** The vaults the installation holds, with the one in front named. */
-const installation = (...vaults: readonly Known[]): Listed => ({
+const installation = (...vaults: readonly Vault[]): Listed => ({
   vaults,
   showing: 'physics',
 })

@@ -47,7 +47,7 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
       return answer(path)
     },
     headings: async () => new Map(),
-    standing: async () => new Map(),
+    fileKinds: async () => new Map(),
     resolve: async () => new Map(),
     opening: async () => ({ path: 'Opening.md' }),
     state: async () => settled,

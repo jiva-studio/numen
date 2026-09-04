@@ -300,7 +300,7 @@ vi.mock('../vault', () => ({
     flushed: async () => {},
     names: async () => said.names,
     search: async () => said.passages,
-    standing: async (paths: readonly string[]) =>
+    fileKinds: async (paths: readonly string[]) =>
       new Map(paths.map((path) => [path, stands(path)])),
     headings: async () => new Map(),
   },

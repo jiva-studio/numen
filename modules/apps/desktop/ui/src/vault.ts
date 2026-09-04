@@ -35,7 +35,7 @@ import type {
   Cue as CueMessage,
   Deck as DeckMessage,
   Entry as EntryMessage,
-  MoveResult as MovedMessage,
+  MoveResult as MoveResultMessage,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
   Page as PageMessage,
   Problem as ProblemMessage,
@@ -66,14 +66,12 @@ import type {
   Fault,
   Configured,
   Hanging,
-  Known,
   Made,
-  Moved,
+  MoveResult,
   Movement,
   Neighbourhood,
   NewLink,
   NoteType,
-  Offer,
   Presence,
   Problem,
   Reached,
@@ -85,6 +83,8 @@ import type {
   Seat,
   Source,
   Stencilled,
+  StencilSummary,
+  Vault,
   VaultRefused,
   Vaults,
 } from './core'
@@ -413,7 +413,7 @@ export const core: Core & Asking & Commanding = {
     )
   },
   /** What the vault holds at each of those paths. */
-  standing: async (paths) => {
+  fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
       answer.kinds.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
@@ -760,7 +760,11 @@ const typed: Record<NoteTypes, NoteType> = {
 const noteType = (of: NoteTypes): NoteType => typed[of] ?? 'note'
 
 /** One stencil of the list, kept as the plain value the window carries it as. */
-const offered = (one: { path: string; title: string; fields: string[] }): Offer => ({
+const offered = (one: {
+  path: string
+  title: string
+  fields: string[]
+}): StencilSummary => ({
   path: one.path,
   title: one.title,
   fields: one.fields,
@@ -843,7 +847,7 @@ const faulted: Record<Faults, Fault> = {
 }
 
 /** One vault of the list, kept as the plain value the window carries it as. */
-const held = (one: VaultMessage): Known => ({
+const held = (one: VaultMessage): Vault => ({
   name: one.name,
   displayName: one.displayName,
   path: one.path,
@@ -875,7 +879,7 @@ const unvaulted: Record<VaultsRefusal, VaultRefused> = {
 }
 
 /** What the file did, in the shape the window carries it. */
-const filed = (moved: MovedMessage): Moved => ({
+const filed = (moved: MoveResultMessage): MoveResult => ({
   from: moved.from,
   to: moved.to,
   repaired: moved.repaired,

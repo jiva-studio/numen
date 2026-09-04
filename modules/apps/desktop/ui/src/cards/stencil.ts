@@ -7,7 +7,7 @@
  */
 import { computed, type ComputedRef } from 'vue'
 import type { Half, PlexShowing } from '@numen/ui'
-import type { Cards, Problem, Refused, Went } from '../core'
+import type { Cards, Move, Problem, Refused } from '../core'
 import type { Store } from '../doing'
 import { editing, type Editing } from '../note/editing'
 import { markOf } from '../note/tab'
@@ -345,7 +345,7 @@ export function stencilling(
   // whole.
   puts.holds('stencil', shows)
 
-  const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
     // What the vault said about a file is filed under that file, so a file
     // that moved takes it along.
     for (const went of renamed) {

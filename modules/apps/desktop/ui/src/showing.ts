@@ -6,7 +6,7 @@
  * is only exercised by looking at the screen.
  */
 import { ref } from 'vue'
-import type { Core, Said, Stretch, Task, Went } from './core'
+import type { Core, Move, Said, Stretch, Task } from './core'
 import { following } from '@numen/ui'
 
 /**
@@ -25,7 +25,7 @@ export interface Showing {
    * What hears that the vault changed, and is waited for. A change carrying no
    * paths names nothing: everything showing the vault reads again.
    */
-  told?(paths: readonly string[], renamed?: readonly Went[]): void | Promise<void>
+  told?(paths: readonly string[], renamed?: readonly Move[]): void | Promise<void>
   /** What hears about a change to a note while it is being made. */
   drawing?(said: Said): void
   /** What puts a note in front of the person, asked for from outside the window. */

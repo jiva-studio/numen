@@ -18,7 +18,7 @@ import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
 import type { Standing } from './standing'
 import { ticketing } from './tickets'
-import type { Heading, NoteType, Went } from '../core'
+import type { Heading, Move, NoteType } from '../core'
 import type { Host, Kind } from '../windowing'
 import { PLEX, plexCalled } from '../workspace'
 import PlexTab from './PlexTab.vue'
@@ -163,7 +163,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
    * nowhere is given the note the vault opens with, which is asked for once for
    * all of them and only while one of them has nowhere to stand.
    */
-  const again = async (renamed: readonly Went[] = []) => {
+  const again = async (renamed: readonly Move[] = []) => {
     if (renamed.length) for (const { held } of all()) held.follows(renamed)
     if (all().some(({ held }) => !held.view.here.value)) {
       try {
@@ -392,7 +392,7 @@ export function plexing(view: Standing, deps: Plexing) {
    * Notes that moved. The plex follows the one it stands on, and every note it
    * draws keeps the ticket it holds.
    */
-  const follows = (renamed: readonly Went[]) => {
+  const follows = (renamed: readonly Move[]) => {
     view.follows(renamed)
     tickets.moved(renamed)
   }

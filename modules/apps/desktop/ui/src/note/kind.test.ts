@@ -122,7 +122,7 @@ const window = (
   const drawing = drawings()
   const held = windowing()
   const puts = putting({
-    standing: async (paths) =>
+    fileKinds: async (paths) =>
       new Map(paths.map((path) => [path, { kind: 'note' as const, type: 'note' as const }])),
   })
   const noted = noting(vault(titles, reaches), store.store, drawing.store, held.host, puts)

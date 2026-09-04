@@ -10,14 +10,14 @@ import { computed, ref, shallowRef } from 'vue'
 import type { PaletteBand, PaletteItem, PaletteKeys } from '@numen/ui'
 import { asking as latest } from './asking'
 import {
-  wentTo,
+  movedTo,
   type Carries,
-  type Known,
   type Listed,
+  type Move,
   type NoteType,
   type Reached,
   type Source,
-  type Went,
+  type Vault,
 } from './core'
 import { keysOf } from './keying'
 import type { Named, Silences } from './finding'
@@ -720,7 +720,7 @@ export function commanding(
   /** The names the vault answered the step that picks a note with. */
   const found = shallowRef<readonly Named[]>([])
   /** The vaults the installation answered the step that lists them with. */
-  const known = shallowRef<readonly Known[]>([])
+  const known = shallowRef<readonly Vault[]>([])
   /** Which of them that answer said this window is showing. */
   const showing = ref('')
   const working = ref(false)
@@ -994,7 +994,7 @@ export function commanding(
    * there, or it is the one the window is showing. A vault that can be chosen
    * is marked with nothing.
    */
-  const aside = (one: Known): string =>
+  const aside = (one: Vault): string =>
     one.missing ? words.gone : one.name === showing.value ? words.current : ''
 
   /**
@@ -1147,10 +1147,10 @@ export function commanding(
   }
 
   /** A note that moved. A step open over it is asked at the name it now has. */
-  const follows = (renamed: readonly Went[] = []) => {
+  const follows = (renamed: readonly Move[] = []) => {
     if (!renamed.length) return
     steps.value = steps.value.map((step) => {
-      const to = wentTo(renamed, step.on.path)
+      const to = movedTo(renamed, step.on.path)
       return to ? { ...step, on: { ...step.on, path: to } } : step
     })
   }

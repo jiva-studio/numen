@@ -22,7 +22,7 @@ const kind = (held: Held) => {
     window.host,
     () => held as unknown as Transcript,
     { runs: () => {} },
-    putting({ standing: async () => new Map() }),
+    putting({ fileKinds: async () => new Map() }),
   ).kind
 }
 

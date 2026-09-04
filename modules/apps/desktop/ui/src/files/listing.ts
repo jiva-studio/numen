@@ -8,7 +8,7 @@
  * the watcher, and appears at the next of those.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { wentTo, type Entry, type Went } from '../core'
+import { movedTo, type Entry, type Move } from '../core'
 
 /** Everything a files tab asks of the application. */
 export interface Folders {
@@ -170,9 +170,9 @@ export function listing(core: Folders) {
    * a change naming nothing is the whole tree. A chosen row that moved is
    * chosen at where it went.
    */
-  const changed = async (paths: readonly string[] = [], renamed: readonly Went[] = []) => {
+  const changed = async (paths: readonly string[] = [], renamed: readonly Move[] = []) => {
     if (renamed.length > 0) {
-      chosen.value = chosen.value.map((one) => wentTo(renamed, one) || one)
+      chosen.value = chosen.value.map((one) => movedTo(renamed, one) || one)
     }
     const named = [...paths, ...renamed.flatMap((one) => [one.from, one.to])]
     if (named.length === 0) return void (await again())

@@ -6,7 +6,7 @@
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
 import type { PlexShowing } from '@numen/ui'
-import type { Made, NoteType, Refused, Standing, Stretch } from './core'
+import type { FileKind, Made, NoteType, Refused, Stretch } from './core'
 import type { Says } from './telling'
 
 /**
@@ -35,11 +35,11 @@ export type Reads = (path: string, stretches: readonly Stretch[]) => void
 
 /** What the window asks the vault about the file it is opening. */
 export interface Asking {
-  standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
+  fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
 }
 
 /** What a file the vault could not be asked about at all is opened as. */
-const ORDINARY: Standing = { kind: 'note', type: 'note' }
+const ORDINARY: FileKind = { kind: 'note', type: 'note' }
 
 export function putting(vault: Asking) {
   /** The editor each kind of note opens in, as its kind handed it over. */
@@ -49,7 +49,7 @@ export function putting(vault: Asking) {
    * The reader a document opens in and the player a recording is heard in, each
    * under the kind the vault answers a path with.
    */
-  const sources = new Map<Standing['kind'], Reads>()
+  const sources = new Map<FileKind['kind'], Reads>()
 
   /** A kind of tab hands over the way it puts a file in front of the person. */
   const holds = (type: Opened, opens: Opens) => {
@@ -70,9 +70,9 @@ export function putting(vault: Asking) {
    * What stands at a path. Nothing stands where the vault answers nothing; a
    * vault that cannot be asked at all leaves it the ordinary note it reads as.
    */
-  const standingAt = async (path: string): Promise<Standing | null> => {
+  const fileKindAt = async (path: string): Promise<FileKind | null> => {
     try {
-      return (await vault.standing([path])).get(path) ?? null
+      return (await vault.fileKinds([path])).get(path) ?? null
     } catch {
       return ORDINARY
     }
@@ -103,7 +103,7 @@ export function putting(vault: Asking) {
     showing: PlexShowing = 'here',
     line?: number,
   ): Promise<void> => {
-    const stands = await standingAt(path)
+    const stands = await fileKindAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, title, stands.type, showing, line)
     sources.get(stands.kind)?.(path, [])
@@ -116,7 +116,7 @@ export function putting(vault: Asking) {
    * opens whole.
    */
   const opensAt = async (path: string, stretches: readonly Stretch[]): Promise<void> => {
-    const stands = await standingAt(path)
+    const stands = await fileKindAt(path)
     if (!stands) return
     if (stands.kind === 'note') return void made(path, '', stands.type)
     sources.get(stands.kind)?.(path, stretches)

@@ -13,12 +13,12 @@ import { ITEMS, NEW_NOTE } from './menu'
 import { standing as stands, type Standing } from './standing'
 import { WORDS as words } from './words'
 import {
-  wentTo,
+  movedTo,
   type Heading,
+  type Move,
   type Neighbourhood,
   type NoteType,
   type Seat,
-  type Went,
 } from '../core'
 import { windowing, type Kept } from '../windowing'
 import { PLEX } from '../workspace'
@@ -761,16 +761,16 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
   const edges = () => (picture()?.edges ?? []).map((one) => `${one.from} -> ${one.to}`)
 
   /** Files moved in the vault, and the plex told what went where. */
-  const follows = (...renamed: readonly Went[]) => {
+  const follows = (...renamed: readonly Move[]) => {
     around = around.map((one) => ({
       ...one,
-      path: wentTo(renamed, one.path) || one.path,
-      through: wentTo(renamed, one.through) || one.through,
+      path: movedTo(renamed, one.path) || one.path,
+      through: movedTo(renamed, one.through) || one.through,
     }))
     held.follows(renamed)
   }
   /** A move, followed by the picture being asked for again. */
-  const moves = async (...renamed: readonly Went[]) => {
+  const moves = async (...renamed: readonly Move[]) => {
     follows(...renamed)
     await view.go(view.here.value)
   }

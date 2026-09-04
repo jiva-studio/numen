@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import { asking } from '../asking'
-import { wentTo, type Neighbourhood, type Went } from '../core'
+import { movedTo, type Neighbourhood, type Move } from '../core'
 import { alike } from './picture'
 
 /** The one question a plex asks of the vault: what is around a note. */
@@ -58,8 +58,8 @@ export function standing(core: Neighbours) {
    * A note that moved. A plex standing on it stands on where it went, and an
    * answer on its way is let go of.
    */
-  const follows = (renamed: readonly Went[]) => {
-    const to = wentTo(renamed, here.value)
+  const follows = (renamed: readonly Move[]) => {
+    const to = movedTo(renamed, here.value)
     if (!to) return
     here.value = to
     asks.drop()

@@ -29,7 +29,7 @@ export type Refusal =
 const mendable: readonly Refusal[] = ['tooLarge', 'bodyRefused', 'unreachable']
 
 /** A note that is no longer where it was, and where it now is. */
-export interface Went {
+export interface Move {
   readonly from: string
   readonly to: string
 }
@@ -147,7 +147,7 @@ export type Event =
       readonly kind: 'changed'
       readonly paths: readonly string[]
       /** The notes that moved, so a tab showing one follows it. */
-      readonly renamed: readonly Went[]
+      readonly renamed: readonly Move[]
     }
   /** A save is asked for now. */
   | { readonly kind: 'saving' }
@@ -357,7 +357,7 @@ const landed = (tab: Tab, answer: Written): Next => {
   return tab.owed ? begins(written, seenOf(written)) : still(written)
 }
 
-const changed = (tab: Tab, paths: readonly string[], renamed: readonly Went[]): Next => {
+const changed = (tab: Tab, paths: readonly string[], renamed: readonly Move[]): Next => {
   // A note that moved is followed wherever it went: its name changed and what
   // it holds did not. A tab left at the name it had holds a name with no file.
   const went = renamed.find((one) => one.from === tab.path)

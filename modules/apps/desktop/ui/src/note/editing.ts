@@ -12,11 +12,11 @@ import {
   waiting,
   type Effect,
   type Event,
+  type Move,
   type Refusal,
   type Seen,
   type State,
   type Tab,
-  type Went,
 } from './tab'
 import type { Answered, Refused } from '../core'
 
@@ -149,7 +149,7 @@ export function editing(core: Notes, how: Keeping = {}) {
   }
 
   /** The vault changed. Every open note hears it and decides for itself. */
-  const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
     for (const id of [...tabs.value.keys()]) turn(id, { kind: 'changed', paths, renamed })
   }
 

@@ -4,7 +4,7 @@
  * decided here.
  */
 import { ref } from 'vue'
-import type { Entry, Source, Went } from '../core'
+import type { Entry, Move, Source } from '../core'
 import type { Landing } from '../finding'
 import { folderOf, landedIn, type Listing, ROOT } from './listing'
 import {
@@ -164,7 +164,7 @@ export function filesKind(host: Host, makes: () => Listing, deps: Filing) {
   }
 
   /** The vault changed, and every open folder a named path sits in is read again. */
-  const changed = (paths: readonly string[], renamed: readonly Went[] = []) =>
+  const changed = (paths: readonly string[], renamed: readonly Move[] = []) =>
     front()?.list.changed(paths, renamed) ?? Promise.resolve()
 
   return { kind, reveals, changed }

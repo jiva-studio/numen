@@ -11,13 +11,13 @@ import type {
   Added,
   Artifact,
   Carries,
-  Known,
   Movement,
   Outcome,
   Reached,
   Refused,
   Removed,
   Renamed,
+  Vault,
   VaultRefused,
 } from './core'
 import { WORDS as words } from './words'
@@ -37,7 +37,7 @@ const front = (over: Partial<Where> = {}): Where => ({
 })
 
 /** One vault as the list answers one. */
-const known = (id: string, name: string): Known => ({
+const known = (id: string, name: string): Vault => ({
   name: id,
   displayName: name,
   path: `/vaults/${name}`,

@@ -8,7 +8,7 @@
  */
 import { computed, ref, shallowRef, type ComputedRef } from 'vue'
 import type { Banded, Drawn, PlexShowing, Stencil } from '@numen/ui'
-import type { Cards, Offer, Problem, Refused, Went } from '../core'
+import type { Cards, Move, Problem, Refused, StencilSummary } from '../core'
 import type { Store } from '../doing'
 import type { Listed, Presets, Read } from '../preset/core'
 import { editing, type Editing } from '../note/editing'
@@ -151,7 +151,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
   /** What each file is called, as the vault last read it. */
   const titles = new Map<string, string>()
   /** The stencils of the vault, as they were last listed. */
-  const offers = shallowRef<readonly Offer[]>([])
+  const offers = shallowRef<readonly StencilSummary[]>([])
   /** Whether the last listing of the stencils answered. */
   let listedOk = true
 
@@ -226,7 +226,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
    */
   const grids = new Map<
     string,
-    { deck: Deck; offers: readonly Offer[]; drawn: readonly Drawn[] }
+    { deck: Deck; offers: readonly StencilSummary[]; drawn: readonly Drawn[] }
   >()
 
   const drawnAt = (id: string): readonly Drawn[] => {
@@ -570,7 +570,7 @@ export function decking(cards: Cards, presets: Presets, host: Host, puts: Puttin
    * The vault changed: every open deck hears it, and the stencils and the
    * presets are listed again. A window holding no deck asks for neither.
    */
-  const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
     // What the vault said about a file is filed under that file, so a file
     // that moved takes it along.
     for (const went of renamed) {

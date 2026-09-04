@@ -7,13 +7,13 @@
 import type { Counting } from '@numen/ui'
 
 /** A note that is no longer where it was, and where it now is. */
-export interface Went {
+export interface Move {
   readonly from: string
   readonly to: string
 }
 
 /** Where a note went, and nothing where none of these moved it. */
-export const wentTo = (renamed: readonly Went[], path: string): string =>
+export const movedTo = (renamed: readonly Move[], path: string): string =>
   renamed.find((one) => one.from === path)?.to ?? ''
 
 /** A stretch of a source's own text, counted in bytes. */
@@ -93,7 +93,7 @@ export type Source = 'note' | 'book' | 'recording' | 'other'
 export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
 
 /** What stands at a path: which source it is, and which of three a note is. */
-export interface Standing {
+export interface FileKind {
   readonly kind: Source
   readonly type: NoteType
 }
@@ -112,7 +112,7 @@ export interface Entry {
 /** What moving a file or a folder came back with. */
 export interface Movement {
   /** What the file did. Null when it stayed where it was. */
-  moved: Moved | null
+  moved: MoveResult | null
   refusal: Refused | null
 }
 
@@ -295,7 +295,7 @@ export interface Core {
    * kind comes off the vault itself, so a path nothing has scanned is answered
    * with what stands there; a path with nothing at it is absent.
    */
-  standing(paths: readonly string[]): Promise<ReadonlyMap<string, Standing>>
+  fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>>
   /**
    * Where each of those addresses lands, by the address it was asked about. A
    * name resolves by a path relative to the note it is written in, which is
@@ -320,7 +320,7 @@ export interface Core {
   changes(signal: AbortSignal): AsyncIterable<{
     paths: string[]
     reload: boolean
-    renamed: readonly Went[]
+    renamed: readonly Move[]
   }>
   /** A change being made to a note's prose, reported while it is being made. */
   editing(signal: AbortSignal): AsyncIterable<Said>
@@ -526,7 +526,7 @@ export interface Renamed {
   /** Whether the rename wrote the title into the frontmatter of the note. */
   frontmatter: boolean
   /** What the file did. Null when it stayed where it was. */
-  moved: Moved | null
+  moved: MoveResult | null
   refusal: Refused | null
   /** The note holds prose nobody here has seen, and nothing was written. */
   changed: boolean
@@ -536,7 +536,7 @@ export interface Renamed {
  * A file under a different name, and what that did to the links written by the
  * name it had.
  */
-export interface Moved {
+export interface MoveResult {
   readonly from: string
   readonly to: string
   /** The notes whose link stopped resolving and was written again, by name. */
@@ -553,7 +553,7 @@ export interface Removed {
 }
 
 /** One stencil as the list of them names it. */
-export interface Offer {
+export interface StencilSummary {
   readonly path: string
   readonly title: string
   /** The names of the fields, in the order a person is asked for them. */
@@ -712,7 +712,7 @@ export interface StencilWritten {
 }
 
 /** One deck a rename did not reach, which keeps the heading it had. */
-export interface NotWritten {
+export interface UnwrittenDeck {
   readonly path: string
   /** Why it was not reached, in the words to show. */
   readonly text: string
@@ -724,7 +724,7 @@ export interface Renaming {
   readonly decks: readonly string[]
   /** How many headings were rewritten, over all those decks. */
   readonly cards: number
-  readonly notWritten: readonly NotWritten[]
+  readonly notWritten: readonly UnwrittenDeck[]
   /** Set where nothing was renamed at all. */
   readonly refusal: Refused | null
   /** The stencil is no longer the one this caller read, and nothing was renamed. */
@@ -740,7 +740,7 @@ export interface Renaming {
  */
 export interface Cards {
   /** Every stencil in the vault, by what it is called and what it asks for. */
-  stencils(limit?: number): Promise<{ stencils: readonly Offer[]; held: number }>
+  stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
   /** A deck of no cards, filed in that folder under a name made from the title. */
   makeDeck(title: string, folder: string): Promise<Made>
   /**
@@ -787,7 +787,7 @@ export interface Cards {
 }
 
 /** One vault the installation holds, as the list has it. */
-export interface Known {
+export interface Vault {
   /** The identity the folder carries, and how the vault is asked for again. */
   readonly name: string
   /** What the person calls the collection. */
@@ -800,7 +800,7 @@ export interface Known {
 
 /** Every vault the installation holds, and the one this window is showing. */
 export interface Listed {
-  readonly vaults: readonly Known[]
+  readonly vaults: readonly Vault[]
   /** The identity of the vault in front of the person. */
   readonly showing: string
 }
@@ -808,7 +808,7 @@ export interface Listed {
 /** What adding a vault came back with, and what renaming one comes back with. */
 export interface Added {
   /** The vault as the list has it now. Null where the list is as it was. */
-  vault: Known | null
+  vault: Vault | null
   refusal: VaultRefused | null
 }
 

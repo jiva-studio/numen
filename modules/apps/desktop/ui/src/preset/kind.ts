@@ -10,7 +10,7 @@ import { ref, shallowRef, type Ref } from 'vue'
 import { Stopped } from '@numen/protocol'
 import { asking, type Asking } from '../asking'
 import type { PlexShowing } from '@numen/ui'
-import type { Refused, Went } from '../core'
+import type { Move, Refused } from '../core'
 import type { Says } from '../telling'
 import type { Host, Kind } from '../windowing'
 import type { Putting } from '../putting'
@@ -606,7 +606,7 @@ export function presetting(
   puts.holds('preset', shows)
 
   /** The vault changed: every open preset at one of those paths is read again. */
-  const changed = (paths: readonly string[], renamed: readonly Went[] = []): void => {
+  const changed = (paths: readonly string[], renamed: readonly Move[] = []): void => {
     for (const went of renamed) {
       const title = titles.get(went.from)
       if (title !== undefined) titles.set(went.to, title)

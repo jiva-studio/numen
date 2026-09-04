@@ -20,10 +20,10 @@ import type {
   Carded,
   Decked,
   Faced,
-  Offer,
   Problem,
   Sectioned,
   Stencilled,
+  StencilSummary,
   Value,
 } from '../core'
 
@@ -196,7 +196,7 @@ export const facesOf = (sheet: Sheet): readonly Faced[] =>
  * file wrote in the brackets, and a card that wrote nothing there is cut by
  * nothing.
  */
-export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] => {
+export const drawnOf = (deck: Deck, offers: readonly StencilSummary[]): readonly Drawn[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,
@@ -210,7 +210,7 @@ export const drawnOf = (deck: Deck, offers: readonly Offer[]): readonly Drawn[] 
  * The stencils a card may be cut by, under the word a card names one by. Two
  * stencils of one title name one stencil, and the first stands.
  */
-export const stencilsOf = (offers: readonly Offer[]): readonly Stencil[] => {
+export const stencilsOf = (offers: readonly StencilSummary[]): readonly Stencil[] => {
   const taken = new Set<string>()
   const stencils: Stencil[] = []
   for (const offer of offers) {
@@ -352,7 +352,7 @@ const sameUnder = (
  * Whether two listings name the same stencils, in the same order and with the
  * same fields.
  */
-export const sameOffers = (one: readonly Offer[], other: readonly Offer[]): boolean =>
+export const sameOffers = (one: readonly StencilSummary[], other: readonly StencilSummary[]): boolean =>
   one.length === other.length &&
   one.every((offer, at) => {
     const against = other[at]
@@ -366,7 +366,7 @@ export const sameOffers = (one: readonly Offer[], other: readonly Offer[]): bool
   })
 
 /** Where the stencil of that title is filed, and nowhere where none is. */
-export const pathOfCut = (offers: readonly Offer[], name: string): string =>
+export const pathOfCut = (offers: readonly StencilSummary[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''
 
 /**

@@ -521,7 +521,7 @@ const kept: Holds = {
  * preset its links name, and every other note is asked about as a preset itself.
  */
 const opensPreset = async (path: string): Promise<void> => {
-  const stands = (await core.standing([path])).get(path)
+  const stands = (await core.fileKinds([path])).get(path)
   if (stands?.type !== 'deck') return schedules.shows(path)
   const answer = await presets.scheduling(path)
   if (answer.refusal) return told(words.refused[answer.refusal], 'refusal')
