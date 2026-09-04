@@ -47,7 +47,7 @@ func TestStartingASittingConsultsTheScheduleCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	warm := l.counting(t, func() error {
-		_, err := l.sat.Execute(ctx, l.vault, flashcards.Over{})
+		_, err := l.sat.Execute(ctx, l.vault, flashcards.Scope{})
 		return err
 	})
 	if warm.Consulted == 0 {

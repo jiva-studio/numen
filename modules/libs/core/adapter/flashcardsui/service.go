@@ -176,7 +176,7 @@ func (a *API) Start(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	over := flashcards.Over{
+	over := flashcards.Scope{
 		Deck:   r.Msg.GetDeck(),
 		Preset: r.Msg.GetPreset(),
 		Named:  r.Msg.Preset != nil,

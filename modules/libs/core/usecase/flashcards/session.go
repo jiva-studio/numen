@@ -17,13 +17,13 @@ var ErrBothNamed = errors.New("a sitting is opened over one deck or over one pre
 // message says which of the reasons it is, in the person's own words.
 var ErrSchedulesNothing = errors.New("this preset schedules nothing today")
 
-// Over is what a sitting is opened over: every deck the vault holds, one of its
-// decks, or one of its presets.
+// Scope is what a sitting is opened over: every deck the vault holds, one of
+// its decks, or one of its presets.
 //
 // The whole vault is the ordinary way to sit down to this: a person owes what
 // they owe, and which file a card is written in is not something they think
 // about.
-type Over struct {
+type Scope struct {
 	// Deck is the path of one deck.
 	Deck string
 	// Preset is the note one preset stands in. The preset scheduling the decks
@@ -33,11 +33,11 @@ type Over struct {
 }
 
 // OverDeck is a sitting over one deck.
-func OverDeck(path string) Over { return Over{Deck: path} }
+func OverDeck(path string) Scope { return Scope{Deck: path} }
 
 // ByPreset is a sitting over the cards of every deck pointing at one preset,
 // held to that preset's budget.
-func ByPreset(preset string) Over { return Over{Preset: preset, Named: true} }
+func ByPreset(preset string) Scope { return Scope{Preset: preset, Named: true} }
 
 // Asked is one card face as it is put to a person: where it stands, how it is laid
 // out, and where the answers so far have left it.
@@ -88,10 +88,10 @@ type Session struct {
 
 // Execute is what to ask, in order.
 //
-// Over is the deck or the preset the sitting is opened over. Naming both is
+// Scope is the deck or the preset the sitting is opened over. Naming both is
 // ErrBothNamed, and a preset with nothing to ask today is ErrSchedulesNothing
 // with the reason.
-func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sitting, error) {
+func (u Session) Execute(ctx context.Context, v domain.Vault, over Scope) (Sitting, error) {
 	if over.Named && over.Deck != "" {
 		return Sitting{}, ErrBothNamed
 	}

@@ -315,7 +315,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 			held.Skipped)
 	}
 
-	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{}); err != nil {
+	if _, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{}); err != nil {
 		t.Errorf("starting a sitting came back with %v", err)
 	}
 	if _, err := s.counted.Execute(t.Context(), s.vault); err != nil {

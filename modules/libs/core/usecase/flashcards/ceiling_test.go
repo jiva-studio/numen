@@ -52,7 +52,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 		sat, err := flashcards.Session{
 			Marking: s.marking, Standings: s.standings, Schedules: s.kept,
 			Presets: s.presets, Day: day, Now: func() time.Time { return now },
-		}.Execute(t.Context(), s.vault, flashcards.Over{})
+		}.Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Asked) == 0 {
 			return out
 		}
@@ -92,7 +92,7 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	var out time.Duration
 	for d := range 3 {
-		over := flashcards.Over{Deck: fmt.Sprintf("decks/D%d.md", d)}
+		over := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.Session{
 				Marking: s.marking, Standings: s.standings, Schedules: s.kept,
@@ -144,7 +144,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 
 	s := opened(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-	sits := func(over flashcards.Over) flashcards.Sitting {
+	sits := func(over flashcards.Scope) flashcards.Sitting {
 		sat, err := flashcards.Session{
 			Marking: s.marking, Standings: s.standings, Schedules: s.kept,
 			Presets: s.presets, Day: today, Now: func() time.Time { return now },
@@ -156,7 +156,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 
 	whole := 0
-	for _, held := range byDeck(sits(flashcards.Over{})) {
+	for _, held := range byDeck(sits(flashcards.Scope{})) {
 		whole += held
 	}
 	if whole != 30 {
@@ -164,7 +164,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayHolds(t *testing.T) {
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
-		if got := len(sits(flashcards.Over{Deck: deck}).Asked); got > 30 {
+		if got := len(sits(flashcards.Scope{Deck: deck}).Asked); got > 30 {
 			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
 		}
 	}

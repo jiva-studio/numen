@@ -62,7 +62,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 
 	scan := usecase.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 	v := testsupport.NewVault(t, notes)
 	if _, err := scan.Execute(ctx, v); err != nil {
@@ -500,7 +500,7 @@ func TestACardPutDaysAwayIsNotOwedToday(t *testing.T) {
 		}
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -637,7 +637,7 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Over{})
+	sitting, err := s.session(today).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
 		t.Fatal(err)
 	}

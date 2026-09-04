@@ -195,7 +195,7 @@ type asking struct {
 //
 // A sitting over a preset takes the cards of every deck pointing at it, so the
 // one budget spent is that preset's.
-func (b *budgets) holds(one Standing, over Over) bool {
+func (b *budgets) holds(one Standing, over Scope) bool {
 	if over.Named {
 		return b.under[one.CardFace] == over.Preset
 	}
@@ -232,7 +232,7 @@ func (b *budgets) refuses(preset string) error {
 // that deck hands over are the one division.
 func (b *budgets) asks(
 	standing []Standing, schedules map[review.CardFaceID]review.Schedule,
-	day review.Day, now time.Time, over Over,
+	day review.Day, now time.Time, over Scope,
 ) asking {
 	var owed, fresh []Standing
 	for _, one := range standing {

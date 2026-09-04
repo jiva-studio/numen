@@ -13,7 +13,7 @@ import (
 // over is what the vault asks at this instant when the sitting is opened over
 // this deck or this preset.
 func (s vaulted) over(
-	t *testing.T, day review.Day, now time.Time, at flashcards.Over,
+	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
 ) (flashcards.Sitting, error) {
 	t.Helper()
 	return flashcards.Session{
@@ -125,7 +125,7 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 		"decks/Birds.md": deckOf("Steady", 3, 0),
 	})
 
-	_, err := s.over(t, today, saturday, flashcards.Over{
+	_, err := s.over(t, today, saturday, flashcards.Scope{
 		Deck: "decks/Birds.md", Preset: "Steady.md", Named: true,
 	})
 	if !errors.Is(err, flashcards.ErrBothNamed) {

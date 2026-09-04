@@ -33,7 +33,7 @@ func BenchmarkVault(b *testing.B) {
 	})
 	b.Run("Sitting", func(b *testing.B) {
 		for b.Loop() {
-			if _, err := l.sat.Execute(ctx, l.vault, flashcards.Over{}); err != nil {
+			if _, err := l.sat.Execute(ctx, l.vault, flashcards.Scope{}); err != nil {
 				b.Fatal(err)
 			}
 		}

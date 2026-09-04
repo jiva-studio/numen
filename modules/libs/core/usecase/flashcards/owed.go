@@ -137,7 +137,7 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	if err != nil {
 		return Owing{}, err
 	}
-	holds := day.asks(standing, schedules, u.Day, now, Over{})
+	holds := day.asks(standing, schedules, u.Day, now, Scope{})
 
 	out := Owing{Faces: len(standing)}
 	decks := make(map[string]*DeckOwing)
