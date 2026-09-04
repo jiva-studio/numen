@@ -1,4 +1,4 @@
-package flashcards_test
+package review_test
 
 import (
 	"maps"
@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // front is a preset's frontmatter, as the parser hands it over.
@@ -23,7 +23,7 @@ func front(t *testing.T, written string) map[string]any {
 
 // A preset says how the decks pointing at it are scheduled.
 func TestWhatAPresetSays(t *testing.T) {
-	p, problems := flashcards.ReadPreset(front(t, `
+	p, problems := review.ReadPreset(front(t, `
 goal: minutes_a_day
 minutes_a_day: 20
 new_a_day: 8
@@ -36,7 +36,7 @@ even_load: true
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
-	if p.Goal != flashcards.GoalMinutes {
+	if p.Goal != review.GoalMinutes {
 		t.Errorf("goal = %q", p.Goal)
 	}
 	if p.MinutesADay != 20 || p.NewADay != 8 || p.ReviewsADay != 45 {
@@ -56,12 +56,12 @@ even_load: true
 // What a day's budget is spent on is read from the file, and a preset saying
 // nothing spends it on cards.
 func TestWhatABudgetIsSpentOn(t *testing.T) {
-	for written, want := range map[string]flashcards.Counts{
-		"":                flashcards.CountsCards,
-		"counts: cards\n": flashcards.CountsCards,
-		"counts: shows\n": flashcards.CountsShows,
+	for written, want := range map[string]review.Counts{
+		"":                review.CountsCards,
+		"counts: cards\n": review.CountsCards,
+		"counts: shows\n": review.CountsShows,
 	} {
-		p, problems := flashcards.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, written))
 		if len(problems) != 0 {
 			t.Fatalf("%q: problems = %v", written, problems)
 		}
@@ -73,12 +73,12 @@ func TestWhatABudgetIsSpentOn(t *testing.T) {
 
 // A key the file does not carry stands at the default.
 func TestWhatAPresetLeavesUnsaid(t *testing.T) {
-	p, problems := flashcards.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
+	p, problems := review.ReadPreset(front(t, "goal: retention\nretention: 0.95\n"))
 
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
-	if p.NewADay != flashcards.Defaults().NewADay || p.ReviewsADay != flashcards.Defaults().ReviewsADay {
+	if p.NewADay != review.Defaults().NewADay || p.ReviewsADay != review.Defaults().ReviewsADay {
 		t.Errorf("limits = %d new, %d reviews", p.NewADay, p.ReviewsADay)
 	}
 	if p.Retention != 0.95 {
@@ -107,11 +107,11 @@ func TestAKeyThatCannotBeRead(t *testing.T) {
 		"learned: sideways\n":     "learned",
 		"interval: 400\n":         "outside",
 	} {
-		p, problems := flashcards.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, written))
 		if len(problems) != 1 || !strings.Contains(problems[0], says) {
 			t.Errorf("%q: problems = %v", written, problems)
 		}
-		if written == "new_a_day: many\n" && p.NewADay != flashcards.Defaults().NewADay {
+		if written == "new_a_day: many\n" && p.NewADay != review.Defaults().NewADay {
 			t.Errorf("%q: new a day = %d", written, p.NewADay)
 		}
 	}
@@ -123,11 +123,11 @@ func TestTheDayItAimsAt(t *testing.T) {
 		"goal: by_date\nby_date: 2026-09-30\n",
 		"goal: by_date\nby_date: \"2026-09-30\"\n",
 	} {
-		p, problems := flashcards.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, written))
 		if len(problems) != 0 {
 			t.Fatalf("%q: problems = %v", written, problems)
 		}
-		if p.By.Format(flashcards.Named) != "2026-09-30" {
+		if p.By.Format(review.Named) != "2026-09-30" {
 			t.Errorf("%q: by = %v", written, p.By)
 		}
 	}
@@ -138,8 +138,8 @@ func TestTheDayItAimsAt(t *testing.T) {
 // The day it names is a whole review day, so the preset schedules through every
 // hour of it and stops when the next one opens.
 func TestADateIsABudget(t *testing.T) {
-	p, _ := flashcards.ReadPreset(front(t, "goal: by_date\nby_date: 2026-09-30\n"))
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	p, _ := review.ReadPreset(front(t, "goal: by_date\nby_date: 2026-09-30\n"))
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 
 	for _, one := range []struct {
 		hour time.Time
@@ -174,12 +174,12 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 		{"goal: minutes_a_day\nminutes_a_day: 0\n", true},
 		{"goal: minutes_a_day\nnew_a_day: 0\nreviews_a_day: 0\n", false},
 	} {
-		p, problems := flashcards.ReadPreset(front(t, one.front))
+		p, problems := review.ReadPreset(front(t, one.front))
 
 		if len(problems) != 0 {
 			t.Fatalf("problems = %v", problems)
 		}
-		got := p.Paused(flashcards.Day{Starts: flashcards.DayStarts}, time.Now())
+		got := p.Paused(review.Day{Starts: review.DayStarts}, time.Now())
 		if got != one.paused {
 			t.Errorf("%q is paused %v, want %v", one.front, got, one.paused)
 		}
@@ -190,11 +190,11 @@ func TestZeroIsAPauseUnderTheGoalThatNamesIt(t *testing.T) {
 // numbers, stands at all of it where the file names none, and is refused
 // outside its bounds.
 func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
-	if got := flashcards.Defaults().Backlog; got != flashcards.AllBacklog {
+	if got := review.Defaults().Backlog; got != review.AllBacklog {
 		t.Errorf("a preset naming nothing gives the debt %d of its day", got)
 	}
 
-	p, problems := flashcards.ReadPreset(front(t, "backlog: 40\n"))
+	p, problems := review.ReadPreset(front(t, "backlog: 40\n"))
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
@@ -202,11 +202,11 @@ func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 		t.Errorf("backlog = %d, want 40", p.Backlog)
 	}
 
-	p, problems = flashcards.ReadPreset(front(t, "backlog: 140\n"))
+	p, problems = review.ReadPreset(front(t, "backlog: 140\n"))
 	if len(problems) != 1 {
 		t.Fatalf("a share outside its bounds turned up %v", problems)
 	}
-	if p.Backlog != flashcards.AllBacklog {
+	if p.Backlog != review.AllBacklog {
 		t.Errorf("a share outside its bounds left %d standing", p.Backlog)
 	}
 }
@@ -219,25 +219,25 @@ func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 // and the share decides nothing. A goal of a date carries the whole material by
 // its own reckoning.
 func TestWhichSettingsAGoalReads(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts}
+	day := review.Day{Starts: review.DayStarts}
 	for _, one := range []struct {
-		goal  flashcards.Goal
+		goal  review.Goal
 		reads bool
 	}{
-		{flashcards.GoalMinutes, true},
-		{flashcards.GoalRetention, false},
-		{flashcards.GoalDate, false},
+		{review.GoalMinutes, true},
+		{review.GoalRetention, false},
+		{review.GoalDate, false},
 	} {
-		p := flashcards.Defaults()
+		p := review.Defaults()
 		p.Goal, p.By, p.Backlog = one.goal, time.Now().AddDate(0, 0, 30), 40
-		admits := p.Admits(day, time.Now(), flashcards.Spent{}, 0, 0)
+		admits := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
 
 		if got := admits.Closes.Backlog != ""; got != one.reads {
 			t.Errorf("under %s the share is read %v, want %v", one.goal, got, one.reads)
 		}
 		want := 40
 		if !one.reads {
-			want = flashcards.AllBacklog
+			want = review.AllBacklog
 		}
 		if admits.Backlog != want {
 			t.Errorf("under %s the day gives the debt %d, want %d",
@@ -249,12 +249,12 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 // What counts as learned is read from the file, and a preset saying nothing
 // learns a card face by the interval it is sent away for.
 func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
-	for written, want := range map[string]flashcards.LearnedRule{
-		"":                     flashcards.RuleInterval,
-		"learned: interval\n":  flashcards.RuleInterval,
-		"learned: retention\n": flashcards.RuleRetention,
+	for written, want := range map[string]review.LearnedRule{
+		"":                     review.RuleInterval,
+		"learned: interval\n":  review.RuleInterval,
+		"learned: retention\n": review.RuleRetention,
 	} {
-		p, problems := flashcards.ReadPreset(front(t, written))
+		p, problems := review.ReadPreset(front(t, written))
 		if len(problems) != 0 {
 			t.Fatalf("%q: problems = %v", written, problems)
 		}
@@ -263,7 +263,7 @@ func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 		}
 	}
 
-	p, problems := flashcards.ReadPreset(front(t, "interval: 45\n"))
+	p, problems := review.ReadPreset(front(t, "interval: 45\n"))
 	if len(problems) != 0 {
 		t.Fatalf("problems = %v", problems)
 	}
@@ -276,15 +276,15 @@ func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 // other, and the rule the preset does not name takes no part.
 func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	now := time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
-	standing := func(since, away int, stability float64) flashcards.Schedule {
+	standing := func(since, away int, stability float64) review.Schedule {
 		last := now.AddDate(0, 0, -since)
-		return flashcards.Schedule{
+		return review.Schedule{
 			Due: last.AddDate(0, 0, away), Last: last, Reps: 3, Stability: stability,
 		}
 	}
 
-	p := flashcards.Defaults()
-	p.Rule, p.Interval, p.Retention = flashcards.RuleInterval, 21, 0.9
+	p := review.Defaults()
+	p.Rule, p.Interval, p.Retention = review.RuleInterval, 21, 0.9
 
 	// The threshold is the interval the preset carries: a card sent away for
 	// exactly it is learned and one sent away a day short of it is not,
@@ -302,11 +302,11 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		}
 	}
 	// Nobody has answered it, so neither rule has anything to read.
-	if p.Learned(flashcards.Schedule{}, now) {
+	if p.Learned(review.Schedule{}, now) {
 		t.Error("a card face nobody has answered is learned")
 	}
 
-	p.Rule = flashcards.RuleRetention
+	p.Rule = review.RuleRetention
 
 	// The same two card faces, under the other rule: what is asked now is the
 	// chance of recalling them today, and the intervals take no part.
@@ -316,7 +316,7 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	if !p.Learned(standing(0, 20, 90), now) {
 		t.Error("a card answered today is not recalled nine times in ten")
 	}
-	if p.Learned(flashcards.Schedule{}, now) {
+	if p.Learned(review.Schedule{}, now) {
 		t.Error("a card face nobody has answered is learned")
 	}
 }
@@ -331,12 +331,12 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	last := now.AddDate(0, 0, -1)
 	// A card face first seen yesterday and put off by sixteen days, and one put
 	// off by twenty-one.
-	near := flashcards.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
-	far := flashcards.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
+	near := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
+	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
 
 	// Every field left empty, which is a preset built from settings that name
 	// no rule at all.
-	var said flashcards.Preset
+	var said review.Preset
 	if said.Learned(near, now) {
 		t.Error("a card face sixteen days off is learned under a preset naming no rule")
 	}
@@ -345,17 +345,17 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	}
 
 	// A rule named with no value under it reads the default value too.
-	named := flashcards.Preset{Rule: flashcards.RuleInterval}
+	named := review.Preset{Rule: review.RuleInterval}
 	if named.Learned(near, now) {
 		t.Error("a card face sixteen days off is learned under an interval nobody wrote")
 	}
 
 	// And the other rule, whose value nobody wrote, holds cards to the default
 	// chance of recall.
-	faded := flashcards.Schedule{
+	faded := review.Schedule{
 		Last: now.AddDate(0, 0, -200), Due: now, Reps: 3, Stability: 10,
 	}
-	chance := flashcards.Preset{Rule: flashcards.RuleRetention}
+	chance := review.Preset{Rule: review.RuleRetention}
 	if chance.Learned(faded, now) {
 		t.Error("a card face two hundred days past its answer is recalled nine times in ten")
 	}
@@ -371,15 +371,15 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 // changes, so a setting that moves a card and not the mark is a cache read back
 // under settings it was never worked out for.
 func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
-	stands := flashcards.Defaults()
+	stands := review.Defaults()
 	stands.Load = map[time.Weekday]int{time.Saturday: 50}
 	was := stands.Placing()
 
-	for what, alter := range map[string]func(p *flashcards.Preset){
-		"an even load off":   func(p *flashcards.Preset) { p.EvenLoad = false },
-		"a goal of a date":   func(p *flashcards.Preset) { p.Goal = flashcards.GoalDate },
-		"a Saturday freed":   func(p *flashcards.Preset) { p.Load = nil },
-		"a lighter Saturday": func(p *flashcards.Preset) { p.Load[time.Saturday] = 20 },
+	for what, alter := range map[string]func(p *review.Preset){
+		"an even load off":   func(p *review.Preset) { p.EvenLoad = false },
+		"a goal of a date":   func(p *review.Preset) { p.Goal = review.GoalDate },
+		"a Saturday freed":   func(p *review.Preset) { p.Load = nil },
+		"a lighter Saturday": func(p *review.Preset) { p.Load[time.Saturday] = 20 },
 	} {
 		one := stands
 		one.Load = maps.Clone(stands.Load)
@@ -404,13 +404,13 @@ func TestThePlacingCarriesEverythingThatMovesACard(t *testing.T) {
 // What the day has already gone through is off what it still admits, so a
 // second sitting takes up where the first left off.
 func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts}
-	p := flashcards.Defaults()
-	p.Goal, p.MinutesADay = flashcards.GoalMinutes, 1
+	day := review.Day{Starts: review.DayStarts}
+	p := review.Defaults()
+	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 
-	fresh := p.Admits(day, time.Now(), flashcards.Spent{}, 0, 0)
-	after := p.Admits(day, time.Now(), flashcards.Spent{
+	fresh := p.Admits(day, time.Now(), review.Spent{}, 0, 0)
+	after := p.Admits(day, time.Now(), review.Spent{
 		Answered: 3, New: 3, Reviews: 3, Took: 18 * time.Second,
 	}, 0, 0)
 
@@ -429,7 +429,7 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 // The budget the goal names decides it, and a budget the goal does not name
 // takes no part whatever it holds.
 func TestWhatAPresetSchedules(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	// A Thursday, and the two days a preset may aim at from it.
 	now := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 	ahead := time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC)
@@ -437,102 +437,102 @@ func TestWhatAPresetSchedules(t *testing.T) {
 
 	for _, one := range []struct {
 		what string
-		p    flashcards.Preset
-		want flashcards.StopReason
+		p    review.Preset
+		want review.StopReason
 	}{
 		{
 			what: "minutes, and the minutes it names",
-			p:    flashcards.Preset{Goal: flashcards.GoalMinutes, MinutesADay: 20},
-			want: flashcards.StoppedNothing,
+			p:    review.Preset{Goal: review.GoalMinutes, MinutesADay: 20},
+			want: review.StoppedNothing,
 		},
 		{
 			what: "minutes at zero",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
+			p: review.Preset{
+				Goal: review.GoalMinutes, MinutesADay: 0, NewADay: 8, ReviewsADay: 45,
 			},
-			want: flashcards.StoppedNoMinutes,
+			want: review.StoppedNoMinutes,
 		},
 		{
 			what: "minutes, with both card counts at zero",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalMinutes, MinutesADay: 20, NewADay: 0, ReviewsADay: 0,
+			p: review.Preset{
+				Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 0, ReviewsADay: 0,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "minutes, past a day it does not aim at",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalMinutes, MinutesADay: 20, By: behind,
+			p: review.Preset{
+				Goal: review.GoalMinutes, MinutesADay: 20, By: behind,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "retention, and both counts",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45,
+			p: review.Preset{
+				Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "retention, with no new cards a day",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalRetention, NewADay: 0, ReviewsADay: 45,
+			p: review.Preset{
+				Goal: review.GoalRetention, NewADay: 0, ReviewsADay: 45,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "retention, with no reviews a day",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 0,
+			p: review.Preset{
+				Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 0,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "retention, with both counts at zero",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalRetention, NewADay: 0, ReviewsADay: 0, MinutesADay: 20,
+			p: review.Preset{
+				Goal: review.GoalRetention, NewADay: 0, ReviewsADay: 0, MinutesADay: 20,
 			},
-			want: flashcards.StoppedNoCards,
+			want: review.StoppedNoCards,
 		},
 		{
 			what: "retention, with the minutes at zero",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45, MinutesADay: 0,
+			p: review.Preset{
+				Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45, MinutesADay: 0,
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "a day ahead, with every other budget at zero",
-			p:    flashcards.Preset{Goal: flashcards.GoalDate, By: ahead},
-			want: flashcards.StoppedNothing,
+			p:    review.Preset{Goal: review.GoalDate, By: ahead},
+			want: review.StoppedNothing,
 		},
 		{
 			what: "the day it aims at",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalDate, By: time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC),
+			p: review.Preset{
+				Goal: review.GoalDate, By: time.Date(2026, 9, 10, 0, 0, 0, 0, time.UTC),
 			},
-			want: flashcards.StoppedNothing,
+			want: review.StoppedNothing,
 		},
 		{
 			what: "a day behind us",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalDate, By: behind,
+			p: review.Preset{
+				Goal: review.GoalDate, By: behind,
 				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			},
-			want: flashcards.StoppedPastDay,
+			want: review.StoppedPastDay,
 		},
 		{
 			what: "a date and no day",
-			p: flashcards.Preset{
-				Goal: flashcards.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+			p: review.Preset{
+				Goal: review.GoalDate, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 			},
-			want: flashcards.StoppedNoDay,
+			want: review.StoppedNoDay,
 		},
 	} {
 		if got := one.p.Stops(day, now); got != one.want {
 			t.Errorf("%s stops on %q, want %q", one.what, got, one.want)
 		}
-		if got, want := one.p.Paused(day, now), one.want != flashcards.StoppedNothing; got != want {
+		if got, want := one.p.Paused(day, now), one.want != review.StoppedNothing; got != want {
 			t.Errorf("%s is paused %v, want %v", one.what, got, want)
 		}
 		// A day of the week at the whole of the load stops nothing of its own.
@@ -545,32 +545,32 @@ func TestWhatAPresetSchedules(t *testing.T) {
 // A day of the week carrying none of the load is a fact about that one day. The
 // preset schedules, and it schedules again on the next day that carries some.
 func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	thursday := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 	if thursday.Weekday() != time.Thursday {
 		t.Fatalf("%v is a %v", thursday, thursday.Weekday())
 	}
 
-	p := flashcards.Preset{
-		Goal: flashcards.GoalMinutes, MinutesADay: 20,
+	p := review.Preset{
+		Goal: review.GoalMinutes, MinutesADay: 20,
 		Load: map[time.Weekday]int{time.Thursday: 0},
 	}
 
-	if got := p.Stops(day, thursday); got != flashcards.StoppedNothing {
+	if got := p.Stops(day, thursday); got != review.StoppedNothing {
 		t.Errorf("a preset with a light Thursday stops on %q", got)
 	}
-	if got := p.StopsOn(day, thursday); got != flashcards.StoppedNoLoad {
-		t.Errorf("its Thursday stops on %q, want %q", got, flashcards.StoppedNoLoad)
+	if got := p.StopsOn(day, thursday); got != review.StoppedNoLoad {
+		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
-	if got := p.StopsOn(day, thursday.AddDate(0, 0, 1)); got != flashcards.StoppedNothing {
+	if got := p.StopsOn(day, thursday.AddDate(0, 0, 1)); got != review.StoppedNothing {
 		t.Errorf("its Friday stops on %q", got)
 	}
 
 	// A preset that schedules nothing at all says so on a light day too, and the
 	// day of the week is not what to fix.
 	p.MinutesADay = 0
-	if got := p.StopsOn(day, thursday); got != flashcards.StoppedNoMinutes {
-		t.Errorf("a paused preset stops today on %q, want %q", got, flashcards.StoppedNoMinutes)
+	if got := p.StopsOn(day, thursday); got != review.StoppedNoMinutes {
+		t.Errorf("a paused preset stops today on %q, want %q", got, review.StoppedNoMinutes)
 	}
 }
 
@@ -578,7 +578,7 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 // is no next day for the cards to be picked up on, which is what a quiet day of
 // an otherwise loud week promises.
 func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 
 	dead := map[time.Weekday]int{}
@@ -586,26 +586,26 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 		dead[one] = 0
 	}
 
-	for what, p := range map[string]flashcards.Preset{
-		"minutes": {Goal: flashcards.GoalMinutes, MinutesADay: 20, Load: dead},
+	for what, p := range map[string]review.Preset{
+		"minutes": {Goal: review.GoalMinutes, MinutesADay: 20, Load: dead},
 		"retention": {
-			Goal: flashcards.GoalRetention, NewADay: 8, ReviewsADay: 45, Load: dead,
+			Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45, Load: dead,
 		},
 		"a date": {
-			Goal: flashcards.GoalDate, By: at.AddDate(0, 0, 30),
+			Goal: review.GoalDate, By: at.AddDate(0, 0, 30),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Load: dead,
 		},
 	} {
 		t.Run(what, func(t *testing.T) {
-			if got := p.Stops(day, at); got != flashcards.StoppedNoWeek {
-				t.Errorf("a dead week stops on %q, want %q", got, flashcards.StoppedNoWeek)
+			if got := p.Stops(day, at); got != review.StoppedNoWeek {
+				t.Errorf("a dead week stops on %q, want %q", got, review.StoppedNoWeek)
 			}
-			if got := p.StopsOn(day, at); got != flashcards.StoppedNoWeek {
-				t.Errorf("its day stops on %q, want %q", got, flashcards.StoppedNoWeek)
+			if got := p.StopsOn(day, at); got != review.StoppedNoWeek {
+				t.Errorf("its day stops on %q, want %q", got, review.StoppedNoWeek)
 			}
 			for i := range 7 {
 				on := at.AddDate(0, 0, i)
-				if got := p.StopsOn(day, on); got == flashcards.StoppedNoLoad {
+				if got := p.StopsOn(day, on); got == review.StoppedNoLoad {
 					t.Errorf("its %v promises a next day that carries some load", on.Weekday())
 				}
 			}
@@ -614,12 +614,12 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 
 	// A week with one loud day is a week of quiet days and not a dead one.
 	alive := maps.Clone(dead)
-	alive[time.Friday] = flashcards.FullLoad
-	p := flashcards.Preset{Goal: flashcards.GoalMinutes, MinutesADay: 20, Load: alive}
-	if got := p.Stops(day, at); got != flashcards.StoppedNothing {
+	alive[time.Friday] = review.FullLoad
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, Load: alive}
+	if got := p.Stops(day, at); got != review.StoppedNothing {
 		t.Errorf("a week with one loud day stops on %q", got)
 	}
-	if got := p.StopsOn(day, at); got != flashcards.StoppedNoLoad {
-		t.Errorf("its Thursday stops on %q, want %q", got, flashcards.StoppedNoLoad)
+	if got := p.StopsOn(day, at); got != review.StoppedNoLoad {
+		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
 }

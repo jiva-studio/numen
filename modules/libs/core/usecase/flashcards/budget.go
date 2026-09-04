@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // budgets is what today leaves each preset a vault's decks are scheduled by,
@@ -19,25 +19,25 @@ import (
 // The presets are separate scopes: one running out closes its own decks and no
 // others. A preset standing in no note schedules the decks naming none.
 type budgets struct {
-	under map[history.CardFaceID]string
+	under map[review.CardFaceID]string
 	left  map[string]*allowance
 	// decks says which preset schedules each deck, by the path of its file.
 	decks map[string]string
 	// cards is how many card faces stand under each preset.
 	cards map[string]int
 	// faced are the card faces answered in the review day being sat.
-	faced map[history.CardFaceID]bool
+	faced map[review.CardFaceID]bool
 	// sat is what the review day being sat came to in each deck.
-	sat map[string]history.Spent
+	sat map[string]review.Spent
 }
 
 // allowance is one preset's day: what the day admits, what an answer under it
 // costs, how it counts, and what has gone on it already.
 type allowance struct {
-	admits history.Allowance
-	cost   history.AnswerCost
-	counts history.Counts
-	spent  history.Spent
+	admits review.Allowance
+	cost   review.AnswerCost
+	counts review.Counts
+	spent  review.Spent
 }
 
 // budgeted works out the day's budgets over the cards standing.
@@ -45,13 +45,13 @@ type allowance struct {
 // What has been answered since the day opened is off it, so a second sitting
 // takes up where the first left off.
 func budgeted(
-	ctx context.Context, v domain.Vault, reading *PresetReads, day history.Day,
-	standing []Standing, schedules map[history.CardFaceID]history.Schedule,
-	log Held, by history.Scheduler, at func(retention float64) history.Scheduler,
+	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
+	standing []Standing, schedules map[review.CardFaceID]review.Schedule,
+	log Held, by review.Scheduler, at func(retention float64) review.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
-		under: make(map[history.CardFaceID]string, len(standing)),
+		under: make(map[review.CardFaceID]string, len(standing)),
 		left:  make(map[string]*allowance),
 		cards: make(map[string]int),
 	}
@@ -61,8 +61,8 @@ func budgeted(
 	asked := make(map[string]string, len(standing))
 	// The deck each card face stands in, which is how the day's answers are
 	// grouped, and the settings each preset was read with.
-	in := make(map[history.CardFaceID]string, len(standing))
-	settings := make(map[string]history.Preset)
+	in := make(map[review.CardFaceID]string, len(standing))
+	settings := make(map[string]review.Preset)
 	// The material each preset has still to begin.
 	unseen := make(map[string]int)
 	for _, one := range standing {
@@ -87,17 +87,17 @@ func budgeted(
 	}
 
 	out.decks = asked
-	counting := make(map[string]history.Counts, len(asked))
+	counting := make(map[string]review.Counts, len(asked))
 	for deck, path := range asked {
 		counting[deck] = settings[path].Counts
 	}
 	named := day.Names(now)
-	out.faced = history.Faced(day, named, log.Answers)
+	out.faced = review.Faced(day, named, log.Answers)
 
 	// A card face stands in one deck and one preset, so a preset's day is the
 	// sum of the days of the decks that name it.
-	out.sat = history.Sat(day, named, log.Answers, in, counting)
-	spent := make(map[string]history.Spent, len(settings))
+	out.sat = review.Sat(day, named, log.Answers, in, counting)
+	spent := make(map[string]review.Spent, len(settings))
 	for deck, one := range out.sat {
 		at := spent[asked[deck]]
 		at.Answered += one.Answered
@@ -107,18 +107,18 @@ func budgeted(
 		spent[asked[deck]] = at
 	}
 
-	costed := history.CostedUnder(by, log.Answers, out.under)
+	costed := review.CostedUnder(by, log.Answers, out.under)
 	for path, p := range settings {
 		cost, held := costed[path]
 		if !held {
-			cost = history.DefaultCost
+			cost = review.DefaultCost
 		}
 		// A date paces the day against how long a card face begun today takes to
 		// be learned, worked out under the scheduler this preset's cards are
 		// spaced by. No other goal reads it, and it is asked for under no other.
 		learn := 0
-		if p.Goal == history.GoalDate {
-			learn = history.Ripens(at(p.Retention), day, p, now)
+		if p.Goal == review.GoalDate {
+			learn = review.Ripens(at(p.Retention), day, p, now)
 		}
 		out.left[path] = &allowance{
 			admits: p.Admits(day, now, spent[path], unseen[path], learn),
@@ -140,7 +140,7 @@ func budgeted(
 // face the first time the day answers it, so a face the day has already charged
 // comes round again for no count. The minutes are spent on every answer
 // whichever way the preset counts.
-func (b *budgets) takes(share *allowance, face history.CardFaceID, fresh bool) bool {
+func (b *budgets) takes(share *allowance, face review.CardFaceID, fresh bool) bool {
 	one, held := b.left[b.under[face]]
 	if !held || one.admits.Paused() {
 		return false
@@ -165,10 +165,10 @@ func (a *allowance) room(fresh, counted bool, cost time.Duration) bool {
 	if fresh {
 		left, closes = a.admits.New, a.admits.Closes.New
 	}
-	if counted && closes != history.ClosedNothing && left <= 0 {
+	if counted && closes != review.ClosedNothing && left <= 0 {
 		return false
 	}
-	return a.admits.Closes.Minutes == history.ClosedNothing || a.admits.Minutes >= cost
+	return a.admits.Closes.Minutes == review.ClosedNothing || a.admits.Minutes >= cost
 }
 
 // spends takes a card face of this kind out of this day.
@@ -231,8 +231,8 @@ func (b *budgets) refuses(preset string) error {
 // what it was opened over. A deck's row on the front door and what pressing
 // that deck hands over are the one division.
 func (b *budgets) asks(
-	standing []Standing, schedules map[history.CardFaceID]history.Schedule,
-	day history.Day, now time.Time, over Over,
+	standing []Standing, schedules map[review.CardFaceID]review.Schedule,
+	day review.Day, now time.Time, over Over,
 ) asking {
 	var owed, fresh []Standing
 	for _, one := range standing {

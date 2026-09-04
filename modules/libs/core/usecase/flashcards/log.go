@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // Area is the folder inside a vault's service folder the answers are kept in.
@@ -26,10 +26,10 @@ type Log struct{ Stores port.DerivedStores }
 
 // Held is what a vault's log came to.
 type Held struct {
-	Answers []history.Answer
+	Answers []review.Answer
 	// order is what Given hands out, worked out at the first asking and kept
 	// for the rest of them.
-	order func() history.Given
+	order func() review.Given
 	// Files are what the answers were read from, sorted by name. What tells a
 	// cache it is out of date is any difference in this list.
 	//
@@ -47,16 +47,16 @@ type Held struct {
 //
 // One request asks several things of one reading, and each of them reads this
 // order. It is worked out once for the reading and handed to all of them.
-func (h Held) Given() history.Given {
+func (h Held) Given() review.Given {
 	if h.order == nil {
-		return history.Give(h.Answers)
+		return review.Give(h.Answers)
 	}
 	return h.order()
 }
 
 // ordered is a reading that works its order out at the first asking.
-func ordered(answers []history.Answer) func() history.Given {
-	return sync.OnceValue(func() history.Given { return history.Give(answers) })
+func ordered(answers []review.Answer) func() review.Given {
+	return sync.OnceValue(func() review.Given { return review.Give(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is
@@ -102,7 +102,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (Held, error) {
 
 // Ran is one file of the log as it was read.
 type Ran struct {
-	Answers []history.Answer
+	Answers []review.Answer
 	// Size is the length read, which is what says whether the file has changed.
 	// It is the length read and not the length listed: a run this machine is
 	// writing grows between the two.
@@ -130,7 +130,7 @@ func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Entry) 
 	if err != nil {
 		return Ran{}, err
 	}
-	answers, skipped := history.Read(raw)
+	answers, skipped := review.Read(raw)
 	return Ran{Answers: answers, Size: len(raw), Skipped: skipped}, nil
 }
 
@@ -183,11 +183,11 @@ func (r *Run) Name() string { return r.name }
 //
 // An append is not atomic: a machine that stopped mid-line leaves a tail no
 // newline closes, and reading the file back leaves that line out.
-func (r *Run) Append(ctx context.Context, a history.Answer) error {
+func (r *Run) Append(ctx context.Context, a review.Answer) error {
 	if r.stopped != nil {
 		return r.stopped
 	}
-	raw, err := history.Write(a)
+	raw, err := review.Write(a)
 	if err != nil {
 		return err
 	}

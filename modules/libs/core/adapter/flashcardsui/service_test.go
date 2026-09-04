@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -58,7 +58,7 @@ func TestACardAlreadyAnsweredComesBackWithWhereItStands(t *testing.T) {
 	if !card.GetSeen() {
 		t.Error("a card already answered says it was not seen")
 	}
-	if _, err := time.Parse(history.Stamp, card.GetDue()); err != nil {
+	if _, err := time.Parse(review.Stamp, card.GetDue()); err != nil {
 		t.Errorf("the card is due at %q, which the page cannot read: %v", card.GetDue(), err)
 	}
 }
@@ -122,7 +122,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 }
 
 // An answer names the vault it belongs to. One the installation does not hold
-// is refused before a line is written into anybody's history.
+// is refused before a line is written into anybody's review.
 func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, deck)
 

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // countedVersion is the shape of the cache file. A cache of another shape is
@@ -26,7 +26,7 @@ type cachedRun struct {
 	Name string `json:"name"`
 	Size int    `json:"size"`
 	// Days is what this run alone came to.
-	Days map[string]history.Tally `json:"days"`
+	Days map[string]review.Tally `json:"days"`
 	// IDs are the identifiers its lines carry, which is what says an answer
 	// another run holds too is the one answer.
 	IDs []string `json:"ids"`
@@ -36,14 +36,14 @@ type cachedRun struct {
 type Reviewed struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
-	Days map[string]history.Tally
+	Days map[string]review.Tally
 	// Due is how many card faces fall on each day still to come, by the same
 	// names. A card owed today or owed and late is not in it: what is behind is
 	// what the front door counts, and this is what is ahead.
 	Due map[string]int
 	// Retained is how much of what came round in days came back on each day. A
 	// card face the scheduler is still putting into memory is not in it.
-	Retained map[string]history.RecallTally
+	Retained map[string]review.RecallTally
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
 	// Answered is how many answers the vault holds altogether.
@@ -69,7 +69,7 @@ type CountReviews struct {
 	// Schedules is where the answers have left every card face, which is what
 	// says how much falls on each day still to come.
 	Schedules Schedules
-	Day       history.Day
+	Day       review.Day
 	Now       func() time.Time
 }
 
@@ -83,7 +83,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 
 	was := u.remembered(ctx, v)
 	now := countCache{V: countedVersion}
-	out := Reviewed{Days: make(map[string]history.Tally)}
+	out := Reviewed{Days: make(map[string]review.Tally)}
 
 	store, err := u.Logs.Open(v)
 	if err != nil {
@@ -112,7 +112,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 			one = cachedRun{
 				Name: file.Name,
 				Size: ran.Size,
-				Days: history.Counted(u.Day, ran.Answers),
+				Days: review.Counted(u.Day, ran.Answers),
 				IDs:  identifiers(ran.Answers),
 			}
 		}
@@ -132,7 +132,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 					return Reviewed{}, err
 				}
 			}
-			days = history.Counted(u.Day, given(ran.Answers, seen))
+			days = review.Counted(u.Day, given(ran.Answers, seen))
 		}
 		for _, id := range one.IDs {
 			seen[id] = true
@@ -145,7 +145,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 
 	held.order = ordered(held.Answers)
 	u.remember(ctx, v, now)
-	out.Streak = history.Streak(u.Day, out.Days, u.now())
+	out.Streak = review.Streak(u.Day, out.Days, u.now())
 
 	// What is still to come, and how much came back, are both worked out from
 	// the answers in the order they were given, so they are asked for together.
@@ -160,8 +160,8 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 
 // added is two days' answers put together, which is how the runs of one day are
 // added up: a person may have answered in two sittings, and it is one day.
-func added(one, other history.Tally) history.Tally {
-	return history.Tally{
+func added(one, other review.Tally) review.Tally {
+	return review.Tally{
 		Answered: one.Answered + other.Answered,
 		Again:    one.Again + other.Again,
 		Hard:     one.Hard + other.Hard,
@@ -172,7 +172,7 @@ func added(one, other history.Tally) history.Tally {
 
 // identifiers is what every line of a run is named by, the lines taking an
 // answer back among them.
-func identifiers(answers []history.Answer) []string {
+func identifiers(answers []review.Answer) []string {
 	out := make([]string, 0, len(answers))
 	for _, a := range answers {
 		out = append(out, a.ID)
@@ -191,8 +191,8 @@ func repeats(ids []string, seen map[string]bool) bool {
 }
 
 // given is the lines of a run no other run was counted for.
-func given(answers []history.Answer, seen map[string]bool) []history.Answer {
-	out := make([]history.Answer, 0, len(answers))
+func given(answers []review.Answer, seen map[string]bool) []review.Answer {
+	out := make([]review.Answer, 0, len(answers))
 	for _, a := range answers {
 		if !seen[a.ID] {
 			out = append(out, a)
@@ -213,7 +213,7 @@ func given(answers []history.Answer, seen map[string]bool) []history.Answer {
 // so the day it shows is the day it would be asked on.
 func (u CountReviews) ahead(
 	ctx context.Context, v domain.Vault, held Held,
-) (map[string]int, map[string]history.RecallTally, error) {
+) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)
 	if u.Schedules.By == nil {
 		return falls, nil, nil

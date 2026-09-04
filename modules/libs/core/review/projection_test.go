@@ -1,10 +1,10 @@
-package flashcards_test
+package review_test
 
 import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // A projection answers the returning share for the days it was asked for, and
@@ -14,18 +14,18 @@ import (
 // nobody asked about is a day it is not worked out on. What the days that were
 // asked for come to does not stand on which of them were.
 func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T) {
-	by := history.NewFSRS()
+	by := review.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	at := learned(by, now, 40)
 
 	// Both rules: one carries the count from day to day and walks the material
 	// only where the share is wanted, and the other walks it every day.
-	interval, recall := history.Defaults(), history.Defaults()
-	recall.Rule, recall.Retention = history.RuleRetention, 0.9
-	for name, p := range map[string]history.Preset{
+	interval, recall := review.Defaults(), review.Defaults()
+	recall.Rule, recall.Retention = review.RuleRetention, 0.9
+	for name, p := range map[string]review.Preset{
 		"an interval": interval, "a chance of recall": recall,
 	} {
-		run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 10}
+		run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 10}
 		whole := run
 		whole.Retains = everyDay(10)
 		run.Retains = []int{2, 7}
@@ -60,12 +60,12 @@ func TestAProjectionAnswersTheReturningShareForTheDaysItIsAskedFor(t *testing.T)
 // A goal of a date past holds the day to a count of new cards alone, so nothing
 // but the pause stands between the reviews and the debt.
 func TestAProjectionAnswersNothingUnderAPresetThatSchedulesNothing(t *testing.T) {
-	by := history.NewFSRS()
+	by := review.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	at := owing(by, now, 12)
-	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 5}
-	p := history.Defaults()
-	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, -1)
+	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 5}
+	p := review.Defaults()
+	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, -1)
 
 	got := ran(t, run, now, p, at, 0)
 	if got.Answered != 0 {
@@ -78,7 +78,7 @@ func TestAProjectionAnswersNothingUnderAPresetThatSchedulesNothing(t *testing.T)
 		if got.Admitted[day] {
 			t.Errorf("day %d was admitted", day)
 		}
-		if !got.Closed[day].Holds(history.ClosedPaused) {
+		if !got.Closed[day].Holds(review.ClosedPaused) {
 			t.Errorf("day %d was closed by %v, want the pause", day, got.Closed[day].Names())
 		}
 	}
@@ -90,12 +90,12 @@ func TestAProjectionAnswersNothingUnderAPresetThatSchedulesNothing(t *testing.T)
 // The load a run reports is over the days the preset admitted, and a day it did
 // not admit takes no part in either figure.
 func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
-	by := history.NewFSRS()
+	by := review.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
 	at := learned(by, now, 600)
-	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 14}
-	p := history.Preset{
-		Goal: history.GoalRetention, ReviewsADay: 40,
+	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 14}
+	p := review.Preset{
+		Goal: review.GoalRetention, ReviewsADay: 40,
 		Load: map[time.Weekday]int{time.Sunday: 0},
 	}
 
@@ -125,11 +125,11 @@ func TestTheLoadOfARunIsOverTheDaysAdmitted(t *testing.T) {
 // falling due later in the day holding now has not had its day, and one nobody
 // has answered has had none.
 func TestWhatStandsOverdue(t *testing.T) {
-	day := history.Day{Starts: history.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.Ends(now).AddDate(0, 0, -1)
-	answered := func(name string, since, due int) (history.CardFaceID, history.Schedule) {
-		return history.CardFaceID{Card: name, Face: "Say it"}, history.Schedule{
+	answered := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
+		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
 		}
@@ -137,24 +137,24 @@ func TestWhatStandsOverdue(t *testing.T) {
 	late, lateAt := answered("late", 10, -1)
 	soon, soonAt := answered("soon", 4, 0)
 	soonAt.Due = now.Add(6 * time.Hour)
-	unbegun := history.CardFaceID{Card: "unbegun", Face: "Say it"}
+	unbegun := review.CardFaceID{Card: "unbegun", Face: "Say it"}
 
-	at := map[history.CardFaceID]history.Schedule{
+	at := map[review.CardFaceID]review.Schedule{
 		late: lateAt, soon: soonAt, unbegun: {},
 	}
-	if got := history.Overdue(day, at, now); got != 1 {
+	if got := review.Overdue(day, at, now); got != 1 {
 		t.Errorf("%d card faces stand overdue, want the one due yesterday", got)
 	}
 
 	// A run opening with nothing overdue has nothing to clear, and one nobody
 	// is answering never gets there.
-	run := history.Simulation{By: history.NewFSRS(), Day: day, Cost: history.DefaultCost, Days: 3}
-	p := history.Preset{Goal: history.GoalRetention}
-	clear := map[history.CardFaceID]history.Schedule{soon: soonAt, unbegun: {}}
+	run := review.Simulation{By: review.NewFSRS(), Day: day, Cost: review.DefaultCost, Days: 3}
+	p := review.Preset{Goal: review.GoalRetention}
+	clear := map[review.CardFaceID]review.Schedule{soon: soonAt, unbegun: {}}
 	if got := ran(t, run, now, p, clear, 0).Clears; got != 0 {
 		t.Errorf("a run with nothing overdue clears in %d days, want none", got)
 	}
-	if got := ran(t, run, now, p, at, 0).Clears; got != history.NeverClears {
+	if got := ran(t, run, now, p, at, 0).Clears; got != review.NeverClears {
 		t.Errorf("a run nobody answers clears in %d days", got)
 	}
 }
@@ -166,11 +166,11 @@ func TestWhatStandsOverdue(t *testing.T) {
 // the material is the figure of the first: what the day got through is the two
 // oldest debts and not two others of the five.
 func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
-	day := history.Day{Starts: history.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	now := time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 	open := day.Ends(now).AddDate(0, 0, -1)
-	standing := func(name string, since, due int) (history.CardFaceID, history.Schedule) {
-		return history.CardFaceID{Card: name, Face: "Say it"}, history.Schedule{
+	standing := func(name string, since, due int) (review.CardFaceID, review.Schedule) {
+		return review.CardFaceID{Card: name, Face: "Say it"}, review.Schedule{
 			Last: open.AddDate(0, 0, -since), Due: open.AddDate(0, 0, due),
 			Reps: 3, Stability: 20, Difficulty: 5, Phase: 2,
 		}
@@ -183,12 +183,12 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	fourth, fourthAt := standing("fourth", 101, -2)
 	fifth, fifthAt := standing("fifth", 102, -1)
 
-	run := history.Simulation{
-		By: history.NewFSRS(), Day: day, Cost: history.DefaultCost, Days: 1, Retains: []int{0},
+	run := review.Simulation{
+		By: review.NewFSRS(), Day: day, Cost: review.DefaultCost, Days: 1, Retains: []int{0},
 	}
-	p := history.Preset{Goal: history.GoalRetention, ReviewsADay: 2}
+	p := review.Preset{Goal: review.GoalRetention, ReviewsADay: 2}
 
-	got := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{
+	got := ran(t, run, now, p, map[review.CardFaceID]review.Schedule{
 		first: firstAt, second: secondAt, third: thirdAt, fourth: fourthAt, fifth: fifthAt,
 	}, 0)
 	if got.Load[0] != 2 {
@@ -202,7 +202,7 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 	// the days after it instead.
 	thirdAt.Due, fourthAt.Due, fifthAt.Due =
 		open.AddDate(0, 0, 1), open.AddDate(0, 0, 2), open.AddDate(0, 0, 3)
-	want := ran(t, run, now, p, map[history.CardFaceID]history.Schedule{
+	want := ran(t, run, now, p, map[review.CardFaceID]review.Schedule{
 		first: firstAt, second: secondAt, third: thirdAt, fourth: fourthAt, fifth: fifthAt,
 	}, 0)
 	if want.Load[0] != 2 || want.Backlog[0] != 0 {
@@ -224,12 +224,12 @@ func TestADayAnswersTheCardFacesWaitingLongest(t *testing.T) {
 // a card face time to be learned, there is nothing to spread and nothing to
 // gain by trickling it out.
 func TestAPaceForARuleNoCardCanReach(t *testing.T) {
-	by := history.NewFSRS()
+	by := review.NewFSRS()
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := history.Simulation{By: by, Day: ahead, Cost: history.DefaultCost, Days: 10}
-	p := history.Defaults()
-	p.Goal, p.By = history.GoalDate, now.AddDate(0, 0, 5)
-	p.Rule, p.Interval = history.RuleInterval, 365
+	run := review.Simulation{By: by, Day: ahead, Cost: review.DefaultCost, Days: 10}
+	p := review.Defaults()
+	p.Goal, p.By = review.GoalDate, now.AddDate(0, 0, 5)
+	p.Rule, p.Interval = review.RuleInterval, 365
 
 	got := ran(t, run, now, p, nil, 30)
 	if got.Faces != 30 || got.Short != 30 {
@@ -248,11 +248,11 @@ func TestAPaceForARuleNoCardCanReach(t *testing.T) {
 // on every day of a run.
 func TestAPresetWithNoMaterialIsThroughIt(t *testing.T) {
 	now := opens(time.Date(2026, 3, 2, 9, 41, 0, 0, time.Local))
-	run := history.Simulation{
-		By: history.NewFSRS(), Day: ahead, Cost: history.DefaultCost, Days: 5,
+	run := review.Simulation{
+		By: review.NewFSRS(), Day: ahead, Cost: review.DefaultCost, Days: 5,
 	}
 
-	got := ran(t, run, now, history.Defaults(), nil, 0)
+	got := ran(t, run, now, review.Defaults(), nil, 0)
 	if got.Faces != 0 || got.Answered != 0 {
 		t.Fatalf("a preset of no card faces holds %d and answered %d", got.Faces, got.Answered)
 	}

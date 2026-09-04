@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -45,7 +45,7 @@ func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
 
 // minutes is how long the whole day of review took, driven the way a person
 // drives it.
-func (s vaulted) minutes(t *testing.T, day history.Day, now time.Time) time.Duration {
+func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Duration {
 	t.Helper()
 	var out time.Duration
 	for range 200 {
@@ -58,9 +58,9 @@ func (s vaulted) minutes(t *testing.T, day history.Day, now time.Time) time.Dura
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Asked {
-			cost := history.DefaultCost.Review
+			cost := review.DefaultCost.Review
 			if !one.Schedule.Seen() {
-				cost = history.DefaultCost.New
+				cost = review.DefaultCost.New
 			}
 			out += cost
 			answer(t, record, one.CardFace.Card, cost)
@@ -103,9 +103,9 @@ func TestSittingDeckByDeckStaysUnderTheOneCeiling(t *testing.T) {
 			}
 			record := s.run(t, now)
 			for _, one := range sat.Asked {
-				cost := history.DefaultCost.Review
+				cost := review.DefaultCost.Review
 				if !one.Schedule.Seen() {
-					cost = history.DefaultCost.New
+					cost = review.DefaultCost.New
 				}
 				out += cost
 				answer(t, record, one.CardFace.Card, cost)

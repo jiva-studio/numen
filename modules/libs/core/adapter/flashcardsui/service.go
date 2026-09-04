@@ -12,8 +12,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -226,15 +226,15 @@ func askedOf(one flashcards.Asked) *v1.Asked {
 }
 
 // ahead is where each of the four would leave the card, in seconds.
-func ahead(said map[history.Rating]time.Duration) *v1.Ahead {
+func ahead(said map[review.Rating]time.Duration) *v1.Ahead {
 	if said == nil {
 		return nil
 	}
 	return &v1.Ahead{
-		Again: int64(said[history.Again].Seconds()),
-		Hard:  int64(said[history.Hard].Seconds()),
-		Good:  int64(said[history.Good].Seconds()),
-		Easy:  int64(said[history.Easy].Seconds()),
+		Again: int64(said[review.Again].Seconds()),
+		Hard:  int64(said[review.Hard].Seconds()),
+		Good:  int64(said[review.Good].Seconds()),
+		Easy:  int64(said[review.Easy].Seconds()),
 	}
 }
 
@@ -251,7 +251,7 @@ func (a *API) Answer(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	on := history.CardFaceID{Card: r.Msg.GetCard(), Face: r.Msg.GetFace()}
+	on := review.CardFaceID{Card: r.Msg.GetCard(), Face: r.Msg.GetFace()}
 	record := flashcards.Record{Run: run, Now: a.Now}
 	given, err := record.Answer(ctx, on, rating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
@@ -267,16 +267,16 @@ func (a *API) Answer(
 
 // rating is the four a person may say. Anything else is refused by the use case,
 // which is where the rule is.
-func rating(r v1.Rating) history.Rating {
+func rating(r v1.Rating) review.Rating {
 	switch r {
 	case v1.Rating_RATING_AGAIN:
-		return history.Again
+		return review.Again
 	case v1.Rating_RATING_HARD:
-		return history.Hard
+		return review.Hard
 	case v1.Rating_RATING_GOOD:
-		return history.Good
+		return review.Good
 	case v1.Rating_RATING_EASY:
-		return history.Easy
+		return review.Easy
 	}
 	return 0
 }

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -95,23 +95,23 @@ func (k countingKept) Write(ctx context.Context, vaultID string, content []byte)
 
 // countingBy counts how often the scheduler is asked for a next date.
 type countingBy struct {
-	inner history.Scheduler
+	inner review.Scheduler
 	on    *loadCounts
 }
 
 func (b countingBy) Name() string { return b.inner.Name() }
 
-func (b countingBy) Next(s history.Schedule, at time.Time, r history.Rating) history.Schedule {
+func (b countingBy) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
 	b.on.Dated++
 	return b.inner.Next(s, at, r)
 }
 
-func (b countingBy) Endings(s history.Schedule, at time.Time) (history.Schedule, history.Schedule) {
+func (b countingBy) Endings(s review.Schedule, at time.Time) (review.Schedule, review.Schedule) {
 	b.on.Dated += 2
 	return b.inner.Endings(s, at)
 }
 
-func (b countingBy) Spaced(s history.Schedule) bool { return b.inner.Spaced(s) }
+func (b countingBy) Spaced(s review.Schedule) bool { return b.inner.Spaced(s) }
 
 // loaded is a vault of many cards and many run files, with everything a request
 // asks of the store, the cache and the scheduler counted.
@@ -135,7 +135,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	schedules := flashcards.Schedules{
 		Logs:      logs,
 		Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
-		By:        countingBy{inner: history.NewFSRS(), on: on},
+		By:        countingBy{inner: review.NewFSRS(), on: on},
 		Day:       today,
 		Standings: s.standings,
 		Presets:   s.presets,
@@ -232,11 +232,11 @@ func loadAnswers(tb testing.TB, s vaulted, cards, days, perDay int) {
 		}
 		var lines []byte
 		for one := range perDay {
-			raw, err := history.Write(history.Answer{
+			raw, err := review.Write(review.Answer{
 				ID:       fmt.Sprintf("%06d%010d", day, one),
-				CardFace: history.CardFaceID{Card: loadMark(card % cards), Face: "Say it"},
+				CardFace: review.CardFaceID{Card: loadMark(card % cards), Face: "Say it"},
 				At:       when.Add(time.Duration(one) * time.Minute),
-				Rating:   history.Rating(one%4 + 1),
+				Rating:   review.Rating(one%4 + 1),
 				Took:     4 * time.Second,
 			})
 			if err != nil {

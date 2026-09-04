@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // ErrNoRating is what an answer outside the four gets. Nothing here guesses
@@ -27,41 +27,41 @@ type Record struct {
 // Answer writes down one card answered once, and hands back the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, on history.CardFaceID, r history.Rating, took time.Duration,
-) (history.Answer, error) {
+	ctx context.Context, on review.CardFaceID, r review.Rating, took time.Duration,
+) (review.Answer, error) {
 	if !r.Valid() {
-		return history.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
+		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
 	}
 	if on.Card == "" || on.Face == "" {
-		return history.Answer{}, errors.New("an answer says which card, and through which face")
+		return review.Answer{}, errors.New("an answer says which card, and through which face")
 	}
 
 	at := u.now()
 	id, err := ulid.New(at)
 	if err != nil {
-		return history.Answer{}, err
+		return review.Answer{}, err
 	}
-	a := history.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
+	a := review.Answer{ID: id, CardFace: on, At: at, Rating: r, Took: took}
 	if err := u.Run.Append(ctx, a); err != nil {
-		return history.Answer{}, err
+		return review.Answer{}, err
 	}
 	return a, nil
 }
 
 // TakeBack writes down that an answer was taken back. A person hits the wrong
 // key, and the record of that is what says so.
-func (u Record) TakeBack(ctx context.Context, id string) (history.Answer, error) {
+func (u Record) TakeBack(ctx context.Context, id string) (review.Answer, error) {
 	if id == "" {
-		return history.Answer{}, errors.New("an answer taken back names the one it takes back")
+		return review.Answer{}, errors.New("an answer taken back names the one it takes back")
 	}
 	at := u.now()
 	own, err := ulid.New(at)
 	if err != nil {
-		return history.Answer{}, err
+		return review.Answer{}, err
 	}
-	a := history.Answer{ID: own, At: at, Undoes: id}
+	a := review.Answer{ID: own, At: at, Undoes: id}
 	if err := u.Run.Append(ctx, a); err != nil {
-		return history.Answer{}, err
+		return review.Answer{}, err
 	}
 	return a, nil
 }

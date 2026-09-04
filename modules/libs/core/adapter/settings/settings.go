@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/transcription"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // Config is this installation's settings, in sections named for what they are
@@ -316,19 +316,19 @@ func (r Review) Starts() (time.Duration, bool) {
 
 // DefaultStarts is when a day of review begins where the file says nothing. An
 // answer given before it finishes the evening it belongs to.
-func DefaultStarts() time.Duration { return flashcards.DayStarts }
+func DefaultStarts() time.Duration { return review.DayStarts }
 
 // Starting is the hour a day of review is to begin at, as it goes into the
 // file. An hour past LatestDayStarts, anything that is not an hour of the
-// clock, and no hour at all, are flashcards.ErrNotAnHour. It reads and writes
+// clock, and no hour at all, are review.ErrNotAnHour. It reads and writes
 // no file.
 func Starting(written string) (string, error) {
 	starts, hour := Review{DayStarts: written}.Starts()
 	if !hour || strings.TrimSpace(written) == "" {
 		return "", fmt.Errorf("%w, 00:00 to %s: %q",
-			flashcards.ErrNotAnHour, flashcards.Clock(LatestDayStarts), written)
+			review.ErrNotAnHour, review.Clock(LatestDayStarts), written)
 	}
-	return flashcards.Clock(starts), nil
+	return review.Clock(starts), nil
 }
 
 // Sync is whether a note's title and its filename are kept as one name.
@@ -373,7 +373,7 @@ func Defaults() Config {
 		},
 		Agent:  agent.Defaults(),
 		Naming: Naming{SyncTitleAndFilename: on()},
-		Review: Review{DayStarts: flashcards.Clock(DefaultStarts())},
+		Review: Review{DayStarts: review.Clock(DefaultStarts())},
 	}
 }
 
@@ -422,7 +422,7 @@ func At(path string) (Config, error) {
 	}
 	if _, hour := cfg.Review.Starts(); !hour {
 		cfg.say("review.day_starts is an hour of the day, 00:00 to %s, and %s stands",
-			flashcards.Clock(LatestDayStarts), flashcards.Clock(DefaultStarts()))
+			review.Clock(LatestDayStarts), review.Clock(DefaultStarts()))
 	}
 	return cfg, nil
 }

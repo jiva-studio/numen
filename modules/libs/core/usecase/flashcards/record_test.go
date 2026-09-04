@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -17,12 +17,12 @@ func TestAnAnswerSaysWhichCardAndThroughWhichFace(t *testing.T) {
 	s := opened(t, vault)
 	record := s.run(t, time.Now())
 
-	for _, on := range []history.CardFaceID{
+	for _, on := range []review.CardFaceID{
 		{Card: "", Face: "Recognise"},
 		{Card: "k7m2xq9fzp", Face: ""},
 		{},
 	} {
-		if _, err := record.Answer(t.Context(), on, history.Good, 0); err == nil {
+		if _, err := record.Answer(t.Context(), on, review.Good, 0); err == nil {
 			t.Errorf("an answer on %+v was written", on)
 		}
 	}
@@ -52,10 +52,10 @@ func TestTakingBackNamesTheAnswerItTakesBack(t *testing.T) {
 func TestARunIsKnownByTheFileItWrites(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
-	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,10 +1,10 @@
-package flashcards_test
+package review_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 func london(t *testing.T) *time.Location {
@@ -20,7 +20,7 @@ func london(t *testing.T) *time.Location {
 // one in the morning is finishing that day, not starting the next.
 func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	in := london(t)
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStarts, In: in}
 
 	late := time.Date(2026, 3, 10, 1, 30, 0, 0, in)
 	if got, want := day.Ends(late), time.Date(2026, 3, 10, 4, 0, 0, 0, in); !got.Equal(want) {
@@ -37,7 +37,7 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 // out of ends at the hour a person reads.
 func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	in := london(t)
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStarts, In: in}
 
 	// The clocks go forward at one in the morning on 29 March 2026.
 	before := time.Date(2026, 3, 28, 9, 0, 0, 0, in)
@@ -50,7 +50,7 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 // and a card owed today is owed for the whole of it.
 func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	in := london(t)
-	day := flashcards.Day{Starts: flashcards.DayStarts, In: in}
+	day := review.Day{Starts: review.DayStarts, In: in}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, in)
 
 	for name, one := range map[string]struct {
@@ -64,7 +64,7 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 		"next week":            {now.Add(7 * 24 * time.Hour), false},
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := flashcards.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
+			s := review.Schedule{Due: one.due, Last: now.Add(-24 * time.Hour)}
 			if got := day.Owed(s, now); got != one.owed {
 				t.Errorf("a card due %v is owed = %v, want %v", one.due, got, one.owed)
 			}
@@ -74,15 +74,15 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 
 // A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts}
-	if !day.Owed(flashcards.Schedule{}, time.Now()) {
+	day := review.Day{Starts: review.DayStarts}
+	if !day.Owed(review.Schedule{}, time.Now()) {
 		t.Error("a card with no answers behind it is not owed")
 	}
 }
 
 // A build holding no zone counts the day in the machine's own.
 func TestADayWithNoZoneIsCountedInTheMachinesOwn(t *testing.T) {
-	day := flashcards.Day{Starts: flashcards.DayStarts}
+	day := review.Day{Starts: review.DayStarts}
 	now := time.Date(2026, 3, 10, 9, 0, 0, 0, time.Local)
 	if got := day.Ends(now); got.Location() != time.Local {
 		t.Errorf("counted in %v, want the machine's own", got.Location())
@@ -107,7 +107,7 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 			t.Skipf("this machine carries no zone database: %v", err)
 		}
 		for hour := range 24 {
-			day := flashcards.Day{Starts: time.Duration(hour) * time.Hour, In: in}
+			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			from := time.Date(2025, 1, 1, 0, 0, 0, 0, in)
 			for i := range 800 * 24 {
 				at := from.Add(time.Duration(i) * time.Hour).In(in)
@@ -116,9 +116,9 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 				if at.Hour() < hour {
 					want = want.AddDate(0, 0, -1)
 				}
-				if got := day.Names(at); got != want.Format(flashcards.Named) {
+				if got := day.Names(at); got != want.Format(review.Named) {
 					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
-						name, at, hour, got, want.Format(flashcards.Named))
+						name, at, hour, got, want.Format(review.Named))
 				}
 			}
 		}
@@ -134,8 +134,8 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 			t.Skipf("this machine carries no zone database: %v", err)
 		}
 		for hour := range 24 {
-			day := flashcards.Day{Starts: time.Duration(hour) * time.Hour, In: in}
-			on := flashcards.Spreading(day)
+			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
+			on := review.Spreading(day)
 			days := make([]time.Time, 0, 800)
 			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.Ends(at) {
 				days = append(days, at)

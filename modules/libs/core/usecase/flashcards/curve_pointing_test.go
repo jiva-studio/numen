@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -111,19 +111,19 @@ func TestACurveIsDrawnFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 	goals := []struct {
 		name string
-		p    history.Preset
+		p    review.Preset
 	}{
-		{"minutes", history.Preset{
-			Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
+		{"minutes", review.Preset{
+			Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
-		{"retention", history.Preset{
-			Goal: history.GoalRetention, Retention: 0.87,
+		{"retention", review.Preset{
+			Goal: review.GoalRetention, Retention: 0.87,
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 		}},
-		{"a date", history.Preset{
-			Goal: history.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
+		{"a date", review.Preset{
+			Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-			Rule: history.RuleInterval, Interval: 21, Retention: 0.9,
+			Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 		}},
 	}
 

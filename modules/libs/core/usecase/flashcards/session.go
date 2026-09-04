@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // ErrBothNamed is a sitting named a deck and a preset at once. Which cards were
@@ -43,11 +43,11 @@ func ByPreset(preset string) Over { return Over{Preset: preset, Named: true} }
 // out, and where the answers so far have left it.
 type Asked struct {
 	Standing
-	Schedule history.Schedule
+	Schedule review.Schedule
 	// Ahead is how long each of the four answers would leave this card, from
 	// the moment it is asked. A person choosing between them is choosing
 	// between these, so they are worked out with the card and not after it.
-	Ahead map[history.Rating]time.Duration
+	Ahead map[review.Rating]time.Duration
 }
 
 // Sitting is what a person sits down to: the cards to ask, and what could not
@@ -82,7 +82,7 @@ type Session struct {
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
 	Presets Presets
-	Day     history.Day
+	Day     review.Day
 	Now     func() time.Time
 }
 
@@ -135,7 +135,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 
 	// How loaded each day of review already is, which is what a card put on one
 	// of them is weighed against.
-	on := history.Spreading(u.Day)
+	on := review.Spreading(u.Day)
 	for _, s := range schedules {
 		on.Holds(s.Due)
 	}
@@ -151,7 +151,7 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 	for _, one := range holds.fresh {
 		out.Asked = append(out.Asked, Asked{
 			Standing: one,
-			Ahead:    ahead(asks.under, on, one.CardFace, history.Schedule{}, now),
+			Ahead:    ahead(asks.under, on, one.CardFace, review.Schedule{}, now),
 		})
 	}
 	return out, nil
@@ -165,9 +165,9 @@ func (u Session) Execute(ctx context.Context, v domain.Vault, over Over) (Sittin
 // its own preset's, so the window under each button is the day the card will
 // come back on.
 func ahead(
-	under history.Under, on *history.DueByDay, face history.CardFaceID,
-	s history.Schedule, now time.Time,
-) map[history.Rating]time.Duration {
+	under review.Under, on *review.DueByDay, face review.CardFaceID,
+	s review.Schedule, now time.Time,
+) map[review.Rating]time.Duration {
 	if under == nil {
 		return nil
 	}
@@ -175,8 +175,8 @@ func ahead(
 	if one.By == nil {
 		return nil
 	}
-	out := make(map[history.Rating]time.Duration, 4)
-	for _, r := range []history.Rating{history.Again, history.Hard, history.Good, history.Easy} {
+	out := make(map[review.Rating]time.Duration, 4)
+	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
 		due := one.By.Next(s, now, r).Due
 		out[r] = one.Preset.Lands(on, now, due).Sub(now)
 	}

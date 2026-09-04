@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -55,17 +55,17 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 		{
 			Preset: "", Decks: 1, Cards: 1, Due: 1,
 			Answered: 1, AnsweredNew: 1, Took: 4 * time.Second,
-			Budget: history.Budget{New: 10, Reviews: 200, Minutes: 20},
-			Closes: history.Closes{
-				Minutes: history.ClosedMinutes, Backlog: history.ClosedBacklog,
+			Budget: review.Budget{New: 10, Reviews: 200, Minutes: 20},
+			Closes: review.Closes{
+				Minutes: review.ClosedMinutes, Backlog: review.ClosedBacklog,
 			},
 		},
 		{
 			Preset: "Sanskrit.md", Decks: 2, Cards: 2, Due: 2,
 			Answered: 2, AnsweredNew: 2, Took: 15 * time.Second,
-			Budget: history.Budget{New: 4, Reviews: 23, Minutes: 10},
-			Closes: history.Closes{
-				Minutes: history.ClosedMinutes, Backlog: history.ClosedBacklog,
+			Budget: review.Budget{New: 4, Reviews: 23, Minutes: 10},
+			Closes: review.Closes{
+				Minutes: review.ClosedMinutes, Backlog: review.ClosedBacklog,
 			},
 		},
 	}
@@ -96,8 +96,8 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 
 	want := flashcards.PresetOwing{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
-		Budget: history.Defaults().Admits(today, saturday, history.Spent{}, 0, 0).Keeps,
-		Closes: history.Defaults().Admits(today, saturday, history.Spent{}, 0, 0).Closes,
+		Budget: review.Defaults().Admits(today, saturday, review.Spent{}, 0, 0).Keeps,
+		Closes: review.Defaults().Admits(today, saturday, review.Spent{}, 0, 0).Closes,
 	}
 	if len(owing.Presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", owing.Presets)
@@ -205,8 +205,8 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
-	s.kept.At = func(retention float64) history.Scheduler {
-		return replaying{Scheduler: history.NewFSRSAt(retention), answers: &replayed}
+	s.kept.At = func(retention float64) review.Scheduler {
+		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
 	owed := s.owedAt(today, func() time.Time { return saturday.Add(time.Hour) })
 
@@ -227,13 +227,13 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 
 // replaying is a scheduler saying how many answers were worked out through it.
 type replaying struct {
-	history.Scheduler
+	review.Scheduler
 	answers *int
 }
 
 func (r replaying) Next(
-	s history.Schedule, at time.Time, rating history.Rating,
-) history.Schedule {
+	s review.Schedule, at time.Time, rating review.Rating,
+) review.Schedule {
 	*r.answers++
 	return r.Scheduler.Next(s, at, rating)
 }
@@ -242,23 +242,23 @@ func (r replaying) Next(
 // as. Every card of this vault is shown through the one face.
 func answer(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
-	return said(t, record, card, history.Good, took)
+	return said(t, record, card, review.Good, took)
 }
 
 // again writes down one card the person could not recall, which comes round
 // again in the same sitting.
 func again(t *testing.T, record flashcards.Record, card string, took time.Duration) string {
 	t.Helper()
-	return said(t, record, card, history.Again, took)
+	return said(t, record, card, review.Again, took)
 }
 
 func said(
 	t *testing.T, record flashcards.Record, card string,
-	rating history.Rating, took time.Duration,
+	rating review.Rating, took time.Duration,
 ) string {
 	t.Helper()
 	given, err := record.Answer(
-		t.Context(), history.CardFaceID{Card: card, Face: "Say it"}, rating, took)
+		t.Context(), review.CardFaceID{Card: card, Face: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package flashcards_test
+package review_test
 
 import (
 	"strings"
@@ -6,23 +6,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // The four ratings are what a person says about a card, and they order the day
 // it comes round again: the better it came back, the longer it is left.
 func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
-	by := flashcards.NewFSRS()
+	by := review.NewFSRS()
 	when := at("2026-08-29T09:00:00Z")
 
 	// A card already spaced, so that the four answers are told apart by what
 	// they do to it rather than by the first steps of learning.
-	learnt := by.Next(by.Next(flashcards.Schedule{}, when, flashcards.Good),
-		when.Add(10*24*time.Hour), flashcards.Good)
+	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
+		when.Add(10*24*time.Hour), review.Good)
 	later := learnt.Due
 
 	var last time.Time
-	for _, r := range []flashcards.Rating{flashcards.Again, flashcards.Hard, flashcards.Good, flashcards.Easy} {
+	for _, r := range []review.Rating{review.Again, review.Hard, review.Good, review.Easy} {
 		due := by.Next(learnt, later, r).Due
 		if !due.After(last) {
 			t.Errorf("%v is due %v, which is no later than the answer before it at %v", r, due, last)
@@ -33,16 +33,16 @@ func TestTheBetterACardCameBackTheLongerItIsLeft(t *testing.T) {
 
 // A card that did not come back at all is a lapse, and it is counted.
 func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
-	by := flashcards.NewFSRS()
+	by := review.NewFSRS()
 	when := at("2026-08-29T09:00:00Z")
 
-	learnt := by.Next(by.Next(flashcards.Schedule{}, when, flashcards.Good),
-		when.Add(10*24*time.Hour), flashcards.Good)
+	learnt := by.Next(by.Next(review.Schedule{}, when, review.Good),
+		when.Add(10*24*time.Hour), review.Good)
 	if learnt.Lapses != 0 {
 		t.Fatalf("a card answered well twice has %d lapses", learnt.Lapses)
 	}
 
-	forgotten := by.Next(learnt, learnt.Due, flashcards.Again)
+	forgotten := by.Next(learnt, learnt.Due, review.Again)
 	if forgotten.Lapses != 1 {
 		t.Errorf("a card that did not come back has %d lapses, want 1", forgotten.Lapses)
 	}
@@ -54,13 +54,13 @@ func TestACardThatDidNotComeBackIsALapse(t *testing.T) {
 // An answer leaves a card seen, which is what tells it from one nobody has
 // reached yet.
 func TestAnAnsweredCardIsSeen(t *testing.T) {
-	by := flashcards.NewFSRS()
+	by := review.NewFSRS()
 	when := at("2026-08-29T09:00:00Z")
 
-	if by.Next(flashcards.Schedule{}, when, flashcards.Good).Seen() != true {
+	if by.Next(review.Schedule{}, when, review.Good).Seen() != true {
 		t.Error("a card answered once is not seen")
 	}
-	if got := by.Next(flashcards.Schedule{}, when, flashcards.Good).Last; !got.Equal(when) {
+	if got := by.Next(review.Schedule{}, when, review.Good).Last; !got.Equal(when) {
 		t.Errorf("answered at %v, recorded at %v", when, got)
 	}
 }
@@ -74,41 +74,41 @@ func TestAnAnsweredCardIsSeen(t *testing.T) {
 // could not be shared, and a projection of a preset shares one across every
 // place of a curve.
 func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
-	by := flashcards.NewFSRS()
+	by := review.NewFSRS()
 	when := at("2026-08-29T09:00:00Z")
 
 	// A spread of card faces: one nobody has answered, ones the scheduler is
 	// still putting into memory, and ones it has put into review.
-	cards := []flashcards.Schedule{{}}
-	for _, r := range []flashcards.Rating{flashcards.Again, flashcards.Good, flashcards.Easy} {
-		one := by.Next(flashcards.Schedule{}, when.Add(-30*24*time.Hour), r)
-		cards = append(cards, one, by.Next(one, one.Due, flashcards.Good))
+	cards := []review.Schedule{{}}
+	for _, r := range []review.Rating{review.Again, review.Good, review.Easy} {
+		one := by.Next(review.Schedule{}, when.Add(-30*24*time.Hour), r)
+		cards = append(cards, one, by.Next(one, one.Due, review.Good))
 	}
 
-	alone := make([]flashcards.Schedule, len(cards))
-	good := make([]flashcards.Schedule, len(cards))
-	again := make([]flashcards.Schedule, len(cards))
+	alone := make([]review.Schedule, len(cards))
+	good := make([]review.Schedule, len(cards))
+	again := make([]review.Schedule, len(cards))
 	for i, c := range cards {
-		alone[i] = by.Next(c, when, flashcards.Good)
+		alone[i] = by.Next(c, when, review.Good)
 		good[i], again[i] = by.Endings(c, when)
 	}
 
 	// Every asking writes its own answer down, so what the detector sees is the
 	// scheduler being shared and nothing this test does with the answers.
 	const rounds = 8
-	at := make([][]flashcards.Schedule, rounds)
-	ends := make([][]flashcards.Schedule, rounds)
-	fell := make([][]flashcards.Schedule, rounds)
+	at := make([][]review.Schedule, rounds)
+	ends := make([][]review.Schedule, rounds)
+	fell := make([][]review.Schedule, rounds)
 	var together sync.WaitGroup
 	for round := range rounds {
-		at[round] = make([]flashcards.Schedule, len(cards))
-		ends[round] = make([]flashcards.Schedule, len(cards))
-		fell[round] = make([]flashcards.Schedule, len(cards))
+		at[round] = make([]review.Schedule, len(cards))
+		ends[round] = make([]review.Schedule, len(cards))
+		fell[round] = make([]review.Schedule, len(cards))
 		for i, c := range cards {
 			together.Add(1)
 			go func() {
 				defer together.Done()
-				at[round][i] = by.Next(c, when, flashcards.Good)
+				at[round][i] = by.Next(c, when, review.Good)
 				ends[round][i], fell[round][i] = by.Endings(c, when)
 			}()
 		}
@@ -132,14 +132,14 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 // A schedule says which scheduler filled it, because the numbers one carries
 // between answers are its own.
 func TestASchedulerSaysWhichItIs(t *testing.T) {
-	got := flashcards.NewFSRS().Name()
-	if !strings.HasPrefix(got, flashcards.FSRSName+".") {
+	got := review.NewFSRS().Name()
+	if !strings.HasPrefix(got, review.FSRSName+".") {
 		t.Errorf("named itself %q, want the algorithm and what it is running on", got)
 	}
-	if got == flashcards.FSRSName+"." {
+	if got == review.FSRSName+"." {
 		t.Error("named itself the algorithm and nothing about its parameters")
 	}
-	if again := flashcards.NewFSRS().Name(); again != got {
+	if again := review.NewFSRS().Name(); again != got {
 		t.Errorf("named itself %q and then %q", got, again)
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // Points is how many places a curve is worked out at. A goal of minutes and a
@@ -28,7 +28,7 @@ const MostAhead = 5 * 365
 // its goal. The grid, what stands at each place of it, and the two marks are
 // all here.
 type Curve struct {
-	Goal history.Goal
+	Goal review.Goal
 	// Grid is the value of the goal at each place: minutes for minutes_a_day, a
 	// share of cards for retention, and days from today for by_date.
 	Grid []float64
@@ -46,7 +46,7 @@ type Curve struct {
 	// Stops is why the settings this curve was drawn under schedule nothing,
 	// and is empty where they schedule something. It is asked of the settings
 	// the request carried.
-	Stops history.StopReason
+	Stops review.StopReason
 	// Decks is how many decks are scheduled by this preset. Zero is a preset no
 	// deck points at, and every place of the curve stands at zero with it.
 	Decks int
@@ -94,15 +94,15 @@ type Point struct {
 	Short int
 	// Closed is every budget that closed the day here, in the words the preset
 	// writes them in, and is empty where the material itself ran out.
-	Closed history.BudgetNames
+	Closed review.BudgetNames
 	// Clears is how many days of review at this place it takes before nothing
 	// is overdue. A curve standing over nothing overdue clears in none, and a
-	// place whose pace never gets there is history.NeverClears.
+	// place whose pace never gets there is review.NeverClears.
 	Clears int
 	// Learned is how many card faces stand learned today at this place, and
 	// Learns how many days of review it takes before all of them do. A place
-	// whose horizon ends with one still to learn is history.NeverLearns, and one
-	// with no such day to name is history.LearnsUnasked.
+	// whose horizon ends with one still to learn is review.NeverLearns, and one
+	// with no such day to name is review.LearnsUnasked.
 	Learned int
 	Learns  int
 	// Backlog is how many card faces stand overdue at the end of each day
@@ -135,11 +135,11 @@ type ProjectCurve struct {
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links projects every deck of the vault.
 	Presets Presets
-	Day     history.Day
+	Day     review.Day
 	Now     func() time.Time
 	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
-	By func(retention float64) history.Scheduler
+	By func(retention float64) review.Scheduler
 	// Cores is how many places of a curve are worked out at once. It is a fact
 	// about the machine, so it is given here rather than asked of the runtime,
 	// and a build holding none works one place at a time.
@@ -148,15 +148,15 @@ type ProjectCurve struct {
 
 // steered is what is wrong with the value the goal moves, and is nil where the
 // value stands inside its bounds. A goal of a date names a day and no number.
-func steered(p history.Preset) error {
+func steered(p review.Preset) error {
 	var value float64
-	var bounds history.Bounds
+	var bounds review.Bounds
 	var key string
 	switch p.Goal {
-	case history.GoalMinutes:
-		value, bounds, key = float64(p.MinutesADay), history.MinutesADayBounds, minutesADayKey
-	case history.GoalRetention:
-		value, bounds, key = p.Retention, history.RetentionBounds, retentionKey
+	case review.GoalMinutes:
+		value, bounds, key = float64(p.MinutesADay), review.MinutesADayBounds, minutesADayKey
+	case review.GoalRetention:
+		value, bounds, key = p.Retention, review.RetentionBounds, retentionKey
 	default:
 		return nil
 	}
@@ -174,7 +174,7 @@ func steered(p history.Preset) error {
 // schedules, and a preset standing in no note schedules the decks that name
 // none.
 func (u ProjectCurve) Execute(
-	ctx context.Context, v domain.Vault, path string, p history.Preset,
+	ctx context.Context, v domain.Vault, path string, p review.Preset,
 ) (Curve, error) {
 	// The value the goal steers is written into the grid, and a grid runs only
 	// between the bounds of it.
@@ -200,9 +200,9 @@ func (u ProjectCurve) Execute(
 	schedules := u.Schedules.worked(held, asks)
 
 	decks := make(map[string]bool)
-	at := make(map[history.CardFaceID]history.Schedule)
+	at := make(map[review.CardFaceID]review.Schedule)
 	// The card faces this preset schedules, which is what it is costed from.
-	under := make(map[history.CardFaceID]string)
+	under := make(map[review.CardFaceID]string)
 	unseen := 0
 	for _, one := range standing {
 		mine, asked := decks[one.Deck]
@@ -233,24 +233,24 @@ func (u ProjectCurve) Execute(
 		return Curve{}, err
 	}
 
-	cost, costed := history.CostedUnder(u.Schedules.By, held.Answers, under)[path]
+	cost, costed := review.CostedUnder(u.Schedules.By, held.Answers, under)[path]
 	if !costed {
-		cost = history.DefaultCost
+		cost = review.DefaultCost
 	}
 	now := u.now()
 	// The projection is run by the scheduler this preset asks for, which is the
 	// one its cards are scheduled by, and it opens on the day a person is
 	// already partway through.
-	run := history.Simulation{
+	run := review.Simulation{
 		By: u.at(p.Retention), Day: u.Day, Cost: cost,
-		Spent: history.Sat(u.Day, u.Day.Names(now), held.Answers, under,
-			map[string]history.Counts{path: p.Counts})[path],
+		Spent: review.Sat(u.Day, u.Day.Names(now), held.Answers, under,
+			map[string]review.Counts{path: p.Counts})[path],
 	}
 	var out Curve
 	switch p.Goal {
-	case history.GoalRetention:
+	case review.GoalRetention:
 		out, err = u.retention(ctx, run, now, p, at, unseen)
-	case history.GoalDate:
+	case review.GoalDate:
 		out, err = u.date(ctx, run, now, p, at, unseen)
 	default:
 		out, err = u.minutes(ctx, run, now, p, at, unseen)
@@ -261,7 +261,7 @@ func (u ProjectCurve) Execute(
 	out.Stops = p.Stops(u.Day, now)
 	out.Decks = mine
 	out.Cards = len(under)
-	out.Overdue = history.Overdue(u.Day, at, now)
+	out.Overdue = review.Overdue(u.Day, at, now)
 	out.Unbegun = unseen
 	return out, nil
 }
@@ -332,17 +332,17 @@ func (u ProjectCurve) pointing(
 // place where the load is carried stands inside it. Each place is the sitting a
 // person would sit down to now, which is the day the deck screen offers.
 func (u ProjectCurve) minutes(
-	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFaceID]history.Schedule, unseen int,
+	ctx context.Context, run review.Simulation, now time.Time, p review.Preset,
+	at map[review.CardFaceID]review.Schedule, unseen int,
 ) (Curve, error) {
 	free := p
-	free.MinutesADay = int(history.MinutesADayBounds.Most)
+	free.MinutesADay = int(review.MinutesADayBounds.Most)
 	load, err := run.Run(ctx, now, free, at, unseen)
 	if err != nil {
 		return Curve{}, err
 	}
 
-	out := Curve{Goal: history.GoalMinutes, Now: Nowhere, Suggested: Nowhere}
+	out := Curve{Goal: review.GoalMinutes, Now: Nowhere, Suggested: Nowhere}
 	top := ceiling(carried(load), float64(p.MinutesADay))
 	for i := range Points {
 		out.Grid = append(out.Grid, math.Round(top*float64(i+1)/Points))
@@ -394,11 +394,11 @@ func (u ProjectCurve) minutes(
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (u ProjectCurve) retention(
-	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFaceID]history.Schedule, unseen int,
+	ctx context.Context, run review.Simulation, now time.Time, p review.Preset,
+	at map[review.CardFaceID]review.Schedule, unseen int,
 ) (Curve, error) {
-	out := Curve{Goal: history.GoalRetention, Now: Nowhere, Suggested: Nowhere}
-	least, most := history.RetentionBounds.Least, history.RetentionBounds.Most
+	out := Curve{Goal: review.GoalRetention, Now: Nowhere, Suggested: Nowhere}
+	least, most := review.RetentionBounds.Least, review.RetentionBounds.Most
 	for i := range Points {
 		out.Grid = append(out.Grid, least+(most-least)*float64(i)/float64(Points-1))
 	}
@@ -444,12 +444,12 @@ func (u ProjectCurve) retention(
 // twice as far as the day named, or the day the material would be through at
 // one card a day, which is the slowest a day of review goes.
 func (u ProjectCurve) date(
-	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFaceID]history.Schedule, unseen int,
+	ctx context.Context, run review.Simulation, now time.Time, p review.Preset,
+	at map[review.CardFaceID]review.Schedule, unseen int,
 ) (Curve, error) {
-	out := Curve{Goal: history.GoalDate, Now: Nowhere, Suggested: Nowhere}
+	out := Curve{Goal: review.GoalDate, Now: Nowhere, Suggested: Nowhere}
 	open := u.Day.Opens(now)
-	by := p.By.Format(history.Named)
+	by := p.By.Format(review.Named)
 	if p.By.IsZero() || by < u.Day.Names(open) {
 		return out, nil
 	}
@@ -486,7 +486,7 @@ func (u ProjectCurve) date(
 		day := first + steps[i]
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
-		asks.Days = max(day+1, history.Ahead)
+		asks.Days = max(day+1, review.Ahead)
 		// A place of this range is read on the day it names, and that is the day
 		// the run works the returning share out on.
 		asks.Retains = []int{day}
@@ -512,7 +512,7 @@ func (u ProjectCurve) date(
 			Share:    ran.Through[day],
 			Enough:   reached(ran, day, ran.Short),
 			Short:    ran.Short,
-			Closed:   history.BudgetNames{history.ClosedPaused},
+			Closed:   review.BudgetNames{review.ClosedPaused},
 			Clears:   ran.Clears,
 			Learned:  ran.Learned,
 			Learns:   ran.Learns,
@@ -598,10 +598,10 @@ func (u ProjectCurve) places(count int, each func(at int) error) error {
 // the one figure drawn under that assumption, and the run and the arithmetic
 // are those of every figure beside it.
 func learnt(
-	ctx context.Context, run history.Simulation, now time.Time, p history.Preset,
-	at map[history.CardFaceID]history.Schedule, unseen int,
+	ctx context.Context, run review.Simulation, now time.Time, p review.Preset,
+	at map[review.CardFaceID]review.Schedule, unseen int,
 ) (int, error) {
-	run.Recalls = history.NothingForgotten
+	run.Recalls = review.NothingForgotten
 	// The day the material is learned is all this run is read for.
 	run.Retains = nil
 	ran, err := run.Run(ctx, now, p, at, unseen)
@@ -617,7 +617,7 @@ func learns(one Point) bool { return one.Short == 0 && one.Enough }
 
 // reached reports whether every card face that can be learned by this day of a
 // run stands learned on it. Short is how many cannot be, whatever the pace.
-func reached(p history.Projection, day, short int) bool {
+func reached(p review.Projection, day, short int) bool {
 	if p.Faces == 0 {
 		return true
 	}
@@ -626,7 +626,7 @@ func reached(p history.Projection, day, short int) bool {
 
 // point is a projection as one place of a curve, at the load it carries over
 // the days the preset admits.
-func point(p history.Projection) Point {
+func point(p review.Projection) Point {
 	// A place is read on the last day of its run, and that is the day the run
 	// works the returning share out on.
 	back, _ := p.Retained.On(p.Days - 1)
@@ -650,10 +650,10 @@ func point(p history.Projection) Point {
 
 // closing is what closed the first day the preset admits. A preset admitting no
 // day is closed by the pause.
-func closing(p history.Projection) history.BudgetNames {
+func closing(p review.Projection) review.BudgetNames {
 	day, any := p.Sitting()
 	if !any {
-		return history.BudgetNames{history.ClosedPaused}
+		return review.BudgetNames{review.ClosedPaused}
 	}
 	return p.Closed[day]
 }
@@ -664,7 +664,7 @@ func closing(p history.Projection) history.BudgetNames {
 // It is one real day of the run, worked out by the arithmetic the deck screen
 // runs, so the count here is the count that sitting hands a person. A preset
 // admitting no day at all holds no sitting, and stands at nothing.
-func sitting(p history.Projection) Point {
+func sitting(p review.Projection) Point {
 	out := point(p)
 	day, any := p.Sitting()
 	if !any {
@@ -741,7 +741,7 @@ func abs(one int) int {
 
 // carried is how long the first day the preset admits took, which is what
 // carrying the whole load costs on the next sitting.
-func carried(p history.Projection) float64 {
+func carried(p review.Projection) float64 {
 	day, any := p.Sitting()
 	if !any {
 		return 0
@@ -753,7 +753,7 @@ func carried(p history.Projection) float64 {
 // load costs, and never less than a short day or more than a day holds.
 func ceiling(load, keeping float64) float64 {
 	top := math.Ceil(2 * math.Max(load, keeping))
-	return math.Min(math.Max(top, LeastCeiling), history.MinutesADayBounds.Most)
+	return math.Min(math.Max(top, LeastCeiling), review.MinutesADayBounds.Most)
 }
 
 // nearest is the place of the grid a value falls at, and -1 for a value outside
@@ -772,11 +772,11 @@ func nearest(grid []float64, value float64) int {
 }
 
 // at is the scheduler asking for a share of the cards to come back.
-func (u ProjectCurve) at(retention float64) history.Scheduler {
+func (u ProjectCurve) at(retention float64) review.Scheduler {
 	if u.By != nil {
 		return u.By(retention)
 	}
-	return history.NewFSRSAt(retention)
+	return review.NewFSRSAt(retention)
 }
 
 func (u ProjectCurve) now() time.Time {

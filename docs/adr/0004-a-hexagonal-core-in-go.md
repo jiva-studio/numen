@@ -93,7 +93,7 @@ modules/libs/core/
   container/               composition root: adapter to port
 
   markdown/                the note format, parsed
-  cards/  flashcards/      what a card is, and how one is scheduled
+  cards/  review/          what a card is, and how one is scheduled
   chunking/  embedding/    text into chunks, chunks into vectors
   epub/  ocr/  highlight/  a book's text, and where it falls on a page
   transcript/  proofread/  a recording's words, and putting them right

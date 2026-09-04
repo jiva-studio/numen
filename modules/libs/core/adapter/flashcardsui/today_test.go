@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // The counts the window is handed stand in a review day, and the window weighs
@@ -13,7 +13,7 @@ import (
 // the day has not.
 func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	api, _ := windowed(t, deck)
-	api.Day = history.Day{Starts: 4 * time.Hour, In: time.UTC}
+	api.Day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
 		at   time.Time

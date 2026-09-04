@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -59,7 +59,7 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
 		t.Errorf("preset = %+v", held.Settings)
 	}
 }
@@ -82,7 +82,7 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
 		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "no role") {
@@ -115,7 +115,7 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
 		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "Sanskrit") {
@@ -237,7 +237,7 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+	if !reflect.DeepEqual(held.Settings, review.Defaults()) {
 		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "not a preset") {
@@ -280,8 +280,8 @@ var settled = map[string]string{
 }
 
 // minutes is a preset steered by how long a day runs.
-func minutes() history.Preset {
-	p := history.Defaults()
+func minutes() review.Preset {
+	p := review.Defaults()
 	p.MinutesADay, p.NewADay, p.ReviewsADay, p.Retention = 35, 8, 45, 0.87
 	return p
 }
@@ -538,7 +538,7 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	s := opened(t, settled)
 
 	p := minutes()
-	p.Goal, p.By = history.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	p.Goal, p.By = review.GoalDate, time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
@@ -550,7 +550,7 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Settings.Goal != history.GoalDate || !held.Settings.By.Equal(p.By) {
+	if held.Settings.Goal != review.GoalDate || !held.Settings.By.Equal(p.By) {
 		t.Errorf("preset = %+v", held.Settings)
 	}
 }
@@ -563,7 +563,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	s := opened(t, settled)
 
 	p := minutes()
-	p.Rule, p.Interval, p.Retention = history.RuleRetention, 45, 0.87
+	p.Rule, p.Interval, p.Retention = review.RuleRetention, 45, 0.87
 	if _, err := s.presets.Save(t.Context(), s.vault, "Sanskrit.md", p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
@@ -582,7 +582,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	if len(back.Problems) != 0 {
 		t.Errorf("problems = %v", back.Problems)
 	}
-	if back.Settings.Rule != history.RuleRetention || back.Settings.Interval != 45 {
+	if back.Settings.Rule != review.RuleRetention || back.Settings.Interval != 45 {
 		t.Errorf("preset = %+v", back.Settings)
 	}
 }
@@ -609,7 +609,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 		t.Fatalf("problems = %v", read.Problems)
 	}
 	p := read.Settings
-	if p.Rule != history.RuleInterval || p.Interval != history.Defaults().Interval {
+	if p.Rule != review.RuleInterval || p.Interval != review.Defaults().Interval {
 		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
 	}
 
@@ -617,7 +617,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	at := map[history.CardFaceID]history.Schedule{
+	at := map[review.CardFaceID]review.Schedule{
 		{Card: "near", Face: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
@@ -625,13 +625,13 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.Learned(at[history.CardFaceID{Card: "near", Face: "Recognise"}], now) {
+	if p.Learned(at[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
 		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
 	}
 
 	// And the counts the window draws off the projection say the same.
-	run := history.Simulation{
-		By: history.NewFSRSAt(p.Retention), Day: today, Cost: history.DefaultCost, Days: 1,
+	run := review.Simulation{
+		By: review.NewFSRSAt(p.Retention), Day: today, Cost: review.DefaultCost, Days: 1,
 	}
 	ran, err := run.Run(t.Context(), now, p, at, 0)
 	if err != nil {

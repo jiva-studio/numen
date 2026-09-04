@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -18,10 +18,10 @@ import (
 func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	record := s.run(t, time.Now())
-	if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -52,14 +52,14 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
 	// Both faces of one card, so the order turns on the face and not the card.
-	recognise := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	name := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}
+	recognise := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	name := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}
 
 	record := s.run(t, time.Now())
-	if _, err := record.Answer(t.Context(), name, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), name, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := record.Answer(t.Context(), recognise, history.Good, 0); err != nil {
+	if _, err := record.Answer(t.Context(), recognise, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
@@ -88,9 +88,9 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	want, err := s.kept.Execute(t.Context(), s.vault)
@@ -130,8 +130,8 @@ func targeted(high, low float64) map[string]string {
 
 // The two card faces of the targeted vault, answered alike.
 var (
-	underHigh = history.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"}
-	underLow  = history.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"}
+	underHigh = review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"}
+	underLow  = review.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"}
 )
 
 // answeredAlike takes both cards through the same answers at the same moments,
@@ -272,8 +272,8 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if _, err := s.run(t, saturday).Answer(t.Context(), on, history.Good, 0); err != nil {
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, saturday).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -304,10 +304,10 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
-	by := history.NewFSRSAt(0.9)
-	begun := by.Next(history.Schedule{}, when, history.Good)
-	fell := by.Next(begun, when, history.Good).Due
-	if away := fell.Sub(when).Hours() / 24; away < history.EvenFrom {
+	by := review.NewFSRSAt(0.9)
+	begun := by.Next(review.Schedule{}, when, review.Good)
+	fell := by.Next(begun, when, review.Good).Due
+	if away := fell.Sub(when).Hours() / 24; away < review.EvenFrom {
 		t.Fatalf("the second answer sends the card %g days away", away)
 	}
 
@@ -315,16 +315,16 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: true\nload: {%s: 0}\n",
-			history.DayName(fell.Weekday()))),
+			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := history.CardFaceID{Card: mark(0), Face: "Say it"}
+	on := review.CardFaceID{Card: mark(0), Face: "Say it"}
 	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	first, err := s.kept.Execute(t.Context(), s.vault)
@@ -334,7 +334,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 
 	// The projection takes the card on from where the first answer left it, and
 	// its one day of review is the day that answer is given in.
-	run := history.Simulation{By: by, Day: today, Cost: history.DefaultCost, Days: 21}
+	run := review.Simulation{By: by, Day: today, Cost: review.DefaultCost, Days: 21}
 	projected, err := run.Run(t.Context(), when, read.Settings, first, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -347,7 +347,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 		}
 	}
 
-	if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	answered, err := s.kept.Execute(t.Context(), s.vault)
@@ -384,21 +384,21 @@ func dayFrom(from, at time.Time) int {
 func TestACardFallingOnADayAtNoneOfTheLoadStandsOver(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
-	by := history.NewFSRSAt(0.9)
-	begun := by.Next(history.Schedule{}, when, history.Good)
-	fell := by.Next(begun, when, history.Good).Due
+	by := review.NewFSRSAt(0.9)
+	begun := by.Next(review.Schedule{}, when, review.Good)
+	fell := by.Next(begun, when, review.Good).Due
 
 	s := opened(t, map[string]string{
 		"Term.md": term,
 		"Even.md": preset(fmt.Sprintf(
 			"new_a_day: 0\nreviews_a_day: 9999\nretention: 0.9\neven_load: false\nload: {%s: 0}\n",
-			history.DayName(fell.Weekday()))),
+			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := history.CardFaceID{Card: mark(0), Face: "Say it"}
+	on := review.CardFaceID{Card: mark(0), Face: "Say it"}
 
 	for range 2 {
-		if _, err := s.run(t, when).Answer(t.Context(), on, history.Good, 0); err != nil {
+		if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}

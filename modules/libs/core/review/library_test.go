@@ -1,4 +1,4 @@
-package flashcards_test
+package review_test
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // libraryNow is the instant the schedules of this file are answered at.
@@ -66,15 +66,15 @@ func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 // scheduling is the scheduler and the library it takes its parameters from, both
 // asking for the same share of the cards. A retention of nothing is the
 // scheduler on its published parameters.
-func scheduling(retention float64) (flashcards.FSRS, *fsrs.FSRS) {
+func scheduling(retention float64) (review.FSRS, *fsrs.FSRS) {
 	p := fsrs.DefaultParam()
 	p.EnableFuzz = false
 	if retention == 0 {
-		return flashcards.NewFSRS(), fsrs.NewFSRS(p)
+		return review.NewFSRS(), fsrs.NewFSRS(p)
 	}
 	p.RequestRetention = math.Min(math.Max(retention,
-		flashcards.RetentionBounds.Least), flashcards.RetentionBounds.Most)
-	return flashcards.NewFSRSAt(retention), fsrs.NewFSRS(p)
+		review.RetentionBounds.Least), review.RetentionBounds.Most)
+	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 
 // libraryAgrees asks both about one card face, at every rating and at both
@@ -86,14 +86,14 @@ func scheduling(retention float64) (flashcards.FSRS, *fsrs.FSRS) {
 // the days that actually went by, and what the scheduler makes of such a card
 // face is written down in the test below.
 func libraryAgrees(
-	t *testing.T, retention float64, by flashcards.FSRS, engine *fsrs.FSRS,
-	s flashcards.Schedule,
+	t *testing.T, retention float64, by review.FSRS, engine *fsrs.FSRS,
+	s review.Schedule,
 ) {
 	t.Helper()
 	stood := standingAway(s)
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(stood), libraryNow, r).Card)
-		got := by.Next(s, libraryNow, flashcards.Rating(r))
+		got := by.Next(s, libraryNow, review.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, standing(s)), got, want)
 	}
 	good, again := by.Endings(s, libraryNow)
@@ -105,7 +105,7 @@ func libraryAgrees(
 
 // standingAway is a card face at the days it stood away. One answered no later
 // than the answer it already carries stood none of them.
-func standingAway(s flashcards.Schedule) flashcards.Schedule {
+func standingAway(s review.Schedule) review.Schedule {
 	if s.Seen() && libraryNow.Before(s.Last) {
 		s.Last = libraryNow
 	}
@@ -123,9 +123,9 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 
 	// A card face the scheduler has put into review, carrying an answer given
 	// after the instant it is asked about.
-	ahead := by.Next(by.Next(flashcards.Schedule{},
-		libraryNow.AddDate(0, 0, -30), flashcards.Good),
-		libraryNow.AddDate(0, 0, 1), flashcards.Good)
+	ahead := by.Next(by.Next(review.Schedule{},
+		libraryNow.AddDate(0, 0, -30), review.Good),
+		libraryNow.AddDate(0, 0, 1), review.Good)
 	if fsrs.State(ahead.Phase) != fsrs.Review {
 		t.Fatalf("the card face this is asked of stands in phase %d, want review", ahead.Phase)
 	}
@@ -141,7 +141,7 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 		} {
 			face := ahead
 			face.Last = libraryNow.Add(over)
-			got := by.Next(face, libraryNow, flashcards.Rating(r))
+			got := by.Next(face, libraryNow, review.Rating(r))
 			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, over), got, want)
 		}
 	}
@@ -153,12 +153,12 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 // The walk opens far enough back that its last answer still falls before the
 // instant these card faces are asked about, so every gap the library is handed
 // runs forwards.
-func libraryWalked(engine *fsrs.FSRS) []flashcards.Schedule {
+func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
-		s  flashcards.Schedule
+		s  review.Schedule
 		at time.Time
 	}
-	out := []flashcards.Schedule{{}}
+	out := []review.Schedule{{}}
 	frontier := []step{{at: libraryNow.Add(-libraryWalkOpens)}}
 	for depth := range 7 {
 		var next []step
@@ -190,9 +190,9 @@ var libraryWalkOpens = func() time.Duration {
 // the stability a run of lapses wears a card down to and at the stability of a
 // card nothing shifts, at each end of the difficulty scale, and answered after
 // gaps from none to years.
-func libraryMade() []flashcards.Schedule {
+func libraryMade() []review.Schedule {
 	stabilities := []float64{
-		0, 1e-6, flashcards.LeastStability, 0.01, 0.1, 1, 2.5, 7, 20, 100, 1000, 36500, 1e6,
+		0, 1e-6, review.LeastStability, 0.01, 0.1, 1, 2.5, 7, 20, 100, 1000, 36500, 1e6,
 	}
 	difficulties := []float64{0, 1, 1.5, 3.2, 5, 7.7, 10}
 	// A card face answered before the answer it already carries stands a
@@ -205,12 +205,12 @@ func libraryMade() []flashcards.Schedule {
 	}
 	phases := []fsrs.State{fsrs.New, fsrs.Learning, fsrs.Review, fsrs.Relearning}
 
-	var out []flashcards.Schedule
+	var out []review.Schedule
 	for _, stability := range stabilities {
 		for _, difficulty := range difficulties {
 			for i, gap := range gaps {
 				for j, phase := range phases {
-					out = append(out, flashcards.Schedule{
+					out = append(out, review.Schedule{
 						Due:        libraryNow.Add(time.Duration(j) * 24 * time.Hour),
 						Last:       libraryNow.Add(-gap),
 						Reps:       1 + i*13 + j,
@@ -228,7 +228,7 @@ func libraryMade() []flashcards.Schedule {
 
 // sameSchedule holds two answers to being the same schedule, field by field and
 // bit for bit.
-func sameSchedule(t *testing.T, what string, got, want flashcards.Schedule) {
+func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 	t.Helper()
 	if !got.Due.Equal(want.Due) {
 		t.Fatalf("%s comes round at %v, want %v", what, got.Due, want.Due)
@@ -255,7 +255,7 @@ func sameSchedule(t *testing.T, what string, got, want flashcards.Schedule) {
 
 // asCard is a schedule as the library reads a card, which is how the scheduler
 // reads one. A card face nobody has answered is the card the library opens with.
-func asCard(s flashcards.Schedule) fsrs.Card {
+func asCard(s review.Schedule) fsrs.Card {
 	if !s.Seen() {
 		return fsrs.NewCard()
 	}
@@ -271,8 +271,8 @@ func asCard(s flashcards.Schedule) fsrs.Card {
 }
 
 // asSchedule is where the library's card stands, as a schedule.
-func asSchedule(c fsrs.Card) flashcards.Schedule {
-	return flashcards.Schedule{
+func asSchedule(c fsrs.Card) review.Schedule {
+	return review.Schedule{
 		Due:        c.Due,
 		Last:       c.LastReview,
 		Reps:       int(c.Reps),
@@ -284,7 +284,7 @@ func asSchedule(c fsrs.Card) flashcards.Schedule {
 }
 
 // standing is one card face, as much of it as names which card face it was.
-func standing(s flashcards.Schedule) string {
+func standing(s review.Schedule) string {
 	return fmt.Sprintf("a card face in phase %d at stability %v difficulty %v answered %v",
 		s.Phase, s.Stability, s.Difficulty, s.Last)
 }

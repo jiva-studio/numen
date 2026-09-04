@@ -11,7 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -141,11 +141,11 @@ func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay in
 			b.Fatal(err)
 		}
 		for one := range perDay {
-			if err := run.Append(ctx, history.Answer{
+			if err := run.Append(ctx, review.Answer{
 				ID:       fmt.Sprintf("%s%06d%010d", v.ID, day, one),
-				CardFace: history.CardFaceID{Card: benchMark(card % cards), Face: "Say it"},
+				CardFace: review.CardFaceID{Card: benchMark(card % cards), Face: "Say it"},
 				At:       when.Add(time.Duration(one) * time.Minute),
-				Rating:   history.Rating(one%4 + 1),
+				Rating:   review.Rating(one%4 + 1),
 				Took:     4 * time.Second,
 			}); err != nil {
 				b.Fatal(err)

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -20,23 +20,23 @@ func TestSettingsAPresetMayNotHoldAreRefused(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
 		what   string
-		of     func(history.Preset) history.Preset
+		of     func(review.Preset) review.Preset
 		reason string
 	}{{
 		what:   "a goal the application does not know",
-		of:     func(p history.Preset) history.Preset { p.Goal = ""; return p },
+		of:     func(p review.Preset) review.Preset { p.Goal = ""; return p },
 		reason: "goal",
 	}, {
 		what:   "a rule the application does not know",
-		of:     func(p history.Preset) history.Preset { p.Rule = ""; return p },
+		of:     func(p review.Preset) review.Preset { p.Rule = ""; return p },
 		reason: "learned",
 	}, {
 		what:   "a goal of a date naming no day",
-		of:     func(p history.Preset) history.Preset { p.Goal, p.By = history.GoalDate, time.Time{}; return p },
+		of:     func(p review.Preset) review.Preset { p.Goal, p.By = review.GoalDate, time.Time{}; return p },
 		reason: "day",
 	}, {
 		what: "a share of a day outside its bounds",
-		of: func(p history.Preset) history.Preset {
+		of: func(p review.Preset) review.Preset {
 			p.Load = map[time.Weekday]int{time.Saturday: 140}
 			return p
 		},

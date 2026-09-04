@@ -9,8 +9,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
@@ -76,7 +76,7 @@ var (
 
 // reviewDay is the day the counts of this file stand in: a boundary four hours
 // past midnight, counted in one zone whatever machine runs the test.
-var reviewDay = history.Day{Starts: 4 * time.Hour, In: time.UTC}
+var reviewDay = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 // firstMorning is the instant the history begins at, well inside its review day.
 var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
@@ -163,7 +163,7 @@ func offers(said *v1.VaultOwing, decks []string) int {
 }
 
 // asWritten is the preset at path as its file now stands.
-func asWritten(t *testing.T, api *API, v domain.Vault, path string) history.Preset {
+func asWritten(t *testing.T, api *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
 	found, err := api.Presets.Read(t.Context(), v, path)
 	if err != nil {
@@ -174,7 +174,7 @@ func asWritten(t *testing.T, api *API, v domain.Vault, path string) history.Pres
 
 // writtenBack writes settings into the preset at path, which is what the window
 // does when a person lets go of the control.
-func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p history.Preset) {
+func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
 	if _, err := api.Presets.Save(t.Context(), v, path, p, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
@@ -183,7 +183,7 @@ func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p history.
 
 // pictured is what these settings come to over the whole range of their goal,
 // drawn by the simulator this window's own pieces make.
-func pictured(t *testing.T, api *API, v domain.Vault, path string, p history.Preset) *v1.Curve {
+func pictured(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) *v1.Curve {
 	t.Helper()
 	held, err := curves(api).Execute(t.Context(), v, path, p)
 	if err != nil {
@@ -218,19 +218,19 @@ func curves(api *API) flashcards.ProjectCurve {
 func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 	for _, one := range []struct {
 		what   string
-		goal   history.Goal
+		goal   review.Goal
 		places []int
 		// steered puts the value at a place of the grid into the settings.
-		steered func(p *history.Preset, value float64)
+		steered func(p *review.Preset, value float64)
 	}{
 		{
 			// A curve of minutes runs to twice what carrying the whole load
 			// costs, so a day in the lower half of the grid stands on the grid
 			// it was read from and the picture is drawn for the day it is left
 			// at.
-			what: "steered by its minutes", goal: history.GoalMinutes,
+			what: "steered by its minutes", goal: review.GoalMinutes,
 			places:  []int{1, 4, 9},
-			steered: func(p *history.Preset, value float64) { p.MinutesADay = int(value) },
+			steered: func(p *review.Preset, value float64) { p.MinutesADay = int(value) },
 		},
 	} {
 		t.Run(one.what, func(t *testing.T) {
@@ -435,19 +435,19 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutUnderTheOldOne(t *testing.T) 
 	standing(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Grammar.md")
-	p.Retention = history.RetentionBounds.Least
+	p.Retention = review.RetentionBounds.Least
 	writtenBack(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the
 	// one that could be answered from it.
 	least := offers(owing(t, api, v), underGrammar)
 
-	p.Retention = history.RetentionBounds.Most
+	p.Retention = review.RetentionBounds.Most
 	writtenBack(t, api, v, "Grammar.md", p)
 	most := offers(owing(t, api, v), underGrammar)
 
 	if most <= least {
 		t.Errorf("asking for %v of the cards back offers %d, and %v offers %d",
-			history.RetentionBounds.Most, most, history.RetentionBounds.Least, least)
+			review.RetentionBounds.Most, most, review.RetentionBounds.Least, least)
 	}
 
 	// And the preset beside it, whose target nobody moved, is where it was.

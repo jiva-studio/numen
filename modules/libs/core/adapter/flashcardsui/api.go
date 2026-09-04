@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -64,7 +64,7 @@ type API struct {
 	Window *wire.Window
 	// Day is where one day of review gives way to the next. A build holding none
 	// counts the day from midnight.
-	Day history.Day
+	Day review.Day
 	// Now is when this is happening.
 	Now func() time.Time
 
@@ -196,5 +196,5 @@ func stamp(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
-	return t.UTC().Format(history.Stamp)
+	return t.UTC().Format(review.Stamp)
 }

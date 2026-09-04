@@ -1,16 +1,16 @@
-package flashcards_test
+package review_test
 
 import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // counted is a table of the days of review, loaded with as many card faces on
 // each of these many days past an instant.
-func counted(d history.Day, at time.Time, on map[int]int) *history.DueByDay {
-	out := history.Spreading(d)
+func counted(d review.Day, at time.Time, on map[int]int) *review.DueByDay {
+	out := review.Spreading(d)
 	for day, cards := range on {
 		for range cards {
 			out.Holds(at.AddDate(0, 0, day))
@@ -23,17 +23,17 @@ func counted(d history.Day, at time.Time, on map[int]int) *history.DueByDay {
 // away for: the day whose share of the load stands highest over what already
 // falls on it. A day at none of the load weighs nothing and takes no card.
 func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
-	day := history.Day{Starts: history.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	if at.Weekday() != time.Sunday {
-		t.Fatalf("%s is a %s", at.Format(history.Named), at.Weekday())
+		t.Fatalf("%s is a %s", at.Format(review.Named), at.Weekday())
 	}
 	// Seven days away, so the window runs from five days off to nine: the
 	// Friday, the Saturday, the Sunday it was sent to, the Monday and the
 	// Tuesday.
 	due := at.AddDate(0, 0, 7)
-	p := history.Preset{
-		Goal: history.GoalMinutes, MinutesADay: 20, EvenLoad: true,
+	p := review.Preset{
+		Goal: review.GoalMinutes, MinutesADay: 20, EvenLoad: true,
 		Load: map[time.Weekday]int{time.Friday: 50, time.Saturday: 0},
 	}
 
@@ -62,7 +62,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 // A table of the days of review says how many card faces fall on the day
 // holding an instant.
 func TestHowLoadedADayOfReviewIs(t *testing.T) {
-	day := history.Day{Starts: history.DayStarts, In: time.UTC}
+	day := review.Day{Starts: review.DayStarts, In: time.UTC}
 	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	on := counted(day, at, map[int]int{0: 2, 1: 1})
 

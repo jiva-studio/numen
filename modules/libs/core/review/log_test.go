@@ -1,11 +1,11 @@
-package flashcards_test
+package review_test
 
 import (
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 func at(s string) time.Time {
@@ -18,15 +18,15 @@ func at(s string) time.Time {
 
 // An answer written down and read back is the answer that was given.
 func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
-	given := flashcards.Answer{
+	given := review.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
+		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 		At:       at("2026-08-29T09:12:33.412Z"),
-		Rating:   flashcards.Good,
+		Rating:   review.Good,
 		Took:     4210 * time.Millisecond,
 	}
 
-	raw, err := flashcards.Write(given)
+	raw, err := review.Write(given)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 		t.Errorf("a line ends with a newline, and this one is %q", raw)
 	}
 
-	back, skipped := flashcards.Read(raw)
+	back, skipped := review.Read(raw)
 	if skipped != 0 {
 		t.Errorf("skipped %d of one good line", skipped)
 	}
@@ -45,7 +45,7 @@ func TestAnAnswerComesBackAsItWasWritten(t *testing.T) {
 
 // An answer taking another back names it and carries no card of its own.
 func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
-	raw, err := flashcards.Write(flashcards.Answer{
+	raw, err := review.Write(review.Answer{
 		ID:     "01K3ZQ7X8B0CDEFGHJKMNPQRST",
 		At:     at("2026-08-29T09:12:41.006Z"),
 		Undoes: "01K3ZQ7X2M9QRSTVWXYZ012345",
@@ -57,7 +57,7 @@ func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
 		t.Errorf("a line taking an answer back carries no card: %s", raw)
 	}
 
-	back, _ := flashcards.Read(raw)
+	back, _ := review.Read(raw)
 	if len(back) != 1 || !back[0].TakesBack() || back[0].Undoes != "01K3ZQ7X2M9QRSTVWXYZ012345" {
 		t.Errorf("read back %+v", back)
 	}
@@ -66,18 +66,18 @@ func TestAnAnswerTakenBackNamesTheOneItTakesBack(t *testing.T) {
 // A run that stopped partway leaves a line that did not land whole. What
 // follows the last newline is left out, and everything before it is read.
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
-	whole, err := flashcards.Write(flashcards.Answer{
+	whole, err := review.Write(review.Answer{
 		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: flashcards.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
+		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
 		At:       at("2026-08-29T09:12:33.412Z"),
-		Rating:   flashcards.Good,
+		Rating:   review.Good,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	torn := append(append([]byte(nil), whole...), []byte(`{"v":1,"id":"01K3ZQ7`)...)
 
-	back, skipped := flashcards.Read(torn)
+	back, skipped := review.Read(torn)
 	if len(back) != 1 {
 		t.Errorf("read %d answers, want the one that landed", len(back))
 	}
@@ -99,7 +99,7 @@ func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 		"an instant nobody wrote": `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F","at":"the other day","rating":3}`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			back, skipped := flashcards.Read([]byte(line + "\n" + good + "\n"))
+			back, skipped := review.Read([]byte(line + "\n" + good + "\n"))
 			if len(back) != 1 {
 				t.Errorf("read %d answers, want the one good line", len(back))
 			}
@@ -116,7 +116,7 @@ func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
 	line := `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F",` +
 		`"at":"2026-08-29T11:12:33.412+02:00","rating":3}`
 
-	back, skipped := flashcards.Read([]byte(line + "\n"))
+	back, skipped := review.Read([]byte(line + "\n"))
 	if len(back) != 1 || skipped != 0 {
 		t.Fatalf("read %d answers and skipped %d", len(back), skipped)
 	}
@@ -135,7 +135,7 @@ func TestAnEmptyLogReadsAsNothing(t *testing.T) {
 		"spaces":      "   \n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			back, skipped := flashcards.Read([]byte(raw))
+			back, skipped := review.Read([]byte(raw))
 			if len(back) != 0 || skipped != 0 {
 				t.Errorf("read %d answers and skipped %d, want none of either", len(back), skipped)
 			}

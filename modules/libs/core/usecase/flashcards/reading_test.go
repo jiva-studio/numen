@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // counting is a vault's files with a tally of what was opened, by path.
@@ -169,7 +169,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 func TestACurveAnswersTheCallersCancellation(t *testing.T) {
 	t.Parallel()
 	s := opened(t, studied(30))
-	p := history.Preset{Goal: history.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
+	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()

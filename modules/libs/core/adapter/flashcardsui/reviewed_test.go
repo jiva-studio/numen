@@ -6,12 +6,12 @@ import (
 
 	"connectrpc.com/connect"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // counting is the day as the application counts one.
-var counting = history.Day{Starts: history.DayStarts}
+var counting = review.Day{Starts: review.DayStarts}
 
 // What a vault was answered on comes back a day at a time, oldest first,
 // because what draws it draws it along a line of time.

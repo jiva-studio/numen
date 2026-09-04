@@ -11,8 +11,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -47,15 +47,15 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 func TestWhatAVaultHoldsIsEveryRunItWasReadFrom(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := history.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
 
 	if _, err := s.run(t, time.Now().AddDate(0, 0, -1)).Answer(
-		t.Context(), on, history.Good, 0,
+		t.Context(), on, review.Good, 0,
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), other, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), other, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -114,8 +114,8 @@ func (l listing) List(ctx context.Context, name string) ([]port.Entry, error) {
 func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -158,8 +158,8 @@ func (closed) Read(context.Context, string) ([]byte, error) { return nil, errClo
 func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -183,9 +183,9 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	writing := s.run(t, time.Now())
-	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -193,7 +193,7 @@ func TestASittingIntoAVaultThatIsGoneStops(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err == nil {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err == nil {
 		t.Error("an answer into a folder that is no longer the vault said it landed")
 	}
 	if _, err := os.Stat(s.vault.Path); !errors.Is(err, fs.ErrNotExist) {
@@ -247,7 +247,7 @@ func (f *filling) Append(ctx context.Context, name string, content []byte) error
 func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	t.Parallel()
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	full := &brimming{DerivedStores: s.logs}
 	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, time.Now())
@@ -256,13 +256,13 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	}
 	writing := flashcards.Record{Run: run, Now: time.Now}
 
-	if _, err := writing.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writing.Answer(t.Context(), on, history.Good, 0); !errors.Is(err, errNoRoom) {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
 		t.Fatalf("an answer that did not land came back with %v", err)
 	}
-	if _, err := writing.Answer(t.Context(), on, history.Good, 0); !errors.Is(err, errNoRoom) {
+	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
 		t.Errorf("the answer after it came back with %v", err)
 	}
 	if full.store.asked != 2 {
@@ -289,13 +289,13 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 		t.Skip("root opens a file whatever its permissions say")
 	}
 	s := opened(t, vault)
-	on := history.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
 	shut := s.run(t, time.Now().AddDate(0, 0, -1))
-	if _, err := shut.Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := shut.Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, history.Good, 0); err != nil {
+	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
 	closed := filepath.Join(s.vault.Path, filesystem.DefaultServiceDir,

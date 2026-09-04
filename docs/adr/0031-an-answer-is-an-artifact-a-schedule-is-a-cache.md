@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-29
-- **Applies to:** the vault format, and `modules/libs/core` — `flashcards`, `usecase/flashcards`
+- **Applies to:** the vault format, and `modules/libs/core` — `review`, `usecase/flashcards`
 - **Related:** ADR-0001, ADR-0003, ADR-0015, ADR-0020, ADR-0027, ADR-0030
 
 ## Context

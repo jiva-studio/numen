@@ -3,7 +3,7 @@ package flashcards
 import (
 	"testing"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // How far a curve of minutes runs is twice the longer of what carrying the
@@ -18,7 +18,7 @@ func TestHowFarACurveOfMinutesRuns(t *testing.T) {
 		{load: 100, keeping: 0, want: 200},
 		{load: 0, keeping: 100, want: 200},
 		{load: 30.5, keeping: 0, want: 61},
-		{load: 5000, keeping: 0, want: history.MinutesADayBounds.Most},
+		{load: 5000, keeping: 0, want: review.MinutesADayBounds.Most},
 	} {
 		if got := ceiling(one.load, one.keeping); got != one.want {
 			t.Errorf("a load of %v minutes under a day of %v runs to %v, want %v",

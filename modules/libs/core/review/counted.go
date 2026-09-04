@@ -1,4 +1,4 @@
-package flashcards
+package review
 
 import "time"
 

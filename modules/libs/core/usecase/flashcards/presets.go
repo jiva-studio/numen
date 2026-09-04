@@ -11,9 +11,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -31,14 +31,14 @@ type PresetContents struct {
 	Type domain.NoteType
 	// Settings are how the decks pointing here are scheduled. They stand at the
 	// defaults for every outcome but Ok.
-	Settings history.Preset
+	Settings review.Preset
 	// Stops is why the preset schedules nothing, and empty where it schedules
 	// something. It is a fact about the preset and holds on every day.
-	Stops history.StopReason
+	Stops review.StopReason
 	// StopsToday is why it schedules nothing on the day this was read in. A
 	// preset that schedules is stopped today by a day of the week carrying none
 	// of the load.
-	StopsToday history.StopReason
+	StopsToday review.StopReason
 	// Problems are what was wrong in the file and was not guessed at. They are
 	// shown against the preset, and the editor is where they are settled.
 	Problems    []string
@@ -68,12 +68,12 @@ type Presets struct {
 	// Day is where one day of review gives way to the next, and Now what time
 	// it is. They answer whether a preset schedules anything today. A build
 	// holding no clock reads the machine's.
-	Day history.Day
+	Day review.Day
 	Now func() time.Time
 }
 
 // stops is why a preset schedules nothing, and why it schedules nothing today.
-func (u Presets) stops(p history.Preset) (history.StopReason, history.StopReason) {
+func (u Presets) stops(p review.Preset) (review.StopReason, review.StopReason) {
 	now := time.Now
 	if u.Now != nil {
 		now = u.Now
@@ -120,7 +120,7 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]PresetSummary, err
 
 // Default is a deck scheduled by no preset.
 func Default() PresetContents {
-	return PresetContents{Outcome: note.Ok, Settings: history.Defaults()}
+	return PresetContents{Outcome: note.Ok, Settings: review.Defaults()}
 }
 
 // Of is the preset the deck at path is scheduled by.
@@ -277,7 +277,7 @@ func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetC
 
 // opened is the note at path as a preset, before it is asked what it schedules.
 func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	out := PresetContents{Path: path, Settings: history.Defaults()}
+	out := PresetContents{Path: path, Settings: review.Defaults()}
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -333,6 +333,6 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 		out.Problems = append(out.Problems, path+" is not a preset, and the defaults stand")
 		return out, nil
 	}
-	out.Settings, out.Problems = history.ReadPreset(n.Frontmatter)
+	out.Settings, out.Problems = review.ReadPreset(n.Frontmatter)
 	return out, nil
 }

@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // keptVersion is the shape of the cache file. A cache of another shape is
@@ -61,10 +61,10 @@ type Schedules struct {
 	// Kept is where the working out is remembered. A build holding none works
 	// it out at every launch.
 	Kept port.ScheduleStore
-	By   history.Scheduler
+	By   review.Scheduler
 	// Day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
-	Day history.Day
+	Day review.Day
 	// Standings and Presets say which preset schedules each card face, so a
 	// card is worked out at the share of the cards its own preset asks for. A
 	// build holding neither works every card out by By.
@@ -72,7 +72,7 @@ type Schedules struct {
 	Presets   Presets
 	// At is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
-	At func(retention float64) history.Scheduler
+	At func(retention float64) review.Scheduler
 }
 
 // assignment is which scheduler each card face is worked out by, and what that
@@ -84,7 +84,7 @@ type Schedules struct {
 // depends on every answer before it, so nothing worked out under the old
 // assignment can be kept.
 type assignment struct {
-	under history.Under
+	under review.Under
 	mark  string
 }
 
@@ -92,8 +92,8 @@ type assignment struct {
 // none is scheduled by.
 func (u Schedules) plain() assignment {
 	return assignment{
-		under: history.By(u.By),
-		mark:  marked([]string{u.By.Name(), u.opening(), history.Defaults().Placing()}),
+		under: review.By(u.By),
+		mark:  marked([]string{u.By.Name(), u.opening(), review.Defaults().Placing()}),
 	}
 }
 
@@ -104,7 +104,7 @@ func (u Schedules) opening() string {
 	if u.Day.In != nil {
 		in = u.Day.In.String()
 	}
-	return "day\t" + history.Clock(u.Day.Starts) + "\t" + in
+	return "day\t" + review.Clock(u.Day.Starts) + "\t" + in
 }
 
 // asking is the scheduler each card face is worked out by, over a reading of
@@ -136,8 +136,8 @@ func (u Schedules) under(
 		return out, nil
 	}
 
-	by := make(map[string]history.Scheduling)
-	under := make(map[history.CardFaceID]history.Scheduling, len(standing))
+	by := make(map[string]review.Scheduling)
+	under := make(map[review.CardFaceID]review.Scheduling, len(standing))
 	asked := make(map[string]string, len(standing))
 	for _, one := range standing {
 		path, known := asked[one.Deck]
@@ -149,7 +149,7 @@ func (u Schedules) under(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = history.Scheduling{By: u.at(p.Settings.Retention), Preset: p.Settings}
+				by[path] = review.Scheduling{By: u.at(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
 		under[one.CardFace] = by[path]
@@ -161,11 +161,11 @@ func (u Schedules) under(
 		marks = append(marks, face.Card+"\t"+face.Face+"\t"+one.By.Name()+"\t"+one.Preset.Placing())
 	}
 	out.mark = marked(marks)
-	out.under = func(face history.CardFaceID) history.Scheduling {
+	out.under = func(face review.CardFaceID) review.Scheduling {
 		if one, held := under[face]; held {
 			return one
 		}
-		return history.Scheduling{By: u.By, Preset: history.Defaults()}
+		return review.Scheduling{By: u.By, Preset: review.Defaults()}
 	}
 	return out, nil
 }
@@ -184,17 +184,17 @@ func marked(lines []string) string {
 }
 
 // at is the scheduler asking for a share of the cards to come back.
-func (u Schedules) at(retention float64) history.Scheduler {
+func (u Schedules) at(retention float64) review.Scheduler {
 	if u.At != nil {
 		return u.At(retention)
 	}
-	return history.NewFSRSAt(retention)
+	return review.NewFSRSAt(retention)
 }
 
 // Execute is every card face the vault's answers name, and where they leave it.
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
-) (map[history.CardFaceID]history.Schedule, error) {
+) (map[review.CardFaceID]review.Schedule, error) {
 	log := Log{Stores: u.Logs}
 
 	// The listing comes first, and the files are read only when the cache does
@@ -223,7 +223,7 @@ func (u Schedules) Execute(
 // caller holding the answers does not read them again to be told this.
 func (u Schedules) From(
 	ctx context.Context, v domain.Vault, held Held,
-) (map[history.CardFaceID]history.Schedule, error) {
+) (map[review.CardFaceID]review.Schedule, error) {
 	asks, err := u.asking(ctx, v)
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held Held, asks assignment) map[history.CardFaceID]history.Schedule {
+func (u Schedules) worked(held Held, asks assignment) map[review.CardFaceID]review.Schedule {
 	return projected(u.Day, held, asks)
 }
 
@@ -249,7 +249,7 @@ func (u Schedules) worked(held Held, asks assignment) map[history.CardFaceID]his
 // is told what the first worked out.
 func (u Schedules) replayed(
 	ctx context.Context, v domain.Vault, held Held, asks assignment,
-) map[history.CardFaceID]history.Schedule {
+) map[review.CardFaceID]review.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
 	}
@@ -260,7 +260,7 @@ func (u Schedules) replayed(
 // caller that has already found the cache out of date asks for.
 func (u Schedules) filled(
 	ctx context.Context, v domain.Vault, held Held, asks assignment,
-) map[history.CardFaceID]history.Schedule {
+) map[review.CardFaceID]review.Schedule {
 	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
 	return out
@@ -269,8 +269,8 @@ func (u Schedules) filled(
 // projected is where the answers leave every card face, and is what a caller
 // that only reads them asks for.
 func projected(
-	d history.Day, held Held, asks assignment,
-) map[history.CardFaceID]history.Schedule {
+	d review.Day, held Held, asks assignment,
+) map[review.CardFaceID]review.Schedule {
 	return held.Given().Replay(d, asks.under)
 }
 
@@ -278,7 +278,7 @@ func projected(
 // runs the vault now holds and under the targets now in force.
 func (u Schedules) remembered(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
-) (map[history.CardFaceID]history.Schedule, bool) {
+) (map[review.CardFaceID]review.Schedule, bool) {
 	if u.Kept == nil {
 		return nil, false
 	}
@@ -294,17 +294,17 @@ func (u Schedules) remembered(
 		return nil, false
 	}
 
-	out := make(map[history.CardFaceID]history.Schedule, len(was.Faces))
+	out := make(map[review.CardFaceID]review.Schedule, len(was.Faces))
 	for _, s := range was.Faces {
-		due, err := history.Moment(s.Due)
+		due, err := review.Moment(s.Due)
 		if err != nil {
 			return nil, false
 		}
-		last, err := history.Moment(s.Last)
+		last, err := review.Moment(s.Last)
 		if err != nil {
 			return nil, false
 		}
-		out[history.CardFaceID{Card: s.Card, Face: s.Face}] = history.Schedule{
+		out[review.CardFaceID{Card: s.Card, Face: s.Face}] = review.Schedule{
 			Due: due, Last: last, Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		}
@@ -331,7 +331,7 @@ func read(was []cachedFile, files []port.Entry) bool {
 // here is reported.
 func (u Schedules) remember(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
-	out map[history.CardFaceID]history.Schedule,
+	out map[review.CardFaceID]review.Schedule,
 ) {
 	if u.Kept == nil {
 		return
@@ -343,8 +343,8 @@ func (u Schedules) remember(
 	for on, s := range out {
 		now.Faces = append(now.Faces, cachedSchedule{
 			Card: on.Card, Face: on.Face,
-			Due:  s.Due.UTC().Format(history.Stamp),
-			Last: s.Last.UTC().Format(history.Stamp),
+			Due:  s.Due.UTC().Format(review.Stamp),
+			Last: s.Last.UTC().Format(review.Stamp),
 			Reps: s.Reps, Lapses: s.Lapses,
 			Stability: s.Stability, Difficulty: s.Difficulty, Phase: s.Phase,
 		})

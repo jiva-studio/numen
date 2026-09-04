@@ -6,8 +6,8 @@ import (
 
 	format "github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -22,7 +22,7 @@ type Standing struct {
 	Section string
 	// CardFace is what a schedule belongs to: the card's mark and the face's
 	// name.
-	CardFace history.CardFaceID
+	CardFace review.CardFaceID
 	// Heading is what the card's heading shows, which is the first line of its
 	// first field.
 	Heading string
@@ -140,7 +140,7 @@ func (u Standings) standing(
 			out = append(out, Standing{
 				Deck:     deck.Path,
 				Section:  section(deck.Body, card),
-				CardFace: history.CardFaceID{Card: string(card.Mark), Face: face.Name},
+				CardFace: review.CardFaceID{Card: string(card.Mark), Face: face.Name},
 				Heading:  card.Heading,
 				stencil:  stencil,
 				face:     face,

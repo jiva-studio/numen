@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -58,7 +58,7 @@ func (s vaulted) presses(t *testing.T, now time.Time, deck string) int {
 // back to is the one card.
 func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	faces := make(map[history.CardFaceID]bool)
+	faces := make(map[review.CardFaceID]bool)
 	for range 100 {
 		sat, err := s.over(t, today, now, flashcards.OverDeck(deck))
 		if err != nil {
@@ -69,9 +69,9 @@ func (s vaulted) sits(t *testing.T, now time.Time, deck string) int {
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Asked {
-			took := history.DefaultCost.Review
+			took := review.DefaultCost.Review
 			if !one.Schedule.Seen() {
-				took = history.DefaultCost.New
+				took = review.DefaultCost.New
 			}
 			faces[one.CardFace] = true
 			answer(t, record, one.CardFace.Card, took)

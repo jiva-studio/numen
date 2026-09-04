@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -562,11 +562,11 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 // The four ratings are carried across as themselves, and nothing else is a
 // rating.
 func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
-	for said, want := range map[v1.Rating]history.Rating{
-		v1.Rating_RATING_AGAIN: history.Again,
-		v1.Rating_RATING_HARD:  history.Hard,
-		v1.Rating_RATING_GOOD:  history.Good,
-		v1.Rating_RATING_EASY:  history.Easy,
+	for said, want := range map[v1.Rating]review.Rating{
+		v1.Rating_RATING_AGAIN: review.Again,
+		v1.Rating_RATING_HARD:  review.Hard,
+		v1.Rating_RATING_GOOD:  review.Good,
+		v1.Rating_RATING_EASY:  review.Easy,
 	} {
 		if got := rating(said); got != want {
 			t.Errorf("%v came across as %v", said, got)
@@ -698,7 +698,7 @@ func TestADeckNamingNoPresetComesUnderTheDefaults(t *testing.T) {
 	if len(presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", presets)
 	}
-	one, defaults := presets[0], history.Defaults()
+	one, defaults := presets[0], review.Defaults()
 	if one.GetPreset() != "" || one.GetAnswered() != 0 {
 		t.Errorf("the day came to %+v", one)
 	}
@@ -805,36 +805,36 @@ var backlogged = map[string]string{
 func TestTheDeckScreenAndThePresetTabAgreeUnderEveryGoal(t *testing.T) {
 	for _, one := range []struct {
 		what   string
-		goal   history.Goal
+		goal   review.Goal
 		by     time.Time
-		closed history.BudgetName
-		never  []history.BudgetName
+		closed review.BudgetName
+		never  []review.BudgetName
 		// learned is the rule the goal is worked out against, where the goal
 		// reads one. Six days are too few to carry a card past an interval of
 		// three weeks, and a date paces the day for the cards that can get
 		// there.
-		learned history.LearnedRule
+		learned review.LearnedRule
 		// sameDay is whether the control moves today, so that what the tab
 		// draws where it stands is the day the deck screen offers.
 		sameDay bool
 	}{
 		{
-			what: "minutes", goal: history.GoalMinutes,
-			closed: history.ClosedMinutes, sameDay: true,
-			never: []history.BudgetName{
-				history.ClosedNew, history.ClosedReviews, history.ClosedDate,
+			what: "minutes", goal: review.GoalMinutes,
+			closed: review.ClosedMinutes, sameDay: true,
+			never: []review.BudgetName{
+				review.ClosedNew, review.ClosedReviews, review.ClosedDate,
 			},
 		},
 		{
-			what: "retention", goal: history.GoalRetention,
-			closed: history.ClosedNew,
-			never:  []history.BudgetName{history.ClosedMinutes, history.ClosedDate},
+			what: "retention", goal: review.GoalRetention,
+			closed: review.ClosedNew,
+			never:  []review.BudgetName{review.ClosedMinutes, review.ClosedDate},
 		},
 		{
-			what: "a date", goal: history.GoalDate, learned: history.RuleRetention,
-			by: time.Now().AddDate(0, 0, 6), closed: history.ClosedDate, sameDay: true,
-			never: []history.BudgetName{
-				history.ClosedNew, history.ClosedReviews, history.ClosedMinutes,
+			what: "a date", goal: review.GoalDate, learned: review.RuleRetention,
+			by: time.Now().AddDate(0, 0, 6), closed: review.ClosedDate, sameDay: true,
+			never: []review.BudgetName{
+				review.ClosedNew, review.ClosedReviews, review.ClosedMinutes,
 			},
 		},
 	} {
@@ -908,7 +908,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	standing(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
-	p.Goal = history.GoalMinutes
+	p.Goal = review.GoalMinutes
 	writtenBack(t, api, v, "Sanskrit.md", p)
 
 	drawn := pictured(t, api, v, "Sanskrit.md", p)
@@ -929,7 +929,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 			got)
 	}
 	for i := range at {
-		if got := drawn.GetAt()[i].GetClosed(); !slices.Contains(got, string(history.ClosedMinutes)) {
+		if got := drawn.GetAt()[i].GetClosed(); !slices.Contains(got, string(review.ClosedMinutes)) {
 			t.Errorf("%v minutes a day closed on %q, and %v is suggested",
 				drawn.GetGrid()[i], got, drawn.GetGrid()[at])
 		}
@@ -958,7 +958,7 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 	}
 
 	p := asWritten(t, api, v, "Sanskrit.md")
-	p.Goal = history.GoalMinutes
+	p.Goal = review.GoalMinutes
 	writtenBack(t, api, v, "Sanskrit.md", p)
 	byMinutes := pictured(t, api, v, "Sanskrit.md", p)
 
@@ -972,7 +972,7 @@ func TestWhatIsOverdueStandsOverTheWholeCurve(t *testing.T) {
 	}
 
 	// The same vault under another goal is the same backlog.
-	p.Goal = history.GoalRetention
+	p.Goal = review.GoalRetention
 	if got := int(pictured(t, api, v, "Sanskrit.md", p).GetOverdue()); got != overdue {
 		t.Errorf("steered by its retention the same vault stands %d overdue, and by its "+
 			"minutes %d", got, overdue)
@@ -1162,7 +1162,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 	standing(api, firstMorning.AddDate(0, 0, 14))
 
 	p := asWritten(t, api, v, "Sanskrit.md")
-	p.Goal = history.GoalMinutes
+	p.Goal = review.GoalMinutes
 	writtenBack(t, api, v, "Sanskrit.md", p)
 	drawn := pictured(t, api, v, "Sanskrit.md", p)
 
@@ -1220,14 +1220,14 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 	for _, one := range []struct {
 		what             string
 		newADay, reviews int
-		counts           history.Counts
+		counts           review.Counts
 		climbs           bool
 	}{
 		// A budget of one showing is a day the target cannot spend, whatever it
 		// is. Counting cards it could: the one card is asked again for nothing,
 		// and how often it comes back is the target's own answer.
-		{"a count binding at every place", 12, 1, history.CountsShows, false},
-		{"counts that never bind", 50, 200, history.CountsCards, true},
+		{"a count binding at every place", 12, 1, review.CountsShows, false},
+		{"counts that never bind", 50, 200, review.CountsCards, true},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			api, held := windowed(t, lived)
@@ -1236,7 +1236,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			standing(api, firstMorning.AddDate(0, 0, 14))
 
 			p := asWritten(t, api, v, "Sanskrit.md")
-			p.Goal = history.GoalRetention
+			p.Goal = review.GoalRetention
 			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
 			p.Counts = one.counts
 			writtenBack(t, api, v, "Sanskrit.md", p)
@@ -1315,7 +1315,7 @@ func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
 		standing(api, firstMorning.AddDate(0, 0, 20))
 
 		p := asWritten(t, api, v, "Sanskrit.md")
-		p.Goal, p.Backlog = history.GoalMinutes, share
+		p.Goal, p.Backlog = review.GoalMinutes, share
 		writtenBack(t, api, v, "Sanskrit.md", p)
 
 		// The control is left on a place of its own grid, so the picture is

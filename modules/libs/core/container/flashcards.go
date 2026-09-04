@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -34,7 +34,7 @@ type Flashcards struct {
 	// of its goal.
 	Curves flashcards.ProjectCurve
 	// Day is where one day of review gives way to the next.
-	Day history.Day
+	Day review.Day
 }
 
 // Answers opens the shelf a vault's answers are kept on. It is the same folder
@@ -102,7 +102,7 @@ func (c Config) Flashcards(
 		Readers: c.VaultReaders(), Writers: c.VaultWriters(),
 		Notes: notes, Links: links, Index: index, Now: time.Now,
 	}
-	day := history.Day{Starts: c.DayStarts()}
+	day := review.Day{Starts: c.DayStarts()}
 
 	counting, err := c.Counting()
 	if err != nil {
@@ -122,7 +122,7 @@ func (c Config) Flashcards(
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.
 	schedules := flashcards.Schedules{
-		Logs: logs, Kept: kept, By: history.NewFSRS(), Day: day,
+		Logs: logs, Kept: kept, By: review.NewFSRS(), Day: day,
 		Standings: standing, Presets: presets,
 	}
 

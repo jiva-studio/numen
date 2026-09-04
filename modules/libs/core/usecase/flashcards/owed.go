@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 )
 
 // Owing is what one vault's cards come to today: what it holds, what is owed,
@@ -72,13 +72,13 @@ type PresetOwing struct {
 	// Budget is what the preset keeps for this day of the week. A budget its
 	// goal does not name stands here as the person left it and closes nothing,
 	// so Due and New are held to Closes and not to all three of these.
-	Budget history.Budget
+	Budget review.Budget
 	// Closes is which of the three closes the day, and what each is called when
 	// it does.
-	Closes history.Closes
+	Closes review.Closes
 	// Stops is why the preset schedules nothing on this day, and empty where it
 	// schedules something.
-	Stops history.StopReason
+	Stops review.StopReason
 }
 
 // Owed is what a vault owes, which is what its front door shows.
@@ -88,7 +88,7 @@ type Owed struct {
 	// Presets says which preset each deck is scheduled by. A build holding no
 	// links schedules every deck by the defaults.
 	Presets Presets
-	Day     history.Day
+	Day     review.Day
 	Now     func() time.Time
 }
 

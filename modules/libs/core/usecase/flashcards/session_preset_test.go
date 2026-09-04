@@ -6,14 +6,14 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
 // over is what the vault asks at this instant when the sitting is opened over
 // this deck or this preset.
 func (s vaulted) over(
-	t *testing.T, day history.Day, now time.Time, at flashcards.Over,
+	t *testing.T, day review.Day, now time.Time, at flashcards.Over,
 ) (flashcards.Sitting, error) {
 	t.Helper()
 	return flashcards.Session{
@@ -24,7 +24,7 @@ func (s vaulted) over(
 
 // under is the sitting over one preset, and a fatal error where it was refused.
 func (s vaulted) under(
-	t *testing.T, day history.Day, now time.Time, preset string,
+	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.Sitting {
 	t.Helper()
 	sat, err := s.over(t, day, now, flashcards.ByPreset(preset))

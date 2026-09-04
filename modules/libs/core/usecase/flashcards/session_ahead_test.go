@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
+	"github.com/jiva-studio/numen/modules/libs/core/review"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 )
 
@@ -31,8 +31,8 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	at := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, at.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
-		on := history.CardFaceID{Card: card, Face: "Say it"}
-		if _, err := record.Answer(t.Context(), on, history.Good, 0); err != nil {
+		on := review.CardFaceID{Card: card, Face: "Say it"}
+		if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -55,10 +55,10 @@ func TestTheWindowsUnderTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 		if !named {
 			t.Fatalf("a card of %s was asked", one.Deck)
 		}
-		want := history.NewFSRSAt(share).Next(one.Schedule, at, history.Good).Due.Sub(at)
-		if one.Ahead[history.Good] != want {
+		want := review.NewFSRSAt(share).Next(one.Schedule, at, review.Good).Due.Sub(at)
+		if one.Ahead[review.Good] != want {
 			t.Errorf("%s comes back in %v at a share of %g, and the window says %v",
-				one.Deck, want, share, one.Ahead[history.Good])
+				one.Deck, want, share, one.Ahead[review.Good])
 		}
 		seen[share] = want
 	}
@@ -106,12 +106,12 @@ func TestTheWindowsUnderTheFourNameTheDayTheCardComesBackOn(t *testing.T) {
 				break
 			}
 			card := sat.Asked[0]
-			said, named := card.Ahead[history.Good]
+			said, named := card.Ahead[review.Good]
 			if !named {
 				t.Fatalf("under %s a card was asked with no window under its buttons", one.what)
 			}
 			if _, err := s.run(t, at).Answer(
-				t.Context(), card.CardFace, history.Good, 0,
+				t.Context(), card.CardFace, review.Good, 0,
 			); err != nil {
 				t.Fatal(err)
 			}
