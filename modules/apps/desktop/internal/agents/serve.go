@@ -163,7 +163,7 @@ func Serve(ctx context.Context, opts Options) (*Server, error) {
 func Claude(
 	cfg container.Config,
 	root, url, secret string,
-	vocabulary map[string]mcp.Words,
+	vocabulary map[string]mcp.Tool,
 	drafting claudecode.Drafting,
 	out io.Writer,
 ) *claudecode.Agent {

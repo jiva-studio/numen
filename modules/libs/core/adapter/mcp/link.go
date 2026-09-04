@@ -122,14 +122,14 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		Type  string `json:"type,omitempty" jsonschema:"leave this out: a value is introduced together with the code that reads it, and none is defined yet"`
 		Label string `json:"label,omitempty" jsonschema:"a few words naming the relationship"`
 		Why   string `json:"note,omitempty" jsonschema:"why the link exists"`
-	}) (*sdk.CallToolResult, Done, error) {
+	}) (*sdk.CallToolResult, ChangeOutcome, error) {
 		err := core.Notes.Linking.Update(ctx, core.shown().Vault, in.From, domain.ParseAddress(in.To), domain.Link{
 			Role:  domain.LinkRole(in.Role),
 			Type:  in.Type,
 			Label: in.Label,
 			Why:   in.Why,
 		})
-		return nil, Done{Path: in.From}, err
+		return nil, ChangeOutcome{Path: in.From}, err
 	})
 
 	sdk.AddTool(server, &sdk.Tool{
@@ -141,10 +141,10 @@ func addLinkWritingTools(server *sdk.Server, core Core) {
 		From string `json:"from" jsonschema:"the path of the note the link is written in"`
 		To   string `json:"to" jsonschema:"the target as it is written"`
 		Role string `json:"role,omitempty" jsonschema:"only remove the link carrying this role; every role by default"`
-	}) (*sdk.CallToolResult, Done, error) {
+	}) (*sdk.CallToolResult, ChangeOutcome, error) {
 		err := core.Notes.Linking.Remove(ctx, core.shown().Vault, in.From,
 			domain.ParseAddress(in.To), domain.LinkRole(in.Role))
-		return nil, Done{Path: in.From}, err
+		return nil, ChangeOutcome{Path: in.From}, err
 	})
 }
 
@@ -179,8 +179,8 @@ func linksOf(links []domain.ResolvedLink) []Link {
 	return out
 }
 
-// Done is what a tool that changed one note says: which note it was.
-type Done struct {
+// ChangeOutcome is what a tool that changed one note says: which note it was.
+type ChangeOutcome struct {
 	Path string `json:"path"`
 }
 

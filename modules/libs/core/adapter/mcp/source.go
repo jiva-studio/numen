@@ -220,12 +220,12 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	})
 }
 
-// Recognising is what the tools need in order to read a document: a way to
+// Recogniser is what the tools need in order to read a document: a way to
 // begin, a way to say how far it has got, and whether it could begin at once.
 //
 // It is an interface so that a server can be built without one, and so that the
 // tools can say "it has started" rather than "there is nothing to read with".
-type Recognising interface {
+type Recogniser interface {
 	// Ready says whether reading could begin now without waiting for anything
 	// to arrive.
 	Ready() bool
@@ -238,11 +238,11 @@ type Recognising interface {
 	Start(v domain.Vault, path string) port.Taking
 }
 
-// Transcribing is what the tools need in order to hear a recording: a way to
+// Transcriber is what the tools need in order to hear a recording: a way to
 // begin, and whether beginning would wait for anything to arrive.
 //
 // A server built without one serves no tool that would listen.
-type Transcribing interface {
+type Transcriber interface {
 	// Ready says whether listening could begin now without waiting for anything
 	// to arrive.
 	Ready() bool

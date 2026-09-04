@@ -211,6 +211,6 @@ func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.V
 // It is always served, even on a machine holding none of the models: what is
 // missing is fetched behind whoever asked, and the tool says so. A tool that is
 // not served at all leaves an agent saying the vault cannot do a thing it can.
-func recogniser(opened *webui.Opened) mcp.Recognising {
+func recogniser(opened *webui.Opened) mcp.Recogniser {
 	return opened.Recognising()
 }

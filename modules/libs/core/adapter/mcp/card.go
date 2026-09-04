@@ -199,9 +199,9 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Values      []FieldValue `json:"values" jsonschema:"what the card holds, in the order to write it"`
 		Section     *int         `json:"section,omitempty" jsonschema:"which of the deck's sections to write it at the end of, counted from the first; left out, the card goes at the end of the deck"`
 		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
-	}) (*sdk.CallToolResult, Written, error) {
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		if size := carries(in.Values); size > maxBytes {
-			return nil, Written{}, fmt.Errorf(
+			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		// Where the card went, so that the mark minted for it is the one this
@@ -222,7 +222,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 				return held, nil
 			})
 		if err != nil {
-			return nil, Written{}, err
+			return nil, WriteOutcome{}, err
 		}
 		written.Mark = markOf(minted, stands)
 		return nil, written, nil
@@ -246,9 +246,9 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Values      []FieldValue `json:"values" jsonschema:"the fields to write, and what to put under each"`
 		Stencil     string       `json:"stencil,omitempty" jsonschema:"the stencil it is cut by from now on, by the name card_stencil_list gave under name; left out, the card keeps the one it names"`
 		Fingerprint string       `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
-	}) (*sdk.CallToolResult, Written, error) {
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		if size := carries(in.Values); size > maxBytes {
-			return nil, Written{}, fmt.Errorf(
+			return nil, WriteOutcome{}, fmt.Errorf(
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
@@ -281,7 +281,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Path        string `json:"path" jsonschema:"the deck the card is in"`
 		Mark        string `json:"mark" jsonschema:"the card's mark, as card_read gives it"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
-	}) (*sdk.CallToolResult, Written, error) {
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.DeckContents) (format.Deck, error) {
 				held := read.Body
@@ -308,7 +308,7 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Path        string `json:"path" jsonschema:"the deck to divide"`
 		Name        string `json:"name" jsonschema:"what the section is called"`
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
-	}) (*sdk.CallToolResult, Written, error) {
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
 			func(read cards.DeckContents) (format.Deck, error) {
 				held := read.Body
@@ -419,9 +419,9 @@ type Face struct {
 	Back  string `json:"back" jsonschema:"what is shown after it"`
 }
 
-// Written is what a deck became: where it is, and what to present at the next
-// write of it.
-type Written struct {
+// WriteOutcome is what a deck became: where it is, and what to present at the
+// next write of it.
+type WriteOutcome struct {
 	Path        string `json:"path"`
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this deck without reading it back"`
 	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
@@ -435,35 +435,35 @@ type Written struct {
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
 	change func(cards.DeckContents) (format.Deck, error),
-) (Written, []format.Minted, error) {
+) (WriteOutcome, []format.Minted, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
-		return Written{}, nil, err
+		return WriteOutcome{}, nil, err
 	}
 	v := core.shown().Vault
 	read, err := core.Cards.Read.Deck(ctx, v, path)
 	if err != nil {
-		return Written{}, nil, err
+		return WriteOutcome{}, nil, err
 	}
 	if why := whyNotADeck(read); why != "" {
-		return Written{}, nil, fmt.Errorf("%s: %s", path, why)
+		return WriteOutcome{}, nil, fmt.Errorf("%s: %s", path, why)
 	}
 
 	held, err := change(read)
 	if err != nil {
-		return Written{}, nil, err
+		return WriteOutcome{}, nil, err
 	}
 	body, err := core.Cards.DeckBody(held)
 	if err != nil {
-		return Written{}, nil, err
+		return WriteOutcome{}, nil, err
 	}
 	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, seen)
 	// A write that reached the vault is a write that happened, so the caller is
 	// handed the fingerprint it presents at its next write.
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
-		return Written{}, nil, err
+		return WriteOutcome{}, nil, err
 	}
-	return Written{
+	return WriteOutcome{
 		Path: path, Fingerprint: fingerprintOf(wrote.Fingerprint), Cards: len(held.Cards),
 	}, wrote.Minted, nil
 }

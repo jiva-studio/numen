@@ -8,13 +8,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Words are how a tool is spoken about to a person: what it is called, and
+// Tool is how one tool is spoken about to a person: what it is called, and
 // which of its arguments says what a call was about.
 //
 // Both are the tool's own declaration. A display name is the title it carries,
 // falling back to the name it is served under; what a call is about is the
 // first argument the tool requires.
-type Words struct {
+type Tool struct {
 	Title string
 	About string
 	// Inside names the field of one element that says which element it is, for
@@ -35,7 +35,7 @@ type Words struct {
 //
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
-var doing = map[string]Words{
+var doing = map[string]Tool{
 	"note_search":         {Kind: port.StepSearch},
 	"note_titles":         {Kind: port.StepRead},
 	"note_read":           {Kind: port.StepRead},
@@ -85,22 +85,22 @@ var doing = map[string]Words{
 // Vocabulary asks the server what it serves, and reads the answer.
 //
 // What the window says about a call is what an agent was told about it.
-func Vocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func Vocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, New(core))
 }
 
 // ReadingVocabulary is the same, for a window served the tools that read. A
 // window is told about the tools it serves and no others.
-func ReadingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReading(core))
 }
 
 // ReviewingVocabulary is the same, for the window a person runs their cards in.
-func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Words, error) {
+func ReviewingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, NewReviewing(core))
 }
 
-func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, error) {
+func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error) {
 	here, there := sdk.NewInMemoryTransports()
 	if _, err := server.Connect(ctx, here, nil); err != nil {
 		return nil, err
@@ -117,10 +117,10 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Words, erro
 		return nil, err
 	}
 
-	words := make(map[string]Words, len(listed.Tools))
+	words := make(map[string]Tool, len(listed.Tools))
 	for _, tool := range listed.Tools {
 		about := firstRequired(tool.InputSchema)
-		words[tool.Name] = Words{
+		words[tool.Name] = Tool{
 			Title:  titleOf(tool),
 			About:  about,
 			Inside: firstRequiredInside(tool.InputSchema, about),
