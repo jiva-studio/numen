@@ -419,15 +419,21 @@ func (f *folders) concerns(absolute string) (paths []string, whole bool, walk st
 // folders under it remembered as it goes.
 //
 // A folder holding more entries than Entries is answered as the whole vault:
-// the rest of the walk costs more than reading the vault again.
+// the rest of the walk costs more than reading the vault again. So is a folder
+// the walk could not enter: what it holds is missing from the shape, and a
+// shape short of a folder cannot tell a folder that has gone from a file that
+// has — the index would go on answering with files that are not there.
 func (f *folders) inside(ctx context.Context, absolute string) (paths []string, whole bool) {
 	var held []string
-	seen, over := 0, false
+	seen, over, short := 0, false, false
 	_ = filepath.WalkDir(absolute, func(p string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
 			return fs.SkipAll
 		}
 		if err != nil {
+			// The rest of the walk still stands: as much of the shape as can be
+			// learnt is learnt, and the vault is read again for what cannot.
+			short = true
 			return nil
 		}
 		seen++
@@ -451,7 +457,7 @@ func (f *folders) inside(ctx context.Context, absolute string) (paths []string, 
 		}
 		return nil
 	})
-	if over {
+	if over || short {
 		return nil, true
 	}
 	return held, false
