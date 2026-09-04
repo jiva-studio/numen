@@ -1,22 +1,16 @@
 package domain_test
 
 import (
-	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 )
 
 // What a vault walks as a recording and what a player is told it is being given
-// are the one table. Two lists drift, and a container added to one of them is a
-// source the vault holds and the player refuses.
+// are the one table. A container named in the one and not the other is a source
+// the vault holds and the player refuses.
 func TestWhatIsWalkedIsWhatIsPlayed(t *testing.T) {
-	walked := filesystem.DefaultRecordingExtensions
-	if !slices.Equal(walked, domain.RecordingExtensions()) {
-		t.Fatalf("a vault walks %v and the table holds %v", walked, domain.RecordingExtensions())
-	}
-	for _, one := range walked {
+	for _, one := range domain.RecordingExtensions() {
 		if domain.MediaType("talk"+one) == "" {
 			t.Errorf("a vault walks %s and nothing says what it is played as", one)
 		}

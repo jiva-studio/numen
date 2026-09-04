@@ -108,6 +108,45 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	}
 }
 
+// A test file is left out of the rules above, because a test stands outside the
+// package it exercises and builds the adapters that stand in for the real ones.
+// That leaves the packages holding what is true of a note or a card, where the
+// reason does not reach: nothing there needs a disk to be shown a note is what
+// it is, and a test that takes one has turned the dependency round at the
+// innermost layer, where every other package can see it.
+func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
+	var wrong []string
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
+			return err
+		}
+		if !holds(pure, within("..", path)) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, one := range file.Imports {
+			to, err := strconv.Unquote(one.Path.Value)
+			if err != nil || !strings.HasPrefix(to, module) {
+				continue
+			}
+			held := strings.TrimPrefix(to, module)
+			if adapting(held) || held == "container" {
+				wrong = append(wrong, path+" is tested through "+held)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
 // A port is named after the need and an adapter after the technology, and the
 // binding between them is the composition root's. An adapter that writes
 // `var _ port.X = …` has named the need it answers, which puts the binding in
