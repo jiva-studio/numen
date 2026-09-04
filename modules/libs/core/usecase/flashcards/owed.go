@@ -10,9 +10,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 )
 
-// Owing is what one vault's cards come to today: what it holds, what is owed,
+// CardsDue is what one vault's cards come to today: what it holds, what is owed,
 // and what has never been asked.
-type Owing struct {
+type CardsDue struct {
 	// Faces is every card the vault holds, counted once for each face it is
 	// shown through.
 	Faces int
@@ -21,14 +21,14 @@ type Owing struct {
 	// the day leave, so they are what a sitting will ask.
 	Due   int
 	New   int
-	Decks []DeckOwing
+	Decks []DeckCardsDue
 	// Presets is what the day comes to under every preset the vault holds,
 	// whether a deck points at it or not.
-	Presets []PresetOwing
+	Presets []PresetCardsDue
 }
 
-// DeckOwing is one deck's share of it, by the path of its file.
-type DeckOwing struct {
+// DeckCardsDue is one deck's share of it, by the path of its file.
+type DeckCardsDue struct {
 	Deck  string
 	Faces int
 	Due   int
@@ -47,9 +47,9 @@ type DeckOwing struct {
 	Learned int
 }
 
-// PresetOwing is one preset's day, by the path of the note it stands in. A
+// PresetCardsDue is one preset's day, by the path of the note it stands in. A
 // preset standing in no note schedules the decks naming none.
-type PresetOwing struct {
+type PresetCardsDue struct {
 	Preset string
 	// Decks is how many decks name it, whatever they hold, and Cards is how
 	// many card faces stand in those decks. A deck holding no cards points at
@@ -81,8 +81,8 @@ type PresetOwing struct {
 	Stops review.StopReason
 }
 
-// Owed is what a vault owes, which is what its front door shows.
-type Owed struct {
+// CountCardsDue is what a vault owes, which is what its front door shows.
+type CountCardsDue struct {
 	Standings Standings
 	Schedules Schedules
 	// Presets says which preset each deck is scheduled by. A build holding no
@@ -102,31 +102,31 @@ type Owed struct {
 //
 // A count nobody is waiting for is dropped at the next phase: reading the
 // decks, reading the log and replaying it each run to their end.
-func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
+func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, error) {
 	if err := ctx.Err(); err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	standing, err := u.Standings.Execute(ctx, v)
 	if err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	if err := ctx.Err(); err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	log, err := Log{Stores: u.Schedules.Logs}.Read(ctx, v)
 	if err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	// One reading of this vault's presets answers the schedulers, the budgets
 	// and how many decks name each preset.
 	reading := u.Presets.Reading()
 	asks, err := u.Schedules.under(ctx, v, reading, standing)
 	if err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	schedules := u.Schedules.replayed(ctx, v, log, asks)
 	if err := ctx.Err(); err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 
 	now := u.now()
@@ -135,16 +135,16 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 		u.Schedules.By, u.Schedules.at, now,
 	)
 	if err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	holds := day.asks(standing, schedules, u.Day, now, Scope{})
 
-	out := Owing{Faces: len(standing)}
-	decks := make(map[string]*DeckOwing)
-	at := func(deck string) *DeckOwing {
+	out := CardsDue{Faces: len(standing)}
+	decks := make(map[string]*DeckCardsDue)
+	at := func(deck string) *DeckCardsDue {
 		one, held := decks[deck]
 		if !held {
-			one = &DeckOwing{Deck: deck}
+			one = &DeckCardsDue{Deck: deck}
 			decks[deck] = one
 		}
 		return one
@@ -181,12 +181,12 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 	for _, deck := range decks {
 		out.Decks = append(out.Decks, *deck)
 	}
-	slices.SortFunc(out.Decks, func(a, b DeckOwing) int {
+	slices.SortFunc(out.Decks, func(a, b DeckCardsDue) int {
 		return strings.Compare(a.Deck, b.Deck)
 	})
 	out.Presets, err = u.presets(ctx, v, reading, day, due, fresh)
 	if err != nil {
-		return Owing{}, err
+		return CardsDue{}, err
 	}
 	return out, nil
 }
@@ -197,10 +197,10 @@ func (u Owed) Execute(ctx context.Context, v domain.Vault) (Owing, error) {
 // How many decks name a preset is counted over every deck the vault holds, so a
 // deck of no cards points at its preset like any other. A preset no deck names
 // stands at nothing.
-func (u Owed) presets(
+func (u CountCardsDue) presets(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day *budgets,
 	due, fresh map[string]int,
-) ([]PresetOwing, error) {
+) ([]PresetCardsDue, error) {
 	out := day.owing(due, fresh)
 	if u.Standings.Notes == nil {
 		return out, nil
@@ -239,11 +239,11 @@ func (u Owed) presets(
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, PresetOwing{
+		out = append(out, PresetCardsDue{
 			Preset: path, Decks: naming[path], Stops: one.StopsToday,
 		})
 	}
-	slices.SortFunc(out, func(a, b PresetOwing) int {
+	slices.SortFunc(out, func(a, b PresetCardsDue) int {
 		return strings.Compare(a.Preset, b.Preset)
 	})
 	return out, nil
@@ -252,10 +252,10 @@ func (u Owed) presets(
 // owing is what the day comes to under each preset the vault's decks name: the
 // budget the day of the week leaves it, and what has been answered under it
 // since the day opened.
-func (b *budgets) owing(due, fresh map[string]int) []PresetOwing {
-	out := make([]PresetOwing, 0, len(b.left))
+func (b *budgets) owing(due, fresh map[string]int) []PresetCardsDue {
+	out := make([]PresetCardsDue, 0, len(b.left))
 	for path, one := range b.left {
-		out = append(out, PresetOwing{
+		out = append(out, PresetCardsDue{
 			Preset: path, Cards: b.cards[path],
 			Due: due[path], New: fresh[path],
 			Answered:        one.spent.Answered,
@@ -269,7 +269,7 @@ func (b *budgets) owing(due, fresh map[string]int) []PresetOwing {
 	return out
 }
 
-func (u Owed) now() time.Time {
+func (u CountCardsDue) now() time.Time {
 	if u.Now == nil {
 		return time.Now()
 	}

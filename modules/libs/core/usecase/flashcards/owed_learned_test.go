@@ -41,7 +41,7 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := map[string]flashcards.DeckOwing{
+	want := map[string]flashcards.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
 		// as likely to come back as a card gets.
 		"decks/One.md": {Deck: "decks/One.md", Faces: 3, Learned: 1},

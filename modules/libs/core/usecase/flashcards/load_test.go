@@ -118,7 +118,7 @@ func (b countingBy) Spaced(s review.Schedule) bool { return b.inner.Spaced(s) }
 type loaded struct {
 	vaulted
 	on     *loadCounts
-	owed   flashcards.Owed
+	owed   flashcards.CountCardsDue
 	sat    flashcards.Session
 	review flashcards.CountReviews
 	faces  int
@@ -144,7 +144,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	return loaded{
 		vaulted: s,
 		on:      on,
-		owed: flashcards.Owed{
+		owed: flashcards.CountCardsDue{
 			Standings: s.standings, Schedules: schedules, Presets: s.presets,
 			Day: today, Now: time.Now,
 		},

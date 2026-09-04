@@ -22,7 +22,7 @@ type Flashcards struct {
 	Standings flashcards.Standings
 	Marking   flashcards.Marking
 	Schedules flashcards.Schedules
-	Owed      flashcards.Owed
+	Owed      flashcards.CountCardsDue
 	Session   flashcards.Session
 	Log       flashcards.Log
 	// Counted is how much of a vault was answered on each day it was reviewed.
@@ -130,7 +130,7 @@ func (c Config) Flashcards(
 		Standings: standing,
 		Marking:   marking,
 		Schedules: schedules,
-		Owed: flashcards.Owed{
+		Owed: flashcards.CountCardsDue{
 			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
 		},
 		Session: flashcards.Session{

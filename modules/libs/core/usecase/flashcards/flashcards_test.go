@@ -171,12 +171,12 @@ func (s vaulted) runNamed(t *testing.T, named, given time.Time) flashcards.Recor
 	return flashcards.Record{Run: run, Now: func() time.Time { return given }}
 }
 
-func (s vaulted) owed(day review.Day) flashcards.Owed {
+func (s vaulted) owed(day review.Day) flashcards.CountCardsDue {
 	return s.owedAt(day, time.Now)
 }
 
-func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.Owed {
-	return flashcards.Owed{
+func (s vaulted) owedAt(day review.Day, now func() time.Time) flashcards.CountCardsDue {
+	return flashcards.CountCardsDue{
 		Standings: s.standings, Schedules: s.kept, Presets: s.presets, Day: day, Now: now,
 	}
 }

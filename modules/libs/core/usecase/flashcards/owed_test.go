@@ -51,7 +51,7 @@ func TestWhatADayCameToUnderEachPresetOfAVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []flashcards.PresetOwing{
+	want := []flashcards.PresetCardsDue{
 		{
 			Preset: "", Decks: 1, Cards: 1, Due: 1,
 			Answered: 1, AnsweredNew: 1, Took: 4 * time.Second,
@@ -94,7 +94,7 @@ func TestAVaultHoldingNoPresetStandsOnTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := flashcards.PresetOwing{
+	want := flashcards.PresetCardsDue{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
 		Budget: review.Defaults().Admits(today, saturday, review.Spent{}, 0, 0).Keeps,
 		Closes: review.Defaults().Admits(today, saturday, review.Spent{}, 0, 0).Closes,
@@ -124,7 +124,7 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var held *flashcards.PresetOwing
+	var held *flashcards.PresetCardsDue
 	for at, one := range owing.Presets {
 		if one.Preset == "Empty.md" {
 			held = &owing.Presets[at]
@@ -133,7 +133,7 @@ func TestAPresetNoDeckPointsAtStandsInTheCount(t *testing.T) {
 	if held == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
 	}
-	if *held != (flashcards.PresetOwing{Preset: "Empty.md"}) {
+	if *held != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
 		t.Errorf("it came to %+v, want a preset nothing stands under", *held)
 	}
 }
@@ -332,7 +332,7 @@ func TestACountIsDroppedOnceTheWindowHasGone(t *testing.T) {
 	gone, went := context.WithCancel(t.Context())
 	went()
 
-	_, err := flashcards.Owed{}.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
+	_, err := flashcards.CountCardsDue{}.Execute(gone, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
 	if !errors.Is(err, context.Canceled) {
 		t.Errorf("the count came back with %v", err)
 	}
