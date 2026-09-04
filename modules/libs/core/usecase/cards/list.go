@@ -25,6 +25,12 @@ type List struct {
 	Notes   port.NoteQueries
 }
 
+// NewList is what the vault's stencils are listed through: what says which
+// notes are stencils, and the vault each is read out of for its fields.
+func NewList(readers port.VaultReaders, notes port.NoteQueries) List {
+	return List{Readers: readers, Notes: notes}
+}
+
 // Execute lists the stencils of one vault, by path, and says how many the vault
 // holds.
 //
@@ -43,6 +49,7 @@ func (u List) Execute(
 		held = held[:limit]
 	}
 
+	// A stencil holds no cards, so nothing here asks where a wikilink lands.
 	read := Read{Readers: u.Readers}
 	out := make([]StencilSummary, 0, len(held))
 	for _, s := range held {

@@ -47,7 +47,8 @@ func (w *countedWriter) Write(
 func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := indexed(t)
 	writers := &counted{VaultWriters: filesystem.VaultWriters{}}
-	u := cards.Write{Readers: filesystem.VaultReaders{}, Writers: writers}
+	u := cards.NewWrite(
+		filesystem.VaultReaders{}, writers, vs.db.NoteQueries(), unlevelled)
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	at, err := u.Stencil(
@@ -85,7 +86,8 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n")
 
-	u := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
+	u := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
 	if _, err := u.Stencil(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
@@ -111,9 +113,8 @@ func laid(t *testing.T, vs vaulted, path, body string) cards.Write {
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
 		t.Fatal(err)
 	}
-	return cards.Write{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Links: vs.db.NoteQueries(),
-	}
+	return cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
 }
 
 // held is the deck as the vault now holds it.
@@ -194,9 +195,8 @@ func TestAMarkIsWrittenInTheFilesOwnLineEnding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	w := cards.Write{
-		Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}, Links: vs.db.NoteQueries(),
-	}
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.Fingerprint{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -315,10 +315,9 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			w := cards.Write{
-				Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{},
-				Links: vs.db.NoteQueries(),
-			}
+			w := cards.NewWrite(
+				filesystem.VaultReaders{}, filesystem.VaultWriters{},
+				vs.db.NoteQueries(), unlevelled)
 			if _, err := w.Deck(
 				t.Context(), vs.first, "decks/Whole.md", body, domain.Fingerprint{},
 			); err != nil {

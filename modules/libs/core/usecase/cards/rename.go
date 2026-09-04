@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/cardid"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // Rename is which field of which stencil is being renamed, and to what.
@@ -57,12 +58,30 @@ type RenameField struct {
 	Writers port.VaultWriters
 	Notes   port.NoteQueries
 	// Links answers where the wikilink a card names its stencil by lands, which
-	// is what says the card is cut by this stencil. A build holding none reaches
-	// no card.
+	// is what says the card is cut by this stencil.
 	Links port.LinkQueries
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index note.Levels
 	// Now is when this is happening. An identifier written here carries it.
 	Now func() time.Time
+}
+
+// NewRenameField is what a stencil's field is renamed through: the vault the
+// stencil and every deck are read and written through, what says which notes
+// are decks, where each card's wikilink lands, and what brings every file the
+// rename touched level in the index.
+//
+// All five are named here because a rename short of any one of them leaves the
+// name written in one place and not another.
+func NewRenameField(
+	readers port.VaultReaders,
+	writers port.VaultWriters,
+	notes port.NoteQueries,
+	links port.LinkQueries,
+	index note.Levels,
+) RenameField {
+	return RenameField{
+		Readers: readers, Writers: writers, Notes: notes, Links: links, Index: index,
+	}
 }
 
 // stamp is the identifier a file this rename writes is to carry where it

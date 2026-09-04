@@ -112,6 +112,10 @@ func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []stri
 	}
 }
 
+// unlevelled brings nothing level: these tests read the file back and not the
+// index. The ones that ask the index level it with a whole scan.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+
 func read(t *testing.T, v domain.Vault, path string) string {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path)))
@@ -150,7 +154,8 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 		t.Fatalf("deck = %+v", got.Body)
 	}
 
-	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -309,7 +314,8 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 // file outranks a caller that read it, thought about it, and arrived late.
 func TestADeckThatChangedSinceItWasReadIsNotWrittenOver(t *testing.T) {
 	vs := indexed(t)
-	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
+	w := cards.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, vs.db.NoteQueries(), unlevelled)
 
 	first, err := cards.Read{Readers: filesystem.VaultReaders{}}.Deck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {

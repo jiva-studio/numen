@@ -2,6 +2,7 @@ package cards
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -24,12 +25,24 @@ type Write struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
 	// Links answers where the wikilink a card names its stencil by lands, which
-	// is what says which of the card's fields is first. A build holding none
-	// reprojects no heading.
+	// is what says which of the card's fields is first.
 	Links port.LinkQueries
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index note.Levels
 	// Now is when this is happening. An identifier written here carries it.
 	Now func() time.Time
+}
+
+// NewWrite is what a deck or a stencil goes back through: the vault it is read
+// and written through, where the wikilink each card names its stencil by lands,
+// and what brings the file level in the index.
+//
+// All four are named here because a write short of any one of them puts the
+// file back and leaves something behind it — a card cut by the wrong stencil,
+// or a deck the vault cannot find.
+func NewWrite(
+	readers port.VaultReaders, writers port.VaultWriters, links port.LinkQueries, index note.Levels,
+) Write {
+	return Write{Readers: readers, Writers: writers, Links: links, Index: index}
 }
 
 // WriteResult is what a write of a deck left behind: what the file now stands at,
@@ -56,10 +69,12 @@ func (u Write) Deck(
 		return WriteResult{}, err
 	}
 	at, err := u.note().Execute(ctx, v, path, whole, fingerprint)
-	if err != nil {
+	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
-	return WriteResult{Fingerprint: at, Minted: minted}, u.level(ctx, v, path)
+	// The file is on disk, so what it now stands at comes back beside a
+	// levelling that failed, and the caller can tell the two apart.
+	return WriteResult{Fingerprint: at, Minted: minted}, err
 }
 
 // whole is the body every card of which has been made whole, and the marks that
@@ -92,11 +107,7 @@ func (u Write) Stencil(
 	if err := note.Bounded(path, len(body), note.MaxBytes); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	at, err := u.stencil(ctx, v, path, body, fields, fingerprint)
-	if err != nil {
-		return at, err
-	}
-	return at, u.level(ctx, v, path)
+	return u.stencil(ctx, v, path, body, fields, fingerprint)
 }
 
 // stencil is the read, the change and the write, under this vault's write lock
@@ -109,10 +120,8 @@ func (u Write) stencil(
 		return domain.Fingerprint{}, note.ErrBodyRefused
 	}
 
-	e := note.Editing{
-		Readers: u.Readers, Writers: u.Writers, Now: u.Now,
-		Fingerprint: fingerprint, Bound: note.MaxBytes,
-	}
+	e := note.NewEditing(u.Readers, u.Writers, u.Index)
+	e.Now, e.Fingerprint, e.Bound = u.Now, fingerprint, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		doc.SetBody(body)
 		// A stencil already declaring these, in this order, keeps the bytes the
@@ -124,17 +133,10 @@ func (u Write) stencil(
 	})
 }
 
-// level brings what a write touched up to date. The levelling is done here so
-// that a caller holding the file's fingerprint is told which of the two failed.
-func (u Write) level(ctx context.Context, v domain.Vault, path string) error {
-	if u.Index == nil {
-		return nil
-	}
-	return note.Levelled(path, u.Index(ctx, v, []string{path}))
-}
-
 // note is the writer a deck goes to disk through, held to the size a deck is
 // read at.
 func (u Write) note() note.Write {
-	return note.Write{Readers: u.Readers, Writers: u.Writers, Now: u.Now, Bound: MaxBytes}
+	writing := note.NewWrite(u.Readers, u.Writers, u.Index)
+	writing.Now, writing.Bound = u.Now, MaxBytes
+	return writing
 }

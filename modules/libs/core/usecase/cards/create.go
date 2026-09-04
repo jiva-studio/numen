@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/ulid"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // The two frontmatter keys a deck and a stencil are made with: what the note
@@ -30,9 +31,18 @@ type Create struct {
 	Writers port.VaultWriters
 	// Index brings the new file up to date, so that a caller which makes a deck
 	// and lists the vault's decks in the next breath finds it.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index note.Levels
 	// Now is when this is happening. An identifier carries it.
 	Now func() time.Time
+}
+
+// NewCreate is what a deck, a stencil or a preset is made through: the vault it
+// is written into, and what brings the new file level in the index.
+//
+// Both are named here because a file made and not levelled is one the vault
+// cannot be asked for in the next breath, which is what making it was for.
+func NewCreate(writers port.VaultWriters, index note.Levels) Create {
+	return Create{Writers: writers, Index: index}
 }
 
 // New is what to make.
@@ -125,9 +135,6 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	// The file is on disk from here on, so what comes back says where it is
 	// whether or not the index caught up.
 	made := CreateNoteResult{Path: path, ID: identifier, Title: title}
-	if u.Index == nil {
-		return made, nil
-	}
 	return made, u.Index(ctx, v, []string{path})
 }
 
