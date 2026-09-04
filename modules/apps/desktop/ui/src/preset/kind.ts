@@ -52,6 +52,25 @@ export type Said = number | string | boolean | Load
 const isLoad = (value: Said): value is Load =>
   typeof value === 'object' && Object.values(value).every((share) => typeof share === 'number')
 
+/** The settings as a tab holds them while a person is moving them. */
+type Holding = { -readonly [field in keyof Settings]: Settings[field] }
+
+/** One setting left where it stands, rather than taken from the read. */
+const kept = <F extends keyof Settings>(out: Holding, was: Settings, field: F): void => {
+  out[field] = was[field]
+}
+
+/**
+ * The settings read, under the ones this person has moved and not written. A
+ * setting nobody touched is the file's, however many of its neighbours were.
+ */
+const taking = (read: Settings, was: Settings, theirs: ReadonlySet<keyof Settings>): Settings => {
+  if (theirs.size === 0) return read
+  const out: Holding = { ...read }
+  for (const field of theirs) kept(out, was, field)
+  return out
+}
+
 /** What one preset tab holds. */
 export interface Held {
   /** The identity this preset opened under, which its tab keeps wherever it goes. */
@@ -153,8 +172,11 @@ export function presetting(
     shape: string
     /** Whether the curve on screen is an answer, though a newer one may be out. */
     real: boolean
-    /** A setting stands here that the file has not been told of. */
-    edited: boolean
+    /**
+     * The settings this person has moved, which the file has not been told of.
+     * Each is theirs alone: moving one says nothing about the rest.
+     */
+    readonly theirs: Set<keyof Settings>
     /** Every curve this tab has been answered, under the settings it was asked for. */
     readonly answers: Map<string, Curve>
   }
@@ -183,7 +205,7 @@ export function presetting(
     drawAgain: false,
     shape: '',
     real: false,
-    edited: false,
+    theirs: new Set<keyof Settings>(),
     answers: new Map<string, Curve>(),
   })
 
@@ -218,9 +240,11 @@ export function presetting(
     if (answer.preset.title) titles.set(one.path.value, answer.preset.title)
     one.problems.value = answer.preset.problems
     one.stopped.value = answer.preset.stopsOn
-    // A setting a person has moved and not yet written is theirs, and the file
-    // is taken up where nothing of the kind stands.
-    if (!one.edited) one.settings.value = answer.preset.settings
+    // A setting a person has moved and not yet written is theirs, and every
+    // other one is taken up from the file. Moving one field is not a claim on
+    // the eleven beside it, which the tab is standing at a placeholder for
+    // until this read lands.
+    one.settings.value = taking(answer.preset.settings, one.settings.value, one.theirs)
     await curves(one)
   }
 
@@ -352,7 +376,8 @@ export function presetting(
     }
     one.saying.value = ''
     one.at = answer.at
-    one.edited = false
+    // The file has been told of every one of them, so none is still theirs.
+    one.theirs.clear()
     one.told = false
   }
 
@@ -388,7 +413,7 @@ export function presetting(
 
   /** Everything the tab owes the file, written and landed. */
   const owed = async (one: Kept): Promise<void> => {
-    if (one.edited && !one.changed.value) await writes(one)
+    if (one.theirs.size > 0 && !one.changed.value) await writes(one)
     else if (one.flight) await one.flight
   }
 
@@ -404,7 +429,7 @@ export function presetting(
    */
   const shut = async (one: Kept): Promise<boolean> => {
     await owed(one)
-    if (!one.edited && !one.changed.value) return true
+    if (one.theirs.size === 0 && !one.changed.value) return true
     if (one.told) return true
     one.told = true
     return false
@@ -415,7 +440,8 @@ export function presetting(
     const was = one.settings.value
     one.settings.value = producing(was, place, one.curve.value, today(), bounds.value)
     one.place.value = place
-    one.edited = true
+    // The knob moves the one value its curve's goal names, and nothing else.
+    one.theirs.add(steers(one.curve.value.goal))
   }
 
   /** One field of the settings, as a person typed it. */
@@ -452,6 +478,16 @@ export function presetting(
     return settings
   }
 
+  /**
+   * One field put where a person typed it, and marked theirs. A value the
+   * field cannot hold moves nothing and claims nothing.
+   */
+  const moved = (one: Kept, field: Field, value: Said): void => {
+    const was = one.settings.value
+    one.settings.value = typed(was, field, value)
+    if (one.settings.value !== was) one.theirs.add(field)
+  }
+
   /** Where a value typed into the field the goal steers falls on the grid. */
   const falling = (one: Kept, value: Said): number => {
     if (typeof value === 'number') return nearest(one.curve.value.grid, value)
@@ -483,9 +519,13 @@ export function presetting(
       changed: () => one.changed.value,
       again: () => void reads(one),
       chooses: (goal) => {
-        if (goal === one.settings.value.goal) return
-        one.settings.value = aiming(one.settings.value, goal)
-        one.edited = true
+        const was = one.settings.value
+        if (goal === was.goal) return
+        one.settings.value = aiming(was, goal)
+        one.theirs.add('goal')
+        // A goal of a date opens on a day where the file names none, and that
+        // day is the person's from here.
+        if (one.settings.value.byDate !== was.byDate) one.theirs.add('byDate')
         // The goal is a settled choice the moment it is made, and the file
         // carries it whether or not the curve of it ever comes back.
         void writes(one)
@@ -498,8 +538,7 @@ export function presetting(
         // written. The knob goes to the place nearest it, which is where the
         // person now stands on the grid.
         if (field === steers(one.settings.value.goal)) {
-          one.settings.value = typed(one.settings.value, field, value)
-          one.edited = true
+          moved(one, field, value)
           const place = falling(one, value)
           if (place >= 0) one.place.value = place
           // The range the curve is drawn over runs to the value the knob
@@ -507,8 +546,7 @@ export function presetting(
           if (shapeOf(one.settings.value) !== one.shape) void curves(one)
           return
         }
-        one.settings.value = typed(one.settings.value, field, value)
-        one.edited = true
+        moved(one, field, value)
         // A field the knob does not ride gives the curve its shape, so the
         // curve is asked for again where one of those is typed.
         if (shapeOf(one.settings.value) !== one.shape) void curves(one)

@@ -140,6 +140,49 @@ const after = async () => {
   for (let i = 0; i < 10; i += 1) await Promise.resolve()
 }
 
+/**
+ * A tab whose first read is still out. Until the test lets it land, the tab is
+ * standing at the placeholder settings and not at the file's own.
+ */
+const opening = async (file: Partial<Settings>) => {
+  let lands = () => {}
+  const held = new Promise<void>((settle) => {
+    lands = settle
+  })
+  const written: Settings[] = []
+  const core: Presets = {
+    read: async (path) => {
+      await held
+      return {
+        preset: {
+          path,
+          title: 'Steady',
+          settings: { ...STEADY, ...file },
+          problems: [],
+          stops: Stopped.NOTHING,
+          stopsOn: Stopped.NOTHING,
+        },
+        refusal: null,
+        at: 'one',
+        bounds: BOUNDS,
+      }
+    },
+    scheduling: async () => ({ preset: null, refusal: null, at: '', bounds: NO_BOUNDS }),
+    list: async () => [],
+    makes: async () => ({ path: '', refusal: null }),
+    schedules: async () => ({ refusal: null, changed: false, at: '' }),
+    write: async (_path, put) => {
+      written.push(put)
+      return { refusal: null, changed: false, at: 'two' }
+    },
+    curve: async () => curve,
+  }
+  const host = { closes: () => {} } as unknown as Host
+  const puts = { holds: () => {} } as unknown as Putting
+  const kind = presetting(core, host, puts, () => {}, () => NOW)
+  return { tab: await kind.kind.opens('Steady.md'), written, lands }
+}
+
 describe('the value the goal steers', () => {
   it('leaves the knob, the field and what is written at one value after a drag', async () => {
     const { held, written } = await opened()
@@ -540,6 +583,32 @@ describe('a file read again', () => {
     expect(held.settings().newADay).toBe(STEADY.newADay)
   })
 
+  // Moving one field is not a claim on the rest: the file has the say over
+  // every setting this person did not touch.
+  it('takes up every setting beside the one that was moved', async () => {
+    const { held, changed } = await opened({}, curve, (time) =>
+      time === 0
+        ? {}
+        : {
+            preset: {
+              path: 'Steady.md',
+              title: 'Steady',
+              settings: { ...STEADY, newADay: 7, reviewsADay: 33, interval: 40 },
+              problems: [],
+              stops: Stopped.NOTHING,
+              stopsOn: Stopped.NOTHING,
+            },
+          },
+    )
+    held.types('newADay', 4)
+    changed(['Steady.md'])
+    await after()
+
+    expect(held.settings().newADay).toBe(4)
+    expect(held.settings().reviewsADay).toBe(33)
+    expect(held.settings().interval).toBe(40)
+  })
+
   it('drops the problems of the file it read before, where it is refused', async () => {
     const { held, changed } = await opened({}, curve, (time) =>
       time === 0
@@ -694,6 +763,47 @@ describe('a field the goal does not steer, typed', () => {
         expect(written.at(-1)).toStrictEqual(now)
       }
     }
+  })
+})
+
+/**
+ * A tab draws its rows before its first read lands, so a person can move one of
+ * them while the file's own settings are still on their way. What they moved is
+ * theirs; every other row is standing at a placeholder, and the file has the say
+ * over it. Writing the placeholders back would lose the preset a person never
+ * looked at.
+ */
+describe('a field moved before the first read lands', () => {
+  it('leaves every other setting to the read, and writes what the read said', async () => {
+    const { tab, written, lands } = await opening({
+      retention: 0.93,
+      newADay: 3,
+      interval: 40,
+    })
+    // Nothing of the file has arrived: this is what the tab opened at.
+    expect(tab.settings().retention).toBe(DEFAULTS.retention)
+    expect(tab.settings().interval).toBe(DEFAULTS.interval)
+
+    tab.types('backlog', 55)
+    lands()
+    await after()
+
+    expect(tab.settings().backlog).toBe(55)
+    expect(tab.settings().retention).toBe(0.93)
+    expect(tab.settings().newADay).toBe(3)
+    expect(tab.settings().interval).toBe(40)
+
+    tab.settles()
+    await after()
+    expect(written.at(-1)).toStrictEqual(tab.settings())
+  })
+
+  it('keeps the moved field where the person left it, whatever the file says', async () => {
+    const { tab, lands } = await opening({ backlog: 10 })
+    tab.types('backlog', 55)
+    lands()
+    await after()
+    expect(tab.settings().backlog).toBe(55)
   })
 })
 
