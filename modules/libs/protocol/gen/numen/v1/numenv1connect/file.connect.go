@@ -39,39 +39,41 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// FileServiceListProcedure is the fully-qualified name of the FileService's List RPC.
-	FileServiceListProcedure = "/numen.v1.FileService/List"
-	// FileServiceStandingProcedure is the fully-qualified name of the FileService's Standing RPC.
-	FileServiceStandingProcedure = "/numen.v1.FileService/Standing"
-	// FileServiceMoveProcedure is the fully-qualified name of the FileService's Move RPC.
-	FileServiceMoveProcedure = "/numen.v1.FileService/Move"
-	// FileServiceRemoveProcedure is the fully-qualified name of the FileService's Remove RPC.
-	FileServiceRemoveProcedure = "/numen.v1.FileService/Remove"
-	// FileServiceMakeFolderProcedure is the fully-qualified name of the FileService's MakeFolder RPC.
-	FileServiceMakeFolderProcedure = "/numen.v1.FileService/MakeFolder"
+	// FileServiceListFilesProcedure is the fully-qualified name of the FileService's ListFiles RPC.
+	FileServiceListFilesProcedure = "/numen.v1.FileService/ListFiles"
+	// FileServiceListFileKindsProcedure is the fully-qualified name of the FileService's ListFileKinds
+	// RPC.
+	FileServiceListFileKindsProcedure = "/numen.v1.FileService/ListFileKinds"
+	// FileServiceMoveFileProcedure is the fully-qualified name of the FileService's MoveFile RPC.
+	FileServiceMoveFileProcedure = "/numen.v1.FileService/MoveFile"
+	// FileServiceRemoveFileProcedure is the fully-qualified name of the FileService's RemoveFile RPC.
+	FileServiceRemoveFileProcedure = "/numen.v1.FileService/RemoveFile"
+	// FileServiceCreateFolderProcedure is the fully-qualified name of the FileService's CreateFolder
+	// RPC.
+	FileServiceCreateFolderProcedure = "/numen.v1.FileService/CreateFolder"
 )
 
 // FileServiceClient is a client for the numen.v1.FileService service.
 type FileServiceClient interface {
-	// List is what one folder of the vault holds. A tree asks for a folder as it
-	// is opened, one folder to a request.
-	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
-	// Standing is what the vault holds at each of those paths, so a client
+	// ListFiles is what one folder of the vault holds. A tree asks for a folder
+	// as it is opened, one folder to a request.
+	ListFiles(context.Context, *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error)
+	// ListFileKinds is what the vault holds at each of those paths, so a client
 	// holding a path opens what stands there in the editor made for it. The kind
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
 	// answers at once are refused, so that an answer is never cut to fit.
-	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
-	// Move puts a file or a folder somewhere else in the vault. Renaming a file
-	// is a move within one folder.
-	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Remove takes a file or a folder out of the vault, into the trash it can be
-	// brought back from. The links that pointed at it are left as they were
+	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
+	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
+	// file is a move within one folder.
+	MoveFile(context.Context, *connect.Request[v1.MoveFileRequest]) (*connect.Response[v1.MoveFileResponse], error)
+	// RemoveFile takes a file or a folder out of the vault, into the trash it can
+	// be brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
-	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	// MakeFolder makes an empty folder. The folders above it are made with it.
-	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
+	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
+	// CreateFolder makes an empty folder. The folders above it are made with it.
+	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 }
 
 // NewFileServiceClient constructs a client for the numen.v1.FileService service. By default, it
@@ -85,34 +87,34 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 	baseURL = strings.TrimRight(baseURL, "/")
 	fileServiceMethods := v1.File_numen_v1_file_proto.Services().ByName("FileService").Methods()
 	return &fileServiceClient{
-		list: connect.NewClient[v1.ListRequest, v1.ListResponse](
+		listFiles: connect.NewClient[v1.ListFilesRequest, v1.ListFilesResponse](
 			httpClient,
-			baseURL+FileServiceListProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("List")),
+			baseURL+FileServiceListFilesProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("ListFiles")),
 			connect.WithClientOptions(opts...),
 		),
-		standing: connect.NewClient[v1.StandingRequest, v1.StandingResponse](
+		listFileKinds: connect.NewClient[v1.ListFileKindsRequest, v1.ListFileKindsResponse](
 			httpClient,
-			baseURL+FileServiceStandingProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("Standing")),
+			baseURL+FileServiceListFileKindsProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("ListFileKinds")),
 			connect.WithClientOptions(opts...),
 		),
-		move: connect.NewClient[v1.MoveRequest, v1.MoveResponse](
+		moveFile: connect.NewClient[v1.MoveFileRequest, v1.MoveFileResponse](
 			httpClient,
-			baseURL+FileServiceMoveProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("Move")),
+			baseURL+FileServiceMoveFileProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("MoveFile")),
 			connect.WithClientOptions(opts...),
 		),
-		remove: connect.NewClient[v1.RemoveRequest, v1.RemoveResponse](
+		removeFile: connect.NewClient[v1.RemoveFileRequest, v1.RemoveFileResponse](
 			httpClient,
-			baseURL+FileServiceRemoveProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("Remove")),
+			baseURL+FileServiceRemoveFileProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("RemoveFile")),
 			connect.WithClientOptions(opts...),
 		),
-		makeFolder: connect.NewClient[v1.MakeFolderRequest, v1.MakeFolderResponse](
+		createFolder: connect.NewClient[v1.CreateFolderRequest, v1.CreateFolderResponse](
 			httpClient,
-			baseURL+FileServiceMakeFolderProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("MakeFolder")),
+			baseURL+FileServiceCreateFolderProcedure,
+			connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -120,59 +122,59 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // fileServiceClient implements FileServiceClient.
 type fileServiceClient struct {
-	list       *connect.Client[v1.ListRequest, v1.ListResponse]
-	standing   *connect.Client[v1.StandingRequest, v1.StandingResponse]
-	move       *connect.Client[v1.MoveRequest, v1.MoveResponse]
-	remove     *connect.Client[v1.RemoveRequest, v1.RemoveResponse]
-	makeFolder *connect.Client[v1.MakeFolderRequest, v1.MakeFolderResponse]
+	listFiles     *connect.Client[v1.ListFilesRequest, v1.ListFilesResponse]
+	listFileKinds *connect.Client[v1.ListFileKindsRequest, v1.ListFileKindsResponse]
+	moveFile      *connect.Client[v1.MoveFileRequest, v1.MoveFileResponse]
+	removeFile    *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
+	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
 }
 
-// List calls numen.v1.FileService.List.
-func (c *fileServiceClient) List(ctx context.Context, req *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
-	return c.list.CallUnary(ctx, req)
+// ListFiles calls numen.v1.FileService.ListFiles.
+func (c *fileServiceClient) ListFiles(ctx context.Context, req *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error) {
+	return c.listFiles.CallUnary(ctx, req)
 }
 
-// Standing calls numen.v1.FileService.Standing.
-func (c *fileServiceClient) Standing(ctx context.Context, req *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
-	return c.standing.CallUnary(ctx, req)
+// ListFileKinds calls numen.v1.FileService.ListFileKinds.
+func (c *fileServiceClient) ListFileKinds(ctx context.Context, req *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error) {
+	return c.listFileKinds.CallUnary(ctx, req)
 }
 
-// Move calls numen.v1.FileService.Move.
-func (c *fileServiceClient) Move(ctx context.Context, req *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
-	return c.move.CallUnary(ctx, req)
+// MoveFile calls numen.v1.FileService.MoveFile.
+func (c *fileServiceClient) MoveFile(ctx context.Context, req *connect.Request[v1.MoveFileRequest]) (*connect.Response[v1.MoveFileResponse], error) {
+	return c.moveFile.CallUnary(ctx, req)
 }
 
-// Remove calls numen.v1.FileService.Remove.
-func (c *fileServiceClient) Remove(ctx context.Context, req *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
-	return c.remove.CallUnary(ctx, req)
+// RemoveFile calls numen.v1.FileService.RemoveFile.
+func (c *fileServiceClient) RemoveFile(ctx context.Context, req *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error) {
+	return c.removeFile.CallUnary(ctx, req)
 }
 
-// MakeFolder calls numen.v1.FileService.MakeFolder.
-func (c *fileServiceClient) MakeFolder(ctx context.Context, req *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
-	return c.makeFolder.CallUnary(ctx, req)
+// CreateFolder calls numen.v1.FileService.CreateFolder.
+func (c *fileServiceClient) CreateFolder(ctx context.Context, req *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
+	return c.createFolder.CallUnary(ctx, req)
 }
 
 // FileServiceHandler is an implementation of the numen.v1.FileService service.
 type FileServiceHandler interface {
-	// List is what one folder of the vault holds. A tree asks for a folder as it
-	// is opened, one folder to a request.
-	List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error)
-	// Standing is what the vault holds at each of those paths, so a client
+	// ListFiles is what one folder of the vault holds. A tree asks for a folder
+	// as it is opened, one folder to a request.
+	ListFiles(context.Context, *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error)
+	// ListFileKinds is what the vault holds at each of those paths, so a client
 	// holding a path opens what stands there in the editor made for it. The kind
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
 	// answers at once are refused, so that an answer is never cut to fit.
-	Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error)
-	// Move puts a file or a folder somewhere else in the vault. Renaming a file
-	// is a move within one folder.
-	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Remove takes a file or a folder out of the vault, into the trash it can be
-	// brought back from. The links that pointed at it are left as they were
+	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
+	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
+	// file is a move within one folder.
+	MoveFile(context.Context, *connect.Request[v1.MoveFileRequest]) (*connect.Response[v1.MoveFileResponse], error)
+	// RemoveFile takes a file or a folder out of the vault, into the trash it can
+	// be brought back from. The links that pointed at it are left as they were
 	// written: a link is not wrong because the note it names is gone.
-	Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error)
-	// MakeFolder makes an empty folder. The folders above it are made with it.
-	MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error)
+	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
+	// CreateFolder makes an empty folder. The folders above it are made with it.
+	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
 }
 
 // NewFileServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -182,48 +184,48 @@ type FileServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	fileServiceMethods := v1.File_numen_v1_file_proto.Services().ByName("FileService").Methods()
-	fileServiceListHandler := connect.NewUnaryHandler(
-		FileServiceListProcedure,
-		svc.List,
-		connect.WithSchema(fileServiceMethods.ByName("List")),
+	fileServiceListFilesHandler := connect.NewUnaryHandler(
+		FileServiceListFilesProcedure,
+		svc.ListFiles,
+		connect.WithSchema(fileServiceMethods.ByName("ListFiles")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fileServiceStandingHandler := connect.NewUnaryHandler(
-		FileServiceStandingProcedure,
-		svc.Standing,
-		connect.WithSchema(fileServiceMethods.ByName("Standing")),
+	fileServiceListFileKindsHandler := connect.NewUnaryHandler(
+		FileServiceListFileKindsProcedure,
+		svc.ListFileKinds,
+		connect.WithSchema(fileServiceMethods.ByName("ListFileKinds")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fileServiceMoveHandler := connect.NewUnaryHandler(
-		FileServiceMoveProcedure,
-		svc.Move,
-		connect.WithSchema(fileServiceMethods.ByName("Move")),
+	fileServiceMoveFileHandler := connect.NewUnaryHandler(
+		FileServiceMoveFileProcedure,
+		svc.MoveFile,
+		connect.WithSchema(fileServiceMethods.ByName("MoveFile")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fileServiceRemoveHandler := connect.NewUnaryHandler(
-		FileServiceRemoveProcedure,
-		svc.Remove,
-		connect.WithSchema(fileServiceMethods.ByName("Remove")),
+	fileServiceRemoveFileHandler := connect.NewUnaryHandler(
+		FileServiceRemoveFileProcedure,
+		svc.RemoveFile,
+		connect.WithSchema(fileServiceMethods.ByName("RemoveFile")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fileServiceMakeFolderHandler := connect.NewUnaryHandler(
-		FileServiceMakeFolderProcedure,
-		svc.MakeFolder,
-		connect.WithSchema(fileServiceMethods.ByName("MakeFolder")),
+	fileServiceCreateFolderHandler := connect.NewUnaryHandler(
+		FileServiceCreateFolderProcedure,
+		svc.CreateFolder,
+		connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.FileService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case FileServiceListProcedure:
-			fileServiceListHandler.ServeHTTP(w, r)
-		case FileServiceStandingProcedure:
-			fileServiceStandingHandler.ServeHTTP(w, r)
-		case FileServiceMoveProcedure:
-			fileServiceMoveHandler.ServeHTTP(w, r)
-		case FileServiceRemoveProcedure:
-			fileServiceRemoveHandler.ServeHTTP(w, r)
-		case FileServiceMakeFolderProcedure:
-			fileServiceMakeFolderHandler.ServeHTTP(w, r)
+		case FileServiceListFilesProcedure:
+			fileServiceListFilesHandler.ServeHTTP(w, r)
+		case FileServiceListFileKindsProcedure:
+			fileServiceListFileKindsHandler.ServeHTTP(w, r)
+		case FileServiceMoveFileProcedure:
+			fileServiceMoveFileHandler.ServeHTTP(w, r)
+		case FileServiceRemoveFileProcedure:
+			fileServiceRemoveFileHandler.ServeHTTP(w, r)
+		case FileServiceCreateFolderProcedure:
+			fileServiceCreateFolderHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -233,22 +235,22 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 // UnimplementedFileServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedFileServiceHandler struct{}
 
-func (UnimplementedFileServiceHandler) List(context.Context, *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.List is not implemented"))
+func (UnimplementedFileServiceHandler) ListFiles(context.Context, *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.ListFiles is not implemented"))
 }
 
-func (UnimplementedFileServiceHandler) Standing(context.Context, *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.Standing is not implemented"))
+func (UnimplementedFileServiceHandler) ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.ListFileKinds is not implemented"))
 }
 
-func (UnimplementedFileServiceHandler) Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.Move is not implemented"))
+func (UnimplementedFileServiceHandler) MoveFile(context.Context, *connect.Request[v1.MoveFileRequest]) (*connect.Response[v1.MoveFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.MoveFile is not implemented"))
 }
 
-func (UnimplementedFileServiceHandler) Remove(context.Context, *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.Remove is not implemented"))
+func (UnimplementedFileServiceHandler) RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.RemoveFile is not implemented"))
 }
 
-func (UnimplementedFileServiceHandler) MakeFolder(context.Context, *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.MakeFolder is not implemented"))
+func (UnimplementedFileServiceHandler) CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.CreateFolder is not implemented"))
 }

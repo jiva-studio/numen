@@ -19,12 +19,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIdCgtMaXN0UmVxdWVzdBIOCgZmb2xkZXIYASABKAkiMAoMTGlzdFJlc3BvbnNlEiAKB2VudHJpZXMYASADKAsyDy5udW1lbi52MS5FbnRyeSKNAQoFRW50cnkSDAoEcGF0aBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSDgoGZm9sZGVyGAMgASgIEiIKBGtpbmQYBCABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEiAKBHR5cGUYBiABKA4yEi5udW1lbi52MS5Ob3RlVHlwZUoECAUQBlIEc2l6ZSIgCg9TdGFuZGluZ1JlcXVlc3QSDQoFcGF0aHMYASADKAkiNQoQU3RhbmRpbmdSZXNwb25zZRIhCgVmb3VuZBgBIAMoCzISLm51bWVuLnYxLlN0YW5kaW5nIl4KCFN0YW5kaW5nEgwKBHBhdGgYASABKAkSIgoEa2luZBgCIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSIAoEdHlwZRgDIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIicKC01vdmVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkicgoMTW92ZVJlc3BvbnNlEiMKBW1vdmVkGAEgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQggKBl9tb3ZlZEIKCghfcmVmdXNhbCJFCgVNb3ZlZBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEhAKCHJlcGFpcmVkGAMgAygJSgQIBBAFUgpyZXRhcmdldGVkIi4KDVJlbW92ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIImgKDlJlbW92ZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIhChFNYWtlRm9sZGVyUmVxdWVzdBIMCgRwYXRoGAEgASgJIkkKEk1ha2VGb2xkZXJSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKnAKClNvdXJjZUtpbmQSGwoXU09VUkNFX0tJTkRfVU5TUEVDSUZJRUQQABIUChBTT1VSQ0VfS0lORF9OT1RFEAESFAoQU09VUkNFX0tJTkRfQk9PSxACEhkKFVNPVVJDRV9LSU5EX1JFQ09SRElORxADMsQCCgtGaWxlU2VydmljZRI1CgRMaXN0EhUubnVtZW4udjEuTGlzdFJlcXVlc3QaFi5udW1lbi52MS5MaXN0UmVzcG9uc2USQQoIU3RhbmRpbmcSGS5udW1lbi52MS5TdGFuZGluZ1JlcXVlc3QaGi5udW1lbi52MS5TdGFuZGluZ1Jlc3BvbnNlEjUKBE1vdmUSFS5udW1lbi52MS5Nb3ZlUmVxdWVzdBoWLm51bWVuLnYxLk1vdmVSZXNwb25zZRI7CgZSZW1vdmUSFy5udW1lbi52MS5SZW1vdmVSZXF1ZXN0GhgubnVtZW4udjEuUmVtb3ZlUmVzcG9uc2USRwoKTWFrZUZvbGRlchIbLm51bWVuLnYxLk1ha2VGb2xkZXJSZXF1ZXN0GhwubnVtZW4udjEuTWFrZUZvbGRlclJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIiChBMaXN0RmlsZXNSZXF1ZXN0Eg4KBmZvbGRlchgBIAEoCSI1ChFMaXN0RmlsZXNSZXNwb25zZRIgCgdlbnRyaWVzGAEgAygLMg8ubnVtZW4udjEuRW50cnkijQEKBUVudHJ5EgwKBHBhdGgYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmZvbGRlchgDIAEoCBIiCgRraW5kGAQgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGVKBAgFEAZSBHNpemUiJQoUTGlzdEZpbGVLaW5kc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiOgoVTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEiEKBWZvdW5kGAEgAygLMhIubnVtZW4udjEuU3RhbmRpbmciXgoIU3RhbmRpbmcSDAoEcGF0aBgBIAEoCRIiCgRraW5kGAIgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIgCgR0eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiKwoPTW92ZUZpbGVSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkidgoQTW92ZUZpbGVSZXNwb25zZRIjCgVtb3ZlZBgBIAEoCzIPLm51bWVuLnYxLk1vdmVkSACIAQESJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIICgZfbW92ZWRCCgoIX3JlZnVzYWwiRQoFTW92ZWQSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIQCghyZXBhaXJlZBgDIAMoCUoECAQQBVIKcmV0YXJnZXRlZCIyChFSZW1vdmVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2Rlc3Ryb3kYAiABKAgibAoSUmVtb3ZlRmlsZVJlc3BvbnNlEg8KB3RyYXNoZWQYASABKAkSEAoIZGFuZ2xpbmcYAiADKAkSJwoHcmVmdXNhbBgDIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCIjChNDcmVhdGVGb2xkZXJSZXF1ZXN0EgwKBHBhdGgYASABKAkiSwoUQ3JlYXRlRm9sZGVyUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCpwCgpTb3VyY2VLaW5kEhsKF1NPVVJDRV9LSU5EX1VOU1BFQ0lGSUVEEAASFAoQU09VUkNFX0tJTkRfTk9URRABEhQKEFNPVVJDRV9LSU5EX0JPT0sQAhIZChVTT1VSQ0VfS0lORF9SRUNPUkRJTkcQAzKAAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
- * @generated from message numen.v1.ListRequest
+ * @generated from message numen.v1.ListFilesRequest
  */
-export type ListRequest = Message<"numen.v1.ListRequest"> & {
+export type ListFilesRequest = Message<"numen.v1.ListFilesRequest"> & {
   /**
    * The folder to list, relative to the root. Empty is the root.
    *
@@ -34,16 +34,16 @@ export type ListRequest = Message<"numen.v1.ListRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ListRequest.
- * Use `create(ListRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListFilesRequest.
+ * Use `create(ListFilesRequestSchema)` to create a new message.
  */
-export const ListRequestSchema: GenMessage<ListRequest> = /*@__PURE__*/
+export const ListFilesRequestSchema: GenMessage<ListFilesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 0);
 
 /**
- * @generated from message numen.v1.ListResponse
+ * @generated from message numen.v1.ListFilesResponse
  */
-export type ListResponse = Message<"numen.v1.ListResponse"> & {
+export type ListFilesResponse = Message<"numen.v1.ListFilesResponse"> & {
   /**
    * What the folder holds, folders first and then files, each group by name
    * with case ignored. This is the order to draw them in.
@@ -54,10 +54,10 @@ export type ListResponse = Message<"numen.v1.ListResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ListResponse.
- * Use `create(ListResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListFilesResponse.
+ * Use `create(ListFilesResponseSchema)` to create a new message.
  */
-export const ListResponseSchema: GenMessage<ListResponse> = /*@__PURE__*/
+export const ListFilesResponseSchema: GenMessage<ListFilesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 1);
 
 /**
@@ -111,9 +111,9 @@ export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 2);
 
 /**
- * @generated from message numen.v1.StandingRequest
+ * @generated from message numen.v1.ListFileKindsRequest
  */
-export type StandingRequest = Message<"numen.v1.StandingRequest"> & {
+export type ListFileKindsRequest = Message<"numen.v1.ListFileKindsRequest"> & {
   /**
    * The paths to answer about, as the vault files them. More than the vault
    * answers at once are refused.
@@ -124,16 +124,16 @@ export type StandingRequest = Message<"numen.v1.StandingRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.StandingRequest.
- * Use `create(StandingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListFileKindsRequest.
+ * Use `create(ListFileKindsRequestSchema)` to create a new message.
  */
-export const StandingRequestSchema: GenMessage<StandingRequest> = /*@__PURE__*/
+export const ListFileKindsRequestSchema: GenMessage<ListFileKindsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 3);
 
 /**
- * @generated from message numen.v1.StandingResponse
+ * @generated from message numen.v1.ListFileKindsResponse
  */
-export type StandingResponse = Message<"numen.v1.StandingResponse"> & {
+export type ListFileKindsResponse = Message<"numen.v1.ListFileKindsResponse"> & {
   /**
    * @generated from field: repeated numen.v1.Standing found = 1;
    */
@@ -141,10 +141,10 @@ export type StandingResponse = Message<"numen.v1.StandingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.StandingResponse.
- * Use `create(StandingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListFileKindsResponse.
+ * Use `create(ListFileKindsResponseSchema)` to create a new message.
  */
-export const StandingResponseSchema: GenMessage<StandingResponse> = /*@__PURE__*/
+export const ListFileKindsResponseSchema: GenMessage<ListFileKindsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 4);
 
 /**
@@ -182,9 +182,9 @@ export const StandingSchema: GenMessage<Standing> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 5);
 
 /**
- * @generated from message numen.v1.MoveRequest
+ * @generated from message numen.v1.MoveFileRequest
  */
-export type MoveRequest = Message<"numen.v1.MoveRequest"> & {
+export type MoveFileRequest = Message<"numen.v1.MoveFileRequest"> & {
   /**
    * The file or folder to move, as the vault calls it.
    *
@@ -201,16 +201,16 @@ export type MoveRequest = Message<"numen.v1.MoveRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MoveRequest.
- * Use `create(MoveRequestSchema)` to create a new message.
+ * Describes the message numen.v1.MoveFileRequest.
+ * Use `create(MoveFileRequestSchema)` to create a new message.
  */
-export const MoveRequestSchema: GenMessage<MoveRequest> = /*@__PURE__*/
+export const MoveFileRequestSchema: GenMessage<MoveFileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 6);
 
 /**
- * @generated from message numen.v1.MoveResponse
+ * @generated from message numen.v1.MoveFileResponse
  */
-export type MoveResponse = Message<"numen.v1.MoveResponse"> & {
+export type MoveFileResponse = Message<"numen.v1.MoveFileResponse"> & {
   /**
    * What the file did. Absent when nothing was moved.
    *
@@ -227,10 +227,10 @@ export type MoveResponse = Message<"numen.v1.MoveResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.MoveResponse.
- * Use `create(MoveResponseSchema)` to create a new message.
+ * Describes the message numen.v1.MoveFileResponse.
+ * Use `create(MoveFileResponseSchema)` to create a new message.
  */
-export const MoveResponseSchema: GenMessage<MoveResponse> = /*@__PURE__*/
+export const MoveFileResponseSchema: GenMessage<MoveFileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 7);
 
 /**
@@ -270,9 +270,9 @@ export const MovedSchema: GenMessage<Moved> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 8);
 
 /**
- * @generated from message numen.v1.RemoveRequest
+ * @generated from message numen.v1.RemoveFileRequest
  */
-export type RemoveRequest = Message<"numen.v1.RemoveRequest"> & {
+export type RemoveFileRequest = Message<"numen.v1.RemoveFileRequest"> & {
   /**
    * The file or folder to remove.
    *
@@ -290,16 +290,16 @@ export type RemoveRequest = Message<"numen.v1.RemoveRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.RemoveRequest.
- * Use `create(RemoveRequestSchema)` to create a new message.
+ * Describes the message numen.v1.RemoveFileRequest.
+ * Use `create(RemoveFileRequestSchema)` to create a new message.
  */
-export const RemoveRequestSchema: GenMessage<RemoveRequest> = /*@__PURE__*/
+export const RemoveFileRequestSchema: GenMessage<RemoveFileRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 9);
 
 /**
- * @generated from message numen.v1.RemoveResponse
+ * @generated from message numen.v1.RemoveFileResponse
  */
-export type RemoveResponse = Message<"numen.v1.RemoveResponse"> & {
+export type RemoveFileResponse = Message<"numen.v1.RemoveFileResponse"> & {
   /**
    * Where the file or folder sits in the trash. Empty when it was destroyed,
    * and when nothing was removed.
@@ -324,16 +324,16 @@ export type RemoveResponse = Message<"numen.v1.RemoveResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.RemoveResponse.
- * Use `create(RemoveResponseSchema)` to create a new message.
+ * Describes the message numen.v1.RemoveFileResponse.
+ * Use `create(RemoveFileResponseSchema)` to create a new message.
  */
-export const RemoveResponseSchema: GenMessage<RemoveResponse> = /*@__PURE__*/
+export const RemoveFileResponseSchema: GenMessage<RemoveFileResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 10);
 
 /**
- * @generated from message numen.v1.MakeFolderRequest
+ * @generated from message numen.v1.CreateFolderRequest
  */
-export type MakeFolderRequest = Message<"numen.v1.MakeFolderRequest"> & {
+export type CreateFolderRequest = Message<"numen.v1.CreateFolderRequest"> & {
   /**
    * Where the folder goes, relative to the root. The folders above it are made
    * with it.
@@ -344,16 +344,16 @@ export type MakeFolderRequest = Message<"numen.v1.MakeFolderRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeFolderRequest.
- * Use `create(MakeFolderRequestSchema)` to create a new message.
+ * Describes the message numen.v1.CreateFolderRequest.
+ * Use `create(CreateFolderRequestSchema)` to create a new message.
  */
-export const MakeFolderRequestSchema: GenMessage<MakeFolderRequest> = /*@__PURE__*/
+export const CreateFolderRequestSchema: GenMessage<CreateFolderRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 11);
 
 /**
- * @generated from message numen.v1.MakeFolderResponse
+ * @generated from message numen.v1.CreateFolderResponse
  */
-export type MakeFolderResponse = Message<"numen.v1.MakeFolderResponse"> & {
+export type CreateFolderResponse = Message<"numen.v1.CreateFolderResponse"> & {
   /**
    * Set when nothing was made, and why.
    *
@@ -363,10 +363,10 @@ export type MakeFolderResponse = Message<"numen.v1.MakeFolderResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeFolderResponse.
- * Use `create(MakeFolderResponseSchema)` to create a new message.
+ * Describes the message numen.v1.CreateFolderResponse.
+ * Use `create(CreateFolderResponseSchema)` to create a new message.
  */
-export const MakeFolderResponseSchema: GenMessage<MakeFolderResponse> = /*@__PURE__*/
+export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_file, 12);
 
 /**
@@ -410,63 +410,63 @@ export const SourceKindSchema: GenEnum<SourceKind> = /*@__PURE__*/
  */
 export const FileService: GenService<{
   /**
-   * List is what one folder of the vault holds. A tree asks for a folder as it
-   * is opened, one folder to a request.
+   * ListFiles is what one folder of the vault holds. A tree asks for a folder
+   * as it is opened, one folder to a request.
    *
-   * @generated from rpc numen.v1.FileService.List
+   * @generated from rpc numen.v1.FileService.ListFiles
    */
-  list: {
+  listFiles: {
     methodKind: "unary";
-    input: typeof ListRequestSchema;
-    output: typeof ListResponseSchema;
+    input: typeof ListFilesRequestSchema;
+    output: typeof ListFilesResponseSchema;
   },
   /**
-   * Standing is what the vault holds at each of those paths, so a client
+   * ListFileKinds is what the vault holds at each of those paths, so a client
    * holding a path opens what stands there in the editor made for it. The kind
    * is read off the vault itself, so a path nothing has scanned is answered
    * with what stands there. A path with nothing at it is absent from the
    * answer, and a path named twice is answered once. More paths than the vault
    * answers at once are refused, so that an answer is never cut to fit.
    *
-   * @generated from rpc numen.v1.FileService.Standing
+   * @generated from rpc numen.v1.FileService.ListFileKinds
    */
-  standing: {
+  listFileKinds: {
     methodKind: "unary";
-    input: typeof StandingRequestSchema;
-    output: typeof StandingResponseSchema;
+    input: typeof ListFileKindsRequestSchema;
+    output: typeof ListFileKindsResponseSchema;
   },
   /**
-   * Move puts a file or a folder somewhere else in the vault. Renaming a file
-   * is a move within one folder.
+   * MoveFile puts a file or a folder somewhere else in the vault. Renaming a
+   * file is a move within one folder.
    *
-   * @generated from rpc numen.v1.FileService.Move
+   * @generated from rpc numen.v1.FileService.MoveFile
    */
-  move: {
+  moveFile: {
     methodKind: "unary";
-    input: typeof MoveRequestSchema;
-    output: typeof MoveResponseSchema;
+    input: typeof MoveFileRequestSchema;
+    output: typeof MoveFileResponseSchema;
   },
   /**
-   * Remove takes a file or a folder out of the vault, into the trash it can be
-   * brought back from. The links that pointed at it are left as they were
+   * RemoveFile takes a file or a folder out of the vault, into the trash it can
+   * be brought back from. The links that pointed at it are left as they were
    * written: a link is not wrong because the note it names is gone.
    *
-   * @generated from rpc numen.v1.FileService.Remove
+   * @generated from rpc numen.v1.FileService.RemoveFile
    */
-  remove: {
+  removeFile: {
     methodKind: "unary";
-    input: typeof RemoveRequestSchema;
-    output: typeof RemoveResponseSchema;
+    input: typeof RemoveFileRequestSchema;
+    output: typeof RemoveFileResponseSchema;
   },
   /**
-   * MakeFolder makes an empty folder. The folders above it are made with it.
+   * CreateFolder makes an empty folder. The folders above it are made with it.
    *
-   * @generated from rpc numen.v1.FileService.MakeFolder
+   * @generated from rpc numen.v1.FileService.CreateFolder
    */
-  makeFolder: {
+  createFolder: {
     methodKind: "unary";
-    input: typeof MakeFolderRequestSchema;
-    output: typeof MakeFolderResponseSchema;
+    input: typeof CreateFolderRequestSchema;
+    output: typeof CreateFolderResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);

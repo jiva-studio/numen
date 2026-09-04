@@ -14,37 +14,37 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // FileService answers what the vault holds at a path, and moves it about.
 service FileService {
-  // List is what one folder of the vault holds. A tree asks for a folder as it
-  // is opened, one folder to a request.
-  rpc List(ListRequest) returns (ListResponse);
+  // ListFiles is what one folder of the vault holds. A tree asks for a folder
+  // as it is opened, one folder to a request.
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 
-  // Standing is what the vault holds at each of those paths, so a client
+  // ListFileKinds is what the vault holds at each of those paths, so a client
   // holding a path opens what stands there in the editor made for it. The kind
   // is read off the vault itself, so a path nothing has scanned is answered
   // with what stands there. A path with nothing at it is absent from the
   // answer, and a path named twice is answered once. More paths than the vault
   // answers at once are refused, so that an answer is never cut to fit.
-  rpc Standing(StandingRequest) returns (StandingResponse);
+  rpc ListFileKinds(ListFileKindsRequest) returns (ListFileKindsResponse);
 
-  // Move puts a file or a folder somewhere else in the vault. Renaming a file
-  // is a move within one folder.
-  rpc Move(MoveRequest) returns (MoveResponse);
+  // MoveFile puts a file or a folder somewhere else in the vault. Renaming a
+  // file is a move within one folder.
+  rpc MoveFile(MoveFileRequest) returns (MoveFileResponse);
 
-  // Remove takes a file or a folder out of the vault, into the trash it can be
-  // brought back from. The links that pointed at it are left as they were
+  // RemoveFile takes a file or a folder out of the vault, into the trash it can
+  // be brought back from. The links that pointed at it are left as they were
   // written: a link is not wrong because the note it names is gone.
-  rpc Remove(RemoveRequest) returns (RemoveResponse);
+  rpc RemoveFile(RemoveFileRequest) returns (RemoveFileResponse);
 
-  // MakeFolder makes an empty folder. The folders above it are made with it.
-  rpc MakeFolder(MakeFolderRequest) returns (MakeFolderResponse);
+  // CreateFolder makes an empty folder. The folders above it are made with it.
+  rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
 }
 
-message ListRequest {
+message ListFilesRequest {
   // The folder to list, relative to the root. Empty is the root.
   string folder = 1;
 }
 
-message ListResponse {
+message ListFilesResponse {
   // What the folder holds, folders first and then files, each group by name
   // with case ignored. This is the order to draw them in.
   repeated Entry entries = 1;
@@ -82,13 +82,13 @@ enum SourceKind {
   SOURCE_KIND_RECORDING = 3;
 }
 
-message StandingRequest {
+message ListFileKindsRequest {
   // The paths to answer about, as the vault files them. More than the vault
   // answers at once are refused.
   repeated string paths = 1;
 }
 
-message StandingResponse {
+message ListFileKindsResponse {
   repeated Standing found = 1;
 }
 
@@ -104,7 +104,7 @@ message Standing {
   NoteType type = 3;
 }
 
-message MoveRequest {
+message MoveFileRequest {
   // The file or folder to move, as the vault calls it.
   string from = 1;
 
@@ -112,7 +112,7 @@ message MoveRequest {
   string to = 2;
 }
 
-message MoveResponse {
+message MoveFileResponse {
   // What the file did. Absent when nothing was moved.
   optional Moved moved = 1;
 
@@ -136,7 +136,7 @@ message Moved {
   reserved "retargeted";
 }
 
-message RemoveRequest {
+message RemoveFileRequest {
   // The file or folder to remove.
   string path = 1;
 
@@ -145,7 +145,7 @@ message RemoveRequest {
   bool destroy = 2;
 }
 
-message RemoveResponse {
+message RemoveFileResponse {
   // Where the file or folder sits in the trash. Empty when it was destroyed,
   // and when nothing was removed.
   string trashed = 1;
@@ -157,13 +157,13 @@ message RemoveResponse {
   optional Refusal refusal = 3;
 }
 
-message MakeFolderRequest {
+message CreateFolderRequest {
   // Where the folder goes, relative to the root. The folders above it are made
   // with it.
   string path = 1;
 }
 
-message MakeFolderResponse {
+message CreateFolderResponse {
   // Set when nothing was made, and why.
   optional Refusal refusal = 1;
 }

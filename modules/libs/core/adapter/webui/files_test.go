@@ -22,7 +22,7 @@ import (
 // drawn is what one folder of the vault holds, as the window asks for it.
 func drawn(t *testing.T, f *going, at string) []*v1.Entry {
 	t.Helper()
-	answer, err := f.client.List(t.Context(), connect.NewRequest(&v1.ListRequest{Folder: at}))
+	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:at}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,11 +114,11 @@ func TestAListingLeavesOutWhatTheVaultLeavesAlone(t *testing.T) {
 func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	_, err := f.client.List(t.Context(), connect.NewRequest(&v1.ListRequest{Folder: "physics"}))
+	_, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:"physics"}))
 	if code := connect.CodeOf(err); code != connect.CodeNotFound {
 		t.Errorf("a folder that is not there was answered with %v", code)
 	}
-	_, err = f.client.List(t.Context(), connect.NewRequest(&v1.ListRequest{Folder: "../elsewhere"}))
+	_, err = f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:"../elsewhere"}))
 	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
 		t.Errorf("a folder outside the vault was answered with %v", code)
 	}
@@ -136,7 +136,7 @@ func TestEverythingTheVaultHoldsMoves(t *testing.T) {
 		{from: "A Book.epub", to: "library/A Book.epub"},
 		{from: "Diagram.png", to: "pictures/Diagram.png"},
 	} {
-		answer, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+		answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 			From: one.from, To: one.to,
 		}))
 		if err != nil {
@@ -171,7 +171,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "physics", To: "science/physics",
 	}))
 	if err != nil {
@@ -215,7 +215,7 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md", To: "physics/Entropy.md",
 	}))
 	if err != nil {
@@ -240,7 +240,7 @@ func TestAMoveOntoATakenNameLeavesBothWhereTheyAre(t *testing.T) {
 func TestAMoveOfAPathWithNothingAtItLeavesNothingBehind(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "physics", To: "science",
 	}))
 	if err != nil {
@@ -267,7 +267,7 @@ func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{
+	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "physics",
 	}))
 	if err != nil {
@@ -299,7 +299,7 @@ func TestARemovedFolderGoesToTheTrashWithEverythingUnderIt(t *testing.T) {
 func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.MakeFolder(t.Context(), connect.NewRequest(&v1.MakeFolderRequest{
+	answer, err := f.client.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 		Path: "science/physics",
 	}))
 	if err != nil {
@@ -319,7 +319,7 @@ func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	}
 
 	// Making it again is the outcome that was asked for.
-	again, err := f.client.MakeFolder(t.Context(), connect.NewRequest(&v1.MakeFolderRequest{
+	again, err := f.client.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 		Path: "science/physics",
 	}))
 	if err != nil {
@@ -335,7 +335,7 @@ func TestAFolderIsNotMadeWhereAFileIsFiled(t *testing.T) {
 	const held = "# Entropy\n"
 	f := quitting(t, nil, map[string]string{"Entropy.md": held})
 
-	answer, err := f.client.MakeFolder(t.Context(), connect.NewRequest(&v1.MakeFolderRequest{
+	answer, err := f.client.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 		Path: "Entropy.md",
 	}))
 	if err != nil {
@@ -393,7 +393,7 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 		paths = append(paths, fmt.Sprintf("Note%03d.md", i))
 	}
 
-	_, err := f.client.Standing(t.Context(), connect.NewRequest(&v1.StandingRequest{Paths: paths}))
+	_, err := f.client.ListFileKinds(t.Context(), connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("err = %v, want a refusal of the paths named", err)
 	}
@@ -402,8 +402,8 @@ func TestMorePathsThanStandingAnswersAtOnceAreRefused(t *testing.T) {
 // stands is what the vault says it holds at each of those paths, by path.
 func stands(t *testing.T, f *going, paths ...string) map[string]*v1.Standing {
 	t.Helper()
-	answer, err := f.client.Standing(t.Context(),
-		connect.NewRequest(&v1.StandingRequest{Paths: paths}))
+	answer, err := f.client.ListFileKinds(t.Context(),
+		connect.NewRequest(&v1.ListFileKindsRequest{Paths: paths}))
 	if err != nil {
 		t.Fatal(err)
 	}

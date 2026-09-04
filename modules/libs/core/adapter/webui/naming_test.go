@@ -108,7 +108,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 
 			// The file tree: a name, and the note is called by it where the two
 			// are one name.
-			if _, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+			if _, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 				From: "Heat.md", To: "Warmth.md",
 			})); err != nil {
 				t.Fatal(err)
@@ -168,7 +168,7 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 	if got := renamed.Msg.GetPath(); got != "Entropy.md" {
 		t.Errorf("the file moved to %q under a setting that was turned off", got)
 	}
-	if _, err := f.client.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+	if _, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Heat.md", To: "Warmth.md",
 	})); err != nil {
 		t.Fatal(err)
@@ -331,7 +331,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{
+	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md",
 	}))
 	if err != nil {
@@ -363,7 +363,7 @@ func TestARemovedNoteGoesToTheTrashAndSaysWhatNowReachesNothing(t *testing.T) {
 func TestADestroyedNoteLeavesNothingBehind(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{
+	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md", Destroy: true,
 	}))
 	if err != nil {
@@ -412,7 +412,7 @@ func TestARemovedFileIsReportedTheFirstTimeItIsAskedFor(t *testing.T) {
 		}
 	}()
 
-	answer, err := client.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{
+	answer, err := client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "assets/diagram.png",
 	}))
 	if err != nil {
@@ -452,7 +452,7 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 	})); connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a rename after the door was shut was answered with %v", err)
 	}
-	if _, err := f.client.Remove(context.Background(), connect.NewRequest(&v1.RemoveRequest{
+	if _, err := f.client.RemoveFile(context.Background(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Entropy.md",
 	})); connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a remove after the door was shut was answered with %v", err)

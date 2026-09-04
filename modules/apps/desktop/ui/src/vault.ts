@@ -324,16 +324,16 @@ export const core: Core & Asking & Commanding = {
     } satisfies Renamed
   },
   remove: async (path, destroy) => {
-    const answer = await files.remove({ path, destroy: destroy ?? false })
+    const answer = await files.removeFile({ path, destroy: destroy ?? false })
     return {
       trashed: answer.trashed,
       dangling: answer.dangling,
       refusal: refusalIn(answer),
     } satisfies Removed
   },
-  list: async (folder) => (await files.list({ folder })).entries.map(listed),
+  list: async (folder) => (await files.listFiles({ folder })).entries.map(listed),
   move: async (from, to) => {
-    const answer = await files.move({ from, to })
+    const answer = await files.moveFile({ from, to })
     return {
       moved: answer.moved ? filed(answer.moved) : null,
       refusal: refusalIn(answer),
@@ -392,7 +392,7 @@ export const core: Core & Asking & Commanding = {
     return typeof hour === 'string' ? hour : DEFAULT_STARTS
   },
   choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
-  makeFolder: async (path) => refusalIn(await files.makeFolder({ path })),
+  makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
   quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
     await windowService.reportFlush({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
@@ -413,7 +413,7 @@ export const core: Core & Asking & Commanding = {
   },
   /** What the vault holds at each of those paths. */
   standing: async (paths) => {
-    const answer = await files.standing({ paths: [...paths] })
+    const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
       answer.found.map((one) => [one.path, { kind: sourceKind(one.kind), type: noteType(one.type) }]),
     )

@@ -239,7 +239,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 
 	asked := map[string]func() error{
 		"list a folder of the vault": func() error {
-			_, err := f.vault.List(t.Context(), connect.NewRequest(&v1.ListRequest{}))
+			_, err := f.vault.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{}))
 			return err
 		},
 		"read a note": func() error {
@@ -270,17 +270,17 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 			return err
 		},
 		"move a file": func() error {
-			_, err := f.vault.Move(t.Context(), connect.NewRequest(&v1.MoveRequest{
+			_, err := f.vault.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 				From: "One.md", To: "Two.md",
 			}))
 			return err
 		},
 		"remove a file": func() error {
-			_, err := f.vault.Remove(t.Context(), connect.NewRequest(&v1.RemoveRequest{Path: "One.md"}))
+			_, err := f.vault.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{Path: "One.md"}))
 			return err
 		},
 		"make a folder": func() error {
-			_, err := f.vault.MakeFolder(t.Context(), connect.NewRequest(&v1.MakeFolderRequest{
+			_, err := f.vault.CreateFolder(t.Context(), connect.NewRequest(&v1.CreateFolderRequest{
 				Path: "somewhere",
 			}))
 			return err

@@ -14,9 +14,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
-// List is what one folder of the vault holds. The vault settles the order the
-// entries come in, and they cross in it.
-func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*connect.Response[v1.ListResponse], error) {
+// ListFiles is what one folder of the vault holds. The vault settles the order
+// the entries come in, and they cross in it.
+func (a *API) ListFiles(
+	ctx context.Context, r *connect.Request[v1.ListFilesRequest],
+) (*connect.Response[v1.ListFilesResponse], error) {
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -37,7 +39,7 @@ func (a *API) List(ctx context.Context, r *connect.Request[v1.ListRequest]) (*co
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.ListResponse{Entries: make([]*v1.Entry, 0, len(held))}
+	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(held))}
 	for _, entry := range held {
 		out.Entries = append(out.Entries, &v1.Entry{
 			Path:        entry.Path,
@@ -72,17 +74,19 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 	return a.Notes.Queries.Types(ctx, string(showing.ID), paths)
 }
 
-// Standing hands the client what the vault holds at each of those paths, so
-// that a client holding a path opens what stands there in the editor made for
-// it.
+// ListFileKinds hands the client what the vault holds at each of those paths,
+// so that a client holding a path opens what stands there in the editor made
+// for it.
 //
 // The kind is read off the vault and the type off the index, so a path nothing
 // has scanned is answered with the source that stands there. A window standing
 // on nothing holds no source, and a path with nothing at it is left out.
-func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingRequest]) (*connect.Response[v1.StandingResponse], error) {
+func (a *API) ListFileKinds(
+	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
+) (*connect.Response[v1.ListFileKindsResponse], error) {
 	showing := a.Showing()
 	if showing.ID == "" {
-		return connect.NewResponse(&v1.StandingResponse{}), nil
+		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
 	reader, err := a.Readers.Open(showing)
 	if err != nil {
@@ -95,7 +99,7 @@ func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingReques
 	if err != nil {
 		return nil, err
 	}
-	out := &v1.StandingResponse{Found: make([]*v1.Standing, 0, len(paths))}
+	out := &v1.ListFileKindsResponse{Found: make([]*v1.Standing, 0, len(paths))}
 	notes := make([]string, 0, len(paths))
 	for _, path := range paths {
 		ref, err := reader.Stat(ctx, path)
@@ -123,8 +127,10 @@ func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingReques
 	return connect.NewResponse(out), nil
 }
 
-// Move puts a file or a folder somewhere else in the vault.
-func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
+// MoveFile puts a file or a folder somewhere else in the vault.
+func (a *API) MoveFile(
+	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
+) (*connect.Response[v1.MoveFileResponse], error) {
 	if a.Files.Move == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -138,7 +144,7 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 	defer a.Writing.done()
 
 	moved, err := a.Files.Move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
-	out := &v1.MoveResponse{}
+	out := &v1.MoveFileResponse{}
 	if moved.Landed {
 		out.Moved = movedOf(moved)
 	}
@@ -152,8 +158,10 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 	return connect.NewResponse(out), nil
 }
 
-// MakeFolder puts an empty folder in the vault, with the folders above it.
-func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
+// CreateFolder puts an empty folder in the vault, with the folders above it.
+func (a *API) CreateFolder(
+	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
+) (*connect.Response[v1.CreateFolderResponse], error) {
 	if a.Files.Writers == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -170,7 +178,7 @@ func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRe
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.MakeFolderResponse{}
+	out := &v1.CreateFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
 		reason, refused := refusal.By(err)
 		if !refused {

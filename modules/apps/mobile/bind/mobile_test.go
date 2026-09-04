@@ -55,7 +55,7 @@ func TestStartAnswers(t *testing.T) {
 
 	names := func() []string {
 		var held []string
-		for _, entry := range ask("FileService", "List", map[string]any{"folder": ""})["entries"].([]any) {
+		for _, entry := range ask("FileService", "ListFiles", map[string]any{"folder": ""})["entries"].([]any) {
 			held = append(held, entry.(map[string]any)["displayName"].(string))
 		}
 		return held

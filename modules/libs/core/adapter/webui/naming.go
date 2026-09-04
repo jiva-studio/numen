@@ -49,9 +49,11 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 // errNoSettings is what a build that configures nothing answers.
 var errNoSettings = errors.New("this build cannot turn settings")
 
-// Remove takes a file or a folder out of the vault. It goes to the trash, and
-// a request that says so destroys a note.
-func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
+// RemoveFile takes a file or a folder out of the vault. It goes to the trash,
+// and a request that says so destroys a note.
+func (a *API) RemoveFile(
+	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
+) (*connect.Response[v1.RemoveFileResponse], error) {
 	if a.Notes.Remove == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -70,12 +72,12 @@ func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) 
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.RemoveFileResponse{Refusal: &reason}), nil
 	}
 	// The watcher reports only the paths the vault holds a source for. What
 	// went is said here, so the tree drops the row whatever stood on it.
 	a.Listeners.tell(change{paths: []string{removed.Path}})
-	return connect.NewResponse(&v1.RemoveResponse{
+	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:  removed.Trashed,
 		Dangling: removed.Dangling,
 	}), nil

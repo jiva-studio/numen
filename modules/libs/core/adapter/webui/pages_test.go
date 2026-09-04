@@ -113,7 +113,7 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 	handler := (&API{}).Serving(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
-		numenv1connect.FileServiceListProcedure,
+		numenv1connect.FileServiceListFilesProcedure,
 		numenv1connect.NoteServiceReadProcedure,
 		numenv1connect.SearchServiceSearchNamesProcedure,
 	} {
