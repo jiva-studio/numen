@@ -24,9 +24,9 @@ type Stretch struct {
 	Length int
 }
 
-// MostLit is how many places of one source are lit at once, the place the
-// person was taken to among them.
+// MostHighlights is how many places of one source are highlighted at once, the
+// place the person was taken to among them.
 //
-// A page with everything on it marked says nothing about where to look, and
-// whoever is choosing the places chooses which of them matter.
-const MostLit = 8
+// A page with everything on it highlighted says nothing about where to look,
+// and whoever is choosing the places chooses which of them matter.
+const MostHighlights = 8

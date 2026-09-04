@@ -58,7 +58,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | fingerprint | Path, size and modification time — what says a note need not be read again. The vectors are keyed by a column of the same name holding a chunk hash, which is the one place the word is spent twice inside this context. | |
 | stretch | A run of a source's text by where it stands: `Start` and `Length`, in bytes over the text the source is read as. A client counts the same run as a span. | |
 | passage | What a search returns: the text around a hit, and where it came from. A read model — a chunk is not rebuilt from one. | |
-| highlight | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each, in fractions of the page so a page drawn at any size lines up. A model reading a scan and a document's own text layer both produce them, and nothing above asks which. The window asks for them by the name `marks`. | |
+| highlight | Where a stretch of a document's text falls on the pages it was read from: the pages, and the rectangles covering it on each, in fractions of the page so a page drawn at any size lines up. A model reading a scan and a document's own text layer both produce them, and nothing above asks which. | |
 | scan | One walk of a whole vault. | |
 | refresh | Bringing named notes up to date. | |
 | group | What a scan writes in: one transaction's worth. | |

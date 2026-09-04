@@ -90,8 +90,8 @@ func addViewTools(server *sdk.Server, core Core) {
 				"a passage begins at or after the start of the text, and its length is zero or more")
 		}
 
-		if 1+len(in.Also) > domain.MostLit {
-			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostLit)
+		if 1+len(in.Also) > domain.MostHighlights {
+			return nil, out{}, fmt.Errorf("light at most %d places of one document", domain.MostHighlights)
 		}
 
 		ref, err := holding(ctx, core, in.Path)

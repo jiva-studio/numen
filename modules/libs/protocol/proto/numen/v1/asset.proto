@@ -32,9 +32,10 @@ service AssetService {
   // listened to, and where its bytes are played from.
   rpc Recording(RecordingRequest) returns (RecordingResponse);
 
-  // Marks is where runs of a source's text sit on the pages it was read from.
-  // A source with no pages has nowhere to put them, and is answered with none.
-  rpc Marks(MarksRequest) returns (MarksResponse);
+  // Highlights is where runs of a source's text sit on the pages it was read
+  // from. A source with no pages has nowhere to put them, and is answered with
+  // none.
+  rpc Highlights(HighlightsRequest) returns (HighlightsResponse);
 }
 
 message DocumentRequest {
@@ -78,7 +79,7 @@ message RecordingResponse {
   string type = 4;
 }
 
-message MarksRequest {
+message HighlightsRequest {
   // The file, as the vault holds it.
   string path = 1;
 
@@ -87,20 +88,21 @@ message MarksRequest {
   repeated Stretch at = 2;
 }
 
-message MarksResponse {
+message HighlightsResponse {
   // One entry per run asked about, in the order they were asked about.
-  repeated Covered runs = 1;
+  repeated Highlight runs = 1;
 }
 
-// Covered is where one run of the text sits: the pages it falls on and, on
+// Highlight is where one run of the text sits: the pages it falls on and, on
 // each, the rectangles covering it.
-message Covered {
-  repeated OnPage marks = 1;
+message Highlight {
+  repeated Page pages = 1;
 }
 
-// OnPage is one page, and what to light on it.
-message OnPage {
-  int32 page = 1;
+// Page is one page of a highlight, and what to light on it.
+message Page {
+  // Where the page stands in the document, counted from the first.
+  int32 index = 1;
   repeated Rect rects = 2;
 }
 

@@ -48,8 +48,8 @@ const (
 	AssetServiceDocumentProcedure = "/numen.v1.AssetService/Document"
 	// AssetServiceRecordingProcedure is the fully-qualified name of the AssetService's Recording RPC.
 	AssetServiceRecordingProcedure = "/numen.v1.AssetService/Recording"
-	// AssetServiceMarksProcedure is the fully-qualified name of the AssetService's Marks RPC.
-	AssetServiceMarksProcedure = "/numen.v1.AssetService/Marks"
+	// AssetServiceHighlightsProcedure is the fully-qualified name of the AssetService's Highlights RPC.
+	AssetServiceHighlightsProcedure = "/numen.v1.AssetService/Highlights"
 )
 
 // AssetServiceClient is a client for the numen.v1.AssetService service.
@@ -65,9 +65,10 @@ type AssetServiceClient interface {
 	// Recording is what a recording is: how long it runs, how much of it has been
 	// listened to, and where its bytes are played from.
 	Recording(context.Context, *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error)
-	// Marks is where runs of a source's text sit on the pages it was read from.
-	// A source with no pages has nowhere to put them, and is answered with none.
-	Marks(context.Context, *connect.Request[v1.MarksRequest]) (*connect.Response[v1.MarksResponse], error)
+	// Highlights is where runs of a source's text sit on the pages it was read
+	// from. A source with no pages has nowhere to put them, and is answered with
+	// none.
+	Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error)
 }
 
 // NewAssetServiceClient constructs a client for the numen.v1.AssetService service. By default, it
@@ -93,10 +94,10 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(assetServiceMethods.ByName("Recording")),
 			connect.WithClientOptions(opts...),
 		),
-		marks: connect.NewClient[v1.MarksRequest, v1.MarksResponse](
+		highlights: connect.NewClient[v1.HighlightsRequest, v1.HighlightsResponse](
 			httpClient,
-			baseURL+AssetServiceMarksProcedure,
-			connect.WithSchema(assetServiceMethods.ByName("Marks")),
+			baseURL+AssetServiceHighlightsProcedure,
+			connect.WithSchema(assetServiceMethods.ByName("Highlights")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -104,9 +105,9 @@ func NewAssetServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // assetServiceClient implements AssetServiceClient.
 type assetServiceClient struct {
-	document  *connect.Client[v1.DocumentRequest, v1.DocumentResponse]
-	recording *connect.Client[v1.RecordingRequest, v1.RecordingResponse]
-	marks     *connect.Client[v1.MarksRequest, v1.MarksResponse]
+	document   *connect.Client[v1.DocumentRequest, v1.DocumentResponse]
+	recording  *connect.Client[v1.RecordingRequest, v1.RecordingResponse]
+	highlights *connect.Client[v1.HighlightsRequest, v1.HighlightsResponse]
 }
 
 // Document calls numen.v1.AssetService.Document.
@@ -119,9 +120,9 @@ func (c *assetServiceClient) Recording(ctx context.Context, req *connect.Request
 	return c.recording.CallUnary(ctx, req)
 }
 
-// Marks calls numen.v1.AssetService.Marks.
-func (c *assetServiceClient) Marks(ctx context.Context, req *connect.Request[v1.MarksRequest]) (*connect.Response[v1.MarksResponse], error) {
-	return c.marks.CallUnary(ctx, req)
+// Highlights calls numen.v1.AssetService.Highlights.
+func (c *assetServiceClient) Highlights(ctx context.Context, req *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error) {
+	return c.highlights.CallUnary(ctx, req)
 }
 
 // AssetServiceHandler is an implementation of the numen.v1.AssetService service.
@@ -137,9 +138,10 @@ type AssetServiceHandler interface {
 	// Recording is what a recording is: how long it runs, how much of it has been
 	// listened to, and where its bytes are played from.
 	Recording(context.Context, *connect.Request[v1.RecordingRequest]) (*connect.Response[v1.RecordingResponse], error)
-	// Marks is where runs of a source's text sit on the pages it was read from.
-	// A source with no pages has nowhere to put them, and is answered with none.
-	Marks(context.Context, *connect.Request[v1.MarksRequest]) (*connect.Response[v1.MarksResponse], error)
+	// Highlights is where runs of a source's text sit on the pages it was read
+	// from. A source with no pages has nowhere to put them, and is answered with
+	// none.
+	Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error)
 }
 
 // NewAssetServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -161,10 +163,10 @@ func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(assetServiceMethods.ByName("Recording")),
 		connect.WithHandlerOptions(opts...),
 	)
-	assetServiceMarksHandler := connect.NewUnaryHandler(
-		AssetServiceMarksProcedure,
-		svc.Marks,
-		connect.WithSchema(assetServiceMethods.ByName("Marks")),
+	assetServiceHighlightsHandler := connect.NewUnaryHandler(
+		AssetServiceHighlightsProcedure,
+		svc.Highlights,
+		connect.WithSchema(assetServiceMethods.ByName("Highlights")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/numen.v1.AssetService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -173,8 +175,8 @@ func NewAssetServiceHandler(svc AssetServiceHandler, opts ...connect.HandlerOpti
 			assetServiceDocumentHandler.ServeHTTP(w, r)
 		case AssetServiceRecordingProcedure:
 			assetServiceRecordingHandler.ServeHTTP(w, r)
-		case AssetServiceMarksProcedure:
-			assetServiceMarksHandler.ServeHTTP(w, r)
+		case AssetServiceHighlightsProcedure:
+			assetServiceHighlightsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -192,6 +194,6 @@ func (UnimplementedAssetServiceHandler) Recording(context.Context, *connect.Requ
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Recording is not implemented"))
 }
 
-func (UnimplementedAssetServiceHandler) Marks(context.Context, *connect.Request[v1.MarksRequest]) (*connect.Response[v1.MarksResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Marks is not implemented"))
+func (UnimplementedAssetServiceHandler) Highlights(context.Context, *connect.Request[v1.HighlightsRequest]) (*connect.Response[v1.HighlightsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.AssetService.Highlights is not implemented"))
 }

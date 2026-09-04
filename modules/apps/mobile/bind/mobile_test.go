@@ -116,7 +116,7 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		"/assets/Physics.md",
 		"/numen.v1.AssetService/Document",
 		"/numen.v1.AssetService/Recording",
-		"/numen.v1.AssetService/Marks",
+		"/numen.v1.AssetService/Highlights",
 		"/numen.v1.ArtifactService/ListArtifacts",
 		"/numen.v1.ArtifactService/CreateArtifact",
 		"/numen.v1.ArtifactService/DeleteArtifact",

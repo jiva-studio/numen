@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiHwoPRG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiQgoQRG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldCIjCgVTaGVldBIMCgR3aWRlGAEgASgBEgwKBGhpZ2gYAiABKAEiIAoQUmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIk8KEVJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIjsKDE1hcmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgAygLMhEubnVtZW4udjEuU3RyZXRjaCIwCg1NYXJrc1Jlc3BvbnNlEh8KBHJ1bnMYASADKAsyES5udW1lbi52MS5Db3ZlcmVkIioKB0NvdmVyZWQSHwoFbWFya3MYASADKAsyEC5udW1lbi52MS5PblBhZ2UiNQoGT25QYWdlEgwKBHBhZ2UYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIy0QEKDEFzc2V0U2VydmljZRJBCghEb2N1bWVudBIZLm51bWVuLnYxLkRvY3VtZW50UmVxdWVzdBoaLm51bWVuLnYxLkRvY3VtZW50UmVzcG9uc2USRAoJUmVjb3JkaW5nEhoubnVtZW4udjEuUmVjb3JkaW5nUmVxdWVzdBobLm51bWVuLnYxLlJlY29yZGluZ1Jlc3BvbnNlEjgKBU1hcmtzEhYubnVtZW4udjEuTWFya3NSZXF1ZXN0GhcubnVtZW4udjEuTWFya3NSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiHwoPRG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiQgoQRG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldCIjCgVTaGVldBIMCgR3aWRlGAEgASgBEgwKBGhpZ2gYAiABKAEiIAoQUmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIk8KEVJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIkAKEUhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjcKEkhpZ2hsaWdodHNSZXNwb25zZRIhCgRydW5zGAEgAygLMhMubnVtZW4udjEuSGlnaGxpZ2h0IioKCUhpZ2hsaWdodBIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2UiNAoEUGFnZRINCgVpbmRleBgBIAEoBRIdCgVyZWN0cxgCIAMoCzIOLm51bWVuLnYxLlJlY3QiQgoEUmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjLgAQoMQXNzZXRTZXJ2aWNlEkEKCERvY3VtZW50EhkubnVtZW4udjEuRG9jdW1lbnRSZXF1ZXN0GhoubnVtZW4udjEuRG9jdW1lbnRSZXNwb25zZRJECglSZWNvcmRpbmcSGi5udW1lbi52MS5SZWNvcmRpbmdSZXF1ZXN0GhsubnVtZW4udjEuUmVjb3JkaW5nUmVzcG9uc2USRwoKSGlnaGxpZ2h0cxIbLm51bWVuLnYxLkhpZ2hsaWdodHNSZXF1ZXN0GhwubnVtZW4udjEuSGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.DocumentRequest
@@ -158,9 +158,9 @@ export const RecordingResponseSchema: GenMessage<RecordingResponse> = /*@__PURE_
   messageDesc(file_numen_v1_asset, 4);
 
 /**
- * @generated from message numen.v1.MarksRequest
+ * @generated from message numen.v1.HighlightsRequest
  */
-export type MarksRequest = Message<"numen.v1.MarksRequest"> & {
+export type HighlightsRequest = Message<"numen.v1.HighlightsRequest"> & {
   /**
    * The file, as the vault holds it.
    *
@@ -178,61 +178,63 @@ export type MarksRequest = Message<"numen.v1.MarksRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MarksRequest.
- * Use `create(MarksRequestSchema)` to create a new message.
+ * Describes the message numen.v1.HighlightsRequest.
+ * Use `create(HighlightsRequestSchema)` to create a new message.
  */
-export const MarksRequestSchema: GenMessage<MarksRequest> = /*@__PURE__*/
+export const HighlightsRequestSchema: GenMessage<HighlightsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 5);
 
 /**
- * @generated from message numen.v1.MarksResponse
+ * @generated from message numen.v1.HighlightsResponse
  */
-export type MarksResponse = Message<"numen.v1.MarksResponse"> & {
+export type HighlightsResponse = Message<"numen.v1.HighlightsResponse"> & {
   /**
    * One entry per run asked about, in the order they were asked about.
    *
-   * @generated from field: repeated numen.v1.Covered runs = 1;
+   * @generated from field: repeated numen.v1.Highlight runs = 1;
    */
-  runs: Covered[];
+  runs: Highlight[];
 };
 
 /**
- * Describes the message numen.v1.MarksResponse.
- * Use `create(MarksResponseSchema)` to create a new message.
+ * Describes the message numen.v1.HighlightsResponse.
+ * Use `create(HighlightsResponseSchema)` to create a new message.
  */
-export const MarksResponseSchema: GenMessage<MarksResponse> = /*@__PURE__*/
+export const HighlightsResponseSchema: GenMessage<HighlightsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 6);
 
 /**
- * Covered is where one run of the text sits: the pages it falls on and, on
+ * Highlight is where one run of the text sits: the pages it falls on and, on
  * each, the rectangles covering it.
  *
- * @generated from message numen.v1.Covered
+ * @generated from message numen.v1.Highlight
  */
-export type Covered = Message<"numen.v1.Covered"> & {
+export type Highlight = Message<"numen.v1.Highlight"> & {
   /**
-   * @generated from field: repeated numen.v1.OnPage marks = 1;
+   * @generated from field: repeated numen.v1.Page pages = 1;
    */
-  marks: OnPage[];
+  pages: Page[];
 };
 
 /**
- * Describes the message numen.v1.Covered.
- * Use `create(CoveredSchema)` to create a new message.
+ * Describes the message numen.v1.Highlight.
+ * Use `create(HighlightSchema)` to create a new message.
  */
-export const CoveredSchema: GenMessage<Covered> = /*@__PURE__*/
+export const HighlightSchema: GenMessage<Highlight> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 7);
 
 /**
- * OnPage is one page, and what to light on it.
+ * Page is one page of a highlight, and what to light on it.
  *
- * @generated from message numen.v1.OnPage
+ * @generated from message numen.v1.Page
  */
-export type OnPage = Message<"numen.v1.OnPage"> & {
+export type Page = Message<"numen.v1.Page"> & {
   /**
-   * @generated from field: int32 page = 1;
+   * Where the page stands in the document, counted from the first.
+   *
+   * @generated from field: int32 index = 1;
    */
-  page: number;
+  index: number;
 
   /**
    * @generated from field: repeated numen.v1.Rect rects = 2;
@@ -241,10 +243,10 @@ export type OnPage = Message<"numen.v1.OnPage"> & {
 };
 
 /**
- * Describes the message numen.v1.OnPage.
- * Use `create(OnPageSchema)` to create a new message.
+ * Describes the message numen.v1.Page.
+ * Use `create(PageSchema)` to create a new message.
  */
-export const OnPageSchema: GenMessage<OnPage> = /*@__PURE__*/
+export const PageSchema: GenMessage<Page> = /*@__PURE__*/
   messageDesc(file_numen_v1_asset, 8);
 
 /**
@@ -316,15 +318,16 @@ export const AssetService: GenService<{
     output: typeof RecordingResponseSchema;
   },
   /**
-   * Marks is where runs of a source's text sit on the pages it was read from.
-   * A source with no pages has nowhere to put them, and is answered with none.
+   * Highlights is where runs of a source's text sit on the pages it was read
+   * from. A source with no pages has nowhere to put them, and is answered with
+   * none.
    *
-   * @generated from rpc numen.v1.AssetService.Marks
+   * @generated from rpc numen.v1.AssetService.Highlights
    */
-  marks: {
+  highlights: {
     methodKind: "unary";
-    input: typeof MarksRequestSchema;
-    output: typeof MarksResponseSchema;
+    input: typeof HighlightsRequestSchema;
+    output: typeof HighlightsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_asset, 0);

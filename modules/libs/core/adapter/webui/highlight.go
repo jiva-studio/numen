@@ -16,12 +16,12 @@ import (
 // errNoHighlight is what a build with nothing to place a passage with answers.
 var errNoHighlight = errors.New("this build cannot say where a passage is")
 
-// Marks answers where runs of a source's text sit: the pages each falls on and,
-// on each, the rectangles covering it.
-func (a *API) Marks(
+// Highlights answers where runs of a source's text sit: the pages each falls on
+// and, on each, the rectangles covering it.
+func (a *API) Highlights(
 	ctx context.Context,
-	r *connect.Request[v1.MarksRequest],
-) (*connect.Response[v1.MarksResponse], error) {
+	r *connect.Request[v1.HighlightsRequest],
+) (*connect.Response[v1.HighlightsResponse], error) {
 	if a.Highlight == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoHighlight)
 	}
@@ -45,17 +45,17 @@ func (a *API) Marks(
 		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 
-	out := &v1.MarksResponse{Runs: make([]*v1.Covered, 0, len(found))}
+	out := &v1.HighlightsResponse{Runs: make([]*v1.Highlight, 0, len(found))}
 	for _, pages := range found {
-		one := &v1.Covered{Marks: make([]*v1.OnPage, 0, len(pages))}
+		one := &v1.Highlight{Pages: make([]*v1.Page, 0, len(pages))}
 		for _, page := range pages {
-			marks := &v1.OnPage{Page: int32(page.Index), Rects: make([]*v1.Rect, 0, len(page.Rects))}
+			on := &v1.Page{Index: int32(page.Index), Rects: make([]*v1.Rect, 0, len(page.Rects))}
 			for _, box := range page.Rects {
-				marks.Rects = append(marks.Rects, &v1.Rect{
+				on.Rects = append(on.Rects, &v1.Rect{
 					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,
 				})
 			}
-			one.Marks = append(one.Marks, marks)
+			one.Pages = append(one.Pages, on)
 		}
 		out.Runs = append(out.Runs, one)
 	}
@@ -70,8 +70,8 @@ const longestRun = 100_000
 // places is which parts of the source's text a caller is asking about, in the
 // order they were asked about.
 func places(at []*v1.Stretch) ([]highlight.Stretch, error) {
-	if len(at) == 0 || len(at) > domain.MostLit {
-		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(at))
+	if len(at) == 0 || len(at) > domain.MostHighlights {
+		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(at))
 	}
 	runs := make([]highlight.Stretch, 0, len(at))
 	for _, one := range at {

@@ -22,7 +22,7 @@ graph TD
     S["beside it: .boxes, .parts,<br/>.fixes, .proofread"]
     CH["chunks<br/>start and length in that text"]
     P["a passage<br/>path, start, length"]
-    VW["the viewer<br/>pages drawn here, marks lit"]
+    VW["the viewer<br/>pages drawn here, highlights lit"]
 
     F -->|text_from is null| TL
     F -->|text_from names the producer| R

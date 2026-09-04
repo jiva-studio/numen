@@ -35,10 +35,10 @@ import type {
   Cue as CueMessage,
   Deck as DeckMessage,
   Entry as EntryMessage,
-  OnPage as OnPageMessage,
   Known as KnownMessage,
   Moved as MovedMessage,
   NeighbourhoodResponse as NeighbourhoodMessage,
+  Page as PageMessage,
   Problem as ProblemMessage,
   Refusal,
   Stencil as StencilMessage,
@@ -477,14 +477,14 @@ export const documents: Documents = {
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
   highlights: async (path, stretches) => {
-    const answer = await waiting(() => assets.marks({ path, at: [...stretches] }))
-    return stretches.map((_, i) => answer.runs[i]?.marks.map(marked) ?? [])
+    const answer = await waiting(() => assets.highlights({ path, at: [...stretches] }))
+    return stretches.map((_, i) => answer.runs[i]?.pages.map(highlighted) ?? [])
   },
 }
 
-/** Where a run of a source's text sits, as the window carries it. */
-const marked = (one: OnPageMessage): Highlight => ({
-  page: one.page,
+/** One page of a highlight, as the window carries it. */
+const highlighted = (one: PageMessage): Highlight => ({
+  page: one.index,
   rects: one.rects.map((box) => ({
     minX: box.minX,
     minY: box.minY,

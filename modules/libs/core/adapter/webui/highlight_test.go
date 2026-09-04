@@ -87,9 +87,9 @@ func where(t *testing.T, doc *pdf.Book, word string) *v1.Stretch {
 	return &v1.Stretch{Start: int32(at), Length: int32(len(word))}
 }
 
-// lit is where the runs of a source's text sit, as the window is told it.
-func lit(api *API, path string, at ...*v1.Stretch) ([]*v1.Covered, error) {
-	out, err := api.Marks(context.Background(), connect.NewRequest(&v1.MarksRequest{
+// highlights is where the runs of a source's text sit, as the window is told it.
+func highlights(api *API, path string, at ...*v1.Stretch) ([]*v1.Highlight, error) {
+	out, err := api.Highlights(context.Background(), connect.NewRequest(&v1.HighlightsRequest{
 		Path: path, At: at,
 	}))
 	if err != nil {
@@ -103,18 +103,18 @@ func lit(api *API, path string, at ...*v1.Stretch) ([]*v1.Covered, error) {
 func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 	api, _, doc := placing(t)
 
-	runs, err := lit(api, book, where(t, doc, "Delta"))
+	runs, err := highlights(api, book, where(t, doc, "Delta"))
 	if err != nil {
 		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
 	if len(runs) != 1 {
 		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
 	}
-	marks := runs[0].GetMarks()
-	if len(marks) != 1 || marks[0].GetPage() != 1 || len(marks[0].GetRects()) != 1 {
-		t.Fatalf("%q is on the second page and came back at %+v", "Delta", marks)
+	pages := runs[0].GetPages()
+	if len(pages) != 1 || pages[0].GetIndex() != 1 || len(pages[0].GetRects()) != 1 {
+		t.Fatalf("%q is on the second page and came back at %+v", "Delta", pages)
 	}
-	box := marks[0].GetRects()[0]
+	box := pages[0].GetRects()[0]
 	if box.GetMinX() < 0 || box.GetMinY() < 0 || box.GetMaxX() > 1 || box.GetMaxY() > 1 {
 		t.Errorf("%q is at %+v, which is off the page", "Delta", box)
 	}
@@ -129,7 +129,7 @@ func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
 	api, _, doc := placing(t)
 	api.Highlight.Sources = indexed{}
 
-	runs, err := lit(api, book, where(t, doc, "Delta"))
+	runs, err := highlights(api, book, where(t, doc, "Delta"))
 	if err != nil {
 		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := placing(t)
 
-			_, err := lit(api, path, &v1.Stretch{Start: 0, Length: 5})
+			_, err := highlights(api, path, &v1.Stretch{Start: 0, Length: 5})
 			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
 				code != connect.CodeInvalidArgument {
 				t.Errorf("%s was refused %v", path, err)
@@ -174,7 +174,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := placing(t)
 
-			if _, err := lit(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			if _, err := highlights(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Errorf("asking about %s was refused %v", one.what, err)
 			}
 		})
@@ -187,7 +187,7 @@ func TestABuildThatCannotPlaceAPassageSaysSo(t *testing.T) {
 	api, _, doc := placing(t)
 	api.Highlight = nil
 
-	_, err := lit(api, book, where(t, doc, "Delta"))
+	_, err := highlights(api, book, where(t, doc, "Delta"))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("a build with nothing to place a passage with was refused %v", err)
 	}

@@ -307,7 +307,7 @@ func (x *RecordingResponse) GetType() string {
 	return ""
 }
 
-type MarksRequest struct {
+type HighlightsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -318,20 +318,20 @@ type MarksRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MarksRequest) Reset() {
-	*x = MarksRequest{}
+func (x *HighlightsRequest) Reset() {
+	*x = HighlightsRequest{}
 	mi := &file_numen_v1_asset_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MarksRequest) String() string {
+func (x *HighlightsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MarksRequest) ProtoMessage() {}
+func (*HighlightsRequest) ProtoMessage() {}
 
-func (x *MarksRequest) ProtoReflect() protoreflect.Message {
+func (x *HighlightsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -343,47 +343,47 @@ func (x *MarksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MarksRequest.ProtoReflect.Descriptor instead.
-func (*MarksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HighlightsRequest.ProtoReflect.Descriptor instead.
+func (*HighlightsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *MarksRequest) GetPath() string {
+func (x *HighlightsRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *MarksRequest) GetAt() []*Stretch {
+func (x *HighlightsRequest) GetAt() []*Stretch {
 	if x != nil {
 		return x.At
 	}
 	return nil
 }
 
-type MarksResponse struct {
+type HighlightsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// One entry per run asked about, in the order they were asked about.
-	Runs          []*Covered `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
+	Runs          []*Highlight `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *MarksResponse) Reset() {
-	*x = MarksResponse{}
+func (x *HighlightsResponse) Reset() {
+	*x = HighlightsResponse{}
 	mi := &file_numen_v1_asset_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *MarksResponse) String() string {
+func (x *HighlightsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*MarksResponse) ProtoMessage() {}
+func (*HighlightsResponse) ProtoMessage() {}
 
-func (x *MarksResponse) ProtoReflect() protoreflect.Message {
+func (x *HighlightsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -395,41 +395,41 @@ func (x *MarksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use MarksResponse.ProtoReflect.Descriptor instead.
-func (*MarksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HighlightsResponse.ProtoReflect.Descriptor instead.
+func (*HighlightsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *MarksResponse) GetRuns() []*Covered {
+func (x *HighlightsResponse) GetRuns() []*Highlight {
 	if x != nil {
 		return x.Runs
 	}
 	return nil
 }
 
-// Covered is where one run of the text sits: the pages it falls on and, on
+// Highlight is where one run of the text sits: the pages it falls on and, on
 // each, the rectangles covering it.
-type Covered struct {
+type Highlight struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Marks         []*OnPage              `protobuf:"bytes,1,rep,name=marks,proto3" json:"marks,omitempty"`
+	Pages         []*Page                `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Covered) Reset() {
-	*x = Covered{}
+func (x *Highlight) Reset() {
+	*x = Highlight{}
 	mi := &file_numen_v1_asset_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Covered) String() string {
+func (x *Highlight) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Covered) ProtoMessage() {}
+func (*Highlight) ProtoMessage() {}
 
-func (x *Covered) ProtoReflect() protoreflect.Message {
+func (x *Highlight) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -441,41 +441,42 @@ func (x *Covered) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Covered.ProtoReflect.Descriptor instead.
-func (*Covered) Descriptor() ([]byte, []int) {
+// Deprecated: Use Highlight.ProtoReflect.Descriptor instead.
+func (*Highlight) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *Covered) GetMarks() []*OnPage {
+func (x *Highlight) GetPages() []*Page {
 	if x != nil {
-		return x.Marks
+		return x.Pages
 	}
 	return nil
 }
 
-// OnPage is one page, and what to light on it.
-type OnPage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	Rects         []*Rect                `protobuf:"bytes,2,rep,name=rects,proto3" json:"rects,omitempty"`
+// Page is one page of a highlight, and what to light on it.
+type Page struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where the page stands in the document, counted from the first.
+	Index         int32   `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
+	Rects         []*Rect `protobuf:"bytes,2,rep,name=rects,proto3" json:"rects,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OnPage) Reset() {
-	*x = OnPage{}
+func (x *Page) Reset() {
+	*x = Page{}
 	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OnPage) String() string {
+func (x *Page) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OnPage) ProtoMessage() {}
+func (*Page) ProtoMessage() {}
 
-func (x *OnPage) ProtoReflect() protoreflect.Message {
+func (x *Page) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_asset_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -487,19 +488,19 @@ func (x *OnPage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OnPage.ProtoReflect.Descriptor instead.
-func (*OnPage) Descriptor() ([]byte, []int) {
+// Deprecated: Use Page.ProtoReflect.Descriptor instead.
+func (*Page) Descriptor() ([]byte, []int) {
 	return file_numen_v1_asset_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *OnPage) GetPage() int32 {
+func (x *Page) GetIndex() int32 {
 	if x != nil {
-		return x.Page
+		return x.Index
 	}
 	return 0
 }
 
-func (x *OnPage) GetRects() []*Rect {
+func (x *Page) GetRects() []*Rect {
 	if x != nil {
 		return x.Rects
 	}
@@ -595,26 +596,27 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\x06length\x18\x01 \x01(\x05R\x06length\x12\x14\n" +
 	"\x05heard\x18\x02 \x01(\x05R\x05heard\x12\x14\n" +
 	"\x05media\x18\x03 \x01(\tR\x05media\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\"E\n" +
-	"\fMarksRequest\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\"J\n" +
+	"\x11HighlightsRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12!\n" +
-	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"6\n" +
-	"\rMarksResponse\x12%\n" +
-	"\x04runs\x18\x01 \x03(\v2\x11.numen.v1.CoveredR\x04runs\"1\n" +
-	"\aCovered\x12&\n" +
-	"\x05marks\x18\x01 \x03(\v2\x10.numen.v1.OnPageR\x05marks\"B\n" +
-	"\x06OnPage\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12$\n" +
+	"\x02at\x18\x02 \x03(\v2\x11.numen.v1.StretchR\x02at\"=\n" +
+	"\x12HighlightsResponse\x12'\n" +
+	"\x04runs\x18\x01 \x03(\v2\x13.numen.v1.HighlightR\x04runs\"1\n" +
+	"\tHighlight\x12$\n" +
+	"\x05pages\x18\x01 \x03(\v2\x0e.numen.v1.PageR\x05pages\"B\n" +
+	"\x04Page\x12\x14\n" +
+	"\x05index\x18\x01 \x01(\x05R\x05index\x12$\n" +
 	"\x05rects\x18\x02 \x03(\v2\x0e.numen.v1.RectR\x05rects\"Z\n" +
 	"\x04Rect\x12\x13\n" +
 	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
 	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
 	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xd1\x01\n" +
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xe0\x01\n" +
 	"\fAssetService\x12A\n" +
 	"\bDocument\x12\x19.numen.v1.DocumentRequest\x1a\x1a.numen.v1.DocumentResponse\x12D\n" +
-	"\tRecording\x12\x1a.numen.v1.RecordingRequest\x1a\x1b.numen.v1.RecordingResponse\x128\n" +
-	"\x05Marks\x12\x16.numen.v1.MarksRequest\x1a\x17.numen.v1.MarksResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\tRecording\x12\x1a.numen.v1.RecordingRequest\x1a\x1b.numen.v1.RecordingResponse\x12G\n" +
+	"\n" +
+	"Highlights\x12\x1b.numen.v1.HighlightsRequest\x1a\x1c.numen.v1.HighlightsResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_asset_proto_rawDescOnce sync.Once
@@ -630,30 +632,30 @@ func file_numen_v1_asset_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_asset_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_asset_proto_goTypes = []any{
-	(*DocumentRequest)(nil),   // 0: numen.v1.DocumentRequest
-	(*DocumentResponse)(nil),  // 1: numen.v1.DocumentResponse
-	(*Sheet)(nil),             // 2: numen.v1.Sheet
-	(*RecordingRequest)(nil),  // 3: numen.v1.RecordingRequest
-	(*RecordingResponse)(nil), // 4: numen.v1.RecordingResponse
-	(*MarksRequest)(nil),      // 5: numen.v1.MarksRequest
-	(*MarksResponse)(nil),     // 6: numen.v1.MarksResponse
-	(*Covered)(nil),           // 7: numen.v1.Covered
-	(*OnPage)(nil),            // 8: numen.v1.OnPage
-	(*Rect)(nil),              // 9: numen.v1.Rect
-	(*Stretch)(nil),           // 10: numen.v1.Stretch
+	(*DocumentRequest)(nil),    // 0: numen.v1.DocumentRequest
+	(*DocumentResponse)(nil),   // 1: numen.v1.DocumentResponse
+	(*Sheet)(nil),              // 2: numen.v1.Sheet
+	(*RecordingRequest)(nil),   // 3: numen.v1.RecordingRequest
+	(*RecordingResponse)(nil),  // 4: numen.v1.RecordingResponse
+	(*HighlightsRequest)(nil),  // 5: numen.v1.HighlightsRequest
+	(*HighlightsResponse)(nil), // 6: numen.v1.HighlightsResponse
+	(*Highlight)(nil),          // 7: numen.v1.Highlight
+	(*Page)(nil),               // 8: numen.v1.Page
+	(*Rect)(nil),               // 9: numen.v1.Rect
+	(*Stretch)(nil),            // 10: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.DocumentResponse.sheets:type_name -> numen.v1.Sheet
-	10, // 1: numen.v1.MarksRequest.at:type_name -> numen.v1.Stretch
-	7,  // 2: numen.v1.MarksResponse.runs:type_name -> numen.v1.Covered
-	8,  // 3: numen.v1.Covered.marks:type_name -> numen.v1.OnPage
-	9,  // 4: numen.v1.OnPage.rects:type_name -> numen.v1.Rect
+	10, // 1: numen.v1.HighlightsRequest.at:type_name -> numen.v1.Stretch
+	7,  // 2: numen.v1.HighlightsResponse.runs:type_name -> numen.v1.Highlight
+	8,  // 3: numen.v1.Highlight.pages:type_name -> numen.v1.Page
+	9,  // 4: numen.v1.Page.rects:type_name -> numen.v1.Rect
 	0,  // 5: numen.v1.AssetService.Document:input_type -> numen.v1.DocumentRequest
 	3,  // 6: numen.v1.AssetService.Recording:input_type -> numen.v1.RecordingRequest
-	5,  // 7: numen.v1.AssetService.Marks:input_type -> numen.v1.MarksRequest
+	5,  // 7: numen.v1.AssetService.Highlights:input_type -> numen.v1.HighlightsRequest
 	1,  // 8: numen.v1.AssetService.Document:output_type -> numen.v1.DocumentResponse
 	4,  // 9: numen.v1.AssetService.Recording:output_type -> numen.v1.RecordingResponse
-	6,  // 10: numen.v1.AssetService.Marks:output_type -> numen.v1.MarksResponse
+	6,  // 10: numen.v1.AssetService.Highlights:output_type -> numen.v1.HighlightsResponse
 	8,  // [8:11] is the sub-list for method output_type
 	5,  // [5:8] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
