@@ -27,7 +27,7 @@ type Log struct{ Stores port.DerivedStores }
 // ReviewLog is what a vault's log came to.
 type ReviewLog struct {
 	Answers []review.Answer
-	// order is what Given hands out, worked out at the first asking and kept
+	// order is what History hands out, worked out at the first asking and kept
 	// for the rest of them.
 	order func() review.ReviewHistory
 	// Files are what the answers were read from, sorted by name. What tells a
@@ -42,12 +42,12 @@ type ReviewLog struct {
 	Skipped int
 }
 
-// Given is the answers in the order they were given: nothing a line takes back,
-// one line to an identifier, earliest first.
+// History is the answers in the order they were given: nothing a line takes
+// back, one line to an identifier, earliest first.
 //
 // One request asks several things of one reading, and each of them reads this
 // order. It is worked out once for the reading and handed to all of them.
-func (h ReviewLog) Given() review.ReviewHistory {
+func (h ReviewLog) History() review.ReviewHistory {
 	if h.order == nil {
 		return review.Give(h.Answers)
 	}
@@ -85,7 +85,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 
 	var out ReviewLog
 	for _, file := range files {
-		ran, err := u.Run(ctx, store, file)
+		ran, err := u.ReadFile(ctx, store, file)
 		if err != nil {
 			return ReviewLog{}, err
 		}
@@ -119,8 +119,10 @@ type LogFile struct {
 	Shut bool
 }
 
-// Run is one file of a vault's log, read.
-func (u Log) Run(ctx context.Context, store port.DerivedStore, file port.Entry) (LogFile, error) {
+// ReadFile reads one file of a vault's log.
+func (u Log) ReadFile(
+	ctx context.Context, store port.DerivedStore, file port.Entry,
+) (LogFile, error) {
 	raw, err := store.Read(ctx, file.Name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{Gone: true}, nil

@@ -13,7 +13,7 @@ func TestAReadingIsPutInOrderOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	first, again := held.Given(), held.Given()
+	first, again := held.History(), held.History()
 	if len(first) != loadDays*loadPerDay {
 		t.Fatalf("the reading came to %d answers where the vault holds %d",
 			len(first), loadDays*loadPerDay)

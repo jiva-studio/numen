@@ -28,7 +28,7 @@ func TestARunTakenAwayBeforeItWasReadIsGone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ran, err := flashcards.Log{Stores: s.logs}.Run(t.Context(), store, port.Entry{
+	ran, err := flashcards.Log{Stores: s.logs}.ReadFile(t.Context(), store, port.Entry{
 		Name: "flashcards/01ARZ3NDEKTSV4RRFFQ69G5FAV.jsonl",
 	})
 	if err != nil {

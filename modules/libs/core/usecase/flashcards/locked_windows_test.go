@@ -17,7 +17,7 @@ func TestARunHeldOpenByAnotherProgramIsOneSkippedRun(t *testing.T) {
 		Op: "open", Path: "run.jsonl", Err: windows.ERROR_SHARING_VIOLATION,
 	}}
 
-	ran, err := Log{}.Run(t.Context(), store, port.Entry{Name: "run.jsonl"})
+	ran, err := Log{}.ReadFile(t.Context(), store, port.Entry{Name: "run.jsonl"})
 	if err != nil {
 		t.Fatalf("a file another program holds refused the whole history: %v", err)
 	}

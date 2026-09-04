@@ -102,7 +102,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		one, kept := was[file.Name]
 		stale := !kept || one.Size != file.Size
 		if stale || coming {
-			ran, err = log.Run(ctx, store, file)
+			ran, err = log.ReadFile(ctx, store, file)
 			if err != nil {
 				return ReviewCounts{}, err
 			}
@@ -127,7 +127,7 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (ReviewCounts
 		days := one.Days
 		if repeats(one.IDs, seen) {
 			if !opened {
-				ran, err = log.Run(ctx, store, file)
+				ran, err = log.ReadFile(ctx, store, file)
 				if err != nil {
 					return ReviewCounts{}, err
 				}
@@ -232,7 +232,7 @@ func (u CountReviews) ahead(
 		}
 		falls[u.Day.Names(s.Due)]++
 	}
-	return falls, held.Given().Retained(u.Schedules.By, u.Day), nil
+	return falls, held.History().Retained(u.Schedules.By, u.Day), nil
 }
 
 // remembered is what was counted last time, by the name of the run it was
