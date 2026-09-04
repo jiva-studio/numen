@@ -13,8 +13,8 @@ import { Days, NumberField, Segmented, Select, Slider, Switch, WEEK } from '@num
 import type { Day } from '@numen/ui'
 import Control from './Control.vue'
 import type { Held, Said } from './kind'
-import { BOUNDS, COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
-import type { Counts, Goal, Rule } from './core'
+import { COUNTS, GOALS, LOADS, RULES, WHOLE_LOAD, loadOn, loaded } from './core'
+import type { Bounds, Counts, Goal, Rule } from './core'
 import { fieldsUnder, idle, round, type Field } from './curve'
 import { WORDS as words } from './words'
 
@@ -80,19 +80,31 @@ const value = computed(() =>
 /** The value the control stands at, in the units of its goal. */
 const reading = computed(() => words.value(curve.value.goal, value.value, day.value))
 
-/** How far a field goes. A field that holds no number is bounded by nothing. */
-const boundsOf = (field: Field): { least: number; most: number } => {
-  if (field === 'newADay') return BOUNDS.newADay
-  if (field === 'reviewsADay') return BOUNDS.reviewsADay
+/** How far each setting goes, as the last read answered it. */
+const bounds = computed(() => props.held.bounds())
+
+/** How far a control runs, and nothing at all where nothing was said. */
+type Ends = { min: number; max: number } | Record<string, never>
+
+/** One pair of ends as a control takes them, counted in the field's own units. */
+const ends = (one: Bounds | undefined, per = 1): Ends =>
+  one ? { min: one.least * per, max: one.most * per } : {}
+
+/**
+ * How far a field goes, as the control it is drawn in takes it. A field the
+ * application has said no bound for is left to the control's own ends.
+ */
+const boundsOf = (field: Field): Ends => {
+  const within = bounds.value
+  if (field === 'newADay') return ends(within.newADay)
+  if (field === 'reviewsADay') return ends(within.reviewsADay)
+  if (field === 'minutesADay') return ends(within.minutesADay)
+  if (field === 'backlog') return ends(within.backlog)
+  if (field === 'interval') return ends(within.interval)
   // A chance of recall is read and typed in per cent, which is how every figure
   // beside it is said.
-  if (field === 'retention') {
-    return { least: BOUNDS.retention.least * 100, most: BOUNDS.retention.most * 100 }
-  }
-  if (field === 'minutesADay') return BOUNDS.minutesADay
-  if (field === 'backlog') return BOUNDS.backlog
-  if (field === 'interval') return BOUNDS.interval
-  return { least: 0, most: 0 }
+  if (field === 'retention') return ends(within.retention, 100)
+  return {}
 }
 
 /** Whether a row draws a number, and the number it draws. */
@@ -227,8 +239,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
               <template v-else-if="field === 'backlog'">
                 <Slider
                   :model-value="settings.backlog"
-                  :min="boundsOf(field).least"
-                  :max="boundsOf(field).most"
+                  v-bind="boundsOf(field)"
                   :step="1"
                   :aria-labelledby="`preset-${field}`"
                   class="preset__slider"
@@ -255,8 +266,7 @@ const stopped = computed(() => words.stopped(props.held.stopped()))
               <NumberField
                 v-else
                 :model-value="counted(field)"
-                :min="boundsOf(field).least"
-                :max="boundsOf(field).most"
+                v-bind="boundsOf(field)"
                 :step="1"
                 :aria-labelledby="`preset-${field}`"
                 class="preset__number"

@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULTS, NOWHERE, type Curve, type Goal, type Point, type Settings } from './core'
+import { BOUNDS } from '../testing/preset'
 import {
   approximate,
   costOf,
@@ -119,10 +120,18 @@ describe('where the preset itself stands', () => {
 
 describe('a number held inside the bounds of its setting', () => {
   it('is the number where it is inside them, and the end it is past where it is not', () => {
-    expect(held(0.85, 'retention')).toBe(0.85)
-    expect(held(0.5, 'retention')).toBe(0.7)
-    expect(held(2, 'retention')).toBe(0.99)
-    expect(held(-4, 'minutesADay')).toBe(0)
+    expect(held(0.85, BOUNDS.retention)).toBe(0.85)
+    expect(held(0.5, BOUNDS.retention)).toBe(0.7)
+    expect(held(2, BOUNDS.retention)).toBe(0.99)
+    expect(held(-4, BOUNDS.minutesADay)).toBe(0)
+  })
+
+  // A tab draws its fields before the first read lands, and a number typed
+  // into one of them is nobody's to bring in until the application has said
+  // how far it goes.
+  it('is the number itself where the application has said no bound', () => {
+    expect(held(-4, undefined)).toBe(-4)
+    expect(held(9_000, undefined)).toBe(9_000)
   })
 })
 
@@ -151,7 +160,7 @@ describe('what one place of the curve produces', () => {
   // did not name can close their day.
   it('takes the goal’s own value off the grid, and writes nothing else', () => {
     const was = settings({ newADay: 12, reviewsADay: 0, retention: 0.95 })
-    const made = producing(was, 3, curve, today)
+    const made = producing(was, 3, curve, today, BOUNDS)
     expect(made.minutesADay).toBe(30)
     expect(made.newADay).toBe(12)
     expect(made.reviewsADay).toBe(0)
@@ -159,7 +168,7 @@ describe('what one place of the curve produces', () => {
   })
 
   it('leaves the settings as they are where the grid has no such place', () => {
-    expect(producing(settings(), 9, curve, today)).toStrictEqual(settings())
+    expect(producing(settings(), 9, curve, today, BOUNDS)).toStrictEqual(settings())
   })
 
   it('names the day of the place for a goal of a date, and nothing else', () => {
@@ -170,7 +179,7 @@ describe('what one place of the curve produces', () => {
       at: curve.at.map((one) => ({ ...one, minutes: 45 })),
     }
     const was = settings({ goal: 'date', minutesADay: 20, reviewsADay: 0 })
-    const made = producing(was, 3, dated, today)
+    const made = producing(was, 3, dated, today, BOUNDS)
     expect(made.byDate).toBe('2026-09-29')
     expect(made.minutesADay).toBe(20)
     expect(made.reviewsADay).toBe(0)
@@ -178,14 +187,14 @@ describe('what one place of the curve produces', () => {
 
   it('moves the target alone under a goal of retention', () => {
     const was = settings({ goal: 'retention', newADay: 12, reviewsADay: 30 })
-    const made = producing(was, 3, { ...curve, goal: 'retention' }, today)
+    const made = producing(was, 3, { ...curve, goal: 'retention' }, today, BOUNDS)
     expect(made.retention).toBe(0.99)
     expect(made.newADay).toBe(12)
     expect(made.reviewsADay).toBe(30)
   })
 
   it('leaves the knob, the field and what is written at one value', () => {
-    const made = producing(settings(), 2, curve, today)
+    const made = producing(settings(), 2, curve, today, BOUNDS)
     expect(made.minutesADay).toBe(curve.grid[2])
   })
 })

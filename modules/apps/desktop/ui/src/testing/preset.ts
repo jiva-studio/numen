@@ -10,8 +10,28 @@ import { mount } from '@vue/test-utils'
 import { Stopped } from '@numen/protocol'
 
 import PresetTab from '../preset/PresetTab.vue'
-import { DEFAULTS, type Curve, type Material, type Point, type Settings } from '../preset/core'
+import {
+  DEFAULTS,
+  type Curve,
+  type Material,
+  type Point,
+  type Settings,
+  type SettingsBounds,
+} from '../preset/core'
 import type { Held } from '../preset/kind'
+
+/**
+ * How far each setting goes, as the application answers a read. A test says
+ * what the tab was told and reads the drawn control against it.
+ */
+export const BOUNDS = {
+  minutesADay: { least: 0, most: 24 * 60 },
+  newADay: { least: 0, most: 9999 },
+  reviewsADay: { least: 0, most: 9999 },
+  retention: { least: 0.7, most: 0.99 },
+  backlog: { least: 0, most: 100 },
+  interval: { least: 1, most: 365 },
+} satisfies SettingsBounds
 
 // The track of a share is measured as it is drawn, and a document with no
 // layout in it watches nothing for size.
@@ -99,6 +119,7 @@ const standing = (
     material: () => (told === undefined ? counted(curve(over)) : told),
     place: () => place.value,
     waiting: () => waiting,
+    bounds: () => BOUNDS,
     problems: () => [],
     stopped: () => Stopped.NOTHING,
     saying: () => '',

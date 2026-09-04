@@ -22,6 +22,7 @@ import {
   type Material,
   type Point,
   type Settings as Scheduling,
+  type SettingsBounds,
 } from './preset/core'
 import type { Held as PresetHeld } from './preset/kind'
 import DeckTab from './cards/DeckTab.vue'
@@ -196,6 +197,16 @@ const SETTINGS_OF_PRESET: Scheduling = {
   reviewsADay: 140,
 }
 
+/** How far each setting goes, as the application answers a read. */
+const BOUNDS: SettingsBounds = {
+  minutesADay: { least: 0, most: 24 * 60 },
+  newADay: { least: 0, most: 9999 },
+  reviewsADay: { least: 0, most: 9999 },
+  retention: { least: 0.7, most: 0.99 },
+  backlog: { least: 0, most: 100 },
+  interval: { least: 1, most: 365 },
+}
+
 const PRESET_HELD: PresetHeld = {
   id: 'Sanskrit.md',
   settings: () => SETTINGS_OF_PRESET,
@@ -203,6 +214,7 @@ const PRESET_HELD: PresetHeld = {
   material: () => ({ decks: 3, cards: 1_240, overdue: 96, unbegun: 410 }) as Material,
   place: () => 4,
   waiting: () => false,
+  bounds: () => BOUNDS,
   problems: () => [],
   stopped: () => Stopped.NOTHING,
   saying: () => '',

@@ -13,7 +13,14 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import { Stopped } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
-import { DEFAULTS, type Curve, type Material, type Point, type Settings } from './core'
+import {
+  DEFAULTS,
+  type Curve,
+  type Material,
+  type Point,
+  type Settings,
+  type SettingsBounds,
+} from './core'
 import { BAND_HIGH, HIGH, WIDE } from './drawing'
 import type { Held } from './kind'
 import { WORDS as words } from './words'
@@ -70,6 +77,16 @@ interface Knobs {
   honest: boolean
 }
 
+/** How far each setting goes, as the application answers a read. */
+const BOUNDS: SettingsBounds = {
+  minutesADay: { least: 0, most: 24 * 60 },
+  newADay: { least: 0, most: 9999 },
+  reviewsADay: { least: 0, most: 9999 },
+  retention: { least: 0.7, most: 0.99 },
+  backlog: { least: 0, most: 100 },
+  interval: { least: 1, most: 365 },
+}
+
 /** A tab standing at those settings, holding the place the knob was moved to. */
 const holding = (args: Knobs): Held => {
   const place = ref(args.place)
@@ -81,6 +98,7 @@ const holding = (args: Knobs): Held => {
     material: () => (args.honest ? MATERIAL : null),
     place: () => place.value,
     waiting: () => args.waiting,
+    bounds: () => BOUNDS,
     problems: () => [],
     stopped: () => Stopped.NOTHING,
     saying: () => '',

@@ -9,7 +9,7 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Stopped } from '@numen/protocol'
 import type { Cards, Carded, Problem, Refused } from '../core'
-import { DEFAULTS, NOWHERE, type Listed, type Presets } from '../preset/core'
+import { DEFAULTS, NOWHERE, NO_BOUNDS, type Listed, type Presets } from '../preset/core'
 import { putting } from '../putting'
 import { windowing } from '../windowing'
 import { DECK } from '../workspace'
@@ -121,6 +121,7 @@ const drawn = async (
       preset: { path, title: '', settings: DEFAULTS, problems: [], ...SCHEDULING },
       refusal: null,
       at: '',
+      bounds: NO_BOUNDS,
     }),
     list: async () =>
       scheduling.presets ?? [
@@ -138,6 +139,7 @@ const drawn = async (
       },
       refusal: null,
       at: '',
+      bounds: NO_BOUNDS,
     }),
     schedules: async (_deck, preset) => {
       put.push(preset)

@@ -10,10 +10,10 @@ import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
 import tabSource from './PresetTab.vue?raw'
 import controlSource from './Control.vue?raw'
-import { BOUNDS } from './core'
+import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
 import type { Held, Said } from './kind'
-import { curve, drawn, rows, standing } from '../testing/preset'
+import { BOUNDS, curve, drawn, rows, standing } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('the settings under the control', () => {
@@ -50,8 +50,10 @@ describe('the settings under the control', () => {
     await tab.vm.$nextTick()
     const track = row.get('[role="slider"]')
     expect(track.attributes('aria-valuenow')).toBe('70')
-    expect(track.attributes('aria-valuemin')).toBe('0')
-    expect(track.attributes('aria-valuemax')).toBe('100')
+    // The track runs the ends the read answered, and nothing outside them is
+    // taken.
+    expect(track.attributes('aria-valuemin')).toBe(`${BOUNDS.backlog.least}`)
+    expect(track.attributes('aria-valuemax')).toBe(`${BOUNDS.backlog.most}`)
     expect(track.attributes('aria-labelledby')).toBe('preset-backlog')
     expect(row.get('[data-preset="percent"]').text()).toBe(words.percent(70))
 
@@ -61,8 +63,6 @@ describe('the settings under the control', () => {
     expect(done).toStrictEqual(['types backlog 69'])
     await track.trigger('keyup', { key: 'ArrowLeft' })
     expect(done).toStrictEqual(['types backlog 69', 'settles'])
-    // The hundred is the whole of it, and nothing outside it is taken.
-    expect(BOUNDS.backlog).toStrictEqual({ least: 0, most: 100 })
   })
 
   // The rule stands over the one value it reads, and the value the other rule
@@ -120,6 +120,18 @@ describe('the settings under the control', () => {
     expect(field.attributes('aria-valuemax')).toBe(`${BOUNDS.interval.most}`)
     await field.setValue('30')
     expect(done).toStrictEqual(['types interval 30'])
+  })
+
+  // A tab draws its rows before the first read lands. Until the application
+  // has said how far a field goes, the field is left at the ends it draws
+  // itself with, rather than at ends the window made up.
+  it('leaves a field the application has said nothing about at its own ends', () => {
+    const one = standing({}, { learned: 'interval', interval: 21 })
+    const held: Held = { ...one.held, bounds: () => NO_BOUNDS }
+    const tab = mount(PresetTab, { props: { held } })
+    const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
+    expect(field.element.value).toBe('21')
+    expect(field.attributes('aria-valuemax')).not.toBe(`${BOUNDS.interval.most}`)
   })
 })
 

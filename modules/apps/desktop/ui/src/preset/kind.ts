@@ -18,12 +18,14 @@ import { PRESET } from '../workspace'
 import PresetTab from './PresetTab.vue'
 import {
   DEFAULTS,
+  NO_BOUNDS,
   type Curve,
   type Goal,
   type Load,
   type Material,
   type Presets,
   type Settings,
+  type SettingsBounds,
 } from './core'
 import {
   approximate,
@@ -68,6 +70,11 @@ export interface Held {
   place(): number
   /** An answer to the picture is on its way. */
   waiting(): boolean
+  /**
+   * How far each setting goes, as the application answers it. They are its own
+   * and not this preset's, and nothing is said of them until a read lands.
+   */
+  bounds(): SettingsBounds
   /** What is wrong with the file, in the words to show. */
   problems(): readonly string[]
   /**
@@ -106,6 +113,12 @@ export function presetting(
 ) {
   /** What each preset is called, as the vault last read it. */
   const titles = new Map<string, string>()
+
+  /**
+   * How far each setting goes. Every read answers the same ones, so they are
+   * the window's and not a tab's, and they stand until the first read lands.
+   */
+  const bounds = shallowRef<SettingsBounds>(NO_BOUNDS)
 
   /** Everything one open preset stands at. */
   interface Kept {
@@ -192,6 +205,7 @@ export function presetting(
     one.saying.value = whyOf(answer.refusal)
     one.changed.value = false
     one.at = answer.at
+    bounds.value = answer.bounds
     // Every curve in hand was worked out over a vault this read has just been
     // through, so each of them is an answer about a vault as it was.
     one.answers.clear()
@@ -398,7 +412,8 @@ export function presetting(
 
   /** The settings the place the knob stands at produces, which is its own value. */
   const turns = (one: Kept, place: number): void => {
-    one.settings.value = producing(one.settings.value, place, one.curve.value, today())
+    const was = one.settings.value
+    one.settings.value = producing(was, place, one.curve.value, today(), bounds.value)
     one.place.value = place
     one.edited = true
   }
@@ -419,12 +434,21 @@ export function presetting(
     if (field === 'load' && isLoad(value)) return { ...settings, load: value }
     if (field === 'evenLoad' && typeof value === 'boolean') return { ...settings, evenLoad: value }
     if (typeof value !== 'number') return settings
-    if (field === 'retention') return { ...settings, retention: held(value, 'retention') }
-    if (field === 'newADay') return { ...settings, newADay: held(value, 'newADay') }
-    if (field === 'reviewsADay') return { ...settings, reviewsADay: held(value, 'reviewsADay') }
-    if (field === 'minutesADay') return { ...settings, minutesADay: held(value, 'minutesADay') }
-    if (field === 'backlog') return { ...settings, backlog: held(Math.round(value), 'backlog') }
-    if (field === 'interval') return { ...settings, interval: held(Math.round(value), 'interval') }
+    const within = bounds.value
+    if (field === 'retention') return { ...settings, retention: held(value, within.retention) }
+    if (field === 'newADay') return { ...settings, newADay: held(value, within.newADay) }
+    if (field === 'reviewsADay') {
+      return { ...settings, reviewsADay: held(value, within.reviewsADay) }
+    }
+    if (field === 'minutesADay') {
+      return { ...settings, minutesADay: held(value, within.minutesADay) }
+    }
+    if (field === 'backlog') {
+      return { ...settings, backlog: held(Math.round(value), within.backlog) }
+    }
+    if (field === 'interval') {
+      return { ...settings, interval: held(Math.round(value), within.interval) }
+    }
     return settings
   }
 
@@ -452,6 +476,7 @@ export function presetting(
       material: () => one.material.value,
       place: () => one.place.value,
       waiting: () => one.waiting.value,
+      bounds: () => bounds.value,
       problems: () => one.problems.value,
       stopped: () => one.stopped.value,
       saying: () => one.saying.value,

@@ -9,10 +9,12 @@ import { createClient } from '@connectrpc/connect'
 import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } from '@numen/protocol'
 import type {
   Stopped,
+  Bounds as BoundsMessage,
   Curve as CurveMessage,
   Mark as PlaceMessage,
   Preset as PresetMessage,
   Settings as SettingsMessage,
+  SettingsBounds as SettingsBoundsMessage,
 } from '@numen/protocol'
 import { fingerprint, refusalIn, staleIn, stamp } from '../answers'
 import type { Refused } from '../core'
@@ -120,15 +122,30 @@ export const DEFAULTS: Settings = {
   interval: 21,
 }
 
-/** How far each setting goes. A number outside its bounds is refused. */
-export const BOUNDS = {
-  minutesADay: { least: 0, most: 24 * 60 },
-  newADay: { least: 0, most: 9999 },
-  reviewsADay: { least: 0, most: 9999 },
-  retention: { least: 0.7, most: 0.99 },
-  backlog: { least: 0, most: 100 },
-  interval: { least: 1, most: 365 },
-} as const
+/** How far one setting goes, at each end. A number outside them is refused. */
+export interface Bounds {
+  readonly least: number
+  readonly most: number
+}
+
+/**
+ * How far each setting goes, as a read answers it. They are the application's
+ * and not the preset's, so every read carries the same ones.
+ *
+ * A setting the application said no bound for is absent here, and goes as far
+ * as the field a person types it into does.
+ */
+export interface SettingsBounds {
+  readonly minutesADay?: Bounds
+  readonly newADay?: Bounds
+  readonly reviewsADay?: Bounds
+  readonly retention?: Bounds
+  readonly backlog?: Bounds
+  readonly interval?: Bounds
+}
+
+/** How far each setting goes until the application has said. */
+export const NO_BOUNDS: SettingsBounds = {}
 
 /** One preset as a read hands it over. */
 export interface Preset {
@@ -154,6 +171,8 @@ export interface Read {
   readonly refusal: Refused | null
   /** The file it came out of, to present at the next write. */
   readonly at: string
+  /** How far each setting goes, which a refused read answers as well. */
+  readonly bounds: SettingsBounds
 }
 
 /** What writing a preset came back with. */
@@ -352,11 +371,29 @@ const took = (answer: {
   preset?: PresetMessage | undefined
   refusal?: number | undefined
   at?: { path: string; size: bigint; mtime: bigint } | undefined
+  bounds?: SettingsBoundsMessage | undefined
 }): Read => ({
   preset: answer.preset ? held(answer.preset) : null,
   refusal: refusalIn(answer),
   at: stamp(answer.at) ?? '',
+  bounds: bounded(answer.bounds),
 })
+
+/** How far each setting goes, as the read answered it. */
+const bounded = (said: SettingsBoundsMessage | undefined): SettingsBounds => {
+  const out: { -readonly [field in keyof SettingsBounds]: Bounds } = {}
+  if (said === undefined) return out
+  if (said.minutesADay) out.minutesADay = ranged(said.minutesADay)
+  if (said.newADay) out.newADay = ranged(said.newADay)
+  if (said.reviewsADay) out.reviewsADay = ranged(said.reviewsADay)
+  if (said.retention) out.retention = ranged(said.retention)
+  if (said.backlog) out.backlog = ranged(said.backlog)
+  if (said.interval) out.interval = ranged(said.interval)
+  return out
+}
+
+/** One pair of ends, in the window's own words. */
+const ranged = (said: BoundsMessage): Bounds => ({ least: said.least, most: said.most })
 
 /** One preset as the window carries it. */
 const held = (one: PresetMessage): Preset => ({

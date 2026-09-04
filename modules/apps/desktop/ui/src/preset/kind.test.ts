@@ -12,6 +12,7 @@ import { presetting, type Said } from './kind'
 import { fieldsUnder, nearest, standing, steers, type Field } from './curve'
 import {
   DEFAULTS,
+  NO_BOUNDS,
   type Curve,
   type Goal,
   type Point,
@@ -20,6 +21,7 @@ import {
   type Settings,
   type Written,
 } from './core'
+import { BOUNDS } from '../testing/preset'
 import type { Refused } from '../core'
 import type { Host } from '../windowing'
 import type { Putting } from '../putting'
@@ -98,9 +100,10 @@ const opened = async (
       },
       refusal: null,
       at: 'one',
+      bounds: BOUNDS,
       ...reading(times++),
     }),
-    scheduling: async () => ({ preset: null, refusal: null, at: '' }),
+    scheduling: async () => ({ preset: null, refusal: null, at: '', bounds: NO_BOUNDS }),
     list: async () => [],
     makes: async () => ({ path: '', refusal: null }),
     schedules: async () => ({ refusal: null, changed: false, at: '' }),
@@ -691,6 +694,29 @@ describe('a field the goal does not steer, typed', () => {
         expect(written.at(-1)).toStrictEqual(now)
       }
     }
+  })
+})
+
+// How far a setting goes is the application's and not the window's: a field
+// drawn from a copy of its own accepts a number the write then refuses.
+describe('how far each setting goes', () => {
+  it('is what the read answered', async () => {
+    const { held } = await opened()
+    expect(held.bounds()).toStrictEqual(BOUNDS)
+  })
+
+  it('is nothing at all where the read answered none', async () => {
+    const { held } = await opened({}, curve, () => ({ bounds: NO_BOUNDS }))
+    expect(held.bounds()).toStrictEqual({})
+  })
+
+  it('holds a number typed past an end at the end the read answered', async () => {
+    const { held } = await opened()
+    held.types('interval', 9_000)
+    expect(held.settings().interval).toBe(BOUNDS.interval.most)
+
+    held.types('newADay', -4)
+    expect(held.settings().newADay).toBe(BOUNDS.newADay.least)
   })
 })
 

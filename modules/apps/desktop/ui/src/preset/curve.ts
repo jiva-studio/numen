@@ -6,8 +6,8 @@
  * the control computes nothing. The line drawn while that answer is on its way
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
-import { BOUNDS, DEFAULTS, NOWHERE } from './core'
-import type { Curve, Goal, Place, Point, Rule, Settings } from './core'
+import { DEFAULTS, NOWHERE } from './core'
+import type { Bounds, Curve, Goal, Place, Point, Rule, Settings, SettingsBounds } from './core'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -15,8 +15,8 @@ const PLACES = 25
 /** The shortest day a curve of minutes runs to. */
 const LEAST_CEILING = 60
 
-/** How far each end of the retention range stands. */
-const RETENTION = BOUNDS.retention
+/** The span of retention the sketch is drawn across, as the two ends of it. */
+const RETENTION = { least: 0.7, most: 0.99 }
 
 /** How long one answer takes where nothing has been answered yet, in seconds. */
 const ANSWER = 8
@@ -195,9 +195,12 @@ export const clearing = (backlog: readonly number[]): number | null => {
   return at < 0 ? -1 : at + 1
 }
 
-/** A number held inside the bounds of the setting it is. */
-export const held = (value: number, of: keyof typeof BOUNDS): number =>
-  Math.min(Math.max(value, BOUNDS[of].least), BOUNDS[of].most)
+/**
+ * A number held inside the bounds of the setting it is. A setting the
+ * application has said no bound for is held to none.
+ */
+export const held = (value: number, within: Bounds | undefined): number =>
+  within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
 
 /** The place of the grid nearest a value, and the last one for an empty grid. */
 export const nearest = (grid: readonly number[], value: number): number => {
@@ -348,15 +351,16 @@ export const producing = (
   place: number,
   curve: Curve,
   today: Date,
+  within: SettingsBounds,
 ): Settings => {
   const value = curve.grid[place] ?? standing(was, today)
   if (curve.goal === 'retention') {
-    return { ...was, retention: held(round(value, 2), 'retention') }
+    return { ...was, retention: held(round(value, 2), within.retention) }
   }
   if (curve.goal === 'date') {
     return { ...was, byDate: curve.days[place] ?? dayAfter(today, value) }
   }
-  return { ...was, minutesADay: held(Math.round(value), 'minutesADay') }
+  return { ...was, minutesADay: held(Math.round(value), within.minutesADay) }
 }
 
 /** A number to that many places. */
