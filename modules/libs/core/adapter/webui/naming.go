@@ -2,7 +2,6 @@ package webui
 
 import (
 	"context"
-	"errors"
 
 	"connectrpc.com/connect"
 
@@ -17,9 +16,6 @@ import (
 func (a *API) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
-	if a.Notes.Rename == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -48,17 +44,11 @@ func (a *API) RenameNote(
 	return connect.NewResponse(out), nil
 }
 
-// errNoSettings is what a build that configures nothing answers.
-var errNoSettings = errors.New("this build cannot turn settings")
-
 // RemoveFile takes a file or a folder out of the vault. It goes to the trash,
 // and a request that says so destroys a note.
 func (a *API) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
-	if a.Notes.Remove == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err

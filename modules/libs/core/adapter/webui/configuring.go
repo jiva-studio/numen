@@ -16,9 +16,6 @@ import (
 func (a *API) GetSettings(
 	_ context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
-	if a.Configuring.Configured == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	written, path, err := a.Configuring.Configured()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -40,9 +37,6 @@ func (a *API) GetSettings(
 func (a *API) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
-	if a.Configuring.ChoosesSetting == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	written := make([]port.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
 		written = append(written, port.Setting{Path: one.GetAt(), JSON: one.GetValue()})
@@ -60,9 +54,6 @@ func (a *API) WriteSettings(
 func (a *API) ReadSettingsFile(
 	_ context.Context, _ *connect.Request[v1.ReadSettingsFileRequest],
 ) (*connect.Response[v1.ReadSettingsFileResponse], error) {
-	if a.Configuring.ConfiguredFile == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	written, path, err := a.Configuring.ConfiguredFile()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -79,9 +70,6 @@ func (a *API) ReadSettingsFile(
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if a.Configuring.WritesFile == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
 	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
 		if errors.Is(err, port.ErrChanged) {
 			stale := v1.Refusal_REFUSAL_STALE

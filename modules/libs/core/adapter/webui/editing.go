@@ -14,16 +14,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// errNoEditing is what a build with no write path answers.
-var errNoEditing = errors.New("this build cannot edit notes")
-
 // ReadNote hands the client the prose of a note.
 func (a *API) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
-	if a.Notes.Read == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -49,9 +43,6 @@ func (a *API) ReadNote(
 func (a *API) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
-	if a.Notes.Write == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -88,9 +79,6 @@ func (a *API) WriteNote(
 func (a *API) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
-	if a.Notes.Create == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -130,9 +118,6 @@ func (a *API) CreateNote(
 func (a *API) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
-	if a.Notes.Linking == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err

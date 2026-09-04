@@ -131,9 +131,6 @@ func (a *API) ListFileKinds(
 func (a *API) MoveFile(
 	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
 ) (*connect.Response[v1.MoveFileResponse], error) {
-	if a.Files.Move == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -162,9 +159,6 @@ func (a *API) MoveFile(
 func (a *API) CreateFolder(
 	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
 ) (*connect.Response[v1.CreateFolderResponse], error) {
-	if a.Files.Writers == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
-	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err

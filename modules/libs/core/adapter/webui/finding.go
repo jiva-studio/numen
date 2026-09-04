@@ -14,9 +14,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 )
 
-// errNoSearching is what a build with nothing to search the text with answers.
-var errNoSearching = errors.New("this build cannot search the text of a vault")
-
 // errNoWay is a search that named no way to ask it.
 var errNoWay = errors.New("a search says how it is asked")
 
@@ -112,9 +109,6 @@ func (a *API) ListHeadings(
 func (a *API) SearchPassages(
 	ctx context.Context, r *connect.Request[v1.SearchPassagesRequest],
 ) (*connect.Response[v1.SearchPassagesResponse], error) {
-	if a.Finds == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSearching)
-	}
 	query := r.Msg.GetQuery()
 	showing := a.Showing()
 	if strings.TrimSpace(query) == "" || showing.ID == "" {
