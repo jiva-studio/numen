@@ -113,6 +113,16 @@ describe('safe, what does not survive', () => {
     expect(safe(`<img src="${said}">`)).toBe(`<img src="${said}">`)
   })
 
+  // A deck may have come from another person. A picture fetched from their
+  // machine is a request the moment the card is drawn, and tells them the deck
+  // was read and from where.
+  it('drops an image that would be fetched from off the machine', () => {
+    expect(cleaned('<img src="https://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="http://tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="//tracker.example/pixel.png">')).toBe('<img>')
+    expect(cleaned('<img src="\\\\tracker.example/pixel.png">')).toBe('<img>')
+  })
+
   it('drops a comment, which is read differently by every parser', () => {
     expect(cleaned('a<!--[if IE]><script>alert(1)</script><![endif]-->b')).toBe('ab')
   })

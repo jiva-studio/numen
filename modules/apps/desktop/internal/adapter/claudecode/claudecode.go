@@ -370,7 +370,13 @@ func runnable(path string) bool {
 // brought is the tools the agent may use besides this vault's own: it may look
 // something up, and it may not touch this machine. Every other built-in — a
 // shell, a file writer, a file reader — is absent.
-const brought = "WebSearch,WebFetch"
+//
+// Looking something up is a search and not a fetch. A note may have been
+// written by anybody and the agent reads notes, so a tool that goes to an
+// address the text names is an address the text chooses: the vault leaves in
+// the request. A search names no address, and the words of it reach the model
+// that is reading them already.
+const brought = "WebSearch"
 
 // arguments are what the agent is started with.
 //
@@ -379,8 +385,8 @@ const brought = "WebSearch,WebFetch"
 // approved ahead of the run. The question itself is not here — it goes on the
 // input, where nothing reads it for options.
 //
-// The tools it brings are the two that reach the web; every other built-in is
-// disabled. An agent works this vault through the tools this vault serves, and
+// The one tool it brings is the search; every other built-in is disabled. An
+// agent works this vault through the tools this vault serves, and
 // every one of those goes through a use case that says what a note is and keeps
 // the index level with the file.
 func (a *Agent) arguments(task port.Task, configuration string) []string {

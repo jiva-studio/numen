@@ -341,11 +341,12 @@ func TestTheAgentBringsOnlyTheToolsItIsNamed(t *testing.T) {
 	named := strings.Split(argv[at+1], ",")
 	// Named one at a time: a check that only counts passes when the set changes
 	// to another set of the same size.
-	if !slices.Equal(named, []string{"WebSearch", "WebFetch"}) {
+	if !slices.Equal(named, []string{"WebSearch"}) {
 		t.Errorf("the tools it brings are %q", named)
 	}
-	// Nothing that reads or writes this machine, whatever else is added.
-	for _, refused := range []string{"Bash", "Write", "Edit", "Read", "Task", "NotebookEdit"} {
+	// Nothing that reads or writes this machine, and nothing that goes to an
+	// address a note names, whatever else is added.
+	for _, refused := range []string{"Bash", "Write", "Edit", "Read", "Task", "NotebookEdit", "WebFetch"} {
 		if slices.Contains(named, refused) {
 			t.Errorf("%s is a tool it brought", refused)
 		}

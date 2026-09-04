@@ -42,7 +42,13 @@ const OWN: Readonly<Record<string, readonly string[]>> = {
   colgroup: ['span'],
 }
 
-/** The schemes a link may point at. An address naming none is the caller's to resolve. */
+/**
+ * The schemes a link may point at. An address naming none is the caller's to
+ * resolve.
+ *
+ * A link is followed when a person presses it, and one leading outward opens in
+ * their own browser rather than in this window.
+ */
 const SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
 /** The declarations a tag may be styled with. */
@@ -73,8 +79,19 @@ const points = (url: string): boolean => {
   return said === null || SCHEMES.has(said)
 }
 
-const shows = (url: string): boolean =>
-  scheme(url) === 'data:' ? INLINE_IMAGE.test(bare(url)) : points(url)
+/**
+ * A picture a card may draw: its own bytes, or a file this window serves.
+ *
+ * An address off the machine is a request the moment the card is drawn, which
+ * tells whoever wrote the deck that it was read, and from where.
+ */
+const shows = (url: string): boolean => {
+  const said = bare(url)
+  if (scheme(said) === 'data:') return INLINE_IMAGE.test(said)
+  // An address opening with two slashes names a host and keeps the window's
+  // own scheme, so it names no scheme and reaches off the machine all the same.
+  return scheme(said) === null && !/^[\\/]{2}/.test(said)
+}
 
 /** A style with every declaration that is not drawn with dropped. */
 const styled = (value: string): string =>
