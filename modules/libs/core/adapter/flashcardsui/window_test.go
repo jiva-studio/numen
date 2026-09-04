@@ -2,6 +2,7 @@ package flashcardsui
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -200,6 +201,7 @@ func curves(api *API) flashcards.Curves {
 		Presets:   api.Presets,
 		Day:       api.Day,
 		Now:       api.Now,
+		Cores:     runtime.GOMAXPROCS(0),
 	}
 }
 

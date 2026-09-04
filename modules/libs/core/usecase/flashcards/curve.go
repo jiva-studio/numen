@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"runtime"
 	"sync"
 	"time"
 
@@ -141,6 +140,10 @@ type Curves struct {
 	// By is the scheduler asking for a share of the cards to come back. A build
 	// holding none reads FSRS.
 	By func(retention float64) history.Scheduler
+	// Cores is how many places of a curve are worked out at once. It is a fact
+	// about the machine, so it is given here rather than asked of the runtime,
+	// and a build holding none works one place at a time.
+	Cores int
 }
 
 // steered is what is wrong with the value the goal moves, and is nil where the
@@ -350,7 +353,7 @@ func (u Curves) minutes(
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
 	out.Points = make([]Point, len(out.Grid))
-	if err := places(len(out.Grid), func(i int) error {
+	if err := u.places(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
 		ran, err := run.Run(ctx, now, one, at, unseen)
@@ -407,7 +410,7 @@ func (u Curves) retention(
 	// works the returning share out on.
 	run.Retains = []int{run.Covers() - 1}
 	out.Points = make([]Point, len(out.Grid))
-	if err := places(len(out.Grid), func(i int) error {
+	if err := u.places(len(out.Grid), func(i int) error {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
 		asks.By = u.at(out.Grid[i])
@@ -479,7 +482,7 @@ func (u Curves) date(
 	out.Grid = make([]float64, len(steps))
 	out.Days = make([]string, len(steps))
 	out.Points = make([]Point, len(steps))
-	if err := places(len(steps), func(i int) error {
+	if err := u.places(len(steps), func(i int) error {
 		day := first + steps[i]
 		aiming, asks := p, run
 		aiming.By = open.AddDate(0, 0, day)
@@ -565,9 +568,9 @@ func (u Curves) date(
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
 // of each place reading the context it was given.
-func places(count int, each func(at int) error) error {
+func (u Curves) places(count int, each func(at int) error) error {
 	failed := make([]error, count)
-	room := make(chan struct{}, max(1, runtime.GOMAXPROCS(0)))
+	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup
 	for at := range count {
 		room <- struct{}{}

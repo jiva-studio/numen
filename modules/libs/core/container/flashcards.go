@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
@@ -141,8 +142,11 @@ func (c Config) Flashcards(
 			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
 		},
 		Presets: presets,
+		// How many places of a curve run at once is what this machine can run
+		// at once, which is a fact only here is allowed to read.
 		Curves: flashcards.Curves{
 			Standings: standing, Schedules: schedules, Presets: presets, Day: day, Now: time.Now,
+			Cores: runtime.GOMAXPROCS(0),
 		},
 		Day: day,
 	}

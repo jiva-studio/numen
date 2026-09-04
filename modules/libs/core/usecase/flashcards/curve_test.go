@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -61,6 +62,7 @@ func (s vaulted) curves(now time.Time) flashcards.Curves {
 	return flashcards.Curves{
 		Standings: s.standings, Schedules: s.kept, Presets: s.presets,
 		Day: today, Now: func() time.Time { return now },
+		Cores: runtime.GOMAXPROCS(0),
 	}
 }
 
