@@ -33,6 +33,11 @@ on:
       - "modules/libs/core/adapter/agent/config.go"
       - ".github/workflows/docs.yml"
 
+# The deploy goes to storage with a key of its own; nothing here writes to the
+# repository.
+permissions:
+  contents: read
+
 jobs:
   # The manual is markdown and carries no framework, so what there is to check
   # is that the site builds and that the keyboard page still says what the

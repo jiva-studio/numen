@@ -16,6 +16,9 @@ concurrency:
   group: ui-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+permissions:
+  contents: read
+
 jobs:
   # The shared components on their own: built into the shape a consumer sees,
   # and asked what they draw in a document.

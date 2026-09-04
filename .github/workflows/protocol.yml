@@ -11,6 +11,9 @@ on:
       - "modules/libs/protocol/**"
       - ".github/workflows/protocol.yml"
 
+permissions:
+  contents: read
+
 defaults:
   run:
     working-directory: modules/libs/protocol
