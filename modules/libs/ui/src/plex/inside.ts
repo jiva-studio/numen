@@ -28,8 +28,8 @@ const DEEPEST = 3
 /** How far below its place a part sets off, as a fraction of its own height. */
 const RISE = 0.7
 
-/** How wide a mark at an edge of the ground is drawn, and how deep. */
-const MARK = { wide: 4, deep: 2.5 }
+/** How wide an arrow at an edge of the ground is drawn, and how deep. */
+const ARROW = { wide: 4, deep: 2.5 }
 
 /** The ground kept clear around the parts, as a fraction of a part's height. */
 const PAD = 0.25
@@ -105,12 +105,12 @@ export interface OpenParts {
   /** Whether the window has parts above it, and parts below it. */
   readonly above: boolean
   readonly below: boolean
-  /** The marks at either edge, one per direction there is more to wind to. */
-  readonly marks: readonly Mark[]
+  /** The arrows at either edge, one per direction there is more to wind to. */
+  readonly arrows: readonly Arrow[]
 }
 
-/** A mark at an edge of the ground, saying which way there is more. */
-export interface Mark {
+/** An arrow at an edge of the ground, saying which way there is more. */
+export interface Arrow {
   readonly at: 'above' | 'below'
   /** The three corners it is drawn through, from the middle of the node. */
   readonly points: readonly Point[]
@@ -275,26 +275,26 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
     first,
     above,
     below,
-    marks: [
-      ...(above ? [markAt(hung, hung.pad / 2, -1)] : []),
-      ...(below ? [markAt(hung, hung.height - hung.pad / 2, 1)] : []),
+    arrows: [
+      ...(above ? [arrowAt(hung, hung.pad / 2, -1)] : []),
+      ...(below ? [arrowAt(hung, hung.height - hung.pad / 2, 1)] : []),
     ],
   }
 }
 
 /**
- * A mark at one edge of the ground, pointing the way there is more to wind to.
- * It is drawn about the middle of what is hung, which is where the eye is.
+ * An arrow at one edge of the ground, pointing the way there is more to wind
+ * to. It is drawn about the middle of what is hung, which is where the eye is.
  */
-function markAt(hung: HungParts, down: number, facing: 1 | -1): Mark {
+function arrowAt(hung: HungParts, down: number, facing: 1 | -1): Arrow {
   const middle = hung.offset
   const y = hung.top + down
   return {
     at: facing > 0 ? 'below' : 'above',
     points: [
-      { x: middle - MARK.wide, y: y - facing * MARK.deep },
-      { x: middle, y: y + facing * MARK.deep },
-      { x: middle + MARK.wide, y: y - facing * MARK.deep },
+      { x: middle - ARROW.wide, y: y - facing * ARROW.deep },
+      { x: middle, y: y + facing * ARROW.deep },
+      { x: middle + ARROW.wide, y: y - facing * ARROW.deep },
     ],
   }
 }

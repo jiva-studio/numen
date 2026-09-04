@@ -12,7 +12,7 @@ import Amiss from './Amiss.vue'
 import Bar from './Bar.vue'
 import Deed from './Deed.vue'
 import Grown from './Grown.vue'
-import Marks from './Marks.vue'
+import Prose from './Prose.vue'
 import NameBox from './NameBox.vue'
 import { useNaming } from './naming'
 import { Button } from '../components/ui/button'
@@ -211,7 +211,7 @@ const put = async (field: string): Promise<void> => {
         >
           <!-- A preview is a face read, not a face followed: a link in it stays
                where it is pressed. -->
-          <Marks :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
+          <Prose :text="pane.text" @follow="(_href, press) => press.preventDefault()" />
         </div>
 
         <!-- An empty part says what it is for, in the middle of itself. -->

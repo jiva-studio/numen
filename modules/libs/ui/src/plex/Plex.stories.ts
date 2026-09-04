@@ -1339,10 +1339,10 @@ export const PartsInside: Story = {
     await userEvent.hover(many)
     await waitFor(async () => await expect(partsOf(many)).toHaveLength(most), { timeout: 3000 })
 
-    // A window on more than it holds is marked at the edge it may be wound
-    // towards, and winding it moves it by whole parts.
-    const marks = () => [...many.querySelectorAll('.plex__more')]
-    await expect(marks()).toHaveLength(1)
+    // A window on more than it holds carries an arrow at the edge it may be
+    // wound towards, and winding it moves it by whole parts.
+    const arrows = () => [...many.querySelectorAll('.plex__more')]
+    await expect(arrows()).toHaveLength(1)
 
     // Said in lines, which is one part the line. A hand on a trackpad speaks
     // in pixels and winds when they come to a part's height.
@@ -1354,7 +1354,7 @@ export const PartsInside: Story = {
     await waitFor(async () =>
       await expect(partsOf(many)[0]!.textContent?.trim()).toBe('Section 2'),
     )
-    await expect(marks()).toHaveLength(2)
+    await expect(arrows()).toHaveLength(2)
 
     wheel(-1)
     await waitFor(async () =>

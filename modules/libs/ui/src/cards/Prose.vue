@@ -34,14 +34,14 @@ const pressed = (press: MouseEvent) => {
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -- what stands here has been measured against what a card may be drawn with -->
   <div
-    class="marks prose prose-sm prose-numen numen max-w-none break-words"
+    class="prose prose-sm prose-numen numen max-w-none break-words"
     v-html="html"
     @click="pressed"
   ></div>
 </template>
 
 <style scoped>
-.marks {
+.prose {
   font-size: var(--numen-prose-size);
   user-select: text;
   -webkit-user-select: text;
@@ -49,13 +49,13 @@ const pressed = (press: MouseEvent) => {
 
 /* A table wider than the measure scrolls inside itself, carrying its own
    scrollbar. */
-.marks :deep(table) {
+.prose :deep(table) {
   display: block;
   overflow-x: auto;
 }
 
 /* A slot naming no field is read where it stands. */
-.marks :deep(mark) {
+.prose :deep(mark) {
   border-radius: var(--numen-radius);
   padding-inline: 0.25em;
   background: var(--numen-alarm-bg);

@@ -6,7 +6,7 @@
  * are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
-import { openedTo, woundBy, type HungParts, type Mark } from '../inside'
+import { openedTo, woundBy, type Arrow, type HungParts } from '../inside'
 
 const props = defineProps<{
   /** The parts and the room they are given. */
@@ -68,9 +68,9 @@ const wind = (event: WheelEvent) => {
   wound.value = shown.first + by
 }
 
-/** The line a mark at an edge is drawn along. */
-const markLine = (mark: Mark) =>
-  mark.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
+/** The line an arrow at an edge is drawn along. */
+const arrowLine = (arrow: Arrow) =>
+  arrow.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
 </script>
 
 <template>
@@ -113,10 +113,10 @@ const markLine = (mark: Mark) =>
 
     <!-- More of them than the window holds, the way they are wound to. -->
     <path
-      v-for="mark in opened.marks"
-      :key="mark.at"
+      v-for="arrow in opened.arrows"
+      :key="arrow.at"
       class="plex__more"
-      :d="markLine(mark)"
+      :d="arrowLine(arrow)"
       :opacity="opened.opacity"
     />
   </g>

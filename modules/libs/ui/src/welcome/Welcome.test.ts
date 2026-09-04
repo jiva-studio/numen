@@ -206,10 +206,10 @@ describe('the screen drawn short', () => {
     expect(screen.get('.welcome__vaults').findAll('.welcome__row--vault')).toHaveLength(3)
   })
 
-  it('keeps the mark and the name with the ways in', () => {
+  it('keeps the glyph and the name with the ways in', () => {
     const lead = drawBoth().get('.welcome__lead')
 
-    expect(lead.find('.welcome__mark').exists()).toBe(true)
+    expect(lead.find('.welcome__glyph').exists()).toBe(true)
     expect(lead.find('.welcome__name').exists()).toBe(true)
   })
 

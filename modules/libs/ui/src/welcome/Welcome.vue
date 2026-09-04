@@ -9,7 +9,7 @@
  */
 import { FolderRoot } from '@lucide/vue'
 import KeyCap from '../palette/KeyCap.vue'
-import Mark from './Mark.vue'
+import Glyph from './Glyph.vue'
 import { vaultLetter } from './picking'
 import type { Held, Offer, Way } from './welcome'
 
@@ -47,7 +47,7 @@ defineEmits<{
     <div class="welcome__column">
       <div class="welcome__lead">
         <div class="welcome__head">
-          <Mark class="welcome__mark" />
+          <Glyph class="welcome__glyph" />
           <h1 class="welcome__name">{{ name }}</h1>
         </div>
 
@@ -120,7 +120,7 @@ defineEmits<{
    needs, it stands as two. */
 .welcome {
   /* How tall the glyph stands over the name. */
-  --mark: 5.4rem;
+  --glyph: 5.4rem;
 
   position: relative;
   display: flex;
@@ -171,10 +171,10 @@ defineEmits<{
 
 /* The glyph carries no size of its own, so it stands at the height it is given
    and is never squeezed to fit the room. */
-.welcome__mark {
+.welcome__glyph {
   flex: none;
   inline-size: auto;
-  block-size: var(--mark);
+  block-size: var(--glyph);
 }
 
 /* The name is set in the letters the mark is drawn in, which are a serif's.
@@ -348,12 +348,12 @@ defineEmits<{
    mark, then the name after it. A way in is never given up. */
 @container (max-height: 19.85rem) {
   .welcome__head {
-    --mark: 2.7rem;
+    --glyph: 2.7rem;
   }
 }
 
 @container (max-height: 17.15rem) {
-  .welcome__mark {
+  .welcome__glyph {
     display: none;
   }
 }

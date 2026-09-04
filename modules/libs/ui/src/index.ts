@@ -63,7 +63,7 @@ export type { Beside, Box } from './placing/place'
 export { days as heatmapDays, fits as heatmapFits, weighs as heatmapWeighs } from './heatmap/heatmap'
 export type { Day as HeatmapDay, Room as HeatmapRoom, Tally as HeatmapTally } from './heatmap/heatmap'
 export { default as Welcome } from './welcome/Welcome.vue'
-export { default as Mark } from './welcome/Mark.vue'
+export { default as Glyph } from './welcome/Glyph.vue'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { opensVault, typing, vaultLetter, VAULT_LETTERS } from './welcome/picking'
 export type { Held, Offer, Way } from './welcome/welcome'
@@ -255,7 +255,7 @@ export { default as Deck } from './cards/Deck.vue'
 export { default as Card } from './cards/Card.vue'
 /** One face of a stencil, which is what the stencil lays out. */
 export { default as Block } from './cards/Block.vue'
-export { default as Marks } from './cards/Marks.vue'
+export { default as CardProse } from './cards/Prose.vue'
 /** The heading one section of a deck stands under. */
 export { default as Band } from './cards/Band.vue'
 /** The strip a tile is carried by. */
