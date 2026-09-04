@@ -604,7 +604,7 @@ onBeforeUnmount(() => {
 /* The room an icon takes, kept whether or not the row draws one, so the words
    line up down the list. What is drawn in it is the caller's.
 
-   It stands on the name, centred against that one line, so the marks read down
+   It stands on the name, centred against that one line, so the icons read down
    the list beside the names on a row carrying a second line. */
 .palette__icon {
   align-self: start;

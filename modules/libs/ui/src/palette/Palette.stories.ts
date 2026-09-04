@@ -501,8 +501,8 @@ export const Alone: Story = {
   },
 }
 
-/** What each row of the marks story is drawn as. The map is the caller's. */
-const MARKS: Record<string, Component> = {
+/** What each row of the icons story is drawn as. The map is the caller's. */
+const ICONS: Record<string, Component> = {
   note: FileText,
   deck: Layers,
   stencil: LayoutTemplate,
@@ -511,13 +511,13 @@ const MARKS: Record<string, Component> = {
   recording: AudioLines,
 }
 
-/** A palette whose rows are marked, which is the caller filling the icon slot. */
+/** A palette whose rows carry an icon, which is the caller filling the icon slot. */
 const marked = (args: Knobs) => ({
   components: { Palette },
   setup() {
     const open = ref(true)
     const typed = ref('ent')
-    return { args, open, typed, marks: MARKS }
+    return { args, open, typed, icons: ICONS }
   },
   template: `
     <div class="numen" style="height:100vh;background:var(--numen-surface)">
@@ -529,24 +529,24 @@ const marked = (args: Knobs) => ({
         @dismiss="args.onDismiss"
       >
         <template #icon="{ id }">
-          <component :is="marks[id]" v-if="marks[id]" style="inline-size:100%;block-size:100%" />
+          <component :is="icons[id]" v-if="icons[id]" style="inline-size:100%;block-size:100%" />
         </template>
       </Palette>
     </div>
   `,
 })
 
-/** What a mark stands in, and what it draws, as the drawn rows report it. */
-const markOf = (row: Element | null | undefined): string =>
+/** What an icon stands in, and what it draws, as the drawn rows report it. */
+const iconOf = (row: Element | null | undefined): string =>
   /lucide-([a-z-]+)-icon/.exec(row?.querySelector('svg')?.getAttribute('class') ?? '')?.[1] ?? ''
 
 /**
- * A mark before every row, drawn by whoever offered the row: here a note, a
+ * An icon before every row, drawn by whoever offered the row: here a note, a
  * deck, a stencil, a preset, a book and a recording, each drawn as itself. A
- * row the caller has no mark for keeps the room, so the names line up down the
+ * row the caller has no icon for keeps the room, so the names line up down the
  * list.
  */
-export const Marks: Story = {
+export const Icons: Story = {
   args: {
     bands: [
       {
@@ -574,7 +574,7 @@ export const Marks: Story = {
   play: async () => {
     await waitFor(() => expect(options()).toHaveLength(7))
 
-    await expect(options().map(markOf)).toEqual([
+    await expect(options().map(iconOf)).toEqual([
       'file-text',
       'layers',
       'layout-template',
@@ -583,16 +583,16 @@ export const Marks: Story = {
       'audio-lines',
       '',
     ])
-    // The row with no mark keeps the room for one, so the names line up.
+    // The row with no icon keeps the room for one, so the names line up.
     await expect(options()[6]?.querySelector('[data-palette="icon"]')).not.toBeNull()
   },
 }
 
 /**
- * Where a mark stands on a row carrying two lines: on the name, not between the
- * two lines, so the marks read down the list beside the names.
+ * Where an icon stands on a row carrying two lines: on the name, not between
+ * the two lines, so the icons read down the list beside the names.
  */
-export const MarksOnTheName: Story = {
+export const IconsOnTheName: Story = {
   args: {
     bands: [
       {
@@ -610,14 +610,14 @@ export const MarksOnTheName: Story = {
     await waitFor(() => expect(options()).toHaveLength(2))
 
     for (const row of options()) {
-      const mark = row.querySelector('[data-palette="icon"]')!.getBoundingClientRect()
+      const icon = row.querySelector('[data-palette="icon"]')!.getBoundingClientRect()
       const name = row.querySelector('[data-palette="name"]')!.getBoundingClientRect()
       const middle = (box: DOMRect) => box.top + box.height / 2
       // Centred on the name's own line, within the rounding a layout leaves.
-      await expect(Math.abs(middle(mark) - middle(name))).toBeLessThan(1.5)
+      await expect(Math.abs(middle(icon) - middle(name))).toBeLessThan(1.5)
     }
 
-    // The second row is the tall one, so a mark centred on the row would sit
+    // The second row is the tall one, so an icon centred on the row would sit
     // well below the name.
     const rows = options().map((row) => row.getBoundingClientRect().height)
     await expect(rows[1]).toBeGreaterThan(rows[0]! + 8)
@@ -945,7 +945,7 @@ export const Steps: Story = {
 /**
  * Items carrying the keystroke that reaches them away from the palette: an
  * Apple keyboard's row, the row of every other keyboard, and a cap holding one
- * mark and a cap holding four.
+ * icon and a cap holding four.
  */
 export const KeyHints: Story = {
   args: {
@@ -983,7 +983,7 @@ export const KeyHints: Story = {
       'Command Option Shift L',
     ])
 
-    // A cap holding one mark is as tall as a cap holding three.
+    // A cap holding one icon is as tall as a cap holding three.
     const heights = new Set(hints.map((cap) => Math.round(cap.getBoundingClientRect().height)))
     await expect(heights.size).toBe(1)
 
