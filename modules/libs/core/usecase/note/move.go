@@ -59,7 +59,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 
 	// Asked before the move, because afterwards nothing points at the old path
 	// and there is nothing left to ask about.
-	pointing, err := u.Links.Backlinks(ctx, string(v.ID), from)
+	pointing, err := u.Links.Backlinks(ctx, v.ID, from)
 	if err != nil {
 		return res, err
 	}
@@ -81,7 +81,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 // filed tells the index that what was at one path is at another. The bytes do
 // not change, so nothing is read.
 func (u Move) filed(ctx context.Context, v domain.Vault, from, to string) error {
-	return u.Sources.MoveSources(ctx, string(v.ID), from, to)
+	return u.Sources.MoveSources(ctx, v.ID, from, to)
 }
 
 // Settle is the work a move leaves once the file is where it was sent and the
@@ -149,7 +149,7 @@ func (u Move) addressed(ctx context.Context, v domain.Vault, path string) (strin
 	if u.Names == nil {
 		return domain.Basename(path), nil
 	}
-	to, err := Addressed(ctx, u.Names, string(v.ID), path)
+	to, err := Addressed(ctx, u.Names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
 		return domain.Basename(path), nil
 	}
@@ -166,7 +166,7 @@ func (u Move) addressed(ctx context.Context, v domain.Vault, path string) (strin
 // has been taken out since the backlinks were read, and saying where it used to
 // go would report a move that nobody made.
 func (u Move) landsOn(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
-	links, err := u.Links.Links(ctx, string(v.ID), was.From)
+	links, err := u.Links.Links(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err
 	}

@@ -24,7 +24,7 @@ func (danglingCheck) Name() domain.Check { return domain.CheckDangling }
 func (danglingCheck) Quiet() bool        { return true }
 
 func (c danglingCheck) Look(ctx context.Context, v domain.Vault) ([]domain.VaultProblem, error) {
-	found, err := c.queries.Dangling(ctx, string(v.ID))
+	found, err := c.queries.Dangling(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}

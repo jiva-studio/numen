@@ -193,7 +193,7 @@ func (u RenameField) stamped(into func(string) (bool, error)) error {
 // This runs under the vault's write lock, so a question per note in the vault
 // is every other write in the application waiting behind it.
 func (u RenameField) decks(ctx context.Context, v domain.Vault) ([]string, error) {
-	return u.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
+	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // deckWriter is one deck's read and write, so that what could not be done to it

@@ -71,14 +71,14 @@ func (u ListCardFaces) Decks(ctx context.Context, v domain.Vault) ([]string, err
 	if u.Notes == nil {
 		return nil, ErrUnread
 	}
-	held, err := u.Notes.Holds(ctx, string(v.ID))
+	held, err := u.Notes.Holds(ctx, v.ID)
 	if err != nil {
 		return nil, err
 	}
 	if !held {
 		return nil, ErrUnread
 	}
-	return u.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
+	return u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 }
 
 // Of reads the decks named and says what stands in them. A caller after the

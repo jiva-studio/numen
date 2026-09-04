@@ -34,7 +34,7 @@ type List struct {
 func (u List) Execute(
 	ctx context.Context, v domain.Vault, limit int,
 ) ([]StencilSummary, int, error) {
-	all, err := u.Notes.Stencils(ctx, string(v.ID))
+	all, err := u.Notes.Stencils(ctx, v.ID)
 	if err != nil {
 		return nil, 0, err
 	}

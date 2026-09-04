@@ -46,7 +46,7 @@ type MarkingResult struct {
 // cards are left out of this sitting and marked at the next, and it is named in
 // what comes back so that a person is told which deck that was.
 func (u Marking) Execute(ctx context.Context, v domain.Vault) (MarkingResult, error) {
-	paths, err := u.Notes.OfType(ctx, string(v.ID), domain.TypeDeck)
+	paths, err := u.Notes.OfType(ctx, v.ID, domain.TypeDeck)
 	if err != nil {
 		return MarkingResult{}, err
 	}

@@ -57,7 +57,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 	for _, s := range seated {
 		paths = append(paths, s.Path)
 	}
-	notes, err := u.Notes.Notes(ctx, string(v.ID), paths)
+	notes, err := u.Notes.Notes(ctx, v.ID, paths)
 	if err != nil {
 		return out, err
 	}
@@ -83,7 +83,7 @@ func (u ShowNeighbourhood) Execute(ctx context.Context, v domain.Vault, path str
 func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path string) (*seats, error) {
 	seats := &seats{}
 
-	links, err := u.Links.Links(ctx, string(v.ID), path)
+	links, err := u.Links.Links(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (u ShowNeighbourhood) around(ctx context.Context, v domain.Vault, path stri
 		}
 	}
 
-	backlinks, err := u.Links.Backlinks(ctx, string(v.ID), path)
+	backlinks, err := u.Links.Backlinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}

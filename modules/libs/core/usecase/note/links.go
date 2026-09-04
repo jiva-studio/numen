@@ -22,11 +22,11 @@ type ShowLinks struct {
 }
 
 func (u ShowLinks) Execute(ctx context.Context, v domain.Vault, path string) (NoteLinks, error) {
-	links, err := u.Links.Links(ctx, string(v.ID), path)
+	links, err := u.Links.Links(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}
-	backlinks, err := u.Links.Backlinks(ctx, string(v.ID), path)
+	backlinks, err := u.Links.Backlinks(ctx, v.ID, path)
 	if err != nil {
 		return NoteLinks{}, err
 	}

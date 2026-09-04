@@ -83,12 +83,12 @@ type countingKept struct {
 	on    *loadCounts
 }
 
-func (k countingKept) Read(ctx context.Context, vaultID string) ([]byte, error) {
+func (k countingKept) Read(ctx context.Context, vaultID domain.VaultID) ([]byte, error) {
 	k.on.Consulted++
 	return k.inner.Read(ctx, vaultID)
 }
 
-func (k countingKept) Write(ctx context.Context, vaultID string, content []byte) error {
+func (k countingKept) Write(ctx context.Context, vaultID domain.VaultID, content []byte) error {
 	k.on.Rewritten++
 	return k.inner.Write(ctx, vaultID, content)
 }

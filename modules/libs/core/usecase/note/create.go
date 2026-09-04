@@ -98,7 +98,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 	if err := u.index(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.Names.Named(ctx, string(v.ID), domain.Basename(path))
+	shares, err := u.Names.Named(ctx, v.ID, domain.Basename(path))
 	if err != nil {
 		return made, err
 	}

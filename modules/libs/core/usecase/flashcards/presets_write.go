@@ -73,7 +73,7 @@ func (u Presets) Point(
 		case at.Outcome != note.Ok || at.Type != domain.TypePreset:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
-		if to, err = note.Addressed(ctx, u.Notes, string(v.ID), preset); err != nil {
+		if to, err = note.Addressed(ctx, u.Notes, v.ID, preset); err != nil {
 			return domain.Fingerprint{}, err
 		}
 	}

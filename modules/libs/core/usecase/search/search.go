@@ -141,7 +141,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 
 	var rankings [][]domain.Passage
 	if p.Lexical > 0 {
-		lexical, err := u.passages.Lexical(ctx, string(v.ID), query, p.Kinds, p.Lexical, p.Growing)
+		lexical, err := u.passages.Lexical(ctx, v.ID, query, p.Kinds, p.Lexical, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 	}
 	var named []domain.Passage
 	if p.Named > 0 {
-		found, err := u.passages.Named(ctx, string(v.ID), query, p.Kinds, p.Named, p.Growing)
+		found, err := u.passages.Named(ctx, v.ID, query, p.Kinds, p.Named, p.Growing)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func (u Search) nearest(ctx context.Context, v domain.Vault, query string, p Par
 	// A vector is kept under the recipe it was made by, which is everything
 	// about the model that decides what a vector is. Asked under anything else,
 	// no vector is found and this half answers nothing at all.
-	return u.passages.Nearest(ctx, string(v.ID), u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
+	return u.passages.Nearest(ctx, v.ID, u.embedder.Model().Recipe(), vectors[0], p.Kinds, p.Dense, p.Floor)
 }
 
 // read fills in the text of each passage from the vault. A chunk is a place in a

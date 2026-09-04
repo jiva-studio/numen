@@ -120,7 +120,7 @@ func (u EditLinks) Remove(ctx context.Context, v domain.Vault, from string, to d
 type NameQueries interface {
 	// Named is the paths of every note filed under one name. More than one is
 	// what makes a link written by that name mean the wrong note.
-	Named(ctx context.Context, vaultID, name string) ([]string, error)
+	Named(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // ErrUnaddressable is a note no link reaches: its name carries a character a
@@ -134,7 +134,7 @@ var ErrUnaddressable = errors.New("no link reaches a note named this")
 // neighbour, so a note filed beside a note of the same name at the root is
 // reached only by writing the path. Which of the two it is, only the vault
 // knows, and it is asked here.
-func Addressed(ctx context.Context, names NameQueries, vaultID, path string) (domain.Address, error) {
+func Addressed(ctx context.Context, names NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
 	name := domain.Basename(path)
 	if name == "" {
 		return domain.Address{}, errors.New("a link needs a note to go to")

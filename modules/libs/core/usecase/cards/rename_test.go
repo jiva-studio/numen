@@ -283,13 +283,13 @@ type byType struct {
 	t *testing.T
 }
 
-func (q byType) Fingerprints(ctx context.Context, vaultID string) (map[string]domain.Fingerprint, error) {
+func (q byType) Fingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
 	q.t.Error("a rename asked the index about every file of the vault")
 	return q.NoteQueries.Fingerprints(ctx, vaultID)
 }
 
 func (q byType) Types(
-	ctx context.Context, vaultID string, paths []string,
+	ctx context.Context, vaultID domain.VaultID, paths []string,
 ) (map[string]domain.NoteType, error) {
 	q.t.Errorf("a rename asked what each of %d notes is", len(paths))
 	return q.NoteQueries.Types(ctx, vaultID, paths)

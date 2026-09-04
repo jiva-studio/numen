@@ -135,7 +135,7 @@ func cutting(
 	if len(written) == 0 {
 		return nil, nil
 	}
-	reached, err := links.Resolve(ctx, string(vaultID), path, written)
+	reached, err := links.Resolve(ctx, vaultID, path, written)
 	if err != nil {
 		return nil, err
 	}

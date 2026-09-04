@@ -67,7 +67,7 @@ type lookups struct {
 	looks map[string]int
 }
 
-func (a lookups) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
+func (a lookups) Links(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	a.looks[from]++
 	return a.LinkQueries.Links(ctx, vaultID, from)
 }

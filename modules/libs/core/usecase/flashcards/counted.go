@@ -241,7 +241,7 @@ func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string
 	if u.Cache == nil {
 		return nil
 	}
-	raw, err := u.Cache.Read(ctx, string(v.ID))
+	raw, err := u.Cache.Read(ctx, v.ID)
 	if err != nil {
 		return nil
 	}
@@ -266,7 +266,7 @@ func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCac
 	if err != nil {
 		return
 	}
-	_ = u.Cache.Write(ctx, string(v.ID), raw)
+	_ = u.Cache.Write(ctx, v.ID, raw)
 }
 
 func (u CountReviews) now() time.Time {

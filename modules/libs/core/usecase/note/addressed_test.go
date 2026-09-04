@@ -13,14 +13,14 @@ import (
 // can be asked.
 type named map[string][]string
 
-func (n named) Named(_ context.Context, _, name string) ([]string, error) {
+func (n named) Named(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
 	return n[name], nil
 }
 
 // unreachable is a vault that cannot answer at all.
 type unreachable struct{ named }
 
-func (unreachable) Named(context.Context, string, string) ([]string, error) {
+func (unreachable) Named(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, errors.New("the index could not be read")
 }
 
