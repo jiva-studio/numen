@@ -10,19 +10,19 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Handed is what a person handed this application, on a machine where what
-// they handed over is a path.
-type Handed struct{}
+// ImportedFiles is what a person handed this application, on a machine where
+// what they handed over is a path.
+type ImportedFiles struct{}
 
-func (Handed) Named(handle string) string { return filepath.Base(handle) }
+func (ImportedFiles) Named(handle string) string { return filepath.Base(handle) }
 
-func (Handed) Stat(_ context.Context, handle string) (port.HandedFile, error) {
+func (ImportedFiles) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
 	// A link is not followed: what it points at is not what was handed over.
 	info, err := os.Lstat(handle)
 	if err != nil {
-		return port.HandedFile{}, err
+		return port.ImportedFile{}, err
 	}
-	return port.HandedFile{
+	return port.ImportedFile{
 		Name:   filepath.Base(handle),
 		Handle: handle,
 		Folder: info.IsDir(),
@@ -30,14 +30,14 @@ func (Handed) Stat(_ context.Context, handle string) (port.HandedFile, error) {
 	}, nil
 }
 
-func (Handed) List(_ context.Context, handle string) ([]port.HandedFile, error) {
+func (ImportedFiles) List(_ context.Context, handle string) ([]port.ImportedFile, error) {
 	held, err := os.ReadDir(handle)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]port.HandedFile, 0, len(held))
+	out := make([]port.ImportedFile, 0, len(held))
 	for _, one := range held {
-		out = append(out, port.HandedFile{
+		out = append(out, port.ImportedFile{
 			Name:   one.Name(),
 			Handle: filepath.Join(handle, one.Name()),
 		})
@@ -45,11 +45,11 @@ func (Handed) List(_ context.Context, handle string) ([]port.HandedFile, error) 
 	return out, nil
 }
 
-func (Handed) Open(_ context.Context, handle string) (io.ReadCloser, error) {
+func (ImportedFiles) Open(_ context.Context, handle string) (io.ReadCloser, error) {
 	return os.Open(handle)
 }
 
-func (Handed) Around(handle, vault string) bool {
+func (ImportedFiles) Holds(handle, vault string) bool {
 	from, err := filepath.Abs(handle)
 	if err != nil {
 		return false

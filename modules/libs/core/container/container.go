@@ -282,11 +282,11 @@ func (c Config) VaultWriters() port.VaultWriters {
 	return filesystem.VaultWriters{Options: c.VaultOptions()}
 }
 
-// Handed reads what a person handed this application from outside every vault.
-// On a machine with a filesystem that is a path; a phone hands over something
-// else, and this is where the two part.
-func (c Config) Handed() port.Handed {
-	return filesystem.Handed{}
+// ImportedFiles reads what a person handed this application from outside every
+// vault. On a machine with a filesystem that is a path; a phone hands over
+// something else, and this is where the two part.
+func (c Config) ImportedFiles() port.ImportedFiles {
+	return filesystem.ImportedFiles{}
 }
 
 // VaultWatcher follows vaults for changes the application did not make.
