@@ -133,7 +133,12 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(target)
+	root, at, err := d.beneath(target)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	return root.ReadFile(at)
 }
 
 func (d *DerivedStore) Write(_ context.Context, name string, content []byte) error {
@@ -141,13 +146,18 @@ func (d *DerivedStore) Write(_ context.Context, name string, content []byte) err
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	root, at, err := d.making(target)
+	if err != nil {
 		return err
 	}
-	if _, err := replace(target, content, 0o644); err != nil {
+	defer root.Close()
+	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
 		return err
 	}
-	return settle(filepath.Dir(target))
+	if _, err := replace(root, at, content, 0o644); err != nil {
+		return err
+	}
+	return settle(root, filepath.Dir(at))
 }
 
 // Append adds to the end of what is there, in place. What it is given lands
@@ -164,15 +174,20 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	root, at, err := d.making(target)
+	if err != nil {
 		return err
 	}
-	file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	defer root.Close()
+	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+		return err
+	}
+	file, err := root.OpenFile(at, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return err
 	}
 	if n, err := file.Write(content); err != nil || n != len(content) {
-		return errors.Join(short(name, n, len(content), err), back(file, n))
+		return errors.Join(short(name, n, len(content), err), back(root, file, at, n))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
@@ -194,8 +209,9 @@ func short(name string, written, wanted int, why error) error {
 // landed, and a write that landed nothing leaves the file as it found it.
 //
 // The cut is made by name, once the file is closed: a file opened to append
-// carries the right to add to the end and not the right to move it.
-func back(file *os.File, wrote int) error {
+// carries the right to add to the end and not the right to move it. The name is
+// the store's own, so the cut lands where the write did.
+func back(root *os.Root, file *os.File, name string, wrote int) error {
 	if wrote <= 0 {
 		return file.Close()
 	}
@@ -203,16 +219,15 @@ func back(file *os.File, wrote int) error {
 	if err != nil {
 		return errors.Join(err, file.Close())
 	}
-	name := file.Name()
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return cut(name, at-int64(wrote))
+	return cut(root, name, at-int64(wrote))
 }
 
 // cut takes a file back to a length and flushes it there.
-func cut(name string, to int64) error {
-	file, err := os.OpenFile(name, os.O_WRONLY, 0o644)
+func cut(root *os.Root, name string, to int64) error {
+	file, err := root.OpenFile(name, os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -294,7 +309,16 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 		if err != nil {
 			return err
 		}
-		if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		root, at, err := d.beneath(target)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		err = root.Remove(at)
+		root.Close()
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 	}
@@ -350,6 +374,31 @@ func carried(root, serviceDir string) (string, *fileInfo, error) {
 		return "", nil, err
 	}
 	return cfg.ID, was, nil
+}
+
+// beneath is the store's folder as a handle, and a place in it as a name that
+// handle takes. Every step of a write is made through the handle, so a folder
+// swapped for a link while the write is on its way is refused by the machine
+// itself and not by a rule read a moment before. The caller closes the handle.
+func (d *DerivedStore) beneath(target string) (*os.Root, string, error) {
+	name, err := filepath.Rel(d.root, target)
+	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
+		return nil, "", fmt.Errorf("%s: %w", target, ErrOutside)
+	}
+	root, err := os.OpenRoot(d.root)
+	if err != nil {
+		return nil, "", err
+	}
+	return root, name, nil
+}
+
+// making is the same, with the store's own folder put there if it is not. It is
+// what a write does that a read does not.
+func (d *DerivedStore) making(target string) (*os.Root, string, error) {
+	if err := os.MkdirAll(d.root, 0o755); err != nil {
+		return nil, "", err
+	}
+	return d.beneath(target)
 }
 
 // area is the one of this store's areas a cleaned name is in, and whether it is

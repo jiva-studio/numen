@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand/v2"
 	"os"
 	pathpkg "path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -66,9 +68,14 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
+	root, name, err := w.beneath(target)
+	if err != nil {
+		return domain.Fingerprint{}, err
+	}
+	defer root.Close()
 
 	mode := newFileMode
-	switch info, err := os.Stat(target); {
+	switch info, err := root.Stat(name); {
 	case err == nil:
 		if info.IsDir() {
 			return domain.Fingerprint{}, fmt.Errorf("write %s: it is a directory", path)
@@ -88,10 +95,10 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 		return domain.Fingerprint{}, err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	written, err := replace(target, content, mode)
+	written, err := replace(root, name, content, mode)
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -105,7 +112,7 @@ const nameMax = 255
 
 // beside is the pattern a temporary file next to a target is created under. The
 // name is cut on a rune boundary, leaving room for the leading dot and for the
-// digits CreateTemp puts where the star is; the rename lands on the full name.
+// digits that go where the star is; the rename lands on the full name.
 func beside(name string) string {
 	const room = len(".") + len(".") + 10
 	for len(name)+room > nameMax {
@@ -113,6 +120,35 @@ func beside(name string) string {
 		name = name[:len(name)-size]
 	}
 	return "." + name + ".*"
+}
+
+// parents puts the folders above a name there, and says a file standing where
+// one of them would go in the words a caller acts on.
+func parents(root *os.Root, dir, path string) error {
+	err := root.MkdirAll(dir, 0o755)
+	if errors.Is(err, fs.ErrExist) {
+		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
+	}
+	return err
+}
+
+// temporary is a file created beside a target, under the vault's own handle.
+// It is what os.CreateTemp is, for a root: a name nobody else holds, taken by
+// creating it and not by looking first.
+func temporary(root *os.Root, dir, pattern string) (*os.File, string, error) {
+	prefix, suffix, _ := strings.Cut(pattern, "*")
+	for range 10_000 {
+		name := filepath.Join(dir, prefix+strconv.FormatUint(uint64(rand.Uint32()), 10)+suffix)
+		file, err := root.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+		if errors.Is(err, fs.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return nil, "", err
+		}
+		return file, name, nil
+	}
+	return nil, "", fmt.Errorf("%s: no free name beside it", dir)
 }
 
 // replace writes content beside the target and renames it over the top.
@@ -129,13 +165,13 @@ func beside(name string) string {
 // descriptor. The rename carries the file across whole, so its size and its
 // modification time are the ones at the target from the moment the rename
 // lands, and a caller holding them is holding the file it just wrote.
-func replace(target string, content []byte, mode fs.FileMode) (domain.Fingerprint, error) {
-	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, beside(name))
+func replace(root *os.Root, target string, content []byte, mode fs.FileMode) (domain.Fingerprint, error) {
+	dir := filepath.Dir(target)
+	tmp, at, err := temporary(root, dir, beside(filepath.Base(target)))
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	defer os.Remove(tmp.Name())
+	defer root.Remove(at)
 
 	if _, err := tmp.Write(content); err != nil {
 		tmp.Close()
@@ -150,18 +186,20 @@ func replace(target string, content []byte, mode fs.FileMode) (domain.Fingerprin
 		tmp.Close()
 		return domain.Fingerprint{}, err
 	}
+	// Changing the mode moves no modification time. It is asked of the open
+	// file, which is this one and can be no other.
+	if err := tmp.Chmod(mode); err != nil {
+		tmp.Close()
+		return domain.Fingerprint{}, err
+	}
 	if err := tmp.Close(); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	// Changing the mode moves no modification time.
-	if err := os.Chmod(tmp.Name(), mode); err != nil {
-		return domain.Fingerprint{}, err
-	}
-	if err := rename(tmp.Name(), target); err != nil {
+	if err := rename(root, at, target); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	written := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime().UnixNano()}
-	return written, settle(dir)
+	return written, settle(root, dir)
 }
 
 // settle flushes the folder the rename was recorded in.
@@ -174,8 +212,8 @@ func replace(target string, content []byte, mode fs.FileMode) (domain.Fingerprin
 // Not every filesystem lets a directory be opened for this, and the ones that
 // refuse are the ones that did not need it. A refusal is not an error to hand
 // back: the note is written either way.
-func settle(dir string) error {
-	folder, err := os.Open(dir)
+func settle(root *os.Root, dir string) error {
+	folder, err := root.Open(dir)
 	if err != nil {
 		return nil
 	}
@@ -207,13 +245,22 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 	if strings.HasPrefix(target, source+string(filepath.Separator)) {
 		return fmt.Errorf("move %s to %s: %w", from, to, port.ErrOccupied)
 	}
+	root, arrives, err := w.beneath(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	leaves, err := w.named(source)
+	if err != nil {
+		return err
+	}
 
-	switch standing, err := os.Lstat(target); {
+	switch standing, err := root.Lstat(arrives); {
 	case err == nil:
 		// A file already at the name is the name being taken, unless it is this
 		// file: a filesystem that tells neither capitalisation nor the spelling
 		// of an accent apart answers the new name with the file being renamed.
-		here, err := os.Lstat(source)
+		here, err := root.Lstat(leaves)
 		if err != nil {
 			return err
 		}
@@ -224,10 +271,10 @@ func (w *VaultWriter) Move(ctx context.Context, from, to string) error {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	if err := parents(root, filepath.Dir(arrives), to); err != nil {
 		return err
 	}
-	return rename(source, target)
+	return rename(root, leaves, arrives)
 }
 
 func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
@@ -238,13 +285,18 @@ func (w *VaultWriter) MakeFolder(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	switch info, err := os.Stat(target); {
+	root, name, err := w.beneath(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	switch info, err := root.Stat(name); {
 	case err == nil && !info.IsDir():
 		return fmt.Errorf("make %s: %w", path, port.ErrOccupied)
 	case err != nil && !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	return os.MkdirAll(target, 0o755)
+	return parents(root, name, path)
 }
 
 func (w *VaultWriter) Remove(ctx context.Context, path string) error {
@@ -255,7 +307,12 @@ func (w *VaultWriter) Remove(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.Remove(target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+	root, name, err := w.beneath(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
 		return err
 	}
 	// A note that is already gone is the outcome that was asked for.
@@ -321,6 +378,31 @@ func (w *VaultWriter) file(path string) (string, error) {
 // taken out of the vault's sight is such a place and is deliberately not a note.
 func (w *VaultWriter) inside(path string) (string, error) {
 	return inside(w.root, path, w.opts.serviceDir())
+}
+
+// beneath is the vault as a handle, and a place in it as a name that handle
+// takes. Every step of a write is made through the handle, so a folder swapped
+// for a link while the write is on its way is refused by the machine itself and
+// not by a rule read a moment before. The caller closes the handle.
+func (w *VaultWriter) beneath(target string) (*os.Root, string, error) {
+	name, err := w.named(target)
+	if err != nil {
+		return nil, "", err
+	}
+	root, err := os.OpenRoot(w.root)
+	if err != nil {
+		return nil, "", err
+	}
+	return root, name, nil
+}
+
+// named is a place on this machine as a name under the vault's root.
+func (w *VaultWriter) named(target string) (string, error) {
+	name, err := filepath.Rel(w.root, target)
+	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%s: %w", target, ErrOutside)
+	}
+	return name, nil
 }
 
 // TrashDir is the folder a removed note is kept in. It is named here as well as
@@ -403,11 +485,16 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	root, name, err := w.beneath(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
 
-	file, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, newFileMode)
+	file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, newFileMode)
 	if errors.Is(err, fs.ErrExist) {
 		return fmt.Errorf("create %s: %w", path, port.ErrOccupied)
 	}
@@ -425,7 +512,7 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) e
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return settle(filepath.Dir(target))
+	return settle(root, filepath.Dir(name))
 }
 
 // Bring copies a file from this machine into the vault.
@@ -441,27 +528,32 @@ func (w *VaultWriter) Bring(ctx context.Context, path string, content io.Reader)
 	if err != nil {
 		return err
 	}
-	switch _, err := os.Lstat(target); {
+	root, name, err := w.beneath(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	switch _, err := root.Lstat(name); {
 	case err == nil:
 		return fmt.Errorf("bring %s: %w", path, port.ErrOccupied)
 	case !errors.Is(err, fs.ErrNotExist):
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	if err := parents(root, filepath.Dir(name), path); err != nil {
 		return err
 	}
-	return arrive(target, content)
+	return arrive(root, name, content)
 }
 
 // arrive streams content beside the target and renames it over the top, by the
 // same rules replace writes bytes it already holds.
-func arrive(target string, content io.Reader) error {
-	dir, name := filepath.Split(target)
-	tmp, err := os.CreateTemp(dir, beside(name))
+func arrive(root *os.Root, target string, content io.Reader) error {
+	dir := filepath.Dir(target)
+	tmp, at, err := temporary(root, dir, beside(filepath.Base(target)))
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	defer root.Remove(at)
 
 	if _, err := io.Copy(tmp, content); err != nil {
 		tmp.Close()
@@ -471,14 +563,15 @@ func arrive(target string, content io.Reader) error {
 		tmp.Close()
 		return err
 	}
+	if err := tmp.Chmod(newFileMode); err != nil {
+		tmp.Close()
+		return err
+	}
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := os.Chmod(tmp.Name(), newFileMode); err != nil {
+	if err := rename(root, at, target); err != nil {
 		return err
 	}
-	if err := rename(tmp.Name(), target); err != nil {
-		return err
-	}
-	return settle(dir)
+	return settle(root, dir)
 }
