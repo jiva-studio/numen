@@ -34,6 +34,16 @@ var owed = map[string][]string{
 	},
 }
 
+// driving are the adapters something outside comes in through. They call the
+// scenarios; a driven adapter stands behind a port and calls none, so what a
+// scenario is written over is a port and never an adapter's own answer.
+var driving = map[string]bool{
+	"adapter/cli":          true,
+	"adapter/flashcardsui": true,
+	"adapter/mcp":          true,
+	"adapter/webui":        true,
+}
+
 // The core is reached by the adapters and reaches none of them, an adapter is
 // given what it needs rather than taking another, and what is assembled is
 // assembled in one place.
@@ -99,6 +109,9 @@ func refused(from, to string) string {
 		}
 		if strings.HasPrefix(to, "adapter/") && !sibling(from, to) {
 			return "an adapter is given what it needs and takes no other adapter"
+		}
+		if strings.HasPrefix(to, "usecase/") && !driving[family(from)] {
+			return "a driven adapter stands behind a port and runs no scenario"
 		}
 	case from == "container":
 		if !assembling(to) {
