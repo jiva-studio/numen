@@ -7,7 +7,7 @@ syntax = "proto3";
 // answers whichever vault a window is showing, and every window reads it.
 package numen.v1;
 
-import "numen/v1/vault.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 

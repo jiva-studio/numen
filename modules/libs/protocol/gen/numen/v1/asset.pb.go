@@ -580,7 +580,7 @@ var File_numen_v1_asset_proto protoreflect.FileDescriptor
 
 const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"%\n" +
+	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"%\n" +
 	"\x0fDocumentRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"Q\n" +
 	"\x10DocumentResponse\x12\x14\n" +
@@ -666,7 +666,7 @@ func file_numen_v1_asset_proto_init() {
 	if File_numen_v1_asset_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -798,7 +798,7 @@ var File_numen_v1_file_proto protoreflect.FileDescriptor
 
 const file_numen_v1_file_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"%\n" +
+	"\x13numen/v1/file.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"%\n" +
 	"\vListRequest\x12\x16\n" +
 	"\x06folder\x18\x01 \x01(\tR\x06folder\"9\n" +
 	"\fListResponse\x12)\n" +
@@ -925,7 +925,7 @@ func file_numen_v1_file_proto_init() {
 	if File_numen_v1_file_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_file_proto_msgTypes[7].OneofWrappers = []any{}
 	file_numen_v1_file_proto_msgTypes[10].OneofWrappers = []any{}
 	file_numen_v1_file_proto_msgTypes[12].OneofWrappers = []any{}

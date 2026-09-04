@@ -9,9 +9,6 @@
 // What the vault is, what has changed in it, and where in it the person stands:
 // the questions that are about the vault itself and not about anything filed in
 // it. Its files are file.proto, its notes note.proto and its text search.proto.
-//
-// It is also the file those three import, and every other service's file with
-// them. A type stands here once three of them hold it, and not before.
 
 package numenv1
 
@@ -29,169 +26,6 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
-
-// Refusal is why a note could not be read or written.
-type Refusal int32
-
-const (
-	Refusal_REFUSAL_UNSPECIFIED Refusal = 0
-	// Nothing is at the path. A read says so; a write creates the file.
-	Refusal_REFUSAL_MISSING Refusal = 1
-	// The file is in the vault and is not a note.
-	Refusal_REFUSAL_NOT_A_NOTE Refusal = 2
-	// The file is not text this can carry.
-	Refusal_REFUSAL_NOT_TEXT Refusal = 3
-	// The file is past the size a note is read at.
-	Refusal_REFUSAL_TOO_LARGE Refusal = 4
-	// The prose opens with a frontmatter delimiter, so writing it would put a
-	// second block inside the first.
-	Refusal_REFUSAL_BODY_REFUSED Refusal = 5
-	// The frontmatter cannot be read, so the note can be neither read nor written
-	// from here.
-	Refusal_REFUSAL_UNREADABLE Refusal = 6
-	// A file is already where the note would go. Nothing is written there; a
-	// rename may already have written the note it was moving.
-	Refusal_REFUSAL_OCCUPIED Refusal = 7
-	// A note cannot be called this: the title leaves nothing a file can be named
-	// after, it is more than one line, or a heading would read it back as
-	// something else. Nothing is written.
-	Refusal_REFUSAL_UNNAMEABLE Refusal = 8
-	// The note at the path is not a stencil, and a stencil was asked for.
-	Refusal_REFUSAL_NOT_A_STENCIL Refusal = 9
-	// The note at the path is not a deck, and a deck was asked for.
-	Refusal_REFUSAL_NOT_A_DECK Refusal = 10
-	// The file is past the size a deck is read at, which stands above the size a
-	// note is read at.
-	Refusal_REFUSAL_DECK_TOO_LARGE Refusal = 11
-	// The note at the path is not a preset, and a preset was asked for.
-	Refusal_REFUSAL_NOT_A_PRESET Refusal = 12
-	// The file is no longer the one this caller read. Nothing was written, and
-	// the person chooses what happens to what they have.
-	Refusal_REFUSAL_STALE Refusal = 13
-)
-
-// Enum value maps for Refusal.
-var (
-	Refusal_name = map[int32]string{
-		0:  "REFUSAL_UNSPECIFIED",
-		1:  "REFUSAL_MISSING",
-		2:  "REFUSAL_NOT_A_NOTE",
-		3:  "REFUSAL_NOT_TEXT",
-		4:  "REFUSAL_TOO_LARGE",
-		5:  "REFUSAL_BODY_REFUSED",
-		6:  "REFUSAL_UNREADABLE",
-		7:  "REFUSAL_OCCUPIED",
-		8:  "REFUSAL_UNNAMEABLE",
-		9:  "REFUSAL_NOT_A_STENCIL",
-		10: "REFUSAL_NOT_A_DECK",
-		11: "REFUSAL_DECK_TOO_LARGE",
-		12: "REFUSAL_NOT_A_PRESET",
-		13: "REFUSAL_STALE",
-	}
-	Refusal_value = map[string]int32{
-		"REFUSAL_UNSPECIFIED":    0,
-		"REFUSAL_MISSING":        1,
-		"REFUSAL_NOT_A_NOTE":     2,
-		"REFUSAL_NOT_TEXT":       3,
-		"REFUSAL_TOO_LARGE":      4,
-		"REFUSAL_BODY_REFUSED":   5,
-		"REFUSAL_UNREADABLE":     6,
-		"REFUSAL_OCCUPIED":       7,
-		"REFUSAL_UNNAMEABLE":     8,
-		"REFUSAL_NOT_A_STENCIL":  9,
-		"REFUSAL_NOT_A_DECK":     10,
-		"REFUSAL_DECK_TOO_LARGE": 11,
-		"REFUSAL_NOT_A_PRESET":   12,
-		"REFUSAL_STALE":          13,
-	}
-)
-
-func (x Refusal) Enum() *Refusal {
-	p := new(Refusal)
-	*p = x
-	return p
-}
-
-func (x Refusal) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (Refusal) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_vault_proto_enumTypes[0].Descriptor()
-}
-
-func (Refusal) Type() protoreflect.EnumType {
-	return &file_numen_v1_vault_proto_enumTypes[0]
-}
-
-func (x Refusal) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use Refusal.Descriptor instead.
-func (Refusal) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{0}
-}
-
-// NoteType is which of four a note is: the `type` key of its frontmatter. It
-// says what the note is; whether the application reads text out of the file is
-// SourceKind.
-type NoteType int32
-
-const (
-	// An ordinary note, which is a note carrying no `type` at all and so nearly
-	// every note in a vault.
-	NoteType_NOTE_TYPE_UNSPECIFIED NoteType = 0
-	// A note whose body is cards.
-	NoteType_NOTE_TYPE_DECK NoteType = 1
-	// A note declaring the fields a card has and the faces it is shown by.
-	NoteType_NOTE_TYPE_STENCIL NoteType = 2
-	// A note saying how the decks pointing at it are scheduled.
-	NoteType_NOTE_TYPE_PRESET NoteType = 3
-)
-
-// Enum value maps for NoteType.
-var (
-	NoteType_name = map[int32]string{
-		0: "NOTE_TYPE_UNSPECIFIED",
-		1: "NOTE_TYPE_DECK",
-		2: "NOTE_TYPE_STENCIL",
-		3: "NOTE_TYPE_PRESET",
-	}
-	NoteType_value = map[string]int32{
-		"NOTE_TYPE_UNSPECIFIED": 0,
-		"NOTE_TYPE_DECK":        1,
-		"NOTE_TYPE_STENCIL":     2,
-		"NOTE_TYPE_PRESET":      3,
-	}
-)
-
-func (x NoteType) Enum() *NoteType {
-	p := new(NoteType)
-	*p = x
-	return p
-}
-
-func (x NoteType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (NoteType) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_vault_proto_enumTypes[1].Descriptor()
-}
-
-func (NoteType) Type() protoreflect.EnumType {
-	return &file_numen_v1_vault_proto_enumTypes[1]
-}
-
-func (x NoteType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use NoteType.Descriptor instead.
-func (NoteType) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{1}
-}
 
 type StateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -620,60 +454,6 @@ func (x *FocusResponse) GetAlso() []*Stretch {
 	return nil
 }
 
-// A Stretch is a run of a source's text, counted in bytes over the text the
-// source is read as.
-type Stretch struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
-	Length        int32                  `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Stretch) Reset() {
-	*x = Stretch{}
-	mi := &file_numen_v1_vault_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Stretch) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Stretch) ProtoMessage() {}
-
-func (x *Stretch) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Stretch.ProtoReflect.Descriptor instead.
-func (*Stretch) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *Stretch) GetStart() int32 {
-	if x != nil {
-		return x.Start
-	}
-	return 0
-}
-
-func (x *Stretch) GetLength() int32 {
-	if x != nil {
-		return x.Length
-	}
-	return 0
-}
-
 type AttendingRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every tab the window has open, in the order the person was last in them.
@@ -687,7 +467,7 @@ type AttendingRequest struct {
 
 func (x *AttendingRequest) Reset() {
 	*x = AttendingRequest{}
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -699,7 +479,7 @@ func (x *AttendingRequest) String() string {
 func (*AttendingRequest) ProtoMessage() {}
 
 func (x *AttendingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[8]
+	mi := &file_numen_v1_vault_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -712,7 +492,7 @@ func (x *AttendingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttendingRequest.ProtoReflect.Descriptor instead.
 func (*AttendingRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AttendingRequest) GetTabs() []*Tab {
@@ -737,7 +517,7 @@ type AttendingResponse struct {
 
 func (x *AttendingResponse) Reset() {
 	*x = AttendingResponse{}
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -749,7 +529,7 @@ func (x *AttendingResponse) String() string {
 func (*AttendingResponse) ProtoMessage() {}
 
 func (x *AttendingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[9]
+	mi := &file_numen_v1_vault_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -762,7 +542,7 @@ func (x *AttendingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttendingResponse.ProtoReflect.Descriptor instead.
 func (*AttendingResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{8}
 }
 
 // A Tab is one tab of the window: what kind it is, and what it holds.
@@ -793,7 +573,7 @@ type Tab struct {
 
 func (x *Tab) Reset() {
 	*x = Tab{}
-	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -805,7 +585,7 @@ func (x *Tab) String() string {
 func (*Tab) ProtoMessage() {}
 
 func (x *Tab) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[10]
+	mi := &file_numen_v1_vault_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -818,7 +598,7 @@ func (x *Tab) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tab.ProtoReflect.Descriptor instead.
 func (*Tab) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{10}
+	return file_numen_v1_vault_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Tab) GetId() string {
@@ -863,74 +643,11 @@ func (x *Tab) GetOf() int32 {
 	return 0
 }
 
-// Fingerprint is which file this is: where it is filed, how big it is, and when
-// it last changed.
-type Fingerprint struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	// When the file last changed, in nanoseconds since the epoch.
-	Mtime         int64 `protobuf:"varint,3,opt,name=mtime,proto3" json:"mtime,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Fingerprint) Reset() {
-	*x = Fingerprint{}
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Fingerprint) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Fingerprint) ProtoMessage() {}
-
-func (x *Fingerprint) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vault_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Fingerprint.ProtoReflect.Descriptor instead.
-func (*Fingerprint) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vault_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *Fingerprint) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *Fingerprint) GetSize() int64 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-func (x *Fingerprint) GetMtime() int64 {
-	if x != nil {
-		return x.Mtime
-	}
-	return 0
-}
-
 var File_numen_v1_vault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_vault_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/vault.proto\x12\bnumen.v1\"\x0e\n" +
+	"\x14numen/v1/vault.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x0e\n" +
 	"\fStateRequest\"\xcb\x02\n" +
 	"\rStateResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
@@ -958,10 +675,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05start\x18\x02 \x01(\x05R\x05start\x12\x16\n" +
 	"\x06length\x18\x03 \x01(\x05R\x06length\x12%\n" +
-	"\x04also\x18\x04 \x03(\v2\x11.numen.v1.StretchR\x04also\"7\n" +
-	"\aStretch\x12\x14\n" +
-	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x02 \x01(\x05R\x06length\"K\n" +
+	"\x04also\x18\x04 \x03(\v2\x11.numen.v1.StretchR\x04also\"K\n" +
 	"\x10AttendingRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x14\n" +
 	"\x05front\x18\x02 \x01(\tR\x05front\"\x13\n" +
@@ -972,32 +686,7 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12\x0e\n" +
 	"\x02at\x18\x05 \x01(\x05R\x02at\x12\x0e\n" +
-	"\x02of\x18\x06 \x01(\x05R\x02of\"K\n" +
-	"\vFingerprint\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
-	"\x05mtime\x18\x03 \x01(\x03R\x05mtime*\xd8\x02\n" +
-	"\aRefusal\x12\x17\n" +
-	"\x13REFUSAL_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fREFUSAL_MISSING\x10\x01\x12\x16\n" +
-	"\x12REFUSAL_NOT_A_NOTE\x10\x02\x12\x14\n" +
-	"\x10REFUSAL_NOT_TEXT\x10\x03\x12\x15\n" +
-	"\x11REFUSAL_TOO_LARGE\x10\x04\x12\x18\n" +
-	"\x14REFUSAL_BODY_REFUSED\x10\x05\x12\x16\n" +
-	"\x12REFUSAL_UNREADABLE\x10\x06\x12\x14\n" +
-	"\x10REFUSAL_OCCUPIED\x10\a\x12\x16\n" +
-	"\x12REFUSAL_UNNAMEABLE\x10\b\x12\x19\n" +
-	"\x15REFUSAL_NOT_A_STENCIL\x10\t\x12\x16\n" +
-	"\x12REFUSAL_NOT_A_DECK\x10\n" +
-	"\x12\x1a\n" +
-	"\x16REFUSAL_DECK_TOO_LARGE\x10\v\x12\x18\n" +
-	"\x14REFUSAL_NOT_A_PRESET\x10\f\x12\x11\n" +
-	"\rREFUSAL_STALE\x10\r*f\n" +
-	"\bNoteType\x12\x19\n" +
-	"\x15NOTE_TYPE_UNSPECIFIED\x10\x00\x12\x12\n" +
-	"\x0eNOTE_TYPE_DECK\x10\x01\x12\x15\n" +
-	"\x11NOTE_TYPE_STENCIL\x10\x02\x12\x14\n" +
-	"\x10NOTE_TYPE_PRESET\x10\x032\x8c\x02\n" +
+	"\x02of\x18\x06 \x01(\x05R\x02of2\x8c\x02\n" +
 	"\fVaultService\x128\n" +
 	"\x05State\x12\x16.numen.v1.StateRequest\x1a\x17.numen.v1.StateResponse\x12@\n" +
 	"\aChanges\x12\x18.numen.v1.ChangesRequest\x1a\x19.numen.v1.ChangesResponse0\x01\x12:\n" +
@@ -1016,36 +705,32 @@ func file_numen_v1_vault_proto_rawDescGZIP() []byte {
 	return file_numen_v1_vault_proto_rawDescData
 }
 
-var file_numen_v1_vault_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_numen_v1_vault_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_vault_proto_goTypes = []any{
-	(Refusal)(0),              // 0: numen.v1.Refusal
-	(NoteType)(0),             // 1: numen.v1.NoteType
-	(*StateRequest)(nil),      // 2: numen.v1.StateRequest
-	(*StateResponse)(nil),     // 3: numen.v1.StateResponse
-	(*ChangesRequest)(nil),    // 4: numen.v1.ChangesRequest
-	(*ChangesResponse)(nil),   // 5: numen.v1.ChangesResponse
-	(*Went)(nil),              // 6: numen.v1.Went
-	(*FocusRequest)(nil),      // 7: numen.v1.FocusRequest
-	(*FocusResponse)(nil),     // 8: numen.v1.FocusResponse
-	(*Stretch)(nil),           // 9: numen.v1.Stretch
-	(*AttendingRequest)(nil),  // 10: numen.v1.AttendingRequest
-	(*AttendingResponse)(nil), // 11: numen.v1.AttendingResponse
-	(*Tab)(nil),               // 12: numen.v1.Tab
-	(*Fingerprint)(nil),       // 13: numen.v1.Fingerprint
+	(*StateRequest)(nil),      // 0: numen.v1.StateRequest
+	(*StateResponse)(nil),     // 1: numen.v1.StateResponse
+	(*ChangesRequest)(nil),    // 2: numen.v1.ChangesRequest
+	(*ChangesResponse)(nil),   // 3: numen.v1.ChangesResponse
+	(*Went)(nil),              // 4: numen.v1.Went
+	(*FocusRequest)(nil),      // 5: numen.v1.FocusRequest
+	(*FocusResponse)(nil),     // 6: numen.v1.FocusResponse
+	(*AttendingRequest)(nil),  // 7: numen.v1.AttendingRequest
+	(*AttendingResponse)(nil), // 8: numen.v1.AttendingResponse
+	(*Tab)(nil),               // 9: numen.v1.Tab
+	(*Stretch)(nil),           // 10: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
-	6,  // 0: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
-	9,  // 1: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
-	12, // 2: numen.v1.AttendingRequest.tabs:type_name -> numen.v1.Tab
-	2,  // 3: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
-	4,  // 4: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
-	7,  // 5: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
-	10, // 6: numen.v1.VaultService.Attending:input_type -> numen.v1.AttendingRequest
-	3,  // 7: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
-	5,  // 8: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
-	8,  // 9: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
-	11, // 10: numen.v1.VaultService.Attending:output_type -> numen.v1.AttendingResponse
+	4,  // 0: numen.v1.ChangesResponse.renamed:type_name -> numen.v1.Went
+	10, // 1: numen.v1.FocusResponse.also:type_name -> numen.v1.Stretch
+	9,  // 2: numen.v1.AttendingRequest.tabs:type_name -> numen.v1.Tab
+	0,  // 3: numen.v1.VaultService.State:input_type -> numen.v1.StateRequest
+	2,  // 4: numen.v1.VaultService.Changes:input_type -> numen.v1.ChangesRequest
+	5,  // 5: numen.v1.VaultService.Focus:input_type -> numen.v1.FocusRequest
+	7,  // 6: numen.v1.VaultService.Attending:input_type -> numen.v1.AttendingRequest
+	1,  // 7: numen.v1.VaultService.State:output_type -> numen.v1.StateResponse
+	3,  // 8: numen.v1.VaultService.Changes:output_type -> numen.v1.ChangesResponse
+	6,  // 9: numen.v1.VaultService.Focus:output_type -> numen.v1.FocusResponse
+	8,  // 10: numen.v1.VaultService.Attending:output_type -> numen.v1.AttendingResponse
 	7,  // [7:11] is the sub-list for method output_type
 	3,  // [3:7] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
@@ -1058,19 +743,19 @@ func file_numen_v1_vault_proto_init() {
 	if File_numen_v1_vault_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vault_proto_rawDesc), len(file_numen_v1_vault_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   12,
+			NumEnums:      0,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_vault_proto_goTypes,
 		DependencyIndexes: file_numen_v1_vault_proto_depIdxs,
-		EnumInfos:         file_numen_v1_vault_proto_enumTypes,
 		MessageInfos:      file_numen_v1_vault_proto_msgTypes,
 	}.Build()
 	File_numen_v1_vault_proto = out.File

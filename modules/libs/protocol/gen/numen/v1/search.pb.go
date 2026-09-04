@@ -567,7 +567,7 @@ var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x14numen/v1/vault.proto\":\n" +
+	"\x15numen/v1/search.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\":\n" +
 	"\fNamesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"6\n" +
@@ -670,7 +670,7 @@ func file_numen_v1_search_proto_init() {
 	}
 	file_numen_v1_file_proto_init()
 	file_numen_v1_note_proto_init()
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_search_proto_msgTypes[2].OneofWrappers = []any{}
 	file_numen_v1_search_proto_msgTypes[5].OneofWrappers = []any{}
 	type x struct{}

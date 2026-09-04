@@ -1937,7 +1937,7 @@ var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x14numen/v1/vault.proto\"\x9f\x02\n" +
+	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x15numen/v1/shared.proto\"\x9f\x02\n" +
 	"\n" +
 	"VaultOwing\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
@@ -2183,7 +2183,7 @@ func file_numen_v1_flashcards_proto_init() {
 		return
 	}
 	file_numen_v1_presets_proto_init()
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_flashcards_proto_msgTypes[7].OneofWrappers = []any{}
 	file_numen_v1_flashcards_proto_msgTypes[20].OneofWrappers = []any{}
 	file_numen_v1_flashcards_proto_msgTypes[24].OneofWrappers = []any{}

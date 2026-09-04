@@ -1781,7 +1781,7 @@ var File_numen_v1_note_proto protoreflect.FileDescriptor
 
 const file_numen_v1_note_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/note.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x14numen/v1/vault.proto\"P\n" +
+	"\x13numen/v1/note.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x15numen/v1/shared.proto\"P\n" +
 	"\x04Note\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1e\n" +
@@ -2031,7 +2031,7 @@ func file_numen_v1_note_proto_init() {
 		return
 	}
 	file_numen_v1_file_proto_init()
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_note_proto_msgTypes[2].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[14].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[16].OneofWrappers = []any{}

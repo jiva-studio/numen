@@ -7,19 +7,18 @@
 // What the vault is, what has changed in it, and where in it the person stands:
 // the questions that are about the vault itself and not about anything filed in
 // it. Its files are file.proto, its notes note.proto and its text search.proto.
-//
-// It is also the file those three import, and every other service's file with
-// them. A type stands here once three of them hold it, and not before.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Stretch } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiDgoMU3RhdGVSZXF1ZXN0IvsBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRINCgVyZWFkeRgEIAEoCBIOCgZmYWlsZWQYBSABKAkSEQoJdW53YXRjaGVkGAYgASgJEhMKC3VucmVhY2hhYmxlGBEgASgJEg4KBmNodW5rcxgHIAEoAxIQCghlbWJlZGRlZBgIIAEoAxIRCgllbWJlZGRpbmcYCiABKAhKBAgDEARKBAgJEApKBAgLEBFSBWJvb2tzUgpib29rc19yZWFkUgRidXN5UgdpbmRleGVkUghsZWFybmluZ1IEbWFkZVIFb3dpbmdSB3JlYWRpbmciEAoOQ2hhbmdlc1JlcXVlc3QiUQoPQ2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuV2VudCIgCgRXZW50EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiDgoMRm9jdXNSZXF1ZXN0Il0KDUZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoBRIOCgZsZW5ndGgYAyABKAUSHwoEYWxzbxgEIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giKAoHU3RyZXRjaBINCgVzdGFydBgBIAEoBRIOCgZsZW5ndGgYAiABKAUiPgoQQXR0ZW5kaW5nUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhMKEUF0dGVuZGluZ1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUiOAoLRmluZ2VycHJpbnQSDAoEcGF0aBgBIAEoCRIMCgRzaXplGAIgASgDEg0KBW10aW1lGAMgASgDKtgCCgdSZWZ1c2FsEhcKE1JFRlVTQUxfVU5TUEVDSUZJRUQQABITCg9SRUZVU0FMX01JU1NJTkcQARIWChJSRUZVU0FMX05PVF9BX05PVEUQAhIUChBSRUZVU0FMX05PVF9URVhUEAMSFQoRUkVGVVNBTF9UT09fTEFSR0UQBBIYChRSRUZVU0FMX0JPRFlfUkVGVVNFRBAFEhYKElJFRlVTQUxfVU5SRUFEQUJMRRAGEhQKEFJFRlVTQUxfT0NDVVBJRUQQBxIWChJSRUZVU0FMX1VOTkFNRUFCTEUQCBIZChVSRUZVU0FMX05PVF9BX1NURU5DSUwQCRIWChJSRUZVU0FMX05PVF9BX0RFQ0sQChIaChZSRUZVU0FMX0RFQ0tfVE9PX0xBUkdFEAsSGAoUUkVGVVNBTF9OT1RfQV9QUkVTRVQQDBIRCg1SRUZVU0FMX1NUQUxFEA0qZgoITm90ZVR5cGUSGQoVTk9URV9UWVBFX1VOU1BFQ0lGSUVEEAASEgoOTk9URV9UWVBFX0RFQ0sQARIVChFOT1RFX1RZUEVfU1RFTkNJTBACEhQKEE5PVEVfVFlQRV9QUkVTRVQQAzKMAgoMVmF1bHRTZXJ2aWNlEjgKBVN0YXRlEhYubnVtZW4udjEuU3RhdGVSZXF1ZXN0GhcubnVtZW4udjEuU3RhdGVSZXNwb25zZRJACgdDaGFuZ2VzEhgubnVtZW4udjEuQ2hhbmdlc1JlcXVlc3QaGS5udW1lbi52MS5DaGFuZ2VzUmVzcG9uc2UwARI6CgVGb2N1cxIWLm51bWVuLnYxLkZvY3VzUmVxdWVzdBoXLm51bWVuLnYxLkZvY3VzUmVzcG9uc2UwARJECglBdHRlbmRpbmcSGi5udW1lbi52MS5BdHRlbmRpbmdSZXF1ZXN0GhsubnVtZW4udjEuQXR0ZW5kaW5nUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiDgoMU3RhdGVSZXF1ZXN0IvsBCg1TdGF0ZVJlc3BvbnNlEgwKBG5hbWUYASABKAkSDAoEcGF0aBgCIAEoCRINCgVyZWFkeRgEIAEoCBIOCgZmYWlsZWQYBSABKAkSEQoJdW53YXRjaGVkGAYgASgJEhMKC3VucmVhY2hhYmxlGBEgASgJEg4KBmNodW5rcxgHIAEoAxIQCghlbWJlZGRlZBgIIAEoAxIRCgllbWJlZGRpbmcYCiABKAhKBAgDEARKBAgJEApKBAgLEBFSBWJvb2tzUgpib29rc19yZWFkUgRidXN5UgdpbmRleGVkUghsZWFybmluZ1IEbWFkZVIFb3dpbmdSB3JlYWRpbmciEAoOQ2hhbmdlc1JlcXVlc3QiUQoPQ2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuV2VudCIgCgRXZW50EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiDgoMRm9jdXNSZXF1ZXN0Il0KDUZvY3VzUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgVzdGFydBgCIAEoBRIOCgZsZW5ndGgYAyABKAUSHwoEYWxzbxgEIAMoCzIRLm51bWVuLnYxLlN0cmV0Y2giPgoQQXR0ZW5kaW5nUmVxdWVzdBIbCgR0YWJzGAEgAygLMg0ubnVtZW4udjEuVGFiEg0KBWZyb250GAIgASgJIhMKEUF0dGVuZGluZ1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUyjAIKDFZhdWx0U2VydmljZRI4CgVTdGF0ZRIWLm51bWVuLnYxLlN0YXRlUmVxdWVzdBoXLm51bWVuLnYxLlN0YXRlUmVzcG9uc2USQAoHQ2hhbmdlcxIYLm51bWVuLnYxLkNoYW5nZXNSZXF1ZXN0GhkubnVtZW4udjEuQ2hhbmdlc1Jlc3BvbnNlMAESOgoFRm9jdXMSFi5udW1lbi52MS5Gb2N1c1JlcXVlc3QaFy5udW1lbi52MS5Gb2N1c1Jlc3BvbnNlMAESRAoJQXR0ZW5kaW5nEhoubnVtZW4udjEuQXR0ZW5kaW5nUmVxdWVzdBobLm51bWVuLnYxLkF0dGVuZGluZ1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.StateRequest
@@ -245,31 +244,6 @@ export const FocusResponseSchema: GenMessage<FocusResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 6);
 
 /**
- * A Stretch is a run of a source's text, counted in bytes over the text the
- * source is read as.
- *
- * @generated from message numen.v1.Stretch
- */
-export type Stretch = Message<"numen.v1.Stretch"> & {
-  /**
-   * @generated from field: int32 start = 1;
-   */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 2;
-   */
-  length: number;
-};
-
-/**
- * Describes the message numen.v1.Stretch.
- * Use `create(StretchSchema)` to create a new message.
- */
-export const StretchSchema: GenMessage<Stretch> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 7);
-
-/**
  * @generated from message numen.v1.AttendingRequest
  */
 export type AttendingRequest = Message<"numen.v1.AttendingRequest"> & {
@@ -294,7 +268,7 @@ export type AttendingRequest = Message<"numen.v1.AttendingRequest"> & {
  * Use `create(AttendingRequestSchema)` to create a new message.
  */
 export const AttendingRequestSchema: GenMessage<AttendingRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 8);
+  messageDesc(file_numen_v1_vault, 7);
 
 /**
  * @generated from message numen.v1.AttendingResponse
@@ -307,7 +281,7 @@ export type AttendingResponse = Message<"numen.v1.AttendingResponse"> & {
  * Use `create(AttendingResponseSchema)` to create a new message.
  */
 export const AttendingResponseSchema: GenMessage<AttendingResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 9);
+  messageDesc(file_numen_v1_vault, 8);
 
 /**
  * A Tab is one tab of the window: what kind it is, and what it holds.
@@ -369,199 +343,7 @@ export type Tab = Message<"numen.v1.Tab"> & {
  * Use `create(TabSchema)` to create a new message.
  */
 export const TabSchema: GenMessage<Tab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 10);
-
-/**
- * Fingerprint is which file this is: where it is filed, how big it is, and when
- * it last changed.
- *
- * @generated from message numen.v1.Fingerprint
- */
-export type Fingerprint = Message<"numen.v1.Fingerprint"> & {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * @generated from field: int64 size = 2;
-   */
-  size: bigint;
-
-  /**
-   * When the file last changed, in nanoseconds since the epoch.
-   *
-   * @generated from field: int64 mtime = 3;
-   */
-  mtime: bigint;
-};
-
-/**
- * Describes the message numen.v1.Fingerprint.
- * Use `create(FingerprintSchema)` to create a new message.
- */
-export const FingerprintSchema: GenMessage<Fingerprint> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vault, 11);
-
-/**
- * Refusal is why a note could not be read or written.
- *
- * @generated from enum numen.v1.Refusal
- */
-export enum Refusal {
-  /**
-   * @generated from enum value: REFUSAL_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * Nothing is at the path. A read says so; a write creates the file.
-   *
-   * @generated from enum value: REFUSAL_MISSING = 1;
-   */
-  MISSING = 1,
-
-  /**
-   * The file is in the vault and is not a note.
-   *
-   * @generated from enum value: REFUSAL_NOT_A_NOTE = 2;
-   */
-  NOT_A_NOTE = 2,
-
-  /**
-   * The file is not text this can carry.
-   *
-   * @generated from enum value: REFUSAL_NOT_TEXT = 3;
-   */
-  NOT_TEXT = 3,
-
-  /**
-   * The file is past the size a note is read at.
-   *
-   * @generated from enum value: REFUSAL_TOO_LARGE = 4;
-   */
-  TOO_LARGE = 4,
-
-  /**
-   * The prose opens with a frontmatter delimiter, so writing it would put a
-   * second block inside the first.
-   *
-   * @generated from enum value: REFUSAL_BODY_REFUSED = 5;
-   */
-  BODY_REFUSED = 5,
-
-  /**
-   * The frontmatter cannot be read, so the note can be neither read nor written
-   * from here.
-   *
-   * @generated from enum value: REFUSAL_UNREADABLE = 6;
-   */
-  UNREADABLE = 6,
-
-  /**
-   * A file is already where the note would go. Nothing is written there; a
-   * rename may already have written the note it was moving.
-   *
-   * @generated from enum value: REFUSAL_OCCUPIED = 7;
-   */
-  OCCUPIED = 7,
-
-  /**
-   * A note cannot be called this: the title leaves nothing a file can be named
-   * after, it is more than one line, or a heading would read it back as
-   * something else. Nothing is written.
-   *
-   * @generated from enum value: REFUSAL_UNNAMEABLE = 8;
-   */
-  UNNAMEABLE = 8,
-
-  /**
-   * The note at the path is not a stencil, and a stencil was asked for.
-   *
-   * @generated from enum value: REFUSAL_NOT_A_STENCIL = 9;
-   */
-  NOT_A_STENCIL = 9,
-
-  /**
-   * The note at the path is not a deck, and a deck was asked for.
-   *
-   * @generated from enum value: REFUSAL_NOT_A_DECK = 10;
-   */
-  NOT_A_DECK = 10,
-
-  /**
-   * The file is past the size a deck is read at, which stands above the size a
-   * note is read at.
-   *
-   * @generated from enum value: REFUSAL_DECK_TOO_LARGE = 11;
-   */
-  DECK_TOO_LARGE = 11,
-
-  /**
-   * The note at the path is not a preset, and a preset was asked for.
-   *
-   * @generated from enum value: REFUSAL_NOT_A_PRESET = 12;
-   */
-  NOT_A_PRESET = 12,
-
-  /**
-   * The file is no longer the one this caller read. Nothing was written, and
-   * the person chooses what happens to what they have.
-   *
-   * @generated from enum value: REFUSAL_STALE = 13;
-   */
-  STALE = 13,
-}
-
-/**
- * Describes the enum numen.v1.Refusal.
- */
-export const RefusalSchema: GenEnum<Refusal> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 0);
-
-/**
- * NoteType is which of four a note is: the `type` key of its frontmatter. It
- * says what the note is; whether the application reads text out of the file is
- * SourceKind.
- *
- * @generated from enum numen.v1.NoteType
- */
-export enum NoteType {
-  /**
-   * An ordinary note, which is a note carrying no `type` at all and so nearly
-   * every note in a vault.
-   *
-   * @generated from enum value: NOTE_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * A note whose body is cards.
-   *
-   * @generated from enum value: NOTE_TYPE_DECK = 1;
-   */
-  DECK = 1,
-
-  /**
-   * A note declaring the fields a card has and the faces it is shown by.
-   *
-   * @generated from enum value: NOTE_TYPE_STENCIL = 2;
-   */
-  STENCIL = 2,
-
-  /**
-   * A note saying how the decks pointing at it are scheduled.
-   *
-   * @generated from enum value: NOTE_TYPE_PRESET = 3;
-   */
-  PRESET = 3,
-}
-
-/**
- * Describes the enum numen.v1.NoteType.
- */
-export const NoteTypeSchema: GenEnum<NoteType> = /*@__PURE__*/
-  enumDesc(file_numen_v1_vault, 1);
+  messageDesc(file_numen_v1_vault, 9);
 
 /**
  * VaultService answers what the one vault a client is looking at is, and what

@@ -8,7 +8,7 @@ syntax = "proto3";
 // and the bytes a file of the person's own holds are asset.proto.
 package numen.v1;
 
-import "numen/v1/vault.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 

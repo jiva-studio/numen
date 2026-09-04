@@ -1863,7 +1863,7 @@ var File_numen_v1_cards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_cards_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/cards.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\xd0\x01\n" +
+	"\x14numen/v1/cards.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\xd0\x01\n" +
 	"\aStencil\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -2131,7 +2131,7 @@ func file_numen_v1_cards_proto_init() {
 	if File_numen_v1_cards_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_cards_proto_msgTypes[5].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[6].OneofWrappers = []any{}
 	file_numen_v1_cards_proto_msgTypes[11].OneofWrappers = []any{}

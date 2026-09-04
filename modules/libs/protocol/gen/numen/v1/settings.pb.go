@@ -621,7 +621,7 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x14numen/v1/vault.proto\"\x11\n" +
+	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x11\n" +
 	"\x0fSettingsRequest\"i\n" +
 	"\x10SettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
@@ -719,7 +719,7 @@ func file_numen_v1_settings_proto_init() {
 	if File_numen_v1_settings_proto != nil {
 		return
 	}
-	file_numen_v1_vault_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_settings_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_settings_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}

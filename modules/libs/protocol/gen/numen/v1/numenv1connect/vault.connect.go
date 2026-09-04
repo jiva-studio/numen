@@ -7,9 +7,6 @@
 // What the vault is, what has changed in it, and where in it the person stands:
 // the questions that are about the vault itself and not about anything filed in
 // it. Its files are file.proto, its notes note.proto and its text search.proto.
-//
-// It is also the file those three import, and every other service's file with
-// them. A type stands here once three of them hold it, and not before.
 package numenv1connect
 
 import (
