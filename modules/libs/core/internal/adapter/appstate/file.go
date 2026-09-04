@@ -9,6 +9,6 @@ type registryFile struct {
 	Version int `json:"v"`
 	// LastID is the identity of the vault opened most recently, and is absent
 	// until one has been opened.
-	LastID string         `json:"last,omitempty"`
+	LastID domain.VaultID `json:"last,omitempty"`
 	Vaults []domain.Vault `json:"vaults"`
 }

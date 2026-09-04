@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // Schedules keeps what a replay of the answers worked out, one file to a vault,
@@ -38,7 +40,7 @@ func OpenCounting() (*Schedules, error) {
 // touch the machine's own.
 func SchedulesAt(dir string) *Schedules { return &Schedules{dir: dir} }
 
-func (s *Schedules) Read(_ context.Context, vaultID string) ([]byte, error) {
+func (s *Schedules) Read(_ context.Context, vaultID domain.VaultID) ([]byte, error) {
 	at, err := s.at(vaultID)
 	if err != nil {
 		return nil, err
@@ -46,7 +48,7 @@ func (s *Schedules) Read(_ context.Context, vaultID string) ([]byte, error) {
 	return os.ReadFile(at)
 }
 
-func (s *Schedules) Write(_ context.Context, vaultID string, content []byte) error {
+func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []byte) error {
 	at, err := s.at(vaultID)
 	if err != nil {
 		return err
@@ -88,9 +90,10 @@ func (s *Schedules) Write(_ context.Context, vaultID string, content []byte) err
 // The identity is a ULID and is written into the name, so it is checked for
 // being one: a name arriving from anywhere else could otherwise reach a file
 // this folder does not hold.
-func (s *Schedules) at(vaultID string) (string, error) {
-	if vaultID == "" || strings.ContainsAny(vaultID, `/\.`) {
-		return "", fmt.Errorf("%q is not the identity of a vault", vaultID)
+func (s *Schedules) at(vaultID domain.VaultID) (string, error) {
+	name := string(vaultID)
+	if name == "" || strings.ContainsAny(name, `/\.`) {
+		return "", fmt.Errorf("%q is not the identity of a vault", name)
 	}
-	return filepath.Join(s.dir, vaultID+".json"), nil
+	return filepath.Join(s.dir, name+".json"), nil
 }

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 )
 
@@ -32,7 +33,7 @@ func TestSchedulesAreKeptByVault(t *testing.T) {
 // refused: anything else could reach a file this folder does not hold.
 func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
 	kept := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
-	for _, id := range []string{"", "../numen.json", "a/b", `a\b`, "one.json"} {
+	for _, id := range []domain.VaultID{"", "../numen.json", "a/b", `a\b`, "one.json"} {
 		if err := kept.Write(t.Context(), id, []byte("{}")); err == nil {
 			t.Errorf("wrote under %q", id)
 		}

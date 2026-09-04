@@ -146,14 +146,14 @@ func (r *VaultRegistry) Save(v domain.Vault) error {
 
 // Remove takes a vault off the list. The folder and the identity inside it stay
 // as they are. An identity the list does not hold is already off it.
-func (r *VaultRegistry) Remove(id string) error {
+func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
 	if err != nil {
 		return err
 	}
-	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return string(v.ID) == id })
+	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
 	if at < 0 {
 		return nil
 	}
@@ -166,14 +166,14 @@ func (r *VaultRegistry) Remove(id string) error {
 
 // Opened records the vault a window is showing. Recording the vault already
 // recorded writes nothing.
-func (r *VaultRegistry) Opened(id string) error {
+func (r *VaultRegistry) Opened(id domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	f, err := r.load()
 	if err != nil {
 		return err
 	}
-	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return string(v.ID) == id }) {
+	if !slices.ContainsFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id }) {
 		return fmt.Errorf("no vault on the list carries the identity %s", id)
 	}
 	if f.LastID == id {
@@ -193,7 +193,7 @@ func (r *VaultRegistry) Last() (domain.Vault, bool, error) {
 		return domain.Vault{}, false, err
 	}
 	for _, v := range f.Vaults {
-		if string(v.ID) == f.LastID && f.LastID != "" {
+		if v.ID == f.LastID && f.LastID != "" {
 			return v, true, nil
 		}
 	}

@@ -163,7 +163,7 @@ func TestTheVaultOpenedLastSurvivesARoundTrip(t *testing.T) {
 	if err := first.Save(v); err != nil {
 		t.Fatal(err)
 	}
-	if err := first.Opened(string(v.ID)); err != nil {
+	if err := first.Opened(v.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -314,7 +314,7 @@ func TestConcurrentWritesLoseNothing(t *testing.T) {
 		}()
 		go func() {
 			defer writing.Done()
-			errs <- r.Remove(fmt.Sprintf("01OLD%02d", i))
+			errs <- r.Remove(domain.VaultID(fmt.Sprintf("01OLD%02d", i)))
 		}()
 	}
 	writing.Wait()

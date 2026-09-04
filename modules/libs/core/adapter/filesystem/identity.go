@@ -4,6 +4,8 @@ import (
 	"errors"
 	"io/fs"
 	"time"
+
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 // VaultIdentity gives folders the identity that makes them vaults, and answers
@@ -15,18 +17,18 @@ func (i VaultIdentity) Readable(root string) error {
 	return err
 }
 
-func (i VaultIdentity) Ensure(root string, at time.Time) (string, error) {
+func (i VaultIdentity) Ensure(root string, at time.Time) (domain.VaultID, error) {
 	cfg, err := Initialize(root, i.Options.ServiceDir, at)
 	if err != nil {
 		return "", err
 	}
-	return cfg.ID, nil
+	return domain.VaultID(cfg.ID), nil
 }
 
 // Of reads the identity a folder carries without creating one. A folder that is
 // gone, or was never a vault, simply carries none — that is an answer rather
 // than a failure.
-func (i VaultIdentity) Of(root string) (string, bool, error) {
+func (i VaultIdentity) Of(root string) (domain.VaultID, bool, error) {
 	cfg, err := ReadConfig(root, i.Options.ServiceDir)
 	if errors.Is(err, ErrNotAVault) {
 		return "", false, nil
@@ -37,5 +39,5 @@ func (i VaultIdentity) Of(root string) (string, bool, error) {
 	if err != nil {
 		return "", false, err
 	}
-	return cfg.ID, true, nil
+	return domain.VaultID(cfg.ID), true, nil
 }
