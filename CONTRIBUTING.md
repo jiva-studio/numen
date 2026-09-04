@@ -71,11 +71,7 @@ header the hook measures is what that comes to.
 - **subject** — imperative, no trailing dot, header capped at 72 characters.
 - **types** — `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`,
   `chore`, `revert`.
-- **scopes** — follow the module layout: `desktop`, `mobile`, `core`, `domain`,
-  `protocol`, `ui`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is
-  a **warning**, not an error: adding a module should never be blocked by a
-  forgotten line in `modules/tools/git-hooks/commitlint.config.mjs` — but a typo
-  still shows up.
+- **scopes** — follow the module layout: `desktop`, `mobile`, `landing`, `core`, `domain`, `protocol`, `ui`, `wire`, `adr`, `docs`, `vault`, `ci`, `deps`, `repo`. An unlisted scope is a **warning**, not an error: adding a module should never be blocked by a forgotten line in `modules/tools/git-hooks/commitlint.config.mjs` — but a typo still shows up.
 - **breaking change** — `!` after the scope, or a `BREAKING CHANGE:` footer.
 
 ```

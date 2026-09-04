@@ -36,8 +36,6 @@ erDiagram
     vaults {
         INTEGER id PK
         TEXT identifier UK "the ULID the folder carries"
-        TEXT name
-        TEXT path
     }
     sources {
         INTEGER id PK
@@ -48,12 +46,12 @@ erDiagram
         INTEGER modified_at "the fingerprint"
         TEXT hash "null until something computes it"
         TEXT recipe "what extracted the text"
-        TEXT text_from "which producer made the text, when it is not the file"
+        TEXT producer "which producer made the text, when it is not the file"
     }
     notes {
         INTEGER source_id PK "and FK to sources"
         INTEGER vault_id FK
-        TEXT basename "NOCASE, what a link written by name matches"
+        TEXT folded_name "folded, what a link written by name matches"
         TEXT title
         TEXT type "note, deck, stencil, preset"
         TEXT identifier "the ULID in the file, when there is one"
@@ -72,10 +70,10 @@ erDiagram
         INTEGER position PK
         TEXT scheme
         TEXT value "as written"
-        TEXT value_base "NOCASE, the last segment without its extension"
+        TEXT folded_name "folded, the last segment of the address"
         TEXT role
         TEXT type
-        TEXT note "why the link exists"
+        TEXT why "why the link exists"
         TEXT label
     }
     problems {
@@ -93,14 +91,14 @@ erDiagram
         TEXT hash "the address its text gives it"
     }
     vectors {
-        BLOB fingerprint UK "the chunk's hash"
+        BLOB hash UK "the chunk's hash"
         TEXT recipe UK
-        BLOB v
+        BLOB embedding
     }
     chunks_vec {
         INTEGER chunk_id PK "vec0"
         INTEGER vault_id "a metadata column"
-        BLOB embedding "one bit per dimension, 1024"
+        BLOB coarse "one bit per dimension, 1024"
     }
     chunks_fts {
         TEXT text "fts5, contentless"

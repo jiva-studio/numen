@@ -18,9 +18,10 @@ export default {
         'mobile',    // modules/apps/mobile
         'landing',   // modules/apps/landing
         'core',      // modules/libs/core
-        'domain',    // modules/libs/domain
+        'domain',    // modules/libs/core/domain
         'protocol',  // modules/libs/protocol
         'ui',        // modules/libs/ui
+        'wire',      // modules/libs/wire
         'adr',       // docs/adr
         'docs',      // everything else under docs/
         'vault',     // vault format spec and parser-facing changes

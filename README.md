@@ -92,6 +92,7 @@ modules/apps/docs/           the manual, for the person using the application
 modules/libs/core/           the core every client is built on
 modules/libs/protocol/       the schema every client is generated from
 modules/libs/ui/             shared interface components
+modules/libs/wire/           what the windows' ports are answered with
 modules/tools/git-hooks/     repo-level tooling
 ```
 
