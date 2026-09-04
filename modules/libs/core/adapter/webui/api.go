@@ -382,7 +382,7 @@ func (a *API) GetVaultState(
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
 	if a.Indexing.Progress != nil && showing.ID != "" {
-		if held, embedded, err := a.Indexing.Progress.Progress(ctx, string(showing.ID), text(&a.Indexing.Recipe)); err == nil {
+		if held, embedded, err := a.Indexing.Progress.Progress(ctx, showing.ID, text(&a.Indexing.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}
@@ -398,7 +398,7 @@ func (a *API) GetOpeningNote(
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Queries.Opening(ctx, string(showing.ID))
+	ref, found, err := a.Notes.Queries.Opening(ctx, showing.ID)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -459,7 +459,7 @@ func (a *API) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Links.Resolve(ctx, string(showing.ID), r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := a.Notes.Links.Resolve(ctx, showing.ID, r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
