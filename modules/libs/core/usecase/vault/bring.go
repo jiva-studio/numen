@@ -3,10 +3,7 @@ package vault
 import (
 	"context"
 	"errors"
-	"os"
-	pathpkg "path"
-	"path/filepath"
-	"strings"
+	"path"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -36,10 +33,14 @@ type BringResult struct {
 // dropped stays where it was.
 type Bring struct {
 	Writers port.VaultWriters
+	// Files is what the person handed over, read where it stands. Nothing here
+	// reaches the machine itself: what arrives is a path on a desktop and a
+	// content URI on a phone, and this is what tells them apart.
+	Files port.Handed
 }
 
-// Execute brings each path into the folder, under the name it already carries.
-// A folder arrives with everything under it.
+// Execute brings each handle into the folder, under the name it already
+// carries. A folder arrives with everything under it.
 //
 // One file refused leaves the rest to arrive: a drop of twenty pictures is
 // nineteen pictures and a sentence. A name the folder already carries is one of
@@ -49,10 +50,10 @@ func (u Bring) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	into string,
-	paths []string,
+	handles []string,
 ) (BringResult, error) {
 	var brought BringResult
-	if len(paths) == 0 {
+	if len(handles) == 0 {
 		return brought, nil
 	}
 	writer, err := u.Writers.Open(v)
@@ -60,12 +61,12 @@ func (u Bring) Execute(
 		return brought, err
 	}
 
-	for _, path := range paths {
+	for _, handle := range handles {
 		if err := ctx.Err(); err != nil {
 			return brought, err
 		}
-		name := filepath.Base(path)
-		if err := u.bring(ctx, writer, v, path, filed(into, name), &brought); err != nil {
+		name := u.Files.Named(handle)
+		if err := u.bring(ctx, writer, v, handle, filed(into, name), &brought); err != nil {
 			brought.Refused = append(brought.Refused, Refusal{Name: name, Why: err})
 		}
 	}
@@ -83,36 +84,35 @@ func (u Bring) bring(
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	info, err := os.Lstat(from)
+	info, err := u.Files.Stat(ctx, from)
 	if err != nil {
 		return err
 	}
 
 	switch {
-	case info.IsDir():
+	case info.Folder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
-		if holds(from, v.Path) {
+		if u.Files.Around(from, v.Path) {
 			return errAround
 		}
 		if err := writer.MakeFolder(ctx, to); err != nil {
 			return err
 		}
 		brought.Landed = append(brought.Landed, to)
-		held, err := os.ReadDir(from)
+		held, err := u.Files.List(ctx, from)
 		if err != nil {
 			return err
 		}
 		for _, one := range held {
-			inside := filepath.Join(from, one.Name())
-			if err := u.bring(ctx, writer, v, inside, filed(to, one.Name()), brought); err != nil {
-				brought.Refused = append(brought.Refused, Refusal{Name: one.Name(), Why: err})
+			if err := u.bring(ctx, writer, v, one.Handle, filed(to, one.Name), brought); err != nil {
+				brought.Refused = append(brought.Refused, Refusal{Name: one.Name, Why: err})
 			}
 		}
 		return nil
 
-	case info.Mode().IsRegular():
-		file, err := os.Open(from)
+	case info.File:
+		file, err := u.Files.Open(ctx, from)
 		if err != nil {
 			return err
 		}
@@ -141,18 +141,5 @@ func filed(folder, name string) string {
 	if folder == "" {
 		return name
 	}
-	return pathpkg.Join(folder, name)
-}
-
-// holds is whether a folder on this machine is one that inside sits under.
-func holds(folder, inside string) bool {
-	from, err := filepath.Abs(folder)
-	if err != nil {
-		return false
-	}
-	under, err := filepath.Abs(inside)
-	if err != nil {
-		return false
-	}
-	return under == from || strings.HasPrefix(under, from+string(filepath.Separator))
+	return path.Join(folder, name)
 }

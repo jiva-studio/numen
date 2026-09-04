@@ -309,7 +309,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Sources: db.Sources(),
 		Notes:   moving,
 	}
-	api.Files.Bring = &usecase.Bring{Writers: cfg.VaultWriters()}
+	api.Files.Bring = &usecase.Bring{Writers: cfg.VaultWriters(), Files: cfg.Handed()}
 	api.Notes.Remove = &note.Remove{
 		Writers: cfg.VaultWriters(),
 		Links:   api.Notes.Links,
