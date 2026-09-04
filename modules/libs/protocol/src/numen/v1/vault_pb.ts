@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vault.proto.
  */
 export const file_numen_v1_vault: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QigwIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuV2VudCIgCgRXZW50EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS92YXVsdC5wcm90bxIIbnVtZW4udjEiFgoUR2V0VmF1bHRTdGF0ZVJlcXVlc3QigwIKFUdldFZhdWx0U3RhdGVSZXNwb25zZRIMCgRuYW1lGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFcmVhZHkYBCABKAgSDgoGZmFpbGVkGAUgASgJEhEKCXVud2F0Y2hlZBgGIAEoCRITCgt1bnJlYWNoYWJsZRgRIAEoCRIOCgZjaHVua3MYByABKAMSEAoIZW1iZWRkZWQYCCABKAMSEQoJZW1iZWRkaW5nGAogASgISgQIAxAESgQICRAKSgQICxARUgVib29rc1IKYm9va3NfcmVhZFIEYnVzeVIHaW5kZXhlZFIIbGVhcm5pbmdSBG1hZGVSBW93aW5nUgdyZWFkaW5nIhoKGFdhdGNoVmF1bHRDaGFuZ2VzUmVxdWVzdCJbChlXYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlEg0KBXBhdGhzGAEgAygJEg4KBnJlbG9hZBgCIAEoCBIfCgdyZW5hbWVkGAMgAygLMg4ubnVtZW4udjEuTW92ZSIgCgRNb3ZlEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkiEwoRV2F0Y2hGb2N1c1JlcXVlc3QiYgoSV2F0Y2hGb2N1c1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAUSDgoGbGVuZ3RoGAMgASgFEh8KBGFsc28YBCADKAsyES5udW1lbi52MS5TdHJldGNoIkIKFFdyaXRlT3BlblRhYnNSZXF1ZXN0EhsKBHRhYnMYASADKAsyDS5udW1lbi52MS5UYWISDQoFZnJvbnQYAiABKAkiFwoVV3JpdGVPcGVuVGFic1Jlc3BvbnNlIlQKA1RhYhIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEgwKBHBhdGgYAyABKAkSDQoFdGl0bGUYBCABKAkSCgoCYXQYBSABKAUSCgoCb2YYBiABKAUy3QIKDFZhdWx0U2VydmljZRJQCg1HZXRWYXVsdFN0YXRlEh4ubnVtZW4udjEuR2V0VmF1bHRTdGF0ZVJlcXVlc3QaHy5udW1lbi52MS5HZXRWYXVsdFN0YXRlUmVzcG9uc2USXgoRV2F0Y2hWYXVsdENoYW5nZXMSIi5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1JlcXVlc3QaIy5udW1lbi52MS5XYXRjaFZhdWx0Q2hhbmdlc1Jlc3BvbnNlMAESSQoKV2F0Y2hGb2N1cxIbLm51bWVuLnYxLldhdGNoRm9jdXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hGb2N1c1Jlc3BvbnNlMAESUAoNV3JpdGVPcGVuVGFicxIeLm51bWVuLnYxLldyaXRlT3BlblRhYnNSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVPcGVuVGFic1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetVaultStateRequest
@@ -147,9 +147,9 @@ export type WatchVaultChangesResponse = Message<"numen.v1.WatchVaultChangesRespo
    * The notes that were renamed by this application, each by where it was and
    * where it now is. A client showing one of them follows it there.
    *
-   * @generated from field: repeated numen.v1.Went renamed = 3;
+   * @generated from field: repeated numen.v1.Move renamed = 3;
    */
-  renamed: Went[];
+  renamed: Move[];
 };
 
 /**
@@ -160,12 +160,12 @@ export const WatchVaultChangesResponseSchema: GenMessage<WatchVaultChangesRespon
   messageDesc(file_numen_v1_vault, 3);
 
 /**
- * Went is a note that is no longer where it was. The bytes do not change on the
+ * Move is a note that is no longer where it was. The bytes do not change on the
  * way, so this says nothing about what the note holds.
  *
- * @generated from message numen.v1.Went
+ * @generated from message numen.v1.Move
  */
-export type Went = Message<"numen.v1.Went"> & {
+export type Move = Message<"numen.v1.Move"> & {
   /**
    * Where the note was filed.
    *
@@ -182,10 +182,10 @@ export type Went = Message<"numen.v1.Went"> & {
 };
 
 /**
- * Describes the message numen.v1.Went.
- * Use `create(WentSchema)` to create a new message.
+ * Describes the message numen.v1.Move.
+ * Use `create(MoveSchema)` to create a new message.
  */
-export const WentSchema: GenMessage<Went> = /*@__PURE__*/
+export const MoveSchema: GenMessage<Move> = /*@__PURE__*/
   messageDesc(file_numen_v1_vault, 4);
 
 /**

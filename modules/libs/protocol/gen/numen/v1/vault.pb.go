@@ -231,7 +231,7 @@ type WatchVaultChangesResponse struct {
 	Reload bool `protobuf:"varint,2,opt,name=reload,proto3" json:"reload,omitempty"`
 	// The notes that were renamed by this application, each by where it was and
 	// where it now is. A client showing one of them follows it there.
-	Renamed       []*Went `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
+	Renamed       []*Move `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -280,16 +280,16 @@ func (x *WatchVaultChangesResponse) GetReload() bool {
 	return false
 }
 
-func (x *WatchVaultChangesResponse) GetRenamed() []*Went {
+func (x *WatchVaultChangesResponse) GetRenamed() []*Move {
 	if x != nil {
 		return x.Renamed
 	}
 	return nil
 }
 
-// Went is a note that is no longer where it was. The bytes do not change on the
+// Move is a note that is no longer where it was. The bytes do not change on the
 // way, so this says nothing about what the note holds.
-type Went struct {
+type Move struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note was filed.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
@@ -299,20 +299,20 @@ type Went struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Went) Reset() {
-	*x = Went{}
+func (x *Move) Reset() {
+	*x = Move{}
 	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Went) String() string {
+func (x *Move) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Went) ProtoMessage() {}
+func (*Move) ProtoMessage() {}
 
-func (x *Went) ProtoReflect() protoreflect.Message {
+func (x *Move) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vault_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -324,19 +324,19 @@ func (x *Went) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Went.ProtoReflect.Descriptor instead.
-func (*Went) Descriptor() ([]byte, []int) {
+// Deprecated: Use Move.ProtoReflect.Descriptor instead.
+func (*Move) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vault_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *Went) GetFrom() string {
+func (x *Move) GetFrom() string {
 	if x != nil {
 		return x.From
 	}
 	return ""
 }
 
-func (x *Went) GetTo() string {
+func (x *Move) GetTo() string {
 	if x != nil {
 		return x.To
 	}
@@ -666,8 +666,8 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
 	"\x06reload\x18\x02 \x01(\bR\x06reload\x12(\n" +
-	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.WentR\arenamed\"*\n" +
-	"\x04Went\x12\x12\n" +
+	"\arenamed\x18\x03 \x03(\v2\x0e.numen.v1.MoveR\arenamed\"*\n" +
+	"\x04Move\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\x13\n" +
 	"\x11WatchFocusRequest\"}\n" +
@@ -712,7 +712,7 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*GetVaultStateResponse)(nil),     // 1: numen.v1.GetVaultStateResponse
 	(*WatchVaultChangesRequest)(nil),  // 2: numen.v1.WatchVaultChangesRequest
 	(*WatchVaultChangesResponse)(nil), // 3: numen.v1.WatchVaultChangesResponse
-	(*Went)(nil),                      // 4: numen.v1.Went
+	(*Move)(nil),                      // 4: numen.v1.Move
 	(*WatchFocusRequest)(nil),         // 5: numen.v1.WatchFocusRequest
 	(*WatchFocusResponse)(nil),        // 6: numen.v1.WatchFocusResponse
 	(*WriteOpenTabsRequest)(nil),      // 7: numen.v1.WriteOpenTabsRequest
@@ -721,7 +721,7 @@ var file_numen_v1_vault_proto_goTypes = []any{
 	(*Stretch)(nil),                   // 10: numen.v1.Stretch
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Went
+	4,  // 0: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.Move
 	10, // 1: numen.v1.WatchFocusResponse.also:type_name -> numen.v1.Stretch
 	9,  // 2: numen.v1.WriteOpenTabsRequest.tabs:type_name -> numen.v1.Tab
 	0,  // 3: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
