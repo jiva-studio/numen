@@ -220,12 +220,12 @@ CREATE INDEX chunks_by_hash ON chunks (hash);
 -- A rowid table with the key in an index of its own: the vector is a kilobyte,
 -- and a key that carries it is a key every probe reads a kilobyte to answer.
 CREATE TABLE vectors (
-    fingerprint BLOB NOT NULL,
-    recipe      TEXT NOT NULL,
-    vector      BLOB NOT NULL
+    hash   BLOB NOT NULL,
+    recipe TEXT NOT NULL,
+    vector BLOB NOT NULL
 );
 
-CREATE UNIQUE INDEX vectors_of ON vectors (fingerprint, recipe);
+CREATE UNIQUE INDEX vectors_by_hash ON vectors (hash, recipe);
 
 -- The coarse pass, one bit per dimension, over everything.
 --

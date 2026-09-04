@@ -171,7 +171,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	keptVirtual, keptOrdinary := virtual(t, db, kept), ordinary(t, db, kept)
 
 	vectors := counted(t, db, `SELECT COUNT(*) FROM vectors`)
-	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE fingerprint IN
+	bought := numbers(t, db, `SELECT rowid FROM vectors WHERE hash IN
 		(SELECT unhex(hash) FROM chunks WHERE id IN `+list(gone.chunks)+`)`)
 	if len(bought) == 0 {
 		t.Fatal("the vault that is forgotten paid for no vector, so this test would pass either way")

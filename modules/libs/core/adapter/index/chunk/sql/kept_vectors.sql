@@ -1,7 +1,7 @@
 -- The vectors already made for these texts under this recipe.
 --
--- The fingerprints arrive as one JSON array of hex, which keeps the statement
--- one shape whatever the count is.
-SELECT hex(e.fingerprint), e.vector
+-- The hashes arrive as one JSON array of hex, which keeps the statement one
+-- shape whatever the count is.
+SELECT hex(e.hash), e.vector
 FROM json_each(?) j
-JOIN vectors e ON e.fingerprint = unhex(j.value) AND e.recipe = ?;
+JOIN vectors e ON e.hash = unhex(j.value) AND e.recipe = ?;

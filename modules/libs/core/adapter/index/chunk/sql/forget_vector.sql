@@ -5,5 +5,5 @@
 -- takes nothing with it: a folder that could not be read looks the same from
 -- here as one whose files were deleted.
 DELETE FROM vectors
-WHERE fingerprint = unhex(?)
+WHERE hash = unhex(?)
   AND NOT EXISTS (SELECT 1 FROM chunks WHERE hash = ?);

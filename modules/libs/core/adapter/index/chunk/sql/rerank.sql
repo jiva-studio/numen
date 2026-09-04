@@ -14,5 +14,5 @@ SELECT c.id, v.vector
 FROM json_each(?1) j
 JOIN chunks c ON c.id = j.value
 JOIN sources s ON s.id = c.source_id
-JOIN vectors v ON v.fingerprint = unhex(c.hash) AND v.recipe = ?2
+JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?2
 WHERE json_array_length(?3) = 0 OR s.kind IN (SELECT value FROM json_each(?3));

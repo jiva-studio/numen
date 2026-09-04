@@ -414,7 +414,7 @@ func (q *Queries) Progress(ctx context.Context, vaultID, recipe string) (held, e
 }
 
 // Kept is the vectors already made for the texts given under the recipe given,
-// by the hex of their fingerprint.
+// by the hex of their hash.
 //
 // A vector that comes back was paid for once, and asking a model for it again
 // is buying what is already here.
@@ -445,12 +445,12 @@ func (q *Queries) Kept(ctx context.Context, recipe string, of [][]byte) (map[str
 
 	out := make(map[string][]byte, len(wanted))
 	for rows.Next() {
-		var fingerprint string
+		var hash string
 		var v []byte
-		if err := rows.Scan(&fingerprint, &v); err != nil {
+		if err := rows.Scan(&hash, &v); err != nil {
 			return nil, err
 		}
-		out[strings.ToLower(fingerprint)] = v
+		out[strings.ToLower(hash)] = v
 	}
 	return out, rows.Err()
 }

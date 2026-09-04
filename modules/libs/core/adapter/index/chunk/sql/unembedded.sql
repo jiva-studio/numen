@@ -7,7 +7,7 @@
 SELECT c.id, s.path, COALESCE(s.producer, ''), COALESCE(s.hash, ''), c.start, c.length, COALESCE(c.location, ''), COALESCE(c.parent, 0), c.hash
 FROM chunks c
 JOIN sources s ON s.id = c.source_id
-LEFT JOIN vectors v ON v.fingerprint = unhex(c.hash) AND v.recipe = ?
-WHERE c.vault_id = ? AND c.id > ? AND c.parent IS NOT NULL AND v.fingerprint IS NULL
+LEFT JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
+WHERE c.vault_id = ? AND c.id > ? AND c.parent IS NOT NULL AND v.hash IS NULL
 ORDER BY c.id
 LIMIT ?;

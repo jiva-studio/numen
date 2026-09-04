@@ -67,7 +67,7 @@ func (db *DB) FitVectors(ctx context.Context, dims int, recipe string) error {
 func fillCoarse(ctx context.Context, tx *sql.Tx, dims int, recipe string) error {
 	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.vault_id, v.vector
-		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.fingerprint
+		 FROM vectors v JOIN chunks c ON unhex(c.hash) = v.hash
 		 WHERE v.recipe = ? AND length(v.vector) = ?`, recipe, dims)
 	if err != nil {
 		return fmt.Errorf("what the recipe has bought: %w", err)
