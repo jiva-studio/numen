@@ -61,6 +61,26 @@ func TestBoxesWrittenForOtherBytesGiveNothing(t *testing.T) {
 	}
 }
 
+// A batch is asked about and answered for by its page. Two batches under one
+// page would take one reply between them, and one page's corrections would be
+// written onto the other page's lines.
+func TestBoxesOutOfReadingOrderGiveNothing(t *testing.T) {
+	prose := "one two three "
+	boxes := []highlight.Box{box(1, 0, 4), box(2, 4, 4), box(1, 8, 6)}
+
+	batches := proofread.Scanned(prose, boxes)
+	if batches != nil {
+		t.Errorf("a reading that went back a page came back as %v", batches)
+	}
+	seen := map[int]bool{}
+	for _, batch := range batches {
+		if seen[batch.Number] {
+			t.Errorf("two batches are numbered %d, and one reply keyed by it", batch.Number)
+		}
+		seen[batch.Number] = true
+	}
+}
+
 func TestABoxWithNoLengthCarriesNoLine(t *testing.T) {
 	prose := "one two "
 	boxes := []highlight.Box{box(1, 0, 4), box(1, 4, 0), box(1, 4, 4)}
