@@ -8,7 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -122,7 +122,7 @@ func TestOnlyTheCoreSaysWhichNoteIsMissing(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := refusal.By(c.err)
+			reason, refused := wire.RefusalBy(c.err)
 			if refused != c.is {
 				t.Fatalf("want refused=%v, got %v (%v)", c.is, refused, reason)
 			}

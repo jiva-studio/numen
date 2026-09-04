@@ -1,4 +1,4 @@
-package refusal_test
+package wire_test
 
 import (
 	"errors"
@@ -11,8 +11,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -35,7 +35,7 @@ func TestWhichRefusalAnOutcomeIs(t *testing.T) {
 		"a note that was read": {note.Ok, v1.Refusal_REFUSAL_UNSPECIFIED, false},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := refusal.Of(c.outcome)
+			reason, refused := wire.RefusalOf(c.outcome)
 			if refused != c.is || reason != c.want {
 				t.Errorf("got %v refused=%v, want %v refused=%v",
 					reason, refused, c.want, c.is)
@@ -96,7 +96,7 @@ func TestWhichRefusalAWritesErrorIs(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			reason, refused := refusal.By(c.err)
+			reason, refused := wire.RefusalBy(c.err)
 			if refused != c.is || reason != c.want {
 				t.Errorf("got %v refused=%v, want %v refused=%v",
 					reason, refused, c.want, c.is)
@@ -107,10 +107,10 @@ func TestWhichRefusalAWritesErrorIs(t *testing.T) {
 
 func TestWhichCodeAnErrorThatIsNoRefusalAnswersWith(t *testing.T) {
 	outside := fmt.Errorf("../elsewhere.md: %w", port.ErrOutside)
-	if got := refusal.Coded(outside); got != connect.CodeInvalidArgument {
+	if got := wire.Coded(outside); got != connect.CodeInvalidArgument {
 		t.Errorf("a path that leaves the vault answers %v", got)
 	}
-	if got := refusal.Coded(errors.New("the disk is full")); got != connect.CodeInternal {
+	if got := wire.Coded(errors.New("the disk is full")); got != connect.CodeInternal {
 		t.Errorf("the vault being out of reach answers %v", got)
 	}
 }

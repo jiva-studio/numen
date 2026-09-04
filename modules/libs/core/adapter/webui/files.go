@@ -10,8 +10,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
@@ -71,7 +71,7 @@ func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string)
 	if a.Notes.Queries == nil || len(paths) == 0 {
 		return nil, nil
 	}
-	return a.Notes.Queries.Types(ctx, string(showing.ID), paths)
+	return a.Notes.Queries.Types(ctx, showing.ID, paths)
 }
 
 // ListFileKinds hands the client what the vault holds at each of those paths,
@@ -149,7 +149,7 @@ func (a *API) MoveFile(
 		out.Moved = movedOf(moved)
 	}
 	if err != nil {
-		reason, refused := refusal.By(err)
+		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -180,7 +180,7 @@ func (a *API) CreateFolder(
 	}
 	out := &v1.CreateFolderResponse{}
 	if err := writer.MakeFolder(ctx, r.Msg.GetPath()); err != nil {
-		reason, refused := refusal.By(err)
+		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

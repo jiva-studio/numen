@@ -9,7 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -39,7 +39,7 @@ func (a *API) RenameNote(
 		out.Moved = movedOf(*renamed.Moved)
 	}
 	if err != nil {
-		reason, refused := refusal.By(err)
+		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -70,7 +70,7 @@ func (a *API) RemoveFile(
 
 	removed, err := a.removal(ctx, showing, r.Msg.GetPath(), r.Msg.GetDestroy())
 	if err != nil {
-		reason, refused := refusal.By(err)
+		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

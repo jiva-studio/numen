@@ -1,10 +1,4 @@
-// Package refusal turns an outcome or a write's error into the refusal the
-// protocol carries.
-//
-// Every window that shows a note it could not read, and every window that could
-// not write one, names the reason the same way: the translation is written once
-// and not one per window.
-package refusal
+package wire
 
 import (
 	"errors"
@@ -18,8 +12,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Of says which refusal an outcome is, and whether it is one at all.
-func Of(o note.ReadOutcome) (v1.Refusal, bool) {
+// An outcome or a write's error as the refusal the schema carries.
+//
+// Every window that shows a note it could not read, and every window that could
+// not write one, names the reason the same way: the translation is written once
+// and not one per window.
+
+// RefusalOf says which refusal an outcome is, and whether it is one at all.
+func RefusalOf(o note.ReadOutcome) (v1.Refusal, bool) {
 	switch o {
 	case note.Missing:
 		return v1.Refusal_REFUSAL_MISSING, true
@@ -36,9 +36,9 @@ func Of(o note.ReadOutcome) (v1.Refusal, bool) {
 	}
 }
 
-// By says which refusal a write's error is, and whether it is one at all.
-// Anything else is the vault being out of reach.
-func By(err error) (v1.Refusal, bool) {
+// RefusalBy says which refusal a write's error is, and whether it is one at
+// all. Anything else is the vault being out of reach.
+func RefusalBy(err error) (v1.Refusal, bool) {
 	switch {
 	case errors.Is(err, port.ErrChanged):
 		return v1.Refusal_REFUSAL_STALE, true

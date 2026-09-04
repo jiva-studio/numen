@@ -5,7 +5,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -39,7 +39,7 @@ func (a *API) GetDeckNeighbourhood(
 			Points:    !one.Backlink,
 			Ambiguous: one.Ambiguous,
 		}
-		if reason, refused := refusal.Of(one.Outcome); refused {
+		if reason, refused := wire.RefusalOf(one.Outcome); refused {
 			next.Refusal = &reason
 		}
 		out.Notes = append(out.Notes, next)

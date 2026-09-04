@@ -10,7 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
@@ -33,7 +33,7 @@ func (a *API) ReadNote(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
-	if reason, refused := refusal.Of(found.Outcome); refused {
+	if reason, refused := wire.RefusalOf(found.Outcome); refused {
 		out.Refusal = &reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
@@ -73,7 +73,7 @@ func (a *API) WriteNote(
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{At: fingerprintOf(at)}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -118,7 +118,7 @@ func (a *API) CreateNote(
 	if err == nil {
 		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -147,7 +147,7 @@ func (a *API) WriteLink(
 	defer a.Writing.done()
 
 	if err := a.Notes.Linking.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
-		reason, refused := refusal.By(err)
+		reason, refused := wire.RefusalBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -199,7 +199,7 @@ func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) 
 	if a.Notes.Queries == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.Addressed(ctx, a.Notes.Queries, string(a.Showing().ID), to)
+	return note.Addressed(ctx, a.Notes.Queries, a.Showing().ID, to)
 }
 
 // roleOf is the role a link carries, in the core's words. A link is written

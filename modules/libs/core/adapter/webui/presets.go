@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -33,11 +32,11 @@ func (a *API) GetDeckPreset(
 	}
 	found, err := a.Presets.Of(ctx, showing, r.Msg.GetDeck())
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.GetDeckPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := refusal.Of(found.Outcome); refused {
+	if reason, refused := wire.RefusalOf(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -63,7 +62,7 @@ func (a *API) ListPresets(
 	}
 	held, err := a.Presets.List(ctx, showing)
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(held))}
@@ -119,9 +118,9 @@ func (a *API) ScheduleDeck(
 		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
 		return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.ScheduleDeckResponse{Refusal: &reason}), nil
 }
@@ -139,11 +138,11 @@ func (a *API) ReadPreset(
 	}
 	found, err := a.Presets.Read(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.ReadPresetResponse{Bounds: wire.SettingsBounds()}
-	if reason, refused := refusal.Of(found.Outcome); refused {
+	if reason, refused := wire.RefusalOf(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -191,9 +190,9 @@ func (a *API) WritePreset(
 		reason := v1.Refusal_REFUSAL_NOT_A_PRESET
 		return connect.NewResponse(&v1.WritePresetResponse{Refusal: &reason}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.WritePresetResponse{Refusal: &reason}), nil
 }
@@ -217,7 +216,7 @@ func (a *API) ComputeCurve(
 	}
 	held, err := a.Curves.Execute(ctx, showing, r.Msg.GetPath(), settings)
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: wire.CurveOf(held)}), nil
 }

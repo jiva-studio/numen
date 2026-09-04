@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
 )
 
 // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A
@@ -23,11 +22,11 @@ func (a *API) GetVaultDeckPreset(
 	}
 	found, err := a.Presets.Of(ctx, v, r.Msg.GetDeck())
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.GetVaultDeckPresetResponse{}
-	if reason, refused := refusal.Of(found.Outcome); refused {
+	if reason, refused := wire.RefusalOf(found.Outcome); refused {
 		out.Refusal = &reason
 		return connect.NewResponse(out), nil
 	}
@@ -41,7 +40,7 @@ func (a *API) titled(ctx context.Context, v domain.Vault, path string) string {
 	if a.Notes == nil || path == "" {
 		return ""
 	}
-	found, err := a.Notes.Notes(ctx, string(v.ID), []string{path})
+	found, err := a.Notes.Notes(ctx, v.ID, []string{path})
 	if err != nil {
 		return ""
 	}

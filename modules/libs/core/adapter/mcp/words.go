@@ -5,17 +5,17 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// What a tool says about a refusal. Which refusal a thing is comes from
-// refusal, the same as it does for a window; the sentence is this one's own,
+// What a tool says about a refusal. Which refusal a thing is comes from the
+// wire, the same as it does for a window; the sentence is this one's own,
 // because an agent is told which tool to reach for next and a person is not.
 
 // why is a read's outcome in words an agent can act on.
 func why(c note.Contents) string {
-	reason, refused := refusal.Of(c.Outcome)
+	reason, refused := wire.RefusalOf(c.Outcome)
 	if !refused {
 		return string(c.Outcome)
 	}
@@ -31,7 +31,7 @@ func why(c note.Contents) string {
 // refusing is a write's error in words an agent can act on. An error that is no
 // refusal is handed over as it stands.
 func refusing(err error) string {
-	if reason, refused := refusal.By(err); refused {
+	if reason, refused := wire.RefusalBy(err); refused {
 		return said(reason)
 	}
 	return err.Error()

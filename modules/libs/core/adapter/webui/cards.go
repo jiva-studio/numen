@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/refusal"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
@@ -111,9 +111,9 @@ func (a *API) makes(
 	if errors.Is(err, cards.ErrNoFields) {
 		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return cards.CreateNoteResult{}, nil, connect.NewError(refusal.Coded(err), err)
+		return cards.CreateNoteResult{}, nil, connect.NewError(wire.Coded(err), err)
 	}
 	return cards.CreateNoteResult{}, &reason, nil
 }
@@ -152,9 +152,9 @@ func (a *API) RenameStencilField(
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.RenameStencilFieldResponse{Refusal: &reason}), nil
 }
@@ -172,7 +172,7 @@ func (a *API) ReadStencil(
 	}
 	found, err := a.Cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.ReadStencilResponse{}
@@ -200,7 +200,7 @@ func (a *API) ReadDeck(
 	}
 	found, err := a.Cards.Read.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 
 	out := &v1.ReadDeckResponse{}
@@ -255,9 +255,9 @@ func (a *API) WriteDeck(
 			Refusal: &refusal, Bound: cards.MaxBytes,
 		}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.WriteDeckResponse{Refusal: &reason}), nil
 }
@@ -295,9 +295,9 @@ func (a *API) WriteStencil(
 		}
 		return connect.NewResponse(&v1.WriteStencilResponse{At: fingerprintOf(at)}), nil
 	}
-	reason, refused := refusal.By(err)
+	reason, refused := wire.RefusalBy(err)
 	if !refused {
-		return nil, connect.NewError(refusal.Coded(err), err)
+		return nil, connect.NewError(wire.Coded(err), err)
 	}
 	return connect.NewResponse(&v1.WriteStencilResponse{Refusal: &reason}), nil
 }
@@ -308,7 +308,7 @@ func (a *API) titled(ctx context.Context, showing domain.Vault, path string) str
 	if a.Notes.Queries == nil {
 		return ""
 	}
-	found, err := a.Notes.Queries.Notes(ctx, string(showing.ID), []string{path})
+	found, err := a.Notes.Queries.Notes(ctx, showing.ID, []string{path})
 	if err != nil {
 		return ""
 	}
@@ -324,7 +324,7 @@ func refusedDeck(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.Ok && is != domain.TypeDeck {
 		return v1.Refusal_REFUSAL_NOT_A_DECK, true
 	}
-	return refusal.Of(o)
+	return wire.RefusalOf(o)
 }
 
 // refusedStencil is why a stencil was not read.
@@ -332,5 +332,5 @@ func refusedStencil(o note.ReadOutcome, is domain.NoteType) (v1.Refusal, bool) {
 	if o == note.Ok && is != domain.TypeStencil {
 		return v1.Refusal_REFUSAL_NOT_A_STENCIL, true
 	}
-	return refusal.Of(o)
+	return wire.RefusalOf(o)
 }
