@@ -9,6 +9,7 @@ DESKTOP  := modules/apps/desktop
 LANDING  := modules/apps/landing
 ICON     := modules/tools/icon
 UI       := modules/libs/ui
+WIRE     := modules/libs/wire
 PROTOCOL := modules/libs/protocol
 
 # What has to be on PATH, and who needs it:
@@ -36,6 +37,7 @@ INSTALL ?= npm install
 install: ## fetch every module's dependencies
 	cd $(PROTOCOL) && $(INSTALL) --omit=dev
 	cd $(UI) && $(INSTALL)
+	cd $(WIRE) && $(INSTALL)
 	cd $(DESKTOP)/ui && $(INSTALL)
 	cd $(DESKTOP)/flashcards && $(INSTALL)
 	cd $(LANDING) && $(INSTALL)
