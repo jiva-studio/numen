@@ -14,7 +14,7 @@ import './app.css'
 import { cards, core, documents, recordings, running, vaults } from './vault'
 import type { Attention, Carries, Listed } from './core'
 import { showing } from './showing'
-import { standing } from './plex/standing'
+import { view } from './plex/standing'
 import { reading } from './document/reading'
 import { cornerOf } from './corner'
 import type { Meaning } from './meaning'
@@ -173,7 +173,7 @@ const carried = ref<readonly string[]>([])
 const hungParts = hanging(core, words, tell.under('hanging'))
 
 /** The plex tabs, and the one the person is looking at. */
-const plexes = plexKind(held.host, () => standing(core), {
+const plexes = plexKind(held.host, () => view(core), {
   makes: making,
   ready: () => !failure.value && !indexing.value,
   hangs: () => hungParts.hangs.value,

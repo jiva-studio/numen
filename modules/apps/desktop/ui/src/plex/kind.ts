@@ -16,7 +16,7 @@ import type {
 import { asking } from '../asking'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
-import type { Standing } from './standing'
+import type { View } from './standing'
 import { ticketing } from './tickets'
 import type { Heading, Move, NoteType } from '../core'
 import type { Host, Kind } from '../windowing'
@@ -98,7 +98,7 @@ export type Held = ReturnType<typeof plexing>
  * the window is put in front of, and the one a plex opened after it stands
  * beside.
  */
-export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
+export function plexKind(host: Host, makes: () => View, deps: Plexing) {
   /** Every plex the window holds, and the one the person was last in. */
   const all = () => host.each<Held>(PLEX)
   const front = (): Held | null => host.last<Held>(PLEX)?.held ?? null
@@ -187,7 +187,7 @@ export function plexKind(host: Host, makes: () => Standing, deps: Plexing) {
   return { kind, looking, names, travel, leaves, again }
 }
 
-export function plexing(view: Standing, deps: Plexing) {
+export function plexing(view: View, deps: Plexing) {
   /** What this plex calls each note it draws. */
   const tickets = ticketing()
 

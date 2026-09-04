@@ -1,11 +1,11 @@
 /**
- * Where one plex is standing, and what travelling comes to.
+ * What one plex is showing, and what travelling comes to.
  *
  * Every one of these has a failure that looks like nothing at all: a plex
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { standing, type Neighbours } from './standing'
+import { view, type Neighbours } from './standing'
 import type { Neighbourhood } from '../core'
 
 const answer = (path: string): Neighbourhood => ({
@@ -27,7 +27,7 @@ const fake = (neighbourhood: Neighbours['neighbourhood']): Neighbours => ({ neig
 describe('two questions in flight', () => {
   it('keeps the answer to the last one asked, however they come back', async () => {
     const delays: Record<string, number> = { Slow: 30, Fast: 0 }
-    const plex = standing(
+    const plex = view(
       fake(async (path) => {
         await new Promise((wake) => setTimeout(wake, delays[path] ?? 0))
         return answer(path)
@@ -47,7 +47,7 @@ describe('a note that moved while a question was in flight', () => {
   it('lets go of the answer about where it was', async () => {
     let release = () => {}
     let holding: Promise<void> | null = null
-    const plex = standing(
+    const plex = view(
       fake(async (path) => {
         if (holding) await holding
         return answer(path)
@@ -68,7 +68,7 @@ describe('a note that moved while a question was in flight', () => {
   it('holds on to an answer about a note nothing moved', async () => {
     let release = () => {}
     let holding: Promise<void> | null = null
-    const plex = standing(
+    const plex = view(
       fake(async (path) => {
         if (holding) await holding
         return answer(path)
@@ -88,7 +88,7 @@ describe('a note that moved while a question was in flight', () => {
 describe('the note in focus goes away', () => {
   it('says so, keeps what it is showing, and can come back to it', async () => {
     let holds = true
-    const plex = standing(fake(async (path) => (holds ? answer(path) : nothing())))
+    const plex = view(fake(async (path) => (holds ? answer(path) : nothing())))
 
     await plex.go('Note.md')
     expect(plex.here.value).toBe('Note.md')
@@ -108,7 +108,7 @@ describe('the note in focus goes away', () => {
 
 describe('a plex whose tab has closed', () => {
   it('says nothing about the answer that was on its way', async () => {
-    const plex = standing(
+    const plex = view(
       fake(async () => {
         await new Promise((wake) => setTimeout(wake, 0))
         return nothing()
@@ -124,7 +124,7 @@ describe('a plex whose tab has closed', () => {
 
   it('travels nowhere else', async () => {
     const asked: string[] = []
-    const plex = standing(
+    const plex = view(
       fake(async (path) => {
         asked.push(path)
         return answer(path)
@@ -142,8 +142,8 @@ describe('a plex whose tab has closed', () => {
 describe('two plexes', () => {
   it('travel apart from one another', async () => {
     const vault = fake(async (path) => answer(path))
-    const one = standing(vault)
-    const two = standing(vault)
+    const one = view(vault)
+    const two = view(vault)
 
     await one.go('One.md')
     await two.go('Two.md')
@@ -157,7 +157,7 @@ describe('two plexes', () => {
 
 describe('a vault that changed somewhere else', () => {
   it('leaves the picture on screen standing, answer for answer', async () => {
-    const plex = standing(fake(async (path) => answer(path)))
+    const plex = view(fake(async (path) => answer(path)))
     await plex.go('Entropy.md')
     const drawn = plex.neighbourhood.value
 
@@ -168,7 +168,7 @@ describe('a vault that changed somewhere else', () => {
 
   it('draws again where what is around the note is different', async () => {
     let related: string[] = []
-    const plex = standing(
+    const plex = view(
       fake(async (path) => ({
         focus: { path, title: path },
         focusType: 'note',

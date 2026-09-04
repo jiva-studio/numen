@@ -1,5 +1,5 @@
 /**
- * Where one plex is standing, and how it travels.
+ * What one plex is showing, and how it travels.
  *
  * A plex tab holds one of these, and holds nothing else: the vault is read once
  * for the whole window, and `showing.ts` tells every plex when to ask again.
@@ -14,9 +14,9 @@ export interface Neighbours {
   neighbourhood(path: string): Promise<Neighbourhood>
 }
 
-export type Standing = ReturnType<typeof standing>
+export type View = ReturnType<typeof view>
 
-export function standing(core: Neighbours) {
+export function view(core: Neighbours) {
   const neighbourhood = ref<Neighbourhood | null>(null)
   /**
    * The note this plex is showing, as it asked for it.

@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
-import { standing as stands, type Standing } from './standing'
+import { view as viewing, type View } from './standing'
 import { WORDS as words } from './words'
 import {
   movedTo,
@@ -49,7 +49,7 @@ const around = (
 })
 
 /** A plex standing on a note, which records every note it was sent to. */
-const standing = (at: string, related: readonly string[] = [], types: Types = {}) => {
+const viewOn = (at: string, related: readonly string[] = [], types: Types = {}) => {
   const went: string[] = []
   const view = {
     neighbourhood: ref(around(at, related, types)),
@@ -66,7 +66,7 @@ const standing = (at: string, related: readonly string[] = [], types: Types = {}
     },
     close: () => {},
   }
-  return { view: view as unknown as Standing, went }
+  return { view: view as unknown as View, went }
 }
 
 /** A vault that takes every note it is asked to make, and records the asking. */
@@ -90,7 +90,7 @@ const making = (takes = true) => {
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (at: string, related: readonly string[] = [], takes = true, types: Types = {}) => {
-  const plex = standing(at, related, types)
+  const plex = viewOn(at, related, types)
   const vault = making(takes)
   const opened: [string, string, string][] = []
   const asked: string[] = []
@@ -263,7 +263,7 @@ describe('the menu on a node', () => {
  * them is a plex to offer a note over.
  */
 describe('a plex drawing nothing', () => {
-  const standing = (over: Partial<Plexing>) => {
+  const plex = (over: Partial<Plexing>) => {
     const view = {
       neighbourhood: ref(null),
       here: ref(''),
@@ -272,7 +272,7 @@ describe('a plex drawing nothing', () => {
       follows: () => {},
       close: () => {},
     }
-    return plexing(view as unknown as Standing, {
+    return plexing(view as unknown as View, {
       makes: making().makes,
       ready: () => true,
       hangs: () => true,
@@ -292,15 +292,15 @@ describe('a plex drawing nothing', () => {
   }
 
   it('is an empty vault where the vault is read and opens with no note', () => {
-    expect(standing({}).empty.value).toBe(true)
+    expect(plex({}).empty.value).toBe(true)
   })
 
   it('is not an empty vault while the vault is still being read', () => {
-    expect(standing({ ready: () => false }).empty.value).toBe(false)
+    expect(plex({ ready: () => false }).empty.value).toBe(false)
   })
 
   it('is not an empty vault while the first answer is on its way', () => {
-    expect(standing({ opening: () => 'Opening.md' }).empty.value).toBe(false)
+    expect(plex({ opening: () => 'Opening.md' }).empty.value).toBe(false)
   })
 
   it('is not an empty vault once the plex stands on a note', () => {
@@ -362,7 +362,7 @@ describe('what a note in the picture is called', () => {
 
 describe('the picture', () => {
   it('is nothing while the window has nothing true to draw', () => {
-    const plex = standing('Root.md')
+    const plex = viewOn('Root.md')
     const held = plexing(plex.view, {
       makes: making().makes,
       ready: () => false,
@@ -714,7 +714,7 @@ const inVault = async (focus: string, beside: readonly Beside[] = []) => {
   const opened: [string, string, string][] = []
   const ran: [string, string, string][] = []
 
-  const view = stands({
+  const view = viewing({
     neighbourhood: async (path) => {
       asked.push(path)
       if (holding) await holding
@@ -1038,13 +1038,13 @@ const other: Kept = {
  * working the vault beside the person — and one of these has to take it.
  */
 const window = (opening = 'Opening.md') => {
-  const views: ReturnType<typeof standing>[] = []
+  const views: ReturnType<typeof viewOn>[] = []
   /** Every time the vault was asked where it opens, and what it answered then. */
   const asked: string[] = []
   let first = opening
 
   const makes = () => {
-    const view = standing('')
+    const view = viewOn('')
     views.push(view)
     return view.view
   }
