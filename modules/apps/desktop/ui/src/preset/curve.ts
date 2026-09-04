@@ -7,7 +7,7 @@
  * is arithmetic over the settings alone, and is shown as an approximation.
  */
 import { BOUNDS, DEFAULTS, NOWHERE } from './core'
-import type { Curve, Goal, Mark, Point, Rule, Settings } from './core'
+import type { Curve, Goal, Place, Point, Rule, Settings } from './core'
 
 /** How many places the line drawn in the answer's place is worked out at. */
 const PLACES = 25
@@ -268,7 +268,7 @@ export const approximate = (settings: Settings, today: Date): Curve => {
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = standing(settings, today)
   const place = nearest(grid, value)
-  const now: Mark = { at: place, value, day: days[place] ?? '' }
+  const now: Place = { at: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,
     grid,

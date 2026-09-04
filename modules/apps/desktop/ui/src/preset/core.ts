@@ -10,7 +10,7 @@ import { Counts as Countings, Goal as Goals, Rule as Rules, PresetsService } fro
 import type {
   Stopped,
   Curve as CurveMessage,
-  Mark as MarkMessage,
+  Mark as PlaceMessage,
   Preset as PresetMessage,
   Settings as SettingsMessage,
 } from '@numen/protocol'
@@ -222,16 +222,16 @@ export interface Point {
 }
 
 /** One place on the curve worth pointing at. */
-export interface Mark {
+export interface Place {
   /** Where on the grid it stands, and -1 for a value that falls outside it. */
   readonly at: number
   readonly value: number
-  /** The day at the mark, filled for a goal of a date. */
+  /** The day at the place, filled for a goal of a date. */
   readonly day: string
 }
 
-/** A mark that falls outside the grid. */
-export const NOWHERE: Mark = { at: -1, value: 0, day: '' }
+/** A place that falls outside the grid. */
+export const NOWHERE: Place = { at: -1, value: 0, day: '' }
 
 /** What the one control comes to over the whole range of its goal. */
 /**
@@ -262,8 +262,8 @@ export interface Curve extends Material {
   /** The day of each place, filled for a goal of a date. */
   readonly days: readonly string[]
   readonly at: readonly Point[]
-  readonly now: Mark
-  readonly suggested: Mark
+  readonly now: Place
+  readonly suggested: Place
   /**
    * Whether this is the application's answer. A curve the window worked out
    * for itself stands until that answer lands.
@@ -423,8 +423,8 @@ const curved = (said: CurveMessage | undefined): Curve => ({
     short: one.short,
     backlog: one.backlog,
   })),
-  now: marked(said?.now),
-  suggested: marked(said?.suggested),
+  now: placed(said?.now),
+  suggested: placed(said?.suggested),
   decks: said?.decks ?? 0,
   cards: said?.cards ?? 0,
   overdue: said?.overdue ?? 0,
@@ -432,7 +432,7 @@ const curved = (said: CurveMessage | undefined): Curve => ({
   honest: true,
 })
 
-const marked = (said: MarkMessage | undefined): Mark =>
+const placed = (said: PlaceMessage | undefined): Place =>
   said === undefined ? NOWHERE : { at: said.at, value: said.value, day: said.day }
 
 /** The goal as the schema names it. */
