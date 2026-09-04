@@ -117,8 +117,8 @@ export const Narrow: Story = {
     await expect(empty).toBe(typed)
 
     // The words that do not fit end in an ellipsis rather than wrapping.
-    const standing = canvasElement.querySelector('.composer__standing') as HTMLElement
-    await expect(standing.scrollWidth).toBeGreaterThan(standing.clientWidth)
-    await expect(getComputedStyle(standing).textOverflow).toBe('ellipsis')
+    const shown = canvasElement.querySelector('.composer__placeholder') as HTMLElement
+    await expect(shown.scrollWidth).toBeGreaterThan(shown.clientWidth)
+    await expect(getComputedStyle(shown).textOverflow).toBe('ellipsis')
   },
 }

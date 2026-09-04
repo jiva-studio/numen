@@ -77,7 +77,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
          the trailing space holds the last line open while it is empty. -->
     <div class="composer__grow grid min-w-0">
       <div class="composer__mirror">{{ text }}&nbsp;</div>
-      <div v-if="!text" class="composer__standing text-hushed" aria-hidden="true">
+      <div v-if="!text" class="composer__placeholder text-hushed" aria-hidden="true">
         {{ placeholder }}
       </div>
       <Textarea
@@ -169,7 +169,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
 
 /* One line, then an ellipsis, so a field at rest is one row at every width.
    The field carries the same words for a screen reader to announce. */
-.composer__standing {
+.composer__placeholder {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

@@ -66,14 +66,14 @@ const build = (
   const doc = state.doc
   const blocks = wants === 'blocks'
 
-  const standing = (start: number, end: number) =>
+  const selected = (start: number, end: number) =>
     state.selection.ranges.some((range) => range.from <= end && range.to >= start)
 
-  const away = (node: SyntaxNodeRef) => !standing(node.from, node.to)
+  const away = (node: SyntaxNodeRef) => !selected(node.from, node.to)
 
   const under = (node: SyntaxNodeRef) => {
     const parent = node.node.parent
-    return parent ? standing(parent.from, parent.to) : true
+    return parent ? selected(parent.from, parent.to) : true
   }
 
   /** A mark and the space it is separated from its content by. */
@@ -327,14 +327,14 @@ const coded = (node: SyntaxNode): boolean => {
  * none. A note in brackets is read by the parser every link is read by.
  */
 export const addressAt = (state: EditorState, at: number): string | null => {
-  const standing = syntaxTree(state).resolveInner(at, 1)
-  if (!coded(standing)) {
+  const innermost = syntaxTree(state).resolveInner(at, 1)
+  if (!coded(innermost)) {
     const line = state.doc.lineAt(at)
     const wiki = wikilinkAt(line.text, at - line.from)
     if (wiki) return wiki.address
   }
 
-  for (let node: SyntaxNode | null = standing; node; node = node.parent) {
+  for (let node: SyntaxNode | null = innermost; node; node = node.parent) {
     if (node.name !== 'Link' && node.name !== 'Autolink') continue
     const address = childOf(node, 'URL')
     return address

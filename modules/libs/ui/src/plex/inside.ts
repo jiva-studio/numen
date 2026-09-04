@@ -247,19 +247,19 @@ export function openedTo(hung: HungParts, open: number, wound = 0): OpenParts | 
 
   // The window stands whole on the parts, wound by one at a time.
   const first = Math.min(Math.max(Math.round(wound), 0), furthest(hung))
-  const standing = hung.parts.slice(first, first + hung.shown)
+  const shown = hung.parts.slice(first, first + hung.shown)
 
   // Each part sets off a lead behind the one above it, and the leads together
   // take the same share of the opening whatever number of parts stand. What is
   // left for any one of them to run in is the opening less every lead before it.
-  const many = standing.length
+  const many = shown.length
   const lead = many > 1 ? Math.min(LEAD, SPREAD / (many - 1)) : 0
   const runs = 1 - lead * (many - 1)
 
   /** The deepest a part may set off from and still stand on the ground. */
   const floor = hung.height - 2 * hung.pad - hung.partHeight
 
-  const parts = standing.map((part, at) => {
+  const parts = shown.map((part, at) => {
     const own = easeOut(clamp01((opened - at * lead) / runs))
     const rests = at * hung.partHeight
     const from = Math.min(rests + RISE * hung.partHeight, floor)

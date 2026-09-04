@@ -54,9 +54,9 @@ export function useHold(
   }
 
   const move = (event: PointerEvent) => {
-    const standing = held.value
-    if (!standing) return
-    if (Math.hypot(event.clientX - standing.x, event.clientY - standing.y) > STRAY) letGo()
+    const began = held.value
+    if (!began) return
+    if (Math.hypot(event.clientX - began.x, event.clientY - began.y) > STRAY) letGo()
   }
 
   onScopeDispose(letGo)

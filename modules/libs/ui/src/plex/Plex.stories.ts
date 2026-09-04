@@ -1050,7 +1050,7 @@ export const ArrowedLines: Story = {
       heads().some((head) => holds(head.getBoundingClientRect(), end))
 
     /** Where every head and every end of every line stands, as one reading. */
-    const standing = () =>
+    const reading = () =>
       JSON.stringify([
         heads().map((head) => {
           const box = head.getBoundingClientRect()
@@ -1066,9 +1066,9 @@ export const ArrowedLines: Story = {
     // its second, and the picture stands still once it has.
     await waitFor(async () => {
       await expect(heads()).toHaveLength(2)
-      const was = standing()
+      const was = reading()
       await frame()
-      await expect(standing()).toBe(was)
+      await expect(reading()).toBe(was)
     })
 
     // A head is really drawn, and is not an empty path.

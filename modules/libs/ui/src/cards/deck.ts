@@ -297,16 +297,16 @@ export function grid(
     }
   })
 
-  const standing = (section: string | null): readonly Tile[] =>
+  const tilesUnder = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)
 
-  const head = standing(null)
+  const head = tilesUnder(null)
   const drawn = [
     { id: HEAD, band: null, tiles: head, landing: head.length === 0 && sections.length > 0 },
     ...sections.map((section, index) => ({
       id: section.id,
       band: { id: section.id, name: section.name, at: index + 1 },
-      tiles: standing(section.id),
+      tiles: tilesUnder(section.id),
       landing: false,
     })),
   ]

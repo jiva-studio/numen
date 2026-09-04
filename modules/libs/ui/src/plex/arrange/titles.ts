@@ -198,7 +198,7 @@ function ribbonOf(
  */
 function clearStretches(
   boxAt: (from: number, to: number) => Box,
-  standing: readonly Box[],
+  placed: readonly Box[],
   ends: number,
   step: number,
 ): Stretch[] {
@@ -210,7 +210,7 @@ function clearStretches(
 
   for (let at = ends; at < last; at += step) {
     const box = boxAt(at, Math.min(at + step, last))
-    if (standing.some((other) => meets(other, box))) {
+    if (placed.some((other) => meets(other, box))) {
       if (open !== null) stretches.push({ from: open, to: at })
       open = null
     } else if (open === null) {

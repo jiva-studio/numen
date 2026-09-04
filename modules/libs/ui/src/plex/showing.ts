@@ -51,11 +51,8 @@ export const byDoubleTap = (within: number = TAP): Showing => ({
     return {
       pointerup: (event: PointerEvent) => {
         if (event.pointerType === 'mouse' || !site.ready()) return
-        const standing = first.value
-        if (
-          standing &&
-          Math.hypot(event.clientX - standing.x, event.clientY - standing.y) <= APART
-        ) {
+        const tap = first.value
+        if (tap && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) <= APART) {
           forget()
           site.show(false)
           return
