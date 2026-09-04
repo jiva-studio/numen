@@ -155,6 +155,8 @@ func (a *API) GetDocument(
 	if !doc.hold(ctx) {
 		return nil, connect.NewError(connect.CodeUnavailable, errBusy)
 	}
+	defer doc.release()
+
 	out := &v1.GetDocumentResponse{Pages: int32(doc.scan.Pages())}
 	out.Sheets = make([]*v1.Sheet, out.Pages)
 	for i := range out.Sheets {
@@ -167,7 +169,6 @@ func (a *API) GetDocument(
 		}
 		out.Sheets[i] = &v1.Sheet{Wide: wide, High: high}
 	}
-	doc.release()
 	return connect.NewResponse(out), nil
 }
 
@@ -300,10 +301,21 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 	}
 	go func() {
 		defer a.Viewer.ahead.done()
-		ctx, cancel := context.WithTimeout(context.Background(), a.Viewer.ahead.within)
+		ctx, cancel := context.WithTimeout(a.behind(), a.Viewer.ahead.within)
 		defer cancel()
 		a.picture(ctx, reader, next)
 	}()
+}
+
+// behind is what a drawing nobody asked for runs under: the context the passes
+// behind the vault in the window run under. The vault going ends it, so a
+// window that is closing is not held open by a page nobody has turned to. A
+// window standing on no vault has no passes, and nothing to end.
+func (a *API) behind() context.Context {
+	if on := a.showing.Load(); on != nil {
+		return on.under
+	}
+	return context.Background()
 }
 
 // picture is one page drawn as wide as was asked for. It is called with the

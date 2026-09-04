@@ -117,7 +117,10 @@ type passes struct {
 	cut     func(context.Context, domain.Vault, string) error
 	forgets func(domain.Vault, string)
 
-	// stop ends every pass this vault started, and ended waits for them.
+	// under is what every pass behind this vault runs under, and what work
+	// nobody is waiting for is started under. stop ends them, and ended waits
+	// for them.
+	under context.Context
 	stop  context.CancelFunc
 	ended func()
 }
@@ -550,6 +553,7 @@ func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
 		// A recording whose answer was dropped is one the queue has had no
 		// answer about.
 		forgets: transcribing.Forget,
+		under:   watching,
 		stop:    stop,
 		ended:   ended,
 	}, nil
