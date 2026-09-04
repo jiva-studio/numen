@@ -24,6 +24,14 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Both ends of the move are the root's own names, so neither can be carried
+	// out of it by a link put in the way.
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+
 	handle := opened(t, target)
 	closed := make(chan struct{})
 	go func() {
@@ -32,7 +40,7 @@ func TestASaveWaitsOutAHandleAnotherProgramHolds(t *testing.T) {
 		windows.CloseHandle(handle)
 	}()
 
-	if err := rename(beside, target); err != nil {
+	if err := rename(root, ".Entropy.md.new", "Entropy.md"); err != nil {
 		<-closed
 		t.Fatalf("the save was refused while the file was held: %v", err)
 	}
@@ -84,10 +92,16 @@ func TestASaveOverAHandleNothingLetsGoIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+
 	handle := opened(t, target)
 	defer windows.CloseHandle(handle)
 
-	if err := rename(beside, target); err == nil {
+	if err := rename(root, ".Entropy.md.new", "Entropy.md"); err == nil {
 		t.Error("the save was reported as landed over a file nothing let go of")
 	}
 }
