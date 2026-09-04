@@ -8,13 +8,16 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+
+	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 )
 
 // Appearance is what the window wears: which theme, which half of a colour pair its
 // tokens are read as, and how large it is drawn and its reading text set.
 type Appearance struct {
 	ThemeName string
-	Mode      v1.Mode
+	Mode      appearance.ColorScheme
 
 	// InterfaceScale is how large the window is drawn and TextScale how large the
 	// text a person reads is set, AsDesigned being the size each was designed at.
@@ -90,7 +93,7 @@ func (s *Service) ListThemes(
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               listed,
 		Applied:              applied,
-		Mode:                 worn.Mode,
+		Mode:                 wire.ModeOf(worn.Mode),
 		InterfaceScale:       worn.InterfaceScale,
 		TextScale:            worn.TextScale,
 		InterfaceScaleBounds: bounded(s.InterfaceScaleBounds),
@@ -142,7 +145,7 @@ func (s *Service) WriteAppearance(
 	}
 	chosen := Appearance{
 		ThemeName:      name,
-		Mode:           req.Msg.GetMode(),
+		Mode:           wire.ModeIn(req.Msg.GetMode()),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
 	}
@@ -199,7 +202,7 @@ const again = time.Second
 func (s *Service) worn() Appearance {
 	worn := Appearance{
 		ThemeName:      Default,
-		Mode:           v1.Mode_MODE_SYSTEM,
+		Mode:           appearance.System,
 		InterfaceScale: AsDesigned,
 		TextScale:      AsDesigned,
 	}
@@ -214,9 +217,7 @@ func (s *Service) worn() Appearance {
 	if said.ThemeName != "" {
 		worn.ThemeName = said.ThemeName
 	}
-	if said.Mode != v1.Mode_MODE_UNSPECIFIED {
-		worn.Mode = said.Mode
-	}
+	worn.Mode = said.Mode
 	if said.InterfaceScale > 0 {
 		worn.InterfaceScale = said.InterfaceScale
 	}

@@ -3,8 +3,6 @@ package container
 import (
 	"sync"
 
-	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
-
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
 )
@@ -106,7 +104,7 @@ func (c Config) dressed(said *scales) (theme.Appearance, error) {
 	}
 	worn := theme.Appearance{
 		ThemeName:      held.Appearance.Theme,
-		Mode:           mode(held.Appearance.Mode),
+		Mode:           settings.Mode(held.Appearance.Mode),
 		InterfaceScale: held.Appearance.InterfaceScale,
 		TextScale:      held.Appearance.TextScale,
 	}
@@ -124,7 +122,7 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 	}
 	writing := []settings.Setting{
 		{At: []string{"appearance", "theme"}, Written: chosen.ThemeName},
-		{At: []string{"appearance", "mode"}, Written: word(chosen.Mode)},
+		{At: []string{"appearance", "mode"}, Written: settings.Word(chosen.Mode)},
 	}
 	if chosen.InterfaceScale > 0 {
 		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
@@ -146,26 +144,4 @@ func (c Config) wear(chosen theme.Appearance, said *scales) error {
 	}
 	said.chose(chosen)
 	return nil
-}
-
-// mode and word are the settings' word for a mode and the schema's value for
-// it, put side by side in the one place that knows both.
-func mode(said string) v1.Mode {
-	switch said {
-	case settings.ModeLight:
-		return v1.Mode_MODE_LIGHT
-	case settings.ModeDark:
-		return v1.Mode_MODE_DARK
-	}
-	return v1.Mode_MODE_SYSTEM
-}
-
-func word(mode v1.Mode) string {
-	switch mode {
-	case v1.Mode_MODE_LIGHT:
-		return settings.ModeLight
-	case v1.Mode_MODE_DARK:
-		return settings.ModeDark
-	}
-	return settings.ModeSystem
 }

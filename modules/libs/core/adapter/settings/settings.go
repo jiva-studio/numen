@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
+	"github.com/jiva-studio/numen/modules/libs/core/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/review"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
@@ -108,6 +109,28 @@ const (
 	ModeLight  = "light"
 	ModeDark   = "dark"
 )
+
+// Mode is the word this file writes read back, and Word is the word for one. A
+// word this file does not name is the machine's own choice.
+func Mode(said string) appearance.ColorScheme {
+	switch said {
+	case ModeLight:
+		return appearance.Light
+	case ModeDark:
+		return appearance.Dark
+	}
+	return appearance.System
+}
+
+func Word(mode appearance.ColorScheme) string {
+	switch mode {
+	case appearance.Light:
+		return ModeLight
+	case appearance.Dark:
+		return ModeDark
+	}
+	return ModeSystem
+}
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
 const AsDesigned = 1
