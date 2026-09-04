@@ -148,7 +148,7 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 		// words about the first run that matched. A hit by meaning stands on no
 		// word, and the window opens where the chunk that matched begins.
 		read, hit := nearby(p.Text, p.HitAt)
-		text, at := around(read, marks(read, query), markdown.Counted(read, hit))
+		text, at := around(read, spans(read, query), markdown.Counted(read, hit))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,

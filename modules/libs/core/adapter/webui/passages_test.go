@@ -92,13 +92,13 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := marks(c.text, c.query)
+			got := spans(c.text, c.query)
 			if len(got) != len(c.want) {
-				t.Fatalf("marks(%q, %q) = %+v, want %+v", c.text, c.query, got, c.want)
+				t.Fatalf("spans(%q, %q) = %+v, want %+v", c.text, c.query, got, c.want)
 			}
 			for i := range got {
 				if got[i] != c.want[i] {
-					t.Fatalf("marks(%q, %q) = %+v, want %+v", c.text, c.query, got, c.want)
+					t.Fatalf("spans(%q, %q) = %+v, want %+v", c.text, c.query, got, c.want)
 				}
 			}
 		})
@@ -116,7 +116,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a passage short enough is left as it stands", func(t *testing.T) {
 		text := "no engine beats a reversible engine"
-		at := marks(text, "engine")
+		at := spans(text, "engine")
 
 		cut, kept := around(text, at, 0)
 		if cut != text {
@@ -129,7 +129,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a long passage opens on the words about the first run", func(t *testing.T) {
 		text := long(500) + " engine " + long(500)
-		cut, kept := around(text, marks(text, "engine"), 0)
+		cut, kept := around(text, spans(text, "engine"), 0)
 
 		if len([]rune(cut)) > glancing+2 {
 			t.Errorf("cut is %d characters, want no more than %d and two marks",
@@ -164,7 +164,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a run near the end of a passage opens the window all the same", func(t *testing.T) {
 		text := long(500) + " engine ends here"
-		cut, kept := around(text, marks(text, "engine"), 0)
+		cut, kept := around(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v runs, want the one that matched", kept)
@@ -185,7 +185,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a run near the end of a passage of two bytes a character", func(t *testing.T) {
 		text := strings.Repeat("слово ", 200) + "дышать не можем"
-		cut, kept := around(text, marks(text, "дышать"), 0)
+		cut, kept := around(text, spans(text, "дышать"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v runs, want the one that matched", kept)
@@ -197,7 +197,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a run left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
-		at := marks(text, "engine")
+		at := spans(text, "engine")
 		if len(at) != 2 {
 			t.Fatalf("the passage holds %d runs, want 2", len(at))
 		}
@@ -210,7 +210,7 @@ func TestAPassageIsCutToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("runs stay counted the way a client counts text", func(t *testing.T) {
 		text := "👋 " + long(400) + " engine " + long(400)
-		cut, kept := around(text, marks(text, "engine"), 0)
+		cut, kept := around(text, spans(text, "engine"), 0)
 
 		if len(kept) != 1 {
 			t.Fatalf("kept %+v runs, want 1", kept)

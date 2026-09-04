@@ -9,13 +9,13 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
-// marks is where each word typed stands in a passage, counted the way a client
+// spans is where each word typed stands in a passage, counted the way a client
 // counts text: in UTF-16 code units. The runs come in order and do not overlap.
 //
 // Case is folded and nothing else is. A run begins where a word begins, and
 // ends where one ends; the last word typed may still be growing, so it matches
 // a word by its opening, which is the rule the index matched it by.
-func marks(text, query string) []domain.Span {
+func spans(text, query string) []domain.Span {
 	words := strings.Fields(query)
 	if len(words) == 0 || text == "" {
 		return nil
