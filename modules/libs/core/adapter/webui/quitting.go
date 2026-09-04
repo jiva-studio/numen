@@ -269,10 +269,14 @@ func (a *API) Flushed(
 
 // left is what a client said it has left, in the words this uses. A client with
 // nothing left and one that has written everything both leave the window free
-// to go.
+// to go; one that named nothing has said nothing, and the round waits its bound
+// for it the way it waits for a client that never answered.
 func left(said v1.Owed) owed {
-	if said == v1.Owed_OWED_ASKING {
+	switch said {
+	case v1.Owed_OWED_NOTHING, v1.Owed_OWED_WRITTEN:
+		return wrote
+	case v1.Owed_OWED_ASKING:
 		return asks
 	}
-	return wrote
+	return silent
 }

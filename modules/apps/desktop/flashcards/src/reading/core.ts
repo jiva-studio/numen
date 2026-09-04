@@ -72,4 +72,5 @@ const refused: Record<Refusal, Refused> = {
   [Refusal.NOT_A_DECK]: 'notANote',
   [Refusal.NOT_A_PRESET]: 'notAPreset',
   [Refusal.DECK_TOO_LARGE]: 'tooLarge',
+  [Refusal.STALE]: 'unreadable',
 }

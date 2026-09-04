@@ -314,7 +314,9 @@ func TestAWindowStandingOnNothingSearchesNothing(t *testing.T) {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
-	found, err := f.vault.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{Query: "one"}))
+	found, err := f.vault.Search(t.Context(), connect.NewRequest(&v1.SearchRequest{
+		Query: "one", Way: v1.Way_WAY_EVERY,
+	}))
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)
 	}

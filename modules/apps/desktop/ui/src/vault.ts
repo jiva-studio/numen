@@ -557,8 +557,8 @@ const counted: Record<Countings, Counting> = {
 }
 
 /** How a search is asked, in the words the window uses. */
-const asked: Record<Ways, Way> = {
-  [Ways.UNSPECIFIED]: 'fused',
+const asked: Partial<Record<Ways, Way>> = {
+  [Ways.EVERY]: 'fused',
   [Ways.WORDS]: 'words',
   [Ways.MEANING]: 'meaning',
   [Ways.NAMES]: 'names',
@@ -803,7 +803,7 @@ const filed = (moved: MovedMessage): Moved => ({
 
 /** What a client has left, as the schema names it. */
 const owing: Record<'nothing' | 'written' | 'asking', Owed> = {
-  nothing: Owed.UNSPECIFIED,
+  nothing: Owed.NOTHING,
   written: Owed.WRITTEN,
   asking: Owed.ASKING,
 }

@@ -203,7 +203,6 @@ func (Counts) EnumDescriptor() ([]byte, []int) {
 type Stopped int32
 
 const (
-	// A build that said nothing about it. It is read as scheduling.
 	Stopped_STOPPED_UNSPECIFIED Stopped = 0
 	// The preset schedules: its decks are handed a day of review.
 	Stopped_STOPPED_NOTHING Stopped = 1

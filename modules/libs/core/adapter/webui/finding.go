@@ -17,6 +17,9 @@ import (
 // errNoSearching is what a build with nothing to search the text with answers.
 var errNoSearching = errors.New("this build cannot search the text of a vault")
 
+// errNoWay is a search that named no way to ask it.
+var errNoWay = errors.New("a search says how it is asked")
+
 // How many answers a client gets when it names no number, and the most it may
 // ask for. A window draws a list a person reads; a number past that is a
 // question about the corpus and is answered as the ceiling.
@@ -102,8 +105,13 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 		return connect.NewResponse(&v1.SearchResponse{}), nil
 	}
 
+	way, named := wayOf(r.Msg.GetWay())
+	if !named {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoWay)
+	}
+
 	found, err := a.Finds.Execute(ctx, showing,
-		query, search.Typing(wayOf(r.Msg.GetWay()), atMost(r.Msg.GetLimit())))
+		query, search.Typing(way, atMost(r.Msg.GetLimit())))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -149,19 +157,20 @@ func (a *API) Search(ctx context.Context, r *connect.Request[v1.SearchRequest]) 
 	return connect.NewResponse(out), nil
 }
 
-// wayOf is the way the client named, as the use case names it.
-func wayOf(way v1.Way) search.SearchWay {
+// wayOf is the way the client named, as the use case names it, and whether it
+// named one at all.
+func wayOf(way v1.Way) (search.SearchWay, bool) {
 	switch way {
 	case v1.Way_WAY_WORDS:
-		return search.Lexical
+		return search.Lexical, true
 	case v1.Way_WAY_MEANING:
-		return search.Dense
+		return search.Dense, true
 	case v1.Way_WAY_NAMES:
-		return search.ByName
-	case v1.Way_WAY_UNSPECIFIED:
-		return search.EveryWay
+		return search.ByName, true
+	case v1.Way_WAY_EVERY:
+		return search.EveryWay, true
 	}
-	return search.EveryWay
+	return search.EveryWay, false
 }
 
 // atMost is how many answers to give, from what the client asked for.

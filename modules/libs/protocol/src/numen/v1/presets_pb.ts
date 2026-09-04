@@ -951,8 +951,6 @@ export const CountsSchema: GenEnum<Counts> = /*@__PURE__*/
  */
 export enum Stopped {
   /**
-   * A build that said nothing about it. It is read as scheduling.
-   *
    * @generated from enum value: STOPPED_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,

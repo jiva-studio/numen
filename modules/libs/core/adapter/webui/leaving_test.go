@@ -3,6 +3,8 @@ package webui
 import (
 	"testing"
 	"time"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // closed reports whether a channel has been closed, without waiting on it.
@@ -270,7 +272,10 @@ func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testin
 
 // TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
 func TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo(t *testing.T) {
-	for name, said := range map[string]owed{"nothing owed": left(0), "everything written": left(1)} {
+	for name, said := range map[string]owed{
+		"nothing owed":       left(v1.Owed_OWED_NOTHING),
+		"everything written": left(v1.Owed_OWED_WRITTEN),
+	} {
 		t.Run(name, func(t *testing.T) {
 			var pages leaving
 

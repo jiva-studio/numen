@@ -602,7 +602,6 @@ message Span {
 // Way is how a search is asked. Each way is an order of its own, and a search
 // asked every way fuses them into one.
 enum Way {
-  // Every way, fused into one ranking.
   WAY_UNSPECIFIED = 0;
 
   // The words typed, matched as words.
@@ -615,6 +614,9 @@ enum Way {
   // The names of the sections a source divides into. A hit is the section, and
   // it answers at its own beginning.
   WAY_NAMES = 3;
+
+  // Every one of them, fused into one ranking.
+  WAY_EVERY = 4;
 }
 
 message SearchRequest {
@@ -623,6 +625,7 @@ message SearchRequest {
   // How many passages to answer with. Zero takes the number the vault chooses.
   int32 limit = 2;
 
+  // How the search is asked. A request naming no way is refused.
   Way way = 3;
 }
 
@@ -1078,8 +1081,10 @@ message QuittingResponse {
 
 // Owed is what a caller has left when it answers.
 enum Owed {
-  // Nothing is left.
   OWED_UNSPECIFIED = 0;
+
+  // Nothing is left. The caller held nothing of its own.
+  OWED_NOTHING = 3;
 
   // Everything this caller held is written.
   OWED_WRITTEN = 1;
@@ -1093,7 +1098,8 @@ message FlushedRequest {
   // The token this caller was given when it began listening.
   string token = 1;
 
-  // What this caller has left.
+  // What this caller has left. A request naming none has said nothing, and is
+  // waited for the way one that never answered is waited for.
   Owed owed = 2;
 }
 

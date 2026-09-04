@@ -251,7 +251,6 @@ func (Counting) EnumDescriptor() ([]byte, []int) {
 type Way int32
 
 const (
-	// Every way, fused into one ranking.
 	Way_WAY_UNSPECIFIED Way = 0
 	// The words typed, matched as words.
 	Way_WAY_WORDS Way = 1
@@ -261,6 +260,8 @@ const (
 	// The names of the sections a source divides into. A hit is the section, and
 	// it answers at its own beginning.
 	Way_WAY_NAMES Way = 3
+	// Every one of them, fused into one ranking.
+	Way_WAY_EVERY Way = 4
 )
 
 // Enum value maps for Way.
@@ -270,12 +271,14 @@ var (
 		1: "WAY_WORDS",
 		2: "WAY_MEANING",
 		3: "WAY_NAMES",
+		4: "WAY_EVERY",
 	}
 	Way_value = map[string]int32{
 		"WAY_UNSPECIFIED": 0,
 		"WAY_WORDS":       1,
 		"WAY_MEANING":     2,
 		"WAY_NAMES":       3,
+		"WAY_EVERY":       4,
 	}
 )
 
@@ -601,8 +604,9 @@ func (Presence) EnumDescriptor() ([]byte, []int) {
 type Owed int32
 
 const (
-	// Nothing is left.
 	Owed_OWED_UNSPECIFIED Owed = 0
+	// Nothing is left. The caller held nothing of its own.
+	Owed_OWED_NOTHING Owed = 3
 	// Everything this caller held is written.
 	Owed_OWED_WRITTEN Owed = 1
 	// Something this caller holds could not be written, and a person is being
@@ -614,11 +618,13 @@ const (
 var (
 	Owed_name = map[int32]string{
 		0: "OWED_UNSPECIFIED",
+		3: "OWED_NOTHING",
 		1: "OWED_WRITTEN",
 		2: "OWED_ASKING",
 	}
 	Owed_value = map[string]int32{
 		"OWED_UNSPECIFIED": 0,
+		"OWED_NOTHING":     3,
 		"OWED_WRITTEN":     1,
 		"OWED_ASKING":      2,
 	}
@@ -2777,8 +2783,9 @@ type SearchRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
-	Limit         int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Way           Way   `protobuf:"varint,3,opt,name=way,proto3,enum=numen.v1.Way" json:"way,omitempty"`
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	// How the search is asked. A request naming no way is refused.
+	Way           Way `protobuf:"varint,3,opt,name=way,proto3,enum=numen.v1.Way" json:"way,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4966,7 +4973,8 @@ type FlushedRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The token this caller was given when it began listening.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	// What this caller has left.
+	// What this caller has left. A request naming none has said nothing, and is
+	// waited for the way one that never answered is waited for.
 	Owed          Owed `protobuf:"varint,2,opt,name=owed,proto3,enum=numen.v1.Owed" json:"owed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -5372,12 +5380,13 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fCOUNTING_THINGS\x10\x01\x12\x12\n" +
 	"\x0eCOUNTING_BYTES\x10\x02\x12\x14\n" +
-	"\x10COUNTING_SECONDS\x10\x03*I\n" +
+	"\x10COUNTING_SECONDS\x10\x03*X\n" +
 	"\x03Way\x12\x13\n" +
 	"\x0fWAY_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tWAY_WORDS\x10\x01\x12\x0f\n" +
 	"\vWAY_MEANING\x10\x02\x12\r\n" +
-	"\tWAY_NAMES\x10\x03*p\n" +
+	"\tWAY_NAMES\x10\x03\x12\r\n" +
+	"\tWAY_EVERY\x10\x04*p\n" +
 	"\n" +
 	"SourceKind\x12\x1b\n" +
 	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
@@ -5406,9 +5415,10 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x14PRESENCE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10PRESENCE_PRESENT\x10\x01\x12\x18\n" +
 	"\x14PRESENCE_NOT_FETCHED\x10\x02\x12\x1d\n" +
-	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x03*?\n" +
+	"\x19PRESENCE_NOTHING_TO_FETCH\x10\x03*Q\n" +
 	"\x04Owed\x12\x14\n" +
 	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
+	"\fOWED_NOTHING\x10\x03\x12\x10\n" +
 	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
 	"\vOWED_ASKING\x10\x022\xb9\x0e\n" +
 	"\fVaultService\x128\n" +

@@ -480,6 +480,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			<-release
 			if _, err := f.client.Flushed(context.Background(), connect.NewRequest(&v1.FlushedRequest{
 				Token: stream.Msg().GetToken(),
+				Owed:  v1.Owed_OWED_NOTHING,
 			})); err != nil {
 				t.Error(err)
 			}
