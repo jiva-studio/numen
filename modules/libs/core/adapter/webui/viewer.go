@@ -151,7 +151,10 @@ func (a *API) GetDocument(
 	}
 	defer doc.release()
 
-	out := &v1.GetDocumentResponse{Pages: int32(doc.scan.Pages())}
+	out := &v1.GetDocumentResponse{
+		Pages:       int32(doc.scan.Pages()),
+		Fingerprint: &v1.Fingerprint{Path: print.path, Size: print.size, Mtime: print.mtime},
+	}
 	out.Sheets = make([]*v1.Sheet, out.Pages)
 	for i := range out.Sheets {
 		wide, high, err := doc.scan.Size(i)
@@ -167,8 +170,13 @@ func (a *API) GetDocument(
 }
 
 // Page answers with one page of a document, drawn as wide as was asked for.
+//
+// The address names the bytes it was drawn from, so it is answered only while
+// the file at that path is still those bytes and the picture it answers with
+// never changes. A file rewritten under the same name is a different address,
+// and this one is gone.
 func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
-	at, wide, err := wanted(page, r.URL.Query())
+	at, wide, named, err := wanted(page, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -179,6 +187,10 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 	reader, print, err := a.standing(ctx, path)
 	if err != nil {
 		refuse(w, err)
+		return
+	}
+	if named.size != print.size || named.mtime != print.mtime {
+		refuse(w, errChanged)
 		return
 	}
 
@@ -192,7 +204,7 @@ func (a *API) Page(w http.ResponseWriter, r *http.Request, path, page string) {
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Length", strconv.Itoa(len(body)))
-	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Cache-Control", immutable)
 	w.Write(body)
 }
 
@@ -351,16 +363,20 @@ func encoded(drawn image.Image) ([]byte, error) {
 
 // wanted is which page the window asks for and how wide, in the pixels of the
 // device it draws on.
-func wanted(page string, query url.Values) (at, width int, err error) {
+func wanted(page string, query url.Values) (at, width int, named fingerprint, err error) {
 	at, err = strconv.Atoi(page)
 	if err != nil || at < 0 {
-		return 0, 0, fmt.Errorf("%q is not a page", page)
+		return 0, 0, fingerprint{}, fmt.Errorf("%q is not a page", page)
 	}
 	width, err = strconv.Atoi(query.Get("wide"))
 	if err != nil || width < 1 || width > widestPage {
-		return 0, 0, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
+		return 0, 0, fingerprint{}, fmt.Errorf("wide: %q is not a width", query.Get("wide"))
 	}
-	return at, width, nil
+	named, err = printed(query)
+	if err != nil {
+		return 0, 0, fingerprint{}, err
+	}
+	return at, width, named, nil
 }
 
 // refusedDrawing is the code a question about a document that could not be
@@ -389,7 +405,7 @@ func refuse(w http.ResponseWriter, err error) {
 		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
-	case errors.Is(err, errNoPage), port.NoNote(err):
+	case errors.Is(err, errNoPage), errors.Is(err, errChanged), port.NoNote(err):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, port.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -22,8 +22,10 @@ func TestAFileIsOnePartOfItsAddress(t *testing.T) {
 		at    string
 	}{
 		{"a file", assetOf("library/a.pdf"), "library/a.pdf", "", ""},
-		{"a page of it", pageOf("library/a.pdf", 3, 800), "library/a.pdf", pagesFacet, "3"},
-		{"a file in a folder named for a facet", pageOf("pages/pages/x.pdf", 2, 400), "pages/pages/x.pdf", pagesFacet, "2"},
+		{"a page of it", pageOf("library/a.pdf", 3, 800, fingerprint{}),
+			"library/a.pdf", pagesFacet, "3"},
+		{"a file in a folder named for a facet", pageOf("pages/pages/x.pdf", 2, 400, fingerprint{}),
+			"pages/pages/x.pdf", pagesFacet, "2"},
 		{"a name with a space in it", assetOf("library/A Book.pdf"), "library/A Book.pdf", "", ""},
 	} {
 		t.Run(one.what, func(t *testing.T) {

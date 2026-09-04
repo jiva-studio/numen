@@ -1,13 +1,10 @@
 package webui
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -61,7 +58,7 @@ func (a *API) GetRecording(
 	out := &v1.GetRecordingResponse{
 		Length: int32(heard),
 		Heard:  int32(heard),
-		Media:  a.Playing.Address(showing, ref.Path),
+		Media:  a.Playing.Address(showing, ref),
 		Type:   domain.MediaType(ref.Path),
 	}
 	if len(cues) > 0 {
@@ -350,21 +347,4 @@ func free(ctx context.Context, store port.DerivedStore, name string) bool {
 	}
 	release()
 	return true
-}
-
-// answer writes what the window is told, as the window reads it.
-//
-// The whole of it is made before any of it is written, so a value that will not
-// encode is refused outright and not left as half a body under an answer that
-// said it went well.
-func answer(w http.ResponseWriter, told any) {
-	var out bytes.Buffer
-	if err := json.NewEncoder(&out).Encode(told); err != nil {
-		http.Error(w, "this answer cannot be written out: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	// A window that has gone is nothing to put right here.
-	_, _ = w.Write(out.Bytes())
 }

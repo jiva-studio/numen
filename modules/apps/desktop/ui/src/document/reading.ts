@@ -43,6 +43,8 @@ export interface Sheet {
 export interface Shape {
   readonly pages: number
   readonly sheets: readonly Sheet[]
+  /** The file these pages were read from, as the one string the window carries. */
+  readonly at: string
 }
 
 /** Everything a document tab asks of the application. */
@@ -52,8 +54,11 @@ export interface Documents {
   /**
    * Where one page is drawn `wide` device pixels across, as an address to point
    * a picture at.
+   *
+   * The file the shape came out of is named in the address, so the address is
+   * one drawing of one document and is answered with that or with nothing.
    */
-  page(path: string, at: number, wide: number): string
+  page(path: string, at: number, wide: number, seen: string): string
   /**
    * Where stretches of the document's own text stand on its pages, one answer
    * per stretch and in the order they were asked about. A stretch nothing was
@@ -78,6 +83,8 @@ export function reading(documents: Documents, path: string) {
   const at = ref(0)
   /** How wide the page is drawn, in device pixels. */
   const wide = ref(0)
+  /** The file the pages were read from, which the addresses they are drawn at name. */
+  const seen = ref('')
   /** What is highlighted, page by page: the place the tab turned to. */
   const highlights = ref<readonly Page[]>([])
   /**
@@ -110,7 +117,7 @@ export function reading(documents: Documents, path: string) {
    * the document has been read and the room it is read in has been measured.
    */
   const pictureOf = (page: number): string =>
-    pages.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value) : ''
+    pages.value > 0 && wide.value > 0 ? documents.page(path, page, wide.value, seen.value) : ''
 
   /** Where the page in front is drawn. */
   const picture = computed(() => pictureOf(at.value))
@@ -128,6 +135,7 @@ export function reading(documents: Documents, path: string) {
       if (!open) return
       pages.value = said.pages
       sheets.value = said.sheets
+      seen.value = said.at
     } catch (error) {
       if (!open) return
       trouble.value = String(error)

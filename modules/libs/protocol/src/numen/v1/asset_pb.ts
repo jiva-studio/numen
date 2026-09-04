@@ -16,7 +16,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Stretch } from "./shared_pb.js";
+import type { Fingerprint, Stretch } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/asset.proto.
  */
 export const file_numen_v1_asset: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiRQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldCIjCgVTaGVldBIMCgR3aWRlGAEgASgBEgwKBGhpZ2gYAiABKAEiIwoTR2V0UmVjb3JkaW5nUmVxdWVzdBIMCgRwYXRoGAEgASgJIlIKFEdldFJlY29yZGluZ1Jlc3BvbnNlEg4KBmxlbmd0aBgBIAEoBRINCgVoZWFyZBgCIAEoBRINCgVtZWRpYRgDIAEoCRIMCgR0eXBlGAQgASgJIkQKFUxpc3RIaWdobGlnaHRzUmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgAygLMhEubnVtZW4udjEuU3RyZXRjaCI7ChZMaXN0SGlnaGxpZ2h0c1Jlc3BvbnNlEiEKBHJ1bnMYASADKAsyEy5udW1lbi52MS5IaWdobGlnaHQiKgoJSGlnaGxpZ2h0Eh0KBXBhZ2VzGAEgAygLMg4ubnVtZW4udjEuUGFnZSI0CgRQYWdlEg0KBWluZGV4GAEgASgFEh0KBXJlY3RzGAIgAygLMg4ubnVtZW4udjEuUmVjdCJCCgRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMv4BCgxBc3NldFNlcnZpY2USSgoLR2V0RG9jdW1lbnQSHC5udW1lbi52MS5HZXREb2N1bWVudFJlcXVlc3QaHS5udW1lbi52MS5HZXREb2N1bWVudFJlc3BvbnNlEk0KDEdldFJlY29yZGluZxIdLm51bWVuLnYxLkdldFJlY29yZGluZ1JlcXVlc3QaHi5udW1lbi52MS5HZXRSZWNvcmRpbmdSZXNwb25zZRJTCg5MaXN0SGlnaGxpZ2h0cxIfLm51bWVuLnYxLkxpc3RIaWdobGlnaHRzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9hc3NldC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkicQoTR2V0RG9jdW1lbnRSZXNwb25zZRINCgVwYWdlcxgBIAEoBRIfCgZzaGVldHMYAiADKAsyDy5udW1lbi52MS5TaGVldBIqCgtmaW5nZXJwcmludBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiMKBVNoZWV0EgwKBHdpZGUYASABKAESDAoEaGlnaBgCIAEoASIjChNHZXRSZWNvcmRpbmdSZXF1ZXN0EgwKBHBhdGgYASABKAkiUgoUR2V0UmVjb3JkaW5nUmVzcG9uc2USDgoGbGVuZ3RoGAEgASgFEg0KBWhlYXJkGAIgASgFEg0KBW1lZGlhGAMgASgJEgwKBHR5cGUYBCABKAkiRAoVTGlzdEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoCYXQYAiADKAsyES5udW1lbi52MS5TdHJldGNoIjsKFkxpc3RIaWdobGlnaHRzUmVzcG9uc2USIQoEcnVucxgBIAMoCzITLm51bWVuLnYxLkhpZ2hsaWdodCIqCglIaWdobGlnaHQSHQoFcGFnZXMYASADKAsyDi5udW1lbi52MS5QYWdlIjQKBFBhZ2USDQoFaW5kZXgYASABKAUSHQoFcmVjdHMYAiADKAsyDi5udW1lbi52MS5SZWN0IkIKBFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIy/gEKDEFzc2V0U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USTQoMR2V0UmVjb3JkaW5nEh0ubnVtZW4udjEuR2V0UmVjb3JkaW5nUmVxdWVzdBoeLm51bWVuLnYxLkdldFJlY29yZGluZ1Jlc3BvbnNlElMKDkxpc3RIaWdobGlnaHRzEh8ubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -63,6 +63,15 @@ export type GetDocumentResponse = Message<"numen.v1.GetDocumentResponse"> & {
    * @generated from field: repeated numen.v1.Sheet sheets = 2;
    */
   sheets: Sheet[];
+
+  /**
+   * Which bytes these pages were read from. It stands in the address a page is
+   * drawn at, so an address names one drawing of one document and answers the
+   * same picture for as long as it answers at all.
+   *
+   * @generated from field: numen.v1.Fingerprint fingerprint = 3;
+   */
+  fingerprint?: Fingerprint | undefined;
 };
 
 /**

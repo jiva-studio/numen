@@ -35,7 +35,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	alone(api)
 	kept := onDisk(t, api)
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	_, drawn, _ := from.counted()
@@ -46,7 +46,7 @@ func TestAPageDrawnBeforeIsNotDrawnAgain(t *testing.T) {
 	// Nothing in memory, the way a window opened again begins.
 	api.Viewer.drawn.Store(drawings())
 
-	out := ask(handler, pageOf(book, 0, 400))
+	out := ask(handler, drawnAt(t, api, book, 0, 400))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
@@ -67,7 +67,7 @@ func TestAPageAtAnotherWidthIsAnotherDrawing(t *testing.T) {
 	kept := onDisk(t, api)
 
 	for _, wide := range []int{400, 800} {
-		if out := ask(handler, pageOf(book, 0, wide)); out.Code != http.StatusOK {
+		if out := ask(handler, drawnAt(t, api, book, 0, wide)); out.Code != http.StatusOK {
 			t.Fatalf("asked for a page %d wide and got %d", wide, out.Code)
 		}
 	}
@@ -84,7 +84,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	alone(api)
 	kept := onDisk(t, api)
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	_, drawn, _ := from.counted()
@@ -99,7 +99,7 @@ func TestADocumentRewrittenIsDrawnAgain(t *testing.T) {
 	}
 	api.Viewer.drawn.Store(drawings())
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
 	if _, again, _ := from.counted(); again <= drawn {
@@ -119,7 +119,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	kept := onDisk(t, api)
 
 	for at := 0; at < 4; at++ {
-		if out := ask(handler, pageOf(book, at, 400)); out.Code != http.StatusOK {
+		if out := ask(handler, drawnAt(t, api, book, at, 400)); out.Code != http.StatusOK {
 			t.Fatalf("asked for page %d and got %d", at, out.Code)
 		}
 	}

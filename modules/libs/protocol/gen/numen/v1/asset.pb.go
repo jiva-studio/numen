@@ -84,7 +84,11 @@ type GetDocumentResponse struct {
 	Pages int32 `protobuf:"varint,1,opt,name=pages,proto3" json:"pages,omitempty"`
 	// How large each page is, in page order. A page whose size could not be read
 	// stands at nothing, and the page after it is still where it was.
-	Sheets        []*Sheet `protobuf:"bytes,2,rep,name=sheets,proto3" json:"sheets,omitempty"`
+	Sheets []*Sheet `protobuf:"bytes,2,rep,name=sheets,proto3" json:"sheets,omitempty"`
+	// Which bytes these pages were read from. It stands in the address a page is
+	// drawn at, so an address names one drawing of one document and answers the
+	// same picture for as long as it answers at all.
+	Fingerprint   *Fingerprint `protobuf:"bytes,3,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -129,6 +133,13 @@ func (x *GetDocumentResponse) GetPages() int32 {
 func (x *GetDocumentResponse) GetSheets() []*Sheet {
 	if x != nil {
 		return x.Sheets
+	}
+	return nil
+}
+
+func (x *GetDocumentResponse) GetFingerprint() *Fingerprint {
+	if x != nil {
+		return x.Fingerprint
 	}
 	return nil
 }
@@ -583,10 +594,11 @@ const file_numen_v1_asset_proto_rawDesc = "" +
 	"\n" +
 	"\x14numen/v1/asset.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"T\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x8d\x01\n" +
 	"\x13GetDocumentResponse\x12\x14\n" +
 	"\x05pages\x18\x01 \x01(\x05R\x05pages\x12'\n" +
-	"\x06sheets\x18\x02 \x03(\v2\x0f.numen.v1.SheetR\x06sheets\"/\n" +
+	"\x06sheets\x18\x02 \x03(\v2\x0f.numen.v1.SheetR\x06sheets\x127\n" +
+	"\vfingerprint\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"/\n" +
 	"\x05Sheet\x12\x12\n" +
 	"\x04wide\x18\x01 \x01(\x01R\x04wide\x12\x12\n" +
 	"\x04high\x18\x02 \x01(\x01R\x04high\")\n" +
@@ -641,25 +653,27 @@ var file_numen_v1_asset_proto_goTypes = []any{
 	(*Highlight)(nil),              // 7: numen.v1.Highlight
 	(*Page)(nil),                   // 8: numen.v1.Page
 	(*Rect)(nil),                   // 9: numen.v1.Rect
-	(*Stretch)(nil),                // 10: numen.v1.Stretch
+	(*Fingerprint)(nil),            // 10: numen.v1.Fingerprint
+	(*Stretch)(nil),                // 11: numen.v1.Stretch
 }
 var file_numen_v1_asset_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.GetDocumentResponse.sheets:type_name -> numen.v1.Sheet
-	10, // 1: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
-	7,  // 2: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
-	8,  // 3: numen.v1.Highlight.pages:type_name -> numen.v1.Page
-	9,  // 4: numen.v1.Page.rects:type_name -> numen.v1.Rect
-	0,  // 5: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	3,  // 6: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
-	5,  // 7: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
-	1,  // 8: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	4,  // 9: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
-	6,  // 10: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
-	8,  // [8:11] is the sub-list for method output_type
-	5,  // [5:8] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	11, // 2: numen.v1.ListHighlightsRequest.at:type_name -> numen.v1.Stretch
+	7,  // 3: numen.v1.ListHighlightsResponse.runs:type_name -> numen.v1.Highlight
+	8,  // 4: numen.v1.Highlight.pages:type_name -> numen.v1.Page
+	9,  // 5: numen.v1.Page.rects:type_name -> numen.v1.Rect
+	0,  // 6: numen.v1.AssetService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	3,  // 7: numen.v1.AssetService.GetRecording:input_type -> numen.v1.GetRecordingRequest
+	5,  // 8: numen.v1.AssetService.ListHighlights:input_type -> numen.v1.ListHighlightsRequest
+	1,  // 9: numen.v1.AssetService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	4,  // 10: numen.v1.AssetService.GetRecording:output_type -> numen.v1.GetRecordingResponse
+	6,  // 11: numen.v1.AssetService.ListHighlights:output_type -> numen.v1.ListHighlightsResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_asset_proto_init() }

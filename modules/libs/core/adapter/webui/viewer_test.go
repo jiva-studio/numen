@@ -152,6 +152,22 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 	return out
 }
 
+// printOf is which bytes the file at a path is, as an address names them.
+func printOf(t *testing.T, api *API, path string) fingerprint {
+	t.Helper()
+	_, print, err := api.standing(t.Context(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return print
+}
+
+// drawnAt is where one page of a file of this window's vault is drawn.
+func drawnAt(t *testing.T, api *API, path string, at, wide int) string {
+	t.Helper()
+	return pageOf(path, at, wide, printOf(t, api, path))
+}
+
 // A page comes back drawn at least as wide as the window asked for it, and
 // keeping its shape. A resolution is a whole number, so the width lands a pixel
 // or two over; the window lays the page out at the width it asked for, and a
@@ -162,7 +178,7 @@ func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 			api, handler := drawnFrom(t, sheets(4))
 			alone(api)
 
-			out := ask(handler, pageOf(book, 0, wide))
+			out := ask(handler, drawnAt(t, api, book, 0, wide))
 			if out.Code != http.StatusOK {
 				t.Fatalf("asked for a page and got %d: %s", out.Code, out.Body)
 			}
@@ -225,7 +241,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 			for _, url := range []string{
 				assetOf(path),
-				pageOf(path, 0, 400),
+				pageOf(path, 0, 400, fingerprint{}),
 			} {
 				out := ask(handler, url)
 				if out.Code == http.StatusOK {
@@ -259,11 +275,41 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			api, handler := drawnFrom(t, sheets(4))
 			alone(api)
 
-			out := ask(handler, assetOf(book)+"/"+pagesFacet+"/"+asked)
+			join := "&"
+			if one.wide == "" {
+				join = "?"
+			}
+			at := assetOf(book) + "/" + pagesFacet + "/" + asked +
+				join + printing(printOf(t, api, book))
+			out := ask(handler, at)
 			if out.Code != one.want {
 				t.Errorf("asking for %s was answered %d, not %d", asked, out.Code, one.want)
 			}
 		})
+	}
+}
+
+// An address is answered only while the file is the bytes the address names.
+//
+// It is what lets a drawn page be kept: the address stands for one drawing of
+// one document, so a document rewritten under the same name is a different
+// address and this one is gone rather than answering another picture.
+func TestAnAddressNamingOtherBytesIsRefused(t *testing.T) {
+	api, handler := drawnFrom(t, sheets(4))
+	alone(api)
+
+	print := printOf(t, api, book)
+	held := ask(handler, pageOf(book, 0, 400, print))
+	if held.Code != http.StatusOK {
+		t.Fatalf("asked for a page and got %d: %s", held.Code, held.Body)
+	}
+	if said := held.Header().Get("Cache-Control"); said != immutable {
+		t.Errorf("a page that may be kept was answered %q", said)
+	}
+
+	print.mtime++
+	if out := ask(handler, pageOf(book, 0, 400, print)); out.Code != http.StatusNotFound {
+		t.Errorf("an address naming bytes the file is not was answered %d", out.Code)
 	}
 }
 
@@ -274,7 +320,7 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 	api, handler := drawnFrom(t, from)
 	alone(api)
 
-	first := ask(handler, pageOf(book, 0, 400))
+	first := ask(handler, drawnAt(t, api, book, 0, 400))
 	if first.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", first.Code, first.Body)
 	}
@@ -283,7 +329,7 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 		t.Fatalf("the document was opened %d times", opens)
 	}
 
-	again := ask(handler, pageOf(book, 0, 400))
+	again := ask(handler, drawnAt(t, api, book, 0, 400))
 	if again.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", again.Code)
 	}
@@ -297,7 +343,7 @@ func TestAPageDrawnIsNotDrawnAgain(t *testing.T) {
 
 	// Another page of the same document is drawn out of the document already
 	// open.
-	if out := ask(handler, pageOf(book, 2, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 2, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for another page and got %d", out.Code)
 	}
 	if opensAgain, _, _ := from.counted(); opensAgain != opens {
@@ -313,12 +359,12 @@ func TestAPageDroppedForRoomIsDrawnAgain(t *testing.T) {
 	alone(api)
 	api.Viewer.drawn.Load().limit = 1
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	_, drawn, _ := from.counted()
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the page again and got %d", out.Code)
 	}
 	if _, drawnAgain, _ := from.counted(); drawnAgain <= drawn {
@@ -341,7 +387,7 @@ func TestManyAsksForOnePageDrawItOnce(t *testing.T) {
 		asking.Add(1)
 		go func() {
 			defer asking.Done()
-			out := ask(handler, pageOf(book, 0, 400))
+			out := ask(handler, drawnAt(t, api, book, 0, 400))
 			codes[i], bodies[i] = out.Code, out.Body.String()
 		}()
 	}
@@ -391,16 +437,16 @@ func TestManyAsksForOneDocumentOpenItOnce(t *testing.T) {
 // The page after the one asked for is drawn before anybody asks for it.
 func TestTheNextPageIsDrawnBeforeItIsAsked(t *testing.T) {
 	from := sheets(4)
-	_, handler := drawnFrom(t, from)
+	api, handler := drawnFrom(t, from)
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	eventually(t, "the next page was not drawn ahead", func() bool {
 		return from.drewPage(1) == 1
 	})
 
-	if out := ask(handler, pageOf(book, 1, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 1, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for the next page and got %d", out.Code)
 	}
 	// Asking for it draws the page after it, and not it again.
@@ -427,7 +473,7 @@ func TestADocumentThatCannotBeReachedInTimeIsBusy(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("what the document is was refused %v, not that it is busy", err)
 	}
-	out := ask(handler, pageOf(book, 0, 400))
+	out := ask(handler, drawnAt(t, api, book, 0, 400))
 	if out.Code != http.StatusServiceUnavailable {
 		t.Errorf("a page was answered %d, not that the document is busy", out.Code)
 	}
@@ -455,7 +501,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 	alone(api)
 	api.Viewer.docs.Load().idleFor = 10 * time.Millisecond
 
-	if out := ask(handler, pageOf(book, 0, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 0, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d", out.Code)
 	}
 	eventually(t, "the document was never closed", func() bool {
@@ -463,7 +509,7 @@ func TestADocumentNobodyIsLookingAtIsClosed(t *testing.T) {
 		return closed == 1
 	})
 
-	if out := ask(handler, pageOf(book, 1, 400)); out.Code != http.StatusOK {
+	if out := ask(handler, drawnAt(t, api, book, 1, 400)); out.Code != http.StatusOK {
 		t.Fatalf("asked for another page and got %d", out.Code)
 	}
 	if opens, _, _ := from.counted(); opens != 2 {
@@ -480,7 +526,7 @@ func TestOnlySoManyDocumentsAreHeldOpen(t *testing.T) {
 	api.Viewer.docs.Load().limit = 1
 
 	for _, path := range []string{book, another} {
-		if out := ask(handler, pageOf(path, 0, 400)); out.Code != http.StatusOK {
+		if out := ask(handler, drawnAt(t, api, path, 0, 400)); out.Code != http.StatusOK {
 			t.Fatalf("asked for a page of %s and got %d", path, out.Code)
 		}
 	}
@@ -502,7 +548,7 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 		t.Fatalf("the document came back as %+v", told)
 	}
 
-	page := ask(handler, pageOf(book, 0, 500))
+	page := ask(handler, drawnAt(t, api, book, 0, 500))
 	if page.Code != http.StatusOK {
 		t.Fatalf("asked for a page and got %d: %s", page.Code, page.Body)
 	}
@@ -531,7 +577,7 @@ func TestTheWindowIsToldWhatItMayLoad(t *testing.T) {
 	api, handler := drawnFrom(t, sheets(4))
 	alone(api)
 
-	allowed := ask(handler, pageOf(book, 0, 400)).Header().Get("Content-Security-Policy")
+	allowed := ask(handler, drawnAt(t, api, book, 0, 400)).Header().Get("Content-Security-Policy")
 	if allowed == "" {
 		t.Fatal("nothing was said about what the window may load")
 	}

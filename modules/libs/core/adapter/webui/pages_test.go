@@ -372,7 +372,7 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := pageOf("Note.md", 0, 800)
+		at := pageOf("Note.md", 0, 800, fingerprint{})
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun

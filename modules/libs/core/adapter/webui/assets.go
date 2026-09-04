@@ -1,16 +1,18 @@
 package webui
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 // A page of a document the vault holds is bytes, and bytes are what this route
 // answers:
 //
-//	GET /assets/<id>/pages/<n>?wide=W   one page, drawn to that width
+//	GET /assets/<id>/pages/<n>?wide=W&size=S&mtime=T   one page, drawn to that width
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
 // window holds.
@@ -77,6 +79,33 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 // hangs off it is the next.
 func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
-func pageOf(path string, at, wide int) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d", assetOf(path), pagesFacet, at, wide)
+func pageOf(path string, at, wide int, print fingerprint) string {
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetOf(path), pagesFacet, at, wide, printing(print))
+}
+
+// An address that names which bytes it is about answers those bytes or nothing,
+// so what it answers with may be kept for as long as anything keeps anything.
+const immutable = "public, max-age=31536000, immutable"
+
+// errChanged is a file that is no longer the one the address was given out for.
+// The address is gone: the caller asks the vault again and is given another.
+var errChanged = errors.New("the file changed since this address was given out")
+
+// printing is a fingerprint as an address carries it, and printed is it read
+// back. The path is a segment of the address already, so what is written here
+// is the rest of what says which bytes the file is.
+func printing(print fingerprint) string {
+	return fmt.Sprintf("size=%d&mtime=%d", print.size, print.mtime)
+}
+
+func printed(query url.Values) (fingerprint, error) {
+	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
+	if err != nil {
+		return fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
+	}
+	mtime, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
+	if err != nil {
+		return fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
+	}
+	return fingerprint{size: size, mtime: mtime}, nil
 }

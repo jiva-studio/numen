@@ -343,7 +343,8 @@ func TestNoDocumentIsDrawnForAWindowStandingOnNothing(t *testing.T) {
 	// with no vault under it reaches.
 	const standing = "serve.go"
 
-	answer, err := f.server.Client().Get(f.server.URL + "/assets/" + standing + "/pages/0?wide=800")
+	answer, err := f.server.Client().Get(
+		f.server.URL + "/assets/" + standing + "/pages/0?wide=800&size=1&mtime=1")
 	if err != nil {
 		t.Fatal(err)
 	}

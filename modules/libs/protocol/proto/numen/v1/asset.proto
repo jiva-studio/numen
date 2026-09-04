@@ -50,6 +50,11 @@ message GetDocumentResponse {
   // How large each page is, in page order. A page whose size could not be read
   // stands at nothing, and the page after it is still where it was.
   repeated Sheet sheets = 2;
+
+  // Which bytes these pages were read from. It stands in the address a page is
+  // drawn at, so an address names one drawing of one document and answers the
+  // same picture for as long as it answers at all.
+  Fingerprint fingerprint = 3;
 }
 
 // A Sheet is one page's size in the document's own units. A client draws a page

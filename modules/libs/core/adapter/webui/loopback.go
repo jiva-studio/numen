@@ -122,11 +122,17 @@ func (l *Loopback) serving() http.Handler {
 // Address is where the file at a path in a vault is read from. A build that
 // opened no socket, and a socket that stopped answering, both answer with
 // nowhere.
-func (l *Loopback) Address(vault domain.Vault, path string) string {
+//
+// The address names which bytes the file was when it was given out, so a player
+// loaded from it plays one recording through and is not spliced with another
+// halfway. A file rewritten under the same name is a different address.
+func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}
-	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) + "/" + url.PathEscape(path)
+	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
+		"/" + url.PathEscape(ref.Path) +
+		"?" + printing(fingerprint{size: ref.Size, mtime: ref.ModTime})
 }
 
 // Close stops answering.
@@ -148,6 +154,11 @@ const errNoVaultNamed = "no vault of that name"
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
 func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
+	named, err := printed(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	held, ok := a.vaultOf(id)
 	if !ok {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
@@ -167,6 +178,10 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 		refuse(w, err)
 		return
 	}
+	if named.size != ref.Size || named.mtime != ref.ModTime {
+		refuse(w, errChanged)
+		return
+	}
 	file, err := reader.Open(r.Context(), ref.Path)
 	if err != nil {
 		refuse(w, err)
@@ -174,7 +189,7 @@ func (a *API) File(w http.ResponseWriter, r *http.Request, id, at string) {
 	}
 	defer file.Close()
 
-	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Cache-Control", immutable)
 	if named := domain.MediaType(ref.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}

@@ -116,7 +116,7 @@ func TestARecordingIsPlayedFromItsOwnBytes(t *testing.T) {
 	api, _ := listeningTo(t, nil)
 	back, handler := played(t, api)
 
-	out := ask(handler, back.Address(api.Showing(), talk))
+	out := ask(handler, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk)))
 	if out.Code != http.StatusOK {
 		t.Fatalf("asked for the recording and got %d: %s", out.Code, out.Body)
 	}
@@ -138,7 +138,7 @@ func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
 	back, handler := played(t, api)
 
 	out := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, back.Address(api.Showing(), talk), nil)
+	r := httptest.NewRequest(http.MethodGet, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk)), nil)
 	r.Header.Set("Range", "bytes=4-12")
 	handler.ServeHTTP(out, r)
 
@@ -187,7 +187,7 @@ func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
 		t.Errorf("a recording nobody heard says %+v", told.GetCues())
 	}
 	back, playing := played(t, api)
-	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
@@ -251,7 +251,7 @@ func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	_ = api.Serving(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
 	back, playing := played(t, api)
-	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
+	if out := ask(playing, back.Address(api.Showing(), statOf(t, api, api.Showing(), talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
 	}
 }
