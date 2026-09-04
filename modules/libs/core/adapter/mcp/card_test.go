@@ -2,6 +2,7 @@ package mcp_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -603,6 +604,36 @@ func TestRenamingAFieldReachesTheCardsCutByThatStencil(t *testing.T) {
 	if !strings.Contains(written, "## Alpaca ^"+alpaca+"\n\nsomebody's prose\n\n### Name\n") ||
 		!strings.Contains(written, "### Height\n\nabout 36\"") {
 		t.Errorf("a card of no stencil was rewritten: %q", written)
+	}
+}
+
+// A rename reads and writes every deck the vault holds, so what bounds it is
+// how many there are. Stopping partway leaves values under a heading nothing
+// declares, which is the fault the rename exists to prevent, so a vault past
+// the bound is refused before the stencil is touched.
+func TestRenamingAFieldIsRefusedWhereTheVaultHoldsTooManyDecks(t *testing.T) {
+	notes := vault()
+	for i := range 200 {
+		notes[fmt.Sprintf("Deck %d.md", i)] = "---\ntype: deck\n---\n\n# Deck\n"
+	}
+	session, v := connected(t, notes)
+
+	got := failing(t, session, "card_field_rename", map[string]any{
+		"path": "Animal.md", "from": "Height", "to": "Shoulder height",
+	})
+	for _, said := range []string{"201", "200"} {
+		if !strings.Contains(got, said) {
+			t.Errorf("the refusal says %q, and nothing of %s", got, said)
+		}
+	}
+
+	// Refused before anything was written: the stencil still declares the name
+	// it had, and so does the deck cut by it.
+	if written := held(t, v, "Animal.md"); !strings.Contains(written, "- Height") {
+		t.Errorf("the stencil was written: %q", written)
+	}
+	if written := held(t, v, "Animals.md"); !strings.Contains(written, "### Height\n\nabout 45\"") {
+		t.Errorf("a deck was written: %q", written)
 	}
 }
 

@@ -22,6 +22,18 @@ const (
 	maxCards    = 50
 )
 
+// maxDecks is how many decks a vault may hold and still have a field renamed
+// through these tools.
+//
+// A field's name is a heading in every card of every deck its stencil cuts, so
+// the rename reads and writes every deck the vault holds, one behind the other
+// under the write lock. Stopping partway is worse than not starting: values
+// left under a heading nothing declares is the fault the rename exists to
+// prevent. So a vault past this is refused before the stencil is written, and
+// the person renames the field in the window, where it is the one thing they
+// asked for rather than a step inside somebody's turn.
+const maxDecks = 200
+
 // Stencil is a stencil as the list of them names it.
 type Stencil struct {
 	Path string `json:"path" jsonschema:"the stencil's path relative to the vault folder"`
@@ -477,7 +489,9 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			"Every field a stencil declares stands under its own heading in every card, " +
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
-			"old heading.",
+			"old heading. Every deck of the vault is read for this, so a vault holding " +
+			"more than " + fmt.Sprint(maxDecks) + " of them is refused whole and the " +
+			"person renames the field in the window.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path string `json:"path" jsonschema:"the stencil that declares the field"`
 		From string `json:"from" jsonschema:"the field's name now"`
@@ -492,7 +506,18 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			Cards      int      `json:"cards" jsonschema:"how many headings were rewritten"`
 			NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 		}
-		renamed, err := core.Cards.RenameField.Execute(ctx, core.shown().Vault, cards.Rename{
+		showing := core.shown().Vault
+		held, err := core.Notes.Queries.OfType(ctx, showing.ID, domain.TypeDeck)
+		if err != nil {
+			return nil, out{}, err
+		}
+		if len(held) > maxDecks {
+			return nil, out{}, fmt.Errorf(
+				"this rename reads and writes every deck in the vault, and there are %d of them, "+
+					"which is more than the %d this does at once: rename the field in the window",
+				len(held), maxDecks)
+		}
+		renamed, err := core.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 			Stencil: in.Path, From: in.From, To: in.To,
 		})
 		if err != nil {
