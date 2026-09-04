@@ -60,7 +60,7 @@ func TestEditLoad(t *testing.T) {
 	}
 	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	opened := cfg.Opening(db)
+	opened := cfg.VaultOpener(db)
 
 	reading := time.Now()
 	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, waking(time.Hour), &pending{}, io.Discard)

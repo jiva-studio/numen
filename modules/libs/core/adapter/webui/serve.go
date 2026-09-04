@@ -103,7 +103,7 @@ func (s *shutting) over(gone bool) {
 //
 // It is published as one, through API.on, and every request reads it there.
 type showing struct {
-	opening      *container.Opening
+	opening      *container.VaultOpener
 	recognising  *source.Recognising
 	transcribing *source.Transcribing
 
@@ -521,7 +521,7 @@ func (o *Opened) begins(v domain.Vault, rebuild bool) (*showing, error) {
 
 	// Opening a vault is the same act in both windows, so it is one thing in the
 	// container. What this window says about it while it runs is below.
-	opening := cfg.Opening(o.Index)
+	opening := cfg.VaultOpener(o.Index)
 	opening.Rebuild = rebuild
 
 	ended := begin(watching, v, cfg, o.Index, o.API, opening,
@@ -845,7 +845,7 @@ func begin(
 	cfg container.Config,
 	db *container.Index,
 	api *API,
-	opening *container.Opening,
+	opening *container.VaultOpener,
 	readers port.VaultReaders,
 	embedder port.Embedder,
 	wake nudges,

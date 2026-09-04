@@ -36,7 +36,7 @@ func (r *vaultRows) Save(_ context.Context, v domain.Vault) error {
 	return nil
 }
 
-func (r *vaultRows) Register(context.Context, domain.Vault) error { return nil }
+func (r *vaultRows) Register(context.Context, domain.VaultID) error { return nil }
 
 func (r *vaultRows) Forget(_ context.Context, vaultID string) error {
 	r.mu.Lock()

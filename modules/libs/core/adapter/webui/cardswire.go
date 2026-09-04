@@ -31,7 +31,7 @@ func stencilOf(path, title string, s format.CardStencil) *v1.Stencil {
 }
 
 // offeredOf is one stencil as the list of them names it.
-func offeredOf(s cards.Listed) *v1.Offered {
+func offeredOf(s cards.StencilSummary) *v1.Offered {
 	return &v1.Offered{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 

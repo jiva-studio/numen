@@ -97,7 +97,7 @@ type API struct {
 	// over the whole range of its goal. A build without them answers that
 	// presets cannot be worked here.
 	Presets *flashcards.Presets
-	Curves  *flashcards.Curves
+	Curves  *flashcards.ProjectCurve
 
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
