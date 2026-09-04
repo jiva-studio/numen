@@ -1,8 +1,8 @@
 package domain
 
-// Attention is what a person has open: every tab of their window, and which of
+// OpenTabs is what a person has open: every tab of their window, and which of
 // them they are looking at.
-type Attention struct {
+type OpenTabs struct {
 	// Tabs are every tab open, in the order the person was last in them.
 	Tabs []Tab
 	// FrontID is the tab in front, by its id. Empty where the window has
@@ -12,9 +12,9 @@ type Attention struct {
 
 // Fronted is the tab the person is looking at. A window holding none answers
 // with no tab at all.
-func (a Attention) Fronted() (Tab, bool) {
-	for _, one := range a.Tabs {
-		if one.ID != "" && one.ID == a.FrontID {
+func (o OpenTabs) Fronted() (Tab, bool) {
+	for _, one := range o.Tabs {
+		if one.ID != "" && one.ID == o.FrontID {
 			return one, true
 		}
 	}

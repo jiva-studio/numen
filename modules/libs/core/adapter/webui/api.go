@@ -112,15 +112,15 @@ type API struct {
 	// place be put in front of the person.
 	Places audience[domain.Place]
 
-	// attention is what the person has open, as the window last said. It is
+	// openTabs is what the person has open, as the window last said. It is
 	// replaced while requests are being served, so every reader takes it
 	// through Attended.
-	attention atomic.Pointer[domain.Attention]
+	openTabs atomic.Pointer[domain.OpenTabs]
 
 	// Attends hears what the person has open each time the window says it,
 	// once what it said stands. A build without one takes the report and tells
 	// nobody.
-	Attends func(domain.Attention)
+	Attends func(domain.OpenTabs)
 
 	// Writing is the writes taken and not yet finished.
 	Writing inflight

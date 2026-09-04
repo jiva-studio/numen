@@ -19,10 +19,10 @@ type tabbed struct {
 
 // attending is the tools as an agent meets them, with a window saying what the
 // person has open.
-func attending(t *testing.T, open domain.Attention) *sdk.ClientSession {
+func attending(t *testing.T, open domain.OpenTabs) *sdk.ClientSession {
 	t.Helper()
 	_, core := built(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	core.Attending = func() domain.Attention { return open }
+	core.Attending = func() domain.OpenTabs { return open }
 	return connectedTo(t, core)
 }
 
@@ -39,7 +39,7 @@ func tabs(t *testing.T, session *sdk.ClientSession) struct {
 }
 
 func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
-	session := attending(t, domain.Attention{
+	session := attending(t, domain.OpenTabs{
 		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabPlex, Path: "Main 222.md", Title: "Main 222"},
@@ -64,7 +64,7 @@ func TestWindowTabsAnswersWithEveryTabAndMarksTheOneInFront(t *testing.T) {
 }
 
 func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
-	session := attending(t, domain.Attention{
+	session := attending(t, domain.OpenTabs{
 		FrontID: "one",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabDocument, Path: "library/A Book.pdf",
@@ -84,7 +84,7 @@ func TestWindowTabsSaysWhereInADocumentThePersonIs(t *testing.T) {
 // A window is free to open a kind of tab nothing here has words for, and such a
 // tab is named by its own kind.
 func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
-	session := attending(t, domain.Attention{
+	session := attending(t, domain.OpenTabs{
 		FrontID: "two",
 		Tabs: []domain.Tab{
 			{ID: "one", Kind: domain.TabNote, Path: "notes/Entropy.md", Title: "Entropy"},
@@ -100,7 +100,7 @@ func TestWindowTabsNamesAKindItHasNoWordsForAndNoNote(t *testing.T) {
 }
 
 func TestWindowTabsSaysSoWhereNothingIsOpen(t *testing.T) {
-	session := attending(t, domain.Attention{})
+	session := attending(t, domain.OpenTabs{})
 
 	out := tabs(t, session)
 

@@ -79,7 +79,7 @@ func TestEveryToolServedSaysWhatItDoes(t *testing.T) {
 	// tools for the list of vaults only where there is a list, so a vault with
 	// somebody looking at it and an installation holding several are asked as
 	// well.
-	attending := func() domain.Attention { return domain.Attention{} }
+	attending := func() domain.OpenTabs { return domain.OpenTabs{} }
 	for _, core := range []mcp.Core{
 		{},
 		{View: &window{}},

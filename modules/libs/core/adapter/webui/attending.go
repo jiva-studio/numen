@@ -18,7 +18,7 @@ func (a *API) Attending(
 	_ context.Context, r *connect.Request[v1.AttendingRequest],
 ) (*connect.Response[v1.AttendingResponse], error) {
 	told := r.Msg.GetTabs()
-	open := domain.Attention{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
+	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(told)), FrontID: r.Msg.GetFront()}
 	for _, one := range told {
 		open.Tabs = append(open.Tabs, domain.Tab{
 			ID:    one.GetId(),
@@ -29,7 +29,7 @@ func (a *API) Attending(
 			Of:    int(one.GetOf()),
 		})
 	}
-	a.attention.Store(&open)
+	a.openTabs.Store(&open)
 	if a.Attends != nil {
 		a.Attends(open)
 	}
@@ -38,9 +38,9 @@ func (a *API) Attending(
 
 // Attended is what the person has open, as the window last said. A window that
 // has said nothing has nothing open as far as anyone here knows.
-func (a *API) Attended() domain.Attention {
-	if open := a.attention.Load(); open != nil {
+func (a *API) Attended() domain.OpenTabs {
+	if open := a.openTabs.Load(); open != nil {
 		return *open
 	}
-	return domain.Attention{}
+	return domain.OpenTabs{}
 }

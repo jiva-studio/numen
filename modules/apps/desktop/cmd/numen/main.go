@@ -213,7 +213,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.
-	naming := func(open domain.Attention) { window.SetTitle(titled(opened.Showing(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(titled(opened.Showing(), open)) }
 	opened.API.Attends = naming
 
 	// Files let go of over the window, copied into the folder the mark under
@@ -268,7 +268,7 @@ const droppedInto = "data-file-drop-target"
 // titled is what the window is called: the application, and the file the
 // person is looking at. A window with no file in front of it is called after
 // the vault it is showing.
-func titled(v domain.Vault, open domain.Attention) string {
+func titled(v domain.Vault, open domain.OpenTabs) string {
 	if front, held := open.Fronted(); held && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}
