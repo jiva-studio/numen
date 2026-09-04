@@ -20,10 +20,10 @@ import {
   finished,
   folded,
   measured,
+  readable,
   remembered,
   ROOM,
   showing,
-  standing,
   tallyOf,
   WAIT,
   type Movement,
@@ -88,7 +88,7 @@ watch(
     arrived.value = arrivals(arrived.value, all, read.value)
     away.value = remembered(away.value, all)
     moving.value = measured(moving.value, all, now.value)
-    const here = new Set(standing(all).map((one) => one.id))
+    const here = new Set(readable(all).map((one) => one.id))
     for (const id of [...forgotten]) if (!here.has(id)) forgotten.delete(id)
   },
   { immediate: true },
@@ -115,10 +115,10 @@ watch(drawn, (all) => {
   if (all.length <= props.room) opened.value = false
 })
 
-/** Whether anything standing has not yet lasted long enough to be drawn. */
+/** Whether anything readable has not yet lasted long enough to be drawn. */
 const coming = computed(() => {
   const shown = new Set(drawn.value.map((one) => one.id))
-  return standing(props.notices).some(
+  return readable(props.notices).some(
     (one) => one.stay !== 'read' && !away.value.has(one.id) && !shown.has(one.id),
   )
 })

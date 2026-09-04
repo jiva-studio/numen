@@ -19,10 +19,10 @@ export interface Announcer {
 }
 
 /**
- * The cards standing now are read out as they arrive and as their words change.
+ * The cards drawn now are read out as they arrive and as their words change.
  * Nothing is read out until the regions themselves have been drawn.
  */
-export function useAnnouncer(standing: () => readonly Notice[]): Announcer {
+export function useAnnouncer(drawn: () => readonly Notice[]): Announcer {
   const told = ref('')
   const cried = ref('')
 
@@ -55,12 +55,12 @@ export function useAnnouncer(standing: () => readonly Notice[]): Announcer {
     if (quiet.length) told.value = quiet.map(wordsOf).join('. ')
   }
 
-  watch(standing, (all) => void reads(all))
+  watch(drawn, (all) => void reads(all))
 
   onMounted(async () => {
     await nextTick()
     listening = true
-    void reads(standing())
+    void reads(drawn())
   })
 
   return { told, cried }

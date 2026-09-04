@@ -10,9 +10,9 @@ import {
   finished,
   folded,
   measured,
+  readable,
   remembered,
   showing,
-  standing,
   tallyOf,
   type Movement,
   type Notice,
@@ -28,17 +28,17 @@ describe('which notices stand in the corner', () => {
   it('draws the notices that have something to say, in the order given', () => {
     const first = one({ id: 'one' })
     const second = one({ id: 'two', says: 'Reading the vault' })
-    expect(standing([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
+    expect(readable([first, second]).map((each) => each.id)).toEqual(['one', 'two'])
   })
 
   it('leaves out a notice nobody could read', () => {
-    expect(standing([one({ id: 'silent', says: '' }), one()]).map((each) => each.id)).toEqual([
+    expect(readable([one({ id: 'silent', says: '' }), one()]).map((each) => each.id)).toEqual([
       'embedding',
     ])
   })
 
   it('draws nothing where nothing is running', () => {
-    expect(standing([])).toEqual([])
+    expect(readable([])).toEqual([])
   })
 })
 

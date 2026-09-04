@@ -87,7 +87,7 @@ export const noticed = (task: Task): Notice => ({
  *
  * A notice with no words is one nobody could read.
  */
-export const standing = (notices: readonly Notice[]): readonly Notice[] =>
+export const readable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.says !== '')
 
 /** What a notice counts against, for the ones that count anything. */
@@ -115,7 +115,7 @@ export const measured = (
   at: number,
 ): ReadonlyMap<string, Movement> => {
   const moving = new Map<string, Movement>()
-  for (const notice of standing(notices)) {
+  for (const notice of readable(notices)) {
     const tally = tallyOf(notice)
     if (tally === undefined) continue
     const before = was.get(notice.id)
@@ -163,7 +163,7 @@ export const arrivals = (
   notices: readonly Notice[],
   at: number,
 ): ReadonlyMap<string, number> =>
-  new Map(standing(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
+  new Map(readable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
 
 /** Whether a notice has stood long enough to have been read. */
 const over = (
@@ -180,7 +180,7 @@ export const showing = (
   at: number,
   wait: number = WAIT,
 ): readonly Notice[] =>
-  standing(notices).filter((notice) => {
+  readable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
     if (notice.stay === 'read') return !over(notice, arrived, at)
     return notice.asked || at - (arrived.get(notice.id) ?? at) >= wait
@@ -192,7 +192,7 @@ export const finished = (
   arrived: ReadonlyMap<string, number>,
   at: number,
 ): readonly string[] =>
-  standing(notices)
+  readable(notices)
     .filter((notice) => notice.stay === 'read' && over(notice, arrived, at))
     .map((notice) => notice.id)
 
@@ -226,6 +226,6 @@ export const remembered = (
   away: ReadonlySet<string>,
   notices: readonly Notice[],
 ): ReadonlySet<string> => {
-  const here = new Set(standing(notices).map((notice) => notice.id))
+  const here = new Set(readable(notices).map((notice) => notice.id))
   return new Set([...away].filter((id) => here.has(id)))
 }
