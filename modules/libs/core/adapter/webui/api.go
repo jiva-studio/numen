@@ -72,11 +72,10 @@ type API struct {
 	// and one leaving the vault is refused there.
 	Readers port.VaultReaders
 	// Viewer holds the documents the window has open and the pages it has
-	// drawn. A build without one answers that it cannot draw a document.
-	Viewer *viewer
-	// Highlight says where a run of a source's text sits on the pages it was
-	// read from. A build without one answers that it cannot say where a passage
-	// is.
+	// drawn, and Highlight says where a run of a source's text sits on the
+	// pages it was read from. They are bound by every build that serves what a
+	// file of the vault is.
+	Viewer    *viewer
 	Highlight *source.Highlight
 	// Playing is the socket a recording is played from. A build without one
 	// answers with no address, and the window says the recording cannot be
@@ -87,8 +86,8 @@ type API struct {
 	// nothing reading behind it, and then a save changes no vectors.
 	Wrote func()
 	// Drops takes a recording's transcript away, with everything listening to
-	// it produced. A build without one answers that a transcript cannot be
-	// dropped here.
+	// it produced. It is bound by every build that serves what is made from a
+	// file.
 	Drops *source.DropTranscript
 
 	// Presets is the preset a deck is scheduled by, and how one is read,
@@ -141,7 +140,7 @@ type API struct {
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
-	// together. Nil answers that this build has none.
+	// together. A build put together without a catalogue serves no ThemeService.
 	Themes numenv1connect.ThemeServiceHandler
 
 	Notes       Notes
