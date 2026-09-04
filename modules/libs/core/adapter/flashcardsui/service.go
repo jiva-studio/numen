@@ -120,7 +120,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 		return one
 	}
 
-	owing, err := a.Owed.Execute(ctx, v)
+	owing, err := a.CardsDue.Execute(ctx, v)
 	if err != nil {
 		one.Unread = err.Error()
 		return one

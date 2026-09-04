@@ -45,7 +45,7 @@ type API struct {
 	// ask next, where the answers leave a card, the run they are appended to,
 	// what each day of them came to, and what the deck being sat to is joined
 	// to.
-	Owed          flashcards.CountCardsDue
+	CardsDue      flashcards.CountCardsDue
 	Session       flashcards.Session
 	Schedules     flashcards.Schedules
 	Log           flashcards.Log

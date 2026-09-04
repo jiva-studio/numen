@@ -42,7 +42,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	// The schedule caches are filled before the clock starts, which is what a
 	// person's second opening of a day costs.
 	for _, v := range all {
-		if _, err := api.Owed.Execute(ctx, v); err != nil {
+		if _, err := api.CardsDue.Execute(ctx, v); err != nil {
 			b.Fatal(err)
 		}
 	}

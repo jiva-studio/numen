@@ -106,7 +106,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	running := cfg.Flashcards(db.Queries(), db.Links(), cfg.Level(db))
 	api := &API{
 		Registry:  registry{held: held},
-		Owed:      running.Owed,
+		CardsDue:  running.CardsDue,
 		Session:   running.Session,
 		Schedules: running.Schedules,
 		Log:       running.Log,

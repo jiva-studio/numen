@@ -87,7 +87,7 @@ func standing(api *API, now time.Time) {
 	at := func() time.Time { return now }
 	api.Now = at
 	api.Day = reviewDay
-	api.Owed.Day, api.Owed.Now = reviewDay, at
+	api.CardsDue.Day, api.CardsDue.Now = reviewDay, at
 	api.Session.Day, api.Session.Now = reviewDay, at
 	api.Counted.Day, api.Counted.Now = reviewDay, at
 }
