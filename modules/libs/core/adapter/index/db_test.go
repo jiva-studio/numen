@@ -175,19 +175,19 @@ func narrow(t *testing.T, db *DB, vault domain.Vault, dims int) {
 	ctx := t.Context()
 
 	path := "library/" + strconv.Itoa(dims) + ".epub"
-	if err := db.Chunks().SaveSource(ctx, string(vault.ID), chunk.Source{
+	if err := db.Chunks().SaveSource(ctx, vault.ID, chunk.Source{
 		Path: path, Kind: "book", Size: 100, MTime: 1, Hash: "h" + path, Recipe: "epub",
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().SaveChunks(ctx, string(vault.ID), "book", path, []chunk.Chunk{{
+	if err := db.Chunks().SaveChunks(ctx, vault.ID, "book", path, []chunk.Chunk{{
 		Start: 0, Length: 50, Text: "whole",
 		Small: []chunk.Chunk{{Start: 0, Length: 50, Text: "a chunk of text"}},
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	owing, err := db.ChunkQueries().Unembedded(ctx, string(vault.ID), narrowRecipe(dims), 0, 10)
+	owing, err := db.ChunkQueries().Unembedded(ctx, vault.ID, narrowRecipe(dims), 0, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

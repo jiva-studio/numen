@@ -21,7 +21,7 @@ func divided(t *testing.T, db *DB, vault domain.Vault, path string, headings ...
 		Body:        strings.Join(text, "\n"),
 		Headings:    headings,
 	}
-	if err := db.Notes().Save(t.Context(), string(vault.ID), []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -35,7 +35,7 @@ func divisions(
 ) map[string][]domain.Heading {
 	t.Helper()
 
-	found, err := db.NoteQueries().Headings(t.Context(), string(vault.ID), paths)
+	found, err := db.NoteQueries().Headings(t.Context(), vault.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -26,7 +26,7 @@ func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 // Register gives the vault a row for other rows to point at. A vault the index
 // already knows keeps the row it has.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("register"), vaultID)
+	_, err := r.db.ExecContext(ctx, stmt.Get("register"), string(vaultID))
 	return err
 }
 
@@ -42,7 +42,7 @@ var forgetting = []string{
 //
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
-func (r *Repository) Forget(ctx context.Context, vaultID string) error {
+func (r *Repository) Forget(ctx context.Context, vaultID domain.VaultID) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -50,7 +50,7 @@ func (r *Repository) Forget(ctx context.Context, vaultID string) error {
 	defer tx.Rollback()
 
 	var row int64
-	err = tx.QueryRowContext(ctx, stmt.Get("vault_row"), vaultID).Scan(&row)
+	err = tx.QueryRowContext(ctx, stmt.Get("vault_row"), string(vaultID)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 // Links returns the links written in one note, resolved.
-func (q *Queries) Links(ctx context.Context, vaultID, from string) ([]domain.ResolvedLink, error) {
+func (q *Queries) Links(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -93,7 +93,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 // written. The priority is the one every name resolves by, so a wikilink
 // nobody recorded as a link is answered as a link is.
 func (q *Queries) Resolve(
-	ctx context.Context, vaultID, from string, written []string,
+	ctx context.Context, vaultID domain.VaultID, from string, written []string,
 ) (map[string]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
@@ -121,7 +121,7 @@ func (q *Queries) Resolve(
 	return out, nil
 }
 
-func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string, r *domain.ResolvedLink) error {
+func (q *Queries) resolve(ctx context.Context, vault int64, vaultID domain.VaultID, from string, r *domain.ResolvedLink) error {
 	switch r.Target.Scheme {
 	case domain.SchemeNote:
 		// An identifier names one note in the world, so this lookup is not
@@ -145,7 +145,7 @@ func (q *Queries) resolve(ctx context.Context, vault int64, vaultID, from string
 		r.To, r.Ambiguous = pick(from, r.Target.Value, candidates)
 		if r.To != "" {
 			// A name means something only inside the vault it was written in.
-			r.ToVault = domain.VaultID(vaultID)
+			r.ToVault = vaultID
 		}
 		return nil
 	default:
@@ -253,7 +253,7 @@ func sharedPrefix(a, b string) int {
 // nearer note of the same name. So every candidate goes through the same
 // resolution the forward direction uses, and only the ones that land here are
 // kept.
-func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.ResolvedLink, error) {
+func (q *Queries) Backlinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -304,7 +304,7 @@ func (q *Queries) Backlinks(ctx context.Context, vaultID, to string) ([]domain.R
 		// A candidate belongs here when it landed on this path in this vault.
 		// An identifier resolves without regard to vault, and two vaults may
 		// file a note at the same path.
-		if c.To == to && c.ToVault == domain.VaultID(vaultID) {
+		if c.To == to && c.ToVault == vaultID {
 			out = append(out, c)
 		}
 	}

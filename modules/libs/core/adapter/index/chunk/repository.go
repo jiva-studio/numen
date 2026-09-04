@@ -91,7 +91,7 @@ type Repository struct{ db *sql.DB }
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
 // SaveSource records one file of one kind and what reading it produced.
-func (r *Repository) SaveSource(ctx context.Context, vaultID string, s Source) error {
+func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -118,7 +118,7 @@ func (r *Repository) SaveSource(ctx context.Context, vaultID string, s Source) e
 //
 // One write, because a recipe names the sizes a source's chunks were cut into:
 // the recipe and the chunks it describes are recorded together.
-func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Source, chunks []Chunk) error {
+func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -144,7 +144,7 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID string, s Sourc
 }
 
 // SaveChunks makes the chunks of one source the ones given.
-func (r *Repository) SaveChunks(ctx context.Context, vaultID, kind, path string, chunks []Chunk) error {
+func (r *Repository) SaveChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -210,7 +210,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 
 // RemoveSources takes out the sources of one kind whose files are gone. The
 // vault is authoritative: what is not on disk is not in the index.
-func (r *Repository) RemoveSources(ctx context.Context, vaultID, kind string, paths []string) error {
+func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, kind string, paths []string) error {
 	if len(paths) == 0 {
 		return nil
 	}
@@ -251,7 +251,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID, kind string, pa
 //
 // Only the file at the path itself can be called something else afterwards;
 // everything under a folder keeps the name it has.
-func (r *Repository) MoveSources(ctx context.Context, vaultID, from, to string) error {
+func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin: %w", err)
@@ -615,9 +615,9 @@ type querier interface {
 
 // vaultRow turns the identifier a vault carries in the world into the row
 // number this database files it under.
-func vaultRow(ctx context.Context, db querier, identifier string) (int64, error) {
+func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
-	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), identifier).Scan(&row)
+	err := db.QueryRowContext(ctx, stmt.Get("vault_row"), string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, errNoVault
 	}

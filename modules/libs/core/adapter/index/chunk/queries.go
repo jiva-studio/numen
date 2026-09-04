@@ -42,7 +42,7 @@ type Passage struct {
 
 // Fingerprints is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
-func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[string]domain.Fingerprint, error) {
+func (q *Queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.Fingerprint{}, nil
@@ -70,7 +70,7 @@ func (q *Queries) Fingerprints(ctx context.Context, vaultID, kind string) (map[s
 
 // Under is every source the vault holds at a path and beneath it, by path: the
 // one file, or everything a folder holds.
-func (q *Queries) Under(ctx context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
+func (q *Queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -116,7 +116,7 @@ func kinds(chosen []domain.SourceKind) (string, error) {
 //
 // What comes back is the large chunk enclosing each hit, which is what a
 // result shows.
-func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) Lexical(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
@@ -162,7 +162,7 @@ func (q *Queries) Lexical(ctx context.Context, vaultID, query string, of []domai
 // section begins. Asked where a book speaks about a thing, this is the half that
 // answers with the chapter about it and not with the paragraph that says its
 // name most often.
-func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
+func (q *Queries) Named(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", limit)
 	}
@@ -206,7 +206,7 @@ func (q *Queries) Named(ctx context.Context, vaultID, query string, of []domain.
 // full-precision vectors order what it kept. A chunk that does not reach the
 // similarity floor is not an answer, so a vault with nothing to say answers
 // with nothing.
-func (q *Queries) Nearest(ctx context.Context, vaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
+func (q *Queries) Nearest(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32, of []domain.SourceKind, limit int, floor float64) ([]domain.Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", limit)
 	}
@@ -289,7 +289,7 @@ func (q *Queries) enclosing(ctx context.Context, vault int64, chunks []int64) ([
 
 // Passage is where one chunk's text is read from. False when the vault holds no
 // such chunk.
-func (q *Queries) Passage(ctx context.Context, vaultID string, chunk int64) (Passage, bool, error) {
+func (q *Queries) Passage(ctx context.Context, vaultID domain.VaultID, chunk int64) (Passage, bool, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return Passage{}, false, nil
@@ -315,7 +315,7 @@ func scanPassage(row *sql.Row, chunk int64) (Passage, bool, error) {
 
 // Unchunked is the sources of one kind with no small chunk: the file changed,
 // or it has never been cut.
-func (q *Queries) Unchunked(ctx context.Context, vaultID, kind string, limit int) ([]string, error) {
+func (q *Queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
 	return q.paths(ctx, vaultID, "unchunked", limit, func(vault int64) []any {
 		return []any{vault, kind, limit}
 	})
@@ -323,7 +323,7 @@ func (q *Queries) Unchunked(ctx context.Context, vaultID, kind string, limit int
 
 // ByOtherRecipe is the sources of one kind whose text was not extracted by any
 // of the recipes now in use.
-func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind string, recipes []string, limit int) ([]string, error) {
+func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind string, recipes []string, limit int) ([]string, error) {
 	named, err := json.Marshal(recipes)
 	if err != nil {
 		return nil, err
@@ -336,7 +336,7 @@ func (q *Queries) ByOtherRecipe(ctx context.Context, vaultID, kind string, recip
 // Unembedded is the small chunks of a vault with no vector from the model in
 // use, from `after` onwards. Asked with the last id of the previous answer, it
 // resumes.
-func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after int64, limit int) ([]Passage, error) {
+func (q *Queries) Unembedded(ctx context.Context, vaultID domain.VaultID, recipe string, after int64, limit int) ([]Passage, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("a batch needs a positive limit, got %d", limit)
 	}
@@ -366,7 +366,7 @@ func (q *Queries) Unembedded(ctx context.Context, vaultID, recipe string, after 
 }
 
 // paths answers the questions that come back as a list of paths in one vault.
-func (q *Queries) paths(ctx context.Context, vaultID, statement string, limit int, args func(vault int64) []any) ([]string, error) {
+func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement string, limit int, args func(vault int64) []any) ([]string, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("%s needs a positive limit, got %d", statement, limit)
 	}
@@ -400,7 +400,7 @@ func (q *Queries) paths(ctx context.Context, vaultID, statement string, limit in
 // does, so the pair is what says how far there is to go.
 //
 // A vault the index has never heard of has nothing and owes nothing.
-func (q *Queries) Progress(ctx context.Context, vaultID, recipe string) (held, embedded int64, err error) {
+func (q *Queries) Progress(ctx context.Context, vaultID domain.VaultID, recipe string) (held, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
@@ -467,7 +467,7 @@ type SourceText struct {
 
 // Reading is what one source's text came from, and false where the index holds
 // no source at that path.
-func (q *Queries) Reading(ctx context.Context, vaultID, path string) (SourceText, bool, error) {
+func (q *Queries) Reading(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return SourceText{}, false, nil
@@ -492,7 +492,7 @@ func (q *Queries) Reading(ctx context.Context, vaultID, path string) (SourceText
 // A scan asks it in order to find the ones whose files are gone: the store is a
 // folder on the person's disk and they may empty it, and a source standing on
 // files that are not there answers a search with nothing.
-func (q *Queries) Recognised(ctx context.Context, vaultID, kind string) ([]SourceText, error) {
+func (q *Queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind string) ([]SourceText, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

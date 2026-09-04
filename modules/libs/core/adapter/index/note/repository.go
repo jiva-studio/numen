@@ -64,7 +64,7 @@ func exec(ctx context.Context, tx *sql.Tx, name string, args ...any) error {
 //
 // A note and the size and date that call it up to date are stored together or
 // not at all, so an interrupted scan leaves files to be read again.
-func (r *Repository) Save(ctx context.Context, vaultID string, notes []domain.Note) error {
+func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.Note) error {
 	if len(notes) == 0 {
 		return nil
 	}
@@ -283,7 +283,7 @@ func outline(n domain.Note) []domain.Heading {
 	}
 }
 
-func (r *Repository) Remove(ctx context.Context, vaultID string, paths []string) error {
+func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	if len(paths) == 0 {
 		return nil
 	}

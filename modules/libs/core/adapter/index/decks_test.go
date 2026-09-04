@@ -32,7 +32,7 @@ func laid(
 		Body:        body,
 		Headings:    headings,
 	}
-	if err := db.Notes().Save(t.Context(), string(vault.ID), []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -43,7 +43,7 @@ func chunksOfNote(t *testing.T, db *DB, vault domain.Vault, path string) int {
 	return counted(t, db, `SELECT COUNT(*) FROM chunks c
 	                       JOIN sources s ON s.id = c.source_id
 	                       JOIN vaults v ON v.id = c.vault_id
-	                       WHERE v.identifier = ? AND s.path = ?`, string(vault.ID), path)
+	                       WHERE v.identifier = ? AND s.path = ?`, vault.ID, path)
 }
 
 // headingTexts is what the index holds as the outline of one note.
@@ -72,7 +72,7 @@ func TestADeckContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "decks/mammals.md"); got != 0 {
 		t.Errorf("a deck holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), string(first.ID), "model", 0, 1000)
+	owing, err := db.ChunkQueries().Unembedded(t.Context(), first.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestAStencilContributesNoChunkAndNoVector(t *testing.T) {
 	if got := chunksOfNote(t, db, first, "stencils/term.md"); got != 0 {
 		t.Errorf("a stencil holds %d chunks, want none", got)
 	}
-	owing, err := db.ChunkQueries().Unembedded(t.Context(), string(first.ID), "model", 0, 1000)
+	owing, err := db.ChunkQueries().Unembedded(t.Context(), first.ID, "model", 0, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,11 +283,11 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 		}},
 		Headings: []domain.Heading{{Level: 2, Text: "Compost ^k7m2xq9fzp"}},
 	}
-	if err := db.Notes().Save(t.Context(), string(first.ID), []domain.Note{n}); err != nil {
+	if err := db.Notes().Save(t.Context(), first.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
 	}
 
-	held, err := db.NoteQueries().Types(t.Context(), string(first.ID), []string{"decks/mammals.md"})
+	held, err := db.NoteQueries().Types(t.Context(), first.ID, []string{"decks/mammals.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,10 +296,10 @@ func TestADeckIsANoteInEveryOtherWay(t *testing.T) {
 	}
 	if got := counted(t, db, `SELECT COUNT(*) FROM notes n JOIN vaults v ON v.id = n.vault_id
 	                          WHERE v.identifier = ? AND n.title = 'Mammals'
-	                            AND n.identifier = '01HQXMAMMALS'`, string(first.ID)); got != 1 {
+	                            AND n.identifier = '01HQXMAMMALS'`, first.ID); got != 1 {
 		t.Error("the deck's row does not carry its title and its identifier")
 	}
-	links, err := db.NoteQueries().Links(t.Context(), string(first.ID), "decks/mammals.md")
+	links, err := db.NoteQueries().Links(t.Context(), first.ID, "decks/mammals.md")
 	if err != nil {
 		t.Fatal(err)
 	}

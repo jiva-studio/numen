@@ -29,42 +29,42 @@ type queries struct {
 
 // SaveSource records what a file is now, with no recipe: a source saved this way
 // owes its text.
-func (s sources) SaveSource(ctx context.Context, vaultID string, src port.Source) error {
+func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src port.Source) error {
 	return s.write.SaveSource(ctx, vaultID, stored(src))
 }
 
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
-func (s sources) SaveExtraction(ctx context.Context, vaultID string, e port.SourceChunks) error {
+func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e port.SourceChunks) error {
 	return s.write.SaveExtraction(ctx, vaultID, stored(e.Source), chunks(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
 // vectors with them.
-func (s sources) RemoveSources(ctx context.Context, vaultID string, kind domain.SourceKind, paths []string) error {
+func (s sources) RemoveSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error {
 	return s.write.RemoveSources(ctx, vaultID, string(kind), paths)
 }
 
 // MoveSources files what was at one path, and everything under it, where it now
 // is. A note its filename names is called by the one it lands under.
-func (s sources) MoveSources(ctx context.Context, vaultID, from, to string) error {
+func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
 	return s.write.MoveSources(ctx, vaultID, from, to)
 }
 
 // Under is every source the vault holds at a path and beneath it.
-func (s queries) Under(ctx context.Context, vaultID, path string) ([]domain.Fingerprint, error) {
+func (s queries) Under(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
 	return s.read.Under(ctx, vaultID, path)
 }
 
-func (s queries) Fingerprints(ctx context.Context, vaultID string, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
+func (s queries) Fingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return s.read.Fingerprints(ctx, vaultID, string(kind))
 }
 
-func (s queries) Unchunked(ctx context.Context, vaultID string, kind domain.SourceKind, limit int) ([]string, error) {
+func (s queries) Unchunked(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.read.Unchunked(ctx, vaultID, string(kind), limit)
 }
 
-func (s queries) ByOtherRecipe(ctx context.Context, vaultID string, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
+func (s queries) ByOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
 	return s.read.ByOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
 }
 
@@ -84,7 +84,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) Unembedded(ctx context.Context, vaultID string, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
+func (s queries) Unembedded(ctx context.Context, vaultID domain.VaultID, model port.EmbeddingModel, after int64, limit int) ([]domain.Passage, error) {
 	found, err := s.read.Unembedded(ctx, vaultID, model.Recipe(), after, limit)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (s sources) Kept(ctx context.Context, recipe string, of [][]byte) (map[stri
 
 // Reading is what one source's text came from, and false where the index holds
 // no source at that path.
-func (s queries) Reading(ctx context.Context, vaultID, path string) (port.SourceText, bool, error) {
+func (s queries) Reading(ctx context.Context, vaultID domain.VaultID, path string) (port.SourceText, bool, error) {
 	found, held, err := s.read.Reading(ctx, vaultID, path)
 	if err != nil || !held {
 		return port.SourceText{}, false, err
@@ -151,7 +151,7 @@ func (s queries) Reading(ctx context.Context, vaultID, path string) (port.Source
 }
 
 // Recognised is the sources of one kind whose text a producer made.
-func (s queries) Recognised(ctx context.Context, vaultID string, kind domain.SourceKind) ([]port.SourceText, error) {
+func (s queries) Recognised(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]port.SourceText, error) {
 	found, err := s.read.Recognised(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
