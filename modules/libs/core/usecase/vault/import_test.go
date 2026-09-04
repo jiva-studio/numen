@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // outside is a folder on this machine holding those files, and where it is.
@@ -45,7 +45,7 @@ func TestFilesAreBroughtIntoTheFolderTheyWereLetGoOver(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	from := outside(t, map[string]string{"Cover.png": "PNG", "Notes.md": "# Notes\n"})
-	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "physics", []string{
 		filepath.Join(from, "Cover.png"),
@@ -83,7 +83,7 @@ func TestAFolderIsBroughtInWhole(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(from, "scans", "empty"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Join(from, "scans")})
 	if err != nil {
@@ -112,7 +112,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Cover.png": "MINE"})
 	from := outside(t, map[string]string{"Cover.png": "THEIRS", "Kelvin.md": "# Kelvin\n"})
-	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{
 		filepath.Join(from, "Cover.png"),
@@ -141,7 +141,7 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 func TestAFolderHoldingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, nil)
-	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
+	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: filesystem.ImportedFiles{}}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{filepath.Dir(v.Path)})
 	if err != nil {

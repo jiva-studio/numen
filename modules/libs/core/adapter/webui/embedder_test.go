@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // vault gives a folder an identity and registers it, and answers with the
@@ -30,7 +30,7 @@ func vault(t *testing.T, embedding embed.Config) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (usecase.Add{
+	if _, err := (vaults.Add{
 		Registry: registry,
 		Identity: cfg.VaultIdentity(),
 		Now:      time.Now,

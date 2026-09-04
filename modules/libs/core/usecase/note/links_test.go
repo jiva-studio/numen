@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // indexed writes a vault of the given notes, scans it, and hands back what is
@@ -23,7 +23,7 @@ func indexed(t *testing.T, notes map[string]string) (*container.Index, domain.Va
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
@@ -275,7 +275,7 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 // a link across vaults possible at all.
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),

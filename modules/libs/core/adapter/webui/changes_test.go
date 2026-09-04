@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // opened is a vault with a window's worth of machinery behind it — the index,
@@ -63,7 +63,7 @@ func serving(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (usecase.Add{
+	if _, err := (vaults.Add{
 		Registry: registry,
 		Identity: settings.VaultIdentity(),
 		Now:      time.Now,

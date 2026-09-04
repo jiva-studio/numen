@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // changing is a vault that can be both asked about and written to, with the
@@ -29,7 +29,7 @@ type changing struct {
 func changeable(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := indexed(t, notes)
-	refresh := usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()}
+	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()}
 	return changing{
 		db:    db,
 		vault: v,

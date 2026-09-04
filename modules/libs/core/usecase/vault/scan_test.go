@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The fixture vault is deliberately awkward: a note with no frontmatter, broken
@@ -41,8 +41,8 @@ func openIndex(t *testing.T) *container.Index {
 	return db
 }
 
-func scanner(readers port.VaultReaders, db *container.Index) usecase.Scan {
-	return usecase.Scan{
+func scanner(readers port.VaultReaders, db *container.Index) vaults.Scan {
+	return vaults.Scan{
 		Readers:     readers,
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
@@ -645,7 +645,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	db := openIndex(t)
 
 	scan := scanner(filesystem.VaultReaders{}, db)
-	scan.OnProgress = func(usecase.ScanResult) { cancel() }
+	scan.OnProgress = func(vaults.ScanResult) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {

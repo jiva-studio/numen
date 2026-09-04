@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // Installation is a window put together and running: the questions a client
@@ -310,14 +310,14 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		WritesFile:     cfg.WritesConfiguredFile(),
 	}
 	api.Notes.Rename = &note.Rename{Move: moving}
-	api.Files.Move = &usecase.Move{
+	api.Files.Move = &vaults.Move{
 		Writers: cfg.VaultWriters(),
 		Links:   api.Notes.Links,
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
 		Notes:   moving,
 	}
-	api.Files.Import = &usecase.Import{Writers: cfg.VaultWriters(), Files: cfg.ImportedFiles()}
+	api.Files.Import = &vaults.Import{Writers: cfg.VaultWriters(), Files: cfg.ImportedFiles()}
 	api.Notes.Remove = &note.Remove{
 		Writers: cfg.VaultWriters(),
 		Links:   api.Notes.Links,
@@ -333,17 +333,17 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 
 	// The vaults this installation holds, beside the one the window is showing.
 	// Erase is Forget and a folder that goes, so the two hold one Forget.
-	forget := usecase.Forget{Registry: registry, Index: db.Vaults()}
+	forget := vaults.Forget{Registry: registry, Index: db.Vaults()}
 	api.Vaults = Vaults{
 		Registry: registry,
-		Add: &usecase.Add{
+		Add: &vaults.Add{
 			Identity: cfg.VaultIdentity(),
 			Registry: registry,
 			Now:      time.Now,
 		},
-		Rename: &usecase.Rename{Registry: registry, Index: db.Vaults()},
+		Rename: &vaults.Rename{Registry: registry, Index: db.Vaults()},
 		Forget: &forget,
-		Erase: &usecase.Erase{
+		Erase: &vaults.Erase{
 			Identity: cfg.VaultIdentity(),
 			Trash:    cfg.Trash(),
 			Forget:   forget,
@@ -377,7 +377,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 // A vault named and not on the list is refused, and the window does not open.
 func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if asked != "" {
-		return usecase.Find{Registry: registry}.Execute(asked)
+		return vaults.Find{Registry: registry}.Execute(asked)
 	}
 	last, found, err := registry.Last()
 	if err != nil {
@@ -386,7 +386,7 @@ func chosen(registry port.VaultRegistry, asked string) (domain.Vault, error) {
 	if found {
 		return last, nil
 	}
-	held, err := usecase.List{Registry: registry}.Execute()
+	held, err := vaults.List{Registry: registry}.Execute()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -482,7 +482,7 @@ func (o *Installation) arrive(v domain.Vault, rebuild bool) error {
 // the watch behind it, the reading of the documents it holds, and the batches
 // left with a proofreader.
 func (o *Installation) begins(v domain.Vault, rebuild bool) (*passes, error) {
-	known, err := usecase.List{Registry: o.registry}.Execute()
+	known, err := vaults.List{Registry: o.registry}.Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -652,11 +652,11 @@ func (o *Installation) Showing() domain.Vault { return o.API.Showing() }
 
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
-func (o *Installation) Refresh() usecase.Refresh {
+func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
-	return usecase.Refresh{
+	return vaults.Refresh{
 		Readers: o.cfg.VaultReaders(),
 		Notes:   o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
 		Known:   o.Index.SourcesKnown(),
@@ -698,14 +698,14 @@ func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string
 func readable(cfg container.Config, v domain.Vault) error {
 	identity := cfg.VaultIdentity()
 	if err := identity.Readable(v.Path); err != nil {
-		return fmt.Errorf("%w: %w", usecase.ErrUnreadable, err)
+		return fmt.Errorf("%w: %w", vaults.ErrUnreadable, err)
 	}
 	carried, found, err := identity.Of(v.Path)
 	if err != nil {
 		return err
 	}
 	if !found || carried != v.ID {
-		return fmt.Errorf("%w: %s is no longer the vault %s", usecase.ErrUnreadable, v.Path, v.Name)
+		return fmt.Errorf("%w: %s is no longer the vault %s", vaults.ErrUnreadable, v.Path, v.Name)
 	}
 	return nil
 }
@@ -870,7 +870,7 @@ func begin(
 		api.Failed.Store(err.Error())
 	}
 	opening.Trouble = trouble
-	opening.Told = func(m usecase.VaultChanges) {
+	opening.Told = func(m vaults.VaultChanges) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
 		api.Listeners.tell(change{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
@@ -915,7 +915,7 @@ func begin(
 
 		// The walk a person watches is this one. A later one is the index being
 		// brought level with a vault that moved under it.
-		result, err := open.Read(ctx, func(res usecase.ScanResult) {
+		result, err := open.Read(ctx, func(res vaults.ScanResult) {
 			api.say(task.Task{ID: walkingNotes, Doing: "Reading the vault", Count: int64(res.Indexed)})
 		})
 

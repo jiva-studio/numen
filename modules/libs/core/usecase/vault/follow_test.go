@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // hand is a watcher whose events a test writes itself, so that what happens
@@ -61,7 +61,7 @@ func (s *sometimes) Open(v domain.Vault) (port.VaultReader, error) {
 type followed struct {
 	vault domain.Vault
 	index *container.Index
-	moved <-chan usecase.VaultChanges
+	moved <-chan vaults.VaultChanges
 }
 
 // following puts one vault, one index and a watcher a test drives together.
@@ -73,12 +73,12 @@ func following(t *testing.T, notes map[string]string, watcher *hand) followed {
 		t.Fatal(err)
 	}
 
-	moved := make(chan usecase.VaultChanges, 8)
-	follow := usecase.Follow{
+	moved := make(chan vaults.VaultChanges, 8)
+	follow := vaults.Follow{
 		Watcher: watcher,
-		Refresh: usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()},
+		Refresh: vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: db.Notes()},
 		Scan:    scanner(filesystem.VaultReaders{}, db),
-		Changed: func(m usecase.VaultChanges) { moved <- m },
+		Changed: func(m vaults.VaultChanges) { moved <- m },
 	}
 
 	started, err := follow.Begin(t.Context(), v)
@@ -206,9 +206,9 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 
 	trouble := make(chan error, 8)
 	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
-	follow := usecase.Follow{
+	follow := vaults.Follow{
 		Watcher: watcher,
-		Refresh: usecase.Refresh{Readers: readers, Notes: db.Notes()},
+		Refresh: vaults.Refresh{Readers: readers, Notes: db.Notes()},
 		Scan:    scanner(filesystem.VaultReaders{}, db),
 		Trouble: func(err error) { trouble <- err },
 	}
@@ -237,7 +237,7 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
-	_, err := usecase.Follow{Watcher: refuses{}}.Begin(t.Context(), v)
+	_, err := vaults.Follow{Watcher: refuses{}}.Begin(t.Context(), v)
 	if err == nil {
 		t.Fatal("a watcher that could not start was taken for one that did")
 	}

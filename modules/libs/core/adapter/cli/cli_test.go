@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // session is one installation: its own registry and index, so a test never
@@ -512,9 +512,9 @@ func TestTheOnlyVaultAnInstallationHasStays(t *testing.T) {
 		{"vault", "erase", "single", "--yes"},
 	} {
 		out, err := s.run(args...)
-		if !errors.Is(err, usecase.ErrLastVault) {
+		if !errors.Is(err, vaults.ErrLastVault) {
 			t.Errorf("numen-cli %s gave %v, want %v\n%s",
-				strings.Join(args, " "), err, usecase.ErrLastVault, out)
+				strings.Join(args, " "), err, vaults.ErrLastVault, out)
 		}
 	}
 	if len(b.took) != 0 {

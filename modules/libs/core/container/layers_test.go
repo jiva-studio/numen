@@ -89,6 +89,46 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	}
 }
 
+// layers are the folders the tree is laid out in.
+var layers = map[string]bool{
+	"adapter": true, "container": true, "domain": true, "port": true, "usecase": true,
+}
+
+// A package is named at the call site for what it is. An alias naming a layer
+// says only which folder the package sits in, which the import path already
+// says, and the reader is left with usecase.Add for what is vaults.Add.
+//
+// The tests are read too: most of a package's call sites are in them.
+func TestNoPackageIsImportedUnderItsLayer(t *testing.T) {
+	var wrong []string
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		if err != nil {
+			return err
+		}
+		for _, one := range file.Imports {
+			if one.Name == nil || !layers[one.Name.Name] {
+				continue
+			}
+			held, err := strconv.Unquote(one.Path.Value)
+			if err != nil {
+				return err
+			}
+			wrong = append(wrong, path+" names "+held+" "+one.Name.Name)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
 // within is the package a file belongs to, as the rules name it.
 func within(root, path string) string {
 	held, err := filepath.Rel(root, filepath.Dir(path))

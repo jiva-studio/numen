@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // reading opens one index and hands back the use case that reads it, together
@@ -32,7 +32,7 @@ func reading(
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}

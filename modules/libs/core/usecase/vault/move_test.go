@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // filing is a scanned vault whose files can be moved about, with the index kept
@@ -40,7 +40,7 @@ func fileable(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: filesystem.VaultReaders{}}
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
 	return filing{
 		db:      db,
 		vault:   v,
@@ -55,13 +55,13 @@ func fileable(t *testing.T, notes map[string]string) filing {
 
 // move is the move an installation nobody has configured does: a title and a
 // filename kept as one name.
-func (f filing) move() usecase.Move { return f.moving(true) }
+func (f filing) move() vaults.Move { return f.moving(true) }
 
 // apart is the move an installation that has turned the two apart does.
-func (f filing) apart() usecase.Move { return f.moving(false) }
+func (f filing) apart() vaults.Move { return f.moving(false) }
 
-func (f filing) moving(kept note.SyncTitleAndFilename) usecase.Move {
-	return usecase.Move{
+func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
+	return vaults.Move{
 		Writers: filesystem.VaultWriters{},
 		Links:   f.db.Links(),
 		Known:   f.db.SourcesKnown(),

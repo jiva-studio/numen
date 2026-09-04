@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 )
 
-func renaming(t *testing.T, vs vaults) cards.RenameField {
+func renaming(t *testing.T, vs vaulted) cards.RenameField {
 	t.Helper()
 	return cards.RenameField{
 		Readers: filesystem.VaultReaders{},

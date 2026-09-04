@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // connected is the tools as an agent meets them: over a real session, through
@@ -74,14 +74,14 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	t.Cleanup(func() { db.Close() })
 
 	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // A vault made searchable in a terminal and one made searchable in a window are
@@ -52,7 +52,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	var order []string
 	making := searchable(readers, db)
 	making.Vectors.Embedder = pointing{}
-	making.Notes.OnProgress = func(usecase.ScanResult) { order = append(order, "notes") }
+	making.Notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
 	making.Books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
 	making.Vectors.OnProgress = func(source.EmbedResult) { order = append(order, "vectors") }
 
@@ -243,8 +243,8 @@ func (c *counting) Open(v domain.Vault) (port.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func searchable(readers port.VaultReaders, db *container.Index) usecase.ReadWholeVault {
-	return usecase.ReadWholeVault{
+func searchable(readers port.VaultReaders, db *container.Index) vaults.ReadWholeVault {
+	return vaults.ReadWholeVault{
 		Notes: scanner(readers, db),
 		Books: source.Extract{
 			Readers: readers,

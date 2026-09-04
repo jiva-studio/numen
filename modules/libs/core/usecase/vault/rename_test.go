@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
@@ -14,7 +14,7 @@ func TestARenamedVaultIsCalledTheSameOnTheListAndInTheIndex(t *testing.T) {
 	_, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "journal")
+	got, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "journal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,8 +44,8 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
-	_, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "PERSONAL")
-	if !errors.Is(err, usecase.ErrNameTaken) {
+	_, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), renamed, "PERSONAL")
+	if !errors.Is(err, vaults.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", taken.Name, err)
 	}
 	onTheList, found, err := registry.Find(string(renamed.ID))
@@ -65,7 +65,7 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := (usecase.Rename{Registry: registry, Index: index}).Execute(t.Context(), v, v.Name)
+	got, err := (vaults.Rename{Registry: registry, Index: index}).Execute(t.Context(), v, v.Name)
 	if err != nil {
 		t.Fatalf("renaming a vault to what it is called: %v", err)
 	}

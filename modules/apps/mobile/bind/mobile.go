@@ -21,7 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // running is the one server this process holds. Starting again while it stands
@@ -171,7 +171,7 @@ func known(cfg container.Config, root string) (string, error) {
 	} else if found {
 		return held.Path, nil
 	}
-	added, err := usecase.Add{
+	added, err := vaults.Add{
 		Identity: cfg.VaultIdentity(),
 		Registry: registry,
 		Now:      time.Now,

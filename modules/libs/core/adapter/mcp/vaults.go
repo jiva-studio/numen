@@ -10,7 +10,7 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // Vault is one vault this installation holds, as an agent is told about it.
@@ -64,16 +64,16 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := usecase.List{Registry: core.Vaults.Registry}.Execute()
+		held, err := vaults.List{Registry: core.Vaults.Registry}.Execute()
 		if err != nil {
 			return nil, out{}, err
 		}
 		showing := core.shown().Vault.ID
-		vaults := make([]Vault, 0, len(held))
+		list := make([]Vault, 0, len(held))
 		for _, v := range held {
-			vaults = append(vaults, knownOf(v, showing))
+			list = append(list, knownOf(v, showing))
 		}
-		return nil, out{Vaults: vaults}, nil
+		return nil, out{Vaults: list}, nil
 	})
 }
 
@@ -280,7 +280,7 @@ func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, errors.New("name the vault, as vault_list gives it")
 	}
-	return usecase.Find{Registry: v.Registry}.Execute(nameOrPath)
+	return vaults.Find{Registry: v.Registry}.Execute(nameOrPath)
 }
 
 // knownOf is one vault as an agent is told about it. A folder that is not there

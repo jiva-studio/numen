@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // bin is the place this machine keeps what a person deleted.
@@ -30,14 +30,14 @@ func (b *bin) Trash(path string) error {
 
 // erasing wires the use case over one registry, recording the order the folder
 // and the rows go in.
-func erasing(registry *appstate.VaultRegistry) (usecase.Erase, *bin, *indexRows, *[]string) {
+func erasing(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows, *[]string) {
 	steps := &[]string{}
 	trash := &bin{steps: steps}
 	index := &indexRows{steps: steps}
-	return usecase.Erase{
+	return vaults.Erase{
 		Identity: filesystem.VaultIdentity{},
 		Trash:    trash,
-		Forget:   usecase.Forget{Registry: registry, Index: index},
+		Forget:   vaults.Forget{Registry: registry, Index: index},
 	}, trash, index, steps
 }
 
@@ -74,7 +74,7 @@ func TestEraseRefusesAFolderThatNoLongerCarriesTheIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := erase.Execute(t.Context(), gone); !errors.Is(err, usecase.ErrUnreadable) {
+	if err := erase.Execute(t.Context(), gone); !errors.Is(err, vaults.ErrUnreadable) {
 		t.Fatalf("a folder that is not the vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
@@ -120,7 +120,7 @@ func TestEraseRefusesTheOnlyVaultBeforeTouchingItsFolder(t *testing.T) {
 	}
 	erase, trash, _, _ := erasing(registry)
 
-	if err := erase.Execute(t.Context(), only); !errors.Is(err, usecase.ErrLastVault) {
+	if err := erase.Execute(t.Context(), only); !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {

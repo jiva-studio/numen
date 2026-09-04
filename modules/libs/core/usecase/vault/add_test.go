@@ -12,15 +12,15 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // adding is the use case over a registry of its own, and the registry, which a
 // test reads to see what was written.
-func adding(t *testing.T) (usecase.Add, *appstate.VaultRegistry) {
+func adding(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
-	return usecase.Add{
+	return vaults.Add{
 		Identity: filesystem.VaultIdentity{},
 		Registry: registry,
 		Now:      time.Now,

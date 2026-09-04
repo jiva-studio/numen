@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The file tree renames a file, and the note in it is called by the name the
@@ -116,7 +116,7 @@ func TestARenamedFileLeavesTheNoteAloneWhereTheTwoAreToldApart(t *testing.T) {
 // however the two are held.
 func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
 	t.Parallel()
-	for name, moving := range map[string]func(filing) usecase.Move{
+	for name, moving := range map[string]func(filing) vaults.Move{
 		"one name":   filing.move,
 		"told apart": filing.apart,
 	} {
@@ -143,7 +143,7 @@ func TestAFileFiledUnderAnotherFolderKeepsTheNameItHad(t *testing.T) {
 // however the two are held.
 func TestARenamedFolderWritesToNothingUnderIt(t *testing.T) {
 	t.Parallel()
-	for name, moving := range map[string]func(filing) usecase.Move{
+	for name, moving := range map[string]func(filing) vaults.Move{
 		"one name":   filing.move,
 		"told apart": filing.apart,
 	} {

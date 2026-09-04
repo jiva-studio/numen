@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -74,7 +74,7 @@ func (r registry) Last() (domain.Vault, bool, error) {
 }
 
 // windowed is the API as the window builds it, over vaults of a test's own.
-func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) {
+func windowed(t testing.TB, notes ...map[string]string) (*API, []domain.Vault) {
 	t.Helper()
 	ctx := t.Context()
 
@@ -92,9 +92,9 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	t.Cleanup(func() { db.Close() })
 
 	scan := cfg.Scan(db)
-	held := make([]domain.Vault, 0, len(vaults))
-	for _, notes := range vaults {
-		v := testsupport.NewVault(t, notes)
+	held := make([]domain.Vault, 0, len(notes))
+	for _, one := range notes {
+		v := testsupport.NewVault(t, one)
 		if _, err := scan.Execute(ctx, v); err != nil {
 			t.Fatal(err)
 		}
@@ -126,7 +126,7 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 	// The window reads a vault the index does not carry, over the same scan.
 	api.Reading(ctx, func(ctx context.Context, v domain.Vault, got func(int64)) error {
 		walk := scan
-		walk.OnProgress = func(res usecase.ScanResult) { got(int64(res.Indexed)) }
+		walk.OnProgress = func(res vaults.ScanResult) { got(int64(res.Indexed)) }
 		_, err := walk.Execute(ctx, v)
 		return err
 	})
@@ -1309,8 +1309,8 @@ func TestTheBacklogShareMovesTheSittingAndTheProjectionTogether(t *testing.T) {
 	bands := make(map[int][]int32, 2)
 
 	for _, share := range []int{100, 0} {
-		api, vaults := windowed(t, lived)
-		v := vaults[0]
+		api, made := windowed(t, lived)
+		v := made[0]
 		lives(t, api, v, 20)
 		standing(api, firstMorning.AddDate(0, 0, 20))
 

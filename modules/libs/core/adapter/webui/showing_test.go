@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The two vaults a swap is asked about, and one note in each.
@@ -115,7 +115,7 @@ func listed(
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := usecase.Add{
+	v, err := vaults.Add{
 		Registry: registry,
 		Identity: cfg.VaultIdentity(),
 		Now:      time.Now,

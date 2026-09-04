@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // handedOver is a machine whose handles are not paths and which has no
@@ -74,7 +74,7 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 			"content://held/1": {"content://held/2", "content://held/3"},
 		},
 	}
-	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: handed}
+	bring := vaults.Import{Writers: filesystem.VaultWriters{}, Files: handed}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {

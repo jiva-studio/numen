@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // checked scans a vault and hands back the checks over it.
@@ -23,7 +23,7 @@ func checked(t *testing.T, notes map[string]string) (check.Checks, domain.Vault)
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}

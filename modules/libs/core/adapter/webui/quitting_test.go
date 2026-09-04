@@ -23,7 +23,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // going is one vault with everything a window has behind it, and a client
@@ -112,7 +112,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := (usecase.Add{
+	if _, err := (vaults.Add{
 		Registry: registry,
 		Identity: cfg.VaultIdentity(),
 		Now:      time.Now,

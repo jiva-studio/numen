@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // windowOn is a window open on a vault of this test's own.
@@ -29,7 +29,7 @@ func windowOn(t *testing.T) (*webui.Installation, container.Config) {
 	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	add := usecase.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
+	add := vaults.Add{Identity: cfg.VaultIdentity(), Registry: registry, Now: time.Now}
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}

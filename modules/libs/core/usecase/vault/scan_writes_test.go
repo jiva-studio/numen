@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // groupedWrites stands in for the index and remembers how it was called: not
@@ -50,7 +50,7 @@ func TestNotesAreWrittenInGroups(t *testing.T) {
 	written := &groupedWrites{}
 	db := openIndex(t)
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
@@ -102,7 +102,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 
 	written := &groupedWrites{}
 	db := openIndex(t)
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       written,
@@ -130,7 +130,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	refused := errors.New("disk full")
 	db := openIndex(t)
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       &groupedWrites{fail: refused},
@@ -154,7 +154,7 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 	db := openIndex(t)
 	measured := &countedMeasurements{}
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     readers,
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),

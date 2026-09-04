@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // dimensions is the width the vector index is built at.
@@ -58,7 +58,7 @@ func indexed(t *testing.T) corpus {
 	t.Cleanup(func() { db.Close() })
 
 	readers := filesystem.VaultReaders{}
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
@@ -437,7 +437,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	const path = "notes/Isotherm.md"
 	const held = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
 		Known: c.db.NoteQueries(), Maintenance: c.db.Maintenance(),
 	}

@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // sequence is what happened, in the order it happened.
@@ -59,7 +59,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	readers, writers := filesystem.VaultReaders{}, filesystem.VaultWriters{}
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}
@@ -73,7 +73,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	var once sync.Once
 	// release lets the held write through, from now on.
 	release := func() { once.Do(func() { close(until) }) }
-	refresh := usecase.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
 	// The index hook is where a write reaches the database. Held open, it is a
 	// write that has not finished at the moment the application is asked to go.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {

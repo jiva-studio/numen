@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // What these measure against: a scan of an unchanged vault fast enough to run
@@ -36,8 +36,8 @@ func openIndexFor(b *testing.B) *container.Index {
 	return db
 }
 
-func scanFor(db *container.Index) usecase.Scan {
-	return usecase.Scan{
+func scanFor(db *container.Index) vaults.Scan {
+	return vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),

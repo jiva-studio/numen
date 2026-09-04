@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args []string) error {
@@ -53,7 +53,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 
 	// A terminal that prints nothing for a minute looks broken. One group is
 	// about half a second, and the line rewrites itself.
-	making.Notes.OnProgress = func(res usecase.ScanResult) {
+	making.Notes.OnProgress = func(res vaults.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
 	making.Books.OnProgress = func(res source.ExtractResult) {
@@ -93,7 +93,7 @@ func findVault(cfg container.Config, nameOrPath string) (domain.Vault, error) {
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	v, err := usecase.Find{Registry: registry}.Execute(nameOrPath)
+	v, err := vaults.Find{Registry: registry}.Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}
@@ -118,7 +118,7 @@ func describeSources(r source.ExtractResult) string {
 // describe puts a scan into words. The use case counts; how that is said to a
 // person belongs to this adapter, and a graphical shell will say it differently
 // or not at all.
-func describe(r usecase.ScanResult) string {
+func describe(r vaults.ScanResult) string {
 	s := fmt.Sprintf("%d notes: %d indexed, %d unchanged, %d removed",
 		r.Notes, r.Indexed, r.Unchanged, r.Removed)
 	if r.Vanished > 0 {

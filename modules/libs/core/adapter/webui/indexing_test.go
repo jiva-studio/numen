@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // TestAPassThatCouldNotEmbedStaysInTheList. A window opened from a desktop
@@ -250,7 +250,7 @@ func reading(t *testing.T) (container.Config, *container.Index) {
 func cut(t *testing.T, db *container.Index, api *API) {
 	t.Helper()
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),

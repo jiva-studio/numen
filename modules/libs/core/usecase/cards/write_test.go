@@ -105,7 +105,7 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatStandsAroundThem(t *testing
 
 // laid puts a deck in the vault and brings the index up to date, so that the
 // wikilink under each card's heading reaches the stencil it names.
-func laid(t *testing.T, vs vaults, path, body string) cards.Write {
+func laid(t *testing.T, vs vaulted, path, body string) cards.Write {
 	t.Helper()
 	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
@@ -117,7 +117,7 @@ func laid(t *testing.T, vs vaults, path, body string) cards.Write {
 }
 
 // held is the deck as the vault now holds it.
-func held(t *testing.T, vs vaults, path string) format.Deck {
+func held(t *testing.T, vs vaulted, path string) format.Deck {
 	t.Helper()
 	got, err := cards.Read{Readers: filesystem.VaultReaders{}, Links: vs.db.NoteQueries()}.
 		Deck(t.Context(), vs.first, path)

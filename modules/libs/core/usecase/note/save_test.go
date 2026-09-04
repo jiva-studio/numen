@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 func (c changing) saving() note.Write {
@@ -584,7 +584,7 @@ func TestARefreshTellsAFileTheVaultLeavesAloneFromANoteThatVanished(t *testing.T
 		t.Fatal(err)
 	}
 
-	refresh := usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: c.db.Notes()}
+	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: c.db.Notes()}
 	res, err := refresh.Execute(t.Context(), c.vault, []string{"photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)

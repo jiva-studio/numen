@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // Version is what an agent is told it is talking to.
@@ -86,9 +86,9 @@ type Vaults struct {
 	FolderDialog port.FolderDialog
 	// Add turns a folder into a vault, Rename is what a person calls one, and
 	// Forget takes one off the list.
-	Add    *usecase.Add
-	Rename *usecase.Rename
-	Forget *usecase.Forget
+	Add    *vaults.Add
+	Rename *vaults.Rename
+	Forget *vaults.Forget
 	// Opens puts another vault in the window. The tools are served for the vault
 	// that is going, so the session asking for the swap ends with it.
 	Opens func(context.Context, domain.Vault) error

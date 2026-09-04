@@ -18,7 +18,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The two vaults every test here uses. They share no word: a heading renamed in
@@ -63,15 +63,15 @@ var (
 	}
 )
 
-// vaults is two vaults on disk, indexed, and the ports every scenario is built
+// vaulted is two vaults on disk, indexed, and the ports every scenario is built
 // out of.
-type vaults struct {
+type vaulted struct {
 	db     *index.DB
 	first  domain.Vault
 	second domain.Vault
 }
 
-func indexed(t *testing.T) vaults {
+func indexed(t *testing.T) vaulted {
 	t.Helper()
 	ctx := t.Context()
 
@@ -81,11 +81,11 @@ func indexed(t *testing.T) vaults {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
-	out := vaults{db: db}
+	out := vaulted{db: db}
 	for i, notes := range []map[string]string{animals, minerals} {
 		v := testsupport.NewVault(t, notes)
 		if _, err := scan.Execute(ctx, v); err != nil {
@@ -100,9 +100,9 @@ func indexed(t *testing.T) vaults {
 	return out
 }
 
-func (vs vaults) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
+func (vs vaulted) index(t *testing.T) func(context.Context, domain.Vault, []string) error {
 	t.Helper()
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
 		Known: vs.db.NoteQueries(), Maintenance: vs.db.Maintenance(),
 	}

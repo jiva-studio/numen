@@ -14,19 +14,19 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // refreshing is a vault already scanned once, and the use case that brings named
 // notes up to date afterwards.
-func refreshing(t *testing.T, notes map[string]string) (usecase.Refresh, *container.Index, domain.Vault) {
+func refreshing(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
 	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	return usecase.Refresh{
+	return vaults.Refresh{
 		Readers: filesystem.VaultReaders{},
 		Notes:   db.Notes(),
 		Known:   db.SourcesKnown(),
@@ -277,7 +277,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 
 	v := testsupport.NewVault(t, notes)
 	written := &countingNotes{}
-	refresh := usecase.Refresh{Readers: filesystem.VaultReaders{}, Notes: written}
+	refresh := vaults.Refresh{Readers: filesystem.VaultReaders{}, Notes: written}
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)

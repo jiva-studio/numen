@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // BenchmarkRun is what opening the problems view costs.
@@ -72,7 +72,7 @@ func scanned(b *testing.B, notes map[string]string) (check.Checks, domain.Vault)
 	}
 	b.Cleanup(func() { db.Close() })
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
 		Known: db.Queries(), Maintenance: db.Maintenance(),
 	}

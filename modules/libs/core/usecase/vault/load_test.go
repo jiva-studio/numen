@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // The load test runs at the size the product is designed for, which no
@@ -57,7 +57,7 @@ func TestLoad(t *testing.T) {
 	}
 	defer db.Close()
 
-	scan := usecase.Scan{
+	scan := vaults.Scan{
 		Readers:     filesystem.VaultReaders{},
 		Vaults:      db.Vaults(),
 		Notes:       db.Notes(),
@@ -103,7 +103,7 @@ func TestLoad(t *testing.T) {
 // on average while the index is being rewritten, but what the slowest one in
 // twenty costs. An application feels slow at its ninety-fifth percentile, not at
 // its median.
-func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan usecase.Scan, query string) {
+func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
 	const (
 		readers  = 4
 		duration = 15 * time.Second

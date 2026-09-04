@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // indexRows is the index as a vault is written to and taken out of it: a set
@@ -70,7 +70,7 @@ func TestForgetTakesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 	kept, gone, registry := twoVaults(t)
 	index := &indexRows{}
 
-	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err != nil {
+	if err := (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err != nil {
 		t.Fatal(err)
 	}
 
@@ -90,7 +90,7 @@ func TestForgetLeavesTheFolderWhereItIs(t *testing.T) {
 	t.Parallel()
 	_, gone, registry := twoVaults(t)
 
-	if err := (usecase.Forget{Registry: registry, Index: &indexRows{}}).Execute(t.Context(), gone); err != nil {
+	if err := (vaults.Forget{Registry: registry, Index: &indexRows{}}).Execute(t.Context(), gone); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,8 +108,8 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 	}
 	index := &indexRows{}
 
-	err = (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), only)
-	if !errors.Is(err, usecase.ErrLastVault) {
+	err = (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), only)
+	if !errors.Is(err, vaults.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	known, err := registry.All()
@@ -129,7 +129,7 @@ func TestAVaultTheIndexCouldNotForgetStaysOnTheList(t *testing.T) {
 	_, gone, registry := twoVaults(t)
 	index := &indexRows{fails: errors.New("the index is locked")}
 
-	if err := (usecase.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err == nil {
+	if err := (vaults.Forget{Registry: registry, Index: index}).Execute(t.Context(), gone); err == nil {
 		t.Fatal("an index that refused was reported as success")
 	}
 	if _, found, err := registry.Find(string(gone.ID)); err != nil || !found {

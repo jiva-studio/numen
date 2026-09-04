@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // importingFiles is what a drop is called in the list of what is being done.
@@ -75,7 +75,7 @@ func directlyIn(into string, landed []string) []string {
 
 // refusedIn is what a drop could not bring in, in one sentence. Nothing is said
 // where every file arrived.
-func refusedIn(refused []usecase.Refusal) string {
+func refusedIn(refused []vaults.Refusal) string {
 	if len(refused) == 0 {
 		return ""
 	}

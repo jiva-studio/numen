@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // rows is the index as a vault is written to and taken out of it.
@@ -93,7 +93,7 @@ func onTheList(t *testing.T) *installation {
 	t.Helper()
 
 	registry := appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
-	adding := usecase.Add{Identity: filesystem.VaultIdentity{}, Registry: registry, Now: time.Now}
+	adding := vaults.Add{Identity: filesystem.VaultIdentity{}, Registry: registry, Now: time.Now}
 	held := &rows{}
 
 	f := &installation{
@@ -110,8 +110,8 @@ func onTheList(t *testing.T) *installation {
 			Registry:     registry,
 			FolderDialog: f.dialog,
 			Add:          &adding,
-			Rename:       &usecase.Rename{Registry: registry, Index: held},
-			Forget:       &usecase.Forget{Registry: registry, Index: held},
+			Rename:       &vaults.Rename{Registry: registry, Index: held},
+			Forget:       &vaults.Forget{Registry: registry, Index: held},
 			Opens: func(_ context.Context, v domain.Vault) error {
 				f.swapped <- v
 				return nil
@@ -122,7 +122,7 @@ func onTheList(t *testing.T) *installation {
 }
 
 // joined makes a folder under a parent of its own and puts it on the list.
-func joined(t *testing.T, add usecase.Add, name string) domain.Vault {
+func joined(t *testing.T, add vaults.Add, name string) domain.Vault {
 	t.Helper()
 
 	v, err := add.Execute(folderNamed(t, name), name)
@@ -143,8 +143,8 @@ func folderNamed(t *testing.T, name string) string {
 	return at
 }
 
-// vaults is the list as an agent is answered with it.
-type vaults struct {
+// answered is the list as an agent is answered with it.
+type answered struct {
 	Vaults []struct {
 		ID      string `json:"id"`
 		Name    string `json:"name"`
@@ -204,7 +204,7 @@ func TestTheListNamesTheVaultInFrontAndMarksAFolderThatIsGone(t *testing.T) {
 	}
 	session := connectedTo(t, f.core)
 
-	list := call[vaults](t, session, "vault_list", struct{}{})
+	list := call[answered](t, session, "vault_list", struct{}{})
 	if len(list.Vaults) != 2 {
 		t.Fatalf("the list holds %v", list.Vaults)
 	}
