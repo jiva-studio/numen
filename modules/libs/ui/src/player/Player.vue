@@ -46,8 +46,8 @@ const sought = (event: Event) => emit('seek', Number((event.target as HTMLInputE
       :aria-pressed="props.playing ? 'true' : 'false'"
       @click="props.playing ? emit('pause') : emit('play')"
     >
-      <Pause v-if="props.playing" class="player__icon" />
-      <Play v-else class="player__icon" />
+      <Pause v-if="props.playing" />
+      <Play v-else />
     </button>
 
     <span class="player__at">{{ clock(props.at) }}</span>

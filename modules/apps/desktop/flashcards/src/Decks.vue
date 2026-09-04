@@ -98,11 +98,7 @@ const share = (deck: DeckOwing): string => {
         >
           <!-- The letter it is picked by, where the alphabet reaches it: a
                person reads down the list and presses what they see. -->
-          <KeyCap
-            v-if="letterOf(at)"
-            class="decks__key"
-            :keys="{ icons: [], letter: letterOf(at) }"
-          />
+          <KeyCap v-if="letterOf(at)" :keys="{ icons: [], letter: letterOf(at) }" />
           <span class="decks__name">
             {{ deckName(deck.deck) }}
             <!-- Which preset schedules it. -->

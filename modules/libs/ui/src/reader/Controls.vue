@@ -58,11 +58,11 @@ const turn = () => {
 </script>
 
 <template>
-  <div class="reader__controls pointer-events-none absolute inset-x-0 bottom-inset flex justify-center">
+  <div class="pointer-events-none absolute inset-x-0 bottom-inset flex justify-center">
     <!-- Standing over the page, so it carries a panel's own ground and lets
          what is behind it through. -->
     <div
-      class="reader__pill pointer-events-auto flex items-center gap-1 rounded-pill border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
+      class="pointer-events-auto flex items-center gap-1 rounded-pill border border-panel-rule bg-panel p-1 shadow-panel backdrop-blur-panel"
     >
       <Button
         variant="ghost"

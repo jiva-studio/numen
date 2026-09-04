@@ -27,11 +27,11 @@ withDefaults(
 <template>
   <p class="tool numen flex items-baseline gap-2 font-sans text-base text-hushed">
     <span class="tool__mark" :data-working="working || undefined" />
-    <span class="tool__name min-w-0 truncate">{{ tool }}</span>
-    <span v-if="about" class="tool__about min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
-    <span v-else class="tool__gap flex-1" />
-    <span v-if="aside" class="tool__aside flex-none tabular-nums opacity-70">{{ aside }}</span>
-    <Dots v-if="working" class="tool__dots" />
+    <span class="min-w-0 truncate">{{ tool }}</span>
+    <span v-if="about" class="min-w-0 flex-1 truncate opacity-70">{{ about }}</span>
+    <span v-else class="flex-1" />
+    <span v-if="aside" class="flex-none tabular-nums opacity-70">{{ aside }}</span>
+    <Dots v-if="working" />
   </p>
 </template>
 

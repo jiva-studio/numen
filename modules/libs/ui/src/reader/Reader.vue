@@ -173,7 +173,7 @@ defineExpose({
           :style="boxOf(page)"
         />
       </div>
-      <p v-else class="reader__silence grid h-full place-items-center text-small text-hushed">
+      <p v-else class="grid h-full place-items-center text-small text-hushed">
         <slot name="silence" />
       </p>
     </div>

@@ -302,7 +302,7 @@ onBeforeUnmount(leave)
           <span v-if="$slots.icon" class="menu__icon flex shrink-0 items-center">
             <slot name="icon" :id="item.id" />
           </span>
-          <span class="menu__said flex min-w-0 flex-col">
+          <span class="flex min-w-0 flex-col">
             <span class="menu__text">{{ item.text }}</span>
             <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
           </span>
