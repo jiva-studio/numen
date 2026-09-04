@@ -182,7 +182,7 @@ type Notes struct {
 type Files struct {
 	Writers port.VaultWriters
 	Move    *usecase.Move
-	Bring   *usecase.Bring
+	Bring   *usecase.Import
 }
 
 // Vaults is the list of vaults this installation holds, the one the window is
