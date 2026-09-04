@@ -64,7 +64,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	held := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	searchable, err := held.Searchable(t.Context(), db, wide{384}, v)
+	searchable, err := held.ReadWholeVault(t.Context(), db, wide{384}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,12 +109,12 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	held := container.Config{Embedding: embed.Defaults(), ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	if _, err := held.Searchable(t.Context(), db, wide{384}, v); err != nil {
+	if _, err := held.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {
 		t.Fatal(err)
 	}
 	// A width the index cannot be built for is the reason nothing is made
 	// searchable, and it is found before a vector is asked of anything.
-	_, err = held.Searchable(t.Context(), db, wide{0}, v)
+	_, err = held.ReadWholeVault(t.Context(), db, wide{0}, v)
 	if err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("got %v", err)
 	}

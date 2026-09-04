@@ -51,11 +51,13 @@ func (c Config) Scan(db *Index) vault.Scan {
 	}
 }
 
-// Searchable is what makes a vault answer, put together the one way: the notes
-// read, the books read, and the vectors made. Every entry point takes it from
-// here, so a vault made searchable in a terminal and a vault made searchable in
-// a window are the same vault.
-func (c Config) Searchable(ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault) (vault.ReadWholeVault, error) {
+// ReadWholeVault is what makes a vault answer, put together the one way: the
+// notes read, the books read, and the vectors made. Every entry point takes it
+// from here, so a vault made searchable in a terminal and a vault made
+// searchable in a window are the same vault.
+func (c Config) ReadWholeVault(
+	ctx context.Context, db *Index, embedder port.Embedder, v domain.Vault,
+) (vault.ReadWholeVault, error) {
 	// The coarse index is built for one width, and the width is the model's. A
 	// vault made searchable is a vault whose vector index holds what the model
 	// makes, whichever entry point is doing the making.

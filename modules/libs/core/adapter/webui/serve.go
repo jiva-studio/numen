@@ -1008,7 +1008,7 @@ func readSources(
 	embedder port.Embedder,
 	out io.Writer,
 ) {
-	making, err := cfg.Searchable(ctx, db, embedder, v)
+	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", Failed: err.Error()})
 		return
@@ -1061,7 +1061,7 @@ func cutSource(
 		api.say(task.Task{ID: readingBooks, Doing: "Reading books", About: path, Failed: err.Error()})
 	}
 
-	making, err := cfg.Searchable(ctx, db, embedder, v)
+	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
 		cut(err)
 		return
@@ -1125,7 +1125,7 @@ func embedSources(
 		api.say(task.Task{ID: makingVectors, Doing: "Indexing", Failed: err.Error()})
 	}
 
-	making, err := cfg.Searchable(ctx, db, embedder, v)
+	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
 		indexing(err)
 		return

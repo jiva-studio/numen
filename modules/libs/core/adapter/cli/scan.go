@@ -46,7 +46,7 @@ func scanCommand(ctx context.Context, out io.Writer, cfg container.Config, args 
 	if closeEmbedder != nil {
 		defer func() { _ = closeEmbedder() }()
 	}
-	making, err := cfg.Searchable(ctx, db, embedder, v)
+	making, err := cfg.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
 		return err
 	}
