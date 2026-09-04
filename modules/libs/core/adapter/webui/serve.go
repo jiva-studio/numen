@@ -52,10 +52,49 @@ type Opened struct {
 	// stopEmbedder gives back the models the installation is holding.
 	stopEmbedder func() error
 
-	// One settling runs at a time, and the second to arrive is refused.
+	shutting shutting
+}
+
+// shutting is what the window owes landing before anything is taken away: one
+// settling runs at a time, and whether the window has settled to go.
+//
+// A swap and a window closing both settle, and the second to arrive is
+// refused. A window that settled to go shows no other vault.
+type shutting struct {
 	mu    sync.Mutex
 	busy  bool
 	going bool
+}
+
+// alone takes the window for one settling, and says why it cannot be had.
+func (s *shutting) alone() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch {
+	case s.going:
+		return errGoing
+	case s.busy:
+		return errSettling
+	}
+	s.busy = true
+	return nil
+}
+
+// free gives the window back, the settling being over and the window staying.
+func (s *shutting) free() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.busy = false
+}
+
+// over gives the window back from the settling that ends it. gone is what that
+// settling came to.
+func (s *shutting) over(gone bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.busy = false
+	s.going = gone
 }
 
 // showing is the half of the window that belongs to one vault: the passes
@@ -365,10 +404,10 @@ func (o *Opened) Show(ctx context.Context, v domain.Vault) error {
 	if err := readable(o.cfg, v); err != nil {
 		return err
 	}
-	if err := o.alone(); err != nil {
+	if err := o.shutting.alone(); err != nil {
 		return err
 	}
-	defer o.free()
+	defer o.shutting.free()
 
 	// A page that says nothing is waited for HandedOverIn and no longer.
 	held, spent := context.WithTimeout(ctx, HandedOverIn)
@@ -549,28 +588,6 @@ func (o *Opened) forget() {
 	}
 }
 
-// alone takes the window for one settling. A swap and a window closing both
-// settle, one settling runs at a time, and the second to arrive is told so.
-func (o *Opened) alone() error {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-
-	switch {
-	case o.going:
-		return errGoing
-	case o.busy:
-		return errSettling
-	}
-	o.busy = true
-	return nil
-}
-
-func (o *Opened) free() {
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.busy = false
-}
-
 // Settle is everything owed landing before anything is taken away. It is called
 // while the window is still drawn, and calling it again is free. It answers
 // false where a page is holding work a person is being asked about, and then
@@ -579,25 +596,15 @@ func (o *Opened) free() {
 // A vault being opened settles too, and the close that arrives while it is
 // running is answered false: the window stays, and the next ask settles again.
 func (o *Opened) Settle(ctx context.Context) bool {
-	o.mu.Lock()
-	if o.going {
-		o.mu.Unlock()
+	switch err := o.shutting.alone(); {
+	case errors.Is(err, errGoing):
 		return true
-	}
-	if o.busy {
-		o.mu.Unlock()
+	case err != nil:
 		return false
 	}
-	o.busy = true
-	o.mu.Unlock()
 
 	settled := settling(ctx, &o.API.clients, &o.API.Writing)
-
-	o.mu.Lock()
-	defer o.mu.Unlock()
-	o.busy = false
-	// A window that settled to go shows no other vault.
-	o.going = settled
+	o.shutting.over(settled)
 	return settled
 }
 

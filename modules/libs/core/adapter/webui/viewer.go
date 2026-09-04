@@ -62,11 +62,29 @@ type viewer struct {
 	// not an answer to a person turning a page.
 	patience time.Duration
 
-	// reading is the one page drawn before it is asked for.
-	reading chan struct{}
-	// ahead is how long that drawing has, being nobody's request.
-	ahead time.Duration
+	ahead ahead
 }
+
+// ahead is the page drawn before it is asked for: the one slot that drawing
+// runs in, and how long it has, being nobody's request.
+type ahead struct {
+	reading chan struct{}
+	within  time.Duration
+}
+
+// take holds the slot for one drawing ahead, and answers false where one is
+// already running: an ask being answered now comes first.
+func (a *ahead) take() bool {
+	select {
+	case a.reading <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}
+
+// done gives the slot back.
+func (a *ahead) done() { <-a.reading }
 
 const (
 	// patience is what a request waits for the document it is about.
@@ -89,8 +107,7 @@ func looking(docs port.Documents) *viewer {
 	v := &viewer{
 		open:     drawnBy(docs),
 		patience: patience,
-		reading:  make(chan struct{}, 1),
-		ahead:    drawnAhead,
+		ahead:    ahead{reading: make(chan struct{}, 1), within: drawnAhead},
 	}
 	v.docs.Store(keeping())
 	v.drawn.Store(drawings())
@@ -288,14 +305,12 @@ func (a *API) readAhead(reader port.VaultReader, key pictureID) {
 	if a.Viewer.drawn.Load().has(next) {
 		return
 	}
-	select {
-	case a.Viewer.reading <- struct{}{}:
-	default:
+	if !a.Viewer.ahead.take() {
 		return
 	}
 	go func() {
-		defer func() { <-a.Viewer.reading }()
-		ctx, cancel := context.WithTimeout(context.Background(), a.Viewer.ahead)
+		defer a.Viewer.ahead.done()
+		ctx, cancel := context.WithTimeout(context.Background(), a.Viewer.ahead.within)
 		defer cancel()
 		a.picture(ctx, reader, next)
 	}()

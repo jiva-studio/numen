@@ -126,7 +126,7 @@ func drawnFrom(t *testing.T, from *paper) (*API, http.Handler) {
 
 // alone turns off the page drawn ahead, for a test counting what was drawn: a
 // slot with no room in it is a drawing that never starts.
-func alone(api *API) { api.Viewer.reading = make(chan struct{}) }
+func alone(api *API) { api.Viewer.ahead.reading = make(chan struct{}) }
 
 // fromTheLibrary is a window looking at a file the library itself draws.
 //
