@@ -300,8 +300,8 @@ export function stencilling(
 
   /** The identity of the tab standing at a file, minted where none stands there. */
   const mints = (path: string): string => {
-    const standing = tabbed.value.get(path) ?? minting.get(path)
-    if (standing) return standing
+    const open = tabbed.value.get(path) ?? minting.get(path)
+    if (open) return open
     const one = crypto.randomUUID()
     minting.set(path, one)
     minted.set(one, path)

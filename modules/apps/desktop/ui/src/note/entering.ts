@@ -47,8 +47,8 @@ export function entering() {
    * is drawn, and the place is what it was opened for.
    */
   const owes = (id: string, line = ITSELF) => {
-    const standing = owed.get(id) ?? ITSELF
-    owed.set(id, line === ITSELF ? standing : line)
+    const was = owed.get(id) ?? ITSELF
+    owed.set(id, line === ITSELF ? was : line)
     void nextTick(() => enters(id))
   }
 

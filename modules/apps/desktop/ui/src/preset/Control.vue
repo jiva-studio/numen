@@ -211,11 +211,11 @@ const named = computed(() => {
 const heights = computed(() => {
   const { least, most } = band.value
   const said = (value: number) => words.heightAt(props.curve.goal, value)
-  const standing = marks.value.map((one) => one.spot)
+  const marked = marks.value.map((one) => one.spot)
   const over = perched.value?.box
   const fits = (y: number, lift: string, value: number) => {
     const box = againstBox(y, lift)
-    if (!clearAt(y, spots.value, standing)) return []
+    if (!clearAt(y, spots.value, marked)) return []
     if (over && !apart(box, over)) return []
     return [{ at: against(y, lift), box, text: said(value) }]
   }

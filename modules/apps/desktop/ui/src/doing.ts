@@ -295,7 +295,7 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
   if (!carry) return
   on.says('')
   try {
-    await carry(standing(deed, on), on, words)
+    await carry(atItsFile(deed, on), on, words)
   } catch (error) {
     on.says(String(error), 'refusal')
   }
@@ -305,7 +305,7 @@ export async function does(deed: Deed | null, on: Doing, words: Words): Promise<
  * The deed at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
-const standing = (deed: Deed, on: Doing): Deed =>
+const atItsFile = (deed: Deed, on: Doing): Deed =>
   deed.note ? { ...deed, path: on.notes.where(deed.note) } : deed
 
 /** A tab asked to settle: which one it was, and whether it is still waiting. */

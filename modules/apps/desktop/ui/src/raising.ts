@@ -26,8 +26,8 @@ export function raising(notes: Notes, going: Quit) {
 
   watch(
     () => notes.all().filter((id) => notes.shown(id).state === 'overtaken'),
-    (standing) => {
-      for (const id of standing) {
+    (overtaken) => {
+      for (const id of overtaken) {
         if (raised.has(id)) continue
         raised.set(
           id,
@@ -39,7 +39,7 @@ export function raising(notes: Notes, going: Quit) {
         )
       }
       for (const [id, drop] of raised) {
-        if (standing.includes(id)) continue
+        if (overtaken.includes(id)) continue
         drop()
         raised.delete(id)
       }
