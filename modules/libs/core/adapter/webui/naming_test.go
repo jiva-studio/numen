@@ -128,7 +128,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 // file are kept as one name.
 func oneName(t *testing.T, f *going, kept bool) error {
 	t.Helper()
-	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+	_, err := f.configuring.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
 		Settings: []*v1.Setting{
 			{At: []string{"naming", "sync_title_and_filename"}, Value: fmt.Sprint(kept)},
 		},

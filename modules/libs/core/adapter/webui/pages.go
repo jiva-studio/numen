@@ -37,6 +37,7 @@ func (a *API) Serving(files http.Handler) http.Handler {
 	listing, held := numenv1connect.NewVaultsServiceHandler(vaults{api: a}, counted)
 	cutting, decks := numenv1connect.NewCardsServiceHandler(a, counted)
 	scheduling, presets := numenv1connect.NewPresetsServiceHandler(a, counted)
+	configuring, settings := numenv1connect.NewSettingsServiceHandler(a, counted)
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
 	policy := appearance.Policy(appearance.Sources{Media: a.Playing.named()})
@@ -54,6 +55,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			decks.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, scheduling):
 			presets.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, configuring):
+			settings.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, route):
 			questions.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, asking):

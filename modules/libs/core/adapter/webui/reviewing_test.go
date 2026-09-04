@@ -27,7 +27,7 @@ func dayStarts(t *testing.T, f *going) string {
 // begins writes the hour into the settings.
 func begins(t *testing.T, f *going, hour string) error {
 	t.Helper()
-	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+	_, err := f.configuring.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
 		Settings: []*v1.Setting{{At: []string{"review", "day_starts"}, Value: `"` + hour + `"`}},
 	}))
 	return err

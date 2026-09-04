@@ -15,6 +15,7 @@ import {
   Presence as Presences,
   Role as Roles,
   Seat as Seats,
+  SettingsService,
   SourceKind,
   VaultService,
   VaultsRefusal,
@@ -85,6 +86,9 @@ const vaultsService = createClient(VaultsService, transport)
 
 const cardsService = createClient(CardsService, transport)
 
+/** The file this installation is configured in, which is no vault's. */
+const settingsService = createClient(SettingsService, transport)
+
 /**
  * The settings the window turns by name, each where it sits in the file.
  *
@@ -98,7 +102,7 @@ const STARTS = ['review', 'day_starts']
 
 /** Every setting as it stands, with the defaults under what the file leaves out. */
 const configured = async (): Promise<unknown> =>
-  JSON.parse((await vault.settings({})).written)
+  JSON.parse((await settingsService.settings({})).written)
 
 /** How many parts a node hangs, and the default where the settings name none. */
 const partsIn = (value: unknown): number =>
@@ -112,7 +116,7 @@ const puts = async (
   written: readonly { at: readonly string[]; value: unknown }[],
 ): Promise<string | null> => {
   try {
-    await vault.chooseSettings({
+    await settingsService.chooseSettings({
       settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
     })
   } catch (thrown) {
@@ -316,7 +320,7 @@ export const core: Core & Asking & Commanding = {
       ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
     ]),
   settings: async () => {
-    const answer = await vault.settings({})
+    const answer = await settingsService.settings({})
     return {
       written: answer.written,
       path: answer.path,
@@ -332,16 +336,16 @@ export const core: Core & Asking & Commanding = {
     } satisfies Configured
   },
   choosesSetting: async (written) => {
-    await vault.chooseSettings({
+    await settingsService.chooseSettings({
       settings: written.map((one) => ({ at: [...one.at], value: one.value })),
     })
   },
   settingsFile: async () => {
-    const answer = await vault.settingsFile({})
+    const answer = await settingsService.settingsFile({})
     return { written: answer.written, path: answer.path }
   },
   writesSettingsFile: async (written, seen) => {
-    const answer = await vault.writeSettingsFile({
+    const answer = await settingsService.writeSettingsFile({
       written,
       ...(seen === null ? {} : { seen }),
     })

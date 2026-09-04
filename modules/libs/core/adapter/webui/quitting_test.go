@@ -29,8 +29,11 @@ import (
 // talking to it the way the window does.
 type going struct {
 	client numenv1connect.VaultServiceClient
-	opened *webui.Opened
-	root   string
+	// configuring is the file a person configures this installation in, which
+	// is a service of its own beside the vault.
+	configuring numenv1connect.SettingsServiceClient
+	opened      *webui.Opened
+	root        string
 	// settings is the vault list this window keeps, which is the folder its
 	// settings file sits in.
 	settings string
@@ -125,8 +128,10 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 
 	route, handler := numenv1connect.NewVaultServiceHandler(opened.API)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(opened.API)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
+	mux.Handle(turning, settings)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -134,11 +139,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(server.Close)
 
 	return &going{
-		client:   numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
-		opened:   opened,
-		root:     root,
-		settings: cfg.RegistryPath,
-		order:    recorded,
+		client:      numenv1connect.NewVaultServiceClient(server.Client(), server.URL),
+		configuring: numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
+		opened:      opened,
+		root:        root,
+		settings:    cfg.RegistryPath,
+		order:       recorded,
 	}
 }
 
