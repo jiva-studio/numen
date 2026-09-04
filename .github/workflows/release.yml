@@ -181,6 +181,13 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
@@ -192,7 +199,7 @@ jobs:
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install INSTALL="npm ci"
           make interface
 
       # What the binary answers `--version` with is written in at the link.
@@ -557,13 +564,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install INSTALL="npm ci"
           make interface
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
@@ -647,13 +661,20 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            modules/libs/protocol/package-lock.json
+            modules/libs/ui/package-lock.json
+            modules/apps/desktop/ui/package-lock.json
+            modules/apps/desktop/flashcards/package-lock.json
+            modules/apps/landing/package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Interface
         env:
           VITE_NUMEN_VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          make install
+          make install INSTALL="npm ci"
           make interface
 
       # Both architectures come off this one machine: the window links against
