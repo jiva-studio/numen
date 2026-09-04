@@ -14,7 +14,7 @@
 -- not be open on this machine. Reporting it would tell somebody to mend a link
 -- that is fine everywhere they use it.
 SELECT s.path, l.scheme, l.value, l.role,
-       COALESCE(l.type, ''), COALESCE(l.note, ''), COALESCE(l.label, '')
+       COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, '')
 FROM links l
 JOIN sources s ON s.id = l.note_id
 WHERE s.vault_id = ?

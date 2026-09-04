@@ -113,7 +113,7 @@ CREATE TABLE headings (
 -- joined with notes: adding a file can resolve a link that was dangling, and
 -- deleting one can break a link that worked.
 --
--- `note` is what the person wrote about why the link exists.
+-- `why` is what the person wrote about why the link exists.
 CREATE TABLE links (
     note_id     INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,
     position    INTEGER NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE links (
 
     role        TEXT NOT NULL,
     type        TEXT,
-    note        TEXT,
+    why         TEXT,
     label       TEXT,
 
     PRIMARY KEY (note_id, position)
