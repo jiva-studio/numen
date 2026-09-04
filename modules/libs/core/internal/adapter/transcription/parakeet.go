@@ -52,8 +52,6 @@ const (
 // last in the file of pieces, after every token the model can write.
 const blankPiece = "<blk>"
 
-var _ port.Transcriber = (*Transcriber)(nil)
-
 // A Transcriber is the models this machine hears a recording with.
 type Transcriber struct {
 	encoder *ort.Session

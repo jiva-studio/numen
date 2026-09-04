@@ -20,8 +20,6 @@ type folderDialog struct {
 	up bool
 }
 
-var _ port.FolderDialog = (*folderDialog)(nil)
-
 // Choose answers with the folder the person chose, and with false where they
 // closed the dialog. A dialog ends when the person answers it, and that wait is
 // on a person and is not measured.

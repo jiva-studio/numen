@@ -1,6 +1,7 @@
 package container
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -105,6 +106,60 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	if read < 100 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the core", read)
 	}
+}
+
+// A port is named after the need and an adapter after the technology, and the
+// binding between them is the composition root's. An adapter that writes
+// `var _ port.X = …` has named the need it answers, which puts the binding in
+// two places: the day the port grows a method, the adapter fails to compile
+// where nothing yet asks it for that method.
+func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
+	var wrong []string
+	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") {
+			return err
+		}
+		if strings.HasSuffix(path, "_test.go") || !adapting(within("..", path)) {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		for _, one := range claimed(file) {
+			wrong = append(wrong, path+" names port."+one)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// claimed are the ports a file declares itself to answer, by the blank name.
+func claimed(file *ast.File) []string {
+	var held []string
+	for _, one := range file.Decls {
+		decl, is := one.(*ast.GenDecl)
+		if !is || decl.Tok != token.VAR {
+			continue
+		}
+		for _, spec := range decl.Specs {
+			named, is := spec.(*ast.ValueSpec)
+			if !is || len(named.Names) != 1 || named.Names[0].Name != "_" {
+				continue
+			}
+			if at, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+					held = append(held, at.Sel.Name)
+				}
+			}
+		}
+	}
+	return held
 }
 
 // layers are the folders the tree is laid out in.

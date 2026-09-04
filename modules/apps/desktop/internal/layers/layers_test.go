@@ -5,6 +5,7 @@
 package layers
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -111,6 +112,63 @@ func TestNoApplicationDoesTheCoresWork(t *testing.T) {
 	if read < 50 {
 		t.Fatalf("%d edges read: the walk is not reading the applications", read)
 	}
+}
+
+// A port is named after the need and what answers it after the technology, and
+// the binding between them is the composition root's. A file that writes
+// `var _ port.X = …` has named the need it answers, which puts the binding in
+// two places: the day the port grows a method, this fails to compile where
+// nothing yet asks it for that method.
+func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
+	var wrong []string
+	err := filepath.WalkDir(filepath.Join("..", "..", ".."), func(path string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() {
+			if entry != nil && entry.IsDir() && entry.Name() == "node_modules" {
+				return filepath.SkipDir
+			}
+			return err
+		}
+		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			return nil
+		}
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if err != nil {
+			return err
+		}
+		for _, one := range claimed(file) {
+			wrong = append(wrong, path+" names port."+one)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, one := range wrong {
+		t.Error(one)
+	}
+}
+
+// claimed are the ports a file declares itself to answer, by the blank name.
+func claimed(file *ast.File) []string {
+	var held []string
+	for _, one := range file.Decls {
+		decl, is := one.(*ast.GenDecl)
+		if !is || decl.Tok != token.VAR {
+			continue
+		}
+		for _, spec := range decl.Specs {
+			named, is := spec.(*ast.ValueSpec)
+			if !is || len(named.Names) != 1 || named.Names[0].Name != "_" {
+				continue
+			}
+			if at, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+					held = append(held, at.Sel.Name)
+				}
+			}
+		}
+	}
+	return held
 }
 
 // within is the package a file belongs to, as the rules name it.

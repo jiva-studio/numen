@@ -8,8 +8,6 @@ var ErrNoTrash = port.ErrNoTrash
 // Trash is this machine's trash.
 type Trash struct{}
 
-var _ port.Trash = Trash{}
-
 // New is this machine's trash.
 func New() Trash { return Trash{} }
 
