@@ -66,9 +66,9 @@ func (a *API) ListPresets(
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
 
-	out := &v1.ListPresetsResponse{Presets: make([]*v1.Listed, 0, len(held))}
+	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(held))}
 	for _, one := range held {
-		out.Presets = append(out.Presets, &v1.Listed{Path: one.Path, Title: one.Title})
+		out.Presets = append(out.Presets, &v1.PresetSummary{Path: one.Path, Title: one.Title})
 	}
 	return connect.NewResponse(out), nil
 }

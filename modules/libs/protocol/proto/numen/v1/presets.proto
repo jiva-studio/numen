@@ -372,12 +372,12 @@ message GetDeckPresetResponse {
 message ListPresetsRequest {}
 
 message ListPresetsResponse {
-  repeated Listed presets = 1;
+  repeated PresetSummary presets = 1;
 }
 
-// Listed is one preset as a person choosing between them sees it: where the
-// file is, and what it is called.
-message Listed {
+// PresetSummary is one preset as a person choosing between them sees it: where
+// the file is, and what it is called.
+message PresetSummary {
   string path = 1;
 
   // What the preset is called. Empty where nothing names the note.

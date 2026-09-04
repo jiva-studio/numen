@@ -1065,7 +1065,7 @@ func (*ListPresetsRequest) Descriptor() ([]byte, []int) {
 
 type ListPresetsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Presets       []*Listed              `protobuf:"bytes,1,rep,name=presets,proto3" json:"presets,omitempty"`
+	Presets       []*PresetSummary       `protobuf:"bytes,1,rep,name=presets,proto3" json:"presets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1100,16 +1100,16 @@ func (*ListPresetsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListPresetsResponse) GetPresets() []*Listed {
+func (x *ListPresetsResponse) GetPresets() []*PresetSummary {
 	if x != nil {
 		return x.Presets
 	}
 	return nil
 }
 
-// Listed is one preset as a person choosing between them sees it: where the
-// file is, and what it is called.
-type Listed struct {
+// PresetSummary is one preset as a person choosing between them sees it: where
+// the file is, and what it is called.
+type PresetSummary struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the preset is called. Empty where nothing names the note.
@@ -1118,20 +1118,20 @@ type Listed struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Listed) Reset() {
-	*x = Listed{}
+func (x *PresetSummary) Reset() {
+	*x = PresetSummary{}
 	mi := &file_numen_v1_presets_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Listed) String() string {
+func (x *PresetSummary) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Listed) ProtoMessage() {}
+func (*PresetSummary) ProtoMessage() {}
 
-func (x *Listed) ProtoReflect() protoreflect.Message {
+func (x *PresetSummary) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_presets_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1143,19 +1143,19 @@ func (x *Listed) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Listed.ProtoReflect.Descriptor instead.
-func (*Listed) Descriptor() ([]byte, []int) {
+// Deprecated: Use PresetSummary.ProtoReflect.Descriptor instead.
+func (*PresetSummary) Descriptor() ([]byte, []int) {
 	return file_numen_v1_presets_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *Listed) GetPath() string {
+func (x *PresetSummary) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Listed) GetTitle() string {
+func (x *PresetSummary) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
@@ -1901,10 +1901,10 @@ const file_numen_v1_presets_proto_rawDesc = "" +
 	"\n" +
 	"\b_refusalB\x05\n" +
 	"\x03_at\"\x14\n" +
-	"\x12ListPresetsRequest\"A\n" +
-	"\x13ListPresetsResponse\x12*\n" +
-	"\apresets\x18\x01 \x03(\v2\x10.numen.v1.ListedR\apresets\"2\n" +
-	"\x06Listed\x12\x12\n" +
+	"\x12ListPresetsRequest\"H\n" +
+	"\x13ListPresetsResponse\x121\n" +
+	"\apresets\x18\x01 \x03(\v2\x17.numen.v1.PresetSummaryR\apresets\"9\n" +
+	"\rPresetSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\"C\n" +
 	"\x13CreatePresetRequest\x12\x14\n" +
@@ -2021,7 +2021,7 @@ var file_numen_v1_presets_proto_goTypes = []any{
 	(*GetDeckPresetResponse)(nil), // 10: numen.v1.GetDeckPresetResponse
 	(*ListPresetsRequest)(nil),    // 11: numen.v1.ListPresetsRequest
 	(*ListPresetsResponse)(nil),   // 12: numen.v1.ListPresetsResponse
-	(*Listed)(nil),                // 13: numen.v1.Listed
+	(*PresetSummary)(nil),         // 13: numen.v1.PresetSummary
 	(*CreatePresetRequest)(nil),   // 14: numen.v1.CreatePresetRequest
 	(*CreatePresetResponse)(nil),  // 15: numen.v1.CreatePresetResponse
 	(*ScheduleDeckRequest)(nil),   // 16: numen.v1.ScheduleDeckRequest
@@ -2054,7 +2054,7 @@ var file_numen_v1_presets_proto_depIdxs = []int32{
 	26, // 12: numen.v1.GetDeckPresetResponse.refusal:type_name -> numen.v1.Refusal
 	27, // 13: numen.v1.GetDeckPresetResponse.at:type_name -> numen.v1.Fingerprint
 	20, // 14: numen.v1.GetDeckPresetResponse.bounds:type_name -> numen.v1.SettingsBounds
-	13, // 15: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.Listed
+	13, // 15: numen.v1.ListPresetsResponse.presets:type_name -> numen.v1.PresetSummary
 	26, // 16: numen.v1.CreatePresetResponse.refusal:type_name -> numen.v1.Refusal
 	27, // 17: numen.v1.ScheduleDeckRequest.seen:type_name -> numen.v1.Fingerprint
 	26, // 18: numen.v1.ScheduleDeckResponse.refusal:type_name -> numen.v1.Refusal
