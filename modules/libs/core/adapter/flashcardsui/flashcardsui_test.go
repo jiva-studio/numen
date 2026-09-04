@@ -116,7 +116,6 @@ func windowed(t testing.TB, vaults ...map[string]string) (*API, []domain.Vault) 
 			Reads:  note.Read{Readers: filesystem.VaultReaders{}},
 		},
 		Presets: running.Presets,
-		Curves:  running.Curves,
 		Notes:   db.Queries(),
 		Tasking: task.New(),
 		Day:     running.Day,

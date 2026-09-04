@@ -77,11 +77,6 @@ service FlashcardsService {
   // and told so.
   rpc Scheduling(FlashcardsServiceSchedulingRequest) returns (FlashcardsServiceSchedulingResponse);
 
-  // Curve is what the settings come to over the whole range of the goal they
-  // name. Nothing is written: a curve is asked for the value a person is
-  // moving and has not settled.
-  rpc Curve(FlashcardsServiceCurveRequest) returns (FlashcardsServiceCurveResponse);
-
   // Tasks is everything this window is doing behind itself, for as long as the
   // caller listens. Reading a vault is the work it reports, and a vault is read
   // without anyone asking, so the whole list arrives at once and again whenever
@@ -463,19 +458,4 @@ message FlashcardsServiceSchedulingResponse {
 
   // Set when the preset was not read, and why.
   optional Refusal refusal = 2;
-}
-
-message FlashcardsServiceCurveRequest {
-  string vault_id = 1;
-
-  // The note the preset stands in, which names the decks it schedules. Empty
-  // is the preset that schedules the decks naming none.
-  string path = 2;
-
-  // The settings a curve is wanted for. They need not be what the file holds.
-  Settings settings = 3;
-}
-
-message FlashcardsServiceCurveResponse {
-  Curve curve = 1;
 }

@@ -9,8 +9,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
-	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -62,41 +60,6 @@ func TestAPresetIsReadFromTheVaultTheRequestNames(t *testing.T) {
 	}
 	if second.GetSettings().GetReviewsADay() != 11 {
 		t.Errorf("the second vault's settings are %+v", second.GetSettings())
-	}
-}
-
-// A curve is worked out over the vault named in the request. The preset here
-// stands in one of the two vaults, and only the deck of that vault is under it.
-func TestACurveIsWorkedOutOverTheVaultTheRequestNames(t *testing.T) {
-	api, held := windowed(t, pointed, elsewhere)
-	one, two := held[0], held[1]
-
-	curved := func(v domain.Vault) *v1.Curve {
-		t.Helper()
-		out, err := api.Curve(t.Context(), connect.NewRequest(&v1.FlashcardsServiceCurveRequest{
-			VaultId: string(v.ID), Path: "Sanskrit.md",
-			Settings: wire.SettingsOf(history.Defaults()),
-		}))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return out.Msg.GetCurve()
-	}
-
-	carried := func(c *v1.Curve) bool {
-		for _, at := range c.GetAt() {
-			if at.GetReviews() > 0 || at.GetMinutes() > 0 {
-				return true
-			}
-		}
-		return false
-	}
-
-	if !carried(curved(one)) {
-		t.Error("the vault holding Sanskrit.md was projected as scheduling nothing")
-	}
-	if carried(curved(two)) {
-		t.Error("a vault holding no Sanskrit.md was projected as scheduling cards")
 	}
 }
 
@@ -158,12 +121,5 @@ func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 		&v1.FlashcardsServiceSchedulingRequest{VaultId: "nobody", Deck: "decks/Words.md"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("reading answered %v", err)
-	}
-
-	_, err = api.Curve(t.Context(), connect.NewRequest(&v1.FlashcardsServiceCurveRequest{
-		VaultId: "nobody", Path: "Sanskrit.md", Settings: wire.SettingsOf(history.Defaults()),
-	}))
-	if connect.CodeOf(err) != connect.CodeNotFound {
-		t.Errorf("the curve answered %v", err)
 	}
 }

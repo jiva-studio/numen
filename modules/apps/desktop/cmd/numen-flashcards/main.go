@@ -103,7 +103,6 @@ func run(cfg container.Config, noAgent bool) error {
 			Reads:  note.Read{Readers: cfg.VaultReaders()},
 		},
 		Presets: running.Presets,
-		Curves:  running.Curves,
 		Notes:   db.Queries(),
 		Tasking: task.New(),
 		Day:     running.Day,

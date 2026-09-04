@@ -35,27 +35,6 @@ func (a *API) Scheduling(
 	return connect.NewResponse(out), nil
 }
 
-// Curve is what these settings come to over the whole range of the goal they
-// name. Nothing is written: a curve is asked for the value a person is moving
-// and has not settled.
-func (a *API) Curve(
-	ctx context.Context, r *connect.Request[v1.FlashcardsServiceCurveRequest],
-) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
-	}
-	settings, err := wire.SettingsIn(r.Msg.GetSettings())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	held, err := a.Curves.Execute(ctx, v, r.Msg.GetPath(), settings)
-	if err != nil {
-		return nil, connect.NewError(refusal.Coded(err), err)
-	}
-	return connect.NewResponse(&v1.FlashcardsServiceCurveResponse{Curve: wire.CurveOf(held)}), nil
-}
-
 // titled is what the vault calls the note at a path. A build with no index, and
 // a path the index holds no note at, are answered with no name.
 func (a *API) titled(ctx context.Context, v domain.Vault, path string) string {

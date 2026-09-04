@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	history "github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
@@ -87,7 +88,6 @@ func standing(api *API, now time.Time) {
 	api.Day = reviewDay
 	api.Owed.Day, api.Owed.Now = reviewDay, at
 	api.Session.Day, api.Session.Now = reviewDay, at
-	api.Curves.Day, api.Curves.Now = reviewDay, at
 	api.Counted.Day, api.Counted.Now = reviewDay, at
 }
 
@@ -180,16 +180,27 @@ func writtenBack(t *testing.T, api *API, v domain.Vault, path string, p history.
 	}
 }
 
-// pictured is what the preset tab draws for these settings.
+// pictured is what these settings come to over the whole range of their goal,
+// drawn by the simulator this window's own pieces make.
 func pictured(t *testing.T, api *API, v domain.Vault, path string, p history.Preset) *v1.Curve {
 	t.Helper()
-	out, err := api.Curve(t.Context(), connect.NewRequest(&v1.FlashcardsServiceCurveRequest{
-		VaultId: string(v.ID), Path: path, Settings: wire.SettingsOf(p),
-	}))
+	held, err := curves(api).Execute(t.Context(), v, path, p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return out.Msg.GetCurve()
+	return wire.CurveOf(held)
+}
+
+// curves is the simulator behind the one control of a preset, standing on the
+// day the window stands on.
+func curves(api *API) flashcards.Curves {
+	return flashcards.Curves{
+		Standings: api.Schedules.Standings,
+		Schedules: api.Schedules,
+		Presets:   api.Presets,
+		Day:       api.Day,
+		Now:       api.Now,
+	}
 }
 
 // The picture over a preset's range and the day its decks offer are one

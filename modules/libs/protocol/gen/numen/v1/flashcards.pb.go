@@ -2014,113 +2014,6 @@ func (x *FlashcardsServiceSchedulingResponse) GetRefusal() Refusal {
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-type FlashcardsServiceCurveRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	// The note the preset stands in, which names the decks it schedules. Empty
-	// is the preset that schedules the decks naming none.
-	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// The settings a curve is wanted for. They need not be what the file holds.
-	Settings      *Settings `protobuf:"bytes,3,opt,name=settings,proto3" json:"settings,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FlashcardsServiceCurveRequest) Reset() {
-	*x = FlashcardsServiceCurveRequest{}
-	mi := &file_numen_v1_flashcards_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FlashcardsServiceCurveRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FlashcardsServiceCurveRequest) ProtoMessage() {}
-
-func (x *FlashcardsServiceCurveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_flashcards_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FlashcardsServiceCurveRequest.ProtoReflect.Descriptor instead.
-func (*FlashcardsServiceCurveRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{27}
-}
-
-func (x *FlashcardsServiceCurveRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *FlashcardsServiceCurveRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *FlashcardsServiceCurveRequest) GetSettings() *Settings {
-	if x != nil {
-		return x.Settings
-	}
-	return nil
-}
-
-type FlashcardsServiceCurveResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Curve         *Curve                 `protobuf:"bytes,1,opt,name=curve,proto3" json:"curve,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *FlashcardsServiceCurveResponse) Reset() {
-	*x = FlashcardsServiceCurveResponse{}
-	mi := &file_numen_v1_flashcards_proto_msgTypes[28]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *FlashcardsServiceCurveResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*FlashcardsServiceCurveResponse) ProtoMessage() {}
-
-func (x *FlashcardsServiceCurveResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_flashcards_proto_msgTypes[28]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use FlashcardsServiceCurveResponse.ProtoReflect.Descriptor instead.
-func (*FlashcardsServiceCurveResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{28}
-}
-
-func (x *FlashcardsServiceCurveResponse) GetCurve() *Curve {
-	if x != nil {
-		return x.Curve
-	}
-	return nil
-}
-
 var File_numen_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_v1_flashcards_proto_rawDesc = "" +
@@ -2264,19 +2157,13 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\t\n" +
 	"\a_presetB\n" +
 	"\n" +
-	"\b_refusal\"~\n" +
-	"\x1dFlashcardsServiceCurveRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
-	"\bsettings\x18\x03 \x01(\v2\x12.numen.v1.SettingsR\bsettings\"G\n" +
-	"\x1eFlashcardsServiceCurveResponse\x12%\n" +
-	"\x05curve\x18\x01 \x01(\v2\x0f.numen.v1.CurveR\x05curve*e\n" +
+	"\b_refusal*e\n" +
 	"\x06Rating\x12\x16\n" +
 	"\x12RATING_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fRATING_AGAIN\x10\x01\x12\x0f\n" +
 	"\vRATING_HARD\x10\x02\x12\x0f\n" +
 	"\vRATING_GOOD\x10\x03\x12\x0f\n" +
-	"\vRATING_EASY\x10\x042\xaa\x06\n" +
+	"\vRATING_EASY\x10\x042\xce\x05\n" +
 	"\x11FlashcardsService\x12:\n" +
 	"\x05Owing\x12\x16.numen.v1.OwingRequest\x1a\x17.numen.v1.OwingResponse0\x01\x128\n" +
 	"\x05Start\x12\x16.numen.v1.StartRequest\x1a\x17.numen.v1.StartResponse\x12;\n" +
@@ -2287,8 +2174,7 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x06Asking\x12\x17.numen.v1.AskingRequest\x1a\x18.numen.v1.AskingResponse\x12;\n" +
 	"\x06Around\x12\x17.numen.v1.AroundRequest\x1a\x18.numen.v1.AroundResponse\x12i\n" +
 	"\n" +
-	"Scheduling\x12,.numen.v1.FlashcardsServiceSchedulingRequest\x1a-.numen.v1.FlashcardsServiceSchedulingResponse\x12Z\n" +
-	"\x05Curve\x12'.numen.v1.FlashcardsServiceCurveRequest\x1a(.numen.v1.FlashcardsServiceCurveResponse\x12\\\n" +
+	"Scheduling\x12,.numen.v1.FlashcardsServiceSchedulingRequest\x1a-.numen.v1.FlashcardsServiceSchedulingResponse\x12\\\n" +
 	"\x05Tasks\x12'.numen.v1.FlashcardsServiceTasksRequest\x1a(.numen.v1.FlashcardsServiceTasksResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -2304,7 +2190,7 @@ func file_numen_v1_flashcards_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_flashcards_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_flashcards_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_numen_v1_flashcards_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_numen_v1_flashcards_proto_goTypes = []any{
 	(Rating)(0),                                 // 0: numen.v1.Rating
 	(*FlashcardsServiceTasksRequest)(nil),       // 1: numen.v1.FlashcardsServiceTasksRequest
@@ -2334,20 +2220,16 @@ var file_numen_v1_flashcards_proto_goTypes = []any{
 	(*MovingResponse)(nil),                      // 25: numen.v1.MovingResponse
 	(*FlashcardsServiceSchedulingRequest)(nil),  // 26: numen.v1.FlashcardsServiceSchedulingRequest
 	(*FlashcardsServiceSchedulingResponse)(nil), // 27: numen.v1.FlashcardsServiceSchedulingResponse
-	(*FlashcardsServiceCurveRequest)(nil),       // 28: numen.v1.FlashcardsServiceCurveRequest
-	(*FlashcardsServiceCurveResponse)(nil),      // 29: numen.v1.FlashcardsServiceCurveResponse
-	(*Task)(nil),                                // 30: numen.v1.Task
-	(Stopped)(0),                                // 31: numen.v1.Stopped
-	(Refusal)(0),                                // 32: numen.v1.Refusal
-	(*Preset)(nil),                              // 33: numen.v1.Preset
-	(*Settings)(nil),                            // 34: numen.v1.Settings
-	(*Curve)(nil),                               // 35: numen.v1.Curve
+	(*Task)(nil),                                // 28: numen.v1.Task
+	(Stopped)(0),                                // 29: numen.v1.Stopped
+	(Refusal)(0),                                // 30: numen.v1.Refusal
+	(*Preset)(nil),                              // 31: numen.v1.Preset
 }
 var file_numen_v1_flashcards_proto_depIdxs = []int32{
-	30, // 0: numen.v1.FlashcardsServiceTasksResponse.tasks:type_name -> numen.v1.Task
+	28, // 0: numen.v1.FlashcardsServiceTasksResponse.tasks:type_name -> numen.v1.Task
 	4,  // 1: numen.v1.VaultOwing.decks:type_name -> numen.v1.DeckOwing
 	5,  // 2: numen.v1.VaultOwing.presets:type_name -> numen.v1.PresetOwing
-	31, // 3: numen.v1.PresetOwing.stops_on:type_name -> numen.v1.Stopped
+	29, // 3: numen.v1.PresetOwing.stops_on:type_name -> numen.v1.Stopped
 	6,  // 4: numen.v1.Asked.ahead:type_name -> numen.v1.Ahead
 	3,  // 5: numen.v1.OwingResponse.vaults:type_name -> numen.v1.VaultOwing
 	3,  // 6: numen.v1.OwingResponse.counted:type_name -> numen.v1.VaultOwing
@@ -2356,38 +2238,34 @@ var file_numen_v1_flashcards_proto_depIdxs = []int32{
 	18, // 9: numen.v1.ReviewedResponse.days:type_name -> numen.v1.Reviewing
 	18, // 10: numen.v1.ReviewedResponse.due:type_name -> numen.v1.Reviewing
 	23, // 11: numen.v1.AroundResponse.notes:type_name -> numen.v1.Neighbour
-	32, // 12: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
-	33, // 13: numen.v1.FlashcardsServiceSchedulingResponse.preset:type_name -> numen.v1.Preset
-	32, // 14: numen.v1.FlashcardsServiceSchedulingResponse.refusal:type_name -> numen.v1.Refusal
-	34, // 15: numen.v1.FlashcardsServiceCurveRequest.settings:type_name -> numen.v1.Settings
-	35, // 16: numen.v1.FlashcardsServiceCurveResponse.curve:type_name -> numen.v1.Curve
-	8,  // 17: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
-	10, // 18: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
-	12, // 19: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
-	14, // 20: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
-	24, // 21: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
-	16, // 22: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
-	19, // 23: numen.v1.FlashcardsService.Asking:input_type -> numen.v1.AskingRequest
-	21, // 24: numen.v1.FlashcardsService.Around:input_type -> numen.v1.AroundRequest
-	26, // 25: numen.v1.FlashcardsService.Scheduling:input_type -> numen.v1.FlashcardsServiceSchedulingRequest
-	28, // 26: numen.v1.FlashcardsService.Curve:input_type -> numen.v1.FlashcardsServiceCurveRequest
-	1,  // 27: numen.v1.FlashcardsService.Tasks:input_type -> numen.v1.FlashcardsServiceTasksRequest
-	9,  // 28: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
-	11, // 29: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
-	13, // 30: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
-	15, // 31: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
-	25, // 32: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
-	17, // 33: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
-	20, // 34: numen.v1.FlashcardsService.Asking:output_type -> numen.v1.AskingResponse
-	22, // 35: numen.v1.FlashcardsService.Around:output_type -> numen.v1.AroundResponse
-	27, // 36: numen.v1.FlashcardsService.Scheduling:output_type -> numen.v1.FlashcardsServiceSchedulingResponse
-	29, // 37: numen.v1.FlashcardsService.Curve:output_type -> numen.v1.FlashcardsServiceCurveResponse
-	2,  // 38: numen.v1.FlashcardsService.Tasks:output_type -> numen.v1.FlashcardsServiceTasksResponse
-	28, // [28:39] is the sub-list for method output_type
-	17, // [17:28] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	30, // 12: numen.v1.Neighbour.refusal:type_name -> numen.v1.Refusal
+	31, // 13: numen.v1.FlashcardsServiceSchedulingResponse.preset:type_name -> numen.v1.Preset
+	30, // 14: numen.v1.FlashcardsServiceSchedulingResponse.refusal:type_name -> numen.v1.Refusal
+	8,  // 15: numen.v1.FlashcardsService.Owing:input_type -> numen.v1.OwingRequest
+	10, // 16: numen.v1.FlashcardsService.Start:input_type -> numen.v1.StartRequest
+	12, // 17: numen.v1.FlashcardsService.Answer:input_type -> numen.v1.AnswerRequest
+	14, // 18: numen.v1.FlashcardsService.TakeBack:input_type -> numen.v1.TakeBackRequest
+	24, // 19: numen.v1.FlashcardsService.Moving:input_type -> numen.v1.MovingRequest
+	16, // 20: numen.v1.FlashcardsService.Reviewed:input_type -> numen.v1.ReviewedRequest
+	19, // 21: numen.v1.FlashcardsService.Asking:input_type -> numen.v1.AskingRequest
+	21, // 22: numen.v1.FlashcardsService.Around:input_type -> numen.v1.AroundRequest
+	26, // 23: numen.v1.FlashcardsService.Scheduling:input_type -> numen.v1.FlashcardsServiceSchedulingRequest
+	1,  // 24: numen.v1.FlashcardsService.Tasks:input_type -> numen.v1.FlashcardsServiceTasksRequest
+	9,  // 25: numen.v1.FlashcardsService.Owing:output_type -> numen.v1.OwingResponse
+	11, // 26: numen.v1.FlashcardsService.Start:output_type -> numen.v1.StartResponse
+	13, // 27: numen.v1.FlashcardsService.Answer:output_type -> numen.v1.AnswerResponse
+	15, // 28: numen.v1.FlashcardsService.TakeBack:output_type -> numen.v1.TakeBackResponse
+	25, // 29: numen.v1.FlashcardsService.Moving:output_type -> numen.v1.MovingResponse
+	17, // 30: numen.v1.FlashcardsService.Reviewed:output_type -> numen.v1.ReviewedResponse
+	20, // 31: numen.v1.FlashcardsService.Asking:output_type -> numen.v1.AskingResponse
+	22, // 32: numen.v1.FlashcardsService.Around:output_type -> numen.v1.AroundResponse
+	27, // 33: numen.v1.FlashcardsService.Scheduling:output_type -> numen.v1.FlashcardsServiceSchedulingResponse
+	2,  // 34: numen.v1.FlashcardsService.Tasks:output_type -> numen.v1.FlashcardsServiceTasksResponse
+	25, // [25:35] is the sub-list for method output_type
+	15, // [15:25] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_flashcards_proto_init() }
@@ -2406,7 +2284,7 @@ func file_numen_v1_flashcards_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_flashcards_proto_rawDesc), len(file_numen_v1_flashcards_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   29,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -68,8 +68,6 @@ const (
 	// FlashcardsServiceSchedulingProcedure is the fully-qualified name of the FlashcardsService's
 	// Scheduling RPC.
 	FlashcardsServiceSchedulingProcedure = "/numen.v1.FlashcardsService/Scheduling"
-	// FlashcardsServiceCurveProcedure is the fully-qualified name of the FlashcardsService's Curve RPC.
-	FlashcardsServiceCurveProcedure = "/numen.v1.FlashcardsService/Curve"
 	// FlashcardsServiceTasksProcedure is the fully-qualified name of the FlashcardsService's Tasks RPC.
 	FlashcardsServiceTasksProcedure = "/numen.v1.FlashcardsService/Tasks"
 )
@@ -125,10 +123,6 @@ type FlashcardsServiceClient interface {
 	// link reaches something that is not a preset is answered with the defaults
 	// and told so.
 	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
-	// Curve is what the settings come to over the whole range of the goal they
-	// name. Nothing is written: a curve is asked for the value a person is
-	// moving and has not settled.
-	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
 	// Tasks is everything this window is doing behind itself, for as long as the
 	// caller listens. Reading a vault is the work it reports, and a vault is read
 	// without anyone asking, so the whole list arrives at once and again whenever
@@ -201,12 +195,6 @@ func NewFlashcardsServiceClient(httpClient connect.HTTPClient, baseURL string, o
 			connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
 			connect.WithClientOptions(opts...),
 		),
-		curve: connect.NewClient[v1.FlashcardsServiceCurveRequest, v1.FlashcardsServiceCurveResponse](
-			httpClient,
-			baseURL+FlashcardsServiceCurveProcedure,
-			connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
-			connect.WithClientOptions(opts...),
-		),
 		tasks: connect.NewClient[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse](
 			httpClient,
 			baseURL+FlashcardsServiceTasksProcedure,
@@ -227,7 +215,6 @@ type flashcardsServiceClient struct {
 	asking     *connect.Client[v1.AskingRequest, v1.AskingResponse]
 	around     *connect.Client[v1.AroundRequest, v1.AroundResponse]
 	scheduling *connect.Client[v1.FlashcardsServiceSchedulingRequest, v1.FlashcardsServiceSchedulingResponse]
-	curve      *connect.Client[v1.FlashcardsServiceCurveRequest, v1.FlashcardsServiceCurveResponse]
 	tasks      *connect.Client[v1.FlashcardsServiceTasksRequest, v1.FlashcardsServiceTasksResponse]
 }
 
@@ -274,11 +261,6 @@ func (c *flashcardsServiceClient) Around(ctx context.Context, req *connect.Reque
 // Scheduling calls numen.v1.FlashcardsService.Scheduling.
 func (c *flashcardsServiceClient) Scheduling(ctx context.Context, req *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
 	return c.scheduling.CallUnary(ctx, req)
-}
-
-// Curve calls numen.v1.FlashcardsService.Curve.
-func (c *flashcardsServiceClient) Curve(ctx context.Context, req *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
-	return c.curve.CallUnary(ctx, req)
 }
 
 // Tasks calls numen.v1.FlashcardsService.Tasks.
@@ -337,10 +319,6 @@ type FlashcardsServiceHandler interface {
 	// link reaches something that is not a preset is answered with the defaults
 	// and told so.
 	Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error)
-	// Curve is what the settings come to over the whole range of the goal they
-	// name. Nothing is written: a curve is asked for the value a person is
-	// moving and has not settled.
-	Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error)
 	// Tasks is everything this window is doing behind itself, for as long as the
 	// caller listens. Reading a vault is the work it reports, and a vault is read
 	// without anyone asking, so the whole list arrives at once and again whenever
@@ -409,12 +387,6 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 		connect.WithSchema(flashcardsServiceMethods.ByName("Scheduling")),
 		connect.WithHandlerOptions(opts...),
 	)
-	flashcardsServiceCurveHandler := connect.NewUnaryHandler(
-		FlashcardsServiceCurveProcedure,
-		svc.Curve,
-		connect.WithSchema(flashcardsServiceMethods.ByName("Curve")),
-		connect.WithHandlerOptions(opts...),
-	)
 	flashcardsServiceTasksHandler := connect.NewServerStreamHandler(
 		FlashcardsServiceTasksProcedure,
 		svc.Tasks,
@@ -441,8 +413,6 @@ func NewFlashcardsServiceHandler(svc FlashcardsServiceHandler, opts ...connect.H
 			flashcardsServiceAroundHandler.ServeHTTP(w, r)
 		case FlashcardsServiceSchedulingProcedure:
 			flashcardsServiceSchedulingHandler.ServeHTTP(w, r)
-		case FlashcardsServiceCurveProcedure:
-			flashcardsServiceCurveHandler.ServeHTTP(w, r)
 		case FlashcardsServiceTasksProcedure:
 			flashcardsServiceTasksHandler.ServeHTTP(w, r)
 		default:
@@ -488,10 +458,6 @@ func (UnimplementedFlashcardsServiceHandler) Around(context.Context, *connect.Re
 
 func (UnimplementedFlashcardsServiceHandler) Scheduling(context.Context, *connect.Request[v1.FlashcardsServiceSchedulingRequest]) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Scheduling is not implemented"))
-}
-
-func (UnimplementedFlashcardsServiceHandler) Curve(context.Context, *connect.Request[v1.FlashcardsServiceCurveRequest]) (*connect.Response[v1.FlashcardsServiceCurveResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FlashcardsService.Curve is not implemented"))
 }
 
 func (UnimplementedFlashcardsServiceHandler) Tasks(context.Context, *connect.Request[v1.FlashcardsServiceTasksRequest], *connect.ServerStream[v1.FlashcardsServiceTasksResponse]) error {

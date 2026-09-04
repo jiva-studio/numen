@@ -50,11 +50,8 @@ type API struct {
 	Log           flashcards.Log
 	Counted       flashcards.Counted
 	Neighbourhood flashcards.Around
-	// Presets is which preset each deck of a vault is scheduled by. Curves is
-	// what the one control of a preset comes to over the whole range of its
-	// goal.
+	// Presets is which preset each deck of a vault is scheduled by.
 	Presets flashcards.Presets
-	Curves  flashcards.Curves
 	// Notes is what a vault calls the note a preset stands in. A build with none
 	// names a preset by nothing.
 	Notes port.NoteQueries
