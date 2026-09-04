@@ -34,12 +34,13 @@ var ErrBodyRefused = markdown.ErrBodyRefused
 // at what the person wrote.
 var ErrUnreadable = markdown.ErrUnreadable
 
-// ErrInline and ErrUnterminated are frontmatter one key cannot be changed in:
-// a block written on one line, and a block that is never closed. Such a note
-// is left alone.
+// ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be
+// changed in: a block written on one line, a block that is never closed, and a
+// block carrying a YAML anchor. Such a note is left alone.
 var (
 	ErrInline       = markdown.ErrInline
 	ErrUnterminated = markdown.ErrUnterminated
+	ErrAnchored     = markdown.ErrAnchored
 )
 
 // Write replaces the prose of a note and leaves its frontmatter alone.

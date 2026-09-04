@@ -50,7 +50,8 @@ func RefusalBy(err error) (v1.Refusal, bool) {
 		return v1.Refusal_REFUSAL_UNNAMEABLE, true
 	case errors.Is(err, note.ErrUnreadable),
 		errors.Is(err, note.ErrInline),
-		errors.Is(err, note.ErrUnterminated):
+		errors.Is(err, note.ErrUnterminated),
+		errors.Is(err, note.ErrAnchored):
 		return v1.Refusal_REFUSAL_UNREADABLE, true
 	case errors.Is(err, note.ErrBodyRefused):
 		return v1.Refusal_REFUSAL_BODY_REFUSED, true

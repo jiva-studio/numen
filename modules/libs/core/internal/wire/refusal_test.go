@@ -70,6 +70,10 @@ func TestWhichRefusalAWritesErrorIs(t *testing.T) {
 			fmt.Errorf("Old.md: %w", note.ErrUnterminated),
 			v1.Refusal_REFUSAL_UNREADABLE, true,
 		},
+		"a frontmatter carrying a YAML anchor": {
+			fmt.Errorf("Old.md: %w", note.ErrAnchored),
+			v1.Refusal_REFUSAL_UNREADABLE, true,
+		},
 		"frontmatter that is not YAML": {
 			fmt.Errorf("Old.md: %w", note.ErrUnreadable),
 			v1.Refusal_REFUSAL_UNREADABLE, true,
