@@ -18,7 +18,8 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 - `CardsService` — the stencils and decks a vault is arranged into.
 - `PresetsService` — the presets that schedule them, and the curve of one.
 - `FlashcardsService` — a sitting: what is owed, what is asked, what was answered.
-- `ArtifactService` — what has been made from a file, and making or taking away one.
+- `AssetService` — what a file of the vault is, for whatever opens it: a document's pages, a recording's length and where its bytes are played from, and where a run of a source's text sits on the page.
+- `ArtifactService` — what has been made from a file: listing it, making one, taking one away, and reading and writing the words a recording was heard as.
 - `SettingsService` — the file a person configures the installation in.
 - `ThemeService` — what the window is dressed in.
 - `WindowService` — one window: what is being done behind it, and what has to land before it goes.
@@ -29,6 +30,8 @@ A window asks about the vault it shows, the vaults the installation holds, the c
 A window answers every call of a service it serves. A question one binary cannot answer therefore does not go on a service that binary needs: it goes on a service of its own, or it stays where it is. What is left unanswered is what a composition binds no use case to, which is a fact about that build and not about the shape of the wire.
 
 The two calls that read a deck's preset are the case. The editor builds the use case that writes a preset and the review window does not, so folding the review window's call into `PresetsService` would put `MakePreset` in front of a binary that cannot answer it — or answer it unimplemented, which is the thing this split exists to take out. The two stay, and the whole of the duplication is one pair of messages.
+
+The files of the vault are the other. The phone serves the vault's notes to a network, over a socket answering any origin at all, and must serve none of what is on the person's disk beside them: a book's pages, where a recording is played from, a model set running over either. That is why what a file is is `AssetService` and not more of `VaultService`, and why the phone declines both it and `ArtifactService` whole.
 
 ### A window is a scope
 

@@ -31,21 +31,19 @@ Which one answers is decided by `text_from` together with a check that the file 
 
 The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is a poor format to deliver a piece at a time, and what says where such a book's words sit is the recognition, which is here.
 
-### A vault file is an asset
+### A vault file is an asset, and a drawn page is all it answers
 
 ```
-GET /assets/<id>                          what it is
-GET /assets/<id>/pages/<n>?wide=W         one page drawn, where the asset has any
-GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
-GET /assets/<id>/cues[?start=N&length=M]  the transcript, as JSON
-PUT /assets/<id>/cues                     put the transcript right
+GET /assets/<id>/pages/<n>?wide=W   one page drawn, where the asset has any
 ```
 
-**What a model wrote about a file is not addressed here.** A reading, a transcript and a transcript put right are artifacts, and `ArtifactService` is where one is listed, asked for and taken away: what has been made from a file is a question a window asks, and only the bytes it draws are on these routes (ADR-0005).
+**Nothing else of a file is addressed here.** What a document is, how long a recording runs, and where a run of a source's text sits are `AssetService`; a reading, a transcript and a transcript put right are `ArtifactService`, where one is listed, asked for, read, written and taken away. Only bytes stay on these routes, because only bytes are what a browser's own elements speak (ADR-0005).
 
-A recording's bytes are not here. They are served ranged, from a loopback port, at an address the answer to `GET /assets/<id>` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+`AssetService` is apart from `VaultService` for the reason a service is carved at all (ADR-0046): the phone serves the vault's notes to a network and must not serve its files, and a service is the unit of what a binary answers.
 
-`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. These routes are served by the same adapter that serves the generated handler (ADR-0005).
+A recording's bytes are not here either. They are served ranged, from a loopback port, at an address `AssetService.Recording` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
+
+`<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. This route is served by the same adapter that serves the generated handler (ADR-0005).
 
 ### Two bounds on what is held
 
@@ -63,7 +61,7 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 - A page asked for with the pool full comes back busy, and the window has to show that.
 - A document rewritten since its recognition is lit by its own layer, and the two disagree about where a word is.
 - Drawn pages are lost with the cache folder, and cost the drawing again.
-- A recording's cues are read and written on these routes and are not bytes: they are the one thing here the rule above does not hold for.
+- A recording's cues are read and written on `ArtifactService`, beside the artifact they are the words of.
 
 ## Alternatives considered
 

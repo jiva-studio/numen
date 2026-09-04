@@ -26,9 +26,7 @@ type rows struct {
 	forgot []string
 }
 
-func (r *rows) Save(context.Context, domain.Vault) error { return nil }
-
-func (r *rows) Register(context.Context, domain.Vault) error { return nil }
+func (r *rows) Register(context.Context, domain.VaultID) error { return nil }
 
 func (r *rows) Forget(_ context.Context, vaultID string) error {
 	r.mu.Lock()
