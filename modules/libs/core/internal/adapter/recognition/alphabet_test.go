@@ -11,7 +11,7 @@ import (
 func TestTheDictionaryHoldsAnEntryForEveryClassButTheBlank(t *testing.T) {
 	cfg := Defaults()
 	cfg.Download = false
-	found, err := locate(t.Context(), cfg)
+	_, found, err := locate(t.Context(), cfg)
 	if err != nil {
 		t.Skipf("no models on this machine: %v", err)
 	}

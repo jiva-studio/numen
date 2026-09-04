@@ -78,11 +78,11 @@ type Transcriber struct {
 // Open loads the models and compiles them. It is expensive — the weights are
 // read — and the result is reusable for the life of the process.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
-	found, err := locate(ctx, cfg)
+	opened, found, err := locate(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, err := found.engine.NewSessionOptions()
+	options, err := opened.engine.NewSessionOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner"},
 		{&out.speech, found.speech, "speech model"},
 	} {
-		session, err := found.engine.NewSession(one.at, options)
+		session, err := opened.engine.NewSession(one.at, options)
 		if err != nil {
 			out.Close()
 			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)

@@ -190,12 +190,17 @@ func (s SegmenterModel) cutting() string {
 		s.threshold(), s.silence(), s.pad(), s.longest(), s.shortest(), s.least())
 }
 
+// through is the ONNX Runtime this run listens through, and where it came
+// from. It is the process's, opened once and held for as long as the process
+// lives, so nothing here closes it.
+type through struct {
+	engine *ort.Engine
+	at     string
+}
+
 // paths are the files this run listens through, and where they were found.
+// Nothing here is open: they are names until something reads them.
 type paths struct {
-	// engine is the ONNX Runtime this run loaded, and runtime is where it came
-	// from.
-	engine  *ort.Engine
-	runtime string
 	encoder string
 	decoder string
 	joiner  string
@@ -204,27 +209,28 @@ type paths struct {
 	from    string
 }
 
-// locate finds the runtime and the models.
+// locate opens the runtime and finds the models.
 //
 // Three places are tried in order and each is a setting: a path written down,
 // the folder the application was installed into, and what was downloaded. A
 // A path that is written down is used as given, and its absence is an error.
-func locate(ctx context.Context, cfg Config) (paths, error) {
-	found := paths{from: "settings"}
-
+func locate(ctx context.Context, cfg Config) (through, paths, error) {
+	var opened through
 	var err error
-	if found.engine, found.runtime, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
-		return paths{}, err
+	if opened.engine, opened.at, err = onnxruntime.Open(ctx, cfg.settings()); err != nil {
+		return through{}, paths{}, err
 	}
+
+	found := paths{from: "settings"}
 	for _, one := range wanted(cfg, &found) {
 		if *one.dst, err = model(ctx, cfg, one.path, one.name, one.kind); err != nil {
-			return paths{}, err
+			return through{}, paths{}, err
 		}
 	}
 	if cfg.Dir != "" {
 		found.from = cfg.Dir
 	}
-	return found, nil
+	return opened, found, nil
 }
 
 // A wantedFile is one of the things a transcription reads: where it is put once

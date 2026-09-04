@@ -43,11 +43,11 @@ type Recogniser struct {
 // Open loads the models and compiles them. It is expensive — the weights are
 // read — and the result is reusable for the life of the process.
 func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	paths, err := locate(ctx, cfg)
+	opened, found, err := locate(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
-	options, err := paths.engine.NewSessionOptions()
+	options, err := opened.engine.NewSessionOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -55,21 +55,21 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		return nil, err
 	}
 
-	layout, err := OpenLayout(paths.engine, paths.layout, options,
+	layout, err := OpenLayout(opened.engine, found.layout, options,
 		cfg.Layout.labels(), cfg.Layout.minimum(), cfg.Layout.overlap())
 	if err != nil {
 		return nil, err
 	}
 
-	classes, dict, err := alphabet(paths.recognise, cfg.Recognise)
+	classes, dict, err := alphabet(found.recognise, cfg.Recognise)
 	if err != nil {
 		layout.Close()
 		return nil, err
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
-		OnnxRuntimeLibPath:  paths.runtime,
-		DetModelPath:        paths.detect,
-		RecModelPath:        paths.recognise,
+		OnnxRuntimeLibPath:  opened.at,
+		DetModelPath:        found.detect,
+		RecModelPath:        found.recognise,
 		DictPath:            dict,
 		RecModelNumClasses:  classes,
 		DetMaxSideLen:       cfg.Detect.maxSide(),
@@ -93,10 +93,10 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		head:   depths(cfg.Regions.head()),
 		margin: cfg.Layout.margin(),
 		model: port.RecognitionModel{
-			Layout:     name(paths.layout),
-			Recogniser: name(paths.recognise),
+			Layout:     name(found.layout),
+			Recogniser: name(found.recognise),
 			DPI:        cfg.Recognise.dpi(),
-			From:       paths.from,
+			From:       found.from,
 		},
 	}, nil
 }
