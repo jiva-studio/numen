@@ -466,8 +466,12 @@ func manners(task port.Task) string {
 	b.WriteString("they are how the tools address a note and mean nothing to the person.\n")
 	b.WriteString("Keep it short. They are reading in a narrow panel, not a terminal.\n")
 
+	// The path is not written here. A note in a synced vault is named by
+	// whoever synced it, and a name in the system prompt is read as
+	// instruction. `window_tabs` names it as a tool's answer, which is data.
 	if task.Focus != "" {
-		fmt.Fprintf(&b, "\nThe note in front of them is at %s. A task that says \"this note\" means that one.\n", task.Focus)
+		b.WriteString("\nA task that says \"this note\" means the one they are looking at, ")
+		b.WriteString("which `window_tabs` names.\n")
 	}
 	return b.String()
 }
