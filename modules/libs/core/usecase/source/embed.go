@@ -154,15 +154,15 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	// The address of the text each chunk held when the source was cut. It is
 	// what a chunk is identified by, what a vector is kept under, and what
 	// every question about what still owes a vector is asked against.
-	prints := make([][]byte, len(texts))
+	hashes := make([][]byte, len(texts))
 	for i := range texts {
 		raw, err := hex.DecodeString(owing[i].ChunkHash)
 		if err != nil || len(raw) == 0 {
 			continue
 		}
-		prints[i] = raw
+		hashes[i] = raw
 	}
-	kept, err := u.Vectors.Kept(ctx, recipe, prints)
+	kept, err := u.Vectors.Kept(ctx, recipe, hashes)
 	if err != nil {
 		return fmt.Errorf("what is already made: %w", err)
 	}
@@ -171,20 +171,20 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 	var asking []string
 	var askingFor []int
 	for i := range texts {
-		value, held := kept[hex.EncodeToString(prints[i])]
-		if !held || len(prints[i]) == 0 {
+		value, held := kept[hex.EncodeToString(hashes[i])]
+		if !held || len(hashes[i]) == 0 {
 			asking = append(asking, texts[i])
 			askingFor = append(askingFor, i)
 			continue
 		}
 		// Bought once. What the coarse pass needs is read back out of it.
 		out = append(out, port.Vector{
-			ChunkID:     owing[i].ChunkID,
-			Fingerprint: prints[i],
-			Model:       model,
-			Kind:        port.QuantisedInt8,
-			Value:       value,
-			Coarse:      embedding.Coarse(unsigned(value)),
+			ChunkID: owing[i].ChunkID,
+			Hash:    hashes[i],
+			Model:   model,
+			Kind:    port.QuantisedInt8,
+			Value:   value,
+			Coarse:  embedding.Coarse(unsigned(value)),
 		})
 		res.Reused++
 	}
@@ -207,12 +207,12 @@ func (u Embed) write(ctx context.Context, model port.EmbeddingModel, owing []dom
 			at := askingFor[i]
 			quantised := embedding.Bytes(v)
 			out = append(out, port.Vector{
-				ChunkID:     owing[at].ChunkID,
-				Fingerprint: prints[at],
-				Model:       model,
-				Kind:        port.QuantisedInt8,
-				Value:       signed(quantised),
-				Coarse:      embedding.Coarse(quantised),
+				ChunkID: owing[at].ChunkID,
+				Hash:    hashes[at],
+				Model:   model,
+				Kind:    port.QuantisedInt8,
+				Value:   signed(quantised),
+				Coarse:  embedding.Coarse(quantised),
 			})
 		}
 	}

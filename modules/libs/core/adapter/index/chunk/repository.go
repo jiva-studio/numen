@@ -74,15 +74,15 @@ type Chunk struct {
 // Vector is one chunk's embedding in both representations that are stored.
 //
 // `Value` is one byte a dimension, for the rerank. `Coarse` is one bit a
-// dimension, read out of `Value`, and is what the first pass compares.
-// `Fingerprint` is the text the vector was bought for, and `Recipe` the model
+// dimension, read out of `Value`, and is what the first pass compares. `Hash`
+// addresses the text the vector was bought for, and `Recipe` names the model
 // and the shape it was bought under.
 type Vector struct {
-	Chunk       int64
-	Fingerprint []byte
-	Recipe      string
-	Value       []byte
-	Coarse      []byte
+	Chunk  int64
+	Hash   []byte
+	Recipe string
+	Value  []byte
+	Coarse []byte
 }
 
 // Repository is the collection of chunks and the vectors made from them.
@@ -198,7 +198,7 @@ func (r *Repository) SaveVectors(ctx context.Context, vectors []Vector) error {
 		if err := exec(ctx, tx, "insert_vec", v.Coarse, v.Chunk); err != nil {
 			return err
 		}
-		if err := exec(ctx, tx, "keep_vector", v.Fingerprint, v.Recipe, v.Value); err != nil {
+		if err := exec(ctx, tx, "keep_vector", v.Hash, v.Recipe, v.Value); err != nil {
 			return err
 		}
 	}

@@ -42,7 +42,7 @@ type store struct {
 	groups  [][]port.Vector         // every write of vectors, in order
 	written map[string]int          // extractions per path
 	next    int64
-	// kept is what the index already holds, by recipe and fingerprint.
+	// kept is what the index already holds, by recipe and hash.
 	kept map[string][]byte
 }
 

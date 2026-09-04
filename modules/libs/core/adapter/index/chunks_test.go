@@ -136,7 +136,7 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: precise(direction(seed)), Coarse: bits(seed),
 		})
 	}
@@ -145,10 +145,10 @@ func vectorise(t *testing.T, db *DB, vault domain.Vault, seed byte) {
 	}
 }
 
-// fingerprintOf addresses the text one chunk holds, which is what the vector
-// made from it is kept under. The real path hashes what it is about to send; a
+// hashOf addresses the text one chunk holds, which is what the vector made
+// from it is kept under. The real path hashes what it is about to send; a
 // fixture reads what the cut already recorded.
-func fingerprintOf(t *testing.T, db *DB, chunk int64) []byte {
+func hashOf(t *testing.T, db *DB, chunk int64) []byte {
 	t.Helper()
 
 	var held string
@@ -872,7 +872,7 @@ func TestAChunkThatWentIsWrittenNoVectorAndStopsNothing(t *testing.T) {
 	vectors := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "model",
 			Value: bits(1), Coarse: bits(1),
 		})
 	}
@@ -946,10 +946,10 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		t.Fatalf("%d chunks owe a vector, want the two small chunks", len(owing))
 	}
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Fingerprint: fingerprintOf(t, db, owing[0].Chunk), Recipe: "model",
+		Chunk: owing[0].Chunk, Hash: hashOf(t, db, owing[0].Chunk), Recipe: "model",
 		Coarse: bits(0xff), Value: precise(direction(0xfe)),
 	}, {
-		Chunk: owing[1].Chunk, Fingerprint: fingerprintOf(t, db, owing[1].Chunk), Recipe: "model",
+		Chunk: owing[1].Chunk, Hash: hashOf(t, db, owing[1].Chunk), Recipe: "model",
 		Coarse: bits(0xfe), Value: precise(direction(0xff)),
 	}}); err != nil {
 		t.Fatal(err)
@@ -989,7 +989,7 @@ func TestAVectorIsKeptByTheTextItWasMadeFrom(t *testing.T) {
 	sum := sha256.Sum256([]byte(text))
 	value := precise(direction(0x11))
 	if err := db.Chunks().SaveVectors(ctx, []chunk.Vector{{
-		Chunk: owing[0].Chunk, Fingerprint: sum[:], Recipe: "a recipe",
+		Chunk: owing[0].Chunk, Hash: sum[:], Recipe: "a recipe",
 		Coarse: bits(0x11), Value: value,
 	}}); err != nil {
 		t.Fatal(err)
@@ -1047,7 +1047,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	made := make([]chunk.Vector, 0, len(owing))
 	for _, p := range owing {
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: fingerprintOf(t, db, p.Chunk), Recipe: "another-model",
+			Chunk: p.Chunk, Hash: hashOf(t, db, p.Chunk), Recipe: "another-model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1107,7 +1107,7 @@ func TestTextThatWentTakesItsVectorAndASourceThatWentDoesNot(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Chunk: p.Chunk, Hash: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}
@@ -1163,7 +1163,7 @@ func TestAVectorStaysWhileAnyChunkStillHoldsItsText(t *testing.T) {
 			t.Fatal(err)
 		}
 		made = append(made, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: "model",
+			Chunk: p.Chunk, Hash: raw, Recipe: "model",
 			Coarse: bits(0x00), Value: precise(direction(0x00)),
 		})
 	}

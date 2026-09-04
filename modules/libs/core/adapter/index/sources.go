@@ -74,11 +74,11 @@ func (s sources) SaveVectors(ctx context.Context, vectors []port.Vector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		out = append(out, chunk.Vector{
-			Chunk:       v.ChunkID,
-			Fingerprint: v.Fingerprint,
-			Recipe:      v.Model.Recipe(),
-			Value:       v.Value,
-			Coarse:      v.Coarse,
+			Chunk:  v.ChunkID,
+			Hash:   v.Hash,
+			Recipe: v.Model.Recipe(),
+			Value:  v.Value,
+			Coarse: v.Coarse,
 		})
 	}
 	return s.write.SaveVectors(ctx, out)

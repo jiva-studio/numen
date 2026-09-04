@@ -10,16 +10,16 @@ const QuantisedInt8 = "int8"
 // Vector is one chunk's embedding, in both representations that are stored.
 //
 // Value is the rerank's copy, quantised as Kind says. Coarse is one bit per
-// dimension, which is the coarse pass's whole question. Fingerprint addresses
+// dimension, which is the coarse pass's whole question. Hash is the digest of
 // the text the model read, which is what the vector is kept under once the
 // chunk that pointed at it is gone.
 type Vector struct {
-	ChunkID     int64
-	Fingerprint []byte
-	Model       EmbeddingModel
-	Kind        string
-	Value       []byte
-	Coarse      []byte
+	ChunkID int64
+	Hash    []byte
+	Model   EmbeddingModel
+	Kind    string
+	Value   []byte
+	Coarse  []byte
 }
 
 // VectorRepository holds the vectors made from chunks.
@@ -33,7 +33,7 @@ type VectorRepository interface {
 	SaveVectors(ctx context.Context, vectors []Vector) error
 
 	// Kept is the vectors already made under the recipe given for the texts the
-	// fingerprints address, by fingerprint. What comes back was paid for once
-	// and is not asked of a model again.
-	Kept(ctx context.Context, recipe string, fingerprints [][]byte) (map[string][]byte, error)
+	// hashes address, by hash. What comes back was paid for once and is not
+	// asked of a model again.
+	Kept(ctx context.Context, recipe string, hashes [][]byte) (map[string][]byte, error)
 }

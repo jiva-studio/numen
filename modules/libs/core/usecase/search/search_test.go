@@ -60,7 +60,7 @@ func indexed(t *testing.T) corpus {
 	readers := filesystem.VaultReaders{}
 	scan := usecase.Scan{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 
 	c := corpus{db: db}
@@ -117,7 +117,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 			t.Fatal(err)
 		}
 		vectors = append(vectors, chunk.Vector{
-			Chunk: p.Chunk, Fingerprint: raw, Recipe: model.Recipe(),
+			Chunk: p.Chunk, Hash: raw, Recipe: model.Recipe(),
 			Value: precise(direction), Coarse: embedding.Bits(direction),
 		})
 	}
@@ -439,7 +439,7 @@ func TestAPassageCarriesTheLineItStandsOnInTheProse(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
 	scan := usecase.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: c.db.Vaults(), Notes: c.db.Notes(),
-		Known: c.db.NoteQueries(), Maintenance: c.db.Statistics(),
+		Known: c.db.NoteQueries(), Maintenance: c.db.Maintenance(),
 	}
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
