@@ -27,14 +27,14 @@ var errNoCards = errors.New("this build cannot work the cards of a vault")
 func (a *API) Stencils(
 	ctx context.Context, r *connect.Request[v1.StencilsRequest],
 ) (*connect.Response[v1.StencilsResponse], error) {
-	if a.Offered == nil {
+	if a.Cards.List == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
 	}
-	held, count, err := a.Offered.Execute(ctx, showing, offering(r.Msg.GetLimit()))
+	held, count, err := a.Cards.List.Execute(ctx, showing, offering(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -63,7 +63,7 @@ func (a *API) MakeStencil(
 ) (*connect.Response[v1.MakeStencilResponse], error) {
 	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
-		return a.MakesCards.Stencil(ctx, showing, in)
+		return a.Cards.Create.Stencil(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (a *API) MakeDeck(
 	ctx context.Context, r *connect.Request[v1.MakeDeckRequest],
 ) (*connect.Response[v1.MakeDeckResponse], error) {
 	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return a.MakesCards.Deck(ctx, showing, in)
+		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (a *API) MakeDeck(
 func (a *API) makes(
 	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.Refusal, error) {
-	if a.MakesCards == nil {
+	if a.Cards.Create == nil {
 		return cards.CreateNoteResult{}, nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
@@ -126,7 +126,7 @@ func (a *API) makes(
 func (a *API) RenameField(
 	ctx context.Context, r *connect.Request[v1.RenameFieldRequest],
 ) (*connect.Response[v1.RenameFieldResponse], error) {
-	if a.RenamesField == nil {
+	if a.Cards.RenameField == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
@@ -138,7 +138,7 @@ func (a *API) RenameField(
 	}
 	defer a.Writing.done()
 
-	renamed, err := a.RenamesField.Execute(ctx, showing, cards.Rename{
+	renamed, err := a.Cards.RenameField.Execute(ctx, showing, cards.Rename{
 		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
 		Fingerprint: refOf(r.Msg.GetSeen()),
 	})
@@ -167,14 +167,14 @@ func (a *API) RenameField(
 func (a *API) ReadStencil(
 	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
 ) (*connect.Response[v1.ReadStencilResponse], error) {
-	if a.Cards == nil {
+	if a.Cards.Read == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Cards.Stencil(ctx, showing, r.Msg.GetPath())
+	found, err := a.Cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
@@ -195,14 +195,14 @@ func (a *API) ReadStencil(
 func (a *API) ReadDeck(
 	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
 ) (*connect.Response[v1.ReadDeckResponse], error) {
-	if a.Cards == nil {
+	if a.Cards.Read == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Cards.Deck(ctx, showing, r.Msg.GetPath())
+	found, err := a.Cards.Read.Deck(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
@@ -228,7 +228,7 @@ func (a *API) ReadDeck(
 func (a *API) WriteDeck(
 	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
 ) (*connect.Response[v1.WriteDeckResponse], error) {
-	if a.Cuts == nil {
+	if a.Cards.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
@@ -244,7 +244,7 @@ func (a *API) WriteDeck(
 	}
 	defer a.Writing.done()
 
-	wrote, err := a.Cuts.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
+	wrote, err := a.Cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save.
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
@@ -275,7 +275,7 @@ func (a *API) WriteDeck(
 func (a *API) WriteStencil(
 	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
 ) (*connect.Response[v1.WriteStencilResponse], error) {
-	if a.Cuts == nil {
+	if a.Cards.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
 	showing, err := a.shown()
@@ -292,7 +292,7 @@ func (a *API) WriteStencil(
 	}
 	defer a.Writing.done()
 
-	at, err := a.Cuts.Stencil(
+	at, err := a.Cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), refOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save.
@@ -315,10 +315,10 @@ func (a *API) WriteStencil(
 // titled is what the vault calls the note at a path. A build with no index, and
 // a path the index holds no note at, are answered with no name.
 func (a *API) titled(ctx context.Context, showing domain.Vault, path string) string {
-	if a.Notes == nil {
+	if a.Notes.Queries == nil {
 		return ""
 	}
-	found, err := a.Notes.Notes(ctx, string(showing.ID), []string{path})
+	found, err := a.Notes.Queries.Notes(ctx, string(showing.ID), []string{path})
 	if err != nil {
 		return ""
 	}

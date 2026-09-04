@@ -20,14 +20,14 @@ var errNoEditing = errors.New("this build cannot edit notes")
 
 // Read hands the client the prose of a note.
 func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
-	if a.Reads == nil {
+	if a.Notes.Read == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Reads.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := a.Notes.Read.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -46,7 +46,7 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 // is written over; one holding something else is left alone and the client is
 // told the note changed.
 func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
-	if a.Saves == nil {
+	if a.Notes.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -59,7 +59,7 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer a.Writing.done()
-	at, err := a.Saves.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
+	at, err := a.Notes.Write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), seenOf(r.Msg.GetSeen()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save.
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
@@ -89,7 +89,7 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 // The index is brought level before the answer comes back, so the note is in
 // the picture as soon as it is on disk.
 func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
-	if a.Makes == nil {
+	if a.Notes.Create == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -105,7 +105,7 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 	}
 	defer a.Writing.done()
 
-	made, err := a.Makes.Execute(ctx, showing, note.NewNote{
+	made, err := a.Notes.Create.Execute(ctx, showing, note.NewNote{
 		Title:  r.Msg.GetTitle(),
 		Folder: r.Msg.GetFolder(),
 		Links:  links,
@@ -129,7 +129,7 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 // Join writes one relationship into one note. What is already written there is
 // carried across, and the note at the other end is left alone.
 func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
-	if a.Joins == nil {
+	if a.Notes.Linking == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -145,7 +145,7 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 	}
 	defer a.Writing.done()
 
-	if err := a.Joins.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
+	if err := a.Notes.Linking.Add(ctx, showing, r.Msg.GetPath(), link); err != nil {
 		// A join reads a note, splices its frontmatter and puts it back. A note
 		// that moved in between is left alone, and the client reads it again
 		// before it asks for this.
@@ -201,10 +201,10 @@ func (a *API) writes(ctx context.Context, l *v1.NewLink) (domain.Link, error) {
 // addressed is the note at the other end as a link carries it. A build with no
 // index cannot ask what else is filed under the name, and writes the name.
 func (a *API) addressed(ctx context.Context, to string) (domain.Address, error) {
-	if a.Notes == nil {
+	if a.Notes.Queries == nil {
 		return domain.Address{Scheme: domain.SchemeName, Value: domain.Basename(to)}, nil
 	}
-	return note.Addressed(ctx, a.Notes, string(a.Showing().ID), to)
+	return note.Addressed(ctx, a.Notes.Queries, string(a.Showing().ID), to)
 }
 
 // roleOf is the role a link carries, in the core's words. A link is written

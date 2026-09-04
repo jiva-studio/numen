@@ -66,7 +66,7 @@ func TestOnlyTheAddressThisRunGaveOutIsAnswered(t *testing.T) {
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := listeningTo(t, nil)
 	held := api.Showing()
-	api.Vaults = heldVaults{held}
+	api.Vaults.Registry = heldVaults{held}
 	back, handler := played(t, api)
 
 	// The window moves to a vault holding nothing of the kind.

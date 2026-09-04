@@ -16,7 +16,7 @@ import (
 
 // Rename gives a note a different name.
 func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
-	if a.Renames == nil {
+	if a.Notes.Rename == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -28,7 +28,7 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	}
 	defer a.Writing.done()
 
-	renamed, err := a.Renames.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
+	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
@@ -56,7 +56,7 @@ func (a *API) Syncing(
 	_ context.Context, _ *connect.Request[v1.SyncingRequest],
 ) (*connect.Response[v1.SyncingResponse], error) {
 	return connect.NewResponse(&v1.SyncingResponse{
-		SyncTitleAndFilename: bool(a.Sync.Kept()),
+		SyncTitleAndFilename: bool(a.Configuring.Sync.Kept()),
 	}), nil
 }
 
@@ -65,10 +65,10 @@ func (a *API) Syncing(
 func (a *API) ChooseSyncing(
 	_ context.Context, r *connect.Request[v1.ChooseSyncingRequest],
 ) (*connect.Response[v1.ChooseSyncingResponse], error) {
-	if a.Chooses == nil {
+	if a.Configuring.ChoosesSync == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.Chooses(note.SyncTitleAndFilename(r.Msg.GetSyncTitleAndFilename())); err != nil {
+	if err := a.Configuring.ChoosesSync(note.SyncTitleAndFilename(r.Msg.GetSyncTitleAndFilename())); err != nil {
 		reason, refused := refusal.By(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
@@ -84,7 +84,7 @@ var errNoSettings = errors.New("this build cannot turn settings")
 // Remove takes a file or a folder out of the vault. It goes to the trash, and
 // a request that says so destroys a note.
 func (a *API) Remove(ctx context.Context, r *connect.Request[v1.RemoveRequest]) (*connect.Response[v1.RemoveResponse], error) {
-	if a.Removes == nil {
+	if a.Notes.Remove == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -121,9 +121,9 @@ func (a *API) removal(
 	destroy bool,
 ) (note.RemoveResult, error) {
 	if destroy {
-		return a.Removes.Destroy(ctx, v, path)
+		return a.Notes.Remove.Destroy(ctx, v, path)
 	}
-	return a.Removes.Execute(ctx, v, path)
+	return a.Notes.Remove.Execute(ctx, v, path)
 }
 
 // namingOf is which of the three a rename wrote, as the schema carries it.

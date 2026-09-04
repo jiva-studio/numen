@@ -33,8 +33,8 @@ func unwritten(t *testing.T, notes map[string]string) (*going, *cutting) {
 
 	f := quitting(t, nil, notes)
 	scanned(t, f)
-	f.opened.API.Saves.Index = jammed
-	f.opened.API.Cuts.Index = jammed
+	f.opened.API.Notes.Write.Index = jammed
+	f.opened.API.Cards.Write.Index = jammed
 
 	route, handler := numenv1connect.NewCardsServiceHandler(f.opened.API)
 	mux := http.NewServeMux()

@@ -38,10 +38,10 @@ func (s vaults) List(
 	_ context.Context,
 	_ *connect.Request[v1.VaultsServiceListRequest],
 ) (*connect.Response[v1.VaultsServiceListResponse], error) {
-	if s.api.Vaults == nil {
+	if s.api.Vaults.Registry == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
-	held, err := usecase.List{Registry: s.api.Vaults}.Execute()
+	held, err := usecase.List{Registry: s.api.Vaults.Registry}.Execute()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -60,10 +60,10 @@ func (s vaults) Choose(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceChooseRequest],
 ) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
-	if s.api.Picker == nil {
+	if s.api.Vaults.Picker == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoPicker)
 	}
-	path, chose, err := s.api.Picker.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
+	path, chose, err := s.api.Vaults.Picker.Choose(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
 	if errors.Is(err, port.ErrChoosing) || errors.Is(err, port.ErrNoFolderDialog) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -80,10 +80,10 @@ func (s vaults) Add(
 	_ context.Context,
 	r *connect.Request[v1.VaultsServiceAddRequest],
 ) (*connect.Response[v1.VaultsServiceAddResponse], error) {
-	if s.api.Adding == nil {
+	if s.api.Vaults.Add == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
-	added, err := s.api.Adding.Execute(r.Msg.GetPath(), r.Msg.GetName())
+	added, err := s.api.Vaults.Add.Execute(r.Msg.GetPath(), r.Msg.GetName())
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
 		if !refused {
@@ -100,12 +100,12 @@ func (s vaults) Rename(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceRenameRequest],
 ) (*connect.Response[v1.VaultsServiceRenameResponse], error) {
-	if s.api.Vaults == nil || s.api.Renaming == nil {
+	if s.api.Vaults.Registry == nil || s.api.Vaults.Rename == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
 	v, err := s.found(r.Msg.GetId())
 	if err == nil {
-		v, err = s.api.Renaming.Execute(ctx, v, r.Msg.GetName())
+		v, err = s.api.Vaults.Rename.Execute(ctx, v, r.Msg.GetName())
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
@@ -123,12 +123,12 @@ func (s vaults) Forget(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceForgetRequest],
 ) (*connect.Response[v1.VaultsServiceForgetResponse], error) {
-	if s.api.Vaults == nil || s.api.Forgetting == nil {
+	if s.api.Vaults.Registry == nil || s.api.Vaults.Forget == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
 	v, err := s.offTheList(r.Msg.GetId())
 	if err == nil {
-		err = s.api.Forgetting.Execute(ctx, v)
+		err = s.api.Vaults.Forget.Execute(ctx, v)
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
@@ -146,12 +146,12 @@ func (s vaults) Erase(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceEraseRequest],
 ) (*connect.Response[v1.VaultsServiceEraseResponse], error) {
-	if s.api.Vaults == nil || s.api.Erasing == nil {
+	if s.api.Vaults.Registry == nil || s.api.Vaults.Erase == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoChanging)
 	}
 	v, err := s.offTheList(r.Msg.GetId())
 	if err == nil {
-		err = s.api.Erasing.Execute(ctx, v)
+		err = s.api.Vaults.Erase.Execute(ctx, v)
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
@@ -168,7 +168,7 @@ func (s vaults) Open(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceOpenRequest],
 ) (*connect.Response[v1.VaultsServiceOpenResponse], error) {
-	if s.api.Vaults == nil || s.api.Opens == nil {
+	if s.api.Vaults.Registry == nil || s.api.Opens == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoOpening)
 	}
 	v, err := s.found(r.Msg.GetId())
@@ -209,7 +209,7 @@ var errShowing = errors.New("this vault is the one the window is showing")
 
 // found is the vault an identity names.
 func (s vaults) found(id string) (domain.Vault, error) {
-	return usecase.Find{Registry: s.api.Vaults}.Execute(id)
+	return usecase.Find{Registry: s.api.Vaults.Registry}.Execute(id)
 }
 
 // knownOf is one vault as the schema carries it. A folder that is not there to

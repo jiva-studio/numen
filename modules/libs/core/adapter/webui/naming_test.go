@@ -592,7 +592,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	scanned(t, f)
-	f.opened.API.Renames.Writers = overtaking{VaultWriters: f.opened.API.Renames.Writers}
+	f.opened.API.Notes.Rename.Writers = overtaking{VaultWriters: f.opened.API.Notes.Rename.Writers}
 
 	out, err := f.opened.API.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
 		Path:  "Old.md",

@@ -20,11 +20,11 @@ func (a *API) Hanging(
 	_ context.Context, _ *connect.Request[v1.HangingRequest],
 ) (*connect.Response[v1.HangingResponse], error) {
 	parts := partsUnderANode
-	if a.Parts != nil {
-		parts = a.Parts()
+	if a.Configuring.Parts != nil {
+		parts = a.Configuring.Parts()
 	}
 	return connect.NewResponse(&v1.HangingResponse{
-		HangPartsUnderANode: a.Hangs == nil || a.Hangs(),
+		HangPartsUnderANode: a.Configuring.Hangs == nil || a.Configuring.Hangs(),
 		PartsUnderANode:     int32(parts),
 	}), nil
 }
@@ -34,19 +34,19 @@ func (a *API) Hanging(
 func (a *API) ChooseHanging(
 	_ context.Context, r *connect.Request[v1.ChooseHangingRequest],
 ) (*connect.Response[v1.ChooseHangingResponse], error) {
-	if a.ChoosesHanging == nil {
+	if a.Configuring.ChoosesHanging == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.ChoosesHanging(r.Msg.GetHangPartsUnderANode()); err != nil {
+	if err := a.Configuring.ChoosesHanging(r.Msg.GetHangPartsUnderANode()); err != nil {
 		return refusedHanging(err)
 	}
 	if r.Msg.PartsUnderANode == nil {
 		return connect.NewResponse(&v1.ChooseHangingResponse{}), nil
 	}
-	if a.ChoosesParts == nil {
+	if a.Configuring.ChoosesParts == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.ChoosesParts(int(r.Msg.GetPartsUnderANode())); err != nil {
+	if err := a.Configuring.ChoosesParts(int(r.Msg.GetPartsUnderANode())); err != nil {
 		return refusedHanging(err)
 	}
 	return connect.NewResponse(&v1.ChooseHangingResponse{}), nil

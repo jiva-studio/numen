@@ -26,7 +26,9 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// API is the vault a client is looking at and what can be asked about it.
+// API is the vault a client is looking at and what can be asked about it, in
+// the things a window works a vault as. Every field of every group is a use
+// case or a query the rest of the application already has.
 type API struct {
 	// vault is the vault the window has open. It is replaced while requests are
 	// being served, so every reader takes it through Showing.
@@ -49,9 +51,6 @@ type API struct {
 	// changed.
 	showing atomic.Pointer[showing]
 
-	Notes port.NoteQueries
-	Links port.LinkQueries
-
 	Listeners audience[changed]
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
@@ -60,41 +59,17 @@ type API struct {
 	// another vault.
 	Opens func(context.Context, domain.Vault) error
 
-	// Vaults is the list of vaults this installation holds, the one the window
-	// is showing among them. A build without one answers that it holds no list.
-	Vaults port.VaultRegistry
-
-	// Picker puts this machine's own folder picker in front of the person.
-	// Only an application with a window has one, and a build without it answers
-	// that a folder cannot be picked here.
-	Picker port.FolderDialog
-
-	// Adding turns a folder into a vault, Renaming is what a person calls one,
-	// and Forgetting and Erasing take one off the list. A build without them
-	// answers that the list cannot be changed here.
-	Adding     *usecase.Add
-	Renaming   *usecase.Rename
-	Forgetting *usecase.Forget
-	Erasing    *usecase.Erase
-
 	// agent is the agent the panel's tasks go to. A vault without one answers
 	// that it has none, and the rest of the window works as it did. It is
 	// replaced while requests are being served, so it is taken through
 	// Answering.
 	agent atomic.Pointer[port.Agent]
 
-	// Reads and Saves are how the window opens a note and puts it back. A build
-	// without them answers that a note cannot be edited here.
-	Reads *note.Read
-	Saves *note.Write
-
 	// Readers open the vault a document is drawn from and a folder is listed
-	// out of. A path from outside arrives at the vault through them, and one
-	// leaving the vault is refused there.
+	// out of. The notes, the documents, the recordings and the window are all
+	// read out of them. A path from outside arrives at the vault through them,
+	// and one leaving the vault is refused there.
 	Readers port.VaultReaders
-	// Writers open the vault a folder is made in. A build without them answers
-	// that a folder cannot be made here.
-	Writers port.VaultWriters
 	// Viewer holds the documents the window has open and the pages it has
 	// drawn. A build without one answers that it cannot draw a document.
 	Viewer *viewer
@@ -115,76 +90,12 @@ type API struct {
 	// dropped here.
 	Drops *source.DropTranscript
 
-	// Makes is how the window makes a note, and Joins how it writes a
-	// relationship into one. A build without them answers that a note cannot be
-	// made here.
-	Makes *note.Create
-	Joins *note.EditLinks
-
-	// Cards reads a deck or a stencil, Offered lists the stencils the vault
-	// holds, and Cuts puts either back. MakesCards makes a deck, a stencil or a
-	// preset, and RenamesField gives one of a stencil's fields a different name
-	// everywhere it is written. A build without them answers that cards cannot
-	// be worked here.
-	Cards        *cards.Read
-	Offered      *cards.List
-	Cuts         *cards.Write
-	MakesCards   *cards.Create
-	RenamesField *cards.RenameField
-
 	// Presets is the preset a deck is scheduled by, and how one is read,
 	// written and made. Curves is what the one control of a preset comes to
 	// over the whole range of its goal. A build without them answers that
 	// presets cannot be worked here.
 	Presets *flashcards.Presets
 	Curves  *flashcards.Curves
-
-	// Renames gives a note a different name, Moves puts a file or a folder
-	// somewhere else in the vault, and Removes takes one out of it. A build
-	// without them answers that nothing can be renamed, moved or removed here.
-	Renames *note.Rename
-	Moves   *usecase.Move
-	Removes *note.Remove
-
-	// Bringing copies files a person handed the window into a folder of the
-	// vault. A build without it takes none.
-	Bringing *usecase.Bring
-
-	// Sync reads whether a note's title and its filename are kept as one name,
-	// and Chooses writes it. A build with no Chooses answers that it configures
-	// nothing; one with no Sync reads what an installation nobody has
-	// configured does.
-	Sync    note.Syncing
-	Chooses func(kept note.SyncTitleAndFilename) error
-
-	// Hangs reads whether a node hangs the headings of its note under it, Parts
-	// how many of them stand there at once, and ChoosesHanging and ChoosesParts
-	// write the two. A build with no writer answers that it configures nothing;
-	// one with no reader reads what an installation nobody has configured does.
-	Hangs          func() bool
-	ChoosesHanging func(hangs bool) error
-	Parts          func() int
-	ChoosesParts   func(parts int) error
-
-	// Reviews reads the hour a day of review begins at, and ChoosesReviewing
-	// writes it. A build with no writer answers that it configures nothing; one
-	// with no reader reads what an installation nobody has configured does.
-	Reviews          func() string
-	ChoosesReviewing func(starts string) error
-
-	// Configured reads every setting as JSON and the file it stands in, Models
-	// the models the settings that name one can be set to, and ChoosesSetting
-	// writes settings into that file. A build without them answers that it
-	// configures nothing.
-	Configured     func() (string, string, error)
-	Models         func() []port.Model
-	ChoosesSetting func(written []port.Setting) error
-
-	// ConfiguredFile reads that file as its person wrote it, and WritesFile
-	// replaces it whole, presenting the file the caller last read. A build
-	// without them answers that it configures nothing.
-	ConfiguredFile func() (string, string, error)
-	WritesFile     func(written string, seen *string) error
 
 	// Finds is how the window searches the text the vault holds, by the words
 	// in it and by what it means. A build without one answers that it cannot be
@@ -230,6 +141,123 @@ type API struct {
 	// an entry rather than another field here.
 	Tasking *task.Tasks
 
+	// Themes are the stylesheets the window may be dressed in. They belong to
+	// the installation, so they arrive here from whatever put the window
+	// together. Nil answers that this build has none.
+	Themes numenv1connect.ThemeServiceHandler
+
+	Notes       Notes
+	Files       Files
+	Vaults      Vaults
+	Cards       Cards
+	Configuring Configuring
+	Indexing    Indexing
+}
+
+// Notes is a vault's notes: what is asked of them, and what changes them.
+//
+// Read and Write are how the window opens a note and puts it back, Create makes
+// one and Linking writes a relationship into one, Rename gives one a different
+// name and Remove takes it out of the vault. A build without them answers that
+// a note cannot be edited here.
+type Notes struct {
+	Queries port.NoteQueries
+	Links   port.LinkQueries
+
+	Read    *note.Read
+	Write   *note.Write
+	Create  *note.Create
+	Linking *note.EditLinks
+	Rename  *note.Rename
+	Remove  *note.Remove
+}
+
+// Files is the vault's tree as a person moves things about in it. Writers open
+// the vault a folder is made in, Move puts a file or a folder somewhere else,
+// and Bring copies files a person handed the window into a folder of the vault.
+// A build without them answers that nothing can be made, moved or brought in
+// here.
+//
+// What a folder holds is read through the API's own Readers, which everything
+// else reads through too.
+type Files struct {
+	Writers port.VaultWriters
+	Move    *usecase.Move
+	Bring   *usecase.Bring
+}
+
+// Vaults is the list of vaults this installation holds, the one the window is
+// showing among them. Without a Registry the window answers that it holds no
+// list.
+//
+// Add turns a folder into a vault, Rename is what a person calls one, and
+// Forget and Erase take one off the list. A build without them answers that the
+// list cannot be changed here.
+type Vaults struct {
+	Registry port.VaultRegistry
+
+	// Picker puts this machine's own folder picker in front of the person. Only
+	// an application with a window has one, and a build without it answers that
+	// a folder cannot be picked here.
+	Picker port.FolderDialog
+
+	Add    *usecase.Add
+	Rename *usecase.Rename
+	Forget *usecase.Forget
+	Erase  *usecase.Erase
+}
+
+// Cards is the decks and stencils a vault is arranged into. Read takes a deck
+// or a stencil, List the stencils the vault holds, and Write puts either back.
+// Create makes a deck, a stencil or a preset, and RenameField gives one of a
+// stencil's fields a different name everywhere it is written. A build without
+// them answers that cards cannot be worked here.
+type Cards struct {
+	Read        *cards.Read
+	List        *cards.List
+	Write       *cards.Write
+	Create      *cards.Create
+	RenameField *cards.RenameField
+}
+
+// Configuring is every setting the window reads and writes. Each is a reader
+// and the writer beside it: a build with no writer answers that it configures
+// nothing, and one with no reader reads what an installation nobody has
+// configured does.
+type Configuring struct {
+	// Sync reads whether a note's title and its filename are kept as one name,
+	// and ChoosesSync writes it.
+	Sync        note.Syncing
+	ChoosesSync func(kept note.SyncTitleAndFilename) error
+
+	// Hangs reads whether a node hangs the headings of its note under it, Parts
+	// how many of them stand there at once, and ChoosesHanging and ChoosesParts
+	// write the two.
+	Hangs          func() bool
+	ChoosesHanging func(hangs bool) error
+	Parts          func() int
+	ChoosesParts   func(parts int) error
+
+	// Reviews reads the hour a day of review begins at, and ChoosesReviewing
+	// writes it.
+	Reviews          func() string
+	ChoosesReviewing func(starts string) error
+
+	// Configured reads every setting as JSON and the file it stands in, Models
+	// the models the settings that name one can be set to, and ChoosesSetting
+	// writes settings into that file.
+	Configured     func() (string, string, error)
+	Models         func() []port.Model
+	ChoosesSetting func(written []port.Setting) error
+
+	// ConfiguredFile reads that file as its person wrote it, and WritesFile
+	// replaces it whole, presenting the file the caller last read.
+	ConfiguredFile func() (string, string, error)
+	WritesFile     func(written string, seen *string) error
+}
+
+// Indexing is how far the vault has been read for meaning.
+type Indexing struct {
 	// Progress answers how far cutting and embedding have got. Nil for a vault
 	// nothing is reading for meaning, and the window then says nothing about it.
 	Progress port.IndexProgress
@@ -241,11 +269,6 @@ type API struct {
 	// Recipe is everything that decides what a vector is, which is what a
 	// vector is found by.
 	Recipe atomic.Value
-
-	// Themes are the stylesheets the window may be dressed in. They belong to
-	// the installation, so they arrive here from whatever put the window
-	// together. Nil answers that this build has none.
-	Themes numenv1connect.ThemeServiceHandler
 }
 
 // Showing is the vault the window has open. A window standing on nothing
@@ -366,13 +389,13 @@ func (a *API) State(ctx context.Context, _ *connect.Request[v1.StateRequest]) (*
 		Failed:      a.failure(),
 		Unwatched:   text(&a.Unwatched),
 		Unreachable: text(&a.Unreachable),
-		Embedding:   text(&a.Model) != "",
+		Embedding:   text(&a.Indexing.Model) != "",
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered as it stands. A window standing on nothing holds no
 	// chunks and counts none.
-	if a.Progress != nil && showing.ID != "" {
-		if held, embedded, err := a.Progress.Progress(ctx, string(showing.ID), text(&a.Recipe)); err == nil {
+	if a.Indexing.Progress != nil && showing.ID != "" {
+		if held, embedded, err := a.Indexing.Progress.Progress(ctx, string(showing.ID), text(&a.Indexing.Recipe)); err == nil {
 			out.Chunks, out.Embedded = held, embedded
 		}
 	}
@@ -386,7 +409,7 @@ func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]
 		return connect.NewResponse(&v1.OpeningResponse{}), nil
 	}
 
-	ref, found, err := a.Notes.Opening(ctx, string(showing.ID))
+	ref, found, err := a.Notes.Queries.Opening(ctx, string(showing.ID))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -402,7 +425,7 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	if err != nil {
 		return nil, err
 	}
-	found, err := note.ShowNeighbourhood{Links: a.Links, Notes: a.Notes}.
+	found, err := note.ShowNeighbourhood{Links: a.Notes.Links, Notes: a.Notes.Queries}.
 		Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -443,7 +466,7 @@ func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Links.Resolve(ctx, string(showing.ID), r.Msg.GetFrom(), r.Msg.GetWritten())
+	found, err := a.Notes.Links.Resolve(ctx, string(showing.ID), r.Msg.GetFrom(), r.Msg.GetWritten())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

@@ -28,7 +28,7 @@ const namedInARefusal = 3
 // named to the listeners here.
 func (o *Opened) Brings(ctx context.Context, into string, paths []string) {
 	api := o.API
-	if api.Bringing == nil || len(paths) == 0 {
+	if api.Files.Bring == nil || len(paths) == 0 {
 		return
 	}
 	showing := api.Showing()
@@ -43,7 +43,7 @@ func (o *Opened) Brings(ctx context.Context, into string, paths []string) {
 	at := task.Task{ID: bringingFiles + " " + into, Doing: "Bringing files in", About: into}
 	api.say(at)
 
-	brought, err := api.Bringing.Execute(ctx, showing, into, paths)
+	brought, err := api.Files.Bring.Execute(ctx, showing, into, paths)
 	if landed := directlyIn(into, brought.Landed); len(landed) > 0 {
 		api.Listeners.tell(changed{paths: landed})
 	}

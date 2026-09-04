@@ -143,12 +143,14 @@ func onAList(t *testing.T) *onTheList {
 		second:   added(t, adding, "two"),
 	}
 	f.api = &API{
-		Vaults:     registry,
-		Picker:     f.picker,
-		Adding:     &adding,
-		Renaming:   &usecase.Rename{Registry: registry, Index: rows},
-		Forgetting: &forget,
-		Erasing:    &usecase.Erase{Identity: identity, Trash: f.bin, Forget: forget},
+		Vaults: Vaults{
+			Registry: registry,
+			Picker:   f.picker,
+			Add:      &adding,
+			Rename:   &usecase.Rename{Registry: registry, Index: rows},
+			Forget:   &forget,
+			Erase:    &usecase.Erase{Identity: identity, Trash: f.bin, Forget: forget},
+		},
 	}
 	f.api.Opens = func(_ context.Context, v domain.Vault) error {
 		f.mu.Lock()

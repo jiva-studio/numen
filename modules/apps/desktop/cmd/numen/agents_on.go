@@ -143,9 +143,9 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 		Attending: opened.API.Attended,
 
 		Vaults: mcp.Vaults{
-			Registry: opened.API.Vaults,
-			Rename:   opened.API.Renaming,
-			Forget:   opened.API.Forgetting,
+			Registry: opened.API.Vaults.Registry,
+			Rename:   opened.API.Vaults.Rename,
+			Forget:   opened.API.Vaults.Forget,
 		},
 
 		Sources: mcp.Sources{

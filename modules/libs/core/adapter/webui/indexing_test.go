@@ -31,12 +31,10 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
 	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
@@ -60,12 +58,10 @@ func TestAPassThatEmbeddedLeavesTheList(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
 	embedSources(t.Context(), cfg, db, api, v, filesystem.VaultReaders{}, model)
@@ -86,12 +82,10 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 	watching.tasks = api.Tasking
 
@@ -117,12 +111,10 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 	// The notes are on disk and nothing has cut them, so the index holds no
 	// chunk and owes no vector.
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 
 	// The weights are still coming down, and in this test they never land.
 	arriving := embedding.Arriving(model.Model())
@@ -151,12 +143,10 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
 	arriving := embedding.Arriving(model.Model())
@@ -296,12 +286,10 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	}
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	api := &API{
-		Tasking:  task.New(),
-		Progress: db.Progress(),
-	}
+	api := &API{Tasking: task.New()}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
-	api.Recipe.Store(model.Model().Recipe())
+	api.Indexing.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
 	// A provider that answers over a network is here the moment it is made, so

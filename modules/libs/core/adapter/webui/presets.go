@@ -80,7 +80,7 @@ func (a *API) MakePreset(
 	ctx context.Context, r *connect.Request[v1.MakePresetRequest],
 ) (*connect.Response[v1.MakePresetResponse], error) {
 	made, refused, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-		return a.MakesCards.Preset(ctx, showing, in)
+		return a.Cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err

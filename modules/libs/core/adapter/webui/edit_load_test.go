@@ -49,14 +49,16 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	api := &API{
-		Notes:     db.Queries(),
-		Links:     db.Links(),
 		Listeners: following(),
 		Places:    focusing(),
-		Progress:  db.Progress(),
-		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
-		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+		Notes: Notes{
+			Queries: db.Queries(),
+			Links:   db.Links(),
+			Read:    &note.Read{Readers: filesystem.VaultReaders{}},
+			Write:   &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+		},
 	}
+	api.Indexing.Progress = db.Progress()
 	api.show(v)
 	opened := cfg.Opening(db)
 
@@ -80,7 +82,7 @@ func TestEditLoad(t *testing.T) {
 	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(time.Now().UnixNano(), 10) + ".\n"
 
 	saving := time.Now()
-	if _, err := api.Saves.Save(t.Context(), v, path, body, nil); err != nil {
+	if _, err := api.Notes.Write.Save(t.Context(), v, path, body, nil); err != nil {
 		t.Fatal(err)
 	}
 	wrote := time.Since(saving)

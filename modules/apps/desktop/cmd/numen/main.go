@@ -199,7 +199,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 	})
 
 	// Picking a folder is the machine's own, and it opens over this window.
-	opened.API.Picker = &picker{window: window}
+	opened.API.Vaults.Picker = &picker{window: window}
 
 	// The window is named after what the person is looking at, and is named
 	// again each time the page says what it has open.

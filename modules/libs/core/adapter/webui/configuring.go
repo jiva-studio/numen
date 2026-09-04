@@ -16,16 +16,16 @@ import (
 func (a *API) Settings(
 	_ context.Context, _ *connect.Request[v1.SettingsRequest],
 ) (*connect.Response[v1.SettingsResponse], error) {
-	if a.Configured == nil {
+	if a.Configuring.Configured == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	written, path, err := a.Configured()
+	written, path, err := a.Configuring.Configured()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	var models []port.Model
-	if a.Models != nil {
-		models = a.Models()
+	if a.Configuring.Models != nil {
+		models = a.Configuring.Models()
 	}
 	return connect.NewResponse(&v1.SettingsResponse{
 		Written: written,
@@ -40,14 +40,14 @@ func (a *API) Settings(
 func (a *API) ChooseSettings(
 	_ context.Context, r *connect.Request[v1.ChooseSettingsRequest],
 ) (*connect.Response[v1.ChooseSettingsResponse], error) {
-	if a.ChoosesSetting == nil {
+	if a.Configuring.ChoosesSetting == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
 	written := make([]port.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
 		written = append(written, port.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
-	if err := a.ChoosesSetting(written); err != nil {
+	if err := a.Configuring.ChoosesSetting(written); err != nil {
 		if errors.Is(err, port.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
@@ -60,10 +60,10 @@ func (a *API) ChooseSettings(
 func (a *API) SettingsFile(
 	_ context.Context, _ *connect.Request[v1.SettingsFileRequest],
 ) (*connect.Response[v1.SettingsFileResponse], error) {
-	if a.ConfiguredFile == nil {
+	if a.Configuring.ConfiguredFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	written, path, err := a.ConfiguredFile()
+	written, path, err := a.Configuring.ConfiguredFile()
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -79,10 +79,10 @@ func (a *API) SettingsFile(
 func (a *API) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
 ) (*connect.Response[v1.WriteSettingsFileResponse], error) {
-	if a.WritesFile == nil {
+	if a.Configuring.WritesFile == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
+	if err := a.Configuring.WritesFile(r.Msg.GetWritten(), r.Msg.Seen); err != nil {
 		if errors.Is(err, port.ErrChanged) {
 			return connect.NewResponse(&v1.WriteSettingsFileResponse{Changed: true}), nil
 		}

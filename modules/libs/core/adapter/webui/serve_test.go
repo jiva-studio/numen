@@ -175,20 +175,22 @@ func openingWith(
 	t.Cleanup(func() { db.Close() })
 
 	api := &API{
-		Notes:     db.Queries(),
-		Links:     db.Links(),
 		Listeners: following(),
 		Places:    focusing(),
-		Reads:     &note.Read{Readers: filesystem.VaultReaders{}},
-		Saves:     &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+		Notes: Notes{
+			Queries: db.Queries(),
+			Links:   db.Links(),
+			Read:    &note.Read{Readers: filesystem.VaultReaders{}},
+			Write:   &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+		},
 	}
 	api.show(v)
 	if embedder != nil {
 		if err := db.FitVectors(t.Context(), embedder.Model().Dimensions, embedder.Model().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.Model.Store(embedder.Model().String())
-		api.Progress = db.Progress()
+		api.Indexing.Model.Store(embedder.Model().String())
+		api.Indexing.Progress = db.Progress()
 	}
 	opened := cfg.OpeningWith(db, readers, watcher)
 
@@ -511,11 +513,10 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	readers := filesystem.VaultReaders{}
 	watcher := byHand()
 	api := &API{
-		Notes:     db.Queries(),
-		Links:     db.Links(),
 		Listeners: following(),
 		Places:    focusing(),
 		Tasking:   task.New(),
+		Notes:     Notes{Queries: db.Queries(), Links: db.Links()},
 	}
 	api.show(v)
 

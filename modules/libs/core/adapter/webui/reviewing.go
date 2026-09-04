@@ -21,8 +21,8 @@ func (a *API) Reviewing(
 	_ context.Context, _ *connect.Request[v1.ReviewingRequest],
 ) (*connect.Response[v1.ReviewingResponse], error) {
 	starts := dayStarts
-	if a.Reviews != nil {
-		starts = a.Reviews()
+	if a.Configuring.Reviews != nil {
+		starts = a.Configuring.Reviews()
 	}
 	return connect.NewResponse(&v1.ReviewingResponse{DayStarts: starts}), nil
 }
@@ -32,10 +32,10 @@ func (a *API) Reviewing(
 func (a *API) ChooseReviewing(
 	_ context.Context, r *connect.Request[v1.ChooseReviewingRequest],
 ) (*connect.Response[v1.ChooseReviewingResponse], error) {
-	if a.ChoosesReviewing == nil {
+	if a.Configuring.ChoosesReviewing == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	if err := a.ChoosesReviewing(r.Msg.GetDayStarts()); err != nil {
+	if err := a.Configuring.ChoosesReviewing(r.Msg.GetDayStarts()); err != nil {
 		// An hour that is not an hour of the day is the client's to correct.
 		if errors.Is(err, history.ErrNotAnHour) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)

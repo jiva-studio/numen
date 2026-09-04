@@ -188,18 +188,12 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	wake := waking(settled)
 
 	api := &API{
-		Notes:     db.Queries(),
-		Links:     db.Links(),
 		Listeners: following(),
 		Places:    focusing(),
 		Edits:     drawing(),
-		Progress:  db.Progress(),
 		Tasking:   tasks,
-		Reads:     &note.Read{Readers: cfg.VaultReaders()},
-		Saves:     &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		Wrote:     func() { raise(wake.notes) },
 		Readers:   cfg.VaultReaders(),
-		Writers:   cfg.VaultWriters(),
 		Viewer:    keepingDrawings(cfg.Documents()),
 		// Where a passage sits on the page is asked of whichever producer made
 		// the text it is a place in, which is what the index records.
@@ -209,14 +203,22 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 			Derived:   cfg.DerivedStores(),
 			Documents: cfg.Documents(),
 		},
+		Notes: Notes{
+			Queries: db.Queries(),
+			Links:   db.Links(),
+			Read:    &note.Read{Readers: cfg.VaultReaders()},
+			Write:   &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
+		},
+		Files: Files{Writers: cfg.VaultWriters()},
 	}
+	api.Indexing.Progress = db.Progress()
 	// Named before anything is read: it is what decides whether a chunk already
 	// carries a vector, and what tells the window that something is going to
 	// embed what was cut.
 	if embedder != nil {
 		model := embedder.Model()
-		api.Model.Store(model.String())
-		api.Recipe.Store(model.Recipe())
+		api.Indexing.Model.Store(model.String())
+		api.Indexing.Recipe.Store(model.Recipe())
 	}
 
 	// The themes are the installation's, and a folder that could not be made
@@ -255,22 +257,24 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		stopEmbedder: closeEmbedder,
 	}
 
-	api.Makes = &note.Create{
+	api.Notes.Create = &note.Create{
 		Writers: cfg.VaultWriters(),
 		Names:   db.Queries(),
 		Index:   opened.level,
 	}
-	api.Joins = &note.EditLinks{
+	api.Notes.Linking = &note.EditLinks{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
 		Index:   opened.level,
 	}
 	cutting := cfg.Cards(db.Queries(), db.Links(), opened.level)
-	api.Cards = &cutting.Read
-	api.Offered = &cutting.List
-	api.Cuts = &cutting.Write
-	api.MakesCards = &cutting.Create
-	api.RenamesField = &cutting.Rename
+	api.Cards = Cards{
+		Read:        &cutting.Read,
+		List:        &cutting.List,
+		Write:       &cutting.Write,
+		Create:      &cutting.Create,
+		RenameField: &cutting.Rename,
+	}
 	// A preset is a note the editor writes key by key, and the curve beside its
 	// one control is the same simulator the flashcards window runs on.
 	running := cfg.Flashcards(db.Queries(), db.Links(), opened.level)
@@ -281,7 +285,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	moving := note.Move{
 		Readers: cfg.VaultReaders(),
 		Writers: cfg.VaultWriters(),
-		Links:   api.Links,
+		Links:   api.Notes.Links,
 		Sources: db.Sources(),
 		Index:   opened.level,
 		Moving: func(ctx context.Context, went domain.Move) {
@@ -289,31 +293,33 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		},
 		Sync: cfg.Syncing(),
 	}
-	api.Sync = cfg.Syncing()
-	api.Chooses = cfg.Turns()
-	api.Hangs = cfg.Hanging()
-	api.ChoosesHanging = cfg.TurnsHanging()
-	api.Parts = cfg.Parts()
-	api.ChoosesParts = cfg.TurnsParts()
-	api.Reviews = cfg.Reviewing()
-	api.ChoosesReviewing = cfg.TurnsReviewing()
-	api.Configured = cfg.Configured()
-	api.Models = cfg.Models()
-	api.ChoosesSetting = cfg.TurnsSetting()
-	api.ConfiguredFile = cfg.ConfiguredFile()
-	api.WritesFile = cfg.WritesConfiguredFile()
-	api.Renames = &note.Rename{Move: moving}
-	api.Moves = &usecase.Move{
+	api.Configuring = Configuring{
+		Sync:             cfg.Syncing(),
+		ChoosesSync:      cfg.Turns(),
+		Hangs:            cfg.Hanging(),
+		ChoosesHanging:   cfg.TurnsHanging(),
+		Parts:            cfg.Parts(),
+		ChoosesParts:     cfg.TurnsParts(),
+		Reviews:          cfg.Reviewing(),
+		ChoosesReviewing: cfg.TurnsReviewing(),
+		Configured:       cfg.Configured(),
+		Models:           cfg.Models(),
+		ChoosesSetting:   cfg.TurnsSetting(),
+		ConfiguredFile:   cfg.ConfiguredFile(),
+		WritesFile:       cfg.WritesConfiguredFile(),
+	}
+	api.Notes.Rename = &note.Rename{Move: moving}
+	api.Files.Move = &usecase.Move{
 		Writers: cfg.VaultWriters(),
-		Links:   api.Links,
+		Links:   api.Notes.Links,
 		Known:   db.SourcesKnown(),
 		Sources: db.Sources(),
 		Notes:   moving,
 	}
-	api.Bringing = &usecase.Bring{Writers: cfg.VaultWriters()}
-	api.Removes = &note.Remove{
+	api.Files.Bring = &usecase.Bring{Writers: cfg.VaultWriters()}
+	api.Notes.Remove = &note.Remove{
 		Writers: cfg.VaultWriters(),
-		Links:   api.Links,
+		Links:   api.Notes.Links,
 		Known:   db.SourcesKnown(),
 		Index:   opened.level,
 	}
@@ -327,18 +333,20 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	// The vaults this installation holds, beside the one the window is showing.
 	// Erase is Forget and a folder that goes, so the two hold one Forget.
 	forget := usecase.Forget{Registry: registry, Index: db.Vaults()}
-	api.Vaults = registry
-	api.Adding = &usecase.Add{
-		Identity: cfg.VaultIdentity(),
+	api.Vaults = Vaults{
 		Registry: registry,
-		Now:      time.Now,
-	}
-	api.Renaming = &usecase.Rename{Registry: registry, Index: db.Vaults()}
-	api.Forgetting = &forget
-	api.Erasing = &usecase.Erase{
-		Identity: cfg.VaultIdentity(),
-		Trash:    cfg.Trash(),
-		Forget:   forget,
+		Add: &usecase.Add{
+			Identity: cfg.VaultIdentity(),
+			Registry: registry,
+			Now:      time.Now,
+		},
+		Rename: &usecase.Rename{Registry: registry, Index: db.Vaults()},
+		Forget: &forget,
+		Erase: &usecase.Erase{
+			Identity: cfg.VaultIdentity(),
+			Trash:    cfg.Trash(),
+			Forget:   forget,
+		},
 	}
 
 	// Reading every file again is what this launch was asked for, and is not
@@ -1116,8 +1124,8 @@ func embedSources(
 	// on the one goroutine that also reads the books and cuts what a recognition
 	// wrote, and a vault owing no vector holds that goroutine for nothing.
 	owing := int64(0)
-	if api.Progress != nil {
-		held, embedded, err := api.Progress.Progress(ctx, string(v.ID), text(&api.Recipe))
+	if api.Indexing.Progress != nil {
+		held, embedded, err := api.Indexing.Progress.Progress(ctx, string(v.ID), text(&api.Indexing.Recipe))
 		if err == nil {
 			owing = max(0, held-embedded)
 			if owing == 0 {

@@ -119,7 +119,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	}
 
 	recorded := &order{}
-	opened.API.Saves = &note.Write{
+	opened.API.Notes.Write = &note.Write{
 		Readers: cfg.VaultReaders(),
 		Writers: recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
 	}

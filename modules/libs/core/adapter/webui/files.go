@@ -66,10 +66,10 @@ func (a *API) typesOf(ctx context.Context, showing domain.Vault, held []domain.E
 // holding no index answers nothing, and every file is then drawn as the file it
 // is.
 func (a *API) typesAt(ctx context.Context, showing domain.Vault, paths []string) (map[string]domain.NoteType, error) {
-	if a.Notes == nil || len(paths) == 0 {
+	if a.Notes.Queries == nil || len(paths) == 0 {
 		return nil, nil
 	}
-	return a.Notes.Types(ctx, string(showing.ID), paths)
+	return a.Notes.Queries.Types(ctx, string(showing.ID), paths)
 }
 
 // Standing hands the client what the vault holds at each of those paths, so
@@ -122,7 +122,7 @@ func (a *API) Standing(ctx context.Context, r *connect.Request[v1.StandingReques
 
 // Move puts a file or a folder somewhere else in the vault.
 func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
-	if a.Moves == nil {
+	if a.Files.Move == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -134,7 +134,7 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 	}
 	defer a.Writing.done()
 
-	moved, err := a.Moves.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
+	moved, err := a.Files.Move.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo())
 	out := &v1.MoveResponse{}
 	if moved.Landed {
 		out.Moved = movedOf(moved)
@@ -151,7 +151,7 @@ func (a *API) Move(ctx context.Context, r *connect.Request[v1.MoveRequest]) (*co
 
 // MakeFolder puts an empty folder in the vault, with the folders above it.
 func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRequest]) (*connect.Response[v1.MakeFolderResponse], error) {
-	if a.Writers == nil {
+	if a.Files.Writers == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
 	showing, err := a.shown()
@@ -163,7 +163,7 @@ func (a *API) MakeFolder(ctx context.Context, r *connect.Request[v1.MakeFolderRe
 	}
 	defer a.Writing.done()
 
-	writer, err := a.Writers.Open(showing)
+	writer, err := a.Files.Writers.Open(showing)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
