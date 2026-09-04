@@ -66,7 +66,7 @@ func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
 }
 
 // Saying nothing about questions is asking the way the vault was indexed.
-func TestOneStationIsOneModelSeenTwoWays(t *testing.T) {
+func TestOneProviderIsOneModelSeenTwoWays(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	indexing, asking, close, why := container.Config{Embedding: serving("bge-m3")}.Embedders(t.Context(), nil)
@@ -300,7 +300,7 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 
 // A comparison that could not be made is not agreement: the provider that
 // answers questions is let go of, and it is said.
-func TestTwoStationsThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
+func TestTwoProvidersThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	held := failing(t, uncompared(t), 2)
 	if len(held) != 2 {
 		t.Fatalf("the list holds %d pieces of work: %+v", len(held), held)
