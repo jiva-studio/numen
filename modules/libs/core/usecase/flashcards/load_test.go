@@ -134,7 +134,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 	logs := countingStores{inner: s.logs, on: on}
 	schedules := flashcards.Schedules{
 		Logs:      logs,
-		Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
+		Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "faces")), on: on},
 		By:        countingBy{inner: review.NewFSRS(), on: on},
 		Day:       today,
 		CardFaces: s.standings,
@@ -154,7 +154,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 		},
 		review: flashcards.CountReviews{
 			Logs:      logs,
-			Kept:      countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
+			Cache:     countingKept{inner: appstate.SchedulesAt(filepath.Join(tb.TempDir(), "days")), on: on},
 			Schedules: schedules,
 			Day:       today,
 			Now:       time.Now,

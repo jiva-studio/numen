@@ -31,7 +31,7 @@ func TestSchedulesAreTheSameWithNothingKept(t *testing.T) {
 	}
 
 	bare := s.kept
-	bare.Kept = nil
+	bare.Cache = nil
 	worked, err := bare.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestTheCacheIsWrittenInOneOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	raw, err := s.kept.Kept.Read(t.Context(), string(s.vault.ID))
+	raw, err := s.kept.Cache.Read(t.Context(), string(s.vault.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.kept.Kept.Write(t.Context(), string(s.vault.ID), []byte("not a cache")); err != nil {
+	if err := s.kept.Cache.Write(t.Context(), string(s.vault.ID), []byte("not a cache")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -284,7 +284,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 
 	// The same answers, worked out by the one scheduler and nothing else.
 	plain := s.kept
-	plain.CardFaces, plain.Presets, plain.Kept = flashcards.ListCardFaces{}, flashcards.Presets{}, nil
+	plain.CardFaces, plain.Presets, plain.Cache = flashcards.ListCardFaces{}, flashcards.Presets{}, nil
 	want, err := plain.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)

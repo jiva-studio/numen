@@ -63,9 +63,9 @@ type ReviewCounts struct {
 // history read again.
 type CountReviews struct {
 	Logs port.DerivedStores
-	// Kept is where the counting is remembered. A build holding none counts the
+	// Cache is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
-	Kept port.ScheduleStore
+	Cache port.ScheduleStore
 	// Schedules is where the answers have left every card face, which is what
 	// says how much falls on each day still to come.
 	Schedules Schedules
@@ -238,10 +238,10 @@ func (u CountReviews) ahead(
 // remembered is what was counted last time, by the name of the run it was
 // counted from. A cache of another shape is nothing remembered.
 func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string]cachedRun {
-	if u.Kept == nil {
+	if u.Cache == nil {
 		return nil
 	}
-	raw, err := u.Kept.Read(ctx, string(v.ID))
+	raw, err := u.Cache.Read(ctx, string(v.ID))
 	if err != nil {
 		return nil
 	}
@@ -259,14 +259,14 @@ func (u CountReviews) remembered(ctx context.Context, v domain.Vault) map[string
 // remember puts the counting where the next launch will find it. A cache that
 // could not be written is a launch that counts again, so nothing is reported.
 func (u CountReviews) remember(ctx context.Context, v domain.Vault, now countCache) {
-	if u.Kept == nil {
+	if u.Cache == nil {
 		return
 	}
 	raw, err := json.Marshal(now)
 	if err != nil {
 		return
 	}
-	_ = u.Kept.Write(ctx, string(v.ID), raw)
+	_ = u.Cache.Write(ctx, string(v.ID), raw)
 }
 
 func (u CountReviews) now() time.Time {

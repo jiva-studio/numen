@@ -58,10 +58,10 @@ type cachedSchedule struct {
 // nothing can be added to what the later ones produced.
 type Schedules struct {
 	Logs port.DerivedStores
-	// Kept is where the working out is remembered. A build holding none works
+	// Cache is where the working out is remembered. A build holding none works
 	// it out at every launch.
-	Kept port.ScheduleStore
-	By   review.Scheduler
+	Cache port.ScheduleStore
+	By    review.Scheduler
 	// Day is where one day of review gives way to the next, which is what says
 	// on which day a card placed by its preset lands.
 	Day review.Day
@@ -279,10 +279,10 @@ func projected(
 func (u Schedules) remembered(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
 ) (map[review.CardFaceID]review.Schedule, bool) {
-	if u.Kept == nil {
+	if u.Cache == nil {
 		return nil, false
 	}
-	raw, err := u.Kept.Read(ctx, string(v.ID))
+	raw, err := u.Cache.Read(ctx, string(v.ID))
 	if err != nil {
 		return nil, false
 	}
@@ -333,7 +333,7 @@ func (u Schedules) remember(
 	ctx context.Context, v domain.Vault, files []port.Entry, mark string,
 	out map[review.CardFaceID]review.Schedule,
 ) {
-	if u.Kept == nil {
+	if u.Cache == nil {
 		return
 	}
 	now := scheduleCache{V: keptVersion, By: mark}
@@ -360,5 +360,5 @@ func (u Schedules) remember(
 	if err != nil {
 		return
 	}
-	_ = u.Kept.Write(ctx, string(v.ID), raw)
+	_ = u.Cache.Write(ctx, string(v.ID), raw)
 }

@@ -86,7 +86,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 	// for, which is how the application builds this.
 	schedules := flashcards.Schedules{
 		Logs:      logs,
-		Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
+		Cache:     appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards")),
 		By:        review.NewFSRS(),
 		Day:       today,
 		CardFaces: standings,
@@ -105,7 +105,7 @@ func opened(t testing.TB, notes map[string]string) vaulted {
 		kept: schedules,
 		counted: flashcards.CountReviews{
 			Logs:      logs,
-			Kept:      appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
+			Cache:     appstate.SchedulesAt(filepath.Join(t.TempDir(), "days")),
 			Schedules: schedules,
 			Day:       today,
 			Now:       time.Now,
@@ -917,7 +917,7 @@ func stamped(at time.Time) string { return at.UTC().Format(review.Stamp) }
 // claims and see whether it was believed.
 func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	t.Helper()
-	raw, err := s.kept.Kept.Read(t.Context(), string(s.vault.ID))
+	raw, err := s.kept.Cache.Read(t.Context(), string(s.vault.ID))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -930,7 +930,7 @@ func rewrite(t *testing.T, s vaulted, change func(*plantedCache)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.kept.Kept.Write(t.Context(), string(s.vault.ID), now); err != nil {
+	if err := s.kept.Cache.Write(t.Context(), string(s.vault.ID), now); err != nil {
 		t.Fatal(err)
 	}
 }

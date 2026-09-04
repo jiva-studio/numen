@@ -59,9 +59,9 @@ func (c Config) DayStarts() time.Duration {
 	return held.DayStarts()
 }
 
-// Kept is where the working out is remembered between launches: the folder the
-// configuration names, or the platform's cache location.
-func (c Config) Kept() (port.ScheduleStore, error) {
+// Schedules is where the working out is remembered between launches: the folder
+// the configuration names, or the platform's cache location.
+func (c Config) Schedules() (port.ScheduleStore, error) {
 	if c.SchedulesPath != "" {
 		return appstate.SchedulesAt(c.SchedulesPath), nil
 	}
@@ -81,16 +81,16 @@ func (c Config) Counting() (port.ScheduleStore, error) {
 
 // Flashcards builds the scenarios against this installation.
 //
-// Kept is where the working out is remembered between launches. It is a cache
-// and it is this machine's, so it stands in the platform's cache location and a
-// machine that has none works the schedules out at every launch.
+// The cache is where the working out is remembered between launches. It is this
+// machine's, so it stands in the platform's cache location and a machine that
+// has none works the schedules out at every launch.
 func (c Config) Flashcards(
 	notes port.NoteQueries,
 	links port.LinkQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 ) Flashcards {
 	logs := c.Answers()
-	kept, err := c.Kept()
+	kept, err := c.Schedules()
 	if err != nil {
 		// A machine that cannot say where its caches go works the schedules out
 		// at every launch. That is slower and no less correct.
@@ -122,7 +122,7 @@ func (c Config) Flashcards(
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face stands under.
 	schedules := flashcards.Schedules{
-		Logs: logs, Kept: kept, By: review.NewFSRS(), Day: day,
+		Logs: logs, Cache: kept, By: review.NewFSRS(), Day: day,
 		CardFaces: standing, Presets: presets,
 	}
 
@@ -139,7 +139,7 @@ func (c Config) Flashcards(
 		},
 		Log: flashcards.Log{Stores: logs},
 		Counted: flashcards.CountReviews{
-			Logs: logs, Kept: counting, Schedules: schedules, Day: day, Now: time.Now,
+			Logs: logs, Cache: counting, Schedules: schedules, Day: day, Now: time.Now,
 		},
 		Presets: presets,
 		// How many places of a curve run at once is what this machine can run
