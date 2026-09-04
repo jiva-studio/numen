@@ -163,7 +163,12 @@ func (o *OpenVault) trouble(err error) {
 // the first walk is still reading the vault.
 type holding struct {
 	port.NoteRepository
+	writes
+}
 
+// writes is every path written through the index while a walk is reading the
+// vault: each path once, in the order it was first written.
+type writes struct {
 	mu    sync.Mutex
 	paths []string
 	kept  map[string]bool
@@ -187,38 +192,38 @@ func (h *holding) Remove(ctx context.Context, vaultID domain.VaultID, paths []st
 // begin holds the paths written through this, for the length of one walk. Every
 // walk holds again: a vault read a second time is read with the same guard as
 // the first.
-func (h *holding) begin() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) begin() {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	h.over = false
-	h.paths, h.kept = nil, nil
+	w.over = false
+	w.paths, w.kept = nil, nil
 }
 
 // hold takes the path before the write it belongs to, so a note whose write
 // lands while the walk is still running is one of the paths taken after it.
-func (h *holding) hold(path string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) hold(path string) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	if h.over || h.kept[path] {
+	if w.over || w.kept[path] {
 		return
 	}
-	if h.kept == nil {
-		h.kept = map[string]bool{}
+	if w.kept == nil {
+		w.kept = map[string]bool{}
 	}
-	h.kept[path] = true
-	h.paths = append(h.paths, path)
+	w.kept[path] = true
+	w.paths = append(w.paths, path)
 }
 
 // taken is every path held, and the end of the holding: the walk is over, so a
 // write that lands from now on is already the last one.
-func (h *holding) taken() []string {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (w *writes) taken() []string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	h.over = true
-	paths := h.paths
-	h.paths, h.kept = nil, nil
+	w.over = true
+	paths := w.paths
+	w.paths, w.kept = nil, nil
 	return paths
 }
