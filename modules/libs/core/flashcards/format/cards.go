@@ -1,11 +1,11 @@
-// Package cards reads the two notes a flashcard is made of. A stencil declares
+// Package format reads the two notes a flashcard is made of. A stencil declares
 // the fields a card has and the faces it is shown by; a deck holds the cards.
 // It is pure: no filesystem, no clock, no database.
 //
 // A card is markdown and nothing else. The heading carries the structure, so a
 // value holds whatever markdown holds short of a heading of the three levels
 // the format spends.
-package cards
+package format
 
 import (
 	"fmt"

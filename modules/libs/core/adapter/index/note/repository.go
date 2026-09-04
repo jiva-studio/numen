@@ -14,9 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/sqlfile"
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/chunking"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
 //go:embed sql/*.sql
@@ -246,8 +246,8 @@ func parts(headings []domain.Heading) []chunking.PartStart {
 // under it. Below them stand the stencil's field names, written out under every
 // card.
 //
-// TODO: which level a deck spends on what is the format's answer, and cards is
-// where the format is read. Take these from there once it names them.
+// TODO: which level a deck spends on what is the format package's answer, and
+// it is where the format is read. Take these from there once it names them.
 const (
 	sectionLevel = 1
 	cardLevel    = 2
@@ -270,7 +270,7 @@ func outline(n domain.Note) []domain.Heading {
 			case sectionLevel:
 				out = append(out, h)
 			case cardLevel:
-				h.Text, _ = cards.ReadHeading(h.Text)
+				h.Text, _ = format.ReadHeading(h.Text)
 				if h.Text == "" {
 					continue
 				}

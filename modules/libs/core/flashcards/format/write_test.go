@@ -1,4 +1,4 @@
-package cards_test
+package format_test
 
 import (
 	"bytes"
@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -84,7 +84,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 				t.Fatalf("read: %v", err)
 			}
 
-			f, err := cards.OpenDeck(before)
+			f, err := format.OpenDeck(before)
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
@@ -114,7 +114,7 @@ const (
 
 func setValue(t *testing.T, raw string, card domain.CardID, field, value string) string {
 	t.Helper()
-	f, err := cards.OpenDeck([]byte(raw))
+	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 func TestSetValueKeepsTheOrderTheFieldsWereWrittenIn(t *testing.T) {
 	raw := setValue(t, deck, llama, "Life span", "about 25 years")
 
-	f, err := cards.OpenDeck([]byte(raw))
+	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -187,11 +187,11 @@ func TestTheFilesOwnLineEndingIsWhatIsWritten(t *testing.T) {
 }
 
 func TestSetValueOfACardTheDeckDoesNotHold(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetValue("wxyz01234t", "Height", "about 35\""); !errors.Is(err, cards.ErrNoSuchCard) {
+	if err := f.SetValue("wxyz01234t", "Height", "about 35\""); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("err = %v, want ErrNoSuchCard", err)
 	}
 	if string(f.Bytes()) != deck {
@@ -202,7 +202,7 @@ func TestSetValueOfACardTheDeckDoesNotHold(t *testing.T) {
 // A deck whose frontmatter cannot be read is never written: repairing it means
 // guessing at what the person wrote.
 func TestADeckThatCannotBeReadIsNotOpened(t *testing.T) {
-	if _, err := cards.OpenDeck([]byte("---\ntype: [deck\n---\n\n## Llama\n")); err == nil {
+	if _, err := format.OpenDeck([]byte("---\ntype: [deck\n---\n\n## Llama\n")); err == nil {
 		t.Error("a broken frontmatter block opened for writing")
 	}
 }
@@ -224,11 +224,11 @@ func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
 // and taken away. Taking one away takes its heading and nothing else: the cards
 // that stood under it stay where they are.
 func TestTheSplicesASectionNeeds(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddSection(cards.Section{Name: "The ones without", Lead: "Added last."}); err != nil {
+	if err := f.AddSection(format.Section{Name: "The ones without", Lead: "Added last."}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	made := deck + "\n# The ones without\n\nAdded last.\n"
@@ -255,21 +255,21 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if len(read.Cards) != 2 {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
-	if read.Cards[0].Section != cards.NoSection {
+	if read.Cards[0].Section != format.NoSection {
 		t.Errorf("the card stands under section %d", read.Cards[0].Section)
 	}
 }
 
 // A section the deck does not hold is not written to.
 func TestASectionTheDeckDoesNotHold(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.RenameSection(4, "Nowhere"); !errors.Is(err, cards.ErrNoSuchSection) {
+	if err := f.RenameSection(4, "Nowhere"); !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("rename = %v, want ErrNoSuchSection", err)
 	}
-	if err := f.RemoveSection(4); !errors.Is(err, cards.ErrNoSuchSection) {
+	if err := f.RemoveSection(4); !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("remove = %v, want ErrNoSuchSection", err)
 	}
 	if string(f.Bytes()) != deck {
@@ -280,16 +280,16 @@ func TestASectionTheDeckDoesNotHold(t *testing.T) {
 // Every field is written under a heading of its own, the first included, and
 // the heading line carries the card's mark.
 func TestAddCard(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(cards.Card{
+	if err := f.AddCard(format.Card{
 		Heading: "Alpaca",
 		Mark:    "m9n8b7v6c5",
 		Stencil: "Animal",
 		Lead:    "From the same trip.",
-		Values: []cards.Value{
+		Values: []format.Value{
 			{Field: "Name", Text: "Alpaca"},
 			{Field: "Height", Text: "about 35\""},
 			{Field: "Life span", Text: ""},
@@ -319,11 +319,11 @@ func TestAddCard(t *testing.T) {
 // A heading is a projection and a mark is minted where the deck is written, so
 // a card handed over with neither is written with neither.
 func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(cards.Card{Stencil: "Animal"}); err != nil {
+	if err := f.AddCard(format.Card{Stencil: "Animal"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	if want := deck + "\n##\n\n[[Animal]]\n"; string(f.Bytes()) != want {
@@ -334,7 +334,7 @@ func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 // A field renamed in a stencil is renamed in the cards that stencil cuts, and
 // the value under the heading is left as it was.
 func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
-	f, err := cards.OpenDeck([]byte(deck))
+	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -399,7 +399,7 @@ const stencil = "---\n" +
 // A field is added, renamed and taken away in the frontmatter, and the keys
 // around it come out of every one of those as the bytes they went in as.
 func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
+	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -430,7 +430,7 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 		t.Errorf("read fields = %v", read.Fields)
 	}
 	for _, p := range read.Problems {
-		if p.Check == cards.CheckPlaceholder {
+		if p.Check == format.CheckPlaceholder {
 			t.Errorf("a face places a name the stencil does not declare: %+v", p)
 		}
 	}
@@ -438,11 +438,11 @@ func TestWritingFieldsLeavesTheRestOfTheFrontmatterAlone(t *testing.T) {
 
 // A stencil declaring no such field is not written to.
 func TestRenamingAFieldNobodyDeclares(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
+	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.RenameField("Girth", "Waist"); !errors.Is(err, cards.ErrNoSuchField) {
+	if err := f.RenameField("Girth", "Waist"); !errors.Is(err, format.ErrNoSuchField) {
 		t.Fatalf("rename = %v, want it refused", err)
 	}
 	if got := string(f.Bytes()); got != stencil {
@@ -455,11 +455,11 @@ func TestRenamingAFieldNobodyDeclares(t *testing.T) {
 // place the same field, and the values under the old heading would be shown by
 // nothing.
 func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
+	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.RenameField("Height", "Life span"); !errors.Is(err, cards.ErrFieldTaken) {
+	if err := f.RenameField("Height", "Life span"); !errors.Is(err, format.ErrFieldTaken) {
 		t.Fatalf("rename = %v, want it refused", err)
 	}
 	if got := string(f.Bytes()); got != stencil {
@@ -470,11 +470,11 @@ func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
 // A face is written with the sides it has. A face missing one is a face that
 // lays out nothing, and it is still that face once it has been written.
 func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
-	f, err := cards.OpenStencil([]byte(stencil))
+	f, err := format.OpenStencil([]byte(stencil))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddFace(cards.FaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
+	if err := f.AddFace(format.FaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
@@ -486,7 +486,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 	read := f.Stencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
 	var missing int
 	for _, p := range read.Problems {
-		if p.Check == cards.CheckFaceSide {
+		if p.Check == format.CheckFaceSide {
 			missing++
 		}
 	}
@@ -499,7 +499,7 @@ func TestAFaceIsWrittenWithTheSidesItHas(t *testing.T) {
 // the note that link lands on, whatever the brackets spell.
 func TestACardIsCutByWhatItsLinkPointsAt(t *testing.T) {
 	written := "---\ntype: deck\n---\n\n## Llama\n\n[[Animal|the beast]]\n\n### Height\n\nabout 45\"\n"
-	f, err := cards.OpenDeck([]byte(written))
+	f, err := format.OpenDeck([]byte(written))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -524,17 +524,17 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 	raw := "---\ntype: deck\n---\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n" +
 		"\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Height\n\nabout 46\"\n"
-	f, err := cards.OpenDeck([]byte(raw))
+	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetValue("k7m2xq9fzp", "Height", "about 47\""); !errors.Is(err, cards.ErrTwoCards) {
+	if err := f.SetValue("k7m2xq9fzp", "Height", "about 47\""); !errors.Is(err, format.ErrTwoCards) {
 		t.Errorf("set = %v, want ErrTwoCards", err)
 	}
 	if string(f.Bytes()) != raw {
 		t.Error("a card was written anyway")
 	}
-	if _, err := f.Deck(domain.Fingerprint{}).Card("k7m2xq9fzp"); !errors.Is(err, cards.ErrTwoCards) {
+	if _, err := f.Deck(domain.Fingerprint{}).Card("k7m2xq9fzp"); !errors.Is(err, format.ErrTwoCards) {
 		t.Errorf("card = %v, want ErrTwoCards", err)
 	}
 }
@@ -543,17 +543,17 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 // lines under it into the file, where the next read takes a second `##` for a
 // second card and mints it a mark.
 func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
-	f, err := cards.OpenDeck([]byte("---\ntype: deck\n---\n"))
+	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(cards.Card{
+	if err := f.AddCard(format.Card{
 		Heading: "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
 		Stencil: "Animal",
 	}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	if err := f.AddSection(cards.Section{Name: "Roots\n\n## Also injected"}); err != nil {
+	if err := f.AddSection(format.Section{Name: "Roots\n\n## Also injected"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
@@ -572,14 +572,14 @@ func TestAHeadingAndASectionsNameAreCutAtTheFirstBreak(t *testing.T) {
 // A field's name is a heading too, so a break in one is cut where a break in a
 // card's heading is.
 func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
-	f, err := cards.OpenDeck([]byte("---\ntype: deck\n---\n"))
+	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(cards.Card{
+	if err := f.AddCard(format.Card{
 		Heading: "Question",
 		Stencil: "Animal",
-		Values: []cards.Value{{
+		Values: []format.Value{{
 			Field: "Answer\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]",
 			Text:  "smuggled",
 		}},
@@ -601,7 +601,7 @@ func TestAFieldsNameIsCutAtTheFirstBreak(t *testing.T) {
 func TestRemovingTheLastSectionLeavesNoBlankLine(t *testing.T) {
 	raw := "---\ntype: deck\n---\n\n# The ones with fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n" +
 		"\n# The ones without\n"
-	f, err := cards.OpenDeck([]byte(raw))
+	f, err := format.OpenDeck([]byte(raw))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -627,13 +627,13 @@ func TestWholeSaysWhichCardsItMinted(t *testing.T) {
 		return out, nil
 	}
 
-	_, minted, err := cards.Whole(body, map[string]cards.Stencil{
+	_, minted, err := format.Whole(body, map[string]format.Stencil{
 		"Animal": {Fields: []string{"Name"}},
 	}, mint)
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
-	want := []cards.Minted{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
+	want := []format.Minted{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
 	if !slices.Equal(minted, want) {
 		t.Errorf("minted = %+v, want %+v", minted, want)
 	}
@@ -646,7 +646,7 @@ func TestAMarkThatCouldNotBeMintedSaysWhichCard(t *testing.T) {
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	broken := func() (domain.CardID, error) { return "", errors.New("no randomness") }
 
-	_, _, err := cards.Whole(body, nil, broken)
+	_, _, err := format.Whole(body, nil, broken)
 	if err == nil {
 		t.Fatal("a deck was made whole with no mark to give")
 	}
@@ -659,12 +659,12 @@ func TestAMarkThatCouldNotBeMintedSaysWhichCard(t *testing.T) {
 // the order they stand, and the tail below the last value. A section no card
 // stands under is written where it stands.
 func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
-	body, err := cards.DeckBody(cards.Deck{
+	body, err := format.DeckBody(format.Deck{
 		Preamble: "Cards I am learning.",
-		Sections: []cards.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
-		Cards: []cards.Card{{
+		Sections: []format.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
+		Cards: []format.Card{{
 			Heading: "Llama", Mark: "k7m2xq9fzp", Stencil: "Animal", Section: 1,
-			Values: []cards.Value{{Field: "Name", Text: "Llama"}},
+			Values: []format.Value{{Field: "Name", Text: "Llama"}},
 		}},
 	})
 	if err != nil {
@@ -680,11 +680,11 @@ func TestDeckBodyWritesTheSectionsNoCardStandsUnder(t *testing.T) {
 // A card standing under a section the deck does not hold is refused. Writing it
 // under whichever section stands last moves somebody's card without saying so.
 func TestDeckBodyRefusesACardUnderASectionTheDeckDoesNotHold(t *testing.T) {
-	_, err := cards.DeckBody(cards.Deck{
-		Sections: []cards.Section{{Name: "One"}, {Name: "Two"}},
-		Cards:    []cards.Card{{Heading: "Llama", Stencil: "Animal", Section: 99}},
+	_, err := format.DeckBody(format.Deck{
+		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
+		Cards:    []format.Card{{Heading: "Llama", Stencil: "Animal", Section: 99}},
 	})
-	if !errors.Is(err, cards.ErrNoSuchSection) {
+	if !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("body = %v, want ErrNoSuchSection", err)
 	}
 }

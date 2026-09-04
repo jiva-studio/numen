@@ -29,8 +29,8 @@ var owed = map[string][]string{
 	// The two source queues and the deck writer stand here, so the words for a
 	// piece of work, a card, a schedule, a cut and a vector are read in place.
 	"container": {
-		"cards", "chunking", "embedding", "flashcards/review", "markdown",
-		"proofread", "task",
+		"chunking", "embedding", "flashcards/format", "flashcards/review",
+		"markdown", "proofread", "task",
 	},
 }
 

@@ -1,4 +1,4 @@
-package cards
+package format
 
 // Problem is something in a stencil or a deck that could not be acted on and
 // was not guessed at. It is filed against the file somebody would open to

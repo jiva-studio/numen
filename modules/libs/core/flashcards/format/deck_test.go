@@ -1,12 +1,12 @@
-package cards_test
+package format_test
 
 import (
 	"slices"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 )
 
@@ -19,9 +19,9 @@ func note(t *testing.T, raw string) domain.Note {
 
 // filed is the one problem of a check, and it fails the test where there is
 // none or more than one.
-func filed(t *testing.T, problems []cards.Problem, check cards.Fault) cards.Problem {
+func filed(t *testing.T, problems []format.Problem, check format.Fault) format.Problem {
 	t.Helper()
-	var found []cards.Problem
+	var found []format.Problem
 	for _, p := range problems {
 		if p.Check == check {
 			found = append(found, p)
@@ -36,7 +36,7 @@ func filed(t *testing.T, problems []cards.Problem, check cards.Fault) cards.Prob
 	return found[0]
 }
 
-func names(deck cards.Deck) []string {
+func names(deck format.Deck) []string {
 	var out []string
 	for _, c := range deck.Cards {
 		out = append(out, c.Heading)
@@ -44,7 +44,7 @@ func names(deck cards.Deck) []string {
 	return out
 }
 
-func fieldsOf(card cards.Card) []string {
+func fieldsOf(card format.Card) []string {
 	var out []string
 	for _, v := range card.Values {
 		out = append(out, v.Field)
@@ -53,7 +53,7 @@ func fieldsOf(card cards.Card) []string {
 }
 
 func TestADeckIsReadCardByCard(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -112,7 +112,7 @@ about 20 years
 // Two first fields that begin alike are two cards of one heading. Their marks
 // tell them apart, and nothing else needed them to differ.
 func TestTwoCardsOfOneHeading(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -152,7 +152,7 @@ about 46"
 // both are shown marked: nothing a person wrote goes missing from the screen,
 // and which of the two is meant is a thing only they know.
 func TestTwoCardsOfOneMark(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -183,7 +183,7 @@ about 30"
 
 	var against []int
 	for _, p := range deck.Problems {
-		if p.Check == cards.CheckTwoMarks {
+		if p.Check == format.CheckTwoMarks {
 			against = append(against, p.Card)
 		}
 	}
@@ -202,7 +202,7 @@ about 30"
 // of them, so a name ending in one keeps it and is the whole of what the card
 // is called.
 func TestAHeadingEndingInAHash(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -235,7 +235,7 @@ type: deck
 }
 
 func TestTwoFieldsOfOneName(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -253,7 +253,7 @@ about 46"
 `))
 
 	card := deck.Cards[0]
-	if got := filed(t, deck.Problems, cards.CheckTwoValues); got.Card != 0 || got.Field != "Height" {
+	if got := filed(t, deck.Problems, format.CheckTwoValues); got.Card != 0 || got.Field != "Height" {
 		t.Errorf("problem = %+v, want it against the first card and its Height", got)
 	}
 	if got, ok := card.Value("Height"); !ok || got != `about 45"` {
@@ -276,13 +276,13 @@ func TestACardNamesNoStencil(t *testing.T) {
 		"nothing at all":             "",
 	} {
 		t.Run(name, func(t *testing.T) {
-			deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n"+head+"\n\n### Height\n\nabout 45\"\n"))
+			deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n"+head+"\n\n### Height\n\nabout 45\"\n"))
 
 			card := deck.Cards[0]
 			if card.Stencil != "" {
 				t.Errorf("stencil = %q, want none", card.Stencil)
 			}
-			if got := filed(t, deck.Problems, cards.CheckNoStencil).Card; got != 0 {
+			if got := filed(t, deck.Problems, format.CheckNoStencil).Card; got != 0 {
 				t.Errorf("card = %d", got)
 			}
 			if got, ok := card.Value("Height"); !ok || got != `about 45"` {
@@ -296,7 +296,7 @@ func TestACardNamesNoStencil(t *testing.T) {
 }
 
 func TestALoneWikilinkIsTheStencilAndTheRestIsLead(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -323,7 +323,7 @@ about 45"
 // A first field that is empty gives a heading of nothing, and the card is a
 // card like any other.
 func TestACardWithNothingInItsHeading(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n## \n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"))
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## \n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"))
 
 	if len(deck.Cards) != 1 {
 		t.Fatalf("cards = %v, a heading of nothing still opens a card", deck.Cards)
@@ -342,7 +342,7 @@ func TestACardWithNothingInItsHeading(t *testing.T) {
 // A first-level heading opens a section. The cards under it are its own until
 // the next one, and the section is a name and the person's own text.
 func TestAFirstLevelHeadingOpensASection(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -405,7 +405,7 @@ The ones I began with.
 	for _, c := range deck.Cards {
 		under = append(under, c.Section)
 	}
-	if !slices.Equal(under, []int{cards.NoSection, 0, 1}) {
+	if !slices.Equal(under, []int{format.NoSection, 0, 1}) {
 		t.Errorf("sections = %v, want the first card under none", under)
 	}
 	if len(deck.Problems) != 0 {
@@ -416,7 +416,7 @@ The ones I began with.
 // A deck of sections and no cards is sections all the same, and what a person
 // wrote under each of them is kept.
 func TestADeckOfSectionsAndNoCards(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n# Animals\n\n### Not a card\n\nprose.\n"))
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n# Animals\n\n### Not a card\n\nprose.\n"))
 
 	if len(deck.Cards) != 0 {
 		t.Fatalf("cards = %v", deck.Cards)
@@ -436,7 +436,7 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 // The format spends two heading levels and no more, so a heading below them is
 // part of the value it stands in.
 func TestAValueHoldsADeeperHeading(t *testing.T) {
-	deck := cards.ReadDeck(note(t, `---
+	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
 
@@ -473,7 +473,7 @@ about 20 years
 
 // A heading inside a code fence is an example of a heading.
 func TestAFencedHeadingOpensNothing(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n\n### Height\n\n```markdown\n## Alpaca\n\n### Weight\n```\n"))
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n[[Animal]]\n\n### Height\n\n```markdown\n## Alpaca\n\n### Weight\n```\n"))
 
 	if got := names(deck); !slices.Equal(got, []string{"Llama"}) {
 		t.Errorf("cards = %v", got)
@@ -486,7 +486,7 @@ func TestAFencedHeadingOpensNothing(t *testing.T) {
 // A block opened with tildes is closed by tildes, so the backticks inside it
 // are part of the example and a heading standing among them opens nothing.
 func TestATildeFencedExampleHoldsBackticks(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\n"+
 		"~~~markdown\n```\n## Alpaca\n```\n### Weight\n~~~\n\n"+
 		"## Vicuña\n\n[[Animal]]\n\n### Height\n\nabout 36\"\n"))
@@ -508,7 +508,7 @@ func TestAnEmptyDeck(t *testing.T) {
 		t.Fatalf("type = %q", n.Type)
 	}
 
-	deck := cards.ReadDeck(n)
+	deck := format.ReadDeck(n)
 	if len(deck.Cards) != 0 {
 		t.Errorf("cards = %v", deck.Cards)
 	}
@@ -524,7 +524,7 @@ func TestAnEmptyDeck(t *testing.T) {
 // last value has been read is the tail and is nobody's value. The preamble is
 // the bytes above the first card, down to the one its heading opens on.
 func TestThePreambleAndTheTail(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\nCards I am learning.\n\n"+
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\nCards I am learning.\n\n"+
 		"## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n\n\n"))
 
 	if deck.Preamble != "\nCards I am learning.\n\n" {
@@ -541,7 +541,7 @@ func TestThePreambleAndTheTail(t *testing.T) {
 // A deck of no cards is all preamble, and there is nothing for a tail to
 // follow.
 func TestADeckOfNoCardsIsAllPreamble(t *testing.T) {
-	deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\nAnimals\n\n### Not a card\n\nprose.\n"))
+	deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\nAnimals\n\n### Not a card\n\nprose.\n"))
 
 	if len(deck.Cards) != 0 {
 		t.Fatalf("cards = %v", deck.Cards)
@@ -563,7 +563,7 @@ func TestTheTailOfACardThatHasNothingUnderIt(t *testing.T) {
 		"## Llama\n\n[[Animal]]\n\n### Height\n\n": "\n\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			deck := cards.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+name))
+			deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n"+name))
 			if deck.Tail != want {
 				t.Errorf("tail = %q, want %q", deck.Tail, want)
 			}
@@ -573,7 +573,7 @@ func TestTheTailOfACardThatHasNothingUnderIt(t *testing.T) {
 
 func TestADeckOfCRLFReadsAsOneKindOfBreak(t *testing.T) {
 	raw := "---\r\ntype: deck\r\n---\r\n\r\n## Llama\r\n\r\n[[Animal]]\r\n\r\n### Height\r\n\r\nabout 45\"\r\nat the shoulder\r\n"
-	deck := cards.ReadDeck(note(t, raw))
+	deck := format.ReadDeck(note(t, raw))
 
 	if deck.Cards[0].Stencil != "Animal" {
 		t.Errorf("stencil = %q", deck.Cards[0].Stencil)

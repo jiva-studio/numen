@@ -1,11 +1,11 @@
-package cards_test
+package format_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
 // A mark stands last, one space after the heading's text, and is a mark only at
@@ -33,11 +33,11 @@ func TestReadHeading(t *testing.T) {
 		"a text that is a mark":   {"^k7m2xq9fzp ^zpqrstvwxy", "^k7m2xq9fzp", "zpqrstvwxy"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			text, mark := cards.ReadHeading(one.heading)
+			text, mark := format.ReadHeading(one.heading)
 			if text != one.text || mark != one.mark {
 				t.Errorf("read %q = %q, %q, want %q, %q", one.heading, text, mark, one.text, one.mark)
 			}
-			if got := cards.WriteHeading(text, mark); got != one.heading {
+			if got := format.WriteHeading(text, mark); got != one.heading {
 				t.Errorf("written back = %q, want %q", got, one.heading)
 			}
 		})
@@ -59,7 +59,7 @@ func TestWriteHeading(t *testing.T) {
 		"beyond latin": {"компост", "k7m2xq9fzp", "компост ^k7m2xq9fzp"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := cards.WriteHeading(one.text, one.mark); got != one.want {
+			if got := format.WriteHeading(one.text, one.mark); got != one.want {
 				t.Errorf("write = %q, want %q", got, one.want)
 			}
 		})
@@ -67,9 +67,9 @@ func TestWriteHeading(t *testing.T) {
 }
 
 // The heading is the first line of the first field, cut to fit one line: it
-// stops at the first break and at cards.HeadingRunes characters.
+// stops at the first break and at format.HeadingRunes characters.
 func TestProject(t *testing.T) {
-	long := strings.Repeat("a", cards.HeadingRunes+40)
+	long := strings.Repeat("a", format.HeadingRunes+40)
 	upTo := func(n int) string { return strings.Repeat("a", n) }
 
 	for name, one := range map[string]struct{ value, want string }{
@@ -82,34 +82,34 @@ func TestProject(t *testing.T) {
 		"spaces alone":        {"   ", ""},
 		"spaces around":       {"  Compost  ", "Compost"},
 		"a blank first line":  {"\nCompost", ""},
-		"too long":            {long, upTo(cards.HeadingRunes)},
+		"too long":            {long, upTo(format.HeadingRunes)},
 		"a break before then": {upTo(10) + "\n" + long, upTo(10)},
 
 		// The cut never falls inside one of these: it falls before the whole of
 		// whichever it lands in.
 		"inside a wikilink": {
-			upTo(cards.HeadingRunes-5) + " [[Compost heap]] and on", upTo(cards.HeadingRunes - 5),
+			upTo(format.HeadingRunes-5) + " [[Compost heap]] and on", upTo(format.HeadingRunes - 5),
 		},
 		"inside an embed": {
-			upTo(cards.HeadingRunes-5) + " ![[llama.png]] and on", upTo(cards.HeadingRunes - 5),
+			upTo(format.HeadingRunes-5) + " ![[llama.png]] and on", upTo(format.HeadingRunes - 5),
 		},
 		"inside a run of emphasis": {
-			upTo(cards.HeadingRunes-5) + " **very heavy** and on", upTo(cards.HeadingRunes - 5),
+			upTo(format.HeadingRunes-5) + " **very heavy** and on", upTo(format.HeadingRunes - 5),
 		},
 		"inside emphasis of one star": {
-			upTo(cards.HeadingRunes-5) + " *very heavy* and on", upTo(cards.HeadingRunes - 5),
+			upTo(format.HeadingRunes-5) + " *very heavy* and on", upTo(format.HeadingRunes - 5),
 		},
 		"inside emphasis of an underscore": {
-			upTo(cards.HeadingRunes-5) + " __very heavy__ and on", upTo(cards.HeadingRunes - 5),
+			upTo(format.HeadingRunes-5) + " __very heavy__ and on", upTo(format.HeadingRunes - 5),
 		},
 		// A wikilink the cut falls after is text like any other.
 		"after a wikilink": {
-			upTo(cards.HeadingRunes-20) + " [[Compost heap]] " + long,
-			upTo(cards.HeadingRunes-20) + " [[Compost heap]] " + upTo(2),
+			upTo(format.HeadingRunes-20) + " [[Compost heap]] " + long,
+			upTo(format.HeadingRunes-20) + " [[Compost heap]] " + upTo(2),
 		},
 		// A star with no partner opens no run of emphasis.
 		"a lone star": {
-			upTo(cards.HeadingRunes-5) + " *very heavy and on", upTo(cards.HeadingRunes-5) + " *ver",
+			upTo(format.HeadingRunes-5) + " *very heavy and on", upTo(format.HeadingRunes-5) + " *ver",
 		},
 
 		// A link inside a run of emphasis is the link's, and the run around it
@@ -127,12 +127,12 @@ func TestProject(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got := cards.Project(one.value)
+			got := format.Project(one.value)
 			if got != one.want {
 				t.Errorf("project %q\n want %q\n  got %q", one.value, one.want, got)
 			}
-			if n := len([]rune(got)); n > cards.HeadingRunes {
-				t.Errorf("the heading is %d characters, and %d is the most one is", n, cards.HeadingRunes)
+			if n := len([]rune(got)); n > format.HeadingRunes {
+				t.Errorf("the heading is %d characters, and %d is the most one is", n, format.HeadingRunes)
 			}
 		})
 	}

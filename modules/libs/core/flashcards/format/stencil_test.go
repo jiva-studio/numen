@@ -1,14 +1,14 @@
-package cards_test
+package format_test
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/cards"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
+	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 )
 
-func faceNames(s cards.Stencil) []string {
+func faceNames(s format.Stencil) []string {
 	var out []string
 	for _, f := range s.Faces {
 		out = append(out, f.Name)
@@ -19,7 +19,7 @@ func faceNames(s cards.Stencil) []string {
 // A section is a deck's, and a stencil is not a deck: a first-level heading in
 // a face is text the face lays out.
 func TestAFirstLevelHeadingInAStencilIsText(t *testing.T) {
-	s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n"+
+	s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n"+
 		"\n# Animal\n\nHow I show these.\n"+
 		"\n## Recognise\n\n### Front\n\n# {{Name}}\n\n### Back\n\n# Anything\n"))
 
@@ -69,7 +69,7 @@ Which animal lives {{Life span}}?
 		t.Fatalf("type = %q", n.Type)
 	}
 
-	s := cards.ReadStencil(n)
+	s := format.ReadStencil(n)
 	// The order is the order a person is asked for them, and the first of them
 	// is what a card is named by.
 	if got := s.Fields; !slices.Equal(got, []string{"Name", "Height", "Weight", "Life span"}) {
@@ -103,7 +103,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 		"an empty name":     "fields:\n  - \"  \"\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := cards.ReadStencil(note(t, "---\ntype: stencil\n"+written+
+			s := format.ReadStencil(note(t, "---\ntype: stencil\n"+written+
 				"---\n\n## Recognise\n\n### Front\n\n{{Height}}\n\n### Back\n\nnothing\n"))
 
 			if s.Fields != nil {
@@ -112,7 +112,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 			if s.First() != "" {
 				t.Errorf("first = %q, want no name at all", s.First())
 			}
-			if got := filed(t, s.Problems, cards.CheckNoFields); got.Card != cards.NoPosition {
+			if got := filed(t, s.Problems, format.CheckNoFields); got.Card != format.NoPosition {
 				t.Errorf("problem = %+v, want it against the file", got)
 			}
 			// The rest of it is read, and a face placing anything at all places
@@ -120,7 +120,7 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 			if len(s.Faces) != 1 {
 				t.Fatalf("faces = %v, the rest of the stencil is read", s.Faces)
 			}
-			if got := filed(t, s.Problems, cards.CheckPlaceholder).Field; got != "Height" {
+			if got := filed(t, s.Problems, format.CheckPlaceholder).Field; got != "Height" {
 				t.Errorf("field = %q", got)
 			}
 		})
@@ -128,18 +128,18 @@ func TestAStencilDeclaringNoField(t *testing.T) {
 }
 
 func TestTwoFieldsOfOneNameInAStencil(t *testing.T) {
-	s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Height\n  - Height\n---\n"))
+	s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Height\n  - Height\n---\n"))
 
 	if got := s.Fields; !slices.Equal(got, []string{"Height"}) {
 		t.Errorf("fields = %v", got)
 	}
-	if got := filed(t, s.Problems, cards.CheckTwoFields).Field; got != "Height" {
+	if got := filed(t, s.Problems, format.CheckTwoFields).Field; got != "Height" {
 		t.Errorf("field = %q", got)
 	}
 }
 
 func TestAFacePlacesAFieldTheStencilDoesNotDeclare(t *testing.T) {
-	s := cards.ReadStencil(note(t, `---
+	s := format.ReadStencil(note(t, `---
 type: stencil
 fields:
   - Name
@@ -157,7 +157,7 @@ fields:
 {{Height}} and {{Weight}}
 `))
 
-	if got := filed(t, s.Problems, cards.CheckPlaceholder); got.Face != 0 || got.Field != "Weight" {
+	if got := filed(t, s.Problems, format.CheckPlaceholder); got.Face != 0 || got.Field != "Weight" {
 		t.Errorf("problem = %+v, want it against the first face and Weight", got)
 	}
 	// The rest of it is read as usual.
@@ -174,17 +174,17 @@ func TestAFaceMissingASideLaysOutNothing(t *testing.T) {
 		"neither":  "Nothing under this one.\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := cards.ReadStencil(note(t,
+			s := format.ReadStencil(note(t,
 				"---\ntype: stencil\nfields:\n  - Name\n  - Height\n---\n\n## Broken\n\n"+sides+
 					"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"))
 
 			if got := faceNames(s); !slices.Equal(got, []string{"Broken", "Recognise"}) {
 				t.Fatalf("faces = %v, want both, so a problem can address one", got)
 			}
-			if got := filed(t, s.Problems, cards.CheckFaceSide).Face; got != 0 {
+			if got := filed(t, s.Problems, format.CheckFaceSide).Face; got != 0 {
 				t.Errorf("face = %d, want the broken one", got)
 			}
-			front, back := cards.Lay(s, s.Faces[0], cards.Card{Heading: "Llama"})
+			front, back := format.Lay(s, s.Faces[0], format.Card{Heading: "Llama"})
 			if front != "" || back != "" {
 				t.Errorf("the face laid out %q and %q, want nothing", front, back)
 			}
@@ -203,7 +203,7 @@ func TestAStencilEndingOnAHeading(t *testing.T) {
 		"nothing": "##",
 	} {
 		t.Run(name, func(t *testing.T) {
-			s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n\n"+written))
+			s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Name\n---\n\n"+written))
 
 			if len(s.Faces) != 1 {
 				t.Fatalf("faces = %+v, want the one the file opens", s.Faces)
@@ -213,7 +213,7 @@ func TestAStencilEndingOnAHeading(t *testing.T) {
 }
 
 func TestAStencilWithNoFaces(t *testing.T) {
-	s := cards.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Height\n---\n"))
+	s := format.ReadStencil(note(t, "---\ntype: stencil\nfields:\n  - Height\n---\n"))
 
 	if len(s.Faces) != 0 {
 		t.Errorf("faces = %v", s.Faces)
@@ -227,7 +227,7 @@ func TestAStencilWithNoFaces(t *testing.T) {
 }
 
 func TestAFieldThatIsNotLatin(t *testing.T) {
-	s := cards.ReadStencil(note(t, `---
+	s := format.ReadStencil(note(t, `---
 type: stencil
 fields:
   - Слово
