@@ -129,10 +129,15 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTi
 	t.Cleanup(func() { _ = opened.Close() })
 
 	recorded := &order{}
-	opened.API.Notes.Write = &note.Write{
-		Readers: cfg.VaultReaders(),
-		Writers: recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
-	}
+	// What this watches is the order the writes and the closing land in, so
+	// nothing is brought level behind them.
+	unlevelled := func(context.Context, domain.Vault, []string) error { return nil }
+	writing := note.NewWrite(
+		cfg.VaultReaders(),
+		recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
+		unlevelled,
+	)
+	opened.API.Notes.Write = &writing
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(opened.API)
 	drawn, itself := numenv1connect.NewWindowServiceHandler(opened.API.Window)

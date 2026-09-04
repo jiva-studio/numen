@@ -98,7 +98,8 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	cfg, db, opening, api, _ := built(t)
 	cfg.Agent = agent.Config{}
 
-	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
+	notes, cutting := composed(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {
@@ -114,7 +115,8 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 	cfg, db, opening, api, _ := built(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, opening, api, true, io.Discard)
+	notes, cutting := composed(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {
@@ -129,7 +131,8 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 	cfg, db, opening, api, vaults := built(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
+	notes, cutting := composed(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
@@ -149,7 +152,8 @@ func TestTheAgentFollowsTheVaultTheSittingIsOn(t *testing.T) {
 	cfg, db, opening, api, vaults := built(t)
 	cfg.Agent = agent.Defaults()
 
-	away := serveAgents(t.Context(), cfg, db, opening, api, false, io.Discard)
+	notes, cutting := composed(cfg, db, opening)
+	away := serveAgents(t.Context(), cfg, db, notes, cutting, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.Answering() != nil {

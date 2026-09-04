@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -38,6 +37,13 @@ type Installation struct {
 	// by words alone.
 	Embedder port.Embedder
 	Asking   port.Embedder
+
+	// notes, cards and vaults are this installation's use cases, built once.
+	// Everything else working the same vault is served these, so a dependency
+	// named here is named for all of them.
+	notes  container.Notes
+	cards  container.Cards
+	vaults container.Vaults
 
 	cfg      container.Config
 	registry port.VaultRegistry
@@ -210,7 +216,6 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Notes: Notes{
 			Queries: db.Queries(),
 			Links:   db.Links(),
-			Read:    &note.Read{Readers: cfg.VaultReaders()},
 		},
 		Files: Files{Writers: cfg.VaultWriters()},
 	}
@@ -262,21 +267,26 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		stopEmbedder: closeEmbedder,
 	}
 
+	// Everything that acts on this installation's notes, cards and vaults, built
+	// once. Whatever else works the same vault — the tools an agent calls — is
+	// served these and builds none of its own.
+	//
 	// A note the person saves is level before the save is answered, so the vault
 	// finds what it now holds without waiting on the watch.
-	writing := note.NewWrite(cfg.VaultReaders(), cfg.VaultWriters(), opened.level)
-	api.Notes.Write = &writing
-	api.Notes.Create = &note.Create{
-		Writers: cfg.VaultWriters(),
-		Names:   db.Queries(),
-		Index:   opened.level,
-	}
-	api.Notes.Linking = &note.EditLinks{
-		Readers: cfg.VaultReaders(),
-		Writers: cfg.VaultWriters(),
-		Index:   opened.level,
-	}
-	cutting := cfg.Cards(db.Queries(), db.Links(), opened.level)
+	opened.notes = cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(),
+		opened.level).Following(api.Viewing())
+	opened.cards = cfg.Cards(db.Queries(), db.Links(), opened.level)
+	opened.vaults = cfg.Vaults(registry, db, opened.notes.Move)
+
+	notes := &opened.notes
+	api.Notes.Read = &notes.Read
+	api.Notes.Write = &notes.Write
+	api.Notes.Create = &notes.Create
+	api.Notes.Linking = &notes.Linking
+	api.Notes.Rename = &notes.Rename
+	api.Notes.Remove = &notes.Remove
+
+	cutting := &opened.cards
 	api.Cards = Cards{
 		Read:        &cutting.Read,
 		List:        &cutting.List,
@@ -289,19 +299,6 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	running := cfg.Flashcards(db.Queries(), db.Links(), opened.level)
 	api.Presets = &running.Presets
 	api.Curves = &running.Curves
-	// One note.Move settles every note that travelled, whether a rename sent it
-	// or a move did.
-	moving := note.Move{
-		Readers: cfg.VaultReaders(),
-		Writers: cfg.VaultWriters(),
-		Links:   api.Notes.Links,
-		Sources: db.Sources(),
-		Index:   opened.level,
-		Moving: func(ctx context.Context, went domain.Move) {
-			_ = api.Viewing().Moved(ctx, went)
-		},
-		Sync: cfg.Syncing(),
-	}
 	api.Configuring = Configuring{
 		Configured:     cfg.Configured(),
 		Models:         cfg.Models(),
@@ -309,45 +306,23 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		ConfiguredFile: cfg.ConfiguredFile(),
 		WritesFile:     cfg.WritesConfiguredFile(),
 	}
-	api.Notes.Rename = &note.Rename{Move: moving}
-	api.Files.Move = &vaults.Move{
-		Writers: cfg.VaultWriters(),
-		Links:   api.Notes.Links,
-		Known:   db.SourcesKnown(),
-		Sources: db.Sources(),
-		Notes:   moving,
+
+	held := &opened.vaults
+	api.Files.Move = &held.Move
+	api.Files.Import = &held.Import
+	api.Vaults = Vaults{
+		Registry: held.Registry,
+		Add:      &held.Add,
+		Rename:   &held.Rename,
+		Forget:   &held.Forget,
+		Erase:    &held.Erase,
 	}
-	api.Files.Import = &vaults.Import{Writers: cfg.VaultWriters(), Files: cfg.ImportedFiles()}
-	api.Notes.Remove = &note.Remove{
-		Writers: cfg.VaultWriters(),
-		Links:   api.Notes.Links,
-		Known:   db.SourcesKnown(),
-		Index:   opened.level,
-	}
+
 	api.Drops = &source.DropTranscript{
 		Readers: cfg.VaultReaders(),
 		Sources: db.Sources(),
 		Owing:   db.SourcesKnown(),
 		Derived: cfg.DerivedStores(),
-	}
-
-	// The vaults this installation holds, beside the one the window is showing.
-	// Erase is Forget and a folder that goes, so the two hold one Forget.
-	forget := vaults.Forget{Registry: registry, Index: db.Vaults()}
-	api.Vaults = Vaults{
-		Registry: registry,
-		Add: &vaults.Add{
-			Identity: cfg.VaultIdentity(),
-			Registry: registry,
-			Now:      time.Now,
-		},
-		Rename: &vaults.Rename{Registry: registry, Index: db.Vaults()},
-		Forget: &forget,
-		Erase: &vaults.Erase{
-			Identity: cfg.VaultIdentity(),
-			Trash:    cfg.Trash(),
-			Forget:   forget,
-		},
 	}
 
 	// Reading every file again is what this launch was asked for, and is not
@@ -650,18 +625,29 @@ func (o *Installation) Close() error {
 // Showing is the vault the window has open.
 func (o *Installation) Showing() domain.Vault { return o.API.Showing() }
 
+// Notes and Cards are the use cases this window works its vault through.
+// Whatever else works the same vault in the same process is served these, so
+// what one of them refuses the other refuses and neither is built short of
+// something the other has. What a person does to the list of vaults is
+// API.Vaults, where the window itself reaches it.
+//
+// A caller that is not the person draws what it is doing over the note, which
+// is Notes.Drawing and is asked for there.
+func (o *Installation) Notes() container.Notes { return o.notes }
+func (o *Installation) Cards() container.Cards { return o.cards }
+
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.API.showing.Load(); on != nil {
 		return on.opening.Refreshing()
 	}
-	return vaults.Refresh{
-		Readers: o.cfg.VaultReaders(),
-		Notes:   o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
-		Known:   o.Index.SourcesKnown(),
-		Sources: o.Index.Sources(),
-	}
+	return vaults.NewRefresh(
+		o.cfg.VaultReaders(),
+		o.Index.NotesCutAt(o.cfg.Chunking(), o.cfg.Legibility()),
+		o.Index.SourcesKnown(),
+		o.Index.Sources(),
+	)
 }
 
 // Recognising reads a scanned document for whoever asks. It is one job for the

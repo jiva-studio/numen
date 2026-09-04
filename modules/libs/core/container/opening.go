@@ -50,12 +50,7 @@ func (c Config) VaultOpenerWith(
 		watcher: watcher,
 		scan:    scan,
 		held:    held,
-		refresh: vault.Refresh{
-			Readers: c.VaultReaders(),
-			Notes:   held,
-			Known:   db.SourcesKnown(),
-			Sources: db.Sources(),
-		},
+		refresh: vault.NewRefresh(c.VaultReaders(), held, db.SourcesKnown(), db.Sources()),
 	}
 }
 

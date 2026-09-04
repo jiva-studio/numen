@@ -1,6 +1,7 @@
 package mcp_test
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -27,6 +28,10 @@ var reads = []string{
 
 // The reading server stands on what it does not serve, so the list is exact:
 // one writing tool reaching it fails this.
+// unlevelled brings nothing level. It stands where a use case that never
+// writes is built, so nothing ever calls it.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+
 func TestTheReadingServerServesTheToolsThatRead(t *testing.T) {
 	cfg, db := opened(t)
 	v := testsupport.NewVault(t, kinetics())
@@ -251,7 +256,9 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 		t.Fatal(err)
 	}
 	queries := db.Queries()
-	cutting := cfg.Cards(queries, db.Links(), nil)
+	// Only the tools that read are served here, and none of them writes, so
+	// nothing is ever brought level.
+	cutting := cfg.Cards(queries, db.Links(), unlevelled)
 
 	return mcp.Core{
 		Showing: mcp.One(v, v.Path),

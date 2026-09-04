@@ -1,15 +1,14 @@
 package container
 
 import (
-	"context"
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
 	"github.com/jiva-studio/numen/modules/libs/core/markdown"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/cards"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // Cards is everything that acts on the two notes a flashcard is made of. Both
@@ -31,22 +30,22 @@ type Cards struct {
 func (c Config) Cards(
 	notes port.NoteQueries,
 	links port.LinkQueries,
-	index func(ctx context.Context, v domain.Vault, paths []string) error,
+	index note.Levels,
 ) Cards {
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
+
+	writing := cards.NewWrite(readers, writers, links, index)
+	writing.Now = time.Now
+	making := cards.NewCreate(writers, index)
+	making.Now = time.Now
+
 	return Cards{
-		Read: cards.Read{Readers: readers, Links: links},
-		List: cards.List{Readers: readers, Notes: notes},
-		Write: cards.Write{
-			Readers: readers, Writers: writers, Links: links, Index: index, Now: time.Now,
-		},
-		Create: cards.Create{
-			Writers: writers, Index: index, Now: time.Now,
-		},
-		Rename: cards.RenameField{
-			Readers: readers, Writers: writers, Notes: notes, Links: links, Index: index,
-		},
+		Read:   cards.NewRead(readers, links),
+		List:   cards.NewList(readers, notes),
+		Write:  writing,
+		Create: making,
+		Rename: cards.NewRenameField(readers, writers, notes, links, index),
 	}
 }
 

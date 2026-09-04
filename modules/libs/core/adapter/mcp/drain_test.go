@@ -73,7 +73,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	var once sync.Once
 	// release lets the held write through, from now on.
 	release := func() { once.Do(func() { close(until) }) }
-	refresh := vaults.Refresh{Readers: readers, Notes: db.Notes()}
+	refresh := vaults.NewRefresh(readers, db.Notes(), db.SourcesKnown(), db.Sources())
 	// The index hook is where a write reaches the database. Held open, it is a
 	// write that has not finished at the moment the application is asked to go.
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -90,6 +90,7 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 	}
 
 	queries := db.Queries()
+	moving := note.NewMove(readers, writers, db.Links(), queries, db.Sources(), index)
 	core := mcp.Core{
 		Showing: mcp.One(v, v.Path), Readers: readers,
 		Notes: mcp.Notes{
@@ -98,12 +99,12 @@ func TestAnAgentWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T)
 			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
 			Links:         note.ShowLinks{Links: db.Links()},
 			Problems:      check.Standard(db.Problems()),
-			Create:        note.Create{Writers: writers, Names: queries, Index: index},
-			Write:         note.Write{Readers: readers, Writers: writers, Index: index},
-			Move:          note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
-			Rename:        note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
-			Remove:        note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-			Linking:       note.EditLinks{Readers: readers, Writers: writers, Index: index},
+			Create:        note.NewCreate(writers, queries, index),
+			Write:         note.NewWrite(readers, writers, index),
+			Move:          moving,
+			Rename:        note.NewRename(moving),
+			Remove:        note.NewRemove(writers, db.Links(), db.SourcesKnown(), index),
+			Linking:       note.NewEditLinks(readers, writers, index),
 		},
 	}
 

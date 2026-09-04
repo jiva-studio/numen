@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
@@ -44,13 +45,13 @@ func (i *Index) Walks() *vault.Walks { return &i.walks }
 // Level brings the notes at the paths given up to date in the index. Whatever
 // writes a note calls it with the paths it touched, so what it wrote is
 // findable by the time the write returns.
-func (c Config) Level(db *Index) func(ctx context.Context, v domain.Vault, paths []string) error {
-	refresh := vault.Refresh{
-		Readers: c.VaultReaders(),
-		Notes:   db.NotesCutAt(c.Chunking(), c.Legibility()),
-		Known:   db.SourcesKnown(),
-		Sources: db.Sources(),
-	}
+func (c Config) Level(db *Index) note.Levels {
+	refresh := vault.NewRefresh(
+		c.VaultReaders(),
+		db.NotesCutAt(c.Chunking(), c.Legibility()),
+		db.SourcesKnown(),
+		db.Sources(),
+	)
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err

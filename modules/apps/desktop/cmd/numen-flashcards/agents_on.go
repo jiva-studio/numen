@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/flashcards/format"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 // This file is the only one that knows a card can be asked about. Built with
@@ -69,7 +68,8 @@ func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
 	db *container.Index,
-	vaults *openVaults,
+	notes container.Notes,
+	cutting container.Cards,
 	api *flashcardsui.API,
 	off bool,
 	out io.Writer,
@@ -101,7 +101,7 @@ func serveAgents(
 			}
 			served, err := agents.Serve(ctx, agents.Options{
 				Config:  cfg,
-				Core:    reviewing(cfg, db, vaults, api, v, root, out),
+				Core:    reviewing(cfg, db, notes, cutting, api, v, root, out),
 				Reviews: true,
 				Token:   secret,
 				Root:    root,
@@ -139,17 +139,13 @@ func serveAgents(
 func reviewing(
 	cfg container.Config,
 	db *container.Index,
-	vaults *openVaults,
+	notes container.Notes,
+	cutting container.Cards,
 	api *flashcardsui.API,
 	v domain.Vault,
 	root string,
 	out io.Writer,
 ) mcp.Core {
-	queries := db.Queries()
-	links := db.Links()
-
-	cutting := cfg.Cards(queries, links, vaults.level)
-
 	return mcp.Core{
 		Showing: mcp.One(v, root),
 		Readers: cfg.VaultReaders(),
@@ -162,9 +158,9 @@ func reviewing(
 		},
 
 		Notes: mcp.Notes{
-			Queries:       queries,
-			Neighbourhood: note.ShowNeighbourhood{Links: links, Notes: queries},
-			Links:         note.ShowLinks{Links: links},
+			Queries:       db.Queries(),
+			Neighbourhood: notes.Neighbourhood,
+			Links:         notes.Links,
 			Search: cfg.SearchingOver(db.Passages(), nil,
 				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
 		},

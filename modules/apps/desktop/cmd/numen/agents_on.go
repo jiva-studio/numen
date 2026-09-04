@@ -60,7 +60,7 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Instal
 		Addr:       addr,
 		Announcing: true,
 		Root:       root,
-		Drafting:   drafting(cfg, opened),
+		Drafting:   drafting(opened),
 		Out:        out,
 	})
 	if err != nil {
@@ -79,8 +79,8 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *webui.Instal
 
 // drafting is how a change the agent is making reaches the window before it
 // lands. Where a stretch stands is the vault's to say.
-func drafting(cfg container.Config, opened *webui.Installation) claudecode.Drafting {
-	reading := note.Read{Readers: cfg.VaultReaders()}
+func drafting(opened *webui.Installation) claudecode.Drafting {
+	reading := opened.Notes().Read
 	return claudecode.Drafting{
 		Report: func(ctx context.Context, said domain.Edit) {
 			_ = opened.API.Viewing().Editing(ctx, said)
@@ -100,53 +100,27 @@ func drafting(cfg container.Config, opened *webui.Installation) claudecode.Draft
 	}
 }
 
-// agentCore wires the tools to the same use cases everything else uses. The
-// index is brought level by the same refresh the watcher drives, so a tool that
-// writes a note leaves it findable.
+// agentCore wires the tools to the use cases the window works this vault
+// through. They are built once, where the window was put together, so a tool
+// and the person reach the vault through the one set: the index is brought
+// level by the same refresh the watcher drives, and a note a tool writes is
+// findable and drawn wherever it is shown.
+//
+// The one difference is Drawing, and it is why: a note a tool writes is drawn
+// as the stretch that changed, and a note the person writes is not, because
+// they are looking at the text they typed.
 func agentCore(cfg container.Config, opened *webui.Installation, root string, out io.Writer) mcp.Core {
-	index := func(ctx context.Context, v domain.Vault, paths []string) error {
-		_, err := opened.Refresh().Execute(ctx, v, paths)
-		return err
-	}
-	readers := cfg.VaultReaders()
-	writers := cfg.VaultWriters()
-	queries := opened.Index.Queries()
-	viewing := opened.API.Viewing()
-	// What a write is doing reaches the window the way a note put in front of
-	// the person does. A build with no window draws nothing and is told nothing.
-	tells := note.TellEditing(func(ctx context.Context, said domain.Edit) {
-		if viewing == nil {
-			return
-		}
-		_ = viewing.Editing(ctx, said)
-	})
-	went := note.TellMove(func(ctx context.Context, gone domain.Move) {
-		if viewing == nil {
-			return
-		}
-		_ = viewing.Moved(ctx, gone)
-	})
-	moves := note.Move{
-		Readers: readers, Writers: writers, Links: opened.Index.Links(),
-		Names:   queries,
-		Sources: opened.Index.Sources(), Index: index,
-		Moving: went,
-		Sync:   cfg.Syncing(),
-	}
-
-	// A note a tool writes is drawn as the stretch that changed, so this writer
-	// is told what it is doing as well as what it writes through.
-	writing := note.NewWrite(readers, writers, index)
-	writing.Telling = tells
-
-	cutting := cfg.Cards(queries, opened.Index.Links(), index)
+	notes := opened.Notes().Drawing(opened.API.Viewing())
+	cutting := opened.Cards()
 
 	return mcp.Core{
 		Showing:   mcp.One(opened.Showing(), root),
-		Readers:   readers,
+		Readers:   cfg.VaultReaders(),
 		View:      opened.API.Viewing(),
 		Attending: opened.API.Attended,
 
+		// The list is the window's own, and an agent does not erase a vault:
+		// the folder that goes is a person's to ask for.
 		Vaults: mcp.Vaults{
 			Registry:     opened.API.Vaults.Registry,
 			FolderDialog: opened.API.Vaults.FolderDialog,
@@ -175,20 +149,21 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 		},
 
 		Notes: mcp.Notes{
-			Queries: queries,
-			Search: cfg.Searching(opened.Index, opened.Asking,
-				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
-			Neighbourhood: note.ShowNeighbourhood{Links: opened.Index.Links(), Notes: queries},
-			Links:         note.ShowLinks{Links: opened.Index.Links()},
+			Queries: opened.Index.Queries(),
+			// The one search the window offers. A model that could not be
+			// fitted is said where the person is, and not twice.
+			Search:        *opened.API.Finds,
+			Neighbourhood: notes.Neighbourhood,
+			Links:         notes.Links,
 			Problems:      check.Standard(opened.Index.Problems()),
 
-			Create:  note.Create{Writers: writers, Names: queries, Index: index},
-			Write:   writing,
-			Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
-			Move:    moves,
-			Rename:  note.Rename{Move: moves},
-			Remove:  note.Remove{Writers: writers, Links: opened.Index.Links(), Known: opened.Index.SourcesKnown(), Index: index},
-			Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
+			Create:  notes.Create,
+			Write:   notes.Write,
+			Replace: notes.Replace,
+			Move:    notes.Move,
+			Rename:  notes.Rename,
+			Remove:  notes.Remove,
+			Linking: notes.Linking,
 		},
 	}
 }

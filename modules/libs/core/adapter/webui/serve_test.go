@@ -175,6 +175,8 @@ func openingWith(
 	}
 	t.Cleanup(func() { db.Close() })
 
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled)
 	api := &API{
 		Listeners: following(),
 		Places:    focusing(),
@@ -182,7 +184,7 @@ func openingWith(
 			Queries: db.Queries(),
 			Links:   db.Links(),
 			Read:    &note.Read{Readers: filesystem.VaultReaders{}},
-			Write:   &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+			Write:   &writing,
 		},
 	}
 	api.show(v)

@@ -19,14 +19,20 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// unlevelled brings nothing level: what is asked in these tests is what the
+// schema carries, and there is no index behind them to find it in.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+
 // editable is a vault with a read and a save on it and nothing behind them.
 // What is asked here is what the schema carries.
 func editable(t *testing.T, notes map[string]string) *API {
 	t.Helper()
+	writing := note.NewWrite(
+		filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled)
 	api := &API{
 		Notes: Notes{
 			Read:  &note.Read{Readers: filesystem.VaultReaders{}},
-			Write: &note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}},
+			Write: &writing,
 		},
 	}
 	api.show(testsupport.NewVault(t, notes))
@@ -162,8 +168,8 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 	on := filepath.Join(api.Showing().Path, "Heat.md")
 
 	var once sync.Once
-	api.Notes.Linking = &note.EditLinks{
-		Readers: beaten{VaultReaders: filesystem.VaultReaders{}, after: func(path string) {
+	linking := note.NewEditLinks(
+		beaten{VaultReaders: filesystem.VaultReaders{}, after: func(path string) {
 			if path != "Heat.md" {
 				return
 			}
@@ -173,8 +179,10 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 				}
 			})
 		}},
-		Writers: filesystem.VaultWriters{},
-	}
+		filesystem.VaultWriters{},
+		unlevelled,
+	)
+	api.Notes.Linking = &linking
 
 	out, err := api.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",

@@ -28,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/flashcards"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 func main() {
@@ -60,6 +59,19 @@ func configured(out io.Writer) container.Config {
 	}
 }
 
+// composed is everything that acts on the vault's notes and cards, built once
+// and in one place. The page and the tools an agent calls are served these and
+// build none of their own, so a dependency named here is named for both.
+//
+// What a write touched is levelled through the opening the vault was opened
+// with, which is what the walk and the watch also go through.
+func composed(
+	cfg container.Config, db *container.Index, vaults *openVaults,
+) (container.Notes, container.Cards) {
+	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.level),
+		cfg.Cards(db.Queries(), db.Links(), vaults.level)
+}
+
 func run(cfg container.Config, noAgent bool) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
@@ -89,6 +101,8 @@ func run(cfg container.Config, noAgent bool) error {
 	// levelled by the paths a write touches.
 	vaults := &openVaults{cfg: cfg, db: db, ctx: ctx, out: os.Stderr}
 
+	notes, cutting := composed(cfg, db, vaults)
+
 	running := cfg.Flashcards(db.Queries(), db.Links(), vaults.level)
 	api := &flashcardsui.API{
 		Registry:  registry,
@@ -98,9 +112,9 @@ func run(cfg container.Config, noAgent bool) error {
 		Log:       running.Log,
 		Counted:   running.Counted,
 		Neighbourhood: flashcards.ShowNeighbourhood{
-			Linked: note.ShowLinks{Links: db.Links()},
+			Linked: notes.Links,
 			Notes:  db.Queries(),
-			Reads:  note.Read{Readers: cfg.VaultReaders()},
+			Reads:  notes.Read,
 		},
 		Presets: running.Presets,
 		Notes:   db.Queries(),
@@ -123,7 +137,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// A card is asked about through tools on a port this window opens for
 	// itself. The agent works the vault the person sat down to, so it is
 	// started and stopped around a sitting.
-	away := serveAgents(ctx, cfg, db, vaults, api, noAgent, os.Stderr)
+	away := serveAgents(ctx, cfg, db, notes, cutting, api, noAgent, os.Stderr)
 
 	// What the window holds, in the order each part needs the next: the agents
 	// are let go of, then the walk and the watch, which write to the index, and
