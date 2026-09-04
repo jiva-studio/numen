@@ -336,7 +336,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
-				Owed:   v1.Owed_OWED_WRITTEN,
+				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -459,7 +459,7 @@ func listening(t *testing.T, f *going) *speaking {
 }
 
 // answering is the page doing, at every ask, what a test says a page does.
-func (p *speaking) answering(doing func(token string) v1.Owed) {
+func (p *speaking) answering(doing func(token string) v1.FlushResult) {
 	go func() {
 		for token := range p.asked {
 			p.says(token, doing(token))
@@ -468,11 +468,11 @@ func (p *speaking) answering(doing func(token string) v1.Owed) {
 }
 
 // says is the page telling the application what it has left.
-func (p *speaking) says(token string, said v1.Owed) {
+func (p *speaking) says(token string, said v1.FlushResult) {
 	_, _ = p.f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
-		Owed:   said,
+		Result: said,
 	}))
 }
 
@@ -499,7 +499,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 	t.Cleanup(func() { f.opened.Close() })
 
 	page := listening(t, f)
-	page.answering(func(string) v1.Owed { return v1.Owed_OWED_ASKING })
+	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -535,7 +535,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	t.Cleanup(func() { f.opened.Close() })
 
 	page := listening(t, f)
-	page.answering(func(string) v1.Owed { return v1.Owed_OWED_ASKING })
+	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -555,7 +555,7 @@ func TestTheWindowGoesOnceTheQuestionsAreAnswered(t *testing.T) {
 	}
 
 	// The person answered every question, and the page has nothing left.
-	page.says(page.token, v1.Owed_OWED_WRITTEN)
+	page.says(page.token, v1.FlushResult_FLUSH_RESULT_WRITTEN)
 
 	select {
 	case let := <-answered:
@@ -575,19 +575,19 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 
 	page := listening(t, f)
 	asks := 0
-	page.answering(func(token string) v1.Owed {
+	page.answering(func(token string) v1.FlushResult {
 		asks++
 		if asks == 1 {
-			return v1.Owed_OWED_ASKING
+			return v1.FlushResult_FLUSH_RESULT_ASKING
 		}
 		// What a page does once the person has said what happens to the text.
 		if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "typed and never saved\n",
 		})); err != nil {
-			return v1.Owed_OWED_ASKING
+			return v1.FlushResult_FLUSH_RESULT_ASKING
 		}
-		return v1.Owed_OWED_WRITTEN
+		return v1.FlushResult_FLUSH_RESULT_WRITTEN
 	})
 
 	first, cancelFirst := context.WithTimeout(context.Background(), 10*time.Second)
@@ -622,7 +622,7 @@ func TestAPageThatGoesWithAQuestionStandingIsWaitedForAndThenLeftBehind(t *testi
 	t.Cleanup(func() { f.opened.Close() })
 
 	page := listening(t, f)
-	page.answering(func(string) v1.Owed { return v1.Owed_OWED_ASKING })
+	page.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -656,7 +656,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 	t.Cleanup(func() { f.opened.Close() })
 
 	first := listening(t, f)
-	first.answering(func(string) v1.Owed { return v1.Owed_OWED_ASKING })
+	first.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	asking, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -669,7 +669,7 @@ func TestAPageThatComesBackRaisesItsQuestionAgain(t *testing.T) {
 	if back.token == first.token {
 		t.Fatalf("the page that came back listens under the token that went, %q", back.token)
 	}
-	back.answering(func(string) v1.Owed { return v1.Owed_OWED_ASKING })
+	back.answering(func(string) v1.FlushResult { return v1.FlushResult_FLUSH_RESULT_ASKING })
 
 	again, cancelAgain := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelAgain()

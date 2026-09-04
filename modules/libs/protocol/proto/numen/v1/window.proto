@@ -113,19 +113,19 @@ message WatchQuitResponse {
   bool flush = 2;
 }
 
-// Owed is what a caller has left when it answers.
-enum Owed {
-  OWED_UNSPECIFIED = 0;
+// FlushResult is what a caller has left when it answers.
+enum FlushResult {
+  FLUSH_RESULT_UNSPECIFIED = 0;
 
   // Nothing is left. The caller held nothing of its own.
-  OWED_NOTHING = 3;
+  FLUSH_RESULT_NOTHING = 3;
 
   // Everything this caller held is written.
-  OWED_WRITTEN = 1;
+  FLUSH_RESULT_WRITTEN = 1;
 
   // Something this caller holds could not be written, and a person is being
   // asked what to do with it. The window stays until they answer.
-  OWED_ASKING = 2;
+  FLUSH_RESULT_ASKING = 2;
 }
 
 message ReportFlushRequest {
@@ -138,7 +138,7 @@ message ReportFlushRequest {
 
   // What this caller has left. A request naming none has said nothing, and is
   // waited for the way one that never answered is waited for.
-  Owed owed = 3;
+  FlushResult result = 3;
 }
 
 message ReportFlushResponse {}

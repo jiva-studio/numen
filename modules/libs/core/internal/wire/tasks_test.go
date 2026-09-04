@@ -100,7 +100,7 @@ func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 	if _, err := client.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: Editor,
 		Token:  "0",
-		Owed:   v1.Owed_OWED_WRITTEN,
+		Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
 	})); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a flush for the editor was answered %v", err)
 	}

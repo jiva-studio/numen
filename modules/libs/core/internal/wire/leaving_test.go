@@ -273,8 +273,8 @@ func TestAPageThatGoesWithAQuestionStandingAndDoesNotComeBackIsSilence(t *testin
 // TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo.
 func TestAPageWithNothingLeftAndOneThatHasWrittenBothLetTheWindowGo(t *testing.T) {
 	for name, said := range map[string]owed{
-		"nothing owed":       left(v1.Owed_OWED_NOTHING),
-		"everything written": left(v1.Owed_OWED_WRITTEN),
+		"nothing owed":       left(v1.FlushResult_FLUSH_RESULT_NOTHING),
+		"everything written": left(v1.FlushResult_FLUSH_RESULT_WRITTEN),
 	} {
 		t.Run(name, func(t *testing.T) {
 			var pages leaving

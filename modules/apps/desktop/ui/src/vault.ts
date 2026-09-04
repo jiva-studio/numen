@@ -13,10 +13,10 @@ import {
   Counting as Countings,
   Fault as Faults,
   FileService,
+  FlushResult,
   Naming,
   NoteService,
   NoteType as NoteTypes,
-  Owed,
   Presence as Presences,
   Role as Roles,
   SearchService,
@@ -396,7 +396,7 @@ export const core: Core & Asking & Commanding = {
   makeFolder: async (path) => refusalIn(await files.createFolder({ path })),
   quitting: (signal) => windowService.watchQuit({ window: WINDOW }, { signal }),
   flushed: async (token, owed) => {
-    await windowService.reportFlush({ window: WINDOW, token, owed: owing[owed ?? 'nothing'] })
+    await windowService.reportFlush({ window: WINDOW, token, result: owing[owed ?? 'nothing'] })
   },
   /** What each of the notes asked about is divided into. */
   headings: async (paths) => {
@@ -882,8 +882,8 @@ const filed = (moved: MovedMessage): Moved => ({
 })
 
 /** What a client has left, as the schema names it. */
-const owing: Record<'nothing' | 'written' | 'asking', Owed> = {
-  nothing: Owed.NOTHING,
-  written: Owed.WRITTEN,
-  asking: Owed.ASKING,
+const owing: Record<'nothing' | 'written' | 'asking', FlushResult> = {
+  nothing: FlushResult.NOTHING,
+  written: FlushResult.WRITTEN,
+  asking: FlushResult.ASKING,
 }

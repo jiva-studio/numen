@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpIBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDgoGZmFpbGVkGAYgASgJEg0KBWFza2VkGAcgASgIEiQKCGNvdW50aW5nGAggASgOMhIubnVtZW4udjEuQ291bnRpbmciIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiUQoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIcCgRvd2VkGAMgASgOMg4ubnVtZW4udjEuT3dlZCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqYwoIQ291bnRpbmcSGAoUQ09VTlRJTkdfVU5TUEVDSUZJRUQQABITCg9DT1VOVElOR19USElOR1MQARISCg5DT1VOVElOR19CWVRFUxACEhQKEENPVU5USU5HX1NFQ09ORFMQAypRCgRPd2VkEhQKEE9XRURfVU5TUEVDSUZJRUQQABIQCgxPV0VEX05PVEhJTkcQAxIQCgxPV0VEX1dSSVRURU4QARIPCgtPV0VEX0FTS0lORxACMsACCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJQCg1HZXRTaG93blZhdWx0Eh4ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlcXVlc3QaHy5udW1lbi52MS5HZXRTaG93blZhdWx0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpIBCgRUYXNrEgoKAmlkGAEgASgJEg0KBWRvaW5nGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDgoGZmFpbGVkGAYgASgJEg0KBWFza2VkGAcgASgIEiQKCGNvdW50aW5nGAggASgOMhIubnVtZW4udjEuQ291bnRpbmciIgoQV2F0Y2hRdWl0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiMQoRV2F0Y2hRdWl0UmVzcG9uc2USDQoFdG9rZW4YASABKAkSDQoFZmx1c2gYAiABKAgiWgoSUmVwb3J0Rmx1c2hSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCRINCgV0b2tlbhgCIAEoCRIlCgZyZXN1bHQYAyABKA4yFS5udW1lbi52MS5GbHVzaFJlc3VsdCIVChNSZXBvcnRGbHVzaFJlc3BvbnNlIiYKFEdldFNob3duVmF1bHRSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSImChVHZXRTaG93blZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkqYwoIQ291bnRpbmcSGAoUQ09VTlRJTkdfVU5TUEVDSUZJRUQQABITCg9DT1VOVElOR19USElOR1MQARISCg5DT1VOVElOR19CWVRFUxACEhQKEENPVU5USU5HX1NFQ09ORFMQAyp4CgtGbHVzaFJlc3VsdBIcChhGTFVTSF9SRVNVTFRfVU5TUEVDSUZJRUQQABIYChRGTFVTSF9SRVNVTFRfTk9USElORxADEhgKFEZMVVNIX1JFU1VMVF9XUklUVEVOEAESFwoTRkxVU0hfUkVTVUxUX0FTS0lORxACMsACCg1XaW5kb3dTZXJ2aWNlEkkKCldhdGNoVGFza3MSGy5udW1lbi52MS5XYXRjaFRhc2tzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoVGFza3NSZXNwb25zZTABEkYKCVdhdGNoUXVpdBIaLm51bWVuLnYxLldhdGNoUXVpdFJlcXVlc3QaGy5udW1lbi52MS5XYXRjaFF1aXRSZXNwb25zZTABEkoKC1JlcG9ydEZsdXNoEhwubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXF1ZXN0Gh0ubnVtZW4udjEuUmVwb3J0Rmx1c2hSZXNwb25zZRJQCg1HZXRTaG93blZhdWx0Eh4ubnVtZW4udjEuR2V0U2hvd25WYXVsdFJlcXVlc3QaHy5udW1lbi52MS5HZXRTaG93blZhdWx0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -206,9 +206,9 @@ export type ReportFlushRequest = Message<"numen.v1.ReportFlushRequest"> & {
    * What this caller has left. A request naming none has said nothing, and is
    * waited for the way one that never answered is waited for.
    *
-   * @generated from field: numen.v1.Owed owed = 3;
+   * @generated from field: numen.v1.FlushResult result = 3;
    */
-  owed: Owed;
+  result: FlushResult;
 };
 
 /**
@@ -310,27 +310,27 @@ export const CountingSchema: GenEnum<Counting> = /*@__PURE__*/
   enumDesc(file_numen_v1_window, 0);
 
 /**
- * Owed is what a caller has left when it answers.
+ * FlushResult is what a caller has left when it answers.
  *
- * @generated from enum numen.v1.Owed
+ * @generated from enum numen.v1.FlushResult
  */
-export enum Owed {
+export enum FlushResult {
   /**
-   * @generated from enum value: OWED_UNSPECIFIED = 0;
+   * @generated from enum value: FLUSH_RESULT_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
    * Nothing is left. The caller held nothing of its own.
    *
-   * @generated from enum value: OWED_NOTHING = 3;
+   * @generated from enum value: FLUSH_RESULT_NOTHING = 3;
    */
   NOTHING = 3,
 
   /**
    * Everything this caller held is written.
    *
-   * @generated from enum value: OWED_WRITTEN = 1;
+   * @generated from enum value: FLUSH_RESULT_WRITTEN = 1;
    */
   WRITTEN = 1,
 
@@ -338,15 +338,15 @@ export enum Owed {
    * Something this caller holds could not be written, and a person is being
    * asked what to do with it. The window stays until they answer.
    *
-   * @generated from enum value: OWED_ASKING = 2;
+   * @generated from enum value: FLUSH_RESULT_ASKING = 2;
    */
   ASKING = 2,
 }
 
 /**
- * Describes the enum numen.v1.Owed.
+ * Describes the enum numen.v1.FlushResult.
  */
-export const OwedSchema: GenEnum<Owed> = /*@__PURE__*/
+export const FlushResultSchema: GenEnum<FlushResult> = /*@__PURE__*/
   enumDesc(file_numen_v1_window, 1);
 
 /**

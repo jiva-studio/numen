@@ -480,7 +480,7 @@ func TestAPageHoldingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
-				Owed:   v1.Owed_OWED_ASKING,
+				Result: v1.FlushResult_FLUSH_RESULT_ASKING,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -529,7 +529,7 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 			if _, err := f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
-				Owed:   v1.Owed_OWED_NOTHING,
+				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,
 			})); err != nil {
 				t.Error(err)
 			}

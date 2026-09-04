@@ -84,60 +84,60 @@ func (Counting) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
 }
 
-// Owed is what a caller has left when it answers.
-type Owed int32
+// FlushResult is what a caller has left when it answers.
+type FlushResult int32
 
 const (
-	Owed_OWED_UNSPECIFIED Owed = 0
+	FlushResult_FLUSH_RESULT_UNSPECIFIED FlushResult = 0
 	// Nothing is left. The caller held nothing of its own.
-	Owed_OWED_NOTHING Owed = 3
+	FlushResult_FLUSH_RESULT_NOTHING FlushResult = 3
 	// Everything this caller held is written.
-	Owed_OWED_WRITTEN Owed = 1
+	FlushResult_FLUSH_RESULT_WRITTEN FlushResult = 1
 	// Something this caller holds could not be written, and a person is being
 	// asked what to do with it. The window stays until they answer.
-	Owed_OWED_ASKING Owed = 2
+	FlushResult_FLUSH_RESULT_ASKING FlushResult = 2
 )
 
-// Enum value maps for Owed.
+// Enum value maps for FlushResult.
 var (
-	Owed_name = map[int32]string{
-		0: "OWED_UNSPECIFIED",
-		3: "OWED_NOTHING",
-		1: "OWED_WRITTEN",
-		2: "OWED_ASKING",
+	FlushResult_name = map[int32]string{
+		0: "FLUSH_RESULT_UNSPECIFIED",
+		3: "FLUSH_RESULT_NOTHING",
+		1: "FLUSH_RESULT_WRITTEN",
+		2: "FLUSH_RESULT_ASKING",
 	}
-	Owed_value = map[string]int32{
-		"OWED_UNSPECIFIED": 0,
-		"OWED_NOTHING":     3,
-		"OWED_WRITTEN":     1,
-		"OWED_ASKING":      2,
+	FlushResult_value = map[string]int32{
+		"FLUSH_RESULT_UNSPECIFIED": 0,
+		"FLUSH_RESULT_NOTHING":     3,
+		"FLUSH_RESULT_WRITTEN":     1,
+		"FLUSH_RESULT_ASKING":      2,
 	}
 )
 
-func (x Owed) Enum() *Owed {
-	p := new(Owed)
+func (x FlushResult) Enum() *FlushResult {
+	p := new(FlushResult)
 	*p = x
 	return p
 }
 
-func (x Owed) String() string {
+func (x FlushResult) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (Owed) Descriptor() protoreflect.EnumDescriptor {
+func (FlushResult) Descriptor() protoreflect.EnumDescriptor {
 	return file_numen_v1_window_proto_enumTypes[1].Descriptor()
 }
 
-func (Owed) Type() protoreflect.EnumType {
+func (FlushResult) Type() protoreflect.EnumType {
 	return &file_numen_v1_window_proto_enumTypes[1]
 }
 
-func (x Owed) Number() protoreflect.EnumNumber {
+func (x FlushResult) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use Owed.Descriptor instead.
-func (Owed) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use FlushResult.Descriptor instead.
+func (FlushResult) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{1}
 }
 
@@ -461,7 +461,7 @@ type ReportFlushRequest struct {
 	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	// What this caller has left. A request naming none has said nothing, and is
 	// waited for the way one that never answered is waited for.
-	Owed          Owed `protobuf:"varint,3,opt,name=owed,proto3,enum=numen.v1.Owed" json:"owed,omitempty"`
+	Result        FlushResult `protobuf:"varint,3,opt,name=result,proto3,enum=numen.v1.FlushResult" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -510,11 +510,11 @@ func (x *ReportFlushRequest) GetToken() string {
 	return ""
 }
 
-func (x *ReportFlushRequest) GetOwed() Owed {
+func (x *ReportFlushRequest) GetResult() FlushResult {
 	if x != nil {
-		return x.Owed
+		return x.Result
 	}
-	return Owed_OWED_UNSPECIFIED
+	return FlushResult_FLUSH_RESULT_UNSPECIFIED
 }
 
 type ReportFlushResponse struct {
@@ -668,11 +668,11 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05flush\x18\x02 \x01(\bR\x05flush\"f\n" +
+	"\x05flush\x18\x02 \x01(\bR\x05flush\"q\n" +
 	"\x12ReportFlushRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
-	"\x05token\x18\x02 \x01(\tR\x05token\x12\"\n" +
-	"\x04owed\x18\x03 \x01(\x0e2\x0e.numen.v1.OwedR\x04owed\"\x15\n" +
+	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +
+	"\x06result\x18\x03 \x01(\x0e2\x15.numen.v1.FlushResultR\x06result\"\x15\n" +
 	"\x13ReportFlushResponse\".\n" +
 	"\x14GetShownVaultRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"-\n" +
@@ -682,12 +682,12 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x14COUNTING_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fCOUNTING_THINGS\x10\x01\x12\x12\n" +
 	"\x0eCOUNTING_BYTES\x10\x02\x12\x14\n" +
-	"\x10COUNTING_SECONDS\x10\x03*Q\n" +
-	"\x04Owed\x12\x14\n" +
-	"\x10OWED_UNSPECIFIED\x10\x00\x12\x10\n" +
-	"\fOWED_NOTHING\x10\x03\x12\x10\n" +
-	"\fOWED_WRITTEN\x10\x01\x12\x0f\n" +
-	"\vOWED_ASKING\x10\x022\xc0\x02\n" +
+	"\x10COUNTING_SECONDS\x10\x03*x\n" +
+	"\vFlushResult\x12\x1c\n" +
+	"\x18FLUSH_RESULT_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14FLUSH_RESULT_NOTHING\x10\x03\x12\x18\n" +
+	"\x14FLUSH_RESULT_WRITTEN\x10\x01\x12\x17\n" +
+	"\x13FLUSH_RESULT_ASKING\x10\x022\xc0\x02\n" +
 	"\rWindowService\x12I\n" +
 	"\n" +
 	"WatchTasks\x12\x1b.numen.v1.WatchTasksRequest\x1a\x1c.numen.v1.WatchTasksResponse0\x01\x12F\n" +
@@ -711,7 +711,7 @@ var file_numen_v1_window_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_window_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_window_proto_goTypes = []any{
 	(Counting)(0),                 // 0: numen.v1.Counting
-	(Owed)(0),                     // 1: numen.v1.Owed
+	(FlushResult)(0),              // 1: numen.v1.FlushResult
 	(*WatchTasksRequest)(nil),     // 2: numen.v1.WatchTasksRequest
 	(*WatchTasksResponse)(nil),    // 3: numen.v1.WatchTasksResponse
 	(*Task)(nil),                  // 4: numen.v1.Task
@@ -725,7 +725,7 @@ var file_numen_v1_window_proto_goTypes = []any{
 var file_numen_v1_window_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.WatchTasksResponse.tasks:type_name -> numen.v1.Task
 	0,  // 1: numen.v1.Task.counting:type_name -> numen.v1.Counting
-	1,  // 2: numen.v1.ReportFlushRequest.owed:type_name -> numen.v1.Owed
+	1,  // 2: numen.v1.ReportFlushRequest.result:type_name -> numen.v1.FlushResult
 	2,  // 3: numen.v1.WindowService.WatchTasks:input_type -> numen.v1.WatchTasksRequest
 	5,  // 4: numen.v1.WindowService.WatchQuit:input_type -> numen.v1.WatchQuitRequest
 	7,  // 5: numen.v1.WindowService.ReportFlush:input_type -> numen.v1.ReportFlushRequest

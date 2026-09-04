@@ -160,7 +160,7 @@ func (w *Window) ReportFlush(
 	if err := w.answers(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	w.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetOwed()))
+	w.clients.flushed(r.Msg.GetToken(), left(r.Msg.GetResult()))
 	return connect.NewResponse(&v1.ReportFlushResponse{}), nil
 }
 
@@ -284,11 +284,11 @@ const (
 // nothing left and one that has written everything both leave the window free
 // to go; one that named nothing has said nothing, and the round waits its bound
 // for it the way it waits for a client that never answered.
-func left(said v1.Owed) owed {
+func left(said v1.FlushResult) owed {
 	switch said {
-	case v1.Owed_OWED_NOTHING, v1.Owed_OWED_WRITTEN:
+	case v1.FlushResult_FLUSH_RESULT_NOTHING, v1.FlushResult_FLUSH_RESULT_WRITTEN:
 		return wrote
-	case v1.Owed_OWED_ASKING:
+	case v1.FlushResult_FLUSH_RESULT_ASKING:
 		return asks
 	}
 	return silent
