@@ -20,6 +20,15 @@ type Forget struct {
 	Index    port.VaultRepository
 }
 
+// NewForget is what takes a vault off the list: the list this installation
+// keeps, and the index its rows are taken out of.
+//
+// Both are named here because a vault taken off the list and left in the index
+// leaves rows nothing on the list points at.
+func NewForget(registry port.VaultRegistry, index port.VaultRepository) Forget {
+	return Forget{Registry: registry, Index: index}
+}
+
 func (u Forget) Execute(ctx context.Context, v domain.Vault) error {
 	if err := keepTheLastVault(u.Registry, v); err != nil {
 		return err

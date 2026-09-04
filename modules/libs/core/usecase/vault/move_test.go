@@ -61,23 +61,18 @@ func (f filing) move() vaults.Move { return f.moving(true) }
 func (f filing) apart() vaults.Move { return f.moving(false) }
 
 func (f filing) moving(kept note.SyncTitleAndFilename) vaults.Move {
-	return vaults.Move{
-		Writers: filesystem.VaultWriters{},
-		Links:   f.db.Links(),
-		Known:   f.db.SourcesKnown(),
-		Sources: f.db.Sources(),
-		Notes: note.Move{
-			Readers: f.readers,
-			Writers: filesystem.VaultWriters{},
-			Links:   f.db.Links(),
-			Sources: f.db.Sources(),
-			Index:   f.index,
-			Sync:    func() note.SyncTitleAndFilename { return kept },
-			Moving: func(_ context.Context, went domain.Move) {
-				*f.went = append(*f.went, went)
-			},
-		},
+	notes := note.NewMove(
+		f.readers, filesystem.VaultWriters{},
+		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index,
+	)
+	notes.Sync = func() note.SyncTitleAndFilename { return kept }
+	notes.Moving = func(_ context.Context, went domain.Move) {
+		*f.went = append(*f.went, went)
 	}
+	return vaults.NewMove(
+		filesystem.VaultWriters{},
+		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
+	)
 }
 
 // resolves is where the one link written in a note reaches.

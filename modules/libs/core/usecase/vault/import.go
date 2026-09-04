@@ -39,6 +39,12 @@ type Import struct {
 	Files port.ImportedFiles
 }
 
+// NewImport is what a file a person handed over arrives through: the vault it
+// is copied into, and what reads it where it stands.
+func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
+	return Import{Writers: writers, Files: files}
+}
+
 // Execute brings each handle into the folder, under the name it already
 // carries. A folder arrives with everything under it.
 //

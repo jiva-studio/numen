@@ -32,6 +32,13 @@ type Add struct {
 	Now      func() time.Time
 }
 
+// NewAdd is what turns a folder into a vault: what writes and reads the
+// identity the folder carries, the list this installation keeps, and when this
+// is happening, which the identity carries.
+func NewAdd(identity port.VaultIdentity, registry port.VaultRegistry, now func() time.Time) Add {
+	return Add{Identity: identity, Registry: registry, Now: now}
+}
+
 // Execute takes a path that is already absolute: resolving one against the
 // process working directory is something only the caller knows how to do, and a
 // use case whose result depends on where it was invoked from is not one.

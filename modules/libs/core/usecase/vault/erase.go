@@ -19,6 +19,13 @@ type Erase struct {
 	Forget   Forget
 }
 
+// NewErase is what takes a vault away: what reads the identity the folder
+// carries, where this machine keeps what a person deleted, and the Forget it is
+// taken off the list through — the same one everything else forgets a vault by.
+func NewErase(identity port.VaultIdentity, trash port.Trash, forget Forget) Erase {
+	return Erase{Identity: identity, Trash: trash, Forget: forget}
+}
+
 func (u Erase) Execute(ctx context.Context, v domain.Vault) error {
 	// Asked before the folder is moved.
 	if err := keepTheLastVault(u.Forget.Registry, v); err != nil {

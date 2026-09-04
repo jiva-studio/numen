@@ -33,6 +33,23 @@ type Move struct {
 	Notes note.Move
 }
 
+// NewMove is what files anything the vault holds somewhere else: the vault it
+// is moved within, the links that pointed at what travelled, what the index
+// holds about the files under the path and where it files them, and the one
+// note.Move every note that travelled settles through.
+//
+// All five are named here because a move short of any one of them lands the
+// file and leaves the index or the links standing at the path it came from.
+func NewMove(
+	writers port.VaultWriters,
+	links port.LinkQueries,
+	known port.SourceQueries,
+	sources port.SourceRepository,
+	notes note.Move,
+) Move {
+	return Move{Writers: writers, Links: links, Known: known, Sources: sources, Notes: notes}
+}
+
 // Execute moves the path and repairs what pointed at the notes under it.
 //
 // A folder is one rename, so what it holds arrives whole or stays where it was.

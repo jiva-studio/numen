@@ -23,10 +23,25 @@ type Refresh struct {
 	Readers port.VaultReaders
 	Notes   port.NoteRepository
 	// Known says which kind of source the index holds at a path, and Sources
-	// takes those rows out. Left nil, a book and a recording keep their rows
-	// until a scan.
+	// takes those rows out.
 	Known   port.SourceQueries
 	Sources port.SourceRepository
+}
+
+// NewRefresh is how the index is brought level with a handful of files: the
+// vault they are read out of, where a note is filed, and the two the rows of a
+// book and a recording are swept through.
+//
+// All four are named here because a refresh short of the last two takes the
+// note away and leaves the book and the recording at a path the vault no longer
+// holds, until something asks for a whole scan.
+func NewRefresh(
+	readers port.VaultReaders,
+	notes port.NoteRepository,
+	known port.SourceQueries,
+	sources port.SourceRepository,
+) Refresh {
+	return Refresh{Readers: readers, Notes: notes, Known: known, Sources: sources}
 }
 
 // RefreshResult is what happened, in the terms a caller acts on: the notes that
@@ -135,7 +150,7 @@ func (u Refresh) Execute(ctx context.Context, v domain.Vault, paths []string) (R
 // A note leaves through the note repository; a book and a recording are filed
 // by kind and leave through their own, with their chunks and their vectors.
 func (u Refresh) swept(ctx context.Context, v domain.Vault, paths []string) error {
-	if u.Known == nil || u.Sources == nil || len(paths) == 0 {
+	if len(paths) == 0 {
 		return nil
 	}
 	// A path names one file, and a folder names everything under it.

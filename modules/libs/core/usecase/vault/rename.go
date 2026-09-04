@@ -20,6 +20,12 @@ type Rename struct {
 	Index    port.VaultRepository
 }
 
+// NewRename is what a vault is called through: the list this installation
+// keeps, and the index, which holds the name beside the rows.
+func NewRename(registry port.VaultRegistry, index port.VaultRepository) Rename {
+	return Rename{Registry: registry, Index: index}
+}
+
 // Execute answers with the vault under its new name. The name a vault already
 // has is not a change and not an error.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
