@@ -16,7 +16,7 @@ import {
   ghostNode,
   handleIn,
   seatWord,
-  type NodeStanding,
+  type GestureRole,
   type PlacedNode,
   type PlexFrame,
   type PlexRelatedSeat,
@@ -191,7 +191,7 @@ const resting = computed(() => lines.value.filter((line) => line.pair !== over.v
  * while one is running: the hand is somewhere else entirely, and a second
  * handle under it would offer to start a gesture already under way.
  */
-const standingOf = (node: PlacedNode): NodeStanding => {
+const roleOf = (node: PlacedNode): GestureRole => {
   const outcome = props.gestureOutcome
   if (outcome?.kind === 'link' && outcome.to === node.id) return 'target'
   if (props.gestureFrom === node.id) return 'source'
@@ -297,7 +297,7 @@ const ghost = computed<PlacedNode | null>(() => {
       v-for="node in drawn"
       :key="node.id"
       :node="node"
-      :standing="standingOf(node)"
+      :gesture-role="roleOf(node)"
       :wide="widen?.(node) ?? null"
       :hung="hung?.(node) ?? null"
       :dwell="dwell"
@@ -328,13 +328,13 @@ const ghost = computed<PlacedNode | null>(() => {
     <!-- The gesture itself, drawn over everything it may land on. -->
     <g v-if="thread" class="plex__reach">
       <path class="plex__thread" :d="thread" aria-hidden="true" />
-      <PlexNodeView v-if="ghost" :node="ghost" standing="ghost" />
+      <PlexNodeView v-if="ghost" :node="ghost" gesture-role="ghost" />
     </g>
 
     <!-- Something carried in from outside, drawn over everything it crosses. -->
     <g v-if="carrying" class="plex__carried">
       <path class="plex__thread" :d="carrying.thread" aria-hidden="true" />
-      <PlexNodeView :node="carrying.ghost" standing="ghost" />
+      <PlexNodeView :node="carrying.ghost" gesture-role="ghost" />
     </g>
   </svg>
 </template>

@@ -11,7 +11,7 @@ import PlexNodeView from './PlexNodeView.vue'
 import { OPENING, type Widened } from '../dwell'
 import { hangParts, type PlexPart } from '../inside'
 import { stubEnvironment } from '../../fixtures/clock'
-import type { NodeStanding, PlacedNode, PlexSeat } from '../model'
+import type { GestureRole, PlacedNode, PlexSeat } from '../model'
 
 const nodeAt = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -147,7 +147,7 @@ describe('a node asked for on its own', () => {
   })
 
   it('is not asked for by a node that is not there yet', async () => {
-    const ghost = mount(PlexNodeView, { props: { node: nodeAt(), standing: 'ghost' } })
+    const ghost = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'ghost' } })
     await ghost.trigger('dblclick')
     expect(ghost.emitted('show')).toBeUndefined()
   })
@@ -189,7 +189,7 @@ describe('the handle', () => {
   })
 
   it('is not offered where reaching out is not on offer', async () => {
-    const node = mount(PlexNodeView, { props: { node: nodeAt(), standing: 'closed' } })
+    const node = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'closed' } })
     await node.trigger('pointerenter')
     expect(node.find('.plex__handle').exists()).toBe(false)
   })
@@ -201,7 +201,7 @@ describe('the handle', () => {
 
   it('stays put once a gesture has left from it, hand or no hand', () => {
     // The pointer is somewhere else entirely by then, dragging the thread.
-    const node = mount(PlexNodeView, { props: { node: nodeAt(), standing: 'source' } })
+    const node = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'source' } })
     expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
@@ -243,7 +243,7 @@ describe('the icon', () => {
 describe('a node that is not there yet', () => {
   const mountGhost = () =>
     mount(PlexNodeView, {
-      props: { node: nodeAt({ title: 'parent', seat: 'parent' }), standing: 'ghost' },
+      props: { node: nodeAt({ title: 'parent', seat: 'parent' }), gestureRole: 'ghost' },
     })
 
   it('cannot be chosen, and is not a tab stop', async () => {
@@ -290,7 +290,7 @@ describe('what a node is drawn as', () => {
 
   it('carries what it is to the gesture as a class of its own', () => {
     expect(mountNode().classes()).toContain('plex__node--open')
-    const target = mount(PlexNodeView, { props: { node: nodeAt(), standing: 'target' } })
+    const target = mount(PlexNodeView, { props: { node: nodeAt(), gestureRole: 'target' } })
     expect(target.classes()).toContain('plex__node--target')
   })
 
@@ -316,12 +316,18 @@ describe('a box with more of its title to show', () => {
   const mountWide = (
     wide: Widened | null = WIDE,
     over: Partial<PlacedNode> = {},
-    standing: NodeStanding = 'open',
+    gestureRole: GestureRole = 'open',
   ) => {
     vi.useFakeTimers()
     const world = stubEnvironment()
     const node = mount(PlexNodeView, {
-      props: { node: nodeAt(over), wide, dwell: WAIT, standing, environment: world.environment },
+      props: {
+        node: nodeAt(over),
+        wide,
+        dwell: WAIT,
+        gestureRole,
+        environment: world.environment,
+      },
     })
     return { node, world }
   }
@@ -449,7 +455,7 @@ describe('a box with nothing more to show', () => {
   })
 
   it('stays as it was placed while a gesture is under way', async () => {
-    const node = await rest({ wide: { width: 400, offset: 0 }, standing: 'source' })
+    const node = await rest({ wide: { width: 400, offset: 0 }, gestureRole: 'source' })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
   })
 

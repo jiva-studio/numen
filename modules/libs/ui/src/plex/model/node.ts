@@ -80,7 +80,7 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
  * - `target` — letting go now would link the gesture to this node
  * - `ghost` — not a node yet: the shape of what letting go here would make
  */
-export type NodeStanding = 'open' | 'closed' | 'source' | 'target' | 'ghost'
+export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
 /** A title may be empty; an accessible name may not. */
 export const nameOf = (node: PlexNode): string =>

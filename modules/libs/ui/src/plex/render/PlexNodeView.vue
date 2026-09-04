@@ -2,7 +2,7 @@
 /**
  * One node: its box, its title, and the handle to reach out from. Every number
  * it draws with is already on the node it was handed, but for what it is to a
- * gesture, which arrives as its standing.
+ * gesture, which arrives as its role in one.
  *
  * The title goes through a `foreignObject`: SVG text cannot ellipsise and does
  * not reorder a right-to-left run.
@@ -34,7 +34,7 @@ import {
   isStop,
   nameOf,
   showingOf,
-  type NodeStanding,
+  type GestureRole,
   type PlacedNode,
   type PlexShowing,
   type Point,
@@ -44,7 +44,7 @@ const props = withDefaults(
   defineProps<{
     node: PlacedNode
     /** What this node is to the gesture. The one thing it cannot work out. */
-    standing?: NodeStanding
+    gestureRole?: GestureRole
     /**
      * The box it widens to while the attention rests on it, and nothing where
      * it has no more of its title to show. How wide the whole title runs, and
@@ -67,7 +67,7 @@ const props = withDefaults(
     environment?: Environment
   }>(),
   {
-    standing: 'open',
+    gestureRole: 'open',
     wide: null,
     hung: null,
     dwell: DWELL,
@@ -131,7 +131,7 @@ const anything = (drawn: readonly VNode[] | undefined): boolean =>
 const icon = computed(() => anything(slots.icon?.({ node: props.node })))
 
 /** Not a node yet, so nothing may be done to it and nothing is told about it. */
-const ghost = computed(() => props.standing === 'ghost')
+const ghost = computed(() => props.gestureRole === 'ghost')
 
 /** One predicate: the same rule decides the click and the name. */
 const reachable = computed(() => !ghost.value && isReachable(props.node))
@@ -162,7 +162,7 @@ const show = (modified: boolean) => {
  */
 const listening = joined(
   props.reaching.listeners({
-    ready: () => !ghost.value && props.standing === 'open',
+    ready: () => !ghost.value && props.gestureRole === 'open',
     reach: (event: PointerEvent) => emit('reach', event),
   }),
   props.showing.listeners({
@@ -239,8 +239,8 @@ const offering = computed(
   () =>
     props.reaching.handle &&
     props.node.opacity >= 1 &&
-    (props.standing === 'source' ||
-      (props.standing === 'open' && (over.value || attended.value))),
+    (props.gestureRole === 'source' ||
+      (props.gestureRole === 'open' && (over.value || attended.value))),
 )
 
 /** Whether there is anything to open: more of the title, or parts to hang. */
@@ -250,13 +250,13 @@ const opens = computed(() => !!props.wide || !!props.hung)
  * What the attention is on, and where that stands. A box that moves under the
  * hand is somewhere else, and is settled on afresh.
  *
- * A gesture is under way at every standing but `open`, and nothing widens
+ * A gesture is under way at every role but `open`, and nothing widens
  * while one is.
  */
 const under = computed(() =>
   opens.value &&
   props.node.opacity >= 1 &&
-  props.standing === 'open' &&
+  props.gestureRole === 'open' &&
   (over.value || attended.value)
     ? `${props.node.x} ${props.node.y}`
     : null,
@@ -311,7 +311,7 @@ const hue = computed(() => ({
     :tabindex="stop ? 0 : -1"
     :aria-hidden="announced ? undefined : 'true'"
     :role="ghost ? undefined : node.seat === 'focus' ? 'img' : 'button'"
-    :class="[`plex__node--${node.seat}`, `plex__node--${standing}`]"
+    :class="[`plex__node--${node.seat}`, `plex__node--${gestureRole}`]"
     :aria-label="ghost ? undefined : nameOf(node)"
     @click="activate"
     @dblclick="showing.doubleClick && show($event.altKey)"
