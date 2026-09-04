@@ -227,7 +227,7 @@ func run(cfg container.Config, mcp agentOptions, vault string, sizes sizes) erro
 		if !marked {
 			return
 		}
-		opened.Brings(ctx, into, event.Context().DroppedFiles())
+		opened.Imports(ctx, into, event.Context().DroppedFiles())
 	})
 
 	// Opening another vault, as a person asks for it. The agents are told which

@@ -10,14 +10,14 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// bringingFiles is what a drop is called in the list of what is being done.
-const bringingFiles = "bringing files"
+// importingFiles is what a drop is called in the list of what is being done.
+const importingFiles = "importing files"
 
 // namedInARefusal is how many of the files that stayed outside are named before
 // the rest are counted.
 const namedInARefusal = 3
 
-// Brings copies files a person let go of over the window into a folder of the
+// Imports copies files a person let go of over the window into a folder of the
 // vault, the root being the empty path.
 //
 // It runs where the drop reached the application, which is off the thread the
@@ -26,9 +26,9 @@ const namedInARefusal = 3
 //
 // The watcher reports a picture or an archive to nobody, so what arrived is
 // named to the listeners here.
-func (o *Installation) Brings(ctx context.Context, into string, paths []string) {
+func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
 	api := o.API
-	if api.Files.Bring == nil || len(paths) == 0 {
+	if api.Files.Import == nil || len(paths) == 0 {
 		return
 	}
 	showing := api.Showing()
@@ -40,10 +40,10 @@ func (o *Installation) Brings(ctx context.Context, into string, paths []string) 
 	}
 	defer api.Writing.done()
 
-	at := task.Task{ID: bringingFiles + " " + into, Doing: "Bringing files in", About: into}
+	at := task.Task{ID: importingFiles + " " + into, Doing: "Bringing files in", About: into}
 	api.say(at)
 
-	brought, err := api.Files.Bring.Execute(ctx, showing, into, paths)
+	brought, err := api.Files.Import.Execute(ctx, showing, into, paths)
 	if landed := directlyIn(into, brought.Landed); len(landed) > 0 {
 		api.Listeners.tell(change{paths: landed})
 	}

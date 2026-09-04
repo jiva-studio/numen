@@ -173,16 +173,16 @@ type Notes struct {
 
 // Files is the vault's tree as a person moves things about in it. Writers open
 // the vault a folder is made in, Move puts a file or a folder somewhere else,
-// and Bring copies files a person handed the window into a folder of the vault.
-// A build without them answers that nothing can be made, moved or brought in
-// here.
+// and Import copies files a person handed the window into a folder of the
+// vault. A build without them answers that nothing can be made, moved or
+// brought in here.
 //
 // What a folder holds is read through the API's own Readers, which everything
 // else reads through too.
 type Files struct {
 	Writers port.VaultWriters
 	Move    *usecase.Move
-	Bring   *usecase.Import
+	Import  *usecase.Import
 }
 
 // Vaults is the list of vaults this installation holds, the one the window is

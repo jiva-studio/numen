@@ -57,7 +57,7 @@ func TestAFileLetGoOfOverTheTreeArrivesAndIsSaid(t *testing.T) {
 		}
 	}()
 
-	opened.Brings(t.Context(), "physics", []string{cover})
+	opened.Imports(t.Context(), "physics", []string{cover})
 
 	held, err := os.ReadFile(filepath.Join(root, "physics", "Cover.png"))
 	if err != nil {
@@ -88,7 +88,7 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opened.Brings(t.Context(), "", []string{theirs})
+	opened.Imports(t.Context(), "", []string{theirs})
 
 	held, err := os.ReadFile(filepath.Join(root, "Entropy.md"))
 	if err != nil {

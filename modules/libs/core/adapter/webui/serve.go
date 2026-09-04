@@ -311,7 +311,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Sources: db.Sources(),
 		Notes:   moving,
 	}
-	api.Files.Bring = &usecase.Import{Writers: cfg.VaultWriters(), Files: cfg.ImportedFiles()}
+	api.Files.Import = &usecase.Import{Writers: cfg.VaultWriters(), Files: cfg.ImportedFiles()}
 	api.Notes.Remove = &note.Remove{
 		Writers: cfg.VaultWriters(),
 		Links:   api.Notes.Links,
