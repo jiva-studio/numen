@@ -13,12 +13,16 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// Ask hands the person's task to the agent and reports what it does for as long
-// as the client listens.
+// AskAgent hands the person's task to the agent and reports what it does for as
+// long as the client listens.
 //
 // The work is stopped on the way out, whether it finished, failed or the client
 // went away. Nothing outlives the panel it was asked from.
-func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream *connect.ServerStream[v1.AskResponse]) error {
+func (a *API) AskAgent(
+	ctx context.Context,
+	r *connect.Request[v1.AskAgentRequest],
+	stream *connect.ServerStream[v1.AskAgentResponse],
+) error {
 	taking := a.Answering()
 	if taking == nil {
 		return connect.NewError(connect.CodeUnimplemented,
@@ -46,7 +50,7 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-repeat.C:
-			if err := stream.Send(&v1.AskResponse{}); err != nil {
+			if err := stream.Send(&v1.AskAgentResponse{}); err != nil {
 				return err
 			}
 		case step, working := <-work.Steps():
@@ -65,8 +69,11 @@ func (a *API) Ask(ctx context.Context, r *connect.Request[v1.AskRequest], stream
 	}
 }
 
-// Finish says a conversation is over, and hands that on to the agent.
-func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) (*connect.Response[v1.FinishResponse], error) {
+// FinishConversation says a conversation is over, and hands that on to the
+// agent.
+func (a *API) FinishConversation(
+	ctx context.Context, r *connect.Request[v1.FinishConversationRequest],
+) (*connect.Response[v1.FinishConversationResponse], error) {
 	taking := a.Answering()
 	if taking == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented,
@@ -76,5 +83,5 @@ func (a *API) Finish(ctx context.Context, r *connect.Request[v1.FinishRequest]) 
 	if err := taking.Finish(ctx, r.Msg.GetConversation()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.FinishResponse{}), nil
+	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }

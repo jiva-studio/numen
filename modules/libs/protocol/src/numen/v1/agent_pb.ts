@@ -16,12 +16,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/agent.proto.
  */
 export const file_numen_v1_agent: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiXAoKQXNrUmVxdWVzdBINCgVhc2tlZBgBIAEoCRINCgVmb2N1cxgCIAEoCRIUCgxjb252ZXJzYXRpb24YAyABKAkSDAoEY2FyZBgEIAEoCRIMCgRmYWNlGAUgASgJIiUKDUZpbmlzaFJlcXVlc3QSFAoMY29udmVyc2F0aW9uGAEgASgJIhAKDkZpbmlzaFJlc3BvbnNlIrEBCgtBc2tSZXNwb25zZRIOCgRzYWlkGAEgASgJSAASJwoJdG9vbF9jYWxsGAIgASgLMhIubnVtZW4udjEuVG9vbENhbGxIABIRCgdzdG9wcGVkGAMgASgJSAASJgoIYW5zd2VyZWQYBCABKAsyEi5udW1lbi52MS5BbnN3ZXJlZEgAEiYKCHRoaW5raW5nGAUgASgLMhIubnVtZW4udjEuVGhpbmtpbmdIAEIGCgRzdGVwIgoKCEFuc3dlcmVkIgoKCFRoaW5raW5nImUKCFRvb2xDYWxsEgwKBHRvb2wYASABKAkSDQoFYWJvdXQYAiABKAkSDwoHd3JpdHRlbhgDIAEoBRIMCgRwYXRoGAQgASgJEg0KBXN0YXJ0GAUgASgFEg4KBmxlbmd0aBgGIAEoBTKBAQoMQWdlbnRTZXJ2aWNlEjQKA0FzaxIULm51bWVuLnYxLkFza1JlcXVlc3QaFS5udW1lbi52MS5Bc2tSZXNwb25zZTABEjsKBkZpbmlzaBIXLm51bWVuLnYxLkZpbmlzaFJlcXVlc3QaGC5udW1lbi52MS5GaW5pc2hSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL21vZHVsZXMvbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChRudW1lbi92MS9hZ2VudC5wcm90bxIIbnVtZW4udjEiYQoPQXNrQWdlbnRSZXF1ZXN0Eg0KBWFza2VkGAEgASgJEg0KBWZvY3VzGAIgASgJEhQKDGNvbnZlcnNhdGlvbhgDIAEoCRIMCgRjYXJkGAQgASgJEgwKBGZhY2UYBSABKAkiMQoZRmluaXNoQ29udmVyc2F0aW9uUmVxdWVzdBIUCgxjb252ZXJzYXRpb24YASABKAkiHAoaRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2UitgEKEEFza0FnZW50UmVzcG9uc2USDgoEc2FpZBgBIAEoCUgAEicKCXRvb2xfY2FsbBgCIAEoCzISLm51bWVuLnYxLlRvb2xDYWxsSAASEQoHc3RvcHBlZBgDIAEoCUgAEiYKCGFuc3dlcmVkGAQgASgLMhIubnVtZW4udjEuQW5zd2VyZWRIABImCgh0aGlua2luZxgFIAEoCzISLm51bWVuLnYxLlRoaW5raW5nSABCBgoEc3RlcCIKCghBbnN3ZXJlZCIKCghUaGlua2luZyJlCghUb29sQ2FsbBIMCgR0b29sGAEgASgJEg0KBWFib3V0GAIgASgJEg8KB3dyaXR0ZW4YAyABKAUSDAoEcGF0aBgEIAEoCRINCgVzdGFydBgFIAEoBRIOCgZsZW5ndGgYBiABKAUytAEKDEFnZW50U2VydmljZRJDCghBc2tBZ2VudBIZLm51bWVuLnYxLkFza0FnZW50UmVxdWVzdBoaLm51bWVuLnYxLkFza0FnZW50UmVzcG9uc2UwARJfChJGaW5pc2hDb252ZXJzYXRpb24SIy5udW1lbi52MS5GaW5pc2hDb252ZXJzYXRpb25SZXF1ZXN0GiQubnVtZW4udjEuRmluaXNoQ29udmVyc2F0aW9uUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
- * @generated from message numen.v1.AskRequest
+ * @generated from message numen.v1.AskAgentRequest
  */
-export type AskRequest = Message<"numen.v1.AskRequest"> & {
+export type AskAgentRequest = Message<"numen.v1.AskAgentRequest"> & {
   /**
    * What the person wrote.
    *
@@ -64,16 +64,16 @@ export type AskRequest = Message<"numen.v1.AskRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.AskRequest.
- * Use `create(AskRequestSchema)` to create a new message.
+ * Describes the message numen.v1.AskAgentRequest.
+ * Use `create(AskAgentRequestSchema)` to create a new message.
  */
-export const AskRequestSchema: GenMessage<AskRequest> = /*@__PURE__*/
+export const AskAgentRequestSchema: GenMessage<AskAgentRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 0);
 
 /**
- * @generated from message numen.v1.FinishRequest
+ * @generated from message numen.v1.FinishConversationRequest
  */
-export type FinishRequest = Message<"numen.v1.FinishRequest"> & {
+export type FinishConversationRequest = Message<"numen.v1.FinishConversationRequest"> & {
   /**
    * Which thread of talk is over, by the name its questions carried. Empty is
    * no conversation, and there is nothing to finish.
@@ -84,34 +84,34 @@ export type FinishRequest = Message<"numen.v1.FinishRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.FinishRequest.
- * Use `create(FinishRequestSchema)` to create a new message.
+ * Describes the message numen.v1.FinishConversationRequest.
+ * Use `create(FinishConversationRequestSchema)` to create a new message.
  */
-export const FinishRequestSchema: GenMessage<FinishRequest> = /*@__PURE__*/
+export const FinishConversationRequestSchema: GenMessage<FinishConversationRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 1);
 
 /**
- * @generated from message numen.v1.FinishResponse
+ * @generated from message numen.v1.FinishConversationResponse
  */
-export type FinishResponse = Message<"numen.v1.FinishResponse"> & {
+export type FinishConversationResponse = Message<"numen.v1.FinishConversationResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.FinishResponse.
- * Use `create(FinishResponseSchema)` to create a new message.
+ * Describes the message numen.v1.FinishConversationResponse.
+ * Use `create(FinishConversationResponseSchema)` to create a new message.
  */
-export const FinishResponseSchema: GenMessage<FinishResponse> = /*@__PURE__*/
+export const FinishConversationResponseSchema: GenMessage<FinishConversationResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 2);
 
 /**
- * AskResponse is one step of the work: one thing the agent said, did, or
+ * AskAgentResponse is one step of the work: one thing the agent said, did, or
  * stopped for.
  *
- * @generated from message numen.v1.AskResponse
+ * @generated from message numen.v1.AskAgentResponse
  */
-export type AskResponse = Message<"numen.v1.AskResponse"> & {
+export type AskAgentResponse = Message<"numen.v1.AskAgentResponse"> & {
   /**
-   * @generated from oneof numen.v1.AskResponse.step
+   * @generated from oneof numen.v1.AskAgentResponse.step
    */
   step: {
     /**
@@ -160,10 +160,10 @@ export type AskResponse = Message<"numen.v1.AskResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.AskResponse.
- * Use `create(AskResponseSchema)` to create a new message.
+ * Describes the message numen.v1.AskAgentResponse.
+ * Use `create(AskAgentResponseSchema)` to create a new message.
  */
-export const AskResponseSchema: GenMessage<AskResponse> = /*@__PURE__*/
+export const AskAgentResponseSchema: GenMessage<AskAgentResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_agent, 3);
 
 /**
@@ -264,26 +264,26 @@ export const ToolCallSchema: GenMessage<ToolCall> = /*@__PURE__*/
  */
 export const AgentService: GenService<{
   /**
-   * Ask hands over a task and reports what the agent does, in the order it
+   * AskAgent hands over a task and reports what the agent does, in the order it
    * does it, until it is done. Letting go of the stream stops the agent.
    *
-   * @generated from rpc numen.v1.AgentService.Ask
+   * @generated from rpc numen.v1.AgentService.AskAgent
    */
-  ask: {
+  askAgent: {
     methodKind: "server_streaming";
-    input: typeof AskRequestSchema;
-    output: typeof AskResponseSchema;
+    input: typeof AskAgentRequestSchema;
+    output: typeof AskAgentResponseSchema;
   },
   /**
-   * Finish says a conversation is over. What the agent kept of it is let go
-   * of, and whatever is still being answered in it stops.
+   * FinishConversation says a conversation is over. What the agent kept of it
+   * is let go of, and whatever is still being answered in it stops.
    *
-   * @generated from rpc numen.v1.AgentService.Finish
+   * @generated from rpc numen.v1.AgentService.FinishConversation
    */
-  finish: {
+  finishConversation: {
     methodKind: "unary";
-    input: typeof FinishRequestSchema;
-    output: typeof FinishResponseSchema;
+    input: typeof FinishConversationRequestSchema;
+    output: typeof FinishConversationResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_agent, 0);

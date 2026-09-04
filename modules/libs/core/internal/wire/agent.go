@@ -10,11 +10,11 @@ import (
 //
 // Every kind that names a tool is drawn as one, whatever that tool does to the
 // vault, and carries where in the vault it is working.
-func StepsOf(step port.Step) []*v1.AskResponse {
+func StepsOf(step port.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case port.StepToolCall, port.StepRead, port.StepEdit,
 		port.StepRemove, port.StepMove, port.StepSearch:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_ToolCall{
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ToolCall{
 			ToolCall: &v1.ToolCall{
 				Tool:    step.Tool,
 				About:   step.About,
@@ -25,12 +25,12 @@ func StepsOf(step port.Step) []*v1.AskResponse {
 			},
 		}}}
 	case port.StepAnswered:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Answered{Answered: &v1.Answered{}}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Answered{Answered: &v1.Answered{}}}}
 	case port.StepThinking:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Thinking{Thinking: &v1.Thinking{}}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Thinking{Thinking: &v1.Thinking{}}}}
 	case port.StepStopped:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Stopped{Stopped: step.Detail}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Stopped{Stopped: step.Detail}}}
 	default:
-		return []*v1.AskResponse{{Step: &v1.AskResponse_Said{Said: step.Text}}}
+		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_Said{Said: step.Text}}}
 	}
 }

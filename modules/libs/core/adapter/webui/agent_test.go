@@ -75,16 +75,16 @@ func panelled(t *testing.T, api *webui.API) numenv1connect.AgentServiceClient {
 }
 
 // heard is every step a client is sent, in order.
-func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskRequest) []*v1.AskResponse {
+func heard(t *testing.T, client numenv1connect.AgentServiceClient, ask *v1.AskAgentRequest) []*v1.AskAgentResponse {
 	t.Helper()
 
-	stream, err := client.Ask(t.Context(), connect.NewRequest(ask))
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(ask))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { stream.Close() })
 
-	var steps []*v1.AskResponse
+	var steps []*v1.AskAgentResponse
 	for stream.Receive() {
 		steps = append(steps, stream.Msg())
 	}
@@ -101,7 +101,7 @@ func TestWhatTheClientAsksReachesTheAgent(t *testing.T) {
 	taking := &asking{took: make(chan port.Task, 1), takes: []port.Step{{Kind: port.StepStopped}}}
 	client := panelled(t, panelling(taking))
 
-	heard(t, client, &v1.AskRequest{
+	heard(t, client, &v1.AskAgentRequest{
 		Asked:        "rewrite this note",
 		Focus:        "notes/Fugue.md",
 		Conversation: "8f2c1e",
@@ -131,7 +131,7 @@ func TestEveryStepTheAgentTakesReachesTheClient(t *testing.T) {
 	}}
 	client := panelled(t, panelling(taking))
 
-	steps := heard(t, client, &v1.AskRequest{Asked: "rewrite this note"})
+	steps := heard(t, client, &v1.AskAgentRequest{Asked: "rewrite this note"})
 	if len(steps) != 5 {
 		t.Fatalf("got %d steps, want 5: %+v", len(steps), steps)
 	}
@@ -167,7 +167,7 @@ func TestACallSaysWhereItIsWorking(t *testing.T) {
 	}}
 	client := panelled(t, panelling(taking))
 
-	steps := heard(t, client, &v1.AskRequest{Asked: "show me where that is"})
+	steps := heard(t, client, &v1.AskAgentRequest{Asked: "show me where that is"})
 	doing := steps[0].GetToolCall()
 	if doing.GetPath() != "library/A Book.epub" || doing.GetStart() != 1200 || doing.GetLength() != 80 {
 		t.Errorf("the call is working at %+v", doing)
@@ -180,8 +180,8 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 	taking := &asking{over: make(chan string, 1)}
 	client := panelled(t, panelling(taking))
 
-	if _, err := client.Finish(t.Context(),
-		connect.NewRequest(&v1.FinishRequest{Conversation: "8f2c1e"})); err != nil {
+	if _, err := client.FinishConversation(t.Context(),
+		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"})); err != nil {
 		t.Fatal(err)
 	}
 
@@ -196,8 +196,8 @@ func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 	taking := &asking{over: make(chan string, 1), refuses: errors.New("the child would not go")}
 	client := panelled(t, panelling(taking))
 
-	_, err := client.Finish(t.Context(),
-		connect.NewRequest(&v1.FinishRequest{Conversation: "8f2c1e"}))
+	_, err := client.FinishConversation(t.Context(),
+		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
 	if got := connect.CodeOf(err); got != connect.CodeInternal {
 		t.Errorf("a conversation that could not be finished answered %v, want %v",
 			got, connect.CodeInternal)
@@ -209,8 +209,8 @@ func TestAConversationThatCouldNotBeFinishedSaysSo(t *testing.T) {
 func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 	client := panelled(t, &webui.API{})
 
-	_, err := client.Finish(t.Context(),
-		connect.NewRequest(&v1.FinishRequest{Conversation: "8f2c1e"}))
+	_, err := client.FinishConversation(t.Context(),
+		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
 	if got := connect.CodeOf(err); got != connect.CodeUnimplemented {
 		t.Errorf("a vault with no agent answered %v, want %v", got, connect.CodeUnimplemented)
 	}
@@ -221,7 +221,7 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 func TestAVaultWithNoAgentSaysSo(t *testing.T) {
 	client := panelled(t, &webui.API{})
 
-	stream, err := client.Ask(t.Context(), connect.NewRequest(&v1.AskRequest{Asked: "anyone?"}))
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{Asked: "anyone?"}))
 	if err != nil {
 		t.Fatal(err)
 	}

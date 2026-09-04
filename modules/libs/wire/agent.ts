@@ -5,22 +5,22 @@
  * comes to in the port is written down once. The window makes the client; this
  * says what its answers mean.
  */
-import type { AskResponse } from '@numen/protocol'
+import type { AskAgentResponse } from '@numen/protocol'
 import type { AgentPort } from '@numen/ui'
 
 /** As much of the agent service as the port asks of it. */
 export interface Asking {
-  ask(
+  askAgent(
     request: { asked: string; focus: string; conversation: string },
     options: { signal: AbortSignal },
-  ): AsyncIterable<AskResponse>
-  finish(request: { conversation: string }): Promise<unknown>
+  ): AsyncIterable<AskAgentResponse>
+  finishConversation(request: { conversation: string }): Promise<unknown>
 }
 
 /** The agent port, over the client the window talks on. */
 export const agentPort = (agent: Asking): AgentPort => ({
   async *ask(asked, focus, conversation, signal) {
-    for await (const step of agent.ask({ asked, focus, conversation }, { signal })) {
+    for await (const step of agent.askAgent({ asked, focus, conversation }, { signal })) {
       switch (step.step.case) {
         case 'said':
           yield { kind: 'said', text: step.step.value }
@@ -52,6 +52,6 @@ export const agentPort = (agent: Asking): AgentPort => ({
   },
 
   async finish(conversation) {
-    await agent.finish({ conversation })
+    await agent.finishConversation({ conversation })
   },
 })

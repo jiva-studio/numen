@@ -27,7 +27,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type AskRequest struct {
+type AskAgentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the person wrote.
 	Asked string `protobuf:"bytes,1,opt,name=asked,proto3" json:"asked,omitempty"`
@@ -49,20 +49,20 @@ type AskRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AskRequest) Reset() {
-	*x = AskRequest{}
+func (x *AskAgentRequest) Reset() {
+	*x = AskAgentRequest{}
 	mi := &file_numen_v1_agent_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AskRequest) String() string {
+func (x *AskAgentRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AskRequest) ProtoMessage() {}
+func (*AskAgentRequest) ProtoMessage() {}
 
-func (x *AskRequest) ProtoReflect() protoreflect.Message {
+func (x *AskAgentRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -74,47 +74,47 @@ func (x *AskRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AskRequest.ProtoReflect.Descriptor instead.
-func (*AskRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use AskAgentRequest.ProtoReflect.Descriptor instead.
+func (*AskAgentRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *AskRequest) GetAsked() string {
+func (x *AskAgentRequest) GetAsked() string {
 	if x != nil {
 		return x.Asked
 	}
 	return ""
 }
 
-func (x *AskRequest) GetFocus() string {
+func (x *AskAgentRequest) GetFocus() string {
 	if x != nil {
 		return x.Focus
 	}
 	return ""
 }
 
-func (x *AskRequest) GetConversation() string {
+func (x *AskAgentRequest) GetConversation() string {
 	if x != nil {
 		return x.Conversation
 	}
 	return ""
 }
 
-func (x *AskRequest) GetCard() string {
+func (x *AskAgentRequest) GetCard() string {
 	if x != nil {
 		return x.Card
 	}
 	return ""
 }
 
-func (x *AskRequest) GetFace() string {
+func (x *AskAgentRequest) GetFace() string {
 	if x != nil {
 		return x.Face
 	}
 	return ""
 }
 
-type FinishRequest struct {
+type FinishConversationRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Which thread of talk is over, by the name its questions carried. Empty is
 	// no conversation, and there is nothing to finish.
@@ -123,20 +123,20 @@ type FinishRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FinishRequest) Reset() {
-	*x = FinishRequest{}
+func (x *FinishConversationRequest) Reset() {
+	*x = FinishConversationRequest{}
 	mi := &file_numen_v1_agent_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FinishRequest) String() string {
+func (x *FinishConversationRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FinishRequest) ProtoMessage() {}
+func (*FinishConversationRequest) ProtoMessage() {}
 
-func (x *FinishRequest) ProtoReflect() protoreflect.Message {
+func (x *FinishConversationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -148,38 +148,38 @@ func (x *FinishRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FinishRequest.ProtoReflect.Descriptor instead.
-func (*FinishRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use FinishConversationRequest.ProtoReflect.Descriptor instead.
+func (*FinishConversationRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *FinishRequest) GetConversation() string {
+func (x *FinishConversationRequest) GetConversation() string {
 	if x != nil {
 		return x.Conversation
 	}
 	return ""
 }
 
-type FinishResponse struct {
+type FinishConversationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FinishResponse) Reset() {
-	*x = FinishResponse{}
+func (x *FinishConversationResponse) Reset() {
+	*x = FinishConversationResponse{}
 	mi := &file_numen_v1_agent_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FinishResponse) String() string {
+func (x *FinishConversationResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FinishResponse) ProtoMessage() {}
+func (*FinishConversationResponse) ProtoMessage() {}
 
-func (x *FinishResponse) ProtoReflect() protoreflect.Message {
+func (x *FinishConversationResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -191,41 +191,41 @@ func (x *FinishResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FinishResponse.ProtoReflect.Descriptor instead.
-func (*FinishResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use FinishConversationResponse.ProtoReflect.Descriptor instead.
+func (*FinishConversationResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{2}
 }
 
-// AskResponse is one step of the work: one thing the agent said, did, or
+// AskAgentResponse is one step of the work: one thing the agent said, did, or
 // stopped for.
-type AskResponse struct {
+type AskAgentResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Step:
 	//
-	//	*AskResponse_Said
-	//	*AskResponse_ToolCall
-	//	*AskResponse_Stopped
-	//	*AskResponse_Answered
-	//	*AskResponse_Thinking
-	Step          isAskResponse_Step `protobuf_oneof:"step"`
+	//	*AskAgentResponse_Said
+	//	*AskAgentResponse_ToolCall
+	//	*AskAgentResponse_Stopped
+	//	*AskAgentResponse_Answered
+	//	*AskAgentResponse_Thinking
+	Step          isAskAgentResponse_Step `protobuf_oneof:"step"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AskResponse) Reset() {
-	*x = AskResponse{}
+func (x *AskAgentResponse) Reset() {
+	*x = AskAgentResponse{}
 	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AskResponse) String() string {
+func (x *AskAgentResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AskResponse) ProtoMessage() {}
+func (*AskAgentResponse) ProtoMessage() {}
 
-func (x *AskResponse) ProtoReflect() protoreflect.Message {
+func (x *AskAgentResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_agent_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -237,104 +237,104 @@ func (x *AskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AskResponse.ProtoReflect.Descriptor instead.
-func (*AskResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AskAgentResponse.ProtoReflect.Descriptor instead.
+func (*AskAgentResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_agent_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AskResponse) GetStep() isAskResponse_Step {
+func (x *AskAgentResponse) GetStep() isAskAgentResponse_Step {
 	if x != nil {
 		return x.Step
 	}
 	return nil
 }
 
-func (x *AskResponse) GetSaid() string {
+func (x *AskAgentResponse) GetSaid() string {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_Said); ok {
+		if x, ok := x.Step.(*AskAgentResponse_Said); ok {
 			return x.Said
 		}
 	}
 	return ""
 }
 
-func (x *AskResponse) GetToolCall() *ToolCall {
+func (x *AskAgentResponse) GetToolCall() *ToolCall {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_ToolCall); ok {
+		if x, ok := x.Step.(*AskAgentResponse_ToolCall); ok {
 			return x.ToolCall
 		}
 	}
 	return nil
 }
 
-func (x *AskResponse) GetStopped() string {
+func (x *AskAgentResponse) GetStopped() string {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_Stopped); ok {
+		if x, ok := x.Step.(*AskAgentResponse_Stopped); ok {
 			return x.Stopped
 		}
 	}
 	return ""
 }
 
-func (x *AskResponse) GetAnswered() *Answered {
+func (x *AskAgentResponse) GetAnswered() *Answered {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_Answered); ok {
+		if x, ok := x.Step.(*AskAgentResponse_Answered); ok {
 			return x.Answered
 		}
 	}
 	return nil
 }
 
-func (x *AskResponse) GetThinking() *Thinking {
+func (x *AskAgentResponse) GetThinking() *Thinking {
 	if x != nil {
-		if x, ok := x.Step.(*AskResponse_Thinking); ok {
+		if x, ok := x.Step.(*AskAgentResponse_Thinking); ok {
 			return x.Thinking
 		}
 	}
 	return nil
 }
 
-type isAskResponse_Step interface {
-	isAskResponse_Step()
+type isAskAgentResponse_Step interface {
+	isAskAgentResponse_Step()
 }
 
-type AskResponse_Said struct {
+type AskAgentResponse_Said struct {
 	// A piece of what the agent is saying, appended in the order it arrives.
 	Said string `protobuf:"bytes,1,opt,name=said,proto3,oneof"`
 }
 
-type AskResponse_ToolCall struct {
+type AskAgentResponse_ToolCall struct {
 	// A tool the agent is using.
 	ToolCall *ToolCall `protobuf:"bytes,2,opt,name=tool_call,json=toolCall,proto3,oneof"`
 }
 
-type AskResponse_Stopped struct {
+type AskAgentResponse_Stopped struct {
 	// The agent has finished, and this is why it stopped. Empty when it
 	// stopped because it was done.
 	Stopped string `protobuf:"bytes,3,opt,name=stopped,proto3,oneof"`
 }
 
-type AskResponse_Answered struct {
+type AskAgentResponse_Answered struct {
 	// The tool the agent was using has answered. Nothing of this application's
 	// is running from here until the next step arrives.
 	Answered *Answered `protobuf:"bytes,4,opt,name=answered,proto3,oneof"`
 }
 
-type AskResponse_Thinking struct {
+type AskAgentResponse_Thinking struct {
 	// A request to the model has begun. This is where a wait starts, and the
 	// agent says so itself.
 	Thinking *Thinking `protobuf:"bytes,5,opt,name=thinking,proto3,oneof"`
 }
 
-func (*AskResponse_Said) isAskResponse_Step() {}
+func (*AskAgentResponse_Said) isAskAgentResponse_Step() {}
 
-func (*AskResponse_ToolCall) isAskResponse_Step() {}
+func (*AskAgentResponse_ToolCall) isAskAgentResponse_Step() {}
 
-func (*AskResponse_Stopped) isAskResponse_Step() {}
+func (*AskAgentResponse_Stopped) isAskAgentResponse_Step() {}
 
-func (*AskResponse_Answered) isAskResponse_Step() {}
+func (*AskAgentResponse_Answered) isAskAgentResponse_Step() {}
 
-func (*AskResponse_Thinking) isAskResponse_Step() {}
+func (*AskAgentResponse_Thinking) isAskAgentResponse_Step() {}
 
 // Answered and Thinking carry nothing: each is a moment, and what it means is
 // its name. A client that does not know one ignores the step it names.
@@ -512,18 +512,17 @@ var File_numen_v1_agent_proto protoreflect.FileDescriptor
 
 const file_numen_v1_agent_proto_rawDesc = "" +
 	"\n" +
-	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x84\x01\n" +
-	"\n" +
-	"AskRequest\x12\x14\n" +
+	"\x14numen/v1/agent.proto\x12\bnumen.v1\"\x89\x01\n" +
+	"\x0fAskAgentRequest\x12\x14\n" +
 	"\x05asked\x18\x01 \x01(\tR\x05asked\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
 	"\fconversation\x18\x03 \x01(\tR\fconversation\x12\x12\n" +
 	"\x04card\x18\x04 \x01(\tR\x04card\x12\x12\n" +
-	"\x04face\x18\x05 \x01(\tR\x04face\"3\n" +
-	"\rFinishRequest\x12\"\n" +
-	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x10\n" +
-	"\x0eFinishResponse\"\xde\x01\n" +
-	"\vAskResponse\x12\x14\n" +
+	"\x04face\x18\x05 \x01(\tR\x04face\"?\n" +
+	"\x19FinishConversationRequest\x12\"\n" +
+	"\fconversation\x18\x01 \x01(\tR\fconversation\"\x1c\n" +
+	"\x1aFinishConversationResponse\"\xe3\x01\n" +
+	"\x10AskAgentResponse\x12\x14\n" +
 	"\x04said\x18\x01 \x01(\tH\x00R\x04said\x121\n" +
 	"\ttool_call\x18\x02 \x01(\v2\x12.numen.v1.ToolCallH\x00R\btoolCall\x12\x1a\n" +
 	"\astopped\x18\x03 \x01(\tH\x00R\astopped\x120\n" +
@@ -540,10 +539,10 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\awritten\x18\x03 \x01(\x05R\awritten\x12\x12\n" +
 	"\x04path\x18\x04 \x01(\tR\x04path\x12\x14\n" +
 	"\x05start\x18\x05 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x06 \x01(\x05R\x06length2\x81\x01\n" +
-	"\fAgentService\x124\n" +
-	"\x03Ask\x12\x14.numen.v1.AskRequest\x1a\x15.numen.v1.AskResponse0\x01\x12;\n" +
-	"\x06Finish\x12\x17.numen.v1.FinishRequest\x1a\x18.numen.v1.FinishResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x06length\x18\x06 \x01(\x05R\x06length2\xb4\x01\n" +
+	"\fAgentService\x12C\n" +
+	"\bAskAgent\x12\x19.numen.v1.AskAgentRequest\x1a\x1a.numen.v1.AskAgentResponse0\x01\x12_\n" +
+	"\x12FinishConversation\x12#.numen.v1.FinishConversationRequest\x1a$.numen.v1.FinishConversationResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_agent_proto_rawDescOnce sync.Once
@@ -559,22 +558,22 @@ func file_numen_v1_agent_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_numen_v1_agent_proto_goTypes = []any{
-	(*AskRequest)(nil),     // 0: numen.v1.AskRequest
-	(*FinishRequest)(nil),  // 1: numen.v1.FinishRequest
-	(*FinishResponse)(nil), // 2: numen.v1.FinishResponse
-	(*AskResponse)(nil),    // 3: numen.v1.AskResponse
-	(*Answered)(nil),       // 4: numen.v1.Answered
-	(*Thinking)(nil),       // 5: numen.v1.Thinking
-	(*ToolCall)(nil),       // 6: numen.v1.ToolCall
+	(*AskAgentRequest)(nil),            // 0: numen.v1.AskAgentRequest
+	(*FinishConversationRequest)(nil),  // 1: numen.v1.FinishConversationRequest
+	(*FinishConversationResponse)(nil), // 2: numen.v1.FinishConversationResponse
+	(*AskAgentResponse)(nil),           // 3: numen.v1.AskAgentResponse
+	(*Answered)(nil),                   // 4: numen.v1.Answered
+	(*Thinking)(nil),                   // 5: numen.v1.Thinking
+	(*ToolCall)(nil),                   // 6: numen.v1.ToolCall
 }
 var file_numen_v1_agent_proto_depIdxs = []int32{
-	6, // 0: numen.v1.AskResponse.tool_call:type_name -> numen.v1.ToolCall
-	4, // 1: numen.v1.AskResponse.answered:type_name -> numen.v1.Answered
-	5, // 2: numen.v1.AskResponse.thinking:type_name -> numen.v1.Thinking
-	0, // 3: numen.v1.AgentService.Ask:input_type -> numen.v1.AskRequest
-	1, // 4: numen.v1.AgentService.Finish:input_type -> numen.v1.FinishRequest
-	3, // 5: numen.v1.AgentService.Ask:output_type -> numen.v1.AskResponse
-	2, // 6: numen.v1.AgentService.Finish:output_type -> numen.v1.FinishResponse
+	6, // 0: numen.v1.AskAgentResponse.tool_call:type_name -> numen.v1.ToolCall
+	4, // 1: numen.v1.AskAgentResponse.answered:type_name -> numen.v1.Answered
+	5, // 2: numen.v1.AskAgentResponse.thinking:type_name -> numen.v1.Thinking
+	0, // 3: numen.v1.AgentService.AskAgent:input_type -> numen.v1.AskAgentRequest
+	1, // 4: numen.v1.AgentService.FinishConversation:input_type -> numen.v1.FinishConversationRequest
+	3, // 5: numen.v1.AgentService.AskAgent:output_type -> numen.v1.AskAgentResponse
+	2, // 6: numen.v1.AgentService.FinishConversation:output_type -> numen.v1.FinishConversationResponse
 	5, // [5:7] is the sub-list for method output_type
 	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
@@ -588,11 +587,11 @@ func file_numen_v1_agent_proto_init() {
 		return
 	}
 	file_numen_v1_agent_proto_msgTypes[3].OneofWrappers = []any{
-		(*AskResponse_Said)(nil),
-		(*AskResponse_ToolCall)(nil),
-		(*AskResponse_Stopped)(nil),
-		(*AskResponse_Answered)(nil),
-		(*AskResponse_Thinking)(nil),
+		(*AskAgentResponse_Said)(nil),
+		(*AskAgentResponse_ToolCall)(nil),
+		(*AskAgentResponse_Stopped)(nil),
+		(*AskAgentResponse_Answered)(nil),
+		(*AskAgentResponse_Thinking)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
