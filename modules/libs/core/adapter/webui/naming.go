@@ -13,8 +13,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
-// Rename gives a note a different name.
-func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) (*connect.Response[v1.RenameResponse], error) {
+// RenameNote gives a note a different name.
+func (a *API) RenameNote(
+	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
+) (*connect.Response[v1.RenameNoteResponse], error) {
 	if a.Notes.Rename == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -28,7 +30,7 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	defer a.Writing.done()
 
 	renamed, err := a.Notes.Rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
-	out := &v1.RenameResponse{
+	out := &v1.RenameNoteResponse{
 		Path:  renamed.Path,
 		Title: renamed.Title,
 		By:    namingOf(renamed.By),

@@ -37,7 +37,7 @@ import type {
   Entry as EntryMessage,
   Known as KnownMessage,
   Moved as MovedMessage,
-  NeighbourhoodResponse as NeighbourhoodMessage,
+  GetNeighbourhoodResponse as NeighbourhoodMessage,
   Page as PageMessage,
   Problem as ProblemMessage,
   Refusal,
@@ -269,8 +269,8 @@ export const cards: Cards = {
 /** The same questions, in the shape the window asks them. */
 export const core: Core & Asking & Commanding = {
   vaults: () => vaults.list(),
-  neighbourhood: async (path) => around(await notes.neighbourhood({ path })),
-  opening: async () => (await notes.opening({})).note ?? null,
+  neighbourhood: async (path) => around(await notes.getNeighbourhood({ path })),
+  opening: async () => (await notes.getOpeningNote({})).note ?? null,
   state: () => vault.getVaultState({}),
   changes: async function* (signal) {
     for await (const change of vault.watchVaultChanges({}, { signal })) {
@@ -285,7 +285,7 @@ export const core: Core & Asking & Commanding = {
   attending: async (open) => {
     await vault.writeOpenTabs({ tabs: open.tabs.map((one) => ({ ...one })), front: open.front })
   },
-  editing: (signal) => notes.editing({}, { signal }),
+  editing: (signal) => notes.watchEdits({}, { signal }),
   async *tasks(signal) {
     for await (const said of windowService.watchTasks({ window: WINDOW }, { signal })) {
       yield said.tasks.map((at) => ({
@@ -300,20 +300,20 @@ export const core: Core & Asking & Commanding = {
       }))
     }
   },
-  read: async (path) => answered(await notes.read({ path })),
+  read: async (path) => answered(await notes.readNote({ path })),
   write: async (path, body, seen) =>
-    answered(await notes.write({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
+    answered(await notes.writeNote({ path, body, ...(seen ? { seen: seenOf(seen) } : {}) })),
   create: async (note) => {
-    const answer = await notes.create({
+    const answer = await notes.createNote({
       title: note.title,
       folder: note.folder,
       links: note.links.map(written),
     })
     return { path: answer.path, refusal: refusalIn(answer) } satisfies Made
   },
-  join: async (path, link) => refusalIn(await notes.join({ path, link: written(link) })),
+  join: async (path, link) => refusalIn(await notes.writeLink({ path, link: written(link) })),
   rename: async (path, title) => {
-    const answer = await notes.rename({ path, title })
+    const answer = await notes.renameNote({ path, title })
     return {
       path: answer.path,
       title: answer.title,
@@ -424,7 +424,7 @@ export const core: Core & Asking & Commanding = {
    * the vault it is showing in its tabs.
    */
   resolve: async (from, written) => {
-    const answer = await notes.resolve({ from, written: [...written] })
+    const answer = await notes.resolveAddresses({ from, written: [...written] })
     return new Map(
       answer.reached.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
     )

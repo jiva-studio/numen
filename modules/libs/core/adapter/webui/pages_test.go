@@ -114,7 +114,7 @@ func TestEveryServiceTheVaultIsAskedAboutIsMounted(t *testing.T) {
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
 		numenv1connect.FileServiceListFilesProcedure,
-		numenv1connect.NoteServiceReadProcedure,
+		numenv1connect.NoteServiceReadNoteProcedure,
 		numenv1connect.SearchServiceSearchNamesProcedure,
 	} {
 		if code := handed(handler, route).Code; code != http.StatusMethodNotAllowed {

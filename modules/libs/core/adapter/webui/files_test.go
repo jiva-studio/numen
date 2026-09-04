@@ -190,7 +190,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	around, err := f.client.Neighbourhood(t.Context(), connect.NewRequest(&v1.NeighbourhoodRequest{
+	around, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {

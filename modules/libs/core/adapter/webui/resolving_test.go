@@ -11,7 +11,7 @@ import (
 const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 
 // reached is where each address landed, by what was asked about.
-func reached(t *testing.T, answer *v1.ResolveResponse) map[string]*v1.Reached {
+func reached(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.Reached {
 	t.Helper()
 	by := map[string]*v1.Reached{}
 	for _, one := range answer.GetReached() {
@@ -28,7 +28,7 @@ func TestAnAddressIsAnsweredWithTheNoteItReaches(t *testing.T) {
 		"Note.md":            "---\ntitle: Note\n---\n\nprose\n",
 	})
 
-	answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
 		From:    "Note.md",
 		Written: []string{"name://Entropy", "note://" + identified, "name://Nowhere"},
 	}))
@@ -68,7 +68,7 @@ func TestANameReachesTheNoteBesideTheOneItIsWrittenIn(t *testing.T) {
 		"heat/Note.md":  "heat/Entropy.md",
 		"order/Note.md": "order/Entropy.md",
 	} {
-		answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+		answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
 			From: from, Written: []string{"name://Entropy"},
 		}))
 		if err != nil {
@@ -90,7 +90,7 @@ func TestANameSeveralNotesAnswerToIsReported(t *testing.T) {
 		"heat/steam/Note.md": "---\ntitle: Note\n---\n\nprose\n",
 	})
 
-	answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
 		From: "heat/steam/Note.md", Written: []string{"name://Entropy"},
 	}))
 	if err != nil {
@@ -114,7 +114,7 @@ func TestANameWrittenInNoNoteReachesTheNoteItNames(t *testing.T) {
 		"notes/" + lecture + ".md": "---\ntitle: " + lecture + "\n---\n\nprose\n",
 	})
 
-	answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
 		From: "", Written: []string{"name://" + lecture},
 	}))
 	if err != nil {
@@ -137,7 +137,7 @@ func TestAnAddressAskedTwiceIsAnsweredOnce(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\nheat\n",
 	})
 
-	answer, err := client.Resolve(t.Context(), connect.NewRequest(&v1.ResolveRequest{
+	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
 		Written: []string{"name://Entropy", "name://Entropy"},
 	}))
 	if err != nil {

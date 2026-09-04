@@ -37,7 +37,7 @@ const writing = ref<string | null>(null)
 
 async function draw(path: string) {
   if (!core.value) return
-  const said = await core.value.notes.neighbourhood({ path })
+  const said = await core.value.notes.getNeighbourhood({ path })
   at.value = path
   picture.value = asPlex(said)
 }
@@ -46,7 +46,7 @@ async function made(from: string, seat: PlexRelatedSeat) {
   if (!core.value) return
   const title = window.prompt(`A new ${seat}`)
   if (!title?.trim()) return
-  const created = await core.value.notes.create({ title: title.trim(), folder: '' })
+  const created = await core.value.notes.createNote({ title: title.trim(), folder: '' })
   if (!created.path) {
     trouble.value = `nothing was made: ${JSON.stringify(created.refusal)}`
     return
@@ -56,7 +56,7 @@ async function made(from: string, seat: PlexRelatedSeat) {
 
 async function joined(from: string, to: string, seat: PlexRelatedSeat) {
   if (!core.value) return
-  const said = await core.value.notes.join({ path: from, link: { to, role: ROLES[seat] } })
+  const said = await core.value.notes.writeLink({ path: from, link: { to, role: ROLES[seat] } })
   if (said.refusal) {
     trouble.value = `nothing was written: ${JSON.stringify(said.refusal)}`
     return

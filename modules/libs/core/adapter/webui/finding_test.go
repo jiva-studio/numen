@@ -321,8 +321,8 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
 	})
 
-	around, err := client.Neighbourhood(t.Context(),
-		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Ontology.md"}))
+	around, err := client.GetNeighbourhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,8 +345,8 @@ func TestANeighbourhoodSaysWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 
 	// And the note in focus is said the same way, a plex standing on a deck.
-	standing, err := client.Neighbourhood(t.Context(),
-		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Animals.md"}))
+	standing, err := client.GetNeighbourhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -54,7 +54,7 @@ func unwritten(t *testing.T, notes map[string]string) (*going, *cutting) {
 func TestASaveTheIndexWouldNotComeLevelWithIsAnswered(t *testing.T) {
 	f, _ := unwritten(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 
-	answer, err := f.client.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	answer, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
 		Body: "what the person typed\n",
 	}))

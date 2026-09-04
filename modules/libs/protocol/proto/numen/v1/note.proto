@@ -16,15 +16,15 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 
 // NoteService answers what a note of the vault holds, and writes it.
 service NoteService {
-  // Opening is the note to show when nothing else has been chosen. It answers
-  // with nothing until a scan has stored something.
-  rpc Opening(OpeningRequest) returns (OpeningResponse);
+  // GetOpeningNote is the note to show when nothing else has been chosen. It
+  // answers with nothing until a scan has stored something.
+  rpc GetOpeningNote(GetOpeningNoteRequest) returns (GetOpeningNoteResponse);
 
-  // Neighbourhood is one note and everything joined to it.
-  rpc Neighbourhood(NeighbourhoodRequest) returns (NeighbourhoodResponse);
+  // GetNeighbourhood is one note and everything joined to it.
+  rpc GetNeighbourhood(GetNeighbourhoodRequest) returns (GetNeighbourhoodResponse);
 
-  // Resolve answers where addresses written in one note land.
-  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+  // ResolveAddresses answers where addresses written in one note land.
+  rpc ResolveAddresses(ResolveAddressesRequest) returns (ResolveAddressesResponse);
 
   // ListHeadings is the headings of the vault's notes, grouped by the note they
   // stand in and in the order they stand there. The paths are the filter: a
@@ -36,33 +36,33 @@ service NoteService {
   // fit.
   rpc ListHeadings(ListHeadingsRequest) returns (ListHeadingsResponse);
 
-  // Read answers with the prose of a note, below its frontmatter.
-  rpc Read(ReadRequest) returns (ReadResponse);
+  // ReadNote answers with the prose of a note, below its frontmatter.
+  rpc ReadNote(ReadNoteRequest) returns (ReadNoteResponse);
 
-  // Write puts prose into a note, keeping the frontmatter the file has when the
-  // write lands and creating the file where there is none. A note that no
+  // WriteNote puts prose into a note, keeping the frontmatter the file has when
+  // the write lands and creating the file where there is none. A note that no
   // longer holds the prose the caller read is left alone and refused
   // `stale`.
-  rpc Write(WriteRequest) returns (WriteResponse);
+  rpc WriteNote(WriteNoteRequest) returns (WriteNoteResponse);
 
-  // Create makes a note. The file is named after the title, and the links the
-  // note carries are written into it as it is made, so it arrives joined.
-  rpc Create(CreateRequest) returns (CreateResponse);
+  // CreateNote makes a note. The file is named after the title, and the links
+  // the note carries are written into it as it is made, so it arrives joined.
+  rpc CreateNote(CreateNoteRequest) returns (CreateNoteResponse);
 
-  // Join writes a relationship into one note. The note at the other end is left
-  // alone: a link is one end's account of a relationship.
-  rpc Join(JoinRequest) returns (JoinResponse);
+  // WriteLink writes a relationship into one note. The note at the other end is
+  // left alone: a link is one end's account of a relationship.
+  rpc WriteLink(WriteLinkRequest) returns (WriteLinkResponse);
 
-  // Rename gives a note a different name. A note is shown by its title, else by
-  // its first level-one heading, else by its filename: whichever of the three
-  // names it is brought into line, and the file follows it where a title and a
-  // filename are kept as one name.
-  rpc Rename(RenameRequest) returns (RenameResponse);
+  // RenameNote gives a note a different name. A note is shown by its title,
+  // else by its first level-one heading, else by its filename: whichever of the
+  // three names it is brought into line, and the file follows it where a title
+  // and a filename are kept as one name.
+  rpc RenameNote(RenameNoteRequest) returns (RenameNoteResponse);
 
-  // Editing reports a change being made to a note's prose while it is being
+  // WatchEdits reports a change being made to a note's prose while it is being
   // made, for as long as the caller listens. It is what a person reading that
   // note is shown; the note itself arrives the way every other change does.
-  rpc Editing(EditingRequest) returns (stream EditingResponse);
+  rpc WatchEdits(WatchEditsRequest) returns (stream WatchEditsResponse);
 }
 
 // Note is a note as something else refers to it.
@@ -75,19 +75,19 @@ message Note {
   string identifier = 3;
 }
 
-message OpeningRequest {}
+message GetOpeningNoteRequest {}
 
-message OpeningResponse {
+message GetOpeningNoteResponse {
   // Absent while a scan has stored nothing, and for a vault that holds no
   // notes.
   optional Note note = 1;
 }
 
-message NeighbourhoodRequest {
+message GetNeighbourhoodRequest {
   string path = 1;
 }
 
-message NeighbourhoodResponse {
+message GetNeighbourhoodResponse {
   Note focus = 1;
   repeated Seated related = 2;
 
@@ -126,7 +126,7 @@ message Seated {
   NoteType type = 6;
 }
 
-message ResolveRequest {
+message ResolveAddressesRequest {
   // The note the addresses are written in. A name resolves by a path relative
   // to it, so a caller with no note to name gets the priority that is left.
   string from = 1;
@@ -137,7 +137,7 @@ message ResolveRequest {
   repeated string written = 2;
 }
 
-message ResolveResponse {
+message ResolveAddressesResponse {
   // Where each address lands, in the order they were asked about. One that
   // reaches nothing is absent, and so is one asked about twice.
   repeated Reached reached = 1;
@@ -194,11 +194,11 @@ message Heading {
   int32 level = 3;
 }
 
-message ReadRequest {
+message ReadNoteRequest {
   string path = 1;
 }
 
-message ReadResponse {
+message ReadNoteResponse {
   // The prose below the frontmatter, with line endings as LF. Empty when the
   // note is refused.
   string body = 1;
@@ -222,7 +222,7 @@ message Seen {
   Fingerprint at = 2;
 }
 
-message WriteRequest {
+message WriteNoteRequest {
   string path = 1;
 
   // The prose to put below the frontmatter, with line endings as LF.
@@ -233,7 +233,7 @@ message WriteRequest {
   optional Seen seen = 3;
 }
 
-message WriteResponse {
+message WriteNoteResponse {
   reserved 2;
   reserved "changed";
 
@@ -267,7 +267,7 @@ message NewLink {
   string label = 3;
 }
 
-message CreateRequest {
+message CreateNoteRequest {
   // What the note is called. The file is named after it.
   string title = 1;
 
@@ -278,7 +278,7 @@ message CreateRequest {
   repeated NewLink links = 3;
 }
 
-message CreateResponse {
+message CreateNoteResponse {
   // Where the note is filed. Empty when nothing was made.
   string path = 1;
 
@@ -286,13 +286,13 @@ message CreateResponse {
   optional Refusal refusal = 2;
 }
 
-message JoinRequest {
+message WriteLinkRequest {
   // The note the link is written in.
   string path = 1;
   NewLink link = 2;
 }
 
-message JoinResponse {
+message WriteLinkResponse {
   reserved 2;
   reserved "changed";
 
@@ -318,7 +318,7 @@ enum Naming {
   NAMING_FILENAME = 3;
 }
 
-message RenameRequest {
+message RenameNoteRequest {
   // The note to rename.
   string path = 1;
 
@@ -326,7 +326,7 @@ message RenameRequest {
   string title = 2;
 }
 
-message RenameResponse {
+message RenameNoteResponse {
   reserved 6;
   reserved "changed";
 
@@ -351,9 +351,9 @@ message RenameResponse {
   optional Refusal refusal = 5;
 }
 
-message EditingRequest {}
+message WatchEditsRequest {}
 
-message EditingResponse {
+message WatchEditsResponse {
   // The change this reports on. Every report of one change carries the same
   // name, and no two changes carry one.
   string change = 1;

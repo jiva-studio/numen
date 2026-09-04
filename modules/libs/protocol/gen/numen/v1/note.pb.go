@@ -268,26 +268,26 @@ func (x *Note) GetIdentifier() string {
 	return ""
 }
 
-type OpeningRequest struct {
+type GetOpeningNoteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OpeningRequest) Reset() {
-	*x = OpeningRequest{}
+func (x *GetOpeningNoteRequest) Reset() {
+	*x = GetOpeningNoteRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OpeningRequest) String() string {
+func (x *GetOpeningNoteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OpeningRequest) ProtoMessage() {}
+func (*GetOpeningNoteRequest) ProtoMessage() {}
 
-func (x *OpeningRequest) ProtoReflect() protoreflect.Message {
+func (x *GetOpeningNoteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -299,12 +299,12 @@ func (x *OpeningRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OpeningRequest.ProtoReflect.Descriptor instead.
-func (*OpeningRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetOpeningNoteRequest.ProtoReflect.Descriptor instead.
+func (*GetOpeningNoteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{1}
 }
 
-type OpeningResponse struct {
+type GetOpeningNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Absent while a scan has stored nothing, and for a vault that holds no
 	// notes.
@@ -313,20 +313,20 @@ type OpeningResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OpeningResponse) Reset() {
-	*x = OpeningResponse{}
+func (x *GetOpeningNoteResponse) Reset() {
+	*x = GetOpeningNoteResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OpeningResponse) String() string {
+func (x *GetOpeningNoteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OpeningResponse) ProtoMessage() {}
+func (*GetOpeningNoteResponse) ProtoMessage() {}
 
-func (x *OpeningResponse) ProtoReflect() protoreflect.Message {
+func (x *GetOpeningNoteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -338,39 +338,39 @@ func (x *OpeningResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OpeningResponse.ProtoReflect.Descriptor instead.
-func (*OpeningResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetOpeningNoteResponse.ProtoReflect.Descriptor instead.
+func (*GetOpeningNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *OpeningResponse) GetNote() *Note {
+func (x *GetOpeningNoteResponse) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-type NeighbourhoodRequest struct {
+type GetNeighbourhoodRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NeighbourhoodRequest) Reset() {
-	*x = NeighbourhoodRequest{}
+func (x *GetNeighbourhoodRequest) Reset() {
+	*x = GetNeighbourhoodRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NeighbourhoodRequest) String() string {
+func (x *GetNeighbourhoodRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NeighbourhoodRequest) ProtoMessage() {}
+func (*GetNeighbourhoodRequest) ProtoMessage() {}
 
-func (x *NeighbourhoodRequest) ProtoReflect() protoreflect.Message {
+func (x *GetNeighbourhoodRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -382,19 +382,19 @@ func (x *NeighbourhoodRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NeighbourhoodRequest.ProtoReflect.Descriptor instead.
-func (*NeighbourhoodRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNeighbourhoodRequest.ProtoReflect.Descriptor instead.
+func (*GetNeighbourhoodRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *NeighbourhoodRequest) GetPath() string {
+func (x *GetNeighbourhoodRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type NeighbourhoodResponse struct {
+type GetNeighbourhoodResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
 	Related []*Seated              `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
@@ -405,20 +405,20 @@ type NeighbourhoodResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NeighbourhoodResponse) Reset() {
-	*x = NeighbourhoodResponse{}
+func (x *GetNeighbourhoodResponse) Reset() {
+	*x = GetNeighbourhoodResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NeighbourhoodResponse) String() string {
+func (x *GetNeighbourhoodResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NeighbourhoodResponse) ProtoMessage() {}
+func (*GetNeighbourhoodResponse) ProtoMessage() {}
 
-func (x *NeighbourhoodResponse) ProtoReflect() protoreflect.Message {
+func (x *GetNeighbourhoodResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -430,26 +430,26 @@ func (x *NeighbourhoodResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NeighbourhoodResponse.ProtoReflect.Descriptor instead.
-func (*NeighbourhoodResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNeighbourhoodResponse.ProtoReflect.Descriptor instead.
+func (*GetNeighbourhoodResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *NeighbourhoodResponse) GetFocus() *Note {
+func (x *GetNeighbourhoodResponse) GetFocus() *Note {
 	if x != nil {
 		return x.Focus
 	}
 	return nil
 }
 
-func (x *NeighbourhoodResponse) GetRelated() []*Seated {
+func (x *GetNeighbourhoodResponse) GetRelated() []*Seated {
 	if x != nil {
 		return x.Related
 	}
 	return nil
 }
 
-func (x *NeighbourhoodResponse) GetFocusType() NoteType {
+func (x *GetNeighbourhoodResponse) GetFocusType() NoteType {
 	if x != nil {
 		return x.FocusType
 	}
@@ -548,7 +548,7 @@ func (x *Seated) GetType() NoteType {
 	return NoteType_NOTE_TYPE_UNSPECIFIED
 }
 
-type ResolveRequest struct {
+type ResolveAddressesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the addresses are written in. A name resolves by a path relative
 	// to it, so a caller with no note to name gets the priority that is left.
@@ -561,20 +561,20 @@ type ResolveRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResolveRequest) Reset() {
-	*x = ResolveRequest{}
+func (x *ResolveAddressesRequest) Reset() {
+	*x = ResolveAddressesRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResolveRequest) String() string {
+func (x *ResolveAddressesRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResolveRequest) ProtoMessage() {}
+func (*ResolveAddressesRequest) ProtoMessage() {}
 
-func (x *ResolveRequest) ProtoReflect() protoreflect.Message {
+func (x *ResolveAddressesRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -586,26 +586,26 @@ func (x *ResolveRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResolveRequest.ProtoReflect.Descriptor instead.
-func (*ResolveRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResolveAddressesRequest.ProtoReflect.Descriptor instead.
+func (*ResolveAddressesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ResolveRequest) GetFrom() string {
+func (x *ResolveAddressesRequest) GetFrom() string {
 	if x != nil {
 		return x.From
 	}
 	return ""
 }
 
-func (x *ResolveRequest) GetWritten() []string {
+func (x *ResolveAddressesRequest) GetWritten() []string {
 	if x != nil {
 		return x.Written
 	}
 	return nil
 }
 
-type ResolveResponse struct {
+type ResolveAddressesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where each address lands, in the order they were asked about. One that
 	// reaches nothing is absent, and so is one asked about twice.
@@ -614,20 +614,20 @@ type ResolveResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ResolveResponse) Reset() {
-	*x = ResolveResponse{}
+func (x *ResolveAddressesResponse) Reset() {
+	*x = ResolveAddressesResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ResolveResponse) String() string {
+func (x *ResolveAddressesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ResolveResponse) ProtoMessage() {}
+func (*ResolveAddressesResponse) ProtoMessage() {}
 
-func (x *ResolveResponse) ProtoReflect() protoreflect.Message {
+func (x *ResolveAddressesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -639,12 +639,12 @@ func (x *ResolveResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ResolveResponse.ProtoReflect.Descriptor instead.
-func (*ResolveResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResolveAddressesResponse.ProtoReflect.Descriptor instead.
+func (*ResolveAddressesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ResolveResponse) GetReached() []*Reached {
+func (x *ResolveAddressesResponse) GetReached() []*Reached {
 	if x != nil {
 		return x.Reached
 	}
@@ -944,27 +944,27 @@ func (x *Heading) GetLevel() int32 {
 	return 0
 }
 
-type ReadRequest struct {
+type ReadNoteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReadRequest) Reset() {
-	*x = ReadRequest{}
+func (x *ReadNoteRequest) Reset() {
+	*x = ReadNoteRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReadRequest) String() string {
+func (x *ReadNoteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReadRequest) ProtoMessage() {}
+func (*ReadNoteRequest) ProtoMessage() {}
 
-func (x *ReadRequest) ProtoReflect() protoreflect.Message {
+func (x *ReadNoteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -976,19 +976,19 @@ func (x *ReadRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReadRequest.ProtoReflect.Descriptor instead.
-func (*ReadRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadNoteRequest.ProtoReflect.Descriptor instead.
+func (*ReadNoteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ReadRequest) GetPath() string {
+func (x *ReadNoteRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type ReadResponse struct {
+type ReadNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The prose below the frontmatter, with line endings as LF. Empty when the
 	// note is refused.
@@ -1001,20 +1001,20 @@ type ReadResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ReadResponse) Reset() {
-	*x = ReadResponse{}
+func (x *ReadNoteResponse) Reset() {
+	*x = ReadNoteResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ReadResponse) String() string {
+func (x *ReadNoteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ReadResponse) ProtoMessage() {}
+func (*ReadNoteResponse) ProtoMessage() {}
 
-func (x *ReadResponse) ProtoReflect() protoreflect.Message {
+func (x *ReadNoteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1026,26 +1026,26 @@ func (x *ReadResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ReadResponse.ProtoReflect.Descriptor instead.
-func (*ReadResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ReadNoteResponse.ProtoReflect.Descriptor instead.
+func (*ReadNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *ReadResponse) GetBody() string {
+func (x *ReadNoteResponse) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *ReadResponse) GetRefusal() Refusal {
+func (x *ReadNoteResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-func (x *ReadResponse) GetAt() *Fingerprint {
+func (x *ReadNoteResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
 	}
@@ -1110,7 +1110,7 @@ func (x *Seen) GetAt() *Fingerprint {
 	return nil
 }
 
-type WriteRequest struct {
+type WriteNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The prose to put below the frontmatter, with line endings as LF.
@@ -1122,20 +1122,20 @@ type WriteRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WriteRequest) Reset() {
-	*x = WriteRequest{}
+func (x *WriteNoteRequest) Reset() {
+	*x = WriteNoteRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WriteRequest) String() string {
+func (x *WriteNoteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WriteRequest) ProtoMessage() {}
+func (*WriteNoteRequest) ProtoMessage() {}
 
-func (x *WriteRequest) ProtoReflect() protoreflect.Message {
+func (x *WriteNoteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1147,33 +1147,33 @@ func (x *WriteRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WriteRequest.ProtoReflect.Descriptor instead.
-func (*WriteRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteNoteRequest.ProtoReflect.Descriptor instead.
+func (*WriteNoteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *WriteRequest) GetPath() string {
+func (x *WriteNoteRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *WriteRequest) GetBody() string {
+func (x *WriteNoteRequest) GetBody() string {
 	if x != nil {
 		return x.Body
 	}
 	return ""
 }
 
-func (x *WriteRequest) GetSeen() *Seen {
+func (x *WriteNoteRequest) GetSeen() *Seen {
 	if x != nil {
 		return x.Seen
 	}
 	return nil
 }
 
-type WriteResponse struct {
+type WriteNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why.
 	Refusal *Refusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.Refusal,oneof" json:"refusal,omitempty"`
@@ -1184,20 +1184,20 @@ type WriteResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *WriteResponse) Reset() {
-	*x = WriteResponse{}
+func (x *WriteNoteResponse) Reset() {
+	*x = WriteNoteResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *WriteResponse) String() string {
+func (x *WriteNoteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*WriteResponse) ProtoMessage() {}
+func (*WriteNoteResponse) ProtoMessage() {}
 
-func (x *WriteResponse) ProtoReflect() protoreflect.Message {
+func (x *WriteNoteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1209,19 +1209,19 @@ func (x *WriteResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use WriteResponse.ProtoReflect.Descriptor instead.
-func (*WriteResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteNoteResponse.ProtoReflect.Descriptor instead.
+func (*WriteNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *WriteResponse) GetRefusal() Refusal {
+func (x *WriteNoteResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-func (x *WriteResponse) GetAt() *Fingerprint {
+func (x *WriteNoteResponse) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
 	}
@@ -1292,7 +1292,7 @@ func (x *NewLink) GetLabel() string {
 	return ""
 }
 
-type CreateRequest struct {
+type CreateNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// What the note is called. The file is named after it.
 	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
@@ -1304,20 +1304,20 @@ type CreateRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateRequest) Reset() {
-	*x = CreateRequest{}
+func (x *CreateNoteRequest) Reset() {
+	*x = CreateNoteRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateRequest) String() string {
+func (x *CreateNoteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateRequest) ProtoMessage() {}
+func (*CreateNoteRequest) ProtoMessage() {}
 
-func (x *CreateRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateNoteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1329,33 +1329,33 @@ func (x *CreateRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateRequest.ProtoReflect.Descriptor instead.
-func (*CreateRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateNoteRequest.ProtoReflect.Descriptor instead.
+func (*CreateNoteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *CreateRequest) GetTitle() string {
+func (x *CreateNoteRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *CreateRequest) GetFolder() string {
+func (x *CreateNoteRequest) GetFolder() string {
 	if x != nil {
 		return x.Folder
 	}
 	return ""
 }
 
-func (x *CreateRequest) GetLinks() []*NewLink {
+func (x *CreateNoteRequest) GetLinks() []*NewLink {
 	if x != nil {
 		return x.Links
 	}
 	return nil
 }
 
-type CreateResponse struct {
+type CreateNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -1365,20 +1365,20 @@ type CreateResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateResponse) Reset() {
-	*x = CreateResponse{}
+func (x *CreateNoteResponse) Reset() {
+	*x = CreateNoteResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateResponse) String() string {
+func (x *CreateNoteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateResponse) ProtoMessage() {}
+func (*CreateNoteResponse) ProtoMessage() {}
 
-func (x *CreateResponse) ProtoReflect() protoreflect.Message {
+func (x *CreateNoteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1390,26 +1390,26 @@ func (x *CreateResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateResponse.ProtoReflect.Descriptor instead.
-func (*CreateResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateNoteResponse.ProtoReflect.Descriptor instead.
+func (*CreateNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *CreateResponse) GetPath() string {
+func (x *CreateNoteResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *CreateResponse) GetRefusal() Refusal {
+func (x *CreateNoteResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-type JoinRequest struct {
+type WriteLinkRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note the link is written in.
 	Path          string   `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -1418,20 +1418,20 @@ type JoinRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *JoinRequest) Reset() {
-	*x = JoinRequest{}
+func (x *WriteLinkRequest) Reset() {
+	*x = WriteLinkRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *JoinRequest) String() string {
+func (x *WriteLinkRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*JoinRequest) ProtoMessage() {}
+func (*WriteLinkRequest) ProtoMessage() {}
 
-func (x *JoinRequest) ProtoReflect() protoreflect.Message {
+func (x *WriteLinkRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1443,26 +1443,26 @@ func (x *JoinRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JoinRequest.ProtoReflect.Descriptor instead.
-func (*JoinRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteLinkRequest.ProtoReflect.Descriptor instead.
+func (*WriteLinkRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *JoinRequest) GetPath() string {
+func (x *WriteLinkRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *JoinRequest) GetLink() *NewLink {
+func (x *WriteLinkRequest) GetLink() *NewLink {
 	if x != nil {
 		return x.Link
 	}
 	return nil
 }
 
-type JoinResponse struct {
+type WriteLinkResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why. A note that moved between being
 	// read and being written is REFUSAL_STALE, and the caller reads it again
@@ -1472,20 +1472,20 @@ type JoinResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *JoinResponse) Reset() {
-	*x = JoinResponse{}
+func (x *WriteLinkResponse) Reset() {
+	*x = WriteLinkResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *JoinResponse) String() string {
+func (x *WriteLinkResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*JoinResponse) ProtoMessage() {}
+func (*WriteLinkResponse) ProtoMessage() {}
 
-func (x *JoinResponse) ProtoReflect() protoreflect.Message {
+func (x *WriteLinkResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1497,19 +1497,19 @@ func (x *JoinResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use JoinResponse.ProtoReflect.Descriptor instead.
-func (*JoinResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WriteLinkResponse.ProtoReflect.Descriptor instead.
+func (*WriteLinkResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{22}
 }
 
-func (x *JoinResponse) GetRefusal() Refusal {
+func (x *WriteLinkResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-type RenameRequest struct {
+type RenameNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note to rename.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -1519,20 +1519,20 @@ type RenameRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RenameRequest) Reset() {
-	*x = RenameRequest{}
+func (x *RenameNoteRequest) Reset() {
+	*x = RenameNoteRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RenameRequest) String() string {
+func (x *RenameNoteRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RenameRequest) ProtoMessage() {}
+func (*RenameNoteRequest) ProtoMessage() {}
 
-func (x *RenameRequest) ProtoReflect() protoreflect.Message {
+func (x *RenameNoteRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1544,26 +1544,26 @@ func (x *RenameRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RenameRequest.ProtoReflect.Descriptor instead.
-func (*RenameRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenameNoteRequest.ProtoReflect.Descriptor instead.
+func (*RenameNoteRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *RenameRequest) GetPath() string {
+func (x *RenameNoteRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *RenameRequest) GetTitle() string {
+func (x *RenameNoteRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-type RenameResponse struct {
+type RenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note is filed. Empty when the note was never opened. The note is
 	// brought into line before the file is, so a refused move answers with the
@@ -1584,20 +1584,20 @@ type RenameResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *RenameResponse) Reset() {
-	*x = RenameResponse{}
+func (x *RenameNoteResponse) Reset() {
+	*x = RenameNoteResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RenameResponse) String() string {
+func (x *RenameNoteResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RenameResponse) ProtoMessage() {}
+func (*RenameNoteResponse) ProtoMessage() {}
 
-func (x *RenameResponse) ProtoReflect() protoreflect.Message {
+func (x *RenameNoteResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1609,66 +1609,66 @@ func (x *RenameResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RenameResponse.ProtoReflect.Descriptor instead.
-func (*RenameResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use RenameNoteResponse.ProtoReflect.Descriptor instead.
+func (*RenameNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *RenameResponse) GetPath() string {
+func (x *RenameNoteResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *RenameResponse) GetTitle() string {
+func (x *RenameNoteResponse) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *RenameResponse) GetBy() Naming {
+func (x *RenameNoteResponse) GetBy() Naming {
 	if x != nil {
 		return x.By
 	}
 	return Naming_NAMING_UNSPECIFIED
 }
 
-func (x *RenameResponse) GetMoved() *Moved {
+func (x *RenameNoteResponse) GetMoved() *Moved {
 	if x != nil {
 		return x.Moved
 	}
 	return nil
 }
 
-func (x *RenameResponse) GetRefusal() Refusal {
+func (x *RenameNoteResponse) GetRefusal() Refusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
 	return Refusal_REFUSAL_UNSPECIFIED
 }
 
-type EditingRequest struct {
+type WatchEditsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EditingRequest) Reset() {
-	*x = EditingRequest{}
+func (x *WatchEditsRequest) Reset() {
+	*x = WatchEditsRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EditingRequest) String() string {
+func (x *WatchEditsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EditingRequest) ProtoMessage() {}
+func (*WatchEditsRequest) ProtoMessage() {}
 
-func (x *EditingRequest) ProtoReflect() protoreflect.Message {
+func (x *WatchEditsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1680,12 +1680,12 @@ func (x *EditingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EditingRequest.ProtoReflect.Descriptor instead.
-func (*EditingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchEditsRequest.ProtoReflect.Descriptor instead.
+func (*WatchEditsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{25}
 }
 
-type EditingResponse struct {
+type WatchEditsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The change this reports on. Every report of one change carries the same
 	// name, and no two changes carry one.
@@ -1705,20 +1705,20 @@ type EditingResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EditingResponse) Reset() {
-	*x = EditingResponse{}
+func (x *WatchEditsResponse) Reset() {
+	*x = WatchEditsResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EditingResponse) String() string {
+func (x *WatchEditsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EditingResponse) ProtoMessage() {}
+func (*WatchEditsResponse) ProtoMessage() {}
 
-func (x *EditingResponse) ProtoReflect() protoreflect.Message {
+func (x *WatchEditsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1730,47 +1730,47 @@ func (x *EditingResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EditingResponse.ProtoReflect.Descriptor instead.
-func (*EditingResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use WatchEditsResponse.ProtoReflect.Descriptor instead.
+func (*WatchEditsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{26}
 }
 
-func (x *EditingResponse) GetChange() string {
+func (x *WatchEditsResponse) GetChange() string {
 	if x != nil {
 		return x.Change
 	}
 	return ""
 }
 
-func (x *EditingResponse) GetPath() string {
+func (x *WatchEditsResponse) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *EditingResponse) GetFrom() int32 {
+func (x *WatchEditsResponse) GetFrom() int32 {
 	if x != nil {
 		return x.From
 	}
 	return 0
 }
 
-func (x *EditingResponse) GetTo() int32 {
+func (x *WatchEditsResponse) GetTo() int32 {
 	if x != nil {
 		return x.To
 	}
 	return 0
 }
 
-func (x *EditingResponse) GetText() string {
+func (x *WatchEditsResponse) GetText() string {
 	if x != nil {
 		return x.Text
 	}
 	return ""
 }
 
-func (x *EditingResponse) GetDone() bool {
+func (x *WatchEditsResponse) GetDone() bool {
 	if x != nil {
 		return x.Done
 	}
@@ -1787,14 +1787,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1e\n" +
 	"\n" +
 	"identifier\x18\x03 \x01(\tR\n" +
-	"identifier\"\x10\n" +
-	"\x0eOpeningRequest\"C\n" +
-	"\x0fOpeningResponse\x12'\n" +
+	"identifier\"\x17\n" +
+	"\x15GetOpeningNoteRequest\"J\n" +
+	"\x16GetOpeningNoteResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
-	"\x05_note\"*\n" +
-	"\x14NeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x9c\x01\n" +
-	"\x15NeighbourhoodResponse\x12$\n" +
+	"\x05_note\"-\n" +
+	"\x17GetNeighbourhoodRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x9f\x01\n" +
+	"\x18GetNeighbourhoodResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12*\n" +
 	"\arelated\x18\x02 \x03(\v2\x10.numen.v1.SeatedR\arelated\x121\n" +
 	"\n" +
@@ -1805,11 +1805,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x16\n" +
 	"\x06mutual\x18\x05 \x01(\bR\x06mutual\x12&\n" +
-	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\">\n" +
-	"\x0eResolveRequest\x12\x12\n" +
+	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
+	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
-	"\awritten\x18\x02 \x03(\tR\awritten\">\n" +
-	"\x0fResolveResponse\x12+\n" +
+	"\awritten\x18\x02 \x03(\tR\awritten\"G\n" +
+	"\x18ResolveAddressesResponse\x12+\n" +
 	"\areached\x18\x01 \x03(\v2\x11.numen.v1.ReachedR\areached\"\x85\x01\n" +
 	"\aReached\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
@@ -1827,10 +1827,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\aHeading\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\x12\x14\n" +
-	"\x05level\x18\x03 \x01(\x05R\x05level\"!\n" +
-	"\vReadRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +
-	"\fReadResponse\x12\x12\n" +
+	"\x05level\x18\x03 \x01(\x05R\x05level\"%\n" +
+	"\x0fReadNoteRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x97\x01\n" +
+	"\x10ReadNoteResponse\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\tR\x04body\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
@@ -1839,13 +1839,13 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x03_at\"C\n" +
 	"\x04Seen\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12%\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"h\n" +
-	"\fWriteRequest\x12\x12\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"l\n" +
+	"\x10WriteNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12'\n" +
 	"\x04seen\x18\x03 \x01(\v2\x0e.numen.v1.SeenH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\x8f\x01\n" +
-	"\rWriteResponse\x120\n" +
+	"\x05_seen\"\x93\x01\n" +
+	"\x11WriteNoteResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
@@ -1854,27 +1854,27 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\aNewLink\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
-	"\x05label\x18\x03 \x01(\tR\x05label\"f\n" +
-	"\rCreateRequest\x12\x14\n" +
+	"\x05label\x18\x03 \x01(\tR\x05label\"j\n" +
+	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\x12'\n" +
-	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"b\n" +
-	"\x0eCreateResponse\x12\x12\n" +
+	"\x05links\x18\x03 \x03(\v2\x11.numen.v1.NewLinkR\x05links\"f\n" +
+	"\x12CreateNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x120\n" +
 	"\arefusal\x18\x02 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusal\"H\n" +
-	"\vJoinRequest\x12\x12\n" +
+	"\b_refusal\"M\n" +
+	"\x10WriteLinkRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12%\n" +
-	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.NewLinkR\x04link\"[\n" +
-	"\fJoinResponse\x120\n" +
+	"\x04link\x18\x02 \x01(\v2\x11.numen.v1.NewLinkR\x04link\"`\n" +
+	"\x11WriteLinkResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"9\n" +
-	"\rRenameRequest\x12\x12\n" +
+	"\b_refusalJ\x04\b\x02\x10\x03R\achanged\"=\n" +
+	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xdf\x01\n" +
-	"\x0eRenameResponse\x12\x12\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xe3\x01\n" +
+	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\x02by\x18\x03 \x01(\x0e2\x10.numen.v1.NamingR\x02by\x12*\n" +
@@ -1882,9 +1882,9 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\arefusal\x18\x05 \x01(\x0e2\x11.numen.v1.RefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_movedB\n" +
 	"\n" +
-	"\b_refusalJ\x04\b\x06\x10\aR\achanged\"\x10\n" +
-	"\x0eEditingRequest\"\x89\x01\n" +
-	"\x0fEditingResponse\x12\x16\n" +
+	"\b_refusalJ\x04\b\x06\x10\aR\achanged\"\x13\n" +
+	"\x11WatchEditsRequest\"\x8c\x01\n" +
+	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x12\n" +
 	"\x04from\x18\x03 \x01(\x05R\x04from\x12\x0e\n" +
@@ -1910,18 +1910,21 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x12NAMING_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12NAMING_FRONTMATTER\x10\x01\x12\x12\n" +
 	"\x0eNAMING_HEADING\x10\x02\x12\x13\n" +
-	"\x0fNAMING_FILENAME\x10\x032\x92\x05\n" +
-	"\vNoteService\x12>\n" +
-	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
-	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponse\x12>\n" +
-	"\aResolve\x12\x18.numen.v1.ResolveRequest\x1a\x19.numen.v1.ResolveResponse\x12M\n" +
-	"\fListHeadings\x12\x1d.numen.v1.ListHeadingsRequest\x1a\x1e.numen.v1.ListHeadingsResponse\x125\n" +
-	"\x04Read\x12\x15.numen.v1.ReadRequest\x1a\x16.numen.v1.ReadResponse\x128\n" +
-	"\x05Write\x12\x16.numen.v1.WriteRequest\x1a\x17.numen.v1.WriteResponse\x12;\n" +
-	"\x06Create\x12\x17.numen.v1.CreateRequest\x1a\x18.numen.v1.CreateResponse\x125\n" +
-	"\x04Join\x12\x15.numen.v1.JoinRequest\x1a\x16.numen.v1.JoinResponse\x12;\n" +
-	"\x06Rename\x12\x17.numen.v1.RenameRequest\x1a\x18.numen.v1.RenameResponse\x12@\n" +
-	"\aEditing\x12\x18.numen.v1.EditingRequest\x1a\x19.numen.v1.EditingResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0fNAMING_FILENAME\x10\x032\x93\x06\n" +
+	"\vNoteService\x12S\n" +
+	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
+	"\x10GetNeighbourhood\x12!.numen.v1.GetNeighbourhoodRequest\x1a\".numen.v1.GetNeighbourhoodResponse\x12Y\n" +
+	"\x10ResolveAddresses\x12!.numen.v1.ResolveAddressesRequest\x1a\".numen.v1.ResolveAddressesResponse\x12M\n" +
+	"\fListHeadings\x12\x1d.numen.v1.ListHeadingsRequest\x1a\x1e.numen.v1.ListHeadingsResponse\x12A\n" +
+	"\bReadNote\x12\x19.numen.v1.ReadNoteRequest\x1a\x1a.numen.v1.ReadNoteResponse\x12D\n" +
+	"\tWriteNote\x12\x1a.numen.v1.WriteNoteRequest\x1a\x1b.numen.v1.WriteNoteResponse\x12G\n" +
+	"\n" +
+	"CreateNote\x12\x1b.numen.v1.CreateNoteRequest\x1a\x1c.numen.v1.CreateNoteResponse\x12D\n" +
+	"\tWriteLink\x12\x1a.numen.v1.WriteLinkRequest\x1a\x1b.numen.v1.WriteLinkResponse\x12G\n" +
+	"\n" +
+	"RenameNote\x12\x1b.numen.v1.RenameNoteRequest\x1a\x1c.numen.v1.RenameNoteResponse\x12I\n" +
+	"\n" +
+	"WatchEdits\x12\x1b.numen.v1.WatchEditsRequest\x1a\x1c.numen.v1.WatchEditsResponse0\x01BIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_note_proto_rawDescOnce sync.Once
@@ -1938,86 +1941,86 @@ func file_numen_v1_note_proto_rawDescGZIP() []byte {
 var file_numen_v1_note_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_note_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_numen_v1_note_proto_goTypes = []any{
-	(Seat)(0),                     // 0: numen.v1.Seat
-	(Role)(0),                     // 1: numen.v1.Role
-	(Naming)(0),                   // 2: numen.v1.Naming
-	(*Note)(nil),                  // 3: numen.v1.Note
-	(*OpeningRequest)(nil),        // 4: numen.v1.OpeningRequest
-	(*OpeningResponse)(nil),       // 5: numen.v1.OpeningResponse
-	(*NeighbourhoodRequest)(nil),  // 6: numen.v1.NeighbourhoodRequest
-	(*NeighbourhoodResponse)(nil), // 7: numen.v1.NeighbourhoodResponse
-	(*Seated)(nil),                // 8: numen.v1.Seated
-	(*ResolveRequest)(nil),        // 9: numen.v1.ResolveRequest
-	(*ResolveResponse)(nil),       // 10: numen.v1.ResolveResponse
-	(*Reached)(nil),               // 11: numen.v1.Reached
-	(*ListHeadingsRequest)(nil),   // 12: numen.v1.ListHeadingsRequest
-	(*ListHeadingsResponse)(nil),  // 13: numen.v1.ListHeadingsResponse
-	(*NoteHeadings)(nil),          // 14: numen.v1.NoteHeadings
-	(*Heading)(nil),               // 15: numen.v1.Heading
-	(*ReadRequest)(nil),           // 16: numen.v1.ReadRequest
-	(*ReadResponse)(nil),          // 17: numen.v1.ReadResponse
-	(*Seen)(nil),                  // 18: numen.v1.Seen
-	(*WriteRequest)(nil),          // 19: numen.v1.WriteRequest
-	(*WriteResponse)(nil),         // 20: numen.v1.WriteResponse
-	(*NewLink)(nil),               // 21: numen.v1.NewLink
-	(*CreateRequest)(nil),         // 22: numen.v1.CreateRequest
-	(*CreateResponse)(nil),        // 23: numen.v1.CreateResponse
-	(*JoinRequest)(nil),           // 24: numen.v1.JoinRequest
-	(*JoinResponse)(nil),          // 25: numen.v1.JoinResponse
-	(*RenameRequest)(nil),         // 26: numen.v1.RenameRequest
-	(*RenameResponse)(nil),        // 27: numen.v1.RenameResponse
-	(*EditingRequest)(nil),        // 28: numen.v1.EditingRequest
-	(*EditingResponse)(nil),       // 29: numen.v1.EditingResponse
-	(NoteType)(0),                 // 30: numen.v1.NoteType
-	(Refusal)(0),                  // 31: numen.v1.Refusal
-	(*Fingerprint)(nil),           // 32: numen.v1.Fingerprint
-	(*Moved)(nil),                 // 33: numen.v1.Moved
+	(Seat)(0),                        // 0: numen.v1.Seat
+	(Role)(0),                        // 1: numen.v1.Role
+	(Naming)(0),                      // 2: numen.v1.Naming
+	(*Note)(nil),                     // 3: numen.v1.Note
+	(*GetOpeningNoteRequest)(nil),    // 4: numen.v1.GetOpeningNoteRequest
+	(*GetOpeningNoteResponse)(nil),   // 5: numen.v1.GetOpeningNoteResponse
+	(*GetNeighbourhoodRequest)(nil),  // 6: numen.v1.GetNeighbourhoodRequest
+	(*GetNeighbourhoodResponse)(nil), // 7: numen.v1.GetNeighbourhoodResponse
+	(*Seated)(nil),                   // 8: numen.v1.Seated
+	(*ResolveAddressesRequest)(nil),  // 9: numen.v1.ResolveAddressesRequest
+	(*ResolveAddressesResponse)(nil), // 10: numen.v1.ResolveAddressesResponse
+	(*Reached)(nil),                  // 11: numen.v1.Reached
+	(*ListHeadingsRequest)(nil),      // 12: numen.v1.ListHeadingsRequest
+	(*ListHeadingsResponse)(nil),     // 13: numen.v1.ListHeadingsResponse
+	(*NoteHeadings)(nil),             // 14: numen.v1.NoteHeadings
+	(*Heading)(nil),                  // 15: numen.v1.Heading
+	(*ReadNoteRequest)(nil),          // 16: numen.v1.ReadNoteRequest
+	(*ReadNoteResponse)(nil),         // 17: numen.v1.ReadNoteResponse
+	(*Seen)(nil),                     // 18: numen.v1.Seen
+	(*WriteNoteRequest)(nil),         // 19: numen.v1.WriteNoteRequest
+	(*WriteNoteResponse)(nil),        // 20: numen.v1.WriteNoteResponse
+	(*NewLink)(nil),                  // 21: numen.v1.NewLink
+	(*CreateNoteRequest)(nil),        // 22: numen.v1.CreateNoteRequest
+	(*CreateNoteResponse)(nil),       // 23: numen.v1.CreateNoteResponse
+	(*WriteLinkRequest)(nil),         // 24: numen.v1.WriteLinkRequest
+	(*WriteLinkResponse)(nil),        // 25: numen.v1.WriteLinkResponse
+	(*RenameNoteRequest)(nil),        // 26: numen.v1.RenameNoteRequest
+	(*RenameNoteResponse)(nil),       // 27: numen.v1.RenameNoteResponse
+	(*WatchEditsRequest)(nil),        // 28: numen.v1.WatchEditsRequest
+	(*WatchEditsResponse)(nil),       // 29: numen.v1.WatchEditsResponse
+	(NoteType)(0),                    // 30: numen.v1.NoteType
+	(Refusal)(0),                     // 31: numen.v1.Refusal
+	(*Fingerprint)(nil),              // 32: numen.v1.Fingerprint
+	(*Moved)(nil),                    // 33: numen.v1.Moved
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
-	3,  // 0: numen.v1.OpeningResponse.note:type_name -> numen.v1.Note
-	3,  // 1: numen.v1.NeighbourhoodResponse.focus:type_name -> numen.v1.Note
-	8,  // 2: numen.v1.NeighbourhoodResponse.related:type_name -> numen.v1.Seated
-	30, // 3: numen.v1.NeighbourhoodResponse.focus_type:type_name -> numen.v1.NoteType
+	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
+	3,  // 1: numen.v1.GetNeighbourhoodResponse.focus:type_name -> numen.v1.Note
+	8,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Seated
+	30, // 3: numen.v1.GetNeighbourhoodResponse.focus_type:type_name -> numen.v1.NoteType
 	3,  // 4: numen.v1.Seated.note:type_name -> numen.v1.Note
 	0,  // 5: numen.v1.Seated.seat:type_name -> numen.v1.Seat
 	30, // 6: numen.v1.Seated.type:type_name -> numen.v1.NoteType
-	11, // 7: numen.v1.ResolveResponse.reached:type_name -> numen.v1.Reached
+	11, // 7: numen.v1.ResolveAddressesResponse.reached:type_name -> numen.v1.Reached
 	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
-	31, // 10: numen.v1.ReadResponse.refusal:type_name -> numen.v1.Refusal
-	32, // 11: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
+	31, // 10: numen.v1.ReadNoteResponse.refusal:type_name -> numen.v1.Refusal
+	32, // 11: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
 	32, // 12: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
-	18, // 13: numen.v1.WriteRequest.seen:type_name -> numen.v1.Seen
-	31, // 14: numen.v1.WriteResponse.refusal:type_name -> numen.v1.Refusal
-	32, // 15: numen.v1.WriteResponse.at:type_name -> numen.v1.Fingerprint
+	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.Seen
+	31, // 14: numen.v1.WriteNoteResponse.refusal:type_name -> numen.v1.Refusal
+	32, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
 	1,  // 16: numen.v1.NewLink.role:type_name -> numen.v1.Role
-	21, // 17: numen.v1.CreateRequest.links:type_name -> numen.v1.NewLink
-	31, // 18: numen.v1.CreateResponse.refusal:type_name -> numen.v1.Refusal
-	21, // 19: numen.v1.JoinRequest.link:type_name -> numen.v1.NewLink
-	31, // 20: numen.v1.JoinResponse.refusal:type_name -> numen.v1.Refusal
-	2,  // 21: numen.v1.RenameResponse.by:type_name -> numen.v1.Naming
-	33, // 22: numen.v1.RenameResponse.moved:type_name -> numen.v1.Moved
-	31, // 23: numen.v1.RenameResponse.refusal:type_name -> numen.v1.Refusal
-	4,  // 24: numen.v1.NoteService.Opening:input_type -> numen.v1.OpeningRequest
-	6,  // 25: numen.v1.NoteService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
-	9,  // 26: numen.v1.NoteService.Resolve:input_type -> numen.v1.ResolveRequest
+	21, // 17: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.NewLink
+	31, // 18: numen.v1.CreateNoteResponse.refusal:type_name -> numen.v1.Refusal
+	21, // 19: numen.v1.WriteLinkRequest.link:type_name -> numen.v1.NewLink
+	31, // 20: numen.v1.WriteLinkResponse.refusal:type_name -> numen.v1.Refusal
+	2,  // 21: numen.v1.RenameNoteResponse.by:type_name -> numen.v1.Naming
+	33, // 22: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.Moved
+	31, // 23: numen.v1.RenameNoteResponse.refusal:type_name -> numen.v1.Refusal
+	4,  // 24: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
+	6,  // 25: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
+	9,  // 26: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
 	12, // 27: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
-	16, // 28: numen.v1.NoteService.Read:input_type -> numen.v1.ReadRequest
-	19, // 29: numen.v1.NoteService.Write:input_type -> numen.v1.WriteRequest
-	22, // 30: numen.v1.NoteService.Create:input_type -> numen.v1.CreateRequest
-	24, // 31: numen.v1.NoteService.Join:input_type -> numen.v1.JoinRequest
-	26, // 32: numen.v1.NoteService.Rename:input_type -> numen.v1.RenameRequest
-	28, // 33: numen.v1.NoteService.Editing:input_type -> numen.v1.EditingRequest
-	5,  // 34: numen.v1.NoteService.Opening:output_type -> numen.v1.OpeningResponse
-	7,  // 35: numen.v1.NoteService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
-	10, // 36: numen.v1.NoteService.Resolve:output_type -> numen.v1.ResolveResponse
+	16, // 28: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
+	19, // 29: numen.v1.NoteService.WriteNote:input_type -> numen.v1.WriteNoteRequest
+	22, // 30: numen.v1.NoteService.CreateNote:input_type -> numen.v1.CreateNoteRequest
+	24, // 31: numen.v1.NoteService.WriteLink:input_type -> numen.v1.WriteLinkRequest
+	26, // 32: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
+	28, // 33: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
+	5,  // 34: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
+	7,  // 35: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
+	10, // 36: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
 	13, // 37: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
-	17, // 38: numen.v1.NoteService.Read:output_type -> numen.v1.ReadResponse
-	20, // 39: numen.v1.NoteService.Write:output_type -> numen.v1.WriteResponse
-	23, // 40: numen.v1.NoteService.Create:output_type -> numen.v1.CreateResponse
-	25, // 41: numen.v1.NoteService.Join:output_type -> numen.v1.JoinResponse
-	27, // 42: numen.v1.NoteService.Rename:output_type -> numen.v1.RenameResponse
-	29, // 43: numen.v1.NoteService.Editing:output_type -> numen.v1.EditingResponse
+	17, // 38: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse
+	20, // 39: numen.v1.NoteService.WriteNote:output_type -> numen.v1.WriteNoteResponse
+	23, // 40: numen.v1.NoteService.CreateNote:output_type -> numen.v1.CreateNoteResponse
+	25, // 41: numen.v1.NoteService.WriteLink:output_type -> numen.v1.WriteLinkResponse
+	27, // 42: numen.v1.NoteService.RenameNote:output_type -> numen.v1.RenameNoteResponse
+	29, // 43: numen.v1.NoteService.WatchEdits:output_type -> numen.v1.WatchEditsResponse
 	34, // [34:44] is the sub-list for method output_type
 	24, // [24:34] is the sub-list for method input_type
 	24, // [24:24] is the sub-list for extension type_name

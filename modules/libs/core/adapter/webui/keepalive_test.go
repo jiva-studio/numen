@@ -30,7 +30,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"editing": func(ctx context.Context, http connect.HTTPClient, at string) error {
 			_, err := numenv1connect.NewNoteServiceClient(http, at).
-				Editing(ctx, connect.NewRequest(&v1.EditingRequest{}))
+				WatchEdits(ctx, connect.NewRequest(&v1.WatchEditsRequest{}))
 			return err
 		},
 		"focus": func(ctx context.Context, http connect.HTTPClient, at string) error {

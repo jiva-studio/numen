@@ -16,7 +16,7 @@ import {
   IonToolbar,
 } from '@ionic/vue'
 import { Editor } from '@numen/ui'
-import type { ReadResponse } from '@numen/protocol'
+import type { ReadNoteResponse } from '@numen/protocol'
 import type { Reached } from '../core'
 
 const props = defineProps<{ core: Reached; path: string }>()
@@ -26,13 +26,13 @@ const emit = defineEmits<{
 }>()
 
 const prose = ref('')
-const seen = ref<{ prose: string; at: NonNullable<ReadResponse['at']> } | null>(null)
+const seen = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
 const reading = ref(true)
 const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
 onMounted(async () => {
   try {
-    const said = await props.core.notes.read({ path: props.path })
+    const said = await props.core.notes.readNote({ path: props.path })
     if (said.refusal) {
       emit('trouble', `the note was not read: ${JSON.stringify(said.refusal)}`)
       emit('close')
@@ -47,7 +47,7 @@ onMounted(async () => {
 })
 
 async function keep() {
-  const said = await props.core.notes.write({
+  const said = await props.core.notes.writeNote({
     path: props.path,
     body: prose.value,
     seen: seen.value ?? undefined,

@@ -35,7 +35,7 @@ func editable(t *testing.T, notes map[string]string) *API {
 
 func at(t *testing.T, api *API, path string) *v1.Seen {
 	t.Helper()
-	out, err := api.Read(t.Context(), connect.NewRequest(&v1.ReadRequest{Path: path}))
+	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := api.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	out, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
 		Body: "# Entropy\n\nMine.\n",
 		Seen: seen,
@@ -88,7 +88,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := editable(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	seen := at(t, api, "Entropy.md")
 
-	first, err := api.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	first, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
 		Body: "# Entropy\n\nOne.\n",
 		Seen: seen,
@@ -103,7 +103,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 		t.Fatal("the write answered with no fingerprint")
 	}
 
-	second, err := api.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	second, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
 		Body: "# Entropy\n\nTwo.\n",
 		Seen: &v1.Seen{Prose: seen.GetProse(), At: first.Msg.GetAt()},
@@ -176,7 +176,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 		Writers: filesystem.VaultWriters{},
 	}
 
-	out, err := api.Join(t.Context(), connect.NewRequest(&v1.JoinRequest{
+	out, err := api.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",
 		Link: &v1.NewLink{To: "Entropy.md", Role: v1.Role_ROLE_PARENT},
 	}))

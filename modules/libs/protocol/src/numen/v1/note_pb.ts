@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/note.proto.
  */
 export const file_numen_v1_note: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIQCg5PcGVuaW5nUmVxdWVzdCI9Cg9PcGVuaW5nUmVzcG9uc2USIQoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGVIAIgBAUIHCgVfbm90ZSIkChROZWlnaGJvdXJob29kUmVxdWVzdBIMCgRwYXRoGAEgASgJIoEBChVOZWlnaGJvdXJob29kUmVzcG9uc2USHQoFZm9jdXMYASABKAsyDi5udW1lbi52MS5Ob3RlEiEKB3JlbGF0ZWQYAiADKAsyEC5udW1lbi52MS5TZWF0ZWQSJgoKZm9jdXNfdHlwZRgDIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIpYBCgZTZWF0ZWQSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSHAoEc2VhdBgCIAEoDjIOLm51bWVuLnYxLlNlYXQSDQoFbGFiZWwYAyABKAkSDwoHdGhyb3VnaBgEIAEoCRIOCgZtdXR1YWwYBSABKAgSIAoEdHlwZRgGIAEoDjISLm51bWVuLnYxLk5vdGVUeXBlIi8KDlJlc29sdmVSZXF1ZXN0EgwKBGZyb20YASABKAkSDwoHd3JpdHRlbhgCIAMoCSI1Cg9SZXNvbHZlUmVzcG9uc2USIgoHcmVhY2hlZBgBIAMoCzIRLm51bWVuLnYxLlJlYWNoZWQiWwoHUmVhY2hlZBIPCgd3cml0dGVuGAEgASgJEgwKBHBhdGgYAiABKAkSDQoFdmF1bHQYAyABKAkSDwoHY3Jvc3NlZBgEIAEoCBIRCglhbWJpZ3VvdXMYBSABKAgiJAoTTGlzdEhlYWRpbmdzUmVxdWVzdBINCgVwYXRocxgBIAMoCSJAChRMaXN0SGVhZGluZ3NSZXNwb25zZRIoCghoZWFkaW5ncxgBIAMoCzIWLm51bWVuLnYxLk5vdGVIZWFkaW5ncyJBCgxOb3RlSGVhZGluZ3MSDAoEcGF0aBgBIAEoCRIjCghoZWFkaW5ncxgCIAMoCzIRLm51bWVuLnYxLkhlYWRpbmciNAoHSGVhZGluZxIMCgR0ZXh0GAEgASgJEgwKBGxpbmUYAiABKAUSDQoFbGV2ZWwYAyABKAUiGwoLUmVhZFJlcXVlc3QSDAoEcGF0aBgBIAEoCSKAAQoMUmVhZFJlc3BvbnNlEgwKBGJvZHkYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0IjgKBFNlZW4SDQoFcHJvc2UYASABKAkSIQoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCJWCgxXcml0ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRib2R5GAIgASgJEiEKBHNlZW4YAyABKAsyDi5udW1lbi52MS5TZWVuSACIAQFCBwoFX3NlZW4iggEKDVdyaXRlUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0SgQIAhADUgdjaGFuZ2VkIkIKB05ld0xpbmsSCgoCdG8YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFbGFiZWwYAyABKAkiUAoNQ3JlYXRlUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkSIAoFbGlua3MYAyADKAsyES5udW1lbi52MS5OZXdMaW5rIlMKDkNyZWF0ZVJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoHcmVmdXNhbBgCIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBAUIKCghfcmVmdXNhbCI8CgtKb2luUmVxdWVzdBIMCgRwYXRoGAEgASgJEh8KBGxpbmsYAiABKAsyES5udW1lbi52MS5OZXdMaW5rIlIKDEpvaW5SZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsSgQIAhADUgdjaGFuZ2VkIiwKDVJlbmFtZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSK+AQoOUmVuYW1lUmVzcG9uc2USDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIcCgJieRgDIAEoDjIQLm51bWVuLnYxLk5hbWluZxIjCgVtb3ZlZBgEIAEoCzIPLm51bWVuLnYxLk1vdmVkSACIAQESJwoHcmVmdXNhbBgFIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAYgBAUIICgZfbW92ZWRCCgoIX3JlZnVzYWxKBAgGEAdSB2NoYW5nZWQiEAoORWRpdGluZ1JlcXVlc3QiZQoPRWRpdGluZ1Jlc3BvbnNlEg4KBmNoYW5nZRgBIAEoCRIMCgRwYXRoGAIgASgJEgwKBGZyb20YAyABKAUSCgoCdG8YBCABKAUSDAoEdGV4dBgFIAEoCRIMCgRkb25lGAYgASgIKl4KBFNlYXQSFAoQU0VBVF9VTlNQRUNJRklFRBAAEg8KC1NFQVRfUEFSRU5UEAESDgoKU0VBVF9DSElMRBACEg0KCVNFQVRfSlVNUBADEhAKDFNFQVRfU0lCTElORxAEKm8KBFJvbGUSFAoQUk9MRV9VTlNQRUNJRklFRBAAEg8KC1JPTEVfUEFSRU5UEAESDgoKUk9MRV9DSElMRBACEg0KCVJPTEVfSlVNUBADEgwKCFJPTEVfUkVGEAQSEwoPUk9MRV9BVFRBQ0hNRU5UEAUqYQoGTmFtaW5nEhYKEk5BTUlOR19VTlNQRUNJRklFRBAAEhYKEk5BTUlOR19GUk9OVE1BVFRFUhABEhIKDk5BTUlOR19IRUFESU5HEAISEwoPTkFNSU5HX0ZJTEVOQU1FEAMykgUKC05vdGVTZXJ2aWNlEj4KB09wZW5pbmcSGC5udW1lbi52MS5PcGVuaW5nUmVxdWVzdBoZLm51bWVuLnYxLk9wZW5pbmdSZXNwb25zZRJQCg1OZWlnaGJvdXJob29kEh4ubnVtZW4udjEuTmVpZ2hib3VyaG9vZFJlcXVlc3QaHy5udW1lbi52MS5OZWlnaGJvdXJob29kUmVzcG9uc2USPgoHUmVzb2x2ZRIYLm51bWVuLnYxLlJlc29sdmVSZXF1ZXN0GhkubnVtZW4udjEuUmVzb2x2ZVJlc3BvbnNlEk0KDExpc3RIZWFkaW5ncxIdLm51bWVuLnYxLkxpc3RIZWFkaW5nc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0SGVhZGluZ3NSZXNwb25zZRI1CgRSZWFkEhUubnVtZW4udjEuUmVhZFJlcXVlc3QaFi5udW1lbi52MS5SZWFkUmVzcG9uc2USOAoFV3JpdGUSFi5udW1lbi52MS5Xcml0ZVJlcXVlc3QaFy5udW1lbi52MS5Xcml0ZVJlc3BvbnNlEjsKBkNyZWF0ZRIXLm51bWVuLnYxLkNyZWF0ZVJlcXVlc3QaGC5udW1lbi52MS5DcmVhdGVSZXNwb25zZRI1CgRKb2luEhUubnVtZW4udjEuSm9pblJlcXVlc3QaFi5udW1lbi52MS5Kb2luUmVzcG9uc2USOwoGUmVuYW1lEhcubnVtZW4udjEuUmVuYW1lUmVxdWVzdBoYLm51bWVuLnYxLlJlbmFtZVJlc3BvbnNlEkAKB0VkaXRpbmcSGC5udW1lbi52MS5FZGl0aW5nUmVxdWVzdBoZLm51bWVuLnYxLkVkaXRpbmdSZXNwb25zZTABQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_file, file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9ub3RlLnByb3RvEghudW1lbi52MSI3CgROb3RlEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSEgoKaWRlbnRpZmllchgDIAEoCSIXChVHZXRPcGVuaW5nTm90ZVJlcXVlc3QiRAoWR2V0T3BlbmluZ05vdGVSZXNwb25zZRIhCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBQgcKBV9ub3RlIicKF0dldE5laWdoYm91cmhvb2RSZXF1ZXN0EgwKBHBhdGgYASABKAkihAEKGEdldE5laWdoYm91cmhvb2RSZXNwb25zZRIdCgVmb2N1cxgBIAEoCzIOLm51bWVuLnYxLk5vdGUSIQoHcmVsYXRlZBgCIAMoCzIQLm51bWVuLnYxLlNlYXRlZBImCgpmb2N1c190eXBlGAMgASgOMhIubnVtZW4udjEuTm90ZVR5cGUilgEKBlNlYXRlZBIcCgRub3RlGAEgASgLMg4ubnVtZW4udjEuTm90ZRIcCgRzZWF0GAIgASgOMg4ubnVtZW4udjEuU2VhdBINCgVsYWJlbBgDIAEoCRIPCgd0aHJvdWdoGAQgASgJEg4KBm11dHVhbBgFIAEoCBIgCgR0eXBlGAYgASgOMhIubnVtZW4udjEuTm90ZVR5cGUiOAoXUmVzb2x2ZUFkZHJlc3Nlc1JlcXVlc3QSDAoEZnJvbRgBIAEoCRIPCgd3cml0dGVuGAIgAygJIj4KGFJlc29sdmVBZGRyZXNzZXNSZXNwb25zZRIiCgdyZWFjaGVkGAEgAygLMhEubnVtZW4udjEuUmVhY2hlZCJbCgdSZWFjaGVkEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRINCgV2YXVsdBgDIAEoCRIPCgdjcm9zc2VkGAQgASgIEhEKCWFtYmlndW91cxgFIAEoCCIkChNMaXN0SGVhZGluZ3NSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIkAKFExpc3RIZWFkaW5nc1Jlc3BvbnNlEigKCGhlYWRpbmdzGAEgAygLMhYubnVtZW4udjEuTm90ZUhlYWRpbmdzIkEKDE5vdGVIZWFkaW5ncxIMCgRwYXRoGAEgASgJEiMKCGhlYWRpbmdzGAIgAygLMhEubnVtZW4udjEuSGVhZGluZyI0CgdIZWFkaW5nEgwKBHRleHQYASABKAkSDAoEbGluZRgCIAEoBRINCgVsZXZlbBgDIAEoBSIfCg9SZWFkTm90ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSKEAQoQUmVhZE5vdGVSZXNwb25zZRIMCgRib2R5GAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdCI4CgRTZWVuEg0KBXByb3NlGAEgASgJEiEKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnQiWgoQV3JpdGVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBGJvZHkYAiABKAkSIQoEc2VlbhgDIAEoCzIOLm51bWVuLnYxLlNlZW5IAIgBAUIHCgVfc2VlbiKGAQoRV3JpdGVOb3RlUmVzcG9uc2USJwoHcmVmdXNhbBgBIAEoDjIRLm51bWVuLnYxLlJlZnVzYWxIAIgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQFCCgoIX3JlZnVzYWxCBQoDX2F0SgQIAhADUgdjaGFuZ2VkIkIKB05ld0xpbmsSCgoCdG8YASABKAkSHAoEcm9sZRgCIAEoDjIOLm51bWVuLnYxLlJvbGUSDQoFbGFiZWwYAyABKAkiVAoRQ3JlYXRlTm90ZVJlcXVlc3QSDQoFdGl0bGUYASABKAkSDgoGZm9sZGVyGAIgASgJEiAKBWxpbmtzGAMgAygLMhEubnVtZW4udjEuTmV3TGluayJXChJDcmVhdGVOb3RlUmVzcG9uc2USDAoEcGF0aBgBIAEoCRInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIkEKEFdyaXRlTGlua1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIfCgRsaW5rGAIgASgLMhEubnVtZW4udjEuTmV3TGluayJXChFXcml0ZUxpbmtSZXNwb25zZRInCgdyZWZ1c2FsGAEgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsSgQIAhADUgdjaGFuZ2VkIjAKEVJlbmFtZU5vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiwgEKElJlbmFtZU5vdGVSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhwKAmJ5GAMgASgOMhAubnVtZW4udjEuTmFtaW5nEiMKBW1vdmVkGAQgASgLMg8ubnVtZW4udjEuTW92ZWRIAIgBARInCgdyZWZ1c2FsGAUgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBQggKBl9tb3ZlZEIKCghfcmVmdXNhbEoECAYQB1IHY2hhbmdlZCITChFXYXRjaEVkaXRzUmVxdWVzdCJoChJXYXRjaEVkaXRzUmVzcG9uc2USDgoGY2hhbmdlGAEgASgJEgwKBHBhdGgYAiABKAkSDAoEZnJvbRgDIAEoBRIKCgJ0bxgEIAEoBRIMCgR0ZXh0GAUgASgJEgwKBGRvbmUYBiABKAgqXgoEU2VhdBIUChBTRUFUX1VOU1BFQ0lGSUVEEAASDwoLU0VBVF9QQVJFTlQQARIOCgpTRUFUX0NISUxEEAISDQoJU0VBVF9KVU1QEAMSEAoMU0VBVF9TSUJMSU5HEAQqbwoEUm9sZRIUChBST0xFX1VOU1BFQ0lGSUVEEAASDwoLUk9MRV9QQVJFTlQQARIOCgpST0xFX0NISUxEEAISDQoJUk9MRV9KVU1QEAMSDAoIUk9MRV9SRUYQBBITCg9ST0xFX0FUVEFDSE1FTlQQBSphCgZOYW1pbmcSFgoSTkFNSU5HX1VOU1BFQ0lGSUVEEAASFgoSTkFNSU5HX0ZST05UTUFUVEVSEAESEgoOTkFNSU5HX0hFQURJTkcQAhITCg9OQU1JTkdfRklMRU5BTUUQAzKTBgoLTm90ZVNlcnZpY2USUwoOR2V0T3BlbmluZ05vdGUSHy5udW1lbi52MS5HZXRPcGVuaW5nTm90ZVJlcXVlc3QaIC5udW1lbi52MS5HZXRPcGVuaW5nTm90ZVJlc3BvbnNlElkKEEdldE5laWdoYm91cmhvb2QSIS5udW1lbi52MS5HZXROZWlnaGJvdXJob29kUmVxdWVzdBoiLm51bWVuLnYxLkdldE5laWdoYm91cmhvb2RSZXNwb25zZRJZChBSZXNvbHZlQWRkcmVzc2VzEiEubnVtZW4udjEuUmVzb2x2ZUFkZHJlc3Nlc1JlcXVlc3QaIi5udW1lbi52MS5SZXNvbHZlQWRkcmVzc2VzUmVzcG9uc2USTQoMTGlzdEhlYWRpbmdzEh0ubnVtZW4udjEuTGlzdEhlYWRpbmdzUmVxdWVzdBoeLm51bWVuLnYxLkxpc3RIZWFkaW5nc1Jlc3BvbnNlEkEKCFJlYWROb3RlEhkubnVtZW4udjEuUmVhZE5vdGVSZXF1ZXN0GhoubnVtZW4udjEuUmVhZE5vdGVSZXNwb25zZRJECglXcml0ZU5vdGUSGi5udW1lbi52MS5Xcml0ZU5vdGVSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVOb3RlUmVzcG9uc2USRwoKQ3JlYXRlTm90ZRIbLm51bWVuLnYxLkNyZWF0ZU5vdGVSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlTm90ZVJlc3BvbnNlEkQKCVdyaXRlTGluaxIaLm51bWVuLnYxLldyaXRlTGlua1JlcXVlc3QaGy5udW1lbi52MS5Xcml0ZUxpbmtSZXNwb25zZRJHCgpSZW5hbWVOb3RlEhsubnVtZW4udjEuUmVuYW1lTm90ZVJlcXVlc3QaHC5udW1lbi52MS5SZW5hbWVOb3RlUmVzcG9uc2USSQoKV2F0Y2hFZGl0cxIbLm51bWVuLnYxLldhdGNoRWRpdHNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hFZGl0c1Jlc3BvbnNlMAFCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_shared]);
 
 /**
  * Note is a note as something else refers to it.
@@ -59,22 +59,22 @@ export const NoteSchema: GenMessage<Note> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 0);
 
 /**
- * @generated from message numen.v1.OpeningRequest
+ * @generated from message numen.v1.GetOpeningNoteRequest
  */
-export type OpeningRequest = Message<"numen.v1.OpeningRequest"> & {
+export type GetOpeningNoteRequest = Message<"numen.v1.GetOpeningNoteRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.OpeningRequest.
- * Use `create(OpeningRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetOpeningNoteRequest.
+ * Use `create(GetOpeningNoteRequestSchema)` to create a new message.
  */
-export const OpeningRequestSchema: GenMessage<OpeningRequest> = /*@__PURE__*/
+export const GetOpeningNoteRequestSchema: GenMessage<GetOpeningNoteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 1);
 
 /**
- * @generated from message numen.v1.OpeningResponse
+ * @generated from message numen.v1.GetOpeningNoteResponse
  */
-export type OpeningResponse = Message<"numen.v1.OpeningResponse"> & {
+export type GetOpeningNoteResponse = Message<"numen.v1.GetOpeningNoteResponse"> & {
   /**
    * Absent while a scan has stored nothing, and for a vault that holds no
    * notes.
@@ -85,16 +85,16 @@ export type OpeningResponse = Message<"numen.v1.OpeningResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.OpeningResponse.
- * Use `create(OpeningResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetOpeningNoteResponse.
+ * Use `create(GetOpeningNoteResponseSchema)` to create a new message.
  */
-export const OpeningResponseSchema: GenMessage<OpeningResponse> = /*@__PURE__*/
+export const GetOpeningNoteResponseSchema: GenMessage<GetOpeningNoteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 2);
 
 /**
- * @generated from message numen.v1.NeighbourhoodRequest
+ * @generated from message numen.v1.GetNeighbourhoodRequest
  */
-export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
+export type GetNeighbourhoodRequest = Message<"numen.v1.GetNeighbourhoodRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -102,16 +102,16 @@ export type NeighbourhoodRequest = Message<"numen.v1.NeighbourhoodRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.NeighbourhoodRequest.
- * Use `create(NeighbourhoodRequestSchema)` to create a new message.
+ * Describes the message numen.v1.GetNeighbourhoodRequest.
+ * Use `create(GetNeighbourhoodRequestSchema)` to create a new message.
  */
-export const NeighbourhoodRequestSchema: GenMessage<NeighbourhoodRequest> = /*@__PURE__*/
+export const GetNeighbourhoodRequestSchema: GenMessage<GetNeighbourhoodRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 3);
 
 /**
- * @generated from message numen.v1.NeighbourhoodResponse
+ * @generated from message numen.v1.GetNeighbourhoodResponse
  */
-export type NeighbourhoodResponse = Message<"numen.v1.NeighbourhoodResponse"> & {
+export type GetNeighbourhoodResponse = Message<"numen.v1.GetNeighbourhoodResponse"> & {
   /**
    * @generated from field: numen.v1.Note focus = 1;
    */
@@ -132,10 +132,10 @@ export type NeighbourhoodResponse = Message<"numen.v1.NeighbourhoodResponse"> & 
 };
 
 /**
- * Describes the message numen.v1.NeighbourhoodResponse.
- * Use `create(NeighbourhoodResponseSchema)` to create a new message.
+ * Describes the message numen.v1.GetNeighbourhoodResponse.
+ * Use `create(GetNeighbourhoodResponseSchema)` to create a new message.
  */
-export const NeighbourhoodResponseSchema: GenMessage<NeighbourhoodResponse> = /*@__PURE__*/
+export const GetNeighbourhoodResponseSchema: GenMessage<GetNeighbourhoodResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 4);
 
 /**
@@ -193,9 +193,9 @@ export const SeatedSchema: GenMessage<Seated> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 5);
 
 /**
- * @generated from message numen.v1.ResolveRequest
+ * @generated from message numen.v1.ResolveAddressesRequest
  */
-export type ResolveRequest = Message<"numen.v1.ResolveRequest"> & {
+export type ResolveAddressesRequest = Message<"numen.v1.ResolveAddressesRequest"> & {
   /**
    * The note the addresses are written in. A name resolves by a path relative
    * to it, so a caller with no note to name gets the priority that is left.
@@ -215,16 +215,16 @@ export type ResolveRequest = Message<"numen.v1.ResolveRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ResolveRequest.
- * Use `create(ResolveRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ResolveAddressesRequest.
+ * Use `create(ResolveAddressesRequestSchema)` to create a new message.
  */
-export const ResolveRequestSchema: GenMessage<ResolveRequest> = /*@__PURE__*/
+export const ResolveAddressesRequestSchema: GenMessage<ResolveAddressesRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 6);
 
 /**
- * @generated from message numen.v1.ResolveResponse
+ * @generated from message numen.v1.ResolveAddressesResponse
  */
-export type ResolveResponse = Message<"numen.v1.ResolveResponse"> & {
+export type ResolveAddressesResponse = Message<"numen.v1.ResolveAddressesResponse"> & {
   /**
    * Where each address lands, in the order they were asked about. One that
    * reaches nothing is absent, and so is one asked about twice.
@@ -235,10 +235,10 @@ export type ResolveResponse = Message<"numen.v1.ResolveResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ResolveResponse.
- * Use `create(ResolveResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ResolveAddressesResponse.
+ * Use `create(ResolveAddressesResponseSchema)` to create a new message.
  */
-export const ResolveResponseSchema: GenMessage<ResolveResponse> = /*@__PURE__*/
+export const ResolveAddressesResponseSchema: GenMessage<ResolveAddressesResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 7);
 
 /**
@@ -391,9 +391,9 @@ export const HeadingSchema: GenMessage<Heading> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 12);
 
 /**
- * @generated from message numen.v1.ReadRequest
+ * @generated from message numen.v1.ReadNoteRequest
  */
-export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
+export type ReadNoteRequest = Message<"numen.v1.ReadNoteRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -401,16 +401,16 @@ export type ReadRequest = Message<"numen.v1.ReadRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.ReadRequest.
- * Use `create(ReadRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ReadNoteRequest.
+ * Use `create(ReadNoteRequestSchema)` to create a new message.
  */
-export const ReadRequestSchema: GenMessage<ReadRequest> = /*@__PURE__*/
+export const ReadNoteRequestSchema: GenMessage<ReadNoteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 13);
 
 /**
- * @generated from message numen.v1.ReadResponse
+ * @generated from message numen.v1.ReadNoteResponse
  */
-export type ReadResponse = Message<"numen.v1.ReadResponse"> & {
+export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
   /**
    * The prose below the frontmatter, with line endings as LF. Empty when the
    * note is refused.
@@ -435,10 +435,10 @@ export type ReadResponse = Message<"numen.v1.ReadResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.ReadResponse.
- * Use `create(ReadResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ReadNoteResponse.
+ * Use `create(ReadNoteResponseSchema)` to create a new message.
  */
-export const ReadResponseSchema: GenMessage<ReadResponse> = /*@__PURE__*/
+export const ReadNoteResponseSchema: GenMessage<ReadNoteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 14);
 
 /**
@@ -473,9 +473,9 @@ export const SeenSchema: GenMessage<Seen> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 15);
 
 /**
- * @generated from message numen.v1.WriteRequest
+ * @generated from message numen.v1.WriteNoteRequest
  */
-export type WriteRequest = Message<"numen.v1.WriteRequest"> & {
+export type WriteNoteRequest = Message<"numen.v1.WriteNoteRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -498,16 +498,16 @@ export type WriteRequest = Message<"numen.v1.WriteRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.WriteRequest.
- * Use `create(WriteRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WriteNoteRequest.
+ * Use `create(WriteNoteRequestSchema)` to create a new message.
  */
-export const WriteRequestSchema: GenMessage<WriteRequest> = /*@__PURE__*/
+export const WriteNoteRequestSchema: GenMessage<WriteNoteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 16);
 
 /**
- * @generated from message numen.v1.WriteResponse
+ * @generated from message numen.v1.WriteNoteResponse
  */
-export type WriteResponse = Message<"numen.v1.WriteResponse"> & {
+export type WriteNoteResponse = Message<"numen.v1.WriteNoteResponse"> & {
   /**
    * Set when nothing was written, and why.
    *
@@ -525,10 +525,10 @@ export type WriteResponse = Message<"numen.v1.WriteResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.WriteResponse.
- * Use `create(WriteResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WriteNoteResponse.
+ * Use `create(WriteNoteResponseSchema)` to create a new message.
  */
-export const WriteResponseSchema: GenMessage<WriteResponse> = /*@__PURE__*/
+export const WriteNoteResponseSchema: GenMessage<WriteNoteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 17);
 
 /**
@@ -565,9 +565,9 @@ export const NewLinkSchema: GenMessage<NewLink> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 18);
 
 /**
- * @generated from message numen.v1.CreateRequest
+ * @generated from message numen.v1.CreateNoteRequest
  */
-export type CreateRequest = Message<"numen.v1.CreateRequest"> & {
+export type CreateNoteRequest = Message<"numen.v1.CreateNoteRequest"> & {
   /**
    * What the note is called. The file is named after it.
    *
@@ -591,16 +591,16 @@ export type CreateRequest = Message<"numen.v1.CreateRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.CreateRequest.
- * Use `create(CreateRequestSchema)` to create a new message.
+ * Describes the message numen.v1.CreateNoteRequest.
+ * Use `create(CreateNoteRequestSchema)` to create a new message.
  */
-export const CreateRequestSchema: GenMessage<CreateRequest> = /*@__PURE__*/
+export const CreateNoteRequestSchema: GenMessage<CreateNoteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 19);
 
 /**
- * @generated from message numen.v1.CreateResponse
+ * @generated from message numen.v1.CreateNoteResponse
  */
-export type CreateResponse = Message<"numen.v1.CreateResponse"> & {
+export type CreateNoteResponse = Message<"numen.v1.CreateNoteResponse"> & {
   /**
    * Where the note is filed. Empty when nothing was made.
    *
@@ -617,16 +617,16 @@ export type CreateResponse = Message<"numen.v1.CreateResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.CreateResponse.
- * Use `create(CreateResponseSchema)` to create a new message.
+ * Describes the message numen.v1.CreateNoteResponse.
+ * Use `create(CreateNoteResponseSchema)` to create a new message.
  */
-export const CreateResponseSchema: GenMessage<CreateResponse> = /*@__PURE__*/
+export const CreateNoteResponseSchema: GenMessage<CreateNoteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 20);
 
 /**
- * @generated from message numen.v1.JoinRequest
+ * @generated from message numen.v1.WriteLinkRequest
  */
-export type JoinRequest = Message<"numen.v1.JoinRequest"> & {
+export type WriteLinkRequest = Message<"numen.v1.WriteLinkRequest"> & {
   /**
    * The note the link is written in.
    *
@@ -641,16 +641,16 @@ export type JoinRequest = Message<"numen.v1.JoinRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.JoinRequest.
- * Use `create(JoinRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WriteLinkRequest.
+ * Use `create(WriteLinkRequestSchema)` to create a new message.
  */
-export const JoinRequestSchema: GenMessage<JoinRequest> = /*@__PURE__*/
+export const WriteLinkRequestSchema: GenMessage<WriteLinkRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 21);
 
 /**
- * @generated from message numen.v1.JoinResponse
+ * @generated from message numen.v1.WriteLinkResponse
  */
-export type JoinResponse = Message<"numen.v1.JoinResponse"> & {
+export type WriteLinkResponse = Message<"numen.v1.WriteLinkResponse"> & {
   /**
    * Set when nothing was written, and why. A note that moved between being
    * read and being written is REFUSAL_STALE, and the caller reads it again
@@ -662,16 +662,16 @@ export type JoinResponse = Message<"numen.v1.JoinResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.JoinResponse.
- * Use `create(JoinResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WriteLinkResponse.
+ * Use `create(WriteLinkResponseSchema)` to create a new message.
  */
-export const JoinResponseSchema: GenMessage<JoinResponse> = /*@__PURE__*/
+export const WriteLinkResponseSchema: GenMessage<WriteLinkResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 22);
 
 /**
- * @generated from message numen.v1.RenameRequest
+ * @generated from message numen.v1.RenameNoteRequest
  */
-export type RenameRequest = Message<"numen.v1.RenameRequest"> & {
+export type RenameNoteRequest = Message<"numen.v1.RenameNoteRequest"> & {
   /**
    * The note to rename.
    *
@@ -688,16 +688,16 @@ export type RenameRequest = Message<"numen.v1.RenameRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.RenameRequest.
- * Use `create(RenameRequestSchema)` to create a new message.
+ * Describes the message numen.v1.RenameNoteRequest.
+ * Use `create(RenameNoteRequestSchema)` to create a new message.
  */
-export const RenameRequestSchema: GenMessage<RenameRequest> = /*@__PURE__*/
+export const RenameNoteRequestSchema: GenMessage<RenameNoteRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 23);
 
 /**
- * @generated from message numen.v1.RenameResponse
+ * @generated from message numen.v1.RenameNoteResponse
  */
-export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
+export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
   /**
    * Where the note is filed. Empty when the note was never opened. The note is
    * brought into line before the file is, so a refused move answers with the
@@ -740,29 +740,29 @@ export type RenameResponse = Message<"numen.v1.RenameResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.RenameResponse.
- * Use `create(RenameResponseSchema)` to create a new message.
+ * Describes the message numen.v1.RenameNoteResponse.
+ * Use `create(RenameNoteResponseSchema)` to create a new message.
  */
-export const RenameResponseSchema: GenMessage<RenameResponse> = /*@__PURE__*/
+export const RenameNoteResponseSchema: GenMessage<RenameNoteResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 24);
 
 /**
- * @generated from message numen.v1.EditingRequest
+ * @generated from message numen.v1.WatchEditsRequest
  */
-export type EditingRequest = Message<"numen.v1.EditingRequest"> & {
+export type WatchEditsRequest = Message<"numen.v1.WatchEditsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.EditingRequest.
- * Use `create(EditingRequestSchema)` to create a new message.
+ * Describes the message numen.v1.WatchEditsRequest.
+ * Use `create(WatchEditsRequestSchema)` to create a new message.
  */
-export const EditingRequestSchema: GenMessage<EditingRequest> = /*@__PURE__*/
+export const WatchEditsRequestSchema: GenMessage<WatchEditsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 25);
 
 /**
- * @generated from message numen.v1.EditingResponse
+ * @generated from message numen.v1.WatchEditsResponse
  */
-export type EditingResponse = Message<"numen.v1.EditingResponse"> & {
+export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
   /**
    * The change this reports on. Every report of one change carries the same
    * name, and no two changes carry one.
@@ -808,10 +808,10 @@ export type EditingResponse = Message<"numen.v1.EditingResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.EditingResponse.
- * Use `create(EditingResponseSchema)` to create a new message.
+ * Describes the message numen.v1.WatchEditsResponse.
+ * Use `create(WatchEditsResponseSchema)` to create a new message.
  */
-export const EditingResponseSchema: GenMessage<EditingResponse> = /*@__PURE__*/
+export const WatchEditsResponseSchema: GenMessage<WatchEditsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_note, 26);
 
 /**
@@ -946,35 +946,35 @@ export const NamingSchema: GenEnum<Naming> = /*@__PURE__*/
  */
 export const NoteService: GenService<{
   /**
-   * Opening is the note to show when nothing else has been chosen. It answers
-   * with nothing until a scan has stored something.
+   * GetOpeningNote is the note to show when nothing else has been chosen. It
+   * answers with nothing until a scan has stored something.
    *
-   * @generated from rpc numen.v1.NoteService.Opening
+   * @generated from rpc numen.v1.NoteService.GetOpeningNote
    */
-  opening: {
+  getOpeningNote: {
     methodKind: "unary";
-    input: typeof OpeningRequestSchema;
-    output: typeof OpeningResponseSchema;
+    input: typeof GetOpeningNoteRequestSchema;
+    output: typeof GetOpeningNoteResponseSchema;
   },
   /**
-   * Neighbourhood is one note and everything joined to it.
+   * GetNeighbourhood is one note and everything joined to it.
    *
-   * @generated from rpc numen.v1.NoteService.Neighbourhood
+   * @generated from rpc numen.v1.NoteService.GetNeighbourhood
    */
-  neighbourhood: {
+  getNeighbourhood: {
     methodKind: "unary";
-    input: typeof NeighbourhoodRequestSchema;
-    output: typeof NeighbourhoodResponseSchema;
+    input: typeof GetNeighbourhoodRequestSchema;
+    output: typeof GetNeighbourhoodResponseSchema;
   },
   /**
-   * Resolve answers where addresses written in one note land.
+   * ResolveAddresses answers where addresses written in one note land.
    *
-   * @generated from rpc numen.v1.NoteService.Resolve
+   * @generated from rpc numen.v1.NoteService.ResolveAddresses
    */
-  resolve: {
+  resolveAddresses: {
     methodKind: "unary";
-    input: typeof ResolveRequestSchema;
-    output: typeof ResolveResponseSchema;
+    input: typeof ResolveAddressesRequestSchema;
+    output: typeof ResolveAddressesResponseSchema;
   },
   /**
    * ListHeadings is the headings of the vault's notes, grouped by the note they
@@ -994,74 +994,74 @@ export const NoteService: GenService<{
     output: typeof ListHeadingsResponseSchema;
   },
   /**
-   * Read answers with the prose of a note, below its frontmatter.
+   * ReadNote answers with the prose of a note, below its frontmatter.
    *
-   * @generated from rpc numen.v1.NoteService.Read
+   * @generated from rpc numen.v1.NoteService.ReadNote
    */
-  read: {
+  readNote: {
     methodKind: "unary";
-    input: typeof ReadRequestSchema;
-    output: typeof ReadResponseSchema;
+    input: typeof ReadNoteRequestSchema;
+    output: typeof ReadNoteResponseSchema;
   },
   /**
-   * Write puts prose into a note, keeping the frontmatter the file has when the
-   * write lands and creating the file where there is none. A note that no
+   * WriteNote puts prose into a note, keeping the frontmatter the file has when
+   * the write lands and creating the file where there is none. A note that no
    * longer holds the prose the caller read is left alone and refused
    * `stale`.
    *
-   * @generated from rpc numen.v1.NoteService.Write
+   * @generated from rpc numen.v1.NoteService.WriteNote
    */
-  write: {
+  writeNote: {
     methodKind: "unary";
-    input: typeof WriteRequestSchema;
-    output: typeof WriteResponseSchema;
+    input: typeof WriteNoteRequestSchema;
+    output: typeof WriteNoteResponseSchema;
   },
   /**
-   * Create makes a note. The file is named after the title, and the links the
-   * note carries are written into it as it is made, so it arrives joined.
+   * CreateNote makes a note. The file is named after the title, and the links
+   * the note carries are written into it as it is made, so it arrives joined.
    *
-   * @generated from rpc numen.v1.NoteService.Create
+   * @generated from rpc numen.v1.NoteService.CreateNote
    */
-  create: {
+  createNote: {
     methodKind: "unary";
-    input: typeof CreateRequestSchema;
-    output: typeof CreateResponseSchema;
+    input: typeof CreateNoteRequestSchema;
+    output: typeof CreateNoteResponseSchema;
   },
   /**
-   * Join writes a relationship into one note. The note at the other end is left
-   * alone: a link is one end's account of a relationship.
+   * WriteLink writes a relationship into one note. The note at the other end is
+   * left alone: a link is one end's account of a relationship.
    *
-   * @generated from rpc numen.v1.NoteService.Join
+   * @generated from rpc numen.v1.NoteService.WriteLink
    */
-  join: {
+  writeLink: {
     methodKind: "unary";
-    input: typeof JoinRequestSchema;
-    output: typeof JoinResponseSchema;
+    input: typeof WriteLinkRequestSchema;
+    output: typeof WriteLinkResponseSchema;
   },
   /**
-   * Rename gives a note a different name. A note is shown by its title, else by
-   * its first level-one heading, else by its filename: whichever of the three
-   * names it is brought into line, and the file follows it where a title and a
-   * filename are kept as one name.
+   * RenameNote gives a note a different name. A note is shown by its title,
+   * else by its first level-one heading, else by its filename: whichever of the
+   * three names it is brought into line, and the file follows it where a title
+   * and a filename are kept as one name.
    *
-   * @generated from rpc numen.v1.NoteService.Rename
+   * @generated from rpc numen.v1.NoteService.RenameNote
    */
-  rename: {
+  renameNote: {
     methodKind: "unary";
-    input: typeof RenameRequestSchema;
-    output: typeof RenameResponseSchema;
+    input: typeof RenameNoteRequestSchema;
+    output: typeof RenameNoteResponseSchema;
   },
   /**
-   * Editing reports a change being made to a note's prose while it is being
+   * WatchEdits reports a change being made to a note's prose while it is being
    * made, for as long as the caller listens. It is what a person reading that
    * note is shown; the note itself arrives the way every other change does.
    *
-   * @generated from rpc numen.v1.NoteService.Editing
+   * @generated from rpc numen.v1.NoteService.WatchEdits
    */
-  editing: {
+  watchEdits: {
     methodKind: "server_streaming";
-    input: typeof EditingRequestSchema;
-    output: typeof EditingResponseSchema;
+    input: typeof WatchEditsRequestSchema;
+    output: typeof WatchEditsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_note, 0);

@@ -43,7 +43,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 
-	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Old.md", Title: "Entropy",
 	}))
 	if err != nil {
@@ -96,7 +96,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 
 			// The palette and the plex menu: a title, and the file follows it
 			// where the two are one name.
-			renamed, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+			renamed, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "Entropy.md", Title: "Disorder",
 			}))
 			if err != nil {
@@ -159,7 +159,7 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 		t.Error("the setting was turned and the window still says one name")
 	}
 
-	renamed, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	renamed, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Disorder",
 	}))
 	if err != nil {
@@ -214,7 +214,7 @@ func TestRenamingLeavesALinkThatMeansAnotherNoteNow(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Thermodynamics",
 	}))
 	if err != nil {
@@ -238,7 +238,7 @@ func TestRenamingOntoATakenNameSaysWhatTheNoteIsCalled(t *testing.T) {
 		"Entropy.md": "# Entropy\n",
 	})
 
-	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Old.md", Title: "Entropy",
 	}))
 	if err != nil {
@@ -265,7 +265,7 @@ func TestRenamingRefusesATitleNoFileCanBeNamedAfter(t *testing.T) {
 	const held = "# Old\n"
 	f := quitting(t, nil, map[string]string{"Old.md": held})
 
-	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Old.md", Title: "   ",
 	}))
 	if err != nil {
@@ -305,7 +305,7 @@ func TestRenamingSaysWhatItCouldNotName(t *testing.T) {
 				"Broken.md":   "---\nid: [unterminated\n---\n# Broken\n",
 			})
 
-			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+			answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: c.path, Title: "Entropy",
 			}))
 			if err != nil {
@@ -447,7 +447,7 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 		t.Fatal("the vault did not settle with nobody holding anything")
 	}
 
-	if _, err := f.client.Rename(context.Background(), connect.NewRequest(&v1.RenameRequest{
+	if _, err := f.client.RenameNote(context.Background(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Thermodynamics",
 	})); connect.CodeOf(err) != connect.CodeUnavailable {
 		t.Errorf("a rename after the door was shut was answered with %v", err)
@@ -508,7 +508,7 @@ func TestRenamingSaysWhatANoteCannotBeCalled(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := quitting(t, nil, map[string]string{"Old.md": c.held})
 
-			answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+			answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "Old.md", Title: c.title,
 			}))
 			if err != nil {
@@ -541,7 +541,7 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	})
 	scanned(t, f)
 
-	answer, err := f.client.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path: "Entropy.md", Title: "Notes [[draft]]",
 	}))
 	if err != nil {
@@ -591,7 +591,7 @@ func TestRenamingANoteWrittenElsewhereIsAQuestion(t *testing.T) {
 	scanned(t, f)
 	f.opened.API.Notes.Rename.Writers = overtaking{VaultWriters: f.opened.API.Notes.Rename.Writers}
 
-	out, err := f.opened.API.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+	out, err := f.opened.API.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",
 		Title: "New",
 	}))

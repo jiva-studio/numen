@@ -56,7 +56,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	opened := openedWindow(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	written, err := opened.API.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	written, err := opened.API.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))

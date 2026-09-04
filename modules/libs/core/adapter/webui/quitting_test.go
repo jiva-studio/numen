@@ -238,7 +238,7 @@ func TestAWriteInFlightAtTheQuitLandsBeforeTheDatabaseCloses(t *testing.T) {
 
 	writing := make(chan error, 1)
 	go func() {
-		_, err := f.client.Write(context.Background(), connect.NewRequest(&v1.WriteRequest{
+		_, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "the last thing the person typed\n",
 		}))
@@ -326,7 +326,7 @@ func TestTheQuitWaitsForThePageToWriteWhatItOwes(t *testing.T) {
 			// What a page does: it writes what only it holds, and says so
 			// afterwards.
 			time.Sleep(200 * time.Millisecond)
-			if _, err := f.client.Write(context.Background(), connect.NewRequest(&v1.WriteRequest{
+			if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
 				Path: "Note.md",
 				Body: "typed and never saved\n",
 			})); err != nil {
@@ -514,7 +514,7 @@ func TestAPageWithAQuestionStandingDoesNotLetTheWindowGo(t *testing.T) {
 
 	// The vault is as it was: the person is going back to work, and the writes
 	// they do next have to land.
-	if _, err := f.client.Write(context.Background(), connect.NewRequest(&v1.WriteRequest{
+	if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Note.md",
 		Body: "written after the question was raised\n",
 	})); err != nil {
@@ -581,7 +581,7 @@ func TestACloseCalledOffAsksThePageAgain(t *testing.T) {
 			return v1.Owed_OWED_ASKING
 		}
 		// What a page does once the person has said what happens to the text.
-		if _, err := f.client.Write(context.Background(), connect.NewRequest(&v1.WriteRequest{
+		if _, err := f.client.WriteNote(context.Background(), connect.NewRequest(&v1.WriteNoteRequest{
 			Path: "Note.md",
 			Body: "typed and never saved\n",
 		})); err != nil {

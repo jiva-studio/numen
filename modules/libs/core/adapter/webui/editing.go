@@ -17,8 +17,10 @@ import (
 // errNoEditing is what a build with no write path answers.
 var errNoEditing = errors.New("this build cannot edit notes")
 
-// Read hands the client the prose of a note.
-func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {
+// ReadNote hands the client the prose of a note.
+func (a *API) ReadNote(
+	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
+) (*connect.Response[v1.ReadNoteResponse], error) {
 	if a.Notes.Read == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -30,7 +32,7 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.ReadResponse{Body: found.Body}
+	out := &v1.ReadNoteResponse{Body: found.Body}
 	if reason, refused := refusal.Of(found.Outcome); refused {
 		out.Refusal = &reason
 	} else {
@@ -41,10 +43,12 @@ func (a *API) Read(ctx context.Context, r *connect.Request[v1.ReadRequest]) (*co
 	return connect.NewResponse(out), nil
 }
 
-// Write puts prose into a note. A note still holding the prose the client read
-// is written over; one holding something else is left alone and the client is
-// told the note changed.
-func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*connect.Response[v1.WriteResponse], error) {
+// WriteNote puts prose into a note. A note still holding the prose the client
+// read is written over; one holding something else is left alone and the client
+// is told the note changed.
+func (a *API) WriteNote(
+	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
+) (*connect.Response[v1.WriteNoteResponse], error) {
 	if a.Notes.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -67,21 +71,23 @@ func (a *API) Write(ctx context.Context, r *connect.Request[v1.WriteRequest]) (*
 		if a.Wrote != nil {
 			a.Wrote()
 		}
-		return connect.NewResponse(&v1.WriteResponse{At: fingerprintOf(at)}), nil
+		return connect.NewResponse(&v1.WriteNoteResponse{At: fingerprintOf(at)}), nil
 	}
 	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.WriteNoteResponse{Refusal: &reason}), nil
 }
 
-// Create makes a note, named after the title it is given and joined to whatever
-// the request says it is joined to.
+// CreateNote makes a note, named after the title it is given and joined to
+// whatever the request says it is joined to.
 //
 // The index is brought level before the answer comes back, so the note is in
 // the picture as soon as it is on disk.
-func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) (*connect.Response[v1.CreateResponse], error) {
+func (a *API) CreateNote(
+	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
+) (*connect.Response[v1.CreateNoteResponse], error) {
 	if a.Notes.Create == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -107,21 +113,23 @@ func (a *API) Create(ctx context.Context, r *connect.Request[v1.CreateRequest]) 
 		// The note is on disk under that name, so that is the answer. What comes
 		// after the write is the index catching up, and the watcher does it
 		// again.
-		return connect.NewResponse(&v1.CreateResponse{Path: made.Path}), nil
+		return connect.NewResponse(&v1.CreateNoteResponse{Path: made.Path}), nil
 	}
 	if err == nil {
-		return connect.NewResponse(&v1.CreateResponse{}), nil
+		return connect.NewResponse(&v1.CreateNoteResponse{}), nil
 	}
 	reason, refused := refusal.By(err)
 	if !refused {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.CreateNoteResponse{Refusal: &reason}), nil
 }
 
-// Join writes one relationship into one note. What is already written there is
-// carried across, and the note at the other end is left alone.
-func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*connect.Response[v1.JoinResponse], error) {
+// WriteLink writes one relationship into one note. What is already written
+// there is carried across, and the note at the other end is left alone.
+func (a *API) WriteLink(
+	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
+) (*connect.Response[v1.WriteLinkResponse], error) {
 	if a.Notes.Linking == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoEditing)
 	}
@@ -143,9 +151,9 @@ func (a *API) Join(ctx context.Context, r *connect.Request[v1.JoinRequest]) (*co
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.JoinResponse{Refusal: &reason}), nil
+		return connect.NewResponse(&v1.WriteLinkResponse{Refusal: &reason}), nil
 	}
-	return connect.NewResponse(&v1.JoinResponse{}), nil
+	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }
 
 // written turns the links a request carries into the links a note is written

@@ -392,25 +392,29 @@ func (a *API) GetVaultState(
 	return connect.NewResponse(out), nil
 }
 
-func (a *API) Opening(ctx context.Context, _ *connect.Request[v1.OpeningRequest]) (*connect.Response[v1.OpeningResponse], error) {
+func (a *API) GetOpeningNote(
+	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
+) (*connect.Response[v1.GetOpeningNoteResponse], error) {
 	showing := a.Showing()
 	if showing.ID == "" {
 		// A window standing on nothing opens on no note.
-		return connect.NewResponse(&v1.OpeningResponse{}), nil
+		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
 	}
 
 	ref, found, err := a.Notes.Queries.Opening(ctx, string(showing.ID))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	out := &v1.OpeningResponse{}
+	out := &v1.GetOpeningNoteResponse{}
 	if found {
 		out.Note = noteOf(ref)
 	}
 	return connect.NewResponse(out), nil
 }
 
-func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error) {
+func (a *API) GetNeighbourhood(
+	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
+) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -432,7 +436,7 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.NeighbourhoodResponse{
+	out := &v1.GetNeighbourhoodResponse{
 		Focus:     noteOf(found.Focus),
 		FocusType: typeOf(types[found.Focus.Path]),
 	}
@@ -449,9 +453,11 @@ func (a *API) Neighbourhood(ctx context.Context, r *connect.Request[v1.Neighbour
 	return connect.NewResponse(out), nil
 }
 
-// Resolve answers where addresses written in one note land. An address that
-// reaches nothing is left out of the answer.
-func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error) {
+// ResolveAddresses answers where addresses written in one note land. An address
+// that reaches nothing is left out of the answer.
+func (a *API) ResolveAddresses(
+	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
+) (*connect.Response[v1.ResolveAddressesResponse], error) {
 	showing, err := a.shown()
 	if err != nil {
 		return nil, err
@@ -463,7 +469,7 @@ func (a *API) Resolve(ctx context.Context, r *connect.Request[v1.ResolveRequest]
 
 	// In the order they were asked about, and an address asked about twice is
 	// one answer.
-	out := &v1.ResolveResponse{}
+	out := &v1.ResolveAddressesResponse{}
 	said := make(map[string]bool, len(found))
 	for _, written := range r.Msg.GetWritten() {
 		one, reached := found[written]

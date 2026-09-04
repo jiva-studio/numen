@@ -133,7 +133,7 @@ func TestTheWindowStandingOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 			state.Msg.GetChunks(), state.Msg.GetEmbedded())
 	}
 
-	opening, err := f.vault.Opening(t.Context(), connect.NewRequest(&v1.OpeningRequest{}))
+	opening, err := f.vault.GetOpeningNote(t.Context(), connect.NewRequest(&v1.GetOpeningNoteRequest{}))
 	if err != nil {
 		t.Fatalf("the window cannot say which note it opens on: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestTheWindowStandingOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the changes stream never opened: %v", changes.Err())
 	}
 
-	editing, err := f.vault.Editing(listening, connect.NewRequest(&v1.EditingRequest{}))
+	editing, err := f.vault.WatchEdits(listening, connect.NewRequest(&v1.WatchEditsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,28 +243,28 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 			return err
 		},
 		"read a note": func() error {
-			_, err := f.vault.Read(t.Context(), connect.NewRequest(&v1.ReadRequest{Path: "One.md"}))
+			_, err := f.vault.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: "One.md"}))
 			return err
 		},
 		"write a note": func() error {
-			_, err := f.vault.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+			_, err := f.vault.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 				Path: "One.md", Body: "what nobody asked to keep\n",
 			}))
 			return err
 		},
 		"make a note": func() error {
-			_, err := f.vault.Create(t.Context(), connect.NewRequest(&v1.CreateRequest{Title: "One"}))
+			_, err := f.vault.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{Title: "One"}))
 			return err
 		},
 		"join a note to another": func() error {
-			_, err := f.vault.Join(t.Context(), connect.NewRequest(&v1.JoinRequest{
+			_, err := f.vault.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 				Path: "One.md",
 				Link: &v1.NewLink{To: "Two.md", Role: v1.Role_ROLE_JUMP},
 			}))
 			return err
 		},
 		"rename a note": func() error {
-			_, err := f.vault.Rename(t.Context(), connect.NewRequest(&v1.RenameRequest{
+			_, err := f.vault.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "One.md", Title: "Two",
 			}))
 			return err
@@ -286,7 +286,7 @@ func TestAWindowStandingOnNothingRefusesEveryQuestionAboutAVault(t *testing.T) {
 			return err
 		},
 		"show what a note is joined to": func() error {
-			_, err := f.vault.Neighbourhood(t.Context(), connect.NewRequest(&v1.NeighbourhoodRequest{
+			_, err := f.vault.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
 				Path: "One.md",
 			}))
 			return err

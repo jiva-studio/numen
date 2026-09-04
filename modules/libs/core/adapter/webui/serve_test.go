@@ -222,7 +222,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 // save lands in.
 func save(t *testing.T, f *behind, path, body string) {
 	t.Helper()
-	out, err := f.api.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{Path: path, Body: body}))
+	out, err := f.api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{Path: path, Body: body}))
 	if err != nil {
 		t.Fatal(err)
 	}

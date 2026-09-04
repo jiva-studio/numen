@@ -161,8 +161,8 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 
 	// And the index is level with the disk by the time it is announced.
-	shown, err := client.Neighbourhood(t.Context(),
-		connect.NewRequest(&v1.NeighbourhoodRequest{Path: "Note.md"}))
+	shown, err := client.GetNeighbourhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Note.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}

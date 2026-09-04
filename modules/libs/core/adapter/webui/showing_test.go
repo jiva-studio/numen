@@ -251,7 +251,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 
 	// The settling shut the door on writes, and the vault that arrived is one
 	// a person types in.
-	if _, err := f.client.Write(t.Context(), connect.NewRequest(&v1.WriteRequest{
+	if _, err := f.client.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: enthalpy,
 		Body: "what a person typed in the vault that arrived\n",
 	})); err != nil {

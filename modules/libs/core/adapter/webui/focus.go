@@ -80,19 +80,19 @@ func (v view) Editing(_ context.Context, said domain.Edit) error {
 	return nil
 }
 
-// Editing reports a change being made to a note's prose while it is being made,
-// for as long as the client listens.
-func (a *API) Editing(
+// WatchEdits reports a change being made to a note's prose while it is being
+// made, for as long as the client listens.
+func (a *API) WatchEdits(
 	ctx context.Context,
-	_ *connect.Request[v1.EditingRequest],
-	out *connect.ServerStream[v1.EditingResponse],
+	_ *connect.Request[v1.WatchEditsRequest],
+	out *connect.ServerStream[v1.WatchEditsResponse],
 ) error {
 	line, done := a.Edits.listen()
 	defer done()
 
 	// A stream that says nothing until a note is changed is indistinguishable
 	// from one that never opened.
-	if err := out.Send(&v1.EditingResponse{}); err != nil {
+	if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
 		return err
 	}
 
@@ -104,14 +104,14 @@ func (a *API) Editing(
 		case <-ctx.Done():
 			return nil
 		case <-repeat.C:
-			if err := out.Send(&v1.EditingResponse{}); err != nil {
+			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
 				return err
 			}
 		case said, open := <-line:
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.EditingResponse{
+			if err := out.Send(&v1.WatchEditsResponse{
 				Change: said.Change,
 				Path:   said.Path,
 				From:   int32(said.From),
