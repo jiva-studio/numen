@@ -16,9 +16,9 @@ type Refusal struct {
 	Why  error
 }
 
-// BringResult is what a drop came to: what the vault now holds, and what it does
-// not.
-type BringResult struct {
+// ImportResult is what a drop came to: what the vault now holds, and what it
+// does not.
+type ImportResult struct {
 	// Landed is each file and folder that arrived, by the path the vault files
 	// it under.
 	Landed []string
@@ -26,17 +26,17 @@ type BringResult struct {
 	Refused []Refusal
 }
 
-// Bring copies files from this machine into a folder of the vault.
+// Import copies files from this machine into a folder of the vault.
 //
 // A person hands the window a file by letting go of it over the tree, and every
 // file that arrives comes through here. The bytes are copied: what the person
 // dropped stays where it was.
-type Bring struct {
+type Import struct {
 	Writers port.VaultWriters
 	// Files is what the person handed over, read where it stands. Nothing here
 	// reaches the machine itself: what arrives is a path on a desktop and a
 	// content URI on a phone, and this is what tells them apart.
-	Files port.Handed
+	Files port.ImportedFiles
 }
 
 // Execute brings each handle into the folder, under the name it already
@@ -46,13 +46,13 @@ type Bring struct {
 // nineteen pictures and a sentence. A name the folder already carries is one of
 // those refusals: what a person meant by a second file of that name is theirs
 // to say.
-func (u Bring) Execute(
+func (u Import) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	into string,
 	handles []string,
-) (BringResult, error) {
-	var brought BringResult
+) (ImportResult, error) {
+	var brought ImportResult
 	if len(handles) == 0 {
 		return brought, nil
 	}
@@ -74,12 +74,12 @@ func (u Bring) Execute(
 }
 
 // bring copies one file or one whole folder to a path in the vault.
-func (u Bring) bring(
+func (u Import) bring(
 	ctx context.Context,
 	writer port.VaultWriter,
 	v domain.Vault,
 	from, to string,
-	brought *BringResult,
+	brought *ImportResult,
 ) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -93,8 +93,8 @@ func (u Bring) bring(
 	case info.Folder:
 		// A folder the vault sits inside does not come in: the vault is where it
 		// would be copied to.
-		if u.Files.Around(from, v.Path) {
-			return errAround
+		if u.Files.Holds(from, v.Path) {
+			return errHoldsTheVault
 		}
 		if err := writer.MakeFolder(ctx, to); err != nil {
 			return err
@@ -128,8 +128,9 @@ func (u Bring) bring(
 	}
 }
 
-// errAround is a folder handed to the window that the vault itself sits inside.
-var errAround = errors.New("the vault is inside it")
+// errHoldsTheVault is a folder handed to the window that the vault itself sits
+// inside.
+var errHoldsTheVault = errors.New("the vault is inside it")
 
 // errNotAFile is a device, a socket or a link handed to the window. The vault
 // holds files and folders.

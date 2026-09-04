@@ -23,8 +23,8 @@ type handedOver struct {
 
 func (h handedOver) Named(handle string) string { return h.names[handle] }
 
-func (h handedOver) Stat(_ context.Context, handle string) (port.HandedFile, error) {
-	one := port.HandedFile{Name: h.names[handle], Handle: handle}
+func (h handedOver) Stat(_ context.Context, handle string) (port.ImportedFile, error) {
+	one := port.ImportedFile{Name: h.names[handle], Handle: handle}
 	if _, held := h.holding[handle]; held {
 		one.Folder = true
 		return one, nil
@@ -33,13 +33,13 @@ func (h handedOver) Stat(_ context.Context, handle string) (port.HandedFile, err
 		one.File = true
 		return one, nil
 	}
-	return port.HandedFile{}, io.ErrUnexpectedEOF
+	return port.ImportedFile{}, io.ErrUnexpectedEOF
 }
 
-func (h handedOver) List(_ context.Context, handle string) ([]port.HandedFile, error) {
-	var out []port.HandedFile
+func (h handedOver) List(_ context.Context, handle string) ([]port.ImportedFile, error) {
+	var out []port.ImportedFile
 	for _, under := range h.holding[handle] {
-		out = append(out, port.HandedFile{Name: h.names[under], Handle: under})
+		out = append(out, port.ImportedFile{Name: h.names[under], Handle: under})
 	}
 	return out, nil
 }
@@ -52,7 +52,7 @@ func (h handedOver) Open(_ context.Context, handle string) (io.ReadCloser, error
 	return io.NopCloser(strings.NewReader(body)), nil
 }
 
-func (handedOver) Around(string, string) bool { return false }
+func (handedOver) Holds(string, string) bool { return false }
 
 // What a person hands over is read through the port, so a machine that names
 // its files anything but paths can bring them in. A use case reaching the
@@ -74,7 +74,7 @@ func TestFilesAreBroughtInFromAMachineWhoseHandlesAreNotPaths(t *testing.T) {
 			"content://held/1": {"content://held/2", "content://held/3"},
 		},
 	}
-	bring := usecase.Bring{Writers: filesystem.VaultWriters{}, Files: handed}
+	bring := usecase.Import{Writers: filesystem.VaultWriters{}, Files: handed}
 
 	brought, err := bring.Execute(t.Context(), v, "", []string{"content://held/1"})
 	if err != nil {
