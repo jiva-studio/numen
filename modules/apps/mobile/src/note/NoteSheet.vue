@@ -32,7 +32,7 @@ const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
 
 onMounted(async () => {
   try {
-    const said = await props.core.vault.read({ path: props.path })
+    const said = await props.core.notes.read({ path: props.path })
     if (said.refusal) {
       emit('trouble', `the note was not read: ${JSON.stringify(said.refusal)}`)
       emit('close')
@@ -47,7 +47,7 @@ onMounted(async () => {
 })
 
 async function keep() {
-  const said = await props.core.vault.write({
+  const said = await props.core.notes.write({
     path: props.path,
     body: prose.value,
     seen: seen.value ?? undefined,
