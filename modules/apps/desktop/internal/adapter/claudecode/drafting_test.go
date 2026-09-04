@@ -49,8 +49,10 @@ func drafting(t *testing.T, window *drawn, prints string) port.Work {
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		Words: map[string]claudecode.ToolDeclaration{
 			claudecode.Tool("note_edit"): {
-				Title: "Edit a note", About: "path", Kind: port.StepEdit,
-				Match: "stood", Text: "becomes",
+				Title: "Edit a note", Kind: port.StepEdit,
+				Arguments: claudecode.Arguments{
+					About: "path", Match: "stood", Text: "becomes",
+				},
 			},
 		},
 		Drafting: window.drafting(),

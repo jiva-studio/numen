@@ -170,12 +170,14 @@ func Claude(
 	words := make(map[string]claudecode.ToolDeclaration, len(vocabulary))
 	for name, said := range vocabulary {
 		words[claudecode.Tool(name)] = claudecode.ToolDeclaration{
-			Title:   said.Title,
-			About:   said.About,
-			Element: said.Inside,
-			Kind:    said.Kind,
-			Match:   said.Stood,
-			Text:    said.Becomes,
+			Title: said.Title,
+			Kind:  said.Kind,
+			Arguments: claudecode.Arguments{
+				About:   said.About,
+				Element: said.Inside,
+				Match:   said.Stood,
+				Text:    said.Becomes,
+			},
 		}
 	}
 	return &claudecode.Agent{

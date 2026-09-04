@@ -313,13 +313,13 @@ func (rd *parser) calls(callID, tool, arguments string) port.Step {
 	}
 
 	step := port.Step{Kind: words.Kind, Call: callID, Tool: words.Title}
-	if words.About == "" {
+	if words.Arguments.About == "" {
 		return step
 	}
 
 	step.Count = len([]rune(arguments))
-	step.About = about(words, arguments)
-	if words.About == notePath {
+	step.About = about(words.Arguments, arguments)
+	if words.Arguments.About == notePath {
 		step.Place = placed(step.About, arguments)
 	}
 	return step
@@ -348,19 +348,19 @@ func placed(path, arguments string) domain.Place {
 // Arguments still arriving is where most of a long wait is spent, and half a
 // document does not parse. What has been written is read for the name, so that
 // the person sees which note is being written while it is being written.
-func about(words ToolDeclaration, arguments string) string {
+func about(names Arguments, arguments string) string {
 	var made map[string]any
 	if err := json.Unmarshal([]byte(arguments), &made); err != nil {
-		if seen := glimpsed(arguments, words.Element); seen != "" {
+		if seen := glimpsed(arguments, names.Element); seen != "" {
 			return seen
 		}
-		return glimpsed(arguments, words.About)
+		return glimpsed(arguments, names.About)
 	}
-	switch value := made[words.About].(type) {
+	switch value := made[names.About].(type) {
 	case string:
 		return value
 	case []any:
-		return named(value, words.Element)
+		return named(value, names.Element)
 	}
 	return ""
 }
@@ -496,16 +496,17 @@ func (e event) blocks() []block {
 // replaces is whole, and where it stands can be found.
 func (rd *parser) draw(ctx context.Context) {
 	words, served := rd.words[rd.tool]
-	if !served || words.Text == "" || !rd.draft.drawing() {
+	names := words.Arguments
+	if !served || names.Text == "" || !rd.draft.drawing() {
 		return
 	}
 
 	arguments := rd.arguments.String()
-	if !strings.Contains(arguments, `"`+words.Text+`"`) {
+	if !strings.Contains(arguments, `"`+names.Text+`"`) {
 		return
 	}
 	if !rd.drawn {
-		path, stood := glimpsed(arguments, words.About), glimpsed(arguments, words.Match)
+		path, stood := glimpsed(arguments, names.About), glimpsed(arguments, names.Match)
 		if path == "" || stood == "" {
 			return
 		}
@@ -526,6 +527,6 @@ func (rd *parser) draw(ctx context.Context) {
 		Path:   rd.path,
 		From:   rd.from,
 		To:     rd.to,
-		Text:   glimpsed(arguments, words.Text),
+		Text:   glimpsed(arguments, names.Text),
 	})
 }

@@ -36,9 +36,19 @@ func started(t *testing.T, prints string) port.Work {
 		Root:    dir,
 		Tools:   claudecode.Endpoint{URL: "http://127.0.0.1:7717/mcp", Token: "let-me-in"},
 		Words: map[string]claudecode.ToolDeclaration{
-			claudecode.Tool("note_search"): {Title: "Search notes", About: "query"},
-			claudecode.Tool("note_create"): {Title: "Create a note", About: "notes", Element: "title"},
-			claudecode.Tool("note_write"):  {Title: "Write a note", About: "path", Kind: port.StepEdit},
+			claudecode.Tool("note_search"): {
+				Title:     "Search notes",
+				Arguments: claudecode.Arguments{About: "query"},
+			},
+			claudecode.Tool("note_create"): {
+				Title:     "Create a note",
+				Arguments: claudecode.Arguments{About: "notes", Element: "title"},
+			},
+			claudecode.Tool("note_write"): {
+				Title:     "Write a note",
+				Kind:      port.StepEdit,
+				Arguments: claudecode.Arguments{About: "path"},
+			},
 		},
 	}
 	work, err := claude.Take(t.Context(), port.Task{Question: "what is here?"})
