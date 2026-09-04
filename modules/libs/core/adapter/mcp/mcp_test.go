@@ -234,6 +234,27 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	})
 }
 
+// Both of these put megabytes of new text in the folder a person syncs, and an
+// agent weighing an hour's work on their behalf is told so before it calls.
+func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
+	session, _ := connected(t, nil)
+
+	for tool, area := range map[string]string{
+		"source_recognise":  filesystem.OCRDir,
+		"source_transcribe": filesystem.SpeechDir,
+	} {
+		said := describing(t, session, tool)
+		for _, rule := range []string{
+			"into the vault",
+			filesystem.DefaultServiceDir + "/" + area,
+		} {
+			if !strings.Contains(said, rule) {
+				t.Errorf("%s says nothing about %q:\n%s", tool, rule, said)
+			}
+		}
+	}
+}
+
 // serves is every tool a session is offered, and each of them says what it is
 // for.
 func serves(t *testing.T, session *sdk.ClientSession) []string {

@@ -136,8 +136,10 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_recognise",
 		Title: "Read a scanned document",
-		Description: "Have a model read one scanned document and write down what it says. " +
-			"The pages it has read are searchable as it goes, so a search finds the " +
+		Description: "Have a model read one scanned document and write what it says into " +
+			"the vault. The words land as files under `.numen/ocr/`, beside the person's " +
+			"notes and inside the folder they sync — a book is megabytes of them. The " +
+			"pages it has read are searchable as it goes, so a search finds the " +
 			"beginning of a book long before the end of it is read; the part not yet " +
 			"read answers nothing until it is. This is slow — an hour for a book — and " +
 			"it is never done on its own, because whether a document's own text is any " +
@@ -179,8 +181,10 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 	sdk.AddTool(server, &sdk.Tool{
 		Name:  "source_transcribe",
 		Title: "Write down what a recording says",
-		Description: "Have a model listen to one recording and write down the words it " +
-			"carries. What has been heard is searchable as it goes, so a search finds " +
+		Description: "Have a model listen to one recording and write the words it carries " +
+			"into the vault. They land as files under `.numen/asr/`, beside the person's " +
+			"notes and inside the folder they sync — an hour of talk is megabytes of " +
+			"them. What has been heard is searchable as it goes, so a search finds " +
 			"the first minutes of a talk long before the last of them are heard. This " +
 			"is slow — about as long as the recording itself. A vault's recordings are " +
 			"listened to on their own where the installation is set to; ask for this " +
