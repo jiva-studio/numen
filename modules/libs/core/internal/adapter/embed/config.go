@@ -362,7 +362,10 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 // settings behind them are unexported, and a file anybody already has is read
 // and written by these three names whatever the fields come to be called.
 type providerFile struct {
-	Use     *string       `json:"use"`
+	// Use is `local` or `service`, and names which of the two sections below is
+	// the one in force. Empty makes no vector at all.
+	Use *string `json:"use"`
+
 	Local   *LocalModel   `json:"local"`
 	Service *ServiceModel `json:"service"`
 }

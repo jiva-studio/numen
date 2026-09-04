@@ -142,8 +142,8 @@ const commands = async () => {
 
 /* -------------------------------------------------------------- settings */
 
-/** A Go type's fields, in the order the file declares them. */
-const structOf = (source, name) => {
+/** The json-tagged fields one Go type declares, in the order it declares them. */
+const fieldsOf = (source, name) => {
   const at = source.search(new RegExp(`^type ${name} struct \\{$`, 'm'))
   if (at < 0) return null
   const body = source.slice(at, source.indexOf('\n}', at))
@@ -164,6 +164,22 @@ const structOf = (source, name) => {
     doc = []
   }
   return fields
+}
+
+/**
+ * A Go type's settings, in the order the file declares them.
+ *
+ * A type keeping its settings unexported writes the keys down on a mirror
+ * struct beside it, so a type declaring none is read from its mirror: what a
+ * person writes in the settings file is what the mirror says, whatever the
+ * fields behind it come to be called. A type with neither is a section holding
+ * nothing, and saying so here is what stops the manual from quietly losing a
+ * page of settings that still work.
+ */
+const structOf = (source, name) => {
+  const fields = fieldsOf(source, name)
+  if (fields === null || fields.length > 0) return fields
+  return fieldsOf(source, `${name[0].toLowerCase()}${name.slice(1)}File`) ?? fields
 }
 
 /** What a Go type is called where a person reads it. */
