@@ -41,12 +41,14 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 
 	renamed := v
 	renamed.Name = name
-	// The list is what the name is on, and the index holds a copy of it.
+	// The list is what the name is on; the index never held it, and there is
+	// nothing here for the rename to write. This only covers a vault renamed
+	// before its first scan, so it still has a row to be scanned into.
 	if err := u.Registry.Save(renamed); err != nil {
 		return domain.Vault{}, err
 	}
-	if err := u.Index.Save(ctx, renamed); err != nil {
-		return domain.Vault{}, fmt.Errorf("rename %s in the index: %w", v.Name, err)
+	if err := u.Index.Register(ctx, renamed.ID); err != nil {
+		return domain.Vault{}, fmt.Errorf("register %s in the index: %w", v.Name, err)
 	}
 	return renamed, nil
 }

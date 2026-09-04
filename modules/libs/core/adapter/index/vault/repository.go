@@ -18,23 +18,15 @@ var files embed.FS
 var stmt = sqlfile.Load(files, "sql")
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
-// is why a vault is saved before anything is stored for it.
+// is why a vault is registered before anything is stored for it.
 type Repository struct{ db *sql.DB }
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// Save gives the vault a row, if it does not already have one. What the vault
-// is called and where it is are not the index's to keep; the list is the
-// authority on those.
-func (r *Repository) Save(ctx context.Context, v domain.Vault) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("save"), v.ID)
-	return err
-}
-
 // Register gives the vault a row for other rows to point at. A vault the index
 // already knows keeps the row it has.
-func (r *Repository) Register(ctx context.Context, v domain.Vault) error {
-	_, err := r.db.ExecContext(ctx, stmt.Get("register"), v.ID)
+func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
+	_, err := r.db.ExecContext(ctx, stmt.Get("register"), vaultID)
 	return err
 }
 

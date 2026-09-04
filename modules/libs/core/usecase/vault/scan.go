@@ -106,7 +106,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	}
 	// The rows the walk writes point at the vault's own row. What the vault is
 	// called and where it is stay as the list has them.
-	if err := u.Vaults.Register(ctx, v); err != nil {
+	if err := u.Vaults.Register(ctx, v.ID); err != nil {
 		return res, fmt.Errorf("register vault: %w", err)
 	}
 

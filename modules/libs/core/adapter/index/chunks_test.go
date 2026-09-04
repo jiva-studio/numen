@@ -76,7 +76,7 @@ func openedAt(t *testing.T, path string) *DB {
 	t.Cleanup(func() { db.Close() })
 
 	for _, v := range []domain.Vault{first, second} {
-		if err := db.Vaults().Save(t.Context(), v); err != nil {
+		if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

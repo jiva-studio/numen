@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
-
-	"github.com/jiva-studio/numen/modules/libs/core/domain"
 )
 
 func TestEveryMigrationIsNamedAndOrdered(t *testing.T) {
@@ -152,7 +150,7 @@ func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Vaults().Save(ctx, domain.Vault{ID: "01LATER", Name: "later", Path: "/later"}); err != nil {
+	if err := db.Vaults().Register(ctx, "01LATER"); err != nil {
 		t.Fatal(err)
 	}
 	// A schema this build does not carry, written by one that does.
@@ -251,7 +249,7 @@ func TestAnIndexOfItsOwnIsNotBuiltAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Vaults().Save(ctx, domain.Vault{ID: "01KEPT", Name: "kept", Path: "/kept"}); err != nil {
+	if err := db.Vaults().Register(ctx, "01KEPT"); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Close(); err != nil {

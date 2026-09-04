@@ -12,41 +12,29 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// indexRows is the index as a vault is written to and taken out of it. `rows`
-// answers the way the table does: Save writes the row whole, and a vault the
-// index already holds keeps its name and its path through Register.
+// indexRows is the index as a vault is written to and taken out of it: a set
+// of identifiers, each either registered or not. A vault already registered
+// keeps the row it has.
 type indexRows struct {
-	saved  []domain.Vault
-	rows   map[string]domain.Vault
+	saved  []domain.VaultID
+	rows   map[string]bool
 	forgot []string
 	fails  error
 	steps  *[]string
 }
 
-func (r *indexRows) Save(_ context.Context, v domain.Vault) error {
-	r.saved = append(r.saved, v)
+func (r *indexRows) Register(_ context.Context, id domain.VaultID) error {
 	if r.fails != nil {
 		return r.fails
 	}
-	r.put(v)
-	return nil
-}
-
-func (r *indexRows) Register(_ context.Context, v domain.Vault) error {
-	if r.fails != nil {
-		return r.fails
-	}
-	if _, there := r.rows[string(v.ID)]; !there {
-		r.put(v)
+	if !r.rows[string(id)] {
+		r.saved = append(r.saved, id)
+		if r.rows == nil {
+			r.rows = map[string]bool{}
+		}
+		r.rows[string(id)] = true
 	}
 	return nil
-}
-
-func (r *indexRows) put(v domain.Vault) {
-	if r.rows == nil {
-		r.rows = map[string]domain.Vault{}
-	}
-	r.rows[string(v.ID)] = v
 }
 
 func (r *indexRows) Forget(_ context.Context, vaultID string) error {
