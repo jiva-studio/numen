@@ -150,7 +150,7 @@ func Recognised(raw, parts, boxes, corrections []byte) *Document {
 		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	for i, m := range marks {
-		doc.paged = append(doc.paged, namedPlace{Offset: m.Offset, Name: sheet(i)})
+		doc.paged = append(doc.paged, namedPlace{Offset: m.Offset, Name: page(i)})
 	}
 	return doc
 }

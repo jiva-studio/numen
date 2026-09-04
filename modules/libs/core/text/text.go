@@ -86,13 +86,13 @@ func (d *Document) Opens(offset int) []string {
 	return names
 }
 
-// sheet is what a page of a file is called: where it stands in it.
+// page is what a page of a file is called: where it stands in it.
 //
 // A person is told the number a viewer opens at, so there is one number and it
 // is the one on the screen. What the paper printed is a second number for the
 // same page, and a person shown both has to work out which is being talked
 // about.
-func sheet(at int) string {
+func page(at int) string {
 	return fmt.Sprintf("page %d of the file", at+1)
 }
 
@@ -207,7 +207,7 @@ func fromPages(ctx context.Context, docs port.Documents, raw []byte) (*Document,
 		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
 	}
 	for i, at := range book.Pages {
-		doc.paged = append(doc.paged, namedPlace{Offset: at, Name: sheet(i)})
+		doc.paged = append(doc.paged, namedPlace{Offset: at, Name: page(i)})
 	}
 	return doc, nil
 }
