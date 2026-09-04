@@ -569,7 +569,15 @@ jobs:
   # name carrying its version, in a folder that is written once and kept.
   publish:
     name: Publish
-    if: ${{ !cancelled() && needs.naming.outputs.publish == 'true' }}
+    # A platform left out by input is not a platform that failed. Every one of
+    # them has to have been built or left out; a failed one would put the
+    # release up with a file missing from it and nothing saying so.
+    if: >-
+      ${{ needs.naming.outputs.publish == 'true'
+      && needs.notes.result == 'success'
+      && (needs.linux.result == 'success' || needs.linux.result == 'skipped')
+      && (needs.windows.result == 'success' || needs.windows.result == 'skipped')
+      && (needs.macos.result == 'success' || needs.macos.result == 'skipped') }}
     needs: [naming, notes, linux, windows, macos]
     runs-on: ubuntu-24.04
     steps:
