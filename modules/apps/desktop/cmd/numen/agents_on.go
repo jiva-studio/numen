@@ -144,8 +144,11 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 
 		Vaults: mcp.Vaults{
 			Registry: opened.API.Vaults.Registry,
+			Picker:   opened.API.Vaults.Picker,
+			Add:      opened.API.Vaults.Add,
 			Rename:   opened.API.Vaults.Rename,
 			Forget:   opened.API.Vaults.Forget,
+			Opens:    opening(opened, out),
 		},
 
 		Sources: mcp.Sources{
@@ -182,6 +185,24 @@ func agentCore(cfg container.Config, opened *webui.Opened, root string, out io.W
 			Remove:  note.Remove{Writers: writers, Links: opened.Index.Links(), Known: opened.Index.SourcesKnown(), Index: index},
 			Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
 		},
+	}
+}
+
+// opening is the window moved to another vault, as a tool asks for it.
+//
+// The session that asked is served for the vault that is going and ends with
+// it, so what went wrong is said here. A window that cannot be moved serves no
+// tool that would move it.
+func opening(opened *webui.Opened, out io.Writer) func(context.Context, domain.Vault) error {
+	if opened.API.Opens == nil {
+		return nil
+	}
+	return func(ctx context.Context, v domain.Vault) error {
+		err := opened.API.Opens(ctx, v)
+		if err != nil {
+			fmt.Fprintln(out, "agents:", err)
+		}
+		return err
 	}
 }
 

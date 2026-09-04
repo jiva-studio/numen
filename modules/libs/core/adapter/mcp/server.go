@@ -7,6 +7,7 @@
 package mcp
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -72,13 +73,20 @@ type Notes struct {
 // Vaults is the list of vaults this installation holds, and what a person does
 // to it. Without a registry an agent is told of the vault it is working and of
 // no other, and each tool is served where what it works through is here.
-//
-// Which folders are vaults, and which of them the window shows, a person
-// settles through the picker the application puts in front of them.
 type Vaults struct {
 	Registry port.VaultRegistry
-	Rename   *usecase.Rename
-	Forget   *usecase.Forget
+	// Picker puts this machine's own folder picker in front of the person, for
+	// a vault added without a path. Without it a folder is named or nothing is
+	// added.
+	Picker port.FolderDialog
+	// Add turns a folder into a vault, Rename is what a person calls one, and
+	// Forget takes one off the list.
+	Add    *usecase.Add
+	Rename *usecase.Rename
+	Forget *usecase.Forget
+	// Opens puts another vault in the window. The tools are served for the vault
+	// that is going, so the session asking for the swap ends with it.
+	Opens func(context.Context, domain.Vault) error
 }
 
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck

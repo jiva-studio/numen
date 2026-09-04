@@ -63,9 +63,7 @@ Five families and a reader of files, served over the vault's own endpoint.
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a run of one's text, ask for a scanned one to be read, and show the person a passage |
-| `vault_*` | show the vault and what a scan could not act on, find notes by name, and list, rename and forget vaults |
-
-Which folders are vaults, and which of them the window shows, a person settles through the folder picker in front of them. No tool adds a vault or moves the window to another one.
+| `vault_*` | show the vault and what a scan could not act on, find notes by name, and list, add, rename, forget and open vaults |
 
 A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
 

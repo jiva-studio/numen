@@ -67,9 +67,7 @@ A tool names a note by its path relative to the vault root — the same address 
 
 ### One vault at a time, and the endpoint follows the window
 
-Every tool works the vault the window is showing, and no other. `vault_list`, `vault_rename` and `vault_forget` are the list and what a person does to it, and a vault whose folder is gone is marked and stays on the list until somebody forgets it.
-
-**No tool names a folder as a vault, and none opens another.** Both reach any folder on the machine, which is the one thing the containment above cannot bound, and both are what a person does through the picker.
+Every tool works the vault the window is showing, and no other. `vault_list`, `vault_add`, `vault_rename`, `vault_forget` and `vault_open` are the list and what a person does to it, and a vault whose folder is gone is marked and stays on the list until somebody forgets it.
 
 The window opening another vault stops the endpoint and serves it again on the one the swap ended on. One swap holds that at a time, so a second waits for the first.
 
