@@ -31,13 +31,13 @@ const idea = "notes/idea.md"
 // asking is a run a test hands the window: what it makes of a source it is
 // given, and what it was given.
 type asking struct {
-	takes port.Taking
+	takes port.StartOutcome
 	vault string
 	path  string
 	times int
 }
 
-func (a *asking) Start(v domain.Vault, path string) port.Taking {
+func (a *asking) Start(v domain.Vault, path string) port.StartOutcome {
 	a.times++
 	a.vault, a.path = string(v.ID), path
 	return a.takes

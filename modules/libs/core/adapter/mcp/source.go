@@ -239,7 +239,7 @@ type Recogniser interface {
 	// now or waits behind the reading already going. A document is never
 	// refused, and it runs under the application rather than under the call
 	// that asked for it.
-	Start(v domain.Vault, path string) port.Taking
+	Start(v domain.Vault, path string) port.StartOutcome
 }
 
 // Transcriber is what the tools need in order to hear a recording: a way to
@@ -254,5 +254,5 @@ type Transcriber interface {
 	// began now or waits behind the listening already going. A recording is
 	// never refused, and it runs under the application rather than under the
 	// call that asked for it.
-	Start(v domain.Vault, path string) port.Taking
+	Start(v domain.Vault, path string) port.StartOutcome
 }

@@ -136,7 +136,7 @@ func (t *Transcribing) Wait() { t.going.Wait() }
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the transcription carries on.
-func (t *Transcribing) Start(v domain.Vault, path string) port.Taking {
+func (t *Transcribing) Start(v domain.Vault, path string) port.StartOutcome {
 	t.mu.Lock()
 	t.queue.add(v, path)
 	if t.running {

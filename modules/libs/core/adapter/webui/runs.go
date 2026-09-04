@@ -23,7 +23,7 @@ type Runner interface {
 	// Start takes on one source a person named, and says whether it began now
 	// or waits its turn. It runs under the application, so whoever asked is
 	// answered at once.
-	Start(v domain.Vault, path string) port.Taking
+	Start(v domain.Vault, path string) port.StartOutcome
 }
 
 // errNoReading is a build with nothing to read a scan with, and errNoListening

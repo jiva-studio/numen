@@ -123,7 +123,7 @@ func (r *Recognising) Running() bool {
 //
 // It runs under the application, so whoever asked is answered at once and goes
 // away while the recognition carries on.
-func (r *Recognising) Start(v domain.Vault, path string) port.Taking {
+func (r *Recognising) Start(v domain.Vault, path string) port.StartOutcome {
 	r.mu.Lock()
 	r.queue.add(v, path)
 	if r.running {

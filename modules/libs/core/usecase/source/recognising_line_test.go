@@ -24,14 +24,14 @@ func (r *Recognising) whenIdle(idle func()) {
 // waits at, and the wait is what puts the two into the same instant.
 type instant struct {
 	once  sync.Once
-	taken chan port.Taking
+	taken chan port.StartOutcome
 }
 
-func newInstant() *instant { return &instant{taken: make(chan port.Taking, 1)} }
+func newInstant() *instant { return &instant{taken: make(chan port.StartOutcome, 1)} }
 
 // at names the source, once, and leaves the ask standing at the lock before the
 // run that called this carries on.
-func (c *instant) at(name func() port.Taking) {
+func (c *instant) at(name func() port.StartOutcome) {
 	c.once.Do(func() {
 		go func() { c.taken <- name() }()
 		time.Sleep(20 * time.Millisecond)
@@ -39,7 +39,7 @@ func (c *instant) at(name func() port.Taking) {
 }
 
 // answered is what the source named at that instant was told.
-func (c *instant) answered(t *testing.T) port.Taking {
+func (c *instant) answered(t *testing.T) port.StartOutcome {
 	t.Helper()
 	select {
 	case taken := <-c.taken:
@@ -102,7 +102,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	}
 
 	crossed := newInstant()
-	w.whenIdle(func() { crossed.at(func() port.Taking { return w.Start(somewhere, "b.pdf") }) })
+	w.whenIdle(func() { crossed.at(func() port.StartOutcome { return w.Start(somewhere, "b.pdf") }) })
 
 	if got := w.Start(somewhere, "a.pdf"); got != port.Began {
 		t.Fatalf("the first document was not read: %v", got)

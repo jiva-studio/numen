@@ -63,7 +63,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 
 	crossed := newInstant()
 	listening.whenIdle(func() {
-		crossed.at(func() port.Taking { return listening.Start(v, "talks/b.mp3") })
+		crossed.at(func() port.StartOutcome { return listening.Start(v, "talks/b.mp3") })
 	})
 
 	if got := listening.Start(v, "talks/a.mp3"); got != port.Began {
