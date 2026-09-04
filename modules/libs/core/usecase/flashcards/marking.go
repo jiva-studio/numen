@@ -58,14 +58,14 @@ func (u Marking) Execute(ctx context.Context, v domain.Vault) (MarkingResult, er
 	var out MarkingResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Deck) {
+		if err != nil || deck.Outcome != note.Ok || !unmarked(deck.Body) {
 			continue
 		}
 
 		// The body goes back exactly as it was read. What the write is for is
 		// the deck being made whole on the way past, which is where a mark is
 		// minted.
-		body, err := format.DeckBody(deck.Deck)
+		body, err := format.DeckBody(deck.Body)
 		if err != nil {
 			out.Unwritten = append(out.Unwritten, path)
 			continue

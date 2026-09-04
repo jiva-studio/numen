@@ -42,8 +42,8 @@ func TestADeckIsScheduledByThePresetItNames(t *testing.T) {
 	if len(held.Problems) != 0 {
 		t.Errorf("problems = %v", held.Problems)
 	}
-	if held.Preset.MinutesADay != 20 || held.Preset.NewADay != 8 || held.Preset.ReviewsADay != 45 {
-		t.Errorf("preset = %+v", held.Preset)
+	if held.Settings.MinutesADay != 20 || held.Settings.NewADay != 8 || held.Settings.ReviewsADay != 45 {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -59,8 +59,8 @@ func TestADeckNamingNoPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -82,8 +82,8 @@ func TestADeckWhosePresetLinkHasNoRole(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "no role") {
 		t.Fatalf("problems = %v", held.Problems)
@@ -115,8 +115,8 @@ func TestADeckWhosePresetNoteIsGoneStandsOnTheDefaults(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "Sanskrit") {
 		t.Errorf("problems = %v, want the one naming the note that is gone", held.Problems)
@@ -157,7 +157,7 @@ func TestAPresetWrittenWithNoLevellingHandsBackItsFingerprint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := held.Preset
+	settings := held.Settings
 	settings.MinutesADay = 35
 
 	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, held.Fingerprint)
@@ -193,7 +193,7 @@ func TestAPresetLeftAloneIsNotAnUnlevelledWrite(t *testing.T) {
 	// the caller read it.
 	stale := held.Fingerprint
 	stale.Size += 100
-	settings := held.Preset
+	settings := held.Settings
 	settings.MinutesADay = 35
 
 	_, err = s.presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, stale)
@@ -237,8 +237,8 @@ func TestADeckNamingANoteThatIsNotAPreset(t *testing.T) {
 	if held.Path != "" {
 		t.Errorf("read from %q", held.Path)
 	}
-	if !reflect.DeepEqual(held.Preset, history.Defaults()) {
-		t.Errorf("preset = %+v", held.Preset)
+	if !reflect.DeepEqual(held.Settings, history.Defaults()) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "not a preset") {
 		t.Errorf("problems = %v", held.Problems)
@@ -261,8 +261,8 @@ func TestADeckNamingTwoPresets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.NewADay != 8 {
-		t.Errorf("new a day = %d", held.Preset.NewADay)
+	if held.Settings.NewADay != 8 {
+		t.Errorf("new a day = %d", held.Settings.NewADay)
 	}
 	if len(held.Problems) != 1 || !strings.Contains(held.Problems[0], "more than one preset") {
 		t.Errorf("problems = %v", held.Problems)
@@ -369,8 +369,8 @@ func TestAWriteIntoAnIndentedBlock(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.MinutesADay != 35 {
-		t.Errorf("the note reads back at %d minutes a day", held.Preset.MinutesADay)
+	if held.Settings.MinutesADay != 35 {
+		t.Errorf("the note reads back at %d minutes a day", held.Settings.MinutesADay)
 	}
 }
 
@@ -449,8 +449,8 @@ func TestTheLoadComesBackAsItWentIn(t *testing.T) {
 	if len(held.Problems) != 0 {
 		t.Errorf("problems = %v", held.Problems)
 	}
-	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
-		t.Errorf("load = %v", held.Preset.Load)
+	if !reflect.DeepEqual(held.Settings.Load, p.Load) {
+		t.Errorf("load = %v", held.Settings.Load)
 	}
 }
 
@@ -550,8 +550,8 @@ func TestAGoalOfADateWritesTheDay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Preset.Goal != history.GoalDate || !held.Preset.By.Equal(p.By) {
-		t.Errorf("preset = %+v", held.Preset)
+	if held.Settings.Goal != history.GoalDate || !held.Settings.By.Equal(p.By) {
+		t.Errorf("preset = %+v", held.Settings)
 	}
 }
 
@@ -582,8 +582,8 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 	if len(back.Problems) != 0 {
 		t.Errorf("problems = %v", back.Problems)
 	}
-	if back.Preset.Rule != history.RuleRetention || back.Preset.Interval != 45 {
-		t.Errorf("preset = %+v", back.Preset)
+	if back.Settings.Rule != history.RuleRetention || back.Settings.Interval != 45 {
+		t.Errorf("preset = %+v", back.Settings)
 	}
 }
 
@@ -608,7 +608,7 @@ func TestAPresetWrittenBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	if len(read.Problems) != 0 {
 		t.Fatalf("problems = %v", read.Problems)
 	}
-	p := read.Preset
+	p := read.Settings
 	if p.Rule != history.RuleInterval || p.Interval != history.Defaults().Interval {
 		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
 	}
@@ -698,7 +698,7 @@ func TestASaveLeavesTheSettingsItCouldNotRead(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			settings := held.Preset
+			settings := held.Settings
 			settings.MinutesADay = 35
 			if _, err := s.presets.Save(
 				t.Context(), s.vault, "Sanskrit.md", settings, domain.Fingerprint{}); err != nil {
@@ -729,7 +729,7 @@ func TestASaveWritesTheSettingThePersonMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := held.Preset
+	settings := held.Settings
 	settings.EvenLoad = false
 	if _, err := s.presets.Save(
 		t.Context(), s.vault, "Sanskrit.md", settings, domain.Fingerprint{}); err != nil {
@@ -752,7 +752,7 @@ func TestASaveOfWhatTheNoteAlreadySaysWritesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := s.presets.Save(
-		t.Context(), s.vault, "Sanskrit.md", held.Preset, domain.Fingerprint{}); err != nil {
+		t.Context(), s.vault, "Sanskrit.md", held.Settings, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -785,8 +785,8 @@ func TestADayTheBlockNamesIsRewrittenWhereItStands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(held.Preset.Load, p.Load) {
-		t.Errorf("load = %v, want %v", held.Preset.Load, p.Load)
+	if !reflect.DeepEqual(held.Settings.Load, p.Load) {
+		t.Errorf("load = %v, want %v", held.Settings.Load, p.Load)
 	}
 }
 
@@ -810,7 +810,7 @@ func TestADayNamedTwiceIsSavedWhereTheReadTakesIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := held.Preset.Load[time.Monday]; got != 80 {
+	if got := held.Settings.Load[time.Monday]; got != 80 {
 		t.Errorf("monday came back at %d, and the save put it at 80\n%s",
 			got, read(t, s.vault, "Sanskrit.md"))
 	}

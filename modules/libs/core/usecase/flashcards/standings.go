@@ -107,10 +107,10 @@ func (u Standings) Of(ctx context.Context, v domain.Vault, paths []string) []Sta
 // face of the stencil it names that lays anything out.
 func (u Standings) standing(
 	ctx context.Context, v domain.Vault, read cards.Read,
-	deck cards.Deck, stencils map[string]format.CardStencil,
+	deck cards.DeckContents, stencils map[string]format.CardStencil,
 ) []Standing {
 	var out []Standing
-	for _, card := range deck.Deck.Cards {
+	for _, card := range deck.Body.Cards {
 		if card.Mark == "" {
 			continue
 		}
@@ -127,7 +127,7 @@ func (u Standings) standing(
 				stencils[path] = format.CardStencil{}
 				continue
 			}
-			stencil = one.Stencil
+			stencil = one.Body
 			stencils[path] = stencil
 		}
 
@@ -139,7 +139,7 @@ func (u Standings) standing(
 			}
 			out = append(out, Standing{
 				Deck:     deck.Path,
-				Section:  section(deck.Deck, card),
+				Section:  section(deck.Body, card),
 				CardFace: history.CardFaceID{Card: string(card.Mark), Face: face.Name},
 				Heading:  card.Heading,
 				stencil:  stencil,

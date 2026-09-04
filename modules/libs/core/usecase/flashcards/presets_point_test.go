@@ -84,8 +84,8 @@ func TestADeckIsPutOnAPreset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if held.Path != "Sanskrit.md" || held.Preset.MinutesADay != 20 {
-		t.Errorf("the deck is scheduled by %q at %+v", held.Path, held.Preset)
+	if held.Path != "Sanskrit.md" || held.Settings.MinutesADay != 20 {
+		t.Errorf("the deck is scheduled by %q at %+v", held.Path, held.Settings)
 	}
 }
 

@@ -149,7 +149,7 @@ func (u Schedules) under(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := by[path]; !held {
-				by[path] = history.Scheduling{By: u.at(p.Preset.Retention), Preset: p.Preset}
+				by[path] = history.Scheduling{By: u.at(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
 		under[one.CardFace] = by[path]

@@ -184,7 +184,7 @@ func (a *API) ReadStencil(
 		out.Refusal = &refusal
 		return connect.NewResponse(out), nil
 	}
-	out.Stencil = stencilOf(found.Path, a.titled(ctx, showing, found.Path), found.Stencil)
+	out.Stencil = stencilOf(found.Path, a.titled(ctx, showing, found.Path), found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the stencil back.
 	out.At = fingerprintOf(found.Fingerprint)
@@ -217,7 +217,7 @@ func (a *API) ReadDeck(
 		}
 		return connect.NewResponse(out), nil
 	}
-	out.Deck = deckOf(found.Path, a.titled(ctx, showing, found.Path), found.Deck, found.Stencils)
+	out.Deck = deckOf(found.Path, a.titled(ctx, showing, found.Path), found.Body, found.Stencils)
 	out.At = fingerprintOf(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }

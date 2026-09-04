@@ -75,7 +75,7 @@ func budgeted(
 			path = p.Path
 			asked[one.Deck] = path
 			if _, held := settings[path]; !held {
-				settings[path] = p.Preset
+				settings[path] = p.Settings
 			}
 		}
 		out.under[one.CardFace] = path

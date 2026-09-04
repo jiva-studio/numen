@@ -183,7 +183,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	moved := settings.Preset
+	moved := settings.Settings
 	moved.Retention = 0.95
 	if _, err := s.presets.Save(t.Context(), s.vault, "Low.md", moved, domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
@@ -335,7 +335,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	// The projection takes the card on from where the first answer left it, and
 	// its one day of review is the day that answer is given in.
 	run := history.Simulation{By: by, Day: today, Cost: history.DefaultCost, Days: 21}
-	projected, err := run.Run(t.Context(), when, read.Preset, first, 0)
+	projected, err := run.Run(t.Context(), when, read.Settings, first, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

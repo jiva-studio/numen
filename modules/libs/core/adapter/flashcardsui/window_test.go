@@ -168,7 +168,7 @@ func asWritten(t *testing.T, api *API, v domain.Vault, path string) history.Pres
 	if err != nil {
 		t.Fatal(err)
 	}
-	return found.Preset
+	return found.Settings
 }
 
 // writtenBack writes settings into the preset at path, which is what the window

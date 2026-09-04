@@ -19,11 +19,11 @@ import (
 )
 
 // PresetOf is one preset as the schema carries it.
-func PresetOf(p flashcards.Preset, title string) *v1.Preset {
+func PresetOf(p flashcards.PresetContents, title string) *v1.Preset {
 	return &v1.Preset{
 		Path:     p.Path,
 		Title:    title,
-		Settings: SettingsOf(p.Preset),
+		Settings: SettingsOf(p.Settings),
 		Problems: p.Problems,
 		Stops:    StoppedOf(p.Stops),
 		StopsOn:  StoppedOf(p.StopsToday),

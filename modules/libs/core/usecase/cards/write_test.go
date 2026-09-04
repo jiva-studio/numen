@@ -124,7 +124,7 @@ func held(t *testing.T, vs vaults, path string) format.Deck {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	return got.Deck
+	return got.Body
 }
 
 // A deck goes to disk through the note writer, and is read at MaxBytes. The

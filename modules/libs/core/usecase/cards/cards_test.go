@@ -145,8 +145,8 @@ func TestADeckReadAndWrittenBackIsTheFileItWas(t *testing.T) {
 	if got.Outcome != note.Ok || got.Type != domain.TypeDeck {
 		t.Fatalf("outcome = %q, type = %q", got.Outcome, got.Type)
 	}
-	if len(got.Deck.Cards) != 2 || got.Deck.Preamble != "\nCards I am learning.\n\n" {
-		t.Fatalf("deck = %+v", got.Deck)
+	if len(got.Body.Cards) != 2 || got.Body.Preamble != "\nCards I am learning.\n\n" {
+		t.Fatalf("deck = %+v", got.Body)
 	}
 
 	w := cards.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
@@ -183,24 +183,24 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 	}
 
 	var filed []format.Problem
-	for _, p := range got.Deck.Problems {
+	for _, p := range got.Body.Problems {
 		if p.Check == format.CheckTwoValues {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 {
-		t.Fatalf("problems = %+v, want the one card that writes it twice", got.Deck.Problems)
+		t.Fatalf("problems = %+v, want the one card that writes it twice", got.Body.Problems)
 	}
 	if filed[0].Card != 0 || filed[0].Field != "Name" {
 		t.Errorf("problem = %+v, want it against the first card and Name", filed[0])
 	}
 
 	// Both are kept, and the first stands.
-	if held, ok := got.Deck.Cards[0].Value("Name"); !ok || held != "Llama" {
+	if held, ok := got.Body.Cards[0].Value("Name"); !ok || held != "Llama" {
 		t.Errorf("Name = %q, want the first", held)
 	}
-	if len(got.Deck.Cards) != 2 {
-		t.Errorf("cards = %+v", got.Deck.Cards)
+	if len(got.Body.Cards) != 2 {
+		t.Errorf("cards = %+v", got.Body.Cards)
 	}
 }
 
@@ -223,13 +223,13 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 	}
 
 	var filed []format.Problem
-	for _, p := range got.Deck.Problems {
+	for _, p := range got.Body.Problems {
 		if p.Check == format.CheckNotAStencil {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 {
-		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Deck.Problems)
+		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Body.Problems)
 	}
 	if filed[0].Card != 1 {
 		t.Errorf("problem = %+v, want it against the second card", filed[0])
@@ -238,8 +238,8 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Errorf("the note was not named: %q", filed[0].Detail)
 	}
 	// The values are read either way.
-	if held, ok := got.Deck.Cards[1].Value("Height"); !ok || held == "" {
-		t.Errorf("the card was not read: %+v", got.Deck.Cards[1])
+	if held, ok := got.Body.Cards[1].Value("Height"); !ok || held == "" {
+		t.Errorf("the card was not read: %+v", got.Body.Cards[1])
 	}
 }
 
@@ -277,11 +277,11 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	if counted.reads != 0 {
 		t.Errorf("the file was opened %d times", counted.reads)
 	}
-	if len(got.Deck.Problems) != 1 || got.Deck.Problems[0].Check != format.CheckTooLarge {
-		t.Errorf("problems = %+v", got.Deck.Problems)
+	if len(got.Body.Problems) != 1 || got.Body.Problems[0].Check != format.CheckTooLarge {
+		t.Errorf("problems = %+v", got.Body.Problems)
 	}
-	if !strings.Contains(got.Deck.Problems[0].Detail, "8388608") {
-		t.Errorf("the bound was not said: %q", got.Deck.Problems[0].Detail)
+	if !strings.Contains(got.Body.Problems[0].Detail, "8388608") {
+		t.Errorf("the bound was not said: %q", got.Body.Problems[0].Detail)
 	}
 }
 

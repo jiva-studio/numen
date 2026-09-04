@@ -21,8 +21,8 @@ import (
 // opened, so a deck over the bound is refused with none of its bytes read.
 const MaxBytes = 8 << 20
 
-// Deck is one deck as a read hands it over.
-type Deck struct {
+// DeckContents is one deck as a read hands it over.
+type DeckContents struct {
 	Path string
 	// Outcome is how the read ended, out of the list an ordinary note's read
 	// answers with.
@@ -30,9 +30,9 @@ type Deck struct {
 	// Type is what the note at the path says it is, so a caller that asked for
 	// a deck and was handed a stencil is told so.
 	Type domain.NoteType
-	// Deck is what the file says. It holds no cards for any outcome but Ok, and
+	// Body is what the file says. It holds no cards for any outcome but Ok, and
 	// a deck over the bound carries the problem that says why.
-	Deck format.Deck
+	Body format.Deck
 	// Stencils is where the wikilink under each card's heading lands, keyed by
 	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
@@ -41,12 +41,14 @@ type Deck struct {
 	Fingerprint domain.Fingerprint
 }
 
-// Stencil is one stencil as a read hands it over.
-type Stencil struct {
-	Path        string
-	Outcome     note.ReadOutcome
-	Type        domain.NoteType
-	Stencil     format.CardStencil
+// StencilContents is one stencil as a read hands it over.
+type StencilContents struct {
+	Path    string
+	Outcome note.ReadOutcome
+	Type    domain.NoteType
+	// Body is what the file says: the fields a card is asked for and the faces
+	// it is shown through. It says nothing for any outcome but Ok.
+	Body        format.CardStencil
 	Fingerprint domain.Fingerprint
 }
 
@@ -65,29 +67,29 @@ type Read struct {
 //
 // An error is the vault being out of reach. What is wrong with the file itself
 // is an outcome, and the caller is told which one.
-func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (Deck, error) {
-	out := Deck{Path: path}
+func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckContents, error) {
+	out := DeckContents{Path: path}
 	n, ref, outcome, err := u.looked(ctx, v, path, MaxBytes)
 	if err != nil {
-		return Deck{}, err
+		return DeckContents{}, err
 	}
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	switch outcome {
 	case note.Ok:
-		out.Deck = format.ReadDeck(n)
-		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Deck)
+		out.Body = format.ReadDeck(n)
+		out.Stencils, err = cutting(ctx, u.Links, v.ID, path, out.Body)
 		if err != nil {
-			return Deck{}, err
+			return DeckContents{}, err
 		}
 		// A card is laid out by the stencil its wikilink lands on, so a name
 		// reaching a note that is not one is a card no face shows.
 		_, ordinary, err := u.stencils(ctx, v, out.Stencils)
 		if err != nil {
-			return Deck{}, err
+			return DeckContents{}, err
 		}
-		out.Deck.Problems = append(out.Deck.Problems, notStencils(out.Deck, ordinary)...)
+		out.Body.Problems = append(out.Body.Problems, notStencils(out.Body, ordinary)...)
 	case note.TooLarge:
-		out.Deck = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
+		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
 			format.CheckTooLarge,
 			fmt.Sprintf("this deck is %d bytes, and %d is the most one is read at", ref.Size, MaxBytes),
 		)}}
@@ -164,7 +166,7 @@ func (u Read) stencils(
 				return nil, nil, err
 			}
 			if found.Outcome == note.Ok && found.Type == domain.TypeStencil {
-				held = found.Stencil
+				held = found.Body
 			}
 			read[path] = held
 			loose[path] = found.Outcome == note.Ok && found.Type != domain.TypeStencil
@@ -193,15 +195,15 @@ func notStencils(d format.Deck, ordinary map[string]bool) []format.Problem {
 }
 
 // Stencil reads the stencil at path. A stencil is a note and is bounded as one.
-func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil, error) {
-	out := Stencil{Path: path}
+func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (StencilContents, error) {
+	out := StencilContents{Path: path}
 	n, ref, outcome, err := u.looked(ctx, v, path, note.MaxBytes)
 	if err != nil {
-		return Stencil{}, err
+		return StencilContents{}, err
 	}
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	if outcome == note.Ok {
-		out.Stencil = format.ReadStencil(n)
+		out.Body = format.ReadStencil(n)
 	}
 	return out, nil
 }

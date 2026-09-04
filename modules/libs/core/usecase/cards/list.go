@@ -50,7 +50,7 @@ func (u List) Execute(ctx context.Context, v domain.Vault, limit int) ([]Listed,
 			return nil, 0, err
 		}
 		if stencil.Outcome == note.Ok {
-			listed.Fields = stencil.Stencil.Fields
+			listed.Fields = stencil.Body.Fields
 		}
 		out = append(out, listed)
 	}

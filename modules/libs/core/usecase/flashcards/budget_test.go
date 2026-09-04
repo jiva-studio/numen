@@ -1053,7 +1053,7 @@ func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 				t.Fatal(err)
 			}
 			curve, err := s.curves(saturday).Execute(
-				t.Context(), s.vault, read.Path, read.Preset)
+				t.Context(), s.vault, read.Path, read.Settings)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1062,7 +1062,7 @@ func TestTheSittingAndTheCurveAgreeOnTheDay(t *testing.T) {
 			}
 
 			drawn := curve.Points[curve.Now.Index].Reviews
-			faces := s.through(t, today, admitting(read.Preset, today, saturday))
+			faces := s.through(t, today, admitting(read.Settings, today, saturday))
 			if drawn != float64(faces) {
 				t.Errorf("the curve draws %v and the day hands over %d", drawn, faces)
 			}

@@ -20,8 +20,8 @@ import (
 // LinkType is what a deck's link to its preset carries under `type`.
 const LinkType = "preset"
 
-// Preset is one preset as a read hands it over.
-type Preset struct {
+// PresetContents is one preset as a read hands it over.
+type PresetContents struct {
 	// Path is the note the settings were read from, and is empty for a deck
 	// naming no preset.
 	Path    string
@@ -29,9 +29,9 @@ type Preset struct {
 	// Type is what the note at the path says it is, so a caller handed an
 	// ordinary note is told so.
 	Type domain.NoteType
-	// Preset is how the decks pointing here are scheduled. It stands at the
+	// Settings are how the decks pointing here are scheduled. They stand at the
 	// defaults for every outcome but Ok.
-	Preset history.Preset
+	Settings history.Preset
 	// Stops is why the preset schedules nothing, and empty where it schedules
 	// something. It is a fact about the preset and holds on every day.
 	Stops history.Stopped
@@ -119,8 +119,8 @@ func (u Presets) List(ctx context.Context, v domain.Vault) ([]Listed, error) {
 }
 
 // Default is a deck scheduled by no preset.
-func Default() Preset {
-	return Preset{Outcome: note.Ok, Preset: history.Defaults()}
+func Default() PresetContents {
+	return PresetContents{Outcome: note.Ok, Settings: history.Defaults()}
 }
 
 // Of is the preset the deck at path is scheduled by.
@@ -129,7 +129,7 @@ func Default() Preset {
 // `links:` entry written with no role all leave the deck on the defaults and say
 // so against it. A deck naming two presets is scheduled by the first and carries
 // a problem: two presets are two answers to one question.
-func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
+func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
 	return u.Reading().Of(ctx, v, deck)
 }
 
@@ -140,10 +140,10 @@ func (u Presets) Of(ctx context.Context, v domain.Vault, deck string) (Preset, e
 // the file as it stood when the run began.
 type Reading struct {
 	Presets
-	held map[string]Preset
+	held map[string]PresetContents
 	// scheduling is the preset each deck asked about is scheduled by, so a deck
 	// is asked once however many times the run comes round to it.
-	scheduling map[string]Preset
+	scheduling map[string]PresetContents
 	// said is what parsing turned up against each file, read once for the run
 	// and only where a deck names no preset.
 	said map[string][]string
@@ -153,33 +153,33 @@ type Reading struct {
 func (u Presets) Reading() *Reading {
 	return &Reading{
 		Presets:    u,
-		held:       make(map[string]Preset),
-		scheduling: make(map[string]Preset),
+		held:       make(map[string]PresetContents),
+		scheduling: make(map[string]PresetContents),
 	}
 }
 
 // Of is the preset the deck at path is scheduled by.
-func (r *Reading) Of(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
+func (r *Reading) Of(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
 	if held, standing := r.scheduling[deck]; standing {
 		return held, nil
 	}
 	out, err := r.scheduled(ctx, v, deck)
 	if err != nil {
-		return Preset{}, err
+		return PresetContents{}, err
 	}
-	out.Stops, out.StopsToday = r.stops(out.Preset)
+	out.Stops, out.StopsToday = r.stops(out.Settings)
 	r.scheduling[deck] = out
 	return out, nil
 }
 
 // scheduled works out which preset schedules the deck at path.
-func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (Preset, error) {
+func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (PresetContents, error) {
 	if r.Links == nil {
 		return Default(), nil
 	}
 	links, err := r.Links.Links(ctx, string(v.ID), deck)
 	if err != nil {
-		return Preset{}, fmt.Errorf("the links of %s: %w", deck, err)
+		return PresetContents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
 
 	var at []domain.ResolvedLink
@@ -191,7 +191,7 @@ func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (P
 	if len(at) == 0 {
 		out := Default()
 		if out.Problems, err = r.roleless(ctx, v, deck); err != nil {
-			return Preset{}, err
+			return PresetContents{}, err
 		}
 		return out, nil
 	}
@@ -202,7 +202,7 @@ func (r *Reading) scheduled(ctx context.Context, v domain.Vault, deck string) (P
 	if first.To != "" {
 		by = first.To
 		if out, err = r.read(ctx, v, first.To); err != nil {
-			return Preset{}, err
+			return PresetContents{}, err
 		}
 		// A note that is not a preset schedules nothing, so the deck stands
 		// with the decks naming none and the problem is shown against it.
@@ -248,13 +248,13 @@ func (r *Reading) roleless(ctx context.Context, v domain.Vault, deck string) ([]
 }
 
 // read is the preset at path, opened once however many decks name it.
-func (r *Reading) read(ctx context.Context, v domain.Vault, path string) (Preset, error) {
+func (r *Reading) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	if held, standing := r.held[path]; standing {
 		return held, nil
 	}
 	out, err := r.Presets.Read(ctx, v, path)
 	if err != nil {
-		return Preset{}, err
+		return PresetContents{}, err
 	}
 	r.held[path] = out
 	return out, nil
@@ -264,22 +264,22 @@ func (r *Reading) read(ctx context.Context, v domain.Vault, path string) (Preset
 //
 // An error is the vault being out of reach. What is wrong with the note itself
 // is an outcome or a problem, and the preset stands at the defaults.
-func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (Preset, error) {
+func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out, err := u.opened(ctx, v, path)
 	if err != nil {
-		return Preset{}, err
+		return PresetContents{}, err
 	}
-	out.Stops, out.StopsToday = u.stops(out.Preset)
+	out.Stops, out.StopsToday = u.stops(out.Settings)
 	return out, nil
 }
 
 // opened is the note at path as a preset, before it is asked what it schedules.
-func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Preset, error) {
-	out := Preset{Path: path, Preset: history.Defaults()}
+func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
+	out := PresetContents{Path: path, Settings: history.Defaults()}
 
 	reader, err := u.Readers.Open(v)
 	if err != nil {
-		return Preset{}, err
+		return PresetContents{}, err
 	}
 
 	// The vault says what is at a path without opening it: a note, a file it
@@ -301,7 +301,7 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 		out.Outcome = note.NotANote
 		return out, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return Preset{}, fmt.Errorf("look at %s: %w", path, err)
+		return PresetContents{}, fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
@@ -313,7 +313,7 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 		out.Outcome = note.NotANote
 		return out, nil
 	case err != nil:
-		return Preset{}, fmt.Errorf("read %s: %w", path, err)
+		return PresetContents{}, fmt.Errorf("read %s: %w", path, err)
 	}
 
 	if !utf8.Valid(raw) {
@@ -331,6 +331,6 @@ func (u Presets) opened(ctx context.Context, v domain.Vault, path string) (Prese
 		out.Problems = append(out.Problems, path+" is not a preset, and the defaults stand")
 		return out, nil
 	}
-	out.Preset, out.Problems = history.ReadPreset(n.Frontmatter)
+	out.Settings, out.Problems = history.ReadPreset(n.Frontmatter)
 	return out, nil
 }

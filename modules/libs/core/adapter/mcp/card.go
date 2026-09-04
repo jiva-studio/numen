@@ -147,24 +147,24 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Limit > 0 {
 			limit = in.Limit
 		}
-		from := min(max(in.From, 0), len(read.Deck.Cards))
+		from := min(max(in.From, 0), len(read.Body.Cards))
 		res := out{
-			Held:        len(read.Deck.Cards),
-			Faults:      faults(read.Deck.Problems),
+			Held:        len(read.Body.Cards),
+			Faults:      faults(read.Body.Problems),
 			Fingerprint: fingerprintOf(read.Fingerprint),
 		}
-		for _, s := range read.Deck.Sections {
+		for _, s := range read.Body.Sections {
 			res.Sections = append(res.Sections, s.Name)
 		}
 		if in.Card != "" {
-			at, err := standing(read.Deck.Cards, in.Card)
+			at, err := standing(read.Body.Cards, in.Card)
 			if err != nil {
 				return nil, out{}, err
 			}
-			res.Cards = append(res.Cards, only(carded(read.Deck.Cards[at]), in.Fields))
+			res.Cards = append(res.Cards, only(carded(read.Body.Cards[at]), in.Fields))
 			return nil, res, nil
 		}
-		for _, card := range read.Deck.Cards[from:min(from+limit, len(read.Deck.Cards))] {
+		for _, card := range read.Body.Cards[from:min(from+limit, len(read.Body.Cards))] {
 			res.Cards = append(res.Cards, only(carded(card), in.Fields))
 		}
 		return nil, res, nil
@@ -208,8 +208,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		// answers with.
 		stands := 0
 		written, minted, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) (format.Deck, error) {
-				held := read.Deck
+			func(read cards.DeckContents) (format.Deck, error) {
+				held := read.Body
 				at, under, err := placed(held, in.Section)
 				if err != nil {
 					return format.Deck{}, err
@@ -252,8 +252,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 				"a card of %d bytes is more than this writes at once, which is %d", size, maxBytes)
 		}
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) (format.Deck, error) {
-				held := read.Deck
+			func(read cards.DeckContents) (format.Deck, error) {
+				held := read.Body
 				at, err := standing(held.Cards, in.Card)
 				if err != nil {
 					return format.Deck{}, err
@@ -283,8 +283,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) (format.Deck, error) {
-				held := read.Deck
+			func(read cards.DeckContents) (format.Deck, error) {
+				held := read.Body
 				at, err := standing(held.Cards, in.Card)
 				if err != nil {
 					return format.Deck{}, err
@@ -310,8 +310,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
 	}) (*sdk.CallToolResult, Written, error) {
 		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
-			func(read cards.Deck) (format.Deck, error) {
-				held := read.Deck
+			func(read cards.DeckContents) (format.Deck, error) {
+				held := read.Body
 				held.Sections = append(held.Sections, format.Section{Name: in.Name})
 				return held, nil
 			})
@@ -434,7 +434,7 @@ type Written struct {
 // they arrived as.
 func changing(
 	ctx context.Context, core Core, path, fingerprint string,
-	change func(cards.Deck) (format.Deck, error),
+	change func(cards.DeckContents) (format.Deck, error),
 ) (Written, []format.Minted, error) {
 	seen, err := parseFingerprint(fingerprint)
 	if err != nil {
@@ -537,7 +537,7 @@ func filled(card format.Card, v FieldValue) format.Card {
 
 // whyNotADeck says why a path is no deck to write cards into, and nothing where
 // it is one.
-func whyNotADeck(read cards.Deck) string {
+func whyNotADeck(read cards.DeckContents) string {
 	if read.Outcome == note.Ok && read.Type != domain.TypeDeck {
 		return "this note is not a deck"
 	}
