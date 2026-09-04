@@ -218,6 +218,10 @@ func (a *Agent) Take(ctx context.Context, task port.Task) (port.Work, error) {
 	cmd.Cancel = func() error { return kill(cmd) }
 	cmd.WaitDelay = 2 * time.Second
 
+	// The question goes on the input. A question is a person's own words and a
+	// note's, and words on a command line are read for options first.
+	cmd.Stdin = strings.NewReader(task.Question)
+
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		stop()
@@ -370,9 +374,10 @@ const brought = "WebSearch,WebFetch"
 
 // arguments are what the agent is started with.
 //
-// Only what the command line documents: the task on the command line, the
-// answer as one JSON object per line, this vault's tools and no other server's,
-// and the tools named in Allowed approved ahead of the run.
+// Only what the command line documents: the answer as one JSON object per line,
+// this vault's tools and no other server's, and the tools named in Allowed
+// approved ahead of the run. The question itself is not here — it goes on the
+// input, where nothing reads it for options.
 //
 // The tools it brings are the two that reach the web; every other built-in is
 // disabled. An agent works this vault through the tools this vault serves, and
@@ -385,7 +390,7 @@ func (a *Agent) arguments(task port.Task, configuration string) []string {
 	}
 
 	args := []string{
-		"-p", task.Question,
+		"-p",
 		"--output-format", "stream-json",
 		"--verbose",
 		"--include-partial-messages",

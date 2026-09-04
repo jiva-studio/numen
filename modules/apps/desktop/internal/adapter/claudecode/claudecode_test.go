@@ -245,10 +245,12 @@ func recordedWith(t *testing.T, change func(*claudecode.Agent)) []string {
 	return given(t, change).argv
 }
 
-// run is what the child was given: the arguments on its command line, and the
-// configuration file they name, copied while the child was still running.
+// run is what the child was given: the arguments on its command line, what
+// stood on its input, and the configuration file the arguments name, copied
+// while the child was still running.
 type run struct {
 	argv   []string
+	asked  string
 	config string
 }
 
@@ -260,10 +262,12 @@ func given(t *testing.T, change func(*claudecode.Agent)) run {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	written := filepath.Join(dir, "argv")
+	asked := filepath.Join(dir, "asked")
 	config := filepath.Join(dir, "config")
 	// The configuration is copied while the child is running: the run removes
 	// the file when the process is done with it.
 	body := "#!/bin/sh\n" +
+		"cat > " + asked + "\n" +
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > " + written + "\n" +
 		"prev=\n" +
 		"for a in \"$@\"; do\n" +
@@ -293,10 +297,27 @@ func given(t *testing.T, change func(*claudecode.Agent)) run {
 		t.Fatal(err)
 	}
 	out := run{argv: strings.Split(strings.TrimRight(string(raw), "\n"), "\n")}
+	if held, err := os.ReadFile(asked); err == nil {
+		out.asked = string(held)
+	}
 	if held, err := os.ReadFile(config); err == nil {
 		out.config = string(held)
 	}
 	return out
+}
+
+// A question is a person's own words, and it carries a note's words with it. On
+// a command line it would be read for options first — a question beginning with
+// a dash is a flag, and the words after it are that flag's.
+func TestTheQuestionGoesOnTheInputAndNotOnTheCommandLine(t *testing.T) {
+	said := given(t, func(*claudecode.Agent) {})
+
+	if said.asked != "what is here?" {
+		t.Errorf("the child was asked %q on its input", said.asked)
+	}
+	if slices.Contains(said.argv, "what is here?") {
+		t.Errorf("the question stands on the command line: %q", said.argv)
+	}
 }
 
 // The agent may look something up and may not touch this machine, so the run
@@ -666,7 +687,7 @@ func TestClosingEndsEveryAgentThatIsStillAnswering(t *testing.T) {
 	script := filepath.Join(dir, "claude")
 	// Says one thing and then waits, the way an agent between turns does.
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 echo $$ > "` + dir + `/pid-$asked"
 sleep 120
@@ -757,7 +778,7 @@ func TestEachConversationGoesOnInItsOwn(t *testing.T) {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 echo '{"type":"result","subtype":"success","is_error":false}'
@@ -813,7 +834,7 @@ func TestConversationsAnsweringAtOnceKeepTheirOwn(t *testing.T) {
 	script := filepath.Join(dir, "claude")
 	// Waits for the other to have started, so that neither finishes alone.
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 touch "` + dir + `/started-$asked"
 for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
 until [ -f "` + dir + `/started-left" ] && [ -f "` + dir + `/started-right" ]; do sleep 0.01; done
@@ -857,7 +878,7 @@ func TestAQuestionInNoConversationCarriesNothing(t *testing.T) {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 for a in "$@"; do printf '%s\n' "$a"; done > "` + dir + `/argv-$asked"
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 echo '{"type":"result","subtype":"success","is_error":false}'
@@ -899,7 +920,7 @@ func TestStoppingOneConversationLeavesAnotherAnswering(t *testing.T) {
 	script := filepath.Join(dir, "claude")
 	// Says one thing, waits to be let on, and says the rest.
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 printf '{"type":"assistant","message":{"content":[{"type":"text","text":"first %s"}]}}\n' "$asked"
 until [ -f "` + dir + `/on-$asked" ]; do sleep 0.01; done
@@ -983,7 +1004,7 @@ func TestFinishingAConversationLetsGoOfWhatItWasOn(t *testing.T) {
 	dir := t.TempDir()
 	script := filepath.Join(dir, "claude")
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 echo '{"type":"result","subtype":"success","is_error":false}'
 `
@@ -1030,7 +1051,7 @@ func TestFinishingAConversationEndsWhatIsStillAnsweringInIt(t *testing.T) {
 	// Says one thing, writes down where it is, and waits the way an agent
 	// between turns does.
 	body := `#!/bin/sh
-asked=$2
+asked=$(cat)
 printf '{"type":"system","subtype":"init","session_id":"s-%s"}\n' "$asked"
 printf '{"type":"assistant","message":{"content":[{"type":"text","text":"first %s"}]}}\n' "$asked"
 echo $$ > "` + dir + `/pid-$asked"
