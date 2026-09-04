@@ -33,7 +33,7 @@ func editable(t *testing.T, notes map[string]string) *API {
 	return api
 }
 
-func at(t *testing.T, api *API, path string) *v1.Seen {
+func at(t *testing.T, api *API, path string) *v1.LastRead {
 	t.Helper()
 	out, err := api.ReadNote(t.Context(), connect.NewRequest(&v1.ReadNoteRequest{Path: path}))
 	if err != nil {
@@ -42,7 +42,7 @@ func at(t *testing.T, api *API, path string) *v1.Seen {
 	if out.Msg.GetAt() == nil {
 		t.Fatalf("the read of %s carried no fingerprint", path)
 	}
-	return &v1.Seen{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
+	return &v1.LastRead{Prose: out.Msg.GetBody(), At: out.Msg.GetAt()}
 }
 
 // A note holding prose the client has not read is its own answer. A refusal is
@@ -106,7 +106,7 @@ func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	second, err := api.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Entropy.md",
 		Body: "# Entropy\n\nTwo.\n",
-		Seen: &v1.Seen{Prose: seen.GetProse(), At: first.Msg.GetAt()},
+		Seen: &v1.LastRead{Prose: seen.GetProse(), At: first.Msg.GetAt()},
 	}))
 	if err != nil {
 		t.Fatal(err)

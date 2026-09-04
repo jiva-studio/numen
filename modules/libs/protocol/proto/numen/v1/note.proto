@@ -89,7 +89,7 @@ message GetNeighbourhoodRequest {
 
 message GetNeighbourhoodResponse {
   Note focus = 1;
-  repeated Seated related = 2;
+  repeated Neighbour related = 2;
 
   // Which of three the note in focus is, so a client draws a deck and a stencil
   // as what they are.
@@ -106,7 +106,8 @@ enum Seat {
   SEAT_SIBLING = 4;
 }
 
-message Seated {
+// Neighbour is one note joined to the one in focus, and what joins them.
+message Neighbour {
   Note note = 1;
   Seat seat = 2;
   // What the person wrote on the link, when they wrote anything.
@@ -140,11 +141,11 @@ message ResolveAddressesRequest {
 message ResolveAddressesResponse {
   // Where each address lands, in the order they were asked about. One that
   // reaches nothing is absent, and so is one asked about twice.
-  repeated Reached reached = 1;
+  repeated ResolvedAddress resolved = 1;
 }
 
-// Reached is one address and the note it reaches now.
-message Reached {
+// ResolvedAddress is one address and the note it reaches now.
+message ResolvedAddress {
   // The address as it was asked about, which is how the caller finds its answer.
   string written = 1;
 
@@ -210,10 +211,10 @@ message ReadNoteResponse {
   optional Fingerprint at = 3;
 }
 
-// Seen is what a caller last saw of a note: the prose a read gave it, and the
-// file that read came out of. A note still holding either is the note this
+// LastRead is what a caller last saw of a note: the prose a read gave it, and
+// the file that read came out of. A note still holding either is the note this
 // caller read.
-message Seen {
+message LastRead {
   // The prose below the frontmatter, with line endings as LF, as the read gave
   // it.
   string prose = 1;
@@ -230,7 +231,7 @@ message WriteNoteRequest {
 
   // What this caller last saw of the note. Absent for a write that lands on
   // whatever the note now holds.
-  optional Seen seen = 3;
+  optional LastRead seen = 3;
 }
 
 message WriteNoteResponse {

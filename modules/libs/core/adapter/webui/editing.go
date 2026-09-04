@@ -233,7 +233,7 @@ func fingerprintOf(ref domain.Fingerprint) *v1.Fingerprint {
 
 // seenOf is what a client says it last saw of a note. Nothing said is nothing
 // compared, and the write lands on whatever the note now holds.
-func seenOf(seen *v1.Seen) *note.LastRead {
+func seenOf(seen *v1.LastRead) *note.LastRead {
 	if seen == nil {
 		return nil
 	}

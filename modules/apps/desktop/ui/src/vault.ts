@@ -427,7 +427,7 @@ export const core: Core & Asking & Commanding = {
   resolve: async (from, written) => {
     const answer = await notes.resolveAddresses({ from, written: [...written] })
     return new Map(
-      answer.reached.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
+      answer.resolved.filter((one) => !one.crossed).map((one) => [one.written, one.path]),
     )
   },
   /** The names in the vault that match what is typed. */

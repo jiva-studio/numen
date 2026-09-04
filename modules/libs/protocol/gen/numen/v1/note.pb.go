@@ -397,7 +397,7 @@ func (x *GetNeighbourhoodRequest) GetPath() string {
 type GetNeighbourhoodResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
-	Related []*Seated              `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
+	Related []*Neighbour           `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
 	// Which of three the note in focus is, so a client draws a deck and a stencil
 	// as what they are.
 	FocusType     NoteType `protobuf:"varint,3,opt,name=focus_type,json=focusType,proto3,enum=numen.v1.NoteType" json:"focus_type,omitempty"`
@@ -442,7 +442,7 @@ func (x *GetNeighbourhoodResponse) GetFocus() *Note {
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetRelated() []*Seated {
+func (x *GetNeighbourhoodResponse) GetRelated() []*Neighbour {
 	if x != nil {
 		return x.Related
 	}
@@ -456,7 +456,8 @@ func (x *GetNeighbourhoodResponse) GetFocusType() NoteType {
 	return NoteType_NOTE_TYPE_UNSPECIFIED
 }
 
-type Seated struct {
+// Neighbour is one note joined to the one in focus, and what joins them.
+type Neighbour struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
 	Seat  Seat                   `protobuf:"varint,2,opt,name=seat,proto3,enum=numen.v1.Seat" json:"seat,omitempty"`
@@ -476,20 +477,20 @@ type Seated struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Seated) Reset() {
-	*x = Seated{}
+func (x *Neighbour) Reset() {
+	*x = Neighbour{}
 	mi := &file_numen_v1_note_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Seated) String() string {
+func (x *Neighbour) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Seated) ProtoMessage() {}
+func (*Neighbour) ProtoMessage() {}
 
-func (x *Seated) ProtoReflect() protoreflect.Message {
+func (x *Neighbour) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -501,47 +502,47 @@ func (x *Seated) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Seated.ProtoReflect.Descriptor instead.
-func (*Seated) Descriptor() ([]byte, []int) {
+// Deprecated: Use Neighbour.ProtoReflect.Descriptor instead.
+func (*Neighbour) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *Seated) GetNote() *Note {
+func (x *Neighbour) GetNote() *Note {
 	if x != nil {
 		return x.Note
 	}
 	return nil
 }
 
-func (x *Seated) GetSeat() Seat {
+func (x *Neighbour) GetSeat() Seat {
 	if x != nil {
 		return x.Seat
 	}
 	return Seat_SEAT_UNSPECIFIED
 }
 
-func (x *Seated) GetLabel() string {
+func (x *Neighbour) GetLabel() string {
 	if x != nil {
 		return x.Label
 	}
 	return ""
 }
 
-func (x *Seated) GetThrough() string {
+func (x *Neighbour) GetThrough() string {
 	if x != nil {
 		return x.Through
 	}
 	return ""
 }
 
-func (x *Seated) GetMutual() bool {
+func (x *Neighbour) GetMutual() bool {
 	if x != nil {
 		return x.Mutual
 	}
 	return false
 }
 
-func (x *Seated) GetType() NoteType {
+func (x *Neighbour) GetType() NoteType {
 	if x != nil {
 		return x.Type
 	}
@@ -609,7 +610,7 @@ type ResolveAddressesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where each address lands, in the order they were asked about. One that
 	// reaches nothing is absent, and so is one asked about twice.
-	Reached       []*Reached `protobuf:"bytes,1,rep,name=reached,proto3" json:"reached,omitempty"`
+	Resolved      []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved,proto3" json:"resolved,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -644,15 +645,15 @@ func (*ResolveAddressesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ResolveAddressesResponse) GetReached() []*Reached {
+func (x *ResolveAddressesResponse) GetResolved() []*ResolvedAddress {
 	if x != nil {
-		return x.Reached
+		return x.Resolved
 	}
 	return nil
 }
 
-// Reached is one address and the note it reaches now.
-type Reached struct {
+// ResolvedAddress is one address and the note it reaches now.
+type ResolvedAddress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The address as it was asked about, which is how the caller finds its answer.
 	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
@@ -670,20 +671,20 @@ type Reached struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Reached) Reset() {
-	*x = Reached{}
+func (x *ResolvedAddress) Reset() {
+	*x = ResolvedAddress{}
 	mi := &file_numen_v1_note_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Reached) String() string {
+func (x *ResolvedAddress) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Reached) ProtoMessage() {}
+func (*ResolvedAddress) ProtoMessage() {}
 
-func (x *Reached) ProtoReflect() protoreflect.Message {
+func (x *ResolvedAddress) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -695,40 +696,40 @@ func (x *Reached) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Reached.ProtoReflect.Descriptor instead.
-func (*Reached) Descriptor() ([]byte, []int) {
+// Deprecated: Use ResolvedAddress.ProtoReflect.Descriptor instead.
+func (*ResolvedAddress) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *Reached) GetWritten() string {
+func (x *ResolvedAddress) GetWritten() string {
 	if x != nil {
 		return x.Written
 	}
 	return ""
 }
 
-func (x *Reached) GetPath() string {
+func (x *ResolvedAddress) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Reached) GetVault() string {
+func (x *ResolvedAddress) GetVault() string {
 	if x != nil {
 		return x.Vault
 	}
 	return ""
 }
 
-func (x *Reached) GetCrossed() bool {
+func (x *ResolvedAddress) GetCrossed() bool {
 	if x != nil {
 		return x.Crossed
 	}
 	return false
 }
 
-func (x *Reached) GetAmbiguous() bool {
+func (x *ResolvedAddress) GetAmbiguous() bool {
 	if x != nil {
 		return x.Ambiguous
 	}
@@ -1052,10 +1053,10 @@ func (x *ReadNoteResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-// Seen is what a caller last saw of a note: the prose a read gave it, and the
-// file that read came out of. A note still holding either is the note this
+// LastRead is what a caller last saw of a note: the prose a read gave it, and
+// the file that read came out of. A note still holding either is the note this
 // caller read.
-type Seen struct {
+type LastRead struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The prose below the frontmatter, with line endings as LF, as the read gave
 	// it.
@@ -1066,20 +1067,20 @@ type Seen struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Seen) Reset() {
-	*x = Seen{}
+func (x *LastRead) Reset() {
+	*x = LastRead{}
 	mi := &file_numen_v1_note_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Seen) String() string {
+func (x *LastRead) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Seen) ProtoMessage() {}
+func (*LastRead) ProtoMessage() {}
 
-func (x *Seen) ProtoReflect() protoreflect.Message {
+func (x *LastRead) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1091,19 +1092,19 @@ func (x *Seen) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Seen.ProtoReflect.Descriptor instead.
-func (*Seen) Descriptor() ([]byte, []int) {
+// Deprecated: Use LastRead.ProtoReflect.Descriptor instead.
+func (*LastRead) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *Seen) GetProse() string {
+func (x *LastRead) GetProse() string {
 	if x != nil {
 		return x.Prose
 	}
 	return ""
 }
 
-func (x *Seen) GetAt() *Fingerprint {
+func (x *LastRead) GetAt() *Fingerprint {
 	if x != nil {
 		return x.At
 	}
@@ -1117,7 +1118,7 @@ type WriteNoteRequest struct {
 	Body string `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 	// What this caller last saw of the note. Absent for a write that lands on
 	// whatever the note now holds.
-	Seen          *Seen `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
+	Seen          *LastRead `protobuf:"bytes,3,opt,name=seen,proto3,oneof" json:"seen,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1166,7 +1167,7 @@ func (x *WriteNoteRequest) GetBody() string {
 	return ""
 }
 
-func (x *WriteNoteRequest) GetSeen() *Seen {
+func (x *WriteNoteRequest) GetSeen() *LastRead {
 	if x != nil {
 		return x.Seen
 	}
@@ -1793,13 +1794,13 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
 	"\x05_note\"-\n" +
 	"\x17GetNeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x9f\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xa2\x01\n" +
 	"\x18GetNeighbourhoodResponse\x12$\n" +
-	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12*\n" +
-	"\arelated\x18\x02 \x03(\v2\x10.numen.v1.SeatedR\arelated\x121\n" +
+	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12-\n" +
+	"\arelated\x18\x02 \x03(\v2\x13.numen.v1.NeighbourR\arelated\x121\n" +
 	"\n" +
-	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc0\x01\n" +
-	"\x06Seated\x12\"\n" +
+	"focus_type\x18\x03 \x01(\x0e2\x12.numen.v1.NoteTypeR\tfocusType\"\xc3\x01\n" +
+	"\tNeighbour\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x04note\x12\"\n" +
 	"\x04seat\x18\x02 \x01(\x0e2\x0e.numen.v1.SeatR\x04seat\x12\x14\n" +
 	"\x05label\x18\x03 \x01(\tR\x05label\x12\x18\n" +
@@ -1808,10 +1809,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04type\x18\x06 \x01(\x0e2\x12.numen.v1.NoteTypeR\x04type\"G\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
-	"\awritten\x18\x02 \x03(\tR\awritten\"G\n" +
-	"\x18ResolveAddressesResponse\x12+\n" +
-	"\areached\x18\x01 \x03(\v2\x11.numen.v1.ReachedR\areached\"\x85\x01\n" +
-	"\aReached\x12\x18\n" +
+	"\awritten\x18\x02 \x03(\tR\awritten\"Q\n" +
+	"\x18ResolveAddressesResponse\x125\n" +
+	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\"\x8d\x01\n" +
+	"\x0fResolvedAddress\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x18\n" +
@@ -1836,14 +1837,14 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x02at\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_at\"C\n" +
-	"\x04Seen\x12\x14\n" +
+	"\x03_at\"G\n" +
+	"\bLastRead\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12%\n" +
-	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"l\n" +
+	"\x02at\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\x02at\"p\n" +
 	"\x10WriteNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04body\x18\x02 \x01(\tR\x04body\x12'\n" +
-	"\x04seen\x18\x03 \x01(\v2\x0e.numen.v1.SeenH\x00R\x04seen\x88\x01\x01B\a\n" +
+	"\x04body\x18\x02 \x01(\tR\x04body\x12+\n" +
+	"\x04seen\x18\x03 \x01(\v2\x12.numen.v1.LastReadH\x00R\x04seen\x88\x01\x01B\a\n" +
 	"\x05_seen\"\x93\x01\n" +
 	"\x11WriteNoteResponse\x120\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
@@ -1949,17 +1950,17 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*GetOpeningNoteResponse)(nil),   // 5: numen.v1.GetOpeningNoteResponse
 	(*GetNeighbourhoodRequest)(nil),  // 6: numen.v1.GetNeighbourhoodRequest
 	(*GetNeighbourhoodResponse)(nil), // 7: numen.v1.GetNeighbourhoodResponse
-	(*Seated)(nil),                   // 8: numen.v1.Seated
+	(*Neighbour)(nil),                // 8: numen.v1.Neighbour
 	(*ResolveAddressesRequest)(nil),  // 9: numen.v1.ResolveAddressesRequest
 	(*ResolveAddressesResponse)(nil), // 10: numen.v1.ResolveAddressesResponse
-	(*Reached)(nil),                  // 11: numen.v1.Reached
+	(*ResolvedAddress)(nil),          // 11: numen.v1.ResolvedAddress
 	(*ListHeadingsRequest)(nil),      // 12: numen.v1.ListHeadingsRequest
 	(*ListHeadingsResponse)(nil),     // 13: numen.v1.ListHeadingsResponse
 	(*NoteHeadings)(nil),             // 14: numen.v1.NoteHeadings
 	(*Heading)(nil),                  // 15: numen.v1.Heading
 	(*ReadNoteRequest)(nil),          // 16: numen.v1.ReadNoteRequest
 	(*ReadNoteResponse)(nil),         // 17: numen.v1.ReadNoteResponse
-	(*Seen)(nil),                     // 18: numen.v1.Seen
+	(*LastRead)(nil),                 // 18: numen.v1.LastRead
 	(*WriteNoteRequest)(nil),         // 19: numen.v1.WriteNoteRequest
 	(*WriteNoteResponse)(nil),        // 20: numen.v1.WriteNoteResponse
 	(*NewLink)(nil),                  // 21: numen.v1.NewLink
@@ -1979,18 +1980,18 @@ var file_numen_v1_note_proto_goTypes = []any{
 var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
 	3,  // 1: numen.v1.GetNeighbourhoodResponse.focus:type_name -> numen.v1.Note
-	8,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Seated
+	8,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbour
 	30, // 3: numen.v1.GetNeighbourhoodResponse.focus_type:type_name -> numen.v1.NoteType
-	3,  // 4: numen.v1.Seated.note:type_name -> numen.v1.Note
-	0,  // 5: numen.v1.Seated.seat:type_name -> numen.v1.Seat
-	30, // 6: numen.v1.Seated.type:type_name -> numen.v1.NoteType
-	11, // 7: numen.v1.ResolveAddressesResponse.reached:type_name -> numen.v1.Reached
+	3,  // 4: numen.v1.Neighbour.note:type_name -> numen.v1.Note
+	0,  // 5: numen.v1.Neighbour.seat:type_name -> numen.v1.Seat
+	30, // 6: numen.v1.Neighbour.type:type_name -> numen.v1.NoteType
+	11, // 7: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
 	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
 	31, // 10: numen.v1.ReadNoteResponse.refusal:type_name -> numen.v1.Refusal
 	32, // 11: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.Fingerprint
-	32, // 12: numen.v1.Seen.at:type_name -> numen.v1.Fingerprint
-	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.Seen
+	32, // 12: numen.v1.LastRead.at:type_name -> numen.v1.Fingerprint
+	18, // 13: numen.v1.WriteNoteRequest.seen:type_name -> numen.v1.LastRead
 	31, // 14: numen.v1.WriteNoteResponse.refusal:type_name -> numen.v1.Refusal
 	32, // 15: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.Fingerprint
 	1,  // 16: numen.v1.NewLink.role:type_name -> numen.v1.Role

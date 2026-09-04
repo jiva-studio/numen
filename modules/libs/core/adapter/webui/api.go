@@ -441,7 +441,7 @@ func (a *API) GetNeighbourhood(
 		FocusType: typeOf(types[found.Focus.Path]),
 	}
 	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.Seated{
+		out.Related = append(out.Related, &v1.Neighbour{
 			Note:    noteOf(related.NoteRef),
 			Seat:    seatOf(related.Seat),
 			Label:   related.Label,
@@ -478,7 +478,7 @@ func (a *API) ResolveAddresses(
 		}
 		said[written] = true
 		vault, crossed := one.InVault(showing.ID)
-		out.Reached = append(out.Reached, &v1.Reached{
+		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
 			Written:   written,
 			Path:      one.To,
 			Vault:     string(vault),

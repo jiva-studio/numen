@@ -11,10 +11,10 @@ import (
 const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 
 // reached is where each address landed, by what was asked about.
-func reached(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.Reached {
+func reached(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
-	by := map[string]*v1.Reached{}
-	for _, one := range answer.GetReached() {
+	by := map[string]*v1.ResolvedAddress{}
+	for _, one := range answer.GetResolved() {
 		by[one.GetWritten()] = one
 	}
 	return by
@@ -144,7 +144,7 @@ func TestAnAddressAskedTwiceIsAnsweredOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := answer.Msg.GetReached(); len(got) != 1 {
+	if got := answer.Msg.GetResolved(); len(got) != 1 {
 		t.Fatalf("reached = %+v, want the one address asked about", got)
 	}
 }
