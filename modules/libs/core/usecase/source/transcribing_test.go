@@ -89,9 +89,11 @@ func listens(t *testing.T, by *deaf, recordings ...string) (*Transcribing, domai
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   task.New(),
-		Ready:   func() bool { return true },
-		Open: func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
-			return by, by.Close, nil
+		Runtime: TranscriptionRuntime{
+			Ready: func() bool { return true },
+			Open: func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+				return by, by.Close, nil
+			},
 		},
 	})
 	held.Cut = func(context.Context, domain.Vault, string) error { return nil }
@@ -145,8 +147,8 @@ func TestTheModelsAreGotUnderTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 	known := unheard{recordings: []string{"talks/one.mp3"}}
 
 	var while []task.Task
-	open := listening.with.Open
-	listening.with.Open = func(
+	open := listening.with.Runtime.Open
+	listening.with.Runtime.Open = func(
 		ctx context.Context,
 		tell func(string, int64, int64),
 	) (port.Transcriber, func() error, error) {
@@ -235,7 +237,7 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 
 	hearing, going := make(chan struct{}, 1), make(chan struct{})
 	first := true
-	listening.with.Open = func(
+	listening.with.Runtime.Open = func(
 		context.Context, func(string, int64, int64),
 	) (port.Transcriber, func() error, error) {
 		if first {
@@ -421,7 +423,7 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	held, v := listens(t, by, "talk.mp3")
 
 	var opened, given int
-	held.with.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	held.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
 		opened++
 		return by, func() error { given++; return by.Close() }, nil
 	}

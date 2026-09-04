@@ -40,16 +40,20 @@ func (c Config) Transcribing(
 		Derived: c.DerivedStores(),
 		Sources: sources,
 		Tasks:   tasks,
-		Open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error) {
-			cfg := c.Transcription
-			cfg.Progress = tell
-			models, err := transcription.Open(ctx, cfg)
-			if err != nil {
-				return nil, nil, err
-			}
-			return models, models.Close, nil
+		Runtime: source.TranscriptionRuntime{
+			Open: func(
+				ctx context.Context, tell func(what string, done, total int64),
+			) (port.Transcriber, func() error, error) {
+				cfg := c.Transcription
+				cfg.Progress = tell
+				models, err := transcription.Open(ctx, cfg)
+				if err != nil {
+					return nil, nil, err
+				}
+				return models, models.Close, nil
+			},
+			Ready: c.TranscriberReady,
 		},
-		Ready:        c.TranscriberReady,
 		Unasked:      c.TranscribesUnder,
 		Proofreading: c.proofreadingFor(c.SpeechProofreading),
 	})

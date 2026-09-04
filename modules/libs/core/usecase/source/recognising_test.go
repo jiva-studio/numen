@@ -48,19 +48,21 @@ func recognising(t *testing.T, why error) *watched {
 		Readers: vaultReaders,
 		Derived: derivedStores,
 		Tasks:   tasks,
-		Ready:   func() bool { return true },
 		Proofreading: Proofreading{
 			Queue: func(string) (port.ProofreadQueue, error) { return nil, nil },
 		},
-		Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
-			w.mu.Lock()
-			w.open++
-			w.while = tasks.List()
-			w.mu.Unlock()
-			if why != nil {
-				return nil, nil, why
-			}
-			return w.held, w.held.Close, nil
+		Runtime: RecognitionRuntime{
+			Ready: func() bool { return true },
+			Open: func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+				w.mu.Lock()
+				w.open++
+				w.while = tasks.List()
+				w.mu.Unlock()
+				if why != nil {
+					return nil, nil, why
+				}
+				return w.held, w.held.Close, nil
+			},
 		},
 	})
 	return w
@@ -117,7 +119,7 @@ func TestADocumentNamedWhileOneIsBeingReadWaitsItsTurn(t *testing.T) {
 	w := recognising(t, errors.New("nothing to read with"))
 
 	reading, held := make(chan struct{}, 2), make(chan struct{})
-	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		w.mu.Unlock()
@@ -228,7 +230,7 @@ func TestAReadingStoppedIsNotAFailure(t *testing.T) {
 	w := recognising(t, nil)
 	ctx, cancel := context.WithCancel(t.Context())
 	w.under = ctx
-	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		cancel()
 		return nil, nil, context.Canceled
 	}
@@ -252,7 +254,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 	// reading does.
 	abrupt := make(chan struct{}, 1)
 	abrupt <- struct{}{}
-	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		select {
 		case <-abrupt:
 			runtime.Goexit()
@@ -277,7 +279,7 @@ func TestAReadingThatEndsAbruptlyDoesNotHoldTheNextOne(t *testing.T) {
 // the document, so what was missing is fetched and nothing is read.
 func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	w := recognising(t, nil)
-	w.Recognising.with.Standing = func() bool { return false }
+	w.Recognising.with.Runtime.Prepared = func() bool { return false }
 
 	err := w.recognise(t.Context(), somewhere, "recognition-1", "a.pdf")
 	if !errors.Is(err, errLateRuntime) {
@@ -297,7 +299,7 @@ func TestTheApplicationWaitsForAReadingItStarted(t *testing.T) {
 	w := recognising(t, nil)
 
 	holding := make(chan struct{})
-	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		<-holding
 		return nil, nil, errors.New("nothing to read with")
 	}

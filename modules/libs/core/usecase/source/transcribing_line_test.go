@@ -70,7 +70,7 @@ func TestARecordingNamedAsDrainAndReleaseEndsIsTranscribed(t *testing.T) {
 		opened int
 	)
 	hearing := make(chan int, 8)
-	listening.with.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
+	listening.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
 		mu.Lock()
 		opened++
 		n := opened

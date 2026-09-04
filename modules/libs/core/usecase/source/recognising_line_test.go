@@ -115,7 +115,7 @@ func TestADocumentNamedAsTheLineEmptiesIsRead(t *testing.T) {
 	}()
 
 	reading := make(chan int, 8)
-	w.Recognising.with.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
+	w.Recognising.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
 		w.mu.Lock()
 		w.open++
 		n := w.open

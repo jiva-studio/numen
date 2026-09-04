@@ -30,6 +30,19 @@ func proofreadingID(path string) string { return "proofreading-" + path }
 // recognise. It is told how far the fetching of what it needs has got.
 type Recognises func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error)
 
+// A RecognitionRuntime is what a page is recognised through on this machine.
+type RecognitionRuntime struct {
+	// Open recognises a page.
+	Open Recognises
+	// Ready says whether opening it would wait for anything to arrive.
+	Ready func() bool
+	// Prepared says whether the runtime was made before the window. One made
+	// after a window reads every page it is given as nothing, so a page it
+	// would read is the next opening's to read. A test that recognises through
+	// nothing leaves this unset.
+	Prepared func() bool
+}
+
 // Recognitions is what one installation recognises scanned documents with: what
 // recognises a page, what a vault is read and written through, and what puts a
 // recognition right afterwards.
@@ -40,14 +53,8 @@ type Recognitions struct {
 	Sources   port.SourceRepository
 	Tasks     *task.Tasks
 
-	// Open recognises a page, and Ready says whether opening it would wait for
-	// anything to arrive.
-	Open  Recognises
-	Ready func() bool
-
-	// Standing says whether the runtime a page is recognised through was made
-	// before the window. A test that recognises through nothing leaves it unset.
-	Standing func() bool
+	// Runtime is what a page is recognised through.
+	Runtime RecognitionRuntime
 
 	// Proofreading is what a recognition is put right with.
 	Proofreading Proofreading
@@ -100,7 +107,7 @@ func NewRecognising(ctx context.Context, with Recognitions) *Recognising {
 
 // Ready says whether a document could be recognised now without waiting for
 // anything to arrive.
-func (r *Recognising) Ready() bool { return r.with.Ready() }
+func (r *Recognising) Ready() bool { return r.with.Runtime.Ready() }
 
 // Wait is every recognition and every collection this started, ended. What they
 // write goes into an index the application still holds open.
@@ -246,7 +253,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.say(task.Task{ID: id, Doing: "Fetching models"})
-	by, letGo, err := r.with.Open(ctx, func(what string, done, total int64) {
+	by, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		r.say(task.Task{
@@ -269,7 +276,7 @@ func (r *Recognising) recognise(ctx context.Context, v domain.Vault, id, path st
 	// its window, and a runtime this process fetched afterwards is not that one.
 	// What was missing is here now, and the recognition is the next opening's to
 	// do.
-	if r.with.Standing != nil && !r.with.Standing() {
+	if r.with.Runtime.Prepared != nil && !r.with.Runtime.Prepared() {
 		return errLateRuntime
 	}
 

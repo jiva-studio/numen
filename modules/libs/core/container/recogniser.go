@@ -51,17 +51,21 @@ func (c Config) Recognising(
 		Documents: c.Documents(),
 		Sources:   sources,
 		Tasks:     tasks,
-		Open: func(ctx context.Context, tell func(what string, done, total int64)) (port.Recogniser, func() error, error) {
-			cfg := c.Recognition
-			cfg.Progress = tell
-			models, err := recognition.Open(ctx, cfg)
-			if err != nil {
-				return nil, nil, err
-			}
-			return models, models.Close, nil
+		Runtime: source.RecognitionRuntime{
+			Open: func(
+				ctx context.Context, tell func(what string, done, total int64),
+			) (port.Recogniser, func() error, error) {
+				cfg := c.Recognition
+				cfg.Progress = tell
+				models, err := recognition.Open(ctx, cfg)
+				if err != nil {
+					return nil, nil, err
+				}
+				return models, models.Close, nil
+			},
+			Ready:    c.RecogniserReady,
+			Prepared: recognition.Prepared,
 		},
-		Ready:        c.RecogniserReady,
-		Standing:     recognition.Prepared,
 		Proofreading: c.proofreadingFor(c.ScanProofreading),
 	})
 }

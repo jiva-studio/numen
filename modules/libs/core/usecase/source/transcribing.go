@@ -53,6 +53,15 @@ type Proofreading struct {
 	MaxEditDistance float64
 }
 
+// A TranscriptionRuntime is what a recording is transcribed through on this
+// machine.
+type TranscriptionRuntime struct {
+	// Open transcribes a recording.
+	Open Transcribes
+	// Ready says whether opening it would wait for anything to arrive.
+	Ready func() bool
+}
+
 // Transcriptions is what one installation transcribes recordings with: what
 // transcribes them, what a vault is read and written through, and what puts a
 // transcript right afterwards.
@@ -62,10 +71,8 @@ type Transcriptions struct {
 	Sources port.SourceRepository
 	Tasks   *task.Tasks
 
-	// Open transcribes a recording, and Ready says whether opening it would wait
-	// for anything to arrive.
-	Open  Transcribes
-	Ready func() bool
+	// Runtime is what a recording is transcribed through.
+	Runtime TranscriptionRuntime
 
 	// Unasked is how many bytes a recording may run to and still be transcribed
 	// where nobody asked for it. A larger one is left for somebody to ask for by
@@ -121,7 +128,7 @@ func NewTranscribing(ctx context.Context, with Transcriptions) *Transcribing {
 
 // Ready says whether a recording could be transcribed now without waiting for
 // anything to arrive.
-func (t *Transcribing) Ready() bool { return t.with.Ready() }
+func (t *Transcribing) Ready() bool { return t.with.Runtime.Ready() }
 
 // Wait is every transcription this started, ended. What they write goes into an
 // index the application still holds open.
@@ -555,7 +562,7 @@ func (t *Transcribing) transcribe(
 	// Getting the models is a step of its own and stands under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.say(task.Task{ID: id, Doing: "Fetching models"}, asked)
-	by, letGo, err := t.with.Open(ctx, func(what string, done, total int64) {
+	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.say(task.Task{
