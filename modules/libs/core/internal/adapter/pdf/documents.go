@@ -34,9 +34,9 @@ func (Documents) Read(ctx context.Context, raw []byte) (out port.Reading, err er
 	return out, nil
 }
 
-// Lit is where the words of the pages named sit on them.
-func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) (lit []highlight.Box, err error) {
-	defer survived("lighting a page", &lit, &err)
+// Highlights is where the words of the pages named sit on them.
+func (Documents) Highlights(ctx context.Context, raw []byte, starts []int, pages []int) (boxes []highlight.Box, err error) {
+	defer survived("highlighting a page", &boxes, &err)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -44,11 +44,11 @@ func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int)
 	for _, at := range starts {
 		book.Pages = append(book.Pages, Page{Offset: at})
 	}
-	boxes, err := book.Lit(raw, pages)
+	found, err := book.Highlights(raw, pages)
 	if err != nil {
 		return nil, refused(err)
 	}
-	return boxes, nil
+	return found, nil
 }
 
 // Draw holds a document open for its pages to be drawn.

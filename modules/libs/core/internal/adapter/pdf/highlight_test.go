@@ -61,7 +61,7 @@ func where(t *testing.T, name string, pages ...int) (*Book, []highlight.Box) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	boxes, err := book.Lit(raw, pages)
+	boxes, err := book.Highlights(raw, pages)
 	if err != nil {
 		t.Fatal(err)
 	}

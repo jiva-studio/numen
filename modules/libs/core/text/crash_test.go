@@ -20,7 +20,7 @@ func (wild) Read(context.Context, []byte) (port.Reading, error) {
 	panic("page 3 of 2")
 }
 
-func (wild) Lit(context.Context, []byte, []int, []int) ([]highlight.Box, error) {
+func (wild) Highlights(context.Context, []byte, []int, []int) ([]highlight.Box, error) {
 	panic("page 3 of 2")
 }
 

@@ -32,7 +32,7 @@ type layered struct {
 	where func(raw []byte, pages []int) ([]highlight.Box, error)
 }
 
-func (l layered) Lit(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
+func (l layered) Highlights(_ context.Context, raw []byte, _ []int, pages []int) ([]highlight.Box, error) {
 	return l.where(raw, pages)
 }
 
@@ -149,7 +149,7 @@ func TestASourceWithNoReadingIsLitFromItsOwnLayer(t *testing.T) {
 	}
 
 	// The rectangle is the one the document puts that word in.
-	boxes, err := book.Lit(raw, []int{0})
+	boxes, err := book.Highlights(raw, []int{0})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
 	var asked []int
 	u = answering(u, func(raw []byte, pages []int) ([]highlight.Box, error) {
 		asked = pages
-		return book.Lit(raw, pages)
+		return book.Highlights(raw, pages)
 	})
 
 	start, length := run(t, book, "closer")
@@ -231,7 +231,7 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 	var asked [][]int
 	u = answering(u, func(raw []byte, pages []int) ([]highlight.Box, error) {
 		asked = append(asked, pages)
-		return book.Lit(raw, pages)
+		return book.Highlights(raw, pages)
 	})
 
 	after, afterLength := run(t, book, "Afterword")

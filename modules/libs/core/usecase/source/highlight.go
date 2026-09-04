@@ -154,7 +154,7 @@ func (u Highlight) layer(
 	if len(pages) == 0 {
 		return nil, nil
 	}
-	return u.Documents.Lit(ctx, raw, book.Pages, pages)
+	return u.Documents.Highlights(ctx, raw, book.Pages, pages)
 }
 
 // every is the pages all the runs fall on, in order and each of them once. Two

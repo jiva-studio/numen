@@ -18,15 +18,15 @@ const (
 	wordGap = 0.25
 )
 
-// Lit is where the words of some pages of the document sit: one box a word, at
-// the offset in Text where that word begins.
+// Highlights is where the words of some pages of the document sit: one box a
+// word, at the offset in Text where that word begins.
 //
 // The pages wanted are given by their index, and only those are read. The
 // boxes come back ascending by offset.
 //
 // A page whose text layer says nothing gives no boxes, and a scan gives none at
 // all.
-func (b *Book) Lit(raw []byte, pages []int) ([]highlight.Box, error) {
+func (b *Book) Highlights(raw []byte, pages []int) ([]highlight.Box, error) {
 	wanted := ordered(pages, len(b.Pages))
 	if len(wanted) == 0 {
 		return nil, nil

@@ -19,10 +19,10 @@ type Documents interface {
 	// each of its pages begins in that text.
 	Read(ctx context.Context, raw []byte) (Reading, error)
 
-	// Lit is where the words of the pages named sit, as fractions of the page,
-	// one box a word. Starts is where each page begins, as Read answered, and
-	// pages are the ones wanted, by index.
-	Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
+	// Highlights is where the words of the pages named sit, as fractions of the
+	// page, one box a word. Starts is where each page begins, as Read answered,
+	// and pages are the ones wanted, by index.
+	Highlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error)
 
 	// Draw holds a document open so its pages can be drawn. It holds a worker
 	// until it is closed, and there are as many workers as this machine has
