@@ -21,8 +21,8 @@ export interface Counts {
 
 /** One vault, as the count answers about it. */
 export interface Vaulted {
-  vault: string
   name: string
+  displayName: string
   path: string
   faces: number
   due: number
@@ -135,8 +135,8 @@ export function counting(deps: Counting) {
 
   /** A vault on the list before its count has arrived. */
   const listed = (one: Vaulted): Owing => ({
-    vault: one.vault,
-    name: one.name,
+    vault: one.name,
+    name: one.displayName,
     path: one.path,
     counted: false,
     faces: 0,
@@ -150,8 +150,8 @@ export function counting(deps: Counting) {
 
   /** A vault as its own count leaves it. */
   const owed = (one: Vaulted): Owing => ({
-    vault: one.vault,
-    name: one.name,
+    vault: one.name,
+    name: one.displayName,
     path: one.path,
     counted: true,
     faces: one.faces,
@@ -197,8 +197,8 @@ export function counting(deps: Counting) {
   const stands = (all: readonly Vaulted[]) => {
     const held = new Map(vaults.value.map((one) => [one.vault, one]))
     vaults.value = all.map((one) => {
-      const was = held.get(one.vault)
-      return was?.counted ? { ...was, name: one.name, path: one.path } : listed(one)
+      const was = held.get(one.name)
+      return was?.counted ? { ...was, name: one.displayName, path: one.path } : listed(one)
     })
   }
 
@@ -208,7 +208,7 @@ export function counting(deps: Counting) {
    */
   const fills = (one: Vaulted) => {
     const now = one.reading ? listed(one) : owed(one)
-    vaults.value = vaults.value.map((row) => (row.vault === one.vault ? now : row))
+    vaults.value = vaults.value.map((row) => (row.vault === one.name ? now : row))
   }
 
   /** One count, answering whether it ran to the end. */

@@ -40,7 +40,7 @@ func (a *API) Owing(
 
 	listed := make([]*v1.VaultOwing, 0, len(all))
 	for _, v := range all {
-		listed = append(listed, &v1.VaultOwing{Vault: string(v.ID), Name: v.Name, Path: v.Path})
+		listed = append(listed, &v1.VaultOwing{Name: string(v.ID), DisplayName: v.Name, Path: v.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	if err := out.Send(&v1.OwingResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
@@ -110,7 +110,7 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 }
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
-	one := &v1.VaultOwing{Vault: string(v.ID), Name: v.Name, Path: v.Path}
+	one := &v1.VaultOwing{Name: string(v.ID), DisplayName: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the

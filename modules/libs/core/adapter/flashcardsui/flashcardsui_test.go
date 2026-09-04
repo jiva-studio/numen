@@ -181,14 +181,14 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Owin
 			first = false
 			out.Day, out.Vaults = said.GetDay(), said.GetVaults()
 			for where, one := range out.GetVaults() {
-				at[one.GetVault()] = where
+				at[one.GetName()] = where
 			}
 			continue
 		}
 		one := said.GetCounted()
-		where, listed := at[one.GetVault()]
+		where, listed := at[one.GetName()]
 		if !listed {
-			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetVault())
+			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetName())
 		}
 		out.Vaults[where] = one
 	}
@@ -323,7 +323,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 func counted(t *testing.T, said *v1.OwingResponse, id string) *v1.VaultOwing {
 	t.Helper()
 	for _, one := range said.GetVaults() {
-		if one.GetVault() == id {
+		if one.GetName() == id {
 			return one
 		}
 	}
@@ -608,7 +608,7 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 	}
 	for _, one := range out.GetVaults() {
 		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("%s comes to %+v", one.GetName(), one)
+			t.Errorf("%s comes to %+v", one.GetDisplayName(), one)
 		}
 	}
 }

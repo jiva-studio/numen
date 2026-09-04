@@ -5,8 +5,8 @@ import { counting } from './counting'
 import type { Counted, Counts, Vaulted } from './counting'
 
 const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
-  vault: id,
   name: id,
+  displayName: id,
   path: `/vaults/${id}`,
   faces: 3,
   due: 1,
@@ -41,7 +41,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
 /** The vaults as they stand before any of them is counted. */
 const listing = (...all: readonly Vaulted[]): Counted => ({
   day: '2026-09-05',
-  vaults: all.map((one) => ({ ...vault(one.vault), ...one, faces: 0, due: 0, new: 0, decks: [] })),
+  vaults: all.map((one) => ({ ...vault(one.name), ...one, faces: 0, due: 0, new: 0, decks: [] })),
 })
 
 /** One vault's count, as it arrives on its own. */

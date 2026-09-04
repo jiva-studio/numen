@@ -18,8 +18,8 @@ const { counted, started, waits } = vi.hoisted(() => ({
     day: '2026-08-31',
     vaults: [
       {
-        vault: 'physics',
-        name: 'Physics',
+        name: 'physics',
+        displayName: 'Physics',
         path: '/vaults/Physics',
         faces: 2,
         due: 0,
@@ -30,8 +30,8 @@ const { counted, started, waits } = vi.hoisted(() => ({
         reading: false,
       },
       {
-        vault: 'words',
-        name: 'Words',
+        name: 'words',
+        displayName: 'Words',
         path: '/vaults/Words',
         faces: 4,
         due: 2,

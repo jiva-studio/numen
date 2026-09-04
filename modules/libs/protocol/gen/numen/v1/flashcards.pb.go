@@ -179,9 +179,11 @@ func (x *FlashcardsServiceTasksResponse) GetTasks() []*Task {
 // VaultOwing is one vault, and what its cards come to today.
 type VaultOwing struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
-	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Path  string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	// Name is the identity the folder carries, and how this vault is asked for
+	// again. DisplayName is what the person calls the collection.
+	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Path        string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Faces is every card the vault holds, counted once for each face it is shown
 	// through. Due is what was answered before and is owed today; New is what
 	// nobody has answered.
@@ -234,16 +236,16 @@ func (*VaultOwing) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *VaultOwing) GetVault() string {
+func (x *VaultOwing) GetName() string {
 	if x != nil {
-		return x.Vault
+		return x.Name
 	}
 	return ""
 }
 
-func (x *VaultOwing) GetName() string {
+func (x *VaultOwing) GetDisplayName() string {
 	if x != nil {
-		return x.Name
+		return x.DisplayName
 	}
 	return ""
 }
@@ -2021,11 +2023,11 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x14numen/v1/vault.proto\"\x1f\n" +
 	"\x1dFlashcardsServiceTasksRequest\"F\n" +
 	"\x1eFlashcardsServiceTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x92\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x9f\x02\n" +
 	"\n" +
-	"VaultOwing\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"VaultOwing\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05faces\x18\x04 \x01(\x05R\x05faces\x12\x10\n" +
 	"\x03due\x18\x05 \x01(\x05R\x03due\x12\x10\n" +
