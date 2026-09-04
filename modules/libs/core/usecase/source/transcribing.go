@@ -167,12 +167,22 @@ func (t *Transcribing) Waiting() int {
 // drain transcribes every recording a person named, in the order they named
 // them. A recording is out of the line before it is transcribed, so one whose
 // transcription ends where nothing expected it to holds nothing afterwards.
+//
+// The context is asked before a recording is taken, so what the line still holds
+// when the application closes is still in it: a recording taken and then dropped
+// is one nobody is told about, on a count that fell for nothing.
 func (t *Transcribing) drain(ctx context.Context) {
 	for {
 		t.mu.Lock()
-		one, waiting := t.queue.take()
+		var (
+			one     wanted
+			waiting bool
+		)
+		if ctx.Err() == nil {
+			one, waiting = t.queue.take()
+		}
 		t.mu.Unlock()
-		if !waiting || ctx.Err() != nil {
+		if !waiting {
 			return
 		}
 		t.one(ctx, one.vault, one.path, true)

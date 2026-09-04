@@ -18,6 +18,29 @@ func (t *Transcribing) whenIdle(idle func()) {
 	t.idle = idle
 }
 
+// A recording still in line when the application closes is left in line. A run
+// that took it and then dropped it would leave a recording never transcribed and
+// never reported, on a count that fell as though it had been.
+func TestARecordingInLineOutlivesTheContext(t *testing.T) {
+	by := &deaf{why: errors.New("not a container anything here decodes")}
+	listening, v := listens(t, by, "talks/a.mp3")
+
+	over, stop := context.WithCancel(context.Background())
+	stop()
+
+	listening.mu.Lock()
+	listening.queue.add(v, "talks/a.mp3")
+	listening.mu.Unlock()
+	listening.drain(over)
+
+	if listening.Waiting() != 1 {
+		t.Errorf("%d recordings are in line after the context ended", listening.Waiting())
+	}
+	if got := by.times(); got != 0 {
+		t.Errorf("a transcriber was handed %d recordings after the context ended", got)
+	}
+}
+
 // A recording named at the instant drainAndRelease finds the line empty is
 // transcribed. The run stops the running under the same lock it found the line
 // empty under, so the ask that follows is told it began and transcribes the

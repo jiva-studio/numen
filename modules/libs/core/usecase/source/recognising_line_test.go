@@ -63,6 +63,34 @@ func begun(t *testing.T, reading <-chan int) int {
 	}
 }
 
+// A document still in line when the application closes is left in line. A run
+// that took it and then dropped it would leave a document never read and never
+// reported, on a count that fell as though it had been.
+func TestADocumentInLineOutlivesTheContext(t *testing.T) {
+	w := recognising(t, errors.New("no models on this machine"))
+
+	over, stop := context.WithCancel(context.Background())
+	stop()
+
+	w.mu.Lock()
+	w.queue.add(somewhere, "a.pdf")
+	w.running = true
+	w.mu.Unlock()
+	w.drain(over)
+
+	if w.Waiting() != 1 {
+		t.Errorf("%d documents are in line after the context ended", w.Waiting())
+	}
+	if w.opened() != 0 {
+		t.Errorf("a recogniser was opened %d times after the context ended", w.opened())
+	}
+	// The run that gave up the line stops the running, so nothing is left
+	// standing over a line it will never come back to.
+	if w.Running() {
+		t.Error("a run that gave up the line is still the one running")
+	}
+}
+
 // A document named at the instant the line empties is read. The run that finds
 // the line empty stops the running under the same lock, so the ask that follows
 // is told it began and reads the document itself.

@@ -157,11 +157,21 @@ func (r *Recognising) Waiting() int {
 // The line is found empty and the running stopped under one hold of the lock,
 // so a document named at that instant is answered "began" and recognised by the
 // run that answers it.
+//
+// The context is asked before a document is taken, so what the line still holds
+// when the application closes is still in it: a document taken and then dropped
+// is one nobody is told about, on a count that fell for nothing.
 func (r *Recognising) drain(ctx context.Context) {
 	for {
 		r.mu.Lock()
-		one, waiting := r.queue.take()
-		if !waiting || ctx.Err() != nil {
+		var (
+			one     wanted
+			waiting bool
+		)
+		if ctx.Err() == nil {
+			one, waiting = r.queue.take()
+		}
+		if !waiting {
 			if r.idle != nil {
 				r.idle()
 			}
