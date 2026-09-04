@@ -92,9 +92,11 @@ func (u Move) Called(ctx context.Context, v domain.Vault, path string) error {
 		return nil
 	case errors.Is(err, markdown.ErrUnreadable),
 		errors.Is(err, markdown.ErrInline),
-		errors.Is(err, markdown.ErrUnterminated):
+		errors.Is(err, markdown.ErrUnterminated),
+		errors.Is(err, markdown.ErrAnchored):
 		// A note whose frontmatter cannot be read is never written, and its
-		// file is renamed like any other.
+		// file is renamed like any other. These four are the whole of what a
+		// frontmatter that cannot be changed a key at a time answers with.
 		return nil
 	}
 	return err

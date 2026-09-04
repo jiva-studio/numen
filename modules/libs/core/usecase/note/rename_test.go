@@ -33,7 +33,7 @@ func (c changing) apart() note.Rename {
 // rather than of the file: it is the answer the person sees.
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	shown, err := c.db.Queries().Notes(t.Context(), string(c.vault.ID), []string{path})
+	shown, err := c.db.Queries().Notes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,6 +269,29 @@ func TestRenamingCanLeaveTheFileWhereItIs(t *testing.T) {
 	}
 }
 
+// A file the person renamed themselves has landed before the note is opened at
+// all, so frontmatter one key cannot be changed in leaves the title unwritten
+// and reports nothing. An anchor is that case as much as one line is: neither
+// is written, and the two come out of the same guard.
+func TestAFileRenamedUnderFrontmatterThatCannotBeChangedIsLeftAlone(t *testing.T) {
+	t.Parallel()
+	for name, raw := range map[string]string{
+		"a block written on one line": "---\n{title: Old, id: b}\n---\nA measure.\n",
+		"a block carrying an anchor":  "---\ntitle: &t Old\nalias: *t\n---\nA measure.\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := changeable(t, map[string]string{"Entropy.md": raw})
+
+			if err := c.move().Called(t.Context(), c.vault, "Entropy.md"); err != nil {
+				t.Fatalf("the file had already landed: %v", err)
+			}
+			if got := c.read(t, "Entropy.md"); got != raw {
+				t.Errorf("want the note untouched, got %q", got)
+			}
+		})
+	}
+}
+
 func TestRenamingRefusesToLandOnAnExistingNote(t *testing.T) {
 	t.Parallel()
 	c := changeable(t, map[string]string{
@@ -300,7 +323,7 @@ type sulking struct {
 	refuse error
 }
 
-func (s sulking) MoveSources(context.Context, string, string, string) error { return s.refuse }
+func (s sulking) MoveSources(context.Context, domain.VaultID, string, string) error { return s.refuse }
 
 // The answer says where the file is. A move that landed says so however the
 // rest of the work goes.
@@ -486,7 +509,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.Queries().Named(t.Context(), string(c.vault.ID), "Entropy")
+			found, err := c.db.Queries().Named(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}
