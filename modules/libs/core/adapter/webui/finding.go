@@ -61,12 +61,15 @@ func (a *API) Names(ctx context.Context, r *connect.Request[v1.NamesRequest]) (*
 	return connect.NewResponse(out), nil
 }
 
-// Headings hands the client what each of the notes asked about is divided
-// into. A window standing on nothing holds no note to divide.
-func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
+// ListHeadings hands the client the headings of the notes the filter names. A
+// window standing on nothing holds no note to divide.
+func (a *API) ListHeadings(
+	ctx context.Context,
+	r *connect.Request[v1.ListHeadingsRequest],
+) (*connect.Response[v1.ListHeadingsResponse], error) {
 	showing := a.Showing()
 	if showing.ID == "" {
-		return connect.NewResponse(&v1.HeadingsResponse{}), nil
+		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
 	paths, err := eachOnce(r.Msg.GetPaths())
 	if err != nil {
@@ -77,8 +80,8 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// In the order they were asked about.
-	out := &v1.HeadingsResponse{Found: make([]*v1.NoteHeadings, 0, len(found))}
+	// In the order the filter named them.
+	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
 	for _, path := range paths {
 		headings, held := found[path]
 		if !held {
@@ -92,7 +95,7 @@ func (a *API) Headings(ctx context.Context, r *connect.Request[v1.HeadingsReques
 				Level: int32(h.Level),
 			})
 		}
-		out.Found = append(out.Found, one)
+		out.Headings = append(out.Headings, one)
 	}
 	return connect.NewResponse(out), nil
 }

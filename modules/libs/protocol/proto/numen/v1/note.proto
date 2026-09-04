@@ -26,14 +26,15 @@ service NoteService {
   // Resolve answers where addresses written in one note land.
   rpc Resolve(ResolveRequest) returns (ResolveResponse);
 
-  // Headings is what each note asked about is divided into, in the order the
-  // headings stand in it. A path that names no note, and a note carrying no
-  // headings, are both absent from the answer.
+  // ListHeadings is the headings of the vault's notes, grouped by the note they
+  // stand in and in the order they stand there. The paths are the filter: a
+  // note it does not name is not in the answer, and neither is one that carries
+  // no headings.
   //
-  // The answer carries one entry per note, and a path named twice is answered
-  // once. More paths than the vault answers at once are refused, so that an
-  // answer is never cut to fit.
-  rpc Headings(HeadingsRequest) returns (HeadingsResponse);
+  // A path named twice is answered once, and a filter naming more notes than
+  // the vault answers at once is refused, so that an answer is never cut to
+  // fit.
+  rpc ListHeadings(ListHeadingsRequest) returns (ListHeadingsResponse);
 
   // Read answers with the prose of a note, below its frontmatter.
   rpc Read(ReadRequest) returns (ReadResponse);
@@ -162,14 +163,14 @@ message Reached {
   bool ambiguous = 5;
 }
 
-message HeadingsRequest {
-  // The notes to answer about, by the paths the vault files them under. More
-  // than the vault answers at once are refused.
+message ListHeadingsRequest {
+  // Only the notes filed under these paths. A filter naming none passes none,
+  // and one naming more notes than the vault answers at once is refused.
   repeated string paths = 1;
 }
 
-message HeadingsResponse {
-  repeated NoteHeadings found = 1;
+message ListHeadingsResponse {
+  repeated NoteHeadings headings = 1;
 }
 
 // NoteHeadings is what one note is divided into.

@@ -394,9 +394,9 @@ export const core: Core & Asking & Commanding = {
   },
   /** What each of the notes asked about is divided into. */
   headings: async (paths) => {
-    const answer = await notes.headings({ paths: [...paths] })
+    const answer = await notes.listHeadings({ paths: [...paths] })
     return new Map(
-      answer.found.map((one) => [
+      answer.headings.map((one) => [
         one.path,
         one.headings.map((heading) => ({
           text: heading.text,

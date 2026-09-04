@@ -283,15 +283,15 @@ func TestANoteSaysWhatItIsDividedInto(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n\n## Heat and work\n\nA reversible engine.\n",
 	})
 
-	answer, err := client.Headings(t.Context(),
-		connect.NewRequest(&v1.HeadingsRequest{Paths: []string{"Entropy.md"}}))
+	answer, err := client.ListHeadings(t.Context(),
+		connect.NewRequest(&v1.ListHeadingsRequest{Paths: []string{"Entropy.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	found := answer.Msg.GetFound()
+	found := answer.Msg.GetHeadings()
 	if len(found) != 1 || found[0].GetPath() != "Entropy.md" {
-		t.Fatalf("found = %+v, want the one note asked about", found)
+		t.Fatalf("found = %+v, want the one note the filter named", found)
 	}
 
 	headings := found[0].GetHeadings()
@@ -360,14 +360,14 @@ func TestAPathAskedTwiceIsAnsweredOnce(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 
-	answer, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{
+	answer, err := client.ListHeadings(t.Context(), connect.NewRequest(&v1.ListHeadingsRequest{
 		Paths: []string{"Entropy.md", "Entropy.md", "Entropy.md"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if found := answer.Msg.GetFound(); len(found) != 1 {
+	if found := answer.Msg.GetHeadings(); len(found) != 1 {
 		t.Errorf("found = %+v, want one entry for the one note", found)
 	}
 }
@@ -385,7 +385,8 @@ func TestMorePathsThanAreAnsweredAtOnceAreRefused(t *testing.T) {
 		paths = append(paths, fmt.Sprintf("Note%03d.md", i))
 	}
 
-	_, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{Paths: paths}))
+	_, err := client.ListHeadings(t.Context(),
+		connect.NewRequest(&v1.ListHeadingsRequest{Paths: paths}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("err = %v, want a refusal of the paths named", err)
 	}
@@ -396,14 +397,14 @@ func TestANoteCarryingNoHeadingIsAbsent(t *testing.T) {
 		"Plain.md": "---\ntitle: Plain\n---\n\nProse and nothing else.\n",
 	})
 
-	answer, err := client.Headings(t.Context(), connect.NewRequest(&v1.HeadingsRequest{
+	answer, err := client.ListHeadings(t.Context(), connect.NewRequest(&v1.ListHeadingsRequest{
 		Paths: []string{"Plain.md", "Gone.md"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if found := answer.Msg.GetFound(); len(found) != 0 {
+	if found := answer.Msg.GetHeadings(); len(found) != 0 {
 		t.Errorf("found = %+v, want nothing for a note with no headings", found)
 	}
 }

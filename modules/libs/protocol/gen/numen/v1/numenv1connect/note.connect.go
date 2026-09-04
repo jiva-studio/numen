@@ -47,8 +47,9 @@ const (
 	NoteServiceNeighbourhoodProcedure = "/numen.v1.NoteService/Neighbourhood"
 	// NoteServiceResolveProcedure is the fully-qualified name of the NoteService's Resolve RPC.
 	NoteServiceResolveProcedure = "/numen.v1.NoteService/Resolve"
-	// NoteServiceHeadingsProcedure is the fully-qualified name of the NoteService's Headings RPC.
-	NoteServiceHeadingsProcedure = "/numen.v1.NoteService/Headings"
+	// NoteServiceListHeadingsProcedure is the fully-qualified name of the NoteService's ListHeadings
+	// RPC.
+	NoteServiceListHeadingsProcedure = "/numen.v1.NoteService/ListHeadings"
 	// NoteServiceReadProcedure is the fully-qualified name of the NoteService's Read RPC.
 	NoteServiceReadProcedure = "/numen.v1.NoteService/Read"
 	// NoteServiceWriteProcedure is the fully-qualified name of the NoteService's Write RPC.
@@ -72,14 +73,15 @@ type NoteServiceClient interface {
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
 	// Resolve answers where addresses written in one note land.
 	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
-	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note, and a note carrying no
-	// headings, are both absent from the answer.
+	// ListHeadings is the headings of the vault's notes, grouped by the note they
+	// stand in and in the order they stand there. The paths are the filter: a
+	// note it does not name is not in the answer, and neither is one that carries
+	// no headings.
 	//
-	// The answer carries one entry per note, and a path named twice is answered
-	// once. More paths than the vault answers at once are refused, so that an
-	// answer is never cut to fit.
-	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
+	// A path named twice is answered once, and a filter naming more notes than
+	// the vault answers at once is refused, so that an answer is never cut to
+	// fit.
+	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -133,10 +135,10 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("Resolve")),
 			connect.WithClientOptions(opts...),
 		),
-		headings: connect.NewClient[v1.HeadingsRequest, v1.HeadingsResponse](
+		listHeadings: connect.NewClient[v1.ListHeadingsRequest, v1.ListHeadingsResponse](
 			httpClient,
-			baseURL+NoteServiceHeadingsProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("Headings")),
+			baseURL+NoteServiceListHeadingsProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("ListHeadings")),
 			connect.WithClientOptions(opts...),
 		),
 		read: connect.NewClient[v1.ReadRequest, v1.ReadResponse](
@@ -183,7 +185,7 @@ type noteServiceClient struct {
 	opening       *connect.Client[v1.OpeningRequest, v1.OpeningResponse]
 	neighbourhood *connect.Client[v1.NeighbourhoodRequest, v1.NeighbourhoodResponse]
 	resolve       *connect.Client[v1.ResolveRequest, v1.ResolveResponse]
-	headings      *connect.Client[v1.HeadingsRequest, v1.HeadingsResponse]
+	listHeadings  *connect.Client[v1.ListHeadingsRequest, v1.ListHeadingsResponse]
 	read          *connect.Client[v1.ReadRequest, v1.ReadResponse]
 	write         *connect.Client[v1.WriteRequest, v1.WriteResponse]
 	create        *connect.Client[v1.CreateRequest, v1.CreateResponse]
@@ -207,9 +209,9 @@ func (c *noteServiceClient) Resolve(ctx context.Context, req *connect.Request[v1
 	return c.resolve.CallUnary(ctx, req)
 }
 
-// Headings calls numen.v1.NoteService.Headings.
-func (c *noteServiceClient) Headings(ctx context.Context, req *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
-	return c.headings.CallUnary(ctx, req)
+// ListHeadings calls numen.v1.NoteService.ListHeadings.
+func (c *noteServiceClient) ListHeadings(ctx context.Context, req *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error) {
+	return c.listHeadings.CallUnary(ctx, req)
 }
 
 // Read calls numen.v1.NoteService.Read.
@@ -251,14 +253,15 @@ type NoteServiceHandler interface {
 	Neighbourhood(context.Context, *connect.Request[v1.NeighbourhoodRequest]) (*connect.Response[v1.NeighbourhoodResponse], error)
 	// Resolve answers where addresses written in one note land.
 	Resolve(context.Context, *connect.Request[v1.ResolveRequest]) (*connect.Response[v1.ResolveResponse], error)
-	// Headings is what each note asked about is divided into, in the order the
-	// headings stand in it. A path that names no note, and a note carrying no
-	// headings, are both absent from the answer.
+	// ListHeadings is the headings of the vault's notes, grouped by the note they
+	// stand in and in the order they stand there. The paths are the filter: a
+	// note it does not name is not in the answer, and neither is one that carries
+	// no headings.
 	//
-	// The answer carries one entry per note, and a path named twice is answered
-	// once. More paths than the vault answers at once are refused, so that an
-	// answer is never cut to fit.
-	Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error)
+	// A path named twice is answered once, and a filter naming more notes than
+	// the vault answers at once is refused, so that an answer is never cut to
+	// fit.
+	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// Read answers with the prose of a note, below its frontmatter.
 	Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error)
 	// Write puts prose into a note, keeping the frontmatter the file has when the
@@ -308,10 +311,10 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("Resolve")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceHeadingsHandler := connect.NewUnaryHandler(
-		NoteServiceHeadingsProcedure,
-		svc.Headings,
-		connect.WithSchema(noteServiceMethods.ByName("Headings")),
+	noteServiceListHeadingsHandler := connect.NewUnaryHandler(
+		NoteServiceListHeadingsProcedure,
+		svc.ListHeadings,
+		connect.WithSchema(noteServiceMethods.ByName("ListHeadings")),
 		connect.WithHandlerOptions(opts...),
 	)
 	noteServiceReadHandler := connect.NewUnaryHandler(
@@ -358,8 +361,8 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 			noteServiceNeighbourhoodHandler.ServeHTTP(w, r)
 		case NoteServiceResolveProcedure:
 			noteServiceResolveHandler.ServeHTTP(w, r)
-		case NoteServiceHeadingsProcedure:
-			noteServiceHeadingsHandler.ServeHTTP(w, r)
+		case NoteServiceListHeadingsProcedure:
+			noteServiceListHeadingsHandler.ServeHTTP(w, r)
 		case NoteServiceReadProcedure:
 			noteServiceReadHandler.ServeHTTP(w, r)
 		case NoteServiceWriteProcedure:
@@ -393,8 +396,8 @@ func (UnimplementedNoteServiceHandler) Resolve(context.Context, *connect.Request
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.Resolve is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) Headings(context.Context, *connect.Request[v1.HeadingsRequest]) (*connect.Response[v1.HeadingsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.Headings is not implemented"))
+func (UnimplementedNoteServiceHandler) ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.ListHeadings is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) Read(context.Context, *connect.Request[v1.ReadRequest]) (*connect.Response[v1.ReadResponse], error) {

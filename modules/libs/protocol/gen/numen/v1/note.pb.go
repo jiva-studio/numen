@@ -735,29 +735,29 @@ func (x *Reached) GetAmbiguous() bool {
 	return false
 }
 
-type HeadingsRequest struct {
+type ListHeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The notes to answer about, by the paths the vault files them under. More
-	// than the vault answers at once are refused.
+	// Only the notes filed under these paths. A filter naming none passes none,
+	// and one naming more notes than the vault answers at once is refused.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeadingsRequest) Reset() {
-	*x = HeadingsRequest{}
+func (x *ListHeadingsRequest) Reset() {
+	*x = ListHeadingsRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeadingsRequest) String() string {
+func (x *ListHeadingsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeadingsRequest) ProtoMessage() {}
+func (*ListHeadingsRequest) ProtoMessage() {}
 
-func (x *HeadingsRequest) ProtoReflect() protoreflect.Message {
+func (x *ListHeadingsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -769,39 +769,39 @@ func (x *HeadingsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeadingsRequest.ProtoReflect.Descriptor instead.
-func (*HeadingsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListHeadingsRequest.ProtoReflect.Descriptor instead.
+func (*ListHeadingsRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *HeadingsRequest) GetPaths() []string {
+func (x *ListHeadingsRequest) GetPaths() []string {
 	if x != nil {
 		return x.Paths
 	}
 	return nil
 }
 
-type HeadingsResponse struct {
+type ListHeadingsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Found         []*NoteHeadings        `protobuf:"bytes,1,rep,name=found,proto3" json:"found,omitempty"`
+	Headings      []*NoteHeadings        `protobuf:"bytes,1,rep,name=headings,proto3" json:"headings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HeadingsResponse) Reset() {
-	*x = HeadingsResponse{}
+func (x *ListHeadingsResponse) Reset() {
+	*x = ListHeadingsResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HeadingsResponse) String() string {
+func (x *ListHeadingsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HeadingsResponse) ProtoMessage() {}
+func (*ListHeadingsResponse) ProtoMessage() {}
 
-func (x *HeadingsResponse) ProtoReflect() protoreflect.Message {
+func (x *ListHeadingsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -813,14 +813,14 @@ func (x *HeadingsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HeadingsResponse.ProtoReflect.Descriptor instead.
-func (*HeadingsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListHeadingsResponse.ProtoReflect.Descriptor instead.
+func (*ListHeadingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *HeadingsResponse) GetFound() []*NoteHeadings {
+func (x *ListHeadingsResponse) GetHeadings() []*NoteHeadings {
 	if x != nil {
-		return x.Found
+		return x.Headings
 	}
 	return nil
 }
@@ -1816,11 +1816,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x18\n" +
 	"\acrossed\x18\x04 \x01(\bR\acrossed\x12\x1c\n" +
-	"\tambiguous\x18\x05 \x01(\bR\tambiguous\"'\n" +
-	"\x0fHeadingsRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"@\n" +
-	"\x10HeadingsResponse\x12,\n" +
-	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.NoteHeadingsR\x05found\"Q\n" +
+	"\tambiguous\x18\x05 \x01(\bR\tambiguous\"+\n" +
+	"\x13ListHeadingsRequest\x12\x14\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"J\n" +
+	"\x14ListHeadingsResponse\x122\n" +
+	"\bheadings\x18\x01 \x03(\v2\x16.numen.v1.NoteHeadingsR\bheadings\"Q\n" +
 	"\fNoteHeadings\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12-\n" +
 	"\bheadings\x18\x02 \x03(\v2\x11.numen.v1.HeadingR\bheadings\"G\n" +
@@ -1910,12 +1910,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x12NAMING_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12NAMING_FRONTMATTER\x10\x01\x12\x12\n" +
 	"\x0eNAMING_HEADING\x10\x02\x12\x13\n" +
-	"\x0fNAMING_FILENAME\x10\x032\x86\x05\n" +
+	"\x0fNAMING_FILENAME\x10\x032\x92\x05\n" +
 	"\vNoteService\x12>\n" +
 	"\aOpening\x12\x18.numen.v1.OpeningRequest\x1a\x19.numen.v1.OpeningResponse\x12P\n" +
 	"\rNeighbourhood\x12\x1e.numen.v1.NeighbourhoodRequest\x1a\x1f.numen.v1.NeighbourhoodResponse\x12>\n" +
-	"\aResolve\x12\x18.numen.v1.ResolveRequest\x1a\x19.numen.v1.ResolveResponse\x12A\n" +
-	"\bHeadings\x12\x19.numen.v1.HeadingsRequest\x1a\x1a.numen.v1.HeadingsResponse\x125\n" +
+	"\aResolve\x12\x18.numen.v1.ResolveRequest\x1a\x19.numen.v1.ResolveResponse\x12M\n" +
+	"\fListHeadings\x12\x1d.numen.v1.ListHeadingsRequest\x1a\x1e.numen.v1.ListHeadingsResponse\x125\n" +
 	"\x04Read\x12\x15.numen.v1.ReadRequest\x1a\x16.numen.v1.ReadResponse\x128\n" +
 	"\x05Write\x12\x16.numen.v1.WriteRequest\x1a\x17.numen.v1.WriteResponse\x12;\n" +
 	"\x06Create\x12\x17.numen.v1.CreateRequest\x1a\x18.numen.v1.CreateResponse\x125\n" +
@@ -1950,8 +1950,8 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*ResolveRequest)(nil),        // 9: numen.v1.ResolveRequest
 	(*ResolveResponse)(nil),       // 10: numen.v1.ResolveResponse
 	(*Reached)(nil),               // 11: numen.v1.Reached
-	(*HeadingsRequest)(nil),       // 12: numen.v1.HeadingsRequest
-	(*HeadingsResponse)(nil),      // 13: numen.v1.HeadingsResponse
+	(*ListHeadingsRequest)(nil),   // 12: numen.v1.ListHeadingsRequest
+	(*ListHeadingsResponse)(nil),  // 13: numen.v1.ListHeadingsResponse
 	(*NoteHeadings)(nil),          // 14: numen.v1.NoteHeadings
 	(*Heading)(nil),               // 15: numen.v1.Heading
 	(*ReadRequest)(nil),           // 16: numen.v1.ReadRequest
@@ -1982,7 +1982,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	0,  // 5: numen.v1.Seated.seat:type_name -> numen.v1.Seat
 	30, // 6: numen.v1.Seated.type:type_name -> numen.v1.NoteType
 	11, // 7: numen.v1.ResolveResponse.reached:type_name -> numen.v1.Reached
-	14, // 8: numen.v1.HeadingsResponse.found:type_name -> numen.v1.NoteHeadings
+	14, // 8: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	15, // 9: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
 	31, // 10: numen.v1.ReadResponse.refusal:type_name -> numen.v1.Refusal
 	32, // 11: numen.v1.ReadResponse.at:type_name -> numen.v1.Fingerprint
@@ -2001,7 +2001,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	4,  // 24: numen.v1.NoteService.Opening:input_type -> numen.v1.OpeningRequest
 	6,  // 25: numen.v1.NoteService.Neighbourhood:input_type -> numen.v1.NeighbourhoodRequest
 	9,  // 26: numen.v1.NoteService.Resolve:input_type -> numen.v1.ResolveRequest
-	12, // 27: numen.v1.NoteService.Headings:input_type -> numen.v1.HeadingsRequest
+	12, // 27: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
 	16, // 28: numen.v1.NoteService.Read:input_type -> numen.v1.ReadRequest
 	19, // 29: numen.v1.NoteService.Write:input_type -> numen.v1.WriteRequest
 	22, // 30: numen.v1.NoteService.Create:input_type -> numen.v1.CreateRequest
@@ -2011,7 +2011,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	5,  // 34: numen.v1.NoteService.Opening:output_type -> numen.v1.OpeningResponse
 	7,  // 35: numen.v1.NoteService.Neighbourhood:output_type -> numen.v1.NeighbourhoodResponse
 	10, // 36: numen.v1.NoteService.Resolve:output_type -> numen.v1.ResolveResponse
-	13, // 37: numen.v1.NoteService.Headings:output_type -> numen.v1.HeadingsResponse
+	13, // 37: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
 	17, // 38: numen.v1.NoteService.Read:output_type -> numen.v1.ReadResponse
 	20, // 39: numen.v1.NoteService.Write:output_type -> numen.v1.WriteResponse
 	23, // 40: numen.v1.NoteService.Create:output_type -> numen.v1.CreateResponse
