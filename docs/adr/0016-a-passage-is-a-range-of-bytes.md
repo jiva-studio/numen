@@ -3,7 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-25
 - **Applies to:** `modules/libs/core`, `modules/apps/desktop` — the asset routes
-- **Related:** ADR-0004, ADR-0005, ADR-0011, ADR-0014, ADR-0015
+- **Related:** ADR-0004, ADR-0005, ADR-0011, ADR-0014, ADR-0015, ADR-0046
 
 ## Context
 
@@ -34,21 +34,16 @@ The window is sent a picture of a page. A scan is hundreds of megabytes, PDF is 
 ### A vault file is an asset
 
 ```
-GET    /assets/<id>                          what it is
-GET    /assets/<id>/pages/<n>?wide=W         one page drawn, where the asset has any
-GET    /assets/<id>/marks?start=N&length=M   where a run of its text sits
-GET    /assets/<id>/cues[?start=N&length=M]  the transcript, as JSON
-PUT    /assets/<id>/cues                     put the transcript right
-DELETE /assets/<id>/cues                     take the transcript away
-POST   /assets/<id>/recognise                read the pages
-POST   /assets/<id>/transcribe               write down what is said
-POST   /assets/<id>/proofread                put a reading or a transcript right
+GET /assets/<id>                          what it is
+GET /assets/<id>/pages/<n>?wide=W         one page drawn, where the asset has any
+GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
+GET /assets/<id>/cues[?start=N&length=M]  the transcript, as JSON
+PUT /assets/<id>/cues                     put the transcript right
 ```
+
+**What a model wrote about a file is not addressed here.** A reading, a transcript and a transcript put right are artifacts, and `ArtifactService` is where one is listed, asked for and taken away: what has been made from a file is a question a window asks, and only the bytes it draws are on these routes (ADR-0005).
 
 A recording's bytes are not here. They are served ranged, from a loopback port, at an address the answer to `GET /assets/<id>` carries: a media element speaks the protocols of the world and not the scheme one application serves its window under.
-
-```
-```
 
 `<id>` is the vault path, percent-encoded, because a file has no other name the window holds. **The handler routes on the escaped path**: Go decodes before a handler sees it, and a decoded separator runs the member and what hangs off it together. These routes are served by the same adapter that serves the generated handler (ADR-0005).
 
@@ -68,6 +63,7 @@ What a page is called, and what a location says to a person, is [`../reading.md`
 - A page asked for with the pool full comes back busy, and the window has to show that.
 - A document rewritten since its recognition is lit by its own layer, and the two disagree about where a word is.
 - Drawn pages are lost with the cache folder, and cost the drawing again.
+- A recording's cues are read and written on these routes and are not bytes: they are the one thing here the rule above does not hold for.
 
 ## Alternatives considered
 

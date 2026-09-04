@@ -59,8 +59,7 @@ window, which is not a configuration file at all.
 The same four families the panel's agent has — [notes, links, documents and
 vaults](/agent/#what-it-can-do). It works whichever vault the window is showing, and no other.
 
-There is no tool that erases a vault from disk. Taking a folder away is asked for in front of
-you.
+There is no tool that puts a folder on the list, opens another vault, or erases one from disk. Which folders are vaults, and which one is in front of you, is settled through the picker.
 
 ## Shutting the door
 

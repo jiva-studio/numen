@@ -30,8 +30,8 @@ A word means one thing inside its context, and the same word in two contexts is 
 | identifier | The ULID a note or a vault carries in the world — [Note format](note-format.md). The number a row has inside the index is not one and does not leave the storage. | |
 | backlink | A link that resolves here, whichever end wrote it — [Links](links.md). | |
 | trash | Where a removed note is kept: `.trash/` inside the vault. The machine's own trash, which a whole vault folder is moved to, is the other thing the word is spent on. | |
-| changed | What a write answers when the note on disk is no longer the one the caller read. | |
-| refusal | Why one call was told no, from a closed list the protocol carries: missing, too large, occupied, unnameable, not a stencil, and the rest. It is written once, in the core, and every window and every tool names the reason the same way. A refusal answers one call; a problem is something wrong with the vault, and a check is what notices one. | problem |
+| stale | Why a write was refused when the file on disk is no longer the one the caller read. It is one refusal among the others and not a field of its own; what a tab in that state is called to a person is `overtaken`. | changed |
+| refusal | Why one call was told no, from a closed list the protocol carries: missing, too large, occupied, unnameable, stale, not a stencil, and the rest. It is written once, in the core, and every window and every tool names the reason the same way. A refusal answers one call; a problem is something wrong with the vault, and a check is what notices one. A refusal is an answer: a call that could not be answered at all carries a status code instead. | problem |
 | watch | Following a vault for changes the application did not make. | |
 | hold | How long events are kept before they are acted on. The word is also the vault's write lock — one write to a vault happens at a time, and `Hold` is what takes it. | |
 | reload | What a client is told when the vault is to be read again whole: more changed at once than could be followed, or a listener that fell behind. | |
