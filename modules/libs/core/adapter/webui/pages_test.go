@@ -342,14 +342,16 @@ func TestTheDoorShutsBehindTheQuestionsAlreadyTaken(t *testing.T) {
 		begun:        make(chan struct{}, 1),
 		until:        make(chan struct{}),
 	}
-	api := &API{Readers: readers}
+	// A page is the one thing left under this route, and drawing one looks the
+	// file up before anything else.
+	api := &API{Readers: readers, Viewer: looking(nil)}
 	api.show(testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"}))
 	handler := api.Serving(http.NotFoundHandler())
 
 	answered := make(chan struct{})
 	go func() {
 		defer close(answered)
-		at := assetsRoute + url.PathEscape("Note.md")
+		at := pageOf("Note.md", 0, 800)
 		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
 	}()
 	<-readers.begun
