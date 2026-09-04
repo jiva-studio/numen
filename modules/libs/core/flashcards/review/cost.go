@@ -208,7 +208,7 @@ type Projection struct {
 	MinutesADay float64
 	// Retained is the share of the material that comes back, on the days the run
 	// was asked to answer for.
-	Retained Kept
+	Retained RetentionByDay
 	// Answered is how many answers were given over the days projected.
 	Answered int
 	// Faces is the material: every card face the preset schedules. Seen is how
@@ -266,24 +266,24 @@ type Projection struct {
 	Through []float64
 }
 
-// Kept is the share of the material that comes back at the end of a day, on the
-// days a run was asked to answer for. A day it was not asked for holds no share,
-// and On says so.
-type Kept struct{ on map[int]float64 }
+// RetentionByDay is the share of the material that comes back at the end of a
+// day, on the days a run was asked to answer for. A day it was not asked for
+// holds no share, and On says so.
+type RetentionByDay struct{ on map[int]float64 }
 
 // On is the share of the material that came back at the end of this day of the
 // run, counting the day the run opens as none, and whether the run answers for
 // that day.
-func (k Kept) On(day int) (float64, bool) {
+func (k RetentionByDay) On(day int) (float64, bool) {
 	share, answers := k.on[day]
 	return share, answers
 }
 
 // Days is every day this answers for, in order.
-func (k Kept) Days() []int { return slices.Sorted(maps.Keys(k.on)) }
+func (k RetentionByDay) Days() []int { return slices.Sorted(maps.Keys(k.on)) }
 
 // holds the share one day came to.
-func (k *Kept) holds(day int, share float64) {
+func (k *RetentionByDay) holds(day int, share float64) {
 	if k.on == nil {
 		k.on = make(map[int]float64)
 	}

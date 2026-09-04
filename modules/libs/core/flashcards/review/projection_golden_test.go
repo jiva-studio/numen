@@ -130,7 +130,7 @@ func written(out *strings.Builder, p review.Projection) {
 }
 
 // kept is the share that came back on each day the run answers for, in order.
-func kept(one review.Kept) []float64 {
+func kept(one review.RetentionByDay) []float64 {
 	days := one.Days()
 	out := make([]float64, 0, len(days))
 	for _, day := range days {
