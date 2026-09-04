@@ -65,7 +65,7 @@ const MODELS: readonly Model[] = [
 ]
 
 /** An installation configured that way, and everything it was asked to change. */
-const standing = (pinned = false, file: Record<string, unknown> = {}) => {
+const configured = (pinned = false, file: Record<string, unknown> = {}) => {
   const done: string[] = []
   const written: Written[] = []
   const syncing = ref(true)
@@ -119,7 +119,7 @@ afterEach(() => {
   while (drawn.length) drawn.pop()?.unmount()
 })
 
-type Tab = ReturnType<typeof standing>['tab']
+type Tab = ReturnType<typeof configured>['tab']
 
 /** The choices one line offers, opened. They are drawn at the end of the document. */
 const opens = async (tab: Tab, id: string) => {
@@ -147,7 +147,7 @@ const takes = async (words: string) => {
 
 describe('the settings tab', () => {
   it('draws every group, by the part of the application it governs', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     const headings = tab.findAll('.settings__heading').map((one) => one.text())
     expect(headings).toStrictEqual([
       words.window,
@@ -161,7 +161,7 @@ describe('the settings tab', () => {
   })
 
   it('opens on the theme the settings name, off both shelves', async () => {
-    const { tab } = standing()
+    const { tab } = configured()
     expect(tab.get('#settings-theme').text()).toContain('numen')
 
     await opens(tab, 'settings-theme')
@@ -169,26 +169,26 @@ describe('the settings tab', () => {
   })
 
   it('writes a theme the way the command of that name writes it', async () => {
-    const { tab, done } = standing()
+    const { tab, done } = configured()
     await opens(tab, 'settings-theme')
     await takes('sea')
     expect(done).toStrictEqual(['chooses mine:sea'])
   })
 
   it('says why the mode cannot be chosen while the theme worn pins it', () => {
-    expect(standing(true).tab.text()).toContain(words.pinned)
-    expect(standing().tab.text()).not.toContain(words.pinned)
+    expect(configured(true).tab.text()).toContain(words.pinned)
+    expect(configured().tab.text()).not.toContain(words.pinned)
   })
 
   it('turns the two switches the window keeps', async () => {
-    const { tab, done } = standing()
+    const { tab, done } = configured()
     await tab.get('[aria-labelledby="settings-hanging"]').trigger('click')
     await tab.get('[aria-labelledby="settings-syncing"]').trigger('click')
     expect(done).toStrictEqual(['hanging false', 'syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {
-    const { tab, done } = standing()
+    const { tab, done } = configured()
     expect(tab.get('.settings__file').text()).toBe('/numen.json')
 
     await tab.get('.settings__where button').trigger('click')
@@ -196,14 +196,14 @@ describe('the settings tab', () => {
   })
 
   it('carries no pencil, and no editor spliced under a row', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     expect(tab.findAll('.editable__row')).toHaveLength(0)
     expect(tab.findAll('.cm-editor')).toHaveLength(0)
     expect(tab.text()).not.toContain('JSON5')
   })
 
   it('draws the settings it reads out of the file, each under the group it is in', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     expect(tab.text()).toContain(words.indexingModel)
     expect(tab.text()).toContain(words.ocrModel)
     expect(tab.text()).toContain(words.transcribing)
@@ -211,7 +211,7 @@ describe('the settings tab', () => {
   })
 
   it('draws each of the two proofreadings beside the thing it puts right', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
     const heard = tab.get('section[aria-label="' + words.transcription + '"]')
 
@@ -222,7 +222,7 @@ describe('the settings tab', () => {
   })
 
   it('reads each of the two proofreadings out of its own path', () => {
-    const { tab } = standing(false, {
+    const { tab } = configured(false, {
       indexing: {
         recognition: { proofread: { with: 'careful' } },
         transcription: { proofread: { with: 'quick' } },
@@ -233,7 +233,7 @@ describe('the settings tab', () => {
   })
 
   it('writes each of the two proofreadings into its own path', async () => {
-    const { tab, written } = standing(false, {
+    const { tab, written } = configured(false, {
       indexing: { proofreading: { profiles: { careful: {} } } },
     })
     await opens(tab, 'settings-transcript-proofread')
@@ -244,7 +244,7 @@ describe('the settings tab', () => {
   })
 
   it('turns whether each of the two is put right unasked', async () => {
-    const { tab, written } = standing()
+    const { tab, written } = configured()
     await tab.get('[aria-labelledby="settings-ocr-always"]').trigger('click')
     await tab.get('[aria-labelledby="settings-transcript-always"]').trigger('click')
     expect(written).toStrictEqual([
@@ -254,7 +254,7 @@ describe('the settings tab', () => {
   })
 
   it('opens a model on what the file names, and says which one is the default', async () => {
-    const { tab } = standing(false, { agent: { claude: { model: 'opus' } } })
+    const { tab } = configured(false, { agent: { claude: { model: 'opus' } } })
     expect(tab.get('#settings-agent-model').text()).toContain('opus')
 
     await opens(tab, 'settings-agent-model')
@@ -262,7 +262,7 @@ describe('the settings tab', () => {
   })
 
   it('names a model by its own words, and addresses it underneath', async () => {
-    const { tab } = standing()
+    const { tab } = configured()
     await opens(tab, 'settings-ocr')
     expect(offered()).toStrictEqual([
       `Tiny, small — ${words.byDefault}`,
@@ -274,7 +274,7 @@ describe('the settings tab', () => {
   })
 
   it('writes the readable name on the line, never the address it is fetched from', () => {
-    const { tab } = standing(false, {
+    const { tab } = configured(false, {
       indexing: { recognition: { recognise: { name: OWN } } },
     })
     const line = tab.get('#settings-ocr')
@@ -285,7 +285,7 @@ describe('the settings tab', () => {
 
   it('draws a value the presets do not name as the person’s own, and says nothing else', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab } = standing(false, {
+    const { tab } = configured(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     expect(tab.get('#settings-ocr').text()).toContain('Other_rec.onnx')
@@ -298,7 +298,7 @@ describe('the settings tab', () => {
 
   it('leaves a value the presets do not name alone while nothing is chosen', async () => {
     const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab, written } = standing(false, {
+    const { tab, written } = configured(false, {
       indexing: { recognition: { recognise: { name: own } } },
     })
     await opens(tab, 'settings-ocr')
@@ -310,20 +310,20 @@ describe('the settings tab', () => {
   })
 
   it('writes everything a model decides, not its name alone', async () => {
-    const { tab, written } = standing()
+    const { tab, written } = configured()
     await opens(tab, 'settings-agent-model')
     await takes('opus')
     expect(written).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
   })
 
   it('writes a setting it read out of the file back where it stands', async () => {
-    const { tab, written } = standing(false, { agent: { serve_tools: false } })
+    const { tab, written } = configured(false, { agent: { serve_tools: false } })
     await tab.get('[aria-labelledby="settings-agent-tools"]').trigger('click')
     expect(written).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
   })
 
   it('offers the profiles the file holds, and naming none', async () => {
-    const { tab } = standing(false, {
+    const { tab } = configured(false, {
       indexing: { proofreading: { profiles: { careful: {}, quick: {} } } },
     })
     await opens(tab, 'settings-ocr-proofread')
@@ -331,20 +331,20 @@ describe('the settings tab', () => {
   })
 
   it('opens on the hour the settings begin a day of review at', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     const hour = tab.get('[data-slot="time-field"]').element as HTMLInputElement
     expect(hour.value).toBe('04:00')
     expect(tab.text()).toContain(words.dayStarts)
   })
 
   it('writes the hour a day of review begins at', async () => {
-    const { tab, done } = standing()
+    const { tab, done } = configured()
     await tab.get('[data-slot="time-field"]').setValue('06:30')
     expect(done).toStrictEqual(['day starts 06:30'])
   })
 
   it('names every row by what it is, without leaning on the row above', () => {
-    const { tab } = standing()
+    const { tab } = configured()
     const names = tab.findAll('.settings__name').map((one) => one.text())
     expect(names).toContain(words.transcribeUnder)
     expect(names).not.toContain('Only under')

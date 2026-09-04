@@ -104,7 +104,7 @@ const counted = (one: Curve): Material | null =>
   one.honest ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun } : null
 
 /** A tab standing at those settings, and everything it was asked to do. */
-const standing = (
+const tabAt = (
   over: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   waiting = true,
@@ -143,9 +143,9 @@ const drawn = (
   waiting = true,
   told?: Material | null,
 ) => {
-  const one = standing(over, settings, waiting, told)
+  const one = tabAt(over, settings, waiting, told)
   return { ...one, tab: mount(PresetTab, { props: { held: one.held } }) }
 }
 
 
-export { counted, curve, drawn, heights, point, rows, standing }
+export { counted, curve, drawn, heights, point, rows, tabAt }

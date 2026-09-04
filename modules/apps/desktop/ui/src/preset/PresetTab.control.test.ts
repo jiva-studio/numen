@@ -11,7 +11,7 @@ import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve, type Point } from './core'
 import { clearing } from './curve'
 import { FOOT } from './drawing'
-import { curve, drawn, heights, point, rows, standing } from '../testing/preset'
+import { curve, drawn, heights, point, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('the one control', () => {
@@ -250,7 +250,7 @@ describe('the one control', () => {
   // The picture is what the keyboard comes to and what it moves. What focus is
   // drawn as on it is a browser's answer, and is asked in the stories.
   it('is what the keyboard reaches, and it takes the focus', () => {
-    const one = standing()
+    const one = tabAt()
     const tab = mount(PresetTab, { props: { held: one.held }, attachTo: document.body })
     const picture = tab.get('[data-control="picture"][role="slider"]')
 

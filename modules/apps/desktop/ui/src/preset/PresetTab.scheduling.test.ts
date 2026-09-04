@@ -9,7 +9,7 @@ import { mount } from '@vue/test-utils'
 import { Stopped } from '@numen/protocol'
 import PresetTab from './PresetTab.vue'
 import { NOWHERE, type Curve } from './core'
-import { curve, drawn, point, rows, standing } from '../testing/preset'
+import { curve, drawn, point, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('a preset that schedules nothing', () => {
@@ -21,7 +21,7 @@ describe('a preset that schedules nothing', () => {
 
   /** The tab drawn for a preset stopped for that reason. */
   const stopped = (why: Stopped) => {
-    const { held } = standing()
+    const { held } = tabAt()
     return mount(PresetTab, { props: { held: { ...held, stopped: () => why } } })
   }
 

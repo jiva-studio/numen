@@ -11,7 +11,7 @@ import { reviewing, DEFAULT_STARTS, type Called } from './reviewing'
 const words = { unturned: 'That setting could not be written:' }
 
 /** A vault holding that hour, and refusing what it is told to refuse. */
-const standing = (held: string, refuses: string | null = null) => {
+const vault = (held: string, refuses: string | null = null) => {
   const written: string[] = []
   const core: Called = {
     reviewing: () => Promise.resolve(held),
@@ -26,11 +26,11 @@ const standing = (held: string, refuses: string | null = null) => {
 
 describe('the hour the window stands at', () => {
   it('is where an installation nobody has configured begins the day', () => {
-    expect(standing('06:00').hours.starts.value).toBe(DEFAULT_STARTS)
+    expect(vault('06:00').hours.starts.value).toBe(DEFAULT_STARTS)
   })
 
   it('is what the settings hold, once the vault has answered', async () => {
-    const { hours } = standing('06:00')
+    const { hours } = vault('06:00')
     await hours.start()
     expect(hours.starts.value).toBe('06:00')
   })
@@ -54,20 +54,20 @@ describe('the hour the window stands at', () => {
 
 describe('an hour chosen', () => {
   it('is written into the settings', async () => {
-    const { hours, written } = standing('04:00')
+    const { hours, written } = vault('04:00')
     await hours.chooses('06:30')
     expect(written).toStrictEqual(['06:30'])
     expect(hours.starts.value).toBe('06:30')
   })
 
   it('is not written again where it is the hour in force', async () => {
-    const { hours, written } = standing('04:00')
+    const { hours, written } = vault('04:00')
     await hours.chooses('04:00')
     expect(written).toStrictEqual([])
   })
 
   it('leaves the window where the settings are when it is refused', async () => {
-    const { hours, said } = standing('04:00', 'the file could not be written')
+    const { hours, said } = vault('04:00', 'the file could not be written')
     await hours.chooses('06:30')
     expect(hours.starts.value).toBe('04:00')
     expect(said).toHaveBeenLastCalledWith(

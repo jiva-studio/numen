@@ -13,7 +13,7 @@ import controlSource from './Control.vue?raw'
 import { NO_BOUNDS } from './core'
 import type { Field } from './curve'
 import type { Held, Said } from './kind'
-import { BOUNDS, curve, drawn, rows, standing } from '../testing/preset'
+import { BOUNDS, curve, drawn, rows, tabAt } from '../testing/preset'
 import { WORDS as words } from './words'
 
 describe('the settings under the control', () => {
@@ -126,7 +126,7 @@ describe('the settings under the control', () => {
   // has said how far a field goes, the field is left at the ends it draws
   // itself with, rather than at ends the window made up.
   it('leaves a field the application has said nothing about at its own ends', () => {
-    const one = standing({}, { learned: 'interval', interval: 21 })
+    const one = tabAt({}, { learned: 'interval', interval: 21 })
     const held: Held = { ...one.held, bounds: () => NO_BOUNDS }
     const tab = mount(PresetTab, { props: { held } })
     const field = tab.get('[data-preset-row="interval"]').get<HTMLInputElement>('input')
@@ -139,7 +139,7 @@ describe('the settings under the control', () => {
 // which is what a fixed permission bit or a restored folder wants.
 describe('what the tab says went wrong', () => {
   const saying = (words: string) => {
-    const one = standing()
+    const one = tabAt()
     const held: Held = { ...one.held, saying: () => words }
     return { tab: mount(PresetTab, { props: { held } }), done: one.done }
   }
@@ -170,7 +170,7 @@ describe('what the tab says went wrong', () => {
 describe('the load of the week', () => {
   /** A tab whose row of days is watched for what it puts into the settings. */
   const watching = (load: Record<string, number>) => {
-    const one = standing({}, { load })
+    const one = tabAt({}, { load })
     const put: [Field, Said][] = []
     const held: Held = {
       ...one.held,
@@ -310,7 +310,7 @@ describe('the row a chance of recall is typed into', () => {
 describe('the rules under the learned row', () => {
   it('marks the rule in force and returns the focus to the line that asked', async () => {
     // Attached to the page, because taking the focus back is what is measured.
-    const one = standing({}, { learned: 'interval' })
+    const one = tabAt({}, { learned: 'interval' })
     const tab = mount(PresetTab, { props: { held: one.held }, attachTo: document.body })
     const line = tab.get('[data-preset="choice"]')
     await line.trigger('click')

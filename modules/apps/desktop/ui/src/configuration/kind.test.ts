@@ -11,7 +11,7 @@ import { WORDS as words } from './words'
 const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
 
 /** A vault holding that file, and everything it was asked to write. */
-const standing = (answers: Partial<Called> = {}) => {
+const vault = (answers: Partial<Called> = {}) => {
   const wrote: string[] = []
   /** What each write presented as the file it last read. */
   const presented: (string | null)[] = []
@@ -30,7 +30,7 @@ const standing = (answers: Partial<Called> = {}) => {
 
 describe('the file as it stands', () => {
   it('is read whole, byte for byte', async () => {
-    const { held } = standing()
+    const { held } = vault()
     await held.again()
 
     expect(held.text()).toBe(HELD)
@@ -39,13 +39,13 @@ describe('the file as it stands', () => {
   })
 
   it('is nothing until it has been read', () => {
-    const { held } = standing()
+    const { held } = vault()
     expect(held.read()).toBe(false)
     expect(held.text()).toBe('')
   })
 
   it('says so where it could not be read', async () => {
-    const { held } = standing({
+    const { held } = vault({
       settingsFile: () => Promise.reject(new Error('the folder is not there')),
     })
     await held.again()
@@ -57,7 +57,7 @@ describe('the file as it stands', () => {
 
 describe('what is typed over it', () => {
   it('is marked as differing from what the file held', async () => {
-    const { held } = standing()
+    const { held } = vault()
     await held.again()
 
     held.types('{}\n')
@@ -68,7 +68,7 @@ describe('what is typed over it', () => {
   })
 
   it('is written as it was typed', async () => {
-    const { held, wrote } = standing()
+    const { held, wrote } = vault()
     await held.again()
 
     held.types('{\n  "agent": { "use": "" }\n}\n')
@@ -80,7 +80,7 @@ describe('what is typed over it', () => {
   })
 
   it('presents the file the tab last read', async () => {
-    const { held, presented } = standing()
+    const { held, presented } = vault()
     await held.again()
 
     held.types('{}\n')
@@ -90,7 +90,7 @@ describe('what is typed over it', () => {
   })
 
   it('is written nowhere before the file has been read', async () => {
-    const { held, wrote } = standing()
+    const { held, wrote } = vault()
     held.types('{}\n')
     await held.keeps()
 
@@ -98,7 +98,7 @@ describe('what is typed over it', () => {
   })
 
   it('has every setting read again once it is written', async () => {
-    const { held, reads } = standing()
+    const { held, reads } = vault()
     await held.again()
     held.types('{}\n')
     await held.keeps()
@@ -109,7 +109,7 @@ describe('what is typed over it', () => {
 
 describe('a file the settings cannot be read out of', () => {
   const refusing = () =>
-    standing({
+    vault({
       writesSettingsFile: () =>
         Promise.reject(new Error('not a setting: it does not read as JSON, at byte 12')),
     })

@@ -32,16 +32,16 @@ const notes = () => {
 
 /** A quit that keeps every question standing until it is dropped. */
 const quit = () => {
-  const standing = new Map<string, Question>()
+  const raised = new Map<string, Question>()
   return {
     going: {
       raise: (one: Question) => {
-        standing.set(one.note, one)
-        return () => standing.delete(one.note)
+        raised.set(one.note, one)
+        return () => raised.delete(one.note)
       },
     },
-    paths: () => [...standing.keys()],
-    answer: async (id: string, how: 'keep' | 'take') => standing.get(id)?.[how](),
+    paths: () => [...raised.keys()],
+    answer: async (id: string, how: 'keep' | 'take') => raised.get(id)?.[how](),
   }
 }
 
