@@ -14,7 +14,7 @@ import (
 const maxStencils = 200
 
 // stencilOf is one stencil as the schema carries it.
-func stencilOf(path, title string, s format.CardStencil) *v1.Stencil {
+func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
 	out := &v1.Stencil{
 		Path:     path,
 		Title:    title,
@@ -52,7 +52,7 @@ func renamedOf(r cards.RenameResult) *v1.RenameFieldResponse {
 	return out
 }
 
-func faceOf(f format.CardFaceTemplate) *v1.Face {
+func faceOf(f format.FaceTemplate) *v1.Face {
 	return &v1.Face{Name: f.Name, Lead: f.Lead, Front: f.Front, Back: f.Back}
 }
 
@@ -219,13 +219,13 @@ func cardsOf(cs []*v1.Card) []format.Card {
 }
 
 // facesOf is the faces a client is putting into a stencil.
-func facesOf(fs []*v1.Face) []format.CardFaceTemplate {
+func facesOf(fs []*v1.Face) []format.FaceTemplate {
 	if len(fs) == 0 {
 		return nil
 	}
-	out := make([]format.CardFaceTemplate, 0, len(fs))
+	out := make([]format.FaceTemplate, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.CardFaceTemplate{
+		out = append(out, format.FaceTemplate{
 			Name: f.GetName(), Lead: f.GetLead(), Front: f.GetFront(), Back: f.GetBack(),
 		})
 	}
