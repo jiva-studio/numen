@@ -246,7 +246,7 @@ func (a *API) Answer(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.running(v.ID, r.Msg.GetRun())
+	run, err := a.runs.named(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -289,7 +289,7 @@ func (a *API) TakeBack(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	run, err := a.running(v.ID, r.Msg.GetRun())
+	run, err := a.runs.named(v.ID, r.Msg.GetRun())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

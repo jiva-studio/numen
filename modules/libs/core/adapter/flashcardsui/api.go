@@ -81,22 +81,46 @@ type API struct {
 	// answers that it has none, and the rest of it works as it did.
 	agent atomic.Pointer[port.Agent]
 
-	mu sync.Mutex
-	// runs is the sitting open on each vault, by the vault's identity.
-	runs map[domain.VaultID]*flashcards.Run
-
-	// reads is how a vault is brought up to date in the index, and ctx is the
-	// life those readings run for. read is the vaults read since the window
-	// opened, underway the ones being read now, and why the reason the last
-	// reading of one failed.
-	reads    Read
-	ctx      context.Context
-	read     map[domain.VaultID]bool
-	underway map[domain.VaultID]bool
-	why      map[domain.VaultID]string
+	runs     sittings
+	readings readings
 
 	// listeners is everyone waiting to hear that a vault moved.
 	listeners following
+}
+
+// sittings is the run open on each vault, by the vault's identity. One sitting
+// to a vault: opening another lets go of the one before it, and the file that
+// one wrote is never appended to again.
+type sittings struct {
+	mu  sync.Mutex
+	run map[domain.VaultID]*flashcards.Run
+}
+
+func (s *sittings) remember(v domain.Vault, run *flashcards.Run) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.run == nil {
+		s.run = make(map[domain.VaultID]*flashcards.Run)
+	}
+	s.run[v.ID] = run
+}
+
+// named is the run this window has open on a vault, and only under the name
+// that run writes.
+//
+// The vault is part of what is asked for, because an answer is written to the
+// vault its run was opened on: a run named against another vault would put a
+// person's answer in a history it does not belong to, and an answer written is
+// not written again. The name is asked for as well, so a page holding the name
+// of a sitting that is over cannot go on writing to it.
+func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.Run, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	run, is := s.run[vault]
+	if !is || run.Name() != name {
+		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
+	}
+	return run, nil
 }
 
 // Answering is the agent a question about a card goes to, and nothing where
@@ -138,40 +162,11 @@ func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, erro
 	if err != nil {
 		return nil, err
 	}
-	a.remember(v, run)
+	a.runs.remember(v, run)
 	// The agent works the vault the person is sitting to, and it is told which
 	// once, when the sitting opens.
 	if a.Opened != nil {
 		a.Opened(ctx, v)
-	}
-	return run, nil
-}
-
-func (a *API) remember(v domain.Vault, run *flashcards.Run) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.runs == nil {
-		a.runs = make(map[domain.VaultID]*flashcards.Run)
-	}
-	// One sitting to a vault: opening another lets go of the one before it, and
-	// the file that one wrote is never appended to again.
-	a.runs[v.ID] = run
-}
-
-// running is the run this window has open on a vault, and only under the name
-// that run writes.
-//
-// The vault is part of what is asked for, because an answer is written to the
-// vault its run was opened on: a run named against another vault would put a
-// person's answer in a history it does not belong to, and an answer written is
-// not written again. The name is asked for as well, so a page holding the name
-// of a sitting that is over cannot go on writing to it.
-func (a *API) running(vault domain.VaultID, name string) (*flashcards.Run, error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	run, is := a.runs[vault]
-	if !is || run.Name() != name {
-		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
 	return run, nil
 }

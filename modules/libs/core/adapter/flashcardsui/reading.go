@@ -2,6 +2,7 @@ package flashcardsui
 
 import (
 	"context"
+	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/task"
@@ -11,13 +12,85 @@ import (
 // goes, counted in the notes written.
 type Read func(ctx context.Context, v domain.Vault, progress func(notes int64)) error
 
+// readings is which vaults this window has read into the index: the ones read
+// since it opened, the ones being read now, and why the last reading of one
+// failed.
+type readings struct {
+	mu sync.Mutex
+
+	// read is how a vault is brought up to date in the index, and under is the
+	// life those readings run for.
+	read  Read
+	under context.Context
+
+	done     map[domain.VaultID]bool
+	underway map[domain.VaultID]bool
+	why      map[domain.VaultID]string
+}
+
+// on is how a vault is read from now on, and the life those readings run for.
+func (r *readings) on(ctx context.Context, read Read) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.under, r.read = ctx, read
+}
+
+// forget lets go of why a vault could not be read.
+func (r *readings) forget(id domain.VaultID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.why, id)
+}
+
+// begins claims a vault for reading. It hands back the reader and the life to
+// run it under where this call is the one that begins it, and no reader where
+// the vault has been read, is being read, could not be read, or where this
+// window reads nothing.
+func (r *readings) begins(v domain.Vault) (read Read, under context.Context, underway bool, failed string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.done[v.ID] {
+		return nil, nil, false, ""
+	}
+	if why, told := r.why[v.ID]; told {
+		return nil, nil, false, why
+	}
+	if r.underway[v.ID] {
+		return nil, nil, true, ""
+	}
+	if r.read == nil {
+		return nil, nil, false, ""
+	}
+	if r.underway == nil {
+		r.underway = make(map[domain.VaultID]bool)
+	}
+	r.underway[v.ID] = true
+	return r.read, r.under, true, ""
+}
+
+// ended is what one reading came to: the vault is read, or it is why it is not.
+func (r *readings) ended(v domain.Vault, err error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	delete(r.underway, v.ID)
+	if err != nil {
+		if r.why == nil {
+			r.why = make(map[domain.VaultID]string)
+		}
+		r.why[v.ID] = err.Error()
+		return
+	}
+	if r.done == nil {
+		r.done = make(map[domain.VaultID]bool)
+	}
+	r.done[v.ID] = true
+}
+
 // Reading is how a vault is brought up to date in the index, and the life those
 // readings run for. A window naming none counts a vault from the index as it
 // stands.
 func (a *API) Reading(ctx context.Context, read Read) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.ctx, a.reads = ctx, read
+	a.readings.on(ctx, read)
 }
 
 // reading brings a vault up to date in the index. It says whether a reading of
@@ -27,30 +100,10 @@ func (a *API) Reading(ctx context.Context, read Read) {
 // from there. One vault is read once at a time however many counts ask for it,
 // and a reading that failed is not begun again until the vault moves.
 func (a *API) reading(ctx context.Context, v domain.Vault) (underway bool, failed string) {
-	a.mu.Lock()
-	if a.read[v.ID] {
-		a.mu.Unlock()
-		return false, ""
-	}
-	if why, told := a.why[v.ID]; told {
-		a.mu.Unlock()
-		return false, why
-	}
-	if a.underway[v.ID] {
-		a.mu.Unlock()
-		return true, ""
-	}
-	read, behind := a.reads, a.ctx
+	read, behind, running, failed := a.readings.begins(v)
 	if read == nil {
-		a.mu.Unlock()
-		return false, ""
+		return running, failed
 	}
-	if a.underway == nil {
-		a.underway = make(map[domain.VaultID]bool)
-	}
-	a.underway[v.ID] = true
-	a.mu.Unlock()
-
 	go a.walk(behind, read, v, a.carries(ctx, v))
 	return true, ""
 }
@@ -86,20 +139,7 @@ func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 		a.say(at)
 	})
 
-	a.mu.Lock()
-	delete(a.underway, v.ID)
-	if err != nil {
-		if a.why == nil {
-			a.why = make(map[domain.VaultID]string)
-		}
-		a.why[v.ID] = err.Error()
-	} else {
-		if a.read == nil {
-			a.read = make(map[domain.VaultID]bool)
-		}
-		a.read[v.ID] = true
-	}
-	a.mu.Unlock()
+	a.readings.ended(v, err)
 
 	if err != nil {
 		at.Failed = err.Error()
@@ -113,7 +153,5 @@ func (a *API) walk(ctx context.Context, read Read, v domain.Vault, held bool) {
 // Forget lets go of why a vault could not be read. A vault that moved
 // underneath the window is read again.
 func (a *API) Forget(vaultID string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	delete(a.why, domain.VaultID(vaultID))
+	a.readings.forget(domain.VaultID(vaultID))
 }
