@@ -26,13 +26,17 @@ PROTOCOL := modules/libs/protocol
 help:
 	@grep -hE '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t20
 
+# Somebody adding a dependency writes the lock; a machine building from one
+# does not: `make install INSTALL="npm ci"`.
+INSTALL ?= npm install
+
 .PHONY: install
 install: ## fetch every module's dependencies
-	cd $(PROTOCOL) && npm install
-	cd $(UI) && npm install
-	cd $(DESKTOP)/ui && npm install
-	cd $(DESKTOP)/flashcards && npm install
-	cd $(LANDING) && npm install
+	cd $(PROTOCOL) && $(INSTALL)
+	cd $(UI) && $(INSTALL)
+	cd $(DESKTOP)/ui && $(INSTALL)
+	cd $(DESKTOP)/flashcards && $(INSTALL)
+	cd $(LANDING) && $(INSTALL)
 
 .PHONY: generate
 generate: ## compile the schema into Go and TypeScript
