@@ -153,6 +153,10 @@ export {
 } from './linking/address'
 export type { Address, Wikilink } from './linking/address'
 
+/** A link that leads out of the application, and the window held against it. */
+export { holdsTheWindow, pointsOutward } from './linking/outward'
+export type { Opens } from './linking/outward'
+
 export { default as Prose } from './prose/Prose.vue'
 export { default as Tool } from './tool/Tool.vue'
 
