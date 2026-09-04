@@ -1,19 +1,25 @@
 package note_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
+// unlevelled brings nothing level. What is measured here is the file being
+// replaced; what the index then costs is a refresh, and is measured as one.
+func unlevelled(context.Context, domain.Vault, []string) error { return nil }
+
 // What these measure: what a person waits for between stopping typing and their
 // note being on disk, and what a window pays per open tab every time the vault
 // changes. The numbers live in docs/performance.md.
 //
-//	go test ./internal/core/usecase/note/ -run XXX -bench . -benchtime 100x
+//	go test ./usecase/note/ -run XXX -bench . -benchtime 100x
 
 // BenchmarkRead is one tab opening a note, and one tab reading it again after a
 // change. A window pays this once per clean tab per change that names its path.
@@ -45,7 +51,8 @@ func BenchmarkSave(b *testing.B) {
 	for _, size := range []int{500, 5_000} {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
-			write := note.Write{Readers: filesystem.VaultReaders{}, Writers: filesystem.VaultWriters{}}
+			write := note.NewWrite(
+				filesystem.VaultReaders{}, filesystem.VaultWriters{}, unlevelled)
 			path := "01/note-000001.md"
 
 			body := ""

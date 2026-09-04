@@ -49,7 +49,7 @@ func missing(err error) error {
 type Editing struct {
 	Readers     port.VaultReaders
 	Writers     port.VaultWriters
-	Index       func(ctx context.Context, v domain.Vault, paths []string) error
+	Index       Levels
 	Now         func() time.Time
 	Fingerprint domain.Fingerprint
 	// Overwrite is a caller writing what is in front of the person: the note
@@ -64,14 +64,19 @@ type Editing struct {
 	Seen *LastRead
 }
 
+// NewEditing is what a change to an existing note is made through: the vault it
+// is read and written through, and what brings it level in the index. What the
+// caller believes is on disk, and how much of a file it will hold, are set
+// beside it.
+func NewEditing(readers port.VaultReaders, writers port.VaultWriters, index Levels) Editing {
+	return Editing{Readers: readers, Writers: writers, Index: index}
+}
+
 // Apply makes one change to the note at path and puts it back.
 func (e Editing) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
 	written, err := e.splice(ctx, v, path, change)
 	if err != nil {
 		return domain.Fingerprint{}, err
-	}
-	if e.Index == nil {
-		return written, nil
 	}
 	// The file is on disk, so the fingerprint stands beside whatever the
 	// levelling came to and a caller can tell the two apart.

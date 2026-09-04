@@ -23,18 +23,40 @@ type Move struct {
 	Links   port.LinkQueries
 	// Names is asked how many notes are filed under a name, which is what says
 	// whether a link repaired to that name reaches this note or another one.
-	// Nothing there leaves a repair writing the bare name.
 	Names NameQueries
 	// Sources is where the index files each file. A move tells it that what was
 	// at one path is at another.
 	Sources port.SourceRepository
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	Index   Levels
 	// Moving is told where the note went, so that whoever is showing it at the
 	// name it had follows it. Nothing is told where nobody is drawing.
 	Moving TellMove
 	// Sync is asked, as each rename is made, whether a note's title and its
-	// filename are kept as one name.
+	// filename are kept as one name. Nothing asked keeps the two one name,
+	// which is what an installation nobody has configured does.
 	Sync Syncing
+}
+
+// NewMove is what files a note somewhere else: the vault it is read and written
+// through, the links that point at it, what is asked which name reaches it,
+// where the index files it, and what brings both paths level.
+//
+// All six are named here because a move short of any one of them lands the file
+// and leaves something behind it — a link repaired to a bare name that reaches
+// another note, a row still filed at the path the file left, or a vault that
+// cannot find what it now holds.
+func NewMove(
+	readers port.VaultReaders,
+	writers port.VaultWriters,
+	links port.LinkQueries,
+	names NameQueries,
+	sources port.SourceRepository,
+	index Levels,
+) Move {
+	return Move{
+		Readers: readers, Writers: writers, Links: links,
+		Names: names, Sources: sources, Index: index,
+	}
 }
 
 // MoveResult says where the note went and what it did to the links that
@@ -146,9 +168,6 @@ func (u Move) Settle(ctx context.Context, v domain.Vault, from, to string, point
 // now that the file is there. A name no link reaches comes back as it stands,
 // and the repair that writes it changes nothing.
 func (u Move) addressed(ctx context.Context, v domain.Vault, path string) (string, error) {
-	if u.Names == nil {
-		return domain.Basename(path), nil
-	}
 	to, err := Addressed(ctx, u.Names, v.ID, path)
 	if errors.Is(err, ErrUnaddressable) {
 		return domain.Basename(path), nil
@@ -228,9 +247,6 @@ func (u Move) repair(ctx context.Context, v domain.Vault, in string, address dom
 }
 
 func (u Move) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
 	return u.Index(ctx, v, paths)
 }
 

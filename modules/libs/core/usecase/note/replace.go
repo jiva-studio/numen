@@ -20,11 +20,21 @@ import (
 type Replace struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	Index   Levels
 	// Telling is told what this change is doing while it is being made. Nothing
 	// is told where nobody is drawing the note.
 	Telling TellEditing
 	Now     func() time.Time
+}
+
+// NewReplace is what one stretch of a note is put right through: the vault it
+// is read and written through, and what brings it level in the index.
+//
+// All three are named here for the reason NewWrite names them: a replacement
+// short of the levelling changes the file and leaves the vault unable to find
+// what it now says.
+func NewReplace(readers port.VaultReaders, writers port.VaultWriters, index Levels) Replace {
+	return Replace{Readers: readers, Writers: writers, Index: index}
 }
 
 // ReplaceResult is what a replacement did.

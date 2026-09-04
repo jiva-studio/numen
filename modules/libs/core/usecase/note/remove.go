@@ -27,7 +27,19 @@ type Remove struct {
 	// Known is what the index holds about each file, and is what says which
 	// sources sit under the path being removed.
 	Known port.SourceQueries
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index Levels
+}
+
+// NewRemove is what takes a note out of the vault: the vault it is moved
+// within, the links that pointed at it, what the index holds about the files
+// under it, and what brings the path it left level.
+//
+// All four are named here because a removal short of any one of them takes the
+// file away and leaves the vault answering about it.
+func NewRemove(
+	writers port.VaultWriters, links port.LinkQueries, known port.SourceQueries, index Levels,
+) Remove {
+	return Remove{Writers: writers, Links: links, Known: known, Index: index}
 }
 
 // RemoveResult says what happened to what was removed and what it leaves behind.
@@ -137,9 +149,6 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 }
 
 func (u Remove) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
 	return u.Index(ctx, v, paths)
 }
 

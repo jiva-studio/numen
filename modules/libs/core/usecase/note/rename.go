@@ -18,6 +18,11 @@ import (
 // leaves a note that says what it is called under a filename that does not.
 type Rename struct{ Move }
 
+// NewRename is the rename over one move. A note that travelled because it was
+// renamed and one that travelled because it was filed elsewhere settle the same
+// way, so both go through the one Move.
+func NewRename(moving Move) Rename { return Rename{Move: moving} }
+
 // RenameResult says what the note is called now and what the file did.
 type RenameResult struct {
 	Path  string // where the note is filed now

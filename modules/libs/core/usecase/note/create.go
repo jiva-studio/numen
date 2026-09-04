@@ -22,9 +22,20 @@ type Create struct {
 	Names   port.NoteQueries
 	// Index brings the named notes up to date, so that a caller which creates
 	// a note and searches for it in the next breath finds it.
-	Index func(ctx context.Context, v domain.Vault, paths []string) error
+	Index Levels
 	// Now is when this is happening. An identifier carries it.
 	Now func() time.Time
+}
+
+// NewCreate is what a note is made through: the vault it is written into, what
+// is asked which names are taken, and what brings the new file level in the
+// index.
+//
+// All three are named here because a note made without any one of them is a
+// note half made — one filed under a name that reaches another note, or one
+// the vault cannot find.
+func NewCreate(writers port.VaultWriters, names port.NoteQueries, index Levels) Create {
+	return Create{Writers: writers, Names: names, Index: index}
 }
 
 // NewNote is what to make.
@@ -149,9 +160,6 @@ func (u Create) now() time.Time {
 }
 
 func (u Create) index(ctx context.Context, v domain.Vault, paths ...string) error {
-	if u.Index == nil {
-		return nil
-	}
 	return u.Index(ctx, v, paths)
 }
 
