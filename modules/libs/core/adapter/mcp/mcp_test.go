@@ -236,6 +236,38 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 	})
 }
 
+// The editor window mounts this server with a list of vaults behind it and
+// somebody sitting in front of it, and eight tools are served that a build
+// holding neither does not reach. This is that window's whole surface.
+//
+// It is the vault's every tool because the editor window is where a person
+// asks for the vault to be changed: the surfaces that read and that review are
+// what the other two windows serve. The set is exact, so a tool added to the
+// server is a tool this window is knowingly given.
+func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
+	_, core := built(t, nil)
+	core.Vaults = onTheList(t).core.Vaults
+	core.View = &window{}
+	core.Attending = func() domain.OpenTabs { return domain.OpenTabs{} }
+
+	exactly(t, serves(t, connectedTo(t, core)), []string{
+		"note_search", "note_titles", "note_read", "note_resolve", "note_neighbourhood",
+		"note_create", "note_rewrite", "note_edit", "note_rename", "note_move", "note_remove",
+		"note_focus",
+		"file_read",
+		"link_add", "link_update", "link_remove", "link_list",
+		"card_stencil_list", "card_read", "card_add", "card_edit",
+		"card_value_remove", "card_remove",
+		"card_section_add", "card_section_rename", "card_section_remove",
+		"card_deck_create", "card_stencil_create", "card_field_rename",
+		"vault_get", "vault_problems",
+		"vault_list", "vault_add", "vault_rename", "vault_forget", "vault_open",
+		"source_list", "source_read", "source_recognise", "source_transcribe",
+		"source_focus",
+		"window_tab_list",
+	})
+}
+
 // Both of these put megabytes of new text in the folder a person syncs, and an
 // agent weighing an hour's work on their behalf is told so before it calls.
 func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
