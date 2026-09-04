@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -23,7 +24,7 @@ var policy = appearance.Policy(appearance.Sources{Images: []string{"data:"}})
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
-func Pages() (http.Handler, error) { return appearance.Serving(pages) }
+func Pages() (http.Handler, error) { return wire.Serving(pages) }
 
 // Serving is the whole of what this window answers: the flashcards service, the
 // agent a card is asked about through, the window itself, the themes it is
@@ -49,8 +50,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			itself.ServeHTTP(w, r)
 		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
 			themes.ServeHTTP(w, r)
-		case slices.Contains(appearance.OpenedAt, r.URL.Path):
-			appearance.Window(w, r, pages, a.Themes, files)
+		case slices.Contains(wire.OpenedAt, r.URL.Path):
+			wire.Page(w, r, pages, a.Themes, files)
 		default:
 			files.ServeHTTP(w, r)
 		}

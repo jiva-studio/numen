@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
@@ -235,7 +236,7 @@ func TestAFileNamingTheZoomOpensTheWindowDrawnAtIt(t *testing.T) {
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
 // element the page carries stands unopposed whatever a theme says.
 func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
-	built, err := appearance.Built(pages)
+	built, err := wire.Built(pages)
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}

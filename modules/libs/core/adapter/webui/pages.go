@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/appearance"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/wire"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -25,7 +26,7 @@ var errGone = errors.New("this window is going")
 
 // Pages is the interface itself, built by `make interface` and carried inside
 // the binary. A binary built without it says so.
-func Pages() (http.Handler, error) { return appearance.Serving(pages) }
+func Pages() (http.Handler, error) { return wire.Serving(pages) }
 
 // Serving puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.
@@ -88,8 +89,8 @@ func (a *API) Serving(files http.Handler) http.Handler {
 			}
 			defer a.questions.done()
 			a.Asset(w, r)
-		case slices.Contains(appearance.OpenedAt, r.URL.Path):
-			appearance.Window(w, r, pages, a.Themes, files)
+		case slices.Contains(wire.OpenedAt, r.URL.Path):
+			wire.Page(w, r, pages, a.Themes, files)
 		default:
 			files.ServeHTTP(w, r)
 		}
