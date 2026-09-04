@@ -47,7 +47,7 @@ CREATE TABLE sources (
 
 -- Every row filed under a vault carries the vault, and names the pair as its
 -- foreign key, so a row cannot claim a vault its source does not belong to.
-CREATE UNIQUE INDEX sources_by_vault ON sources (id, vault_id);
+CREATE UNIQUE INDEX sources_by_id_vault ON sources (id, vault_id);
 
 -- Every scan asks one question of every source of one kind: has this file
 -- changed. This answers it without reading the files themselves.
@@ -56,7 +56,7 @@ CREATE INDEX sources_by_fingerprint ON sources (vault_id, kind, path, size, modi
 -- Which sources of a vault stand on a text a producer made. It is asked once a
 -- scan, to find the ones whose file a person deleted by hand, and it is answered
 -- in proportion to the documents that were read rather than to the library.
-CREATE INDEX sources_by_text ON sources (vault_id, kind) WHERE producer IS NOT NULL;
+CREATE INDEX sources_by_producer ON sources (vault_id, kind) WHERE producer IS NOT NULL;
 
 -- What only a note has: the names a link reaches it by, and the frontmatter
 -- they are written in. A note's row number is its source's, so a question that

@@ -33,14 +33,14 @@ SELECT * FROM (
 UNION ALL
 SELECT is_heading, path, title, type, line, marked, score FROM (
     SELECT is_heading, path, title, type, line, marked, score,
-           ROW_NUMBER() OVER (PARTITION BY note ORDER BY score) AS row_number
+           ROW_NUMBER() OVER (PARTITION BY note_id ORDER BY score) AS row_number
     FROM (
         SELECT 1                                AS is_heading,
                s.path                           AS path,
                n.title                          AS title,
                n.type                           AS type,
                h.line                           AS line,
-               h.note_id                        AS note,
+               h.note_id                        AS note_id,
                highlight(headings_fts, 0, ?, ?) AS marked,
                bm25(headings_fts)               AS score
         FROM headings_fts
