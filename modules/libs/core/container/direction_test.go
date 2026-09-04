@@ -22,10 +22,6 @@ var outward = []string{
 // owedWire are the edges to the schema the core still has. Each is a package
 // naming the wire in the core's own language, and the list only shrinks.
 var owedWire = map[string][]string{
-	// A refusal is one value of an enum the schema declares.
-	"refusal": {wire},
-	// The appearance a window is served is a message.
-	"appearance": {wire},
 	// What two adapters both put on the schema is built here.
 	"internal/wire": {wire},
 }
@@ -40,22 +36,30 @@ func owing(from, dep string) bool {
 	return false
 }
 
-// inward says whether a package of this module is the core. An adapter, the
-// composition root and what only a test builds are the rest of it.
-func inward(path string) bool {
+// answering is what a package of this module may not be compiled from, and
+// whether it answers for what it names itself rather than for everything it is
+// built from.
+//
+// The core answers for the whole of what it is built from. The composition root
+// binds the adapters and is built from them, so it answers for what it names,
+// and the schema is the one thing it may not name. An adapter and what only a
+// test builds answer for nothing.
+func answering(path string) (refuses []string, named bool) {
 	held := strings.TrimPrefix(path, module)
 	switch {
-	case held == "container",
-		strings.HasPrefix(held, "adapter/"),
+	case held == "container":
+		return []string{wire}, true
+	case strings.HasPrefix(held, "adapter/"),
 		strings.HasPrefix(held, "internal/adapter/"),
 		strings.HasPrefix(held, "internal/testsupport"):
-		return false
+		return nil, false
 	}
-	return true
+	return outward, false
 }
 
 // Imports point inward. What the build resolved is what is read, so a package
-// the core reaches through another answers for it too.
+// the core reaches through another answers for it too, and answering says how
+// far each package is held to that.
 //
 // A test file is left out: a test stands outside the package it exercises and
 // builds the adapters that stand in for the real ones.
@@ -76,9 +80,10 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 	for {
 		var pkg struct {
 			ImportPath string
-			// Deps is everything this package is compiled from, at whatever
-			// remove.
-			Deps []string
+			// Imports is what this package names, and Deps everything it is
+			// compiled from, at whatever remove.
+			Imports []string
+			Deps    []string
 		}
 		err := decoder.Decode(&pkg)
 		if errors.Is(err, io.EOF) {
@@ -87,16 +92,21 @@ func TestNothingTheCoreIsCompiledFromReachesOutward(t *testing.T) {
 		if err != nil {
 			t.Fatalf("go list: %v", err)
 		}
-		if !inward(pkg.ImportPath) {
+		refuses, named := answering(pkg.ImportPath)
+		if refuses == nil {
 			continue
 		}
 		packages++
+		reaching := pkg.Deps
+		if named {
+			reaching = pkg.Imports
+		}
 		held := strings.TrimPrefix(pkg.ImportPath, module)
-		for _, dep := range pkg.Deps {
+		for _, dep := range reaching {
 			if owing(held, dep) {
 				continue
 			}
-			for _, refused := range outward {
+			for _, refused := range refuses {
 				if strings.HasPrefix(dep, refused) {
 					t.Errorf("%s reaches %s", held, strings.TrimPrefix(dep, module))
 				}
