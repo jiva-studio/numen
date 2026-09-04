@@ -15,7 +15,8 @@ type Documents struct{}
 
 // Read is what one document says, with the parts it names and where each of
 // its pages begins.
-func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
+func (Documents) Read(ctx context.Context, raw []byte) (out port.Reading, err error) {
+	defer survived("reading a document", &out, &err)
 	if err := ctx.Err(); err != nil {
 		return port.Reading{}, err
 	}
@@ -23,7 +24,7 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 	if err != nil {
 		return port.Reading{}, refused(err)
 	}
-	out := port.Reading{Text: book.Text}
+	out = port.Reading{Text: book.Text}
 	for _, p := range book.Parts {
 		out.Parts = append(out.Parts, chunking.PartStart{Title: p.Title, Offset: p.Offset})
 	}
@@ -34,7 +35,8 @@ func (Documents) Read(ctx context.Context, raw []byte) (port.Reading, error) {
 }
 
 // Lit is where the words of the pages named sit on them.
-func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) ([]highlight.Box, error) {
+func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int) (lit []highlight.Box, err error) {
+	defer survived("lighting a page", &lit, &err)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -50,7 +52,8 @@ func (Documents) Lit(ctx context.Context, raw []byte, starts []int, pages []int)
 }
 
 // Draw holds a document open for its pages to be drawn.
-func (Documents) Draw(ctx context.Context, raw []byte) (port.OpenDocument, error) {
+func (Documents) Draw(ctx context.Context, raw []byte) (open port.OpenDocument, err error) {
+	defer survived("opening a document to draw", &open, &err)
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -59,6 +62,21 @@ func (Documents) Draw(ctx context.Context, raw []byte) (port.OpenDocument, error
 		return nil, refused(err)
 	}
 	return scan, nil
+}
+
+// survived is the boundary around the library, deferred by everything that
+// hands it a file: a panic raised inside becomes an error about the item that
+// raised it, and the answer is the zero one.
+//
+// A book in a synced vault was put there by whoever synced it, and the library
+// reading it is compiled from C. One document, or one page of it, that the
+// library cannot survive is worth one error; it is not worth the process the
+// person's window runs in.
+func survived[T any](what string, answer *T, err *error) {
+	if raised := recover(); raised != nil {
+		var none T
+		*answer, *err = none, fmt.Errorf("%w: %s raised %v", port.ErrNotADocument, what, raised)
+	}
 }
 
 // refused says which of the two ways a document could not be read, in the words

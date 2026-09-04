@@ -137,7 +137,17 @@ func ReaderName(ref domain.Fingerprint) (string, bool) {
 // archive at a text offset returns compressed noise.
 //
 // One format is read by a library, which is given rather than reached for.
-func Read(ctx context.Context, docs port.Documents, ref domain.Fingerprint, raw []byte) (*Document, error) {
+//
+// The bytes are somebody else's: a book in a synced vault was put there by
+// whoever synced it, and a library taking text out of it is a library being
+// fed. A panic inside one is answered here as an unreadable file, so that one
+// crafted book costs one file and not the process the window runs in.
+func Read(ctx context.Context, docs port.Documents, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
+	defer func() {
+		if raised := recover(); raised != nil {
+			doc, err = nil, fmt.Errorf("%w: reading %s raised %v", ErrUnreadable, ref.Path, raised)
+		}
+	}()
 	reader, ok := ReaderName(ref)
 	if !ok {
 		return nil, ErrUnreadable
