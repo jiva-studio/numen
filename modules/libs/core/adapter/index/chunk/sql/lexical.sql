@@ -7,7 +7,7 @@
 --
 -- The kinds are a JSON array, and an empty one is every kind: a question that
 -- says nothing about what sort of file it wants asks about all of them.
-SELECT c.id, s.path, s.kind, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
+SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        COALESCE(p.start, c.start),
        COALESCE(p.length, c.length),
        COALESCE(p.location, c.location, ''),

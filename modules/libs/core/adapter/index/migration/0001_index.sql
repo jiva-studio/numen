@@ -23,13 +23,13 @@ CREATE TABLE vaults (
 --
 -- `recipe` is what extracted the text, and is null while nothing has.
 --
--- `text_from` is which producer made the text this source's chunks are places
+-- `producer` is which producer made the text this source's chunks are places
 -- in. A scanned document holds no text a machine can take out of it: what
 -- reading it produced is a file of its own, and showing a passage reads that
 -- file. Null is the ordinary case, and the only case for a note or a book whose
 -- text is its own.
 --
--- `hash`, `recipe` and `text_from` are one fact and are cleared by one write:
+-- `hash`, `recipe` and `producer` are one fact and are cleared by one write:
 -- the file is not the file that was read.
 CREATE TABLE sources (
     id          INTEGER PRIMARY KEY,
@@ -40,7 +40,7 @@ CREATE TABLE sources (
     modified_at INTEGER NOT NULL,
     hash        TEXT,
     recipe      TEXT,
-    text_from   TEXT,
+    producer    TEXT,
 
     UNIQUE (vault_id, path)
 );
@@ -56,7 +56,7 @@ CREATE INDEX sources_by_fingerprint ON sources (vault_id, kind, path, size, modi
 -- Which sources of a vault stand on a text a producer made. It is asked once a
 -- scan, to find the ones whose file a person deleted by hand, and it is answered
 -- in proportion to the documents that were read rather than to the library.
-CREATE INDEX sources_by_text ON sources (vault_id, kind) WHERE text_from IS NOT NULL;
+CREATE INDEX sources_by_text ON sources (vault_id, kind) WHERE producer IS NOT NULL;
 
 -- What only a note has: the names a link reaches it by, and the frontmatter
 -- they are written in. A note's row number is its source's, so a question that

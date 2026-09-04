@@ -4,7 +4,7 @@
 -- passage standing where the section begins. The shape is the same as a search
 -- asked by words, so both are read back the same way and both fuse into one
 -- order.
-SELECT c.id, s.path, s.kind, COALESCE(s.text_from, ''), COALESCE(s.hash, ''),
+SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        c.start,
        c.length,
        COALESCE(c.location, ''),
