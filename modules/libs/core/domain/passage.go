@@ -29,10 +29,10 @@ type Passage struct {
 	// where the source's own bytes are the text.
 	TextFrom string
 
-	// Hash addresses the content of the source, and is what the files of a
+	// SourceHash addresses the content of the source, and is what the files of a
 	// reading of it are kept under. Reading a passage back composes the name
 	// from this and TextFrom.
-	Hash string
+	SourceHash string
 
 	// HitAt is where the chunk that matched begins inside Text, in bytes. A
 	// passage whose hit is the chunk itself begins at its own beginning.

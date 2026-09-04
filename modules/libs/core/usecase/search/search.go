@@ -226,7 +226,7 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	for _, p := range found {
 		prose, held := read[p.Source]
 		if !held && !gone[p.Source] {
-			prose, err = extracted(ctx, of, p.Source, p.TextFrom, p.Hash)
+			prose, err = extracted(ctx, of, p.Source, p.TextFrom, p.SourceHash)
 			if port.NoNote(err) || errors.Is(err, errUnreadable) {
 				gone[p.Source] = true
 				continue

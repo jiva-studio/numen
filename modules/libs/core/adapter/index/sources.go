@@ -92,14 +92,14 @@ func (s queries) Unembedded(ctx context.Context, vaultID string, model port.Embe
 	out := make([]domain.Passage, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.Passage{
-			ChunkID:   p.Chunk,
-			Source:    p.Path,
-			TextFrom:  p.TextFrom,
-			Hash:      p.Hash,
-			Start:     p.Start,
-			Length:    p.Length,
-			Location:  p.Location,
-			ChunkHash: p.ChunkHash,
+			ChunkID:    p.Chunk,
+			Source:     p.Path,
+			TextFrom:   p.TextFrom,
+			SourceHash: p.Hash,
+			Start:      p.Start,
+			Length:     p.Length,
+			Location:   p.Location,
+			ChunkHash:  p.ChunkHash,
 		})
 	}
 	return out, nil

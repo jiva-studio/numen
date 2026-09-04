@@ -121,7 +121,7 @@ func (u Embed) read(ctx context.Context, source *extracted, owing []domain.Passa
 			res.Reading = p.Source
 			u.progress(*res)
 		}
-		prose, ok, err := source.textOf(ctx, p.Source, p.TextFrom, p.Hash)
+		prose, ok, err := source.textOf(ctx, p.Source, p.TextFrom, p.SourceHash)
 		if err != nil {
 			return nil, nil, err
 		}
