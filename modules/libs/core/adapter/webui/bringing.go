@@ -45,7 +45,7 @@ func (o *Installation) Brings(ctx context.Context, into string, paths []string) 
 
 	brought, err := api.Files.Bring.Execute(ctx, showing, into, paths)
 	if landed := directlyIn(into, brought.Landed); len(landed) > 0 {
-		api.Listeners.tell(changed{paths: landed})
+		api.Listeners.tell(change{paths: landed})
 	}
 	if err != nil {
 		at.Failed = err.Error()

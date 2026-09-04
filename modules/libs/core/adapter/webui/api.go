@@ -53,7 +53,7 @@ type API struct {
 	// changed.
 	showing atomic.Pointer[passes]
 
-	Listeners audience[changed]
+	Listeners audience[change]
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that

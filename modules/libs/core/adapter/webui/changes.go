@@ -2,9 +2,9 @@ package webui
 
 import "github.com/jiva-studio/numen/modules/libs/core/domain"
 
-// changed is what a client is told: the files that are different now, notes
+// change is what a client is told: the files that are different now, notes
 // and assets alike, or that the vault has to be read again.
-type changed struct {
+type change struct {
 	paths  []string
 	reload bool
 	// renamed is the notes that are no longer where they were, each by where it
@@ -18,9 +18,9 @@ type changed struct {
 // same answer the watcher gives when more arrives at once than it can follow.
 // A message that never arrives leaves a client showing something stale and
 // certain it is current.
-func following() audience[changed] {
-	return audience[changed]{
-		fallback: func(changed) changed { return changed{reload: true} },
+func following() audience[change] {
+	return audience[change]{
+		fallback: func(change) change { return change{reload: true} },
 		room:     8,
 	}
 }

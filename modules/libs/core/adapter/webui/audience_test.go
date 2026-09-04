@@ -15,14 +15,14 @@ func TestALaggingListenerIsToldToReadEverythingAgain(t *testing.T) {
 
 	// Fill what it may be owed, then one more it cannot take.
 	for range cap(line) {
-		following.tell(changed{paths: []string{"notes/one.md"}})
+		following.tell(change{paths: []string{"notes/one.md"}})
 	}
-	following.tell(changed{paths: []string{"notes/missed.md"}})
+	following.tell(change{paths: []string{"notes/missed.md"}})
 
 	for range cap(line) {
 		<-line
 	}
-	following.tell(changed{paths: []string{"notes/two.md"}})
+	following.tell(change{paths: []string{"notes/two.md"}})
 
 	if last := <-line; !last.reload {
 		t.Errorf("a listener that missed one was handed %+v", last)

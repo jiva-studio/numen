@@ -15,14 +15,14 @@ import (
 
 // Viewing is this window, for whatever asks for a place to be put in front of
 // the person.
-func (a *API) Viewing() port.Window { return viewing{a} }
+func (a *API) Viewing() port.Window { return view{a} }
 
-// viewing tells the clients and nothing more. What travelling there looks
+// view tells the clients and nothing more. What travelling there looks
 // like is theirs, and a place asked for while nobody is drawing is a place
 // nobody sees.
-type viewing struct{ *API }
+type view struct{ *API }
 
-func (v viewing) Focus(_ context.Context, at domain.Place) error {
+func (v view) Focus(_ context.Context, at domain.Place) error {
 	v.Places.tell(at)
 	return nil
 }
@@ -70,12 +70,12 @@ func (a *API) Focus(
 	}
 }
 
-func (v viewing) Moved(_ context.Context, went domain.Move) error {
-	v.Listeners.tell(changed{renamed: []domain.Move{went}})
+func (v view) Moved(_ context.Context, went domain.Move) error {
+	v.Listeners.tell(change{renamed: []domain.Move{went}})
 	return nil
 }
 
-func (v viewing) Editing(_ context.Context, said domain.Edit) error {
+func (v view) Editing(_ context.Context, said domain.Edit) error {
 	v.Edits.tell(said)
 	return nil
 }

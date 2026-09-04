@@ -145,7 +145,7 @@ type behind struct {
 	api   *API
 	vault domain.Vault
 	index *container.Index
-	heard <-chan changed
+	heard <-chan change
 }
 
 // opening puts a vault, an index, a scan and a watch together the way Open

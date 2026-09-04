@@ -441,7 +441,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault) error {
 	o.API.Window.Over()
 	// Everything a page is holding was read in a vault that is no longer in
 	// front of it.
-	o.API.Listeners.tell(changed{reload: true})
+	o.API.Listeners.tell(change{reload: true})
 	return err
 }
 
@@ -865,7 +865,7 @@ func begin(
 	opening.Told = func(m usecase.VaultChanges) {
 		// A client draws every file the vault holds, so an asset is named to it
 		// the way a note is.
-		api.Listeners.tell(changed{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
+		api.Listeners.tell(change{paths: slices.Concat(m.Paths, m.Assets), reload: m.Reload})
 		if m.Reading() {
 			// A book dropped into an open vault is read without anybody asking.
 			raise(wake.sources)
