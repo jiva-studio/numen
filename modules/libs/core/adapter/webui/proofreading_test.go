@@ -52,7 +52,7 @@ func proofreading(t *testing.T, held port.DerivedStores, read indexed) (*API, ht
 
 // onTheShelf is a store holding the transcript a model wrote of the recording.
 func onTheShelf() stored {
-	return stored{derived.Artifact(listener, hashed): []byte("what the model heard")}
+	return stored{derived.Artifact(asr, hashed): []byte("what the model heard")}
 }
 
 // A transcript the window asks for is put right, the run is told which file of
@@ -161,7 +161,7 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
 	const put = "the name and the named are not two"
 	held := onTheShelf()
-	held[derived.Corrected(listener, hashed)] = []byte(put)
+	held[derived.Corrected(asr, hashed)] = []byte(put)
 	api, _, by := proofreading(t, held, heardBy())
 
 	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))

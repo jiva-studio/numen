@@ -250,7 +250,7 @@ func TestASourceAlreadyDoneIsNotRunAgain(t *testing.T) {
 		hash string
 	}{
 		{"a scan already read", readingID, book, reader, scanned},
-		{"a recording already heard", heardID, talk, listener, hashed},
+		{"a recording already heard", heardID, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			const wrote = "what the model wrote"
@@ -287,7 +287,7 @@ func TestASourceARunHoldsIsSaidToBeUnderWay(t *testing.T) {
 		hash string
 	}{
 		{"a scan being read", readingID, book, reader, scanned},
-		{"a recording being heard", heardID, talk, listener, hashed},
+		{"a recording being heard", heardID, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			const far = "as far as it has got"
@@ -326,7 +326,7 @@ func TestASourceNothingHoldsIsNotUnderWay(t *testing.T) {
 		hash string
 	}{
 		{"a scan", readingID, book, reader, scanned},
-		{"a recording", heardID, talk, listener, hashed},
+		{"a recording", heardID, talk, asr, hashed},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := running(t,

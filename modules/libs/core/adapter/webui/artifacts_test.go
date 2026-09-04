@@ -122,8 +122,8 @@ func TestWhatARunAnsweredIsWhatARecordingCarries(t *testing.T) {
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			api, _ := running(t,
-				stored{derived.Answer(listener, hashed): []byte(one.gave)},
-				indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
+				stored{derived.Answer(asr, hashed): []byte(one.gave)},
+				indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
 				willRun(), willRun(),
 			)
 

@@ -25,8 +25,8 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()
 	api, _ := running(t,
-		stored{derived.Answer(listener, hashed): []byte(derived.Unopened + ": " + said + "\n")},
-		indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
+		stored{derived.Answer(asr, hashed): []byte(derived.Unopened + ": " + said + "\n")},
+		indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
 
@@ -100,10 +100,10 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 	talks := willRun()
 	api, _ := running(t,
 		stored{
-			derived.Artifact(listener, hashed): []byte("what the model heard"),
-			derived.Answer(listener, hashed):   []byte(derived.Silent + "\n"),
+			derived.Artifact(asr, hashed): []byte("what the model heard"),
+			derived.Answer(asr, hashed):   []byte(derived.Silent + "\n"),
 		},
-		indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
+		indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
 		willRun(), talks,
 	)
 

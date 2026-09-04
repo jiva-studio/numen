@@ -64,8 +64,8 @@ func (s stored) Claim(context.Context, string) (func() error, error) {
 
 // The model a test's words were heard by, and the bytes it heard them in.
 const (
-	listener = derived.ASR
-	hashed   = "2fd4e1c6"
+	asr    = derived.ASR
+	hashed = "2fd4e1c6"
 )
 
 // listeningTo is a window holding one recording, with what a model wrote of it
@@ -82,7 +82,7 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 	api := &API{
 		Readers: filesystem.VaultReaders{},
 		Highlight: &source.Highlight{
-			Sources: indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
+			Sources: indexed{talk: {Path: talk, Producer: asr, Hash: hashed}},
 			Derived: held,
 		},
 	}
@@ -93,12 +93,12 @@ func windowOn(t *testing.T, held port.DerivedStores) (*API, http.Handler) {
 // whole is the store holding a finished transcript of the recording, and partly
 // is one a run is still writing.
 func whole(cues []transcript.Cue) stored {
-	return stored{derived.Artifact(listener, hashed): transcript.Marshal(cues)}
+	return stored{derived.Artifact(asr, hashed): transcript.Marshal(cues)}
 }
 
 func partly(cues []transcript.Cue, reached int) stored {
 	return stored{
-		derived.Partial(listener, hashed): append(transcript.Marshal(cues), transcript.Heard(reached)...),
+		derived.Partial(asr, hashed): append(transcript.Marshal(cues), transcript.Heard(reached)...),
 	}
 }
 
@@ -335,14 +335,14 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 
-	put, kept := held[derived.Corrected(listener, hashed)]
+	put, kept := held[derived.Corrected(asr, hashed)]
 	if !kept {
 		t.Fatalf("nothing was kept beside the transcript: %v", held)
 	}
 	if _, cues := transcript.Parse(put); len(cues) != 2 || cues[1].Text != "what Rupa said next" {
 		t.Errorf("the transcript was put right to %q", put)
 	}
-	if _, cues := transcript.Parse(held[derived.Artifact(listener, hashed)]); cues[1].Text != "what was said next" {
+	if _, cues := transcript.Parse(held[derived.Artifact(asr, hashed)]); cues[1].Text != "what was said next" {
 		t.Error("what was heard was written over")
 	}
 }
@@ -355,8 +355,8 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	if err := putting(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if !transcript.Written(held[derived.Corrected(listener, hashed)]) {
-		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrected(listener, hashed)])
+	if !transcript.Written(held[derived.Corrected(asr, hashed)]) {
+		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrected(asr, hashed)])
 	}
 }
 
@@ -395,7 +395,7 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	if err := putting(api, cueOf("what was said", 1500, 4200)); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if _, kept := held[derived.Corrected(listener, hashed)]; !kept {
+	if _, kept := held[derived.Corrected(asr, hashed)]; !kept {
 		t.Error("the correction was not kept")
 	}
 }
@@ -416,7 +416,7 @@ func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 		t.Errorf("the window is told %+v", told.GetCues())
 	}
 
-	delete(held, derived.Corrected(listener, hashed))
+	delete(held, derived.Corrected(asr, hashed))
 	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
 		t.Errorf("what was heard did not come back: %+v", told.GetCues())
 	}
@@ -466,7 +466,7 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 			if err.Error() == "" {
 				t.Error("the transcript was refused without saying why")
 			}
-			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
+			if _, kept := held[derived.Corrected(asr, hashed)]; kept {
 				t.Error("a transcript that was refused was written")
 			}
 		})
@@ -485,7 +485,7 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 	); err != nil {
 		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if _, cues := transcript.Parse(held[derived.Corrected(listener, hashed)]); len(cues) != 2 {
+	if _, cues := transcript.Parse(held[derived.Corrected(asr, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
 	}
 }
@@ -493,14 +493,14 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not edited
 // underneath.
 func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: partly(spoke(), 9100), name: derived.Partial(listener, hashed)}
+	held := heldBy{stored: partly(spoke(), 9100), name: derived.Partial(asr, hashed)}
 	api, _ := windowOn(t, held)
 
 	err := putting(api, cueOf("what was said", 1500, 4200))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("edited a recording being listened to and was refused %v", err)
 	}
-	if _, kept := held.stored[derived.Corrected(listener, hashed)]; kept {
+	if _, kept := held.stored[derived.Corrected(asr, hashed)]; kept {
 		t.Error("the transcript was written while a run held the recording")
 	}
 
@@ -551,7 +551,7 @@ func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Fatalf("the transcript was answered with %v", err)
 			}
-			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
+			if _, kept := held[derived.Corrected(asr, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
 			if told := heard(t, api); len(told.GetCues()) != 2 {
@@ -626,7 +626,7 @@ type refusing struct {
 func (r refusing) Open(domain.Vault) (port.DerivedStore, error) { return r, nil }
 
 func (r refusing) Write(ctx context.Context, name string, content []byte) error {
-	if name == derived.Corrected(listener, hashed) {
+	if name == derived.Corrected(asr, hashed) {
 		return r.why
 	}
 	return r.stored.Write(ctx, name, content)

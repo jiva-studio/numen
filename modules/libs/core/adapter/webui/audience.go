@@ -26,11 +26,12 @@ type audience[T any] struct {
 
 	mu        sync.Mutex
 	next      int
-	listeners map[int]*line[T]
+	listeners map[int]*listener[T]
 }
 
-// line is one listener and whether it is owed a message it never received.
-type line[T any] struct {
+// listener is one of the audience, and whether it is owed a message it never
+// received.
+type listener[T any] struct {
 	ch     chan T
 	behind bool
 }
@@ -43,11 +44,11 @@ func (a *audience[T]) listen() (<-chan T, func()) {
 	defer a.mu.Unlock()
 
 	if a.listeners == nil {
-		a.listeners = map[int]*line[T]{}
+		a.listeners = map[int]*listener[T]{}
 	}
 	id := a.next
 	a.next++
-	l := &line[T]{ch: make(chan T, a.held())}
+	l := &listener[T]{ch: make(chan T, a.held())}
 	a.listeners[id] = l
 
 	return l.ch, func() {
@@ -79,7 +80,7 @@ func (a *audience[T]) tell(what T) {
 // What the listener has not read is taken back out and looked at: the message
 // takes the place of one waiting about the same thing, and otherwise joins the
 // end of the line. A line with no room left keeps what it holds.
-func (a *audience[T]) queue(l *line[T], message T) bool {
+func (a *audience[T]) queue(l *listener[T], message T) bool {
 	waiting := unread(l.ch)
 
 	fitted := false

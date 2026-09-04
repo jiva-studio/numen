@@ -50,7 +50,7 @@ func dropper(t *testing.T, held port.DerivedStores, known indexed) (*API, *notin
 
 // heardBy is what the index says a recording a model listened to stands on.
 func heardBy() indexed {
-	return indexed{talk: {Path: talk, Producer: listener, Hash: hashed}}
+	return indexed{talk: {Path: talk, Producer: asr, Hash: hashed}}
 }
 
 // dropping asks for what a recording was heard as to be taken away.
@@ -68,8 +68,8 @@ func dropping(api *API) (*v1.Artifact, error) {
 // owing its text.
 func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held := whole(spoke())
-	held[derived.Corrected(listener, hashed)] = held[derived.Artifact(listener, hashed)]
-	held[derived.Beside(listener, hashed)] = []byte(`{"model":"parakeet"}`)
+	held[derived.Corrected(asr, hashed)] = held[derived.Artifact(asr, hashed)]
+	held[derived.Beside(asr, hashed)] = []byte(`{"model":"parakeet"}`)
 	api, index, _ := dropper(t, held, heardBy())
 
 	gone, err := dropping(api)
@@ -104,13 +104,13 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 // A run appends to the transcript, and what is being appended to is not taken
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
-	held := heldBy{stored: whole(spoke()), name: derived.Partial(listener, hashed)}
+	held := heldBy{stored: whole(spoke()), name: derived.Partial(asr, hashed)}
 	api, index, _ := dropper(t, held, heardBy())
 
 	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("dropped a transcript being written and was refused %v", err)
 	}
-	if _, kept := held.stored[derived.Artifact(listener, hashed)]; !kept {
+	if _, kept := held.stored[derived.Artifact(asr, hashed)]; !kept {
 		t.Error("the transcript went out from under the run")
 	}
 	if len(index.written) != 0 {
