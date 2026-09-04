@@ -18,19 +18,18 @@ func TestARefusalSaysWhatItFound(t *testing.T) {
 	at := filepath.Join(t.TempDir(), "index.db")
 	cfg := container.Config{IndexPath: at}
 
-	page, err := refusal{}.page(cfg, &index.NewerSchema{Held: 9, Known: 1})
+	page, err := refusal{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if err != nil {
 		t.Fatal(err)
 	}
 	said := string(page)
 
 	for _, want := range []string{
-		openingTheIndex,          // what could not be opened
-		"later version of numen", // what happened
-		">9<",                    // the schema the index holds
-		">1<",                    // the schema this build knows
-		at,                       // which file
-		"Update numen",           // what to do
+		readingTheSettings,        // what could not be read
+		"appearance.text_scale",   // which field
+		">4<",                     // what was written there
+		"as far as the size goes", // what it may be
+		"Write a number",          // what to do
 	} {
 		if !strings.Contains(said, want) {
 			t.Errorf("the page does not say %q", want)
@@ -96,11 +95,6 @@ func stoppings(t *testing.T) []stopping {
 	}
 
 	return []stopping{
-		{
-			name: "an index a later build wrote",
-			cfg:  container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-			why:  &index.NewerSchema{Held: 9, Known: 1},
-		},
 		{
 			name: "an index that is not a database",
 			cfg:  container.Config{IndexPath: corrupt},
@@ -193,7 +187,6 @@ func TestARefusalNamesWhatCouldNotBeOpened(t *testing.T) {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
 	want := map[string]string{
-		"an index a later build wrote":           openingTheIndex,
 		"an index that is not a database":        openingTheIndex,
 		"an index path that is a folder":         openingTheIndex,
 		"an index folder nobody may write in":    openingTheIndex,

@@ -13,7 +13,6 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
@@ -99,20 +98,6 @@ func (refusal) page(cfg container.Config, why error) ([]byte, error) {
 // stopped is the state the application is in, said in its own words: what it
 // could not open, what it found, and what a person can do about it.
 func stopped(cfg container.Config, why error) refusal {
-	var ahead *index.NewerSchema
-	if errors.As(why, &ahead) {
-		return refusal{
-			Heading:  openingTheIndex,
-			Sentence: "This index was written by a later version of numen.",
-			Facts: []fact{
-				{"schema the index holds", fmt.Sprint(ahead.Held)},
-				{"schema this build knows", fmt.Sprint(ahead.Known)},
-				{"index", indexAt(cfg)},
-			},
-			Remedy: "Update numen to the version that wrote it.",
-		}
-	}
-
 	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
 		return sized(cfg, outside)

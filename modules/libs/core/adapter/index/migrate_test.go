@@ -2,7 +2,6 @@ package index
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -142,7 +141,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 // Its schema holds what this build cannot read. Nothing is repaired, nothing is
 // emptied: what this build owes the person is the two numbers and their own
 // copy of their index, untouched.
-func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
+func TestAnIndexAtAnUnknownSchemaIsBuiltAgain(t *testing.T) {
 	ctx := t.Context()
 	path := filepath.Join(t.TempDir(), "index.db")
 
@@ -163,19 +162,23 @@ func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
 	}
 
 	again, err := Open(ctx, path)
-	if err == nil {
-		again.Close()
-		t.Fatal("an index from a later build was opened")
+	if err != nil {
+		t.Fatalf("an index at a schema this build does not carry was not opened: %v", err)
 	}
-	var ahead *NewerSchema
-	if !errors.As(err, &ahead) {
-		t.Fatalf("the error is %v, which does not say the index is ahead", err)
+	defer again.Close()
+
+	// It was built again from the first migration, so it stands at what this
+	// build carries rather than at what it held.
+	var version int
+	if err := again.write.QueryRowContext(ctx, "PRAGMA user_version").Scan(&version); err != nil {
+		t.Fatal(err)
 	}
-	if ahead.Held != newest(t)+3 || ahead.Known != newest(t) {
-		t.Errorf("said %d and %d, want %d and %d", ahead.Held, ahead.Known, newest(t)+3, newest(t))
+	if version != newest(t) {
+		t.Errorf("the index is at schema %d, want %d", version, newest(t))
 	}
 
-	// The index is as it was left. Nothing was repaired by deleting.
+	// Nothing it held survived: what it holds is a reading of the vault, and
+	// the next scan reads the vault again.
 	raw, err := sql.Open("sqlite", dsn(path))
 	if err != nil {
 		t.Fatal(err)
@@ -185,8 +188,8 @@ func TestAnIndexFromALaterBuildIsRefused(t *testing.T) {
 	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
 		t.Fatal(err)
 	}
-	if vaults != 1 {
-		t.Errorf("the index holds %d vaults, want the one it was left with", vaults)
+	if vaults != 0 {
+		t.Errorf("the index holds %d vaults, want none: it was built again", vaults)
 	}
 }
 

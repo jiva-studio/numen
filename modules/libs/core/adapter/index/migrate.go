@@ -40,9 +40,10 @@ type migration struct {
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
 //
-// An index at a version this build does not carry was written by a later one:
-// its schema holds what this build cannot read, so it is reported and left
-// exactly as it stands.
+// An index at a version this build does not carry is emptied and built again
+// from the first migration. The index is a cache: what it holds is a reading of
+// the vault, and the next scan reads the vault again. Refusing it instead would
+// stop the application on a database it is free to throw away.
 func migrate(ctx context.Context, db *sql.DB) error {
 	available, err := loadMigrations()
 	if err != nil {
@@ -58,7 +59,10 @@ func migrate(ctx context.Context, db *sql.DB) error {
 		newest = available[len(available)-1].version
 	}
 	if current > newest {
-		return &NewerSchema{Held: current, Known: newest}
+		if err := discard(ctx, db); err != nil {
+			return fmt.Errorf("emptying an index at schema %d: %w", current, err)
+		}
+		current = 0
 	}
 
 	for _, m := range available {
@@ -72,18 +76,76 @@ func migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-// NewerSchema is an index a later build wrote. Nothing is done to it: the schema it
-// holds is one this build cannot read, and the way out is the build that made
-// it.
-type NewerSchema struct {
-	Held  int
-	Known int
-}
+// discard empties an index of everything a migration made, so the migrations
+// can run again from the first.
+//
+// What is dropped is read back each time round: a virtual table takes its
+// shadow tables down with it, and those are rows in this list too. The loop
+// ends when a pass drops nothing, which is either an empty schema or one this
+// cannot empty, and the second is a failure worth reporting rather than
+// spinning on.
+//
+// It runs on one connection with foreign keys off, because the tables go in
+// whatever order the schema lists them and a child outliving its parent for
+// the rest of the pass is the ordinary way through.
+func discard(ctx context.Context, db *sql.DB) error {
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
+		return fmt.Errorf("setting the keys aside: %w", err)
+	}
 
-func (e *NewerSchema) Error() string {
-	return fmt.Sprintf(
-		"this index was written by a later version of numen: it is at schema %d and this build knows %d",
-		e.Held, e.Known)
+	for {
+		rows, err := conn.QueryContext(ctx,
+			`SELECT type, name FROM sqlite_master
+			  WHERE type IN ('table', 'view', 'trigger', 'index')
+			    AND name NOT LIKE 'sqlite_%'`)
+		if err != nil {
+			return fmt.Errorf("what this index holds: %w", err)
+		}
+		var kinds, names []string
+		for rows.Next() {
+			var kind, name string
+			if err := rows.Scan(&kind, &name); err != nil {
+				_ = rows.Close()
+				return err
+			}
+			kinds, names = append(kinds, kind), append(names, name)
+		}
+		if err := rows.Err(); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		if err := rows.Close(); err != nil {
+			return err
+		}
+		if len(names) == 0 {
+			break
+		}
+
+		dropped := false
+		var why error
+		for i, name := range names {
+			// An object already taken down by the one before it is gone, not a
+			// failure: the next pass is what decides whether anything is left.
+			if _, err := conn.ExecContext(ctx,
+				fmt.Sprintf("DROP %s IF EXISTS %q", strings.ToUpper(kinds[i]), name)); err != nil {
+				why = fmt.Errorf("%s %s: %w", kinds[i], name, err)
+			} else {
+				dropped = true
+			}
+		}
+		if !dropped {
+			return fmt.Errorf("%d objects stand and none could be dropped: %w", len(names), why)
+		}
+	}
+	if _, err := conn.ExecContext(ctx, "PRAGMA user_version = 0"); err != nil {
+		return fmt.Errorf("putting the version back: %w", err)
+	}
+	return nil
 }
 
 // remember is where an index keeps what migrated it. It is not one of the
