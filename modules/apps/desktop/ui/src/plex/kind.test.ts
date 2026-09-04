@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { paneById, panesOf } from '@numen/ui'
 import { plexKind, plexing, type Held, type Making, type Plexing } from './kind'
 import { ITEMS, NEW_NOTE } from './menu'
-import { view as viewing, type View } from './standing'
+import { view as viewing, type View } from './view'
 import { WORDS as words } from './words'
 import {
   movedTo,

@@ -5,7 +5,7 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it } from 'vitest'
-import { view, type Neighbours } from './standing'
+import { view, type Neighbours } from './view'
 import type { Neighbourhood } from '../core'
 
 const answer = (path: string): Neighbourhood => ({

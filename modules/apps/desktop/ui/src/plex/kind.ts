@@ -16,7 +16,7 @@ import type {
 import { asking } from '../asking'
 import { NEW_NOTE, OFFERED } from './menu'
 import { asParts, asPlex, typesIn } from './picture'
-import type { View } from './standing'
+import type { View } from './view'
 import { ticketing } from './tickets'
 import type { Heading, Move, NoteType } from '../core'
 import type { Host, Kind } from '../windowing'
