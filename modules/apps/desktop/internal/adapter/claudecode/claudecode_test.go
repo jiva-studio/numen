@@ -10,7 +10,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
@@ -651,6 +650,13 @@ func TestAVaultsOwnConfigurationIsNeverRead(t *testing.T) {
 	}
 }
 
+// die makes sure a process is gone, whatever it takes.
+func die(pid int) {
+	if proc, err := os.FindProcess(pid); err == nil {
+		proc.Kill()
+	}
+}
+
 // No agent this window started outlives it, and a person has several
 // conversations open at once. Each child is put in a process group of its own,
 // so nothing that ends this process reaches it, and one still answering goes on
@@ -700,8 +706,8 @@ sleep 120
 		if pid == 0 {
 			t.Fatalf("the agent of conversation %q never started", conversation)
 		}
-		if err := syscall.Kill(pid, 0); err != nil {
-			t.Fatalf("the agent of conversation %q is not running: %v", conversation, err)
+		if !running(pid) {
+			t.Fatalf("the agent of conversation %q is not running", conversation)
 		}
 		pids[conversation] = pid
 	}
@@ -711,18 +717,18 @@ sleep 120
 	}
 
 	// A process this one started stays visible until it is waited for, so what
-	// says it is over is that a signal no longer reaches it.
+	// says it is over is that it can no longer be found.
 	for conversation, pid := range pids {
 		gone := false
 		for range 200 {
-			if err := syscall.Kill(pid, 0); err != nil {
+			if !running(pid) {
 				gone = true
 				break
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 		if !gone {
-			syscall.Kill(pid, syscall.SIGKILL)
+			die(pid)
 			t.Errorf("the agent of conversation %q outlived the window that started it", conversation)
 		}
 	}
@@ -1065,13 +1071,13 @@ sleep 120
 	}
 
 	if !ended(closing) {
-		syscall.Kill(closing, syscall.SIGKILL)
+		die(closing)
 		t.Error("the agent of a conversation that is over is still running")
 	}
 	for range left.Steps() {
 	}
-	if err := syscall.Kill(answering, 0); err != nil {
-		t.Errorf("the conversation left open stopped answering: %v", err)
+	if !running(answering) {
+		t.Error("the conversation left open stopped answering")
 	}
 	if session := claude.Carrying("two"); session != "s-right" {
 		t.Errorf("conversation %q is carrying %q, want %q", "two", session, "s-right")
@@ -1096,11 +1102,11 @@ func pidOf(t *testing.T, dir, asked string) int {
 }
 
 // ended reports whether a process is over. One this process started stays
-// visible until it is waited for, so what says it is over is that a signal no
-// longer reaches it.
+// visible until it is waited for, so what says it is over is that it can no
+// longer be found.
 func ended(pid int) bool {
 	for range 200 {
-		if err := syscall.Kill(pid, 0); err != nil {
+		if !running(pid) {
 			return true
 		}
 		time.Sleep(10 * time.Millisecond)
