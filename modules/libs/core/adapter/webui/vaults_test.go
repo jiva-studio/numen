@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // vaultRows is the index as a vault is written to and taken out of it.
@@ -130,10 +130,10 @@ func onAList(t *testing.T) *onTheList {
 
 	registry := appstate.At(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	identity := filesystem.VaultIdentity{}
-	adding := usecase.Add{Identity: identity, Registry: registry, Now: time.Now}
+	adding := vaults.Add{Identity: identity, Registry: registry, Now: time.Now}
 
 	rows := &vaultRows{}
-	forget := usecase.Forget{Registry: registry, Index: rows}
+	forget := vaults.Forget{Registry: registry, Index: rows}
 	f := &onTheList{
 		registry: registry,
 		rows:     rows,
@@ -147,9 +147,9 @@ func onAList(t *testing.T) *onTheList {
 			Registry:     registry,
 			FolderDialog: f.dialog,
 			Add:          &adding,
-			Rename:       &usecase.Rename{Registry: registry, Index: rows},
+			Rename:       &vaults.Rename{Registry: registry, Index: rows},
 			Forget:       &forget,
-			Erase:        &usecase.Erase{Identity: identity, Trash: f.bin, Forget: forget},
+			Erase:        &vaults.Erase{Identity: identity, Trash: f.bin, Forget: forget},
 		},
 	}
 	f.api.Opens = func(_ context.Context, v domain.Vault) error {
@@ -185,7 +185,7 @@ func (f *onTheList) asked() []domain.Vault {
 }
 
 // added makes a folder under a parent of its own and puts it on the list.
-func added(t *testing.T, add usecase.Add, name string) domain.Vault {
+func added(t *testing.T, add vaults.Add, name string) domain.Vault {
 	t.Helper()
 
 	v, err := add.Execute(folderNamed(t, name), name)
@@ -609,11 +609,14 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	}
 }
 
-// TestABuildWithoutThePieceSaysItCannotBeDoneHere, for every question about the
-// list.
-func TestABuildWithoutThePieceSaysItCannotBeDoneHere(t *testing.T) {
+// A build that does not serve the list answers no question about it. The list
+// is a service and is mounted whole, so what is unanswered is unanswered
+// because nothing serves it and not because a handler standing there has
+// nothing behind it.
+func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
 	api := &API{}
-	server := httptest.NewUnstartedServer(api.Serving(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(
+		api.Serving(http.NotFoundHandler(), numenv1connect.NoteServiceName))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)

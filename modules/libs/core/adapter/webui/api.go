@@ -25,7 +25,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
-	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
+	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
 // API is the vault a client is looking at and what can be asked about it, in
@@ -57,8 +57,7 @@ type API struct {
 
 	// Opens puts another vault in the window: the agents are stopped, the vault
 	// is swapped, and the agents are started again against the one that
-	// arrived. A build without one answers that the window cannot be moved to
-	// another vault.
+	// arrived. It is bound by every build that serves the list of vaults.
 	Opens func(context.Context, domain.Vault) error
 
 	// agent is the agent the panel's tasks go to. A vault without one answers
@@ -94,14 +93,14 @@ type API struct {
 
 	// Presets is the preset a deck is scheduled by, and how one is read,
 	// written and made. Curves is what the one control of a preset comes to
-	// over the whole range of its goal. A build without them answers that
-	// presets cannot be worked here.
+	// over the whole range of its goal. They are bound by every build that
+	// serves the presets.
 	Presets *flashcards.Presets
 	Curves  *flashcards.ProjectCurve
 
 	// Finds is how the window searches the text the vault holds, by the words
-	// in it and by what it means. A build without one answers that it cannot be
-	// searched, and the names a vault holds are answered all the same.
+	// in it and by what it means. It is bound by every build that serves the
+	// search, and the names a vault holds are answered beside it.
 	Finds *search.Search
 
 	// Edits is everyone drawing this vault, for a change to a note being made
@@ -157,8 +156,8 @@ type API struct {
 //
 // Read and Write are how the window opens a note and puts it back, Create makes
 // one and Linking writes a relationship into one, Rename gives one a different
-// name and Remove takes it out of the vault. A build without them answers that
-// a note cannot be edited here.
+// name and Remove takes it out of the vault. They are bound by every build that
+// serves a note.
 type Notes struct {
 	Queries port.NoteQueries
 	Links   port.LinkQueries
@@ -174,43 +173,40 @@ type Notes struct {
 // Files is the vault's tree as a person moves things about in it. Writers open
 // the vault a folder is made in, Move puts a file or a folder somewhere else,
 // and Import copies files a person handed the window into a folder of the
-// vault. A build without them answers that nothing can be made, moved or
-// brought in here.
+// vault. They are bound by every build that serves the tree.
 //
 // What a folder holds is read through the API's own Readers, which everything
 // else reads through too.
 type Files struct {
 	Writers port.VaultWriters
-	Move    *usecase.Move
-	Import  *usecase.Import
+	Move    *vaults.Move
+	Import  *vaults.Import
 }
 
 // Vaults is the list of vaults this installation holds, the one the window is
-// showing among them. Without a Registry the window answers that it holds no
-// list.
+// showing among them.
 //
 // Add turns a folder into a vault, Rename is what a person calls one, and
-// Forget and Erase take one off the list. A build without them answers that the
-// list cannot be changed here.
+// Forget and Erase take one off the list. They are bound by every build that
+// serves the list, and so is the folder dialog below.
 type Vaults struct {
 	Registry port.VaultRegistry
 
 	// FolderDialog puts this machine's own folder dialog in front of the person.
-	// Only an application with a window has one, and a build without it answers
-	// that a folder cannot be chosen here.
+	// Only an application with a window has one.
 	FolderDialog port.FolderDialog
 
-	Add    *usecase.Add
-	Rename *usecase.Rename
-	Forget *usecase.Forget
-	Erase  *usecase.Erase
+	Add    *vaults.Add
+	Rename *vaults.Rename
+	Forget *vaults.Forget
+	Erase  *vaults.Erase
 }
 
 // Cards is the decks and stencils a vault is arranged into. Read takes a deck
 // or a stencil, List the stencils the vault holds, and Write puts either back.
 // Create makes a deck, a stencil or a preset, and RenameField gives one of a
-// stencil's fields a different name everywhere it is written. A build without
-// them answers that cards cannot be worked here.
+// stencil's fields a different name everywhere it is written. They are bound by
+// every build that serves the cards.
 type Cards struct {
 	Read        *cards.Read
 	List        *cards.List
@@ -220,9 +216,9 @@ type Cards struct {
 }
 
 // Configuring is every setting the window reads and writes. Each is a reader
-// and the writer beside it: a build with no writer answers that it configures
-// nothing, and one with no reader reads what an installation nobody has
-// configured does.
+// and the writer beside it, and they are bound by every build that serves the
+// settings: the phone serves them to a socket answering any origin at all, so
+// it mounts no service about the file the keys are written in.
 type Configuring struct {
 	// Configured reads every setting as JSON and the file it stands in, Models
 	// the models the settings that name one can be set to, and ChoosesSetting
