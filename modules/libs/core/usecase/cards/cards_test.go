@@ -83,7 +83,7 @@ func indexed(t *testing.T) vaults {
 
 	scan := usecase.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 	out := vaults{db: db}
 	for i, notes := range []map[string]string{animals, minerals} {
@@ -104,7 +104,7 @@ func (vs vaults) index(t *testing.T) func(context.Context, domain.Vault, []strin
 	t.Helper()
 	scan := usecase.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: vs.db.Vaults(), Notes: vs.db.Notes(),
-		Known: vs.db.NoteQueries(), Maintenance: vs.db.Statistics(),
+		Known: vs.db.NoteQueries(), Maintenance: vs.db.Maintenance(),
 	}
 	return func(ctx context.Context, v domain.Vault, _ []string) error {
 		_, err := scan.Execute(ctx, v)
@@ -185,7 +185,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldWrittenTwice(t *testing.T) {
 
 	var filed []format.Problem
 	for _, p := range got.Body.Problems {
-		if p.Check == format.CheckTwoValues {
+		if p.Fault == format.FaultTwoValues {
 			filed = append(filed, p)
 		}
 	}
@@ -225,7 +225,7 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 
 	var filed []format.Problem
 	for _, p := range got.Body.Problems {
-		if p.Check == format.CheckNotAStencil {
+		if p.Fault == format.FaultNotAStencil {
 			filed = append(filed, p)
 		}
 	}
@@ -278,7 +278,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	if counted.reads != 0 {
 		t.Errorf("the file was opened %d times", counted.reads)
 	}
-	if len(got.Body.Problems) != 1 || got.Body.Problems[0].Check != format.CheckTooLarge {
+	if len(got.Body.Problems) != 1 || got.Body.Problems[0].Fault != format.FaultTooLarge {
 		t.Errorf("problems = %+v", got.Body.Problems)
 	}
 	if !strings.Contains(got.Body.Problems[0].Detail, "8388608") {

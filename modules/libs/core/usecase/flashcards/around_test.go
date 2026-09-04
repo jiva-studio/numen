@@ -34,7 +34,7 @@ func reading(
 
 	scan := usecase.Scan{
 		Readers: filesystem.VaultReaders{}, Vaults: db.Vaults(), Notes: db.Notes(),
-		Known: db.NoteQueries(), Maintenance: db.Statistics(),
+		Known: db.NoteQueries(), Maintenance: db.Maintenance(),
 	}
 	add := func(notes map[string]string) domain.Vault {
 		t.Helper()

@@ -93,7 +93,7 @@ func (i *Index) Vectors() port.VectorRepository   { return i.db.Sources() }
 func (i *Index) VectorsOwing() port.VectorQueries { return i.db.Sources() }
 
 // Maintenance is how the index is told that it has changed wholesale.
-func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Statistics() }
+func (i *Index) Maintenance() port.IndexMaintenance { return i.db.Maintenance() }
 
 // Path is where the database file is, which a load test needs in order to say
 // how large the index got.

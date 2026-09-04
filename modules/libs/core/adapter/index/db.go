@@ -109,8 +109,8 @@ func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
 func (d *DB) Notes() *note.Repository   { return note.NewRepository(d.write) }
 func (d *DB) Chunks() *chunk.Repository { return chunk.NewRepository(d.write) }
 
-// Statistics writes, so it takes the pool that is allowed to.
-func (d *DB) Statistics() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
+// Maintenance writes, so it takes the pool that is allowed to.
+func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
