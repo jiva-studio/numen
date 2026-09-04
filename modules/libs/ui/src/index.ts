@@ -111,7 +111,6 @@ export type {
   Size,
   Widths,
 } from './plex/arrange'
-export { default as Panel } from './panel/Panel.vue'
 
 export { default as Editor } from './editor/Editor.vue'
 export type { EditorChange } from './editor/change'
