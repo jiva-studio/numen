@@ -1161,10 +1161,10 @@ func TestTheSittingAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	p := review.Defaults()
 
 	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	stood := review.ReplayUnder(day, review.By(by), []review.Answer{
+	stood := review.Give([]review.Answer{
 		answered("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
 		answered("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
-	})[face]
+	}).Replay(day, review.By(by))[face]
 
 	// The answer is given ten days before the night the clock goes back, so the
 	// day the scheduler names falls the far side of it and the window the card

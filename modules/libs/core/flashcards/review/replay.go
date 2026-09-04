@@ -18,7 +18,7 @@ import (
 // met a conflict leaves a second copy of a run beside the first, and a person
 // restoring a backup puts one there by hand.
 func Replay(d Day, by Scheduler, answers []Answer) map[CardFaceID]Schedule {
-	return ReplayUnder(d, By(by), answers)
+	return Give(answers).Replay(d, By(by))
 }
 
 // Scheduling is how one card face is worked out: the scheduler that spaces it,
@@ -37,12 +37,6 @@ type Assignment func(CardFaceID) Scheduling
 // scheduled by.
 func By(s Scheduler) Assignment {
 	return func(CardFaceID) Scheduling { return Scheduling{By: s, Preset: Defaults()} }
-}
-
-// ReplayUnder works out where a history leaves every card face, each under the
-// scheduler its own preset asks for and on the day its own preset puts it.
-func ReplayUnder(d Day, by Assignment, answers []Answer) map[CardFaceID]Schedule {
-	return Give(answers).Replay(d, by)
 }
 
 // History is a vault's answers in the order they were given: nothing a
