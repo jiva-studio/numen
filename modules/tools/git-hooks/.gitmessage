@@ -17,10 +17,12 @@
 #   revert    reverts a previous commit
 #
 # --- scopes -------------------------------------------------------------
-#   desktop   modules/apps/desktop      adr     docs/adr
-#   mobile    modules/apps/mobile       docs    everything else in docs/
-#   domain    modules/libs/domain       vault   vault format / parser
-#   protocol  modules/libs/protocol     ci  deps  repo
+#   desktop   modules/apps/desktop      core    modules/libs/core
+#   mobile    modules/apps/mobile       domain  modules/libs/core/domain
+#   landing   modules/apps/landing      ui      modules/libs/ui
+#   protocol  modules/libs/protocol     wire    modules/libs/wire
+#   adr       docs/adr                  docs    everything else in docs/
+#   vault     vault format / parser     ci  deps  repo
 #
 # --- examples -----------------------------------------------------------
 #   docs(adr): add ADR-0009 on two levels of addressing

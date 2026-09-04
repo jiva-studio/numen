@@ -2,7 +2,7 @@
  * Conventional Commits — https://www.conventionalcommits.org
  *
  * Enforced locally by the .husky/commit-msg hook and in CI by
- * .github/workflows/commitlint.yml (so unhooked clones still get caught).
+ * .github/workflows/commits.yml (so unhooked clones still get caught).
  */
 export default {
   extends: ['@commitlint/config-conventional'],
