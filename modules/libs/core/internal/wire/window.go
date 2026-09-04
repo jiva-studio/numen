@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"connectrpc.com/connect"
@@ -26,6 +27,22 @@ const (
 
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
+
+// A Reason is why something a window shows is not so, as it stands now, said by
+// whatever found out and read by whoever draws the window.
+//
+// The empty reason is nothing being the matter. It is a reason and not a flag:
+// a window is told what went wrong, not that something did.
+type Reason struct{ why atomic.Value }
+
+// Store says why, or the empty string once nothing is the matter.
+func (r *Reason) Store(why string) { r.why.Store(why) }
+
+// Why is what was last said, and empty while nothing is the matter.
+func (r *Reason) Why() string {
+	why, _ := r.why.Load().(string)
+	return why
+}
 
 // Window is one window of this application, as the schema answers about it:
 // everything being done behind it, and everyone drawing it for the moment it

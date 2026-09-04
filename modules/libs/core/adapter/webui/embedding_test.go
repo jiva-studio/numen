@@ -258,7 +258,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	}, unwatchable{}, walked(), model, 20*time.Millisecond)
 
 	eventually(t, "the model was never asked at all", func() bool { return model.refused() > 0 })
-	if reason := text(&f.api.Unwatched); reason == "" {
+	if why := f.api.Unwatched.Why(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
 	held, embedded := vectored(t, f, model)
@@ -287,7 +287,7 @@ func TestANoteWrittenAfterTheScanFailedIsEmbedded(t *testing.T) {
 	}, watcher, unwalkable{VaultReaders: filesystem.VaultReaders{}}, model, 20*time.Millisecond)
 
 	eventually(t, "the scan was not reported as failed", func() bool {
-		return f.api.failure() != ""
+		return f.api.Failed.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", noteWith(after, 200))

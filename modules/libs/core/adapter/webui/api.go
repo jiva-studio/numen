@@ -125,15 +125,15 @@ type API struct {
 	// Writing is the writes taken and not yet finished.
 	Writing inflight
 
-	// Ready is set when the scan finished, Failed when it could not — a vault
-	// that could not be read is not an empty one, and the interface has to be
-	// able to tell them apart.
+	// Ready is set when the scan finished, and Failed says why it could not —
+	// a vault that could not be read is not an empty one, and the interface has
+	// to be able to tell them apart.
 	Ready  atomic.Bool
-	Failed atomic.Value
+	Failed wire.Reason
 	// Unwatched is why the vault is not being followed, when it is not.
-	Unwatched atomic.Value
+	Unwatched wire.Reason
 	// Unreachable is why an agent cannot be reached, when one cannot.
-	Unreachable atomic.Value
+	Unreachable wire.Reason
 
 	// Window is this window itself: everything being done behind it, which
 	// whatever does work puts itself into, and everyone drawing it for the
@@ -360,9 +360,6 @@ func (a *API) Answers(taking port.Agent) {
 	a.agent.Store(&taking)
 }
 
-// failure is what stopped the scan, or empty while nothing has.
-func (a *API) failure() string { return text(&a.Failed) }
-
 func text(v *atomic.Value) string {
 	s, _ := v.Load().(string)
 	return s
@@ -376,9 +373,9 @@ func (a *API) GetVaultState(
 		Name:        showing.Name,
 		Path:        showing.Path,
 		Ready:       a.Ready.Load(),
-		Failed:      a.failure(),
-		Unwatched:   text(&a.Unwatched),
-		Unreachable: text(&a.Unreachable),
+		Failed:      a.Failed.Why(),
+		Unwatched:   a.Unwatched.Why(),
+		Unreachable: a.Unreachable.Why(),
 		Embedding:   text(&a.Indexing.Model) != "",
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of

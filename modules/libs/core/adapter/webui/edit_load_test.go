@@ -65,10 +65,10 @@ func TestEditLoad(t *testing.T) {
 	reading := time.Now()
 	wait := begin(t.Context(), v, cfg, db, api, opened, filesystem.VaultReaders{}, nil, waking(time.Hour), &pending{}, io.Discard)
 	t.Cleanup(wait)
-	for !api.Ready.Load() && api.failure() == "" {
+	for !api.Ready.Load() && api.Failed.Why() == "" {
 		time.Sleep(50 * time.Millisecond)
 	}
-	if why := api.failure(); why != "" {
+	if why := api.Failed.Why(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
 	t.Logf("read %d notes in %s", notes, time.Since(reading).Round(time.Millisecond))

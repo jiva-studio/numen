@@ -400,7 +400,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
 
 	eventually(t, "the scan was not reported as failed", func() bool {
-		return f.api.failure() != ""
+		return f.api.Failed.Why() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -419,7 +419,7 @@ func TestAVaultThatCannotBeWatchedSaysSo(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, filesystem.VaultReaders{})
 
-	if reason := text(&f.api.Unwatched); reason == "" {
+	if why := f.api.Unwatched.Why(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
 	}
 }
@@ -434,7 +434,7 @@ func TestAWatchThatStopsSaysSo(t *testing.T) {
 	close(watcher.changes)
 
 	eventually(t, "a vault whose watch stopped is shown as followed", func() bool {
-		return text(&f.api.Unwatched) != ""
+		return f.api.Unwatched.Why() != ""
 	})
 }
 

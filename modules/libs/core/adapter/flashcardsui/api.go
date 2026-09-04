@@ -73,7 +73,7 @@ type API struct {
 	Opened func(context.Context, domain.Vault)
 
 	// Unreachable is why an agent cannot be reached, when one cannot.
-	Unreachable atomic.Value
+	Unreachable wire.Reason
 
 	// agent is the agent a question about a card goes to. A window without one
 	// answers that it has none, and the rest of it works as it did.

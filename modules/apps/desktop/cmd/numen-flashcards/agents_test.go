@@ -105,7 +105,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 	if api.Answering() != nil {
 		t.Error("a card can be asked about")
 	}
-	if said, _ := api.Unreachable.Load().(string); said == "" {
+	if api.Unreachable.Why() == "" {
 		t.Error("the page was told nothing about why it has no agent")
 	}
 }

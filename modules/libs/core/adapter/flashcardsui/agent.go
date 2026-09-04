@@ -25,8 +25,7 @@ var ErrNoAgent = errors.New("no agent is set up for this window")
 func (a *API) GetAgentState(
 	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
 ) (*connect.Response[v1.GetAgentStateResponse], error) {
-	why, _ := a.Unreachable.Load().(string)
-	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: why}), nil
+	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: a.Unreachable.Why()}), nil
 }
 
 // AskAgent hands the person's question to the agent and reports what it does
