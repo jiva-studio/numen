@@ -33,22 +33,34 @@ var (
 	errNoListening = errors.New("this build cannot hear a recording")
 )
 
-// reached is how far a run over one source has got: done is the whole of the
-// text a model produced already standing, under is a run holding this very
-// source now, and stopped is part of the text on disk with no run behind it.
-//
-// answer is what a run got out of a source it got no words out of, and why is
-// what it wrote about it. size is how many bytes stand under whichever name
-// the run has reached, and is what tells a caller that what it read has moved
-// on.
+// reached is how far a run over one source has got: the one thing a source
+// stands at, what the run wrote about a source it got no words out of, and how
+// many bytes stand under whichever name it has reached, which is what tells a
+// caller that what it read has moved on.
 type reached struct {
-	done    bool
-	under   bool
-	stopped bool
-	answer  string
-	why     string
-	size    int
+	stands stand
+	why    string
+	size   int
 }
+
+// A stand is what a source stands at. One holds at a time: a source is not both
+// being read and read through.
+type stand int
+
+const (
+	// untouched is a source no run has left anything of.
+	untouched stand = iota
+	// done is the whole of the text a model produced already standing.
+	done
+	// under is a run holding this very source now.
+	under
+	// stopped is part of the text on disk with no run behind it.
+	stopped
+	// silent is a run that got no words out of it because it holds no speech,
+	// and unopened one that got none because nothing here opens the bytes.
+	silent
+	unopened
+)
 
 // far says how far a run over the source at a path has got.
 //
@@ -83,7 +95,7 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	whole, err := store.Read(ctx, derived.Artifact(from, hash))
 	switch {
 	case err == nil:
-		got.done, got.size = true, len(whole)
+		got.stands, got.size = done, len(whole)
 		return got, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err
@@ -93,7 +105,12 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 	// asks for the source to be tried afresh.
 	switch held, err := store.Read(ctx, derived.Answer(from, hash)); {
 	case err == nil:
-		got.answer, got.why = derived.Answered(held)
+		switch answer, why := derived.Answered(held); answer {
+		case derived.Silent:
+			got.stands = silent
+		case derived.Unopened:
+			got.stands, got.why = unopened, why
+		}
 		return got, nil
 	case !errors.Is(err, fs.ErrNotExist):
 		return got, err
@@ -107,10 +124,14 @@ func farUnder(ctx context.Context, store port.DerivedStore, from, hash string) (
 		return got, err
 	}
 	got.size = len(part)
-	got.under = !free(ctx, store, derived.Partial(from, hash))
+	switch {
+	case !free(ctx, store, derived.Partial(from, hash)):
+		got.stands = under
 	// A run that stopped left what it reached behind it. It is not a source
 	// nothing has touched, and asking again begins afresh.
-	got.stopped = !got.under && got.size > 0
+	case got.size > 0:
+		got.stands = stopped
+	}
 	return got, nil
 }
 

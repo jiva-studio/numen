@@ -186,7 +186,7 @@ func (a *API) run(
 	}
 	// What stands is what the ask comes to. A source a run already answered
 	// about is answered the same until that record is taken away.
-	if got.done || got.under || got.answer != "" {
+	if got.stands == done || got.stands == under || got.stands == silent || got.stands == unopened {
 		return stood(v, ref.Path, id, got), nil
 	}
 
@@ -307,16 +307,16 @@ func (a *API) corrections(
 // stood is how far a run got, as the artifact a client reads.
 func stood(v domain.Vault, path, id string, got reached) *v1.Artifact {
 	out := &v1.Artifact{Name: named(v, path, id), Size: int64(got.size)}
-	switch {
-	case got.done:
+	switch got.stands {
+	case done:
 		out.State = v1.State_STATE_DONE
-	case got.answer == derived.Silent:
+	case silent:
 		out.State = v1.State_STATE_EMPTY
-	case got.answer == derived.Unopened:
+	case unopened:
 		out.State, out.Error = v1.State_STATE_FAILED, got.why
-	case got.under:
+	case under:
 		out.State = v1.State_STATE_RUNNING
-	case got.stopped:
+	case stopped:
 		out.State = v1.State_STATE_STOPPED
 	default:
 		out.State = v1.State_STATE_NONE
