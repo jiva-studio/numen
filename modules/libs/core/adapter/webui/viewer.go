@@ -53,12 +53,12 @@ var errNoDrawing = errors.New("this build cannot draw a document")
 type viewer struct {
 	// open holds a document open for drawing. It is pdf.Open in the
 	// application, and a test puts its own in.
-	open  func(raw []byte) (drawable, error)
+	open  func(raw []byte) (scan, error)
 	docs  atomic.Pointer[documents]
 	drawn atomic.Pointer[pictures]
 	// kept is the same pages on disk, so a document opened again is not drawn
 	// again. It is nothing where this machine names no cache folder.
-	kept *shelf
+	kept *cache
 
 	// patience is how long a request waits for the document before it answers
 	// that the document is busy. The library's own wait is minutes, which is
@@ -97,8 +97,8 @@ const (
 )
 
 // drawnBy holds a document open with what the application draws with.
-func drawnBy(docs port.Documents) func([]byte) (drawable, error) {
-	return func(raw []byte) (drawable, error) {
+func drawnBy(docs port.Documents) func([]byte) (scan, error) {
+	return func(raw []byte) (scan, error) {
 		return docs.Draw(context.Background(), raw)
 	}
 }
@@ -237,7 +237,7 @@ func (a *API) opening(
 	reader port.VaultReader,
 	print fingerprint,
 ) (*document, func(), error) {
-	return a.Viewer.docs.Load().take(ctx, print, func() (drawable, error) {
+	return a.Viewer.docs.Load().take(ctx, print, func() (scan, error) {
 		raw, err := reader.Read(context.WithoutCancel(ctx), print.path)
 		if err != nil {
 			return nil, err

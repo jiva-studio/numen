@@ -55,7 +55,7 @@ func sheets(pages int) *paper {
 }
 
 // opened is what the viewer is given in place of pdf.Open.
-func (p *paper) opened([]byte) (drawable, error) {
+func (p *paper) opened([]byte) (scan, error) {
 	if p.gate != nil {
 		<-p.gate
 	}

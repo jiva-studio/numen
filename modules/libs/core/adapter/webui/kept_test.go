@@ -9,15 +9,15 @@ import (
 )
 
 // onDisk gives a window a folder of its own to keep its drawings in.
-func onDisk(t *testing.T, api *API) *shelf {
+func onDisk(t *testing.T, api *API) *cache {
 	t.Helper()
-	kept := &shelf{dir: t.TempDir(), limit: mostKept}
+	kept := &cache{dir: t.TempDir(), limit: mostKept}
 	api.Viewer.kept = kept
 	return kept
 }
 
 // drawingsIn is how many drawings the folder holds.
-func drawingsIn(t *testing.T, kept *shelf) int {
+func drawingsIn(t *testing.T, kept *cache) int {
 	t.Helper()
 	found, err := os.ReadDir(kept.dir)
 	if err != nil {
@@ -146,7 +146,7 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 }
 
 // totalOf is what the folder's drawings come to.
-func totalOf(t *testing.T, kept *shelf) int64 {
+func totalOf(t *testing.T, kept *cache) int64 {
 	t.Helper()
 	found, err := os.ReadDir(kept.dir)
 	if err != nil {

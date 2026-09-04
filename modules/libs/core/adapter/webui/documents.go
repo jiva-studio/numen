@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// drawable is a document held open for its pages to be drawn. It is pdf.Scan in
+// scan is a document held open for its pages to be drawn. It is pdf.Scan in
 // the application, and a test puts its own in.
-type drawable interface {
+type scan interface {
 	Pages() int
 	Size(index int) (wide, high float64, err error)
 	Image(index, dpi int) (image.Image, error)
@@ -41,7 +41,7 @@ type document struct {
 	// ready is closed once the document is open or the reason it is not is
 	// known. Whoever asked for it while it was opening waits here.
 	ready chan struct{}
-	scan  drawable
+	scan  scan
 	why   error
 
 	// points is how wide each page is in its own units, measured when the page
@@ -133,7 +133,7 @@ func keeping() *documents {
 func (d *documents) take(
 	ctx context.Context,
 	print fingerprint,
-	open func() (drawable, error),
+	open func() (scan, error),
 ) (*document, func(), error) {
 	d.mu.Lock()
 	if d.closing {
@@ -173,7 +173,7 @@ func (d *documents) take(
 }
 
 // fill opens the document and tells whoever is waiting.
-func (d *documents) fill(print fingerprint, doc *document, open func() (drawable, error)) {
+func (d *documents) fill(print fingerprint, doc *document, open func() (scan, error)) {
 	doc.scan, doc.why = open()
 	close(doc.ready)
 	if doc.why == nil {

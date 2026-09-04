@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// A shelf is the pages drawn before, kept where this machine keeps what it can
+// A cache is the pages drawn before, kept where this machine keeps what it can
 // make again.
 //
 // A page of a scan is the same half second of decoding every time it is turned
@@ -22,7 +22,7 @@ import (
 // It is not in the vault and not beside the document. A drawn page is nobody's
 // work, and the folder a person keeps their notes in is not where an
 // application puts what it can remake.
-type shelf struct {
+type cache struct {
 	dir   string
 	limit int64
 
@@ -43,23 +43,23 @@ const (
 
 // shelved is where this machine keeps pages already drawn, and nothing where it
 // says it keeps nothing.
-func shelved() *shelf {
-	cache, err := os.UserCacheDir()
+func shelved() *cache {
+	under, err := os.UserCacheDir()
 	if err != nil {
 		return nil
 	}
-	dir := filepath.Join(cache, "numen", "pages")
+	dir := filepath.Join(under, "numen", "pages")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
-	return &shelf{dir: dir, limit: mostKept}
+	return &cache{dir: dir, limit: mostKept}
 }
 
 // get is a page drawn before, and nothing where it was not.
 //
 // The file's time is set to now, so what is dropped when the folder is swept is
 // what has gone longest without being looked at.
-func (s *shelf) get(key pictureID) []byte {
+func (s *cache) get(key pictureID) []byte {
 	if s == nil {
 		return nil
 	}
@@ -75,7 +75,7 @@ func (s *shelf) get(key pictureID) []byte {
 
 // put keeps one drawn page. A page that cannot be written is a page drawn again
 // next time and nothing else, so nothing here is reported.
-func (s *shelf) put(key pictureID, body []byte) {
+func (s *cache) put(key pictureID, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
@@ -114,7 +114,7 @@ func (s *shelf) put(key pictureID, body []byte) {
 
 // sweep drops the pages that have gone longest without being looked at, until
 // what is kept is under the bound.
-func (s *shelf) sweep() {
+func (s *cache) sweep() {
 	if s == nil {
 		return
 	}
@@ -157,7 +157,7 @@ func (s *shelf) sweep() {
 // The file's own name says nothing about the vault. A folder listing is
 // readable by whatever else runs as this person, and what they are reading is
 // theirs.
-func (s *shelf) named(key pictureID) string {
+func (s *cache) named(key pictureID) string {
 	sum := sha256.Sum256(fmt.Appendf(nil, "%s\x00%d\x00%d\x00%d\x00%d",
 		key.document.path, key.document.size, key.document.mtime, key.page, key.width))
 	return hex.EncodeToString(sum[:]) + ".jpg"

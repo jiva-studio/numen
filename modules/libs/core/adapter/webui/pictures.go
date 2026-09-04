@@ -33,8 +33,8 @@ func (p *picture) wait(ctx context.Context) ([]byte, error) {
 	}
 }
 
-// kept is one picture in the order it was last asked for.
-type kept struct {
+// entry is one picture in the order it was last asked for.
+type entry struct {
 	key pictureID
 	pic *picture
 }
@@ -68,12 +68,12 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 	p.mu.Lock()
 	if el, held := p.index[key]; held {
 		p.order.MoveToFront(el)
-		pic := el.Value.(*kept).pic
+		pic := el.Value.(*entry).pic
 		p.mu.Unlock()
 		return pic.wait(ctx)
 	}
 	pic := &picture{ready: make(chan struct{})}
-	p.index[key] = p.order.PushFront(&kept{key: key, pic: pic})
+	p.index[key] = p.order.PushFront(&entry{key: key, pic: pic})
 	p.mu.Unlock()
 
 	pic.body, pic.why = drawn()
@@ -83,7 +83,7 @@ func (p *pictures) draw(ctx context.Context, key pictureID, drawn func() ([]byte
 	defer p.mu.Unlock()
 	// It may have been dropped for room while it was being drawn, and then it
 	// is this caller's answer and nothing else's.
-	if el, still := p.index[key]; !still || el.Value.(*kept).pic != pic {
+	if el, still := p.index[key]; !still || el.Value.(*entry).pic != pic {
 		return pic.body, pic.why
 	}
 	if pic.why != nil {
@@ -112,7 +112,7 @@ func (p *pictures) drop(key pictureID) {
 	}
 	delete(p.index, key)
 	p.order.Remove(el)
-	if pic := el.Value.(*kept).pic; pic.why == nil {
+	if pic := el.Value.(*entry).pic; pic.why == nil {
 		p.bytes -= len(pic.body)
 	}
 }
@@ -123,10 +123,10 @@ func (p *pictures) drop(key pictureID) {
 func (p *pictures) trim() {
 	for el := p.order.Back(); el != nil && p.bytes > p.limit; {
 		before := el.Prev()
-		entry := el.Value.(*kept)
+		oldest := el.Value.(*entry)
 		select {
-		case <-entry.pic.ready:
-			p.drop(entry.key)
+		case <-oldest.pic.ready:
+			p.drop(oldest.key)
 		default:
 		}
 		el = before

@@ -217,8 +217,8 @@ func (f *onTheList) held(t *testing.T) *v1.VaultsServiceListResponse {
 	return out.Msg
 }
 
-// entry is the vault of that identity on the list the client was answered with.
-func entry(t *testing.T, list *v1.VaultsServiceListResponse, id string) *v1.Known {
+// onList is the vault of that identity on the list the client was answered with.
+func onList(t *testing.T, list *v1.VaultsServiceListResponse, id string) *v1.Known {
 	t.Helper()
 
 	for _, one := range list.GetVaults() {
@@ -238,11 +238,11 @@ func TestTheListMarksAFolderThatIsGone(t *testing.T) {
 	}
 
 	list := f.held(t)
-	if here := entry(t, list, string(f.first.ID)); here.GetMissing() {
+	if here := onList(t, list, string(f.first.ID)); here.GetMissing() {
 		t.Errorf("%s is marked missing, and its folder is at %s",
 			here.GetDisplayName(), here.GetPath())
 	}
-	gone := entry(t, list, string(f.second.ID))
+	gone := onList(t, list, string(f.second.ID))
 	if !gone.GetMissing() {
 		t.Errorf("%s is not marked missing, and there is nothing at %s",
 			gone.GetDisplayName(), gone.GetPath())
@@ -335,7 +335,7 @@ func TestANameAnotherVaultHasIsNotGivenToASecond(t *testing.T) {
 	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_NAME_TAKEN {
 		t.Errorf("a name another vault has was answered %v", got)
 	}
-	if entry(t, f.held(t), string(f.second.ID)).GetDisplayName() != f.second.Name {
+	if onList(t, f.held(t), string(f.second.ID)).GetDisplayName() != f.second.Name {
 		t.Error("the vault was renamed all the same")
 	}
 }
@@ -357,7 +357,7 @@ func TestAVaultIsCalledWhatThePersonCallsIt(t *testing.T) {
 	if got := out.Msg.GetVault().GetDisplayName(); got != "journal" {
 		t.Errorf("the vault is called %q", got)
 	}
-	if got := entry(t, f.held(t), string(f.second.ID)).GetDisplayName(); got != "journal" {
+	if got := onList(t, f.held(t), string(f.second.ID)).GetDisplayName(); got != "journal" {
 		t.Errorf("the list calls it %q", got)
 	}
 }
@@ -385,7 +385,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 		t.Errorf("erasing the vault being shown was answered %v", got)
 	}
 
-	entry(t, f.held(t), string(f.first.ID))
+	onList(t, f.held(t), string(f.first.ID))
 	if got := f.rows.forgotten(); len(got) != 0 {
 		t.Errorf("the index was told to forget %v", got)
 	}
@@ -420,7 +420,7 @@ func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	if got := only.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_LAST_VAULT {
 		t.Errorf("the only vault this installation has was answered %v", got)
 	}
-	entry(t, f.held(t), string(f.first.ID))
+	onList(t, f.held(t), string(f.first.ID))
 }
 
 // TestAnIdentityOnNoListIsUnknown, whichever way it is asked about.
@@ -500,7 +500,7 @@ func TestAMachineWithNowhereToPutWhatIsDeletedErasesNothing(t *testing.T) {
 	if got := out.Msg.GetRefusal(); got != v1.VaultsRefusal_VAULTS_REFUSAL_NO_TRASH {
 		t.Errorf("a machine with nowhere to put it was answered %v", got)
 	}
-	entry(t, f.held(t), string(f.second.ID))
+	onList(t, f.held(t), string(f.second.ID))
 	if got := f.rows.forgotten(); len(got) != 0 {
 		t.Errorf("the index was told to forget %v", got)
 	}

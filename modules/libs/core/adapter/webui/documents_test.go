@@ -51,7 +51,7 @@ func TestGoingWaitsForWhatIsBeingDrawn(t *testing.T) {
 
 	drawn := make(chan error, 1)
 	go func() {
-		doc, give, err := docs.take(t.Context(), print, func() (drawable, error) { return one, nil })
+		doc, give, err := docs.take(t.Context(), print, func() (scan, error) { return one, nil })
 		if err != nil {
 			drawn <- err
 			return
@@ -110,7 +110,7 @@ func TestAWindowGoingOpensNothingMore(t *testing.T) {
 
 	print := fingerprint{path: "library/a.pdf", size: 1, mtime: 1}
 	opened := 0
-	_, _, err := docs.take(t.Context(), print, func() (drawable, error) {
+	_, _, err := docs.take(t.Context(), print, func() (scan, error) {
 		opened++
 		return &held{drawing: make(chan struct{}), let: make(chan struct{})}, nil
 	})
