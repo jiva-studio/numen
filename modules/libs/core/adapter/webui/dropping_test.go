@@ -3,8 +3,11 @@ package webui
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
@@ -50,11 +53,15 @@ func heardBy() indexed {
 	return indexed{talk: {Path: talk, Producer: listener, Hash: hashed}}
 }
 
-// dropping asks the window's own facet for a transcript to take it away.
-func dropping(handler http.Handler) *httptest.ResponseRecorder {
-	out := httptest.NewRecorder()
-	handler.ServeHTTP(out, httptest.NewRequest(http.MethodDelete, cuesOf(talk), nil))
-	return out
+// dropping asks for what a recording was heard as to be taken away.
+func dropping(api *API) (*v1.Artifact, error) {
+	out, err := api.DeleteArtifact(context.Background(), connect.NewRequest(&v1.DeleteArtifactRequest{
+		Path: talk, ArtifactId: heardID,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return out.Msg.GetArtifact(), nil
 }
 
 // Everything one run of listening produced goes, and the recording is left
@@ -63,11 +70,14 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held := whole(spoke())
 	held[derived.Corrected(listener, hashed)] = held[derived.Artifact(listener, hashed)]
 	held[derived.Beside(listener, hashed)] = []byte(`{"model":"parakeet"}`)
-	_, index, handler := dropper(t, held, heardBy())
+	api, index, handler := dropper(t, held, heardBy())
 
-	out := dropping(handler)
-	if out.Code != http.StatusOK {
-		t.Fatalf("dropped the transcript and got %d: %s", out.Code, out.Body)
+	gone, err := dropping(api)
+	if err != nil {
+		t.Fatalf("dropped the transcript and was refused: %v", err)
+	}
+	if gone.GetState() != v1.State_STATE_NONE {
+		t.Errorf("what was taken away is %s", gone.GetState())
 	}
 	if len(held) != 0 {
 		t.Errorf("the store still holds %v", held)
@@ -95,11 +105,10 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 // out from under it.
 func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
 	held := heldBy{stored: whole(spoke()), name: derived.Partial(listener, hashed)}
-	_, index, handler := dropper(t, held, heardBy())
+	api, index, _ := dropper(t, held, heardBy())
 
-	out := dropping(handler)
-	if out.Code != http.StatusConflict {
-		t.Fatalf("dropped a transcript being written and got %d: %s", out.Code, out.Body)
+	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("dropped a transcript being written and was refused %v", err)
 	}
 	if _, kept := held.stored[derived.Artifact(listener, hashed)]; !kept {
 		t.Error("the transcript went out from under the run")
@@ -111,11 +120,10 @@ func TestATranscriptIsNotDroppedWhileTheRecordingIsBeingListenedTo(t *testing.T)
 
 // A recording nobody has listened to has no transcript to drop.
 func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
-	_, index, handler := dropper(t, stored{}, indexed{})
+	api, index, _ := dropper(t, stored{}, indexed{})
 
-	out := dropping(handler)
-	if out.Code != http.StatusNotFound {
-		t.Fatalf("dropped the transcript of a recording nothing heard and got %d: %s", out.Code, out.Body)
+	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("dropped the transcript of a recording nothing heard and was refused %v", err)
 	}
 	if len(index.written) != 0 {
 		t.Error("the index was written for a drop that did nothing")
@@ -124,10 +132,26 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 
 // A build that cannot read a transcript cannot drop one either, and says so.
 func TestABuildThatCannotHearDropsNoTranscript(t *testing.T) {
-	api, _, handler := dropper(t, whole(spoke()), heardBy())
+	api, _, _ := dropper(t, whole(spoke()), heardBy())
 	api.Drops = nil
 
-	if out := dropping(handler); out.Code != http.StatusNotImplemented {
-		t.Fatalf("dropped a transcript in a build that cannot hear and got %d: %s", out.Code, out.Body)
+	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Fatalf("dropped a transcript in a build that cannot hear and was refused %v", err)
+	}
+}
+
+// What a recording was heard as is the only artifact taken away here: the words
+// a person put right go with it, and are not taken away on their own.
+func TestOnlyWhatARecordingWasHeardAsIsTakenAway(t *testing.T) {
+	api, index, _ := dropper(t, whole(spoke()), heardBy())
+
+	_, err := api.DeleteArtifact(t.Context(), connect.NewRequest(&v1.DeleteArtifactRequest{
+		Path: talk, ArtifactId: correctedID,
+	}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("took the corrections away on their own and was refused %v", err)
+	}
+	if len(index.written) != 0 {
+		t.Error("the index was written for a drop that did nothing")
 	}
 }

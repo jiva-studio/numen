@@ -3,8 +3,9 @@ package webui
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -23,18 +24,18 @@ func sounded() string { return derived.Fingerprint([]byte(sound)) }
 func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	talks := willRun()
-	_, handler := running(t,
+	api, _ := running(t,
 		stored{derived.Answer(listener, hashed): []byte(derived.Unopened + ": " + said + "\n")},
 		indexed{talk: {Path: talk, Producer: listener, Hash: hashed}},
 		willRun(), talks,
 	)
 
-	back := answered(t, post(handler, transcribeAt(talk)))
-	if back.Answer != outcomeAnswered {
-		t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+	made := making(t, api, talk, heardID)
+	if made.GetState() != v1.State_STATE_FAILED {
+		t.Fatalf("it was answered %s", made.GetState())
 	}
-	if back.Why != hearingUnopened+" "+said {
-		t.Errorf("it does not say what came of it: %q", back.Why)
+	if made.GetError() != said {
+		t.Errorf("it does not say what came of it: %q", made.GetError())
 	}
 	if talks.times != 0 {
 		t.Error("a run was given a recording already answered")
@@ -46,27 +47,28 @@ func TestASourceAlreadyAnsweredSaysWhatCameOfIt(t *testing.T) {
 func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 	const said = "the mp3 recording: mp3: MPEG version 2.5 is not supported"
 	for _, one := range []struct {
-		name string
-		gave string
-		why  string
+		name  string
+		gave  string
+		state v1.State
+		why   string
 	}{
-		{"heard no speech", derived.Silent + "\n", hearingSilent},
-		{"could not be opened", derived.Unopened + ": " + said + "\n", hearingUnopened + " " + said},
+		{"heard no speech", derived.Silent + "\n", v1.State_STATE_EMPTY, ""},
+		{"could not be opened", derived.Unopened + ": " + said + "\n", v1.State_STATE_FAILED, said},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			talks := willRun()
-			_, handler := running(t,
+			api, _ := running(t,
 				stored{derived.Answer(derived.ASR, sounded()): []byte(one.gave)},
 				indexed{talk: {Path: talk, Hash: sounded()}},
 				willRun(), talks,
 			)
 
-			back := answered(t, post(handler, transcribeAt(talk)))
-			if back.Answer != outcomeAnswered {
-				t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+			made := making(t, api, talk, heardID)
+			if made.GetState() != one.state {
+				t.Fatalf("it was answered %s", made.GetState())
 			}
-			if back.Why != one.why {
-				t.Errorf("it was told %q", back.Why)
+			if made.GetError() != one.why {
+				t.Errorf("it says %q came of it", made.GetError())
 			}
 			if talks.times != 0 {
 				t.Error("a run was given a recording already answered")
@@ -79,15 +81,14 @@ func TestARecordingAnsweredIsFoundWhereTheIndexNamesNoProducer(t *testing.T) {
 // the answer stands under the bytes, and nothing else names them.
 func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 	talks := willRun()
-	_, handler := running(t,
+	api, _ := running(t,
 		stored{derived.Answer(derived.ASR, sounded()): []byte(derived.Silent + "\n")},
 		nothingRead(),
 		willRun(), talks,
 	)
 
-	back := answered(t, post(handler, transcribeAt(talk)))
-	if back.Answer != outcomeAnswered {
-		t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+	if made := making(t, api, talk, heardID); made.GetState() != v1.State_STATE_EMPTY {
+		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 0 {
 		t.Error("a run was given a recording already answered")
@@ -97,7 +98,7 @@ func TestARecordingAnsweredIsFoundWhereTheIndexHoldsNothing(t *testing.T) {
 // What a run finished stands over what it once answered.
 func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 	talks := willRun()
-	_, handler := running(t,
+	api, _ := running(t,
 		stored{
 			derived.Artifact(listener, hashed): []byte("what the model heard"),
 			derived.Answer(listener, hashed):   []byte(derived.Silent + "\n"),
@@ -106,31 +107,31 @@ func TestASourceDoneIsDoneEvenWhereAnAnswerStands(t *testing.T) {
 		willRun(), talks,
 	)
 
-	back := answered(t, post(handler, transcribeAt(talk)))
-	if back.Answer != outcomeDone {
-		t.Errorf("it was answered %q: %s", back.Answer, back.Why)
+	if made := making(t, api, talk, heardID); made.GetState() != v1.State_STATE_DONE {
+		t.Errorf("it was answered %s", made.GetState())
 	}
 }
 
 // A finished transcript stands over an answer where the index names no producer
 // either.
 func TestARecordingDoneIsDoneWhereTheIndexNamesNoProducer(t *testing.T) {
+	const heard = "what the model heard"
 	talks := willRun()
-	_, handler := running(t,
+	api, _ := running(t,
 		stored{
-			derived.Artifact(derived.ASR, sounded()): []byte("what the model heard"),
+			derived.Artifact(derived.ASR, sounded()): []byte(heard),
 			derived.Answer(derived.ASR, sounded()):   []byte(derived.Silent + "\n"),
 		},
 		indexed{talk: {Path: talk, Hash: sounded()}},
 		willRun(), talks,
 	)
 
-	back := answered(t, post(handler, transcribeAt(talk)))
-	if back.Answer != outcomeDone {
-		t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+	made := making(t, api, talk, heardID)
+	if made.GetState() != v1.State_STATE_DONE {
+		t.Fatalf("it was answered %s", made.GetState())
 	}
-	if back.Why != heardAlready {
-		t.Errorf("it was told %q", back.Why)
+	if made.GetSize() != int64(len(heard)) {
+		t.Errorf("what stands is %d bytes long", made.GetSize())
 	}
 }
 
@@ -188,12 +189,12 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 	api.show(vault)
 	runningBehind(api, func(on *showing) { on.transcribes = talks })
 
-	back := answered(t, post(api.Serving(http.NotFoundHandler()), transcribeAt(talk)))
-	if back.Answer != outcomeAnswered {
-		t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+	made := making(t, api, talk, heardID)
+	if made.GetState() != v1.State_STATE_FAILED {
+		t.Fatalf("it was answered %s", made.GetState())
 	}
-	if back.Why != hearingUnopened+" mp3: MPEG version 2.5 is not supported" {
-		t.Errorf("it does not say what came of it: %q", back.Why)
+	if made.GetError() != "mp3: MPEG version 2.5 is not supported" {
+		t.Errorf("it does not say what came of it: %q", made.GetError())
 	}
 	if talks.times != 0 {
 		t.Error("a run was given a recording already answered")
@@ -203,11 +204,10 @@ func TestWhatARunAnsweredIsWhatTheFacetFinds(t *testing.T) {
 // A recording nothing has answered is put through a run.
 func TestARecordingNothingAnsweredIsRun(t *testing.T) {
 	talks := willRun()
-	_, handler := running(t, stored{}, nothingRead(), willRun(), talks)
+	api, _ := running(t, stored{}, nothingRead(), willRun(), talks)
 
-	back := answered(t, post(handler, transcribeAt(talk)))
-	if back.Answer != outcomeStarted {
-		t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
+	if made := making(t, api, talk, heardID); made.GetState() != v1.State_STATE_RUNNING {
+		t.Fatalf("it was answered %s", made.GetState())
 	}
 	if talks.times != 1 {
 		t.Errorf("the run was asked for %d times", talks.times)

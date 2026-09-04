@@ -100,3 +100,38 @@ func TestStartAnswers(t *testing.T) {
 		t.Fatalf("the note it made is not in the listing: %v", names())
 	}
 }
+
+// The files of the vault and what is made from them are not served here. What
+// this server answers is answered to any origin at all, so a caller that
+// reached it must not be able to read a book off the disk or set a model
+// running over one.
+func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
+	port, err := bind.Start(t.TempDir())
+	if err != nil {
+		t.Fatalf("starting: %v", err)
+	}
+	t.Cleanup(func() { _ = bind.Stop() })
+
+	for _, at := range []string{
+		"/assets/Physics.md",
+		"/numen.v1.ArtifactService/ListArtifacts",
+		"/numen.v1.ArtifactService/CreateArtifact",
+		"/numen.v1.ArtifactService/DeleteArtifact",
+	} {
+		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, at)
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))
+		if err != nil {
+			t.Fatalf("asking %s: %v", at, err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Connect-Protocol-Version", "1")
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("asking %s: %v", at, err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("%s answered %s", at, res.Status)
+		}
+	}
+}

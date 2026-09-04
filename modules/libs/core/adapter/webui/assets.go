@@ -14,23 +14,20 @@ import (
 //	GET /assets/<id>/pages/<n>?wide=W         one page, where it has any
 //	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
 //	GET /assets/<id>/cues                     the words heard in it
-//	DELETE /assets/<id>/cues                  take the transcript away
-//	POST /assets/<id>/recognise               read the scan
-//	POST /assets/<id>/transcribe              hear the recording
-//	POST /assets/<id>/proofread               put the transcript right
+//	PUT /assets/<id>/cues                     put the transcript right
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
 // window holds.
+//
+// What a model wrote about a file is not here: an artifact is a resource of the
+// schema, listed and made and taken away by name.
 const assetsRoute = "/assets/"
 
 // The facets an asset offers.
 const (
-	pagesFacet      = "pages"
-	marksFacet      = "marks"
-	cuesFacet       = "cues"
-	recogniseFacet  = "recognise"
-	transcribeFacet = "transcribe"
-	proofreadFacet  = "proofread"
+	pagesFacet = "pages"
+	marksFacet = "marks"
+	cuesFacet  = "cues"
 )
 
 // An address is one question about one asset: which file, which facet, and what
@@ -84,12 +81,6 @@ func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 		a.Marks(w, r, at.path)
 	case cuesFacet:
 		a.Cues(w, r, at.path)
-	case recogniseFacet:
-		a.Recognise(w, r, at.path)
-	case transcribeFacet:
-		a.Transcribe(w, r, at.path)
-	case proofreadFacet:
-		a.Proofread(w, r, at.path)
 	default:
 		http.Error(w, "an asset has no "+at.facet, http.StatusNotFound)
 	}

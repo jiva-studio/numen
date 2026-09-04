@@ -3,8 +3,11 @@ package webui
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -47,61 +50,47 @@ func proofreading(t *testing.T, held port.DerivedStores, read indexed) (*API, ht
 	return api, handler, by
 }
 
-// Where a proofreading is asked for.
-func proofreadAt(path string) string { return assetOf(path) + "/" + proofreadFacet }
-
 // onTheShelf is a store holding the transcript a model wrote of the recording.
 func onTheShelf() stored {
 	return stored{derived.Artifact(listener, hashed): []byte("what the model heard")}
 }
 
 // A transcript the window asks for is put right, the run is told which file of
-// which vault, and the person is told that it began.
+// which vault, and the corrections are said to be under way.
 func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
-	api, handler, by := proofreading(t, onTheShelf(), heardBy())
+	api, _, by := proofreading(t, onTheShelf(), heardBy())
 
-	back := answered(t, post(handler, proofreadAt(talk)))
-	if back.Answer != outcomeStarted {
-		t.Fatalf("the transcript was answered %q: %s", back.Answer, back.Why)
+	made := making(t, api, talk, correctedID)
+	if made.GetState() != v1.State_STATE_RUNNING {
+		t.Fatalf("the transcript was answered %s", made.GetState())
 	}
-	if back.Path != talk {
-		t.Errorf("the answer is about %q", back.Path)
-	}
-	if back.Why != proofreadingBegun {
-		t.Errorf("a run begun was told %q", back.Why)
+	if made.GetName() != named(api.Showing(), talk, correctedID) {
+		t.Errorf("the answer is about %q", made.GetName())
 	}
 	if by.times != 1 || by.path != talk || by.vault != string(api.Showing().ID) {
 		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
 	}
 }
 
-// Every way a run can come to nothing is a sentence the person reads, so that
+// Every way a run can come to nothing is a state the window draws, so that
 // pressing the item is never silence.
 func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 	for _, one := range []struct {
-		name   string
-		came   source.PutRightResult
-		answer string
-		why    string
+		name  string
+		came  source.PutRightResult
+		state v1.State
 	}{
-		{"a recording another run holds", source.PutRightResult{Busy: true}, outcomeRunning, proofreadingNow},
-		{"a transcript already put right", source.PutRightResult{Already: true}, outcomeDone, proofreadAlready},
-		{"words a person wrote themselves", source.PutRightResult{Edited: true}, outcomeByHand, proofreadByHand},
-		{"a transcript holding no words", source.PutRightResult{None: true}, outcomeUnheard, nothingHeard},
+		{"a recording another run holds", source.PutRightResult{Busy: true}, v1.State_STATE_RUNNING},
+		{"a transcript already put right", source.PutRightResult{Already: true}, v1.State_STATE_DONE},
+		{"words a person wrote themselves", source.PutRightResult{Edited: true}, v1.State_STATE_DONE},
+		{"a transcript holding no words", source.PutRightResult{None: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			_, handler, by := proofreading(t, onTheShelf(), heardBy())
+			api, _, by := proofreading(t, onTheShelf(), heardBy())
 			by.came = one.came
 
-			back := answered(t, post(handler, proofreadAt(talk)))
-			if back.Answer != one.answer {
-				t.Fatalf("it was answered %q: %s", back.Answer, back.Why)
-			}
-			if back.Why == "" {
-				t.Fatal("it was told nothing at all")
-			}
-			if back.Why != one.why {
-				t.Errorf("it was told %q", back.Why)
+			if made := making(t, api, talk, correctedID); made.GetState() != one.state {
+				t.Fatalf("it was answered %s", made.GetState())
 			}
 		})
 	}
@@ -110,17 +99,18 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 // A recording the index says nothing has listened to holds no words to put
 // right, and the run is never asked for.
 func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
-	_, handler, by := proofreading(t, stored{}, nothingRead())
+	api, _, by := proofreading(t, stored{}, nothingRead())
 
-	back := answered(t, post(handler, proofreadAt(talk)))
-	if back.Answer != outcomeUnheard {
-		t.Fatalf("a recording nothing has heard was answered %q", back.Answer)
-	}
-	if back.Why != nothingHeard {
-		t.Errorf("it was told %q", back.Why)
+	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeFailedPrecondition {
+		t.Fatalf("a recording nothing has heard was refused %s", code)
 	}
 	if by.times != 0 {
 		t.Error("a run was given a recording holding no words")
+	}
+	// Nothing stands, and the window that asked what the recording carries is
+	// told so rather than offering the run at all.
+	if state := carrying(t, api, talk)[correctedID]; state != v1.State_STATE_NONE {
+		t.Errorf("the corrections of a recording nothing heard are %s", state)
 	}
 }
 
@@ -129,14 +119,10 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 	for _, path := range []string{book, idea} {
 		t.Run(path, func(t *testing.T) {
-			_, handler, by := proofreading(t, onTheShelf(), heardBy())
+			api, _, by := proofreading(t, onTheShelf(), heardBy())
 
-			back := answered(t, post(handler, proofreadAt(path)))
-			if back.Answer != outcomeUnfit {
-				t.Fatalf("a file of the wrong kind was answered %q", back.Answer)
-			}
-			if back.Why != notATranscript {
-				t.Errorf("it was told %q", back.Why)
+			if code := refusedMaking(t, api, path, correctedID); code != connect.CodeInvalidArgument {
+				t.Fatalf("a file of the wrong kind was refused %s", code)
 			}
 			if by.times != 0 {
 				t.Error("a run was given a file carrying no transcript")
@@ -160,26 +146,42 @@ func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
 		}},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			api, handler, _ := proofreading(t, onTheShelf(), heardBy())
+			api, _, _ := proofreading(t, onTheShelf(), heardBy())
 			one.holds(api)
 
-			out := post(handler, proofreadAt(talk))
-			if out.Code != http.StatusNotImplemented {
-				t.Fatalf("it answered %d: %s", out.Code, out.Body)
+			if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeUnimplemented {
+				t.Fatalf("it was refused %s", code)
 			}
 		})
 	}
 }
 
-// A run changes the vault, and is asked for with POST.
-func TestAProofreadingIsAskedForWithPost(t *testing.T) {
-	_, handler, by := proofreading(t, onTheShelf(), heardBy())
+// The corrections a recording carries are what stands beside the transcript,
+// and asking what it carries begins no run.
+func TestTheCorrectionsARecordingCarriesAreWhatStands(t *testing.T) {
+	const put = "the name and the named are not two"
+	held := onTheShelf()
+	held[derived.Corrected(listener, hashed)] = []byte(put)
+	api, _, by := proofreading(t, held, heardBy())
 
-	out := httptest.NewRecorder()
-	handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, proofreadAt(talk), nil))
-
-	if out.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("a proofreading asked for with GET answered %d: %s", out.Code, out.Body)
+	out, err := api.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
+	if err != nil {
+		t.Fatalf("asked what the recording carries and was refused: %v", err)
+	}
+	var corrections *v1.Artifact
+	for _, one := range out.Msg.GetArtifacts() {
+		if one.GetName() == named(api.Showing(), talk, correctedID) {
+			corrections = one
+		}
+	}
+	if corrections == nil {
+		t.Fatal("the recording carries no corrections at all")
+	}
+	if corrections.GetState() != v1.State_STATE_DONE {
+		t.Errorf("corrections that stand are %s", corrections.GetState())
+	}
+	if corrections.GetSize() != int64(len(put)) {
+		t.Errorf("they are %d bytes long", corrections.GetSize())
 	}
 	if by.times != 0 {
 		t.Error("a run was begun by a question that only asked")

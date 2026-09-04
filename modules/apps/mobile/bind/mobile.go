@@ -17,6 +17,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
+
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/webui"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -88,7 +90,7 @@ func Start(dir string) (int, error) {
 	}
 
 	server := &http.Server{
-		Handler: allowing(withoutAssets(opened.API.Serving(http.NotFoundHandler()))),
+		Handler: allowing(withoutFiles(opened.API.Serving(http.NotFoundHandler()))),
 	}
 	go func() { _ = server.Serve(listener) }()
 
@@ -210,13 +212,18 @@ func seed(root string) error {
 	return nil
 }
 
-// withoutAssets keeps the files of the vault off this server. Nothing the phone
-// draws asks for one, and what is served here is served to any origin at all.
-func withoutAssets(next http.Handler) http.Handler {
+// withoutFiles keeps the files of the vault, and what is made from them, off
+// this server. Nothing the phone draws asks for either, and what is served here
+// is served to any origin at all: a caller that reached it could otherwise set
+// models running over the person's books and take a transcript away.
+func withoutFiles(next http.Handler) http.Handler {
+	kept := []string{"/assets/", "/" + numenv1connect.ArtifactServiceName + "/"}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.EscapedPath(), "/assets/") {
-			http.NotFound(w, r)
-			return
+		for _, one := range kept {
+			if strings.HasPrefix(r.URL.EscapedPath(), one) {
+				http.NotFound(w, r)
+				return
+			}
 		}
 		next.ServeHTTP(w, r)
 	})

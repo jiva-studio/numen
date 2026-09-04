@@ -111,14 +111,11 @@ func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
 // against the milliseconds it was spoken in. A recording nothing has listened to
 // holds no words, which is an answer.
 //
-// A PUT puts the transcript right, and a DELETE takes it away.
+// A PUT puts the transcript right. Taking the transcript away is taking away
+// what the recording was heard as, which is an artifact of the schema.
 func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
-	switch r.Method {
-	case http.MethodPut:
+	if r.Method == http.MethodPut {
 		a.PutRight(w, r, path)
-		return
-	case http.MethodDelete:
-		a.Drop(w, r, path)
 		return
 	}
 	if _, _, ok := a.hearing(); !ok {
@@ -249,50 +246,6 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
 	}
 	answer(w, told)
-}
-
-// Drop takes the transcript of a recording away, with everything listening to
-// it produced. It answers with the words the recording now has, which are none.
-//
-// A recording a run is listening to is refused, and one nothing has listened to
-// is not found.
-func (a *API) Drop(w http.ResponseWriter, r *http.Request, path string) {
-	if a.Drops == nil {
-		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), patience)
-	defer cancel()
-
-	showing, ref, err := a.held(ctx, path)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if ref.Kind != domain.KindRecording {
-		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
-		return
-	}
-
-	// The queue told about it is the one behind the vault the recording was
-	// found in.
-	drops := *a.Drops
-	drops.Forgets = a.forgets()
-
-	res, err := drops.Execute(ctx, showing, ref.Path)
-	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if res.Busy {
-		http.Error(w, errBeingHeard.Error(), http.StatusConflict)
-		return
-	}
-	if res.None {
-		http.Error(w, errNotHeard.Error(), http.StatusNotFound)
-		return
-	}
-	answer(w, spoken{Path: ref.Path, Cues: []cue{}, Editable: true})
 }
 
 // ordered is a transcript from the window as the cues it is written down as,

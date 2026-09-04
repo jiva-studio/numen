@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -544,14 +543,14 @@ func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 
 	asking, stop := context.WithCancel(t.Context())
 	var asked sync.WaitGroup
-	for _, facet := range []string{"proofread", "recognise", "transcribe"} {
+	for _, id := range []string{"asr.corrected", "ocr", "asr"} {
 		asked.Add(1)
 		go func() {
 			defer asked.Done()
 			for asking.Err() == nil {
-				at := "/assets/" + url.PathEscape(entropy) + "/" + facet
-				r := httptest.NewRequest(http.MethodPost, at, nil).WithContext(asking)
-				f.opened.API.Asset(httptest.NewRecorder(), r)
+				f.opened.API.CreateArtifact(asking, connect.NewRequest(&v1.CreateArtifactRequest{
+					Path: entropy, ArtifactId: id,
+				}))
 			}
 		}()
 	}
