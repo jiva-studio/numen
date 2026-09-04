@@ -35,3 +35,9 @@ included. Nothing is cut for this build.
 that does. On `arm64` the same library goes through the `*at` forms and is
 fine, so a phone is unaffected. `go.work` at the root of this tree points at a
 patched copy for the emulator; a build for a phone wants neither.
+
+## What the page may load
+
+The policy is the `<meta http-equiv>` in `index.html`, checked by `src/policy.test.ts` against every address the page is seen to ask for. The window on the desktop is served its policy as a header; here the package serves the page and sets none, so the page carries its own. That costs `frame-ancestors`, which a page may not give itself, and it puts the bridge Capacitor injects — an inline script, written in straight after `<head>` — before the policy is parsed and so outside it.
+
+A device has still to answer three things: that the Ionic styles, injected at runtime, are drawn under `style-src 'unsafe-inline'`; that on a WebView too old for a message listener the bridge's reply, evaluated into the page from the native side, is not read as a script the policy refuses; and that nothing the application draws goes missing.
