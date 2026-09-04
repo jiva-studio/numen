@@ -18,29 +18,29 @@ option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/nume
 // CardsService answers about the stencils and the decks of the one vault a
 // client is looking at.
 service CardsService {
-  // Stencils is what a person choosing what kind of card to write next is
+  // ListStencils is what a person choosing what kind of card to write next is
   // shown: every stencil in the vault, by what it is called and what it asks
   // for. The faces are read one stencil at a time.
   //
   // A stencil that could not be read is absent from the answer.
-  rpc Stencils(StencilsRequest) returns (StencilsResponse);
+  rpc ListStencils(ListStencilsRequest) returns (ListStencilsResponse);
 
-  // MakeStencil puts a stencil in the vault, declaring the fields it is given
+  // CreateStencil puts a stencil in the vault, declaring the fields it is given
   // and showing no face. The file says it is a stencil from the moment it
   // exists, so it is one to everything that reads the vault before a card is
   // cut by it.
   //
   // The first field is what a card's heading is read from, so a stencil is
   // made with at least one.
-  rpc MakeStencil(MakeStencilRequest) returns (MakeStencilResponse);
+  rpc CreateStencil(CreateStencilRequest) returns (CreateStencilResponse);
 
   // ReadStencil is the fields and the faces of one stencil.
   rpc ReadStencil(ReadStencilRequest) returns (ReadStencilResponse);
 
   // WriteStencil puts fields and faces into a stencil. A path the vault holds
-  // no note at is refused `missing`; MakeStencil is what puts a stencil in the
-  // vault. Every frontmatter key but `fields` stays as the person wrote it, and
-  // a stencil that no longer holds what the caller read is left alone and
+  // no note at is refused `missing`; CreateStencil is what puts a stencil in
+  // the vault. Every frontmatter key but `fields` stays as the person wrote it,
+  // and a stencil that no longer holds what the caller read is left alone and
   // refused `stale`.
   //
   // The preamble, the tail and each face's lead are written back as they
@@ -48,10 +48,10 @@ service CardsService {
   // bytes they went in as.
   rpc WriteStencil(WriteStencilRequest) returns (WriteStencilResponse);
 
-  // RenameField gives one of a stencil's fields a different name, everywhere it
-  // is written: where the stencil declares it, in the braces of every face that
-  // places it, and as a heading in every card of every deck that stencil cuts.
-  // What stands under each heading is left as it was.
+  // RenameStencilField gives one of a stencil's fields a different name,
+  // everywhere it is written: where the stencil declares it, in the braces of
+  // every face that places it, and as a heading in every card of every deck
+  // that stencil cuts. What stands under each heading is left as it was.
   //
   // Every field a stencil declares stands under its own heading in every card,
   // the first included, so renaming any of them reaches every deck that
@@ -60,20 +60,20 @@ service CardsService {
   //
   // A stencil that no longer holds what the caller read is left alone and
   // refused `stale`, and then no deck is written either.
-  rpc RenameField(RenameFieldRequest) returns (RenameFieldResponse);
+  rpc RenameStencilField(RenameStencilFieldRequest) returns (RenameStencilFieldResponse);
 
-  // MakeDeck puts a deck of no cards in the vault. The file says it is a deck
+  // CreateDeck puts a deck of no cards in the vault. The file says it is a deck
   // from the moment it exists, so it is one to everything that reads the vault
   // before a card is written into it.
-  rpc MakeDeck(MakeDeckRequest) returns (MakeDeckResponse);
+  rpc CreateDeck(CreateDeckRequest) returns (CreateDeckResponse);
 
   // ReadDeck is the sections and the cards of one deck, in the order they
   // stand in the file. Each card says which section it stands under.
   rpc ReadDeck(ReadDeckRequest) returns (ReadDeckResponse);
 
   // WriteDeck puts sections and cards into a deck, in the order they are
-  // given. A path the vault holds no note at is refused `missing`; MakeDeck is
-  // what puts a deck in the vault. The frontmatter stays as the person wrote
+  // given. A path the vault holds no note at is refused `missing`; CreateDeck
+  // is what puts a deck in the vault. The frontmatter stays as the person wrote
   // it, and a deck that no longer holds what the caller read is left alone and
   // refused `stale`.
   //
@@ -293,13 +293,13 @@ message Value {
   string text = 2;
 }
 
-message StencilsRequest {
+message ListStencilsRequest {
   // How many stencils to answer with. Zero takes the number the vault chooses,
   // and a number above the ceiling the vault sets takes that ceiling.
   int32 limit = 1;
 }
 
-message StencilsResponse {
+message ListStencilsResponse {
   // The stencils, by path, with case ignored.
   repeated Offered stencils = 1;
 
@@ -308,7 +308,7 @@ message StencilsResponse {
   int32 held = 2;
 }
 
-message MakeStencilRequest {
+message CreateStencilRequest {
   // What the stencil is called. The file is named after it, and that name is
   // what a card's wikilink writes.
   string title = 1;
@@ -321,7 +321,7 @@ message MakeStencilRequest {
   repeated string fields = 3;
 }
 
-message MakeStencilResponse {
+message CreateStencilResponse {
   // Where the stencil is filed. Empty when nothing was made.
   string path = 1;
 
@@ -380,7 +380,7 @@ message WriteStencilResponse {
   optional Fingerprint at = 3;
 }
 
-message RenameFieldRequest {
+message RenameStencilFieldRequest {
   // The stencil that declares the field.
   string path = 1;
 
@@ -393,7 +393,7 @@ message RenameFieldRequest {
   optional Fingerprint seen = 4;
 }
 
-message RenameFieldResponse {
+message RenameStencilFieldResponse {
   reserved 5;
   reserved "changed";
 
@@ -426,7 +426,7 @@ message NotWritten {
   Problem problem = 2;
 }
 
-message MakeDeckRequest {
+message CreateDeckRequest {
   // What the deck is called. The file is named after it.
   string title = 1;
 
@@ -434,7 +434,7 @@ message MakeDeckRequest {
   string folder = 2;
 }
 
-message MakeDeckResponse {
+message CreateDeckResponse {
   // Where the deck is filed. Empty when nothing was made.
   string path = 1;
 

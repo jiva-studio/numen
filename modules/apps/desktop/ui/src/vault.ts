@@ -182,19 +182,19 @@ export const vaults: Vaults = {
 /** The stencils and the decks of that vault, in the shape the window asks about them. */
 export const cards: Cards = {
   stencils: async (limit) => {
-    const answer = await cardsService.stencils({ limit: limit ?? 0 })
+    const answer = await cardsService.listStencils({ limit: limit ?? 0 })
     return { stencils: answer.stencils.map(offered), held: answer.held }
   },
   makeDeck: async (title, folder) => {
-    const answer = await cardsService.makeDeck({ title, folder })
+    const answer = await cardsService.createDeck({ title, folder })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   makeStencil: async (title, folder, fields) => {
-    const answer = await cardsService.makeStencil({ title, folder, fields: [...fields] })
+    const answer = await cardsService.createStencil({ title, folder, fields: [...fields] })
     return { path: answer.path, refusal: refusalIn(answer) }
   },
   renameField: async (path, from, to, seen) => {
-    const answer = await cardsService.renameField({
+    const answer = await cardsService.renameStencilField({
       path,
       from,
       to,

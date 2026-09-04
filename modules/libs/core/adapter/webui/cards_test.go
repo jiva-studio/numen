@@ -374,7 +374,8 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 		"Loose.md":  "# An ordinary note\n",
 	})
 
-	answer, err := f.client.Stencils(t.Context(), connect.NewRequest(&v1.StencilsRequest{Limit: 2}))
+	answer, err := f.client.ListStencils(t.Context(),
+		connect.NewRequest(&v1.ListStencilsRequest{Limit: 2}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,7 +396,7 @@ func TestAListOfStencilsCutShortSaysHowManyTheVaultHolds(t *testing.T) {
 func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := dealing(t, map[string]string{"Animal.md": animal})
 
-	answer, err := f.client.MakeDeck(t.Context(), connect.NewRequest(&v1.MakeDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
 		Title: "Camelids", Folder: "decks",
 	}))
 	if err != nil {
@@ -425,7 +426,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := dealing(t, nil)
 
-	answer, err := f.client.MakeStencil(t.Context(), connect.NewRequest(&v1.MakeStencilRequest{
+	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
 		Title: "Bird", Folder: "cards", Fields: []string{"Species", "Wingspan"},
 	}))
 	if err != nil {
@@ -462,7 +463,7 @@ func TestRenamingAFieldReachesTheDecksThatStencilCuts(t *testing.T) {
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height",
 	}))
 	if err != nil {
@@ -500,7 +501,7 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
 	}))
 	if err != nil {
@@ -556,7 +557,7 @@ func TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead(t *testing.T
 	}
 	deckBefore := onDisk(t, f.root, "Animals.md")
 
-	answer, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Seen: read.Msg.GetAt(),
 	}))
 	if err != nil {

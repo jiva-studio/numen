@@ -22,7 +22,7 @@ import (
 // drawn is what one folder of the vault holds, as the window asks for it.
 func drawn(t *testing.T, f *going, at string) []*v1.Entry {
 	t.Helper()
-	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:at}))
+	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder: at}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,11 +114,12 @@ func TestAListingLeavesOutWhatTheVaultLeavesAlone(t *testing.T) {
 func TestAFolderThatIsNotThereIsNotAnEmptyOne(t *testing.T) {
 	f := quitting(t, nil, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	_, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:"physics"}))
+	_, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder: "physics"}))
 	if code := connect.CodeOf(err); code != connect.CodeNotFound {
 		t.Errorf("a folder that is not there was answered with %v", code)
 	}
-	_, err = f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Folder:"../elsewhere"}))
+	_, err = f.client.ListFiles(t.Context(),
+		connect.NewRequest(&v1.ListFilesRequest{Folder: "../elsewhere"}))
 	if code := connect.CodeOf(err); code != connect.CodeInvalidArgument {
 		t.Errorf("a folder outside the vault was answered with %v", code)
 	}

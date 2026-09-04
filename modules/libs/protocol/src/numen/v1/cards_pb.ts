@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/cards.proto.
  */
 export const file_numen_v1_cards: GenFile = /*@__PURE__*/
-  fileDesc("ChRudW1lbi92MS9jYXJkcy5wcm90bxIIbnVtZW4udjEimgEKB1N0ZW5jaWwSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkSHQoFZmFjZXMYBCADKAsyDi5udW1lbi52MS5GYWNlEiMKCHByb2JsZW1zGAUgAygLMhEubnVtZW4udjEuUHJvYmxlbRIQCghwcmVhbWJsZRgGIAEoCRIMCgR0YWlsGAcgASgJIjYKB09mZmVyZWQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkiPwoERmFjZRIMCgRuYW1lGAEgASgJEg0KBWZyb250GAIgASgJEgwKBGJhY2sYAyABKAkSDAoEbGVhZBgEIAEoCSKsAQoERGVjaxIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhAKCHByZWFtYmxlGAMgASgJEh0KBWNhcmRzGAQgAygLMg4ubnVtZW4udjEuQ2FyZBIjCghzZWN0aW9ucxgHIAMoCzIRLm51bWVuLnYxLlNlY3Rpb24SIwoIcHJvYmxlbXMYBSADKAsyES5udW1lbi52MS5Qcm9ibGVtEgwKBHRhaWwYBiABKAkiJQoHU2VjdGlvbhIMCgRuYW1lGAEgASgJEgwKBGxlYWQYAiABKAkifgoHUHJvYmxlbRIeCgVmYXVsdBgBIAEoDjIPLm51bWVuLnYxLkZhdWx0EhEKBGNhcmQYAiABKAVIAIgBARIRCgRmYWNlGAMgASgFSAGIAQESDQoFZmllbGQYBCABKAkSDAoEdGV4dBgFIAEoCUIHCgVfY2FyZEIHCgVfZmFjZSKbAQoEQ2FyZBIMCgRtYXJrGAEgASgJEhQKB3NlY3Rpb24YBiABKAVIAIgBARIPCgdoZWFkaW5nGAcgASgJEg8KB3N0ZW5jaWwYAiABKAkSDAoEbGVhZBgDIAEoCRIfCgZ2YWx1ZXMYBCADKAsyDy5udW1lbi52MS5WYWx1ZRISCgpzdGVuY2lsX2F0GAUgASgJQgoKCF9zZWN0aW9uIiQKBVZhbHVlEg0KBWZpZWxkGAEgASgJEgwKBHRleHQYAiABKAkiIAoPU3RlbmNpbHNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFIkUKEFN0ZW5jaWxzUmVzcG9uc2USIwoIc3RlbmNpbHMYASADKAsyES5udW1lbi52MS5PZmZlcmVkEgwKBGhlbGQYAiABKAUiQwoSTWFrZVN0ZW5jaWxSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEg4KBmZvbGRlchgCIAEoCRIOCgZmaWVsZHMYAyADKAkiWAoTTWFrZVN0ZW5jaWxSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiIgoSUmVhZFN0ZW5jaWxSZXF1ZXN0EgwKBHBhdGgYASABKAkirgEKE1JlYWRTdGVuY2lsUmVzcG9uc2USJwoHc3RlbmNpbBgBIAEoCzIRLm51bWVuLnYxLlN0ZW5jaWxIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIKCghfc3RlbmNpbEIKCghfcmVmdXNhbEIFCgNfYXQipQEKE1dyaXRlU3RlbmNpbFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZmaWVsZHMYAiADKAkSHQoFZmFjZXMYAyADKAsyDi5udW1lbi52MS5GYWNlEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEhAKCHByZWFtYmxlGAUgASgJEgwKBHRhaWwYBiABKAlCBwoFX3NlZW4iiQEKFFdyaXRlU3RlbmNpbFJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCJvChJSZW5hbWVGaWVsZFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRmcm9tGAIgASgJEgoKAnRvGAMgASgJEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBQgcKBV9zZWVuItEBChNSZW5hbWVGaWVsZFJlc3BvbnNlEg0KBWRlY2tzGAEgAygJEg0KBWNhcmRzGAIgASgFEikKC25vdF93cml0dGVuGAMgAygLMhQubnVtZW4udjEuTm90V3JpdHRlbhInCgdyZWZ1c2FsGAQgASgOMhEubnVtZW4udjEuUmVmdXNhbEgAiAEBEiYKAmF0GAYgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBAUIKCghfcmVmdXNhbEIFCgNfYXRKBAgFEAZSB2NoYW5nZWQiPgoKTm90V3JpdHRlbhIMCgRwYXRoGAEgASgJEiIKB3Byb2JsZW0YAiABKAsyES5udW1lbi52MS5Qcm9ibGVtIjAKD01ha2VEZWNrUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkiVQoQTWFrZURlY2tSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiHwoPUmVhZERlY2tSZXF1ZXN0EgwKBHBhdGgYASABKAkisQEKEFJlYWREZWNrUmVzcG9uc2USIQoEZGVjaxgBIAEoCzIOLm51bWVuLnYxLkRlY2tIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBARINCgVib3VuZBgEIAEoA0IHCgVfZGVja0IKCghfcmVmdXNhbEIFCgNfYXQitwEKEFdyaXRlRGVja1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCRIdCgVjYXJkcxgDIAMoCzIOLm51bWVuLnYxLkNhcmQSIwoIc2VjdGlvbnMYBiADKAsyES5udW1lbi52MS5TZWN0aW9uEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEgwKBHRhaWwYBSABKAlCBwoFX3NlZW4ilQEKEVdyaXRlRGVja1Jlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEg0KBWJvdW5kGAQgASgDQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCq7AgoFRmF1bHQSFQoRRkFVTFRfVU5TUEVDSUZJRUQQABIeChpGQVVMVF9GSUVMRF9ERUNMQVJFRF9UV0lDRRABEiAKHEZBVUxUX1NURU5DSUxfV0lUSE9VVF9GSUVMRFMQAhIdChlGQVVMVF9GQUNFX01JU1NJTkdfQV9TSURFEAMSIAocRkFVTFRfUExBQ0VIT0xERVJfVU5ERUNMQVJFRBAEEiAKHEZBVUxUX0NBUkRfV0lUSE9VVF9BX1NURU5DSUwQBRIcChhGQVVMVF9TVEVOQ0lMX0lTX05PVF9PTkUQBhIdChlGQVVMVF9GSUVMRF9XUklUVEVOX1RXSUNFEAcSGwoXRkFVTFRfRklFTERfTk9UX1JFTkFNRUQQCBIcChhGQVVMVF9NQVJLX0NBUlJJRURfVFdJQ0UQCTLQBAoMQ2FyZHNTZXJ2aWNlEkEKCFN0ZW5jaWxzEhkubnVtZW4udjEuU3RlbmNpbHNSZXF1ZXN0GhoubnVtZW4udjEuU3RlbmNpbHNSZXNwb25zZRJKCgtNYWtlU3RlbmNpbBIcLm51bWVuLnYxLk1ha2VTdGVuY2lsUmVxdWVzdBodLm51bWVuLnYxLk1ha2VTdGVuY2lsUmVzcG9uc2USSgoLUmVhZFN0ZW5jaWwSHC5udW1lbi52MS5SZWFkU3RlbmNpbFJlcXVlc3QaHS5udW1lbi52MS5SZWFkU3RlbmNpbFJlc3BvbnNlEk0KDFdyaXRlU3RlbmNpbBIdLm51bWVuLnYxLldyaXRlU3RlbmNpbFJlcXVlc3QaHi5udW1lbi52MS5Xcml0ZVN0ZW5jaWxSZXNwb25zZRJKCgtSZW5hbWVGaWVsZBIcLm51bWVuLnYxLlJlbmFtZUZpZWxkUmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZUZpZWxkUmVzcG9uc2USQQoITWFrZURlY2sSGS5udW1lbi52MS5NYWtlRGVja1JlcXVlc3QaGi5udW1lbi52MS5NYWtlRGVja1Jlc3BvbnNlEkEKCFJlYWREZWNrEhkubnVtZW4udjEuUmVhZERlY2tSZXF1ZXN0GhoubnVtZW4udjEuUmVhZERlY2tSZXNwb25zZRJECglXcml0ZURlY2sSGi5udW1lbi52MS5Xcml0ZURlY2tSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVEZWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChRudW1lbi92MS9jYXJkcy5wcm90bxIIbnVtZW4udjEimgEKB1N0ZW5jaWwSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkSHQoFZmFjZXMYBCADKAsyDi5udW1lbi52MS5GYWNlEiMKCHByb2JsZW1zGAUgAygLMhEubnVtZW4udjEuUHJvYmxlbRIQCghwcmVhbWJsZRgGIAEoCRIMCgR0YWlsGAcgASgJIjYKB09mZmVyZWQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkiPwoERmFjZRIMCgRuYW1lGAEgASgJEg0KBWZyb250GAIgASgJEgwKBGJhY2sYAyABKAkSDAoEbGVhZBgEIAEoCSKsAQoERGVjaxIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJEhAKCHByZWFtYmxlGAMgASgJEh0KBWNhcmRzGAQgAygLMg4ubnVtZW4udjEuQ2FyZBIjCghzZWN0aW9ucxgHIAMoCzIRLm51bWVuLnYxLlNlY3Rpb24SIwoIcHJvYmxlbXMYBSADKAsyES5udW1lbi52MS5Qcm9ibGVtEgwKBHRhaWwYBiABKAkiJQoHU2VjdGlvbhIMCgRuYW1lGAEgASgJEgwKBGxlYWQYAiABKAkifgoHUHJvYmxlbRIeCgVmYXVsdBgBIAEoDjIPLm51bWVuLnYxLkZhdWx0EhEKBGNhcmQYAiABKAVIAIgBARIRCgRmYWNlGAMgASgFSAGIAQESDQoFZmllbGQYBCABKAkSDAoEdGV4dBgFIAEoCUIHCgVfY2FyZEIHCgVfZmFjZSKbAQoEQ2FyZBIMCgRtYXJrGAEgASgJEhQKB3NlY3Rpb24YBiABKAVIAIgBARIPCgdoZWFkaW5nGAcgASgJEg8KB3N0ZW5jaWwYAiABKAkSDAoEbGVhZBgDIAEoCRIfCgZ2YWx1ZXMYBCADKAsyDy5udW1lbi52MS5WYWx1ZRISCgpzdGVuY2lsX2F0GAUgASgJQgoKCF9zZWN0aW9uIiQKBVZhbHVlEg0KBWZpZWxkGAEgASgJEgwKBHRleHQYAiABKAkiJAoTTGlzdFN0ZW5jaWxzUmVxdWVzdBINCgVsaW1pdBgBIAEoBSJJChRMaXN0U3RlbmNpbHNSZXNwb25zZRIjCghzdGVuY2lscxgBIAMoCzIRLm51bWVuLnYxLk9mZmVyZWQSDAoEaGVsZBgCIAEoBSJFChRDcmVhdGVTdGVuY2lsUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIOCgZmb2xkZXIYAiABKAkSDgoGZmllbGRzGAMgAygJIloKFUNyZWF0ZVN0ZW5jaWxSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiIgoSUmVhZFN0ZW5jaWxSZXF1ZXN0EgwKBHBhdGgYASABKAkirgEKE1JlYWRTdGVuY2lsUmVzcG9uc2USJwoHc3RlbmNpbBgBIAEoCzIRLm51bWVuLnYxLlN0ZW5jaWxIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBAUIKCghfc3RlbmNpbEIKCghfcmVmdXNhbEIFCgNfYXQipQEKE1dyaXRlU3RlbmNpbFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZmaWVsZHMYAiADKAkSHQoFZmFjZXMYAyADKAsyDi5udW1lbi52MS5GYWNlEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEhAKCHByZWFtYmxlGAUgASgJEgwKBHRhaWwYBiABKAlCBwoFX3NlZW4iiQEKFFdyaXRlU3RlbmNpbFJlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCJ2ChlSZW5hbWVTdGVuY2lsRmllbGRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZnJvbRgCIAEoCRIKCgJ0bxgDIAEoCRIoCgRzZWVuGAQgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUIHCgVfc2VlbiLYAQoaUmVuYW1lU3RlbmNpbEZpZWxkUmVzcG9uc2USDQoFZGVja3MYASADKAkSDQoFY2FyZHMYAiABKAUSKQoLbm90X3dyaXR0ZW4YAyADKAsyFC5udW1lbi52MS5Ob3RXcml0dGVuEicKB3JlZnVzYWwYBCABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYBiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBQgoKCF9yZWZ1c2FsQgUKA19hdEoECAUQBlIHY2hhbmdlZCI+CgpOb3RXcml0dGVuEgwKBHBhdGgYASABKAkSIgoHcHJvYmxlbRgCIAEoCzIRLm51bWVuLnYxLlByb2JsZW0iMgoRQ3JlYXRlRGVja1JlcXVlc3QSDQoFdGl0bGUYASABKAkSDgoGZm9sZGVyGAIgASgJIlcKEkNyZWF0ZURlY2tSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKB3JlZnVzYWwYAiABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiHwoPUmVhZERlY2tSZXF1ZXN0EgwKBHBhdGgYASABKAkisQEKEFJlYWREZWNrUmVzcG9uc2USIQoEZGVjaxgBIAEoCzIOLm51bWVuLnYxLkRlY2tIAIgBARInCgdyZWZ1c2FsGAIgASgOMhEubnVtZW4udjEuUmVmdXNhbEgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBARINCgVib3VuZBgEIAEoA0IHCgVfZGVja0IKCghfcmVmdXNhbEIFCgNfYXQitwEKEFdyaXRlRGVja1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCRIdCgVjYXJkcxgDIAMoCzIOLm51bWVuLnYxLkNhcmQSIwoIc2VjdGlvbnMYBiADKAsyES5udW1lbi52MS5TZWN0aW9uEigKBHNlZW4YBCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgAiAEBEgwKBHRhaWwYBSABKAlCBwoFX3NlZW4ilQEKEVdyaXRlRGVja1Jlc3BvbnNlEicKB3JlZnVzYWwYASABKA4yES5udW1lbi52MS5SZWZ1c2FsSACIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEg0KBWJvdW5kGAQgASgDQgoKCF9yZWZ1c2FsQgUKA19hdEoECAIQA1IHY2hhbmdlZCq7AgoFRmF1bHQSFQoRRkFVTFRfVU5TUEVDSUZJRUQQABIeChpGQVVMVF9GSUVMRF9ERUNMQVJFRF9UV0lDRRABEiAKHEZBVUxUX1NURU5DSUxfV0lUSE9VVF9GSUVMRFMQAhIdChlGQVVMVF9GQUNFX01JU1NJTkdfQV9TSURFEAMSIAocRkFVTFRfUExBQ0VIT0xERVJfVU5ERUNMQVJFRBAEEiAKHEZBVUxUX0NBUkRfV0lUSE9VVF9BX1NURU5DSUwQBRIcChhGQVVMVF9TVEVOQ0lMX0lTX05PVF9PTkUQBhIdChlGQVVMVF9GSUVMRF9XUklUVEVOX1RXSUNFEAcSGwoXRkFVTFRfRklFTERfTk9UX1JFTkFNRUQQCBIcChhGQVVMVF9NQVJLX0NBUlJJRURfVFdJQ0UQCTL9BAoMQ2FyZHNTZXJ2aWNlEk0KDExpc3RTdGVuY2lscxIdLm51bWVuLnYxLkxpc3RTdGVuY2lsc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0U3RlbmNpbHNSZXNwb25zZRJQCg1DcmVhdGVTdGVuY2lsEh4ubnVtZW4udjEuQ3JlYXRlU3RlbmNpbFJlcXVlc3QaHy5udW1lbi52MS5DcmVhdGVTdGVuY2lsUmVzcG9uc2USSgoLUmVhZFN0ZW5jaWwSHC5udW1lbi52MS5SZWFkU3RlbmNpbFJlcXVlc3QaHS5udW1lbi52MS5SZWFkU3RlbmNpbFJlc3BvbnNlEk0KDFdyaXRlU3RlbmNpbBIdLm51bWVuLnYxLldyaXRlU3RlbmNpbFJlcXVlc3QaHi5udW1lbi52MS5Xcml0ZVN0ZW5jaWxSZXNwb25zZRJfChJSZW5hbWVTdGVuY2lsRmllbGQSIy5udW1lbi52MS5SZW5hbWVTdGVuY2lsRmllbGRSZXF1ZXN0GiQubnVtZW4udjEuUmVuYW1lU3RlbmNpbEZpZWxkUmVzcG9uc2USRwoKQ3JlYXRlRGVjaxIbLm51bWVuLnYxLkNyZWF0ZURlY2tSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRGVja1Jlc3BvbnNlEkEKCFJlYWREZWNrEhkubnVtZW4udjEuUmVhZERlY2tSZXF1ZXN0GhoubnVtZW4udjEuUmVhZERlY2tSZXNwb25zZRJECglXcml0ZURlY2sSGi5udW1lbi52MS5Xcml0ZURlY2tSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVEZWNrUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * Stencil is what a card is cut by: the fields it is asked for, and the faces
@@ -425,9 +425,9 @@ export const ValueSchema: GenMessage<Value> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 7);
 
 /**
- * @generated from message numen.v1.StencilsRequest
+ * @generated from message numen.v1.ListStencilsRequest
  */
-export type StencilsRequest = Message<"numen.v1.StencilsRequest"> & {
+export type ListStencilsRequest = Message<"numen.v1.ListStencilsRequest"> & {
   /**
    * How many stencils to answer with. Zero takes the number the vault chooses,
    * and a number above the ceiling the vault sets takes that ceiling.
@@ -438,16 +438,16 @@ export type StencilsRequest = Message<"numen.v1.StencilsRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.StencilsRequest.
- * Use `create(StencilsRequestSchema)` to create a new message.
+ * Describes the message numen.v1.ListStencilsRequest.
+ * Use `create(ListStencilsRequestSchema)` to create a new message.
  */
-export const StencilsRequestSchema: GenMessage<StencilsRequest> = /*@__PURE__*/
+export const ListStencilsRequestSchema: GenMessage<ListStencilsRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 8);
 
 /**
- * @generated from message numen.v1.StencilsResponse
+ * @generated from message numen.v1.ListStencilsResponse
  */
-export type StencilsResponse = Message<"numen.v1.StencilsResponse"> & {
+export type ListStencilsResponse = Message<"numen.v1.ListStencilsResponse"> & {
   /**
    * The stencils, by path, with case ignored.
    *
@@ -465,16 +465,16 @@ export type StencilsResponse = Message<"numen.v1.StencilsResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.StencilsResponse.
- * Use `create(StencilsResponseSchema)` to create a new message.
+ * Describes the message numen.v1.ListStencilsResponse.
+ * Use `create(ListStencilsResponseSchema)` to create a new message.
  */
-export const StencilsResponseSchema: GenMessage<StencilsResponse> = /*@__PURE__*/
+export const ListStencilsResponseSchema: GenMessage<ListStencilsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 9);
 
 /**
- * @generated from message numen.v1.MakeStencilRequest
+ * @generated from message numen.v1.CreateStencilRequest
  */
-export type MakeStencilRequest = Message<"numen.v1.MakeStencilRequest"> & {
+export type CreateStencilRequest = Message<"numen.v1.CreateStencilRequest"> & {
   /**
    * What the stencil is called. The file is named after it, and that name is
    * what a card's wikilink writes.
@@ -500,16 +500,16 @@ export type MakeStencilRequest = Message<"numen.v1.MakeStencilRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeStencilRequest.
- * Use `create(MakeStencilRequestSchema)` to create a new message.
+ * Describes the message numen.v1.CreateStencilRequest.
+ * Use `create(CreateStencilRequestSchema)` to create a new message.
  */
-export const MakeStencilRequestSchema: GenMessage<MakeStencilRequest> = /*@__PURE__*/
+export const CreateStencilRequestSchema: GenMessage<CreateStencilRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 10);
 
 /**
- * @generated from message numen.v1.MakeStencilResponse
+ * @generated from message numen.v1.CreateStencilResponse
  */
-export type MakeStencilResponse = Message<"numen.v1.MakeStencilResponse"> & {
+export type CreateStencilResponse = Message<"numen.v1.CreateStencilResponse"> & {
   /**
    * Where the stencil is filed. Empty when nothing was made.
    *
@@ -526,10 +526,10 @@ export type MakeStencilResponse = Message<"numen.v1.MakeStencilResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeStencilResponse.
- * Use `create(MakeStencilResponseSchema)` to create a new message.
+ * Describes the message numen.v1.CreateStencilResponse.
+ * Use `create(CreateStencilResponseSchema)` to create a new message.
  */
-export const MakeStencilResponseSchema: GenMessage<MakeStencilResponse> = /*@__PURE__*/
+export const CreateStencilResponseSchema: GenMessage<CreateStencilResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 11);
 
 /**
@@ -667,9 +667,9 @@ export const WriteStencilResponseSchema: GenMessage<WriteStencilResponse> = /*@_
   messageDesc(file_numen_v1_cards, 15);
 
 /**
- * @generated from message numen.v1.RenameFieldRequest
+ * @generated from message numen.v1.RenameStencilFieldRequest
  */
-export type RenameFieldRequest = Message<"numen.v1.RenameFieldRequest"> & {
+export type RenameStencilFieldRequest = Message<"numen.v1.RenameStencilFieldRequest"> & {
   /**
    * The stencil that declares the field.
    *
@@ -699,16 +699,16 @@ export type RenameFieldRequest = Message<"numen.v1.RenameFieldRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.RenameFieldRequest.
- * Use `create(RenameFieldRequestSchema)` to create a new message.
+ * Describes the message numen.v1.RenameStencilFieldRequest.
+ * Use `create(RenameStencilFieldRequestSchema)` to create a new message.
  */
-export const RenameFieldRequestSchema: GenMessage<RenameFieldRequest> = /*@__PURE__*/
+export const RenameStencilFieldRequestSchema: GenMessage<RenameStencilFieldRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 16);
 
 /**
- * @generated from message numen.v1.RenameFieldResponse
+ * @generated from message numen.v1.RenameStencilFieldResponse
  */
-export type RenameFieldResponse = Message<"numen.v1.RenameFieldResponse"> & {
+export type RenameStencilFieldResponse = Message<"numen.v1.RenameStencilFieldResponse"> & {
   /**
    * The decks a heading was rewritten in, by path.
    *
@@ -750,10 +750,10 @@ export type RenameFieldResponse = Message<"numen.v1.RenameFieldResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.RenameFieldResponse.
- * Use `create(RenameFieldResponseSchema)` to create a new message.
+ * Describes the message numen.v1.RenameStencilFieldResponse.
+ * Use `create(RenameStencilFieldResponseSchema)` to create a new message.
  */
-export const RenameFieldResponseSchema: GenMessage<RenameFieldResponse> = /*@__PURE__*/
+export const RenameStencilFieldResponseSchema: GenMessage<RenameStencilFieldResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 17);
 
 /**
@@ -784,9 +784,9 @@ export const NotWrittenSchema: GenMessage<NotWritten> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 18);
 
 /**
- * @generated from message numen.v1.MakeDeckRequest
+ * @generated from message numen.v1.CreateDeckRequest
  */
-export type MakeDeckRequest = Message<"numen.v1.MakeDeckRequest"> & {
+export type CreateDeckRequest = Message<"numen.v1.CreateDeckRequest"> & {
   /**
    * What the deck is called. The file is named after it.
    *
@@ -803,16 +803,16 @@ export type MakeDeckRequest = Message<"numen.v1.MakeDeckRequest"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeDeckRequest.
- * Use `create(MakeDeckRequestSchema)` to create a new message.
+ * Describes the message numen.v1.CreateDeckRequest.
+ * Use `create(CreateDeckRequestSchema)` to create a new message.
  */
-export const MakeDeckRequestSchema: GenMessage<MakeDeckRequest> = /*@__PURE__*/
+export const CreateDeckRequestSchema: GenMessage<CreateDeckRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 19);
 
 /**
- * @generated from message numen.v1.MakeDeckResponse
+ * @generated from message numen.v1.CreateDeckResponse
  */
-export type MakeDeckResponse = Message<"numen.v1.MakeDeckResponse"> & {
+export type CreateDeckResponse = Message<"numen.v1.CreateDeckResponse"> & {
   /**
    * Where the deck is filed. Empty when nothing was made.
    *
@@ -829,10 +829,10 @@ export type MakeDeckResponse = Message<"numen.v1.MakeDeckResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.MakeDeckResponse.
- * Use `create(MakeDeckResponseSchema)` to create a new message.
+ * Describes the message numen.v1.CreateDeckResponse.
+ * Use `create(CreateDeckResponseSchema)` to create a new message.
  */
-export const MakeDeckResponseSchema: GenMessage<MakeDeckResponse> = /*@__PURE__*/
+export const CreateDeckResponseSchema: GenMessage<CreateDeckResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_cards, 20);
 
 /**
@@ -1086,21 +1086,21 @@ export const FaultSchema: GenEnum<Fault> = /*@__PURE__*/
  */
 export const CardsService: GenService<{
   /**
-   * Stencils is what a person choosing what kind of card to write next is
+   * ListStencils is what a person choosing what kind of card to write next is
    * shown: every stencil in the vault, by what it is called and what it asks
    * for. The faces are read one stencil at a time.
    *
    * A stencil that could not be read is absent from the answer.
    *
-   * @generated from rpc numen.v1.CardsService.Stencils
+   * @generated from rpc numen.v1.CardsService.ListStencils
    */
-  stencils: {
+  listStencils: {
     methodKind: "unary";
-    input: typeof StencilsRequestSchema;
-    output: typeof StencilsResponseSchema;
+    input: typeof ListStencilsRequestSchema;
+    output: typeof ListStencilsResponseSchema;
   },
   /**
-   * MakeStencil puts a stencil in the vault, declaring the fields it is given
+   * CreateStencil puts a stencil in the vault, declaring the fields it is given
    * and showing no face. The file says it is a stencil from the moment it
    * exists, so it is one to everything that reads the vault before a card is
    * cut by it.
@@ -1108,12 +1108,12 @@ export const CardsService: GenService<{
    * The first field is what a card's heading is read from, so a stencil is
    * made with at least one.
    *
-   * @generated from rpc numen.v1.CardsService.MakeStencil
+   * @generated from rpc numen.v1.CardsService.CreateStencil
    */
-  makeStencil: {
+  createStencil: {
     methodKind: "unary";
-    input: typeof MakeStencilRequestSchema;
-    output: typeof MakeStencilResponseSchema;
+    input: typeof CreateStencilRequestSchema;
+    output: typeof CreateStencilResponseSchema;
   },
   /**
    * ReadStencil is the fields and the faces of one stencil.
@@ -1127,9 +1127,9 @@ export const CardsService: GenService<{
   },
   /**
    * WriteStencil puts fields and faces into a stencil. A path the vault holds
-   * no note at is refused `missing`; MakeStencil is what puts a stencil in the
-   * vault. Every frontmatter key but `fields` stays as the person wrote it, and
-   * a stencil that no longer holds what the caller read is left alone and
+   * no note at is refused `missing`; CreateStencil is what puts a stencil in
+   * the vault. Every frontmatter key but `fields` stays as the person wrote it,
+   * and a stencil that no longer holds what the caller read is left alone and
    * refused `stale`.
    *
    * The preamble, the tail and each face's lead are written back as they
@@ -1144,10 +1144,10 @@ export const CardsService: GenService<{
     output: typeof WriteStencilResponseSchema;
   },
   /**
-   * RenameField gives one of a stencil's fields a different name, everywhere it
-   * is written: where the stencil declares it, in the braces of every face that
-   * places it, and as a heading in every card of every deck that stencil cuts.
-   * What stands under each heading is left as it was.
+   * RenameStencilField gives one of a stencil's fields a different name,
+   * everywhere it is written: where the stencil declares it, in the braces of
+   * every face that places it, and as a heading in every card of every deck
+   * that stencil cuts. What stands under each heading is left as it was.
    *
    * Every field a stencil declares stands under its own heading in every card,
    * the first included, so renaming any of them reaches every deck that
@@ -1157,24 +1157,24 @@ export const CardsService: GenService<{
    * A stencil that no longer holds what the caller read is left alone and
    * refused `stale`, and then no deck is written either.
    *
-   * @generated from rpc numen.v1.CardsService.RenameField
+   * @generated from rpc numen.v1.CardsService.RenameStencilField
    */
-  renameField: {
+  renameStencilField: {
     methodKind: "unary";
-    input: typeof RenameFieldRequestSchema;
-    output: typeof RenameFieldResponseSchema;
+    input: typeof RenameStencilFieldRequestSchema;
+    output: typeof RenameStencilFieldResponseSchema;
   },
   /**
-   * MakeDeck puts a deck of no cards in the vault. The file says it is a deck
+   * CreateDeck puts a deck of no cards in the vault. The file says it is a deck
    * from the moment it exists, so it is one to everything that reads the vault
    * before a card is written into it.
    *
-   * @generated from rpc numen.v1.CardsService.MakeDeck
+   * @generated from rpc numen.v1.CardsService.CreateDeck
    */
-  makeDeck: {
+  createDeck: {
     methodKind: "unary";
-    input: typeof MakeDeckRequestSchema;
-    output: typeof MakeDeckResponseSchema;
+    input: typeof CreateDeckRequestSchema;
+    output: typeof CreateDeckResponseSchema;
   },
   /**
    * ReadDeck is the sections and the cards of one deck, in the order they
@@ -1189,8 +1189,8 @@ export const CardsService: GenService<{
   },
   /**
    * WriteDeck puts sections and cards into a deck, in the order they are
-   * given. A path the vault holds no note at is refused `missing`; MakeDeck is
-   * what puts a deck in the vault. The frontmatter stays as the person wrote
+   * given. A path the vault holds no note at is refused `missing`; CreateDeck
+   * is what puts a deck in the vault. The frontmatter stays as the person wrote
    * it, and a deck that no longer holds what the caller read is left alone and
    * refused `stale`.
    *

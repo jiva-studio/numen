@@ -38,8 +38,8 @@ func offeredOf(s cards.StencilSummary) *v1.Offered {
 // renamedOf is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func renamedOf(r cards.RenameResult) *v1.RenameFieldResponse {
-	out := &v1.RenameFieldResponse{
+func renamedOf(r cards.RenameResult) *v1.RenameStencilFieldResponse {
+	out := &v1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
 		At:    fingerprintOf(r.Stencil),

@@ -20,12 +20,12 @@ import (
 // answers.
 var errNoCards = errors.New("this build cannot work the cards of a vault")
 
-// Stencils is every stencil the vault holds, by what it is called and what it
-// asks for. A vault holding more than one answer carries is answered with as
+// ListStencils is every stencil the vault holds, by what it is called and what
+// it asks for. A vault holding more than one answer carries is answered with as
 // many as it carries, and told how many it holds.
-func (a *API) Stencils(
-	ctx context.Context, r *connect.Request[v1.StencilsRequest],
-) (*connect.Response[v1.StencilsResponse], error) {
+func (a *API) ListStencils(
+	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
+) (*connect.Response[v1.ListStencilsResponse], error) {
 	if a.Cards.List == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
@@ -38,7 +38,7 @@ func (a *API) Stencils(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.StencilsResponse{Held: int32(count)}
+	out := &v1.ListStencilsResponse{Held: int32(count)}
 	out.Stencils = make([]*v1.Offered, 0, len(held))
 	for _, stencil := range held {
 		out.Stencils = append(out.Stencils, offeredOf(stencil))
@@ -55,11 +55,11 @@ func offering(limit int32) int {
 	return int(limit)
 }
 
-// MakeStencil puts a stencil declaring these fields in the vault, showing no
+// CreateStencil puts a stencil declaring these fields in the vault, showing no
 // face.
-func (a *API) MakeStencil(
-	ctx context.Context, r *connect.Request[v1.MakeStencilRequest],
-) (*connect.Response[v1.MakeStencilResponse], error) {
+func (a *API) CreateStencil(
+	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
+) (*connect.Response[v1.CreateStencilResponse], error) {
 	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return a.Cards.Create.Stencil(ctx, showing, in)
@@ -67,20 +67,20 @@ func (a *API) MakeStencil(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.MakeStencilResponse{Path: made.Path, Refusal: refusal}), nil
+	return connect.NewResponse(&v1.CreateStencilResponse{Path: made.Path, Refusal: refusal}), nil
 }
 
-// MakeDeck puts a deck of no cards in the vault.
-func (a *API) MakeDeck(
-	ctx context.Context, r *connect.Request[v1.MakeDeckRequest],
-) (*connect.Response[v1.MakeDeckResponse], error) {
+// CreateDeck puts a deck of no cards in the vault.
+func (a *API) CreateDeck(
+	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
+) (*connect.Response[v1.CreateDeckResponse], error) {
 	made, refusal, err := a.makes(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return a.Cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetFolder())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.MakeDeckResponse{Path: made.Path, Refusal: refusal}), nil
+	return connect.NewResponse(&v1.CreateDeckResponse{Path: made.Path, Refusal: refusal}), nil
 }
 
 // makes is what making a deck and making a stencil have in common: the vault
@@ -118,13 +118,13 @@ func (a *API) makes(
 	return cards.CreateNoteResult{}, &reason, nil
 }
 
-// RenameField gives one of a stencil's fields a different name, in the stencil
-// and in every card of every deck that stencil cuts. A stencil still holding
-// what the client read is written; one holding something else is left alone and
-// the client is told the stencil changed.
-func (a *API) RenameField(
-	ctx context.Context, r *connect.Request[v1.RenameFieldRequest],
-) (*connect.Response[v1.RenameFieldResponse], error) {
+// RenameStencilField gives one of a stencil's fields a different name, in the
+// stencil and in every card of every deck that stencil cuts. A stencil still
+// holding what the client read is written; one holding something else is left
+// alone and the client is told the stencil changed.
+func (a *API) RenameStencilField(
+	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
+) (*connect.Response[v1.RenameStencilFieldResponse], error) {
 	if a.Cards.RenameField == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoCards)
 	}
@@ -156,7 +156,7 @@ func (a *API) RenameField(
 	if !refused {
 		return nil, connect.NewError(refusal.Coded(err), err)
 	}
-	return connect.NewResponse(&v1.RenameFieldResponse{Refusal: &reason}), nil
+	return connect.NewResponse(&v1.RenameStencilFieldResponse{Refusal: &reason}), nil
 }
 
 // ReadStencil is the fields and the faces of one stencil.

@@ -157,7 +157,7 @@ func TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused(t *testing.T) {
 func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := dealing(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.MakeStencil(t.Context(), connect.NewRequest(&v1.MakeStencilRequest{
+	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
 		Title: "Animal", Folder: "cards", Fields: []string{"Species"},
 	}))
 	if err != nil {
@@ -176,7 +176,7 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := dealing(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.MakeDeck(t.Context(), connect.NewRequest(&v1.MakeDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
 		Title: "Animal", Folder: "cards",
 	}))
 	if err != nil {
@@ -210,7 +210,7 @@ func TestAPathThatLeavesTheVaultIsTheClientsToCorrect(t *testing.T) {
 		t.Errorf("reading a stencil outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.MakeDeck(t.Context(), connect.NewRequest(&v1.MakeDeckRequest{
+	_, err = f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
 		Title: "Elsewhere", Folder: "../elsewhere",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
@@ -224,9 +224,10 @@ func TestAPathThatLeavesTheVaultIsTheClientsToCorrect(t *testing.T) {
 func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 	f := dealing(t, map[string]string{"cards/Animal.md": animal})
 
-	_, err := f.client.RenameField(t.Context(), connect.NewRequest(&v1.RenameFieldRequest{
-		Path: "cards/Animal.md", From: "Height", To: "Name",
-	}))
+	_, err := f.client.RenameStencilField(t.Context(),
+		connect.NewRequest(&v1.RenameStencilFieldRequest{
+			Path: "cards/Animal.md", From: "Height", To: "Name",
+		}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("renaming a field onto a declared name answered %v (%v)", got, err)
 	}
@@ -241,7 +242,7 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	f := dealing(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.MakeDeck(t.Context(), connect.NewRequest(&v1.MakeDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
 		Title: "Camelids", Folder: "Entropy.md",
 	}))
 	if err != nil {
