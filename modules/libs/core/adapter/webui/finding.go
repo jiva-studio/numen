@@ -43,7 +43,7 @@ func (a *API) SearchNames(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.SearchNamesResponse{}), nil
 	}
-	found, err := a.Notes.Queries.Names(ctx, string(showing.ID), r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
+	found, err := a.Notes.Queries.Names(ctx, showing.ID, r.Msg.GetQuery(), atMost(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -77,7 +77,7 @@ func (a *API) ListHeadings(
 	if err != nil {
 		return nil, err
 	}
-	found, err := a.Notes.Queries.Headings(ctx, string(showing.ID), paths)
+	found, err := a.Notes.Queries.Headings(ctx, showing.ID, paths)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -136,13 +136,13 @@ func (a *API) SearchPassages(
 	// source that is not a note is absent, and a window offering to open notes
 	// offers nothing for it.
 	sources := sourcesOf(found)
-	titles, err := a.Notes.Queries.Notes(ctx, string(showing.ID), sources)
+	titles, err := a.Notes.Queries.Notes(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	// Which of four each of those notes is, so a passage is drawn with the mark
 	// of the note it was read out of.
-	types, err := a.Notes.Queries.Types(ctx, string(showing.ID), sources)
+	types, err := a.Notes.Queries.Types(ctx, showing.ID, sources)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

@@ -27,9 +27,9 @@ func (l heldVaults) Last() (domain.Vault, bool, error) { return domain.Vault{}, 
 
 func (heldVaults) Save(domain.Vault) error { return nil }
 
-func (heldVaults) Remove(string) error { return nil }
+func (heldVaults) Remove(domain.VaultID) error { return nil }
 
-func (heldVaults) Opened(string) error { return nil }
+func (heldVaults) Opened(domain.VaultID) error { return nil }
 
 // played is the socket a player reaches this API over, closed with the test.
 func played(t *testing.T, api *API) (*Loopback, http.Handler) {

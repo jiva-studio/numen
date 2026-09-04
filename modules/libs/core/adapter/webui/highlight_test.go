@@ -24,28 +24,28 @@ import (
 // the others.
 type indexed map[string]port.SourceText
 
-func (i indexed) Reading(_ context.Context, _, path string) (port.SourceText, bool, error) {
+func (i indexed) Reading(_ context.Context, _ domain.VaultID, path string) (port.SourceText, bool, error) {
 	found, held := i[path]
 	return found, held, nil
 }
 
-func (i indexed) Fingerprints(context.Context, string, domain.SourceKind) (map[string]domain.Fingerprint, error) {
+func (i indexed) Fingerprints(context.Context, domain.VaultID, domain.SourceKind) (map[string]domain.Fingerprint, error) {
 	return nil, nil
 }
 
-func (i indexed) Unchunked(context.Context, string, domain.SourceKind, int) ([]string, error) {
+func (i indexed) Unchunked(context.Context, domain.VaultID, domain.SourceKind, int) ([]string, error) {
 	return nil, nil
 }
 
-func (i indexed) ByOtherRecipe(context.Context, string, domain.SourceKind, []string, int) ([]string, error) {
+func (i indexed) ByOtherRecipe(context.Context, domain.VaultID, domain.SourceKind, []string, int) ([]string, error) {
 	return nil, nil
 }
 
-func (i indexed) Recognised(context.Context, string, domain.SourceKind) ([]port.SourceText, error) {
+func (i indexed) Recognised(context.Context, domain.VaultID, domain.SourceKind) ([]port.SourceText, error) {
 	return nil, nil
 }
 
-func (i indexed) Under(context.Context, string, string) ([]domain.Fingerprint, error) {
+func (i indexed) Under(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
 	return nil, nil
 }
 

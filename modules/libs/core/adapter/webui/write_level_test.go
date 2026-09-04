@@ -67,7 +67,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save was refused: %v", refused)
 	}
 
-	found, err := opened.Index.Queries().Search(t.Context(), string(opened.Showing().ID), "tetragrammaton", 10)
+	found, err := opened.Index.Queries().Search(t.Context(), opened.Showing().ID, "tetragrammaton", 10)
 	if err != nil {
 		t.Fatal(err)
 	}

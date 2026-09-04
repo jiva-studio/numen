@@ -151,14 +151,16 @@ func (deaf) Close() error                                           { return nil
 // unrecorded is an index a run writes to and nothing reads back.
 type unrecorded struct{}
 
-func (unrecorded) SaveSource(context.Context, string, port.Source) error           { return nil }
-func (unrecorded) SaveExtraction(context.Context, string, port.SourceChunks) error { return nil }
-
-func (unrecorded) RemoveSources(context.Context, string, domain.SourceKind, []string) error {
+func (unrecorded) SaveSource(context.Context, domain.VaultID, port.Source) error { return nil }
+func (unrecorded) SaveExtraction(context.Context, domain.VaultID, port.SourceChunks) error {
 	return nil
 }
 
-func (unrecorded) MoveSources(context.Context, string, string, string) error { return nil }
+func (unrecorded) RemoveSources(context.Context, domain.VaultID, domain.SourceKind, []string) error {
+	return nil
+}
+
+func (unrecorded) MoveSources(context.Context, domain.VaultID, string, string) error { return nil }
 
 // What a run wrote about a recording it got no words out of is what the facet
 // finds, over one vault and one store: both name the file by the fingerprint of

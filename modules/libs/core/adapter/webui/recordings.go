@@ -298,7 +298,7 @@ func (a *API) heard(
 	if !ok {
 		return port.SourceText{}, nil, false, nil
 	}
-	said, held, err := sources.Reading(ctx, string(v.ID), path)
+	said, held, err := sources.Reading(ctx, v.ID, path)
 	if err != nil || !held || said.Producer == "" {
 		return port.SourceText{}, nil, false, err
 	}

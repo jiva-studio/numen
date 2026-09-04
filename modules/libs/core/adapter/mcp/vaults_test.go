@@ -23,24 +23,24 @@ import (
 // rows is the index as a vault is written to and taken out of it.
 type rows struct {
 	mu     sync.Mutex
-	forgot []string
+	forgot []domain.VaultID
 }
 
 func (r *rows) Save(context.Context, domain.VaultID) error { return nil }
 
 func (r *rows) Register(context.Context, domain.VaultID) error { return nil }
 
-func (r *rows) Forget(_ context.Context, vaultID string) error {
+func (r *rows) Forget(_ context.Context, vaultID domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.forgot = append(r.forgot, vaultID)
 	return nil
 }
 
-func (r *rows) forgotten() []string {
+func (r *rows) forgotten() []domain.VaultID {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return append([]string(nil), r.forgot...)
+	return append([]domain.VaultID(nil), r.forgot...)
 }
 
 // folders is the person choosing a folder, as a test answers for them. The real
@@ -380,7 +380,7 @@ func TestForgettingLeavesTheFolderWhereItIs(t *testing.T) {
 	if _, err := os.Stat(f.second.Path); err != nil {
 		t.Errorf("the folder went with the vault: %v", err)
 	}
-	if got := f.rows.forgotten(); len(got) != 1 || got[0] != string(f.second.ID) {
+	if got := f.rows.forgotten(); len(got) != 1 || got[0] != f.second.ID {
 		t.Errorf("the index was told to forget %v", got)
 	}
 	if _, found, err := f.registry.Find(string(f.second.ID)); err != nil || found {

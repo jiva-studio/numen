@@ -84,7 +84,7 @@ func addNoteResolve(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Queries.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
+		paths, err := core.Notes.Queries.Named(ctx, core.shown().Vault.ID, domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -164,7 +164,7 @@ func addNoteReadingTools(server *sdk.Server, core Core) {
 		if len(in.Paths) > maxRefs {
 			return nil, out{}, fmt.Errorf("ask about at most %d notes at a time", maxRefs)
 		}
-		found, err := core.Notes.Queries.Notes(ctx, string(core.shown().Vault.ID), in.Paths)
+		found, err := core.Notes.Queries.Notes(ctx, core.shown().Vault.ID, in.Paths)
 		if err != nil {
 			return nil, out{}, err
 		}

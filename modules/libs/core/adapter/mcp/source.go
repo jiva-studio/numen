@@ -54,11 +54,11 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		shown := core.shown()
-		known, err := core.Sources.Queries.Fingerprints(ctx, string(shown.Vault.ID), domain.KindBook)
+		known, err := core.Sources.Queries.Fingerprints(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Queries.Recognised(ctx, string(shown.Vault.ID), domain.KindBook)
+		read, err := core.Sources.Queries.Recognised(ctx, shown.Vault.ID, domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}

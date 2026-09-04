@@ -115,7 +115,7 @@ func (a *API) carries(ctx context.Context, v domain.Vault) bool {
 	if a.Notes == nil {
 		return false
 	}
-	held, err := a.Notes.Holds(ctx, string(v.ID))
+	held, err := a.Notes.Holds(ctx, v.ID)
 	return err == nil && held
 }
 
@@ -154,6 +154,6 @@ func (a *API) walk(ctx context.Context, read ReadVault, v domain.Vault, held boo
 
 // Forget lets go of why a vault could not be read. A vault that moved
 // underneath the window is read again.
-func (a *API) Forget(vaultID string) {
-	a.readings.forget(domain.VaultID(vaultID))
+func (a *API) Forget(vaultID domain.VaultID) {
+	a.readings.forget(vaultID)
 }

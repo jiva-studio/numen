@@ -91,7 +91,7 @@ func TestTheVaultOpenedLastIsCountedFirst(t *testing.T) {
 	all := []domain.Vault{{ID: "one"}, {ID: "two"}, {ID: "three"}}
 
 	for name, c := range map[string]struct {
-		last string
+		last domain.VaultID
 		want []string
 	}{
 		"one in the middle":    {"two", []string{"two", "one", "three"}},

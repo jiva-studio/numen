@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	derived "github.com/jiva-studio/numen/modules/libs/core/text"
@@ -22,7 +23,7 @@ type noting struct {
 	written []port.SourceChunks
 }
 
-func (n *noting) SaveExtraction(_ context.Context, _ string, e port.SourceChunks) error {
+func (n *noting) SaveExtraction(_ context.Context, _ domain.VaultID, e port.SourceChunks) error {
 	n.written = append(n.written, e)
 	return nil
 }

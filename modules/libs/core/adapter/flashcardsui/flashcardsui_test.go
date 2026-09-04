@@ -54,19 +54,19 @@ var other = map[string]string{
 // which of them a window was last opened on.
 type registry struct {
 	held []domain.Vault
-	last string
+	last domain.VaultID
 }
 
 func (r registry) All() ([]domain.Vault, error) { return r.held, nil }
 func (r registry) Save(domain.Vault) error      { return nil }
-func (r registry) Remove(string) error          { return nil }
-func (r registry) Opened(string) error          { return nil }
+func (r registry) Remove(domain.VaultID) error  { return nil }
+func (r registry) Opened(domain.VaultID) error  { return nil }
 
 func (r registry) Find(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
 
 func (r registry) Last() (domain.Vault, bool, error) {
 	for _, v := range r.held {
-		if string(v.ID) == r.last {
+		if v.ID == r.last {
 			return v, true, nil
 		}
 	}

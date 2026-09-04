@@ -115,7 +115,7 @@ func run(cfg container.Config, noAgent bool) error {
 	// A vault that moved is counted again, and is one whose walk is worth trying
 	// again where the last one failed.
 	vaults.record = func(v domain.Vault) {
-		api.Forget(string(v.ID))
+		api.Forget(v.ID)
 		api.Moved()
 	}
 	api.Reading(ctx, vaults.reads)

@@ -36,7 +36,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.shown()
-		summary, err := core.Notes.Queries.Summary(ctx, string(shown.Vault.ID))
+		summary, err := core.Notes.Queries.Summary(ctx, shown.Vault.ID)
 		if err != nil {
 			return nil, out{}, err
 		}

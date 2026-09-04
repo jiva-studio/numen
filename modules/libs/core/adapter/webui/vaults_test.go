@@ -26,7 +26,7 @@ import (
 type vaultRows struct {
 	mu     sync.Mutex
 	saved  []domain.Vault
-	forgot []string
+	forgot []domain.VaultID
 }
 
 func (r *vaultRows) Save(_ context.Context, v domain.Vault) error {
@@ -38,17 +38,17 @@ func (r *vaultRows) Save(_ context.Context, v domain.Vault) error {
 
 func (r *vaultRows) Register(context.Context, domain.VaultID) error { return nil }
 
-func (r *vaultRows) Forget(_ context.Context, vaultID string) error {
+func (r *vaultRows) Forget(_ context.Context, vaultID domain.VaultID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.forgot = append(r.forgot, vaultID)
 	return nil
 }
 
-func (r *vaultRows) forgotten() []string {
+func (r *vaultRows) forgotten() []domain.VaultID {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return append([]string(nil), r.forgot...)
+	return append([]domain.VaultID(nil), r.forgot...)
 }
 
 // bin is where a test puts what a person deleted, and a machine with nowhere to
@@ -479,8 +479,8 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	if got := f.bin.trashed(); len(got) != 1 || got[0] != f.second.Path {
 		t.Errorf("trashed %v, want %s", got, f.second.Path)
 	}
-	if got := f.rows.forgotten(); len(got) != 1 || got[0] != string(f.second.ID) {
-		t.Errorf("the index was told to forget %v, want %s", got, string(f.second.ID))
+	if got := f.rows.forgotten(); len(got) != 1 || got[0] != f.second.ID {
+		t.Errorf("the index was told to forget %v, want %s", got, f.second.ID)
 	}
 	if _, found, err := f.registry.Find(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
