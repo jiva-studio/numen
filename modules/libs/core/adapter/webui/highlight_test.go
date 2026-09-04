@@ -2,11 +2,14 @@ package webui
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -75,47 +78,47 @@ func placing(t *testing.T) (*API, http.Handler, *pdf.Book) {
 }
 
 // where is where a word of the document is, as the window would ask about it.
-func where(t *testing.T, doc *pdf.Book, word string) string {
+func where(t *testing.T, doc *pdf.Book, word string) *v1.Stretch {
 	t.Helper()
 	at := strings.Index(doc.Text, word)
 	if at < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return marksOf(book, at, len(word))
+	return &v1.Stretch{Start: int32(at), Length: int32(len(word))}
+}
+
+// lit is where the runs of a source's text sit, as the window is told it.
+func lit(api *API, path string, at ...*v1.Stretch) ([]*v1.Covered, error) {
+	out, err := api.Marks(context.Background(), connect.NewRequest(&v1.MarksRequest{
+		Path: path, At: at,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return out.Msg.GetRuns(), nil
 }
 
 // A run of a source's text comes back as the pages it falls on and, on each,
 // the rectangles covering it.
 func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
-	_, handler, doc := placing(t)
+	api, _, doc := placing(t)
 
-	out := ask(handler, where(t, doc, "Delta"))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked where a word is and got %d: %s", out.Code, out.Body)
+	runs, err := lit(api, book, where(t, doc, "Delta"))
+	if err != nil {
+		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
-	if said := out.Header().Get("Content-Type"); said != "application/json" {
-		t.Errorf("where the word is came back as %q", said)
+	if len(runs) != 1 {
+		t.Fatalf("one place was asked about and %d came back: %+v", len(runs), runs)
 	}
-	if said := out.Header().Get("Cache-Control"); said != "no-store" {
-		t.Errorf("where the word is is kept: %q", said)
-	}
-
-	var told covering
-	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-		t.Fatal(err)
-	}
-	if len(told.Runs) != 1 {
-		t.Fatalf("one place was asked about and %d came back: %+v", len(told.Runs), told.Runs)
-	}
-	marks := told.Runs[0].Marks
-	if len(marks) != 1 || marks[0].Page != 1 || len(marks[0].Rects) != 1 {
+	marks := runs[0].GetMarks()
+	if len(marks) != 1 || marks[0].GetPage() != 1 || len(marks[0].GetRects()) != 1 {
 		t.Fatalf("%q is on the second page and came back at %+v", "Delta", marks)
 	}
-	box := marks[0].Rects[0]
-	if box.MinX < 0 || box.MinY < 0 || box.MaxX > 1 || box.MaxY > 1 {
+	box := marks[0].GetRects()[0]
+	if box.GetMinX() < 0 || box.GetMinY() < 0 || box.GetMaxX() > 1 || box.GetMaxY() > 1 {
 		t.Errorf("%q is at %+v, which is off the page", "Delta", box)
 	}
-	if box.MinX >= box.MaxX || box.MinY >= box.MaxY {
+	if box.GetMinX() >= box.GetMaxX() || box.GetMinY() >= box.GetMaxY() {
 		t.Errorf("%q is at %+v, which is nothing at all", "Delta", box)
 	}
 }
@@ -123,15 +126,15 @@ func TestARunOfTheProseComesBackAsPagesAndRectangles(t *testing.T) {
 // A source the index does not hold is lit nowhere, and the window is told a
 // list of no pages.
 func TestASourceNothingIsKnownAboutComesBackWithNoPages(t *testing.T) {
-	api, handler, doc := placing(t)
+	api, _, doc := placing(t)
 	api.Highlight.Sources = indexed{}
 
-	out := ask(handler, where(t, doc, "Delta"))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked where a word is and got %d: %s", out.Code, out.Body)
+	runs, err := lit(api, book, where(t, doc, "Delta"))
+	if err != nil {
+		t.Fatalf("asked where a word is and was refused: %v", err)
 	}
-	if body := strings.TrimSpace(out.Body.String()); body != `{"runs":[]}` {
-		t.Errorf("a source nothing is known about came back as %s", body)
+	if len(runs) != 0 {
+		t.Errorf("a source nothing is known about came back as %+v", runs)
 	}
 }
 
@@ -146,11 +149,12 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		beside,
 	} {
 		t.Run(path, func(t *testing.T) {
-			_, handler, _ := placing(t)
+			api, _, _ := placing(t)
 
-			out := ask(handler, marksOf(path, 0, 5))
-			if out.Code != http.StatusNotFound {
-				t.Errorf("%s was answered %d, not %d", path, out.Code, http.StatusNotFound)
+			_, err := lit(api, path, &v1.Stretch{Start: 0, Length: 5})
+			if code := connect.CodeOf(err); code != connect.CodeNotFound &&
+				code != connect.CodeInvalidArgument {
+				t.Errorf("%s was refused %v", path, err)
 			}
 		})
 	}
@@ -158,20 +162,20 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 
 // A run that is not one is refused, and nothing is read to say so.
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
-	for _, query := range []string{
-		"start=0",
-		"length=5",
-		"start=-1&length=5",
-		"start=nowhere&length=5",
-		"start=0&length=0",
-		"start=0&length=none",
+	for _, one := range []struct {
+		what string
+		at   []*v1.Stretch
+	}{
+		{"no run at all", nil},
+		{"a place before the text", []*v1.Stretch{{Start: -1, Length: 5}}},
+		{"a run of nothing", []*v1.Stretch{{Start: 0, Length: 0}}},
+		{"a run longer than a book", []*v1.Stretch{{Start: 0, Length: longestRun + 1}}},
 	} {
-		t.Run(query, func(t *testing.T) {
-			_, handler, _ := placing(t)
+		t.Run(one.what, func(t *testing.T) {
+			api, _, _ := placing(t)
 
-			out := ask(handler, assetOf(book)+"/"+marksFacet+"?"+query)
-			if out.Code != http.StatusBadRequest {
-				t.Errorf("asking for %s was answered %d", query, out.Code)
+			if _, err := lit(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Errorf("asking about %s was refused %v", one.what, err)
 			}
 		})
 	}
@@ -180,11 +184,11 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 // A build with nothing to place a passage with says so, and the rest of the
 // window works as it did.
 func TestABuildThatCannotPlaceAPassageSaysSo(t *testing.T) {
-	api, handler, doc := placing(t)
+	api, _, doc := placing(t)
 	api.Highlight = nil
 
-	out := ask(handler, where(t, doc, "Delta"))
-	if out.Code != http.StatusNotImplemented {
-		t.Errorf("a build with nothing to place a passage with answered %d", out.Code)
+	_, err := lit(api, book, where(t, doc, "Delta"))
+	if connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Errorf("a build with nothing to place a passage with was refused %v", err)
 	}
 }

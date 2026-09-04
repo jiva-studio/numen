@@ -8,6 +8,7 @@ import { Code, createClient } from '@connectrpc/connect'
 import type { ConnectError } from '@connectrpc/connect'
 import {
   ArtifactService,
+  AssetService,
   CardsService,
   Counting as Countings,
   Fault as Faults,
@@ -28,8 +29,10 @@ import {
 } from '@numen/protocol'
 import type {
   Card as CardMessage,
+  Cue as CueMessage,
   Deck as DeckMessage,
   Entry as EntryMessage,
+  OnPage as OnPageMessage,
   Known as KnownMessage,
   Moved as MovedMessage,
   NeighbourhoodResponse as NeighbourhoodMessage,
@@ -98,6 +101,9 @@ const windowService = createClient(WindowService, transport)
 
 /** What a model has made from the files of the vault. */
 const artifacts = createClient(ArtifactService, transport)
+
+/** What the files of the vault are, for whatever opens one. */
+const assets = createClient(AssetService, transport)
 
 /** The window every question about a window names. */
 const WINDOW = 'editor'
@@ -446,20 +452,29 @@ export const core: Core & Asking & Commanding = {
  */
 export const documents: Documents = {
   shape: async (path) => {
-    const answer = await served(asset(path))
-    const said = (await answer.json()) as { pages?: number; sheets?: readonly Sheet[] }
-    return { pages: said.pages ?? 0, sheets: said.sheets ?? [] }
+    const answer = await waiting(() => assets.document({ path }))
+    return {
+      pages: answer.pages,
+      sheets: answer.sheets.map((one) => ({ wide: one.wide, high: one.high })),
+    }
   },
   page: (path, at, wide) => `${asset(path)}/pages/${at}?wide=${wide}`,
   highlights: async (path, stretches) => {
-    const where = stretches
-      .map((one) => `start=${one.start}&length=${one.length}`)
-      .join('&')
-    const answer = await served(`${asset(path)}/marks?${where}`)
-    const said = (await answer.json()) as { runs?: readonly { marks?: readonly Highlight[] }[] }
-    return stretches.map((_, i) => said.runs?.[i]?.marks ?? [])
+    const answer = await waiting(() => assets.marks({ path, at: [...stretches] }))
+    return stretches.map((_, i) => answer.runs[i]?.marks.map(marked) ?? [])
   },
 }
+
+/** Where a run of a source's text sits, as the window carries it. */
+const marked = (one: OnPageMessage): Highlight => ({
+  page: one.page,
+  rects: one.rects.map((box) => ({
+    minX: box.minX,
+    minY: box.minY,
+    maxX: box.maxX,
+    maxY: box.maxY,
+  })),
+})
 
 /**
  * The recordings the vault holds, over the same addresses. The player is given
@@ -468,39 +483,29 @@ export const documents: Documents = {
  */
 export const recordings: Recordings = {
   listened: async (path) => {
-    const answer = await served(asset(path))
-    const said = (await answer.json()) as {
-      length?: number
-      heard?: number
-      media?: string
-      type?: string
-    }
+    const answer = await waiting(() => assets.recording({ path }))
     return {
-      length: said.length ?? 0,
-      heard: said.heard ?? 0,
-      media: said.media ?? '',
-      type: said.type ?? '',
+      length: answer.length,
+      heard: answer.heard,
+      media: answer.media,
+      type: answer.type,
     }
   },
   cues: async (path) => {
-    const answer = await served(`${asset(path)}/cues`)
-    const said = (await answer.json()) as { cues?: readonly Cue[]; editable?: boolean }
-    return { cues: said.cues ?? [], editable: said.editable ?? true }
+    const answer = await waiting(() => artifacts.readTranscript({ path }))
+    return { cues: answer.cues.map(spoken), editable: answer.editable }
   },
   writes: async (path, cues) => {
-    await served(`${asset(path)}/cues`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, cues }),
-    })
+    await waiting(() => artifacts.writeTranscript({ path, cues: [...cues] }))
   },
   plays: async (path, stretch) => {
-    const where = `start=${stretch.start}&length=${stretch.length}`
-    const answer = await served(`${asset(path)}/cues?${where}`)
-    const said = (await answer.json()) as { cues?: readonly Cue[] }
-    return said.cues?.[0]?.from ?? null
+    const answer = await waiting(() => artifacts.readTranscript({ path, at: stretch }))
+    return answer.cues[0]?.from ?? null
   },
 }
+
+/** One stretch of speech, kept as the plain value the window carries it as. */
+const spoken = (one: CueMessage): Cue => ({ text: one.text, from: one.from, to: one.to })
 
 /**
  * What a model makes from one file of the vault, asked for by name. Which model
@@ -582,18 +587,21 @@ const asset = (path: string): string => `/assets/${encodeURIComponent(path)}`
 /** How often a document that is busy is waited out before it is a refusal. */
 const PATIENCE = 3
 
+/** How long the window waits before asking a busy document again. */
+const AGAIN = 1000
+
 /**
  * What the application answered. A document held by whoever is drawing from it
- * is asked for again, after the wait it names.
+ * says so, and is asked again after a wait.
  */
-const served = async (address: string, asking?: RequestInit): Promise<Response> => {
+const waiting = async <T>(ask: () => Promise<T>): Promise<T> => {
   for (let asked = 0; ; asked++) {
-    const answer = await fetch(address, asking)
-    if (answer.ok) return answer
-    if (answer.status !== 503 || asked >= PATIENCE) {
-      throw new Error((await answer.text()).trim() || `${answer.status}`)
+    try {
+      return await ask()
+    } catch (error) {
+      if (Code.Unavailable !== (error as ConnectError).code || asked >= PATIENCE) throw error
+      await sleep(AGAIN)
     }
-    await sleep(Number(answer.headers.get('Retry-After') ?? 1) * 1000)
   }
 }
 

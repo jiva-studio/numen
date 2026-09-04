@@ -70,7 +70,7 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 	held := whole(spoke())
 	held[derived.Corrected(listener, hashed)] = held[derived.Artifact(listener, hashed)]
 	held[derived.Beside(listener, hashed)] = []byte(`{"model":"parakeet"}`)
-	api, index, handler := dropper(t, held, heardBy())
+	api, index, _ := dropper(t, held, heardBy())
 
 	gone, err := dropping(api)
 	if err != nil {
@@ -96,8 +96,8 @@ func TestATranscriptDroppedTakesEverythingListeningProduced(t *testing.T) {
 		t.Errorf("the source was left with %d chunks of the words", len(wrote.Chunks))
 	}
 
-	if told := heard(t, handler); len(told.Cues) != 0 {
-		t.Errorf("the recording still says %+v", told.Cues)
+	if told := heard(t, api); len(told.GetCues()) != 0 {
+		t.Errorf("the recording still says %+v", told.GetCues())
 	}
 }
 

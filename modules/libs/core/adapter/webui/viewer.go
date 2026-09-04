@@ -3,7 +3,6 @@ package webui
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -13,6 +12,10 @@ import (
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
@@ -123,62 +126,49 @@ func (v *viewer) empty() {
 	v.drawn.Store(drawings())
 }
 
-// said is what the window is told a document is.
-type said struct {
-	Path  string `json:"path"`
-	Pages int    `json:"pages"`
-	// Sheets is how big each page is, in the page's own units. A window lays
-	// out the pages it has not drawn yet, so it needs their shape before it has
-	// their pixels, and a strip built on one guessed shape moves under the hand
-	// as the real ones arrive.
-	Sheets []sheet `json:"sheets"`
-}
-
-// A sheet is one page's size, in the page's own units.
-type sheet struct {
-	Wide float64 `json:"wide"`
-	High float64 `json:"high"`
-}
-
-// Document answers what the document at a path in the vault is.
-func (a *API) Document(w http.ResponseWriter, r *http.Request, path string) {
+// Document answers what the document at a path in the vault is: how many pages
+// it has, and how big each of them is in the page's own units.
+//
+// A window lays out the pages it has not drawn yet, so it needs their shape
+// before it has their pixels: a strip built on one guessed shape moves under
+// the hand as the real ones arrive.
+func (a *API) Document(
+	ctx context.Context,
+	r *connect.Request[v1.DocumentRequest],
+) (*connect.Response[v1.DocumentResponse], error) {
 	if a.Viewer == nil || a.Readers == nil {
-		refuse(w, errNoDrawing)
-		return
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoDrawing)
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), a.Viewer.patience)
+	ctx, cancel := context.WithTimeout(ctx, a.Viewer.patience)
 	defer cancel()
 
-	reader, print, err := a.standing(ctx, path)
+	reader, print, err := a.standing(ctx, r.Msg.GetPath())
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 	doc, give, err := a.opening(ctx, reader, print)
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 	defer give()
 
 	if !doc.hold(ctx) {
-		refuse(w, errBusy)
-		return
+		return nil, connect.NewError(connect.CodeUnavailable, errBusy)
 	}
-	told := said{Path: print.path, Pages: doc.scan.Pages()}
-	told.Sheets = make([]sheet, told.Pages)
-	for i := range told.Sheets {
+	out := &v1.DocumentResponse{Pages: int32(doc.scan.Pages())}
+	out.Sheets = make([]*v1.Sheet, out.Pages)
+	for i := range out.Sheets {
 		wide, high, err := doc.scan.Size(i)
 		if err != nil {
+			// A page whose size could not be read stands at nothing, and the
+			// pages after it are still where they were.
+			out.Sheets[i] = &v1.Sheet{}
 			continue
 		}
-		told.Sheets[i] = sheet{Wide: wide, High: high}
+		out.Sheets[i] = &v1.Sheet{Wide: wide, High: high}
 	}
 	doc.release()
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	json.NewEncoder(w).Encode(told)
+	return connect.NewResponse(out), nil
 }
 
 // Page answers with one page of a document, drawn as wide as was asked for.
@@ -371,7 +361,28 @@ func wanted(page string, query url.Values) (at, width int, err error) {
 	return at, width, nil
 }
 
-// refuse says why a document or a page is not coming.
+// refusedDrawing is the code a question about a document that could not be
+// answered is refused under.
+//
+// A document another reader holds is unavailable and not a failure: the caller
+// asks again. Everything else a caller can act on says which of its own doing
+// it was.
+func refusedDrawing(err error) connect.Code {
+	switch {
+	case errors.Is(err, errBusy):
+		return connect.CodeUnavailable
+	case errors.Is(err, errNoPage):
+		return connect.CodeNotFound
+	case errors.Is(err, port.ErrNotADocument), errors.Is(err, port.ErrEncrypted):
+		return connect.CodeFailedPrecondition
+	case errors.Is(err, errNoDrawing):
+		return connect.CodeUnimplemented
+	default:
+		return reaching(err)
+	}
+}
+
+// refuse says why a page is not coming.
 func refuse(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, errBusy):

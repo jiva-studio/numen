@@ -1,7 +1,6 @@
 package webui
 
 import (
-	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -13,6 +12,10 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/pdf"
@@ -186,20 +189,23 @@ func TestAPageComesBackDrawnAsWideAsWasAsked(t *testing.T) {
 // What a document is: how many pages it has, and what a person reading it would
 // call each one.
 func TestWhatADocumentIsIsHowManyPagesAndWhatEachIsCalled(t *testing.T) {
-	api, handler := drawnFrom(t, sheets(4))
+	api, _ := drawnFrom(t, sheets(4))
 	alone(api)
 
-	out := ask(handler, assetOf(book))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked what the document is and got %d: %s", out.Code, out.Body)
-	}
-	var told said
-	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-		t.Fatal(err)
-	}
-	if told.Path != book || told.Pages != 4 {
+	told := shaped(t, api)
+	if told.GetPages() != 4 || len(told.GetSheets()) != 4 {
 		t.Errorf("the document came back as %+v", told)
 	}
+}
+
+// shaped is what a document is, as the window is told it.
+func shaped(t *testing.T, api *API) *v1.DocumentResponse {
+	t.Helper()
+	out, err := api.Document(t.Context(), connect.NewRequest(&v1.DocumentRequest{Path: book}))
+	if err != nil {
+		t.Fatalf("asked what the document is and was refused: %v", err)
+	}
+	return out.Msg
 }
 
 // A path that leaves the vault is refused, and so is one the vault holds
@@ -487,17 +493,9 @@ func TestAPageOfARealDocumentComesBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, handler := fromTheLibrary(t, string(raw))
+	api, handler := fromTheLibrary(t, string(raw))
 
-	out := ask(handler, assetOf(book))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked what the document is and got %d: %s", out.Code, out.Body)
-	}
-	var told said
-	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-		t.Fatal(err)
-	}
-	if told.Pages < 1 {
+	if told := shaped(t, api); told.GetPages() < 1 {
 		t.Fatalf("the document came back as %+v", told)
 	}
 

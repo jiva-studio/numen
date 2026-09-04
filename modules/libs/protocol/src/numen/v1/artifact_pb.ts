@@ -11,13 +11,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Stretch } from "./vault_pb.js";
+import { file_numen_v1_vault } from "./vault_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/artifact.proto.
  */
 export const file_numen_v1_artifact: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiVQoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMiJAoUTGlzdEFydGlmYWN0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCSI+ChVMaXN0QXJ0aWZhY3RzUmVzcG9uc2USJQoJYXJ0aWZhY3RzGAEgAygLMhIubnVtZW4udjEuQXJ0aWZhY3QiOgoVQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAkSEwoLYXJ0aWZhY3RfaWQYAiABKAkiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IjoKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhMKC2FydGlmYWN0X2lkGAIgASgJIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzKNAgoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChdudW1lbi92MS9hcnRpZmFjdC5wcm90bxIIbnVtZW4udjEiVQoIQXJ0aWZhY3QSDAoEbmFtZRgBIAEoCRIeCgVzdGF0ZRgCIAEoDjIPLm51bWVuLnYxLlN0YXRlEg0KBWVycm9yGAMgASgJEgwKBHNpemUYBCABKAMiJAoUTGlzdEFydGlmYWN0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCSI+ChVMaXN0QXJ0aWZhY3RzUmVzcG9uc2USJQoJYXJ0aWZhY3RzGAEgAygLMhIubnVtZW4udjEuQXJ0aWZhY3QiOgoVQ3JlYXRlQXJ0aWZhY3RSZXF1ZXN0EgwKBHBhdGgYASABKAkSEwoLYXJ0aWZhY3RfaWQYAiABKAkiPgoWQ3JlYXRlQXJ0aWZhY3RSZXNwb25zZRIkCghhcnRpZmFjdBgBIAEoCzISLm51bWVuLnYxLkFydGlmYWN0IjoKFURlbGV0ZUFydGlmYWN0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhMKC2FydGlmYWN0X2lkGAIgASgJIj4KFkRlbGV0ZUFydGlmYWN0UmVzcG9uc2USJAoIYXJ0aWZhY3QYASABKAsyEi5udW1lbi52MS5BcnRpZmFjdCItCgNDdWUSDAoEdGV4dBgBIAEoCRIMCgRmcm9tGAIgASgFEgoKAnRvGAMgASgFIkQKFVJlYWRUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KAmF0GAIgASgLMhEubnVtZW4udjEuU3RyZXRjaCJHChZSZWFkVHJhbnNjcmlwdFJlc3BvbnNlEhsKBGN1ZXMYASADKAsyDS5udW1lbi52MS5DdWUSEAoIZWRpdGFibGUYAiABKAgiQwoWV3JpdGVUcmFuc2NyaXB0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhsKBGN1ZXMYAiADKAsyDS5udW1lbi52MS5DdWUiSAoXV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2USGwoEY3VlcxgBIAMoCzINLm51bWVuLnYxLkN1ZRIQCghlZGl0YWJsZRgCIAEoCCqZAQoFU3RhdGUSFQoRU1RBVEVfVU5TUEVDSUZJRUQQABIOCgpTVEFURV9OT05FEAESEAoMU1RBVEVfUVVFVUVEEAISEQoNU1RBVEVfUlVOTklORxADEhEKDVNUQVRFX1NUT1BQRUQQBBIOCgpTVEFURV9ET05FEAUSDwoLU1RBVEVfRU1QVFkQBhIQCgxTVEFURV9GQUlMRUQQBzK6AwoPQXJ0aWZhY3RTZXJ2aWNlElAKDUxpc3RBcnRpZmFjdHMSHi5udW1lbi52MS5MaXN0QXJ0aWZhY3RzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RBcnRpZmFjdHNSZXNwb25zZRJTCg5DcmVhdGVBcnRpZmFjdBIfLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVxdWVzdBogLm51bWVuLnYxLkNyZWF0ZUFydGlmYWN0UmVzcG9uc2USUwoORGVsZXRlQXJ0aWZhY3QSHy5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlcXVlc3QaIC5udW1lbi52MS5EZWxldGVBcnRpZmFjdFJlc3BvbnNlElMKDlJlYWRUcmFuc2NyaXB0Eh8ubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXF1ZXN0GiAubnVtZW4udjEuUmVhZFRyYW5zY3JpcHRSZXNwb25zZRJWCg9Xcml0ZVRyYW5zY3JpcHQSIC5udW1lbi52MS5Xcml0ZVRyYW5zY3JpcHRSZXF1ZXN0GiEubnVtZW4udjEuV3JpdGVUcmFuc2NyaXB0UmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9tb2R1bGVzL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_vault]);
 
 /**
  * An Artifact is one thing a model wrote about one file of the vault.
@@ -207,6 +209,153 @@ export const DeleteArtifactResponseSchema: GenMessage<DeleteArtifactResponse> = 
   messageDesc(file_numen_v1_artifact, 6);
 
 /**
+ * A Cue is one stretch of speech in a recording: what was said, and the
+ * milliseconds of the recording it spans.
+ *
+ * One cue stands on one line. A cue broken over two is two a client would offer
+ * to edit and one the recording would play.
+ *
+ * @generated from message numen.v1.Cue
+ */
+export type Cue = Message<"numen.v1.Cue"> & {
+  /**
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * @generated from field: int32 from = 2;
+   */
+  from: number;
+
+  /**
+   * @generated from field: int32 to = 3;
+   */
+  to: number;
+};
+
+/**
+ * Describes the message numen.v1.Cue.
+ * Use `create(CueSchema)` to create a new message.
+ */
+export const CueSchema: GenMessage<Cue> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 7);
+
+/**
+ * @generated from message numen.v1.ReadTranscriptRequest
+ */
+export type ReadTranscriptRequest = Message<"numen.v1.ReadTranscriptRequest"> & {
+  /**
+   * The recording, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The run of the recording's text to answer about, and nothing at all for the
+   * whole of it. It is a start and a length in the words, which is how a
+   * passage is addressed everywhere else, and what comes back is the speech
+   * those bytes were said in.
+   *
+   * @generated from field: numen.v1.Stretch at = 2;
+   */
+  at?: Stretch | undefined;
+};
+
+/**
+ * Describes the message numen.v1.ReadTranscriptRequest.
+ * Use `create(ReadTranscriptRequestSchema)` to create a new message.
+ */
+export const ReadTranscriptRequestSchema: GenMessage<ReadTranscriptRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 8);
+
+/**
+ * @generated from message numen.v1.ReadTranscriptResponse
+ */
+export type ReadTranscriptResponse = Message<"numen.v1.ReadTranscriptResponse"> & {
+  /**
+   * The words, in the order they were said.
+   *
+   * @generated from field: repeated numen.v1.Cue cues = 1;
+   */
+  cues: Cue[];
+
+  /**
+   * Whether they may be put right now. A run listening to the recording holds
+   * it, and a client draws what it reads and leaves it alone.
+   *
+   * @generated from field: bool editable = 2;
+   */
+  editable: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ReadTranscriptResponse.
+ * Use `create(ReadTranscriptResponseSchema)` to create a new message.
+ */
+export const ReadTranscriptResponseSchema: GenMessage<ReadTranscriptResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 9);
+
+/**
+ * @generated from message numen.v1.WriteTranscriptRequest
+ */
+export type WriteTranscriptRequest = Message<"numen.v1.WriteTranscriptRequest"> & {
+  /**
+   * The recording, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * The words as the person left them, against the milliseconds they were said
+   * in. A client that merged and split lines does the arithmetic.
+   *
+   * Speech runs forward: a cue ends no earlier than it begins, and begins after
+   * the one before it ends. A cue whose words trim away is dropped, and its
+   * timings still bound the cue after it. Words carrying nothing at all are
+   * refused: what was heard comes back by taking the corrections away, and
+   * writing nothing over the words would leave the recording saying nothing
+   * with nothing to edit.
+   *
+   * @generated from field: repeated numen.v1.Cue cues = 2;
+   */
+  cues: Cue[];
+};
+
+/**
+ * Describes the message numen.v1.WriteTranscriptRequest.
+ * Use `create(WriteTranscriptRequestSchema)` to create a new message.
+ */
+export const WriteTranscriptRequestSchema: GenMessage<WriteTranscriptRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 10);
+
+/**
+ * @generated from message numen.v1.WriteTranscriptResponse
+ */
+export type WriteTranscriptResponse = Message<"numen.v1.WriteTranscriptResponse"> & {
+  /**
+   * The words as they now stand.
+   *
+   * @generated from field: repeated numen.v1.Cue cues = 1;
+   */
+  cues: Cue[];
+
+  /**
+   * @generated from field: bool editable = 2;
+   */
+  editable: boolean;
+};
+
+/**
+ * Describes the message numen.v1.WriteTranscriptResponse.
+ * Use `create(WriteTranscriptResponseSchema)` to create a new message.
+ */
+export const WriteTranscriptResponseSchema: GenMessage<WriteTranscriptResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_artifact, 11);
+
+/**
  * State is what has become of one artifact.
  *
  * @generated from enum numen.v1.State
@@ -327,6 +476,35 @@ export const ArtifactService: GenService<{
     methodKind: "unary";
     input: typeof DeleteArtifactRequestSchema;
     output: typeof DeleteArtifactResponseSchema;
+  },
+  /**
+   * ReadTranscript is the words a recording was heard as, each stretch of
+   * speech against the milliseconds it was spoken in. A recording nothing has
+   * listened to holds no words, which is an answer.
+   *
+   * What comes back is the transcript as it now stands: the words a person put
+   * right, and what a model heard where nothing put them right.
+   *
+   * @generated from rpc numen.v1.ArtifactService.ReadTranscript
+   */
+  readTranscript: {
+    methodKind: "unary";
+    input: typeof ReadTranscriptRequestSchema;
+    output: typeof ReadTranscriptResponseSchema;
+  },
+  /**
+   * WriteTranscript writes the words of a recording as a person left them.
+   *
+   * What the model heard stays under its own name and the words as they now
+   * stand go beside it, so a transcript edited into nonsense is corrections
+   * that can be taken away and what was heard comes back.
+   *
+   * @generated from rpc numen.v1.ArtifactService.WriteTranscript
+   */
+  writeTranscript: {
+    methodKind: "unary";
+    input: typeof WriteTranscriptRequestSchema;
+    output: typeof WriteTranscriptResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_artifact, 0);

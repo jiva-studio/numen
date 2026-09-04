@@ -217,7 +217,11 @@ func seed(root string) error {
 // is served to any origin at all: a caller that reached it could otherwise set
 // models running over the person's books and take a transcript away.
 func withoutFiles(next http.Handler) http.Handler {
-	kept := []string{"/assets/", "/" + numenv1connect.ArtifactServiceName + "/"}
+	kept := []string{
+		"/assets/",
+		"/" + numenv1connect.AssetServiceName + "/",
+		"/" + numenv1connect.ArtifactServiceName + "/",
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, one := range kept {
 			if strings.HasPrefix(r.URL.EscapedPath(), one) {

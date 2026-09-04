@@ -6,6 +6,7 @@
  */
 export * from './src/numen/v1/vault_pb.js'
 export * from './src/numen/v1/artifact_pb.js'
+export * from './src/numen/v1/asset_pb.js'
 export * from './src/numen/v1/vaults_pb.js'
 export * from './src/numen/v1/settings_pb.js'
 export * from './src/numen/v1/window_pb.js'

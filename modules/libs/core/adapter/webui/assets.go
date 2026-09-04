@@ -7,28 +7,21 @@ import (
 	"strings"
 )
 
-// A file the vault holds is an asset, addressed as one: the collection, the
-// file, and what hangs off it.
+// A page of a document the vault holds is bytes, and bytes are what this route
+// answers:
 //
-//	GET /assets/<id>                          what it is
-//	GET /assets/<id>/pages/<n>?wide=W         one page, where it has any
-//	GET /assets/<id>/marks?start=N&length=M   where a run of its text sits
-//	GET /assets/<id>/cues                     the words heard in it
-//	PUT /assets/<id>/cues                     put the transcript right
+//	GET /assets/<id>/pages/<n>?wide=W   one page, drawn to that width
 //
 // The id is the file's path in the vault, escaped. A file has no other name the
 // window holds.
 //
-// What a model wrote about a file is not here: an artifact is a resource of the
-// schema, listed and made and taken away by name.
+// Nothing else of a file is here. What a file is, where a run of its text sits,
+// and what a model made from it are questions of the schema; a page is a
+// picture, and a picture is what an `img` loads.
 const assetsRoute = "/assets/"
 
-// The facets an asset offers.
-const (
-	pagesFacet = "pages"
-	marksFacet = "marks"
-	cuesFacet  = "cues"
-)
+// The one facet an asset offers.
+const pagesFacet = "pages"
 
 // An address is one question about one asset: which file, which facet, and what
 // the facet was named with.
@@ -65,38 +58,25 @@ func addressed(r *http.Request) (address, bool) {
 	return held, true
 }
 
-// Asset answers one question about one file of the vault.
+// Asset answers with the bytes of one page of one file of the vault.
 func (a *API) Asset(w http.ResponseWriter, r *http.Request) {
 	at, ok := addressed(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
 		return
 	}
-	switch at.facet {
-	case "":
-		a.About(w, r, at.path)
-	case pagesFacet:
-		a.Page(w, r, at.path, at.at)
-	case marksFacet:
-		a.Marks(w, r, at.path)
-	case cuesFacet:
-		a.Cues(w, r, at.path)
-	default:
-		http.Error(w, "an asset has no "+at.facet, http.StatusNotFound)
+	if at.facet != pagesFacet {
+		http.Error(w, "an asset answers with a page and nothing else", http.StatusNotFound)
+		return
 	}
+	a.Page(w, r, at.path, at.at)
 }
 
-// assetOf is where a file of the vault is asked about, and pageOf and marksOf
-// are its facets. A path is escaped whole, so a file in a folder is one segment
-// and what hangs off it is the next.
+// assetOf is where a file of the vault is drawn from, and pageOf one page of
+// it. A path is escaped whole, so a file in a folder is one segment and what
+// hangs off it is the next.
 func assetOf(path string) string { return assetsRoute + url.PathEscape(path) }
 
 func pageOf(path string, at, wide int) string {
 	return fmt.Sprintf("%s/%s/%d?wide=%d", assetOf(path), pagesFacet, at, wide)
 }
-
-func marksOf(path string, start, length int) string {
-	return fmt.Sprintf("%s/%s?start=%d&length=%d", assetOf(path), marksFacet, start, length)
-}
-
-func cuesOf(path string) string { return assetOf(path) + "/" + cuesFacet }

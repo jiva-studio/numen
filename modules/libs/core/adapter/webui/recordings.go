@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
@@ -35,201 +37,123 @@ var errNotHeard = errors.New("nothing has listened to this recording")
 // to the transcript, and what is being appended to is not edited underneath.
 var errBeingHeard = errors.New("this recording is being listened to")
 
-// listened is what the window is told a recording is: how far the words reach,
-// and how much of it a run has written down, both in milliseconds.
+// Recording answers what the recording at a path is: how far the words reach,
+// how much of it a run has written down, and where its bytes are played from.
 //
 // A recording nothing has listened to reaches nowhere, and the player it is
 // loaded into is what then says how long it runs.
-type listened struct {
-	Path   string `json:"path"`
-	Length int    `json:"length"`
-	Heard  int    `json:"heard"`
-	// Media is where the recording is played from, and Type is what it is
-	// played as. Both are answered here: the socket is opened afresh for every
-	// run, and what counts as a recording is this application's to say.
-	Media string `json:"media"`
-	Type  string `json:"type"`
-}
-
-// spoken is the transcript of a recording, in the order it was said.
-//
-// Editable says whether the words may be put right now. A run listening to the
-// recording holds it, and the window draws what it reads and leaves it alone.
-type spoken struct {
-	Path     string `json:"path"`
-	Cues     []cue  `json:"cues"`
-	Editable bool   `json:"editable"`
-}
-
-// putRight is a transcript as a person left it in the window: the recording it
-// belongs to, and the words against the milliseconds they were said in. The
-// window does the arithmetic for lines it merged and split.
-type putRight struct {
-	Path string `json:"path"`
-	Cues []cue  `json:"cues"`
-}
-
-// cue is one stretch of speech: what was said, and the milliseconds it spans.
-type cue struct {
-	Text string `json:"text"`
-	From int    `json:"from"`
-	To   int    `json:"to"`
-}
-
-// About answers what the file at a path is. A recording is how long it runs,
-// and every other file is a document and is answered with its pages.
-func (a *API) About(w http.ResponseWriter, r *http.Request, path string) {
-	ctx, cancel := context.WithTimeout(r.Context(), patience)
-	defer cancel()
-
-	showing, ref, err := a.held(ctx, path)
-	if err != nil || ref.Kind != domain.KindRecording {
-		a.Document(w, r, path)
-		return
+func (a *API) Recording(
+	ctx context.Context,
+	r *connect.Request[v1.RecordingRequest],
+) (*connect.Response[v1.RecordingResponse], error) {
+	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
+	if err != nil {
+		return nil, err
 	}
 	raw, err := a.transcript(ctx, showing, ref.Path)
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(reaching(err), err)
 	}
 	heard, _ := transcript.Reached(raw)
 	_, cues := transcript.Parse(raw)
-	told := listened{
-		Path:   ref.Path,
-		Length: heard,
-		Heard:  heard,
+	// Where a recording is played from and what it is played as are answered
+	// here: the socket is opened afresh for every run, and what counts as a
+	// recording is this application's to say.
+	out := &v1.RecordingResponse{
+		Length: int32(heard),
+		Heard:  int32(heard),
 		Media:  a.Playing.Address(showing, ref.Path),
 		Type:   domain.MediaType(ref.Path),
 	}
 	if len(cues) > 0 {
-		told.Length = max(told.Length, cues[len(cues)-1].To)
+		out.Length = max(out.Length, int32(cues[len(cues)-1].To))
 	}
-	answer(w, told)
+	return connect.NewResponse(out), nil
 }
 
-// Cues answers with the transcript of a recording, each stretch of speech
-// against the milliseconds it was spoken in. A recording nothing has listened to
-// holds no words, which is an answer.
-//
-// A PUT puts the transcript right. Taking the transcript away is taking away
-// what the recording was heard as, which is an artifact of the schema.
-func (a *API) Cues(w http.ResponseWriter, r *http.Request, path string) {
-	if r.Method == http.MethodPut {
-		a.PutRight(w, r, path)
-		return
-	}
+// ReadTranscript answers with the transcript of a recording, each stretch of
+// speech against the milliseconds it was spoken in. A recording nothing has
+// listened to holds no words, which is an answer.
+func (a *API) ReadTranscript(
+	ctx context.Context,
+	r *connect.Request[v1.ReadTranscriptRequest],
+) (*connect.Response[v1.ReadTranscriptResponse], error) {
 	if _, _, ok := a.hearing(); !ok {
-		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
-		return
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoHearing)
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), patience)
-	defer cancel()
-
-	showing, ref, err := a.held(ctx, path)
+	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
 	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if ref.Kind != domain.KindRecording {
-		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
-		return
+		return nil, err
 	}
 	said, store, listened, err := a.heard(ctx, showing, ref.Path)
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(reaching(err), err)
 	}
-	told := spoken{Path: ref.Path}
+
+	out := &v1.ReadTranscriptResponse{}
 	var raw []byte
 	if listened {
 		if raw, err = a.transcribed(ctx, store, said); err != nil {
-			refuse(w, err)
-			return
+			return nil, connect.NewError(reaching(err), err)
 		}
 		// Taken after the words, so a run that began while they were being read
-		// is one the window is told about.
-		told.Editable = free(ctx, store, derived.Partial(said.Producer, said.Hash))
+		// is one the caller is told about.
+		out.Editable = free(ctx, store, derived.Partial(said.Producer, said.Hash))
 	}
 	_, cues := transcript.Parse(raw)
-	cues, err = narrowed(r.URL.Query(), cues)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if at := r.Msg.GetAt(); at != nil {
+		cues, err = within(at)(cues)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
 	}
-
-	told.Cues = make([]cue, 0, len(cues))
-	for _, one := range cues {
-		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
-	}
-	answer(w, told)
+	out.Cues = spoken(cues)
+	return connect.NewResponse(out), nil
 }
 
-// PutRight writes the transcript of a recording as a person left it in the
-// window.
+// WriteTranscript writes the transcript of a recording as a person left it.
 //
 // What the model heard stays under its own name and the words as they now stand
-// go beside it, so a transcript edited into nonsense is a file that can be
-// deleted and what was heard comes back.
-func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
+// go beside it, so a transcript edited into nonsense is corrections that can be
+// taken away and what was heard comes back.
+func (a *API) WriteTranscript(
+	ctx context.Context,
+	r *connect.Request[v1.WriteTranscriptRequest],
+) (*connect.Response[v1.WriteTranscriptResponse], error) {
 	if _, _, ok := a.hearing(); !ok {
-		http.Error(w, errNoHearing.Error(), http.StatusNotImplemented)
-		return
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoHearing)
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), patience)
-	defer cancel()
-
-	var put putRight
-	if err := json.NewDecoder(r.Body).Decode(&put); err != nil {
-		http.Error(w, "this is not a transcript: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	if put.Path != path {
-		http.Error(w, "the transcript names "+put.Path+", which is not the recording it was sent to", http.StatusBadRequest)
-		return
-	}
-	cues, err := ordered(put.Cues)
+	cues, err := ordered(r.Msg.GetCues())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-
-	showing, ref, err := a.held(ctx, put.Path)
+	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
 	if err != nil {
-		refuse(w, err)
-		return
-	}
-	if ref.Kind != domain.KindRecording {
-		http.Error(w, errNotARecording.Error(), http.StatusNotFound)
-		return
+		return nil, err
 	}
 	said, store, listened, err := a.heard(ctx, showing, ref.Path)
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(reaching(err), err)
 	}
 	if !listened {
-		http.Error(w, errNotHeard.Error(), http.StatusNotFound)
-		return
+		return nil, connect.NewError(connect.CodeNotFound, errNotHeard)
 	}
 
 	// A run holds the recording it is listening to for as long as it takes, by
 	// the name it appends to.
 	release, err := store.Claim(ctx, derived.Partial(said.Producer, said.Hash))
 	if errors.Is(err, port.ErrClaimed) {
-		http.Error(w, errBeingHeard.Error(), http.StatusConflict)
-		return
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errBeingHeard)
 	}
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(reaching(err), err)
 	}
 	defer release()
 
 	// The words are a person's, and a proofreader leaves them alone.
 	written := append(transcript.Marshal(cues), transcript.Hand()...)
 	if err := store.Write(ctx, derived.Corrected(said.Producer, said.Hash), written); err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(reaching(err), err)
 	}
 
 	// The chunks in the index hold the words as they were heard, so the source
@@ -240,12 +164,35 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 			a.say(task.Task{ID: readingBooks, Doing: "Reading books", About: ref.Path, Failed: err.Error()})
 		}
 	}
+	return connect.NewResponse(&v1.WriteTranscriptResponse{
+		Cues: spoken(cues), Editable: true,
+	}), nil
+}
 
-	told := spoken{Path: ref.Path, Cues: make([]cue, 0, len(cues)), Editable: true}
-	for _, one := range cues {
-		told.Cues = append(told.Cues, cue{Text: one.Text, From: one.From, To: one.To})
+// recording is the vault the window is showing and the recording it holds at a
+// path. A file that is not one carries no transcript.
+func (a *API) recording(
+	ctx context.Context,
+	path string,
+) (domain.Vault, domain.Fingerprint, error) {
+	showing, ref, err := a.held(ctx, path)
+	if err != nil {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(reaching(err), err)
 	}
-	answer(w, told)
+	if ref.Kind != domain.KindRecording {
+		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(
+			connect.CodeInvalidArgument, errNotARecording)
+	}
+	return showing, ref, nil
+}
+
+// spoken is a transcript as a caller reads it.
+func spoken(cues []transcript.Cue) []*v1.Cue {
+	out := make([]*v1.Cue, 0, len(cues))
+	for _, one := range cues {
+		out = append(out, &v1.Cue{Text: one.Text, From: int32(one.From), To: int32(one.To)})
+	}
+	return out
 }
 
 // ordered is a transcript from the window as the cues it is written down as,
@@ -258,28 +205,29 @@ func (a *API) PutRight(w http.ResponseWriter, r *http.Request, path string) {
 // A transcript carrying no words at all is refused: what was heard comes back
 // by deleting the file beside it, and writing nothing over the words leaves the
 // recording saying nothing with nothing to edit.
-func ordered(cues []cue) ([]transcript.Cue, error) {
+func ordered(cues []*v1.Cue) ([]transcript.Cue, error) {
 	out := make([]transcript.Cue, 0, len(cues))
-	last := cue{From: -1, To: -1}
+	last := transcript.Cue{From: -1, To: -1}
 	for at, one := range cues {
+		from, to := int(one.GetFrom()), int(one.GetTo())
 		switch {
-		case one.From < 0 || one.To < one.From:
-			return nil, fmt.Errorf("cue %d: %d to %d is not a stretch of a recording", at, one.From, one.To)
-		case one.From < last.From:
-			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", at, one.From, last.From)
-		case one.From < last.To:
-			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, one.From, last.To)
-		case strings.ContainsAny(one.Text, "\r\n"):
+		case from < 0 || to < from:
+			return nil, fmt.Errorf("cue %d: %d to %d is not a stretch of a recording", at, from, to)
+		case from < last.From:
+			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", at, from, last.From)
+		case from < last.To:
+			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, from, last.To)
+		case strings.ContainsAny(one.GetText(), "\r\n"):
 			// One cue is one line of the transcript, and the window edits it as
 			// one. A cue broken over two lines is two the window would offer to
 			// edit and one the recording would play.
 			return nil, fmt.Errorf("cue %d: a cue stands on one line", at)
 		}
-		last = one
-		if strings.TrimSpace(one.Text) == "" {
+		last = transcript.Cue{Text: one.GetText(), From: from, To: to}
+		if strings.TrimSpace(one.GetText()) == "" {
 			continue
 		}
-		out = append(out, transcript.Cue{Text: one.Text, From: one.From, To: one.To})
+		out = append(out, last)
 	}
 	if len(out) == 0 {
 		return nil, errors.New("a transcript of no words is not one this recording was put right to")
@@ -287,26 +235,22 @@ func ordered(cues []cue) ([]transcript.Cue, error) {
 	return out, nil
 }
 
-// narrowed cuts the cues down to a run of the words, where the question named one.
-// A question naming none is about the whole transcript.
+// within cuts the cues down to the run of the words a request named.
 //
-// The run is a `start` and a `length` in the words, which is how a passage is
+// The run is a start and a length in the words, which is how a passage is
 // addressed everywhere else, and what comes back is the speech those bytes were
 // said in. A search hit is played from the first of them.
-func narrowed(query url.Values, cues []transcript.Cue) ([]transcript.Cue, error) {
-	at, wide := query.Get("start"), query.Get("length")
-	if at == "" && wide == "" {
-		return cues, nil
+func within(at *v1.Stretch) func([]transcript.Cue) ([]transcript.Cue, error) {
+	return func(cues []transcript.Cue) ([]transcript.Cue, error) {
+		start, length := int(at.GetStart()), int(at.GetLength())
+		if start < 0 {
+			return nil, fmt.Errorf("start: %d is not a place in the words", start)
+		}
+		if length <= 0 {
+			return nil, fmt.Errorf("length: %d is not a run of words", length)
+		}
+		return transcript.At(cues, start, length), nil
 	}
-	start, err := strconv.Atoi(at)
-	if err != nil || start < 0 {
-		return nil, fmt.Errorf("start: %q is not a place in the words", at)
-	}
-	length, err := strconv.Atoi(wide)
-	if err != nil || length <= 0 {
-		return nil, fmt.Errorf("length: %q is not a run of words", wide)
-	}
-	return transcript.At(cues, start, length), nil
 }
 
 // held is the vault the window is showing and what it holds at a path. It is

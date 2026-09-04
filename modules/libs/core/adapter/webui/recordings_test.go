@@ -2,15 +2,17 @@ package webui
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 	"testing"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -161,20 +163,14 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 		{"a run still going", partly(spoke(), 9100)},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			_, handler := listeningTo(t, one.held)
+			api, _ := listeningTo(t, one.held)
 
-			out := ask(handler, cuesOf(talk))
-			if out.Code != http.StatusOK {
-				t.Fatalf("asked what was heard and got %d: %s", out.Code, out.Body)
-			}
-			var told spoken
-			if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-				t.Fatal(err)
-			}
-			if told.Path != talk || len(told.Cues) != 2 {
+			told := heard(t, api)
+			if len(told.GetCues()) != 2 {
 				t.Fatalf("what was heard came back as %+v", told)
 			}
-			if first := told.Cues[0]; first.Text != "what was said" || first.From != 1500 || first.To != 4200 {
+			if first := told.GetCues()[0]; first.GetText() != "what was said" ||
+				first.GetFrom() != 1500 || first.GetTo() != 4200 {
 				t.Errorf("the first thing said came back as %+v", first)
 			}
 		})
@@ -184,18 +180,10 @@ func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 // A recording nobody has listened to holds no words, and is played all the
 // same.
 func TestARecordingNobodyHasListenedToHoldsNoWords(t *testing.T) {
-	api, handler := listeningTo(t, nil)
+	api, _ := listeningTo(t, nil)
 
-	out := ask(handler, cuesOf(talk))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked what was heard and got %d: %s", out.Code, out.Body)
-	}
-	var told spoken
-	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-		t.Fatal(err)
-	}
-	if len(told.Cues) != 0 {
-		t.Errorf("a recording nobody heard says %+v", told.Cues)
+	if told := heard(t, api); len(told.GetCues()) != 0 {
+		t.Errorf("a recording nobody heard says %+v", told.GetCues())
 	}
 	back, playing := played(t, api)
 	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
@@ -209,25 +197,24 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 	for _, one := range []struct {
 		what   string
 		held   stored
-		length int
-		heard  int
+		length int32
+		heard  int32
 	}{
 		{"nothing heard", nil, 0, 0},
 		{"a run that finished", whole(spoke()), 9100, 0},
 		{"a run still going", partly(spoke()[:1], 4200), 4200, 4200},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			_, handler := listeningTo(t, one.held)
+			api, _ := listeningTo(t, one.held)
 
-			out := ask(handler, assetOf(talk))
-			if out.Code != http.StatusOK {
-				t.Fatalf("asked what the recording is and got %d: %s", out.Code, out.Body)
+			out, err := api.Recording(t.Context(), connect.NewRequest(&v1.RecordingRequest{
+				Path: talk,
+			}))
+			if err != nil {
+				t.Fatalf("asked what the recording is and was refused: %v", err)
 			}
-			var told listened
-			if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-				t.Fatal(err)
-			}
-			if told.Path != talk || told.Length != one.length || told.Heard != one.heard {
+			told := out.Msg
+			if told.GetLength() != one.length || told.GetHeard() != one.heard {
 				t.Errorf("the recording came back as %+v, want %d long and %d heard",
 					told, one.length, one.heard)
 			}
@@ -236,13 +223,19 @@ func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 }
 
 // What was heard is a recording's. A document holds no words and is asked for
-// none.
+// none, and neither is a path the vault does not hold.
 func TestOnlyARecordingIsHeard(t *testing.T) {
-	_, handler := listeningTo(t, whole(spoke()))
+	api, _ := listeningTo(t, whole(spoke()))
 
-	for _, url := range []string{cuesOf(book), cuesOf("talks/none.mp3")} {
-		if out := ask(handler, url); out.Code != http.StatusNotFound {
-			t.Errorf("%s was answered %d", url, out.Code)
+	for path, want := range map[string]connect.Code{
+		book:             connect.CodeInvalidArgument,
+		"talks/none.mp3": connect.CodeNotFound,
+	} {
+		_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+			Path: path,
+		}))
+		if connect.CodeOf(err) != want {
+			t.Errorf("%s was refused %v", path, err)
 		}
 	}
 }
@@ -253,10 +246,13 @@ func TestABuildThatReadsNoTranscriptSaysSo(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := &API{Readers: filesystem.VaultReaders{}}
 	api.show(vault)
-	handler := api.Serving(http.NotFoundHandler())
+	_ = api.Serving(http.NotFoundHandler())
 
-	if out := ask(handler, cuesOf(talk)); out.Code != http.StatusNotImplemented {
-		t.Errorf("asked what was heard and got %d: %s", out.Code, out.Body)
+	_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+		Path: talk,
+	}))
+	if connect.CodeOf(err) != connect.CodeUnimplemented {
+		t.Errorf("asked what was heard and was refused %v", err)
 	}
 	back, playing := played(t, api)
 	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
@@ -264,37 +260,18 @@ func TestABuildThatReadsNoTranscriptSaysSo(t *testing.T) {
 	}
 }
 
-// A file of the vault is one part of its address, and what is asked of it is
-// the next.
-func TestARecordingsFacetsAreAddressed(t *testing.T) {
-	for _, one := range []struct {
-		url   string
-		facet string
-	}{
-		{cuesOf(talk), cuesFacet},
-	} {
-		got, ok := addressed(httptest.NewRequest(http.MethodGet, one.url, nil))
-		if !ok {
-			t.Fatalf("%s is not an address", one.url)
-		}
-		if got.path != talk || got.facet != one.facet {
-			t.Errorf("%s reads as %q/%q", one.url, got.path, got.facet)
-		}
-	}
-}
-
 // A question about a run of the words is answered with the speech those bytes
 // were said in, so a search hit is played from where it was said.
 func TestCuesNarrowToARunOfTheWords(t *testing.T) {
-	said := []transcript.Cue{
+	spoke := []transcript.Cue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},
 	}
-	_, cues := transcript.Parse(transcript.Marshal(said))
+	_, cues := transcript.Parse(transcript.Marshal(spoke))
 
 	// "second" begins after "first\n".
-	got, err := narrowed(url.Values{"start": {"6"}, "length": {"6"}}, cues)
+	got, err := within(&v1.Stretch{Start: 6, Length: 6})(cues)
 	if err != nil {
 		t.Fatalf("a run of the words was refused: %v", err)
 	}
@@ -302,13 +279,17 @@ func TestCuesNarrowToARunOfTheWords(t *testing.T) {
 		t.Errorf("the run was placed at %v", got)
 	}
 
-	whole, err := narrowed(url.Values{}, cues)
-	if err != nil || len(whole) != 3 {
-		t.Errorf("a question naming no run answered with %d cues (%v)", len(whole), err)
-	}
-
-	if _, err := narrowed(url.Values{"start": {"-1"}, "length": {"6"}}, cues); err == nil {
+	if _, err := within(&v1.Stretch{Start: -1, Length: 6})(cues); err == nil {
 		t.Errorf("a place before the words was taken")
+	}
+}
+
+// A question naming no run at all is about the whole transcript.
+func TestAQuestionNamingNoRunIsAboutTheWholeTranscript(t *testing.T) {
+	api, _ := listeningTo(t, whole(spoke()))
+
+	if told := heard(t, api); len(told.GetCues()) != 2 {
+		t.Errorf("the whole transcript came back as %+v", told.GetCues())
 	}
 }
 
@@ -328,34 +309,30 @@ func (h heldBy) Claim(ctx context.Context, name string) (func() error, error) {
 	return h.stored.Claim(ctx, name)
 }
 
-// putting sends a transcript to the window's own facet for one.
-func putting(handler http.Handler, body string) *httptest.ResponseRecorder {
-	out := httptest.NewRecorder()
-	handler.ServeHTTP(out, httptest.NewRequest(http.MethodPut, cuesOf(talk), strings.NewReader(body)))
-	return out
+// putting sends a transcript as the window sends one.
+func putting(api *API, cues ...*v1.Cue) error {
+	_, err := api.WriteTranscript(context.Background(), connect.NewRequest(&v1.WriteTranscriptRequest{
+		Path: talk, Cues: cues,
+	}))
+	return err
 }
 
-// edited is a transcript as the window sends one.
-func edited(cues ...cue) string {
-	body, err := json.Marshal(putRight{Path: talk, Cues: cues})
-	if err != nil {
-		panic(err)
-	}
-	return string(body)
+// cueOf is one cue as the window sends one.
+func cueOf(text string, from, to int32) *v1.Cue {
+	return &v1.Cue{Text: text, From: from, To: to}
 }
 
 // What a transcript was put right to is kept beside what was heard, and what
 // was heard stays where it is.
 func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 	held := whole(spoke())
-	_, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 
-	out := putting(handler, edited(
-		cue{Text: "what was said", From: 1500, To: 4200},
-		cue{Text: "what Rupa said next", From: 4200, To: 9100},
-	))
-	if out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api,
+		cueOf("what was said", 1500, 4200),
+		cueOf("what Rupa said next", 4200, 9100),
+	); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 
 	put, kept := held[derived.Corrected(listener, hashed)]
@@ -373,11 +350,10 @@ func TestATranscriptPutRightIsKeptBesideWhatWasHeard(t *testing.T) {
 // What a person wrote says so, so a proofreader leaves it alone.
 func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 	held := whole(spoke())
-	_, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 
-	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
-	if out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 	if !transcript.Written(held[derived.Corrected(listener, hashed)]) {
 		t.Errorf("the transcript does not say a person wrote it:\n%s", held[derived.Corrected(listener, hashed)])
@@ -387,7 +363,7 @@ func TestATranscriptAPersonWroteSaysSo(t *testing.T) {
 // The chunks in the index hold the words as they were heard, so a transcript
 // put right is a source asked for again.
 func TestATranscriptPutRightIsCutAgain(t *testing.T) {
-	api, handler := listeningTo(t, whole(spoke()))
+	api, _ := listeningTo(t, whole(spoke()))
 
 	var asked []string
 	runningBehind(api, func(on *showing) {
@@ -397,9 +373,8 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 		}
 	})
 
-	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
-	if out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api, cueOf("what was said", 1500, 4200)); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 	if len(asked) != 1 || asked[0] != talk {
 		t.Errorf("the sources cut again are %v", asked)
@@ -410,16 +385,15 @@ func TestATranscriptPutRightIsCutAgain(t *testing.T) {
 // is on disk either way.
 func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 	held := whole(spoke())
-	api, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 	runningBehind(api, func(on *showing) {
 		on.cut = func(context.Context, domain.Vault, string) error {
 			return errors.New("nothing is cutting")
 		}
 	})
 
-	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
-	if out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api, cueOf("what was said", 1500, 4200)); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 	if _, kept := held[derived.Corrected(listener, hashed)]; !kept {
 		t.Error("the correction was not kept")
@@ -430,36 +404,34 @@ func TestATranscriptStandsWhenItCannotBeCutAgain(t *testing.T) {
 // was put right to gives back what was heard.
 func TestATranscriptPutRightIsWhatTheWindowIsToldNext(t *testing.T) {
 	held := whole(spoke())
-	_, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 
-	if out := putting(handler, edited(
-		cue{Text: "what was said", From: 1500, To: 4200},
-		cue{Text: "what Rupa said next", From: 4200, To: 9100},
-	)); out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api,
+		cueOf("what was said", 1500, 4200),
+		cueOf("what Rupa said next", 4200, 9100),
+	); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
-	if told := heard(t, handler); told.Cues[1].Text != "what Rupa said next" {
-		t.Errorf("the window is told %+v", told.Cues)
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what Rupa said next" {
+		t.Errorf("the window is told %+v", told.GetCues())
 	}
 
 	delete(held, derived.Corrected(listener, hashed))
-	if told := heard(t, handler); told.Cues[1].Text != "what was said next" {
-		t.Errorf("what was heard did not come back: %+v", told.Cues)
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("what was heard did not come back: %+v", told.GetCues())
 	}
 }
 
 // heard is the transcript the window is told about.
-func heard(t *testing.T, handler http.Handler) spoken {
+func heard(t *testing.T, api *API) *v1.ReadTranscriptResponse {
 	t.Helper()
-	out := ask(handler, cuesOf(talk))
-	if out.Code != http.StatusOK {
-		t.Fatalf("asked what was heard and got %d: %s", out.Code, out.Body)
+	out, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
+		Path: talk,
+	}))
+	if err != nil {
+		t.Fatalf("asked what was heard and was refused: %v", err)
 	}
-	var told spoken
-	if err := json.NewDecoder(out.Body).Decode(&told); err != nil {
-		t.Fatal(err)
-	}
-	return told
+	return out.Msg
 }
 
 // Speech runs forward, and a transcript that says otherwise was not cut from a
@@ -467,37 +439,31 @@ func heard(t *testing.T, handler http.Handler) spoken {
 func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		what string
-		body string
+		cues []*v1.Cue
 	}{
-		{"a cue ending before it began", edited(cue{Text: "said", From: 4200, To: 1500})},
-		{"a cue before the one above it", edited(
-			cue{Text: "said", From: 4200, To: 9100},
-			cue{Text: "said next", From: 1500, To: 2000},
-		)},
-		{"a cue overlapping the one above it", edited(
-			cue{Text: "said", From: 1500, To: 4200},
-			cue{Text: "said next", From: 3000, To: 9100},
-		)},
-		{"a cue beginning before the recording", edited(cue{Text: "said", From: -1, To: 4200})},
-		{"bytes that are not a transcript", "{"},
-		{"a transcript of another recording", `{"path":"talks/other.mp3","cues":[]}`},
+		{"a cue ending before it began", []*v1.Cue{cueOf("said", 4200, 1500)}},
+		{"a cue before the one above it", []*v1.Cue{
+			cueOf("said", 4200, 9100),
+			cueOf("said next", 1500, 2000),
+		}},
+		{"a cue overlapping the one above it", []*v1.Cue{
+			cueOf("said", 1500, 4200),
+			cueOf("said next", 3000, 9100),
+		}},
+		{"a cue beginning before the recording", []*v1.Cue{cueOf("said", -1, 4200)}},
 		// One cue is one line, and the window edits it as one.
-		{"a cue broken over two lines", edited(
-			cue{Text: "said\nand said next", From: 1500, To: 4200},
-		)},
-		{"a cue carrying a carriage return", edited(
-			cue{Text: "said\rand said next", From: 1500, To: 4200},
-		)},
+		{"a cue broken over two lines", []*v1.Cue{cueOf("said\nand said next", 1500, 4200)}},
+		{"a cue carrying a carriage return", []*v1.Cue{cueOf("said\rand said next", 1500, 4200)}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			held := whole(spoke())
-			_, handler := listeningTo(t, held)
+			api, _ := listeningTo(t, held)
 
-			out := putting(handler, one.body)
-			if out.Code != http.StatusBadRequest {
-				t.Fatalf("the transcript was answered with %d: %s", out.Code, out.Body)
+			err := putting(api, one.cues...)
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("the transcript was answered with %v", err)
 			}
-			if strings.TrimSpace(out.Body.String()) == "" {
+			if err.Error() == "" {
 				t.Error("the transcript was refused without saying why")
 			}
 			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
@@ -510,14 +476,14 @@ func TestATranscriptThatRunsBackwardsIsRefused(t *testing.T) {
 // A cue whose words trim away is silence, and Marshal writes none.
 func TestACueWithNoWordsIsDropped(t *testing.T) {
 	held := whole(spoke())
-	_, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 
-	if out := putting(handler, edited(
-		cue{Text: "what was said", From: 1500, To: 4200},
-		cue{Text: "   ", From: 4200, To: 6000},
-		cue{Text: "what was said last", From: 6000, To: 9100},
-	)); out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api,
+		cueOf("what was said", 1500, 4200),
+		cueOf("   ", 4200, 6000),
+		cueOf("what was said last", 6000, 9100),
+	); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 	if _, cues := transcript.Parse(held[derived.Corrected(listener, hashed)]); len(cues) != 2 {
 		t.Errorf("the transcript was written down as %v", cues)
@@ -528,26 +494,26 @@ func TestACueWithNoWordsIsDropped(t *testing.T) {
 // underneath.
 func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) {
 	held := heldBy{stored: partly(spoke(), 9100), name: derived.Partial(listener, hashed)}
-	_, handler := windowOn(t, held)
+	api, _ := windowOn(t, held)
 
-	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
-	if out.Code != http.StatusConflict {
-		t.Fatalf("edited a recording being listened to and got %d: %s", out.Code, out.Body)
+	err := putting(api, cueOf("what was said", 1500, 4200))
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+		t.Fatalf("edited a recording being listened to and was refused %v", err)
 	}
 	if _, kept := held.stored[derived.Corrected(listener, hashed)]; kept {
 		t.Error("the transcript was written while a run held the recording")
 	}
 
-	if told := heard(t, handler); told.Editable {
+	if told := heard(t, api); told.GetEditable() {
 		t.Error("the window was told it may edit a transcript a run is writing")
 	}
 }
 
 // A transcript nothing is writing may be put right, and the window is told so.
 func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
-	_, handler := listeningTo(t, whole(spoke()))
+	api, _ := listeningTo(t, whole(spoke()))
 
-	if told := heard(t, handler); !told.Editable {
+	if told := heard(t, api); !told.GetEditable() {
 		t.Error("the window was told it may not edit a transcript nothing is writing")
 	}
 }
@@ -555,12 +521,12 @@ func TestTheWindowIsToldATranscriptMayBePutRight(t *testing.T) {
 // A recording nobody has listened to has no transcript to put right.
 func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 	held := stored{}
-	api, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 	api.Highlight.Sources = indexed{}
 
-	out := putting(handler, edited(cue{Text: "what was said", From: 1500, To: 4200}))
-	if out.Code != http.StatusNotFound {
-		t.Fatalf("put right a recording nothing heard and got %d: %s", out.Code, out.Body)
+	err := putting(api, cueOf("what was said", 1500, 4200))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("put right a recording nothing heard and was refused %v", err)
 	}
 	if len(held) != 0 {
 		t.Errorf("a transcript was written for a recording nothing heard: %v", held)
@@ -572,24 +538,24 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToPutRight(t *testing.T) {
 func TestATranscriptOfNoWordsIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		what string
-		body string
+		cues []*v1.Cue
 	}{
-		{"a transcript naming no cues", `{"path":"` + talk + `"}`},
-		{"a transcript of empty cues", edited(cue{Text: "  ", From: 1500, To: 4200})},
+		{"a transcript naming no cues", nil},
+		{"a transcript of empty cues", []*v1.Cue{cueOf("  ", 1500, 4200)}},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			held := whole(spoke())
-			_, handler := listeningTo(t, held)
+			api, _ := listeningTo(t, held)
 
-			out := putting(handler, one.body)
-			if out.Code != http.StatusBadRequest {
-				t.Fatalf("the transcript was answered with %d: %s", out.Code, out.Body)
+			err := putting(api, one.cues...)
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Fatalf("the transcript was answered with %v", err)
 			}
 			if _, kept := held[derived.Corrected(listener, hashed)]; kept {
 				t.Error("a transcript of no words was written over the recording")
 			}
-			if told := heard(t, handler); len(told.Cues) != 2 {
-				t.Errorf("the recording now says %+v", told.Cues)
+			if told := heard(t, api); len(told.GetCues()) != 2 {
+				t.Errorf("the recording now says %+v", told.GetCues())
 			}
 		})
 	}
@@ -626,7 +592,7 @@ func (s stating) Stat(ctx context.Context, path string) (domain.Fingerprint, err
 // there.
 func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 	held := whole(spoke())
-	api, handler := listeningTo(t, held)
+	api, _ := listeningTo(t, held)
 	standing := api.Showing()
 	elsewhere := testsupport.NewVault(t, map[string]string{talk: sound})
 
@@ -640,9 +606,8 @@ func TestATranscriptIsCutAgainInTheVaultItBelongsTo(t *testing.T) {
 		}
 	})
 
-	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
-	if out.Code != http.StatusOK {
-		t.Fatalf("put the transcript right and got %d: %s", out.Code, out.Body)
+	if err := putting(api, cueOf("what Rupa said", 1500, 4200)); err != nil {
+		t.Fatalf("put the transcript right and was refused: %v", err)
 	}
 	if len(cutIn) != 1 {
 		t.Fatalf("the recording was cut again in %v", cutIn)
@@ -671,7 +636,7 @@ func (r refusing) Write(ctx context.Context, name string, content []byte) error 
 // again from words that are not on disk.
 func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 	held := refusing{stored: whole(spoke()), why: errors.New("the disk is full")}
-	api, handler := windowOn(t, held)
+	api, _ := windowOn(t, held)
 
 	var asked []string
 	runningBehind(api, func(on *showing) {
@@ -681,14 +646,13 @@ func TestATranscriptThatCouldNotBeWrittenIsRefused(t *testing.T) {
 		}
 	})
 
-	out := putting(handler, edited(cue{Text: "what Rupa said", From: 1500, To: 4200}))
-	if out.Code == http.StatusOK {
-		t.Fatalf("a correction that was not written was answered %d: %s", out.Code, out.Body)
+	if err := putting(api, cueOf("what Rupa said", 1500, 4200)); err == nil {
+		t.Fatal("a correction that was not written was answered as one that was")
 	}
 	if len(asked) != 0 {
 		t.Errorf("the source was cut again from words nothing holds: %v", asked)
 	}
-	if told := heard(t, handler); told.Cues[1].Text != "what was said next" {
-		t.Errorf("the recording now says %+v", told.Cues)
+	if told := heard(t, api); told.GetCues()[1].GetText() != "what was said next" {
+		t.Errorf("the recording now says %+v", told.GetCues())
 	}
 }

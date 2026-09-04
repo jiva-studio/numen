@@ -2,12 +2,12 @@ package webui
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
-	"strconv"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
 	"github.com/jiva-studio/numen/modules/libs/core/highlight"
@@ -16,80 +16,50 @@ import (
 // errNoHighlight is what a build with nothing to place a passage with answers.
 var errNoHighlight = errors.New("this build cannot say where a passage is")
 
-// covering is what the window is told the runs of the prose cover, one entry per
-// run and in the order they were asked about.
-type covering struct {
-	Runs []covered `json:"runs"`
-}
-
-// covered is what one run covers.
-type covered struct {
-	Marks []onPage `json:"marks"`
-}
-
-// onPage is one page and what to light on it.
-type onPage struct {
-	Page  int    `json:"page"`
-	Rects []rect `json:"rects"`
-}
-
-// rect is a place on a page, in fractions of it, so a page drawn at any size
-// lines up by multiplying.
-type rect struct {
-	MinX float32 `json:"minX"`
-	MinY float32 `json:"minY"`
-	MaxX float32 `json:"maxX"`
-	MaxY float32 `json:"maxY"`
-}
-
-// Marks answers where a run of a source's text sits: the pages it falls on and,
+// Marks answers where runs of a source's text sit: the pages each falls on and,
 // on each, the rectangles covering it.
-func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
+func (a *API) Marks(
+	ctx context.Context,
+	r *connect.Request[v1.MarksRequest],
+) (*connect.Response[v1.MarksResponse], error) {
 	if a.Highlight == nil {
-		http.Error(w, errNoHighlight.Error(), http.StatusNotImplemented)
-		return
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoHighlight)
 	}
 	showing := a.Showing()
 	if showing.ID == "" {
-		refuse(w, errNoVault)
-		return
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	runs, err := places(r.URL.Query())
+	runs, err := places(r.Msg.GetAt())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
 	// A reading is read off the disk, and a layer is asked of the document,
-	// which waits for one of the pool. A window is answered or told to ask
+	// which waits for one of the pool. A caller is answered or told to ask
 	// again; it is not held while a recognition has every worker.
-	ctx, cancel := context.WithTimeout(r.Context(), patience)
+	ctx, cancel := context.WithTimeout(ctx, patience)
 	defer cancel()
 
-	found, err := a.Highlight.Execute(ctx, showing, path, runs)
+	found, err := a.Highlight.Execute(ctx, showing, r.Msg.GetPath(), runs)
 	if err != nil {
-		refuse(w, err)
-		return
+		return nil, connect.NewError(refusedDrawing(err), err)
 	}
 
-	told := covering{Runs: make([]covered, 0, len(found))}
+	out := &v1.MarksResponse{Runs: make([]*v1.Covered, 0, len(found))}
 	for _, pages := range found {
-		one := covered{Marks: make([]onPage, 0, len(pages))}
+		one := &v1.Covered{Marks: make([]*v1.OnPage, 0, len(pages))}
 		for _, page := range pages {
-			marks := onPage{Page: page.Index, Rects: make([]rect, 0, len(page.Rects))}
+			marks := &v1.OnPage{Page: int32(page.Index), Rects: make([]*v1.Rect, 0, len(page.Rects))}
 			for _, box := range page.Rects {
-				marks.Rects = append(marks.Rects, rect{
+				marks.Rects = append(marks.Rects, &v1.Rect{
 					MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY,
 				})
 			}
 			one.Marks = append(one.Marks, marks)
 		}
-		told.Runs = append(told.Runs, one)
+		out.Runs = append(out.Runs, one)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	json.NewEncoder(w).Encode(told)
+	return connect.NewResponse(out), nil
 }
 
 // longestRun is the most text one question about a place may cover. A passage
@@ -97,25 +67,20 @@ func (a *API) Marks(w http.ResponseWriter, r *http.Request, path string) {
 // one page at a time.
 const longestRun = 100_000
 
-// places is which parts of the source's text the window is asking about: a
-// `start` and a `length` for each of them, paired in the order they are given.
-func places(query url.Values) ([]highlight.Stretch, error) {
-	starts, lengths := query["start"], query["length"]
-	if len(starts) != len(lengths) {
-		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
+// places is which parts of the source's text a caller is asking about, in the
+// order they were asked about.
+func places(at []*v1.Stretch) ([]highlight.Stretch, error) {
+	if len(at) == 0 || len(at) > domain.MostLit {
+		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(at))
 	}
-	if len(starts) == 0 || len(starts) > domain.MostLit {
-		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(starts))
-	}
-	runs := make([]highlight.Stretch, 0, len(starts))
-	for i, at := range starts {
-		start, err := strconv.Atoi(at)
-		if err != nil || start < 0 {
-			return nil, fmt.Errorf("start: %q is not a place in the text", at)
+	runs := make([]highlight.Stretch, 0, len(at))
+	for _, one := range at {
+		start, length := int(one.GetStart()), int(one.GetLength())
+		if start < 0 {
+			return nil, fmt.Errorf("start: %d is not a place in the text", start)
 		}
-		length, err := strconv.Atoi(lengths[i])
-		if err != nil || length < 1 || length > longestRun {
-			return nil, fmt.Errorf("length: %q is not a run of the text", lengths[i])
+		if length < 1 || length > longestRun {
+			return nil, fmt.Errorf("length: %d is not a run of the text", length)
 		}
 		runs = append(runs, highlight.Stretch{Start: start, Length: length})
 	}

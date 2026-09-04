@@ -8,6 +8,8 @@ syntax = "proto3";
 // under a name of the application's own.
 package numen.v1;
 
+import "numen/v1/vault.proto";
+
 option go_package = "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1";
 
 // ArtifactService answers what has been made from a file of the vault, makes
@@ -33,6 +35,21 @@ service ArtifactService {
   // DeleteArtifact takes one away, with everything cut from it. The file stands
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
+
+  // ReadTranscript is the words a recording was heard as, each stretch of
+  // speech against the milliseconds it was spoken in. A recording nothing has
+  // listened to holds no words, which is an answer.
+  //
+  // What comes back is the transcript as it now stands: the words a person put
+  // right, and what a model heard where nothing put them right.
+  rpc ReadTranscript(ReadTranscriptRequest) returns (ReadTranscriptResponse);
+
+  // WriteTranscript writes the words of a recording as a person left them.
+  //
+  // What the model heard stays under its own name and the words as they now
+  // stand go beside it, so a transcript edited into nonsense is corrections
+  // that can be taken away and what was heard comes back.
+  rpc WriteTranscript(WriteTranscriptRequest) returns (WriteTranscriptResponse);
 }
 
 // An Artifact is one thing a model wrote about one file of the vault.
@@ -134,4 +151,57 @@ message DeleteArtifactRequest {
 message DeleteArtifactResponse {
   // The artifact as it now stands, which is nothing.
   Artifact artifact = 1;
+}
+
+// A Cue is one stretch of speech in a recording: what was said, and the
+// milliseconds of the recording it spans.
+//
+// One cue stands on one line. A cue broken over two is two a client would offer
+// to edit and one the recording would play.
+message Cue {
+  string text = 1;
+  int32 from = 2;
+  int32 to = 3;
+}
+
+message ReadTranscriptRequest {
+  // The recording, as the vault holds it.
+  string path = 1;
+
+  // The run of the recording's text to answer about, and nothing at all for the
+  // whole of it. It is a start and a length in the words, which is how a
+  // passage is addressed everywhere else, and what comes back is the speech
+  // those bytes were said in.
+  Stretch at = 2;
+}
+
+message ReadTranscriptResponse {
+  // The words, in the order they were said.
+  repeated Cue cues = 1;
+
+  // Whether they may be put right now. A run listening to the recording holds
+  // it, and a client draws what it reads and leaves it alone.
+  bool editable = 2;
+}
+
+message WriteTranscriptRequest {
+  // The recording, as the vault holds it.
+  string path = 1;
+
+  // The words as the person left them, against the milliseconds they were said
+  // in. A client that merged and split lines does the arithmetic.
+  //
+  // Speech runs forward: a cue ends no earlier than it begins, and begins after
+  // the one before it ends. A cue whose words trim away is dropped, and its
+  // timings still bound the cue after it. Words carrying nothing at all are
+  // refused: what was heard comes back by taking the corrections away, and
+  // writing nothing over the words would leave the recording saying nothing
+  // with nothing to edit.
+  repeated Cue cues = 2;
+}
+
+message WriteTranscriptResponse {
+  // The words as they now stand.
+  repeated Cue cues = 1;
+  bool editable = 2;
 }
