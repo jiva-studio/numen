@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { COMPOSER_STATES, composerState, keyIntent, said } from './model'
+import { COMPOSER_STATES, composerState, keyIntent, said } from './state'
 
 const press = (over: Partial<Parameters<typeof keyIntent>[0]> = {}) => ({
   key: 'Enter',

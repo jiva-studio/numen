@@ -18,7 +18,7 @@ import {
   stepIn,
   type ActionWords,
   type PaletteAction,
-} from './model'
+} from './item'
 
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */

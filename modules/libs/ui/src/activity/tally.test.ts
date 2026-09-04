@@ -8,7 +8,7 @@ import {
   shareOf,
   sizeWord,
   tallyWord,
-} from './model'
+} from './tally'
 
 describe('shareOf', () => {
   it.each([

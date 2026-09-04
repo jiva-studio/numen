@@ -35,7 +35,7 @@ import {
   threadOf,
   type Drop,
 } from '../arrange'
-import type { MenuOpening } from '../../menu/model'
+import type { MenuOpening } from '../../menu/item'
 
 const props = withDefaults(
   defineProps<{

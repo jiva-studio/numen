@@ -11,7 +11,7 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Prose from '../prose/Prose.vue'
 import Tool from '../tool/Tool.vue'
 import { atFoot, footOf } from './foot'
-import { placeTurns, type PlacedTurn, type Turn } from './model'
+import { placeTurns, type PlacedTurn, type Turn } from './turn'
 
 const props = defineProps<{
   turns: readonly Turn[]

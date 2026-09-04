@@ -6,7 +6,7 @@
  * business of the thing around it, which knows how tall it is allowed to get.
  */
 import { useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 
 const props = defineProps<{ class?: HTMLAttributes['class'] }>()
 

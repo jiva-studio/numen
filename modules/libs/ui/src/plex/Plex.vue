@@ -37,7 +37,7 @@ import {
 import { resolveOptions } from './arrange'
 import { usePlexCarry } from './carry'
 import { usePlexGesture } from './gesture'
-import type { MenuOpening } from '../menu/model'
+import type { MenuOpening } from '../menu/item'
 
 const props = withDefaults(
   defineProps<{

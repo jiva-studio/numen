@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import Waiting from '../waiting/Waiting.vue'
-import { activity, percentWord, type Tally, type Tone } from './model'
+import { activity, percentWord, type Tally, type Tone } from './tally'
 
 const props = withDefaults(
   defineProps<{

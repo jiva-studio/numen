@@ -7,7 +7,7 @@
  * at half an hour, or at nothing, hands nothing on and is left where it stands.
  */
 import { computed, useTemplateRef, type HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { onTheClock } from './clock'
 
 const props = withDefaults(

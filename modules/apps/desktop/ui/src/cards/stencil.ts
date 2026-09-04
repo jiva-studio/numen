@@ -35,7 +35,7 @@ import {
   sheetOf,
   type Marks,
   type Sheet,
-} from './model'
+} from './body'
 import { WORDS as words } from './words'
 
 /** What the vault said about one file the last time it was read or written. */

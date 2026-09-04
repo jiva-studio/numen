@@ -2,7 +2,7 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import { rateOf, type Counting, type Tone } from '../activity/model'
+import { rateOf, type Counting, type Tone } from '../activity/tally'
 
 export type { Tone }
 

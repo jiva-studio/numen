@@ -11,7 +11,7 @@
 import { computed, nextTick, ref, useTemplateRef, watch, watchEffect } from 'vue'
 import Activity from '../activity/Activity.vue'
 import Announce from './Announce.vue'
-import { remainingWord } from '../activity/model'
+import { remainingWord } from '../activity/tally'
 import { useAnnouncer } from './announcing'
 import { useHeld } from './held'
 import {
@@ -28,7 +28,7 @@ import {
   WAIT,
   type Movement,
   type Notice,
-} from './model'
+} from './notice'
 
 const props = withDefaults(
   defineProps<{

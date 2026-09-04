@@ -9,7 +9,7 @@
  */
 import type { HTMLAttributes } from 'vue'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { type SegmentedChoice } from '.'
 
 const props = withDefaults(

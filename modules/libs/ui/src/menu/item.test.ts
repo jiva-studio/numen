@@ -4,7 +4,7 @@
  * area it has to fit in.
  */
 import { describe, expect, it } from 'vitest'
-import { banded, landsOn, placeMenu, stepTo, type MenuItem } from './model'
+import { banded, landsOn, placeMenu, stepTo, type MenuItem } from './item'
 
 const VIEWPORT = { width: 1000, height: 800 }
 const SIZE = { width: 200, height: 300 }

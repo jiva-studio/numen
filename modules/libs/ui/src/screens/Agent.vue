@@ -9,7 +9,7 @@
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import Thread from '../thread/Thread.vue'
 import Composer from '../composer/Composer.vue'
-import type { Turn } from '../thread/model'
+import type { Turn } from '../thread/turn'
 
 withDefaults(
   defineProps<{

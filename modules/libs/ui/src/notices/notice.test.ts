@@ -16,7 +16,7 @@ import {
   tallyOf,
   type Movement,
   type Notice,
-} from './model'
+} from './notice'
 
 const one = (over: Partial<Notice> = {}): Notice => ({
   id: 'embedding',

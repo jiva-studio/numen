@@ -39,7 +39,7 @@ import {
   standingIn,
   type Deck,
   type Sheet,
-} from './model'
+} from './body'
 
 /** Identities counted out, so a test names the card it means. */
 const minting = () => {

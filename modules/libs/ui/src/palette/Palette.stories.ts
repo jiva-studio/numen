@@ -10,7 +10,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
 import { AudioLines, BookOpen, FileText, Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import Palette from './Palette.vue'
-import { keyChord, type PaletteBand, type PaletteSpan } from './model'
+import { keyChord, type PaletteBand, type PaletteSpan } from './item'
 import {
   ARABIC,
   DEVANAGARI,

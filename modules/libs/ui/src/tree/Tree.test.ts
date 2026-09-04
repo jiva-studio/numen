@@ -8,7 +8,7 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
-import type { Row } from './model'
+import type { Row } from './row'
 import { stubEnvironment } from '../fixtures/clock'
 import type { Environment } from '../lib/environment'
 

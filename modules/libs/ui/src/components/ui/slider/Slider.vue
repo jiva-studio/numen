@@ -9,7 +9,7 @@
  */
 import { computed, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { clamped, walked, walks, type Bounds } from './track'
 
 defineOptions({ inheritAttrs: false })

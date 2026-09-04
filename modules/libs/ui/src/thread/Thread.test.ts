@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Thread from './Thread.vue'
-import type { Turn } from './model'
+import type { Turn } from './turn'
 
 const said = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }

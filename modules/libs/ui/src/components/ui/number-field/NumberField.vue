@@ -7,7 +7,7 @@
  * once the field is left. Bounds that move under the number bring it in.
  */
 import { computed, nextTick, ref, useTemplateRef, watch, type HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import {
   allowed,
   clamped,

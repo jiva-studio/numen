@@ -6,7 +6,7 @@
  * not.
  */
 import type { Component } from 'vue'
-import type { PaletteKeys } from '../palette/model'
+import type { PaletteKeys } from '../palette/item'
 
 /** One way in: what it is called, what draws it, and the keystroke that reaches it. */
 export interface Way {

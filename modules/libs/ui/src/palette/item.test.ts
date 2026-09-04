@@ -27,7 +27,7 @@ import {
   stepTo,
   type PaletteItem,
   type PaletteBand,
-} from './model'
+} from './item'
 import { MANY } from './fixtures/actions'
 
 const OPEN = [{ id: 'open', text: 'Open' }]

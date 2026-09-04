@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
 import Tree from './Tree.vue'
-import type { Landing, Row, RowId } from './model'
+import type { Landing, Row, RowId } from './row'
 
 /** A row taken out of wherever it stands. */
 const without = (rows: readonly Row[], id: RowId): readonly Row[] =>

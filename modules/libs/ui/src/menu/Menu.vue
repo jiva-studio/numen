@@ -8,7 +8,7 @@
  * one does are the caller's.
  */
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './model'
+import { banded, landsOn, placeMenu, stepTo, type MenuItem, type MenuOpening } from './item'
 import type { Point, Size } from '../lib/geometry'
 
 const props = withDefaults(

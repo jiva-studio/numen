@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ICONS } from './icons'
-import type { PaletteIcon } from './model'
+import type { PaletteIcon } from './item'
 
 const EVERY = Object.entries(ICONS) as readonly [PaletteIcon, (typeof ICONS)[PaletteIcon]][]
 

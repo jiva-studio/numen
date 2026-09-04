@@ -15,7 +15,7 @@ import { branch, pane, type Tab, type Workspace as State } from '@/workspace/mod
 import { neighbourhoods } from '@/plex/fixtures/neighbourhoods'
 import { LONG, MULTILINE } from '@/fixtures/prose'
 import type { PlexNeighbourhood } from '@/plex/model'
-import type { Turn } from '@/thread/model'
+import type { Turn } from '@/thread/turn'
 
 const PLEX = 'plex'
 const AGENT = 'agent'

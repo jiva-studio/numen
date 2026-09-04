@@ -29,7 +29,7 @@ import {
   type Row,
   type RowId,
   type ShownRow,
-} from './model'
+} from './row'
 import type { Point } from '../lib/geometry'
 import { browserEnvironment, type Environment } from '../lib/environment'
 import CarriedLabel from '../press/CarriedLabel.vue'

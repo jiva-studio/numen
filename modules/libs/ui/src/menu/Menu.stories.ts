@@ -9,7 +9,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, ref, type Component } from 'vue'
 import { Copy, CornerDownRight, FileText } from '@lucide/vue'
 import Menu from './Menu.vue'
-import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './model'
+import { MENU_OPENINGS_ALL, type MenuItem, type MenuOpening } from './item'
 import { ARABIC, DEVANAGARI, EMPTY, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
 interface Knobs {

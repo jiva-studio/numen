@@ -27,7 +27,7 @@ import { byDoubleClick, joined, type Showing } from '../showing'
 import type { HungParts } from '../inside'
 import { lerp } from '../arrange'
 import { browserEnvironment, type Environment } from '../transition'
-import type { MenuOpening } from '../../menu/model'
+import type { MenuOpening } from '../../menu/item'
 import {
   handleIn,
   isReachable,

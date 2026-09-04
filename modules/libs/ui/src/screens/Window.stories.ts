@@ -31,22 +31,22 @@ import Palette from '@/palette/Palette.vue'
 import Reader from '@/reader/Reader.vue'
 import Tree from '@/tree/Tree.vue'
 import Menu from '@/menu/Menu.vue'
-import type { MenuItem } from '@/menu/model'
+import type { MenuItem } from '@/menu/item'
 import Agent from './Agent.vue'
 import { branch, pane, type Tab, type Workspace as State } from '@/workspace/model'
-import { keyChord } from '@/palette/model'
+import { keyChord } from '@/palette/item'
 import type {
   PaletteAction,
   PaletteBand,
   PaletteItem,
   PaletteKeys,
   PaletteSpan,
-} from '@/palette/model'
+} from '@/palette/item'
 import type { PlexPart } from '@/plex/inside'
 import { RELATED_SEATS } from '@/plex/model'
 import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelatedSeat } from '@/plex/model'
-import type { Row } from '@/tree/model'
-import type { Turn } from '@/thread/model'
+import type { Row } from '@/tree/row'
+import type { Turn } from '@/thread/turn'
 import { hovered } from '@/fixtures/colour'
 
 const PLEX = 'plex'

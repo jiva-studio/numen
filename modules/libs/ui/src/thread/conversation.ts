@@ -8,7 +8,7 @@
  * them all as one.
  */
 import { ref, type Ref } from 'vue'
-import { charsWord, type Turn } from './model'
+import { charsWord, type Turn } from './turn'
 import type { AgentPort, Place } from './agent'
 
 /** The words the panel puts up itself. */

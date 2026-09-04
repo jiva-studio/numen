@@ -8,7 +8,7 @@
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
 import { Primitive } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import { buttonVariants, type ButtonVariants } from '.'
 
 const props = withDefaults(

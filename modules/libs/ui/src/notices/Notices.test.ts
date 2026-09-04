@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Notices from './Notices.vue'
-import { SETTLE, type Notice } from './model'
+import { SETTLE, type Notice } from './notice'
 
 /** A clock a test winds by hand, so nothing waits on the real one. */
 function wound(at = 0) {

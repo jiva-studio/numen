@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { placeTurns, VOICES, type Turn } from './model'
+import { placeTurns, VOICES, type Turn } from './turn'
 
 const said = (id: string, text = 'said', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }

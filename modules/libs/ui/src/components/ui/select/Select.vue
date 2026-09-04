@@ -8,9 +8,9 @@
  */
 import { computed, ref, useTemplateRef, type HTMLAttributes } from 'vue'
 import { ChevronDown } from '@lucide/vue'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import Menu from '../../../menu/Menu.vue'
-import type { MenuItem } from '../../../menu/model'
+import type { MenuItem } from '../../../menu/item'
 import type { Point } from '../../../lib/geometry'
 import type { SelectChoice } from '.'
 

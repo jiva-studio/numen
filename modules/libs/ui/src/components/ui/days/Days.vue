@@ -8,7 +8,7 @@
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
 import { RovingFocusGroup, RovingFocusItem } from 'reka-ui'
-import { cn } from '@/lib/utils'
+import { cn } from '@/classes'
 import Menu from '@/menu/Menu.vue'
 import type { Point } from '@/plex/model'
 import { filled, offering, percent, type Day } from './week'

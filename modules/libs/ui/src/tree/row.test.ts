@@ -23,7 +23,7 @@ import {
   type Press,
   type Row,
   type RowId,
-} from './model'
+} from './row'
 
 const ROWS: readonly Row[] = [
   {

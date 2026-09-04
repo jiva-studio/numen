@@ -12,14 +12,14 @@ export { browserEnvironment } from './plex/transition'
 export { countOf, isStop, seatWord, showingOf, SEATS, SHOWINGS } from './plex/model'
 
 export { default as Menu } from './menu/Menu.vue'
-export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/model'
+export { banded, landsOn, placeMenu, stepTo, MENU_OPENINGS } from './menu/item'
 export type {
   BandedItem,
   MenuItem,
   MenuOpening,
   MenuPlacement,
   MenuPlacing,
-} from './menu/model'
+} from './menu/item'
 
 export { Button, buttonVariants } from './components/ui/button'
 export type { ButtonVariants } from './components/ui/button'
@@ -70,7 +70,7 @@ export type { Held, Offer, Way } from './welcome/welcome'
 
 export { default as Palette } from './palette/Palette.vue'
 export { default as KeyCap } from './palette/KeyCap.vue'
-export { commandKeyChord, keyChord, overlayIcon, ACTION_WORDS } from './palette/model'
+export { commandKeyChord, keyChord, overlayIcon, ACTION_WORDS } from './palette/item'
 export type {
   ActionWords,
   PaletteAction,
@@ -81,7 +81,7 @@ export type {
   PalettePart,
   PaletteBand,
   PaletteSpan,
-} from './palette/model'
+} from './palette/item'
 
 /** For arranging without drawing, or drawing without this renderer. */
 export { default as PlexView } from './plex/render/PlexView.vue'
@@ -123,8 +123,8 @@ export { clock } from './player/clock'
 export type { Timed, Timing } from './editor/timing'
 
 export { default as Composer } from './composer/Composer.vue'
-export { COMPOSER_STATES, composerState, keyIntent } from './composer/model'
-export type { ComposerState, KeyIntent } from './composer/model'
+export { COMPOSER_STATES, composerState, keyIntent } from './composer/state'
+export type { ComposerState, KeyIntent } from './composer/state'
 
 /** A stream taken up again for as long as a window is open. */
 export { following } from './following/following'
@@ -135,8 +135,8 @@ export { default as Waiting } from './waiting/Waiting.vue'
 export { default as Coming } from './waiting/Coming.vue'
 
 export { default as Thread } from './thread/Thread.vue'
-export { VOICES, charsWord, placeTurns } from './thread/model'
-export type { PlacedTurn, Turn, TurnState, Voice } from './thread/model'
+export { VOICES, charsWord, placeTurns } from './thread/turn'
+export type { PlacedTurn, Turn, TurnState, Voice } from './thread/turn'
 export { conversation } from './thread/conversation'
 export type { Conversation, Wording } from './thread/conversation'
 export type { AgentPort, AgentStep, Place } from './thread/agent'
@@ -166,12 +166,12 @@ export {
   shareOf,
   sizeWord,
   tallyWord,
-} from './activity/model'
-export type { ActivityDescriptor, ActivityState, Counting, Tally, Tone } from './activity/model'
+} from './activity/tally'
+export type { ActivityDescriptor, ActivityState, Counting, Tally, Tone } from './activity/tally'
 
 export { default as Notices } from './notices/Notices.vue'
-export { ROOM, dwellOf, finished, folded, measured, noticed, standing, tallyOf } from './notices/model'
-export type { Movement, Notice, Stay, Task } from './notices/model'
+export { ROOM, dwellOf, finished, folded, measured, noticed, standing, tallyOf } from './notices/notice'
+export type { Movement, Notice, Stay, Task } from './notices/notice'
 
 export { default as Agent } from './screens/Agent.vue'
 export { default as Reader } from './reader/Reader.vue'
@@ -235,7 +235,7 @@ export {
   selects,
   stepTo as stepToRow,
   TREE_KEYS,
-} from './tree/model'
+} from './tree/row'
 export type {
   Carried,
   Landing,
@@ -247,7 +247,7 @@ export type {
   ShownRow,
   Step,
   TreeKey,
-} from './tree/model'
+} from './tree/row'
 
 export { default as StencilView } from './cards/StencilView.vue'
 export { default as Deck } from './cards/Deck.vue'

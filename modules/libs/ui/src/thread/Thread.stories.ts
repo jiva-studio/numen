@@ -4,7 +4,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Thread from './Thread.vue'
-import type { Turn } from './model'
+import type { Turn } from './turn'
 import { ARABIC, DEVANAGARI, LINK, LONG, MULTILINE, RUSSIAN, UNBREAKABLE } from '@/fixtures/prose'
 
 const meta = {

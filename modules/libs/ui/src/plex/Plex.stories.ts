@@ -28,7 +28,7 @@ import type {
   Point,
 } from './model'
 import type { Environment } from './transition'
-import type { MenuOpening } from '../menu/model'
+import type { MenuOpening } from '../menu/item'
 
 interface Knobs {
   neighbourhood: PlexNeighbourhood

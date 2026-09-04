@@ -13,7 +13,7 @@ import {
   Option,
   type LucideIcon,
 } from '@lucide/vue'
-import type { PaletteIcon } from './model'
+import type { PaletteIcon } from './item'
 
 /**
  * How thick an icon is stroked, in the 24 units it is drawn on, for an icon

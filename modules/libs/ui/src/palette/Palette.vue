@@ -39,7 +39,7 @@ import {
   type PaletteBand,
   type PaletteKeys,
   type PaletteLit,
-} from './model'
+} from './item'
 
 const props = withDefaults(
   defineProps<{

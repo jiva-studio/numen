@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import { ICONS } from './icons'
-import type { PaletteKeys } from './model'
+import type { PaletteKeys } from './item'
 
 const props = defineProps<{ keys: PaletteKeys }>()
 

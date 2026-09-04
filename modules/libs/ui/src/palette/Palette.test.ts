@@ -11,7 +11,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import Palette from './Palette.vue'
-import type { PaletteBand, PaletteKeys } from './model'
+import type { PaletteBand, PaletteKeys } from './item'
 import { MANY } from './fixtures/actions'
 
 /** A keystroke that reaches an item away from the palette. */
