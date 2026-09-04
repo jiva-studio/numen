@@ -643,6 +643,15 @@ jobs:
       # The installer carries Microsoft's own bootstrapper and runs it on a
       # machine whose Windows does not already have the engine the window draws
       # through.
+      #
+      # It is not signed, and no step here can sign it. A publicly trusted
+      # code-signing key may not leave hardware, so the shape the mac job uses —
+      # a .p12 in a secret, imported into a keychain — is not issued for Windows
+      # at all: what it takes is a key a service holds, either Azure Artifact
+      # Signing or a cloud-HSM certificate from a certificate authority. Both
+      # sign from a Linux runner, so what is missing is an identity and not a
+      # toolchain. Until there is one, SmartScreen warns on first run and the
+      # sha256 the manifest carries is what a person has to check.
       - name: Installer
         env:
           VERSION: ${{ needs.naming.outputs.version }}
