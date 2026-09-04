@@ -67,6 +67,9 @@ export function audio(makes: Makes = made): Player {
     try {
       element = makes()
     } catch {
+      // A window that cannot make the element plays nothing at all, and every
+      // press of play would otherwise do nothing and say nothing.
+      failed.value = WORDS.unreadable
       return null
     }
     element.preload = 'metadata'

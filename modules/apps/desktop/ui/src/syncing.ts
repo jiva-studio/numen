@@ -49,7 +49,7 @@ export function syncing(core: Called, words: Words, said: Says) {
     try {
       kept.value = await core.syncing()
     } catch {
-      return
+      // A vault that cannot be asked leaves the setting where it stands.
     }
   }
 

@@ -297,7 +297,7 @@ describe('the element a window plays through', () => {
     expect(stood.listening('error')).toBe(1)
   })
 
-  it('is never asked for again where the window has none to give', () => {
+  it('plays nothing and says so where the window has no element to give', () => {
     const plays = audio(() => {
       throw new Error('this window plays no sound')
     })
@@ -309,5 +309,6 @@ describe('the element a window plays through', () => {
 
     expect(plays.address.value).toBe('')
     expect(plays.playing.value).toBe(false)
+    expect(plays.failed.value).toBe(WORDS.unreadable)
   })
 })

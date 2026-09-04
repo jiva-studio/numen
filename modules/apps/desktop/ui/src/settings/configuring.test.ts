@@ -9,7 +9,10 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Model } from '../core'
 import { configuring, standing, type Called } from './configuring'
 
-const words = { unturned: 'That setting could not be written:' }
+const words = {
+  unturned: 'That setting could not be written:',
+  unreadSettings: 'The settings could not be read.',
+}
 
 const MODELS: readonly Model[] = [
   {
@@ -65,10 +68,11 @@ describe('what stands at a setting', () => {
     expect(kept.path.value).toBe('')
   })
 
-  it('is nothing where the vault answers with what is not JSON', async () => {
-    const { kept } = holding('not JSON at all')
+  it('is nothing where the vault answers with what is not JSON, and is said', async () => {
+    const { kept, said } = holding('not JSON at all')
     await kept.start()
     expect(kept.at(['agent'])).toBeUndefined()
+    expect(said).toHaveBeenLastCalledWith('The settings could not be read.', 'refusal')
   })
 })
 

@@ -76,6 +76,7 @@ export function hanging(core: Called, words: Words, said: Says) {
     try {
       held = await core.hanging()
     } catch {
+      // A vault that cannot be asked leaves both settings where they stand.
       return
     }
     hangs.value = held.hangs

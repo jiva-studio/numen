@@ -206,6 +206,8 @@ export const WORDS = {
   /** The band the counts are drawn in. */
   partsBand: 'How many parts stand under a node at once',
   unturned: 'That setting could not be written:',
+  /** The settings the vault answered with could not be read. */
+  unreadSettings: 'The settings could not be read, so what is drawn is what they last held.',
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
   answer: 'Choose an answer',

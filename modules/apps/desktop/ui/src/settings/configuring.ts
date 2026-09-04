@@ -15,6 +15,8 @@ import { write } from './json5'
 export interface Words {
   /** The setting could not be written. */
   readonly unturned: string
+  /** The settings the vault answered with could not be read. */
+  readonly unreadSettings: string
 }
 
 /** What this asks of the vault. */
@@ -53,11 +55,17 @@ export function configuring(core: Called, words: Words, said: Says) {
     try {
       answer = await core.settings()
     } catch {
+      // A vault that cannot be asked leaves the settings where they stand, and
+      // the window already says it lost touch with the vault.
       return
     }
     try {
       held.value = JSON.parse(answer.written)
     } catch {
+      // The vault answered with something no settings can be read out of. It is
+      // not a vault that has gone away, and a write followed by this leaves the
+      // person watching their setting go back with no word for it.
+      said(words.unreadSettings, 'refusal')
       return
     }
     path.value = answer.path
