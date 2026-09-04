@@ -6,6 +6,7 @@ on:
       - "modules/apps/desktop/**"
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
+      - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
   push:
@@ -14,6 +15,7 @@ on:
       - "modules/apps/desktop/**"
       - "modules/libs/core/**"
       - "modules/libs/ui/**"
+      - "modules/libs/wire/**"
       - "modules/libs/protocol/**"
       - ".github/workflows/numen-desktop.yml"
 
