@@ -257,7 +257,8 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 		Description: "Write values into one card of a deck. A field the card already " +
 			"carries is replaced, one it does not is added at the end of it, and a field " +
 			"left out of the call is left as it stands. Send the fields you are changing " +
-			"and no others. The card is addressed by the " +
+			"and no others; taking a field off a card is `card_value_remove`. " +
+			"The card is addressed by the " +
 			"mark `card_read` gives it, which is what the card is for as long as it " +
 			"exists: a card rewritten from end to end is still that card, and what is " +
 			"attached to it stays attached. The first field is written like every " +
@@ -293,6 +294,31 @@ func addCardEditingTools(server *sdk.Server, core Core) {
 					}
 				}
 				return nil
+			})
+		return nil, written, err
+	})
+
+	sdk.AddTool(server, &sdk.Tool{
+		Name:  "card_value_remove",
+		Title: "Take a field off a card",
+		Description: "Remove one field from one card: its heading, and what the person " +
+			"wrote under it. `card_edit` writes a value and never takes one away, and an " +
+			"empty value is a field standing empty, not a field gone. The fields around " +
+			"it keep the order they were written in, and every other byte of the file is " +
+			"left as it was. The stencil is not touched: it goes on declaring the field, " +
+			"and every other card cut by it goes on carrying its own value. A card " +
+			"writing nothing under that field is refused. The card is addressed by the " +
+			"mark `card_read` gives it, the fingerprint from `card_read` is required, and " +
+			"a write lands only on the deck that fingerprint names.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
+		Path        string `json:"path" jsonschema:"the deck the card is in"`
+		Mark        string `json:"mark" jsonschema:"the card's mark, as card_read gives it"`
+		Field       string `json:"field" jsonschema:"the field to take off, as card_read gives it under field"`
+		Fingerprint string `json:"fingerprint" jsonschema:"what card_read said the deck was, which refuses a write over somebody else's edit"`
+	}) (*sdk.CallToolResult, WriteOutcome, error) {
+		written, _, err := changing(ctx, core, in.Path, in.Fingerprint,
+			func(_ cards.DeckContents, file *format.DeckFile) error {
+				return file.RemoveValue(domain.CardID(in.Mark), in.Field)
 			})
 		return nil, written, err
 	})

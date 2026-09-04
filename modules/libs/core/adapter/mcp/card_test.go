@@ -432,6 +432,40 @@ func TestACardIsEditedAndTheCardsBesideItAreLeftAlone(t *testing.T) {
 	}
 }
 
+// A person asks an agent to take a field off a card. card_edit only ever writes
+// a value, and an empty value is a field standing empty rather than one gone.
+func TestAFieldIsTakenOffACardAndTheOthersStay(t *testing.T) {
+	session, v := connected(t, vault())
+
+	call[map[string]any](t, session, "card_value_remove", map[string]any{
+		"path": "Animals.md", "mark": llama, "field": "Height",
+		"fingerprint": deckFingerprint(t, session, "Animals.md"),
+	})
+
+	written := held(t, v, "Animals.md")
+	if strings.Contains(written, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height") {
+		t.Errorf("the field is still on the card: %q", written)
+	}
+	if !strings.Contains(written, "## Llama ^"+llama+"\n\n[[Animal]]\n\n### Name\n\nLlama\n") {
+		t.Errorf("the field the call did not name came back as %q", written)
+	}
+	// The card cut by the same stencil goes on carrying its own value, and the
+	// stencil goes on declaring the field.
+	if !strings.Contains(written, "## Alpaca ^"+alpaca+
+		"\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n") {
+		t.Errorf("the card beside it came back as %q", written)
+	}
+	if got := held(t, v, "Animal.md"); got != stencil {
+		t.Errorf("the stencil was rewritten as %q", got)
+	}
+	if said := failing(t, session, "card_value_remove", map[string]any{
+		"path": "Animals.md", "mark": llama, "field": "Height",
+		"fingerprint": deckFingerprint(t, session, "Animals.md"),
+	}); !strings.Contains(said, "no value") {
+		t.Errorf("taking a field off twice was answered %q", said)
+	}
+}
+
 // TestACardIsRemovedAndNothingElseIs.
 func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	session, v := connected(t, vault())
@@ -779,6 +813,7 @@ func TestAWriteReachesTheCardItNamesAndNoOther(t *testing.T) {
 			"mark":   llama,
 			"values": []map[string]string{{"field": "Height", "text": "about 46\""}},
 		},
+		"card_value_remove":   {"mark": llama, "field": "Height"},
 		"card_remove":         {"mark": llama},
 		"card_section_add":    {"name": "Others"},
 		"card_section_rename": {"section": 0, "name": "The ones with fur"},

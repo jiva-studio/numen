@@ -28,6 +28,11 @@ var ErrNoSuchSection = errors.New("this deck holds no section standing there")
 // field of that name.
 var ErrNoSuchField = errors.New("this stencil declares no field of that name")
 
+// ErrNoSuchValue is what removing a value says when the card writes nothing
+// under that field. The stencil may well declare it: what is not there is what
+// the person wrote.
+var ErrNoSuchValue = errors.New("this card writes no value under that field")
+
 // ErrFieldTaken is what renaming a field says when the stencil already declares
 // a field of the name asked for. Two fields of one name are one field to every
 // face and every card, and the values under the other are held by nothing.
@@ -109,6 +114,39 @@ func (f *DeckFile) SetValue(card domain.CardID, field, value string) error {
 		block += "\n\n" + text
 	}
 	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
+}
+
+// RemoveValue takes one field off a card: its heading line and what stands
+// under it. The fields around it keep the order the person wrote them in, and
+// a card writing nothing under that field is ErrNoSuchValue.
+//
+// Taking the first field off is what rewrites the heading, and that is done
+// where the deck is made whole, not here.
+func (f *DeckFile) RemoveValue(card domain.CardID, field string) error {
+	body := []byte(f.doc.Body())
+	span, err := f.carrying(body, card)
+	if err != nil {
+		return err
+	}
+	for _, v := range span.values {
+		if v.field != field {
+			continue
+		}
+		// The blank line under the value went with it, so what follows closes
+		// up against what the value stood beneath.
+		head, to := v.head, v.to
+		written := ""
+		// A value nothing stood under was last in the file, and what is above
+		// it now ends on the one break a file ends with.
+		if to == len(body) {
+			head = trimmedEnd(body, 0, head)
+			if head > 0 {
+				written = "\n"
+			}
+		}
+		return f.doc.SpliceBody(head, to, written)
+	}
+	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
 
 // SetStencil writes the wikilink naming the stencil a card is cut by. A card

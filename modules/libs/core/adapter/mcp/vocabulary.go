@@ -54,6 +54,7 @@ var doing = map[string]Tool{
 	"card_showing":        {Kind: port.StepRead},
 	"card_add":            {Kind: port.StepEdit},
 	"card_edit":           {Kind: port.StepEdit},
+	"card_value_remove":   {Kind: port.StepRemove},
 	"card_remove":         {Kind: port.StepRemove},
 	"card_section_add":    {Kind: port.StepEdit},
 	"card_section_rename": {Kind: port.StepMove},

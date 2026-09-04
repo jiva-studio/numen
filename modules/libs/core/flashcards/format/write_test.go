@@ -171,6 +171,59 @@ func TestSetValueAddsAFieldAtTheEndOfTheCard(t *testing.T) {
 	}
 }
 
+// removeValue is a field taken off a card, and the file as it now stands.
+func removeValue(t *testing.T, raw string, card domain.CardID, field string) string {
+	t.Helper()
+	f, err := format.OpenDeck([]byte(raw))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RemoveValue(card, field); err != nil {
+		t.Fatalf("remove %s of %s: %v", field, card, err)
+	}
+	return string(f.Bytes())
+}
+
+// Taking a field off a card takes its heading and its value and closes the gap,
+// and every other byte of the file is the byte it was.
+func TestRemoveValueTakesTheFieldAndNothingElse(t *testing.T) {
+	got := removeValue(t, deck, llama, "Life span")
+
+	want := strings.Replace(deck, "### Life span\n\nabout 20 years\n\n", "", 1)
+	if got != want {
+		t.Errorf("the field was taken off wrong\n want %q\n  got %q", want, got)
+	}
+}
+
+// The last field of the last card has nothing under it, so what is above it
+// ends on the one break a file ends with.
+func TestRemoveValueOfTheLastFieldLeavesNoBlankLine(t *testing.T) {
+	got := removeValue(t, deck, compost, "Значение")
+
+	want := strings.Replace(deck, "\n\n### Значение\n\nперегной\n", "\n", 1)
+	if got != want {
+		t.Errorf("the last field was taken off wrong\n want %q\n  got %q", want, got)
+	}
+}
+
+// A field the card writes nothing under is refused, and nothing is written.
+// The stencil may well declare it: what is not there is what the person wrote.
+func TestRemoveValueOfAFieldTheCardDoesNotWrite(t *testing.T) {
+	f, err := format.OpenDeck([]byte(deck))
+	if err != nil {
+		t.Fatalf("open: %v", err)
+	}
+	if err := f.RemoveValue(llama, "Weight"); !errors.Is(err, format.ErrNoSuchValue) {
+		t.Errorf("err = %v, want ErrNoSuchValue", err)
+	}
+	if err := f.RemoveValue("wxyz01234t", "Height"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("err = %v, want ErrNoSuchCard", err)
+	}
+	if string(f.Bytes()) != deck {
+		t.Error("a field that is not there was taken off anyway")
+	}
+}
+
 // A file written with carriage returns is written back with them.
 func TestTheFilesOwnLineEndingIsWhatIsWritten(t *testing.T) {
 	raw := strings.ReplaceAll(deck, "\n", "\r\n")
@@ -720,6 +773,9 @@ func TestChangingOneCardLeavesEveryOtherTheBytesItWas(t *testing.T) {
 		},
 		"a field the card did not carry": func(f *format.DeckFile) error {
 			return f.SetValue(llama, "Life span", "about 20 years")
+		},
+		"a field taken off": func(f *format.DeckFile) error {
+			return f.RemoveValue(llama, "Height")
 		},
 		"a stencil written": func(f *format.DeckFile) error {
 			return f.SetStencil(llama, "Beast")
