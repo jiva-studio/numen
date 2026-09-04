@@ -14,9 +14,9 @@ import (
 	usecase "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
 
-// vaults answers about the vaults this installation holds, over the API this
-// window serves.
-type vaults struct{ api *API }
+// vaultsService answers about the vaults this installation holds, over the API
+// this window serves.
+type vaultsService struct{ api *API }
 
 // errNoVaults is what a build that holds no list of vaults answers.
 var errNoVaults = errors.New("this build holds no list of vaults")
@@ -34,7 +34,7 @@ var errNoOpening = errors.New("this build cannot show another vault")
 
 // List is every vault the installation holds. Which of them the window has in
 // front of the person is asked of the window.
-func (s vaults) List(
+func (s vaultsService) List(
 	_ context.Context,
 	_ *connect.Request[v1.VaultsServiceListRequest],
 ) (*connect.Response[v1.VaultsServiceListResponse], error) {
@@ -53,7 +53,7 @@ func (s vaults) List(
 }
 
 // Choose puts this machine's own folder picker in front of the person.
-func (s vaults) Choose(
+func (s vaultsService) Choose(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceChooseRequest],
 ) (*connect.Response[v1.VaultsServiceChooseResponse], error) {
@@ -73,7 +73,7 @@ func (s vaults) Choose(
 
 // Add turns a folder into a vault on the list. A name another vault has gets a
 // number appended, and is not a refusal here.
-func (s vaults) Add(
+func (s vaultsService) Add(
 	_ context.Context,
 	r *connect.Request[v1.VaultsServiceAddRequest],
 ) (*connect.Response[v1.VaultsServiceAddResponse], error) {
@@ -93,7 +93,7 @@ func (s vaults) Add(
 
 // Rename is what a person calls a vault. The folder keeps the name the
 // filesystem gives it.
-func (s vaults) Rename(
+func (s vaultsService) Rename(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceRenameRequest],
 ) (*connect.Response[v1.VaultsServiceRenameResponse], error) {
@@ -116,7 +116,7 @@ func (s vaults) Rename(
 
 // Forget takes a vault off the list and out of the index. The folder stays
 // where it is.
-func (s vaults) Forget(
+func (s vaultsService) Forget(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceForgetRequest],
 ) (*connect.Response[v1.VaultsServiceForgetResponse], error) {
@@ -139,7 +139,7 @@ func (s vaults) Forget(
 
 // Erase is Forget, and the folder goes to the place this machine keeps what a
 // person deleted.
-func (s vaults) Erase(
+func (s vaultsService) Erase(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceEraseRequest],
 ) (*connect.Response[v1.VaultsServiceEraseResponse], error) {
@@ -161,7 +161,7 @@ func (s vaults) Erase(
 }
 
 // Open shows another vault in this window.
-func (s vaults) Open(
+func (s vaultsService) Open(
 	ctx context.Context,
 	r *connect.Request[v1.VaultsServiceOpenRequest],
 ) (*connect.Response[v1.VaultsServiceOpenResponse], error) {
@@ -190,7 +190,7 @@ func (s vaults) Open(
 // offTheList is the vault an identity names, asked to leave. The vault the
 // window has in front of the person stays: the use cases are not told which one
 // that is, and this is.
-func (s vaults) offTheList(id string) (domain.Vault, error) {
+func (s vaultsService) offTheList(id string) (domain.Vault, error) {
 	v, err := s.found(id)
 	if err != nil {
 		return domain.Vault{}, err
@@ -205,7 +205,7 @@ func (s vaults) offTheList(id string) (domain.Vault, error) {
 var errShowing = errors.New("this vault is the one the window is showing")
 
 // found is the vault an identity names.
-func (s vaults) found(id string) (domain.Vault, error) {
+func (s vaultsService) found(id string) (domain.Vault, error) {
 	return usecase.Find{Registry: s.api.Vaults.Registry}.Execute(id)
 }
 

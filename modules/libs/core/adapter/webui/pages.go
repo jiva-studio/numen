@@ -37,7 +37,7 @@ func (a *API) Serving(files http.Handler) http.Handler {
 	finding, found := numenv1connect.NewSearchServiceHandler(a, counted)
 	asking, tasks := numenv1connect.NewAgentServiceHandler(a, counted)
 	wearing, themes := numenv1connect.NewThemeServiceHandler(a.dressed(), counted)
-	listing, held := numenv1connect.NewVaultsServiceHandler(vaults{api: a}, counted)
+	listing, held := numenv1connect.NewVaultsServiceHandler(vaultsService{api: a}, counted)
 	cutting, decks := numenv1connect.NewCardsServiceHandler(a, counted)
 	scheduling, presets := numenv1connect.NewPresetsServiceHandler(a, counted)
 	configuring, settings := numenv1connect.NewSettingsServiceHandler(a, counted)
