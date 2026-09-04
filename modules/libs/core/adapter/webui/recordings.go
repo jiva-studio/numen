@@ -28,9 +28,6 @@ import (
 // not one.
 var errNotARecording = errors.New("not a recording this vault holds")
 
-// errNoHearing is what a build with nothing to read a transcript with answers.
-var errNoHearing = errors.New("this build cannot read what a recording says")
-
 // errNotHeard is what an edit to a recording nothing has listened to gets.
 var errNotHeard = errors.New("nothing has listened to this recording")
 
@@ -80,9 +77,6 @@ func (a *API) ReadTranscript(
 	ctx context.Context,
 	r *connect.Request[v1.ReadTranscriptRequest],
 ) (*connect.Response[v1.ReadTranscriptResponse], error) {
-	if _, _, ok := a.hearing(); !ok {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoHearing)
-	}
 	showing, ref, err := a.recording(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, err
@@ -122,9 +116,6 @@ func (a *API) WriteTranscript(
 	ctx context.Context,
 	r *connect.Request[v1.WriteTranscriptRequest],
 ) (*connect.Response[v1.WriteTranscriptResponse], error) {
-	if _, _, ok := a.hearing(); !ok {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoHearing)
-	}
 	cues, err := ordered(r.Msg.GetCues())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)

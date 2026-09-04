@@ -26,13 +26,6 @@ type Runner interface {
 	Start(v domain.Vault, path string) port.StartOutcome
 }
 
-// errNoReading is a build with nothing to read a scan with, and errNoListening
-// one with nothing to hear a recording with.
-var (
-	errNoReading   = errors.New("this build cannot read a scan")
-	errNoListening = errors.New("this build cannot hear a recording")
-)
-
 // reached is how far a run over one source has got: the one thing a source
 // stands at, what the run wrote about a source it got no words out of, and how
 // many bytes stand under whichever name it has reached, which is what tells a

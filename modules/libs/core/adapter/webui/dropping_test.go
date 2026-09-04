@@ -131,16 +131,6 @@ func TestARecordingNobodyHasListenedToHasNoTranscriptToDrop(t *testing.T) {
 	}
 }
 
-// A build that cannot read a transcript cannot drop one either, and says so.
-func TestABuildThatCannotHearDropsNoTranscript(t *testing.T) {
-	api, _, _ := dropper(t, whole(spoke()), heardBy())
-	api.Drops = nil
-
-	if _, err := dropping(api); connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Fatalf("dropped a transcript in a build that cannot hear and was refused %v", err)
-	}
-}
-
 // What a recording was heard as is the only artifact taken away here: the words
 // a person put right go with it, and are not taken away on their own.
 func TestOnlyWhatARecordingWasHeardAsIsTakenAway(t *testing.T) {

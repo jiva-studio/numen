@@ -23,6 +23,6 @@ type Proofreader interface {
 	Proofread(ctx context.Context, v domain.Vault, path string) (source.PutRightResult, error)
 }
 
-// errNoProofreading is a build, or an installation, with nothing to put a
+// errNoProofreading is an installation the settings name nothing to put a
 // transcript right with.
-var errNoProofreading = errors.New("this build cannot proofread a transcript")
+var errNoProofreading = errors.New("this installation has no proofreader")

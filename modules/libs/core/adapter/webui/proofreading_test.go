@@ -132,27 +132,26 @@ func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 }
 
 // An installation naming nothing to put a transcript right with says so, and
-// the window offers the run nowhere after that.
+// the window offers the run nowhere after that. Which model does it is the
+// settings', so the call was answered and the answer is that there is nothing
+// to ask.
 func TestAnInstallationNamingNoProofreaderSaysSo(t *testing.T) {
-	for _, one := range []struct {
-		name  string
-		holds func(*API)
-	}{
-		{"a build with no proofreading at all", func(a *API) {
-			runningBehind(a, func(on *passes) { on.proofreads = nil })
-		}},
-		{"an installation naming no profile", func(a *API) {
-			runningBehind(a, func(on *passes) { on.proofreads = &proofreads{} })
-		}},
-	} {
-		t.Run(one.name, func(t *testing.T) {
-			api, _, _ := proofreading(t, onTheShelf(), heardBy())
-			one.holds(api)
+	api, _, _ := proofreading(t, onTheShelf(), heardBy())
+	runningBehind(api, func(on *passes) { on.proofreads = &proofreads{} })
 
-			if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeUnimplemented {
-				t.Fatalf("it was refused %s", code)
-			}
-		})
+	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeFailedPrecondition {
+		t.Fatalf("it was refused %s", code)
+	}
+}
+
+// A vault whose passes are not up yet holds nothing to put a transcript right
+// with, and the caller asks again.
+func TestAProofreadingAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
+	api, _, _ := proofreading(t, onTheShelf(), heardBy())
+	runningBehind(api, func(on *passes) { on.proofreads = nil })
+
+	if code := refusedMaking(t, api, talk, correctedID); code != connect.CodeUnavailable {
+		t.Fatalf("it was refused %s", code)
 	}
 }
 

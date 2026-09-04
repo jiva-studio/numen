@@ -401,14 +401,14 @@ func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 	}
 }
 
-// A build with nothing to run with says so, and the window then offers the run
-// nowhere.
-func TestABuildWithNoRunsMakesNothing(t *testing.T) {
+// A vault is in the window before what runs behind it is, so a run asked for in
+// between reaches no runner and the caller asks again.
+func TestARunAskedForBeforeThePassesAreUpIsAskedAgain(t *testing.T) {
 	api, _ := running(t, stored{}, nothingRead(), nil, nil)
 
 	for id, path := range map[string]string{readingID: book, heardID: talk} {
-		if code := refusedMaking(t, api, path, id); code != connect.CodeUnimplemented {
-			t.Errorf("asked a build that cannot run and was refused %s", code)
+		if code := refusedMaking(t, api, path, id); code != connect.CodeUnavailable {
+			t.Errorf("asked before the passes were up and was refused %s", code)
 		}
 	}
 }

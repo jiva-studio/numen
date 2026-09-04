@@ -135,9 +135,6 @@ func (a *API) DeleteArtifact(
 	if r.Msg.GetArtifactId() != heardID {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNotDroppable)
 	}
-	if a.Drops == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoHearing)
-	}
 	showing, ref, err := a.held(ctx, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(reaching(err), err)
@@ -176,9 +173,9 @@ func (a *API) run(
 	ref domain.Fingerprint,
 	id string,
 ) (*v1.Artifact, error) {
-	by, why := a.runner(id)
+	by := a.runner(id)
 	if by == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, why)
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	got, err := a.far(ctx, v, ref.Path, ref.Kind)
 	if err != nil {
@@ -201,14 +198,19 @@ func (a *API) run(
 	return &v1.Artifact{Name: named(v, ref.Path, id), State: state}, nil
 }
 
-// runner is what reads a scan or hears a recording, and why a build has
-// neither.
-func (a *API) runner(id string) (Runner, error) {
+// runner is what reads a scan or hears a recording. Nothing while the passes
+// behind the vault the window is showing are still coming up.
+func (a *API) runner(id string) Runner {
 	if id == readingID {
-		return a.recognises(), errNoReading
+		return a.recognises()
 	}
-	return a.transcribes(), errNoListening
+	return a.transcribes()
 }
+
+// errComingUp is a run asked for over a vault whose passes are not up yet. The
+// vault is in the window and what runs behind it arrives after, so the caller
+// asks again.
+var errComingUp = errors.New("the vault is still coming up")
 
 // putRight begins putting the transcript of a recording right, and answers with
 // what the corrections now are.
@@ -220,8 +222,13 @@ func (a *API) putRight(
 	// Taken once, so the whole answer is the work of the vault the window was
 	// showing when it was asked.
 	puts := a.proofreads()
-	if puts == nil || !puts.ProofreaderReady() {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoProofreading)
+	if puts == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
+	}
+	// Which model puts a transcript right is the settings', so an installation
+	// naming none has nothing to ask, and the call was answered.
+	if !puts.ProofreaderReady() {
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoProofreading)
 	}
 	_, _, listened, err := a.heard(ctx, v, ref.Path)
 	if err != nil {

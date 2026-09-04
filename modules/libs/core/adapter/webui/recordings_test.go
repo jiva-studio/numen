@@ -13,6 +13,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/domain"
@@ -240,20 +241,15 @@ func TestOnlyARecordingIsHeard(t *testing.T) {
 	}
 }
 
-// A build with nothing to read a transcript with says so, and the recording is
-// played all the same.
-func TestABuildThatReadsNoTranscriptSaysSo(t *testing.T) {
+// A build that mounts nothing about what is made from a file plays the
+// recording all the same: the bytes are served over a socket of their own and
+// not over the service that says what was heard in them.
+func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := &API{Readers: filesystem.VaultReaders{}}
 	api.show(vault)
-	_ = api.Serving(http.NotFoundHandler())
+	_ = api.Serving(http.NotFoundHandler(), numenv1connect.VaultServiceName)
 
-	_, err := api.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
-		Path: talk,
-	}))
-	if connect.CodeOf(err) != connect.CodeUnimplemented {
-		t.Errorf("asked what was heard and was refused %v", err)
-	}
 	back, playing := played(t, api)
 	if out := ask(playing, back.Address(api.Showing(), talk)); out.Code != http.StatusOK {
 		t.Errorf("the recording itself was answered %d", out.Code)
