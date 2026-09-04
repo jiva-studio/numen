@@ -39,9 +39,9 @@ func (a *API) ListStencils(
 	}
 
 	out := &v1.ListStencilsResponse{Held: int32(count)}
-	out.Stencils = make([]*v1.Offered, 0, len(held))
+	out.Stencils = make([]*v1.StencilSummary, 0, len(held))
 	for _, stencil := range held {
-		out.Stencils = append(out.Stencils, offeredOf(stencil))
+		out.Stencils = append(out.Stencils, summaryOf(stencil))
 	}
 	return connect.NewResponse(out), nil
 }

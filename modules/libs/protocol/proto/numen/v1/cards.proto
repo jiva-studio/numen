@@ -114,9 +114,9 @@ message Stencil {
   string tail = 7;
 }
 
-// Offered is one stencil as the list of them names it: where it is filed, what
-// it is called, and what it asks a person for.
-message Offered {
+// StencilSummary is one stencil as the list of them names it: where it is
+// filed, what it is called, and what it asks a person for.
+message StencilSummary {
   string path = 1;
   string title = 2;
 
@@ -301,7 +301,7 @@ message ListStencilsRequest {
 
 message ListStencilsResponse {
   // The stencils, by path, with case ignored.
-  repeated Offered stencils = 1;
+  repeated StencilSummary stencils = 1;
 
   // How many stencils the vault holds. It stands above the length of the list
   // when the ceiling was reached, and the interface says so.
@@ -405,7 +405,7 @@ message RenameStencilFieldResponse {
 
   // One entry per deck the rename could not be written to. Each of them keeps
   // the old heading.
-  repeated NotWritten not_written = 3;
+  repeated UnwrittenDeck not_written = 3;
 
   // Set when the field was not renamed at all, and why. No deck is written
   // where the stencil refused the rename, and a stencil that is no longer the
@@ -417,8 +417,8 @@ message RenameStencilFieldResponse {
   optional Fingerprint at = 6;
 }
 
-// NotWritten is one deck a rename did not reach.
-message NotWritten {
+// UnwrittenDeck is one deck a rename did not reach.
+message UnwrittenDeck {
   string path = 1;
 
   // Why it was not reached, in the words to show. It stands against the deck

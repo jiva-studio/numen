@@ -30,9 +30,9 @@ func stencilOf(path, title string, s format.Stencil) *v1.Stencil {
 	return out
 }
 
-// offeredOf is one stencil as the list of them names it.
-func offeredOf(s cards.StencilSummary) *v1.Offered {
-	return &v1.Offered{Path: s.Path, Title: s.Title, Fields: s.Fields}
+// summaryOf is one stencil as the list of them names it.
+func summaryOf(s cards.StencilSummary) *v1.StencilSummary {
+	return &v1.StencilSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
 // renamedOf is what a rename reached and what it did not, as the schema carries
@@ -45,7 +45,7 @@ func renamedOf(r cards.RenameResult) *v1.RenameStencilFieldResponse {
 		At:    fingerprintOf(r.Stencil),
 	}
 	for _, deck := range r.NotWritten {
-		out.NotWritten = append(out.NotWritten, &v1.NotWritten{
+		out.NotWritten = append(out.NotWritten, &v1.UnwrittenDeck{
 			Path: deck.Path, Problem: problemOf(deck.Problem),
 		})
 	}

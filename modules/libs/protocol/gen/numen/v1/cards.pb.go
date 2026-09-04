@@ -225,9 +225,9 @@ func (x *Stencil) GetTail() string {
 	return ""
 }
 
-// Offered is one stencil as the list of them names it: where it is filed, what
-// it is called, and what it asks a person for.
-type Offered struct {
+// StencilSummary is one stencil as the list of them names it: where it is
+// filed, what it is called, and what it asks a person for.
+type StencilSummary struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
@@ -237,20 +237,20 @@ type Offered struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Offered) Reset() {
-	*x = Offered{}
+func (x *StencilSummary) Reset() {
+	*x = StencilSummary{}
 	mi := &file_numen_v1_cards_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Offered) String() string {
+func (x *StencilSummary) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Offered) ProtoMessage() {}
+func (*StencilSummary) ProtoMessage() {}
 
-func (x *Offered) ProtoReflect() protoreflect.Message {
+func (x *StencilSummary) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_cards_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -262,26 +262,26 @@ func (x *Offered) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Offered.ProtoReflect.Descriptor instead.
-func (*Offered) Descriptor() ([]byte, []int) {
+// Deprecated: Use StencilSummary.ProtoReflect.Descriptor instead.
+func (*StencilSummary) Descriptor() ([]byte, []int) {
 	return file_numen_v1_cards_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Offered) GetPath() string {
+func (x *StencilSummary) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Offered) GetTitle() string {
+func (x *StencilSummary) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *Offered) GetFields() []string {
+func (x *StencilSummary) GetFields() []string {
 	if x != nil {
 		return x.Fields
 	}
@@ -833,7 +833,7 @@ func (x *ListStencilsRequest) GetLimit() int32 {
 type ListStencilsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The stencils, by path, with case ignored.
-	Stencils []*Offered `protobuf:"bytes,1,rep,name=stencils,proto3" json:"stencils,omitempty"`
+	Stencils []*StencilSummary `protobuf:"bytes,1,rep,name=stencils,proto3" json:"stencils,omitempty"`
 	// How many stencils the vault holds. It stands above the length of the list
 	// when the ceiling was reached, and the interface says so.
 	Held          int32 `protobuf:"varint,2,opt,name=held,proto3" json:"held,omitempty"`
@@ -871,7 +871,7 @@ func (*ListStencilsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_cards_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ListStencilsResponse) GetStencils() []*Offered {
+func (x *ListStencilsResponse) GetStencils() []*StencilSummary {
 	if x != nil {
 		return x.Stencils
 	}
@@ -1340,7 +1340,7 @@ type RenameStencilFieldResponse struct {
 	Cards int32 `protobuf:"varint,2,opt,name=cards,proto3" json:"cards,omitempty"`
 	// One entry per deck the rename could not be written to. Each of them keeps
 	// the old heading.
-	NotWritten []*NotWritten `protobuf:"bytes,3,rep,name=not_written,json=notWritten,proto3" json:"not_written,omitempty"`
+	NotWritten []*UnwrittenDeck `protobuf:"bytes,3,rep,name=not_written,json=notWritten,proto3" json:"not_written,omitempty"`
 	// Set when the field was not renamed at all, and why. No deck is written
 	// where the stencil refused the rename, and a stencil that is no longer the
 	// one this caller read is REFUSAL_STALE.
@@ -1396,7 +1396,7 @@ func (x *RenameStencilFieldResponse) GetCards() int32 {
 	return 0
 }
 
-func (x *RenameStencilFieldResponse) GetNotWritten() []*NotWritten {
+func (x *RenameStencilFieldResponse) GetNotWritten() []*UnwrittenDeck {
 	if x != nil {
 		return x.NotWritten
 	}
@@ -1417,8 +1417,8 @@ func (x *RenameStencilFieldResponse) GetAt() *Fingerprint {
 	return nil
 }
 
-// NotWritten is one deck a rename did not reach.
-type NotWritten struct {
+// UnwrittenDeck is one deck a rename did not reach.
+type UnwrittenDeck struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Why it was not reached, in the words to show. It stands against the deck
@@ -1428,20 +1428,20 @@ type NotWritten struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *NotWritten) Reset() {
-	*x = NotWritten{}
+func (x *UnwrittenDeck) Reset() {
+	*x = UnwrittenDeck{}
 	mi := &file_numen_v1_cards_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NotWritten) String() string {
+func (x *UnwrittenDeck) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NotWritten) ProtoMessage() {}
+func (*UnwrittenDeck) ProtoMessage() {}
 
-func (x *NotWritten) ProtoReflect() protoreflect.Message {
+func (x *UnwrittenDeck) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_cards_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1453,19 +1453,19 @@ func (x *NotWritten) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NotWritten.ProtoReflect.Descriptor instead.
-func (*NotWritten) Descriptor() ([]byte, []int) {
+// Deprecated: Use UnwrittenDeck.ProtoReflect.Descriptor instead.
+func (*UnwrittenDeck) Descriptor() ([]byte, []int) {
 	return file_numen_v1_cards_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *NotWritten) GetPath() string {
+func (x *UnwrittenDeck) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *NotWritten) GetProblem() *Problem {
+func (x *UnwrittenDeck) GetProblem() *Problem {
 	if x != nil {
 		return x.Problem
 	}
@@ -1871,8 +1871,8 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05faces\x18\x04 \x03(\v2\x0e.numen.v1.FaceR\x05faces\x12-\n" +
 	"\bproblems\x18\x05 \x03(\v2\x11.numen.v1.ProblemR\bproblems\x12\x1a\n" +
 	"\bpreamble\x18\x06 \x01(\tR\bpreamble\x12\x12\n" +
-	"\x04tail\x18\a \x01(\tR\x04tail\"K\n" +
-	"\aOffered\x12\x12\n" +
+	"\x04tail\x18\a \x01(\tR\x04tail\"R\n" +
+	"\x0eStencilSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06fields\x18\x03 \x03(\tR\x06fields\"X\n" +
@@ -1915,9 +1915,9 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"+\n" +
 	"\x13ListStencilsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\x05R\x05limit\"Y\n" +
-	"\x14ListStencilsResponse\x12-\n" +
-	"\bstencils\x18\x01 \x03(\v2\x11.numen.v1.OfferedR\bstencils\x12\x12\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"`\n" +
+	"\x14ListStencilsResponse\x124\n" +
+	"\bstencils\x18\x01 \x03(\v2\x18.numen.v1.StencilSummaryR\bstencils\x12\x12\n" +
 	"\x04held\x18\x02 \x01(\x05R\x04held\"\\\n" +
 	"\x14CreateStencilRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x16\n" +
@@ -1958,19 +1958,18 @@ const file_numen_v1_cards_proto_rawDesc = "" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12.\n" +
 	"\x04seen\x18\x04 \x01(\v2\x15.numen.v1.FingerprintH\x00R\x04seen\x88\x01\x01B\a\n" +
-	"\x05_seen\"\xff\x01\n" +
+	"\x05_seen\"\x82\x02\n" +
 	"\x1aRenameStencilFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
-	"\x05cards\x18\x02 \x01(\x05R\x05cards\x125\n" +
-	"\vnot_written\x18\x03 \x03(\v2\x14.numen.v1.NotWrittenR\n" +
+	"\x05cards\x18\x02 \x01(\x05R\x05cards\x128\n" +
+	"\vnot_written\x18\x03 \x03(\v2\x17.numen.v1.UnwrittenDeckR\n" +
 	"notWritten\x120\n" +
 	"\arefusal\x18\x04 \x01(\x0e2\x11.numen.v1.RefusalH\x00R\arefusal\x88\x01\x01\x12*\n" +
 	"\x02at\x18\x06 \x01(\v2\x15.numen.v1.FingerprintH\x01R\x02at\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusalB\x05\n" +
-	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"M\n" +
-	"\n" +
-	"NotWritten\x12\x12\n" +
+	"\x03_atJ\x04\b\x05\x10\x06R\achanged\"P\n" +
+	"\rUnwrittenDeck\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12+\n" +
 	"\aproblem\x18\x02 \x01(\v2\x11.numen.v1.ProblemR\aproblem\"A\n" +
 	"\x11CreateDeckRequest\x12\x14\n" +
@@ -2046,7 +2045,7 @@ var file_numen_v1_cards_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_numen_v1_cards_proto_goTypes = []any{
 	(Fault)(0),                         // 0: numen.v1.Fault
 	(*Stencil)(nil),                    // 1: numen.v1.Stencil
-	(*Offered)(nil),                    // 2: numen.v1.Offered
+	(*StencilSummary)(nil),             // 2: numen.v1.StencilSummary
 	(*Face)(nil),                       // 3: numen.v1.Face
 	(*Deck)(nil),                       // 4: numen.v1.Deck
 	(*Section)(nil),                    // 5: numen.v1.Section
@@ -2063,7 +2062,7 @@ var file_numen_v1_cards_proto_goTypes = []any{
 	(*WriteStencilResponse)(nil),       // 16: numen.v1.WriteStencilResponse
 	(*RenameStencilFieldRequest)(nil),  // 17: numen.v1.RenameStencilFieldRequest
 	(*RenameStencilFieldResponse)(nil), // 18: numen.v1.RenameStencilFieldResponse
-	(*NotWritten)(nil),                 // 19: numen.v1.NotWritten
+	(*UnwrittenDeck)(nil),              // 19: numen.v1.UnwrittenDeck
 	(*CreateDeckRequest)(nil),          // 20: numen.v1.CreateDeckRequest
 	(*CreateDeckResponse)(nil),         // 21: numen.v1.CreateDeckResponse
 	(*ReadDeckRequest)(nil),            // 22: numen.v1.ReadDeckRequest
@@ -2081,7 +2080,7 @@ var file_numen_v1_cards_proto_depIdxs = []int32{
 	6,  // 4: numen.v1.Deck.problems:type_name -> numen.v1.Problem
 	0,  // 5: numen.v1.Problem.fault:type_name -> numen.v1.Fault
 	8,  // 6: numen.v1.Card.values:type_name -> numen.v1.Value
-	2,  // 7: numen.v1.ListStencilsResponse.stencils:type_name -> numen.v1.Offered
+	2,  // 7: numen.v1.ListStencilsResponse.stencils:type_name -> numen.v1.StencilSummary
 	26, // 8: numen.v1.CreateStencilResponse.refusal:type_name -> numen.v1.Refusal
 	1,  // 9: numen.v1.ReadStencilResponse.stencil:type_name -> numen.v1.Stencil
 	26, // 10: numen.v1.ReadStencilResponse.refusal:type_name -> numen.v1.Refusal
@@ -2091,10 +2090,10 @@ var file_numen_v1_cards_proto_depIdxs = []int32{
 	26, // 14: numen.v1.WriteStencilResponse.refusal:type_name -> numen.v1.Refusal
 	27, // 15: numen.v1.WriteStencilResponse.at:type_name -> numen.v1.Fingerprint
 	27, // 16: numen.v1.RenameStencilFieldRequest.seen:type_name -> numen.v1.Fingerprint
-	19, // 17: numen.v1.RenameStencilFieldResponse.not_written:type_name -> numen.v1.NotWritten
+	19, // 17: numen.v1.RenameStencilFieldResponse.not_written:type_name -> numen.v1.UnwrittenDeck
 	26, // 18: numen.v1.RenameStencilFieldResponse.refusal:type_name -> numen.v1.Refusal
 	27, // 19: numen.v1.RenameStencilFieldResponse.at:type_name -> numen.v1.Fingerprint
-	6,  // 20: numen.v1.NotWritten.problem:type_name -> numen.v1.Problem
+	6,  // 20: numen.v1.UnwrittenDeck.problem:type_name -> numen.v1.Problem
 	26, // 21: numen.v1.CreateDeckResponse.refusal:type_name -> numen.v1.Refusal
 	4,  // 22: numen.v1.ReadDeckResponse.deck:type_name -> numen.v1.Deck
 	26, // 23: numen.v1.ReadDeckResponse.refusal:type_name -> numen.v1.Refusal
