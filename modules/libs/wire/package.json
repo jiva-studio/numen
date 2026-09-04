@@ -8,8 +8,17 @@
   "exports": {
     ".": "./index.ts"
   },
+  "scripts": {
+    "typecheck": "tsc --build --force",
+    "test": "vitest run"
+  },
   "dependencies": {
     "@numen/protocol": "file:../protocol",
     "@numen/ui": "file:../ui"
+  },
+  "devDependencies": {
+    "@bufbuild/protobuf": "^2.10.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
   }
 }

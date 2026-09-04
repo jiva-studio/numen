@@ -123,9 +123,9 @@ jobs:
             GOOS=${target%/*} GOARCH=${target#*/} CGO_ENABLED=0 go build -o /dev/null ./cmd/numen-cli
           done
 
-  # The two screens the desktop draws. Both are typed against the schema and
-  # against the components, so a change to either fails here rather than on
-  # screen.
+  # The two screens the desktop draws, and the wire they read their answers
+  # through. All three are typed against the schema and against the components,
+  # so a change to either fails here rather than on screen.
   screens:
     name: "Test :: Screens"
     runs-on: ubuntu-latest
@@ -173,11 +173,13 @@ jobs:
 
       - name: Typecheck
         run: |
+          npm run typecheck --prefix modules/libs/wire
           npm run typecheck --prefix modules/apps/desktop/ui
           npm run typecheck --prefix modules/apps/desktop/flashcards
 
       - name: Test
         run: |
+          npm test --prefix modules/libs/wire
           npm run test:unit --prefix modules/apps/desktop/ui -- --coverage
           npm run test:stories --prefix modules/apps/desktop/ui
           npm test --prefix modules/apps/desktop/flashcards

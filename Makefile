@@ -116,6 +116,7 @@ test: ## run every test
 	cd $(MOBILE) && go test ./... -race
 	cd $(UI) && npm test
 	cd $(UI) && npm run build
+	cd $(WIRE) && npm test
 	cd $(DESKTOP)/ui && npm test
 	cd $(DESKTOP)/flashcards && npm test
 	cd $(MOBILE) && npm test
@@ -127,6 +128,7 @@ lint: generate-check ## the checks CI runs, less the one needing a base branch
 	cd $(MOBILE) && gofmt -l ./bind && go vet ./...
 	cd $(PROTOCOL) && buf lint
 	cd $(UI) && npm run typecheck
+	cd $(WIRE) && npm run typecheck
 	cd $(DESKTOP)/ui && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
 	cd $(MOBILE) && npm run typecheck
