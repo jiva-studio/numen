@@ -208,7 +208,6 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 			Queries: db.Queries(),
 			Links:   db.Links(),
 			Read:    &note.Read{Readers: cfg.VaultReaders()},
-			Write:   &note.Write{Readers: cfg.VaultReaders(), Writers: cfg.VaultWriters()},
 		},
 		Files: Files{Writers: cfg.VaultWriters()},
 	}
@@ -260,6 +259,10 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		stopEmbedder: closeEmbedder,
 	}
 
+	// A note the person saves is level before the save is answered, so the vault
+	// finds what it now holds without waiting on the watch.
+	writing := note.NewWrite(cfg.VaultReaders(), cfg.VaultWriters(), opened.level)
+	api.Notes.Write = &writing
 	api.Notes.Create = &note.Create{
 		Writers: cfg.VaultWriters(),
 		Names:   db.Queries(),

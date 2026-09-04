@@ -51,7 +51,7 @@ var (
 type Write struct {
 	Readers port.VaultReaders
 	Writers port.VaultWriters
-	Index   func(ctx context.Context, v domain.Vault, paths []string) error
+	Index   Levels
 	Now     func() time.Time
 	// Bound is the most the file may be, measured as it goes to disk. Zero is
 	// MaxBytes. A caller whose files are read at a bound of their own sets it.
@@ -59,6 +59,21 @@ type Write struct {
 	// Telling is told what a write is doing while it is being made. Nothing is
 	// told where nobody is drawing the note.
 	Telling TellEditing
+}
+
+// Levels brings the named notes up to date in the index, so that what a write
+// changed is findable before the write is reported done.
+type Levels func(ctx context.Context, v domain.Vault, paths []string) error
+
+// NewWrite is the writer a note somebody is saving goes to disk through: the
+// vault it is read and written through, and what brings it level in the index.
+//
+// All three are named here because a write without any one of them is a save
+// that half happens. A caller that forgets the levelling does not compile,
+// where a struct built field by field would save the note and quietly leave the
+// vault unable to find what it now holds.
+func NewWrite(readers port.VaultReaders, writers port.VaultWriters, index Levels) Write {
+	return Write{Readers: readers, Writers: writers, Index: index}
 }
 
 // Execute puts body in the note at path.

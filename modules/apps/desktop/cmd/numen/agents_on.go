@@ -134,6 +134,11 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 		Sync:   cfg.Syncing(),
 	}
 
+	// A note a tool writes is drawn as the stretch that changed, so this writer
+	// is told what it is doing as well as what it writes through.
+	writing := note.NewWrite(readers, writers, index)
+	writing.Telling = tells
+
 	cutting := cfg.Cards(queries, opened.Index.Links(), index)
 
 	return mcp.Core{
@@ -143,12 +148,12 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 		Attending: opened.API.Attended,
 
 		Vaults: mcp.Vaults{
-			Registry: opened.API.Vaults.Registry,
-			Picker:   opened.API.Vaults.Picker,
-			Add:      opened.API.Vaults.Add,
-			Rename:   opened.API.Vaults.Rename,
-			Forget:   opened.API.Vaults.Forget,
-			Opens:    opening(opened, out),
+			Registry:     opened.API.Vaults.Registry,
+			FolderDialog: opened.API.Vaults.FolderDialog,
+			Add:          opened.API.Vaults.Add,
+			Rename:       opened.API.Vaults.Rename,
+			Forget:       opened.API.Vaults.Forget,
+			Opens:        opening(opened, out),
 		},
 
 		Sources: mcp.Sources{
@@ -178,7 +183,7 @@ func agentCore(cfg container.Config, opened *webui.Installation, root string, ou
 			Problems:      check.Standard(opened.Index.Problems()),
 
 			Create:  note.Create{Writers: writers, Names: queries, Index: index},
-			Write:   note.Write{Readers: readers, Writers: writers, Index: index, Telling: tells},
+			Write:   writing,
 			Replace: note.Replace{Readers: readers, Writers: writers, Index: index, Telling: tells},
 			Move:    moves,
 			Rename:  note.Rename{Move: moves},
