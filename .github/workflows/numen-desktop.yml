@@ -35,6 +35,8 @@ jobs:
         working-directory: modules/apps/desktop
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # The two caches are keyed apart: the modules answer to go.sum, the build
       # answers to the commit.
@@ -103,6 +105,8 @@ jobs:
         working-directory: modules/apps/desktop
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
@@ -123,6 +127,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:

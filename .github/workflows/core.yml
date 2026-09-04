@@ -50,6 +50,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - id: said
         env:
@@ -117,6 +118,8 @@ jobs:
         working-directory: modules/libs/core
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # The two caches are keyed apart: the modules answer to go.sum, the build
       # answers to the commit. Both carry the machine, because what a compiler
