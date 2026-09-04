@@ -249,7 +249,6 @@ export type {
   TreeKey,
 } from './tree/model'
 
-export { default as Face } from './cards/Face.vue'
 export { default as StencilView } from './cards/StencilView.vue'
 export { default as Deck } from './cards/Deck.vue'
 /** One card of a deck, which is what the deck lays out. */
