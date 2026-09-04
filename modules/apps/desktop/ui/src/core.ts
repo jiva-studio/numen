@@ -840,10 +840,11 @@ export interface Vaults {
   add(path: string, name: string): Promise<Added>
   /** What a person calls a vault. The folder keeps the name the filesystem gives it. */
   rename(id: string, name: string): Promise<Added>
-  /** A vault taken off the list. The folder stays where it is. */
-  forget(id: string): Promise<VaultRefused | null>
-  /** A vault taken off the list, and its folder into the trash this machine keeps. */
-  erase(id: string): Promise<VaultRefused | null>
+  /**
+   * A vault taken off the list. The folder stays where it is, and goes to the
+   * trash this machine keeps when the call asks for it.
+   */
+  remove(id: string, trash: boolean): Promise<VaultRefused | null>
   /** Another vault shown in this window, in place of the one it was showing. */
   open(id: string): Promise<VaultRefused | null>
 }

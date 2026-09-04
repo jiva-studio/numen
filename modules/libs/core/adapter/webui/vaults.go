@@ -88,44 +88,32 @@ func (s vaultsService) RenameVault(
 	return connect.NewResponse(&v1.RenameVaultResponse{Vault: vaultOf(v)}), nil
 }
 
-// ForgetVault takes a vault off the list and out of the index. The folder stays
-// where it is.
-func (s vaultsService) ForgetVault(
+// RemoveVault takes a vault off the list and out of the index, and its folder
+// to the trash when the request asks for it.
+func (s vaultsService) RemoveVault(
 	ctx context.Context,
-	r *connect.Request[v1.ForgetVaultRequest],
-) (*connect.Response[v1.ForgetVaultResponse], error) {
+	r *connect.Request[v1.RemoveVaultRequest],
+) (*connect.Response[v1.RemoveVaultResponse], error) {
 	v, err := s.offTheList(r.Msg.GetName())
 	if err == nil {
-		err = s.api.Vaults.Forget.Execute(ctx, v)
+		err = s.removal(ctx, v, r.Msg.GetTrash())
 	}
 	if err != nil {
 		refusal, refused := vaultRefusedBy(err)
 		if !refused {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.ForgetVaultResponse{Refusal: &refusal}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Refusal: &refusal}), nil
 	}
-	return connect.NewResponse(&v1.ForgetVaultResponse{}), nil
+	return connect.NewResponse(&v1.RemoveVaultResponse{}), nil
 }
 
-// EraseVault is ForgetVault, and the folder goes to the place this machine
-// keeps what a person deleted.
-func (s vaultsService) EraseVault(
-	ctx context.Context,
-	r *connect.Request[v1.EraseVaultRequest],
-) (*connect.Response[v1.EraseVaultResponse], error) {
-	v, err := s.offTheList(r.Msg.GetName())
-	if err == nil {
-		err = s.api.Vaults.Erase.Execute(ctx, v)
+// removal is the two ways a vault leaves the list.
+func (s vaultsService) removal(ctx context.Context, v domain.Vault, trash bool) error {
+	if trash {
+		return s.api.Vaults.Erase.Execute(ctx, v)
 	}
-	if err != nil {
-		refusal, refused := vaultRefusedBy(err)
-		if !refused {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.EraseVaultResponse{Refusal: &refusal}), nil
-	}
-	return connect.NewResponse(&v1.EraseVaultResponse{}), nil
+	return s.api.Vaults.Forget.Execute(ctx, v)
 }
 
 // OpenVault shows another vault in this window.

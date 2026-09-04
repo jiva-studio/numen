@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkoKBVZhdWx0EgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDwoHbWlzc2luZxgEIAEoCCITChFMaXN0VmF1bHRzUmVxdWVzdCJEChJMaXN0VmF1bHRzUmVzcG9uc2USHwoGdmF1bHRzGAEgAygLMg8ubnVtZW4udjEuVmF1bHRKBAgCEANSB3Nob3dpbmciOQoTQ2hvb3NlRm9sZGVyUmVxdWVzdBINCgV0aXRsZRgBIAEoCRITCgtzdGFydGluZ19hdBgCIAEoCSIzChRDaG9vc2VGb2xkZXJSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWNob3NlGAIgASgIIjUKD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCSJ8ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCI4ChJSZW5hbWVWYXVsdFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifwoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoHcmVmdXNhbBgCIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAYgBAUIICgZfdmF1bHRCCgoIX3JlZnVzYWwiIgoSRm9yZ2V0VmF1bHRSZXF1ZXN0EgwKBG5hbWUYASABKAkiUAoTRm9yZ2V0VmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIiEKEUVyYXNlVmF1bHRSZXF1ZXN0EgwKBG5hbWUYASABKAkiTwoSRXJhc2VWYXVsdFJlc3BvbnNlEi0KB3JlZnVzYWwYASABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwiIAoQT3BlblZhdWx0UmVxdWVzdBIMCgRuYW1lGAEgASgJIk4KEU9wZW5WYXVsdFJlc3BvbnNlEi0KB3JlZnVzYWwYASABKA4yFy5udW1lbi52MS5WYXVsdHNSZWZ1c2FsSACIAQFCCgoIX3JlZnVzYWwqsgIKDVZhdWx0c1JlZnVzYWwSHgoaVkFVTFRTX1JFRlVTQUxfVU5TUEVDSUZJRUQQABIdChlWQVVMVFNfUkVGVVNBTF9VTlJFQURBQkxFEAESFwoTVkFVTFRTX1JFRlVTQUxfQ09QWRACEhsKF1ZBVUxUU19SRUZVU0FMX09WRVJMQVBTEAMSHQoZVkFVTFRTX1JFRlVTQUxfTkFNRV9UQUtFThAEEh0KGVZBVUxUU19SRUZVU0FMX0xBU1RfVkFVTFQQBRIaChZWQVVMVFNfUkVGVVNBTF9TSE9XSU5HEAYSGgoWVkFVTFRTX1JFRlVTQUxfVU5LTk9XThAHEhsKF1ZBVUxUU19SRUZVU0FMX05PX1RSQVNIEAgSGQoVVkFVTFRTX1JFRlVTQUxfQVNLSU5HEAkykQQKDVZhdWx0c1NlcnZpY2USRwoKTGlzdFZhdWx0cxIbLm51bWVuLnYxLkxpc3RWYXVsdHNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdFZhdWx0c1Jlc3BvbnNlEk0KDENob29zZUZvbGRlchIdLm51bWVuLnYxLkNob29zZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXNwb25zZRJBCghBZGRWYXVsdBIZLm51bWVuLnYxLkFkZFZhdWx0UmVxdWVzdBoaLm51bWVuLnYxLkFkZFZhdWx0UmVzcG9uc2USSgoLUmVuYW1lVmF1bHQSHC5udW1lbi52MS5SZW5hbWVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW5hbWVWYXVsdFJlc3BvbnNlEkoKC0ZvcmdldFZhdWx0EhwubnVtZW4udjEuRm9yZ2V0VmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuRm9yZ2V0VmF1bHRSZXNwb25zZRJHCgpFcmFzZVZhdWx0EhsubnVtZW4udjEuRXJhc2VWYXVsdFJlcXVlc3QaHC5udW1lbi52MS5FcmFzZVZhdWx0UmVzcG9uc2USRAoJT3BlblZhdWx0EhoubnVtZW4udjEuT3BlblZhdWx0UmVxdWVzdBobLm51bWVuLnYxLk9wZW5WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkoKBVZhdWx0EgwKBG5hbWUYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEgwKBHBhdGgYAyABKAkSDwoHbWlzc2luZxgEIAEoCCITChFMaXN0VmF1bHRzUmVxdWVzdCJEChJMaXN0VmF1bHRzUmVzcG9uc2USHwoGdmF1bHRzGAEgAygLMg8ubnVtZW4udjEuVmF1bHRKBAgCEANSB3Nob3dpbmciOQoTQ2hvb3NlRm9sZGVyUmVxdWVzdBINCgV0aXRsZRgBIAEoCRITCgtzdGFydGluZ19hdBgCIAEoCSIzChRDaG9vc2VGb2xkZXJSZXNwb25zZRIMCgRwYXRoGAEgASgJEg0KBWNob3NlGAIgASgIIjUKD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCSJ8ChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgdyZWZ1c2FsGAIgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgBiAEBQggKBl92YXVsdEIKCghfcmVmdXNhbCI4ChJSZW5hbWVWYXVsdFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifwoTUmVuYW1lVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoHcmVmdXNhbBgCIAEoDjIXLm51bWVuLnYxLlZhdWx0c1JlZnVzYWxIAYgBAUIICgZfdmF1bHRCCgoIX3JlZnVzYWwiMQoSUmVtb3ZlVmF1bHRSZXF1ZXN0EgwKBG5hbWUYASABKAkSDQoFdHJhc2gYAiABKAgiUAoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsIiAKEE9wZW5WYXVsdFJlcXVlc3QSDAoEbmFtZRgBIAEoCSJOChFPcGVuVmF1bHRSZXNwb25zZRItCgdyZWZ1c2FsGAEgASgOMhcubnVtZW4udjEuVmF1bHRzUmVmdXNhbEgAiAEBQgoKCF9yZWZ1c2FsKrICCg1WYXVsdHNSZWZ1c2FsEh4KGlZBVUxUU19SRUZVU0FMX1VOU1BFQ0lGSUVEEAASHQoZVkFVTFRTX1JFRlVTQUxfVU5SRUFEQUJMRRABEhcKE1ZBVUxUU19SRUZVU0FMX0NPUFkQAhIbChdWQVVMVFNfUkVGVVNBTF9PVkVSTEFQUxADEh0KGVZBVUxUU19SRUZVU0FMX05BTUVfVEFLRU4QBBIdChlWQVVMVFNfUkVGVVNBTF9MQVNUX1ZBVUxUEAUSGgoWVkFVTFRTX1JFRlVTQUxfU0hPV0lORxAGEhoKFlZBVUxUU19SRUZVU0FMX1VOS05PV04QBxIbChdWQVVMVFNfUkVGVVNBTF9OT19UUkFTSBAIEhkKFVZBVUxUU19SRUZVU0FMX0FTS0lORxAJMsgDCg1WYXVsdHNTZXJ2aWNlEkcKCkxpc3RWYXVsdHMSGy5udW1lbi52MS5MaXN0VmF1bHRzUmVxdWVzdBocLm51bWVuLnYxLkxpc3RWYXVsdHNSZXNwb25zZRJNCgxDaG9vc2VGb2xkZXISHS5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVzcG9uc2USQQoIQWRkVmF1bHQSGS5udW1lbi52MS5BZGRWYXVsdFJlcXVlc3QaGi5udW1lbi52MS5BZGRWYXVsdFJlc3BvbnNlEkoKC1JlbmFtZVZhdWx0EhwubnVtZW4udjEuUmVuYW1lVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuUmVuYW1lVmF1bHRSZXNwb25zZRJKCgtSZW1vdmVWYXVsdBIcLm51bWVuLnYxLlJlbW92ZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbW92ZVZhdWx0UmVzcG9uc2USRAoJT3BlblZhdWx0EhoubnVtZW4udjEuT3BlblZhdWx0UmVxdWVzdBobLm51bWVuLnYxLk9wZW5WYXVsdFJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Vault is one vault the installation holds, as the list has it.
@@ -256,66 +256,37 @@ export const RenameVaultResponseSchema: GenMessage<RenameVaultResponse> = /*@__P
   messageDesc(file_numen_v1_vaults, 8);
 
 /**
- * @generated from message numen.v1.ForgetVaultRequest
+ * @generated from message numen.v1.RemoveVaultRequest
  */
-export type ForgetVaultRequest = Message<"numen.v1.ForgetVaultRequest"> & {
+export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
   /**
-   * The vault to forget, by its identity.
+   * The vault to remove, by its identity.
    *
    * @generated from field: string name = 1;
    */
   name: string;
+
+  /**
+   * Trash sends the folder to the place this machine keeps what a person
+   * deleted. A folder no longer carrying this vault's identity stays where it
+   * is and the vault stays on the list.
+   *
+   * @generated from field: bool trash = 2;
+   */
+  trash: boolean;
 };
 
 /**
- * Describes the message numen.v1.ForgetVaultRequest.
- * Use `create(ForgetVaultRequestSchema)` to create a new message.
+ * Describes the message numen.v1.RemoveVaultRequest.
+ * Use `create(RemoveVaultRequestSchema)` to create a new message.
  */
-export const ForgetVaultRequestSchema: GenMessage<ForgetVaultRequest> = /*@__PURE__*/
+export const RemoveVaultRequestSchema: GenMessage<RemoveVaultRequest> = /*@__PURE__*/
   messageDesc(file_numen_v1_vaults, 9);
 
 /**
- * @generated from message numen.v1.ForgetVaultResponse
+ * @generated from message numen.v1.RemoveVaultResponse
  */
-export type ForgetVaultResponse = Message<"numen.v1.ForgetVaultResponse"> & {
-  /**
-   * Set when the vault is still on the list, and why.
-   *
-   * @generated from field: optional numen.v1.VaultsRefusal refusal = 1;
-   */
-  refusal?: VaultsRefusal | undefined;
-};
-
-/**
- * Describes the message numen.v1.ForgetVaultResponse.
- * Use `create(ForgetVaultResponseSchema)` to create a new message.
- */
-export const ForgetVaultResponseSchema: GenMessage<ForgetVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 10);
-
-/**
- * @generated from message numen.v1.EraseVaultRequest
- */
-export type EraseVaultRequest = Message<"numen.v1.EraseVaultRequest"> & {
-  /**
-   * The vault to erase, by its identity.
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.EraseVaultRequest.
- * Use `create(EraseVaultRequestSchema)` to create a new message.
- */
-export const EraseVaultRequestSchema: GenMessage<EraseVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 11);
-
-/**
- * @generated from message numen.v1.EraseVaultResponse
- */
-export type EraseVaultResponse = Message<"numen.v1.EraseVaultResponse"> & {
+export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
   /**
    * Set when the vault is still on the list, and why. The folder is where it
    * was.
@@ -326,11 +297,11 @@ export type EraseVaultResponse = Message<"numen.v1.EraseVaultResponse"> & {
 };
 
 /**
- * Describes the message numen.v1.EraseVaultResponse.
- * Use `create(EraseVaultResponseSchema)` to create a new message.
+ * Describes the message numen.v1.RemoveVaultResponse.
+ * Use `create(RemoveVaultResponseSchema)` to create a new message.
  */
-export const EraseVaultResponseSchema: GenMessage<EraseVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 12);
+export const RemoveVaultResponseSchema: GenMessage<RemoveVaultResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_vaults, 10);
 
 /**
  * @generated from message numen.v1.OpenVaultRequest
@@ -349,7 +320,7 @@ export type OpenVaultRequest = Message<"numen.v1.OpenVaultRequest"> & {
  * Use `create(OpenVaultRequestSchema)` to create a new message.
  */
 export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 13);
+  messageDesc(file_numen_v1_vaults, 11);
 
 /**
  * @generated from message numen.v1.OpenVaultResponse
@@ -368,7 +339,7 @@ export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
  * Use `create(OpenVaultResponseSchema)` to create a new message.
  */
 export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 14);
+  messageDesc(file_numen_v1_vaults, 12);
 
 /**
  * VaultsRefusal is why the list is as it was, or why the window is still
@@ -511,26 +482,16 @@ export const VaultsService: GenService<{
     output: typeof RenameVaultResponseSchema;
   },
   /**
-   * ForgetVault takes a vault off the list and out of the index. The folder
-   * stays where it is, and adding it again brings back the same vault.
+   * RemoveVault takes a vault off the list and out of the index. The folder
+   * stays where it is unless the request asks for it, and adding it back
+   * brings back the same vault.
    *
-   * @generated from rpc numen.v1.VaultsService.ForgetVault
+   * @generated from rpc numen.v1.VaultsService.RemoveVault
    */
-  forgetVault: {
+  removeVault: {
     methodKind: "unary";
-    input: typeof ForgetVaultRequestSchema;
-    output: typeof ForgetVaultResponseSchema;
-  },
-  /**
-   * EraseVault is ForgetVault, and the folder goes to the place this machine
-   * keeps what a person deleted.
-   *
-   * @generated from rpc numen.v1.VaultsService.EraseVault
-   */
-  eraseVault: {
-    methodKind: "unary";
-    input: typeof EraseVaultRequestSchema;
-    output: typeof EraseVaultResponseSchema;
+    input: typeof RemoveVaultRequestSchema;
+    output: typeof RemoveVaultResponseSchema;
   },
   /**
    * OpenVault shows another vault in this window. What the window was showing

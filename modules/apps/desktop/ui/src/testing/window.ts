@@ -182,8 +182,7 @@ vi.mock('../vault', () => ({
     },
     add: async () => ({ vault: null, refusal: null }),
     rename: async () => ({ vault: null, refusal: null }),
-    forget: async () => null,
-    erase: async () => null,
+    remove: async () => null,
     open: async (id: string) => {
       asked.opened.push(id)
       return null

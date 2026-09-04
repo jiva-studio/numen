@@ -188,12 +188,8 @@ const window = (
         done.push(`renames vault ${id} ${name}`)
         return answers.added ?? { vault: known(id, name), refusal: null }
       },
-      forget: async (id) => {
-        done.push(`forgets ${id}`)
-        return refusal
-      },
-      erase: async (id) => {
-        done.push(`erases ${id}`)
+      remove: async (id, trash) => {
+        done.push(trash ? `erases ${id}` : `forgets ${id}`)
         return refusal
       },
       open: async (id) => {

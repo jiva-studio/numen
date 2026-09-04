@@ -30,13 +30,10 @@ service VaultsService {
   // filesystem gives it.
   rpc RenameVault(RenameVaultRequest) returns (RenameVaultResponse);
 
-  // ForgetVault takes a vault off the list and out of the index. The folder
-  // stays where it is, and adding it again brings back the same vault.
-  rpc ForgetVault(ForgetVaultRequest) returns (ForgetVaultResponse);
-
-  // EraseVault is ForgetVault, and the folder goes to the place this machine
-  // keeps what a person deleted.
-  rpc EraseVault(EraseVaultRequest) returns (EraseVaultResponse);
+  // RemoveVault takes a vault off the list and out of the index. The folder
+  // stays where it is unless the request asks for it, and adding it back
+  // brings back the same vault.
+  rpc RemoveVault(RemoveVaultRequest) returns (RemoveVaultResponse);
 
   // OpenVault shows another vault in this window. What the window was showing
   // is let go of, and everything a client asked about it is asked again of the
@@ -163,22 +160,17 @@ message RenameVaultResponse {
   optional VaultsRefusal refusal = 2;
 }
 
-message ForgetVaultRequest {
-  // The vault to forget, by its identity.
+message RemoveVaultRequest {
+  // The vault to remove, by its identity.
   string name = 1;
+
+  // Trash sends the folder to the place this machine keeps what a person
+  // deleted. A folder no longer carrying this vault's identity stays where it
+  // is and the vault stays on the list.
+  bool trash = 2;
 }
 
-message ForgetVaultResponse {
-  // Set when the vault is still on the list, and why.
-  optional VaultsRefusal refusal = 1;
-}
-
-message EraseVaultRequest {
-  // The vault to erase, by its identity.
-  string name = 1;
-}
-
-message EraseVaultResponse {
+message RemoveVaultResponse {
   // Set when the vault is still on the list, and why. The folder is where it
   // was.
   optional VaultsRefusal refusal = 1;

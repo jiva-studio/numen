@@ -598,28 +598,32 @@ func (x *RenameVaultResponse) GetRefusal() VaultsRefusal {
 	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
 }
 
-type ForgetVaultRequest struct {
+type RemoveVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The vault to forget, by its identity.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The vault to remove, by its identity.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Trash sends the folder to the place this machine keeps what a person
+	// deleted. A folder no longer carrying this vault's identity stays where it
+	// is and the vault stays on the list.
+	Trash         bool `protobuf:"varint,2,opt,name=trash,proto3" json:"trash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ForgetVaultRequest) Reset() {
-	*x = ForgetVaultRequest{}
+func (x *RemoveVaultRequest) Reset() {
+	*x = RemoveVaultRequest{}
 	mi := &file_numen_v1_vaults_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ForgetVaultRequest) String() string {
+func (x *RemoveVaultRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ForgetVaultRequest) ProtoMessage() {}
+func (*RemoveVaultRequest) ProtoMessage() {}
 
-func (x *ForgetVaultRequest) ProtoReflect() protoreflect.Message {
+func (x *RemoveVaultRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_vaults_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,109 +635,26 @@ func (x *ForgetVaultRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ForgetVaultRequest.ProtoReflect.Descriptor instead.
-func (*ForgetVaultRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RemoveVaultRequest.ProtoReflect.Descriptor instead.
+func (*RemoveVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ForgetVaultRequest) GetName() string {
+func (x *RemoveVaultRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-type ForgetVaultResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when the vault is still on the list, and why.
-	Refusal       *VaultsRefusal `protobuf:"varint,1,opt,name=refusal,proto3,enum=numen.v1.VaultsRefusal,oneof" json:"refusal,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ForgetVaultResponse) Reset() {
-	*x = ForgetVaultResponse{}
-	mi := &file_numen_v1_vaults_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ForgetVaultResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ForgetVaultResponse) ProtoMessage() {}
-
-func (x *ForgetVaultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vaults_proto_msgTypes[10]
+func (x *RemoveVaultRequest) GetTrash() bool {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.Trash
 	}
-	return mi.MessageOf(x)
+	return false
 }
 
-// Deprecated: Use ForgetVaultResponse.ProtoReflect.Descriptor instead.
-func (*ForgetVaultResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *ForgetVaultResponse) GetRefusal() VaultsRefusal {
-	if x != nil && x.Refusal != nil {
-		return *x.Refusal
-	}
-	return VaultsRefusal_VAULTS_REFUSAL_UNSPECIFIED
-}
-
-type EraseVaultRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The vault to erase, by its identity.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EraseVaultRequest) Reset() {
-	*x = EraseVaultRequest{}
-	mi := &file_numen_v1_vaults_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EraseVaultRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EraseVaultRequest) ProtoMessage() {}
-
-func (x *EraseVaultRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vaults_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EraseVaultRequest.ProtoReflect.Descriptor instead.
-func (*EraseVaultRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *EraseVaultRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type EraseVaultResponse struct {
+type RemoveVaultResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when the vault is still on the list, and why. The folder is where it
 	// was.
@@ -742,21 +663,21 @@ type EraseVaultResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EraseVaultResponse) Reset() {
-	*x = EraseVaultResponse{}
-	mi := &file_numen_v1_vaults_proto_msgTypes[12]
+func (x *RemoveVaultResponse) Reset() {
+	*x = RemoveVaultResponse{}
+	mi := &file_numen_v1_vaults_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EraseVaultResponse) String() string {
+func (x *RemoveVaultResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EraseVaultResponse) ProtoMessage() {}
+func (*RemoveVaultResponse) ProtoMessage() {}
 
-func (x *EraseVaultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vaults_proto_msgTypes[12]
+func (x *RemoveVaultResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_vaults_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -767,12 +688,12 @@ func (x *EraseVaultResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EraseVaultResponse.ProtoReflect.Descriptor instead.
-func (*EraseVaultResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{12}
+// Deprecated: Use RemoveVaultResponse.ProtoReflect.Descriptor instead.
+func (*RemoveVaultResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *EraseVaultResponse) GetRefusal() VaultsRefusal {
+func (x *RemoveVaultResponse) GetRefusal() VaultsRefusal {
 	if x != nil && x.Refusal != nil {
 		return *x.Refusal
 	}
@@ -789,7 +710,7 @@ type OpenVaultRequest struct {
 
 func (x *OpenVaultRequest) Reset() {
 	*x = OpenVaultRequest{}
-	mi := &file_numen_v1_vaults_proto_msgTypes[13]
+	mi := &file_numen_v1_vaults_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -801,7 +722,7 @@ func (x *OpenVaultRequest) String() string {
 func (*OpenVaultRequest) ProtoMessage() {}
 
 func (x *OpenVaultRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vaults_proto_msgTypes[13]
+	mi := &file_numen_v1_vaults_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -814,7 +735,7 @@ func (x *OpenVaultRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenVaultRequest.ProtoReflect.Descriptor instead.
 func (*OpenVaultRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{13}
+	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *OpenVaultRequest) GetName() string {
@@ -834,7 +755,7 @@ type OpenVaultResponse struct {
 
 func (x *OpenVaultResponse) Reset() {
 	*x = OpenVaultResponse{}
-	mi := &file_numen_v1_vaults_proto_msgTypes[14]
+	mi := &file_numen_v1_vaults_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +767,7 @@ func (x *OpenVaultResponse) String() string {
 func (*OpenVaultResponse) ProtoMessage() {}
 
 func (x *OpenVaultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_vaults_proto_msgTypes[14]
+	mi := &file_numen_v1_vaults_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +780,7 @@ func (x *OpenVaultResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenVaultResponse.ProtoReflect.Descriptor instead.
 func (*OpenVaultResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_vaults_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *OpenVaultResponse) GetRefusal() VaultsRefusal {
@@ -906,16 +827,11 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\arefusal\x18\x02 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x01R\arefusal\x88\x01\x01B\b\n" +
 	"\x06_vaultB\n" +
 	"\n" +
-	"\b_refusal\"(\n" +
-	"\x12ForgetVaultRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"Y\n" +
-	"\x13ForgetVaultResponse\x126\n" +
-	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
-	"\n" +
-	"\b_refusal\"'\n" +
-	"\x11EraseVaultRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"X\n" +
-	"\x12EraseVaultResponse\x126\n" +
+	"\b_refusal\">\n" +
+	"\x12RemoveVaultRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05trash\x18\x02 \x01(\bR\x05trash\"Y\n" +
+	"\x13RemoveVaultResponse\x126\n" +
 	"\arefusal\x18\x01 \x01(\x0e2\x17.numen.v1.VaultsRefusalH\x00R\arefusal\x88\x01\x01B\n" +
 	"\n" +
 	"\b_refusal\"&\n" +
@@ -935,16 +851,14 @@ const file_numen_v1_vaults_proto_rawDesc = "" +
 	"\x16VAULTS_REFUSAL_SHOWING\x10\x06\x12\x1a\n" +
 	"\x16VAULTS_REFUSAL_UNKNOWN\x10\a\x12\x1b\n" +
 	"\x17VAULTS_REFUSAL_NO_TRASH\x10\b\x12\x19\n" +
-	"\x15VAULTS_REFUSAL_ASKING\x10\t2\x91\x04\n" +
+	"\x15VAULTS_REFUSAL_ASKING\x10\t2\xc8\x03\n" +
 	"\rVaultsService\x12G\n" +
 	"\n" +
 	"ListVaults\x12\x1b.numen.v1.ListVaultsRequest\x1a\x1c.numen.v1.ListVaultsResponse\x12M\n" +
 	"\fChooseFolder\x12\x1d.numen.v1.ChooseFolderRequest\x1a\x1e.numen.v1.ChooseFolderResponse\x12A\n" +
 	"\bAddVault\x12\x19.numen.v1.AddVaultRequest\x1a\x1a.numen.v1.AddVaultResponse\x12J\n" +
 	"\vRenameVault\x12\x1c.numen.v1.RenameVaultRequest\x1a\x1d.numen.v1.RenameVaultResponse\x12J\n" +
-	"\vForgetVault\x12\x1c.numen.v1.ForgetVaultRequest\x1a\x1d.numen.v1.ForgetVaultResponse\x12G\n" +
-	"\n" +
-	"EraseVault\x12\x1b.numen.v1.EraseVaultRequest\x1a\x1c.numen.v1.EraseVaultResponse\x12D\n" +
+	"\vRemoveVault\x12\x1c.numen.v1.RemoveVaultRequest\x1a\x1d.numen.v1.RemoveVaultResponse\x12D\n" +
 	"\tOpenVault\x12\x1a.numen.v1.OpenVaultRequest\x1a\x1b.numen.v1.OpenVaultResponseBIZGgithub.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -960,7 +874,7 @@ func file_numen_v1_vaults_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_vaults_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_numen_v1_vaults_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_vaults_proto_goTypes = []any{
 	(VaultsRefusal)(0),           // 0: numen.v1.VaultsRefusal
 	(*Vault)(nil),                // 1: numen.v1.Vault
@@ -972,12 +886,10 @@ var file_numen_v1_vaults_proto_goTypes = []any{
 	(*AddVaultResponse)(nil),     // 7: numen.v1.AddVaultResponse
 	(*RenameVaultRequest)(nil),   // 8: numen.v1.RenameVaultRequest
 	(*RenameVaultResponse)(nil),  // 9: numen.v1.RenameVaultResponse
-	(*ForgetVaultRequest)(nil),   // 10: numen.v1.ForgetVaultRequest
-	(*ForgetVaultResponse)(nil),  // 11: numen.v1.ForgetVaultResponse
-	(*EraseVaultRequest)(nil),    // 12: numen.v1.EraseVaultRequest
-	(*EraseVaultResponse)(nil),   // 13: numen.v1.EraseVaultResponse
-	(*OpenVaultRequest)(nil),     // 14: numen.v1.OpenVaultRequest
-	(*OpenVaultResponse)(nil),    // 15: numen.v1.OpenVaultResponse
+	(*RemoveVaultRequest)(nil),   // 10: numen.v1.RemoveVaultRequest
+	(*RemoveVaultResponse)(nil),  // 11: numen.v1.RemoveVaultResponse
+	(*OpenVaultRequest)(nil),     // 12: numen.v1.OpenVaultRequest
+	(*OpenVaultResponse)(nil),    // 13: numen.v1.OpenVaultResponse
 }
 var file_numen_v1_vaults_proto_depIdxs = []int32{
 	1,  // 0: numen.v1.ListVaultsResponse.vaults:type_name -> numen.v1.Vault
@@ -985,28 +897,25 @@ var file_numen_v1_vaults_proto_depIdxs = []int32{
 	0,  // 2: numen.v1.AddVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
 	1,  // 3: numen.v1.RenameVaultResponse.vault:type_name -> numen.v1.Vault
 	0,  // 4: numen.v1.RenameVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 5: numen.v1.ForgetVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 6: numen.v1.EraseVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	0,  // 7: numen.v1.OpenVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
-	2,  // 8: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
-	4,  // 9: numen.v1.VaultsService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
-	6,  // 10: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest
-	8,  // 11: numen.v1.VaultsService.RenameVault:input_type -> numen.v1.RenameVaultRequest
-	10, // 12: numen.v1.VaultsService.ForgetVault:input_type -> numen.v1.ForgetVaultRequest
-	12, // 13: numen.v1.VaultsService.EraseVault:input_type -> numen.v1.EraseVaultRequest
-	14, // 14: numen.v1.VaultsService.OpenVault:input_type -> numen.v1.OpenVaultRequest
-	3,  // 15: numen.v1.VaultsService.ListVaults:output_type -> numen.v1.ListVaultsResponse
-	5,  // 16: numen.v1.VaultsService.ChooseFolder:output_type -> numen.v1.ChooseFolderResponse
-	7,  // 17: numen.v1.VaultsService.AddVault:output_type -> numen.v1.AddVaultResponse
-	9,  // 18: numen.v1.VaultsService.RenameVault:output_type -> numen.v1.RenameVaultResponse
-	11, // 19: numen.v1.VaultsService.ForgetVault:output_type -> numen.v1.ForgetVaultResponse
-	13, // 20: numen.v1.VaultsService.EraseVault:output_type -> numen.v1.EraseVaultResponse
-	15, // 21: numen.v1.VaultsService.OpenVault:output_type -> numen.v1.OpenVaultResponse
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	0,  // 5: numen.v1.RemoveVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	0,  // 6: numen.v1.OpenVaultResponse.refusal:type_name -> numen.v1.VaultsRefusal
+	2,  // 7: numen.v1.VaultsService.ListVaults:input_type -> numen.v1.ListVaultsRequest
+	4,  // 8: numen.v1.VaultsService.ChooseFolder:input_type -> numen.v1.ChooseFolderRequest
+	6,  // 9: numen.v1.VaultsService.AddVault:input_type -> numen.v1.AddVaultRequest
+	8,  // 10: numen.v1.VaultsService.RenameVault:input_type -> numen.v1.RenameVaultRequest
+	10, // 11: numen.v1.VaultsService.RemoveVault:input_type -> numen.v1.RemoveVaultRequest
+	12, // 12: numen.v1.VaultsService.OpenVault:input_type -> numen.v1.OpenVaultRequest
+	3,  // 13: numen.v1.VaultsService.ListVaults:output_type -> numen.v1.ListVaultsResponse
+	5,  // 14: numen.v1.VaultsService.ChooseFolder:output_type -> numen.v1.ChooseFolderResponse
+	7,  // 15: numen.v1.VaultsService.AddVault:output_type -> numen.v1.AddVaultResponse
+	9,  // 16: numen.v1.VaultsService.RenameVault:output_type -> numen.v1.RenameVaultResponse
+	11, // 17: numen.v1.VaultsService.RemoveVault:output_type -> numen.v1.RemoveVaultResponse
+	13, // 18: numen.v1.VaultsService.OpenVault:output_type -> numen.v1.OpenVaultResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_vaults_proto_init() }
@@ -1018,14 +927,13 @@ func file_numen_v1_vaults_proto_init() {
 	file_numen_v1_vaults_proto_msgTypes[8].OneofWrappers = []any{}
 	file_numen_v1_vaults_proto_msgTypes[10].OneofWrappers = []any{}
 	file_numen_v1_vaults_proto_msgTypes[12].OneofWrappers = []any{}
-	file_numen_v1_vaults_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_vaults_proto_rawDesc), len(file_numen_v1_vaults_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

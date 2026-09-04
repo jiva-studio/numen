@@ -475,7 +475,7 @@ const calls = async (deed: Deed, on: Doing, words: Words): Promise<void> => {
  */
 const forgets = async (deed: Deed, erase: boolean, on: Doing, words: Words): Promise<void> => {
   const id = deed.vault.id
-  const refusal = erase ? await on.vaults.erase(id) : await on.vaults.forget(id)
+  const refusal = await on.vaults.remove(id, erase)
   if (refusal) on.says(words.unvaulted[refusal], 'refusal')
 }
 
