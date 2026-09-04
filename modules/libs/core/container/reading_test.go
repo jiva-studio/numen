@@ -32,7 +32,7 @@ func scanned(t *testing.T) (container.Config, domain.Vault) {
 	}
 	defer db.Close()
 
-	if err := db.Vaults().Save(t.Context(), vault); err != nil {
+	if err := db.Vaults().Register(t.Context(), vault.ID); err != nil {
 		t.Fatal(err)
 	}
 	err = db.Sources().SaveExtraction(t.Context(), string(vault.ID), port.SourceChunks{

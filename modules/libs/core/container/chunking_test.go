@@ -68,7 +68,7 @@ func TestANoteIsCutAtTheSettingsSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Vaults().Save(t.Context(), v); err != nil {
+	if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
 		t.Fatal(err)
 	}
 
