@@ -182,6 +182,8 @@ func TestEveryStepReachesThePageAsItself(t *testing.T) {
 }
 
 // A window that can reach no agent says so, and answers nothing about a card.
+// The window serves the agent either way: whether one is up is this window's at
+// this moment, and the page reads it in the state it asks for as it opens.
 func TestAWindowWithNoAgentAnswersNothingAboutACard(t *testing.T) {
 	client := panelled(t, &API{})
 
@@ -192,13 +194,13 @@ func TestAWindowWithNoAgentAnswersNothingAboutACard(t *testing.T) {
 	t.Cleanup(func() { stream.Close() })
 	for stream.Receive() {
 	}
-	if code := connect.CodeOf(stream.Err()); code != connect.CodeUnimplemented {
+	if code := connect.CodeOf(stream.Err()); code != connect.CodeFailedPrecondition {
 		t.Errorf("asking answered %v", code)
 	}
 
 	_, err = client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "one"}))
-	if code := connect.CodeOf(err); code != connect.CodeUnimplemented {
+	if code := connect.CodeOf(err); code != connect.CodeFailedPrecondition {
 		t.Errorf("finishing answered %v", code)
 	}
 }

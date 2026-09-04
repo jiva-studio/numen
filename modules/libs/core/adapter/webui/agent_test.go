@@ -211,8 +211,8 @@ func TestAVaultWithNoAgentHasNoConversationToFinish(t *testing.T) {
 
 	_, err := client.FinishConversation(t.Context(),
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "8f2c1e"}))
-	if got := connect.CodeOf(err); got != connect.CodeUnimplemented {
-		t.Errorf("a vault with no agent answered %v, want %v", got, connect.CodeUnimplemented)
+	if got := connect.CodeOf(err); got != connect.CodeFailedPrecondition {
+		t.Errorf("a vault with no agent answered %v, want %v", got, connect.CodeFailedPrecondition)
 	}
 }
 
@@ -228,7 +228,7 @@ func TestAVaultWithNoAgentSaysSo(t *testing.T) {
 	t.Cleanup(func() { stream.Close() })
 	for stream.Receive() {
 	}
-	if got := connect.CodeOf(stream.Err()); got != connect.CodeUnimplemented {
-		t.Errorf("a vault with no agent answered %v, want %v", got, connect.CodeUnimplemented)
+	if got := connect.CodeOf(stream.Err()); got != connect.CodeFailedPrecondition {
+		t.Errorf("a vault with no agent answered %v, want %v", got, connect.CodeFailedPrecondition)
 	}
 }

@@ -13,6 +13,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
+// errNoAgent is a vault with none. Whether one can be reached is what the
+// window is told in the vault's state, and is a fact about this vault and this
+// moment rather than about what the binary was built to answer.
+var errNoAgent = errors.New("no agent is set up for this vault")
+
 // AskAgent hands the person's task to the agent and reports what it does for as
 // long as the client listens.
 //
@@ -25,8 +30,7 @@ func (a *API) AskAgent(
 ) error {
 	taking := a.Answering()
 	if taking == nil {
-		return connect.NewError(connect.CodeUnimplemented,
-			errors.New("no agent is set up for this vault"))
+		return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
 	}
 
 	work, err := taking.Take(ctx, port.Task{
@@ -76,8 +80,7 @@ func (a *API) FinishConversation(
 ) (*connect.Response[v1.FinishConversationResponse], error) {
 	taking := a.Answering()
 	if taking == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented,
-			errors.New("no agent is set up for this vault"))
+		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
 	}
 
 	if err := taking.Finish(ctx, r.Msg.GetConversation()); err != nil {

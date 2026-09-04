@@ -13,7 +13,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// ErrNoAgent is a question asked at a window that can reach none.
+// ErrNoAgent is a question asked at a window that can reach none. Whether one
+// can be reached is what GetAgentState answers, and is a fact about this window
+// and this moment rather than about what the binary was built to answer.
 var ErrNoAgent = errors.New("no agent is set up for this window")
 
 // GetAgentState is whether a card can be asked about here, and on which cards
@@ -40,7 +42,7 @@ func (a *API) AskAgent(
 ) error {
 	taking := a.Answering()
 	if taking == nil {
-		return connect.NewError(connect.CodeUnimplemented, ErrNoAgent)
+		return connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
 
 	// The card is what `card_showing` answers with, not part of the question. A
@@ -99,7 +101,7 @@ func (a *API) FinishConversation(
 ) (*connect.Response[v1.FinishConversationResponse], error) {
 	taking := a.Answering()
 	if taking == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, ErrNoAgent)
+		return nil, connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
 
 	if err := taking.Finish(ctx, r.Msg.GetConversation()); err != nil {
