@@ -77,6 +77,8 @@ A model is run through an ONNX Runtime engine made once and kept for the life of
 
 **It is made before the window**, and a reading is refused where it was not: the binding stamps onto a tensor the engine that stood when the tensor was built, so a page read through an engine made after the window is read as nothing. A transcription refuses nothing on that account.
 
+**The reading library makes an engine of its own**, and it takes none: it is not written here and offers no way to be handed one. So it is made where this process settles its runtime, not on the first page. The binding gives every tensor to the engine made last, and one made on the first page would move what a transcription already running had been building its tensors through. Both engines load the same file, and which of the two a tensor carries is settled once, before there is a tensor to lose.
+
 A machine holding no runtime at all is left as it is, and a reading is what fetches one. The reading that fetched it says so, and the document is the next opening's to read.
 
 ### What is loaded is what was published
@@ -100,6 +102,7 @@ A grandchild holding the child's error output keeps a wait from returning, so th
 - A close a page calls off is a window that went and came back.
 - A machine that fetched its runtime during a reading reads that document at the next opening, and is told so where the reading was asked for.
 - A file dropped into the fetch directory under the library's name is written over by the published one.
+- A process that reads pages holds two ONNX Runtime engines, this one and the reading library's, and nothing can bring that to one until the library will take an engine it is given.
 - Moving to another runtime version is new sums in the build, and every machine fetches again.
 - A note an agent was part of the way through writing is whatever its last complete write left.
 - Every bound here is a constant, and nothing measures what any of them is a bound on. A subprocess arriving with a feature of its own brings another, and nothing counts them.
