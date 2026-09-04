@@ -16,7 +16,7 @@ import (
 // Embedders are what makes the vectors a vault is searched by and what makes
 // the vector a question is asked with.
 //
-// They are one model where the settings name one station. Naming a station
+// They are one model where the settings name one provider. Naming a provider
 // for questions is what puts a vault indexed over a network within reach of a
 // machine that has none.
 //
@@ -24,8 +24,8 @@ import (
 // is drawn while it arrives. Until it is here the words answer alone, and the
 // model and its width are known from the settings.
 //
-// An embedder is optional: an installation naming no station answers with
-// nothing. A station that cannot be built — no key, no base URL — is a
+// An embedder is optional: an installation naming no provider answers with
+// nothing. A provider that cannot be built — no key, no base URL — is a
 // reason, and nothing is built at all.
 func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, asking port.Embedder, close func() error, why error) {
 	first, why := c.placed(ctx, c.Embedding.Indexing, forIndexing, tasks)
@@ -44,7 +44,7 @@ func (c Config) Embedders(ctx context.Context, tasks *task.Tasks) (indexing, ask
 	if second == nil {
 		return first.Filling(), nil, first.Close, nil
 	}
-	// Two stations are asked whether they are one model, once both are here.
+	// Two providers are asked whether they are one model, once both are here.
 	go func() {
 		if err := agreeing(ctx, first, second); err != nil {
 			_ = second.Disown(err)
@@ -65,7 +65,7 @@ func (c Config) Embedder(ctx context.Context) (port.Embedder, func() error, erro
 }
 
 // Asking is what embeds a question, for a run that fills no index. Only the
-// station that answers questions is opened, and it answers under the identity
+// provider that answers questions is opened, and it answers under the identity
 // the index is filled with.
 func (c Config) Asking(ctx context.Context) (port.Embedder, func() error, error) {
 	held, err := c.placed(ctx, c.Embedding.Asking(), forQuery, nil)
@@ -92,17 +92,18 @@ func (c Config) SearchingOver(passages port.PassageQueries, asking port.Embedder
 		asking, c.Embedding.Floor, trouble)
 }
 
-// placed is what one station makes: a service, which answers at once, or a
+// placed is what one provider makes: a service, which answers at once, or a
 // model on this machine, which is loaded behind the window. Nothing for a
-// station that names neither.
+// provider that names neither.
 //
 // Whichever it is, it answers under the identity the index is filled with, and
-// the two stations are held to it by being compared as one model.
-func (c Config) placed(ctx context.Context, where embed.Station, role string, tasks *task.Tasks) (*embedding.Embedder, error) {
+// the two providers are held to it by being compared as one model.
+func (c Config) placed(ctx context.Context, where embed.Provider, role string, tasks *task.Tasks) (*embedding.Embedder, error) {
 	is := c.Embedding.Stored()
 	switch where.Use {
 	case embed.UseService:
-		client, err := openai.New(is, where.Service)
+		service, _ := where.Service()
+		client, err := openai.New(is, service)
 		if err != nil {
 			return nil, err
 		}
@@ -111,12 +112,13 @@ func (c Config) placed(ctx context.Context, where embed.Station, role string, ta
 		return held, nil
 
 	case embed.UseLocal:
+		local, _ := where.Local()
 		held := embedding.Arriving(is)
 		at := arriving(role, where)
 		doing := preparing(tasks, at)
 		doing(0, 0)
 		go func() {
-			model, err := onnx.Open(ctx, is, where.Local, doing)
+			model, err := onnx.Open(ctx, is, local, doing)
 			if err != nil {
 				held.Landed(nil, err)
 				failed(tasks, at, err)
@@ -136,10 +138,10 @@ func (c Config) placed(ctx context.Context, where embed.Station, role string, ta
 		where.Use, embed.UseLocal, embed.UseService)
 }
 
-// agreeing is the two stations answering one text alike, once both are here.
+// agreeing is the two providers answering one text alike, once both are here.
 //
 // A question embedded in another space finds nothing the first indexed, and
-// nothing in a settings file shows that two stations are one model. A
+// nothing in a settings file shows that two providers are one model. A
 // comparison that did not happen is not agreement, and only a context that
 // ended excuses one.
 func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
@@ -175,26 +177,28 @@ func agreeing(ctx context.Context, first, second *embedding.Embedder) error {
 	return nil
 }
 
-// Which half of the work a station is for. An arrival is called by its role
-// and its name, and two stations naming one repository are two lines.
+// Which half of the work a provider is for. An arrival is called by its role
+// and its name, and two providers naming one repository are two lines.
 const (
 	forIndexing = "indexing"
 	forQuery    = "query"
 )
 
-// listing is one station's arrival in the list of what is being done: what
+// listing is one provider's arrival in the list of what is being done: what
 // that line is called, and the name to show on it.
 type listing struct {
 	id, name string
 }
 
-// arriving is how one station appears while it is on its way. A model on this
+// arriving is how one provider appears while it is on its way. A model on this
 // machine is named by its repository and a service by the model it is asked
 // for.
-func arriving(role string, where embed.Station) listing {
-	name := where.Service.Name
-	if where.Use == embed.UseLocal {
-		name = where.Local.Name
+func arriving(role string, where embed.Provider) listing {
+	name := ""
+	if local, ok := where.Local(); ok {
+		name = local.Name
+	} else if service, ok := where.Service(); ok {
+		name = service.Name
 	}
 	return listing{id: "getting ready: " + role + ": " + name, name: name}
 }

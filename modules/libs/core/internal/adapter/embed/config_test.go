@@ -1,6 +1,8 @@
 package embed_test
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
@@ -10,11 +12,8 @@ import (
 // two are not one set of vectors.
 func TestAModelRunHereAndOneServedAreTwoAddresses(t *testing.T) {
 	name := "intfloat/multilingual-e5-small"
-	here := embed.Station{Use: embed.UseLocal, Local: embed.LocalModel{Name: name}}
-	served := embed.Station{
-		Use:     embed.UseService,
-		Service: embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name},
-	}
+	here := embed.Provider{}.Running(embed.LocalModel{Name: name})
+	served := embed.Provider{}.Serving(embed.ServiceModel{BaseURL: "http://127.0.0.1:1/v1", Name: name})
 	if a, b := here.From(), served.From(); a == b {
 		t.Errorf("both are %q", a)
 	}
@@ -61,17 +60,17 @@ func TestOneBuildOnThisMachineIsOneAddress(t *testing.T) {
 	}
 }
 
-// A station naming neither is an installation with no model, and has no
+// A provider naming neither is an installation with no model, and has no
 // address at all.
-func TestAStationThatNamesNeitherIsNowhere(t *testing.T) {
-	if got := (embed.Station{}).From(); got != "" {
+func TestAProviderThatNamesNeitherIsNowhere(t *testing.T) {
+	if got := (embed.Provider{}).From(); got != "" {
 		t.Errorf("got %q", got)
 	}
 }
 
 // What a vector is kept under is the model, made where the index is filled. A
 // question placed elsewhere claims those rows.
-func TestVectorsAreKeptUnderTheStationThatFillsTheIndex(t *testing.T) {
+func TestVectorsAreKeptUnderTheProviderThatFillsTheIndex(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Query.Use = embed.UseService
 
@@ -80,5 +79,43 @@ func TestVectorsAreKeptUnderTheStationThatFillsTheIndex(t *testing.T) {
 	}
 	if got := cfg.Stored().Name; got != cfg.Model.Name {
 		t.Errorf("kept under %q, and the model is %q", got, cfg.Model.Name)
+	}
+}
+
+// The settings behind a provider are not fields anybody can name, so the keys a
+// file already on somebody's disk is read and written by are written down.
+func TestAProviderIsReadAndWrittenByTheKeysAFileAlreadyHas(t *testing.T) {
+	var held embed.Provider
+	if err := json.Unmarshal(
+		[]byte(`{"use":"service","local":{"name":"a/repository"},"service":{"name":"served"}}`),
+		&held,
+	); err != nil {
+		t.Fatal(err)
+	}
+	service, ok := held.Service()
+	if !ok || service.Name != "served" {
+		t.Fatalf("read as %+v", held)
+	}
+
+	written, err := json.Marshal(held)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back map[string]json.RawMessage
+	if err := json.Unmarshal(written, &back); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"use", "local", "service"} {
+		if _, named := back[key]; !named {
+			t.Errorf("%q is not a key of %s", key, written)
+		}
+	}
+	if len(back) != 3 {
+		t.Errorf("a provider is written as %s", written)
+	}
+	// The half the file is not on is kept, so a person who goes back to it
+	// finds what they left.
+	if !strings.Contains(string(written), "a/repository") {
+		t.Errorf("the repository is gone from %s", written)
 	}
 }

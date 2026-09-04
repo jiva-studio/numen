@@ -241,7 +241,11 @@ func TestAKeyAPersonTypedIsStillThereAfterAThemeIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := cfg.Indexing.Embedding.Indexing.Service.Key(); got != "sk-the-persons-own" {
+	service, ok := cfg.Indexing.Embedding.Indexing.Service()
+	if !ok {
+		t.Fatal("the vault is no longer indexed by a service")
+	}
+	if got := service.Key(); got != "sk-the-persons-own" {
 		t.Errorf("the key is now %q", got)
 	}
 	if cfg.Appearance.Theme != "mine:dracula" {

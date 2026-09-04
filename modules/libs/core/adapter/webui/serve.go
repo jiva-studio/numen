@@ -30,7 +30,7 @@ type Opened struct {
 	Index *container.Index
 
 	// Embedder fills the index, and Asking turns a query into a vector. They
-	// are one object where the settings name one station, and two stations
+	// are one object where the settings name one provider, and two providers
 	// of one model where a vault indexed over a network is asked on a machine
 	// that has none. Nil for an installation with none, and for Asking also
 	// where the two turned out not to be one model; then a search is answered
@@ -137,7 +137,7 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 	embedder, asking, closeEmbedder, why := cfg.Embedders(ctx, tasks)
 	if why != nil {
 		fmt.Fprintf(out, "not embedding: %v\n", why)
-		// A station that made no model is an installation with no vectors for
+		// A provider that made no model is an installation with no vectors for
 		// as long as the window is open. It stands in the list under what
 		// stopped it.
 		tasks.Set(task.Task{ID: makingVectors, Doing: "Indexing", Failed: why.Error()})

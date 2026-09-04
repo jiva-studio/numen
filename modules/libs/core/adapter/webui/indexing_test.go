@@ -304,7 +304,7 @@ func TestIndexingIsNeverAWordWithNothingUnderIt(t *testing.T) {
 	api.Recipe.Store(model.Model().Recipe())
 	cut(t, db, api)
 
-	// A station that answers over a network is here the moment it is made, so
+	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
 	over := &overheard{asked: model, tasks: api.Tasking}
 	held := embedding.Arriving(model.Model())

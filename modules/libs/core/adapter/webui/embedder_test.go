@@ -46,9 +46,11 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 	embedding := embed.Defaults()
 	embedding.Model.Name = "asked-for"
 	embedding.Indexing.Use = embed.UseService
-	embedding.Indexing.Service.Name = "asked-for"
+	service, _ := embedding.Indexing.Service()
+	service.Name = "asked-for"
 	// Nowhere: this test wants the embedder built, not called.
-	embedding.Indexing.Service.BaseURL = "http://127.0.0.1:1/v1"
+	service.BaseURL = "http://127.0.0.1:1/v1"
+	embedding.Indexing = embedding.Indexing.Serving(service)
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	opened, err := webui.Open(t.Context(), vault(t, embedding), "", os.Stderr)

@@ -51,8 +51,8 @@ type Config struct {
 	//
 	// A vault is indexed once and asked all day, and this machine answers a
 	// question without a network.
-	Indexing Station `json:"indexing"`
-	Query    Station `json:"query"`
+	Indexing Provider `json:"indexing"`
+	Query    Provider `json:"query"`
 
 	// Floor is the cosine similarity a passage reaches to be an answer, in the
 	// units the model in use measures in. Where a model puts two pieces of text
@@ -63,7 +63,7 @@ type Config struct {
 
 // Model is what a vector is: everything that decides the space it lands in.
 //
-// Name is what the model is called here, and is not how either station
+// Name is what the model is called here, and is not how either provider
 // reaches it: a repository and a service call one model by two names, and
 // vectors made under both are kept under this one.
 type Model struct {
@@ -92,24 +92,63 @@ func (m Model) Stored(from string) port.EmbeddingModel {
 	}
 }
 
-// Station is where a vector is made: on this machine, or by a service.
-type Station struct {
-	// Use is `local` or `service`, and names which of the two sections below is
-	// the one in force.
-	Use     string       `json:"use"`
-	Local   LocalModel   `json:"local"`
-	Service ServiceModel `json:"service"`
+// Provider is where a vector is made: on this machine, or by a service.
+//
+// The settings for both are carried, because a file keeps the one it is not on
+// and a person moves between them by changing a word. Which of the two is in
+// force is Use, and Local and Service are the only way to the settings behind
+// it: the half that is not in force describes nothing this installation does,
+// and is not read out of here by mistake.
+type Provider struct {
+	// Use is UseLocal or UseService. Empty is an installation that makes no
+	// vector at all.
+	Use string
+
+	local   LocalModel
+	service ServiceModel
 }
 
-// From is this station as the address its vectors are kept under. It leads
+// Local is the model this machine runs, and false where a vector is made
+// anywhere else.
+func (p Provider) Local() (LocalModel, bool) {
+	if p.Use != UseLocal {
+		return LocalModel{}, false
+	}
+	return p.local, true
+}
+
+// Service is the service a vector is asked of, and false where a vector is made
+// anywhere else.
+func (p Provider) Service() (ServiceModel, bool) {
+	if p.Use != UseService {
+		return ServiceModel{}, false
+	}
+	return p.service, true
+}
+
+// Running is this provider making its vectors on this machine with the model
+// given, and Serving is it making them at the service given. Each sets the word
+// with the settings, so a half is never written without being put in force, and
+// each keeps the half it is not on the way the file does.
+func (p Provider) Running(m LocalModel) Provider {
+	p.Use, p.local = UseLocal, m
+	return p
+}
+
+func (p Provider) Serving(m ServiceModel) Provider {
+	p.Use, p.service = UseService, m
+	return p
+}
+
+// From is this provider as the address its vectors are kept under. It leads
 // with the word that says which of the two it is, because one name is both a
 // repository and something a service answers to.
-func (s Station) From() string {
-	switch s.Use {
-	case UseLocal:
-		return s.Local.From()
-	case UseService:
-		return s.Service.From()
+func (p Provider) From() string {
+	if local, ok := p.Local(); ok {
+		return local.From()
+	}
+	if service, ok := p.Service(); ok {
+		return service.From()
 	}
 	return ""
 }
@@ -175,9 +214,9 @@ func (s ServiceModel) From() string {
 // Defaults embed on this machine: no key and no account. The model itself is
 // fetched the first time it is wanted.
 func Defaults() Config {
-	here := Station{
-		Local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
-		Service: ServiceModel{
+	here := Provider{
+		local: LocalModel{Name: "intfloat/multilingual-e5-small", BatchTexts: 8, Download: true},
+		service: ServiceModel{
 			BaseURL:         "https://api.openai.com/v1",
 			Name:            "text-embedding-3-small",
 			BatchCharacters: 32000,
@@ -200,7 +239,7 @@ func Defaults() Config {
 
 // Asking is where the vector of a question is made. An installation that says
 // nothing about questions asks the way it indexed.
-func (c Config) Asking() Station {
+func (c Config) Asking() Provider {
 	if c.Query.Use == "" {
 		return c.Indexing
 	}
@@ -217,10 +256,10 @@ func (c Config) Stored() port.EmbeddingModel {
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
 func (c *Config) UnmarshalJSON(raw []byte) error {
 	var f struct {
-		Model    *Model   `json:"model"`
-		Indexing *Station `json:"indexing"`
-		Query    *Station `json:"query"`
-		Floor    *float64 `json:"floor"`
+		Model    *Model    `json:"model"`
+		Indexing *Provider `json:"indexing"`
+		Query    *Provider `json:"query"`
+		Floor    *float64  `json:"floor"`
 	}
 	f.Model, f.Indexing, f.Query = &c.Model, &c.Indexing, &c.Query
 	if err := json.Unmarshal(raw, &f); err != nil {
@@ -319,19 +358,29 @@ func (m *LocalModel) UnmarshalJSON(raw []byte) error {
 	return nil
 }
 
+// providerFile is the shape on disk. The keys are written down here because the
+// settings behind them are unexported, and a file anybody already has is read
+// and written by these three names whatever the fields come to be called.
+type providerFile struct {
+	Use     *string       `json:"use"`
+	Local   *LocalModel   `json:"local"`
+	Service *ServiceModel `json:"service"`
+}
+
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.
-func (s *Station) UnmarshalJSON(raw []byte) error {
-	var f struct {
-		Use     *string       `json:"use"`
-		Local   *LocalModel   `json:"local"`
-		Service *ServiceModel `json:"service"`
-	}
-	f.Local, f.Service = &s.Local, &s.Service
+func (p *Provider) UnmarshalJSON(raw []byte) error {
+	f := providerFile{Local: &p.local, Service: &p.service}
 	if err := json.Unmarshal(raw, &f); err != nil {
 		return err
 	}
-	assign(&s.Use, f.Use)
+	assign(&p.Use, f.Use)
 	return nil
+}
+
+// MarshalJSON writes both halves, the one in force and the one kept: a person
+// moving between them by a word finds the settings they left still there.
+func (p Provider) MarshalJSON() ([]byte, error) {
+	return json.Marshal(providerFile{Use: &p.Use, Local: &p.local, Service: &p.service})
 }
 
 // UnmarshalJSON keeps whatever the defaults set for the fields the file omits.

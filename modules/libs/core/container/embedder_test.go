@@ -34,10 +34,17 @@ const (
 func serving(name string) embed.Config {
 	cfg := embed.Defaults()
 	cfg.Model.Name = name
-	cfg.Indexing.Use = embed.UseService
-	cfg.Indexing.Service.Name = name
-	cfg.Indexing.Service.BaseURL = nowhere
+	cfg.Indexing = at(cfg.Indexing, name, nowhere)
 	return cfg
+}
+
+// at is a provider asking a service at a base URL for the model it calls name.
+// Everything else about the service is left as the settings hold it.
+func at(where embed.Provider, name, baseURL string) embed.Provider {
+	where.Use = embed.UseService
+	service, _ := where.Service()
+	service.Name, service.BaseURL = name, baseURL
+	return where.Serving(service)
 }
 
 func TestTheSettingsGivenAreTheOnesUsed(t *testing.T) {
@@ -80,9 +87,7 @@ func TestOneStationIsOneModelSeenTwoWays(t *testing.T) {
 func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := serving("bge-m3")
-	cfg.Query.Use = embed.UseService
-	cfg.Query.Service.Name = "reached-another-way"
-	cfg.Query.Service.BaseURL = nowhere
+	cfg.Query = at(cfg.Query, "reached-another-way", nowhere)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why != nil {
@@ -92,9 +97,9 @@ func TestAQuestionIsEmbeddedWhereTheSettingsSay(t *testing.T) {
 		defer func() { _ = close() }()
 	}
 	if indexing == asking {
-		t.Fatal("one embedder for two stations")
+		t.Fatal("one embedder for two providers")
 	}
-	// Two stations of one model keep their vectors under one recipe.
+	// Two providers of one model keep their vectors under one recipe.
 	if a, b := indexing.Model().Recipe(), asking.Model().Recipe(); a != b {
 		t.Errorf("%s and %s", a, b)
 	}
@@ -126,7 +131,7 @@ func TestTwoServicesServingOneNameKeepTheirOwnVectors(t *testing.T) {
 
 	one := serving("bge-m3")
 	other := serving("bge-m3")
-	other.Indexing.Service.BaseURL = elsewhere
+	other.Indexing = at(other.Indexing, "bge-m3", elsewhere)
 
 	if a, b := recipe(t, one), recipe(t, other); a == b {
 		t.Errorf("two services keep their vectors under one key: %s", a)
@@ -141,10 +146,12 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	here := embed.Defaults()
+	local, _ := here.Indexing.Local()
 	// The repository is named and not fetched, so nothing reaches a network.
-	here.Indexing.Local.Download = false
+	local.Download = false
+	here.Indexing = here.Indexing.Running(local)
 	served := serving(here.Model.Name)
-	served.Indexing.Service.Name = here.Indexing.Local.Name
+	served.Indexing = at(served.Indexing, local.Name, nowhere)
 
 	if a, b := recipe(t, here), recipe(t, served); a == b {
 		t.Errorf("a model run here and one served keep their vectors under one key: %s", a)
@@ -153,15 +160,13 @@ func TestAModelRunHereAndOneServedKeepTheirOwnVectors(t *testing.T) {
 
 // A run that only asks questions claims the vectors the index holds.
 //
-// The station that fills an index is what its vectors were made by, and a
+// The provider that fills an index is what its vectors were made by, and a
 // question placed elsewhere is answered from those rows.
 func TestARunThatOnlyAsksClaimsWhatTheIndexWasFilledWith(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 
 	cfg := serving("bge-m3")
-	cfg.Query.Use = embed.UseService
-	cfg.Query.Service.Name = "bge-m3"
-	cfg.Query.Service.BaseURL = elsewhere
+	cfg.Query = at(cfg.Query, "bge-m3", elsewhere)
 
 	asking, close, why := container.Config{Embedding: cfg}.Asking(t.Context())
 	if why != nil {
@@ -184,8 +189,7 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	cfg := embed.Defaults()
 	// A folder with nothing in it: the model is looked for and not found,
 	// which is what this asks about. Nothing reaches a network.
-	cfg.Indexing.Local.Dir = t.TempDir()
-	cfg.Indexing.Local.Download = false
+	cfg.Indexing = missing(t)
 	held := container.Config{Embedding: cfg}
 
 	embedder, close, why := held.Embedder(t.Context())
@@ -216,9 +220,9 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 	}
 }
 
-// A word for a station that nobody implements is a reason, not a vault
+// A word for a provider that nobody implements is a reason, not a vault
 // quietly searched by its words.
-func TestAStationNobodyImplementsIsARefusal(t *testing.T) {
+func TestAProviderNobodyImplementsIsARefusal(t *testing.T) {
 	cfg := serving("bge-m3")
 	cfg.Query.Use = "grcp"
 
@@ -232,15 +236,15 @@ func TestAStationNobodyImplementsIsARefusal(t *testing.T) {
 	}
 }
 
-// missing is a station for a model on this machine that is not on it: a
+// missing is a provider for a model on this machine that is not on it: a
 // folder with nothing in it, looked in and not fetched. Nothing reaches a
 // network.
-func missing(t *testing.T) embed.Station {
+func missing(t *testing.T) embed.Provider {
 	t.Helper()
 	where := embed.Defaults().Indexing
-	where.Local.Dir = t.TempDir()
-	where.Local.Download = false
-	return where
+	local, _ := where.Local()
+	local.Dir, local.Download = t.TempDir(), false
+	return where.Running(local)
 }
 
 // waited is the list of what is being done, once it holds what is asked of it.
@@ -256,7 +260,7 @@ func waited(t *testing.T, tasks *task.Tasks, enough func([]task.Task) bool) []ta
 	return nil
 }
 
-// uncompared is two stations the comparison between them never got an answer
+// uncompared is two providers the comparison between them never got an answer
 // out of: the model the vault would be indexed by is not on this machine, and
 // questions are placed with a service. It answers with the list.
 func uncompared(t *testing.T) *task.Tasks {
@@ -264,11 +268,10 @@ func uncompared(t *testing.T) *task.Tasks {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := embed.Defaults()
 	cfg.Indexing = missing(t)
-	// A service station is reached by the model it asks for, and names no
+	// A provider on a service is reached by the model it asks for, and names no
 	// repository at all.
-	cfg.Query = embed.Station{Use: embed.UseService}
-	cfg.Query.Service.Name = "reached-another-way"
-	cfg.Query.Service.BaseURL = nowhere
+	cfg.Query = embed.Provider{}.Serving(
+		embed.ServiceModel{Name: "reached-another-way", BaseURL: nowhere})
 
 	tasks := task.New()
 	_, _, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), tasks)
@@ -295,7 +298,7 @@ func failing(t *testing.T, tasks *task.Tasks, want int) []task.Task {
 	})
 }
 
-// A comparison that could not be made is not agreement: the station that
+// A comparison that could not be made is not agreement: the provider that
 // answers questions is let go of, and it is said.
 func TestTwoStationsThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	held := failing(t, uncompared(t), 2)
@@ -304,8 +307,8 @@ func TestTwoStationsThatCouldNotBeComparedAreNotOneModel(t *testing.T) {
 	}
 }
 
-// A station is called by the name it is reached by, whichever kind it is.
-func TestAStationIsInTheListUnderItsOwnName(t *testing.T) {
+// A provider is called by the name it is reached by, whichever kind it is.
+func TestAProviderIsInTheListUnderItsOwnName(t *testing.T) {
 	tasks := uncompared(t)
 	held := failing(t, tasks, 2)
 
@@ -314,12 +317,12 @@ func TestAStationIsInTheListUnderItsOwnName(t *testing.T) {
 			return
 		}
 	}
-	t.Errorf("the station that answers questions is not in the list: %+v", held)
+	t.Errorf("the provider that answers questions is not in the list: %+v", held)
 }
 
-// Two stations naming one repository are two lines, and how far one has got
+// Two providers naming one repository are two lines, and how far one has got
 // is not written over by the other.
-func TestTwoStationsOfOneRepositoryAreTwoLines(t *testing.T) {
+func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 	cfg := embed.Defaults()
 	cfg.Indexing = missing(t)
 	cfg.Query = missing(t)
@@ -344,20 +347,22 @@ func TestTwoStationsOfOneRepositoryAreTwoLines(t *testing.T) {
 		return failed == 2
 	})
 	if len(held) != 2 {
-		t.Fatalf("two stations are %d lines: %+v", len(held), held)
+		t.Fatalf("two providers are %d lines: %+v", len(held), held)
 	}
 	if held[0].ID == held[1].ID {
-		t.Errorf("two stations share the line %q", held[0].ID)
+		t.Errorf("two providers share the line %q", held[0].ID)
 	}
 }
 
-// A station that cannot be built is the whole thing not being built, and
+// A provider that cannot be built is the whole thing not being built, and
 // what was opened before it is let go of.
 func TestAQuestionWithNowhereToBeEmbeddedIsAReason(t *testing.T) {
 	t.Setenv(embed.KeyEnvVar, "sk-test")
 	cfg := serving("bge-m3")
 	cfg.Query.Use = embed.UseService
-	cfg.Query.Service.BaseURL = ""
+	service, _ := cfg.Query.Service()
+	service.BaseURL = ""
+	cfg.Query = cfg.Query.Serving(service)
 
 	indexing, asking, close, why := container.Config{Embedding: cfg}.Embedders(t.Context(), nil)
 	if why == nil {
@@ -391,7 +396,7 @@ func TestAnInstallationSilentAboutQuestionsPreparesNoModelHere(t *testing.T) {
 	if indexing == nil || asking == nil {
 		t.Fatalf("got %v and %v", indexing, asking)
 	}
-	// Both halves are the station the settings named, and neither is this
+	// Both halves are the provider the settings named, and neither is this
 	// machine's own model.
 	if from := indexing.Model().From; from != cfg.Indexing.From() {
 		t.Errorf("the index is filled from %q", from)

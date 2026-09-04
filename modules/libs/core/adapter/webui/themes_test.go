@@ -90,8 +90,14 @@ func TestAThemeChosenInTheWindowIsWrittenIntoTheSettings(t *testing.T) {
 	if said.Appearance.Theme != "preset:nord" || said.Appearance.Mode != settings.ModeDark {
 		t.Errorf("the file says %+v", said.Appearance)
 	}
-	if got := said.Indexing.Embedding.Indexing.Service.Key(); got != "sk-the-persons-own" {
-		t.Errorf("the key is now %q", got)
+	// The key sits in the half the settings are not on, which nothing reads
+	// through a provider. What it is still doing there is what the file says.
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(raw), "sk-the-persons-own") {
+		t.Errorf("the file came back as %s", raw)
 	}
 
 	answer, err := client.Themes(t.Context(), connect.NewRequest(&v1.ThemesRequest{}))

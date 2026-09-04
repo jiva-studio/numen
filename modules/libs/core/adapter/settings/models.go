@@ -43,23 +43,24 @@ func Models(held Config) []port.Model {
 
 // embedding is the model the vault is indexed by. The name is what a vector is
 // kept under, and the width, the window and the pooling belong with it, so
-// choosing one writes the model and the station that runs it together.
+// choosing one writes the model and the provider that runs it together.
 func embedding(held Config) []port.Model {
 	offered := embed.Defaults()
-	station := held.Indexing.Embedding.Indexing
+	provider := held.Indexing.Embedding.Indexing
+	offeredLocal, _ := offered.Indexing.Local()
 	models := []port.Model{{
 		Path:     EmbeddingModelAt,
 		Name:     offered.Model.Name,
 		Title:    offered.Model.Name,
 		Shelf:    shelfMachine,
 		Default:  true,
-		Presence: embedded(station, offered.Model.Name),
+		Presence: embedded(provider, offered.Model.Name),
 		Writes: []port.Setting{
 			setting([]string{"indexing", "embedding", "model"}, offered.Model),
 			setting([]string{"indexing", "embedding", "indexing", "use"}, embed.UseLocal),
 			setting(
 				[]string{"indexing", "embedding", "indexing", "local", "name"},
-				offered.Indexing.Local.Name,
+				offeredLocal.Name,
 			),
 		},
 	}}
@@ -67,39 +68,37 @@ func embedding(held Config) []port.Model {
 	if name == "" || name == offered.Model.Name {
 		return models
 	}
+	writes := []port.Setting{
+		setting([]string{"indexing", "embedding", "model"}, held.Indexing.Embedding.Model),
+		setting([]string{"indexing", "embedding", "indexing", "use"}, provider.Use),
+	}
+	// The repository is written back where it is the one in force. A provider
+	// on a service is reached by what the service calls the model, and the
+	// repository beside it says nothing about this row.
+	if local, ok := provider.Local(); ok {
+		writes = append(writes, setting(
+			[]string{"indexing", "embedding", "indexing", "local", "name"}, local.Name))
+	}
 	return append(models, port.Model{
 		Path:     EmbeddingModelAt,
 		Name:     name,
 		Title:    name,
 		Shelf:    shelfConfigured,
-		Presence: embedded(station, name),
-		Writes: []port.Setting{
-			setting([]string{"indexing", "embedding", "model"}, held.Indexing.Embedding.Model),
-			setting([]string{"indexing", "embedding", "indexing", "use"}, station.Use),
-			setting(
-				[]string{"indexing", "embedding", "indexing", "local", "name"},
-				station.Local.Name,
-			),
-		},
+		Presence: embedded(provider, name),
+		Writes:   writes,
 	})
 }
 
-// embedded is what the model named is on this machine, at the station the
-// settings run it at. Which of the two a station is is `use`, and a station
-// reaching a service fetches nothing whatever the model is called.
-func embedded(station embed.Station, name string) port.Presence {
-	if station.Use != embed.UseLocal {
+// embedded is what the model named is on this machine, at the provider the
+// settings run it at. A provider reaching a service fetches nothing whatever
+// the model is called.
+func embedded(provider embed.Provider, name string) port.Presence {
+	local, here := provider.Local()
+	if !here {
 		return port.NothingToFetch
 	}
-	return fetching(embed.Fetched(under(station, name)))
-}
-
-// under is how this station runs the model named: the folder, the file and the
-// download the settings hold, under that name.
-func under(station embed.Station, name string) embed.LocalModel {
-	local := station.Local
 	local.Name = name
-	return local
+	return fetching(embed.Fetched(local))
 }
 
 // recognising is the model a scanned page is read by. It is named by where it

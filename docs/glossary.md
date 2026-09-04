@@ -64,7 +64,7 @@ A word means one thing inside its context, and the same word in two contexts is 
 | vector | What a model made of one chunk's text. Kept by its text and its recipe. | |
 | kept | Held past the run that made it, and claimed again by what it was made from. | stored |
 | recipe | Everything that decides what a thing made from text is: for a cut, the reader and the sizes; for a vector, where it was made, which model, how wide, where the text was cut off and how it is kept. | |
-| station | Where a vector is made: on this machine, or by a service. | placement |
+| provider | Where a vector is made: on this machine, or by a service. | station, placement |
 | presence | What a model's files are on this machine: `present` where a fetch put them, `not fetched` for a model this machine runs whose files are not here, and `nothing to fetch` for a model reached over the network. It says where files stand and nothing else, and a model is never preferred for it. | installed, missing, available, downloaded |
 | arriving | A model that is not on this machine yet. What it is is known from the settings, so the index is fitted and vectors are claimed under its recipe while the weights come down. | |
 | landed | The model turning up, or the reason it never will. The first of the two counts, and one turning up after the wait is over is let go of. | |
