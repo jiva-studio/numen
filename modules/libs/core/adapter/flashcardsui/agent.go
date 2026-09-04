@@ -3,6 +3,7 @@ package flashcardsui
 import (
 	"context"
 	"errors"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -52,10 +53,20 @@ func (a *API) Ask(
 	}
 	defer work.Stop()
 
+	// A model thinking for a minute writes nothing, and a stream that writes
+	// nothing never learns its client has gone. A step naming nothing is one a
+	// client ignores and a write that fails ends the work.
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-repeat.C:
+			if err := stream.Send(&v1.AskResponse{}); err != nil {
+				return err
+			}
 		case step, working := <-work.Steps():
 			if !working {
 				return nil

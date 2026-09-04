@@ -2,6 +2,7 @@ package webui
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -35,10 +36,19 @@ func (a *API) Focus(
 	line, done := a.Places.listen()
 	defer done()
 
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			// A place nobody asked for names nothing, and is here to fail when
+			// the client has gone.
+			if err := out.Send(&v1.FocusResponse{}); err != nil {
+				return err
+			}
 		case at, open := <-line:
 			if !open {
 				return nil
@@ -84,10 +94,18 @@ func (a *API) Editing(
 	if err := out.Send(&v1.EditingResponse{}); err != nil {
 		return err
 	}
+
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.EditingResponse{}); err != nil {
+				return err
+			}
 		case said, open := <-line:
 			if !open {
 				return nil

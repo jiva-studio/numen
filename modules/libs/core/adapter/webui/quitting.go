@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"sync"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -232,10 +233,20 @@ func (a *API) Quitting(
 		return err
 	}
 
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			// The same token, and nothing asked of the client. A page that has
+			// gone fails the write, and this stream is what holds the window
+			// back at the quit.
+			if err := out.Send(&v1.QuittingResponse{Token: token}); err != nil {
+				return err
+			}
 		case asked, listening := <-told:
 			if !listening {
 				return nil

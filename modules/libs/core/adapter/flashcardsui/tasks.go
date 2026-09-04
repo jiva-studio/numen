@@ -30,8 +30,7 @@ func (a *API) Tasks(
 	defer stop()
 
 	watch := a.Tasking.Watch(watching)
-	repeat := time.NewTimer(again)
-	repeat.Stop()
+	repeat := time.NewTicker(again)
 	defer repeat.Stop()
 
 	var last []task.Task
@@ -55,8 +54,13 @@ func (a *API) Tasks(
 	}
 }
 
-// again is how long after a change the same list is said a second time. A window
-// is handed each list by the write that follows it.
+// again is how often a stream says what it last said when nothing has changed.
+//
+// A window is handed each list by the write that follows it. Nothing else tells
+// a handler its client has gone: the request context belongs to the process and
+// is cancelled when the window closes, not when a page is reloaded away from
+// under a stream. A write that fails is the one report there is, so every
+// stream makes one whether or not it has anything to say.
 const again = time.Second
 
 // doing is the work as the schema says it.

@@ -305,7 +305,10 @@ onMounted(() => {
   // when it opened, and what a deck says now is read at the next one.
   void follows(
     () => cards.moving({}),
-    async () => {
+    async (said) => {
+      // The stream says nothing on its own account so that a page that has gone
+      // fails the write. Only a move is a move.
+      if (!said.reload) return
       if (on.value === 'session') return
       await count()
       if (!vault.value) return

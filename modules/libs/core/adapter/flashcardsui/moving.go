@@ -3,6 +3,7 @@ package flashcardsui
 import (
 	"context"
 	"sync"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -93,10 +94,19 @@ func (a *API) Moving(
 		return err
 	}
 
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			// Nothing moved, which is what the opening message says too. A page
+			// that has gone fails the write.
+			if err := out.Send(&v1.MovingResponse{}); err != nil {
+				return err
+			}
 		case _, open := <-line:
 			if !open {
 				return nil

@@ -162,10 +162,21 @@ func (s *Service) Changed(
 	if err != nil {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
+
+	// Naming nothing changed, so that a client that has gone fails the write.
+	// The request context belongs to the process and says nothing about the page
+	// a stream was opened from.
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			if err := stream.Send(&v1.ChangedResponse{}); err != nil {
+				return err
+			}
 		case names, open := <-changed:
 			if !open {
 				return nil
@@ -176,6 +187,10 @@ func (s *Service) Changed(
 		}
 	}
 }
+
+// again is how often the stream says nothing changed. It is the one thing that
+// tells a handler its client has gone.
+const again = time.Second
 
 // worn is what the settings say, and this product's own palette at the size it
 // was designed at, under the system's choice, where they say nothing or could

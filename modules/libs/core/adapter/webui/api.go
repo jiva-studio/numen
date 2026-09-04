@@ -9,6 +9,7 @@ package webui
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -509,10 +510,17 @@ func (a *API) Changes(
 		return err
 	}
 
+	repeat := time.NewTicker(again)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-repeat.C:
+			if err := out.Send(&v1.ChangesResponse{}); err != nil {
+				return err
+			}
 		case what, open := <-line:
 			if !open {
 				return nil
