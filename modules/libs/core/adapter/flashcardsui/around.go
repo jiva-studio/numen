@@ -16,7 +16,7 @@ import (
 func (a *API) Around(
 	ctx context.Context, r *connect.Request[v1.AroundRequest],
 ) (*connect.Response[v1.AroundResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
+	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

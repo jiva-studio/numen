@@ -29,7 +29,7 @@ var elsewhere = map[string]string{
 func scheduled(t *testing.T, api *API, v domain.Vault, path string) *v1.Preset {
 	t.Helper()
 	out, err := api.Scheduling(t.Context(), connect.NewRequest(
-		&v1.FlashcardsServiceSchedulingRequest{VaultId: string(v.ID), Deck: path}))
+		&v1.FlashcardsServiceSchedulingRequest{Vault: string(v.ID), Deck: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestAQuestionAboutThePresetsOfAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, pointed)
 
 	_, err := api.Scheduling(t.Context(), connect.NewRequest(
-		&v1.FlashcardsServiceSchedulingRequest{VaultId: "nobody", Deck: "decks/Words.md"}))
+		&v1.FlashcardsServiceSchedulingRequest{Vault: "nobody", Deck: "decks/Words.md"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("reading answered %v", err)
 	}

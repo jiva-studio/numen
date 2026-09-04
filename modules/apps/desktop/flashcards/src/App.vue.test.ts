@@ -18,7 +18,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
     day: '2026-08-31',
     vaults: [
       {
-        vaultId: 'physics',
+        vault: 'physics',
         name: 'Physics',
         path: '/vaults/Physics',
         faces: 2,
@@ -30,7 +30,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
         reading: false,
       },
       {
-        vaultId: 'words',
+        vault: 'words',
         name: 'Words',
         path: '/vaults/Words',
         faces: 4,
@@ -109,7 +109,7 @@ const press = async (key: string, more: KeyboardEventInit = {}) => {
 /** The vault the window went into, and nothing while it is still on the list. */
 const opened = (window: VueWrapper): string => {
   const decks = window.findComponent(Decks)
-  return decks.exists() ? (decks.props('vault') as { vaultId: string }).vaultId : ''
+  return decks.exists() ? (decks.props('vault') as { vault: string }).vault : ''
 }
 
 describe('a letter pressed on the vaults', () => {
@@ -162,7 +162,7 @@ describe('a letter pressed on the decks', () => {
 
     await press('a')
 
-    expect(started).toStrictEqual([{ vaultId: 'words', deck: 'decks/Words.md' }])
+    expect(started).toStrictEqual([{ vault: 'words', deck: 'decks/Words.md' }])
   })
 
   it('sits down to nothing where that deck owes nothing', async () => {
@@ -186,6 +186,6 @@ describe('a letter pressed on the decks', () => {
 
     await press('Enter')
 
-    expect(started).toStrictEqual([{ vaultId: 'words', deck: '' }])
+    expect(started).toStrictEqual([{ vault: 'words', deck: '' }])
   })
 })

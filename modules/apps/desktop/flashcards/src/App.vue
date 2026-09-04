@@ -120,7 +120,7 @@ const talks = () => {
 /** What is read, so the keys can scroll it: the caret is nowhere in it. */
 const page = useTemplateRef<InstanceType<typeof Reading>>('page')
 
-const chosen = computed(() => vaults.value.find((one) => one.vaultId === vault.value) ?? null)
+const chosen = computed(() => vaults.value.find((one) => one.vault === vault.value) ?? null)
 
 /**
  * Into a vault. A vault is opened once it has been counted, so what the rest of
@@ -254,7 +254,7 @@ const picking = (press: KeyboardEvent) => {
   const one = at === null ? undefined : vaults.value[at]
   if (!one || !one.counted) return
   press.preventDefault()
-  choose(one.vaultId)
+  choose(one.vault)
 }
 
 /** The keys a person picks what to sit down to with. */

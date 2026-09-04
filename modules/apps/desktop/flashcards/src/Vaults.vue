@@ -21,7 +21,7 @@ const props = defineProps<{
   version: string
 }>()
 
-defineEmits<{ (event: 'choose', vaultId: string): void }>()
+defineEmits<{ (event: 'choose', vault: string): void }>()
 
 /**
  * A vault as a row of the list. One being read into the index says so, and one
@@ -31,7 +31,7 @@ const listed = computed<readonly Held[]>(() =>
   props.vaults.map((one) => {
     const said = one.reading ? 'Reading the vault' : one.unread
     return {
-      id: one.vaultId,
+      id: one.vault,
       name: one.name,
       path: one.path,
       working: !one.counted,
@@ -50,7 +50,7 @@ const waiting = computed(
     new Map(
       props.vaults
         .filter((one) => !one.unread && !one.reading)
-        .map((one) => [one.vaultId, one.counted ? one.due + one.new : null]),
+        .map((one) => [one.vault, one.counted ? one.due + one.new : null]),
     ),
 )
 </script>

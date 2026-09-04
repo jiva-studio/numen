@@ -51,7 +51,7 @@ const deck = (said: Partial<DeckOwing> = {}): DeckOwing => ({
 })
 
 const vault = (said: Partial<Owing> = {}): Owing => ({
-  vaultId: '01A',
+  vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
   counted: true,

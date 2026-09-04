@@ -18,16 +18,16 @@ export interface Asking {
    * Deck is one deck, or empty for every deck the vault holds. Preset holds it
    * to the decks one preset schedules, and to the budget that preset keeps.
    */
-  start(said: { vaultId: string; deck: string; preset?: string }): Promise<Opened>
+  start(said: { vault: string; deck: string; preset?: string }): Promise<Opened>
   answer(said: {
-    vaultId: string
+    vault: string
     run: string
     card: string
     face: string
     rating: number
     tookMs: bigint
   }): Promise<{ answer: string }>
-  takeBack(said: { vaultId: string; run: string; answer: string }): Promise<unknown>
+  takeBack(said: { vault: string; run: string; answer: string }): Promise<unknown>
 }
 
 /** What opening a sitting comes back with. */
@@ -114,15 +114,17 @@ export function session(deps: Sits) {
    * that schedules the decks naming none. Naming none at all sits to the deck.
    */
   const start = async (
-    vaultId: string,
+    named: string,
     deck: string,
     preset?: string,
   ): Promise<Report | null> => {
     try {
       const opened = await deps.cards.start(
-        preset === undefined ? { vaultId, deck } : { vaultId, deck, preset },
+        preset === undefined
+          ? { vault: named, deck }
+          : { vault: named, deck, preset },
       )
-      vault.value = vaultId
+      vault.value = named
       run.value = opened.run
       asked.value = opened.asked.map(asking)
       at.value = 0
@@ -152,7 +154,7 @@ export function session(deps: Sits) {
     writing.value = true
     try {
       const given = await deps.cards.answer({
-        vaultId: vault.value,
+        vault: vault.value,
         run: run.value,
         card: one.card,
         face: one.face,
@@ -180,7 +182,7 @@ export function session(deps: Sits) {
     if (last === undefined || writing.value) return
     writing.value = true
     try {
-      await deps.cards.takeBack({ vaultId: vault.value, run: run.value, answer: last })
+      await deps.cards.takeBack({ vault: vault.value, run: run.value, answer: last })
     } catch (why) {
       deps.failed(why)
       return

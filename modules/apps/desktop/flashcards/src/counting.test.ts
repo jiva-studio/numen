@@ -5,7 +5,7 @@ import { counting } from './counting'
 import type { Counted, Counts, Vaulted } from './counting'
 
 const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
-  vaultId: id,
+  vault: id,
   name: id,
   path: `/vaults/${id}`,
   faces: 3,
@@ -41,7 +41,7 @@ const vault = (id: string, said: Partial<Vaulted> = {}): Vaulted => ({
 /** The vaults as they stand before any of them is counted. */
 const listing = (...all: readonly Vaulted[]): Counted => ({
   day: '2026-09-05',
-  vaults: all.map((one) => ({ ...vault(one.vaultId), ...one, faces: 0, due: 0, new: 0, decks: [] })),
+  vaults: all.map((one) => ({ ...vault(one.vault), ...one, faces: 0, due: 0, new: 0, decks: [] })),
 })
 
 /** One vault's count, as it arrives on its own. */
@@ -99,7 +99,7 @@ describe('counting what every vault owes', () => {
     await settles()
 
     expect(one.day.value).toBe('2026-09-05')
-    expect(one.vaults.value.map((held) => held.vaultId)).toStrictEqual(['01A', '01B'])
+    expect(one.vaults.value.map((held) => held.vault)).toStrictEqual(['01A', '01B'])
     // Nothing is known about what any of them holds, and none of them reads as
     // a vault owing nothing.
     for (const held of one.vaults.value) {
@@ -118,12 +118,12 @@ describe('counting what every vault owes', () => {
     front.says(count(vault('01B', { due: 4, new: 1 })))
     await settles()
 
-    expect(one.vaults.value[0]).toMatchObject({ vaultId: '01A', counted: false, due: 0, new: 0 })
-    expect(one.vaults.value[1]).toMatchObject({ vaultId: '01B', counted: true, due: 4, new: 1 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: false, due: 0, new: 0 })
+    expect(one.vaults.value[1]).toMatchObject({ vault: '01B', counted: true, due: 4, new: 1 })
 
     front.says(count(vault('01A')))
     await settles()
-    expect(one.vaults.value[0]).toMatchObject({ vaultId: '01A', counted: true, due: 1, new: 2 })
+    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', counted: true, due: 1, new: 2 })
     // What a day took arrives in milliseconds and is held in minutes.
     expect(one.vaults.value[0]?.presets[0]).toEqual({
       preset: 'Sanskrit.md',

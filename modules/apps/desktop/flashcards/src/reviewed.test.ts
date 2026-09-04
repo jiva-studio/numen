@@ -47,8 +47,8 @@ describe('what a vault was answered on', () => {
   it('is dropped when the person has moved to another vault', async () => {
     let settle = (_: Said) => {}
     const cards: Asks = {
-      reviewed({ vaultId }) {
-        if (vaultId === '01SLOW') {
+      reviewed({ vault }) {
+        if (vault === '01SLOW') {
           return new Promise<Said>((then) => {
             settle = then
           })

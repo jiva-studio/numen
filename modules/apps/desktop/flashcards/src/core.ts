@@ -119,7 +119,7 @@ export interface Closes {
 
 /** One vault, and what its cards come to today. */
 export interface Owing {
-  readonly vaultId: string
+  readonly vault: string
   readonly name: string
   readonly path: string
   /**

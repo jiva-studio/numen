@@ -29,8 +29,8 @@ func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T
 	api, _ := windowed(t, joined)
 
 	_, err := api.Around(t.Context(), connect.NewRequest(&v1.AroundRequest{
-		VaultId: "no-vault-of-this-identity",
-		Deck:    "decks/Words.md",
+		Vault: "no-vault-of-this-identity",
+		Deck:  "decks/Words.md",
 	}))
 	if err == nil {
 		t.Fatal("a vault this installation does not hold was read around")
@@ -57,7 +57,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	}
 
 	out, err := api.Around(t.Context(), connect.NewRequest(&v1.AroundRequest{
-		VaultId: string(v.ID), Deck: "decks/Words.md",
+		Vault: string(v.ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {
 		t.Fatal(err)

@@ -94,7 +94,7 @@ const vault = (
   decks: readonly { deck: string; due: number; new: number }[],
   presets: readonly PresetOwing[] = [],
 ): Owing => ({
-  vaultId: '01A',
+  vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
   counted: true,
@@ -754,7 +754,7 @@ describe('every question about a preset', () => {
       presets: {
         ...answers,
         async scheduling(say) {
-          named.push(say.vaultId)
+          named.push(say.vault)
           return answers.scheduling(say)
         },
       },

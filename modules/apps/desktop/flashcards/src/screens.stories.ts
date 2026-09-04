@@ -184,7 +184,7 @@ const DECKS: readonly DeckOwing[] = [
 ]
 
 const VAULT: Vault = {
-  vaultId: 'v1',
+  vault: 'v1',
   name: 'Studies',
   path: '/home/you/Studies',
   counted: true,

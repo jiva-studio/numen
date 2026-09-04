@@ -53,7 +53,7 @@ export interface Budget {
  * written to.
  */
 export interface Asks {
-  scheduling(said: { vaultId: string; deck: string }): Promise<{
+  scheduling(said: { vault: string; deck: string }): Promise<{
     preset?:
       | {
           path: string
@@ -143,22 +143,22 @@ export function scheduling(deps: Scheduling) {
 
   // Today is the review day, which the application measures and this window is
   // told: it begins at the hour the settings name.
-  const read = async (vault: Owing | null, today: string) => {
-    if (!vault) {
+  const read = async (owing: Owing | null, today: string) => {
+    if (!owing) {
       forget()
       return
     }
     // A vault read again keeps what is known of it while the reading runs, so
     // the screen it is read behind does not empty and fill.
-    if (of.value !== vault.vaultId) known.value = false
-    of.value = vault.vaultId
+    if (of.value !== owing.vault) known.value = false
+    of.value = owing.vault
 
     const held = await Promise.all(
-      vault.decks.map((deck) => scheduled(deps.presets, vault.vaultId, deck.deck)),
+      owing.decks.map((deck) => scheduled(deps.presets, owing.vault, deck.deck)),
     )
-    if (of.value !== vault.vaultId) return
+    if (of.value !== owing.vault) return
 
-    presets.value = gather(vault, held, today)
+    presets.value = gather(owing, held, today)
     known.value = true
   }
 
@@ -184,9 +184,9 @@ interface Answered {
 const UNREAD = 'the settings of this preset could not be read'
 
 /** The preset one deck is scheduled by, or why it could not be read. */
-const scheduled = async (presets: Asks, vaultId: string, deck: string): Promise<Answered> => {
+const scheduled = async (presets: Asks, vault: string, deck: string): Promise<Answered> => {
   try {
-    const answer = await presets.scheduling({ vaultId, deck })
+    const answer = await presets.scheduling({ vault, deck })
     const settings = answer.preset?.settings
     if (!answer.preset || !settings) {
       return { deck, held: null, refused: said(answer.refusal) || UNREAD }

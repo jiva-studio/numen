@@ -43,7 +43,7 @@ const preset = (said: Partial<Preset> = {}): Preset => ({
 })
 
 const vault: Owing = {
-  vaultId: '01A',
+  vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
   counted: true,

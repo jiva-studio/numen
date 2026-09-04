@@ -22,7 +22,7 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 	sitting := started(t, api, v)
 	for _, card := range sitting.GetAsked() {
 		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-			VaultId: string(v.ID), Run: sitting.GetRun(),
+			Vault: string(v.ID), Run: sitting.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD,
 		})); err != nil {
@@ -30,7 +30,7 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 		}
 	}
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(v.ID)}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestWhatAVaultWasAnsweredOnComesBackInOrder(t *testing.T) {
 func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 	api, held := windowed(t, deck)
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(held[0].ID)}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(held[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,14 +76,14 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	}
 	card := sitting.GetAsked()[0]
 	if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_EASY,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(v.ID)}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
 	api, held := windowed(t, deck)
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(held[0].ID)}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(held[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 func TestReviewedIsRefusedForAVaultNobodyHolds(t *testing.T) {
 	api, _ := windowed(t)
 
-	_, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: "nothing"}))
+	_, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}

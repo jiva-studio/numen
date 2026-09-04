@@ -121,7 +121,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 				rating = v1.Rating_RATING_AGAIN
 			}
 			_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-				VaultId: string(v.ID), Run: sitting.GetRun(),
+				Vault: string(v.ID), Run: sitting.GetRun(),
 				Card: one.GetCard(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
 			}))
@@ -136,7 +136,7 @@ func lives(t *testing.T, api *API, v domain.Vault, days int) {
 func owing(t *testing.T, api *API, v domain.Vault) *v1.VaultOwing {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
-		if one.GetVaultId() == string(v.ID) {
+		if one.GetVault() == string(v.ID) {
 			if one.GetUnread() != "" {
 				t.Fatalf("the vault could not be counted: %s", one.GetUnread())
 			}
@@ -306,7 +306,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		fresh += int(one.GetNew())
 
 		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-			VaultId: string(v.ID), Deck: one.GetDeck(),
+			Vault: string(v.ID), Deck: one.GetDeck(),
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -352,7 +352,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 
 	// One deck answered, and only that deck counts it.
 	sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-		VaultId: string(v.ID), Deck: "decks/Roots.md",
+		Vault: string(v.ID), Deck: "decks/Roots.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -362,7 +362,7 @@ func TestADeckSaysHowMuchOfItWasAnsweredToday(t *testing.T) {
 	}
 	for _, card := range sat.Msg.GetAsked()[:3] {
 		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-			VaultId: string(v.ID), Run: sat.Msg.GetRun(),
+			Vault: string(v.ID), Run: sat.Msg.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 		})); err != nil {
@@ -394,7 +394,7 @@ func TestTheFrontDoorHoldsEachVaultOnce(t *testing.T) {
 	}
 	seen := make(map[string]int, len(rows))
 	for _, one := range rows {
-		seen[one.GetVaultId()]++
+		seen[one.GetVault()]++
 	}
 	for _, v := range held {
 		if seen[string(v.ID)] != 1 {

@@ -270,7 +270,7 @@ func TestTheAgentIsToldWhichVaultTheSittingIsOn(t *testing.T) {
 	var opened []string
 	for _, v := range vaults {
 		if _, err := api.Start(t.Context(),
-			connect.NewRequest(&v1.StartRequest{VaultId: string(v.ID)})); err != nil {
+			connect.NewRequest(&v1.StartRequest{Vault: string(v.ID)})); err != nil {
 			t.Fatal(err)
 		}
 		opened = append(opened, string(v.ID))

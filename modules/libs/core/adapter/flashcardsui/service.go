@@ -40,7 +40,7 @@ func (a *API) Owing(
 
 	listed := make([]*v1.VaultOwing, 0, len(all))
 	for _, v := range all {
-		listed = append(listed, &v1.VaultOwing{VaultId: string(v.ID), Name: v.Name, Path: v.Path})
+		listed = append(listed, &v1.VaultOwing{Vault: string(v.ID), Name: v.Name, Path: v.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
 	if err := out.Send(&v1.OwingResponse{Day: a.Day.Names(a.now()), Vaults: listed}); err != nil {
@@ -110,7 +110,7 @@ func (a *API) counting(ctx context.Context, all []domain.Vault) <-chan *v1.Vault
 }
 
 func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
-	one := &v1.VaultOwing{VaultId: string(v.ID), Name: v.Name, Path: v.Path}
+	one := &v1.VaultOwing{Vault: string(v.ID), Name: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted
 	// from a walk half done, and the numbers arrive with the count that the
@@ -172,7 +172,7 @@ func (a *API) counted(ctx context.Context, v domain.Vault) *v1.VaultOwing {
 func (a *API) Start(
 	ctx context.Context, r *connect.Request[v1.StartRequest],
 ) (*connect.Response[v1.StartResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
+	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -242,7 +242,7 @@ func ahead(said map[history.Rating]time.Duration) *v1.Ahead {
 func (a *API) Answer(
 	ctx context.Context, r *connect.Request[v1.AnswerRequest],
 ) (*connect.Response[v1.AnswerResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
+	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
@@ -285,7 +285,7 @@ func rating(r v1.Rating) history.Rating {
 func (a *API) TakeBack(
 	ctx context.Context, r *connect.Request[v1.TakeBackRequest],
 ) (*connect.Response[v1.TakeBackResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
+	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

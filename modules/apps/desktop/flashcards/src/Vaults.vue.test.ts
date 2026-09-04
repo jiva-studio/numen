@@ -10,7 +10,7 @@ import Vaults from './Vaults.vue'
 import type { Owing } from './core'
 
 const vault = (said: Partial<Owing> = {}): Owing => ({
-  vaultId: '01A',
+  vault: '01A',
   name: 'Studies',
   path: '/vaults/01A',
   counted: true,
@@ -56,7 +56,7 @@ describe('the front door before it knows which vaults there are', () => {
 describe('the front door while the vaults are being counted', () => {
   // The list is what the window opens on, and counting a vault runs behind it.
   it('draws every vault before any of them has a count', () => {
-    const one = shown(true, [uncounted(), uncounted({ vaultId: '01B', name: 'Sanskrit' })])
+    const one = shown(true, [uncounted(), uncounted({ vault: '01B', name: 'Sanskrit' })])
 
     expect(one.findAll('.welcome__row--vault')).toHaveLength(2)
     expect(one.find('.vaults__counting').exists()).toBe(false)
@@ -99,7 +99,7 @@ describe('the front door while the vaults are being counted', () => {
   })
 
   it('opens a vault as soon as that vault has been counted', async () => {
-    const one = shown(true, [vault(), uncounted({ vaultId: '01B', name: 'Sanskrit' })])
+    const one = shown(true, [vault(), uncounted({ vault: '01B', name: 'Sanskrit' })])
 
     await one.findAll('.welcome__row--vault')[0]?.trigger('click')
 

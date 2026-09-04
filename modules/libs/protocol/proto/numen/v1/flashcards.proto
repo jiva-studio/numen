@@ -109,7 +109,7 @@ enum Rating {
 
 // VaultOwing is one vault, and what its cards come to today.
 message VaultOwing {
-  string vault_id = 1;
+  string vault = 1;
   string name = 2;
   string path = 3;
 
@@ -278,7 +278,7 @@ message OwingResponse {
 }
 
 message StartRequest {
-  string vault_id = 1;
+  string vault = 1;
   // Deck is the path of one deck, or empty for every deck the vault holds.
   string deck = 2;
 
@@ -305,7 +305,7 @@ message StartResponse {
 }
 
 message AnswerRequest {
-  string vault_id = 1;
+  string vault = 1;
   string run = 2;
   string card = 3;
   string face = 4;
@@ -322,7 +322,7 @@ message AnswerResponse {
 }
 
 message TakeBackRequest {
-  string vault_id = 1;
+  string vault = 1;
   string run = 2;
   // Answer is the identifier a previous Answer came back with.
   string answer = 3;
@@ -331,7 +331,7 @@ message TakeBackRequest {
 message TakeBackResponse {}
 
 message ReviewedRequest {
-  string vault_id = 1;
+  string vault = 1;
 }
 
 message ReviewedResponse {
@@ -385,7 +385,7 @@ message AskingResponse {
 }
 
 message AroundRequest {
-  string vault_id = 1;
+  string vault = 1;
   // Deck is the path of the deck being sat to. One deck is asked about at a
   // time, because what a person is reading around is the deck in front of them.
   string deck = 2;
@@ -446,7 +446,7 @@ message MovingResponse {
 // the editor asks over the one vault its window shows.
 
 message FlashcardsServiceSchedulingRequest {
-  string vault_id = 1;
+  string vault = 1;
 
   // The deck whose preset this is, by the path it is filed under.
   string deck = 2;

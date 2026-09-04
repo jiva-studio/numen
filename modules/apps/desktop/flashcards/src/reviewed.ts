@@ -9,7 +9,7 @@ import type { HeatmapTally } from '@numen/ui'
 
 /** What the application answers about a vault's days. */
 export interface Asks {
-  reviewed(said: { vaultId: string }): Promise<Said>
+  reviewed(said: { vault: string }): Promise<Said>
 }
 
 export interface Said {
@@ -56,23 +56,23 @@ export function reviewed(deps: Reviewing) {
     of.value = ''
   }
 
-  const read = async (vaultId: string) => {
-    if (!vaultId) {
+  const read = async (vault: string) => {
+    if (!vault) {
       forget()
       return
     }
-    of.value = vaultId
+    of.value = vault
     try {
-      const said = await deps.cards.reviewed({ vaultId })
+      const said = await deps.cards.reviewed({ vault })
       // A person who moved to another vault while this was on its way is
       // looking at that one, and these days are not its days.
-      if (of.value !== vaultId) return
+      if (of.value !== vault) return
       days.value = new Map(said.days.map((one) => [one.day, counted(one)]))
       due.value = new Map(said.due.map((one) => [one.day, one.answered]))
       streak.value = said.streak
       answered.value = said.answered
     } catch (why) {
-      if (of.value !== vaultId) return
+      if (of.value !== vault) return
       deps.failed(why)
       forget()
     }

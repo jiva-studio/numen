@@ -181,14 +181,14 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Owin
 			first = false
 			out.Day, out.Vaults = said.GetDay(), said.GetVaults()
 			for where, one := range out.GetVaults() {
-				at[one.GetVaultId()] = where
+				at[one.GetVault()] = where
 			}
 			continue
 		}
 		one := said.GetCounted()
-		where, listed := at[one.GetVaultId()]
+		where, listed := at[one.GetVault()]
 		if !listed {
-			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetVaultId())
+			t.Fatalf("a count arrived for %s, which the front door did not list", one.GetVault())
 		}
 		out.Vaults[where] = one
 	}
@@ -201,7 +201,7 @@ func asked(t *testing.T, client numenv1connect.FlashcardsServiceClient) *v1.Owin
 // started is a sitting opened on one vault, and what it holds to ask.
 func started(t *testing.T, api *API, v domain.Vault) *v1.StartResponse {
 	t.Helper()
-	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: string(v.ID)}))
+	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,11 +221,11 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(two.ID),
-		Run:     sitting.GetRun(),
-		Card:    card.GetCard(),
-		Face:    card.GetFace(),
-		Rating:  v1.Rating_RATING_GOOD,
+		Vault:  string(two.ID),
+		Run:    sitting.GetRun(),
+		Card:   card.GetCard(),
+		Face:   card.GetFace(),
+		Rating: v1.Rating_RATING_GOOD,
 	}))
 	if err == nil {
 		t.Fatal("an answer named against another vault's run was written")
@@ -271,11 +271,11 @@ func TestARunIsClosedByTheNextSittingOnItsVault(t *testing.T) {
 
 	card := now.GetAsked()[0]
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(v.ID),
-		Run:     was.GetRun(),
-		Card:    card.GetCard(),
-		Face:    card.GetFace(),
-		Rating:  v1.Rating_RATING_GOOD,
+		Vault:  string(v.ID),
+		Run:    was.GetRun(),
+		Card:   card.GetCard(),
+		Face:   card.GetFace(),
+		Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("the sitting was over and the answer was refused with %v", connect.CodeOf(err))
@@ -297,7 +297,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 	sitting := started(t, api, one)
 	for _, card := range sitting.GetAsked() {
 		if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-			VaultId: string(one.ID), Run: sitting.GetRun(),
+			Vault: string(one.ID), Run: sitting.GetRun(),
 			Card: card.GetCard(), Face: card.GetFace(),
 			Rating: v1.Rating_RATING_EASY,
 		})); err != nil {
@@ -323,7 +323,7 @@ func TestAnAnswerInOneVaultLeavesTheOtherOwingWhatItDid(t *testing.T) {
 func counted(t *testing.T, said *v1.OwingResponse, id string) *v1.VaultOwing {
 	t.Helper()
 	for _, one := range said.GetVaults() {
-		if one.GetVaultId() == id {
+		if one.GetVault() == id {
 			return one
 		}
 	}
@@ -341,12 +341,12 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	given, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(v.ID),
-		Run:     sitting.GetRun(),
-		Card:    card.GetCard(),
-		Face:    card.GetFace(),
-		Rating:  v1.Rating_RATING_GOOD,
-		TookMs:  1200,
+		Vault:  string(v.ID),
+		Run:    sitting.GetRun(),
+		Card:   card.GetCard(),
+		Face:   card.GetFace(),
+		Rating: v1.Rating_RATING_GOOD,
+		TookMs: 1200,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -356,9 +356,9 @@ func TestAnAnswerIsWrittenAndCanBeTakenBack(t *testing.T) {
 	}
 
 	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: string(v.ID),
-		Run:     sitting.GetRun(),
-		Answer:  given.Msg.GetAnswer(),
+		Vault:  string(v.ID),
+		Run:    sitting.GetRun(),
+		Answer: given.Msg.GetAnswer(),
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +376,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	card := sitting.GetAsked()[0]
 
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_UNSPECIFIED,
 	}))
@@ -460,7 +460,7 @@ func TestSittingDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	unread := testsupport.NewVault(t, deck)
 	api.Registry = registry{held: []domain.Vault{unread}}
 
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: string(unread.ID)}))
+	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: string(unread.ID)}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("refused with %v: %v", connect.CodeOf(err), err)
 	}
@@ -484,7 +484,7 @@ func waitFor(t *testing.T, so func() bool) {
 // A question about a vault the installation does not hold is refused.
 func TestAQuestionAboutAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t)
-	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{VaultId: "nothing"}))
+	_, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
 	}
@@ -661,7 +661,7 @@ func TestTheFrontDoorSaysWhatTodayCameToUnderEachPreset(t *testing.T) {
 	}
 	card := sitting.GetAsked()[0]
 	if _, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
@@ -1056,7 +1056,7 @@ func TestThePresetTileAndTheSittingItOpensAreOneNumber(t *testing.T) {
 		}
 
 		sat, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-			VaultId: string(v.ID), Preset: naming(one.GetPreset()),
+			Vault: string(v.ID), Preset: naming(one.GetPreset()),
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -1273,7 +1273,7 @@ type sat struct{ asked, owed, fresh int }
 func sitting(t *testing.T, api *API, v domain.Vault, preset string) sat {
 	t.Helper()
 	out, err := api.Start(t.Context(), connect.NewRequest(&v1.StartRequest{
-		VaultId: string(v.ID), Preset: naming(preset),
+		Vault: string(v.ID), Preset: naming(preset),
 	}))
 	if err != nil {
 		t.Fatal(err)

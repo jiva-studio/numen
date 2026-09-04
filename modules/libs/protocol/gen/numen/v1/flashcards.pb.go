@@ -178,10 +178,10 @@ func (x *FlashcardsServiceTasksResponse) GetTasks() []*Task {
 
 // VaultOwing is one vault, and what its cards come to today.
 type VaultOwing struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Name    string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Path    string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Path  string                 `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
 	// Faces is every card the vault holds, counted once for each face it is shown
 	// through. Due is what was answered before and is owed today; New is what
 	// nobody has answered.
@@ -234,9 +234,9 @@ func (*VaultOwing) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *VaultOwing) GetVaultId() string {
+func (x *VaultOwing) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -920,8 +920,8 @@ func (x *OwingResponse) GetCounted() *VaultOwing {
 }
 
 type StartRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	// Deck is the path of one deck, or empty for every deck the vault holds.
 	Deck string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
 	// Preset is the note one preset stands in, and the empty path is the preset
@@ -963,9 +963,9 @@ func (*StartRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *StartRequest) GetVaultId() string {
+func (x *StartRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -1059,12 +1059,12 @@ func (x *StartResponse) GetSkipped() int32 {
 }
 
 type AnswerRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Run     string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
-	Card    string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
-	Face    string                 `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
-	Rating  Rating                 `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.v1.Rating" json:"rating,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Vault  string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	Run    string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
+	Card   string                 `protobuf:"bytes,3,opt,name=card,proto3" json:"card,omitempty"`
+	Face   string                 `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
+	Rating Rating                 `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.v1.Rating" json:"rating,omitempty"`
 	// Took is how long the card stood on the screen, in milliseconds. It is the
 	// one thing about an answer that cannot be measured later.
 	TookMs        int64 `protobuf:"varint,6,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
@@ -1102,9 +1102,9 @@ func (*AnswerRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *AnswerRequest) GetVaultId() string {
+func (x *AnswerRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -1191,9 +1191,9 @@ func (x *AnswerResponse) GetAnswer() string {
 }
 
 type TakeBackRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Run     string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	Run   string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
 	// Answer is the identifier a previous Answer came back with.
 	Answer        string `protobuf:"bytes,3,opt,name=answer,proto3" json:"answer,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1230,9 +1230,9 @@ func (*TakeBackRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *TakeBackRequest) GetVaultId() string {
+func (x *TakeBackRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -1289,7 +1289,7 @@ func (*TakeBackResponse) Descriptor() ([]byte, []int) {
 
 type ReviewedRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	Vault         string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1324,9 +1324,9 @@ func (*ReviewedRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *ReviewedRequest) GetVaultId() string {
+func (x *ReviewedRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -1601,8 +1601,8 @@ func (x *AskingResponse) GetUnreachable() string {
 }
 
 type AroundRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	// Deck is the path of the deck being sat to. One deck is asked about at a
 	// time, because what a person is reading around is the deck in front of them.
 	Deck          string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
@@ -1640,9 +1640,9 @@ func (*AroundRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *AroundRequest) GetVaultId() string {
+func (x *AroundRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -1908,8 +1908,8 @@ func (x *MovingResponse) GetReload() bool {
 }
 
 type FlashcardsServiceSchedulingRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	// The deck whose preset this is, by the path it is filed under.
 	Deck          string `protobuf:"bytes,2,opt,name=deck,proto3" json:"deck,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1946,9 +1946,9 @@ func (*FlashcardsServiceSchedulingRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_flashcards_proto_rawDescGZIP(), []int{25}
 }
 
-func (x *FlashcardsServiceSchedulingRequest) GetVaultId() string {
+func (x *FlashcardsServiceSchedulingRequest) GetVault() string {
 	if x != nil {
-		return x.VaultId
+		return x.Vault
 	}
 	return ""
 }
@@ -2021,10 +2021,10 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x19numen/v1/flashcards.proto\x12\bnumen.v1\x1a\x16numen/v1/presets.proto\x1a\x14numen/v1/vault.proto\"\x1f\n" +
 	"\x1dFlashcardsServiceTasksRequest\"F\n" +
 	"\x1eFlashcardsServiceTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x97\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x92\x02\n" +
 	"\n" +
-	"VaultOwing\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
+	"VaultOwing\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
 	"\x05faces\x18\x04 \x01(\x05R\x05faces\x12\x10\n" +
@@ -2085,9 +2085,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\rOwingResponse\x12,\n" +
 	"\x06vaults\x18\x01 \x03(\v2\x14.numen.v1.VaultOwingR\x06vaults\x12\x10\n" +
 	"\x03day\x18\x02 \x01(\tR\x03day\x12.\n" +
-	"\acounted\x18\x03 \x01(\v2\x14.numen.v1.VaultOwingR\acounted\"e\n" +
-	"\fStartRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
+	"\acounted\x18\x03 \x01(\v2\x14.numen.v1.VaultOwingR\acounted\"`\n" +
+	"\fStartRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\x12\x1b\n" +
 	"\x06preset\x18\x03 \x01(\tH\x00R\x06preset\x88\x01\x01B\t\n" +
 	"\a_preset\"\x80\x01\n" +
@@ -2095,23 +2095,23 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\x03run\x18\x01 \x01(\tR\x03run\x12%\n" +
 	"\x05asked\x18\x02 \x03(\v2\x0f.numen.v1.AskedR\x05asked\x12\x1c\n" +
 	"\tunwritten\x18\x03 \x03(\tR\tunwritten\x12\x18\n" +
-	"\askipped\x18\x04 \x01(\x05R\askipped\"\xa7\x01\n" +
-	"\rAnswerRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
+	"\askipped\x18\x04 \x01(\x05R\askipped\"\xa2\x01\n" +
+	"\rAnswerRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x12\n" +
 	"\x04card\x18\x03 \x01(\tR\x04card\x12\x12\n" +
 	"\x04face\x18\x04 \x01(\tR\x04face\x12(\n" +
 	"\x06rating\x18\x05 \x01(\x0e2\x10.numen.v1.RatingR\x06rating\x12\x17\n" +
 	"\atook_ms\x18\x06 \x01(\x03R\x06tookMs\"(\n" +
 	"\x0eAnswerResponse\x12\x16\n" +
-	"\x06answer\x18\x01 \x01(\tR\x06answer\"V\n" +
-	"\x0fTakeBackRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x10\n" +
+	"\x06answer\x18\x01 \x01(\tR\x06answer\"Q\n" +
+	"\x0fTakeBackRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x10\n" +
 	"\x03run\x18\x02 \x01(\tR\x03run\x12\x16\n" +
 	"\x06answer\x18\x03 \x01(\tR\x06answer\"\x12\n" +
-	"\x10TakeBackResponse\",\n" +
-	"\x0fReviewedRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\"\x96\x01\n" +
+	"\x10TakeBackResponse\"'\n" +
+	"\x0fReviewedRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\"\x96\x01\n" +
 	"\x10ReviewedResponse\x12'\n" +
 	"\x04days\x18\x01 \x03(\v2\x13.numen.v1.ReviewingR\x04days\x12%\n" +
 	"\x03due\x18\x04 \x03(\v2\x13.numen.v1.ReviewingR\x03due\x12\x16\n" +
@@ -2128,9 +2128,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\brecalled\x18\b \x01(\x05R\brecalled\"\x0f\n" +
 	"\rAskingRequest\"2\n" +
 	"\x0eAskingResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\">\n" +
-	"\rAroundRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"9\n" +
+	"\rAroundRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\"S\n" +
 	"\x0eAroundResponse\x12)\n" +
 	"\x05notes\x18\x01 \x03(\v2\x13.numen.v1.NeighbourR\x05notes\x12\x16\n" +
@@ -2148,9 +2148,9 @@ const file_numen_v1_flashcards_proto_rawDesc = "" +
 	"\b_refusal\"\x0f\n" +
 	"\rMovingRequest\"(\n" +
 	"\x0eMovingResponse\x12\x16\n" +
-	"\x06reload\x18\x01 \x01(\bR\x06reload\"S\n" +
-	"\"FlashcardsServiceSchedulingRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
+	"\x06reload\x18\x01 \x01(\bR\x06reload\"N\n" +
+	"\"FlashcardsServiceSchedulingRequest\x12\x14\n" +
+	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x12\n" +
 	"\x04deck\x18\x02 \x01(\tR\x04deck\"\x9d\x01\n" +
 	"#FlashcardsServiceSchedulingResponse\x12-\n" +
 	"\x06preset\x18\x01 \x01(\v2\x10.numen.v1.PresetH\x00R\x06preset\x88\x01\x01\x120\n" +

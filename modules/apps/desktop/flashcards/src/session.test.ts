@@ -64,7 +64,7 @@ describe('what a sitting is opened over', () => {
 
     await one.start('01VAULT', 'decks/Words.md')
 
-    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: 'decks/Words.md' })
+    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: 'decks/Words.md' })
   })
 
   it('names the preset where it is opened over one', async () => {
@@ -72,7 +72,7 @@ describe('what a sitting is opened over', () => {
 
     await one.start('01VAULT', '', 'Sanskrit.md')
 
-    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: '', preset: 'Sanskrit.md' })
+    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: '', preset: 'Sanskrit.md' })
   })
 
   it('names the defaults by the empty path, and not by naming nothing', async () => {
@@ -80,7 +80,7 @@ describe('what a sitting is opened over', () => {
 
     await one.start('01VAULT', '', '')
 
-    expect(asks[0]?.said).toStrictEqual({ vaultId: '01VAULT', deck: '', preset: '' })
+    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: '', preset: '' })
   })
 
   // A preset with nothing to ask is refused, and a tile standing for one is not

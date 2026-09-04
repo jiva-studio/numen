@@ -20,7 +20,7 @@ func answered(t *testing.T, api *API, vault string, sitting *v1.StartResponse) s
 	}
 	card := sitting.GetAsked()[0]
 	out, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: vault, Run: sitting.GetRun(),
+		Vault: vault, Run: sitting.GetRun(),
 		Card: card.GetCard(), Face: card.GetFace(),
 		Rating: v1.Rating_RATING_GOOD,
 	}))
@@ -73,12 +73,12 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	given := answered(t, api, string(v.ID), sitting)
 
 	if _, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: string(v.ID), Run: sitting.GetRun(), Answer: given,
+		Vault: string(v.ID), Run: sitting.GetRun(), Answer: given,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
-	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{VaultId: string(v.ID)}))
+	out, err := api.Reviewed(t.Context(), connect.NewRequest(&v1.ReviewedRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	sitting := started(t, api, v)
 
 	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: string(v.ID), Run: sitting.GetRun(),
+		Vault: string(v.ID), Run: sitting.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("refused with %v", connect.CodeOf(err))
@@ -114,7 +114,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 	given := answered(t, api, string(v.ID), sitting)
 
 	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: string(v.ID), Run: "nothing", Answer: given,
+		Vault: string(v.ID), Run: "nothing", Answer: given,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))
@@ -127,7 +127,7 @@ func TestAnsweringAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, deck)
 
 	_, err := api.Answer(t.Context(), connect.NewRequest(&v1.AnswerRequest{
-		VaultId: "nothing", Run: "nothing",
+		Vault: "nothing", Run: "nothing",
 		Card: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -166,7 +166,7 @@ func TestTakingBackOnAVaultNobodyHoldsIsRefused(t *testing.T) {
 	api, _ := windowed(t, deck)
 
 	_, err := api.TakeBack(t.Context(), connect.NewRequest(&v1.TakeBackRequest{
-		VaultId: "nothing", Run: "nothing", Answer: "nothing",
+		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("refused with %v", connect.CodeOf(err))

@@ -17,7 +17,7 @@ import (
 func (a *API) Scheduling(
 	ctx context.Context, r *connect.Request[v1.FlashcardsServiceSchedulingRequest],
 ) (*connect.Response[v1.FlashcardsServiceSchedulingResponse], error) {
-	v, err := a.Vault(r.Msg.GetVaultId())
+	v, err := a.Vault(r.Msg.GetVault())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

@@ -25,7 +25,7 @@ const dated = (day: string): SettingsMessage => ({
 })
 
 const vault: Owing = {
-  vaultId: '01A',
+  vault: '01A',
   name: 'Vault',
   path: '/vaults/01A',
   counted: true,
