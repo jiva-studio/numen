@@ -38,7 +38,7 @@ func addVaultGet(server *sdk.Server, core Core) {
 			Headings int    `json:"headings"`
 		}
 		shown := core.shown()
-		summary, err := core.Notes.Summary(ctx, string(shown.Vault.ID))
+		summary, err := core.Notes.Queries.Summary(ctx, string(shown.Vault.ID))
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -77,7 +77,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		for _, name := range in.Checks {
 			named = append(named, domain.Check(name))
 		}
-		found, err := core.Problems.Run(ctx, core.shown().Vault, named...)
+		found, err := core.Notes.Problems.Run(ctx, core.shown().Vault, named...)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -86,7 +86,7 @@ func addVaultProblems(server *sdk.Server, core Core) {
 		if len(res.Ran) == 0 {
 			// Saying which checks an empty answer covers is the difference
 			// between "nothing is wrong" and "nothing I looked at is wrong".
-			for _, name := range core.Problems.Loud() {
+			for _, name := range core.Notes.Problems.Loud() {
 				res.Ran = append(res.Ran, string(name))
 			}
 		}
@@ -118,7 +118,7 @@ func addVaultNamed(server *sdk.Server, core Core) {
 		type out = struct {
 			Paths []string `json:"paths"`
 		}
-		paths, err := core.Notes.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
+		paths, err := core.Notes.Queries.Named(ctx, string(core.shown().Vault.ID), domain.LinkName(in.Name))
 		if err != nil {
 			return nil, out{}, err
 		}

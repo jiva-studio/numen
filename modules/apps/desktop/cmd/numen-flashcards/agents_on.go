@@ -150,20 +150,28 @@ func reviewing(
 	cutting := cfg.Cards(queries, links, vaults.level)
 
 	return mcp.Core{
-		Showing:       mcp.One(v, root),
-		Readers:       cfg.VaultReaders(),
-		Notes:         queries,
-		Sources:       db.SourcesKnown(),
-		Derived:       cfg.DerivedStores(),
-		Documents:     cfg.Documents(),
-		Neighbourhood: note.ShowNeighbourhood{Links: links, Notes: queries},
-		Links:         note.ShowLinks{Links: links},
-		Search: cfg.SearchingOver(db.Passages(), nil,
-			func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
+		Showing: mcp.One(v, root),
+		Readers: cfg.VaultReaders(),
 
-		Cards:    cutting.Read,
-		Stencils: cutting.List,
-		Cuts:     cutting.Write,
-		DeckBody: format.DeckBody,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Neighbourhood: note.ShowNeighbourhood{Links: links, Notes: queries},
+			Links:         note.ShowLinks{Links: links},
+			Search: cfg.SearchingOver(db.Passages(), nil,
+				func(err error) { fmt.Fprintln(out, "agents: answering by words alone:", err) }),
+		},
+
+		Sources: mcp.Sources{
+			Queries:   db.SourcesKnown(),
+			Derived:   cfg.DerivedStores(),
+			Documents: cfg.Documents(),
+		},
+
+		Cards: mcp.Cards{
+			Read:     cutting.Read,
+			List:     cutting.List,
+			Write:    cutting.Write,
+			DeckBody: format.DeckBody,
+		},
 	}
 }

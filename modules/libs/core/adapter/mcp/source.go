@@ -50,15 +50,15 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			Documents []Source `json:"documents"`
 			Says      string   `json:"says,omitempty"`
 		}
-		if core.Sources == nil {
+		if core.Sources.Queries == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		shown := core.shown()
-		known, err := core.Sources.Fingerprints(ctx, string(shown.Vault.ID), domain.KindBook)
+		known, err := core.Sources.Queries.Fingerprints(ctx, string(shown.Vault.ID), domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
-		read, err := core.Sources.Recognised(ctx, string(shown.Vault.ID), domain.KindBook)
+		read, err := core.Sources.Queries.Recognised(ctx, string(shown.Vault.ID), domain.KindBook)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -71,11 +71,11 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			documents = append(documents, Source{Path: path, Read: stands[path]})
 		}
 		says := ""
-		if core.Recognise != nil {
+		if core.Sources.Recognise != nil {
 			switch {
-			case core.Recognise.Running():
+			case core.Sources.Recognise.Running():
 				says = "one document is being read now"
-			case !core.Recognise.Ready():
+			case !core.Sources.Recognise.Ready():
 				says = "what is needed to read scans is not here yet, and is fetched when one is asked for"
 			}
 		}
@@ -110,14 +110,14 @@ func addSourceReadingTools(server *sdk.Server, core Core) {
 			Length   int    `json:"length" jsonschema:"how long the run is"`
 			Whole    int    `json:"whole" jsonschema:"how long the document's text is, so what stands on either side can be asked for"`
 		}
-		if core.Sources == nil {
+		if core.Sources.Queries == nil {
 			return nil, out{}, fmt.Errorf("this vault's sources are not open")
 		}
 		res, err := source.Read{
 			Readers:   core.Readers,
-			Sources:   core.Sources,
-			Derived:   core.Derived,
-			Documents: core.Documents,
+			Sources:   core.Sources.Queries,
+			Derived:   core.Sources.Derived,
+			Documents: core.Sources.Documents,
 		}.Execute(ctx, core.shown().Vault, in.Path, in.Start, in.Length)
 		if err != nil {
 			return nil, out{}, err
@@ -155,7 +155,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
 			Says    string `json:"says"`
 		}
-		if core.Recognise == nil {
+		if core.Sources.Recognise == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot read scans")
 		}
 
@@ -164,12 +164,12 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		// among everything else the window shows being done.
 		says := "started; it runs in the background, the pages it has read are searchable " +
 			"as it goes, and the window shows how far it has got"
-		switch core.Recognise.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Recognise.Start(core.shown().Vault, in.Path) {
 		case port.Queued:
 			says = "queued; another document is being read and this one is in line behind " +
 				"it — nothing more is needed, it begins when that reading is over"
 		default:
-			if !core.Recognise.Ready() {
+			if !core.Sources.Recognise.Ready() {
 				says = "started; what is needed to read scans is being fetched first, about 160 MB"
 			}
 		}
@@ -198,7 +198,7 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 			Started bool   `json:"started" jsonschema:"whether the vault took this on, which it always does"`
 			Says    string `json:"says"`
 		}
-		if core.Transcribe == nil {
+		if core.Sources.Transcribe == nil {
 			return nil, out{}, fmt.Errorf("this installation cannot hear recordings")
 		}
 
@@ -207,12 +207,12 @@ func addSourceWritingTools(server *sdk.Server, core Core) {
 		// is among everything else the window shows being done.
 		says := "started; it runs in the background, and what has been transcribed is " +
 			"searchable as it goes"
-		switch core.Transcribe.Start(core.shown().Vault, in.Path) {
+		switch core.Sources.Transcribe.Start(core.shown().Vault, in.Path) {
 		case port.Queued:
 			says = "queued; another recording is being transcribed and this one is in line " +
 				"behind it — nothing more is needed, it begins when that one is over"
 		default:
-			if !core.Transcribe.Ready() {
+			if !core.Sources.Transcribe.Ready() {
 				says = "started; what is needed to transcribe recordings is being fetched first"
 			}
 		}

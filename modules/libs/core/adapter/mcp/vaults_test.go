@@ -67,10 +67,12 @@ func onTheList(t *testing.T) *installation {
 		second:   joined(t, adding, "two"),
 	}
 	f.core = mcp.Core{
-		Showing:    mcp.One(f.first, f.first.Path),
-		Vaults:     registry,
-		Renaming:   &usecase.Rename{Registry: registry, Index: held},
-		Forgetting: &usecase.Forget{Registry: registry, Index: held},
+		Showing: mcp.One(f.first, f.first.Path),
+		Vaults: mcp.Vaults{
+			Registry: registry,
+			Rename:   &usecase.Rename{Registry: registry, Index: held},
+			Forget:   &usecase.Forget{Registry: registry, Index: held},
+		},
 	}
 	return f
 }
@@ -269,11 +271,11 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 		tool    string
 		without func(*mcp.Core)
 	}{
-		{"vault_list", func(c *mcp.Core) { c.Vaults = nil }},
-		{"vault_rename", func(c *mcp.Core) { c.Renaming = nil }},
-		{"vault_forget", func(c *mcp.Core) { c.Forgetting = nil }},
-		{"vault_rename", func(c *mcp.Core) { c.Vaults = nil }},
-		{"vault_forget", func(c *mcp.Core) { c.Vaults = nil }},
+		{"vault_list", func(c *mcp.Core) { c.Vaults.Registry = nil }},
+		{"vault_rename", func(c *mcp.Core) { c.Vaults.Rename = nil }},
+		{"vault_forget", func(c *mcp.Core) { c.Vaults.Forget = nil }},
+		{"vault_rename", func(c *mcp.Core) { c.Vaults.Registry = nil }},
+		{"vault_forget", func(c *mcp.Core) { c.Vaults.Registry = nil }},
 	} {
 		t.Run(one.tool, func(t *testing.T) {
 			f := onTheList(t)

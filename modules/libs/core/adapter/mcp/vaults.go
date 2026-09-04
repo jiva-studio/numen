@@ -46,7 +46,7 @@ func addVaultsWritingTools(server *sdk.Server, core Core) {
 }
 
 func addVaultList(server *sdk.Server, core Core) {
-	if core.Vaults == nil {
+	if core.Vaults.Registry == nil {
 		return
 	}
 
@@ -63,7 +63,7 @@ func addVaultList(server *sdk.Server, core Core) {
 		type out = struct {
 			Vaults []Vault `json:"vaults"`
 		}
-		held, err := usecase.List{Registry: core.Vaults}.Execute()
+		held, err := usecase.List{Registry: core.Vaults.Registry}.Execute()
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -77,7 +77,7 @@ func addVaultList(server *sdk.Server, core Core) {
 }
 
 func addVaultRename(server *sdk.Server, core Core) {
-	if core.Vaults == nil || core.Renaming == nil {
+	if core.Vaults.Registry == nil || core.Vaults.Rename == nil {
 		return
 	}
 
@@ -100,11 +100,11 @@ func addVaultRename(server *sdk.Server, core Core) {
 			Name   string `json:"name"`
 			Folder string `json:"folder"`
 		}
-		v, err := core.found(in.Vault)
+		v, err := core.Vaults.found(in.Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
-		renamed, err := core.Renaming.Execute(ctx, v, in.Name)
+		renamed, err := core.Vaults.Rename.Execute(ctx, v, in.Name)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -113,7 +113,7 @@ func addVaultRename(server *sdk.Server, core Core) {
 }
 
 func addVaultForget(server *sdk.Server, core Core) {
-	if core.Vaults == nil || core.Forgetting == nil {
+	if core.Vaults.Registry == nil || core.Vaults.Forget == nil {
 		return
 	}
 
@@ -136,7 +136,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 			Forgotten bool   `json:"forgotten"`
 			Folder    string `json:"folder" jsonschema:"where the folder still is, with everything in it"`
 		}
-		v, err := core.found(in.Vault)
+		v, err := core.Vaults.found(in.Vault)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -145,7 +145,7 @@ func addVaultForget(server *sdk.Server, core Core) {
 		if v.ID == core.shown().Vault.ID {
 			return nil, out{}, fmt.Errorf("%s is the vault the window is showing", v.Name)
 		}
-		if err := core.Forgetting.Execute(ctx, v); err != nil {
+		if err := core.Vaults.Forget.Execute(ctx, v); err != nil {
 			return nil, out{}, err
 		}
 		return nil, out{Forgotten: true, Folder: v.Path}, nil
@@ -153,11 +153,11 @@ func addVaultForget(server *sdk.Server, core Core) {
 }
 
 // found is the vault a name, a folder or an identity reaches on the list.
-func (c Core) found(nameOrPath string) (domain.Vault, error) {
+func (v Vaults) found(nameOrPath string) (domain.Vault, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, errors.New("name the vault, as vault_list gives it")
 	}
-	return usecase.Find{Registry: c.Vaults}.Execute(nameOrPath)
+	return usecase.Find{Registry: v.Registry}.Execute(nameOrPath)
 }
 
 // knownOf is one vault as an agent is told about it. A folder that is not there

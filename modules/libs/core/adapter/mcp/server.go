@@ -25,16 +25,17 @@ import (
 // Version is what an agent is told it is talking to.
 const Version = "0.1.0"
 
-// Core is everything the tools work through. Every field is a use case or a
-// query the rest of the application already has: nothing about a vault is
-// decided here.
+// Core is everything the tools work through, in the four things a vault is
+// worked as. Every field of every group is a use case or a query the rest of
+// the application already has: nothing about a vault is decided here.
 type Core struct {
 	// Showing is the vault the tools work, asked at every call so that they
 	// follow the window.
 	Showing func() Shown
 
+	// Readers is the vault's files, which the notes, the documents and the
+	// window are all read out of.
 	Readers port.VaultReaders
-	Notes   port.NoteQueries
 
 	// View is the person's window, where there is one. Without it an agent is
 	// served the vault and nothing that puts a note in front of anybody.
@@ -45,20 +46,62 @@ type Core struct {
 	// of what is in front of anybody.
 	Attending func() domain.Attention
 
-	// Vaults is the list of vaults this installation holds. Without it an agent
-	// is told of the vault it is working and of no other.
-	Vaults port.VaultRegistry
-	// Renaming is what a person calls a vault, and Forgetting takes one off the
-	// list. Each tool is served where what it works through is here.
-	//
-	// Which folders are vaults, and which of them the window shows, a person
-	// settles through the picker the application puts in front of them.
-	Renaming   *usecase.Rename
-	Forgetting *usecase.Forget
+	Notes   Notes
+	Vaults  Vaults
+	Cards   Cards
+	Sources Sources
+}
 
-	// Sources and Recognise are the documents a vault holds beside its notes.
-	// Without them the tools for those documents are not added.
-	Sources   port.SourceQueries
+// Notes is a vault's notes: what is asked of them, and what changes them.
+type Notes struct {
+	Queries       port.NoteQueries
+	Search        search.Search
+	Neighbourhood note.ShowNeighbourhood
+	Links         note.ShowLinks
+	Problems      check.Checks
+
+	Create  note.Create
+	Write   note.Write
+	Replace note.Replace
+	Move    note.Move
+	Rename  note.Rename
+	Remove  note.Remove
+	Linking note.EditLinks
+}
+
+// Vaults is the list of vaults this installation holds, and what a person does
+// to it. Without a registry an agent is told of the vault it is working and of
+// no other, and each tool is served where what it works through is here.
+//
+// Which folders are vaults, and which of them the window shows, a person
+// settles through the picker the application puts in front of them.
+type Vaults struct {
+	Registry port.VaultRegistry
+	Rename   *usecase.Rename
+	Forget   *usecase.Forget
+}
+
+// Cards is the decks and stencils a vault is arranged into. Read takes a deck
+// or a stencil, List the stencils the vault holds, Write puts a deck back,
+// Create makes a stencil and RenameField gives one of a stencil's fields a
+// different name in every card it cuts.
+type Cards struct {
+	Read        cards.Read
+	List        cards.List
+	Write       cards.Write
+	Create      cards.Create
+	RenameField cards.RenameField
+	// DeckBody is the markdown a deck of cards is written as, and StencilBody
+	// the markdown a stencil's faces are. A tool changes cards and hands them
+	// back; what the file then reads as is the format's.
+	DeckBody    func(d format.Deck) (string, error)
+	StencilBody func(preamble string, faces []format.CardFaceTemplate, tail string) (string, error)
+}
+
+// Sources is the documents a vault holds beside its notes. Without Queries the
+// tools for those documents are not added.
+type Sources struct {
+	Queries   port.SourceQueries
 	Recognise Recognising
 	// Transcribe hears a recording. Without it the tool that asks for one is
 	// served and answers that this installation cannot.
@@ -69,33 +112,6 @@ type Core struct {
 	// Documents reads a format that needs a library, for a document standing on
 	// its own bytes.
 	Documents port.Documents
-
-	Search        search.Search
-	Neighbourhood note.ShowNeighbourhood
-	Links         note.ShowLinks
-	Problems      check.Checks
-
-	// Cards reads a deck or a stencil, Stencils lists the stencils the vault
-	// holds, Cuts puts a deck back, Cutting makes a stencil and FieldRename
-	// gives one of a stencil's fields a different name in every card it cuts.
-	Cards       cards.Read
-	Stencils    cards.List
-	Cuts        cards.Write
-	Cutting     cards.Create
-	FieldRename cards.RenameField
-	// DeckBody is the markdown a deck of cards is written as, and StencilBody
-	// the markdown a stencil's faces are. A tool changes cards and hands them
-	// back; what the file then reads as is the format's.
-	DeckBody    func(d format.Deck) (string, error)
-	StencilBody func(preamble string, faces []format.CardFaceTemplate, tail string) (string, error)
-
-	Create  note.Create
-	Write   note.Write
-	Replace note.Replace
-	Move    note.Move
-	Rename  note.Rename
-	Remove  note.Remove
-	Linking note.EditLinks
 }
 
 // Shown is the vault a call is answered about: the vault itself, and where it

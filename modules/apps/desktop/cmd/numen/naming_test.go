@@ -63,7 +63,7 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			indexed(t, opened, v, "Entropy.md")
 
 			core := agentCore(cfg, opened, v.Path, io.Discard)
-			renamed, err := core.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
+			renamed, err := core.Notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)
 			}

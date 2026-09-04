@@ -89,28 +89,33 @@ func built(t *testing.T, notes map[string]string) (domain.Vault, mcp.Core) {
 	cutting := cfg.Cards(queries, db.Links(), index)
 
 	core := mcp.Core{
-		Cards:       cutting.Read,
-		Stencils:    cutting.List,
-		Cuts:        cutting.Write,
-		Cutting:     cutting.Create,
-		FieldRename: cutting.Rename,
-		DeckBody:    format.DeckBody,
-		StencilBody: container.StencilBody,
-
-		Showing: mcp.One(v, v.Path), Readers: readers, Notes: queries,
-		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: db.Links()},
-		Problems:      check.Standard(db.Problems()),
-		Create: note.Create{
-			Writers: writers, Names: queries, Index: index,
+		Cards: mcp.Cards{
+			Read:        cutting.Read,
+			List:        cutting.List,
+			Write:       cutting.Write,
+			Create:      cutting.Create,
+			RenameField: cutting.Rename,
+			DeckBody:    format.DeckBody,
+			StencilBody: container.StencilBody,
 		},
-		Write:   note.Write{Readers: readers, Writers: writers, Index: index},
-		Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
-		Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
-		Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
-		Remove:  note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
-		Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
+
+		Showing: mcp.One(v, v.Path), Readers: readers,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
+			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
+			Links:         note.ShowLinks{Links: db.Links()},
+			Problems:      check.Standard(db.Problems()),
+			Create: note.Create{
+				Writers: writers, Names: queries, Index: index,
+			},
+			Write:   note.Write{Readers: readers, Writers: writers, Index: index},
+			Replace: note.Replace{Readers: readers, Writers: writers, Index: index},
+			Move:    note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index},
+			Rename:  note.Rename{Move: note.Move{Readers: readers, Writers: writers, Links: db.Links(), Sources: db.Sources(), Index: index}},
+			Remove:  note.Remove{Writers: writers, Links: db.Links(), Known: db.SourcesKnown(), Index: index},
+			Linking: note.EditLinks{Readers: readers, Writers: writers, Index: index},
+		},
 	}
 	return v, core
 }
@@ -508,7 +513,7 @@ func TestLinksGoWhereTheyBelongAndABadOneCostsOnlyItself(t *testing.T) {
 // is refused the name it already holds.
 func TestANoteOnDiskComesBackWithItsPath(t *testing.T) {
 	v, core := built(t, nil)
-	core.Create.Index = func(context.Context, domain.Vault, []string) error {
+	core.Notes.Create.Index = func(context.Context, domain.Vault, []string) error {
 		return errors.New("the index is not level")
 	}
 	session := connectedTo(t, core)

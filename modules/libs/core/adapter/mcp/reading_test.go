@@ -254,15 +254,16 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 	cutting := cfg.Cards(queries, db.Links(), nil)
 
 	return mcp.Core{
-		Showing:       mcp.One(v, v.Path),
-		Readers:       readers,
-		Notes:         queries,
-		Sources:       db.SourcesKnown(),
-		Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
-		Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
-		Links:         note.ShowLinks{Links: db.Links()},
-		Cards:         cutting.Read,
-		Stencils:      cutting.List,
+		Showing: mcp.One(v, v.Path),
+		Readers: readers,
+		Notes: mcp.Notes{
+			Queries:       queries,
+			Search:        search.New(db.Passages(), readers, nil, nil, nil, 0, nil),
+			Neighbourhood: note.ShowNeighbourhood{Links: db.Links(), Notes: queries},
+			Links:         note.ShowLinks{Links: db.Links()},
+		},
+		Cards:   mcp.Cards{Read: cutting.Read, List: cutting.List},
+		Sources: mcp.Sources{Queries: db.SourcesKnown()},
 	}
 }
 

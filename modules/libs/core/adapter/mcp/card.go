@@ -85,7 +85,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Limit > 0 {
 			limit = in.Limit
 		}
-		held, count, err := core.Stencils.Execute(ctx, core.shown().Vault, limit)
+		held, count, err := core.Cards.List.Execute(ctx, core.shown().Vault, limit)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -135,7 +135,7 @@ func addCardReadingTools(server *sdk.Server, core Core) {
 		if in.Card == "" && in.Limit > maxCards {
 			return nil, out{}, fmt.Errorf("read at most %d cards at a time", maxCards)
 		}
-		read, err := core.Cards.Deck(ctx, core.shown().Vault, in.Path)
+		read, err := core.Cards.Read.Deck(ctx, core.shown().Vault, in.Path)
 		if err != nil {
 			return nil, out{}, err
 		}
@@ -335,7 +335,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Title  string `json:"title" jsonschema:"what the deck is called"`
 		Folder string `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		made, err := core.Cutting.Deck(ctx, core.shown().Vault, cards.New{
+		made, err := core.Cards.Create.Deck(ctx, core.shown().Vault, cards.New{
 			Title: in.Title, Folder: in.Folder,
 		})
 		return nil, made, err
@@ -358,7 +358,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 		Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
 		Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 	}) (*sdk.CallToolResult, cards.CreateNoteResult, error) {
-		body, err := core.StencilBody("", faced(in.Faces), "")
+		body, err := core.Cards.StencilBody("", faced(in.Faces), "")
 		if err != nil {
 			return nil, cards.CreateNoteResult{}, err
 		}
@@ -366,7 +366,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			return nil, cards.CreateNoteResult{}, fmt.Errorf(
 				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), maxBytes)
 		}
-		made, err := core.Cutting.Stencil(ctx, core.shown().Vault, cards.New{
+		made, err := core.Cards.Create.Stencil(ctx, core.shown().Vault, cards.New{
 			Title: in.Title, Body: body, Folder: in.Folder, Fields: in.Fields,
 		})
 		return nil, made, err
@@ -398,7 +398,7 @@ func addCardMakingTools(server *sdk.Server, core Core) {
 			Cards      int      `json:"cards" jsonschema:"how many headings were rewritten"`
 			NotWritten []string `json:"notWritten,omitempty" jsonschema:"the decks the rename could not be written to, which keep the old heading"`
 		}
-		renamed, err := core.FieldRename.Execute(ctx, core.shown().Vault, cards.Rename{
+		renamed, err := core.Cards.RenameField.Execute(ctx, core.shown().Vault, cards.Rename{
 			Stencil: in.Path, From: in.From, To: in.To,
 		})
 		if err != nil {
@@ -441,7 +441,7 @@ func changing(
 		return Written{}, nil, err
 	}
 	v := core.shown().Vault
-	read, err := core.Cards.Deck(ctx, v, path)
+	read, err := core.Cards.Read.Deck(ctx, v, path)
 	if err != nil {
 		return Written{}, nil, err
 	}
@@ -453,11 +453,11 @@ func changing(
 	if err != nil {
 		return Written{}, nil, err
 	}
-	body, err := core.DeckBody(held)
+	body, err := core.Cards.DeckBody(held)
 	if err != nil {
 		return Written{}, nil, err
 	}
-	wrote, err := core.Cuts.Deck(ctx, v, path, body, seen)
+	wrote, err := core.Cards.Write.Deck(ctx, v, path, body, seen)
 	// A write that reached the vault is a write that happened, so the caller is
 	// handed the fingerprint it presents at its next write.
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {

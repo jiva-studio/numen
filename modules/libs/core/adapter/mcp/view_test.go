@@ -38,13 +38,13 @@ func watched(t *testing.T, notes map[string]string) (*sdk.ClientSession, *window
 	tells := note.TellEditing(func(ctx context.Context, said domain.Edit) {
 		_ = looking.Editing(ctx, said)
 	})
-	core.Write.Telling = tells
-	core.Replace.Telling = tells
+	core.Notes.Write.Telling = tells
+	core.Notes.Replace.Telling = tells
 	moving := note.TellMove(func(ctx context.Context, went domain.Move) {
 		_ = looking.Moved(ctx, went)
 	})
-	core.Move.Moving = moving
-	core.Rename.Moving = moving
+	core.Notes.Move.Moving = moving
+	core.Notes.Rename.Moving = moving
 	return connectedTo(t, core), looking
 }
 
