@@ -29,7 +29,7 @@ type Held struct {
 	Answers []review.Answer
 	// order is what Given hands out, worked out at the first asking and kept
 	// for the rest of them.
-	order func() review.Given
+	order func() review.ReviewHistory
 	// Files are what the answers were read from, sorted by name. What tells a
 	// cache it is out of date is any difference in this list.
 	//
@@ -47,7 +47,7 @@ type Held struct {
 //
 // One request asks several things of one reading, and each of them reads this
 // order. It is worked out once for the reading and handed to all of them.
-func (h Held) Given() review.Given {
+func (h Held) Given() review.ReviewHistory {
 	if h.order == nil {
 		return review.Give(h.Answers)
 	}
@@ -55,8 +55,8 @@ func (h Held) Given() review.Given {
 }
 
 // ordered is a reading that works its order out at the first asking.
-func ordered(answers []review.Answer) func() review.Given {
-	return sync.OnceValue(func() review.Given { return review.Give(answers) })
+func ordered(answers []review.Answer) func() review.ReviewHistory {
+	return sync.OnceValue(func() review.ReviewHistory { return review.Give(answers) })
 }
 
 // Files is what the vault's log is made of, without reading any of it. It is
