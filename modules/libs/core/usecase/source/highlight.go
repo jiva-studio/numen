@@ -43,7 +43,7 @@ func (u Highlight) Execute(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
-	runs []highlight.Run,
+	runs []highlight.Stretch,
 ) ([][]highlight.Page, error) {
 	reader, err := u.Readers.Open(v)
 	if err != nil {
@@ -80,7 +80,7 @@ func (u Highlight) Execute(
 
 // over is where each run sits, in the order the runs were asked about. A run
 // standing nowhere is lit nowhere and keeps its place in the answer.
-func over(boxes []highlight.Box, runs []highlight.Run) [][]highlight.Page {
+func over(boxes []highlight.Box, runs []highlight.Stretch) [][]highlight.Page {
 	out := make([][]highlight.Page, 0, len(runs))
 	for _, one := range runs {
 		out = append(out, highlight.Marks(boxes, one.Start, one.Length))
@@ -132,7 +132,7 @@ func (u Highlight) layer(
 	ctx context.Context,
 	reader port.VaultReader,
 	ref domain.Fingerprint,
-	runs []highlight.Run,
+	runs []highlight.Stretch,
 ) ([]highlight.Box, error) {
 	if name, ok := text.ReaderName(ref); !ok || name != text.ReaderPDF {
 		// A book made for a screen is set afresh wherever it is shown, and
@@ -159,7 +159,7 @@ func (u Highlight) layer(
 
 // every is the pages all the runs fall on, in order and each of them once. Two
 // runs on one page are one page read.
-func every(book port.Reading, runs []highlight.Run) []int {
+func every(book port.Reading, runs []highlight.Stretch) []int {
 	held := map[int]bool{}
 	var out []int
 	for _, one := range runs {

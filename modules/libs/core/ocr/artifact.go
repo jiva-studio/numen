@@ -78,8 +78,8 @@ func within(page Page, block Block, base int) []highlight.Box {
 	boxes := make([]highlight.Box, 0, len(block.Stretches))
 	for _, stretch := range block.Stretches {
 		boxes = append(boxes, highlight.Box{
-			Page: page.Index,
-			Run:  highlight.Run{Start: base + stretch.Start, Length: stretch.Length},
+			Page:    page.Index,
+			Stretch: highlight.Stretch{Start: base + stretch.Start, Length: stretch.Length},
 			Rect: highlight.Rect{
 				MinX: float32(stretch.Box.Min.X) / wide,
 				MinY: float32(stretch.Box.Min.Y) / high,

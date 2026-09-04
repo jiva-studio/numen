@@ -39,7 +39,7 @@ func Unpack(raw []byte) []Box {
 		one := raw[at : at+record]
 		boxes = append(boxes, Box{
 			Page: int(int32(binary.LittleEndian.Uint32(one[0:]))),
-			Run: Run{
+			Stretch: Stretch{
 				Start:  int(int32(binary.LittleEndian.Uint32(one[4:]))),
 				Length: int(int32(binary.LittleEndian.Uint32(one[8:]))),
 			},

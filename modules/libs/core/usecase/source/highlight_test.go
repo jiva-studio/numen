@@ -19,9 +19,9 @@ import (
 // of the page it covers.
 func boxed(page, start, length int, over highlight.Rect) highlight.Box {
 	return highlight.Box{
-		Page: page,
-		Run:  highlight.Run{Start: start, Length: length},
-		Rect: over,
+		Page:    page,
+		Stretch: highlight.Stretch{Start: start, Length: length},
+		Rect:    over,
 	}
 }
 
@@ -94,7 +94,7 @@ func run(t *testing.T, book *pdf.Book, word string) (start, length int) {
 // source with no reading and no layer is lit nowhere.
 func litOn(t *testing.T, u Highlight, path string, start, length int) []highlight.Page {
 	t.Helper()
-	found, err := u.Execute(t.Context(), first, path, []highlight.Run{{Start: start, Length: length}})
+	found, err := u.Execute(t.Context(), first, path, []highlight.Stretch{{Start: start, Length: length}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
 
 	after, afterLength := run(t, book, "Afterword")
 	closer, closerLength := run(t, book, "closer")
-	found, err := u.Execute(t.Context(), first, documentPath, []highlight.Run{
+	found, err := u.Execute(t.Context(), first, documentPath, []highlight.Stretch{
 		{Start: after, Length: afterLength},
 		{Start: closer, Length: closerLength},
 	})
@@ -265,7 +265,7 @@ func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 
 	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
 		t.Run(path, func(t *testing.T) {
-			found, err := u.Execute(t.Context(), first, path, []highlight.Run{{Start: 0, Length: 5}})
+			found, err := u.Execute(t.Context(), first, path, []highlight.Stretch{{Start: 0, Length: 5}})
 			if err == nil {
 				t.Errorf("%s was answered with %+v", path, found)
 			}

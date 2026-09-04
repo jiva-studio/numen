@@ -10,9 +10,9 @@ import (
 // box is one run of prose on a page, over the rectangle it covers.
 func box(page, start, length int, over highlight.Rect) highlight.Box {
 	return highlight.Box{
-		Page: page,
-		Run:  highlight.Run{Start: start, Length: length},
-		Rect: over,
+		Page:    page,
+		Stretch: highlight.Stretch{Start: start, Length: length},
+		Rect:    over,
 	}
 }
 

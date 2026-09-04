@@ -16,7 +16,7 @@ import "sort"
 // of bytes in the text, and the rectangle it covers.
 type Box struct {
 	Page int
-	Run
+	Stretch
 	Rect
 }
 
@@ -31,8 +31,8 @@ type Page struct {
 	Rects []Rect
 }
 
-// A Run is a stretch of a source's text, in bytes.
-type Run struct {
+// A Stretch is a run of a source's text, in bytes.
+type Stretch struct {
 	Start  int
 	Length int
 }

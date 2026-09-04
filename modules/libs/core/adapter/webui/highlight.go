@@ -99,7 +99,7 @@ const longestRun = 100_000
 
 // places is which parts of the source's text the window is asking about: a
 // `start` and a `length` for each of them, paired in the order they are given.
-func places(query url.Values) ([]highlight.Run, error) {
+func places(query url.Values) ([]highlight.Stretch, error) {
 	starts, lengths := query["start"], query["length"]
 	if len(starts) != len(lengths) {
 		return nil, fmt.Errorf("%d places begin and %d have a length", len(starts), len(lengths))
@@ -107,7 +107,7 @@ func places(query url.Values) ([]highlight.Run, error) {
 	if len(starts) == 0 || len(starts) > domain.MostLit {
 		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostLit, len(starts))
 	}
-	runs := make([]highlight.Run, 0, len(starts))
+	runs := make([]highlight.Stretch, 0, len(starts))
 	for i, at := range starts {
 		start, err := strconv.Atoi(at)
 		if err != nil || start < 0 {
@@ -117,7 +117,7 @@ func places(query url.Values) ([]highlight.Run, error) {
 		if err != nil || length < 1 || length > longestRun {
 			return nil, fmt.Errorf("length: %q is not a run of the text", lengths[i])
 		}
-		runs = append(runs, highlight.Run{Start: start, Length: length})
+		runs = append(runs, highlight.Stretch{Start: start, Length: length})
 	}
 	return runs, nil
 }
