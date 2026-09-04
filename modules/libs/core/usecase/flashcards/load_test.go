@@ -164,7 +164,7 @@ func load(tb testing.TB, cards, days, perDay int) loaded {
 }
 
 // logRead is this vault's answers, read the way a request reads them.
-func (l loaded) logRead(tb testing.TB) (flashcards.Held, error) {
+func (l loaded) logRead(tb testing.TB) (flashcards.ReviewLog, error) {
 	tb.Helper()
 	return flashcards.Log{Stores: l.logs}.Read(tb.Context(), l.vault)
 }

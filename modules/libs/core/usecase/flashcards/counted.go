@@ -95,9 +95,9 @@ func (u CountReviews) Execute(ctx context.Context, v domain.Vault) (Reviewed, er
 	// What is still to come is worked out from the whole history, so every run
 	// is read here and the reading is handed on.
 	coming := u.Schedules.By != nil
-	var held Held
+	var held ReviewLog
 	for _, file := range files {
-		var ran Ran
+		var ran LogFile
 		var opened bool
 		one, kept := was[file.Name]
 		stale := !kept || one.Size != file.Size
@@ -212,7 +212,7 @@ func given(answers []review.Answer, seen map[string]bool) []review.Answer {
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
 func (u CountReviews) ahead(
-	ctx context.Context, v domain.Vault, held Held,
+	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)
 	if u.Schedules.By == nil {

@@ -79,6 +79,12 @@ type API struct {
 	// answers that it has none, and the rest of it works as it did.
 	agent atomic.Pointer[port.Agent]
 
+	// showing is the card the last question was asked about, which the tools
+	// answer with. It is held rather than written into the question: a deck is
+	// named by whoever synced it, and a name in a question is read as
+	// instruction where a tool's answer is data.
+	showing atomic.Pointer[Showing]
+
 	runs     sittings
 	readings readings
 
@@ -91,14 +97,14 @@ type API struct {
 // one wrote is never appended to again.
 type sittings struct {
 	mu  sync.Mutex
-	run map[domain.VaultID]*flashcards.Run
+	run map[domain.VaultID]*flashcards.LogWriter
 }
 
-func (s *sittings) remember(v domain.Vault, run *flashcards.Run) {
+func (s *sittings) remember(v domain.Vault, run *flashcards.LogWriter) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.run == nil {
-		s.run = make(map[domain.VaultID]*flashcards.Run)
+		s.run = make(map[domain.VaultID]*flashcards.LogWriter)
 	}
 	s.run[v.ID] = run
 }
@@ -111,7 +117,7 @@ func (s *sittings) remember(v domain.Vault, run *flashcards.Run) {
 // person's answer in a history it does not belong to, and an answer written is
 // not written again. The name is asked for as well, so a page holding the name
 // of a sitting that is over cannot go on writing to it.
-func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.Run, error) {
+func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.LogWriter, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	run, is := s.run[vault]
@@ -119,6 +125,23 @@ func (s *sittings) named(vault domain.VaultID, name string) (*flashcards.Run, er
 		return nil, fmt.Errorf("%w: %s", ErrNoRun, name)
 	}
 	return run, nil
+}
+
+// Showing is the card in front of the person, as the last question said it. A
+// window that has asked nothing is looking at no card as far as anyone here
+// knows.
+type Showing struct {
+	Deck string
+	Card string
+	Face string
+}
+
+// Showing is that card, for whatever answers about it.
+func (a *API) Showing() Showing {
+	if on := a.showing.Load(); on != nil {
+		return *on
+	}
+	return Showing{}
 }
 
 // Answering is the agent a question about a card goes to, and nothing where
@@ -155,7 +178,7 @@ func (a *API) Vault(id string) (domain.Vault, error) {
 }
 
 // opened starts a run and remembers it under its own name.
-func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.Run, error) {
+func (a *API) opened(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
 	run, err := a.Log.Open(ctx, v, a.now())
 	if err != nil {
 		return nil, err

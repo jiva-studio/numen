@@ -20,7 +20,7 @@ var ErrNoRating = errors.New("not one of the four ratings")
 // whatever happens next — including a person taking an answer back, which is a
 // line of its own naming the one it takes back.
 type Record struct {
-	Run *Run
+	Run *LogWriter
 	Now func() time.Time
 }
 

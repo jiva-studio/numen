@@ -47,7 +47,7 @@ type allowance struct {
 func budgeted(
 	ctx context.Context, v domain.Vault, reading *PresetReads, day review.Day,
 	standing []Standing, schedules map[review.CardFaceID]review.Schedule,
-	log Held, by review.Scheduler, at func(retention float64) review.Scheduler,
+	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{

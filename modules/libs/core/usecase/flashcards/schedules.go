@@ -222,7 +222,7 @@ func (u Schedules) Execute(
 // From is where a log that has already been read leaves every card face. A
 // caller holding the answers does not read them again to be told this.
 func (u Schedules) From(
-	ctx context.Context, v domain.Vault, held Held,
+	ctx context.Context, v domain.Vault, held ReviewLog,
 ) (map[review.CardFaceID]review.Schedule, error) {
 	asks, err := u.asking(ctx, v)
 	if err != nil {
@@ -238,7 +238,7 @@ func (u Schedules) From(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) worked(held Held, asks assignment) map[review.CardFaceID]review.Schedule {
+func (u Schedules) worked(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
 	return projected(u.Day, held, asks)
 }
 
@@ -248,7 +248,7 @@ func (u Schedules) worked(held Held, asks assignment) map[review.CardFaceID]revi
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
 func (u Schedules) replayed(
-	ctx context.Context, v domain.Vault, held Held, asks assignment,
+	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
 	if out, ok := u.remembered(ctx, v, held.Files, asks.mark); ok {
 		return out
@@ -259,7 +259,7 @@ func (u Schedules) replayed(
 // filled works the answers out and remembers what they came to. It is what a
 // caller that has already found the cache out of date asks for.
 func (u Schedules) filled(
-	ctx context.Context, v domain.Vault, held Held, asks assignment,
+	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
 	out := projected(u.Day, held, asks)
 	u.remember(ctx, v, held.Files, asks.mark, out)
@@ -269,7 +269,7 @@ func (u Schedules) filled(
 // projected is where the answers leave every card face, and is what a caller
 // that only reads them asks for.
 func projected(
-	d review.Day, held Held, asks assignment,
+	d review.Day, held ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
 	return held.Given().Replay(d, asks.under)
 }
