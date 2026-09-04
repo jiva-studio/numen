@@ -119,32 +119,6 @@ service VaultService {
   // is a move within one folder.
   rpc Move(MoveRequest) returns (MoveResponse);
 
-  // Syncing is whether renaming either a note's title or the name of its file
-  // brings the other into line.
-  rpc Syncing(SyncingRequest) returns (SyncingResponse);
-
-  // ChooseSyncing writes that setting into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was, and the next rename reads what was written.
-  rpc ChooseSyncing(ChooseSyncingRequest) returns (ChooseSyncingResponse);
-
-  // Hanging is whether a node in the plex hangs the headings of its note under
-  // the box, and how many of them stand there at once.
-  rpc Hanging(HangingRequest) returns (HangingResponse);
-
-  // ChooseHanging writes those settings into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was.
-  rpc ChooseHanging(ChooseHangingRequest) returns (ChooseHangingResponse);
-
-  // Reviewing is the hour a day of review begins at, on the clock on the wall.
-  rpc Reviewing(ReviewingRequest) returns (ReviewingResponse);
-
-  // ChooseReviewing writes that hour into the file a person configures this
-  // installation in. The file is patched as an object, so every key a person
-  // typed stays where it was.
-  rpc ChooseReviewing(ChooseReviewingRequest) returns (ChooseReviewingResponse);
-
   // Settings is every setting of the file a person configures this
   // installation in, and the models the settings that name one can be set to.
   rpc Settings(SettingsRequest) returns (SettingsResponse);
@@ -935,70 +909,6 @@ message Moved {
 
   reserved 4;
   reserved "retargeted";
-}
-
-message SyncingRequest {}
-
-message SyncingResponse {
-  // Whether renaming either a note's title or the name of its file brings the
-  // other into line. It is the `naming.sync_title_and_filename` of the settings
-  // file, and an installation nobody has configured keeps the two one name.
-  bool sync_title_and_filename = 1;
-}
-
-message ChooseSyncingRequest {
-  bool sync_title_and_filename = 1;
-}
-
-message ChooseSyncingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
-
-message HangingRequest {}
-
-message HangingResponse {
-  // Whether a node in the plex hangs the headings of its note under the box. It
-  // is the `appearance.hang_parts_under_a_node` of the settings file, and an
-  // installation nobody has configured hangs them.
-  bool hang_parts_under_a_node = 1;
-
-  // How many of them stand under a node at once, the rest being wound to. It is
-  // the `appearance.parts_under_a_node` of the settings file.
-  int32 parts_under_a_node = 2;
-}
-
-message ChooseHangingRequest {
-  bool hang_parts_under_a_node = 1;
-
-  // How many of them stand under a node at once. A count left unset stands as
-  // it is.
-  optional int32 parts_under_a_node = 2;
-}
-
-message ChooseHangingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
-}
-
-message ReviewingRequest {}
-
-message ReviewingResponse {
-  // The hour a day of review begins at, written as `04:00`. It is the
-  // `review.day_starts` of the settings file, and an installation nobody has
-  // configured begins the day at four.
-  string day_starts = 1;
-}
-
-message ChooseReviewingRequest {
-  // The hour to begin the day at, written as `04:00`. An hour outside 00:00 to
-  // 12:00 is refused, and the file is left as it was.
-  string day_starts = 1;
-}
-
-message ChooseReviewingResponse {
-  // Set when nothing was written, and why. What the settings hold is unchanged.
-  optional Refusal refusal = 1;
 }
 
 message SettingsRequest {}

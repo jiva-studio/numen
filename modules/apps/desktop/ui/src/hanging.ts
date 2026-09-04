@@ -24,6 +24,9 @@ export const OFF = 'off'
 const LEAST = 1
 const MOST = 12
 
+/** How many a node hangs where the settings name no number. */
+export const DEFAULT_PARTS = 6
+
 /** Everything this says in the window's voice. */
 export interface Words {
   /** The band the setting is drawn in, and the two it is. */
@@ -65,7 +68,7 @@ export function hanging(core: Called, words: Words, said: Says) {
    * does, and are asked of the vault as the window opens.
    */
   const hangs = ref(true)
-  const parts = ref(6)
+  const parts = ref(DEFAULT_PARTS)
 
   /** What the settings hold, asked once the window is up. */
   const start = async (): Promise<void> => {

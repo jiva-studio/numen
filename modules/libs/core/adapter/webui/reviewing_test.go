@@ -14,31 +14,40 @@ import (
 // The window asks the hour a day of review begins at, and sets it from the
 // settings screen.
 
+// dayStarts is the hour the settings hold, read off the settings whole.
+func dayStarts(t *testing.T, f *going) string {
+	t.Helper()
+	held, is := setting(t, f, "review", "day_starts").(string)
+	if !is {
+		t.Fatalf("the hour is not written as an hour")
+	}
+	return held
+}
+
+// begins writes the hour into the settings.
+func begins(t *testing.T, f *going, hour string) error {
+	t.Helper()
+	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+		Settings: []*v1.Setting{{At: []string{"review", "day_starts"}, Value: `"` + hour + `"`}},
+	}))
+	return err
+}
+
 // TestTheHourADayBeginsAtIsAnsweredByTheNextQuestion. The screen sets it, the
 // file is written, and the window reads what was written.
 func TestTheHourADayBeginsAtIsAnsweredByTheNextQuestion(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
-	said, err := f.client.Reviewing(t.Context(), connect.NewRequest(&v1.ReviewingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if said.Msg.GetDayStarts() != "04:00" {
-		t.Fatalf("an installation nobody has configured begins the day at %q",
-			said.Msg.GetDayStarts())
+	if said := dayStarts(t, f); said != "04:00" {
+		t.Fatalf("an installation nobody has configured begins the day at %q", said)
 	}
 
-	if _, err := f.client.ChooseReviewing(t.Context(),
-		connect.NewRequest(&v1.ChooseReviewingRequest{DayStarts: "05:30"})); err != nil {
+	if err := begins(t, f, "05:30"); err != nil {
 		t.Fatal(err)
 	}
 
-	said, err = f.client.Reviewing(t.Context(), connect.NewRequest(&v1.ReviewingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if said.Msg.GetDayStarts() != "05:30" {
-		t.Errorf("the day begins at %q", said.Msg.GetDayStarts())
+	if said := dayStarts(t, f); said != "05:30" {
+		t.Errorf("the day begins at %q", said)
 	}
 }
 
@@ -48,18 +57,13 @@ func TestAnHourADayOfReviewCannotBeginAtIsNotWritten(t *testing.T) {
 	f := opening(t, nil, nil, true)
 
 	for _, one := range []string{"13:00", "24:00", "half past four", ""} {
-		if _, err := f.client.ChooseReviewing(t.Context(),
-			connect.NewRequest(&v1.ChooseReviewingRequest{DayStarts: one})); err == nil {
+		if err := begins(t, f, one); err == nil {
 			t.Errorf("a day was made to begin at %q", one)
 		}
 	}
 
-	said, err := f.client.Reviewing(t.Context(), connect.NewRequest(&v1.ReviewingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if said.Msg.GetDayStarts() != "04:00" {
-		t.Errorf("the day begins at %q", said.Msg.GetDayStarts())
+	if said := dayStarts(t, f); said != "04:00" {
+		t.Errorf("the day begins at %q", said)
 	}
 }
 
@@ -72,8 +76,7 @@ func TestSettingTheHourLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := f.client.ChooseReviewing(t.Context(),
-		connect.NewRequest(&v1.ChooseReviewingRequest{DayStarts: "06:00"})); err != nil {
+	if err := begins(t, f, "06:00"); err != nil {
 		t.Fatal(err)
 	}
 

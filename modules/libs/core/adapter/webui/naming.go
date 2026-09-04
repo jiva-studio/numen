@@ -51,33 +51,6 @@ func (a *API) Rename(ctx context.Context, r *connect.Request[v1.RenameRequest]) 
 	return connect.NewResponse(out), nil
 }
 
-// Syncing says whether a note's title and its filename are kept as one name.
-func (a *API) Syncing(
-	_ context.Context, _ *connect.Request[v1.SyncingRequest],
-) (*connect.Response[v1.SyncingResponse], error) {
-	return connect.NewResponse(&v1.SyncingResponse{
-		SyncTitleAndFilename: bool(a.Configuring.Sync.Kept()),
-	}), nil
-}
-
-// ChooseSyncing writes that setting into the file a person configures this
-// installation in.
-func (a *API) ChooseSyncing(
-	_ context.Context, r *connect.Request[v1.ChooseSyncingRequest],
-) (*connect.Response[v1.ChooseSyncingResponse], error) {
-	if a.Configuring.ChoosesSync == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	if err := a.Configuring.ChoosesSync(note.SyncTitleAndFilename(r.Msg.GetSyncTitleAndFilename())); err != nil {
-		reason, refused := refusal.By(err)
-		if !refused {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
-		return connect.NewResponse(&v1.ChooseSyncingResponse{Refusal: &reason}), nil
-	}
-	return connect.NewResponse(&v1.ChooseSyncingResponse{}), nil
-}
-
 // errNoSettings is what a build that configures nothing answers.
 var errNoSettings = errors.New("this build cannot turn settings")
 

@@ -2,6 +2,7 @@ package webui_test
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -123,6 +124,18 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	}
 }
 
+// oneName writes into the settings whether a note's title and the name of its
+// file are kept as one name.
+func oneName(t *testing.T, f *going, kept bool) error {
+	t.Helper()
+	_, err := f.client.ChooseSettings(t.Context(), connect.NewRequest(&v1.ChooseSettingsRequest{
+		Settings: []*v1.Setting{
+			{At: []string{"naming", "sync_title_and_filename"}, Value: fmt.Sprint(kept)},
+		},
+	}))
+	return err
+}
+
 // TestTurningTheSettingIsAnsweredByTheNextRename. The palette turns it, the
 // file is written, and the rename after it reads what was written. Nothing is
 // launched again in between.
@@ -133,30 +146,16 @@ func TestTurningTheSettingIsAnsweredByTheNextRename(t *testing.T) {
 	}, true)
 	scanned(t, f)
 
-	said, err := f.client.Syncing(t.Context(), connect.NewRequest(&v1.SyncingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !said.Msg.GetSyncTitleAndFilename() {
+	if setting(t, f, "naming", "sync_title_and_filename") != true {
 		t.Fatal("an installation nobody has configured tells the two apart")
 	}
 
-	turned, err := f.client.ChooseSyncing(t.Context(), connect.NewRequest(&v1.ChooseSyncingRequest{
-		SyncTitleAndFilename: false,
-	}))
-	if err != nil {
+	if err := oneName(t, f, false); err != nil {
 		t.Fatal(err)
-	}
-	if refusal := turned.Msg.GetRefusal(); refusal != v1.Refusal_REFUSAL_UNSPECIFIED {
-		t.Fatalf("the setting was refused: %v", refusal)
 	}
 
 	// Read back through the same window, and then acted on by a rename.
-	said, err = f.client.Syncing(t.Context(), connect.NewRequest(&v1.SyncingRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if said.Msg.GetSyncTitleAndFilename() {
+	if setting(t, f, "naming", "sync_title_and_filename") != false {
 		t.Error("the setting was turned and the window still says one name")
 	}
 
@@ -188,9 +187,7 @@ func TestTurningTheSettingLeavesTheRestOfTheFileAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := f.client.ChooseSyncing(t.Context(), connect.NewRequest(&v1.ChooseSyncingRequest{
-		SyncTitleAndFilename: false,
-	})); err != nil {
+	if err := oneName(t, f, false); err != nil {
 		t.Fatal(err)
 	}
 

@@ -226,24 +226,6 @@ type Cards struct {
 // nothing, and one with no reader reads what an installation nobody has
 // configured does.
 type Configuring struct {
-	// Sync reads whether a note's title and its filename are kept as one name,
-	// and ChoosesSync writes it.
-	Sync        note.Syncing
-	ChoosesSync func(kept note.SyncTitleAndFilename) error
-
-	// Hangs reads whether a node hangs the headings of its note under it, Parts
-	// how many of them stand there at once, and ChoosesHanging and ChoosesParts
-	// write the two.
-	Hangs          func() bool
-	ChoosesHanging func(hangs bool) error
-	Parts          func() int
-	ChoosesParts   func(parts int) error
-
-	// Reviews reads the hour a day of review begins at, and ChoosesReviewing
-	// writes it.
-	Reviews          func() string
-	ChoosesReviewing func(starts string) error
-
 	// Configured reads every setting as JSON and the file it stands in, Models
 	// the models the settings that name one can be set to, and ChoosesSetting
 	// writes settings into that file.

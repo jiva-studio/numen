@@ -34,6 +34,10 @@ import type {
 } from '@numen/protocol'
 import type { Counting } from '@numen/ui'
 import { fingerprint, refusalIn, stamp } from './answers'
+import { DEFAULT_PARTS } from './hanging'
+import { DEFAULT_STARTS } from './reviewing'
+import { standing as settingAt } from './settings/configuring'
+import { write } from './settings/json5'
 import type { Asking as Commanding } from './commanding'
 import type { Asking, Way } from './finding'
 import type { Documents, Highlight, Sheet } from './document/reading'
@@ -80,6 +84,42 @@ export const vault = createClient(VaultService, transport)
 const vaultsService = createClient(VaultsService, transport)
 
 const cardsService = createClient(CardsService, transport)
+
+/**
+ * The settings the window turns by name, each where it sits in the file.
+ *
+ * They are read off the settings whole and written back one at a time, so what
+ * the window turns and what the settings screen turns are the one surface.
+ */
+const SYNCS = ['naming', 'sync_title_and_filename']
+const HANGS = ['appearance', 'hang_parts_under_a_node']
+const PARTS = ['appearance', 'parts_under_a_node']
+const STARTS = ['review', 'day_starts']
+
+/** Every setting as it stands, with the defaults under what the file leaves out. */
+const configured = async (): Promise<unknown> =>
+  JSON.parse((await vault.settings({})).written)
+
+/** How many parts a node hangs, and the default where the settings name none. */
+const partsIn = (value: unknown): number =>
+  typeof value === 'number' ? value : DEFAULT_PARTS
+
+/**
+ * Settings written into the file, together or not at all. What could not be
+ * written, and nothing where it was.
+ */
+const puts = async (
+  written: readonly { at: readonly string[]; value: unknown }[],
+): Promise<string | null> => {
+  try {
+    await vault.chooseSettings({
+      settings: written.map((one) => ({ at: [...one.at], value: write(one.value) })),
+    })
+  } catch (thrown) {
+    return thrown instanceof Error ? thrown.message : `${thrown}`
+  }
+  return null
+}
 
 /** The vaults this installation holds, in the shape the window asks about them. */
 export const vaults: Vaults = {
@@ -259,22 +299,22 @@ export const core: Core & Asking & Commanding = {
       refusal: refusalIn(answer),
     } satisfies Movement
   },
-  syncing: async () => (await vault.syncing({})).syncTitleAndFilename,
-  choosesSyncing: async (kept) =>
-    refusalIn(await vault.chooseSyncing({ syncTitleAndFilename: kept })),
+  syncing: async () => settingAt(await configured(), SYNCS) !== false,
+  choosesSyncing: (kept) => puts([{ at: SYNCS, value: kept }]),
   hanging: async () => {
-    const answer = await vault.hanging({})
+    const written = await configured()
     return {
-      hangs: answer.hangPartsUnderANode,
-      parts: answer.partsUnderANode,
+      hangs: settingAt(written, HANGS) !== false,
+      parts: partsIn(settingAt(written, PARTS)),
     } satisfies Hanging
   },
   // The switch is always sent, and the count only where it is the count being
   // turned.
-  choosesHanging: async (hangs, parts) =>
-    refusalIn(
-      await vault.chooseHanging({ hangPartsUnderANode: hangs, partsUnderANode: parts }),
-    ),
+  choosesHanging: (hangs, parts) =>
+    puts([
+      { at: HANGS, value: hangs },
+      ...(parts === undefined ? [] : [{ at: PARTS, value: parts }]),
+    ]),
   settings: async () => {
     const answer = await vault.settings({})
     return {
@@ -307,9 +347,11 @@ export const core: Core & Asking & Commanding = {
     })
     return { changed: answer.changed }
   },
-  reviewing: async () => (await vault.reviewing({})).dayStarts,
-  choosesReviewing: async (starts) =>
-    refusalIn(await vault.chooseReviewing({ dayStarts: starts })),
+  reviewing: async () => {
+    const hour = settingAt(await configured(), STARTS)
+    return typeof hour === 'string' ? hour : DEFAULT_STARTS
+  },
+  choosesReviewing: (starts) => puts([{ at: STARTS, value: starts }]),
   makeFolder: async (path) => refusalIn(await vault.makeFolder({ path })),
   quitting: (signal) => vault.quitting({}, { signal }),
   flushed: async (token, owed) => {

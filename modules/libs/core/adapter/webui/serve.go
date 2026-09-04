@@ -294,19 +294,11 @@ func Open(ctx context.Context, cfg container.Config, asked string, out io.Writer
 		Sync: cfg.Syncing(),
 	}
 	api.Configuring = Configuring{
-		Sync:             cfg.Syncing(),
-		ChoosesSync:      cfg.Turns(),
-		Hangs:            cfg.Hanging(),
-		ChoosesHanging:   cfg.TurnsHanging(),
-		Parts:            cfg.Parts(),
-		ChoosesParts:     cfg.TurnsParts(),
-		Reviews:          cfg.Reviewing(),
-		ChoosesReviewing: cfg.TurnsReviewing(),
-		Configured:       cfg.Configured(),
-		Models:           cfg.Models(),
-		ChoosesSetting:   cfg.TurnsSetting(),
-		ConfiguredFile:   cfg.ConfiguredFile(),
-		WritesFile:       cfg.WritesConfiguredFile(),
+		Configured:     cfg.Configured(),
+		Models:         cfg.Models(),
+		ChoosesSetting: cfg.TurnsSetting(),
+		ConfiguredFile: cfg.ConfiguredFile(),
+		WritesFile:     cfg.WritesConfiguredFile(),
 	}
 	api.Notes.Rename = &note.Rename{Move: moving}
 	api.Files.Move = &usecase.Move{

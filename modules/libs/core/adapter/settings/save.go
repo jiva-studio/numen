@@ -78,9 +78,9 @@ func holds(raw []byte) error {
 }
 
 // takes says what is wrong with the settings this call wrote, and nothing where
-// each is a number its setting takes.
+// each is a number its setting takes and an hour its setting begins at.
 //
-// A number outside its setting that the file already held is one the person
+// A value outside its setting that the file already held is one the person
 // typed and one they can still reach: what is refused is what was handed in.
 func takes(raw []byte, wrote []Setting) error {
 	held := Defaults()
@@ -94,8 +94,19 @@ func takes(raw []byte, wrote []Setting) error {
 			}
 		}
 	}
+	for _, setting := range wrote {
+		if !covers(setting.At, dayStartsAt) {
+			continue
+		}
+		if _, err := Starting(held.Review.DayStarts); err != nil {
+			return err
+		}
+	}
 	return nil
 }
+
+// dayStartsAt is where the hour a day of review begins at sits in the file.
+const dayStartsAt = "review.day_starts"
 
 // covers is whether a setting handed in at one name wrote the field at another:
 // the field itself, or a field inside the section named.

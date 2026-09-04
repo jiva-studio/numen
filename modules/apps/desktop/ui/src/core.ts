@@ -380,7 +380,7 @@ export interface Core {
    * That setting written into the settings file. What could not be written, and
    * nothing where it was: the rename after this reads what was written.
    */
-  choosesSyncing(kept: boolean): Promise<Refused | null>
+  choosesSyncing(kept: boolean): Promise<string | null>
   /**
    * Whether a node in the plex hangs the parts of its note under the box, and
    * how many of them stand there at once, as the settings hold them.
@@ -390,7 +390,7 @@ export interface Core {
    * Those settings written into the settings file. What could not be written,
    * and nothing where it was. A count left out stands as it is.
    */
-  choosesHanging(hangs: boolean, parts?: number): Promise<Refused | null>
+  choosesHanging(hangs: boolean, parts?: number): Promise<string | null>
   /**
    * The hour a day of review begins at, on the clock on the wall, written as
    * `04:00`.
@@ -400,7 +400,7 @@ export interface Core {
    * That hour written into the settings file. What could not be written, and
    * nothing where it was.
    */
-  choosesReviewing(starts: string): Promise<Refused | null>
+  choosesReviewing(starts: string): Promise<string | null>
   /** Every setting as it stands, and the models the settings offer. */
   settings(): Promise<Configured>
   /**

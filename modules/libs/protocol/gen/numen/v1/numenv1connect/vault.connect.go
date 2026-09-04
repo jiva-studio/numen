@@ -82,21 +82,6 @@ const (
 	VaultServiceRenameProcedure = "/numen.v1.VaultService/Rename"
 	// VaultServiceMoveProcedure is the fully-qualified name of the VaultService's Move RPC.
 	VaultServiceMoveProcedure = "/numen.v1.VaultService/Move"
-	// VaultServiceSyncingProcedure is the fully-qualified name of the VaultService's Syncing RPC.
-	VaultServiceSyncingProcedure = "/numen.v1.VaultService/Syncing"
-	// VaultServiceChooseSyncingProcedure is the fully-qualified name of the VaultService's
-	// ChooseSyncing RPC.
-	VaultServiceChooseSyncingProcedure = "/numen.v1.VaultService/ChooseSyncing"
-	// VaultServiceHangingProcedure is the fully-qualified name of the VaultService's Hanging RPC.
-	VaultServiceHangingProcedure = "/numen.v1.VaultService/Hanging"
-	// VaultServiceChooseHangingProcedure is the fully-qualified name of the VaultService's
-	// ChooseHanging RPC.
-	VaultServiceChooseHangingProcedure = "/numen.v1.VaultService/ChooseHanging"
-	// VaultServiceReviewingProcedure is the fully-qualified name of the VaultService's Reviewing RPC.
-	VaultServiceReviewingProcedure = "/numen.v1.VaultService/Reviewing"
-	// VaultServiceChooseReviewingProcedure is the fully-qualified name of the VaultService's
-	// ChooseReviewing RPC.
-	VaultServiceChooseReviewingProcedure = "/numen.v1.VaultService/ChooseReviewing"
 	// VaultServiceSettingsProcedure is the fully-qualified name of the VaultService's Settings RPC.
 	VaultServiceSettingsProcedure = "/numen.v1.VaultService/Settings"
 	// VaultServiceChooseSettingsProcedure is the fully-qualified name of the VaultService's
@@ -205,26 +190,6 @@ type VaultServiceClient interface {
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.
 	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Syncing is whether renaming either a note's title or the name of its file
-	// brings the other into line.
-	Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error)
-	// ChooseSyncing writes that setting into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was, and the next rename reads what was written.
-	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
-	// Hanging is whether a node in the plex hangs the headings of its note under
-	// the box, and how many of them stand there at once.
-	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
-	// ChooseHanging writes those settings into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was.
-	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
-	// Reviewing is the hour a day of review begins at, on the clock on the wall.
-	Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error)
-	// ChooseReviewing writes that hour into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was.
-	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
 	// Settings is every setting of the file a person configures this
 	// installation in, and the models the settings that name one can be set to.
 	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
@@ -387,42 +352,6 @@ func NewVaultServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(vaultServiceMethods.ByName("Move")),
 			connect.WithClientOptions(opts...),
 		),
-		syncing: connect.NewClient[v1.SyncingRequest, v1.SyncingResponse](
-			httpClient,
-			baseURL+VaultServiceSyncingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Syncing")),
-			connect.WithClientOptions(opts...),
-		),
-		chooseSyncing: connect.NewClient[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse](
-			httpClient,
-			baseURL+VaultServiceChooseSyncingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
-			connect.WithClientOptions(opts...),
-		),
-		hanging: connect.NewClient[v1.HangingRequest, v1.HangingResponse](
-			httpClient,
-			baseURL+VaultServiceHangingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Hanging")),
-			connect.WithClientOptions(opts...),
-		),
-		chooseHanging: connect.NewClient[v1.ChooseHangingRequest, v1.ChooseHangingResponse](
-			httpClient,
-			baseURL+VaultServiceChooseHangingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
-			connect.WithClientOptions(opts...),
-		),
-		reviewing: connect.NewClient[v1.ReviewingRequest, v1.ReviewingResponse](
-			httpClient,
-			baseURL+VaultServiceReviewingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("Reviewing")),
-			connect.WithClientOptions(opts...),
-		),
-		chooseReviewing: connect.NewClient[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse](
-			httpClient,
-			baseURL+VaultServiceChooseReviewingProcedure,
-			connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
-			connect.WithClientOptions(opts...),
-		),
 		settings: connect.NewClient[v1.SettingsRequest, v1.SettingsResponse](
 			httpClient,
 			baseURL+VaultServiceSettingsProcedure,
@@ -496,12 +425,6 @@ type vaultServiceClient struct {
 	join              *connect.Client[v1.JoinRequest, v1.JoinResponse]
 	rename            *connect.Client[v1.RenameRequest, v1.RenameResponse]
 	move              *connect.Client[v1.MoveRequest, v1.MoveResponse]
-	syncing           *connect.Client[v1.SyncingRequest, v1.SyncingResponse]
-	chooseSyncing     *connect.Client[v1.ChooseSyncingRequest, v1.ChooseSyncingResponse]
-	hanging           *connect.Client[v1.HangingRequest, v1.HangingResponse]
-	chooseHanging     *connect.Client[v1.ChooseHangingRequest, v1.ChooseHangingResponse]
-	reviewing         *connect.Client[v1.ReviewingRequest, v1.ReviewingResponse]
-	chooseReviewing   *connect.Client[v1.ChooseReviewingRequest, v1.ChooseReviewingResponse]
 	settings          *connect.Client[v1.SettingsRequest, v1.SettingsResponse]
 	chooseSettings    *connect.Client[v1.ChooseSettingsRequest, v1.ChooseSettingsResponse]
 	settingsFile      *connect.Client[v1.SettingsFileRequest, v1.SettingsFileResponse]
@@ -610,36 +533,6 @@ func (c *vaultServiceClient) Rename(ctx context.Context, req *connect.Request[v1
 // Move calls numen.v1.VaultService.Move.
 func (c *vaultServiceClient) Move(ctx context.Context, req *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
 	return c.move.CallUnary(ctx, req)
-}
-
-// Syncing calls numen.v1.VaultService.Syncing.
-func (c *vaultServiceClient) Syncing(ctx context.Context, req *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error) {
-	return c.syncing.CallUnary(ctx, req)
-}
-
-// ChooseSyncing calls numen.v1.VaultService.ChooseSyncing.
-func (c *vaultServiceClient) ChooseSyncing(ctx context.Context, req *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
-	return c.chooseSyncing.CallUnary(ctx, req)
-}
-
-// Hanging calls numen.v1.VaultService.Hanging.
-func (c *vaultServiceClient) Hanging(ctx context.Context, req *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error) {
-	return c.hanging.CallUnary(ctx, req)
-}
-
-// ChooseHanging calls numen.v1.VaultService.ChooseHanging.
-func (c *vaultServiceClient) ChooseHanging(ctx context.Context, req *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
-	return c.chooseHanging.CallUnary(ctx, req)
-}
-
-// Reviewing calls numen.v1.VaultService.Reviewing.
-func (c *vaultServiceClient) Reviewing(ctx context.Context, req *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error) {
-	return c.reviewing.CallUnary(ctx, req)
-}
-
-// ChooseReviewing calls numen.v1.VaultService.ChooseReviewing.
-func (c *vaultServiceClient) ChooseReviewing(ctx context.Context, req *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
-	return c.chooseReviewing.CallUnary(ctx, req)
 }
 
 // Settings calls numen.v1.VaultService.Settings.
@@ -769,26 +662,6 @@ type VaultServiceHandler interface {
 	// Move puts a file or a folder somewhere else in the vault. Renaming a file
 	// is a move within one folder.
 	Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error)
-	// Syncing is whether renaming either a note's title or the name of its file
-	// brings the other into line.
-	Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error)
-	// ChooseSyncing writes that setting into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was, and the next rename reads what was written.
-	ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error)
-	// Hanging is whether a node in the plex hangs the headings of its note under
-	// the box, and how many of them stand there at once.
-	Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error)
-	// ChooseHanging writes those settings into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was.
-	ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error)
-	// Reviewing is the hour a day of review begins at, on the clock on the wall.
-	Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error)
-	// ChooseReviewing writes that hour into the file a person configures this
-	// installation in. The file is patched as an object, so every key a person
-	// typed stays where it was.
-	ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error)
 	// Settings is every setting of the file a person configures this
 	// installation in, and the models the settings that name one can be set to.
 	Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error)
@@ -947,42 +820,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(vaultServiceMethods.ByName("Move")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultServiceSyncingHandler := connect.NewUnaryHandler(
-		VaultServiceSyncingProcedure,
-		svc.Syncing,
-		connect.WithSchema(vaultServiceMethods.ByName("Syncing")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceChooseSyncingHandler := connect.NewUnaryHandler(
-		VaultServiceChooseSyncingProcedure,
-		svc.ChooseSyncing,
-		connect.WithSchema(vaultServiceMethods.ByName("ChooseSyncing")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceHangingHandler := connect.NewUnaryHandler(
-		VaultServiceHangingProcedure,
-		svc.Hanging,
-		connect.WithSchema(vaultServiceMethods.ByName("Hanging")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceChooseHangingHandler := connect.NewUnaryHandler(
-		VaultServiceChooseHangingProcedure,
-		svc.ChooseHanging,
-		connect.WithSchema(vaultServiceMethods.ByName("ChooseHanging")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceReviewingHandler := connect.NewUnaryHandler(
-		VaultServiceReviewingProcedure,
-		svc.Reviewing,
-		connect.WithSchema(vaultServiceMethods.ByName("Reviewing")),
-		connect.WithHandlerOptions(opts...),
-	)
-	vaultServiceChooseReviewingHandler := connect.NewUnaryHandler(
-		VaultServiceChooseReviewingProcedure,
-		svc.ChooseReviewing,
-		connect.WithSchema(vaultServiceMethods.ByName("ChooseReviewing")),
-		connect.WithHandlerOptions(opts...),
-	)
 	vaultServiceSettingsHandler := connect.NewUnaryHandler(
 		VaultServiceSettingsProcedure,
 		svc.Settings,
@@ -1073,18 +910,6 @@ func NewVaultServiceHandler(svc VaultServiceHandler, opts ...connect.HandlerOpti
 			vaultServiceRenameHandler.ServeHTTP(w, r)
 		case VaultServiceMoveProcedure:
 			vaultServiceMoveHandler.ServeHTTP(w, r)
-		case VaultServiceSyncingProcedure:
-			vaultServiceSyncingHandler.ServeHTTP(w, r)
-		case VaultServiceChooseSyncingProcedure:
-			vaultServiceChooseSyncingHandler.ServeHTTP(w, r)
-		case VaultServiceHangingProcedure:
-			vaultServiceHangingHandler.ServeHTTP(w, r)
-		case VaultServiceChooseHangingProcedure:
-			vaultServiceChooseHangingHandler.ServeHTTP(w, r)
-		case VaultServiceReviewingProcedure:
-			vaultServiceReviewingHandler.ServeHTTP(w, r)
-		case VaultServiceChooseReviewingProcedure:
-			vaultServiceChooseReviewingHandler.ServeHTTP(w, r)
 		case VaultServiceSettingsProcedure:
 			vaultServiceSettingsHandler.ServeHTTP(w, r)
 		case VaultServiceChooseSettingsProcedure:
@@ -1188,30 +1013,6 @@ func (UnimplementedVaultServiceHandler) Rename(context.Context, *connect.Request
 
 func (UnimplementedVaultServiceHandler) Move(context.Context, *connect.Request[v1.MoveRequest]) (*connect.Response[v1.MoveResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Move is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Syncing(context.Context, *connect.Request[v1.SyncingRequest]) (*connect.Response[v1.SyncingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Syncing is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) ChooseSyncing(context.Context, *connect.Request[v1.ChooseSyncingRequest]) (*connect.Response[v1.ChooseSyncingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseSyncing is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Hanging(context.Context, *connect.Request[v1.HangingRequest]) (*connect.Response[v1.HangingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Hanging is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) ChooseHanging(context.Context, *connect.Request[v1.ChooseHangingRequest]) (*connect.Response[v1.ChooseHangingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseHanging is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) Reviewing(context.Context, *connect.Request[v1.ReviewingRequest]) (*connect.Response[v1.ReviewingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.Reviewing is not implemented"))
-}
-
-func (UnimplementedVaultServiceHandler) ChooseReviewing(context.Context, *connect.Request[v1.ChooseReviewingRequest]) (*connect.Response[v1.ChooseReviewingResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultService.ChooseReviewing is not implemented"))
 }
 
 func (UnimplementedVaultServiceHandler) Settings(context.Context, *connect.Request[v1.SettingsRequest]) (*connect.Response[v1.SettingsResponse], error) {

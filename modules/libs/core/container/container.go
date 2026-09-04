@@ -15,7 +15,6 @@ import (
 	adapteragent "github.com/jiva-studio/numen/modules/libs/core/adapter/agent"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/filesystem"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/flashcards"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/embed"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/proofreading"
@@ -143,114 +142,6 @@ func (c Config) Syncing() note.Syncing {
 			return true
 		}
 		return note.SyncTitleAndFilename(held.Sync())
-	}
-}
-
-// Turns writes into the settings whether a note's title and its filename are
-// kept as one name. The file is patched as an object, so every key a person
-// typed stays where it was.
-func (c Config) Turns() func(kept note.SyncTitleAndFilename) error {
-	return func(kept note.SyncTitleAndFilename) error {
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"naming", "sync_title_and_filename"}, Written: bool(kept),
-		})
-	}
-}
-
-// Hanging reads, as the window asks, whether a node hangs the headings of its
-// note under it. A file that cannot be read hangs them, which is what an
-// installation nobody has configured does.
-func (c Config) Hanging() func() bool {
-	return func() bool {
-		path, err := c.settingsFile()
-		if err != nil {
-			return true
-		}
-		held, err := settings.At(path)
-		if err != nil {
-			return true
-		}
-		return held.Hangs()
-	}
-}
-
-// TurnsHanging writes into the settings whether a node hangs the headings of
-// its note under it. The file is patched as an object, so every key a person
-// typed stays where it was.
-func (c Config) TurnsHanging() func(hangs bool) error {
-	return func(hangs bool) error {
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "hang_parts_under_a_node"}, Written: hangs,
-		})
-	}
-}
-
-// Parts reads, as the window asks, how many headings stand under a node at
-// once. A file that cannot be read stands the default of them.
-func (c Config) Parts() func() int {
-	return func() int {
-		path, err := c.settingsFile()
-		if err != nil {
-			return settings.DefaultParts
-		}
-		held, err := settings.At(path)
-		if err != nil {
-			return settings.DefaultParts
-		}
-		return held.Parts()
-	}
-}
-
-// TurnsParts writes into the settings how many headings stand under a node at
-// once. A number outside what the setting goes to is refused and the file is
-// left as it is.
-func (c Config) TurnsParts() func(parts int) error {
-	return func(parts int) error {
-		if err := settings.PartsUnderANodeBounds.Check(
-			"appearance.parts_under_a_node", float64(parts),
-		); err != nil {
-			return err
-		}
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"appearance", "parts_under_a_node"}, Written: parts,
-		})
-	}
-}
-
-// Reviewing reads, as the window asks, the hour a day of review begins at. A
-// file that cannot be read begins the day where an installation nobody has
-// configured begins it.
-func (c Config) Reviewing() func() string {
-	return func() string { return flashcards.Clock(c.DayStarts()) }
-}
-
-// TurnsReviewing writes into the settings the hour a day of review begins at.
-// An hour the setting does not take is refused and the file is left as it is.
-func (c Config) TurnsReviewing() func(starts string) error {
-	return func(starts string) error {
-		written, err := settings.Starting(starts)
-		if err != nil {
-			return err
-		}
-		path, err := c.settingsFile()
-		if err != nil {
-			return err
-		}
-		return settings.Save(path, settings.Setting{
-			At: []string{"review", "day_starts"}, Written: written,
-		})
 	}
 }
 

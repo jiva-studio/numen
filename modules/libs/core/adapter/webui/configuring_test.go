@@ -12,6 +12,28 @@ import (
 
 // The window asks for every setting and writes one of them back.
 
+// setting is what stands at a path through the settings, read off the whole of
+// them. What the file leaves out stands there at its default.
+func setting(t *testing.T, f *going, at ...string) any {
+	t.Helper()
+	said, err := f.client.Settings(t.Context(), connect.NewRequest(&v1.SettingsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var held any
+	if err := json.Unmarshal([]byte(said.Msg.GetWritten()), &held); err != nil {
+		t.Fatalf("the settings read out as %q: %v", said.Msg.GetWritten(), err)
+	}
+	for _, step := range at {
+		section, is := held.(map[string]any)
+		if !is {
+			t.Fatalf("%s is not a section of the settings", strings.Join(at, "."))
+		}
+		held = section[step]
+	}
+	return held
+}
+
 // The settings read out hold what the file leaves out, so the window draws what
 // this installation is doing rather than what a person happened to type.
 func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
